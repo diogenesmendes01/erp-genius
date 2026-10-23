@@ -66,7 +66,7 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
   }
   const conversa = pagina.getByRole("region", { name: "Conversa", exact: true });
   await conversa.waitFor({ state: "visible" });
-  const humano = estado === "humano-compositor";
+  const humano = estado === "humano-compositor" || estado === "nota";
   await conversa.getByText(humano ? "Quero matricular meu filho Pedro." : "Quero saber o valor do Inglês Intensivo B1.", { exact: true }).waitFor({ state: "visible" });
   if (humano) {
     await conversa.getByRole("note").getByText("Família pediu atendimento no período da tarde.", { exact: true }).waitFor({ state: "visible" });
@@ -89,7 +89,7 @@ export function semanticaThreadHumanaPronta() {
   const mensagens = [...conversa.querySelectorAll('[data-mensagem-id]')];
   const status = '[title="Enviando"],[title="Enviada"],[title="Entregue"],[title="Lida"],[title="Não enviada"]';
   const autor = mensagens.some(m => [...m.querySelectorAll('span')].some(s => s.textContent?.trim() === 'Você'));
-  const notas = [...conversa.querySelectorAll('[role="note"]')];
+  const notas = [...conversa.querySelectorAll('[role="note"]')].filter(n => !n.closest('footer'));
   const nota = notas.some(n => n.textContent.includes('Nota interna')) && notas.every(n => n.getAttribute('data-nota-id')
     && !n.querySelector('button,[role="menu"],img,video,audio') && !n.querySelector(status));
   const dia = [...conversa.querySelectorAll('[data-virtual-key]')].some(n => n.getAttribute('data-virtual-key')?.startsWith('dia:') && n.textContent.trim());
@@ -175,4 +175,42 @@ export function semanticaBuscaConversaPronta() {
  return r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= window.innerWidth + 1 && r.top >= -1 && r.bottom <= window.innerHeight + 1
   && area.left >= -1 && area.right <= window.innerWidth + 1 && /[1-9]\d* de [1-9]\d*/.test(regiao.querySelector('[role="status"]')?.textContent ?? "")
   && !!regiao.querySelector('[data-mensagem-id] .ring-amber-600');
+}
+
+/** #317: troca apenas a aba, depois do conteúdo e da assinatura cliente. Não envia nota. */
+export async function abrirNotaConversaApp(pagina, tamanho) {
+  await esperarConteudoApp(pagina, "humano-compositor", tamanho);
+  await esperarHidratacaoApp(pagina);
+  await pagina.getByRole("region", { name: "Conversa", exact: true }).getByRole("tab", { name: "Nota interna", exact: true }).click();
+}
+
+/** Callback DOM autocontido317: editor atual e abas/controles reais alcançáveis, sem liberar casca antiga. */
+export function semanticaRodapePronto(modo) {
+  if (!["responder", "nota"].includes(modo)) return false;
+  const conversa = document.querySelector('section[aria-label="Conversa"]');
+  const rodape = conversa?.querySelector('footer'), header = conversa?.querySelector('header');
+  if (!rodape || rodape.inert || !header || Math.abs(header.getBoundingClientRect().height - 68) > .5) return false;
+  const dentro = e => {
+    const r = e?.getBoundingClientRect();
+    return !!r && r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= window.innerWidth + 1 && r.top >= -1 && r.bottom <= window.innerHeight + 1;
+  };
+  if (!dentro(rodape)) return false;
+  const abas = [...rodape.querySelectorAll('[role="tab"]')];
+  const ativa = abas.find(t => t.textContent.trim() === (modo === "nota" ? "Nota interna" : "Responder"));
+  if (abas.length !== 2 || !ativa || ativa.disabled || ativa.getAttribute('aria-selected') !== 'true'
+    || abas.filter(t => t.getAttribute('aria-selected') === 'true').length !== 1
+    || abas.some(t => !dentro(t) || t.getBoundingClientRect().height < 44)) return false;
+  const painel = rodape.querySelector('[role="tabpanel"]');
+  const campo = painel?.querySelector('textarea[aria-label="' + (modo === 'nota' ? 'Escreva uma nota interna' : 'Escreva uma mensagem') + '"]');
+  if (!campo || campo.disabled || !dentro(campo) || campo.getBoundingClientRect().height < 44
+    || painel.id !== ativa.getAttribute('aria-controls') || painel.getAttribute('aria-labelledby') !== ativa.id) return false;
+  const emoji = rodape.querySelector('button[aria-label="Emojis"]');
+  const anexar = rodape.querySelector('button[aria-label="Anexar"]');
+  const agenda = rodape.querySelector('button[aria-label="Agendar mensagem"]');
+  const voz = rodape.querySelector('button[aria-label="Gravar mensagem de voz"]');
+  const enviar = [...rodape.querySelectorAll('button')].find(b => b.textContent.trim() === 'Enviar');
+  if (modo === 'nota' && (anexar || agenda || voz || !rodape.querySelector('[role="note"]')?.textContent.includes('não é enviada ao contato.') || !enviar)) return false;
+  if (modo === 'responder' && (!anexar || (!voz && !enviar))) return false;
+  if (!emoji || ![emoji, anexar, agenda, voz, enviar].filter(Boolean).every(b => dentro(b) && b.getBoundingClientRect().width >= 44 && b.getBoundingClientRect().height >= 44)) return false;
+  return rodape.textContent.includes('/ respostas rápidas') && !rodape.textContent.includes('@ mencionar');
 }

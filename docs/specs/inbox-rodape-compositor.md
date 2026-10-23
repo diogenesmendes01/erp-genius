@@ -23,3 +23,8 @@ A variante travada tem comandos reais fornecidos por callbacks, mas não há pro
 Testes de marcação usam React SSR; parte das interações usa o harness existente tela-sem-dom, com hooks controlados e layout-effect aplicado sem simular cleanup/unmount real. Eles verificam contratos, callbacks e identidade React, não comprovam geometria/foco do navegador. Mount/cleanup real, identidade do scroller, teclado, alvos44, 320×500, imagens app×protótipo, fluxo de permissões, QA independente e global integrado permanecem pendentes de janela coordenada.
 
 O hook useBuscaConversa e seu teste permanecem intactos na base294. A correção C2/#402 é de outra frente e será incorporada pelo integrador antes do QA/formal/global317; este checkpoint não atribui essa correção à própria fonte.
+
+
+## CLI preparada, captura pendente
+
+Delta separado do produto a86: estado nota12PNG app×protótipo e três tamanhos/dois temas; humano+nota24 formais planejadas. Prontidão confirma abas/campo44/header68/viewport e conteúdo do modo, abrindo nota pelo controle real após hidratação. Aviso do footer não é item da thread314; notas reais continuam estritas. Referência mantém menção futura histórica, app não promete esse recurso. Fonte/hashes e anonDOM392/guardReact/rede permanecem. GREEN8/51, TSC38512 e lint8fontes0 observados, sem browser/DB/imagens ainda. C2 e janela do integrador necessários antes do formal.
