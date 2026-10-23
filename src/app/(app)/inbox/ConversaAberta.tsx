@@ -23,7 +23,6 @@ import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-resposta
 import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
-import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
 import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
 import type { AcoesCabecalho } from "./MenuConversa";
@@ -46,9 +45,6 @@ export interface PropsConversaAberta {
   /** O painel não carregou: "Tentar de novo" do compositor (C2 da revisão do #218). */
   falhaPermissao?: () => void;
   destinos?: DestinoTransferencia[];
-  /** Triagem do número (a quem `listarTriagemWhatsApp` aceita) e revisão de envio incerto (administrador); nulos para os demais. */
-  triagem?: ItemTriagem[] | null;
-  revisoes?: RevisaoEnvio[] | null;
   aoVoltar(): void;
   aoAlternarPainel(): void;
   painelAberto?: boolean;
