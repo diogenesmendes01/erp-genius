@@ -4767,3 +4767,11 @@ Implementação e verificação local concluídas; revisão independente e publi
 - Correção de harness308 abcaaabe: aguardar assinatura cliente/hidratação além do conteúdoSSR antes do screenshot. RED2/GREEN19,TSC/lint0; testeindependente reproduziu warningcaret1/5 semespera e0/5 comespera, semsilenciarwarnings. Não altera visual/fluxo do produto.
 - Correções311 R1original83c6/root1f1bc886(singular) eR2original7d27/root86093f4d(drenarcorpoHTTPantigo antespróximoGET) revistas pelo TESTER:32+20dirigidosR1/helper,44dirigidosR2,exit0. NavegadorR2 confirmou dois tabs2→1→2→1, rótulos corretos,SSE1ativa/aba,GET1emvoo incluindo corpo, sempageerror/warning. Negativos/manifestos brutos/proveniência preservados. Parecer finaloutput/inbox-311-qa/parecer-tester-r2.md.
 - Implementações verificadas, **PRs308/311 ainda não publicados**: evidências binárias estão sendo preparadas para depósito remoto confirmado e links de revisão, conforme coordenação com a frente de comentários/merges. Não remover evidência sem backup confirmado. A abertura dosPRs e sua incorporação remota não são presumidas.
+
+### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
+
+**Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
+
+- Linha307 `+5500000000300`, sete contatos/oportunidades `0301`–`0307`, mesmos IDs e vínculos. Reexecução repara apenas telefones legados reconhecidos, em transação; exige BAILEYS desconectado, relações da fixture e ausência de colisão com outro cenário. Recusa telefone modificado, sem sobrescrevê-lo; falha desfaz inclusive o reparo da linha. Não reseta contadores ou outros campos de QA.
+- TDD integração RED sessão39417 exit1:4 falhas/1pass; GREEN87004 exit0:1arquivo/5testes sem filtros/ignorados, exclusivamente `ci-integracao` (`erp_genius_test_ciint`), sem tocar cluster ou outros bancos. Unitários dirigidos visual+dependências:2arquivos/18testes exit0; TSC41721 exit0; ESLint das duas fontes exit0.
+- Ainda não declara C1 inteiro resolvido: PNGs anteriores precisam sair do código e o aceite visual deve ser recapturado com dados fictícios/DOM do protótipo explicitamente anonimizado. Não houve envio WhatsApp ou ativação externa. B1/B2/C2/C5/C6 continuam na fila.

@@ -10,7 +10,9 @@ export type IdsDemo = Record<"mariana" | "ventura" | "beatriz" | "lucas" | "thia
 const BANCOS_DESCARTAVEIS = new Set([
   "erp_genius_test", "erp_genius_test_dev_email", "erp_genius_test_dev_gravacoes", "erp_genius_test_tester", "erp_genius_test_ciint",
 ]);
-const NUMERO = "+551140028922";
+const NUMERO = "+5500000000300";
+// Somente para reconhecer e reparar a versão antiga desta fixture local.
+const NUMERO_LEGADO = "+551140028922";
 const ID_NUMERO = "inbox-demo-numero-307";
 const IDS: IdsDemo = {
   mariana: "inbox-demo-mariana-307", ventura: "inbox-demo-ventura-307", beatriz: "inbox-demo-beatriz-307",
@@ -28,28 +30,32 @@ export function exigirBancoDescartavel(url: string): void {
   throw new Error("A demo do Inbox só roda no banco descartável dos perfis locais em localhost:54329.");
 }
 
-type Caso = { chave: keyof IdsDemo; nome: string | null; telefone: string; texto: string; dono: "admin" | "joao"; status?: "ABERTO_SEM_RESPONSAVEL" | "EM_ATENDIMENTO" };
+type Caso = { chave: keyof IdsDemo; nome: string | null; telefone: string; legado: string; texto: string; dono: "admin" | "joao"; status?: "ABERTO_SEM_RESPONSAVEL" | "EM_ATENDIMENTO" };
 const CASOS: Caso[] = [
-  { chave: "mariana", nome: "Mariana Costa", telefone: "+5511984213307", texto: "Quero saber o valor do Inglês Intensivo B1.", dono: "admin", status: "EM_ATENDIMENTO" },
-  { chave: "ventura", nome: "Grupo Ventura", telefone: "+5511986213308", texto: "Podemos conversar sobre aulas para a equipe?", dono: "joao" },
-  { chave: "beatriz", nome: "Beatriz Lima", telefone: "+5511973334521", texto: "Quero matricular meu filho Pedro.", dono: "admin", status: "EM_ATENDIMENTO" },
-  { chave: "lucas", nome: "Lucas Andrade", telefone: "+5511962224522", texto: "Preciso de ajuda com a matrícula.", dono: "admin" },
-  { chave: "thiago", nome: "Thiago Moreira", telefone: "+5511951114523", texto: "Podem me chamar amanhã?", dono: "admin" },
-  { chave: "semNome", nome: null, telefone: "+5511940004524", texto: "Olá", dono: "admin" },
-  { chave: "fernanda", nome: "Fernanda Rocha", telefone: "+5511939994525", texto: "Gostei da aula experimental.", dono: "joao" },
+  { chave: "mariana", nome: "Mariana Costa", telefone: "+5500000000301", legado: "+5511984213307", texto: "Quero saber o valor do Inglês Intensivo B1.", dono: "admin", status: "EM_ATENDIMENTO" },
+  { chave: "ventura", nome: "Grupo Ventura", telefone: "+5500000000302", legado: "+5511986213308", texto: "Podemos conversar sobre aulas para a equipe?", dono: "joao" },
+  { chave: "beatriz", nome: "Beatriz Lima", telefone: "+5500000000303", legado: "+5511973334521", texto: "Quero matricular meu filho Pedro.", dono: "admin", status: "EM_ATENDIMENTO" },
+  { chave: "lucas", nome: "Lucas Andrade", telefone: "+5500000000304", legado: "+5511962224522", texto: "Preciso de ajuda com a matrícula.", dono: "admin" },
+  { chave: "thiago", nome: "Thiago Moreira", telefone: "+5500000000305", legado: "+5511951114523", texto: "Podem me chamar amanhã?", dono: "admin" },
+  { chave: "semNome", nome: null, telefone: "+5500000000306", legado: "+5511940004524", texto: "Olá", dono: "admin" },
+  { chave: "fernanda", nome: "Fernanda Rocha", telefone: "+5500000000307", legado: "+5511939994525", texto: "Gostei da aula experimental.", dono: "joao" },
 ];
 
 /** Dados locais de demonstração, sem sessão de envio ou integração externa. */
 export async function criarDemoInbox(prisma: PrismaClient): Promise<IdsDemo> {
-  const existente = await prisma.numeroWhatsApp.findUnique({ where: { telefoneE164: NUMERO } });
-  if (existente) {
-    if (existente.id !== ID_NUMERO || existente.driver !== "BAILEYS" || existente.sessao !== "DESCONECTADO") throw new Error("Número da demo já existe com configuração inesperada.");
-  }
-
   const admin = await prisma.usuario.findUniqueOrThrow({ where: { email: "admin@genius.com" } });
   const joao = await prisma.usuario.findUniqueOrThrow({ where: { email: "joao@genius.com" } });
   const agora = new Date();
   await prisma.$transaction(async (tx) => {
+    const existente = await tx.numeroWhatsApp.findUnique({ where: { id: ID_NUMERO } });
+    const colisao = await tx.numeroWhatsApp.findUnique({ where: { telefoneE164: NUMERO } });
+    if ((colisao && colisao.id !== ID_NUMERO) || (existente &&
+      (existente.driver !== "BAILEYS" || existente.sessao !== "DESCONECTADO" || ![NUMERO, NUMERO_LEGADO].includes(existente.telefoneE164)))) {
+      throw new Error("Número da demo já existe com configuração inesperada.");
+    }
+    if (existente && existente.telefoneE164 === NUMERO_LEGADO) {
+      await tx.numeroWhatsApp.update({ where: { id: ID_NUMERO }, data: { telefoneE164: NUMERO } });
+    }
     if (!existente) await tx.numeroWhatsApp.create({ data: {
       id: ID_NUMERO, telefoneE164: NUMERO, rotulo: "Demo Inbox · desconectado", driver: "BAILEYS",
       finalidade: "VENDAS", sessao: "DESCONECTADO", ativo: true, donoId: joao.id,
@@ -61,13 +67,23 @@ export async function criarDemoInbox(prisma: PrismaClient): Promise<IdsDemo> {
       const conversaId = `inbox-demo-conversa-${caso.chave}-307`;
       const em = new Date(agora.getTime() - indice * 30 * 60_000);
       const leadId = `inbox-demo-lead-${caso.chave}-307`;
+      const contato = await tx.contatoWhatsApp.findUnique({ where: { id: contatoId } });
+      const lead = await tx.oportunidade.findUnique({ where: { id: leadId } });
+      const conversa = await tx.conversaWhatsApp.findUnique({ where: { id: conversaId } });
+      const colisaoContato = await tx.contatoWhatsApp.findUnique({ where: { telefoneE164: caso.telefone } });
+      if ((contato && (contato.leadId !== leadId || ![caso.telefone, caso.legado].includes(contato.telefoneE164))) ||
+        (lead && ![caso.telefone, caso.legado].includes(lead.telefoneE164 ?? "")) ||
+        (conversa && (conversa.numeroId !== ID_NUMERO || conversa.contatoId !== contatoId)) ||
+        (colisaoContato && colisaoContato.id !== contatoId)) {
+        throw new Error("Registro da demo já existe com configuração inesperada.");
+      }
       let pessoaId: string | null = null;
       if (caso.chave === "mariana") {
         pessoaId = "inbox-demo-pessoa-mariana-307";
         await tx.pessoa.upsert({ where: { id: pessoaId }, create: { id: pessoaId, nome: caso.nome!, email: "mariana.costa@example.test", origemCanal: "INSTAGRAM" }, update: {} });
       }
-      await tx.oportunidade.upsert({ where: { id: leadId }, create: { id: leadId, nome: caso.nome ?? "Contato sem nome", telefoneE164: caso.telefone, vendedorDonoId: caso.dono === "joao" ? joao.id : admin.id, pessoaId }, update: {} });
-      await tx.contatoWhatsApp.upsert({ where: { id: contatoId }, create: { id: contatoId, telefoneE164: caso.telefone, nomeExibicao: caso.nome, leadId, pessoaId }, update: {} });
+      await tx.oportunidade.upsert({ where: { id: leadId }, create: { id: leadId, nome: caso.nome ?? "Contato sem nome", telefoneE164: caso.telefone, vendedorDonoId: caso.dono === "joao" ? joao.id : admin.id, pessoaId }, update: { telefoneE164: caso.telefone } });
+      await tx.contatoWhatsApp.upsert({ where: { id: contatoId }, create: { id: contatoId, telefoneE164: caso.telefone, nomeExibicao: caso.nome, leadId, pessoaId }, update: { telefoneE164: caso.telefone } });
       await tx.conversaWhatsApp.upsert({ where: { id: conversaId }, create: { id: conversaId, numeroId: ID_NUMERO, contatoId, ultimaMensagemEm: em, naoLidas: 1 }, update: {} });
       await tx.atendimentoWhatsApp.upsert({ where: { id: IDS[caso.chave] }, create: {
         id: IDS[caso.chave], conversaId, contextoChave: "COMERCIAL:LINHA", finalidade: "COMERCIAL", leadId,
