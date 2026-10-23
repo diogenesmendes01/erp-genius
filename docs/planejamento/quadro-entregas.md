@@ -4748,12 +4748,50 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 ### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
 
 **Estado: implementação, revisão independente e global combinado concluídos; [PR394 aberto](https://github.com/diogenesmendes01/erp-genius/pull/394).** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
+## PR #391 — C1/C2: mono600 nativa e sem preload global
+
+### PR #392 — C1/C2: aceite sanitizado fora do código e retirada das imagens históricas
+
+**Estado: fonte/fixture e evidências sanitizadas verificadas; B2, integração das bases e CI ainda pendentes.** A fixture usa somente linha0300 e contatos0301–0307 no prefixo fictício+5500000000; o protótipo é anonimizado no DOM antes da foto, preservando seu arquivo original.
+
+Recaptura na fonte52a8b315: CLI59879 exit0,34PNGs (18app/16protótipo),0falhas e14diagnósticos de GET abortado recuperado. Oito imagens inspecionadas por amostragem, inclusive os quatro painéis app celular/tablet claro/escuro. Perfil exclusivo ci-integracao; BAILEYS desconectado, sem transporte externo. Primeira tentativa falhou por segredo de autenticação ausente no ambiente; servidor reiniciado com segredo efêmero e a rodada completa passou. Preview parado e bloco AGENTS gerado restaurado, sem outro delta.
+
+ZIP sanitizado `inbox-pr392-aceite-sanitizado-52a8b315.zip`: asset667665737,3.273.148bytes,SHA256893f939070072eeac6c505cfb01a369f9d44b05119b388074d273964167c0a03. Upload autorizado e download/hash confirmados na release DRAFT421321214, não publicada. Só depois foram retirados104PNGs históricos de output/inbox-307-* do estado atual; cópias locais e histórico Git preservados. O ZIP legado de124arquivos/104PNGs fica somente local: a revisão automática rejeitou o envio por conter imagens anteriores à anonimização; nenhuma tentativa de contorno ou envio desse ZIP ocorreu. Referências imutáveis da #297 não mudaram.
+
+Após a retirada, unitários dirigidos visual+dependências2arquivos/18testes e integração real visual-inbox1arquivo/5testes (95623,ci-integracao), ambos exit0 sem filtro/ignorados. Não são suítes completas. A única mudança de configuração B1 foi alinhar comentário ao da #297, com merge-tree RED1→GREEN0; o bloco ignorado permaneceu igual. Sem package/lock/install nesta etapa. B2 permanece aguardando resposta humana à autorização específica do lockfile; C5/C6 serão conciliados na integração/retarget. Índice e limites em output/inbox-307-evidencias.md e output/pr392-qa/recaptura-sanitizada.md.
+## PR #392 — preservar limpeza404 sem alterar B2
+
+Sobre06248af0,64PNG298/3.595.413B herdados coincidem com manifesto404/
+ZIP381 autorizado por tamanho/SHA256/GitOID; backup local conferido, sem
+variantes/upload novos. Retirada sóartefatos e docs,src/scripts/prisma/
+package/lock idênticos06248,stashB2 intacto. QA técnico do porte e decisão
+humana B2 pendentes,sem novo global/DB/browser presumido. Evidência em
+output/pr392-qa/recaptura-sanitizada.md e manifesto privadoqa404-307.
+
+## PR #392 — B2 autorizado e alinhado
+
+Usuário autorizou o integrador a regenerar somente o lockfile offline com scripts ignorados. Comando47463c saída0: trio Playwright1.64.1 alinhado à #280; CLI exige PW_CHROMIUM e guard confere resolução real do core pelo runner. RED1falha/5passes→GREEN6, global846arquivos/6543testes92630, TSCfinal92901, lintfinal71193/40avisos, integração1arquivo/5testes99228 e ChromeDOM1teste12b89d: todos terminais0. Cópia física do core alinhada somente no worktree integrador, backup e115hashes preservados; demais ambientes intactos. Fonte isolada sobrec57, ainda exige composição com main, verificação de conflitos280, TESTER e CI final. Negativos e limites em output/pr392-qa/b2-playwright.md. Não marcar issue concluída antes desses gates.
+### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
+
+**Estado: implementação, revisão independente e global combinado concluídos; pronta para PR.** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
 
 - Contratos centrais IdChipInbox/ContagensChipsInbox, cinco agregados por escopo+filtros (retira somente responsável/não-lidas/prazo), API opt-in sem cursor e SSR após guarda. Estado produtor protege leitura otimista/SSE/filtros e reconcilia pontualmente; sem polling ou cálculo pelo tamanho da página. Saúde pública só id/rótulo/saúde, sem telefone/provedor, sem alterar capacidades.
 - Ruling: schema não possui SIMULADO; usa enums atuais, sem literal proibido ou adapter legado. Opção enviar preserva escopo restrito da rota, incluindo convite somente leitura. #310 antes #308 é coordenação de contrato/page, não aresta funcional obrigatória. Não altera a casca #308.
 - Node22.23.2: GREEN5arquivos82testes unitários (03865f); integração completa2arquivos26testes dev-email56956 exit0; complemento51657 exit0 com3testes/21 fora do filtro prova123além da página50, lidaAte pessoal e convites3→1 com envio. TSCheap8192 sessão93695 exit0; lint dirigido13arquivos0avisos exit0. RED e correções de fixtures/tipos documentados no relatório.
 - Aceite visual reservado à #313 (Task5Step5, sem tela própria nesta entrega), sem homologação presumida. Global final coordenado após combinar309+310; full próprio deliberadamente não executado. TESTER deve revisar SHA exato. Sem schema/migration, pacote/lock, permissão nova, servidor iniciado ou mensagem externa.
 - Congelamento: recorte final10arquivos161testes a0b1e7 exit0 (inclui guardas sem-polling/provedores/paleta/responsivo/botões), lint dirigido final264633 exit0/0avisos e TSCheap8192 final11852 exit0. Node22.23.2 confirmado. Sem mudança de fonte após esses gates, apenas documentação. Full integrado e TESTER ainda pendentes.
+
+### Inbox E1.6 — #311: selo pessoal e SSE compartilhado — 2026-10-22
+
+**Estado: entrega DEV com prova visual inspecionada; TESTER e global integrado pendentes.** Branch codex/inbox-e1-311 sobre103a507d. SPEC docs/specs/inbox-nao-lidas-menu.md; ledger output/inbox-311-report.md; imagens/manifestos output/inbox-311-visual. Nenhum PR/push pelo DEV.
+
+- Contagem pessoal usa a condição extraída de #310 e escopo inteiro, sem filtros/paginação; zero sem papel antes de consultar. API com sessão/papel/no-store. SSR sem rede/mutação em render; Sidebar224 e geometria global preservadas. InboxNovo apenas finally da leitura. Uma SSE por aba, assinantes independentes, resync dirigido a quem monta tarde, descarte/StrictMode protegidos. Loja com GET único e uma repetição pendente, geração/dispose/auth/erro testados; rótulos dizem conversas.
+- TDD: módulos ausentes RED; API/consumidores RED; backend RED; demo--entrada RED; testes adicionais RED para assinante tardio/propSSR com outro consumidor montado. Extração inicial com CRLF incorreta gerou parse/TSC vermelho e foi corrigida antes dos GREEN. Integração dirigida dev-gravacoes2arquivos27testes exit0 sessão67611 (nao-lidas+consultas-pagina); demo/trigger+reparo3072arquivos2testes exit0 sessão9095. Nenhum ignorado; não é suíte completa de integração. JanelaDB encerrada antes do preparo visual.
+- Visual final95056 exit0:24PNG app,0falhas0diagnósticos; seis referências protótipo18038 exit0. Todos os estados/temas/tamanhos inspecionados, 2→1→2→1. Duas abas SSEativa/máxima1 cada, GETmáximo1. Ruling Step5: Home desmonta chat entre queda e subida; chat aberto auto-lê entrada e mantém1 sem loop. Reset marca apenas preferências pessoais dos dois alvos; não restaura compartilhados. Tentativas negativas preservadas em output/inbox-311-visual-tentativa1/2, sem chamar falha de harness de correção produtiva.
+- Full próprio21392 terminou exit1:855arquivos/6647testes, só guard botoes falhou por literal no JSX mobile. Simplificação sem alterar guard/pixels; GREEN final32arquivos359testes exit0 sessão42967, sem filtros/ignorados dentro do recorte listado no ledger. Lint dirigido23arquivos exit0. Lint global anterior1345 exit0/40avisos e TSC97388 exit0 são anteriores à simplificação; novo TypeScript e global integrado devem ser registrados separadamente. Não atribuir full verde ao fix antes do integrador.
+- Sem schema/migração, transporte externo, pacote/lock ou modificação da casca #308. Preview e autenticação fictícia preparados/parados pelo integrador. Protótipo offline tem outra navegação; não se afirma paridade integral com a casca futura.
+
+- Fechamento DEV: TSC final heap8192 sessão39406 exit0 após simplificação mobile. Fonte sem alterações após recorte359/TSC/lintdirigido. Global integrado e TESTER continuam pendentes.
 
 ### Inbox E1.3 — #308: casca em tela cheia e painel único — 2026-10-22
 
@@ -5329,6 +5367,7 @@ Recaptura na fonte52a8b315: CLI59879 exit0,34PNGs (18app/16protótipo),0falhas e
 ZIP sanitizado `inbox-pr392-aceite-sanitizado-52a8b315.zip`: asset667665737,3.273.148bytes,SHA256893f939070072eeac6c505cfb01a369f9d44b05119b388074d273964167c0a03. Upload autorizado e download/hash confirmados na release DRAFT421321214, não publicada. Só depois foram retirados104PNGs históricos de output/inbox-307-* do estado atual; cópias locais e histórico Git preservados. O ZIP legado de124arquivos/104PNGs fica somente local: a revisão automática rejeitou o envio por conter imagens anteriores à anonimização; nenhuma tentativa de contorno ou envio desse ZIP ocorreu. Referências imutáveis da #297 não mudaram.
 
 Após a retirada, unitários dirigidos visual+dependências2arquivos/18testes e integração real visual-inbox1arquivo/5testes (95623,ci-integracao), ambos exit0 sem filtro/ignorados. Não são suítes completas. A única mudança de configuração B1 foi alinhar comentário ao da #297, com merge-tree RED1→GREEN0; o bloco ignorado permaneceu igual. Sem package/lock/install nesta etapa. B2 permanece aguardando resposta humana à autorização específica do lockfile; C5/C6 serão conciliados na integração/retarget. Índice e limites em output/inbox-307-evidencias.md e output/pr392-qa/recaptura-sanitizada.md.
+
 ## PR #385 — C1: capturas fora do estado atual do código
 
 128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
@@ -5581,6 +5620,22 @@ metadados finais/publicação/CI seguem necessários antes de fechar313.
 GitHub306closed04:29:22UTC, squash391mainb287f9043566bfea7c18447506355df552c273de.
 **Total9/81integradas:298–306.** PRsabertosnãocontamcomoconcluídos. Release
 de evidências permaneceDRAFT; semmensagensreais, ativaçãoexterna oudeploy.
+## PR #393 — C2/C4: cálculo puro e selo acessível
+
+Regra de prazo extraída para módulo puro, com reexport compatível no relógio
+cliente. Estado visual deixa de importar módulo cliente. Selo IA expõe nome
+“Aria atendendo”; Avatar comum mantém markup decorativo idêntico. TDD duas
+falhas causais antes, recorte 4 arquivos / 57 testes depois. Uma guarda global
+apontou literal legado na fixture nova; execução interrompida com saída 1,
+fixture corrigida para SIMULADO e guarda preservada. Global repetido 85183
+terminou 0: 849 arquivos / 6.645 testes unitários, sem filtro/ignorados,
+maxWorkers2. TSC73432 e lint57857 terminaram 0; lint tem 40 avisos herdados.
+
+Chrome offline: 40 pares × dois temas, 80 comparações de geometria/estilo,
+40 nomes IA acessíveis e markup comum idêntico. Mesma fonte fallback; não é
+tela Next/RSC completa. Duas imagens inspecionadas e locais. Sem DB/envio.
+Relatório output/pr393-qa/revisao.md. Parecer do head final e CI pendentes;
+#392/B2 ainda bloqueia a integração da pilha em main por decisão humana.
 ## PR #391 — pais integrados e gate contra main
 
 Main8d00124 incorporada por merge normal 8c6930c2. Os arquivos Inbox/conversa
@@ -5911,6 +5966,22 @@ sem filtros/ignorados. Nexttypegen/TSC50060 e lint29580 EXIT0,0erros40avisos.
 TESTERc221 favorável7/133 próprios,exec3f5f3a EXIT0,sem DB/preview/browser/
 global próprios. CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
 
+
+## PR #400 — LOWs C3/C4/C5 (DEV B)
+
+Base exata3b852c54, branch codex/inbox-pr400-review-todos. C3 sóJSDoc
+@deprecated: alias legado299 preservado, sem callerprodutivo nestaárvore;
+Inbox usaAutomatico com política fixa no servidor. JS emitido semcomentários
+idêntico antes/depois (SHA1c84aacf6c3b95b466a9257a6fdb023c8a010be96442dec7d804e1befcc95e9d),
+sem alterar corpo/assinatura/imports. C5 SPEC alinha Conversas/1conectado aos
+testes existentes. C4 inventário/curadoria/ZIPshistóricos no relatório
+output/inbox-pr400-review-todos.md, sem apagar ou reatribuir evidências.
+
+UTCef39c4 e SPa361ad EXIT0:8arquivos139testes emcadafuso, semfiltro/ignorados;
+TSC56267 e lint2fcadb EXIT0/0avisos. Schema igual402/cliente jácompatível,
+nenhumDB/Prisma/preview/browser/deps/harness/PNG/global/push. C2 continua20INT
+nominais260a/44027, não reexecutados nestehead. C1/main/CI e C6conflitos do
+quadro pertencem ao integrador; revisão independente e merge pendentes.
 ## PR #398 — C1: composição local e compatibilidade de testes
 
 Base314-r3@cada334f recebe3975f8/main sem moverc207; fonte67192a57 preserva
@@ -6013,3 +6084,163 @@ CI/main/392B2 pendentes. output/pr403-qa contémpareceresindependentescurados.
 ## PR403 — C4/C5/C7 e mapa integral R1 (revisão documental)
 
 Base68e95d8e preservada; zero delta runtime/testes/scripts/deps. C4 intencional: texto tem rascunhos separados, File/voz de Responder temporários são descartados/interrompidos ao mudar modo; não há promessa de preservar anexo ou cancelar POST/envio já iniciado. C5 mapeado na SPEC aos nomes reais e ao alcance SSR/harness/17ReactDOMStrictMode, sem inventar assertivas CSS ou prova de microfone. C7 inventário próprio a8→68e22outputs/1.826linhas (14MD501+8JSON1325), links/fontes/hashes históricos curados, zeroPNG/probescript novo. C2 Nota por leitura inclusive ENCERRADO e C3f896/741 intactos. Recorte8/1028b5363, TSC4700/7ca537, lint10fontes227ef7 saída0 Node22.23.2; lint inicial a6fa9e falhou por caminho inexistente no comando, corrigido sem fonte. C1/main/CI/retarget e C6 conflitos docs seguem integrador; semDB/browser/global/push. Relatório output/inbox-pr403-review-todos.md; não reatribuir imagens29f/A7/317bbb/df9 ao C3final.
+
+
+## PR #402 — revisão C3/C4 e avaliação C5 (DEV B)
+
+Base exata a8dba58c; branch codex/inbox-pr402-review-todos. C3 RED causal
+b62efa:2falhas/3passes, Ctrl/Meta+Shift+F consumidos. Condição shiftKey mínima,
+sem alterar Alt/IME/modal/foco; GREEN5/5. C4 SPEC explicita min-h-11/flex-wrap
+e temMaisDepois/carregandoAntigas/campoRef, rastreáveis aos testes atuais.
+C2 hook/test7a825062 e pin/RAF/intent intactos; regressões repetidas.
+C5 inventário25arquivos261.601B/6.245linhas,5.900 emJSON históricos;
+preservados sem PNG/sondas novas. Report output/pr402-qa/review-todos-dev-b.md.
+
+UTC95bf5c e SaoPaulo62c38d EXIT0:7arquivos40testes emcadafuso, semfiltros/
+ignorados; guardas9370 EXIT0:3/173; TSCfinal13749 e lintf3c6f1 EXIT0/0avisos.
+UTCc9dd5e negativo de fixture React18/ref corrigida apenas no teste; sem
+alterar libs/UI. Prisma402 gerado peloROOT antes dosgates, bancoB490 intacto.
+Sem DB/browser/preview/deps/lock/harness/PNG/global/push. C1/main/CI e C6/
+conflitos continuam comintegrador; revisão independente e merge pendentes.
+## PR #401 — LOWs C2–C5 documentados (DEV B)
+
+Base exata 0fcaf459; branch codex/inbox-pr401-review-todos. Só três MD:
+SPEC cabeçalho/menu, quadro e output/inbox-pr401-review-todos.md.
+C2 separa Busca Em breve315 da ativação316/PR402; C3 justifica Voltar960
+pela casca308 e painel1400; C4 explicita recontagem na aba atual sem promessa
+de atualização imediata entre abas ou SSE novo. Trechos existentes refinados,
+sem duplicar o histórico. C5 inventário/ZIP/fontes/curadoria preservados;
+nenhum artefato alheio removido ou imagem nova atribuída.
+
+UTC e5e7da e SP d86623 EXIT0: sete arquivos/53 testes em cada fuso, sem
+filtros/ignorados. Zero delta src/scripts/prisma/deps/PNG/testes e objetos
+conferidos; TSC/lint não repetidos para MD, sem atribuir gates históricos
+ao head novo. Banco B490 intacto, cliente402 compatível, sem DB/Prisma/
+preview/browser/deps/harness/push. C1/main/retarget/CI/QA280 e revisão
+independente do novo SHA continuam com o integrador; sem merge presumido.
+### PR #399 — revisão C1–C6 e limpeza mínima de contrato (DEV A)
+
+Base EXATA62e0f74d, branch codex/inbox-pr399-review-todos. C5 remove APENAS importtypeItemTriagem/RevisaoEnvio, comentário e2propsórfãos dePropsConversaAberta; único consumidorprodInbox nãoos passa. Um casoSSR queinjetavapropignorado retirado por autorizaçãoROOT, sem testeartificial deausência. Os3casos reais de composição/triagem/tagsporcontexto/semseleção noInbox ePainelTriagem.test continuam. aoFecharobrigatório/contatoopcional preservamfallback308; min-h26 suporta rótuloextenso/acessibilidade, sem mudançaCSS. C4SPEC aponta960/1400/Sidebar224/overlayaté1399 ejustifica fecharpersistente, nãohide1100.
+
+C3 registrado precisamente:snapshotjárecebido sómesmoID permanece inclusive tags; acoesContatonull e podeEnviarfalse. Aria/optout podemseguirvisíveis, cadaactionrevalidaautorizaçãocorrente; nãoalegarremoçãouniversal/novaqueryouacesso. Regressão223/404 eproteçãoA→B cobertasnorecorte. C6delta própriopós278615 quantificado23output/6699linhas(9MD305,10JSON6319,4MJS75), índice deproveniência/cobertura/hashes relacionadoaoZIP318histórico142PNG/SHA c8e082..., semapagarevidências/probes/negativos nemreatribuirfotos. Semupload/downloadnovo.
+
+Unitdefinitivoae680f:12arquivos165testes0/3.26s,maxWorkers2,semfiltro/skipsnovos;lint2fontes912b9emax0. RevisãodiffdetectouCRLF antesfreeze,correçãoefetivaaplicadaegatesrepetidos,nominaispreliminaresnãoatribuídos;TSCfinal42027/ee3e3cheap8192 TERMINAL0. C1composiçãomain/QA280/retarget/CI eC2INTfinal são dointegrador:12INThistóricosab8nãoprovam execução no novohead. Relatório output/inbox-pr399-review-todos.md/SPEC318atualizada. SemDB/browser/preview/global/deps/harness/PNG/GitHub peloDEV;398d5f78 e investigação324preservados.
+### PR #398 — R1 C3/C4 corrigidos, C5/C6 documentados (DEV A)
+
+Base ffddfdae exata, branch codex/inbox-pr398-review-todos. RED92ab90:4falhasnovas/40pass; dados inválidos intercalados apagavam memória civil e duplicavam keydia, notaautorvazio/branco não usavafallback. Patchmínimo em itens-thread/Balao: preservar diaAnterior quando dia inválido, autor.trim()||Autor não informado. Não alterar VirtualList/SSR/relógio/SSE/permissões/harness/deps. Cinco casos novos preservando anteriores e controles de dia real/nome válido/null/origem/status/mídia.
+
+GREEN dirigido9arquivos88testes0, repetidoUTC34b6fe eAmericaSaoPaulo275459 ambos0, semfiltro/skipsnovos;lint4fontes92a338max0. TSC inicial falhou só cacheNextdev da rota323 ausente nesta base; typegen0 e limpezaapenascacheignorado, repetiçãofinal73649/bac043heap8192TERMINAL0. C5telaociosaàmeia-noite élimiteaceito sempolling, renovação porrevisão/seleção/assinatura eSSR preservados; C6SPECmapa12nomes plano→testesreais, seminventarE2E. C1/C2/composiçãomainQA280/retarget/CIremota continuam comintegrador após397, não resolvidos porgatelocal. Relatório output/inbox-pr398-review-todos.md. Investigação324privada preservada; nenhuma implementação324/DB/preview/browser iniciada.
+## PR #395 — preservar retirada404 sem delta produtivo
+
+Base-r3450318f9 recebe maincce21e19,retira64PNG298 já arquivados e mantém
+src/scripts/prisma/package/lock idênticos3fc403de após composição. Sódocs/
+artefatos,sem repetir ou reatribuir suítes. Gate/parecer3fc nominal,CI/main/
+392B2 pendentes. output/pr395-qa/pais.md,nenhum upload/captura novo.
+## PR #396 — preservar retirada404 sem delta produtivo
+
+Porte pai39517ab18b7 mantém maincce21e19 e retira64PNG298;src/scripts/
+prisma/package/lock idênticosbc09e572. Sódocs/artefatos,sem repetirouatribuir
+novas suítes. Gates/parecer01a permanecem nominais;CI/main/392B2 pendentes.
+output/pr396-qa/c6.md,sem nova captura/upload/DB/servidor.
+## PR #397 — preservar retirada404 sem delta produtivo
+
+Base312-r35adbfbb8 recebe396aa42/39517ab/maincce21e19 e retira64PNG298;
+src/scripts/prisma/package/lock iguais5f8f0f10. Sódocs/artefatos,sem repetir/
+reatribuir suítes. Gates/parecer332nominais,CI/main/392B2 pendentes.
+output/pr397-qa/revisao.md,nenhuma captura/upload/DB novo.
+
+## PR #392 — composição B2 com main
+
+Maincce incorporada: contratos E0 preservados literalmente da main; delta src/scripts restrito aos14caminhos próprios307/B2, manifest/lock/eslint iguais68974544. Quadro com2conflitos preserva amboslados, c412b6 saída0; specs/relatórios anteriores conservammain. Recortecompostob21319 saída0/2arquivos20testes+syntaxCLI/preflightreal/diffcheck. Global/TSC/lint/integração compostos e TESTER ainda pendentes. Merge-tree280 tem só conflito textual de linhaBabel necessária ao protótipo, não divergência Playwright; preservar Babel na resolução futura, ver relatórioB2. Não declarar merge-treeclean nem reatribuir globalisolado à composição.
+
+## PR #392 — gates finais da composição c7
+
+Fontec7bae481 congelada: global65804/c1315c saída0,849arquivos6651testes236,80s,maxWorkers2,semfiltro/skipsnovos;typegen/TSC26045 saída0;lint60950 saída0/0erros40avisos;integração47303 saída0/1arquivo5testes33,36s,ci-integracaoexclusivo. d8674c saída0 confirmafonteimutável;20dirigidosanteriorescompostos0. Chrome12b89d pertenceaoisolado689,helpers/CLIiguaisc7,semrecapturaERP. RegistroapósfonteapenasMD;TESTERindependente/CIremota/mainmergeaindapendentes. RelatórioB2distinguegatesisolados/compostos/resíduoBabel280;nenhumaguardahumanaB2restanteapósautorizaçãoexplícita.
+
+## PR #393 — composição com a base392/B2
+
+Basepublicada67e6cc60 incorporada localmente:src/scripts preservadosdabase,comexatamente9arquivospróprios309byteiguaisa1a79196. Manifest/lock/eslint67preservados;contratos310/E0/harnessB2nãoregredidos. Quadro4conflitos preservaliteralmenteamboslados,dc6821 saída0;recorte6arquivos73testes0semfiltro/skips/banco/browser. ParecerindependenteB2c7preservadocomoantecedente,semalegarQAcomposta. Global/TSC/lint/TESTERcompostos/CI finalaguardados;392CI/mergeobrigatóriosantesintegração393. Relatóriooutput/pr393-qa/integracao-b2.md;B2humanojáintegralmenteautorizado,nãopendentecomoemcheckpointsantigos.
+
+## PR #393 — gates finais e main392 confirmada
+
+Fonte04d27fd8: global45766/7a6585 terminal0,852arquivos6704testes232,85s,maxWorkers2semfiltro/skipsnovos;typegen/TSC67991 terminal0;lint9959 terminal0/0erros40avisos. TESTERexato04d a4383f terminal0/6arquivos75testes,hashparecer304fc9...,não73dorecorteinicial. Main392b6b451a3/squashconfirmadaCI39937916911success5/5;issue307CLOSEDverificada. Árvoreinteiramainb6==ancestral67→incorporaçãoancestralidadepreservaárvore04dantesregistros,nãorepetirgatesporMD. Relatóriointegracao-b2+parecerTESTERversionados. CIremota393/mainmergependentes;nenhumaissue309marcadaconcluídaantecipadamente.
+
+## PR #395 — preservar casca308 ao portar B2
+
+Composição17+825:aplicação/testes/servidorbyteiguais17,6deltaslimitadosaosmanifestos/travaB2/CLIumaexpressão/READMEportabilidade. Package/lock/eslint/guard2iguais825. Prova932074/2db696 saída0 e6conflitosquadropreservamboslados. Recorte13266/e54381 saída0:27arquivos309testes53,35s,maxWorkers2semfiltro/skipsnovos;nãoéglobal. Typegen/TSC18116 e lint63574 saída0/0erros40avisos. Global855/6723permaneceNOMINAL3fc403de;nãorepetidolocalporcódigoappigual/BBcompartilhadojávalidado,CIglobalfinal2TZobrigatório. #393merge61b8ebefconfirmadoCI39939948787success5/5. QAcomposta/ancestralidadefinalmain/CI395/mergeaindapendentes. Semnovobrowser/banco/install;output/pr395-qa/b2.md.
+
+## PR #395 — ancestralidade main393
+
+Fonte7e60dc36 preservada: main61b8ebef tem árvore inteira igual ao ancestral825. Merge apenas de ancestralidade, quadro7e mantido sem perda distinta, árvore préMD igual7e. Registros finais só2MD, executáveis iguais7e. QA independente7e/CI remota/mainmerge395 pendentes, sem repetir gates por MD.
+
+## PR #396 — composição B2 sem alterar SSE
+
+Base395f8 incorporada: aplicação/testes/backend/SSE iguaisaa42, apenas seis caminhos de tooling B2, CLI uma expressão e README. Trava/package/lock iguaisf8. Provas3de6ea/e0e650 saída0; um conflito do quadro preserva ambos os lados. Recorte04fcc1 terminal0:8arquivos62testes/maxWorkers2/sem filtro ou skips novos; não é global. TSC36132/f0495d e lint14373/2bf43d terminais0/0erros40avisos. Executores anteriores expirados não contados; apenas TSC/lint repetidos. Global860/6756 continua nominal01a254f5; CI global final2TZ e QA independente compostos obrigatórios. Sem novo DB/browser/install; evidências C6 anteriores não reatribuídas. Predecessor395 ainda aguarda QA/merge, nenhuma antecipação funcional.
+
+## PR #396 — QA independente e base395 mergeada
+
+Fonte 83f5947d preservada. O TESTER aprovou nove arquivos / 79 testes próprios (5de06e, saída 0), syntax/help/resoluções/diff check (236822, saída 0) e OIDs (bdf174). Parecer original conferido pelo SHA256 6f8b05ce...; cópia versionada em output/pr396-qa/tester-b2-83.md, com apenas EOF normalizado. O parecer do predecessor395 também é preservado, sem substituir a QA desta fonte.
+
+A main395 363c0e83 tem árvore inteira igual ao ancestral f8 já incorporado. Dois conflitos documentais mantêm a versão83; toda a árvore foi conferida igual a83 antes destes registros (9d5e10, saída 0). O head final acrescenta apenas Markdown. QA concluída, CI global final contra main ainda pendente; nenhum merge antecipado, novo banco, navegador ou instalação.
+
+## PR #397 — composição B2 preservando lista e itens
+
+Base3966a incorporada. Aplicação, lista, virtualização, backend e testes são iguais ao head d3c; somente seis caminhos de tooling mudaram. Guard/package/lock/ESLint iguais6a, CLI muda uma expressão. Verificações b8b279 e7a61c3 terminaram0; único conflito do quadro preserva ambos os lados. Recorte740dc8 terminal0:9arquivos109testes, maxWorkers2, sem filtros internos/skips. Typegen/TSC55556/29da33 e lint13633/4e26ea terminais0, zero erros/40 avisos. Global863/6788 continua nominal332; CI global final2TZ e QA independente obrigatórios. Sem novo DB/browser/install; source visual não reatribuída.
+
+## PR #397 — mainQA280 e todos os comentários LOW
+
+A main2f inclui QA280/003025b1; não é árvore igual ao ancestral6a. Asserção597d25 detectou antes de alterar o merge. Composição normal preserva integralmente43arquivos QA, packageScripts e seed-qa; objetos iguais à main, sem executar E2E/seed/DB e sem alterar schema/migrations. Provas15a121/98cf81 saída0. C2 documenta um timer pendente e fronteiras relativas aos itens, sem rede. C3 documenta agoraInicial no SSR/fallback0. C4 marca dois helpers órfãos como deprecated, preservando API e testes históricos. Três fontes alteram só JSDoc; emit JS igual194,9ce708 saída0.
+
+TSC/lint após mainQA28054202/29352 e após LOW62608/4967: todos terminais0, zero erros/40avisos. QA194 nominal favorável120testes próprios/hash8d559, integrador109nominais; nenhuma reatribuição de global. Fonte atual precisa QA estendida e CI global2TZ antes de merge. Relatório output/pr397-qa/main-comentarios.md; nenhuma regra de ignorar LOW permanece na fila nova.
+
+## Inbox — PR297: comentários e reservas coordenadas
+
+Revisão de todos os comentários C1–C5:3labelsmd/json alinhadas,7emailsestáticos paraexample.com, referênciaD1porsímbolo,22referênciasPNGjámain preservadas semnovoartefato/dependência. Registro output/pr297-qa/revisao-todos.md. Decisões de produto aprovadas em inbox-decisoes-produto.md prevalecem sobre levantamento histórico. CI final/QA/merge ainda pendentes.
+
+Reserva específica322:20261023100000_tarefa_atendimento e20261023110000_tarefa_atendimento_indice (PR408). Reserva337:20261023140000_notificacao_mencao_nota,20261023170000_notificacao_mencao_unicidade_legada e20261023180000_notificacao_mencao_retira_unicidade_global; aplicação somente pelo integrador e conferência de todas as branches/worktrees/bancos descartáveis. Não reutilizar ID aplicado; faixas dos planos não reservam IDs por si. Nenhuma migration nova nesta PR.
+
+## PR #397 — QA643 e planejamento297 incorporado
+
+QA independente643 favorável: identidade43/43QA280 e JS emitido das3anotaçõesLOW igual194; nenhuma nova suíte/DB/browser no parecer. Original SHA256c76c95c69a481260d82908eeb3e11507c65ab558eef1e06db3ba82332666f30c, cópia output/pr397-qa/tester-main-low-643.md. Main3401/#297 incorporada: delta somente documental, decisão canônica com autorização humana de merge e um conflito do quadro com ambos os lados preservados. Executáveis iguais643; CI final2TZ e merge ainda pendentes. Evidências antigas permanecem nominais às fontes declaradas.
+
+## PR #398 — composição local de todos os comentários
+
+Fonte d441c631: patch isolado d5/e11 preservado, candidata3970473/main3401/QA280/B2 incorporados; dois blocos do quadro preservam ambos os lados. C3/C4 corrigidos; C5 limite de snapshot ocioso documentado; C6 mapa nominal da SPEC. Gates próprios: 13 arquivos/183 testes por fuso UTC495885/SP556266, TypeScript37331/b7b921 e lint99368/7d248f terminais0, zero erros/40avisos. Não é suíte global/DB. QA exata d5 favorável, hash3d235d2a... em tester-patch-d5.md. QA composta, squash397main e CI398 permanecem pendentes. Sem publicação antecipada, captura nova, banco, instalação ou deploy; output/pr398-qa/composicao-todos.md.
+
+## PR #400 — composição local de todos os comentários
+
+Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar publicação/merge. Quadro6blocos preserva ambos; testeInbox400 integralmente preservado, thread398 idêntica794 e B2/QA280 mantidos. C3 alias legado documentado, C4 artefatos avaliados, C5 SPEC alinhada. Recorte12/208b514c0, TSC94403/8be42f e lint21031/3bba19 terminais0/40avisos. IntegraçãoC2 nominal260a20testes, arquivosINTiguais, preferencias sóJSDoc; nenhuma nova DB. QA616 favorável hashde3107... versionada tester-patch-616.md. QA composta e pais397/398main/CI final2TZ ainda gates; output/pr400-qa/composicao-todos.md.
+## PR #397 integrada; ancestralidade398 pronta para CI
+
+#397 squashb98da36314a719e118d1e9da510cb966311c0fc7, CI40013125860 success5/5, freshhead/main/comments/threads conferidos, issue312CLOSED confirmada. #398696e6270 incorpora squashb98 com árvore inteira igual794 após três conflitos resolvidos por identidade integral; fontes executáveisd441 preservadas. QAcomposta e CI398 serão paralelos, ambos gates antes demerge; não há conclusão antecipada da issue314.
+
+## PR #400 — QA composta e integração complementar
+
+QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composicao-cb.md; QA predecessora39870ec/hashf669 também versionada. Fontecb preservada após332f3cb1, apenasMD/ancestralidade397. Integração complementar NOMINALa5ece399:preferencias+motor/presenca20casos, junto10crm/tags,3/30sessão81795/9f1ea7terminal0,perfilciint exclusivo; arquivosINT epreferencias400 byteiguais àfonteexecutada. SemtesteDBconcorrente,envio,migraçãoouclusterchange. CI400final/398main ainda gates, não fechar313antecipadamente.
+
+## PR #398 integrada; PR400 pronta para CI final
+
+#398 squash34c63fb456ffdd786e54635b14cc507decc9e812, CI40014397587success5/5 eQAfinal70ecfavorável, issue314CLOSEDconfirmada. Squashtreeigual70ec; incorporação à400mantém INDEXINTEIROigual317be3b2 apósseisconflitos deancestralidade. Fontecb897eQA400d546preservadas; somenteMDapósúltimosgates. CI400main2TZaindapendente, semanteciparfechamento313.
+
+## PR #399 — QA composta e integração C2 final
+
+Fontea5ecee15:patch461/c962+332compostos semantecipar319/E2;QAcompostafavorávelhash5d5e36...,patch461favorável130testespróprios/hash07f1...,pareceresversionados. Próprio9/18736daee,TSC19125/6fb917,lint27244/7d342a terminais0/40avisos. C2paineis.int completo1/12sessão40250/245fd8terminal0,36,07s,perfilciintegracaoexclusivo. Complemento3/30sessão81795/9f1ea7terminal0 (10CRMtags+20leitura/presença) separado;nenhumfiltro/skipsnovos/envio/migração. C3snapshotmesmoID/C4overlay9601400/C5propsórfãos/C6inventário naSPEC/report. Merge400db6sódocs/ancestralidade,fontea5preservada. CI/main400/merge399aindagates;output/pr399-qa/composicao-todos.md.
+
+## PR #401 — composição do cabeçalho e todos os comentários
+
+Fonte266b180e:7e988310patch474+399978compostos;1blocoquadroconservaambos,Conversa mantém315/Cabecalho/useAcoes comremoçãopropsórfãos399;teste315preservado,estadoPickee565intacto. JSConversaemitigual7e. Próprio10/201837b4b+2/5ceba6d,TSC40454/5b1118,lint85407/521e25 terminais0/40avisos,semglobalDB. QA474favorávelhash17259...versionada;QAcomposta/399main/CI401aindagates. C2buscafutura316/C3cortes9601400/C4recontaapenasok/C5inventário documentados; output/pr401-qa/composicao-todos.md. Semenvio/captura/migração/install.
+
+## PR #402 — composição e comentários da busca
+
+Fonte6aa08b37:patchf94/7fdb52ed+4014b9;1blocoquadroconservaambos. C2hookscroll/RAF/pin/intenção9e9ad0+test8c129preservados, C3Shiftatalhorejeitado, C4contratosdocumentados e C5inventáriopreservado. Próprio12/176d55b9b,TSC30533/f27cd4 e lint79500/513ce0 terminais0/40avisos. QApatchf94favorável7/40porfusopróprios/hash2b6b61...versionada;QAcomposta/401main/CI402gatespendentes. B2/QA280/Pick315/patches398399400preservados; sem317/E2antecipados, DB/captura/migração/install/envio. output/pr402-qa/composicao-todos.md.
+## PR #400 integrada; PR399 pronta para CI final
+
+#400 squash0cfff251a4475137b421b3926e1048a4998ad5a3, CI40015569278 success5/5, QAcompostad546favorável, issue313CLOSEDconfirmada. Squashtreeigualdb6; incorporação à399INDEXINTEIROigual978 após12conflitos deancestralidade. Fontea5,QA5d5,recorte9/187 eINTpaineis1/12(+30complementares) preservados. C1main/paisresolvidos,CI399final2TZaindapendente;semfechar318antecipadamente.
+
+## PR #401 — QA composta e fonte preservada após399efa
+
+QA266favorávelestática, original47f69e99...versionado tester-composicao-266.md; atribuiçãodosgatesexternoscorrigida para10/201+2/5próprios401 (não9/187399), nenhumtesterepetido/hashantigo5d6nãofinal. Merge399efa(main4000c) sódocs/ancestralidade,quadro1blocopreservambos e fonte266preservada. QAconcluída,399main/CI401aindagates.
+
+## PR #402 — QA composta e fonte preservada
+
+QA6aafavorávelestática/hash1ee9e13c... versionada tester-composicao-6aa.md; DOM/hook/testesf94 eprodutores401preservados, semnovotestesDB/browser doparecer. Merge4012252sódocs/ancestralidade,1blocoquadroconservaambos,fonte6aaexecutáveligual. QAconcluída,401main/CI402aindagates.

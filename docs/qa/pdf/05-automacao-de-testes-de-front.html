@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Automação de testes de front</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  /* Complementos locais deste guia (só tokens do brand.css). */
+  pre .c { color: var(--text-terciary); }
+  pre.saida { background: var(--surface); border-style: dashed; }
+  .ver { border: 1px solid var(--brand-border); border-left: 3px solid var(--brand-solid); background: var(--surface); border-radius: 8px; padding: 5px 9px; margin: -2px 0 12px; font-size: 9.6pt; break-inside: avoid; }
+  .ver .t { display: block; font-weight: 600; color: var(--brand-text); font-size: 8.8pt; margin-bottom: 2px; }
+  .ver p { margin: 0 0 4px; color: var(--text-primary); font-size: 9.3pt; }
+  .steps > li p { font-size: 9.5pt; }
+  .ver p:last-child { margin-bottom: 0; }
+  .ver pre { margin: 4px 0 2px; }
+  .os { font-size: 8.8pt; font-weight: 600; color: var(--text-terciary); margin: 8px 0 3px; }
+  .steps > li pre, .steps > li .ver { margin-top: 6px; }
+  .steps > li > div { min-width: 0; }
+  .card ul { font-size: 9.6pt; color: var(--text-secondary); margin: 4px 0 0; padding-left: 16px; }
+  h3 .chip { vertical-align: 2px; margin-left: 6px; }
+  /* Densidade: o guia é longo; menos respiro vertical que o padrão. */
+  h2 { margin: 22px 0 8px; }
+  h3 { margin: 14px 0 5px; }
+  pre { padding: 7px 10px; margin-bottom: 8px; }
+  .steps > li { padding: 6px 0; }
+  .callout { margin: 8px 0 10px; padding: 8px 12px; }
+  table { margin: 4px 0 10px; }
+  td pre { margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ============================== CAPA ============================== -->
+<section class="cover">
+  <div>
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Genius</div>
+  </div>
+  <div>
+    <div class="kicker">Kit do QA · UAT v1 · Documento 05</div>
+    <h1>Automação de testes de front</h1>
+    <p class="subtitle">Tutorial do zero para rodar e escrever testes com Playwright contra o UAT do ERP Genius. Para quem nunca automatizou.</p>
+    <dl class="meta">
+      <dt>Versão</dt><dd>22/10/2026</dd>
+      <dt>Público</dt><dd>QA júnior, sem experiência com automação</dd>
+      <dt>Base</dt><dd>Pasta <code>e2e/</code> e <code>playwright.config.ts</code> da branch <code>qa/auditoria-e-onboarding</code> (commit <code>1a4c2934</code>)</dd>
+      <dt>Ferramentas</dt><dd>Playwright 1.64.1 · Node 22 (arquivo <code>.nvmrc</code>) · Chromium</dd>
+      <dt>Leia antes</dt><dd>Documentos 01 a 04 do kit (onboarding, usuários e papéis, roteiro manual, fluxo de bugs)</dd>
+    </dl>
+  </div>
+  <div class="band">Os testes rodam na sua máquina, contra o UAT. Você só edita a pasta <code>e2e/</code>. Nunca aponte para produção e nunca escaneie o QR do WhatsApp.</div>
+</section>
+
+<!-- ============================== SUMÁRIO ============================== -->
+<h1>Sumário</h1>
+<div class="toc">
+  <ol>
+    <li><span class="num">1</span>O que é um teste de front automatizado<span class="desc">Analogia, Playwright, headless, spec</span></li>
+    <li><span class="num">2</span>O que já está pronto no projeto<span class="desc">Pasta e2e, os 50 testes, test.fixme</span></li>
+    <li><span class="num">3</span>Preparar a máquina<span class="desc">Node 22, Git, VS Code, npm install, Chromium</span></li>
+    <li><span class="num">4</span>Configurar o acesso ao UAT<span class="desc">.env.e2e, URL, senhas por papel</span></li>
+    <li><span class="num">5</span>Rodar pela primeira vez<span class="desc">Terminal, modo UI, headed, filtro por ID</span></li>
+    <li><span class="num">6</span>Ler o resultado<span class="desc">Relatório HTML, trace, vídeo, issue</span></li>
+    <li><span class="num">7</span>Anatomia de um teste<span class="desc">ACE-07 linha a linha e o fixture papel</span></li>
+    <li><span class="num">8</span>Escrever o seu primeiro teste<span class="desc">Codegen, limpeza do código, rodar</span></li>
+    <li><span class="num">9</span>Boas práticas neste projeto<span class="desc">Nomes, seletores, dados, proibições</span></li>
+    <li><span class="num">10</span>O que automatizar primeiro<span class="desc">P1 de ACE, PER, CFG e CRM; bloqueadores</span></li>
+    <li><span class="num">11</span>Quando quebrar<span class="desc">Erros comuns e o que fazer</span></li>
+    <li><span class="num">12</span>Fluxo de entrega<span class="desc">Branch, commit em e2e/, PR, CI</span></li>
+    <li><span class="num">13</span>Glossário e checklists<span class="desc">Termos e listas de conferência</span></li>
+  </ol>
+</div>
+
+<h2>Como ler este guia</h2>
+<p>Cada passo traz o comando exato num bloco cinza. Logo abaixo vem uma caixa verde com o que você deve ver na tela. Se a tela mostrar outra coisa, pare e vá à seção 11.</p>
+<div class="keep">
+<pre><code>npm run test:e2e</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>A descrição do resultado esperado fica aqui.</p></div>
+</div>
+<p>Nos blocos de comando, troque o que está entre <code>&lt;</code> e <code>&gt;</code> pelo seu valor. Exemplo: <code>&lt;url-do-uat&gt;</code> vira a URL que o gestor passou. As caixas coloridas seguem o resto do kit:</p>
+<p><span class="chip info">Azul</span> explicação ou dica · <span class="chip warning">Amarelo</span> atenção, dá para errar aqui · <span class="chip danger">Vermelho</span> proibido, não faça · <span class="chip success">Verde</span> exercício.</p>
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Onde está a versão curta</div><p>O guia oficial e resumido é o <code>e2e/README.md</code>. Este documento explica o mesmo conteúdo com calma, passo a passo. Se os dois divergirem, vale o README e avise o gestor.</p></div></div>
+
+<!-- ============================== 1 ============================== -->
+<section class="section">
+<h2><span class="num">1</span>O que é um teste de front automatizado</h2>
+<p class="lead">É um roteiro de teste que o computador executa sozinho, num navegador de verdade, clicando e digitando como um usuário. No fim, ele diz o que passou e o que falhou.</p>
+
+<h3>Uma analogia</h3>
+<p>Pense numa receita de bolo. No teste manual, você lê a receita e faz o bolo. No teste automatizado, você escreve a receita num formato que um robô de cozinha entende. O robô faz o bolo do mesmo jeito todas as vezes. Quando algo dá errado, ele para e avisa: "no passo 6 a massa não cresceu".</p>
+<p>No ERP Genius, a "receita" é algo assim: abrir <code>/login</code>, digitar o e-mail, digitar a senha, clicar em <strong>Entrar</strong> e conferir que o menu lateral tem os 9 itens do Vendedor, na ordem certa. Você já faz isso à mão no roteiro (documento 03). A automação repete esse roteiro em segundos, para os 14 usuários de teste.</p>
+
+<div class="flow">
+  <div class="node neutral">Você escreve o spec<br>(e2e/*.spec.ts)</div><div class="arrow">→</div>
+  <div class="node">Playwright abre o Chromium</div><div class="arrow">→</div>
+  <div class="node">Chromium acessa o UAT</div><div class="arrow">→</div>
+  <div class="node">Confere a tela</div><div class="arrow">→</div>
+  <div class="node neutral">Relatório: ✓ ou ✘</div>
+</div>
+
+<h3>Quatro palavras que você vai usar todo dia</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16l13 -8l-13 -8" /></svg> Playwright</div><p>Ferramenta gratuita da Microsoft que controla o navegador por código. O projeto usa a versão 1.64.1. Os testes são escritos em TypeScript, uma forma de JavaScript com tipos.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg> Navegador headless</div><p>"Sem cabeça": o Chromium roda sem janela. Ele carrega, clica e digita, mas não desenha nada na sua tela. É mais rápido. Para ver o navegador, use o modo UI ou <code>--headed</code>.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M10 13l-1 2l1 2" /><path d="M14 13l1 2l-1 2" /></svg> Spec</div><p>Arquivo que termina em <code>.spec.ts</code> e guarda os testes de um módulo. Exemplo: <code>e2e/login.spec.ts</code> tem os testes de login. Cada teste dentro dele é um cenário.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg> Asserção (expect)</div><p>A conferência do teste: "espero que o título Acesso negado esteja visível". O Playwright espera até 10 segundos. Se não aparecer, o teste falha.</p></div>
+</div>
+
+<h3>Manual e automatizado: cada um no seu papel</h3>
+<p>O manual é bom para fluxo novo, usabilidade, texto confuso e layout. O automatizado é bom para o que se repete igual: login, menu por papel, permissões e regressão a cada versão. Ele roda em segundos, mas não pega o que ninguém mandou conferir.</p>
+
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /><path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /></svg><div><div class="title">Onde isso entra na estratégia de testes</div><p>O documento 14 descreve uma pirâmide. Na base ficam os testes unitários e, no meio, os de integração com banco descartável (Vitest, do time de dev). No topo ficam os testes ponta a ponta (E2E), com Playwright. Quando o documento 14 foi escrito, o E2E era "futuro". Hoje ele existe na pasta <code>e2e/</code>, e essa pasta é sua.</p></div></div>
+<div class="callout warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">A automação não substitui o roteiro manual</div><p>O primeiro ciclo continua manual. Automatize o que já passou no manual, se repete a cada versão e tem prioridade P1. Um teste automático só confere o que você mandou conferir.</p></div></div>
+</section>
+
+<!-- ============================== 2 ============================== -->
+<section>
+<h2><span class="num">2</span>O que já está pronto no projeto</h2>
+<p class="lead">O projeto já tem a configuração, o login automático por papel e 50 testes. Você não começa do zero: começa ampliando o que existe.</p>
+
+<h3>Os arquivos</h3>
+
+<table>
+  <thead><tr><th>Arquivo</th><th>O que faz</th><th>Você edita?</th></tr></thead>
+  <tbody>
+    <tr><td><code>playwright.config.ts</code></td><td>Lê o <code>.env.e2e</code>, exige <code>E2E_BASE_URL</code>, define os tempos (teste 60 s, expect 10 s, ação 15 s, navegação 30 s), guarda print, vídeo e trace só de teste que falhou, gera o relatório HTML. Define dois projetos: <code>setup</code> e <code>chromium</code>.</td><td>Não. Combine antes.</td></tr>
+    <tr><td><code>e2e/auth.setup.ts</code></td><td>Roda antes de tudo. Para cada papel com senha, faz login pela tela <code>/login</code> e salva os cookies em <code>e2e/.auth/&lt;PAPEL&gt;.json</code>. Papel sem senha é pulado.</td><td>Raramente.</td></tr>
+    <tr><td><code>e2e/fixtures/usuarios.ts</code></td><td>Lista os 14 papéis (<code>PAPEIS</code>), os e-mails padrão do seed e lê as senhas do ambiente. Se faltar senha, explica qual variável preencher.</td><td>Só para incluir papel novo.</td></tr>
+    <tr><td><code>e2e/fixtures/auth.ts</code></td><td>Função <code>login(page, papel)</code>, função <code>menuPrincipal(page)</code> e o <code>test</code> com a opção <code>papel</code>, que começa o teste já logado.</td><td>Raramente.</td></tr>
+    <tr><td><code>e2e/*.spec.ts</code></td><td>Os testes. Um arquivo por módulo do roteiro.</td><td>Sim. É o seu trabalho.</td></tr>
+  </tbody>
+</table>
+
+<h3>Os 50 testes que já existem</h3>
+<p>Para ver a lista completa sem executar nada, rode o comando abaixo (ele só precisa da URL, não das senhas):</p>
+<div class="keep">
+<pre><code>npx playwright test --list</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>Uma linha por teste, no formato <code>[projeto] › arquivo:linha › grupo › nome</code>, e no fim:</p><pre class="saida"><code>Total: 50 tests in 3 files</code></pre></div>
+</div>
+<table>
+  <thead><tr><th>Grupo</th><th class="center">Qtde</th><th>O que confere</th><th>Estado</th></tr></thead>
+  <tbody>
+    <tr><td><code>autenticar &lt;PAPEL&gt;</code> (setup)</td><td class="center">14</td><td>Login de cada papel e gravação da sessão</td><td><span class="chip info">Roda sempre antes</span></td></tr>
+    <tr><td>ACE-03</td><td class="center">14</td><td>Login com sucesso e itens do menu lateral, na ordem exata, um teste por papel</td><td><span class="chip success">Ativo</span></td></tr>
+    <tr><td>ACE-07</td><td class="center">1</td><td>Senha errada e e-mail inexistente mostram "E-mail ou senha incorretos." e ficam em <code>/login</code> (a 1ª tentativa do cenário de bloqueio)</td><td><span class="chip success">Ativo</span></td></tr>
+    <tr><td>ACE-06</td><td class="center">4</td><td><code>/alunos</code>, <code>/financeiro</code>, <code>/configuracao/usuarios</code> e <code>/funil</code> sem sessão vão para <code>/login?callbackUrl=…</code></td><td><span class="chip success">Ativo</span></td></tr>
+    <tr><td>PER-02a–c, PER-07a–c, PER-09a–b, PER-11a–b, PER-13a–b</td><td class="center">12</td><td>Papel digita uma URL proibida e vê "Acesso negado"</td><td><span class="chip success">Ativo</span></td></tr>
+    <tr><td>PER-02d, PER-04a, PER-05a, PER-07d, PER-11c</td><td class="center">5</td><td>Bugs conhecidos X2 e X3 e decisão pendente R13</td><td><span class="chip warning">test.fixme</span></td></tr>
+  </tbody>
+</table>
+
+<h3>As duas formas de "Acesso negado"</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /><path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /></svg> Redirecionamento</div><p>A página manda para <code>/acesso-negado</code>, que mostra o título "Acesso negado" e o link "Voltar ao início". Exemplos: <code>/funil</code> e <code>/diario</code>. No spec: <code>mecanismo: "redirect"</code>.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 11h2a2 2 0 0 1 2 2v2m0 4a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6a2 2 0 0 1 2 -2h4" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-3m.719 -3.289a4 4 0 0 1 7.281 2.289v4" /><path d="M3 3l18 18" /></svg> Na própria página</div><p>A URL não muda e a tela mostra "Acesso negado" no lugar do conteúdo. Exemplos: <code>/financeiro</code>, <code>/alunos</code> e <code>/empresas</code>. No spec: <code>mecanismo: "na-pagina"</code>.</p></div>
+</div>
+
+<h3>O que está em test.fixme e por quê</h3>
+<p><code>test.fixme(...)</code> marca um teste que o Playwright lista, mas não executa. No resultado ele aparece como pulado. O teste descreve o comportamento <strong>esperado</strong>, que hoje não acontece por causa de um bug conhecido ou de uma decisão que o PO ainda não tomou.</p>
+<table class="compact">
+  <thead><tr><th>ID</th><th>Papel e URL</th><th>Motivo</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap">PER-05a</td><td>GERENTE_COMERCIAL em <code>/empresas</code></td><td>Bug X2: "Empresas" está no menu, mas a página nega o acesso</td></tr>
+    <tr><td class="nowrap">PER-07d</td><td>SECRETARIA em <code>/empresas</code></td><td>Bug X2, o mesmo caso para a Secretaria</td></tr>
+    <tr><td class="nowrap">PER-02d</td><td>VENDEDOR em <code>/financeiro/permuta</code></td><td>Bug X3: tela de erro genérica em vez de "Acesso negado"</td></tr>
+    <tr><td class="nowrap">PER-11c</td><td>GERENTE_PEDAGOGICO em <code>/configuracao/contratos</code></td><td>Bug X3, mesma tela de erro</td></tr>
+    <tr><td class="nowrap">PER-04a</td><td>GERENTE_COMERCIAL em <code>/configuracao/crm</code></td><td>Decisão R13: sem item no menu, mas a página abre pela URL</td></tr>
+  </tbody>
+</table>
+<p>Quando a correção for publicada no UAT (ou o PO decidir), troque <code>test.fixme</code> por <code>test</code> e rode. Se o teste passar, ele vira proteção contra o bug voltar. Se a decisão for manter o comportamento atual, ajuste ou apague o caso.</p>
+
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 11.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 17.5l1.5 1.5l2.5 -2.5" /><path d="M11 6l9 0" /><path d="M11 12l9 0" /><path d="M11 18l9 0" /></svg><div><div class="title">Os nomes já usam os IDs do roteiro</div><p>Cada teste começa pelo ID do cenário em <code>docs/qa/03-roteiro-testes-manuais.md</code>. Quando um cenário vira vários testes, a letra final identifica a URL: <code>PER-02a</code> é <code>/alunos</code>, <code>PER-02b</code> é <code>/configuracao/usuarios</code>. O filtro <code>-g</code>, a planilha e a issue usam o mesmo ID.</p></div></div>
+</section>
+
+<!-- ============================== 3 ============================== -->
+<section>
+<h2><span class="num">3</span>Preparar a máquina</h2>
+<p class="lead">Você vai instalar quatro coisas: Node, Git, VS Code e o navegador do Playwright. Faça uma vez por máquina. Reserve cerca de uma hora.</p>
+
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l3 3l-3 3" /><path d="M13 15l3 0" /><path d="M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -12" /></svg><div><div class="title">O que é o terminal</div><p>É a janela onde você digita comandos. No Windows, use o <strong>PowerShell</strong> ou o <strong>Git Bash</strong> (vem com o Git). No Mac, use o app <strong>Terminal</strong>. Dentro do VS Code, o terminal abre com <kbd>Ctrl</kbd>+<kbd>`</kbd> (Mac: <kbd>Control</kbd>+<kbd>`</kbd>). Digite o comando e aperte <kbd>Enter</kbd>.</p></div></div>
+
+<ol class="steps">
+  <li><div>
+    <div class="title">Instale o Node.js na versão 22</div>
+    <p>O arquivo <code>.nvmrc</code> do projeto diz <code>22</code>. É a versão usada pela CI. O mínimo técnico é 20.12, porque o <code>playwright.config.ts</code> usa <code>process.loadEnvFile</code>.</p>
+    <p><strong>Windows:</strong> no site nodejs.org, página de download, escolha a versão 22 e o instalador <code>.msi</code>. Avance com as opções padrão.</p>
+    <p><strong>Mac:</strong> no mesmo site, baixe o instalador <code>.pkg</code> da versão 22. Se você já usa o nvm, rode <code>nvm install</code> dentro da pasta do projeto: ele lê o <code>.nvmrc</code>.</p>
+    <p>Feche e abra o terminal. Depois confira:</p>
+    <pre><code>node -v</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p><code>v22.</code> seguido de dois números, por exemplo <code>v22.12.0</code>. Se aparecer "não é reconhecido" ou "command not found", a instalação não terminou: reinstale e abra um terminal novo.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Instale o Git</div>
+    <p><strong>Windows:</strong> baixe em git-scm.com e instale com as opções padrão. Ele traz o Git Bash.</p>
+    <p><strong>Mac:</strong> rode o comando abaixo. Se o Git não existir, o macOS oferece instalar as "ferramentas de linha de comando". Aceite.</p>
+    <pre><code>git --version</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p><code>git version 2.</code> seguido da versão, por exemplo <code>git version 2.47.1</code>.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Instale o VS Code e a extensão do Playwright</div>
+    <p>Baixe o VS Code em code.visualstudio.com. Abra a aba Extensões (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>, no Mac <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>), procure <strong>Playwright Test for VSCode</strong>, publicada pela Microsoft, e clique em Install.</p>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Um ícone de tubo de ensaio (Testing) na barra da esquerda. Depois do passo 6, ele lista os testes da pasta <code>e2e/</code> com um botão ▶ ao lado de cada um.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Clone o repositório</div>
+    <p>Você precisa do convite do GitHub (documento 01). No terminal, entre na pasta onde quer guardar o projeto e rode:</p>
+    <pre><code>git clone https://github.com/diogenesmendes01/erp-genius.git
+cd erp-genius</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p><code>Cloning into 'erp-genius'...</code> e, no fim, o prompt de volta. Depois do <code>cd</code>, você está dentro da pasta <code>erp-genius</code>. Se o GitHub pedir login, entre com a sua conta convidada.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Instale as dependências do projeto</div>
+    <p>Este comando baixa as bibliotecas do projeto, inclusive o <code>@playwright/test</code>. Na regra do time, os agentes de desenvolvimento não rodam install: quem prepara o ambiente deles é o integrador. A sua máquina de QA é outra situação. Aqui você instala.</p>
+    <pre><code>npm install</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Alguns minutos de espera e, no fim, uma linha como <code>added 1234 packages in 3m</code> (o número varia). Linhas <code>npm warn</code> são avisos e não impedem nada. Uma linha <code>npm error</code> impede: veja a seção 11.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Baixe o navegador usado nos testes</div>
+    <pre><code>npx playwright install chromium</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Barras de progresso de download e uma linha dizendo que o Chromium foi baixado para uma pasta <code>ms-playwright</code>. Para conferir a versão do Playwright:</p><pre class="saida"><code>npx playwright --version
+Version 1.64.1</code></pre></div>
+  </div></li>
+</ol>
+
+<div class="callout warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Windows: "a execução de scripts foi desabilitada"</div><p>Se o PowerShell recusar o <code>npx</code> ou o <code>npm</code> com essa mensagem, troque por <code>npx.cmd</code> e <code>npm.cmd</code> (exemplo: <code>npx.cmd playwright install chromium</code>), ou use o terminal Git Bash. Não altere a política de segurança do Windows por conta própria: fale com o gestor.</p></div></div>
+</section>
+
+<!-- ============================== 4 ============================== -->
+<section>
+<h2><span class="num">4</span>Configurar o acesso ao UAT</h2>
+<p class="lead">Os testes precisam de duas informações: a URL do UAT e as senhas dos usuários de teste. Elas ficam num arquivo só seu, o <code>.env.e2e</code>, que nunca vai para o GitHub.</p>
+
+<ol class="steps">
+  <li><div>
+    <div class="title">Copie o modelo</div>
+    <p>Na pasta do projeto, rode o comando do seu terminal:</p>
+    <pre><code><span class="c"># Git Bash ou Mac</span>
+cp .env.e2e.example .env.e2e
+<span class="c"># PowerShell</span>
+Copy-Item .env.e2e.example .env.e2e</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Nenhuma mensagem. No VS Code, o arquivo <code>.env.e2e</code> aparece na raiz do projeto, ao lado do <code>playwright.config.ts</code>, com o nome em cinza (cinza quer dizer "ignorado pelo Git").</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Preencha a URL do UAT</div>
+    <p>Abra o <code>.env.e2e</code> no VS Code. Troque o exemplo pela URL que o gestor passou por canal privado. Ela começa com <code>https://</code> e não tem barra no final.</p>
+    <pre><code>E2E_BASE_URL=&lt;url-do-uat&gt;</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>A URL abre no seu navegador comum e mostra a tela de login do ERP Genius. Confira também <code>&lt;url-do-uat&gt;/api/health</code>: deve mostrar <code>ok: true</code> e um <code>sha</code>.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Preencha as senhas</div>
+    <p>Para cada papel, preencha a linha <code>E2E_PASSWORD_&lt;PAPEL&gt;=</code> com a senha recebida. Sem espaço antes ou depois do <code>=</code>. Se a senha tiver espaço ou <code>#</code>, coloque-a entre aspas simples. As linhas <code>E2E_EMAIL_&lt;PAPEL&gt;</code> já vêm preenchidas com o padrão do seed: só mude se o gestor pedir.</p>
+    <pre><code>E2E_PASSWORD_VENDEDOR=&lt;senha-do-vendedor&gt;
+E2E_PASSWORD_PROFESSOR=&lt;senha-da-professora&gt;</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>O arquivo salvo, com as 14 linhas de senha preenchidas. Pode começar com só algumas: os papéis sem senha são pulados no setup (seção 5).</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Confira que o arquivo está protegido</div>
+    <pre><code>git check-ignore -v .env.e2e</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><pre class="saida"><code>.gitignore:47:.env.e2e	.env.e2e</code></pre><p>Isso quer dizer que a linha 47 do <code>.gitignore</code> protege o arquivo. Se não aparecer nada, pare e avise o gestor antes de qualquer commit. Rode também <code>git status</code>: o <code>.env.e2e</code> não pode aparecer na lista.</p></div>
+  </div></li>
+</ol>
+
+<h3>As variáveis por papel</h3>
+<p>Cada papel usa duas variáveis: <code>E2E_EMAIL_&lt;PAPEL&gt;</code> e <code>E2E_PASSWORD_&lt;PAPEL&gt;</code>. Exemplo: <code>E2E_PASSWORD_GERENTE_PEDAGOGICO2</code>. O apelido é o mesmo do documento 02 e do roteiro.</p>
+<table class="compact">
+  <thead><tr><th>&lt;PAPEL&gt;</th><th>Apelido</th><th>Papel no sistema</th><th>E-mail padrão</th></tr></thead>
+  <tbody>
+    <tr><td><code>ADMIN</code></td><td>ADM</td><td>Administrador</td><td>admin@genius.com</td></tr>
+    <tr><td><code>ADMIN2</code></td><td>ADM-2</td><td>Segundo administrador (decisões independentes)</td><td>admin2@genius.com</td></tr>
+    <tr><td><code>GERENTE_COMERCIAL</code></td><td>GC</td><td>Gerente Comercial</td><td>gerente@genius.com</td></tr>
+    <tr><td><code>VENDEDOR</code></td><td>VEND-A</td><td>Vendedor</td><td>joao@genius.com</td></tr>
+    <tr><td><code>VENDEDOR2</code></td><td>VEND-B</td><td>Vendedor de outra carteira</td><td>vendedor2@genius.com</td></tr>
+    <tr><td><code>VENDEDOR3</code></td><td>VEND-0</td><td>Vendedor sem limite de desconto</td><td>vendedor3@genius.com</td></tr>
+    <tr><td><code>GERENTE_PEDAGOGICO</code></td><td>GP</td><td>Gerente Pedagógico</td><td>gp@genius.com</td></tr>
+    <tr><td><code>GERENTE_PEDAGOGICO2</code></td><td>GP-2</td><td>Segundo Gerente Pedagógico</td><td>gp2@genius.com</td></tr>
+    <tr><td><code>PROFESSOR</code></td><td>PROF</td><td>Professor</td><td>carla@genius.com</td></tr>
+    <tr><td><code>PROFESSOR2</code></td><td>PROF-2</td><td>Professor de outra turma</td><td>professor2@genius.com</td></tr>
+    <tr><td><code>FINANCEIRO</code></td><td>FIN</td><td>Financeiro</td><td>financeiro@genius.com</td></tr>
+    <tr><td><code>FINANCEIRO2</code></td><td>FIN-2</td><td>Segundo Financeiro (aprova acertos)</td><td>financeiro2@genius.com</td></tr>
+    <tr><td><code>SECRETARIA</code></td><td>SEC</td><td>Secretaria Acadêmica</td><td>secretaria@genius.com</td></tr>
+    <tr><td><code>VENDEDOR_PROFESSOR</code></td><td>VEND+PROF</td><td>Vendedor e Professor no mesmo usuário</td><td>venprof@genius.com</td></tr>
+  </tbody>
+</table>
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Usuários do roteiro que ainda não têm variável</div><p>GC+V (mariana@genius.com) e FIN+SEC (ana@genius.com) existem no roteiro, mas não na lista <code>PAPEIS</code>. Cenários com eles (ACE-05, ACE-10) ainda não dão para automatizar. Incluir um papel novo mexe em <code>fixtures/usuarios.ts</code>, no <code>.env.e2e.example</code> e no README: combine com o gestor.</p></div></div>
+<div class="callout danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg><div><div class="title">Proibido</div><p>Commitar o <code>.env.e2e</code> ou a pasta <code>e2e/.auth/</code>. Colocar senha ou URL do UAT direto no código. Colar senha em issue, print ou chat. Apontar <code>E2E_BASE_URL</code> para produção: os testes logam, clicam e, nos próximos specs, criam dados.</p></div></div>
+<div class="keep">
+<p>Se preferir não usar arquivo, você pode definir as variáveis no terminal. O que está no terminal tem prioridade sobre o arquivo:</p>
+<pre><code><span class="c"># Git Bash ou Mac</span>
+export E2E_BASE_URL=&lt;url-do-uat&gt;
+export E2E_PASSWORD_PROFESSOR='&lt;senha&gt;'
+<span class="c"># PowerShell</span>
+$env:E2E_BASE_URL = '&lt;url-do-uat&gt;'
+$env:E2E_PASSWORD_PROFESSOR = '&lt;senha&gt;'</code></pre>
+</div>
+</section>
+
+<!-- ============================== 5 ============================== -->
+<section>
+<h2><span class="num">5</span>Rodar pela primeira vez</h2>
+<p class="lead">Agora você roda os 50 testes, aprende a ver o navegador trabalhando e a rodar só o que interessa.</p>
+
+<h3>O que acontece quando você roda</h3>
+<div class="flow">
+  <div class="node neutral">npm run test:e2e</div><div class="arrow">→</div>
+  <div class="node">Projeto setup: login de cada papel com senha</div><div class="arrow">→</div>
+  <div class="node">Sessões salvas em e2e/.auth/</div><div class="arrow">→</div>
+  <div class="node">Projeto chromium: specs em paralelo, já logados</div>
+</div>
+<p>O setup faz o login uma vez por papel, pela tela <code>/login</code>, e grava os cookies em <code>e2e/.auth/&lt;PAPEL&gt;.json</code>. Os testes de permissão reaproveitam esses arquivos e começam já logados. Isso economiza tempo e evita gastar tentativas de login. O setup roda sempre, mesmo quando você filtra os testes.</p>
+
+<h3>Rode tudo, sem janela</h3>
+<div class="keep">
+<pre><code>npm run test:e2e</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>As linhas aparecem enquanto os testes rodam. Exemplo resumido (tempos e número de workers variam):</p>
+<pre class="saida"><code>Running 50 tests using 4 workers
+
+  ✓  1 [setup] › auth.setup.ts:23:8 › autenticar ADMIN (4.1s)
+  ✓  2 [setup] › auth.setup.ts:23:8 › autenticar ADMIN2 (3.8s)
+  …
+  ✓ 29 [chromium] › login.spec.ts:140:7 › Login › ACE-07 senha errada … (2.6s)
+  - 46 [chromium] › permissoes.spec.ts:199:10 › … › PER-05a item Empresas …
+  …
+  5 skipped
+  45 passed (1.6m)
+
+To open last HTML report run:
+
+  npx playwright show-report</code></pre>
+<p>Com todas as senhas preenchidas, o esperado é 45 passaram e 5 pulados (os <code>test.fixme</code>).</p></div>
+</div>
+<table class="keep">
+  <thead><tr><th>Símbolo</th><th>Significado</th></tr></thead>
+  <tbody>
+    <tr><td class="ok">✓</td><td>Passou.</td></tr>
+    <tr><td class="no">✘</td><td>Falhou. O erro aparece logo abaixo da lista, com o arquivo e a linha.</td></tr>
+    <tr><td>-</td><td>Pulado: <code>test.fixme</code>, ou setup de um papel sem senha.</td></tr>
+    <tr><td><code>did not run</code></td><td>Nem começou. Acontece quando o setup de algum papel falha: o projeto <code>chromium</code> inteiro fica parado.</td></tr>
+  </tbody>
+</table>
+
+<div class="keep">
+<h3>Quando falta uma senha</h3>
+<p>O setup daquele papel aparece com <code>-</code> (pulado) e a razão: <code>E2E_PASSWORD_ADMIN2 não definida: papel pulado no setup</code>. Os outros papéis rodam normalmente. Os testes que usam o papel sem senha falham dizendo o que preencher:</p>
+<pre class="saida"><code>[e2e] Senha do papel ADMIN2 não definida. Preencha E2E_PASSWORD_ADMIN2 no arquivo .env.e2e …
+[e2e] Sessão de ADMIN2 não encontrada em …/e2e/.auth/ADMIN2.json. …</code></pre>
+<p>A primeira aparece no ACE-03 daquele papel. A segunda, nos testes que começam logados com ele. Já uma senha <strong>preenchida mas errada</strong> faz o setup falhar, e aí nenhum spec roda. Corrija a senha.</p>
+</div>
+
+<div class="keep">
+<h3>Outras formas de rodar</h3>
+<p>O <code>--</code> separa as opções do npm das opções do Playwright. Tudo o que vem depois dele vai para o Playwright.</p>
+<table class="compact">
+  <thead><tr><th style="width:42%">Comando</th><th>O que você deve ver</th></tr></thead>
+  <tbody>
+    <tr><td><code>npm run test:e2e:ui</code></td><td>A janela do modo UI: à esquerda, os arquivos e testes, com filtro; clique no ▶ de um teste. No alto, miniaturas da tela; no centro, a tela em cada passo; embaixo, log, console e rede. Se um teste com papel falhar com "Sessão de … não encontrada", rode antes <code>npm run test:e2e</code> uma vez pelo terminal.</td></tr>
+    <tr><td><code>npm run test:e2e -- --headed</code></td><td>Janelas do Chromium abrindo e fechando rápido, uma por worker. Junte com um filtro para acompanhar com calma.</td></tr>
+    <tr><td><code>npm run test:e2e -- -g "ACE-03"</code></td><td>As 14 linhas do setup e os 14 ACE-03, um por papel. Nada de ACE-06, ACE-07 ou PER. O filtro é por texto: <code>-g "PER-"</code> pega todos os PER; <code>-g "PER-02a"</code>, só um.</td></tr>
+    <tr><td><code>npm run test:e2e -- e2e/permissoes.spec.ts</code></td><td>O setup e os 17 testes de permissão (12 ativos e 5 pulados).</td></tr>
+    <tr><td><code>npm run test:e2e -- -g "PER-02a" --debug</code></td><td>O navegador e o Playwright Inspector. O teste para antes de cada ação; o botão Step over executa uma linha por vez.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 11h2a2 2 0 0 1 2 2v2m0 4a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6a2 2 0 0 1 2 -2h4" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-3m.719 -3.289a4 4 0 0 1 7.281 2.289v4" /><path d="M3 3l18 18" /></svg><div><div class="title">Cuidado com o ACE-07 e o bloqueio de login</div><p>O ACE-07 erra a senha do VEND-B (vendedor2) de propósito, uma vez por execução. Depois de 5 falhas em 15 minutos, o sistema bloqueia aquele e-mail, inclusive com a senha certa. Aí o setup do VENDEDOR2 falha e <strong>nenhum spec roda</strong>. Não rode a suíte inteira mais de 4 vezes em 15 minutos. Para repetir muito, filtre: <code>-g "PER"</code> ou o arquivo do seu spec.</p></div></div>
+</section>
+
+<!-- ============================== 6 ============================== -->
+<section>
+<h2><span class="num">6</span>Ler o resultado</h2>
+<p class="lead">O terminal diz o que falhou. O relatório HTML e o trace dizem por quê. Print, vídeo e trace só são guardados para testes que falharam.</p>
+
+<h3>Relatório HTML</h3>
+<div class="keep">
+<pre><code>npx playwright show-report</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>O terminal mostra <code>Serving HTML report at http://localhost:9323</code> e o navegador abre a lista de testes. No alto, filtros: Passed, Failed, Flaky, Skipped. Clique num teste para ver os passos, o erro, o print e o vídeo. Para fechar, volte ao terminal e aperte <kbd>Ctrl</kbd>+<kbd>C</kbd>.</p></div>
+</div>
+
+<h3>Trace viewer, passo a passo</h3>
+<p>O trace é uma gravação completa do teste. Dá para "voltar no tempo" e ver a tela, o console e as requisições de cada momento. É a melhor evidência para o dev.</p>
+<ol class="steps">
+  <li><div><div class="title">Abra o teste que falhou no relatório HTML</div><p>Filtre por Failed e clique no nome do teste.</p></div></li>
+  <li><div><div class="title">Clique na miniatura da seção Traces</div><p>Fica no fim da página do teste. O Trace Viewer abre.</p></div></li>
+  <li><div><div class="title">Leia a lista de ações, à esquerda</div><p>Cada linha é um comando: <code>goto</code>, <code>fill</code>, <code>click</code>, <code>expect</code>. A ação que falhou fica em vermelho.</p></div></li>
+  <li><div><div class="title">Clique na ação anterior à falha</div><p>O centro mostra a tela naquele instante. As abas Before e After mostram antes e depois da ação. A faixa de miniaturas no alto também leva a qualquer momento.</p></div></li>
+  <li><div><div class="title">Leia as abas de baixo</div><p>Errors: o esperado e o recebido. Console: erros do JavaScript da página. Network: as requisições e os códigos (um 500 aponta erro no servidor). Source: a linha do teste.</p></div></li>
+</ol>
+<div class="keep">
+<p>Também dá para abrir um trace direto pelo terminal:</p>
+<pre><code>npx playwright show-trace test-results/&lt;pasta-do-teste&gt;/trace.zip</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>A mesma janela do Trace Viewer, sem passar pelo relatório.</p></div>
+</div>
+<div class="keep">
+<p>Para treinar sem esperar uma falha, force o trace num teste que passa. A opção <code>--trace on</code> existe no Playwright (confira em <code>npx playwright test --help</code>):</p>
+<pre><code>npm run test:e2e -- -g "PER-02a" --trace on
+npx playwright show-report</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>O PER-02a passa e, no relatório, ganha a seção Traces. Abra e explore: <code>goto /alunos</code>, depois o <code>expect</code> do título "Acesso negado".</p></div>
+</div>
+
+<h3>Vídeo e print</h3>
+<p>Ficam na pasta <code>test-results/&lt;nome-do-teste&gt;-chromium/</code>, ao lado do <code>trace.zip</code>: <code>video.webm</code> e <code>test-failed-1.png</code>. Também aparecem no relatório HTML. A pasta <code>test-results/</code> é apagada no começo de cada execução: copie o que precisa antes de rodar de novo.</p>
+
+<h3>Anexar o trace numa issue</h3>
+<ol class="steps">
+  <li><div><div class="title">Copie o trace.zip para fora do projeto</div><p>Assim a próxima execução não apaga a evidência.</p></div></li>
+  <li><div><div class="title">Confira se não há dado sensível</div><p>Abra o trace e olhe os prints e a aba Network. O trace guarda as requisições, inclusive o cookie de sessão do usuário de teste.</p></div></li>
+  <li><div><div class="title">Abra a issue pelo template Bug</div><p>Siga o documento 04. Título com o ID: <code>[PER-02a] Vendedor abre a lista de alunos</code>. Informe o <code>sha</code> de <code>/api/health</code> e o comando que você rodou.</p></div></li>
+  <li><div><div class="title">Arraste o trace.zip para o campo de texto</div><p>O GitHub sobe o arquivo e cria o link. Diga na issue que o dev abre com <code>npx playwright show-trace</code>.</p></div></li>
+</ol>
+<div class="callout danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0" /><path d="M15 9h.01" /></svg><div><div class="title">Trace de teste que faz login mostra a senha</div><p>No setup e no ACE-03, o teste digita a senha real com <code>fill</code>, e o trace registra o valor digitado. Não anexe esses traces. Nesse caso, anexe o print e o vídeo e descreva o passo. Os testes que começam logados com <code>papel</code> não digitam senha.</p></div></div>
+</section>
+
+<!-- ============================== 7 ============================== -->
+<section>
+<h2><span class="num">7</span>Anatomia de um teste</h2>
+<p class="lead">Vamos ler o ACE-07 real, de <code>e2e/login.spec.ts</code>, pedaço por pedaço. Ele cobre a primeira tentativa do cenário ACE-07 do roteiro: senha errada e e-mail inexistente. Algumas linhas foram quebradas para caber na página.</p>
+
+<div class="keep">
+<h3>1. Importar as ferramentas</h3>
+<pre><code>import { test, expect, login, menuPrincipal } from "./fixtures/auth";
+import { emailDe, PAPEIS, type PapelE2E } from "./fixtures/usuarios";
+
+const MENSAGEM_LOGIN_RECUSADO = "E-mail ou senha incorretos.";</code></pre>
+<p><code>import</code> traz funções de outros arquivos. O <code>test</code> e o <code>expect</code> vêm de <code>./fixtures/auth</code>, e não de <code>@playwright/test</code>: é essa versão que tem a opção <code>papel</code>. A constante guarda o texto esperado num lugar só.</p>
+</div>
+
+<div class="keep">
+<h3>2. Declarar o teste</h3>
+<pre><code>test.describe("Login", () =&gt; {
+  test(
+    "ACE-07 senha errada e e-mail inexistente mostram a mesma mensagem e continuam em /login",
+    async ({ page }) =&gt; {</code></pre>
+<p><code>test.describe</code> agrupa testes com um título ("Login"). <code>test(nome, função)</code> cria um teste. O nome começa pelo ID. <code>async ({ page })</code> recebe a aba do navegador, já aberta e sem sessão, porque este bloco não usa <code>test.use({ papel })</code>.</p>
+</div>
+
+<div class="keep">
+<h3>3. Agir na tela</h3>
+<pre><code>      await page.goto("/login");
+      await page.locator('input[name="email"]').fill(emailDe("VENDEDOR2"));
+      await page.locator('input[name="senha"]').fill("senha-errada-e2e");
+      await page.getByRole("button", { name: "Entrar" }).click();</code></pre>
+<p><code>await</code> quer dizer "espere esta ação terminar antes da próxima". <code>page.goto("/login")</code> abre a URL; o começo (<code>E2E_BASE_URL</code>) vem da configuração. <code>locator(...)</code> encontra um elemento. <code>fill</code> digita, <code>click</code> clica. O e-mail é o do VEND-B, e a senha é inválida de propósito.</p>
+</div>
+
+<div class="keep">
+<h3>4. Conferir o resultado</h3>
+<pre><code>      await expect(page.getByText(MENSAGEM_LOGIN_RECUSADO)).toBeVisible();
+      await expect(page).toHaveURL(/\/login/);</code></pre>
+<p><code>expect(...)</code> é a asserção. <code>toBeVisible()</code> espera até 10 s o texto aparecer. <code>toHaveURL(/\/login/)</code> confere que a URL contém <code>/login</code>. O que está entre barras é uma expressão regular, um padrão de texto; a <code>\/</code> é uma barra escrita de forma "escapada".</p>
+</div>
+
+<div class="keep">
+<h3>5. Repetir com um e-mail que não existe</h3>
+<pre><code>      await page.locator('input[name="email"]').fill("nao-existe-e2e@genius.com");
+<span class="c">      // … mesma senha, mesmo clique em Entrar e os mesmos dois expect …</span>
+    },
+  );
+});</code></pre>
+<p>A mensagem tem de ser a mesma. Se fosse diferente, um invasor descobriria quais e-mails existem no sistema.</p>
+</div>
+
+<h3>Resumo das peças</h3>
+<table class="compact">
+  <thead><tr><th>Peça</th><th>Para que serve</th></tr></thead>
+  <tbody>
+    <tr><td><code>page.goto(url)</code></td><td>Abre uma página do UAT. Use o caminho (<code>"/funil"</code>), nunca a URL inteira.</td></tr>
+    <tr><td><code>page.getByRole(papel, { name })</code></td><td>Acha pelo papel de acessibilidade e pelo nome visível: botão, link, título, diálogo. A primeira escolha.</td></tr>
+    <tr><td><code>page.getByLabel(texto)</code></td><td>Acha um campo pelo rótulo escrito ao lado dele.</td></tr>
+    <tr><td><code>page.getByText(texto)</code></td><td>Acha pelo texto na tela.</td></tr>
+    <tr><td><code>page.locator('input[name="email"]')</code></td><td>Seletor CSS. Use só quando não há rótulo ou papel, como nos campos do login.</td></tr>
+    <tr><td><code>.fill(texto)</code> e <code>.click()</code></td><td>Digita e clica. Esperam o elemento aparecer, até 15 s.</td></tr>
+    <tr><td><code>expect(...).toBeVisible()</code></td><td>Confere que está na tela.</td></tr>
+    <tr><td><code>expect(...).toHaveCount(0)</code></td><td>Confere que não existe.</td></tr>
+    <tr><td><code>expect(page).toHaveURL(...)</code></td><td>Confere a URL atual.</td></tr>
+  </tbody>
+</table>
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Seletores têm motivo</div><p>O teste usa <code>getByText</code>, e não <code>getByRole("alert")</code>, porque o Next.js também coloca na página um anunciador de rota com <code>role="alert"</code>. Haveria dois "alertas". Quando você escolher um seletor, deixe um comentário se o motivo não for óbvio.</p></div></div>
+
+<h3>Um teste de permissão com o fixture papel</h3>
+<div class="keep">
+<p>Em <code>e2e/permissoes.spec.ts</code>, cada caso é um objeto numa lista:</p>
+<pre><code>  {
+    id: "PER-02a",
+    papel: "VENDEDOR",
+    url: "/alunos",
+    mecanismo: "na-pagina", // alunos/(lista)/page.tsx: SEC, GP, FIN, PRO
+    descricao: "Vendedor não abre a lista de alunos",
+  },</code></pre>
+</div>
+<div class="keep">
+<p>Um laço transforma cada objeto num teste:</p>
+<pre><code>for (const caso of CASOS_NEGADOS) {
+  test.describe(`${caso.papel} em ${caso.url}`, () =&gt; {
+    test.use({ papel: caso.papel });
+
+    test(`${caso.id} ${caso.descricao}`, async ({ page }) =&gt; {
+      await page.goto(caso.url);
+
+      await expect(tituloAcessoNegado(page)).toBeVisible();
+      if (caso.mecanismo === "redirect") {
+        await expect(page).toHaveURL(/\/acesso-negado$/);
+        await expect(page.getByRole("link", { name: "Voltar ao início" })).toBeVisible();
+      } else {
+        await expect(page).toHaveURL(new RegExp(`${escaparRegex(caso.url)}(\\?|$)`));
+      }
+    });
+  });
+}</code></pre>
+</div>
+<p>A linha que importa é <code>test.use({ papel: caso.papel })</code>. Ela troca a sessão do teste pelo arquivo <code>e2e/.auth/VENDEDOR.json</code>, salvo pelo setup. O teste começa já logado como João Silva (VEND-A), sem passar pela tela de login. Depois ele digita a URL e confere o título "Acesso negado" e a URL final.</p>
+<div class="flow">
+  <div class="node neutral">auth.setup.ts faz login</div><div class="arrow">→</div>
+  <div class="node">e2e/.auth/VENDEDOR.json</div><div class="arrow">→</div>
+  <div class="node">test.use({ papel: "VENDEDOR" })</div><div class="arrow">→</div>
+  <div class="node neutral">Teste começa logado</div>
+</div>
+
+<div class="callout success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.615 20h-2.615a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8" /><path d="M14 19l2 2l4 -4" /><path d="M9 8h4" /><path d="M9 12h2" /></svg><div><div class="title">Exercício: a sua primeira contribuição</div><p>No roteiro, o PER-02 diz que o VEND-A, ao digitar <code>/aria</code>, é negado por redirecionamento. Esse caso não está no spec. Acrescente um objeto à lista <code>CASOS_NEGADOS</code>, logo depois do PER-02c: <code>id: "PER-02e"</code> (a letra d já é o <code>test.fixme</code> de <code>/financeiro/permuta</code>), <code>papel: "VENDEDOR"</code>, <code>url: "/aria"</code>, <code>mecanismo: "redirect"</code>, <code>descricao: "Vendedor não abre o Agente de IA"</code>. Depois rode <code>npm run test:e2e -- -g "PER-02e"</code>. Você deve ver o setup e <code>1 passed</code> para o PER-02e.</p></div></div>
+</section>
+
+<!-- ============================== 8 ============================== -->
+<section>
+<h2><span class="num">8</span>Escrever o seu primeiro teste</h2>
+<p class="lead">Você vai gravar um fluxo com o codegen, limpar o código e criar o arquivo <code>e2e/crm.spec.ts</code>. O teste abre o Funil como Vendedor e confere uma parte do CRM-01: a nova oportunidade do vendedor não tem o campo "Responsável".</p>
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Por que este fluxo</div><p>Ele não cria dados: abre o diálogo e cancela. É seguro repetir quantas vezes quiser. O CRM-01 completo cria uma oportunidade; isso fica para quando você dominar o básico (seção 10).</p></div></div>
+
+<ol class="steps">
+  <li><div>
+    <div class="title">Garanta que a sessão do Vendedor existe</div>
+    <pre><code>npm run test:e2e -- -g "PER-02a"</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>O setup e <code>1 passed</code> no PER-02a. A pasta <code>e2e/.auth/</code> passa a ter o arquivo <code>VENDEDOR.json</code>.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Abra o codegen já logado</div>
+    <p>O codegen não lê o <code>.env.e2e</code>: digite a URL do UAT. A opção <code>--load-storage</code> (listada em <code>npx playwright codegen --help</code>) carrega a sessão salva, para você não gravar o login com a senha.</p>
+    <pre><code>npm run test:e2e:codegen -- --load-storage e2e/.auth/VENDEDOR.json &lt;url-do-uat&gt;/funil</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Duas janelas. Um Chromium aberto no Funil, logado como João Silva, com uma barra de ferramentas flutuante no alto. E o Playwright Inspector, que já mostra <code>import</code>, <code>test('test', …)</code> e a linha <code>page.goto</code>.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Grave uma conferência do título</div>
+    <p>Na barra flutuante, clique no ícone de olho (Assert visibility). Depois clique no título "Funil" da página.</p>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Uma linha nova no Inspector: <code>await expect(page.getByRole('heading', { name: 'Funil' })).toBeVisible();</code></p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Abra e feche o diálogo</div>
+    <p>Clique em <strong>Nova oportunidade</strong>. Use de novo o olho e clique no título do diálogo. Depois clique em <strong>Cancelar</strong>. Não clique em Criar: isso gravaria dados no UAT.</p>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Mais três linhas: o <code>click</code> em Nova oportunidade, o <code>expect</code> do título e o <code>click</code> em Cancelar. O diálogo fecha.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Copie o código e feche as janelas</div>
+    <p>No Inspector, use o botão de copiar. Feche o Chromium e o Inspector. O terminal volta ao prompt.</p>
+  </div></li>
+</ol>
+
+<div class="keep">
+<p>O código gravado fica parecido com este:</p>
+<pre><code>import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) =&gt; {
+  await page.goto('&lt;url-do-uat&gt;/funil');
+  await expect(page.getByRole('heading', { name: 'Funil' })).toBeVisible();
+  await page.getByRole('button', { name: 'Nova oportunidade' }).click();
+  await expect(page.getByRole('heading', { name: 'Nova oportunidade' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancelar' }).click();
+});</code></pre>
+<p>Ele funciona uma vez na sua máquina, mas ainda não segue o padrão do projeto. Use-o como rascunho.</p>
+</div>
+
+<div class="keep">
+<h3>Limpar o rascunho</h3>
+<p>Crie o arquivo <code>e2e/crm.spec.ts</code> no VS Code e escreva a versão final:</p>
+<pre><code><span class="c">// CRM: funil, carteira, contatos e tarefas (módulo 3 do roteiro, docs/qa/03).</span>
+import { test, expect } from "./fixtures/auth";
+
+test.describe("Funil como Vendedor", () =&gt; {
+  test.use({ papel: "VENDEDOR" });
+
+  test("CRM-01 nova oportunidade do vendedor não tem Responsável", async ({ page }) =&gt; {
+    await page.goto("/funil");
+    await expect(page.getByRole("heading", { name: "Funil", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Nova oportunidade" }).click();
+    const dialogo = page.getByRole("dialog", { name: "Nova oportunidade" });
+    await expect(dialogo).toBeVisible();
+<span class="c">    // CRM-01: "Não existe campo Responsável para o vendedor."</span>
+    await expect(dialogo.getByLabel("Responsável")).toHaveCount(0);
+
+<span class="c">    // Fecha sem criar nada: este teste não gera dados no UAT.</span>
+    await dialogo.getByRole("button", { name: "Cancelar" }).click();
+    await expect(dialogo).toHaveCount(0);
+  });
+});</code></pre>
+</div>
+
+<table class="compact keep">
+  <thead><tr><th>O que mudou</th><th>Por quê</th></tr></thead>
+  <tbody>
+    <tr><td><code>import</code> de <code>./fixtures/auth</code></td><td>Para ter a opção <code>papel</code>.</td></tr>
+    <tr><td><code>test.use({ papel: "VENDEDOR" })</code></td><td>Começa logado pela sessão do setup. Nada de login gravado.</td></tr>
+    <tr><td><code>page.goto("/funil")</code></td><td>Só o caminho. A URL do UAT vem do <code>.env.e2e</code>, nunca do código.</td></tr>
+    <tr><td>Nome com o ID <code>CRM-01</code></td><td>Liga o resultado ao roteiro, à planilha e à issue.</td></tr>
+    <tr><td><code>exact: true</code> no título</td><td>Evita casar com outro título que contenha "Funil".</td></tr>
+    <tr><td><code>dialogo.getBy…</code></td><td>Procura só dentro do diálogo. Evita achar outro "Cancelar" na página.</td></tr>
+    <tr><td><code>toHaveCount(0)</code> do Responsável</td><td>O codegen só grava o que existe. A ausência você escreve à mão.</td></tr>
+    <tr><td>Aspas duplas e comentários</td><td>É o estilo dos outros specs.</td></tr>
+  </tbody>
+</table>
+
+<div class="keep">
+<h3>Rodar o seu teste</h3>
+<pre><code>npm run test:e2e -- e2e/crm.spec.ts</code></pre>
+<div class="ver"><span class="t">O que você deve ver</span><p>O setup e uma linha nova, com o ✓:</p><pre class="saida"><code>  ✓ 15 [chromium] › crm.spec.ts:7:7 › Funil como Vendedor › CRM-01 nova oportunidade … (3.1s)</code></pre><p>No fim, <code>15 passed</code> (14 do setup e o seu). No VS Code, o teste também aparece na aba Testing.</p></div>
+</div>
+
+<div class="keep">
+<h3>Prove que o teste sabe falhar</h3>
+<p>Um teste que nunca falha não testa nada. Troque <code>"Funil"</code> por <code>"Funis"</code> no <code>expect</code> do título, salve e rode o mesmo comando.</p>
+<div class="ver"><span class="t">O que você deve ver</span><p>Um ✘ e o erro abaixo, depois de 10 s de espera:</p>
+<pre class="saida"><code>Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Funis', exact: true })
+Expected: visible
+Timeout: 10000ms
+Error: element(s) not found</code></pre>
+<p>Desfaça a troca e rode de novo até voltar o ✓. Na planilha de resultados, anote: "CRM-01, parte do campo Responsável, automatizada em <code>e2e/crm.spec.ts</code>".</p></div>
+</div>
+</section>
+
+<!-- ============================== 9 ============================== -->
+<section>
+<h2><span class="num">9</span>Boas práticas neste projeto</h2>
+<p class="lead">Regras curtas que evitam teste frágil, dado perdido no UAT e risco de mensagem real.</p>
+
+<div class="cards">
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 11.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 17.5l1.5 1.5l2.5 -2.5" /><path d="M11 6l9 0" /><path d="M11 12l9 0" /><path d="M11 18l9 0" /></svg> ID do roteiro no nome</div><p>O nome começa pelo ID (<code>CRM-04 …</code>) e segue com uma frase do que se espera. Assim o filtro <code>-g</code>, a planilha e a issue falam a mesma língua.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 19h-6a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v4" /><path d="M20 21l2 -2l-2 -2" /><path d="M17 17l-2 2l2 2" /></svg> Um spec por módulo</div><p><code>login.spec.ts</code>, <code>permissoes.spec.ts</code>, <code>crm.spec.ts</code> e depois <code>matricula.spec.ts</code>, <code>financeiro.spec.ts</code>, <code>alunos.spec.ts</code>. Não misture módulos num arquivo.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 8.04l-12.122 12.124a2.857 2.857 0 1 1 -4.041 -4.04l12.122 -12.124" /><path d="M7 13h8" /><path d="M19 15l1.5 1.6a2 2 0 1 1 -3 0l1.5 -1.6" /><path d="M15 3l6 6" /></svg> Testes independentes</div><p>Os testes rodam em paralelo e em qualquer ordem. Nenhum teste pode depender de outro ter rodado antes, nem de dado criado por outro.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11" /></svg> Cada teste cria o que precisa</div><p>Se o teste precisa de uma oportunidade, ele mesmo cria, com um nome único, e confere em cima dela.</p></div>
+</div>
+
+<h3>Seletores: do mais forte ao mais frágil</h3>
+<table class="compact">
+  <thead><tr><th>Ordem</th><th>Seletor</th><th>Quando usar</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>getByRole("button", { name: "Entrar" })</code></td><td>Sempre que der: botões, links, títulos, abas, diálogos.</td></tr>
+    <tr><td>2</td><td><code>getByLabel("Responsável")</code></td><td>Campos de formulário com rótulo.</td></tr>
+    <tr><td>3</td><td><code>getByText("E-mail ou senha incorretos.")</code></td><td>Mensagens e textos soltos.</td></tr>
+    <tr><td>4</td><td><code>locator('input[name="email"]')</code></td><td>Só quando não há papel nem rótulo.</td></tr>
+    <tr><td class="no">Evite</td><td><code>locator(".flex &gt; div:nth-child(3) button")</code></td><td>Classes CSS e posições mudam a cada ajuste de layout. XPath também.</td></tr>
+  </tbody>
+</table>
+
+<div>
+<h3>Dados criados pelo teste</h3>
+<p>O roteiro pede que todo registro comece com <code>QA</code>. O README pede que a automação seja identificável. Use o prefixo <code>QA-E2E-</code>, que atende os dois, e um carimbo de tempo para o nome não repetir:</p>
+<pre><code>const nome = `QA-E2E-OPORT-${Date.now()}`;</code></pre>
+<p>Telefones só fictícios, no formato do roteiro (<code>+506 8888 01xx</code>). Como o CRM avisa quando um telefone já existe (CRM-03), peça ao gestor uma faixa reservada para a automação antes de criar oportunidades em massa.</p>
+</div>
+
+<div>
+<h3>Faça</h3>
+<ul>
+  <li>Espere com <code>expect(...)</code>. Ele já espera até 10 s o elemento aparecer.</li>
+  <li>Escreva o bug conhecido com o comportamento esperado e marque com <code>test.fixme</code>, com um comentário citando o X ou o R.</li>
+  <li>Comentários e nomes em português.</li>
+  <li>Rode o seu teste novo pelo menos três vezes seguidas antes do PR. Se falhar uma vez sem motivo, ele está instável.</li>
+  <li>Quando um texto da tela mudar, confirme com o roteiro ou com o dev se a mudança é intencional antes de mudar o teste.</li>
+</ul>
+</div>
+
+<div>
+<h3>Não faça</h3>
+<ul>
+  <li><code>page.waitForTimeout(...)</code> ("espere 3 segundos"). Deixa o teste lento e ainda falha quando o UAT demora mais.</li>
+  <li><code>test.only</code> esquecido no commit. Ele faz só aquele teste rodar.</li>
+  <li>Alterar configuração global do UAT (Operação, Países, Catálogo, Preços, Usuários) num teste automático sem combinar. Isso muda o ciclo manual dos colegas.</li>
+  <li>Mexer em <code>vitest.config.ts</code> ou nos testes de <code>src/</code>. São do time de dev.</li>
+</ul>
+</div>
+<div class="callout danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg><div><div class="title">Nunca, em hipótese alguma</div><p><strong>Nunca rode contra produção.</strong> <code>E2E_BASE_URL</code> é sempre o UAT. <strong>Nunca escaneie o QR do WhatsApp</strong>, nem à mão nem num teste, e nunca automatize o botão "Conectar" de um número (CFG-30). Algumas ações da Inbox chamam o motor do WhatsApp direto, sem a trava <code>WHATSAPP_LIVE</code>. Com um celular pareado, elas mandariam mensagem de verdade (bug X15). Nunca use e-mail, telefone ou documento de pessoa real.</p></div></div>
+</section>
+
+<!-- ============================== 10 ============================== -->
+<section>
+<h2><span class="num">10</span>O que automatizar primeiro</h2>
+<p class="lead">Comece pelos P1 que não criam dados. Depois, os que criam dados com <code>QA-E2E-</code>. Deixe de fora o que mexe na configuração compartilhada e o que esbarra num bloqueador.</p>
+
+<h3>Onda 1: sem criar dados</h3>
+<table class="compact">
+  <thead><tr><th>Cenário</th><th>O que automatizar</th><th>Situação</th><th>Observação</th></tr></thead>
+  <tbody>
+    <tr><td>ACE-03, ACE-06, ACE-07, ACE-13</td><td>Menu por papel; rotas sem sessão; senha errada; Vendedor em <code>/alunos</code></td><td><span class="chip success">Já coberto</span></td><td>ACE-03, ACE-06 e ACE-07 em <code>login.spec.ts</code>; ACE-13 pelo PER-02a. O ACE-07 cobre só a 1ª tentativa.</td></tr>
+    <tr><td>ACE-01</td><td><code>/api/health</code> com <code>ok: true</code> e <code>/api/ready</code> com <code>ready: true</code></td><td><span class="chip brand">Dá hoje</span></td><td>Sem login. Use o request do Playwright, sem navegador.</td></tr>
+    <tr><td>PER-02, PER-09, PER-11, PER-13</td><td>URLs que devem ser negadas</td><td><span class="chip brand">Em parte</span></td><td>Já há PER-02a–c, PER-09a–b, PER-11a–b e PER-13a–b. Acrescente as URLs que faltam em <code>CASOS_NEGADOS</code>, com a próxima letra livre. URLs com <code>&lt;id&gt;</code> da massa ficam para depois.</td></tr>
+    <tr><td>PER-01, PER-04, PER-06, PER-08, PER-10, PER-12</td><td>URLs que devem abrir para o papel</td><td><span class="chip brand">Dá hoje</span></td><td>Confira o título da página e a ausência de "Acesso negado". Pede um helper novo; peça revisão ao dev.</td></tr>
+    <tr><td>PER-05, PER-07, PER-04</td><td>Menu Empresas, tela de erro, Configuração › CRM</td><td><span class="chip warning">fixme</span></td><td>PER-05a e PER-07d (X2), PER-02d e PER-11c (X3), PER-04a (R13) já estão no spec. PER-07a–c já testam as URLs negadas da Secretaria.</td></tr>
+    <tr><td>CFG-24, passo 1</td><td>ADM tenta desativar a si mesmo e vê "Você não pode desativar a si mesmo."</td><td><span class="chip brand">Dá hoje</span></td><td>Não confirme nada além da mensagem.</td></tr>
+  </tbody>
+</table>
+
+<h3>Onda 2: cria dados com QA-E2E-</h3>
+<table class="compact">
+  <thead><tr><th>Cenário</th><th>O que automatizar</th><th>Situação</th><th>Observação</th></tr></thead>
+  <tbody>
+    <tr><td>CRM-01</td><td>Vendedor cria oportunidade; cartão em Novo, código <code>L-</code> e 6 dígitos, dono João Silva</td><td><span class="chip brand">Dá hoje</span></td><td>Depende do CFG-20 feito no UAT.</td></tr>
+    <tr><td>CRM-04</td><td>GC sem responsável recebe erro; com responsável cria</td><td><span class="chip brand">Dá hoje</span></td><td>Papel <code>GERENTE_COMERCIAL</code>.</td></tr>
+    <tr><td>CRM-05</td><td>VEND-A não vê cartões do VEND-B, nem pela URL</td><td><span class="chip brand">Dá hoje</span></td><td>Dois papéis no mesmo teste. Peça ajuda ao dev na primeira vez.</td></tr>
+    <tr><td>CRM-10</td><td>"Preparar contratação" abre a tela e a oportunidade fica em Proposta</td><td><span class="chip brand">Dá hoje</span></td><td>O teste cria e avança a própria oportunidade.</td></tr>
+    <tr><td>CRM-14, CRM-22</td><td>GC troca o responsável; cobertura de carteira</td><td><span class="chip brand">Dá hoje</span></td><td>Revogue a cobertura no fim do teste.</td></tr>
+    <tr><td>CFG-25, CFG-26, CFG-28</td><td>Modelo contratual; números de WhatsApp fictícios</td><td><span class="chip warning">Com cuidado</span></td><td>Versões publicadas ficam para sempre. No CFG-28, nunca clique em Conectar.</td></tr>
+    <tr><td>CFG-22</td><td>E-mail com maiúscula</td><td><span class="chip warning">fixme</span></td><td>Bug X1. Desative os usuários criados no fim.</td></tr>
+  </tbody>
+</table>
+
+<div>
+<h3>Ainda não</h3>
+<table class="compact">
+  <thead><tr><th>Cenário</th><th>Motivo</th></tr></thead>
+  <tbody>
+    <tr><td>CFG-02, CFG-03, CFG-05, CFG-14, CFG-18, CFG-19, CFG-20</td><td>Preparação do ambiente. Muda configuração usada por todo o ciclo manual. Fica manual, feita uma vez.</td></tr>
+    <tr><td>ACE-10, ACE-11</td><td>Tira papel ou desativa um usuário compartilhado no meio de testes paralelos. O ACE-10 usa o FIN+SEC, que não tem variável.</td></tr>
+    <tr><td>CFG-30</td><td>Mostra o QR do WhatsApp. Nunca automatizar (X15).</td></tr>
+    <tr><td>CRM-08</td><td>Bloqueador B6: a experimental não chega ao professor.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div>
+<h3>O que não dá para automatizar hoje</h3>
+<p>Os bloqueadores da auditoria consolidada (seção 2 dela) travam o fluxo pela interface. Sem o fluxo, não há o que o teste clicar.</p>
+<table class="compact">
+  <thead><tr><th>#</th><th>O que trava</th><th>Por que o teste não passa</th><th>Quando revisitar</th></tr></thead>
+  <tbody>
+    <tr><td>B2</td><td>Assinatura de contrato</td><td>Não existe driver de assinatura, nem simulado. A matrícula do fluxo novo não chega a ATIVA.</td><td>Quando o dev entregar o driver simulado ou a fixture.</td></tr>
+    <tr><td>B3</td><td>Pagamento</td><td>O pagamento simulado está desligado no código; o webhook responde 404; nenhuma tela gera o link <code>/pagar</code>.</td><td>Depois da decisão R2 e da correção da flag.</td></tr>
+    <tr><td>B4</td><td>Portal do aluno</td><td>O token de ativação só nasce com e-mail enviado de verdade. Ativação, login e recuperação ficam intestáveis.</td><td>Quando o PO escolher a caixa de teste ou a ferramenta de token.</td></tr>
+    <tr><td>B5</td><td>Gravação de aula</td><td>Exige Google Drive. Sem ele, "Erro inesperado". Sem aula Ministrada, não há reposição nem conclusão.</td><td>Quando houver Drive de teste.</td></tr>
+    <tr><td>B6, B8</td><td>Experimental e mensagem recebida</td><td>Etapas do funil inalcançáveis; não há como simular mensagem recebida no WhatsApp sem o dev.</td><td>Depois da correção do B6 e da receita do B8.</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- ============================== 11 ============================== -->
+<section class="erro">
+<h2><span class="num">11</span>Quando quebrar</h2>
+<p class="lead">Os erros mais comuns, a mensagem que aparece e o que fazer. Antes de abrir bug, descarte os problemas de configuração desta lista.</p>
+<table class="compact">
+  <thead><tr><th style="width:44%">O que aparece</th><th>Causa e o que fazer</th></tr></thead>
+  <tbody>
+    <tr><td><code>[e2e] E2E_BASE_URL não definida</code></td><td>Nada roda. O <code>.env.e2e</code> não existe, está em outra pasta ou a linha está vazia. Ele fica na raiz, ao lado do <code>playwright.config.ts</code>. Refaça a seção 4.</td></tr>
+    <tr><td><code>[e2e] Senha do papel X não definida</code> ou <code>[e2e] Sessão de X não encontrada</code></td><td>Preencha <code>E2E_PASSWORD_X</code> no <code>.env.e2e</code>. No modo UI, rode antes uma vez <code>npm run test:e2e</code> pelo terminal, para o setup criar as sessões.</td></tr>
+    <tr><td><code>page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL</code></td><td>A <code>E2E_BASE_URL</code> está sem <code>https://</code> ou com erro de digitação. Copie de novo a URL que o gestor passou.</td></tr>
+    <tr><td><code>✘ [setup] › … › autenticar VENDEDOR2</code>, <code>page.waitForURL: Timeout 30000ms exceeded</code> e, no fim, <code>33 did not run</code></td><td>O login daquele papel não chegou à Home, e o projeto <code>chromium</code> inteiro parou. Causas, em ordem: senha errada; e-mail bloqueado por 5 falhas (linha abaixo); usuário desativado no UAT. Abra o trace para ver a tela de login, mas não o anexe: ele mostra a senha.</td></tr>
+    <tr><td>"E-mail ou senha incorretos." com a senha certa</td><td>Bloqueio por 5 falhas em 15 minutos no mesmo e-mail. O ACE-07 gasta uma tentativa do VEND-B por execução da suíte. O bloqueio fica na memória do servidor e some 15 minutos depois da primeira falha, ou quando o servidor reinicia. Espere e passe a filtrar (<code>-g</code> ou arquivo). Se não sair, fale com o gestor.</td></tr>
+    <tr><td><code>Test timeout of 60000ms exceeded.</code></td><td>UAT lento ou fora do ar. Abra <code>&lt;url-do-uat&gt;/api/health</code>. Se não responder, avise o gestor e pare. Se responder, rode só o que falhou: <code>npm run test:e2e -- --last-failed</code>. Se o mesmo teste sempre estoura, abra o trace.</td></tr>
+    <tr><td><code>expect(locator).toBeVisible() failed</code> … <code>element(s) not found</code>, ou <code>locator.click: Timeout 15000ms exceeded</code></td><td>O texto da tela mudou, o papel não vê o elemento (pode ser bug de permissão) ou a página deu erro antes (abas Console e Network do trace). Só ajuste o teste se a mudança for intencional. Se for bug, abra issue.</td></tr>
+    <tr><td><code>strict mode violation: getByRole('button', { name: 'Cancelar' }) resolved to 2 elements</code></td><td>O seletor achou mais de um elemento. Use <code>exact: true</code> ou procure dentro de uma região: <code>page.getByRole("dialog", …).getByRole("button", …)</code>.</td></tr>
+    <tr><td><code>browserType.launch: Executable doesn't exist at …ms-playwright…</code></td><td>Falta o navegador. Rode <code>npx playwright install chromium</code>. Acontece depois de atualizar o Playwright do projeto.</td></tr>
+    <tr><td>ACE-03 falha num papel só</td><td>Menu com item a mais, a menos ou fora de ordem. Pode ser bug, ou o <code>MENU_ESPERADO</code> de <code>login.spec.ts</code> ficou para trás em relação a <code>src/lib/nav.ts</code>. Compare com a tabela "Menu esperado por papel puro" do roteiro e pergunte ao dev antes de mudar o teste.</td></tr>
+    <tr><td>Passa às vezes, falha às vezes</td><td>Teste instável (flaky). Não resolva com <code>waitForTimeout</code>. Abra o trace e procure o que muda: mensagem que some rápido, dado de outro teste, lista ainda carregando. Espere o estado certo com <code>expect</code> e avise no PR.</td></tr>
+    <tr><td><code>npx.ps1 não pode ser carregado</code> (PowerShell)</td><td>Use <code>npx.cmd</code> e <code>npm.cmd</code>, ou o terminal Git Bash (seção 3).</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ============================== 12 ============================== -->
+<section>
+<h2><span class="num">12</span>Fluxo de entrega</h2>
+<p class="lead">O teste só vale para o time quando chega à <code>main</code> por um pull request. Você commita apenas arquivos da pasta <code>e2e/</code>.</p>
+
+<ol class="steps">
+  <li><div>
+    <div class="title">Atualize a main e crie a sua branch</div>
+    <pre><code>git checkout main
+git pull
+git checkout -b qa/e2e-crm-01</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p><code>Switched to a new branch 'qa/e2e-crm-01'</code>. Use o prefixo <code>qa/</code> e o ID ou o módulo no nome.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Com o teste estável, rode o lint</div>
+    <p>Estável é pelo menos três execuções seguidas com ✓, filtrando pelo seu arquivo.</p>
+    <pre><code>npx eslint e2e</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Nenhuma saída: está tudo certo. Se aparecer uma lista de avisos ou erros, corrija antes do commit. Erros de TypeScript aparecem sublinhados em vermelho no VS Code e na aba Problems.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Confira o que vai no commit</div>
+    <pre><code>git status</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Só arquivos dentro de <code>e2e/</code>, como <code>e2e/crm.spec.ts</code>. Nunca <code>.env.e2e</code>, <code>e2e/.auth/</code>, <code>test-results/</code> ou <code>playwright-report/</code>. Se aparecer arquivo fora de <code>e2e/</code>, não inclua.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Adicione pelo caminho e faça o commit</div>
+    <p>Use o caminho do arquivo, nunca <code>git add .</code>.</p>
+    <pre><code>git add e2e/crm.spec.ts
+git commit -m "e2e: CRM-01 nova oportunidade do vendedor não tem Responsável"</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>Uma linha com a branch, o código curto do commit e a mensagem, e <code>1 file changed</code>.</p></div>
+  </div></li>
+  <li><div>
+    <div class="title">Envie a branch e abra o PR</div>
+    <pre><code>git push -u origin qa/e2e-crm-01</code></pre>
+    <div class="ver"><span class="t">O que você deve ver</span><p>O Git mostra um link para criar o pull request. Abra o link, confira que a base é <code>main</code> e preencha a descrição.</p></div>
+  </div></li>
+</ol>
+
+<div>
+<h3>O que escrever na descrição do PR</h3>
+<p>Os IDs do roteiro cobertos (total ou parcial); o comando, o resultado (ex.: <code>15 passed</code>), a data e o <code>sha</code> de <code>/api/health</code>; os <code>test.fixme</code> com o X ou R de cada um; e os dados que o teste cria no UAT. Nunca senha, URL do UAT ou trace com dado sensível.</p>
+</div>
+
+<div class="callout warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M15 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M7 8l0 8" /><path d="M9 18h6a2 2 0 0 0 2 -2v-5" /><path d="M14 14l3 -3l3 3" /></svg><div><div class="title">A CI não roda os testes E2E</div><p>A CI do repositório (<code>.github/workflows/ci.yml</code>) roda quatro coisas em cada PR: typecheck, lint, testes unitários (em dois fusos) e build. Ela não tem o <code>.env.e2e</code> nem acesso ao UAT, e não executa o Playwright. CI verde não quer dizer que o seu teste passa: quem revisa confia no resultado que você colou no PR. Mas a CI confere os seus arquivos: o TypeScript inclui a pasta <code>e2e/</code>, e o lint tem um teto de 40 avisos no projeto todo, que um aviso novo seu pode estourar.</p></div></div>
+</section>
+
+<!-- ============================== 13 ============================== -->
+<section>
+<h2><span class="num">13</span>Glossário e checklists</h2>
+
+<h3>Glossário</h3>
+<dl class="terms">
+  <dt>Asserção</dt><dd>A conferência de um teste, escrita com <code>expect(...)</code>. Se não se confirma no tempo, o teste falha.</dd>
+  <dt>baseURL</dt><dd>O começo de todas as URLs, vindo de <code>E2E_BASE_URL</code>. Por isso o teste escreve só <code>"/funil"</code>.</dd>
+  <dt>Codegen</dt><dd>Gravador do Playwright. Abre o navegador e escreve o código enquanto você clica.</dd>
+  <dt>Fixture</dt><dd>Algo que o Playwright prepara para o teste antes de ele começar: a <code>page</code>, a sessão do <code>papel</code>.</dd>
+  <dt>Flaky</dt><dd>Teste instável: às vezes passa, às vezes falha, sem mudança no sistema.</dd>
+  <dt>Locator</dt><dd>A "mira" que encontra um elemento na tela, como <code>getByRole(...)</code>.</dd>
+  <dt>Papel</dt><dd>O usuário de teste que o teste usa: <code>VENDEDOR</code>, <code>PROFESSOR</code>. Configurado com <code>test.use({ papel })</code>.</dd>
+  <dt>Rate limit</dt><dd>Limite de tentativas. No login: 5 falhas em 15 minutos por e-mail.</dd>
+  <dt>Sessão (storageState)</dt><dd>Os cookies de um login, salvos em <code>e2e/.auth/&lt;PAPEL&gt;.json</code>.</dd>
+  <dt>test.fixme</dt><dd>Teste listado e não executado, para bug conhecido ou decisão pendente.</dd>
+  <dt>Trace</dt><dd>Gravação completa de um teste (<code>trace.zip</code>), aberta no Trace Viewer.</dd>
+  <dt>UAT</dt><dd>Ambiente de homologação, onde o QA testa. Nunca é produção.</dd>
+</dl>
+
+<div>
+<h3>Checklist da primeira semana</h3>
+<ul class="check">
+  <li><code>node -v</code> mostra <code>v22</code> e <code>npx playwright --version</code> mostra <code>1.64.1</code>.</li>
+  <li>O <code>.env.e2e</code> está preenchido e <code>git check-ignore -v .env.e2e</code> confirma a proteção.</li>
+  <li><code>npx playwright test --list</code> mostra <code>Total: 50 tests in 3 files</code>.</li>
+  <li><code>npm run test:e2e</code> termina com 45 passaram e 5 pulados.</li>
+  <li>Rodei com <code>-g</code> e <code>--headed</code>, e abri um trace com <code>--trace on</code>.</li>
+  <li>Fiz o exercício do PER-02e e o <code>e2e/crm.spec.ts</code> da seção 8.</li>
+  <li>Fiz o teste falhar de propósito e voltei ao ✓.</li>
+  <li>Sei a quem pedir ajuda: gestor ou dev de plantão, com o comando, o erro completo e o <code>sha</code> do UAT, sem senha nem trace de login.</li>
+</ul>
+</div>
+
+<div>
+<h3>Checklist antes de abrir o PR</h3>
+<ul class="check">
+  <li>O nome de cada teste começa pelo ID do roteiro, e nenhum teste depende de outro.</li>
+  <li>Dados criados começam com <code>QA-E2E-</code> e usam só telefones e e-mails fictícios.</li>
+  <li>Nenhuma senha, URL do UAT, <code>test.only</code>, <code>waitForTimeout</code>, QR ou "Conectar" de número no código.</li>
+  <li>Três execuções seguidas com ✓, <code>npx eslint e2e</code> sem saída e nada sublinhado em vermelho.</li>
+  <li><code>git status</code> mostra só arquivos de <code>e2e/</code>.</li>
+  <li>A descrição do PR tem IDs, comando, resultado, data e <code>sha</code> do UAT.</li>
+</ul>
+</div>
+</section>
+
+</body>
+</html>
