@@ -72,7 +72,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 38 PNGs: 20 do app e 18 do protótipo. O painel do
+`--estado todos` produz 50 PNGs: 26 do app e 24 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -86,6 +86,10 @@ A demo aceita `--entrada thiago` (ou outra chave fictícia fechada) para inserir
 O preparo muda somente preferências pessoais do Admin: Thiago/Ventura explicitamente não lidas, outras cinco lidas; compartilhados/fixada/silenciada são preservados. Gera 24 PNGs em output/inbox-311-visual, nas quatro fases2→1→2→1, três tamanhos e dois temas. Antes de provocar a subida, navega Home por Link para desmontar a seleção: chat selecionado lê entrada automaticamente. Outra entrada com chat aberto prova reconciliação para1 sem loop. A segunda aba também confirma2, cada aba com uma SSE simultânea e no máximo um GET da contagem em voo.
 
 A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; valida gaveta no viewport e Sidebar224. Mantém diagnóstico de rede e só oculta toast Next sem issues durante a foto. Em erro escreve manifesto-incompleto; não sobrescreva uma tentativa negativa antes de preservá-la. A CLI principal permanece responsável pelas referências offline app×protótipo.
+
+## Estado de lista vazia (#312)
+
+#312 acrescenta `--estado lista-vazia`: app em `?busca=zzzz` sem seleção, protótipo com busca real `zzzz`, três tamanhos e dois temas (12PNGs). A espera exige EstadoVazio visível e nenhum item da lista; os passos dos demais estados permanecem iguais.
 
 ## Atualização da casca #308
 

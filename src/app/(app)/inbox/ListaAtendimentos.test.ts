@@ -20,16 +20,17 @@ const base: ItemListaInbox = {
 };
 const html = (p: Partial<ItemListaInbox> = {}, extra: Record<string, unknown> = {}) =>
   renderToStaticMarkup(createElement(ListaAtendimentos, {
-    itens: [{ ...base, ...p }], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn(), ...extra,
+    itens: [{ ...base, ...p }], agoraInicial: Date.now(), proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn(), ...extra,
   } as never));
 const htmlFiltros = (o: { setores: Setor[]; filtros?: object }) =>
   renderToStaticMarkup(createElement(PainelFiltros, { filtros: o.filtros ?? {}, setores: o.setores, numeros: [{ id: "n1", rotulo: "Cobrança" }] } as never));
 
 describe("ListaAtendimentos", () => {
-  it("item mostra setor, número, status, responsável e prazo estourado", () => {
+  it("item mostra setor, estado e prazo; número e telefone não aparecem", () => {
     const h = html({ finalidade: "FINANCEIRO", numeroRotulo: "Cobrança", status: "ABERTO_SEM_RESPONSAVEL", prazoRespostaEm: passado });
-    expect(h).toContain("Financeiro"); expect(h).toContain("Cobrança"); expect(h).toContain("Na fila"); expect(h).toContain("Prazo estourado");
-    expect(html({ responsavelNome: "Ana Lima" })).toContain("Ana Lima");
+    expect(h).toContain("Financeiro"); expect(h).not.toContain("Cobrança"); expect(h).toContain("Na fila"); expect(h).toContain("Prazo estourado");
+    expect(html({ responsavelNome: "Ana Lima", responsavelId: "u1" }, { usuarioId: "outra" })).toContain("Com Ana");
+    expect(html({ responsavelId: "u1" }, { usuarioId: "u1" })).toContain("Com você");
   });
   it("prazo no futuro não é estourado; encerrado não é estourado", () => {
     const futuro = new Date(Date.now() + 3_600_000).toISOString();
@@ -83,4 +84,31 @@ describe("ListaAtendimentos: hora no fuso de exibição", () => {
     expect(html({ ultimaMensagemEm: "2026-10-21T02:30:00.000Z" }, { fuso: "America/Sao_Paulo" })).toContain(">23:30<");
     expect(html({ ultimaMensagemEm: "2026-10-21T02:30:00.000Z" }, { fuso: "America/Costa_Rica" })).toContain(">20:30<");
   });
+});
+
+it("preserva lista curta, entrada na virtualização acima de100 e carregar mais", () => {
+  const render = (n: number) => renderToStaticMarkup(createElement(ListaAtendimentos, {
+    itens: Array.from({ length: n }, (_, i) => ({ ...base, id: "item-" + i, contatoNome: "Contato " + i })),
+    proximo: "proxima", selecionado: null, aoSelecionar() {}, aoCarregarMais() {},
+  }));
+  const curta = render(100), longa = render(101);
+  expect(curta).not.toContain("data-virtual-count"); expect((curta.match(/aria-current=/g) ?? []).length).toBe(0);
+  expect(curta).toContain("Contato 99");
+  expect(longa).toContain('data-virtual-count="101"'); expect(longa).toContain("Carregar mais");
+  expect((longa.match(/data-virtual-key=/g) ?? []).length).toBeLessThan(30);
+  expect(html()).toContain("px-2 pb-3 pt-1");
+});
+
+it("snapshot SSR do relógio fica estável ao atravessar minuto antes da hidratação", () => {
+  const instanteSSR = Date.UTC(2026, 9, 22, 12);
+  const prazo = new Date(instanteSSR - 29 * 60_000).toISOString();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(instanteSSR);
+    const servidor = html({ prazoRespostaEm: prazo }, { agoraInicial: instanteSSR });
+    vi.setSystemTime(instanteSSR + 60_000);
+    const hidratacao = html({ prazoRespostaEm: prazo }, { agoraInicial: instanteSSR });
+    expect(servidor).toContain("Prazo estourado · 29 min");
+    expect(hidratacao).toBe(servidor);
+  } finally { vi.useRealTimers(); }
 });
