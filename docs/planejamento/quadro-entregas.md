@@ -6424,6 +6424,10 @@ Fonte57530e8c:3258+40621979, deltaSRCresidualEXATAMENTE6arquivos321/OIDs3258. B1
 ## PR #407 — QA composta favorável
 
 QA575favorávelestática/hash103b9688...versionada tester-composicao-575.md;6paths321/OIDs3258, UI/harness/Pick/B2/schema485/QA280297preservados,sem322/323futuro. NenhumDB/testeadicional doparecer,lintpróprio94412/289af8terminou0/40depoisinspeção. Fonte575preservadaapósMD;406main/B1final/CI407aindagates.
+
+## PR #406 integrada; PR407 sincronizada com a main
+
+406squash4b3c39434f2e48273cd45fee483ca9dbc9b25955, CI40027085473success5/5, QA320755 e gates próprios favoráveis, issue320CLOSED confirmada. Auditoria298–320:23issues fechadas;321–323 seguem abertas antes dos merges. Árvore squash406 igualb955; merge97339323 à407 resolveu apenas dois blocos de ancestralidade do quadro, índice inteiro igual69adef. Fonte executável575/QA103b/INT2-8/unit5-89/TSC/lint40 preservados. B1Pick/harness/main e C2quadro resolvidos; retarget407main/CI final ainda pendentes, sem antecipar322323.
 ## PR #399 integrada; PR401 pronta para CI final
 
 #399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
