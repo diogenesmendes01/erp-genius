@@ -160,6 +160,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setVista(selecionadoInicial ? "conversa" : "lista");
   }
   const selecionadoRef = useRef(selecionado);
+  const regiaoConversa = useRef<HTMLElement>(null);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
@@ -193,7 +194,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
         const vigente = leituraRef.current;
         const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
-        return vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
+        return regiaoConversa.current?.getClientRects().length && vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
           ? zerarNaoLidas(lista, vigente.id!) : lista;
       });
     });
@@ -215,7 +216,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
         carregarLista(filtrosRef.current);
       }
-    });
+    }, (id) => selecionadoRef.current === id && document.visibilityState === "visible" && Boolean(regiaoConversa.current?.getClientRects().length));
     return () => { marcarLeituraRef.current = null; };
   }, [carregarLista]);
   const pedirLeitura = useCallback((id: string, mensagemNova = false) => {
@@ -228,6 +229,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   useEffect(() => {
     if (selecionado && leituraRef.current.id !== selecionado) pedirLeitura(selecionado);
   }, [selecionado, pedirLeitura]);
+  useEffect(() => {
+    const pagina = document;
+    const aoRetornar = () => {
+      const id = selecionadoRef.current;
+      if (pagina.visibilityState === "visible" && id && regiaoConversa.current?.getClientRects().length) pedirLeitura(id);
+    };
+    pagina.addEventListener("visibilitychange", aoRetornar);
+    return () => pagina.removeEventListener("visibilitychange", aoRetornar);
+  }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
   const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
@@ -262,7 +272,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
-    if (avisoMarcaLida(a, selecionadoRef.current) && typeof document !== "undefined" && document.visibilityState === "visible") {
+    if (avisoMarcaLida(a, selecionadoRef.current) && regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") {
       pedirLeitura(a.atendimentoId!, true);
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
@@ -343,7 +353,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} />
       </section>
 
-      <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
+      <section ref={regiaoConversa} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
         {!selecionado ? (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
