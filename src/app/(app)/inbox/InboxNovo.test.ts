@@ -139,3 +139,8 @@ it("SSR318 monta cabeçalho/Detalhes na casca com WhatsApp apenas quando recebid
   expect(sem).not.toContain(">WhatsApp<");
   expect(h.match(/id="painel-contato"/g)).toHaveLength(1);
 });
+
+it("WhatsApp recebido usa o valor mono exigido no painel318", () => {
+  const h = html({ selecionado: "a1" });
+  expect(h).toMatch(/<span class="font-mono">\+506<\/span>/);
+});
