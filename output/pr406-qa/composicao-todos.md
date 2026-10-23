@@ -17,4 +17,6 @@ QA independente do patchd36 favorável: teste unitário SSE inteiro1/8,02325f te
 
 QA composta95f é favorável estática: INT e unitário SSE iguaisd36; dez casos auth/TTL/grupos preservados e negativa estrutural no unitário; produtorInbox/schema iguais8a e pais405/Shift/Pick/B2 preservados. Não executou testes/DB/browser nessa extensão. Original SHA256 320755cde61f076537fa5d8cccf5311e28b45d09853246a8965e2c2d813f1576, em tester-composicao-95f.md com apenas EOF normalizado. Nenhum pai323 foi incorporado.
 
-Squash405main e CI final ainda pendentes. Global904/7.103 e264PNG320 pertencem às suas fontes históricas;14pares idênticos foram declarados no aceite, sem nova equivalência visual inferida aqui. Nenhuma nova captura, seed, envio real ou deploy.
+Os registros finais dos pais foram propagados sem alteração nãoMarkdown. #405 integrou por squasha3879780 após CI40025543009 success5/5 e QA favorável; issue319 fechada. O squash tem árvore inteira igualf3d4d65e. Sua incorporação à406 gerou apenas o conflito de ancestralidade do quadro; a versão já composta foi mantida e o índice inteiro conferido igual58b984d1 antes do commit. Nenhuma fonte, teste ou documento distinto mudou, sem repetir gates por esse merge.
+
+CI final406 em dois fusos ainda é obrigatório. Global904/7.103 e264PNG320 pertencem às suas fontes históricas;14pares idênticos foram declarados no aceite, sem nova equivalência visual inferida aqui. Nenhuma nova captura, seed, envio real ou deploy.
