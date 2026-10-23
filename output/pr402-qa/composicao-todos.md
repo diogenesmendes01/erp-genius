@@ -14,4 +14,8 @@ QA independente do patchf94 favorável: sete arquivos/40testes por fuso, executa
 
 QA composta6aa é favorável, estática: busca DOM/hook/testes iguaisf94; header/useAcoes/Pick401, quatro argumentos da thread, stableMount/pin e remoção de props órfãs preservados. Planos/QA280/deps/schema iguais ao pai4b. Não executou novos testes/DB/browser nessa extensão. Parecer original SHA256 1ee9e13c095ada38e28bff885c38bdbfbd1d43b403b3f95a392ae4f97a7db2f6, em tester-composicao-6aa.md com apenas EOF normalizado.
 
-Incorporação posterior de4012252 adiciona documentos/ancestralidade dos pais sem alterar a fonte6aa; um bloco do quadro preserva ambos os lados. Squash401/main e CI final ainda pendentes. Global894/6.987 e capturas316/C2 pertencem às fontes nominais históricas; não houve nova captura, DB, migração, instalação, seed, envio ou deploy.
+Incorporação posterior de4012252 e4011222 adiciona documentos/ancestralidade dos pais sem alterar a fonte6aa; os blocos do quadro preservam ambos os lados.
+
+#401 integrou por squash408dc9a6 após CI40018129184 success5/5 e QA favorável; issue315 fechada. O squash tem árvore inteira igual1222. Sua incorporação à402 gerou15conflitos de ancestralidade; mantive a candidata já composta e provei o índice inteiro igual34f45afa antes de confirmar. Nenhum executável, teste ou documento distinto mudou; a fonte6aa e seus gates não foram repetidos por esse merge. CI final402 em dois fusos continua obrigatório.
+
+Global894/6.987 e capturas316/C2 pertencem às fontes nominais históricas; não houve nova captura, DB, migração, instalação, seed, envio ou deploy.
