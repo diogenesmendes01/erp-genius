@@ -84,7 +84,7 @@ describe("InboxPage", () => {
     expect(sino.listar).toHaveBeenCalledWith({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
   });
 
-  it("entrega ao InboxNovo os setores e números do PainelFiltros, consultados com o usuário da sessão", async () => {
+  it("entrega ao InboxNovo os setores e números dos filtros da coluna, consultados com o usuário da sessão", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
     const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     expect(h).toContain("setores:SECRETARIA|numeros:n1");

@@ -17,6 +17,7 @@ it("setor/status viram removíveis com selo2, preservando lista e seletorD17",()
  const h=html({filtros:{setor:"FINANCEIRO",status:"ENCERRADO"},opcoesFiltro:{setores:["FINANCEIRO"],numeros:[{id:"n1",rotulo:"Central",saude:"conectado"}]}});
  for(const t of ['aria-label="Remover filtro Financeiro"','aria-label="Remover filtro Encerrado"','Todos os números · 1 conectado','Limpar'])expect(h).toContain(t);
  expect(h).toMatch(/aria-label="Filtros"[\s\S]*?>2</);
+ expect(h).toMatch(/<span aria-hidden="true" class="(?=[^"]*font-mono)(?=[^"]*tabular-nums)[^"]*">2<\/span>/);
 });
 it("SSR de lista usa o mesmo instante serializado mesmo com relógio cliente posterior",()=>{
  const T=Date.UTC(2026,9,22,12);vi.useFakeTimers({toFake:["Date"]});try{vi.setSystemTime(T+60_000);const h=html({agoraInicial:T,itens:[{...item,prazoRespostaEm:new Date(T-29*60_000).toISOString()}]});expect(h).toContain("29 min");expect(h).not.toContain("30 min");}finally{vi.useRealTimers();}

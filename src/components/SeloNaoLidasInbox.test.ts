@@ -97,3 +97,10 @@ describe("um GET real até o término do corpo", () => {
     } finally { lenta.fechar(); sairNovo(); await tick(); }
   });
 });
+
+it("pílula numérica usa mono/tabular sem transformar o ponto em contador", () => {
+ const h=renderToStaticMarkup(createElement(SeloNaoLidasInbox,{inicial:120,variante:"pilula"}));
+ expect(h).toMatch(/<span class="(?=[^"]*font-mono)(?=[^"]*tabular-nums)[^"]*">99\+/);
+ const ponto=renderToStaticMarkup(createElement(SeloNaoLidasInbox,{inicial:120,variante:"ponto"}));
+ expect(ponto).not.toContain("99");expect(ponto).not.toContain("font-mono");expect(ponto).not.toContain("tabular-nums");
+});
