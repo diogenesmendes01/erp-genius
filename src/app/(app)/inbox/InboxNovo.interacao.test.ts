@@ -115,6 +115,190 @@ const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify
 const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
 
 describe("InboxNovo: leitura ao abrir", () => {
+  it("soma entrada oculta nova à contagem prévia conhecida mesmo com leitura e recuperação falhas", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m-antiga", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-nova-apos-contagem", conversaId: "cv1" });
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
+  it("GET fresco que já inclui a mensagem corrige a contagem após SSE atrasado", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 3 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-ja-incluiu", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-ja-contada", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
+  it("GET iniciado antes da entrada oculta não apaga a contagem quando responde depois", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-contagem", conversaId: "cv1" });
+    await esvaziar(); tela();
+    let concluirAntigo!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-antigo", conversaId: "cv1" });
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-get", conversaId: "cv1" });
+    concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
+  it("entrada oculta mantém contagem conhecida se leitura e GET de recuperação falharem", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    let concluirAntigo!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pre-entrada", conversaId: "cv1" });
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-falha", conversaId: "cv1" });
+    concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+  });
+  it("GET fresco zero após SSE aceita leitura de outra aba e mantém tentativa pessoal independente", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-outra-aba", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledTimes(2);
+    await esvaziar();
+  });
+  it("GET fresco da mesma versão corrige zero mesmo se a leitura falhar antes da resposta", async () => {
+    tela(); await esvaziar();
+    respostaLista = async () => new Response("", { status: 503 });
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluirLeitura = ok; }));
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-resposta-perdida", conversaId: "cv1" });
+    let concluirFresco!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirFresco = ok; });
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pos-pedido", conversaId: "cv1" });
+    respostaLista = async () => new Response("", { status: 503 });
+    concluirLeitura({ ok: false }); await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    concluirFresco(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+  });
+  it("sucesso não transforma IDs pendentes em não lidas depois de GET fresco zero", async () => {
+    tela(); await esvaziar();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-primeira", conversaId: "cv1" });
+    await esvaziar(); tela();
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluirLeitura = ok; }));
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-durante", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    concluirLeitura({ ok: true }); await esvaziar(); tela(); marcar.mockClear();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    await esvaziar();
+  });
+  it("entrada oculta com leitura e GET falhos permite tentativa no próximo retorno", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-retry", conversaId: "cv1" });
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("restaura as entradas ocultas únicas conhecidas, sem contar SSE repetido duas vezes", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => new Response("", { status: 503 });
+    for (const mensagemId of ["m-1", "m-1", "m-2"]) m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId, conversaId: "cv1" });
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+  });
+  it("sucesso consome só as entradas ocultas observadas antes do pedido", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-antes", conversaId: "cv1" });
+    await esvaziar(); tela();
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-depois", conversaId: "cv1" });
+    concluir(); await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("voltar à aba com zero não lidas e sem mensagem nova não repete a ação de leitura", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    for (let i = 0; i < 3; i++) {
+      mudarVisibilidade("hidden"); m.aoVisibilidade!();
+      mudarVisibilidade("visible"); m.aoVisibilidade!();
+      await esvaziar(); tela();
+    }
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("mensagem recebida oculta continua pendente mesmo se a leitura anterior terminar com zero", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela(); mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-pedido", conversaId: "cv1" });
+    concluir(); await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("retorno recupera repetição descartada por aba oculta antes da conclusão", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-em-voo", conversaId: "cv1" });
+    mudarVisibilidade("hidden"); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledTimes(2);
+  });
   it("voltar à aba visível lê a conversa exibida sem esperar outro aviso SSE", async () => {
     tela(); await esvaziar(); marcar.mockClear();
     mudarVisibilidade("hidden");
