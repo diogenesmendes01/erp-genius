@@ -27,6 +27,7 @@ import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-aten
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
 import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
 import type { AcoesCabecalho } from "./MenuConversa";
+import { useRevisoesRascunhos } from "@/components/conversa/rascunhos-conversa";
 import { RodapeConversa } from "./RodapeConversa";
 import { CabecalhoConversa } from "./CabecalhoConversa";
 import { BuscaConversa } from "./BuscaConversa";
@@ -99,6 +100,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
 
 export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial }: PropsConversaAberta) {
   const tentativasNota = useChavesPorAlvo();
+  const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
   const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
@@ -192,6 +194,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           modo="compositor"
           podeAnotar={!item.grupo}
           tentativasNota={tentativasNota}
+          revisoesRascunhos={revisoesRascunhos}
           aoAgendar={acoes?.abrirAgendar ?? undefined}
           podeEnviar={envioLiberado}
           falhaPermissao={item.status === "ENCERRADO" ? undefined : falhaPermissao}

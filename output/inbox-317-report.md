@@ -108,3 +108,23 @@ Todas10PNG inspecionadas em3pranchas. Browsers/contextos fechados porfinally ant
 output/inbox-317-probes/allowlist-positiva-final.json contém98arquivos,88PNG(70originais+18pranchas),12.801.910bytes totais incluindoJSON, hashes conferidos. Seleção positiva explícita: formalR224 +normalR224 +permissões12 +C210. Negativos/formalR1/diagnósticos/HTML/logs/credenciais/seeds/probes privados não entram. NenhumaPNG emGit. Resumo sanitizado em evidencias-final.json e índice inspecao-final.json na mesma pasta; imagens permanecem locais para o integrador empacotar pela allowlist.
 
 Este freeze muda somente metadados/SPEC/report/quadro. Gates produtivos a86 e patchaa57 são os já observados acima; não se repetem por documentos. QAfinal/global/publicação/CI e eventual porteC6 permanecem sobROOT, sem homologação presumida. Não iniciar nova implementação. Sem servidores ou browsers DEV ativos.
+
+
+### Revisão PR403 C3 — armazenamento da tentativa confirmada
+
+Correção sobre a fonte publicada32f9222d8240b77fab1d656043d7399be9226d76. Antes, o guard visual retornava em outro contexto sem remover o rascunho já enviado. Agora a confirmação ok limpa somente a chave do modo/contato original quando owner commitado, revisão e texto bruto persistido ainda coincidem. A limpeza visual atual não repete escrita incondicional no armazenamento. Texto/emoji/arquivo incrementam revisão; erro/incerto mantêm rascunho e a política de idempotência existente.
+
+O mapa é local à ConversaAberta acima da key, repassado opcionalmente ao Compositor; fallback local é chamado incondicionalmente. Registro só no layout effect, sem mutação no render. Remontar o mesmo rascunho cria novo owner e revoga conservadoramente a confirmação antiga, mesmo com texto igual. Desmontar o dono integral invalida o mapa antigo: confirmação daquela sessão já não pode limpar storage depois de novo Inbox. Sem sincronização global, novo formato de localStorage, backend ou alteração da Thread/R6.
+
+REDc65bb8:45testes/3falhas; RED React real/StrictModef0551d:1/1falha de persistência. RED ef5b85: comparação bruta protegida ainda era apagada pela escrita visual; GREEN final10arquivos/257testes sessão48686 saída0, incluindo10testes React reais/StrictMode,43 regressões anteriores e2novos testes controlados. TSC77347 heap8192 e lint8d25f7 cincofontes saída0, Node22.23.2. Lint21b158 inicial falhou por warning do mock, corrigido. Recorte não é full. Sem DB/preview/browser/envios. Visuais317bbb/df9 são históricos; QA independente/global integrado permanecem coordenados.
+
+
+### Revisão PR403 C2 — Nota por leitura também no menu encerrado
+
+Decisão técnica ROOT: preservar a regra20 vigente, inclusive ENCERRADO. Evidência: server/inbox/permissoes.ts mantém notaInterna=true como alçada, com escopo obrigatório na action; registrarNotaAtendimento em server/whatsapp/acoes-conversa.ts usa atendimentoVisivel(usuario,id,false,tx), sem exigir envio ou atendimento aberto. Projeção de interface não é autorização: nada mudou no servidor, escopo ou permissões globais.
+
+O único delta produtivo C2 é useAcoesAtendimento.pode: !grupo && (aberto || acao===notaInterna) && podeExecutar atual. Agenda, assumir, transferência e gestão mantêm o gate fechado. As ações pessoais já existentes continuam no menu; Nota abre o diálogo existente do contato correto. O rodapé não foi restringido: leitura individual mantém Nota, grupo não; participante sem envio continua com podeEnviar=false.
+
+RED212ccc:2arquivos/11testes, única falha Nota ausente no menu ENCERRADO. GREEN02e329:2/12. Gate combinado comC3:13arquivos/319testes sessão13331 saída0, lint4d0679 oitofontes saída0. TSC1949 inicial falhou só no literal string de fixture; corrigido para literal tipado, TSC85482 heap8192 saída0 e lint5c48e7 testealterado0, Node22.23.2. Recorte inclui permissões unitárias, menu/controlador, composição/rodapé/compositor/idempotência e guardas completas afetadas. Não é suíte global nem integraçãoDB. Nenhum envio/nota de negócio/servidor/browser nesta revisão.
+
+Visuais anteriores317bbb/df9 permanecem históricos, sem atribuir a eles o menu corrigido. Complemento de menu encerrado, QA independente exata e global integrado/publicação ficam pendentes de Ready/coordenação ROOT; não houve push/PR pelo DEV.

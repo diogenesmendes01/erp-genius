@@ -47,3 +47,9 @@ it('item null mantém fallback sem inventar controlador ou rodapé; grupo não h
  expect(elementos(tela({...base,item:null})).some(n=>n.type===RodapeConversa)).toBe(false);expect(m.usar).not.toHaveBeenCalled();
  const r=elementos(tela({...base,item:{...base.item!,grupo:true}})).find(n=>n.type===RodapeConversa)!;expect(r).toBeDefined();expect(r.props.podeAnotar).toBe(false);
 });
+
+it.each(['ENCERRADO','EM_ATENDIMENTO'] as const)('C2 participante com leitura em %s conserva Nota no rodapé sem ganhar envio ou agenda',status=>{
+ m.usar.mockReturnValue({assumir:null,transferir:null,menu:[],feedback:null,dialogos:null,abrirAgendar:null});
+ const r=elementos(tela({...base,item:{...base.item!,status,responsavelId:'outro'},usuario:{...base.usuario,id:'participante'},podeEnviar:false})).find(n=>n.type===RodapeConversa)!;
+ expect(r.props.podeAnotar).toBe(true);expect(r.props.podeEnviar).toBe(false);expect(r.props.aoAgendar).toBeUndefined();
+});

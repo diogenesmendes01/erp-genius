@@ -5759,3 +5759,12 @@ Formal84095 saída1 timeoutcarregando; execução inteira fora daallowlistfinal.
 Negativo96724 em1b6: painel-erro foi fotografado antes de GET substituto terminar; dois cancelamentos reprovaram classificador ainda sem recuperação concluída. Toda a formal excluída da allowlist. Diagnóstico85f744 com routefetch/fulfill200 é limitado; causal dd988c com CDP/latência real exata, sem interceptar200, confirmou false/false antes e true/true após requestfinished, 1doc/SSEmáx1. ROOT parou20932/restaurou snapshotB3b6192; blocoNext removido isoladamente. Delta autorizado sóharness/testes/docs: painel-erro/painel-vazio observam GET exato antes do goto e aguardam corpo/falha até30s antes do veredito, cleanup, sem exigir200/alterar guardas/classificador/foto/predicados. REDf7baec2falhas→GREENaf6ac1/33bf7311testes0; recorte13226 14files246testes0; TSC71693 sótipo do deferred corrigido, final pendente nofreeze; lint4fontes5d16f7zero. Fonte produtiva igual1b6/5e9, nenhum global novo. Formal42+12/inspeção/fase150/Triagem/QA/publicação continuam pendentes; sem320.
 
 Gates finais da barreira: TSC42755 heap8192 saída0 observado, lint4fontes5d16f7 saída0/0avisos, diffcheck/Nodecheck/help cbde28 saída0; produção/AGENTS intactos. Fonte congelada aguardando Ready para nova formal inteira.
+
+### #317 — PR403 C3 armazenamento confirmado (revisão)
+
+Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, sem escrever em outro contexto nem apagar edição nova. Remount/cleanup integral revogam callbacks conservadoramente. RED causal real/StrictMode preservado no relatório;10arquivos/257testes, TSC77347/lint8d25f7 saída0 Node22.23.2. Sem full/DB/browser nesta revisão; visual antigo explicitamente histórico. C2 menu, QA independente e integração/publicação pendentes.
+
+
+### #317 — PR403 C2 menu alinhado à regra20 vigente
+
+Somente projeção local: Nota individual disponível em ENCERRADO, mantendo grupos sem Nota e gates de envio/agenda/gestão fechados. Servidor/escopo inalterados. RED212ccc→GREEN02e329; combinação C3+C2:13arquivos/319testes13331, TSC85482 heap8192 e lint8fontes4d0679/teste5c48e7 saída0 Node22.23.2. TSC1949 inicial era fixture com literal alargado, corrigido. Sem DB/browser/full próprios. Complemento visual do menu encerrado, QA exata/global integrado/publicação pendentes do ROOT. Fontes visuais históricas preservadas no relatório.
