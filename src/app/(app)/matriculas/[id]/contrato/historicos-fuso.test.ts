@@ -20,6 +20,7 @@ vi.mock("@/server/contratos/participantes", () => ({ consultarFormularioParticip
 vi.mock("@/server/contratos/assinatura-conferencia", () => ({ consultarConferenciaAssinatura: mocks.conferenciaAssinatura }));
 vi.mock("@/server/contratos/conclusao-consulta", () => ({ consultarConclusaoContratual: mocks.conclusao }));
 vi.mock("@/server/contratos/aceite", () => ({ consultarAceiteOriginal: mocks.aceite }));
+vi.mock("@/server/contratos/envio", () => ({ consultarIntegracaoAssinatura: vi.fn().mockResolvedValue({ ok: true, dado: null }), enviarContratoParaAssinatura: vi.fn(), conciliarEnvioAssinatura: vi.fn() }));
 
 import ContratoPage from "./page";
 import PreviaPage from "./previas/[previaId]/page";

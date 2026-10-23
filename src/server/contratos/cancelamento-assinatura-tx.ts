@@ -63,7 +63,9 @@ export async function registrarObservacaoCancelamentoTx(tx: Prisma.TransactionCl
 }
 
 const IniciarDesistencia = z.object({ pedidoId: z.string().min(1).max(100), processoId: z.string().min(1).max(100), estadoHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
-const ObservarDesistencia = z.object({ intencaoId: z.string().min(1).max(100), processoId: z.string().min(1).max(100), pedidoId: z.string().min(1).max(100), chave: z.string().trim().min(8).max(200), resultado: z.enum(["INCERTO", "CONFIRMADO"]), referenciaExterna: z.string().trim().min(1).max(200), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
+const ObservarDesistencia = z.object({ intencaoId: z.string().min(1).max(100), processoId: z.string().min(1).max(100), pedidoId: z.string().min(1).max(100), chave: z.string().trim().min(8).max(200), resultado: z.enum(["INCERTO", "CONFIRMADO"]), referenciaExterna: z.string().trim().min(1).max(200), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/),
+  /** Quem acionou o cancelamento integrado e a marca de idempotência dessa ação. */
+  autorId: z.string().min(1).optional(), marca: z.object({ chaveIdempotencia: z.string().min(1), entradaHash: z.string().min(1) }).strict().optional() }).strict();
 
 /** Cancela um envio externo por desistência já autorizada. Não cria artefato ou
  * processo substituto: o pedido, a decisão administrativa e a aplicação Q165
@@ -100,12 +102,15 @@ export async function registrarObservacaoCancelamentoDesistenciaTx(tx: Prisma.Tr
   await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id=${intencao.processo.matriculaId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "ProcessoAssinaturaContratual" WHERE id=${intencao.processoId} FOR UPDATE`;
   let observacao = await tx.observacaoCancelamentoAssinatura.findUnique({ where: { intencaoId_chave: { intencaoId: intencao.id, chave: d.chave } } });
+  const nova = !observacao;
   if (observacao) { if (observacao.resultado !== d.resultado || observacao.referenciaExterna !== d.referenciaExterna || observacao.evidenciaHash !== d.evidenciaHash) throw new ErroRegra("Chave de observação reutilizada com outro resultado."); }
-  else { observacao = await tx.observacaoCancelamentoAssinatura.create({ data: { intencaoId: intencao.id, chave: d.chave, resultado: d.resultado, referenciaExterna: d.referenciaExterna, evidenciaHash: d.evidenciaHash } }); await registrarEvento(tx, { tipo: "ResultadoCancelamentoAssinaturaDesistenciaPreservado", agregadoTipo: "Matricula", agregadoId: intencao.processo.matriculaId, payload: { intencaoId: intencao.id, observacaoId: observacao.id, processoId: intencao.processoId, resultado: d.resultado } }); }
+  else observacao = await tx.observacaoCancelamentoAssinatura.create({ data: { intencaoId: intencao.id, chave: d.chave, resultado: d.resultado, referenciaExterna: d.referenciaExterna, evidenciaHash: d.evidenciaHash } });
   if (d.resultado === "CONFIRMADO") {
     if (await tx.conclusaoAssinaturaContratual.count({ where: { processoId: intencao.processoId } })) throw new ErroRegra("A assinatura foi concluída; não é possível encerrá-la como cancelada.");
     await tx.processoAssinaturaContratual.update({ where: { id: intencao.processoId }, data: { estado: "CANCELADO" } });
   }
-  const confirmado = await tx.observacaoCancelamentoAssinatura.count({ where: { intencaoId: intencao.id, resultado: "CONFIRMADO" } });
-  return { id: observacao.id, cancelamentoConfirmado: confirmado > 0 };
+  const cancelamentoConfirmado = await tx.observacaoCancelamentoAssinatura.count({ where: { intencaoId: intencao.id, resultado: "CONFIRMADO" } }) > 0;
+  if (nova) await registrarEvento(tx, { tipo: "ResultadoCancelamentoAssinaturaDesistenciaPreservado", agregadoTipo: "Matricula", agregadoId: intencao.processo.matriculaId, autorId: d.autorId ?? null,
+    payload: { intencaoId: intencao.id, observacaoId: observacao.id, processoId: intencao.processoId, resultado: d.resultado, cancelamentoConfirmado, ...d.marca } });
+  return { id: observacao.id, cancelamentoConfirmado };
 }

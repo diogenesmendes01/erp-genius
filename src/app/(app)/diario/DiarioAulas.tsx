@@ -4,7 +4,9 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { salvarAulaDiario } from "@/server/diario/acoes";
-import { listarAlunosParaChamada } from "@/server/diario/chamada";
+import { listarAlunosParaChamadaLocal, salvarAulaDiarioLocal } from "@/server/diario/diario-local";
+import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import type { AulaDiarioView, TurmaDiario } from "@/server/diario/consultas";
 import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
@@ -13,10 +15,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 
 const campo = "rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = botaoClasses({ tamanho: "lg" });
-function dataLocal(iso = new Date().toISOString()) {
-  const d = new Date(iso); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
-}
 type RegistroForm = { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string; podeEditar: boolean };
 type AlunoChamada = { alunoId: string; nomeAluno: string };
 /** Troca de data que tiraria da chamada alunos com presença ou observação preenchida: espera a decisão. */
@@ -39,13 +37,20 @@ export function mesclarChamada(atuais: RegistroForm[], alunos: AlunoChamada[]): 
   };
 }
 
-export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[]; /** Estado vazio de uma busca (a página diz o termo). */ mensagemVazio?: string }) {
+/**
+ * `fusoEntrada`: fuso em que a data e hora da aula são digitadas (pessoal; sem preferência, o da escola — ver
+ * fusoDoCampoLocal), escrito ao lado do campo. O valor inicial e o `max` saem nele; a conversão é do servidor
+ * (diario-local.ts). Antes, tudo no fuso do navegador.
+ */
+export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[]; /** Estado vazio de uma busca (a página diz o termo). */ mensagemVazio?: string; fusoEntrada: string }) {
+  /** Valor do campo para o instante (agora, por padrão) no fuso de entrada. */
+  const dataLocal = (iso: string | Date = new Date()) => valorCampoLocal(iso, fusoEntrada);
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [aberto, setAberto] = useState(false);
   const [edicao, setEdicao] = useState<AulaDiarioView | null>(null);
   const [turmaId, setTurmaId] = useState("");
-  const [data, setData] = useState(dataLocal);
+  const [data, setData] = useState(() => dataLocal());
   const [conteudo, setConteudo] = useState("");
   const [registros, setRegistros] = useState<RegistroForm[]>([]);
   const [erro, setErro] = useState<string | null>(null);
@@ -64,11 +69,10 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
     const versao = ++consulta.current;
     if (!preenchidos) setRegistros([]);
     setErro(null); setConferencia(false); setCarregando(false); setTroca(null);
-    const ocorrida = new Date(instante);
-    if (!id || !Number.isFinite(ocorrida.getTime())) return;
+    if (!id || !instante) return;
     setCarregando(true);
     try {
-      const r = await listarAlunosParaChamada({ turmaId: id, ocorridaEm: ocorrida.toISOString() });
+      const r = await listarAlunosParaChamadaLocal({ turmaId: id, ocorridaLocal: instante, fuso: fusoEntrada });
       if (versao !== consulta.current) return;
       if (!r.ok) { setErro(r.erro); voltarDataSeFalhou(preenchidos); return; }
       const mescla = mesclarChamada(preenchidos?.registros ?? [], r.dado!.alunos);
@@ -103,7 +107,7 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
   function abrir(aula: AulaDiarioView | null) {
     consulta.current++; setCarregando(false); setConferencia(false); setTroca(null);
     setErro(null); setEdicao(aula); setAberto(true);
-    setConteudo(aula?.conteudo ?? ""); setData(dataLocal(aula?.ocorridaEm));
+    setConteudo(aula?.conteudo ?? ""); setData(dataLocal(aula?.ocorridaEm ?? new Date()));
     if (aula) {
       setTurmaId(aula.turmaId ?? "");
       setRegistros(aula.registros.map((r) => ({ ...r, observacao: r.observacao ?? "" })));
@@ -111,10 +115,11 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
   }
   function salvar() {
     iniciar(async () => {
-      const resposta = await salvarAulaDiario({
-        aulaId: edicao?.id, turmaId, ocorridaEm: edicao?.ocorridaEm ?? new Date(data).toISOString(), conteudo,
-        registros: registros.map((r) => ({ alunoId: r.alunoId, presente: r.presente, observacao: r.observacao })),
-      });
+      const registrosEnvio = registros.map((r) => ({ alunoId: r.alunoId, presente: r.presente, observacao: r.observacao }));
+      // Edição mantém o instante gravado (o campo fica travado); aula nova manda o texto e o fuso ao servidor.
+      const resposta = edicao
+        ? await salvarAulaDiario({ aulaId: edicao.id, turmaId, ocorridaEm: edicao.ocorridaEm, conteudo, registros: registrosEnvio })
+        : await salvarAulaDiarioLocal({ turmaId, ocorridaLocal: data, fuso: fusoEntrada, conteudo, registros: registrosEnvio });
       if (!resposta.ok) setErro(resposta.erro);
       else { setAberto(false); router.refresh(); }
     });
@@ -131,8 +136,8 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
         <label className="flex flex-col gap-1 text-sm">Turma
           {edicao ? <span className={campo}>{edicao.turma}</span> : <select className={campo} value={turmaId} onChange={async (e) => { await escolherTurma(e.target.value); }}><option value="">Selecione</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>}
         </label>
-        <label className="flex flex-col gap-1 text-sm">Data e hora da aula (seu fuso local)
-          <input className={campo} type="datetime-local" value={data} disabled={!!edicao} max={dataLocal()} onChange={async (e) => { const dataAnterior = data; setData(e.target.value); await escolherTurma(turmaId, e.target.value, { registros, dataAnterior, conferenciaAnterior: conferencia }); }} />
+        <label className="flex flex-col gap-1 text-sm">Data e hora da aula
+          <CampoDataHoraLocal fuso={fusoEntrada} className={campo} value={data} disabled={!!edicao} max={dataLocal()} onChange={async (e) => { const dataAnterior = data; setData(e.target.value); await escolherTurma(turmaId, e.target.value, { registros, dataAnterior, conferenciaAnterior: conferencia }); }} />
         </label>
       </div>
       <label className="flex flex-col gap-1 text-sm">Conteúdo ministrado<CampoTexto className={campo} rows={3} value={conteudo} maxLength={10000} onChange={(e) => setConteudo(e.target.value)} /></label>

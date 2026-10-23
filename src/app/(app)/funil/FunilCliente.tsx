@@ -34,6 +34,8 @@ type Props = {
   vendedores: { id: string; nome: string }[];
   paises: { id: string; nome: string }[];
   fuso?: string;
+  /** Fuso pessoal de exibição dos instantes do painel (criação, histórico, experimental); sem ele, o da escola. */
+  preferenciaFusoExibicao?: string | null;
   /** Estado vazio já resolvido no servidor (carteira vazia × filtro sem resultado); null = há oportunidades. */
   vazio: ReactNode;
 };
@@ -41,7 +43,7 @@ type Props = {
 const CAMPO = "rounded-md border border-gray-300 bg-surface px-2 py-1.5 text-sm max-sm:min-h-11";
 
 export function FunilCliente({
-  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, vazio,
+  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -188,6 +190,7 @@ export function FunilCliente({
           paises={paises}
           aoFechar={fechar}
           fuso={fuso}
+          preferenciaFusoExibicao={preferenciaFusoExibicao}
         />
       )}
       {novo && <NovaOportunidade podeAtribuir={podeAtribuir} vendedores={vendedores} paises={paises} aoFechar={() => setNovo(false)} />}

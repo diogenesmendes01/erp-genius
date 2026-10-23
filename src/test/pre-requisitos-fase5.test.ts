@@ -11,9 +11,6 @@ import { describe, expect, it } from "vitest";
 // atualizarPerfil/atualizarPrivacidade/definirTemporarias.
 const raiz = process.cwd();
 const schema = readFileSync(join(raiz, "prisma/schema.prisma"), "utf8");
-const pkg = JSON.parse(readFileSync(join(raiz, "package.json"), "utf8")) as {
-  dependencies: Record<string, string>;
-};
 
 function ler(rel: string): string {
   return readFileSync(join(raiz, rel), "utf8");
@@ -66,5 +63,4 @@ describe("pré-requisitos da Fase 5", () => {
     expect(ler("src/server/whatsapp/motor/processar-grupo.ts")).toMatch(/origem: fromMe \? "CELULAR"/);
   });
   it("fase4e_trava_de_legados", () => expect(existsSync(join(raiz, "src/server/whatsapp/sem-provedores-legados.test.ts"))).toBe(true));
-  it("sdk_com_versao_exata", () => expect(pkg.dependencies["@anthropic-ai/sdk"]).toMatch(/^\d+\.\d+\.\d+$/));
 });

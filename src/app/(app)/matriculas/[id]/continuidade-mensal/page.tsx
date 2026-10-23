@@ -5,18 +5,20 @@ import { consultarCondicoesContinuidadeMensal } from "@/server/matricula/condico
 import { consultarPreviaContinuidadeMensal } from "@/server/matricula/continuidade-previa";
 import { CondicoesContinuidadeMensal } from "./CondicoesContinuidadeMensal";
 import { PreviaContinuidadeMensal } from "./PreviaContinuidadeMensal";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params;
-  const [resultado, previa] = await Promise.all([consultarCondicoesContinuidadeMensal(id), consultarPreviaContinuidadeMensal(id)]);
+  const [resultado, previa, preferencia, fusoEscola] = await Promise.all([consultarCondicoesContinuidadeMensal(id), consultarPreviaContinuidadeMensal(id), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   return <div className="space-y-4">
     <Link href={`/matriculas/${id}/condicoes`} className="underline">Condições de entrada</Link>
     <h1 className="text-2xl">Condições de continuidade mensal</h1>
     <p>Registre as condições já contratadas para revisão independente. Este registro não emite cobrança, não renova o contrato e não altera cobranças existentes.</p>
     <Link href={`/matriculas/${id}/indisponibilidade-oferta`} className="underline">Relatar e acompanhar indisponibilidade da oferta</Link>
     {!resultado.ok && <p role="alert">{resultado.erro}</p>}
-    {resultado.ok && resultado.dado && <CondicoesContinuidadeMensal dados={resultado.dado} />}
+    {resultado.ok && resultado.dado && <CondicoesContinuidadeMensal dados={resultado.dado} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} fusoEscola={fusoEscola} />}
     <Link href={`/matriculas/${id}/disponibilidade-oferta`} className="block underline">Solicitar e acompanhar confirmação de oferta</Link>
     <PreviaContinuidadeMensal resultado={previa} />
   </div>;

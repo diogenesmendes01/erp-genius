@@ -4,11 +4,21 @@
 > (fase comercial) + [`28`](28-whatsapp-auditoria-gaps.md) (gaps) + [`29`](29-whatsapp-integracao-codigo.md)
 > (mapa de integração) num plano executável por etapas. Em divergência de detalhe, vale
 > este doc. Iniciado em 2026-07-06, branch `feat/whatsapp-v1`.
+>
+> **Estado atual do canal (out/2026, Fase 4):** Meta Cloud e Evolution API **saíram do código**
+> (trava em `src/server/whatsapp/sem-provedores-legados.test.ts`; nenhuma variável `META_WA_*` ou
+> `EVOLUTION_*` é lida). O único driver do despachante é o **MOTOR** — o `whatsapp-web-baileys`
+> em modo serviço (`MOTOR_MODE: servico`), serviço `motor` dos composes, só na rede interna
+> (`http://motor:4317`). Variáveis: `MOTOR_IMAGE` (imagem publicada), `MOTOR_API_KEY` (ERP → motor) e
+> `MOTOR_WEBHOOK_SECRET` (HMAC do webhook motor → ERP em `/api/whatsapp/webhook/motor`). O número é
+> conectado por **QR ou código de pareamento** em **Configuração › WhatsApp › Números**. Os enums
+> `META_CLOUD`/`BAILEYS` seguem no schema só como rótulo de número legado (não envia nem recebe; ver
+> `SETUP.md` §Números legados). As menções a Meta/Evolution nas etapas abaixo são **histórico** da E1–E5.
 
 ## Decisões fechadas nesta spec (pendências resolvidas)
 | # | Decisão | Valor |
 |---|---|---|
-| S1 | **Trava do cron** (doc 26 §Em aberto) | **Vale só para BAILEYS legado (D38, Fase 4).** Disparo *automático* do cron (régua de cobrança, avisos de agenda) exige driver que aceite automação: hoje só **MOTOR** (motor próprio, com ritmo por número — M8). **Meta** (META_CLOUD) fica de fora até ter driver no despachante (R1 do #213, C1); quando tiver, entra com template APROVADO. Armar política ou avisos de agenda com remetente Meta é recusado ("Meta Cloud ainda não tem envio disponível."). Número BAILEYS legado nunca recebe automação desassistida (`trava_driver_oficial`) e, sem driver no despachante, nem envia (`driver_indisponivel`). Manual e lote-com-aprovação seguem as mesmas regras de driver do despachante. A exceção histórica D34 (cadências COMERCIAIS C1/C2 e classe reativa isentas da trava) continua no código, e hoje essas cadências também saem pelo MOTOR. Reversível só por código (`driverAceitaAutomacao` em `canal.ts`). |
+| S1 | **Trava do cron** (doc 26 §Em aberto) | **Vale só para BAILEYS legado (D38, Fase 4).** Disparo *automático* do cron (régua de cobrança, avisos de agenda) exige driver que aceite automação: hoje só **MOTOR** (motor próprio, com ritmo por número — M8). **Meta** (META_CLOUD) fica de fora até ter driver no despachante (R1 do #213, C1); quando tiver, entra com template APROVADO. Armar política ou avisos de agenda com remetente Meta é recusado ("Meta Cloud ainda não tem envio disponível."). Número BAILEYS legado nunca recebe automação desassistida (`trava_driver_oficial`) e, sem driver no despachante, nem envia (`driver_indisponivel`). Manual e lote-com-aprovação seguem as mesmas regras de driver do despachante. Da exceção histórica D34 resta só a classe **reativa** isenta da trava (hoje produzida pela Aria); as cadências COMERCIAIS C1/C2 não têm mais produtor (o `cron-comercial.ts` saiu com o CRM antigo — ver doc 32). Reversível só por código (`driverAceitaAutomacao` em `canal.ts`). |
 | S2 | **Destinatário da cobrança** (gap 9) | Determinístico: responsável com vínculo `FINANCEIRO` e telefone (o mais antigo, se N); sem responsável cadastrado → `aluno.telefoneE164`; sem telefone algum → intenção **não nasce**, item vai à fila humana com motivo `sem_destino`. |
 | S3 | **Fuso da janela de envio** (gap 11) | Janela avaliada em `Aluno.fuso ?? Pais.fuso ?? America/Sao_Paulo` do destinatário. Cron roda em UTC. |
 | S4 | **Silêncio pós-inbound** (gap 13) | Inbound não tratado **suspende degraus automáticos do contato por 72h** (config `silencioPosInboundHoras`); tratar = registrar promessa/pagamento ou "retomar régua". |
@@ -19,7 +29,7 @@
 | S9 | **Mídia (E1)** | Log de mensagem referencia mídia por caminho; download/armazenamento real (S3 vs disco) é decisão da E3 — E1 não trata binário. |
 | S10 | **Opt-out (E1)** | Campo `optOutEm` no contato + lei no despachante. Captura (botão/keyword) é UI da E3. |
 | S11 | **Matriz papéis × canal** (gaps D21/D22, fechados na E3) | Conversa é do NÚMERO (`whatsapp/escopo.ts`, fail-closed): Admin vê tudo · Financeiro/Secretaria veem números de COBRANCA · Gerente Comercial supervisiona VENDAS · Vendedor só números dos quais é dono. Quem vê, opera (enviar/vincular/opt-out). Promessa/pagamento pela inbox seguem as alçadas do doc 12 (Financeiro/Secretaria); "retomar régua" idem; config (números/templates/política/kill switch) = Admin. |
-| S12 | **Storage de mídia** (E3, resolve S9/gap A3) | Disco local no pipeline existente: `data/uploads/whatsapp/` + `GET /api/files` + 3º ramo em `podeLerArquivo` (escopo do número). Whitelist ganhou áudio/webp/mp4; teto 10MB; download inbound imediato no webhook (URL da Meta expira). S3/retenção = E5. |
+| S12 | **Storage de mídia** (E3, resolve S9/gap A3) | Disco local no pipeline existente: `data/uploads/whatsapp/` + `GET /api/files` + 3º ramo em `podeLerArquivo` (escopo do número). Whitelist ganhou áudio/webp/mp4; teto 10MB. *Hoje:* a mídia inbound é baixada do motor (`baixarMidiaMotor`) ao processar o evento `mensagem.recebida`. S3/retenção = E5. |
 | S13 | **Kill switch × origem HUMANO** (E3) | Kill switch congela a AUTOMAÇÃO (CRON/LOTE); origem HUMANO (inbox e botão da fila) passa — resposta humana é decisão humana, não automação. |
 | S14 | **"Tratar" o inbound** (E3, completa S4) | `ConversaWhatsApp.inboundTratadoEm`: promessa/pagamento pela inbox e "retomar régua" marcam tratado; o despachante só aplica o silêncio quando `ultimoInboundEm > inboundTratadoEm`. |
 | S15 | **Prontidão da política** (E4) | Validada ao ARMAR (salvar com estado shadow/ativa): exige remetente ativo; remetente oficial exige template APROVADO nos degraus ativos automático/lote; remetente Baileys com degrau automático é recusado (trava S1). DESLIGADA salva livre. |
@@ -47,9 +57,9 @@ modo, ativo, @@unique politicaId+passo).
 
 ## Contratos
 - **Porta** `CanalWhatsApp`: `enviarTexto(numero, para, corpo)` · `enviarTemplate(numero, para, template, variaveis)` ·
-  `enviarMidia(...)` → `{ providerMessageId }` ou lança `ErroDriver(motivo)`. Drivers:
-  `meta-cloud` (Graph API, env `META_WA_TOKEN`/`META_WA_PHONE_ID`), `evolution` (env
-  `EVOLUTION_URL`/`EVOLUTION_APIKEY`). Só `despachante.ts` importa drivers.
+  `enviarMidia(...)` → `{ providerMessageId }` ou lança `ErroDriver(motivo)`. Driver único:
+  `drivers/motor.ts` (`driverMotor`, HTTP para `MOTOR_URL` com `MOTOR_API_KEY`). Os drivers
+  `meta-cloud` e `evolution` da spec original foram removidos na Fase 4. Só `despachante.ts` importa drivers.
 - **Despachante** (ordem dos guard-rails, cada um com motivo auditável): kill switch →
   estado da política → trava S1 (automático⇒só MOTOR; META_CLOUD sem driver e BAILEYS barrado, D38) → opt-out → lei do inbound (inbound
   do contato após `criadaEm` ⇒ `CANCELADA`) → silêncio S4 → idempotência (`@@unique` +
@@ -64,7 +74,9 @@ modo, ativo, @@unique politicaId+passo).
 
 ## Etapas
 > **Estado:** E1+E2 entregues (PR #49/#50, 2026-07-13) · E3+E4 entregues (branch
-> `feat/whatsapp-e3-e4`, 2026-07-13) · E5 (go-live) e E6 (comercial) pendentes.
+> `feat/whatsapp-e3-e4`, 2026-07-13) · E5 (go-live) executada sobre o motor (doc 31) · E6
+> (comercial C1/C2) **fora do código atual** (doc 32). O texto das etapas é o plano original:
+> onde cita Meta, Evolution ou WABA, vale a nota "Estado atual" do topo.
 
 - **E1 — Fundação de dados + braço em shadow (esta etapa).** Schema + migration aditiva ·
   seed (política de fábrica = REGUA com D-7/D-3/D0 `AUTOMATICO`, D+3/D+7 `LOTE`, D+15 fora;
@@ -72,20 +84,25 @@ modo, ativo, @@unique politicaId+passo).
   `PASSOS_VALIDOS` deriva da política · `registrarCobrancaWhatsApp` ganha `canal:"manual"`
   (+ helper sem sessão) · módulo `src/server/whatsapp/` (porta, drivers, despachante,
   fila) · rotas cron (`CRON_SECRET`) e webhooks (assinatura Meta / token Evolution, dedupe,
-  200-imediato) · testes. **Aceite:** cron em shadow gera intenções `SIMULADA` corretas
+  200-imediato — *hoje um único webhook, `/api/whatsapp/webhook/motor`, com HMAC de
+  `MOTOR_WEBHOOK_SECRET`*) · testes. **Aceite:** cron em shadow gera intenções `SIMULADA` corretas
   contra dados reais sem enviar nada; testes verdes.
 - **E2 — Fila de cobrança ligada ao braço.** Destinatário S2 na fila · `enfileirar` no
   lugar do wa.me (wa.me vira fallback) · chip "respondeu" · lote-com-aprovação · estado de
   entrega no drawer · regra S6 no replay · textos saem do client.
 - **E3 — Inbox + sessão.** Conversas/thread/vínculo contato→pessoa · mídia (decisão de
-  storage) · tela do número (QR Evolution, estado de sessão) · captura de opt-out ·
+  storage) · tela do número (QR — *hoje QR ou código de pareamento no motor*, estado de sessão) · captura de opt-out ·
   notificação básica.
 - **E4 — Templates ciclo Meta + config UI.** Mapeador (sync WABA) · editor com submissão →
-  webhook de status · tela de políticas (estados, ensaio/shadow por política).
+  webhook de status · tela de políticas (estados, ensaio/shadow por política). *Hoje:* sem
+  ciclo Meta — o editor de templates é texto livre e o motor envia o texto como está, sem
+  aprovação externa.
 - **E5 — Go-live.** Deploy (VPS: app + Evolution + reverse proxy/TLS), WABA + verificação,
   backups, monitoramento mínimo, bancos por ambiente, piloto → geral (gaps A do doc 28).
+  *Hoje:* app + `motor` + crons do compose, sem WABA (doc 31).
 - **E6 — Fase comercial** ([`27`](27-comercial-automacoes-ia.md), ondas C1+C2+C3): motor
   generalizado por âncora, auto-lead com dedupe (gap 17) e filtro (gap 18), IA copiloto.
+  *Hoje:* as cadências C1/C2 saíram com o CRM antigo (e o copiloto saiu do tick); o piloto do doc 32 não roda.
 
 ## Fora desta spec
 Tudo que os docs 26/27 estacionaram + os gaps de LGPD/papéis do doc 28 (D21–D30) que devem

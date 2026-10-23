@@ -15,22 +15,24 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/server/diario/chamada", () => ({ listarAlunosParaChamada: m.listar }));
 vi.mock("@/server/diario/acoes", () => ({ salvarAulaDiario: m.salvar }));
+// Lote 3 do fuso pessoal: a tela manda o texto digitado e o fuso; quem converte é o servidor (diario-local.ts).
+vi.mock("@/server/diario/diario-local", () => ({ listarAlunosParaChamadaLocal: m.listar, salvarAulaDiarioLocal: m.salvar }));
 
 import type { ReactNode } from "react";
 import { DiarioAulas, mesclarChamada } from "./DiarioAulas";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { CampoTexto } from "@/components/CampoTexto";
 import { clicar, criarGanchos, elementos, temBotao, texto } from "@/test/tela-sem-dom";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); });
 
-const tela = () => m.ganchos!.renderizar(DiarioAulas, { aulas: [], turmas: [{ id: "t1", label: "Turma 1" }] as never });
+const tela = () => m.ganchos!.renderizar(DiarioAulas, { aulas: [], turmas: [{ id: "t1", label: "Turma 1" }] as never, fusoEntrada: "America/Sao_Paulo" });
 const tick = () => new Promise((r) => setTimeout(r, 0));
 type Mudanca = (e: { target: { value: string } }) => void;
 const selects = (t: ReactNode) => elementos(t).filter((n) => n.type === "select");
 const observacoes = (t: ReactNode) => elementos(t).filter((n) => n.type === CampoTexto).slice(1); // o 1º é o conteúdo da aula
-const data = (t: ReactNode) => elementos(t).find((n) => n.type === "input" && n.props.type === "datetime-local")!;
+const data = (t: ReactNode) => elementos(t).find((n) => n.type === CampoDataHoraLocal)!;
 const alunos = (...nomes: string[]) => ({ ok: true, dado: { exigeConferencia: false, alunos: nomes.map((n) => ({ alunoId: n.toLowerCase(), nomeAluno: n })) } });
 const chamada = (t: ReactNode) => selects(t).slice(1).map((s, i) => `${s.props.value}|${observacoes(t)[i]?.props.value ?? ""}`);
 

@@ -20,6 +20,8 @@ const { prismaMock, authMock } = vi.hoisted(() => ({
     coberturaCarteira: { findMany: vi.fn() },
     evento: {
       create: vi.fn(),
+      // #166 (5º lote): o check-in repetido procura o último check-in do lead.
+      findFirst: vi.fn().mockResolvedValue(null),
     },
     // `turma` é re-mockado ad-hoc no teste da Home do professor.
     turma: {
@@ -30,6 +32,8 @@ const { prismaMock, authMock } = vi.hoisted(() => ({
       findUnique: vi.fn().mockResolvedValue(null),
     },
     $transaction: vi.fn(),
+    // Trava do lead (#166, 5º lote).
+    $queryRaw: vi.fn().mockResolvedValue([]),
   },
   authMock: vi.fn(),
 }));

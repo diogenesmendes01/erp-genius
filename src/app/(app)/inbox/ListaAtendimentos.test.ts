@@ -51,6 +51,9 @@ describe("ListaAtendimentos", () => {
     expect(html({}, { proximo: "cur" })).toContain("Carregar mais");
     expect(html()).not.toContain("Carregar mais");
   });
+  it("contador de não lidas usa o fundo sólido da marca", () => {
+    expect(html({ naoLidas: 3 })).toMatch(/<span class="[^"]*bg-brand-solid[^"]*text-on-brand[^"]*">3<\/span>/);
+  });
   it("lista vazia mostra estado vazio", () => {
     expect(renderToStaticMarkup(createElement(ListaAtendimentos, { itens: [], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn() } as never))).toContain("Nenhuma conversa");
   });
@@ -70,5 +73,14 @@ describe("PainelFiltros", () => {
     const q = paramsDaUrl({ setor: "FINANCEIRO", numeroId: "n1", responsavel: "eu", status: "EM_ATENDIMENTO", naoLidas: true, prazoEstourado: true, busca: "ana" });
     expect(Object.fromEntries(q)).toEqual({ setor: "FINANCEIRO", numero: "n1", resp: "eu", status: "EM_ATENDIMENTO", naoLidas: "1", prazo: "estourado", busca: "ana" });
     expect(paramsDaUrl({}).toString()).toBe("");
+  });
+});
+
+// Fuso pessoal nas telas (pendência da Q176): a hora da última mensagem sai no fuso de exibição recebido da página
+// (o pessoal; sem ele, o da escola) — o mesmo resultado com o processo em UTC ou em America/Sao_Paulo.
+describe("ListaAtendimentos: hora no fuso de exibição", () => {
+  it("02:30Z é 23:30 em São Paulo e 20:30 em Costa Rica", () => {
+    expect(html({ ultimaMensagemEm: "2026-10-21T02:30:00.000Z" }, { fuso: "America/Sao_Paulo" })).toContain(">23:30<");
+    expect(html({ ultimaMensagemEm: "2026-10-21T02:30:00.000Z" }, { fuso: "America/Costa_Rica" })).toContain(">20:30<");
   });
 });

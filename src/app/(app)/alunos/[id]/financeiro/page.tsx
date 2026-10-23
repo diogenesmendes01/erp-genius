@@ -13,6 +13,7 @@ import { ConcluirMatriculas } from "./ConcluirMatriculas";
 import { RetomadasPainel } from "@/app/(app)/financeiro/RetomadasPainel";
 import { listarContextoRetomada, listarPropostasRetomada } from "@/server/retomada/consultas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export default async function FichaFinanceiraPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,10 +36,10 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
     return <ResumoFinanceiroComercial dados={resumo} />;
   }
   // As capacidades vêm do usuário da sessão (carregarUsuarioFresco já traz `permissoes`; C11 da #170).
-  const [f, informes, contextoRetomada, propostasRetomada, preferencia] = await Promise.all([
+  const [f, informes, contextoRetomada, propostasRetomada, preferencia, fusoEscola] = await Promise.all([
     obterFichaFinanceira(id, usuario), listarInformesPagamento(id),
     listarContextoRetomada(id), listarPropostasRetomada(id),
-    consultarPreferenciaFusoEquipe(),
+    consultarPreferenciaFusoEquipe(), fusoDaEscola(),
   ]);
   if (!f) notFound();
   const podeVerRegularizacaoIntegral = usuario.papeis.includes(Papel.FINANCEIRO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
@@ -136,7 +137,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
 
   const mostrarRetomada = !contextoRetomada.ok || !propostasRetomada.ok || contextoRetomada.dado?.status === "PAUSADO" || (propostasRetomada.dado?.length ?? 0) > 0;
   return <div className="space-y-8">
-    <FichaFinanceira dados={dados} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
+    <FichaFinanceira dados={dados} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} fusoEscola={fusoEscola} />
     <Link className="block text-sm text-brand-700 underline" href={`/alunos/${id}/movimentacoes`}>Pausa, retomada e encerramento por matrícula</Link>
     {tem(Papel.FINANCEIRO) && f.aluno.matriculas.map(m => <Link key={m.id} href={`/matriculas/${m.id}/ocorrencias-financeiras`} className="block underline">Conferir particulares da matrícula {m.codigo ?? "sem código"}</Link>)}
     {mostrarRetomada && <RetomadasPainel
@@ -145,7 +146,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
       erroConsulta={!contextoRetomada.ok ? contextoRetomada.erro : !propostasRetomada.ok ? propostasRetomada.erro : null}
       preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
     />}
-    <AcessoAulasPainel alunoId={id} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} /><InformesPagamento informes={informes} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
+    <AcessoAulasPainel alunoId={id} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} /><InformesPagamento informes={informes} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} fusoEscola={fusoEscola} />
     <ConcluirMatriculas matriculas={f.aluno.matriculas.filter((m) => m.status === "AGUARDANDO" || m.status === "RASCUNHO").map((m) => ({ id: m.id, nome: `${m.codigo ?? "Matrícula"} · ${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` }))} />
     {tem(Papel.SECRETARIA_ACADEMICA) && f.aluno.matriculas.map((m) => <Link key={m.id} className="block text-sm text-brand-700 underline" href={`/secretaria?matriculaId=${m.id}`}>Consultar cadastro e confirmação documental da matrícula {m.codigo}</Link>)}
   </div>;

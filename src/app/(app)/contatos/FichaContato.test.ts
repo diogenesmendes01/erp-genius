@@ -167,3 +167,12 @@ describe("mensagemFalhaParcialCampos", () => {
     expect(mensagemFalhaParcialCampos(2, 3, "Curso", "Valor inválido.")).toBe("2 campos salvos de 3. Curso não foi salvo: Valor inválido.");
   });
 });
+
+// Fuso pessoal nas telas (pendência da Q176): o cadastro sai no fuso pessoal; sem ele, no da escola.
+describe("FichaContato: fuso pessoal de exibição", () => {
+  const d: DetalheContato = { ...detalhe, criadoEm: new Date("2026-10-21T02:30:00Z") };
+  it("Costa Rica pela preferência; sem preferência, São Paulo (escola) — igual em TZ=UTC e America/Sao_Paulo", () => {
+    expect(renderFicha(d, ["funil.ver"], [], { fuso: "America/Sao_Paulo", preferenciaFusoExibicao: "America/Costa_Rica" })).toContain("20/10/2026, 20:30");
+    expect(renderFicha(d, ["funil.ver"], [], { fuso: "America/Sao_Paulo", preferenciaFusoExibicao: null })).toContain("20/10/2026, 23:30");
+  });
+});

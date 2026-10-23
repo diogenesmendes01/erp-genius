@@ -3,7 +3,7 @@ import { ErroPermissao, exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
-import { listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { contarChipsInbox, listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import { InboxNovo } from "./InboxNovo";
 import { NovoAtendimento } from "./NovoAtendimento";
@@ -39,7 +39,7 @@ export default async function InboxPage({
     throw e;
   });
 
-  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola] = await Promise.all([
+  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola, contagens] = await Promise.all([
     listarAtendimentosPagina(usuario, filtros, cursor),
     listarOpcoesAtendimento(),
     triagemOuNula(),
@@ -49,27 +49,30 @@ export default async function InboxPage({
     // Sino (SLA): o aviso de prazo estourado abre o atendimento aqui (?c=).
     listarNotificacoes(usuario),
     fusoDaEscola(),
+    contarChipsInbox(usuario, filtros),
   ]);
   // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
   if (c && !inicial.itens.some((i) => i.id === c)) {
     const item = await obterItemListaInbox(usuario, c);
     if (item) inicial.itens = [item, ...inicial.itens];
   }
-  const fuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
+  // Fuso de exibição já resolvido: o pessoal; sem ele, o da escola (antes, sem preferência, a lista e o balão saíam
+  // em UTC). Regras (SLA, prazos) seguem no fuso da escola, no servidor.
+  const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
+    <div className="flex min-h-0 flex-col h-[calc(100dvh-2rem-3.5625rem)] sm:h-[calc(100dvh-2rem-3.3125rem)] md:h-[calc(100dvh-4rem)]">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <h1 className="text-2xl font-medium">Inbox</h1>
-        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={resolverFusoExibicao(fuso, fusoEscola)} fusoEscola={fusoEscola} />
+        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />
       </div>
-      <div className="mt-4">
+      <div role="region" aria-label="Abrir atendimento" className="mt-4 min-h-0 max-h-[30%] shrink-0 overflow-y-auto">
         <NovoAtendimento opcoes={opcoes} />
       </div>
-      <div className="mt-4">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col">
         <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
           destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
-          triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} />
+          triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens} />
       </div>
     </div>
   );

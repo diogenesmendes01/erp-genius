@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), preferencia: vi.fn(), buscar: vi.fn(), consultar: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/server/diario/reposicao-busca-matricula", () => ({ buscarMatriculasParaReposicao: mocks.buscar, LIMITE_BUSCA_REPOSICAO: 20 }));
 vi.mock("@/server/diario/reposicao-consulta", () => ({ consultarReposicoesEquipe: mocks.consultar }));
 vi.mock("@/server/diario/reposicao-entrega-operacional", () => ({ consultarOperacaoEntregaReposicao: vi.fn() }));
@@ -104,6 +105,15 @@ describe("/academico/reposicoes com matrícula: a consulta pesada fica num <Susp
     expect(await chave({ matriculaId: "m2" })).not.toBe(base);
     expect(await chave({ matriculaId: "m1", cursor: "c2" })).toBe(base);
     expect(await chave({ matriculaId: "m1", origemCursor: "o2" })).toBe(base);
+  });
+
+  // B1 da review do #290: sem preferência, a operação da entrega (prazo e "Expira em") é digitada no fuso da ESCOLA,
+  // não em UTC; com preferência, no pessoal.
+  it("o fuso que chega ao conteúdo (e aos campos de entrada): sem preferência, o da escola; com preferência, o pessoal", async () => {
+    const fusoDoConteudo = async () => (limites(await abrir({ matriculaId: "m1" }))[0].props.children.props as { fusoExibicao: string }).fusoExibicao;
+    expect(await fusoDoConteudo()).toBe("America/Sao_Paulo");
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    expect(await fusoDoConteudo()).toBe("America/Costa_Rica");
   });
 
   it("sem matrícula na URL não há <Suspense>: a busca não tem consulta lenta a isolar", async () => {

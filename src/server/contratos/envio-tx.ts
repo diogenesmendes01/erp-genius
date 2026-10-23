@@ -1,13 +1,16 @@
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
+import type { MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { conferirAutor } from "./modelos-tx";
 import { carregarRevisaoAssinatura } from "./assinatura-estado";
 import { aplicarSubstituicaoContratualTx, ConsumoSubstituicaoSchema } from "./substituicao-aplicar-tx";
+import { CamposDestinoAssinatura, destinoAssinaturaCoerente, MENSAGEM_DESTINO_SIMULADO } from "./provedor-assinatura";
 
-const Destino = z.object({ fornecedor: z.enum(["ZAPSIGN", "CLICKSIGN", "DOCUSIGN"]), ambiente: z.enum(["SANDBOX", "PRODUCAO"]) });
-const Criar = Destino.extend({ matriculaId: z.string().min(1), artefatoId: z.string().min(1), conferenciaId: z.string().min(1), executorId: z.string().min(1), substituicao: ConsumoSubstituicaoSchema.optional() }).strict();
+const Criar = z.object({ ...CamposDestinoAssinatura, matriculaId: z.string().min(1), artefatoId: z.string().min(1), conferenciaId: z.string().min(1), executorId: z.string().min(1), substituicao: ConsumoSubstituicaoSchema.optional() }).strict()
+  .refine(destinoAssinaturaCoerente, MENSAGEM_DESTINO_SIMULADO);
+const Marca = z.object({ chaveIdempotencia: z.string().min(1), entradaHash: z.string().min(1) }).strict();
 
 /** Primitivas internas: nenhuma é Server Action ou faz chamada externa.
  * A integração escolhida deve fornecer configuração validada, confirmar permissão
@@ -32,8 +35,9 @@ export async function prepararProcessoEnvioTx(tx: Prisma.TransactionClient, inpu
   return { id: p.id };
 }
 
-export async function iniciarTentativaAssinaturaTx(tx: Prisma.TransactionClient, input: { processoId: string; executorId: string }) {
-  const d = z.object({ processoId: z.string().min(1), executorId: z.string().min(1) }).strict().parse(input);
+/** `marca` (opcional): idempotência da ação de envio integrado, gravada no Evento da tentativa. */
+export async function iniciarTentativaAssinaturaTx(tx: Prisma.TransactionClient, input: { processoId: string; executorId: string; marca?: MarcaIdempotencia }) {
+  const d = z.object({ processoId: z.string().min(1), executorId: z.string().min(1), marca: Marca.optional() }).strict().parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const referencia = await tx.processoAssinaturaContratual.findUnique({ where: { id: d.processoId }, select: { matriculaId: true } });
   if (!referencia) throw new ErroRegra("Processo não encontrado.");
@@ -47,12 +51,14 @@ export async function iniciarTentativaAssinaturaTx(tx: Prisma.TransactionClient,
   if (r.revisaoHash !== p.conferencia.revisaoHash) throw new ErroRegra("As condições mudaram antes do envio. Revise o processo.");
   const t = await tx.tentativaEnvioAssinatura.create({ data: { processoId: p.id, numero: p.tentativaAtual + 1, revisaoHash: r.revisaoHash } });
   await tx.processoAssinaturaContratual.update({ where: { id: p.id }, data: { estado: "ENVIANDO", tentativaAtual: t.numero } });
-  await registrarEvento(tx, { tipo: "TentativaAssinaturaIniciada", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: d.executorId, payload: { processoId: p.id, tentativaId: t.id, numero: t.numero } });
+  await registrarEvento(tx, { tipo: "TentativaAssinaturaIniciada", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: d.executorId, payload: { processoId: p.id, tentativaId: t.id, numero: t.numero, ...d.marca } });
   return { processoId: p.id, tentativaId: t.id, numero: t.numero };
 }
 
 const Resultado = z.object({ processoId: z.string().min(1), tentativaId: z.string().min(1), chave: z.string().min(8).max(200),
-  resultado: z.enum(["INCERTO", "REGISTRADO", "NAO_CRIADO"]), referenciaExterna: z.string().trim().min(1).max(200).nullable(), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
+  resultado: z.enum(["INCERTO", "REGISTRADO", "NAO_CRIADO"]), referenciaExterna: z.string().trim().min(1).max(200).nullable(), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/),
+  /** Quem pediu a conciliação (o envio em si é do sistema) e a marca de idempotência dessa ação. */
+  autorId: z.string().min(1).optional(), marca: Marca.optional() }).strict();
 
 /** Somente o adaptador autenticado/conciliador deve chamar. NAO_CRIADO exige prova
  * positiva do fornecedor: timeout/erro de rede por si só sempre é INCERTO. */
@@ -74,7 +80,7 @@ export async function registrarResultadoEnvioTx(tx: Prisma.TransactionClient, in
   const estado = d.resultado === "REGISTRADO" ? "ENVIADO" : d.resultado === "NAO_CRIADO" ? "PREPARADO" : "ENVIO_INCERTO";
   const o = await tx.observacaoEnvioAssinatura.create({ data: { tentativaId: t.id, chave: d.chave, resultado: d.resultado, referenciaExterna: d.referenciaExterna, evidenciaHash: d.evidenciaHash } });
   await tx.processoAssinaturaContratual.update({ where: { id: p.id }, data: { estado, ...(d.referenciaExterna ? { referenciaExterna: d.referenciaExterna } : {}) } });
-  await registrarEvento(tx, { tipo: "ResultadoEnvioAssinaturaRegistrado", agregadoTipo: "Matricula", agregadoId: p.matriculaId,
-    payload: { processoId: p.id, tentativaId: t.id, observacaoId: o.id, resultado: d.resultado, estado } });
+  await registrarEvento(tx, { tipo: "ResultadoEnvioAssinaturaRegistrado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: d.autorId ?? null,
+    payload: { processoId: p.id, tentativaId: t.id, observacaoId: o.id, resultado: d.resultado, estado, ...d.marca } });
   return { id: o.id, estado };
 }

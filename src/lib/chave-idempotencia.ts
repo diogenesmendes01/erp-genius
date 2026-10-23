@@ -25,3 +25,25 @@ export function useChaveIdempotencia(): ChaveTentativa {
   const [tentativa] = useState(() => criarChaveTentativa());
   return tentativa;
 }
+
+/**
+ * Uma tentativa por alvo (matrícula, destino…), para telas com vários alvos (C3 da R1 do #291): o resultado incerto
+ * de um alvo não prende a chave do outro, e voltar ao mesmo alvo reaproveita a tentativa ainda não confirmada.
+ */
+export type ChavesPorAlvo = { para(alvo: string): ChaveTentativa };
+
+export function criarChavesPorAlvo(gerar: () => string = () => crypto.randomUUID()): ChavesPorAlvo {
+  const tentativas = new Map<string, ChaveTentativa>();
+  return {
+    para(alvo) {
+      let t = tentativas.get(alvo);
+      if (!t) { t = criarChaveTentativa(gerar); tentativas.set(alvo, t); }
+      return t;
+    },
+  };
+}
+
+export function useChavesPorAlvo(): ChavesPorAlvo {
+  const [chaves] = useState(() => criarChavesPorAlvo());
+  return chaves;
+}

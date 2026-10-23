@@ -7,6 +7,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 export interface ConfigIATela {
   modeloConversa: string;
@@ -26,7 +27,8 @@ const MODELOS = [
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
 const usd = (n: number) => `US$ ${n.toFixed(2).replace(".", ",")}`;
 
-export function IaPainel({ chave, config, orcamento, chamadas }: { chave: "configurada" | "ausente"; config: ConfigIATela; orcamento: OrcamentoTela; chamadas: ChamadaTela[] }) {
+/** `fusoExibicao`: o fuso pessoal de quem lê, já resolvido na página (sem preferência, o da escola). */
+export function IaPainel({ chave, config, orcamento, chamadas, fusoExibicao }: { chave: "configurada" | "ausente"; config: ConfigIATela; orcamento: OrcamentoTela; chamadas: ChamadaTela[]; fusoExibicao: string }) {
   const router = useRouter();
   // Idempotente por natureza (#166): a configuração de IA é um registro único, gravado com os valores da tela;
   // o servidor não grava nada (nem Evento) quando eles já estão lá, então reenviar não duplica.
@@ -96,7 +98,7 @@ export function IaPainel({ chave, config, orcamento, chamadas }: { chave: "confi
         <div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs">
           <thead><tr className="text-gray-500"><th className="py-1">Quando</th><th>Origem</th><th>Modelo</th><th>Latência</th><th>Tokens</th><th>Resultado</th></tr></thead>
           <tbody>{chamadas.map((c, i) => <tr key={i} className="border-t border-gray-100">
-            <td className="py-1">{new Date(c.quando).toLocaleString("pt-BR")}</td><td>{c.origem}</td><td>{c.modelo}</td><td>{c.latenciaMs} ms</td><td>{c.tokens}</td><td>{c.resultado}</td>
+            <td className="py-1">{formatarInstanteExibicao(c.quando, fusoExibicao, "UTC").texto}</td><td>{c.origem}</td><td>{c.modelo}</td><td>{c.latenciaMs} ms</td><td>{c.tokens}</td><td>{c.resultado}</td>
           </tr>)}</tbody>
         </table></div>}
     </section>

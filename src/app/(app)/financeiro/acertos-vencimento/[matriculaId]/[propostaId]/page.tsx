@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarVencimentosAditivo } from "@/server/contratos/vencimento-aditivo";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarDiaCivilGravado, formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { VencimentoFormulario } from "./Formulario";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
@@ -19,20 +20,23 @@ export default async function Pagina({ params, searchParams }: {
 }) {
  const usuario = await exigirSessaoPagina(Papel.FINANCEIRO);
  const { matriculaId, propostaId } = await params;
- const [versao, preferencia, cabecalho] = await Promise.all([
+ const [versao, preferencia, cabecalho, fusoEscola] = await Promise.all([
    prisma.versaoCondicoesAditivo.findFirst({ where: { matriculaId, propostaId }, select: { id: true } }),
    consultarPreferenciaFusoEquipe(),
    consultarCabecalhoMatricula(usuario, matriculaId),
+   fusoDaEscola(),
  ]);
  if (!versao) return <p role="status">Formalize as condições do aditivo antes de preparar o acerto.</p>;
  const pagina = Number((await searchParams).pagina ?? 1);
  const r = await consultarVencimentosAditivo({ matriculaId, versaoCondicoesId: versao.id, pagina });
  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível" : r.erro}</p>;
  const d = r.dado;
- const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
- const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short" }).format(new Date(valor));
- const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, fusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; };
- const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, "UTC");
+ // Lote 3 do fuso pessoal: registro, aplicação e vigência são instantes — fuso pessoal; sem preferência, o da escola
+ // (antes, UTC), com o fuso escrito. Vencimentos são datas civis gravadas: o dia no fuso em que o acerto foi preparado.
+ const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEscola);
+ const data = (valor: string, fuso: string) => formatarDiaCivilGravado(valor, fuso);
+ const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, fusoExibicao, fusoEscola); return `${exibicao.texto} (horário exibido em ${exibicao.fuso})`; };
+ const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, fusoEscola);
  return <main className="space-y-5"><VoltarPara href="/financeiro" />
  <h1 className="text-2xl">Acerto do vencimento da primeira mensalidade</h1>
  {/* De quem é o acerto: aluno e matrícula pelo código, não o id da URL (docs/43 §6 item 7). */}

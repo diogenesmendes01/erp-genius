@@ -1,10 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), versao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), cabecalho: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), versao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), cabecalho: vi.fn(), fusoEscola: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/cabecalho", () => ({ consultarCabecalhoMatricula: mocks.cabecalho }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: mocks.fusoEscola }));
 vi.mock("@/lib/prisma", () => ({ prisma: { versaoCondicoesAditivo: { findFirst: mocks.versao } } }));
 vi.mock("@/server/contratos/adiantamento-aditivo", () => ({ consultarAdiantamentosAditivo: mocks.consulta }));
 vi.mock("./Formulario", () => ({ AdiantamentoFormulario: ({ modo }: { modo: string }) => createElement("span", { "data-acao": modo }, modo) }));
@@ -17,7 +18,7 @@ const dado = () => ({ versao: 2, vigenciaInicio: "2026-09-01T00:00:00Z", revisao
  propostas: [{ id: "acerto1", estado: "APROVADA", criadaEm: "2026-09-10T15:00:00Z", fuso: "America/Sao_Paulo", moeda: "CRC", valorAnterior: "250.00", valorNovo: "375.00", minutosAnteriores: 120, minutosNovos: 180,
   vencimentoAnterior: "2099-09-10T12:00:00Z", vencimentoNovo: "2099-09-20T12:00:00Z", motivo: "Alteração <script>", evidencia: "Contrato conferido", podeDecidir: false, podeSolicitarAplicacao: true, decisao: { motivo: "Conferência independente" }, aplicadaEm: null as string | null }],
 });
-beforeEach(() => { vi.resetAllMocks(); mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } }); mocks.versao.mockResolvedValue({ id: "v1" }); mocks.consulta.mockResolvedValue({ ok: true, dado: dado() }); });
+beforeEach(() => { vi.resetAllMocks(); mocks.fusoEscola.mockResolvedValue("America/Sao_Paulo"); mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } }); mocks.versao.mockResolvedValue({ id: "v1" }); mocks.consulta.mockResolvedValue({ ok: true, dado: dado() }); });
 it("nega acesso antes de consultar versão e histórico", async () => {
  mocks.sessao.mockRejectedValue(new Error("Sem acesso"));
  await expect(Page(entrada())).rejects.toThrow("Sem acesso");
@@ -64,4 +65,19 @@ it("sem propostas, mostra o estado vazio", async () => {
  const d = dado(); d.propostas = [];
  mocks.consulta.mockResolvedValue({ ok: true, dado: d });
  expect(renderToStaticMarkup(await Page(entrada()))).toContain("Nenhuma proposta de acerto registrada.");
+});
+
+// Lote 3 do fuso pessoal nas telas: sem preferência, registro e aplicação no fuso da ESCOLA (antes, UTC), com o fuso
+// escrito; o vencimento é data civil gravada, no fuso em que o acerto foi preparado. Expectativas fixas (TZ=UTC e SP).
+it("registro e aplicação: sem preferência, o fuso da escola; com preferência, a pessoal; vencimento como data civil", async () => {
+ const d = dado(); Object.assign(d.propostas[0], { criadaEm: "2026-09-11T02:30:00Z", aplicadaEm: "2026-09-19T01:00:00Z", estado: "APLICADA", podeSolicitarAplicacao: false });
+ mocks.consulta.mockResolvedValue({ ok: true, dado: d });
+ mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } });
+ let html = renderToStaticMarkup(await Page(entrada()));
+ expect(html).toContain("Proposta de 10/09/2026, 23:30 (horário exibido em America/Sao_Paulo)");
+ expect(html).toContain("Aplicado em 18/09/2026, 22:00 (horário exibido em America/Sao_Paulo).");
+ expect(html).not.toContain("origem UTC");
+ mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "Asia/Tokyo" } });
+ html = renderToStaticMarkup(await Page(entrada()));
+ expect(html).toContain("Proposta de 11/09/2026, 11:30 (horário exibido em Asia/Tokyo)");
 });

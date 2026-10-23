@@ -39,10 +39,9 @@ export function HomeProfessor({
   preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
-  // checkinExperimental não recebe chave de idempotência e recusa a repetição — depois do 1º check-in
-  // a etapa deixa de ser "agendada" (server/comercial/acoes.ts:593, :603): resultado incerto manda
-  // conferir antes de repetir. O erro aparece sob a linha da experimental que o disparou.
-  const acao = useAcaoCliente({ idempotente: false });
+  // checkinExperimental é idempotente por natureza (#166, 5º lote): o mesmo check-in, já registrado por quem
+  // repete, devolve ok sem gravar de novo (server/comercial/acoes.ts). O erro aparece sob a linha da experimental.
+  const acao = useAcaoCliente({ idempotente: true });
   const [alvo, setAlvo] = useState<string | null>(null);
 
   async function compareceu(id: string) {
@@ -144,7 +143,7 @@ export function HomeProfessor({
         <ConfirmarAcao
           titulo={`Marcar ${faltou.nome} como faltou?`}
           confirmacao="falta"
-          idempotente={false}
+          idempotente
           acao={() => checkinExperimental(faltou.id, false)}
           aoConcluir={faltaRegistrada}
           aoCancelar={() => setFaltou(null)}

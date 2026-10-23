@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio, EstadoVazioLinha } from "@/components/EstadoVazio";
@@ -65,8 +66,8 @@ const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
 // Abas do /financeiro como componentes independentes (E8 — uma rota por aba). Cada rota monta só a
 // sua aba; as que executam ações carregam o próprio executor (useAcaoCliente) e o próprio retorno.
-// Câmbio, fechamento de comissões, configuração e aprovações: nenhuma action recebe chave de
-// idempotência — resultado incerto manda conferir antes de repetir.
+// Câmbio, configuração e aprovações: nenhuma action recebe chave de idempotência — resultado incerto manda
+// conferir antes de repetir. O fechamento de comissões recebe chave (#166, 5º lote).
 
 function useExecutorFinanceiro() {
   const router = useRouter();
@@ -87,6 +88,9 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
   // "Fechar mês e marcar pagas" paga TODAS as aprovadas e não tem desfazer (docs/42 L2016): o botão só
   // abre a confirmação, que repete quantas comissões e quanto, por moeda.
   const [confirmarFechamento, setConfirmarFechamento] = useState(false);
+  // Chave da tentativa (#166, 5º lote): o reenvio depois de um resultado incerto devolve o fechamento já feito, sem
+  // pagar as comissões aprovadas no intervalo. Só muda depois do sucesso.
+  const tentativaFechamento = useChaveIdempotencia();
   const quantidade = aPagar.reduce((n: number, v: ValorMoeda | TotalAPagar) => n + ("quantidade" in v ? v.quantidade : 0), 0);
   return (
     <>
@@ -106,9 +110,10 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
         <ConfirmarAcao
           titulo="Fechar o mês e marcar as comissões aprovadas como pagas?"
           confirmacao="fechamento do mês"
-          idempotente={false}
-          acao={() => fecharMesComissoes()}
+          idempotente
+          acao={() => fecharMesComissoes({ chaveIdempotencia: tentativaFechamento.atual })}
           aoConcluir={(d: { pagas: number } | undefined) => {
+            tentativaFechamento.depoisDo({ tipo: "ok" });
             const pagas = d?.pagas ?? 0;
             setConfirmarFechamento(false);
             acao.setSucesso(pagas === 1 ? "Mês fechado: 1 comissão marcada como paga." : `Mês fechado: ${pagas} comissões marcadas como pagas.`);

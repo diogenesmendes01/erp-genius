@@ -66,7 +66,9 @@ describe("convidar e revogar participante", () => {
     const p = await prisma.participanteAtendimentoWhatsApp.findUniqueOrThrow({ where: { id: participanteId } });
     expect(p.revogadoEm).not.toBeNull();
     expect(await prisma.evento.count({ where: { tipo: "ParticipanteRevogado", agregadoId: a.id } })).toBe(1);
-    expect((await revogarParticipante(participanteId)).ok).toBe(false);
+    // #166: o reenvio de quem revogou devolve ok sem outro Evento (atendimento-idempotencia.int.test.ts).
+    expect((await revogarParticipante(participanteId)).ok).toBe(true);
+    expect(await prisma.evento.count({ where: { tipo: "ParticipanteRevogado", agregadoId: a.id } })).toBe(1);
   });
 
   it("revogar cancela as intenções pendentes do convidado, mas não as de quem ainda envia por outro vínculo (C5 da R1)", async () => {

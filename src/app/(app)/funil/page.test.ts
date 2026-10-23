@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   paises: vi.fn(async () => [] as unknown[]),
   config: vi.fn(async () => ({ fusoInstitucional: "America/Costa_Rica" })),
   cliente: vi.fn((props: Record<string, unknown>) => createElement("div", { "data-cliente": "" }, props.vazio as never)),
+  preferencia: vi.fn(async () => ({ ok: true, dado: { fusoExibicao: "Asia/Tokyo" } }) as unknown),
 }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => mocks.usuario.valor }));
 vi.mock("@/server/crm/funil", async (original) => ({ ...(await original<typeof import("@/server/crm/funil")>()), carregarFunil: mocks.carregar }));
@@ -22,6 +23,7 @@ vi.mock("@/server/comercial/consultas", () => ({ listarVendedores: mocks.vendedo
 vi.mock("@/server/paises/consultas", () => ({ listarPaisesOperacionais: mocks.paises }));
 vi.mock("@/lib/prisma", () => ({ prisma: { configuracaoOperacional: { findUnique: mocks.config } } }));
 vi.mock("./FunilCliente", () => ({ FunilCliente: mocks.cliente }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 
 import Page from "./page";
 
@@ -61,5 +63,13 @@ describe("/funil (página)", () => {
     expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ modo: "lista", aberta: { oportunidade: { id: "o1" } } });
     await renderPagina({ o: "alheia" }, comOportunidade);
     expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ modo: "quadro", aberta: null, oportunidadeNaoEncontrada: true });
+  });
+
+  it("fuso pessoal nas telas: o cliente recebe a preferência de exibição e, à parte, o fuso da escola (regras)", async () => {
+    await renderPagina({}, comOportunidade);
+    expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ fuso: "America/Costa_Rica", preferenciaFusoExibicao: "Asia/Tokyo" });
+    mocks.preferencia.mockResolvedValueOnce({ ok: false, erro: "x" });
+    await renderPagina({}, comOportunidade);
+    expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ fuso: "America/Costa_Rica", preferenciaFusoExibicao: null });
   });
 });

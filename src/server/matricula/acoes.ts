@@ -62,7 +62,7 @@ import { nomeCompleto } from "@/lib/nome";
 import { resolverMensalVigenteTx } from "@/server/contratos/aditivo-mensal-vigente";
 // Conjuntos de papéis centralizados (compartilhados com a UI).
 import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
-import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
@@ -797,16 +797,28 @@ export async function marcarContratoAssinado(matriculaId: string): Promise<Resul
  * Registra o LINK DE PAGAMENTO enviado ao cliente (taxa de matrícula) — âncora da régua
  * "link sem pagamento" (C4). Na Fase 2 o gateway gera o link; aqui pode ser colado
  * manualmente (Pix copia-e-cola, link do provedor). Reenviar atualiza a âncora.
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outro LinkPagamentoEnviado nem move a
+ * âncora, mesmo depois de a cobrança ser paga: a busca roda depois do papel e antes das validações da cobrança.
+ * Chave nova é um reenvio deliberado.
  */
-export async function registrarLinkPagamento(cobrancaId: string, url: string): Promise<Resultado> {
+export async function registrarLinkPagamento(cobrancaId: string, url: string, opcoes?: { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_FECHAMENTO);
     const link = url.trim();
     if (!link) throw new ErroRegra("Informe o link (ou código) de pagamento enviado.");
     if (link.length > 2048) throw new ErroRegra("Link longo demais.");
+    const chave = ChaveIdempotenciaSchema.optional().parse(opcoes?.chaveIdempotencia);
+    const marca: MarcaIdempotencia | null = chave ? { chaveIdempotencia: chave, entradaHash: hashEntrada({ cobrancaId, link }) } : null;
     const agora = new Date();
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "LinkPagamentoEnviado", agregadoTipo: "Cobranca", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outro link. Recarregue a oportunidade e confira o link registrado antes de repetir.",
+        });
+        if (repetido) return;
+      }
       const cobranca = await tx.cobranca.findUnique({
         where: { id: cobrancaId },
         include: { matricula: { select: { id: true, leadId: true, status: true } } },
@@ -828,7 +840,7 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string): P
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        payload: { quando: agora.toISOString(), reenvio: cobranca.linkEnviadoEm != null },
+        payload: { quando: agora.toISOString(), reenvio: cobranca.linkEnviadoEm != null, ...marca },
       });
     });
     revalidar();

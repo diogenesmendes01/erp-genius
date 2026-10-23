@@ -12,7 +12,9 @@ vi.mock("react", async importOriginal => {
     useRef: ((inicial: unknown) => mocks.ganchos!.useRef(inicial)) as unknown as typeof real.useRef,
   };
 });
-vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarConferenciaAgendaAditivo: mocks.consultar, registrarPropostaAgendaAditivo: mocks.registrar }));
+vi.mock("@/server/contratos/agenda-aditivo", () => ({ registrarPropostaAgendaAditivo: mocks.registrar }));
+// Lote 3 do fuso pessoal: a conferência manda o texto digitado e o fuso; quem converte é o servidor.
+vi.mock("@/server/contratos/agenda-aditivo-local", () => ({ consultarConferenciaAgendaAditivoLocal: mocks.consultar }));
 import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaAgendaFormulario";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios } from "@/test/feedback-acao";
@@ -47,16 +49,27 @@ it("submete o docente atual, apaga resultado ao editar e bloqueia controles pend
   pendente.resolver({ ok: true, dado: { proposta: { encontros: [] }, pendencias: [] } });
   await envio;
   expect(no("fieldset").props.disabled).toBe(false);
-  expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "m", encontros: [{ encontroId: "e", professorNovoId: "atual", inicioNovo: "2099-10-11T10:00:00.000Z", fimNovo: "2099-10-11T11:00:00.000Z", duracaoMinutos: 60, fusoOrigem: "UTC" }] });
+  expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "m", alteracoes: [{ encontroId: "e", professorNovoId: "atual", fusoOrigem: "UTC", inicioLocal: "2099-10-11T10:00", fimLocal: "2099-10-11T11:00" }] });
   expect(temResultado()).toBe(true);
   (no("form").props.onChange as () => void)();
   expect(temResultado()).toBe(false);
 });
 
-it("não chama o servidor quando o horário DST é inválido", async () => {
+it("horário DST inválido: o servidor converte e recusa com a mensagem dele; campo vazio nem chama o servidor", async () => {
+  mocks.consultar.mockResolvedValueOnce({ ok: false, erro: "Esse horário não existe em America/New_York (mudança de horário de verão); escolha outro." });
   await submeter(selecionar(), { ...dados, "fuso-e": "America/New_York", "inicio-e": "2026-03-08T02:30" });
+  expect(mocks.consultar).toHaveBeenCalledWith(expect.objectContaining({ alteracoes: [expect.objectContaining({ fusoOrigem: "America/New_York", inicioLocal: "2026-03-08T02:30" })] }));
+  expect(anuncios(tela()).alerta).toEqual(["Esse horário não existe em America/New_York (mudança de horário de verão); escolha outro."]);
+  mocks.consultar.mockClear();
+  await submeter(selecionar(), { ...dados, "inicio-e": "" });
   expect(mocks.consultar).not.toHaveBeenCalled();
-  expect(anuncios(tela()).alerta).toEqual(["Informe datas, horários e fuso válidos."]);
+});
+
+it("valor inicial dos campos no fuso do encontro, sem lançar com fuso inválido", () => {
+  const comFuso = (fusoOrigem: string) => { mocks.ganchos = criarGanchos(); return elementos(mocks.ganchos.renderizar(ConferenciaAgendaFormulario, { ...props, encontros: [{ ...props.encontros[0], fusoOrigem }] })); };
+  const inicioInicial = (fusoOrigem: string) => { const nos = comFuso(fusoOrigem); (nos.find(n => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)(); return elementos(mocks.ganchos!.renderizar(ConferenciaAgendaFormulario, { ...props, encontros: [{ ...props.encontros[0], fusoOrigem }] })).find(n => n.props.name === "inicio-e")?.props.defaultValue; };
+  expect(inicioInicial("America/Sao_Paulo")).toBe("2099-10-10T07:00");
+  expect(inicioInicial("UTC")).toBe("2099-10-10T10:00");
 });
 
 it("registra a fotografia conferida e mantém o vínculo contratual em etapa separada", async () => {

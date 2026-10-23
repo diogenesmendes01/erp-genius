@@ -12,17 +12,12 @@ import {
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { assinarInbox, iniciarEscuta } from "@/server/inbox/barramento";
 import { criarFiltroDeAvisos, formatarSSE } from "@/server/inbox/eventos-sse";
+import { REVALIDAR_MS, RETRY_MS, VIDA_MAX_MS } from "./limites";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PING_MS = 25_000;
-/** Prazo máximo de vida de uma conexão: ao fim, o servidor fecha e o EventSource reconecta (e reautentica). */
-export const VIDA_MAX_MS = 15 * 60_000;
-/** De quanto em quanto tempo o usuário é relido do banco (ativo e com papel do Inbox). */
-export const REVALIDAR_MS = 60_000;
-/** Intervalo de reconexão sugerido ao navegador (campo `retry:` do SSE). */
-export const RETRY_MS = 3_000;
 
 /** O usuário relido ainda pode receber os avisos do Inbox? */
 const podeContinuar = (u: UsuarioSessao | null): u is UsuarioSessao => !!u && !apenasPortal(u) && temPapel(u, ...PAPEIS_INBOX);

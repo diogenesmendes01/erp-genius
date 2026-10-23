@@ -167,8 +167,9 @@ export function MatriculaFormulario({
   // de um resultado incerto devolve a matrícula já criada em vez de criar aluno e contrato em dobro.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  // Solicitar abertura só grava um evento, sem chave (server/turmas/acoes.ts:74-93): repetir duplica o pedido.
-  const abertura = useAcaoCliente({ idempotente: false });
+  // Solicitar abertura recebe chave (#166, 5º lote): o reenvio da mesma tentativa não grava outro pedido.
+  const abertura = useAcaoCliente({ idempotente: true });
+  const tentativaAbertura = useChaveIdempotencia();
   // Depois do sucesso a tela navega; o botão segue travado até sair, para não criar a matrícula de novo.
   const [navegando, setNavegando] = useState(false);
   const salvando = acao.ocupado || navegando;
@@ -180,7 +181,8 @@ export function MatriculaFormulario({
   const [tentouPasso2, setTentouPasso2] = useState(false);
 
   async function pedirAbertura() {
-    await abertura.executar(() => solicitarAberturaTurma({ produtoId, nivelId: nivelInicialId || undefined }), "Solicitação enviada ao Gerente Pedagógico.");
+    const d = await abertura.executar(() => solicitarAberturaTurma({ produtoId, nivelId: nivelInicialId || undefined, chaveIdempotencia: tentativaAbertura.atual }), "Solicitação enviada ao Gerente Pedagógico.");
+    tentativaAbertura.depoisDo(d);
   }
 
   const leadNome = lead ? dividirNome(lead.nome) : null;

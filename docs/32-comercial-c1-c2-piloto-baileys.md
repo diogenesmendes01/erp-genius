@@ -1,5 +1,21 @@
 # 32 — Comercial C1/C2: piloto no Baileys (antes da WABA)
 
+> **ESTE PILOTO NÃO RODA NO CÓDIGO ATUAL (conferido em 21/10/2026).** Doc mantido como
+> registro histórico; não use como checklist de ativação.
+> - **Sem produtor das cadências C1/C2:** `src/server/whatsapp/cron-comercial.ts` foi removido com
+>   a casca do CRM antigo (E1; commits `9e5d7bd3` e `53c69b4b`). O tick (`/api/whatsapp/cron`) não
+>   tem mais etapa comercial, e a política comercial (`PoliticaComercial`) não é lida por nenhum
+>   código de `src` — sobra só o model no schema.
+> - **Bloqueadores que saíram junto:** B1 (`modoPiloto`/`pilotoLeadIds`), B7 (revalidação de
+>   etapa/ocorrência/takeover no despachante) e B9 (`rodarCheckInVencido`) não existem mais no
+>   código. Continuam: B3 (`validaAte` no despachante, para qualquer intenção com prazo —
+>   `piloto-bloqueadores.int.test.ts`) e o campo `Lead.aguardandoReagendamentoEm` do B8.
+> - **Canal:** Baileys direto, Evolution API e Meta Cloud/WABA saíram (Fase 4). O único driver é
+>   o motor `whatsapp-web-baileys` em modo serviço (doc 31); as cadências automáticas que existem
+>   hoje são a régua de cobrança e os avisos de agenda (D38), mais as respostas da Aria (reativas).
+> - Retomar C1/C2 exige reimplementar o enfileirador e os bloqueadores acima sobre o motor — e
+>   reescrever este doc antes de qualquer piloto.
+
 > Executa um **piloto de produto e operação** das automações comerciais C1 (captura +
 > velocidade) e C2 (experimental) do [`27`](27-comercial-automacoes-ia.md) rodando no driver
 > **Baileys**, antes da burocracia Meta/WABA do [`31`](31-whatsapp-go-live.md) §0.
@@ -11,15 +27,15 @@
 > (sessão não oficial, risco de bloqueio do número) — tratado como risco aceito e monitorado,
 > não como estado final.
 >
-> **Situação no código (19/10/2026):** o piloto não roda no código atual. O `cron-comercial.ts`, citado
-> nos bloqueadores da §0, saiu com a casca do CRM antigo (E1), e as cadências de C1 e C2 não são mais
-> enfileiradas. O driver Baileys direto também saiu: o número é pareado no motor (Fase 4E).
+> **Situação no código:** ver o aviso no topo — o piloto não roda e as referências a
+> `cron-comercial.ts` e à Evolution abaixo apontam para código que não existe mais.
 
 ## 0. Bloqueadores conhecidos (fechar ANTES de ativar o piloto)
 Levantados na revisão de prontidão; enquanto abertos, o piloto não começa. Cada um vira item
 dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 
-> **Status (ago/2026): TODOS os bloqueadores B1–B9 estão implementados.**
+> **Status (ago/2026, superado — ver aviso do topo): TODOS os bloqueadores B1–B9 estavam implementados.**
+> Em out/2026, B1, B7 e B9 já não existem no código.
 > B1 — allowlist na política (`modoPiloto` + `pilotoLeadIds`, migration
 > `piloto_comercial_bloqueadores` + UI no painel da régua; desligar o piloto pede
 > confirmação explícita de go-live). B2 — takeover por TODA saída manual (origem
@@ -41,7 +57,7 @@ dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 | B1 | **Sem cohort real.** Ativar uma régua alcança TODOS os leads elegíveis do número — isso é go-live geral, não piloto. | resolvers em [`cron-comercial.ts`](../src/server/whatsapp/cron-comercial.ts) | **Allowlist de leads na política** (decidido): `PoliticaComercial` ganha uma lista explícita de `leadId`s do piloto + UI; o cron só enfileira para leads na allowlist. Migração + tela. |
 | B2 | **Resposta do vendedor pelo celular não para a cadência.** O `fromMe` entra como `origem: null`; a stop-condition só conta `origem: HUMANO`. | [`inbound.ts:94`](../src/server/whatsapp/inbound.ts) grava `origem: null`; [`cron-comercial.ts:170`](../src/server/whatsapp/cron-comercial.ts) conta só `HUMANO` | Contar como "vendedor assumiu" TODA saída manual — `origem` ∈ {`HUMANO`, `null`} **após a âncora** (não as automáticas `CRON`/`LOTE`). Enquanto não corrigido: **atendimento exclusivamente pela inbox** durante o piloto. |
 | B3 | **Cadência pré-evento sem validade no despacho.** Há guarda no enfileiramento (`encerrada` quando a aula começou), mas uma intenção pré-evento já enfileirada e **ADIADA** (janela/silêncio/kill switch) ainda dispara depois da aula; o degrau "‑24h/amanhã" pode sair atrasado. | [`cron-comercial.ts:205`](../src/server/whatsapp/cron-comercial.ts) (só no enqueue); nada no [`despachante.ts`](../src/server/whatsapp/despachante.ts) | Toda intenção pré-evento carrega `validaAte`; o despachante **cancela** (não envia) se `agora > validaAte`, inclusive itens adiados por janela/silêncio/kill switch. Tolerância por degrau. |
-| B4 | **Cron horário incompatível com `+30min`.** O tick de hora em hora transforma "+30min" em quase "+90min". | [`31-whatsapp-go-live.md:145`](31-whatsapp-go-live.md) | Definir tolerância máxima por degrau; para C1/C2, tick a cada **5–10 min**. |
+| B4 | **Cron horário incompatível com `+30min`.** O tick de hora em hora transforma "+30min" em quase "+90min". | [`31`](31-whatsapp-go-live.md) §2 (crontab horário, já superado pelo tick de 5 min do compose) | Definir tolerância máxima por degrau; para C1/C2, tick a cada **5–10 min**. |
 | B5 | **Spec em contradição.** A [`30`](30-whatsapp-spec-implementacao.md) §S1 ainda diz "régua automática exige driver oficial"; código e doc 27 abrem a exceção C1/C2 no Baileys. | [`30`](30-whatsapp-spec-implementacao.md) §S1 × [`despachante.ts:138`](../src/server/whatsapp/despachante.ts) | Registrar a decisão final (exceção comercial no Baileys), seus limites e o risco aceito, como ADR no [`15`](15-decisoes-adr.md) e reconciliar o texto da S1. |
 | B6 | **Origem do lead no Baileys.** O referral de anúncio não é garantido nesse driver — origem pode ser inferida errada. | captura em [`captura.ts`](../src/server/comercial/captura.ts) | No piloto, origem fica explicitamente **"não identificada (Baileys)"** ou tem preenchimento manual — nunca inferida incorretamente. |
 | B7 | **Stop-conditions só avaliadas no enqueue, não no despacho.** O despachante revalida a idempotência (passo+ocorrência já enviados), mas NÃO a **etapa** nem a **ocorrência atual**. Uma intenção já `PENDENTE`/`ADIADA` dispara mesmo que, após o enqueue, o lead vá para `EM_ATENDIMENTO`, faça check-in ou a experimental seja reagendada → follow-up de C1 sai após o vendedor assumir, e no-show/pré-experimental sai para a **ocorrência anterior**. (Generaliza B2/B3: o despacho não pode confiar no snapshot do enqueue.) | idempotência em [`despachante.ts:223`](../src/server/whatsapp/despachante.ts); stop-conditions só em [`cron-comercial.ts:163`](../src/server/whatsapp/cron-comercial.ts) | Revalidar no despachante **etapa + `ocorrenciaComercial` + takeover** (e `validaAte`, B3); **cancelar** as intenções obsoletas em vez de enviar. Testes cobrindo itens **adiados**. |
@@ -69,7 +85,7 @@ dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 ## 2. Portões de entrada (todos verdes antes de ativar)
 - [ ] Build, lint, testes unitários e de integração **verdes**.
 - [ ] Produção e desenvolvimento com **bancos separados** (gap A5; dev sem `WHATSAPP_LIVE=1`).
-- [ ] Evolution **privada** (fora da internet), sessão Baileys **conectada** e webhook recebendo.
+- [ ] Evolution **privada** (fora da internet), sessão Baileys **conectada** e webhook recebendo. *(Hoje: motor sem porta publicada, número `CONECTADO` em Configuração › WhatsApp › Números e eventos chegando em `/api/whatsapp/webhook/motor`.)*
 - [ ] Backup e **restore testados** (não só backup — restaurar num compose limpo, §31 §4).
 - [ ] Health monitorado **externamente** (UptimeRobot/Better Stack no `/api/whatsapp/health`).
 - [ ] **Kill switch ensaiado** (congela e descongela sem perder fila) pelo responsável.

@@ -83,9 +83,9 @@ export function civisComoInstante(fonte: string): string[] {
 }
 
 /** Usos conhecidos fora do recorte da C52, contados por arquivo — a lista só encolhe. */
-const CIVIS_COMO_INSTANTE_CONHECIDOS: Record<string, { usos: number; motivo: string }> = {
-  "src/app/(app)/financeiro/InformesPagamento.tsx": { usos: 1, motivo: "dataPagamento é DateTime sem @db.Date; conferir se é dia ou instante antes de trocar" },
-};
+// Vazia desde o fuso pessoal nas telas: a data do pagamento dos informes é data civil gravada ao meio-dia da escola
+// (dataOpcional + analisarComDatasDaEscola) e sai por formatarDiaCivilGravado.
+const CIVIS_COMO_INSTANTE_CONHECIDOS: Record<string, { usos: number; motivo: string }> = {};
 
 const telas = ["src/app", "src/components"].flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])

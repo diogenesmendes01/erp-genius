@@ -1,14 +1,16 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ substituir: vi.fn(), refresh: vi.fn(), useState: vi.fn(), useTransition: vi.fn(), useRef: vi.fn() }));
+const mocks = vi.hoisted(() => ({ prorrogarLocal: vi.fn(), liberarLocal: vi.fn(), substituir: vi.fn(), refresh: vi.fn(), useState: vi.fn(), useTransition: vi.fn(), useRef: vi.fn() }));
 vi.mock("react", async original => ({ ...(await original<typeof import("react")>()), useState: mocks.useState, useTransition: mocks.useTransition, useRef: mocks.useRef }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
 vi.mock("@/server/diario/reposicao-entrega-operacional", () => ({
   confirmarIndisponibilidadeOperacional: vi.fn(), liberarEntregaOperacional: vi.fn(), prorrogarEtapaOperacional: vi.fn(), publicarMaterialOperacional: vi.fn(), retomarIndisponibilidadeOperacional: vi.fn(), substituirAvaliadorReposicaoOperacional: mocks.substituir,
 }));
 vi.mock("@/server/diario/reposicao-operacoes-relatos", () => ({ descartarRelatoIndisponibilidadeEquipe: vi.fn() }));
+vi.mock("@/server/diario/reposicao-local", () => ({ prorrogarEtapaOperacionalLocal: mocks.prorrogarLocal, liberarEntregaOperacionalLocal: mocks.liberarLocal }));
 vi.mock("./RelatarIndisponibilidadeReposicao", () => ({ RelatarIndisponibilidadeReposicao: () => null }));
 import { OperacaoEntregaReposicao, type OperacaoEntrega } from "./OperacaoEntregaReposicao";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 function todos(no: unknown, tipo: string): No[] { if (Array.isArray(no)) return no.flatMap(n => todos(n, tipo)); if (!no || typeof no !== "object") return []; const n = no as No; if (typeof n.type === "function") return todos((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), tipo); const filhos = n.props?.children; return [...(n.type === tipo ? [n] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)]; }
@@ -135,4 +137,22 @@ it("envio liga a tentativa pendente; só o sucesso a desliga", async () => {
   expect(setTemTentativa.mock.calls).toEqual([[true]]);
   await enviar({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
   expect(setTemTentativa.mock.calls).toEqual([[true], [true], [false]]);
+});
+
+// B1 da review do #290: o novo prazo da etapa e o "Expira em" da liberação vão como o texto digitado e o fuso escrito
+// ao lado do campo (o `fusoExibicao` da página: pessoal; sem preferência, o da ESCOLA). A conversão é do servidor:
+// 25/10 23:59 em America/Sao_Paulo → 2026-10-26T02:59:00.000Z (src/server/operacao/acoes-campo-local.test.ts).
+it("prorrogação e liberação mandam o texto digitado e o fuso do campo, sem converter no navegador", async () => {
+  preparar();
+  mocks.prorrogarLocal.mockResolvedValue({ ok: true }); mocks.liberarLocal.mockResolvedValue({ ok: true });
+  vi.stubGlobal("FormData", class { get(nome: string) { return ({ novoPrazo: "2026-10-25T23:59", expiraEm: "2026-10-25T23:59", motivo: "Motivo da prorrogação conferido" } as Record<string, string>)[nome] ?? null; } });
+  const comPrazo: OperacaoEntrega = { ...operacao, material: { publicadoEm: "2026-10-01T12:00:00.000Z", disponivel: true, fonteTrocaElegivel: false } as never, etapa: { correcaoId: null, prazoAte: "2026-10-20T02:59:00.000Z", prazoInicialAte: null }, liberacao: { podeLiberar: true, expiraEm: null } };
+  const arvore = OperacaoEntregaReposicao({ operacao: comPrazo, fusoExibicao: "America/Sao_Paulo" });
+  const ehCampo = (n: No) => n.type === CampoDataHoraLocal;
+  const camposDe = (no: unknown): No[] => { if (Array.isArray(no)) return no.flatMap(camposDe); if (!no || typeof no !== "object") return []; const n = no as No; if (ehCampo(n)) return [n]; const filhos = n.props?.children; return camposDe(Array.isArray(filhos) ? filhos : [filhos]); };
+  const forms = todos(arvore, "form").filter(f => camposDe(f).length);
+  expect(forms.flatMap(f => camposDe(f)).map(n => [n.props!.name, n.props!.fuso])).toEqual([["novoPrazo", "America/Sao_Paulo"], ["expiraEm", "America/Sao_Paulo"]]);
+  for (const f of forms) { await (f.props!.onSubmit as (e: { preventDefault(): void; currentTarget: object }) => void)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve(); }
+  expect(mocks.prorrogarLocal).toHaveBeenCalledWith({ reposicaoId: "repo", solicitacaoCorrecaoId: null, prazoAnterior: "2026-10-20T02:59:00.000Z", novoPrazoLocal: "2026-10-25T23:59", fuso: "America/Sao_Paulo", motivo: "Motivo da prorrogação conferido" });
+  expect(mocks.liberarLocal).toHaveBeenCalledWith({ reposicaoId: "repo", expiraLocal: "2026-10-25T23:59", fuso: "America/Sao_Paulo", motivo: "Motivo da prorrogação conferido" });
 });

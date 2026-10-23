@@ -8,7 +8,7 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 
 const entradaSchema = z.object({ matriculaId: z.string().trim().min(1).max(100) }).strict();
 
-type CancelamentoSubstituicaoDocumental =
+type CancelamentoDocumental =
   | { situacao: "NAO_INICIADO" }
   | { situacao: "PENDENTE_SEM_RESULTADO" }
   | { situacao: "RESULTADO_INCERTO" }
@@ -25,7 +25,10 @@ export type ConsultaDocumentosDesistenciaPreparacao = {
     ambiente: string;
     referenciaExternaPresente: boolean;
     conclusaoRegistrada: boolean;
-    cancelamentoSubstituicao: CancelamentoSubstituicaoDocumental;
+    /** Cancelamento pedido por substituição contratual (proposta + decisão). */
+    cancelamentoSubstituicao: CancelamentoDocumental;
+    /** Cancelamento do envio por desistência Q165 (pedido + decisão administrativa). */
+    cancelamentoDesistencia: CancelamentoDocumental;
   }>;
   pendencias: string[];
   possuiPendenciaDocumental: boolean;
@@ -37,7 +40,7 @@ async function exigirAutorAtualTx(tx: Prisma.TransactionClient, usuarioId: strin
   if (!usuario?.ativo || !usuario.papeis.some(papel => papel === Papel.SECRETARIA_ACADEMICA || papel === Papel.ADMINISTRADOR)) throw new ErroPermissao();
 }
 
-function resumirCancelamento(observacoes: Array<{ resultado: string }>): CancelamentoSubstituicaoDocumental {
+function resumirCancelamento(observacoes: Array<{ resultado: string }>): CancelamentoDocumental {
   if (!observacoes.length) return { situacao: "PENDENTE_SEM_RESULTADO" };
   if (observacoes.some(observacao => observacao.resultado === "CONFIRMADO")) return { situacao: "RESULTADO_CONFIRMADO" };
   return { situacao: "RESULTADO_INCERTO" };
@@ -69,10 +72,12 @@ export async function consultarDocumentosDesistenciaPreparacao(input: { matricul
         tx.processoAssinaturaContratual.findMany({ where: { matriculaId: matricula.id }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: {
           id: true, estado: true, fornecedor: true, ambiente: true, referenciaExterna: true,
           conclusao: { select: { id: true } },
-          intencaoCancelamento: { select: { observacoes: { orderBy: [{ registradaEm: "asc" }, { id: "asc" }], select: { resultado: true } } } },
+          intencaoCancelamento: { select: { pedidoDesistenciaId: true, observacoes: { orderBy: [{ registradaEm: "asc" }, { id: "asc" }], select: { resultado: true } } } },
         } }),
       ]);
 
+      const substituicao = (p: typeof processos[number]) => p.intencaoCancelamento && !p.intencaoCancelamento.pedidoDesistenciaId ? p.intencaoCancelamento : null;
+      const desistencia = (p: typeof processos[number]) => p.intencaoCancelamento?.pedidoDesistenciaId ? p.intencaoCancelamento : null;
       const processosResumo = processos.map(processo => ({
         id: processo.id,
         estado: processo.estado,
@@ -80,9 +85,8 @@ export async function consultarDocumentosDesistenciaPreparacao(input: { matricul
         ambiente: processo.ambiente,
         referenciaExternaPresente: !!processo.referenciaExterna,
         conclusaoRegistrada: !!processo.conclusao,
-        cancelamentoSubstituicao: processo.intencaoCancelamento
-          ? resumirCancelamento(processo.intencaoCancelamento.observacoes)
-          : { situacao: "NAO_INICIADO" } as const,
+        cancelamentoSubstituicao: substituicao(processo) ? resumirCancelamento(substituicao(processo)!.observacoes) : { situacao: "NAO_INICIADO" } as const,
+        cancelamentoDesistencia: desistencia(processo) ? resumirCancelamento(desistencia(processo)!.observacoes) : { situacao: "NAO_INICIADO" } as const,
       }));
 
       const pendencias = [
@@ -93,7 +97,8 @@ export async function consultarDocumentosDesistenciaPreparacao(input: { matricul
           ...(processo.estado === "PREPARADO" ? [`O processo de assinatura ${indice + 1} ainda está preparado e não possui confirmação externa para a conferência documental.`] : []),
           ...(processo.estado === "ENVIO_INCERTO" ? [`O processo de assinatura ${indice + 1} tem envio incerto e exige conciliação documental.`] : []),
           ...(processo.conclusao ? [`O processo de assinatura ${indice + 1} possui conclusão registrada e exige conferência documental específica.`] : []),
-          ...(processo.intencaoCancelamento ? ["A fonte de substituição contratual permanece distinta: nenhuma observação de cancelamento autoriza o pedido de desistência."] : []),
+          ...(substituicao(processo) ? ["A fonte de substituição contratual permanece distinta: nenhuma observação de cancelamento autoriza o pedido de desistência."] : []),
+          ...(desistencia(processo) && processo.estado !== "CANCELADO" ? [`O cancelamento do envio do processo de assinatura ${indice + 1} pela desistência ainda não foi confirmado pelo serviço de assinatura.`] : []),
         ]),
       ];
       return { matricula, pedido, documentos, processos: processosResumo, pendencias, possuiPendenciaDocumental: pendencias.length > 0 };

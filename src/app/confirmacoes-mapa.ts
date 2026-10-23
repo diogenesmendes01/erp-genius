@@ -220,6 +220,20 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     efeito: "faz logout do número no motor: o número para de enviar e receber até novo pareamento por QR ou código",
   },
   {
+    arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "desativarNumeroWhatsApp",
+    achado: "Fase 4D",
+    efeito: "desativa o número e faz logout no motor: ele para de enviar e receber até ser ativado e pareado de novo",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "excluirNumeroWhatsApp",
+    achado: "Fase 4D",
+    efeito: "desativa o número, faz logout no motor e o tira da tela de Números; só um novo cadastro do mesmo telefone o traz de volta",
+  },
+  {
     arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx",
     modulo: "@/server/whatsapp/motor/acoes-mensagem",
     acao: "apagarMensagemWhatsApp",

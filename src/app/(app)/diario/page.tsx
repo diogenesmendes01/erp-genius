@@ -5,6 +5,9 @@ import { listarAulasDiario, listarTurmasParaDiario } from "@/server/diario/consu
 import { DiarioAulas } from "./DiarioAulas";
 import { hrefDiario, lerBuscaDiario } from "@/server/diario/busca-diario";
 import { botaoClasses } from "@/components/Botao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
 
 export default async function DiarioPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -12,7 +15,9 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
   const antes = typeof parametros.antes === "string" ? parametros.antes : undefined;
   // Busca no servidor (E4): por turma, assunto da aula ou professor; mantida ao paginar.
   const busca = lerBuscaDiario(parametros);
-  const [historico, turmas] = await Promise.all([listarAulasDiario(usuario, antes, busca), listarTurmasParaDiario(usuario)]);
+  const [historico, turmas, preferencia, fusoEscola] = await Promise.all([listarAulasDiario(usuario, antes, busca), listarTurmasParaDiario(usuario), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
+  // Data e hora da aula digitadas no fuso pessoal; sem preferência, no da escola (lote 3 do fuso pessoal nas telas).
+  const fusoEntrada = fusoDoCampoLocal(preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEscola);
   return <div className="space-y-6">
     {/* As sub-seções do diário estão nas abas do layout (E2); Avaliações é do acadêmico. */}
     <Link className="inline-block text-sm text-brand-700 underline" href="/academico/avaliacoes">Avaliações e histórico por matrícula</Link>
@@ -21,7 +26,7 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
       <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
       {busca && <Link href="/diario" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
     </form>
-    <DiarioAulas aulas={historico.aulas} turmas={turmas} mensagemVazio={busca ? `Nenhuma aula para “${busca}”${antes ? " nesta página" : ""}.` : undefined} />
+    <DiarioAulas aulas={historico.aulas} turmas={turmas} fusoEntrada={fusoEntrada} mensagemVazio={busca ? `Nenhuma aula para “${busca}”${antes ? " nesta página" : ""}.` : undefined} />
     <nav aria-label="Páginas do histórico do diário" className="flex gap-4 text-sm text-brand-700">
       {antes && <Link href={hrefDiario({ busca })}>Aulas recentes</Link>}
       {historico.proximo && <Link href={hrefDiario({ busca, antes: historico.proximo })}>Aulas anteriores →</Link>}

@@ -12,10 +12,9 @@ export interface CamposNumero {
   rotulo: string;
   finalidade: string;
   donoId: string;
-  ativo: boolean;
 }
 
-const NUMERO_VAZIO: CamposNumero = { telefoneE164: "", rotulo: "", finalidade: "COBRANCA", donoId: "", ativo: true };
+const NUMERO_VAZIO: CamposNumero = { telefoneE164: "", rotulo: "", finalidade: "COBRANCA", donoId: "" };
 
 /** O formulário de número aberto difere do número salvo (ou do vazio, num número novo)? */
 export function numeroAlterado(form: CamposNumero | null, numeros: readonly NumeroConfig[]): boolean {
@@ -23,10 +22,10 @@ export function numeroAlterado(form: CamposNumero | null, numeros: readonly Nume
   const salvo = form.id ? numeros.find((n) => n.id === form.id) : null;
   if (form.id && !salvo) return true; // outra pessoa apagou: o que está na tela não está salvo em lugar nenhum
   const origem: CamposNumero = salvo
-    ? { telefoneE164: salvo.telefoneE164, rotulo: salvo.rotulo, finalidade: salvo.finalidade, donoId: salvo.donoId ?? "", ativo: salvo.ativo }
+    ? { telefoneE164: salvo.telefoneE164, rotulo: salvo.rotulo, finalidade: salvo.finalidade, donoId: salvo.donoId ?? "" }
     : NUMERO_VAZIO;
   return form.telefoneE164 !== origem.telefoneE164 || form.rotulo !== origem.rotulo || form.finalidade !== origem.finalidade
-    || form.donoId !== origem.donoId || form.ativo !== origem.ativo;
+    || form.donoId !== origem.donoId;
 }
 
 const mesmoConjunto = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));

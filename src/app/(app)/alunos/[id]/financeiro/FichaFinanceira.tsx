@@ -13,7 +13,7 @@ import {
 import { formatarMoeda, formatarMoedaParaCampo, formatarValores, parseMoeda, type ValorMoeda } from "@/lib/dinheiro";
 import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
-import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarDiaCivilGravado, formatarDiaDoPagamento, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
@@ -35,12 +35,12 @@ const VIGENCIA_INFO: Record<Vigencia, { label: string; cls: string }> = {
 };
 
 // Chip da régua (read-only) na linha da cobrança — espelha o estado da fila (doc 24 §só leitura).
-function reguaChipInfo(r: ReguaFicha | null): { label: string; cls: string } | null {
+function reguaChipInfo(r: ReguaFicha | null, fusoEscola: string): { label: string; cls: string } | null {
   if (!r) return null;
   if (r.precisaBloqueio) return { label: "Bloqueio pendente", cls: "bg-red-100 text-red-700" };
   if (r.estado === "promessa") {
     return {
-      label: r.promessaAte ? `Promessa até ${new Date(r.promessaAte).toLocaleDateString("pt-BR")}` : "Promessa",
+      label: r.promessaAte ? `Promessa até ${formatarDiaCivilGravado(r.promessaAte, fusoEscola)}` : "Promessa",
       cls: "bg-blue-100 text-blue-700",
     };
   }
@@ -107,7 +107,13 @@ export interface FichaFinanceiraDados {
   permissoes: { registrarPagamento: boolean; somenteInformar: boolean; renegociar: boolean; perdao: boolean };
 }
 
-export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null }) {
+/**
+ * `fusoEscola`: a promessa é data civil gravada e sai no dia da escola (`formatarDiaCivilGravado`). O último
+ * pagamento (`Cobranca.pagoEm`) é misto: data digitada ou instante real (ajuste, desistência, baixa sem data);
+ * sai pelo `formatarDiaDoPagamento`, o dia da escola para os dois. Nenhum dos dois usa o fuso pessoal.
+ * Instantes (envio, conferência) seguem a preferência pessoal.
+ */
+export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEscola }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const router = useRouter();
   const [msg, setMsg] = useState<string | null>(null);
   const [pagar, setPagar] = useState<FichaFinanceiraDados["cobrancas"][number] | null>(null);
@@ -141,7 +147,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? rotuloVencimento(t.proximoVenc.vencimento) : ""} />
-        <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? new Date(t.ultimoPago.data).toLocaleDateString("pt-BR") : ""} />
+        <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? formatarDiaDoPagamento(t.ultimoPago.data, fusoEscola) : ""} />
         <Tile titulo="Em aberto" valor={formatarValores(t.emAberto)} />
         <Tile titulo="Em atraso" valor={formatarValores(t.emAtraso)} cls={t.emAtraso.some((v) => v.valor > 0) ? "text-red-600" : ""} />
       </div>
@@ -169,7 +175,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
                 <td className="px-4 py-2 text-gray-600">
                   {STATUS_COBRANCA_LABEL[c.status]}
                   {(() => {
-                    const ch = reguaChipInfo(c.regua);
+                    const ch = reguaChipInfo(c.regua, fusoEscola);
                     return ch ? <span className={"ml-2 inline-block rounded px-1.5 py-0.5 text-[11px] " + ch.cls}>{ch.label}</span> : null;
                   })()}
                   {c.regua && c.regua.tentativas > 1 && (

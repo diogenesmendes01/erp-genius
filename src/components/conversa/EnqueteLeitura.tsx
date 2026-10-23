@@ -19,7 +19,7 @@ export function EnqueteLeitura({ enquete }: { enquete: EnqueteDados }) {
               <span className="flex-1">{o.texto}</span>
               <b>{o.votos}</b>
             </span>
-            <span className="h-1 rounded bg-gray-200"><i className="block h-1 rounded bg-brand" style={{ width: `${total ? (o.votos / total) * 100 : 0}%` }} /></span>
+            <span className="h-1 rounded bg-gray-200"><i className="block h-1 rounded bg-brand-solid" style={{ width: `${total ? (o.votos / total) * 100 : 0}%` }} /></span>
           </li>
         ))}
       </ul>

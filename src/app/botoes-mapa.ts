@@ -210,10 +210,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/whatsapp/NumerosPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "const btnPerigo → perigo/sm",
     "<button> Novo número → btnPri",
     "<button> Conectar → btnSec",
     "<button> Desconectar → btnSec",
     "<button> Editar → btnSec",
+    "<button> Desativar · Ativar → perigo|fantasma/sm",
+    "<button> Excluir → btnPerigo",
     "<button> Salvando… · Salvar número → btnPri",
     "<button> Salvando… · Salvar setores → btnPri",
     "<button> Fechar → btnSec",
@@ -779,6 +782,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aplicar coberturas aprovadas → primario/md",
     "<button> APROVADO · Confirmar divergência material · Descartar conjun → perigo/md",
   ],
+  "financeiro/acertos-moeda/[matriculaId]/[propostaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
   "financeiro/acertos-taxa/DecisaoTaxa.tsx": [
     "<button> Aprovar acerto → secundario/lg",
     "<button> Rejeitar acerto → perigo/lg",
@@ -810,6 +816,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviando… · Registrar → secundario/sm",
     // Decidir a compensação (L2142, #175): rejeitar é perigo; aprovar só abre o ConfirmarAcao.
     "<button> Enviando… · Rejeitar · Aprovar e compensar · Decidir → perigo|secundario/sm",
+  ],
+  // Q171/Q167C: destinação do excedente e uso do saldo restrito a serviços (um botão por formulário, como acertos-adiantamento).
+  "financeiro/permuta/excedente/[matriculaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
   ],
   "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
     "<button> Destinar → fantasma/sm",
@@ -849,6 +859,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/contrato/ConferirAssinatura.tsx": [
     "<button> Registrando… · Registrar conferência para assinatura → secundario/lg",
   ],
+  "matriculas/[id]/contrato/EnviarAssinatura.tsx": [
+    "<button> Aguarde… · Enviar para assinatura · Conciliar envio → secundario/lg",
+  ],
   "matriculas/[id]/contrato/PreservarOriginal.tsx": [
     "<button> Gerando e preservando… · Gerar e preservar original → secundario/lg",
   ],
@@ -866,6 +879,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/contrato/aditivos/ConferenciaFinalFormulario.tsx": [
     "<button> Registrando… · Registrar conferência interna → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/EnvioAditivoFormulario.tsx": [
+    "<button> Aguarde… · Enviar aditivo para assinatura · Conciliar envio → secundario/lg",
   ],
   "matriculas/[id]/contrato/aditivos/Formularios.tsx": [
     "<button> Registrando… · Registrar proposta de aditivo → secundario/lg",
@@ -895,6 +911,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Conferindo… · Conferir alterações → secundario/lg",
     "<button> Registrando… · Registrar fotografia da agenda → secundario/lg",
   ],
+  "matriculas/[id]/contrato/origem-historica/Formularios.tsx": [
+    "<button> Registrada · Enviando… · Registrar para conferência → secundario/lg",
+    "<button> Registrada · Processando… · Registrar conferência → secundario/lg",
+  ],
   "matriculas/[id]/contrato/previas/[previaId]/participantes/Formulario.tsx": [
     "<button> Registrando… · Registrar conferência dos participantes → secundario/lg",
   ],
@@ -913,6 +933,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx": [
     "<button> Registrando… · Registrar decisão administrativa → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/documentos/CancelarAssinatura.tsx": [
+    "<button> Aguarde… · Cancelar envio no serviço de assinatura → perigo/lg",
   ],
   "matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx": [
     "<button> Preparando… · Reapresentar memória contratual · Preparar mem → secundario/lg",

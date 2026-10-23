@@ -13,7 +13,9 @@ vi.mock("react", async (original) => {
     useRef: ((inicial: unknown) => m.ganchos!.useRef(inicial)) as unknown as typeof real.useRef,
   };
 });
-vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarConferenciaAgendaAditivo: m.consultar, registrarPropostaAgendaAditivo: m.registrar }));
+vi.mock("@/server/contratos/agenda-aditivo", () => ({ registrarPropostaAgendaAditivo: m.registrar }));
+// Lote 3 do fuso pessoal: a conferência manda o texto digitado e o fuso; quem converte é o servidor.
+vi.mock("@/server/contratos/agenda-aditivo-local", () => ({ consultarConferenciaAgendaAditivoLocal: m.consultar }));
 
 import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaAgendaFormulario";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";

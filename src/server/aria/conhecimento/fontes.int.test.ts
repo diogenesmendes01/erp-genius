@@ -166,7 +166,11 @@ describe("fontes de conhecimento", () => {
     expect(await prisma.fonteConhecimento.findUnique({ where: { id } })).toMatchObject({ arquivadaEm: expect.any(Date) });
     expect(await prisma.trechoConhecimento.count({ where: { fonteId: id } })).toBe(1);
     expect((await eventosDo("FonteConhecimento", id)).map((e) => e.tipo)).toContain("FonteConhecimentoArquivada");
-    expect((await arquivarFonte(id)).ok).toBe(false);
+    // #166 (5º lote): o reenvio de quem arquivou devolve ok sem outro Evento; outra pessoa segue recusada.
+    expect((await arquivarFonte(id)).ok).toBe(true);
+    expect((await eventosDo("FonteConhecimento", id)).filter((e) => e.tipo === "FonteConhecimentoArquivada")).toHaveLength(1);
+    logado(await criarUsuario([Papel.ADMINISTRADOR], "Outra administração"));
+    expect(await arquivarFonte(id)).toEqual({ ok: false, erro: "A fonte já está arquivada." });
   });
 
   it("vendedor_nao_cria_fonte", async () => {

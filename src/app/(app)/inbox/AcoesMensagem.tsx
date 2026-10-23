@@ -8,6 +8,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
@@ -38,13 +39,14 @@ export interface PropsAcoesMensagem {
 }
 
 export function AcoesMensagem({ acao, mensagem, origem, aoFechar, aoMudar }: PropsAcoesMensagem) {
+  // Apagar é idempotente por natureza (#166): o reenvio de quem já apagou devolve ok sem chamar o motor.
   if (acao === "apagar") {
     return (
       <ConfirmarAcao
         folha
         titulo="Apagar esta mensagem para todos?"
         confirmacao="apagar para todos"
-        idempotente={false}
+        idempotente
         acao={() => apagarMensagemWhatsApp({ mensagemId: mensagem.id })}
         aoConcluir={() => { aoFechar(); aoMudar(); }}
         aoCancelar={aoFechar}
@@ -93,6 +95,9 @@ export function EncaminharMensagem({ mensagem, origem, aoFechar, aoMudar }: Omit
   const [ocupado, setOcupado] = useState(false);
   // Encaminhar manda a mensagem a outro contato e não volta: escolher o destino só abre a confirmação.
   const [escolha, setEscolha] = useState<ItemListaInbox | null>(null);
+  // Chave de idempotência (#166), uma por destino (C3 da R1 do #291): o reenvio da mesma tentativa não encaminha de
+  // novo, e trocar de destino depois de um resultado incerto não esbarra na chave do anterior.
+  const tentativas = useChavesPorAlvo();
 
   // Primeira carga (sem busca) fora do render; a resposta de um efeito descartado não é aplicada.
   useEffect(() => {
@@ -130,9 +135,9 @@ export function EncaminharMensagem({ mensagem, origem, aoFechar, aoMudar }: Omit
         folha
         titulo={`Encaminhar esta mensagem para ${escolha.contatoNome}?`}
         confirmacao={`encaminhamento para ${escolha.contatoNome}`}
-        idempotente={false}
-        acao={() => encaminharMensagemWhatsApp({ mensagemId: mensagem.id, atendimentoDestinoId: escolha.id })}
-        aoConcluir={() => { setEscolha(null); aoFechar(); aoMudar(); }}
+        idempotente
+        acao={() => encaminharMensagemWhatsApp({ mensagemId: mensagem.id, atendimentoDestinoId: escolha.id, chaveIdempotencia: tentativas.para(escolha.id).atual })}
+        aoConcluir={() => { tentativas.para(escolha.id).depoisDo({ tipo: "ok", dado: undefined }); setEscolha(null); aoFechar(); aoMudar(); }}
         aoCancelar={() => setEscolha(null)}
       >
         <p>A mensagem sai pelo WhatsApp deste número para {escolha.contatoNome}, marcada como encaminhada. Não há como desfazer pela tela.</p>

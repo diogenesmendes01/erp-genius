@@ -27,6 +27,7 @@ RUN DATABASE_URL="postgresql://check:check@127.0.0.1:1/check" npx prisma migrate
 # Next 16 standalone (next.config.mjs `output: "standalone"`).
 # DATABASE_URL de placeholder: páginas são dinâmicas (auth), o build não conecta.
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS=--max-old-space-size=4608
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
 
 FROM base AS runner

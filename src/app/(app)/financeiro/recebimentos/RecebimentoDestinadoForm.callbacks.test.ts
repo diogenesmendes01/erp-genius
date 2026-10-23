@@ -77,6 +77,25 @@ it("calcula totais em centavos e confirma múltipla destinação com crédito", 
   }));
 });
 
+// Item A da review do #289 (lote 3 do fuso pessoal): a data do pagamento ia como o meio-dia do NAVEGADOR
+// (`new Date("2026-10-05T12:00:00")`); em Sydney isso é 2026-10-05T01:00Z, que a escola em São Paulo lê como 04/10.
+// Agora vai o texto digitado (AAAA-MM-DD), qualquer que seja o fuso do navegador; o servidor grava o meio-dia da escola.
+it("envia a data digitada como AAAA-MM-DD, sem converter no fuso do navegador (Sydney, São Paulo, UTC)", async () => {
+  const anterior = process.env.TZ;
+  try {
+    for (const fuso of ["Australia/Sydney", "America/Sao_Paulo", "UTC"]) {
+      process.env.TZ = fuso;
+      mocks.registrar.mockReset().mockResolvedValue({ ok: true });
+      const c = montar(["mat-1", [], "100", "100", "", FormaPagamento.DINHEIRO, "2026-10-05", "Antecipação acordada", "", "", "", false, null, null, false]);
+      await (encontrar(c.arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento").props!.onClick as () => Promise<void>)();
+      expect(mocks.registrar, fuso).toHaveBeenCalledWith(expect.objectContaining({ dataPagamento: "2026-10-05" }));
+    }
+  } finally {
+    if (anterior === undefined) delete process.env.TZ;
+    else process.env.TZ = anterior;
+  }
+});
+
 it("distingue dois contratos do mesmo aluno e moeda e envia o ID selecionado", async () => {
   mocks.registrar.mockResolvedValue({ ok: true });
   const mesmoAluno = [

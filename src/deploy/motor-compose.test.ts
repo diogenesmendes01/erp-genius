@@ -30,6 +30,13 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
       expect(motor).toContain("image: ${MOTOR_IMAGE:?defina");
       expect(motor).toContain("restart: unless-stopped");
     });
+    it("motor com healthcheck e limites de recursos", () => {
+      expect(motor).toMatch(/^\s+healthcheck:/m);
+      expect(motor).toMatch(/node.*fetch.*127\.0\.0\.1:4317\/api\/health/);
+      expect(motor).toMatch(/^\s+deploy:/m);
+      expect(motor).toMatch(/memory:/);
+      expect(motor).toMatch(/cpus:/);
+    });
     it("motor sem porta publicada", () => expect(motor).not.toMatch(/^\s+ports:/m));
     it("motor em modo serviço com webhook interno", () => {
       expect(motor).toContain("MOTOR_MODE: servico");
@@ -41,7 +48,28 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
       expect(motor).toContain("MOTOR_WEBHOOK_SECRET:");
       expect(motor).toMatch(/motor_data:\/data/);
     });
+    it("coolify: motor nas redes default e coolify + banco Postgres dedicado", () => {
+      if (arq === "docker-compose.coolify.yml") {
+        expect(motor).toMatch(/^\s+networks:/m);
+        expect(motor).toMatch(/^\s+-\s+default$/m);
+        expect(motor).toMatch(/^\s+-\s+coolify$/m);
+        expect(motor).toContain("DATABASE_URL: ${MOTOR_DATABASE_URL:?defina no Coolify}");
+        expect(motor).toContain("MASTER_KEY: ${MOTOR_MASTER_KEY:?defina no Coolify}");
+      }
+    });
+    it("prod: motor sem rede coolify", () => {
+      if (arq === "docker-compose.prod.yml") {
+        expect(motor).not.toMatch(/coolify/);
+        expect(motor).not.toContain("MOTOR_DATABASE_URL");
+        expect(motor).not.toContain("MOTOR_MASTER_KEY");
+      }
+    });
     it("volume motor_data declarado", () => expect(t).toMatch(/^volumes:\n(?:  .*\n)*?  motor_data:/m));
+    it("coolify: rede externa declarada", () => {
+      if (arq === "docker-compose.coolify.yml") {
+        expect(t).toMatch(/^networks:\n(?:  .*\n)*?  coolify:\n    external: true$/m);
+      }
+    });
     it("app aponta para o motor", () => {
       expect(app).toContain("MOTOR_URL: http://motor:4317");
       expect(app).toContain("MOTOR_API_KEY:");

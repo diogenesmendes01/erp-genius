@@ -61,6 +61,7 @@ function detalhe(itemAtual: FilaCobrancaItem, preferenciaFusoExibicao: string | 
     regua: [{ passo: "D+3", offsetDias: 3, tipo: "cobrar", rotulo: "Cobrar" }],
     podeOperar: false,
     preferenciaFusoExibicao,
+    fusoEscola: "America/Sao_Paulo",
     onClose: vi.fn(), onEnviarApi: vi.fn(), onPrepararManual: async () => null,
     onConfirmarManual: async () => false, onPagar: vi.fn(), onPromessa: vi.fn(),
   }));
@@ -102,11 +103,11 @@ describe("DetalheCobranca", () => {
     const geral = renderToStaticMarkup(createElement(FilaCobranca, {
       itens: [], totalFila: 0, filtros: lerFiltrosFila({}), opcoes: { paises: [], turmas: [] },
       dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [],
-      podeOperar: true, podeBloquear: false, preferenciaFusoExibicao: "America/Costa_Rica",
+      podeOperar: true, podeBloquear: false, fusoEscola: "America/Sao_Paulo", preferenciaFusoExibicao: "America/Costa_Rica",
     }));
     expect(geral).toContain('data-acesso="geral:America/Costa_Rica"');
     const detalheOperavel = renderToStaticMarkup(createElement(DetalheCobranca, {
-      item, regua: [], podeOperar: true, preferenciaFusoExibicao: "America/Costa_Rica",
+      item, regua: [], podeOperar: true, preferenciaFusoExibicao: "America/Costa_Rica", fusoEscola: "America/Sao_Paulo",
       onClose: vi.fn(), onEnviarApi: vi.fn(), onPrepararManual: async () => null,
       onConfirmarManual: async () => false, onPagar: vi.fn(), onPromessa: vi.fn(),
     }));
@@ -125,7 +126,7 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
   const fila = (podeOperar: boolean) => renderToStaticMarkup(createElement(FilaCobranca, {
     itens: [item, { ...item, id: "outra", aluno: { id: "aluno-2", nome: "Bruno Costa", telefone: null } }],
     totalFila: 2, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})),
-    dashs, regua: [], podeOperar, podeBloquear: false,
+    dashs, regua: [], podeOperar, podeBloquear: false, fusoEscola: "America/Sao_Paulo",
   }));
 
   it("cada linha abre por um <button type=\"button\"> com o nome do aluno", () => {
@@ -181,7 +182,7 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     const filtros = lerFiltrosFila(params);
     return renderToStaticMarkup(createElement(FilaCobranca, {
       itens, totalFila: 5, filtros, opcoes: opcoesDaFila([item, costaRica], filtros),
-      dashs, regua: [], podeOperar: true, podeBloquear: false,
+      dashs, regua: [], podeOperar: true, podeBloquear: false, fusoEscola: "America/Sao_Paulo",
     }));
   };
   /** [aria-pressed, texto] de cada cartão-indicador, na ordem. */
@@ -301,7 +302,7 @@ describe("FilaCobranca — trechos por cursor nos dois sentidos (docs/43 §6 ite
     const filtros = lerFiltrosFila({ indicador: "emAtraso", pais: "Brasil" });
     return renderToStaticMarkup(createElement(FilaCobranca, {
       itens: [item], totalFila: 120, totalVisao: 60, filtros, opcoes: opcoesDaFila([item], filtros),
-      dashs, regua: [], podeOperar: true, podeBloquear: false, ...o,
+      dashs, regua: [], podeOperar: true, podeBloquear: false, fusoEscola: "America/Sao_Paulo", ...o,
     }));
   };
   const link = (texto: string) => {
@@ -346,5 +347,26 @@ describe("FilaCobranca — trechos por cursor nos dois sentidos (docs/43 §6 ite
     const html = fila({ itens: [], totalVisao: 0 });
     expect(html).toContain("Nada nesta visão.");
     expect(links.lista.filter((l) => l.texto === "Ir para o início da fila")).toEqual([]);
+  });
+});
+
+// Fuso pessoal nas telas (pendência da Q176): a promessa é data civil gravada e sai no dia da escola, sem fuso
+// pessoal e sem o fuso do processo. A gravação legada à meia-noite UTC dava 04/10 com o servidor em São Paulo.
+describe("promessa de pagamento: dia civil da escola", () => {
+  const prometida = (promessaAte: string) => ({ ...item, estado: "promessa" as const, promessaAte });
+  it("meio-dia da escola e meia-noite UTC (legado) dão o mesmo dia, para qualquer preferência", () => {
+    for (const promessaAte of ["2026-10-05T15:00:00.000Z", "2026-10-05T00:00:00.000Z"]) {
+      for (const preferencia of ["Asia/Tokyo", "America/Costa_Rica", null]) {
+        expect(detalhe(prometida(promessaAte), preferencia)).toContain("Promessa de pagamento até 05/10/2026");
+      }
+    }
+  });
+  it("o rótulo curto da fila usa o mesmo dia", () => {
+    const html = renderToStaticMarkup(createElement(FilaCobranca, {
+      itens: [prometida("2026-10-05T00:00:00.000Z")], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: { paises: [], turmas: [] },
+      dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 1, recebidoHoje: [] }, regua: [],
+      podeOperar: false, podeBloquear: false, fusoEscola: "America/Sao_Paulo",
+    }));
+    expect(html).toContain("promessa · paga 05/10/2026");
   });
 });

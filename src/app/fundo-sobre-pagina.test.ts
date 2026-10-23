@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { DIFERENCA_MINIMA, fundosDoTailwind } from "@/test/fundo-visivel";
+import { literaisDeString } from "@/test/literais-string";
 import config from "../../tailwind.config";
 
 const { destaqueSobreAPagina } = fundosDoTailwind(config);
@@ -38,24 +38,6 @@ function arquivosTsx(dir: string): string[] {
     if (statSync(p).isDirectory()) return arquivosTsx(p);
     return p.endsWith(".tsx") && !p.includes(".test.") ? [p] : [];
   });
-}
-
-/**
- * Literais de string do arquivo ("…", '…', `…`), sem os comentários. Usa o parser do TypeScript (TSX): um `/*` ou `//`
- * dentro de string (glob, URL) não é comentário e não apaga o resto. Um template com `${…}` conta inteiro, uma vez.
- */
-function literaisDeString(fonte: string): string[] {
-  const arquivo = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
-  const literais: string[] = [];
-  const visitar = (no: ts.Node): void => {
-    if (ts.isStringLiteral(no) || ts.isNoSubstitutionTemplateLiteral(no) || ts.isTemplateExpression(no)) {
-      literais.push(no.getText(arquivo));
-      return;
-    }
-    ts.forEachChild(no, visitar);
-  };
-  visitar(arquivo);
-  return literais;
 }
 
 /** Strings de classe com fundo sutil sem prefixo de estado (hover:, disabled:) e sem borda junto. */

@@ -13,11 +13,13 @@ import { ETAPAS_ARIA } from "@/server/aria/matriz";
 import { ACOES_MATRIZ } from "@/server/aria/matriz";
 import { aprovarAcaoAria, desfazerAcaoAria, rejeitarAcaoAria } from "@/server/aria/acoes";
 import type { ItemHistoricoAria } from "@/server/aria/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Props = {
   itens: ItemHistoricoAria[];
   proximo: string | null;
   podeDecidir: boolean;
+  /** Fuso de exibição já resolvido pela página: o pessoal; sem ele, o da escola. */
   fuso: string;
   filtros: { busca: string; acao: string; etapa: string; resultado: string };
 };
@@ -35,7 +37,7 @@ export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props)
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
   const [desfazendo, setDesfazendo] = useState<ItemHistoricoAria | null>(null);
-  const quando = (iso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+  const quando = (iso: string) => formatarInstanteExibicao(iso, fuso, "UTC", "diaMesHora").texto;
 
   async function decidir(fn: () => ReturnType<typeof aprovarAcaoAria>, ok: string) {
     const d = await acao.executar(fn, ok);

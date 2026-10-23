@@ -110,7 +110,12 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `NomeContatoReparado` | Reparo único (`scripts/reparar-nome-contato-whatsapp.ts`, após a migração 20260929120000): nome do contato igual ao perfil da própria linha (pushName de mensagem fromMe) volta a vazio em `nomeExibicao`/`nomePerfil` | Sistema (script operado pelo admin) | `{ motivo, antes: { nomeExibicao, nomePerfil } }` |
 | `ReguaRetomada` | "Retomar régua" na thread — libera o silêncio pós-inbound (S4) sem promessa/pagamento | Financeiro/Secretaria | `{ conversaId }` |
 | `NumeroWhatsAppCriado` | Cadastro de número na config | Admin | `{ telefoneE164, driver, finalidade }` |
-| `NumeroWhatsAppAlterado` | Edição do número — inclui **troca de driver** (D26) | Admin | `{ antes, depois }` |
+| `NumeroWhatsAppAlterado` | Edição do número — inclui **troca de driver** (D26). Não muda `ativo` (ativar/desativar têm Evento próprio) | Admin | `{ antes, depois }` |
+| `NumeroWhatsAppDesativado` | "Desativar" na tela de Números: logout no motor antes de gravar; o número fica na lista, inativo | Admin | `{ sessaoAntes }` |
+| `NumeroWhatsAppReativado` | "Ativar" na tela de Números: volta a ativo e é recadastrado no motor; o pareamento é refeito no Conectar | Admin | `{}` |
+| `NumeroWhatsAppDesconectado` | Logout do número no motor ("Desconectar", ou ao desativar/excluir um número com sessão) | Admin | `{ de }` |
+| `NumeroWhatsAppExcluido` | "Excluir" na tela de Números: desativa, faz logout e marca `excluidoEm` — some da configuração; conversas, mensagens e Eventos ficam. Recusado se o número é remetente da política da régua ou dos avisos da agenda | Admin | `{ telefoneE164, rotulo, ativoAntes, sessaoAntes }` |
+| `NumeroWhatsAppRestaurado` | "Novo número" com o telefone de um número excluído: o registro antigo volta (com o histórico) com rótulo, finalidade e dono novos | Admin | `{ excluidoEm, antes, depois }` |
 | `NumeroWhatsAppConectado` | Sessão Baileys abriu (QR lido) — via webhook `connection.update` ou poll | Sistema | `{ via, de }` |
 | `SessaoBaileysCaiu` | Sessão que estava CONECTADO caiu — fila degrada p/ "acumula + alerta" | Sistema | `{ via }` |
 | `TemplateCriado` / `TemplateAlterado` | Editor de template (edição de aprovado volta a rascunho) | Admin | `{ nome, ... }` / `{ antes, depois }` |
@@ -119,6 +124,30 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `PoliticaReguaAlterada` | Salvar política / kill switch (D26) | Admin | `{ antes, depois }` (snapshot; `antes: null` na 1ª materialização) |
 | `ConfigComercialAlterada` | Salvar a config comercial (auto-lead / saudação — fase doc 27 C1); agregado `ConfigComercial` | Gerente Com./Admin | `{ antes, depois }` (`antes: null` na 1ª materialização) |
 | `PoliticaComercialAlterada` | Salvar a régua comercial (lead-novo: estado/remetente/degraus — doc 27 C1); agregado `PoliticaComercial` | Gerente Com./Admin | `{ antes, depois }` |
+
+> **6º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em: `AtendimentoTransferido`
+> (nos dois Eventos, origem e novo; hash de atendimento, destino, chave do destino e contexto), `MensagemWhatsAppEncaminhamentoIniciado`
+> (Evento novo, gravado antes da chamada ao motor; hash de mensagem e atendimento de destino. O desfecho entra numa
+> segunda transação, com `tentativaId` = id do `...Iniciado`: `MensagemWhatsAppEncaminhada`, `MensagemWhatsAppEncaminhamentoIncerto`
+> (timeout, rede ou resposta ambígua do motor; o reenvio da mesma chave é recusado sem chamar o motor) ou
+> `MensagemWhatsAppEncaminhamentoNaoEnviado` (o motor afirmou que não executou; a mesma chave pode tentar de novo). Sem
+> desfecho, o reenvio recebe "não confirmado, confira a conversa" e o motor não é chamado),
+> `RestricaoAulasSolicitada` e `LiberacaoAulasSolicitada` do agregado `Matricula` (hash de matrícula, pedido e motivo) e
+> `LinkPagamentoEnviado` do agregado `Cobranca` (hash de cobrança e link). Em todos, a busca vem depois da sessão e do
+> papel e antes das validações de estado: o reenvio da mesma tentativa devolve o registro original mesmo com a origem
+> encerrada, a mensagem apagada, a solicitação decidida ou a cobrança paga. A mesma chave com outra entrada recebe a
+> mesma recusa, exista o alvo ou não.
+> Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar nem chamar o motor; o estado vindo
+> de outra pessoa, do despachante ou do celular segue recusado): `AtendimentoAssumido` e `AtendimentoDevolvido` (o
+> último Evento de responsável do atendimento é o de quem repete), `AtendimentoEncerrado` (pelo Inbox; a linha é
+> travada), `ParticipanteRevogado`, `MensagemAgendadaCancelada` (só quando a intenção tem agregado; sem ele não há
+> Evento para reconhecer e o reenvio segue "já cancelada"), `MensagemWhatsAppEditada` (a última edição já deixou
+> o mesmo texto) e `MensagemWhatsAppApagada`. Editar e apagar gravam antes do motor, sob a trava da mensagem e do verbo,
+> `MensagemWhatsAppAcaoIniciada` (`{ mensagemId, verbo, texto? }`); o desfecho leva `tentativaId`: `MensagemWhatsAppEditada`
+> ou `MensagemWhatsAppApagada`, `MensagemWhatsAppAcaoIncerta` (timeout, rede, resultado incerto) ou
+> `MensagemWhatsAppAcaoNaoExecutada` (o motor recusou). Pedido que encontra a tentativa sem desfecho é recusado sem
+> chamar o motor; depois de um desfecho, um pedido novo pode chamar o motor de novo (editar e apagar não duplicam nada
+> para o contato).
 
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |
@@ -192,6 +221,21 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > `DocumentoArquivado` do `Lead`; `ContatoVinculado` de "criar oportunidade pela conversa"; `PoliticaComissaoPublicada`
 > (a última versão já é a pedida, do mesmo autor); `AgenteIARascunhoSalvo`, `AgenteIAPublicado` e
 > `AgenteIARascunhoDescartado`; `EmpresaEditada` com o mesmo cadastro; `PendenciaAcessoPortalAlunoEmailAusente`, `TrocaEmailPortalAlunoPreparada` e a decisão da troca.
+
+> **5º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em:
+> `TrocaEmailPortalAlunoPreparada` (hash de aluno, novo e-mail normalizado, motivo e evidência) e `RetomadaSolicitada`
+> (hash de aluno, opção, motivo e datas ordenadas pela cobrança). Nos dois, a busca vem antes das validações de estado:
+> o reenvio da mesma tentativa devolve a solicitação ou a proposta original mesmo depois que outra pessoa a decidiu
+> (N3 da R1 do #274). `AberturaTurmaSolicitada` (hash de produto, nível e observação). `ComissaoPaga` do fechamento
+> manual do mês: todos os Eventos do mesmo fechamento levam a mesma marca; o reenvio devolve quantos foram pagos (a
+> contagem deles) e não paga as comissões aprovadas depois da tentativa. O fechamento automático do cron não leva marca.
+> Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar; o estado vindo de outra pessoa
+> segue recusado ou, onde antes gravava, grava como antes): `ComissaoEstornada` (mesmo motivo e detalhe),
+> `ExperimentalRealizada` e `NoShow` (o último check-in do lead é o mesmo, do mesmo autor), `LeadPerdido` (mesmo motivo
+> e observação; antes cada reenvio gravava um), `TagArquivada`, `CampoArquivado`, `FonteConhecimentoArquivada`,
+> `TarefaCancelada` (mesmo motivo), `CoberturaRevogada` (já revogada devolve ok, como antes), `OptOutRegistrado` e
+> `OptOutRemovido` (mesma evidência). Nesses casos a linha do registro é travada, para o clique duplo não gravar dois
+> Eventos.
 
 ---
 
@@ -381,3 +425,31 @@ Agregado Aluno; identifica pedido, rascunho, decisão e aprovação/rejeição. 
 ### RecebimentoRegistrado (Q87)
 
 Agregado `Recebimento`, na mesma transação do fato de caixa e das destinações. Preserva titular, pagador, valor/moeda, data/forma, hash material, referência do comprovante privado, comentário e destinações. O replay retorna o fato existente antes de emitir outro evento. A consulta financeira associa a prova somente quando ID do recebimento, matrícula e hash coincidem; ausência no legado não autoriza presumir prova.
+
+### Assinatura eletrônica por driver (port da #62, Q155/Q165) — 21/10/2026
+
+Envio, conciliação e cancelamento passam pelo port `ProvedorAssinatura` (`src/server/contratos/provedor-assinatura.ts`). Hoje o único driver é o SIMULADO (`ASSINATURA_DRIVER=simulado`). A marca de idempotência (`chaveIdempotencia` + `entradaHash`, de `repeticaoIdempotente`) só existe quando a ação recebe chave. Ela é o que permite devolver o resultado gravado sem chamar o serviço de novo, então faz parte do contrato do evento.
+
+| Evento | Agregado | Gatilho | Quem | Payload (essencial) |
+|---|---|---|---|---|
+| `EnvelopeSimuladoCriado` | `EnvelopeAssinaturaSimulado` (novo) | O driver simulado "cria" o envelope (tabela `EnvelopeAssinaturaSimulado`, que faz o papel do serviço). Nada sai do ERP | Sistema (`autorId` nulo) | `{ chave, referenciaExterna, pdfHash, signatarios (quantidade), simulado: true }` |
+| `EnvelopeSimuladoSituacaoAlterada` | `EnvelopeAssinaturaSimulado` | Transição condicional do envelope simulado (`EM_ASSINATURA` → `CANCELADO` ou `ASSINADO`). Só é gravado quando a transição acontece | Sistema | `{ referenciaExterna, de, para, simulado: true }` |
+| `TentativaAssinaturaIniciada` (alterado) | `Matricula` | Tentativa de envio do contrato confirmada antes da chamada externa | Secretaria que enviou | `{ processoId, tentativaId, numero, chaveIdempotencia?, entradaHash? }` |
+| `ResultadoEnvioAssinaturaRegistrado` (alterado) | `Matricula` | Resultado da criação (sem autor: veio do serviço) ou da conciliação (autor = quem conciliou). Gravado só para observação nova | Sistema ou Secretaria | `{ processoId, tentativaId, observacaoId, resultado, estado, chaveIdempotencia?, entradaHash? }`. Na conciliação, a marca e o `autorId` vêm da ação |
+| `TentativaAssinaturaAditivoIniciada` (novo) | `Matricula` | Tentativa de envio do aditivo confirmada antes da chamada externa. Antes, a primitiva não gravava Evento | Secretaria que enviou | `{ processoId, propostaId, tentativaId, numero, chaveIdempotencia?, entradaHash? }` |
+| `ResultadoEnvioAssinaturaAditivoRegistrado` (novo) | `Matricula` | Resultado da criação ou da conciliação do envio do aditivo, só para observação nova | Sistema ou Secretaria | `{ processoId, propostaId, tentativaId, observacaoId, resultado, estado, chaveIdempotencia?, entradaHash? }` |
+| `ResultadoCancelamentoAssinaturaDesistenciaPreservado` (alterado) | `Matricula` | Observação nova do cancelamento Q165. Agora é gravado **depois** da transição (`CANCELADO` quando confirmado), na mesma transação | Secretaria que acionou (`autorId`, antes nulo) | `{ intencaoId, observacaoId, processoId, resultado, cancelamentoConfirmado, chaveIdempotencia?, entradaHash? }` |
+
+Conciliação: `ENCONTRADO` só confirma o envio com o envelope `EM_ASSINATURA` ou `ASSINADO`. Envelope `CANCELADO` ou `RECUSADO` no serviço fica `INCERTO`, com o motivo na evidência (o `evidenciaHash` da observação). `ENVIANDO` só é conciliado depois de `PRAZO_CONCILIACAO_ENVIANDO_MS` contado de `iniciadaEm`. Antes disso a ação é recusada e nada é gravado. Nenhum destes eventos comprova assinatura, aceite ou efeito contratual: processos `SIMULADO` ficam em `SANDBOX`, e o banco exige `PRODUCAO` para efeito real.
+
+### Destinação do excedente de permuta (Q171/Q167C)
+
+Agregado `Matricula`, cada um na transação do próprio registro. `DestinacaoExcedentePermutaProposta`: propostaId, cobrancaId, valorExcedente, moeda e os itens (`SALDO_SERVICOS`/`CREDITO_FINANCEIRO` com valor); a chave de idempotência mora na própria proposta. `ConcordanciaExcedentePermutaRegistrada`: propostaId, concordanciaId e parte (`ALUNO_OU_RESPONSAVEL`/`ESCOLA`); nome, meio e evidência ficam no registro imutável. `DestinacaoExcedentePermutaDecidida`: propostaId, decisaoId, aprovada, motivo e os destinos criados (id do saldo de serviços; id da origem e do crédito financeiro). A repetição idêntica devolve o registro existente sem novo evento. Não altera a cobrança nem a compensação original.
+
+### Uso do saldo restrito a serviços (Q171)
+
+Agregado `Matricula`. `UsoSaldoServicoPermutaProposto`: propostaId, saldoId, cobrancaId, valor e moeda. `UsoSaldoServicoPermutaDecidido`: propostaId, decisaoId, aprovada, motivo e aplicacaoId (a `AplicacaoCompensacaoPermuta` criada na mesma transação da aprovação; nula na rejeição). O uso abate a cobrança como serviço compensado; não é recebimento nem crédito financeiro e nunca vira devolução.
+
+### Troca de moeda por aditivo (Q173)
+
+Agregado `Matricula`, cada um na transação do próprio registro imutável. `MoedaAditivoProposta`: propostaId, de, para, fuso (da escola, gravado na proposta) e fotografiaHash. `MoedaAditivoDecidida`: propostaId, decisaoId e aprovada; o motivo fica na decisão. `MoedaAditivoAplicada`: propostaId, aplicacaoId, de, para e fotografiaHash; na mesma transação, o trigger troca `Matricula.moeda` (única escrita aceita nessa coluna). A repetição idêntica devolve o registro existente sem novo evento. Nada é convertido: cobranças, créditos e compras de horas ficam na moeda em que nasceram, e a troca só passa com a matrícula sem pendências na moeda anterior.

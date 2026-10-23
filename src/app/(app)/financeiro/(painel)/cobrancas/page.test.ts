@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../contexto", () => ({ contextoDaAba: mocks.contexto }));
 vi.mock("@/server/cobrancas/consultas", () => ({ listarFilaCobranca: mocks.fila }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+// Fuso pessoal nas telas: datas civis gravadas (promessa, pagamento) saem no dia da escola.
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => "Acesso negado" }));
 vi.mock("../../FilaCobranca", () => ({ FilaCobranca: () => null }));
 

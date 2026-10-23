@@ -1,7 +1,44 @@
 # Quadro único de entregas
 
+## Fechamento Inbox E0 — 22/10/2026
+
+Oito implementações com PR individual aberto e anexado:298→381,299→382,300→386,301→388,302→383,303→384,304→389,305→385. Pré-requisitos380/387/390 separados. Mapa de dependências, gates e limites em `docs/planejamento/inbox-e0-fechamento.md`. Fonte integrada99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. E0 validada localmente, sem merge/deploy; E1–E4 ainda não implementadas. Texto “PR em publicação” nas entradas antigas é histórico; links reais constam no fechamento.
+
+## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
+
+Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota inicial e nova sem reload, zero nova mensagem no banco,24 PNGs depois. Evidências e limites em output/inbox-301-visual/. Combinação E0 fonte7657c528:845 arquivos/6526 testes sessão99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Estados abaixo preservam as etapas anteriores; merge/deploy não executados.
+
+**Estado: implementação e validação concluídas; PR em publicação.** Branch `codex/inbox-e0-301`, dependente da #300. A fonte ERP preserva `notas: array | null`; histórico mantém em `antes`, substitui em inicial/`depois`/reconexão, limpa na troca e ignora respostas antigas. O aviso atualiza mesmo sem mensagem nova. A thread intercala notas e mensagens por tempo, distingue chave `nota:<id>` e oculta nota anterior à janela enquanto houver mensagens antigas. Cartão interno mostra origem, autor e hora no fuso, sem ações externas. Contrato em `docs/specs/inbox-notas-visiveis.md`; sem schema, permissão ou transporte novo.
+
+- TDD RED no Node 22.23.2: quatro arquivos tiveram cinco falhas funcionais e 35 testes verdes, saída 1 — fonte descartava notas, histórico não guardava, UI não mostrava e módulos novos inexistiam. Depois, cenário de janela fora de ordem falhou com nota ausente (1 falha, 4 verdes); corrigida a seleção do instante mais antigo. Recorte de design system encontrou `text-amber-900` não mapeado (1 falha, 318 verdes); substituído por `text-amber-700`, token válido nos dois temas.
+- GREEN dirigido: `src/components/conversa`, `src/app/(app)/inbox`, paleta, botões e contraste: **29 arquivos / 319 testes**, saída **0**, nenhum ignorado. Cenário adicional de duas sessões com conversa só de notas: `historico-conversa.test.ts` **1 arquivo / 16 testes**, saída **0**, nenhum ignorado. Não equivale à suíte completa.
+- Recorte dirigido final após adicionar o cenário de duas sessões: mesmos filtros, **29 arquivos / 320 testes**, saída **0**, nenhum ignorado, Node 22.23.2. ESLint dos 9 arquivos TypeScript tocados com `--max-warnings 0`, saída **0**.
+- Rebase de #301 de `9853be83` para #300 publicada `30706754`, com conflito exclusivamente no quadro resolvido preservando as seções #300 FINAL e #301. Base sem mudança em `src`; o delta empilhado contém só #301. No SHA pós-rebase `4803b061`, o mesmo recorte dirigido **29 arquivos / 320 testes** saiu **0**, nenhum ignorado, Node 22.23.2. O integrador/TESTER prepararão fixture e servidores em bancos descartáveis; este DEV não iniciou servidor nem envio externo.
+- Gates globais no SHA documental `09222757` (fonte idêntica a `4803b061`), Node 22.23.2: TypeScript `--noEmit` heap 8192, sessão `23074` até saída **0**; Vitest completo sem filtro, `--maxWorkers=2`, **842 arquivos / 6.490 testes**, sessão `54811` até saída **0**, nenhum ignorado; `eslint . --max-warnings 40`, sessão `96249` até saída **0**, **0 erros / 40 avisos** herdados.
+- Rebase dos três commits da #301 sobre E0 integrada `797994aa`, sem conflito; diff contra base contém só 12 arquivos #301 e preserva quadro das demais issues. No SHA `33d0a991`, Node 22.23.2: recorte dirigido com os mesmos filtros **32 arquivos / 354 testes**, saída **0**, nenhum ignorado; TSC heap 8192 sessão `26262` até saída **0**; `eslint . --max-warnings 40` sessão `26917` até saída **0**, **0 erros / 40 avisos** herdados. Vitest completo da combinação #301 + #304 será executado pelo integrador; revisão TESTER, visual e homologação ainda pendentes.
+## Inbox — chaves dos painéis irmãos — 22/10/2026
+
+Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
+
+## Inbox E0.3 — notas na rota e aviso transacional (#300, 22/10/2026)
+
+**Estado: contrato de servidor/SSE implementado e validado; PR em publicação.** Branch `codex/inbox-e0-300`, base PR #382 (#299). SPEC em `docs/specs/inbox-notas-thread.md`, investigação em `output/inbox-300-report.md`, parecer independente em `output/inbox-300-review.md`. Sem merge/deploy; renderização na tela é escopo da #301.
+
+- **Entrega:** rota inicial/depois combina notas do atendimento e, sob permissão comercial específica, da oportunidade; origem identificada e ordem crescente por tempo/id. Cursor antes devolve notas:null. Seleciona50 recentes e retira arquivadas. Consulta sem escopo está em módulo interno não-action; chamadores validam acesso antes de delegar. Nota e NOTIFY apenas com IDs gravados na mesma transação; repetição idempotente não avisa novamente.
+- **TDD/integração DEV:** quatro falhas RED esperadas antes do código; GREEN45 testes. Após extrair o módulo interno:2 arquivos/26 testes sessão10696 e1 arquivo/19 testes sessão27335, todos saída0 noNode22/perfildev-gravacoes. Regressão dirigida anterior10arquivos/115testes sessão46885 saída0 em562s, nenhum ignorado; não é suíte completa nem execução pós-extração.
+- **Gates globais Node22.23.2:** na fonte288c62e1, TSC heap8192 saída0 após tipar mock novo; unitário completo840arquivos/6478testes sessão47978 saída0, maxWorkers2 e sem ignorados; lint global sessão61365 saída0,0 erros/40 avisos herdados. Commit9853be83 somente documental; nenhum gate atribuído como nova execução por isso.
+- **TESTER:** fonte288c62e1 revisada sem achados bloqueantes em fronteira, escopo, paginação, limite/arquivo ou transação/idempotência. Delta9853be83 sem alteração emsrc. Integração independente nos3 arquivos exigidos:45 testes, sessão37125 saída0,187,69s, sem ignorados/filtro por nome, Node22.23.2/perfiltester. Sem visual ou transporte externo nesta issue de servidor. CI aguarda retarget para main após integrar382.
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox E0.2 — leitura automática (#299, 22/10/2026)
+
+**Estado: implementação e validação concluídas; PR em publicação.** Branch `codex/inbox-e0-299`, empilhada sobre PR#381 (#298). SPEC em `docs/specs/inbox-leitura-automatica.md`, investigação em `output/inbox-299-report.md` e parecer independente em `output/inbox-299-visual/qa/inbox-299-final-review.md`. Merge/deploy não executados.
+
+- **Entrega:** abertura por lista ou `?c=` marca a leitura pessoal e compartilhada; nova mensagem na conversa aberta/aba visível repete a leitura. Contador otimista protegido contra GET/SSE antigos, restauração em falha e reconciliação única; pedidos em voo consolidados. `message.read` exige capacidade de confirmação (número ativo, sessão conectada). Sem polling, migration ou permissão nova.
+- **Código revisado:** TESTER aprovou fonte299 após duas correções de corrida e conferiu SHA final `aa91a47f` sobre1ce8e582; código de produção idêntico ao último parecer limpo208b993d, tipagem de mocks corrigida. Recorte independente4arquivos/36testes saída0, sem ignorados. Integrador repetiu os mesmos36testes comNode22.23.2, saída0; testes anteriores e captura usaramNode24.16.0.
+- **Gates DEV:** TSC heap8192 saída0; full unitário840arquivos/6478testes, sem ignorados, session_id64403 até saída0; eslint . --max-warnings40, session_id34109 até saída0,0erros40avisos. Executados na pilha anterior ao rebase exclusivo de docs/PNG/JSON para1ce8e582; fonte/testes/harness invariantes. Integração2arquivos/13testes emdev-gravacoes, session_id11998 até saída0, sem ignorados; transportes mockados.
+- **Visual TESTER:** 25PNGs e manifesto em `output/inbox-299-visual/depois/`, seis aberturas por clique (1440×900,1024×768,390×844 × claro/escuro) e um deep link. Fixture resetada para2 antes de cada contexto; atendimento2→0, preferência pessoal preenchida e marcadaNaoLida=false, DOMbadge2→ausente em todos, pageerror=[]. Sessões10654/16170 saída0. Recortes de item mostram2/0 mesmo no mobile. Nenhum envio ou confirmação real externa.
+- **Limites:** overlay Next dev e chave React duplicada preexistentes; no mobile o overlay cobre parte esquerda do item, sem cobrir a área do badge. CI só dispara para base main: após integrar381, redirecionar PR299 para main e aguardar checks. Captura local validou fixture descartável; WhatsApp real não foi ativado.
 ## Pendências da revisão do #227 e do #231 (18/10/2026)
 
 Branch `claude/pendencias-227-231`. Três pendências de revisão de PRs já mergeados.
@@ -4268,3 +4305,740 @@ Branch `claude/compose-env-repasse`, base `main` 80ba5d88. Bug de deploy: o `env
   - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
   - `TZ=UTC vitest run`: 819 arquivos, 6.210 testes OK (antes dos agendadores); depois deles, `src/deploy` + rotas dos dois crons: 6 arquivos, 134 testes OK.
   - `docker compose -f … config` nos dois composes: saída 0, serviços `cron-portal-envios` e `cron-avisos-agenda` presentes e flags resolvidas como `"false"`.
+
+
+### Fuso pessoal nas telas restantes (1º lote: telas operacionais) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas`, base `main` 239001ad. Pendência da Q176 ("fuso pessoal nas telas restantes, que está parcial: a #159 cobriu parte"). Só exibição: regras de negócio continuam no fuso da escola (`fusoDaEscola`, `dataCivilInstitucional`, `diaCivilGravado`) e datas civis continuam como data civil. Sem migration.
+
+- **Helper central** (`src/server/operacao/fuso-exibicao.ts`): `formatarInstanteExibicao` ganhou o 4º parâmetro `estilo` (`dataHora`, padrão e igual ao de antes; `data`; `hora`, 24 h; `diaMesHora`), sempre com `timeZone` explícito. Novo `formatarDiaCivilGravado(valor, fusoEscola)`: data civil gravada como instante (promessa, data do pagamento) sai como o dia da escola pelo mesmo critério da régua, sem fuso pessoal.
+- **Telas ajustadas:**
+  - Inbox: a página entrega o fuso já resolvido (pessoal; sem ele, o da escola; antes caía em UTC); hora da lista (`ListaAtendimentos`), do balão (`BalaoMensagem`), da Aria (`PainelAria`) e de convites/agendamentos (`AcoesAtendimento`, que formatava no fuso do navegador).
+  - CRM: painel da oportunidade no funil (criação, experimental, histórico no fuso pessoal; o próximo follow-up passou a sair como dia civil da escola, sem a hora 12:00), ficha do contato, histórico da Aria, chamadas da IA em Configuração › CRM › IA (`toLocaleString` sem fuso).
+  - Financeiro: promessa na fila de cobrança e na ficha financeira, data do pagamento nos informes e "último pagamento" da ficha (eram `toLocaleDateString` no fuso do processo; a gravação legada à meia-noite UTC dava o dia anterior com o servidor em São Paulo); recebimento existente na conciliação da migração.
+  - Aluno: data do teste de nível e da emissão do certificado (fuso pessoal), nascimento (data civil, sem `new Date`); validação pública do certificado no fuso da escola.
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`): pelo AST, em todo `.ts`/`.tsx` de produção de `src/app` e `src/components` (fora `src/app/api`), acusa `toLocaleDateString`/`toLocaleTimeString` sem `timeZone`, `toLocaleString` sem `timeZone` que não é de número, `Intl.DateTimeFormat` sem `timeZone` e getters do relógio local (`getHours`, `getDate`, `getTimezoneOffset`…). Opções opacas e arquivo que não analisa contam. Exceções com motivo, uma por achado: os campos de entrada `datetime-local` da experimental (5 getters) e do diário (`getTimezoneOffset`), e a detecção do fuso do navegador no aditivo. Fora do alcance (declarado): `timeZone` presente com o fuso errado.
+- **Fica para o próximo lote:** telas que já passam `timeZone`, mas com o fuso de origem/da reserva em instantes (Secretaria › Reservas, matrícula: reserva, nova reserva, ocorrências financeiras, indisponibilidade de oferta, compensações, aditivos/agenda; segundas chamadas; presença histórica da migração) — é preciso separar, uma a uma, o que é instante do que é horário publicado no fuso da agenda; e o fuso de ENTRADA dos campos `datetime-local` (agendar mensagem no Inbox, experimental, diário), que ainda leem no relógio do navegador.
+
+### Docs do WhatsApp no estado do motor + nits da review do #279 — 2026-10-21
+
+Branch `claude/docs-whatsapp-e-nits`, base `main` 239001ad. Só documentação e um teste de deploy.
+
+- **Doc 30**: nota "Estado atual" no topo (Meta Cloud e Evolution fora do código; driver único `MOTOR`, `whatsapp-web-baileys` em modo serviço; `MOTOR_IMAGE`/`MOTOR_API_KEY`/`MOTOR_WEBHOOK_SECRET`; webhook `/api/whatsapp/webhook/motor`; conexão por QR ou código em Configuração › WhatsApp › Números). S1 deixa de dizer que as cadências C1/C2 saem pelo motor (não têm produtor; da D34 resta a classe reativa, hoje da Aria). Contratos: o driver único é `drivers/motor.ts`. Etapas E1/E3/E4/E5/E6 ganham o "hoje" ao lado do plano original.
+- **Doc 31**: §0 (burocracia Meta) trocada pelos pré-requisitos do motor; §1 descreve os serviços reais do compose (sem banco `evolution`, com `motor` e os crons); §1.3 vira motor + pareamento; §2 marca o crontab horário da VPS como **superado** e tabela os quatro laços do compose (`cron` 5 min, `cron-despacho` 1 min, `cron-portal-envios` 1 min, `cron-avisos-agenda` 5 min); §3 com os alertas atuais de `saude.ts` (motor inalcançável, eventos falhos, driver legado); §5/§6/§7 sem Evolution, kill switch em Política da régua.
+- **Doc 32**: aviso no topo de que o piloto C1/C2 **não roda no código atual** (`cron-comercial.ts` removido em 9e5d7bd3/53c69b4b; `PoliticaComercial` sem leitor em `src`; B1, B7 e B9 sumiram; restam B3 `validaAte` e o campo do B8). Status "todos implementados" marcado como superado.
+- **Nits do #279** (`src/deploy/cron-despacho.test.ts`): C1 — a contagem de laços em linha única passa a ser o número de serviços `cron*` do bloco `services` (não mais `toBe(4)`); C2 — a trava recusa qualquer `command:` em bloco escalar (`>`, `>-`, `>+`, `|`, `|-`, `|+`).
+- **Evidências:**
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run src/deploy`: 4 arquivos, 131 testes OK. Mutação: um quinto serviço `cron-extra` no compose do Coolify derruba o teste (`expected 4 to be 5`); a regex casa `>`, `>-`, `>+`, `|`, `|-` e não casa `command:` em lista nem `command: npx …`.
+  - Suíte de integração não rodada (máquina com carga alta; mudança só em docs e teste de deploy).
+
+### Idempotência, 5º lote (#166) — 2026-10-21
+
+- **Escopo:** o N3 da R1 do #274 e 12 ações que criam registro, enviam mensagem ou mexem em dinheiro. A #166 continua aberta. Os testes de integração do N3 entraram primeiro e falharam contra o servidor de `main` (6 dos 9 casos novos; os 3 da retomada que passaram em `main` cobrem o reenvio simultâneo, a chave nova e a chave de outro autor, e ficam como trava de regressão). A implementação veio depois.
+- **N3 da R1 do #274** (`repeticaoIdempotente`, depois da sessão e da conferência do papel, busca antes das validações de estado, escopo por autor):
+  - Troca de e-mail do portal: `prepararTrocaEmailPortalAluno` recebe chave (marca no `TrocaEmailPortalAlunoPreparada`; hash de aluno, novo e-mail normalizado, motivo e evidência). Se outra pessoa rejeitar a troca entre a tentativa e o reenvio, o reenvio devolve a solicitação original, sem nova solicitação nem novo e-mail de validação. A busca vem antes da leitura do aluno: a chave reaproveitada com outro aluno, existente ou não, recebe a mesma recusa. A ficha usa `useChaveIdempotencia`.
+  - Retomada: `solicitarRetomada` recebe chave (marca no `RetomadaSolicitada`; hash de aluno, opção, motivo e datas ordenadas pela cobrança). A conferência do usuário atual passou para antes das travas do calendário, e a busca vem logo depois dela. `RetomadasPainel` usa `useChaveIdempotencia`.
+  - Chave nova continua sendo nova solicitação ou proposta; sem chave, o comportamento de antes.
+- **Criações com chave:**
+  - Financeiro, fechar o mês das comissões (`fecharMesComissoes`): a marca vai em todos os `ComissaoPaga` do mesmo fechamento. O reenvio devolve quantas foram pagas e não paga as comissões aprovadas depois da tentativa (antes, o reenvio pagava tudo o que estivesse aprovado). O fechamento automático do cron não muda. `ConfirmarAcao` com `idempotente` e chave trocada em `aoConcluir`.
+  - Matrícula nova, solicitar abertura de turma (`solicitarAberturaTurma`, marca no `AberturaTurmaSolicitada`). Antes, cada reenvio gravava outro pedido.
+- **Idempotentes por natureza, com mudança no servidor.** O reenvio de quem já fez a ação devolve ok sem gravar registro nem Evento. Se o estado veio de outra pessoa (ou do contato, no opt-out), a ação segue recusada como antes. A linha do registro é travada para o clique duplo não gravar dois Eventos. Helper novo: `ultimoEventoDoAutor` (`src/server/_shared/idempotencia.ts`).
+  - Comissões, estornar (`estornarComissao`): mesmo motivo e detalhe. A falha de rede da tela agora manda tentar de novo.
+  - Home do professor, check-in da experimental (compareceu e faltou): o último check-in do lead é o mesmo, do mesmo autor. O escopo do professor passou para antes da etapa, então quem não está atribuído recebe sempre "não está atribuída a você".
+  - Funil, marcar como perdida (`marcarPerdido`): mesmo motivo e observação. Antes, cada reenvio gravava outro `LeadPerdido`. Com outro motivo, grava como antes.
+  - Configuração do CRM, arquivar tag e campo (o campo confere o nome de novo); Aria, arquivar fonte; Tarefas, cancelar (mesmo motivo, antes da conferência de versão); Carteira, revogar cobertura (já devolvia ok, mas o clique duplo gravava dois Eventos); Inbox, registrar e remover opt-out (a remoção confere a evidência).
+- **Mantidas como estão, por já estarem protegidas por chave única:** envio de cobrança pelo WhatsApp, individual e em lote (`IntencaoMensagem` única por cobrança, passo e ciclo; o reenvio devolve a intenção existente ou é recusado com "sem ação devida", sem segundo envio). Ficam com `idempotente: false` porque a tela não deve sugerir repetir.
+- **Restam 103 linhas** com `idempotente: false` ou `idempotente={false}` fora de testes e de `src/server` (eram 116 em `main`, na mesma contagem). Os grupos são os mesmos do PR #274. Saíram deste lote: estorno, fechamento do mês, check-in (2), perda, abertura de turma, tag, campo, fonte, tarefa, cobertura e opt-out (2).
+- **Testes atualizados** porque fixavam o comportamento antigo: o reenvio do opt-out (`whatsapp/inbox.int.test.ts`) e do arquivamento de fonte (`fontes.int.test.ts`) agora devolve ok com um Evento; os mocks de `comissoes-estorno.test.ts` e `experimental.test.ts` (trava da linha) e a mensagem de resultado incerto em `HomeProfessor.confirmacao.test.ts`.
+- **Evidências** (banco descartável `erp_genius_test_idem5`, `migrate deploy`; perfil temporário desfeito e banco apagado ao fim). O Postgres compartilhado foi reiniciado duas vezes durante a rodada; o banco foi recriado e as suítes, repetidas do zero.
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 817 arquivos e 6.113 testes OK em UTC e em America/Sao_Paulo. Inclui a trava `crm-config/auditoria.test.ts`.
+  - `npm run build`: saída 0.
+  - Integração dos módulos tocados, em 3 blocos: portal do aluno, retomada e financeiro (29 arquivos, 219 testes); comercial, CRM, configuração do CRM, turmas, acesso e Aria (66 arquivos, 607 testes); WhatsApp e Inbox (69 arquivos, 536 testes). Mais `academico/fluxo` e `matricula/limite-legado`, que também chamam `solicitarRetomada` (2 arquivos, 68 testes). Tudo OK, sem testes ignorados nos blocos.
+  - Arquivos novos: `retomada/retomada-idempotencia`, `financeiro/comissoes-idempotencia`, `comercial/experimental-perda-idempotencia`, `crm-config/arquivamentos-idempotencia` e casos novos em `portal-aluno/identidade-idempotencia`. Só os do N3 foram rodados contra `main` antes da implementação; os demais foram escritos junto com ela.
+
+### Fuso pessoal nas telas (2º lote: `pagoEm` misto e telas com fuso de origem) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas-2`, base `main` 95ca3d73 (com o 1º lote, #286). Continua a pendência da Q176 e trata as ressalvas das duas reviews do #286. Só exibição: nenhuma gravação nem regra de negócio mudou. Sem migration.
+
+- **`Cobranca.pagoEm` misto (ressalva A / C2):** o campo guarda a data digitada (meio-dia da escola em `registrarPagamento`/ativação; meio-dia do NAVEGADOR no FIN-04, ver "Fica para o próximo lote"), a gravação legada à meia-noite UTC ou um instante real (`new Date()`/`agora` na baixa e no informe sem data, no ajuste que quita, na desistência; o instante histórico da baixa da migração). Normalizar na gravação **não é local**: o mesmo valor alimenta `Recebimento.dataPagamento`, o hash de idempotência (`hashDados`) e filtros por período (`dataPagamento <= agora`). Por isso a leitura distingue, no novo `diaCivilDoPagamento`/`formatarDiaDoPagamento` (`src/server/operacao/fuso-exibicao.ts`): exatamente 00:00:00.000 UTC é data civil legada (dia UTC); qualquer outro valor sai no dia da escola (`dataCivilInstitucional`), o que vale para a data digitada e para o instante. Limite aceito: instante real exatamente à meia-noite UTC, com milissegundo zero, é lido como data civil. Telas: "Último pagamento" da ficha financeira, data do pagamento nos informes e no histórico de recebimentos (este usava o dia UTC do ISO). O pagamento das 22:30 de São Paulo deixa de aparecer no dia seguinte.
+- **C3:** o follow-up do painel da oportunidade usa o novo `formatarDiaDaEscola`, que não lança com fuso inválido (cai no dia UTC). O valor inicial do campo de data (`type="date"`, não `datetime-local`) em `DatasOportunidade` ganhou o mesmo fallback, porque derrubava o mesmo painel.
+- **Telas com fuso de origem:** separado instante (→ fuso pessoal; sem preferência, o de origem; com o fuso dito) de horário publicado no fuso da agenda/reserva (→ mantém):
+  - Secretaria › Reservas (turma e particular): registro e decisão da proposta → fuso pessoal; prazo, novo prazo (digitado no fuso da reserva) e horários → mantêm.
+  - Matrícula › ocorrências financeiras (`ConferenciaHoras`): comunicação, conferência e aplicação da declaração → fuso pessoal; encontro, vigência e limite de cancelamento → mantêm.
+  - Matrícula › indisponibilidade de oferta (relatos e término): confirmação/registro/decisão → fuso pessoal (sem preferência, o da escola, como antes; sem fuso da escola, UTC rotulado).
+  - Matrícula › continuidade mensal: registro e decisão da versão eram o **dia UTC** → dia no fuso pessoal (sem preferência, o da escola).
+  - Segundas chamadas › agenda inicial: registro da proposta → fuso pessoal; horário proposto → mantém.
+  - Presença histórica da migração (fixava UTC): horário da aula → fuso de origem do encontro da agenda (sem encontro, o da escola; ajuste D da review 5604624805); resolução da divergência → fuso pessoal.
+  - Conferidos e mantidos: matrícula › reserva e nova reserva (só prazo e horários da agenda), revisões de correção de aula (horário do encontro), compensações e prévia da continuidade (datas civis), período integral e compras de horas (já no fuso pessoal), aditivos › agenda e `ImpactosAcademicosAcerto` (horários da agenda; o resto é campo de entrada), `SegundaChamadaPainel` e remarcação/substituição (já no fuso pessoal), avaliações (`Formularios`: só o `datetime-local`), Configuração › CRM › metas (competência da escola é regra), contratação › `AgendaParticularFormulario` (conferência dos horários no fuso digitado).
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`), lacunas da review: nova regra "apelido" (`Intl.DateTimeFormat` fora da posição de chamada, `Intl` como valor, `X.DateTimeFormat` de outro objeto, desestruturação de `DateTimeFormat`; `globalThis.Intl`/`window.Intl`/`Intl["DateTimeFormat"]` passam pela regra "intl"); nova regra "texto-local" (`String(d)`, `d.toString()`, `${d}`, `d + …`, `+=`) e `Date()` sem `new`. "d é data" é sintático (`new Date(…)` ou nome declarado no arquivo como `new Date(…)`/`: Date`, também em união) — o type checker custaria demais na suíte; Date que chega tipada de outro módulo fica fora (no JSX o tsc já recusa). `parseDiagnostics` (API interna do TS): falha fechada se sumir e teste de sanidade. Nenhum achado novo nas telas; exceções inalteradas.
+- **Fica para o próximo lote:**
+  - telas cujo fallback sem preferência ainda é UTC, não o fuso da escola: acertos de adiantamento e de vencimento, período integral, compras de horas, substituição de agenda da segunda chamada;
+  - `remarcacao` da segunda chamada: "prazo vigente" no `fusoExibicao` vindo do servidor (conferir a origem);
+  - fuso de ENTRADA dos campos `datetime-local` (Inbox, experimental, diário, avaliações, aditivos › agenda, conciliação da migração);
+  - **gravador do FIN-04** (review 5604624805, item A): `RecebimentoDestinadoForm.tsx` grava o meio-dia do NAVEGADOR (`new Date(\`${data}T12:00:00\`)`, aceito por `z.coerce.date()` em `financeiro/acoes.ts`), não o da escola. Com o navegador a ~12h ou mais a leste da escola, `diaCivilDoPagamento` mostra o dia anterior (a oeste, o seguinte). Correção no lote 3: o form manda a data AAAA-MM-DD e o servidor a lê com `analisarComDatasDaEscola`, cuidando do `hashDados` nos reenvios.
+- **Ajustes da review 5604624805** (aprovada; nenhum bloqueador):
+  - A: JSDoc de `diaCivilDoPagamento` e descrição do PR corrigidos (a data digitada não é sempre o meio-dia da escola; limite do FIN-04 documentado). Gravador intocado neste PR.
+  - B: a trava também acusa o acesso por propriedade (`String(p.criadoEm)`, `${p.criadoEm}`) de nome declarado como data. Rodada no repo: nenhuma tela real nova.
+  - C: limite de escopo por arquivo (falso positivo possível) registrado no cabeçalho da trava.
+  - D: presença histórica: o horário da aula sai no `fusoOrigem` do `EncontroAgenda`, como no diário; só a aula sem encontro cai no fuso da escola. As duas consultas trazem `fusoAgenda` (teste de integração novo).
+  - E: `ConferenciaHoras`: a comunicação também sai no fuso da agenda, entre parênteses, quando o fuso exibido difere, para comparar com o limite de cancelamento no mesmo fuso.
+  - F: continuidade mensal: o dia do registro e o da decisão saem com o fuso escrito.
+  - Evidências: eslint dos arquivos tocados, saída 0; trava e testes tocados (15 arquivos, 184 testes) OK em `TZ=UTC` e `TZ=America/Sao_Paulo`; `entrada-financeira-historica.int.test.ts` (23 testes) OK nos dois fusos, no banco descartável `erp_genius_test_fix289`, apagado depois. `tsc` local estourou a memória (4 GB): conferido pelo CI.
+- **Evidências** (Postgres de teste em `localhost:54329` recusando conexões: só unitários):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - Afetados (helper, as duas travas, funil, financeiro, ficha financeira, reservas, ocorrências, indisponibilidade, continuidade, segundas chamadas, presença): 87 arquivos, 526 testes OK em `TZ=UTC` e em `TZ=America/Sao_Paulo`, com expectativas fixas. Os testes novos de tela falham com o comportamento antigo (conferido para o "último pagamento" e os informes).
+  - `TZ=UTC vitest run` completo: 825 arquivos, 6.267 testes OK.
+  - `npm run build`: saída 0.
+
+### Fuso pessoal nas telas (3º lote: fallback da escola, prazo da remarcação e fuso de entrada dos `datetime-local`) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas-3`, a partir do 2º lote (#289, já no `main`, com merge do `main` sem rebase). Encerra as três pendências que o #289 deixou e trata o item A da review dele (FIN-04). Sem migration.
+
+- **Fallback da escola** (sem preferência pessoal, as telas caíam em UTC): registros e decisões (instantes) agora usam o fuso pessoal; sem preferência, o da escola (ou o da agenda), com o fuso escrito na tela.
+  - Financeiro › acertos de adiantamento e de vencimento: proposta, aplicação e vigência. Saiu o "origem UTC". Os vencimentos são datas civis gravadas e passam por `formatarDiaCivilGravado`, no fuso em que o acerto foi preparado (antes era um `Intl` cru, que lançava com fuso inválido).
+  - Matrícula › período integral: registro, decisão e aplicação (`instanteDoPeriodoIntegral`).
+  - Aluno › movimentações › compras de horas: registro da compra. O horário do encontro continua no fuso da agenda.
+  - Segundas chamadas › substituição: registro e decisão no fuso pessoal; sem preferência, no da agenda (como a agenda inicial do lote 2) e, sem agenda válida, no da escola. O horário publicado fica no fuso da agenda, e um fuso de agenda inválido não derruba mais a página: sai em UTC, dito na tela.
+  - Política de comissão: as vigências exibidas acompanham o campo de entrada (sem preferência, fuso da escola).
+- **Remarcação da segunda chamada › "prazo vigente":** o servidor mandava `estado.encontro?.fusoOrigem ?? "UTC"`, ou seja, UTC sem encontro, e um fuso gravado inválido derrubava a página.
+  - Agora `fusoDoPrazoSegundaChamada` (`src/server/avaliacoes/segunda-chamada-prazo.ts`) usa o fuso da agenda; sem ela, ou com fuso inválido, usa o da escola (`fusoDaEscola`). Só cai em UTC se a escola também não tiver fuso, e nunca usa o fuso do servidor.
+  - A consulta devolve `origemFusoExibicao` e a tela escreve "(America/Sao_Paulo, fuso da agenda/da escola)", sem lançar.
+- **Fuso de ENTRADA dos `datetime-local`.** Os ~40 campos de `src/app` foram auditados:
+  - 24 já estavam certos: `<CampoFuso>` no mesmo formulário e ação `*-local` com `instanteAvaliacaoLocal`.
+  - Os errados liam o texto digitado no fuso do navegador (`new Date(valor)`: diário, Inbox, experimental no painel e nas datas, vigência do aditivo, política de comissão, validação/prazo/liberação da reposição).
+  - A correção da conclusão de reposição lia o valor como UTC.
+  - `paraDataHoraLocal` lia no fuso do PROCESSO.
+  - A agenda do aditivo convertia no cliente.
+  - O ciclo da agenda particular não dizia o fuso.
+  - **Novo `src/server/operacao/fuso-entrada.ts`:**
+    - `fusoDoCampoLocal`: o fuso pessoal; sem ele, o da escola; sem nenhum válido, "UTC" escrito ao lado do campo (fallback documentado).
+    - `valorCampoLocal`: valor inicial e `max` no mesmo fuso; não lança, e fuso inválido usa UTC.
+    - `instanteDoCampoLocal`: converte no fuso informado e recusa formato inválido, data impossível e horário pulado ou repetido no horário de verão.
+    - Servidor: `exigirInstanteDoCampoLocal` (`src/server/_shared/campo-local.ts`) transforma o erro em `ErroRegra`, sem fallback.
+  - **Novo `<CampoDataHoraLocal fuso=…>`** (`src/components`): escreve "Horário em X." ao lado do campo, marca `data-fuso` e, com `nomeFuso`, envia o fuso junto.
+  - **Ações `*-local`** (texto + fuso → instante no servidor):
+    - `diario/reposicao-local.ts`
+    - `diario/diario-local.ts`
+    - `financeiro/politica-comissao-local.ts`
+    - `contratos/aditivos-local.ts`
+    - `contratos/agenda-aditivo-local.ts`
+    - `agendarMensagemNoAtendimentoLocal`
+    - `agendarExperimental({ dataLocal, fuso })`
+    - `atualizarDatas({ dataExperimental, fusoDataExperimental })`
+  - `paraDataHoraLocal`/`dataHoraOpcional` passam a recusar o texto sem fuso.
+  - Exceção mantida: a conciliação financeira da migração, que usa deslocamento UTC explícito, copiado da fonte.
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`):
+  - Nova regra "campo-local": `datetime-local` fora do `<CampoDataHoraLocal>`, a não ser com `<CampoFuso>` no mesmo `<form>` ou na mesma árvore JSX. `createElement`/constante contam (falha fechada).
+  - Nova regra "conversao-local": `new Date(v)`/`Date.parse(v)` em que `v` lê o campo (`x.get("<name>")` ou o nome ligado ao `value`).
+  - Saíram as 7 exceções do lote 2 (experimental, diário, `Intl.DateTimeFormat()` do aditivo) e entrou 1 (conciliação da migração).
+  - `campos.test`/`campos-mapa` e `rotulos.test` reconhecem o `CampoDataHoraLocal`.
+- **FIN-04 (item A da review do #289):**
+  - Antes, o form gravava o meio-dia do NAVEGADOR: 05/10 digitado em Sydney virava 04/10 na escola em São Paulo.
+  - Agora o form manda `AAAA-MM-DD` e `registrarRecebimentoDestinado` analisa com `analisarComDatasDaEscola`/`dataObrigatoria`, gravando o meio-dia da escola (`Recebimento.dataPagamento` e `Cobranca.pagoEm`). O ISO de um form antigo ainda aberto continua aceito.
+  - **Idempotência:** com `dataDigitada`, o replay da mesma chave aceita a data gravada pela outra convenção de meio-dia para o MESMO dia digitado (`mesmaDataDigitada`: meio-dia de D em algum fuso, entre UTC−12 e UTC+14, em quartos de hora e sem segundos), desde que o resto do `hashDados` seja igual.
+  - Outro dia com a mesma chave continua recusado.
+- **Pendências:**
+  - Cerca de 100 telas ainda usam "UTC" como origem de exibição sem preferência (fora do escopo deste lote; lista com `grep 'formatarInstanteExibicao(.*"UTC"'`). Entre elas a própria página de aditivos e os históricos de movimentações.
+  - O horário publicado na remarcação da segunda chamada continua no fuso pessoal com "(origem X)", como o lote 2 deixou.
+  - O `tsc --noEmit` completo foi morto por falta de memória: fica com o CI. O dos arquivos alterados e dos seus importadores (143 arquivos) passou.
+- **Evidências** (depois do merge do `main` com o #289):
+  - Afetados: 282 arquivos e 2.546 testes OK em `TZ=UTC` e em `TZ=America/Sao_Paulo`, com expectativas fixas. Inclui as travas `fuso-pessoal-telas`, `fuso-instante`, `campos` e `rotulos`, os helpers e as telas tocadas.
+  - Testes novos: `fuso-entrada` (dois fusos, virada do dia, horário de verão, fallback), `acoes-campo-local` e `segunda-chamada-prazo`. `recebimentos-data-digitada` cobre Sydney → 05/10 e o replay. Também os autotestes das regras novas da trava.
+  - Integração no banco descartável `erp_genius_test_fuso3`, apagado no fim:
+    - `recebimentos-destinados`: FIN-04 nos dois sentidos do replay e outro dia recusado.
+    - `comercial/leads`: experimental com e sem fuso.
+    - `whatsapp/agendamento`: agendamento local.
+    - `reposicao-entrega-operacional`.
+    - Tudo OK em UTC; `agendamento` e `recebimentos-destinados` também em São Paulo.
+    - `segunda-chamada.int` (consulta de remarcação: fuso do prazo = agenda): OK.
+  - `tsc` dirigido (alterados e importadores, 145 arquivos): saída 0. O `tsc --noEmit` completo foi morto por falta de memória (4 GB): fica com o CI.
+  - `eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
+- **Correções das reviews do #290** (5605939307 e 5605944129):
+  - **B1:** em `/academico/reposicoes`, o prazo da etapa e o "Expira em" da liberação eram digitados em UTC quando não havia preferência. Agora a página usa `fusoDoCampoLocal(preferência, escola)`, e 25/10 23:59 em São Paulo vira `2026-10-26T02:59Z`. Nenhuma outra entrada caía em UTC.
+  - **FIN-04, replay (menor 1 e C3):** `mesmaDataDigitadaNaEscola` compara com o dia que a escola vê no registro existente. Em Pacific/Auckland e Pacific/Honolulu, outro dia com a mesma chave é recusado. Um registro antigo que a escola vê em outro dia (Sydney) também é recusado, sem duplicar o caixa.
+  - **Menores:**
+    - comentário de `diaCivilDoPagamento` atualizado;
+    - a experimental intocada volta como o instante gravado (hora repetida do horário de verão), com o limite documentado no diário e na agenda do aditivo;
+    - a trava "conversao-local" passa a pegar `new Date`/`Date.parse` sobre `*.target.value` nos handlers do campo e `valueAsNumber`/`valueAsDate`;
+    - na remarcação, o rótulo do prazo com fuso não reconhecido mostra "UTC; … não reconhecido";
+    - o texto do `datetime-local` sem fuso vira erro de validação legível.
+  - **Evidências:**
+    - trava e testes tocados (26 arquivos, 211 testes) OK em UTC e em São Paulo;
+    - financeiro, `_shared` e comercial: 72 arquivos e 560 testes OK nos dois TZ;
+    - `tsc` dirigido: saída 0; lint dos alterados: 0.
+    - A integração não rodou, porque o cluster de teste está com o checkpoint parado (vários `DROP DATABASE` pendentes, inclusive o do `erp_genius_test_fuso3`). O `recebimentos-destinados.int` foi atualizado para a regra nova.
+
+### Idempotência, 6º lote (#166) — 2026-10-21
+
+Branch `claude/idempotencia-lote6`, base `main` 239001ad, com `main` mesclada depois do 5º lote (PR #282). Não toca as ações do 5º lote. A #166 continua aberta.
+
+- **Escopo:** 20 ações que criam registro, enviam pelo WhatsApp ou mexem em dinheiro. Os testes de integração entraram primeiro e rodaram contra o servidor de `main`: 18 de 29 casos falharam; os 11 que passaram (sem chave, chave de outro autor, estado vindo de outra pessoa) ficam como trava de regressão.
+- **Criações com chave** (`repeticaoIdempotente` depois da sessão e do papel, busca antes das validações de estado, escopo por autor; `useChaveIdempotencia` na tela):
+  - Financeiro, pedido manual de restrição e de liberação de aulas (`bloquearAcesso`, `desbloquearAcesso`; marca em `RestricaoAulasSolicitada`/`LiberacaoAulasSolicitada`, hash de matrícula, pedido e motivo). Antes, se a solicitação era rejeitada entre a tentativa e o reenvio, o reenvio abria outra; se era aprovada, o reenvio era recusado. A mesma chave com outro motivo, o pedido inverso ou outra matrícula (existente ou não) recebe a mesma recusa.
+  - Funil, registrar o link de pagamento da taxa (`registrarLinkPagamento`; marca em `LinkPagamentoEnviado`, hash de cobrança e link). Antes, cada reenvio gravava outro Evento e movia a âncora da régua "link sem pagamento". O reenvio devolve ok mesmo com a cobrança já paga. O painel ganhou executor próprio para o link (como a nota).
+  - Inbox, transferir atendimento (`transferirAtendimento`; marca nos dois `AtendimentoTransferido`, hash de atendimento, destino, chave do destino e contexto). O reenvio devolve o atendimento novo em vez de "Atendimento encerrado".
+  - Inbox, encaminhar mensagem pelo motor (`encaminharMensagemWhatsApp`), no padrão do envio de assinatura (#288), depois do B1 da R1: a TX1 confere tudo e grava `MensagemWhatsAppEncaminhamentoIniciado` (com a marca) sob a trava da chave; o motor é chamado fora de transação; a TX2 grava o desfecho (`MensagemWhatsAppEncaminhada`, `...EncaminhamentoIncerto` para timeout, rede ou resposta ambígua, `...EncaminhamentoNaoEnviado` quando o motor afirma que não executou). O reenvio da mesma chave devolve ok, "em andamento" ou "incerto" sem chamar o motor; só depois de "não enviado" tenta de novo. A leitura e o escopo da TX1 usam a própria transação (B2). Sem chave, o fluxo de antes.
+- **Idempotentes por natureza, com mudança no servidor.** O reenvio de quem já fez a ação devolve ok sem gravar Evento nem chamar o motor. Se o estado veio de outra pessoa, do despachante ou do celular, a ação segue recusada como antes.
+  - Inbox: assumir (o último Evento de responsável do atendimento é o `AtendimentoAssumido` de quem repete; o clique duplo que perde o UPDATE condicional também recebe ok), devolver para a fila (último é o `AtendimentoDevolvido` dele), encerrar (antes, com a corrida do clique duplo, dava para gravar dois `AtendimentoEncerrado`; agora a linha é travada), revogar convite e cancelar mensagem agendada (`cancelarMensagemAgendada`, que também serve à agenda de tarefas).
+  - Mensagem pelo motor: editar com o mesmo texto da última edição de quem repete e apagar a mensagem que ele mesmo apagou pelo ERP. Apagada pelo celular (sem Evento), segue "já foi apagada".
+- **Idempotentes por natureza, só na tela** (conferido no servidor, que já devolvia a decisão ou a efetivação existente): decisão da solicitação de acesso às aulas, efetivação da desistência, decisão administrativa e decisão financeira da desistência, decisão e efetivação do acerto de encerramento, atribuir atendimento. As decisões já usavam a mensagem própria de decisão incerta ("reenvie a mesma decisão"); as efetivações passam de "recarregue antes de repetir" para "reenvie sem alterar os dados".
+- **Fica como está:** fixar conversa no Inbox alterna o estado (o reenvio desfaria o primeiro clique); continua com `idempotente: false`, agora num executor separado de assumir/devolver. O pagamento simulado da página pública `/pagar` não baixa a cobrança (`baixarCobrancaTx` exige autor), então não há o que repetir.
+- **Restam 92 linhas** com `idempotente: false` ou `idempotente={false}` fora de testes e de `src/server` (103 em `main` depois do 5º lote, na mesma contagem). O encerramento usa `ultimoEventoDoAutor` do 5º lote; assumir e devolver usam um helper local, porque o último Evento de responsável é procurado entre três tipos.
+- **Testes atualizados** porque fixavam o comportamento antigo: o segundo `revogarParticipante` em `whatsapp/participantes.int.test.ts` (agora ok, com um Evento); a chamada de `encaminharMensagemWhatsApp` em `inbox/AcoesMensagem.test.ts` (leva a chave); a mensagem de resultado incerto das efetivações em `movimentacoes/feedback.interacao.test.ts` e `desistencia/feedback.interacao.test.ts`.
+- **R1 do #291:** B1 e B2 acima; testes de motor lento (6 s, acima do timeout padrão de transação interativa), envio simultâneo com a mesma chave (C2), timeout que vira incerto e limite de ritmo que libera nova tentativa; encaminhar com chave, transferir com chave e as repetições de devolver, assumir e encerrar em `whatsapp/acoes-atendimento-pool.int.test.ts` (uma conexão). C3: chave por alvo (`useChavesPorAlvo`) no painel de acesso às aulas (matrícula e pedido) e no encaminhar (destino). C4: trava comum a restringir e liberar com a mesma chave.
+- **R2 do #291 (revisão 5605995246):** o marcador confirmado antes do motor (`...EncaminhamentoIniciado`) já cobria o B1/B2; o reenvio que o encontra sem desfecho agora diz "não confirmado, confira a conversa". `traduzir` só diz "não executou, tente de novo" quando o motor afirma que não executou; timeout, rede e `RESULTADO_INCERTO` dizem que a ação pode já ter sido feita. B3: editar e apagar gravam `MensagemWhatsAppAcaoIniciada` sob a trava da mensagem e do verbo antes do motor e o desfecho depois; dois pedidos simultâneos geram uma chamada e um Evento (cenários D e E). A chave não vai ao motor: a rota `/v1/numeros/:id/acoes` não tem campo de deduplicação no contrato conhecido (o `clientMessageId` é só da rota de mensagens).
+- **Arquivos novos:** `cobrancas/acesso-aulas-idempotencia`, `matricula/link-pagamento-idempotencia`, `whatsapp/atendimento-idempotencia` e `whatsapp/motor/mensagem-idempotencia` (`*.int.test.ts`). Os três primeiros trocam só `exigirSessao` (como `empresa-idempotencia`), para o envio simultâneo não esbarrar no `import()` duplo do NextAuth mockado.
+- **Evidências** (banco descartável `erp_genius_test_idem6`, `migrate deploy`; perfil temporário desfeito e banco apagado ao fim). A máquina estava sob carga (load ~20 em 4 núcleos) e o Postgres compartilhado entrou em recuperação no meio da rodada; a integração foi repetida depois que ele voltou.
+  - `tsc --noEmit`: saída 0, antes e depois do merge da `main`.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base), antes e depois do merge.
+  - `npm test` antes do merge: 819 arquivos e 6.218 testes; em UTC, 2 falharam por timeout de carga (`colunas-ordenaveis`, `paginacao-dois-sentidos`), em America/Sao_Paulo, 1 (`campos-texto`, timeout fixo de 120 s). Os três passam repetidos isolados. Inclui a trava `crm-config/auditoria.test.ts`.
+  - `npm run build`: saída 0 (a primeira tentativa parou em "Failed to type check" sem diagnóstico, com a memória da máquina esgotada; repetida, passou).
+  - Integração: os 19 arquivos que chamam as ações tocadas mais `whatsapp/linha-comercial`, `crm/carteira` e `crm/funil-carteira-equivalencia`: 22 arquivos e 247 testes OK. A rodada por diretório inteiro (`whatsapp`, `inbox`, `crm`, `cobrancas`) não terminou dentro do limite de uma hora por causa da carga.
+
+### Port da #62: Q171/Q167C — destinos do excedente de permuta e saldo restrito a serviços — 2026-10-21
+
+Branch `claude/port-62-q171`, base `main` 80ba5d88. Origem: #62 `5f2354ee` (destinação negociada) e `4f09181e` (uso do saldo), portados sem cherry-pick e adaptados à `main`. Regras de 21/09 (`docs/planejamento/decisoes-2026-09-21.md`, sexta rodada): o acordo caso a caso escolhe entre saldo restrito a serviços e crédito financeiro; concordância do aluno (ou responsável) e da escola com nome, meio e evidência; aprovação independente; saldo de serviços abate mensalidade, hora particular ou taxa da mesma matrícula, não expira e nunca vira dinheiro.
+
+- **Migrations** `20261021300000_destinacao_excedente_permuta` (era `20260921070000`) e `20261021310000_uso_saldo_servico_permuta` (era `…080000`). Proposta → concordâncias → decisão independente → destinos na mesma transação (`SaldoServicoPermuta`; `OrigemCreditoExcedentePermuta` → `CreditoMatricula`). O uso aprovado nasce como `AplicacaoCompensacaoPermuta` com `usoSaldoServicoId` (CHECK de origem única), então contador, projeção e proteção da cobrança seguem sem reescrita. Guards SQL imutáveis, aprovador ≠ preparador, constraint triggers diferidas (destinos e aplicação nascem com a aprovação).
+- **Nona origem de crédito** (`origemExcedentePermutaId`) em todas as funções que enumeram origens, copiadas da definição VIGENTE na `main` e conferidas com `diff -w` (só o ramo novo): `credito_matricula_origem_unica_check`, `q165_delta_reconhecimento_guard_249` e `q165_fotografia_delta_atual_255` (de `20261020500000`), `q165_fotografia_atual` (de `20261020520000`, #276). A #62 só tinha os dois primeiros: `_255` e `q165_fotografia_atual` foram redefinidos na `main` depois. TS no mesmo padrão (`desistencia-financeiro-tx.ts`, `desistencia-reconferencia-delta-fontes.ts`): a chave só aparece quando existe. `validar_aplicacao_permuta_223`: cópia da vigente (`20260917148000`) com o ramo do uso antes do corpo original, que ficou idêntico (a #62 mudava a ordem dos bloqueios).
+- **Diferenças em relação à #62:** o uso do saldo recusa cobrança em pausa (suspensa/cancelada) e com comprovante a conferir, na ação e no banco, como a compensação por permuta da `main`; a concordância idêntica repetida devolve a mesma (também depois da decisão); decisões guardam o motivo no Evento; ações devolvem `podeRevisar` como `permuta-servico.ts`; vencimentos na tela são dia civil no fuso da escola (`diaCivilGravado` + `fusoDaEscola`); tela sem id cru, com `IdentificacaoRegistro`, `EstadoVazio`, rótulos e `formatarMoeda`; valores aceitam vírgula.
+- **Tela** `financeiro/permuta/excedente/[matriculaId]` (link em cada acordo da lista de permutas). Manifestos atualizados: `botoes-mapa.ts`, `estados-vazios-mapa.ts`, trilha. Catálogo de eventos (doc 12) com os seis eventos novos.
+- **Perguntas ao dono (escolhido o mais conservador):** a concordância pode ser registrada pela Secretaria (como na #62), mas a tela é só do Financeiro, ok? A Q173 (aditivo de moeda, ainda não na `main`) deve contar saldo de serviços na moeda antiga como pendência da "matrícula limpa"? Hoje ele simplesmente não abate cobrança de outra moeda.
+- **TDD:** a igualdade Node/SQL da `q165_fotografia_atual` com a nona origem ficou vermelha antes do TS; integrações novas `excedente-permuta-destinacao.int.test.ts` (3 casos: fonte mista, soma, idempotência, concordâncias, autoaprovação na ação e no banco, destinos atômicos, cobrança intacta, Evento por escrita, TS = SQL da fotografia delta, crédito usado pelo fluxo geral, segunda destinação recusada, cobrança alterada) e `saldo-servico-permuta-uso.int.test.ts` (3 casos: tipos/moeda/matrícula, disponível na ação e no banco, reserva, autoaprovação, aprovação sem aplicação recusada pelo banco, imutabilidade, sem crédito gerado, cadeia nas fontes da Q167, comprovante a conferir recusado na ação e no banco, rejeição devolve a reserva).
+- **Evidências** (Postgres na 54329, banco descartável `erp_genius_test_q171`, `migrate deploy` do zero com 476 migrations, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `vitest run`: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo (inclui a trava `crm-config/auditoria.test.ts`).
+  - Integração de `src/server/financeiro` e `src/server/matricula` (permuta, desistência, Q165, Q167): 58 arquivos e 488 testes OK; `financeiro/politica.int.test.ts` (baixas parciais concorrentes, não tocado) falhou uma vez com o build rodando junto e passou ao ser repetido sozinho.
+  - `npm run build`: saída 0.
+- **Correções da revisão (R1 `5602744571` e R1 rigorosa `5603911810`):**
+  - **B1/C2, saldo restrito nunca vira dinheiro:** o uso aprovado do saldo não é origem de excedente. A recusa vale na ação (`apurarTx`) e no banco (`guardar_origem_excedente_uso_saldo_171` em `OrigemExcedentePermuta`).
+  - **B2 e item menor:** o uso abate só `MENSALIDADE`, como a permuta da `main`, na ação e no banco. Em hora particular, a Q175 devolveria a aula paga com saldo como crédito financeiro. Em taxa, o acerto de taxa não conhece a permuta e o uso falhava com exceção do banco. Nenhuma função vigente foi redefinida. Isso é mais estreito que a decisão de 21/09 (ver a nota da Q171 em `decisoes-2026-09-21.md`).
+  - **B3:** a destinação exige cobrança `PAGO`, com saldo 0 e liquidado ≥ `valorNegociado`, na ação e nos guards da proposta e da decisão.
+  - **C3:** a nota da Q171 explica que `valorDevidoAcordado` é digitado na proposta.
+  - As mudanças entraram nas próprias migrations `20261021300000`/`310000`. O corpo original de `validar_aplicacao_permuta_223` continua idêntico (`diff -w`).
+  - Testes novos: `saldo-servico-permuta-uso.int.test.ts` com 4 casos (B1 na ação e no banco; tipos fora de mensalidade recusados na ação e no banco) e `excedente-permuta-destinacao.int.test.ts` com 4 casos (B3 na ação e no banco). Com o guard do banco removido, o caso B1 fica vermelho.
+- **Correções da R2 (`5606178959` e rigorosa `5606415941`):**
+  - **B4:** o banco amarra o excedente à obrigação acordada. O limite é a redução (liquidado − obrigação) e o serviço próprio (permuta − usos do saldo). Além disso, a obrigação não pode passar do negociado. A regra vale nos guards da proposta e da decisão (`20261021300000`). Teste do cenário da sonda (caixa 30 + permuta 50 + uso 20) em `saldo-servico-permuta-uso.int.test.ts`.
+  - **C7:** a tela do excedente esconde a preparação em cobrança em aberto e quando a única fonte de serviço é uso de saldo, e explica o motivo. Teste de render em `excedente/[matriculaId]/page.test.ts`.
+  - **C6:** a descrição do PR foi atualizada para o recorte só de mensalidade.
+
+### Port da #62: assinatura eletrônica com driver simulado (Q155/Q165) — 2026-10-21
+
+Branch `claude/port-62-assinatura-simulada`, base `main` 239001ad. Traz, adaptado à `main` atual, o port da #62 (`d2cf08f2`, `1583df0a`, `f09201ea`, que nunca chegaram à `main`). Envio e cancelamento de assinatura (contrato, aditivo e desistência Q165) passam a funcionar ponta a ponta com um driver SIMULADO, atrás do port `ProvedorAssinatura`; trocar para o fornecedor real (Q155) é implementar um driver nesse contrato.
+
+- **Port e drivers** (`src/server/contratos/`): `provedor-assinatura.ts` (contrato: criar envelope pela chave da tentativa, consultar por chave, cancelar, baixar assinado; exceção, timeout ou referência vazia são sempre INCERTO), `provedor-assinatura-simulado.ts` (driver SIMULADO; os envelopes ficam na tabela `EnvelopeAssinaturaSimulado`, durável entre reinícios e com Evento em cada escrita) e `provedor-assinatura-ativo.ts` (`ASSINATURA_DRIVER`: vazio = registro manual; `simulado`; qualquer outro valor falha com erro de regra citando a Q155).
+- **Sinalização do simulado:** o processo criado pelo simulado tem fornecedor `SIMULADO` e ambiente `SANDBOX`. Migration `20261021500000_driver_assinatura_simulado`: CHECK `SIMULADO ⇒ SANDBOX` e `SIMULADO ⇒ referência sim_…` nos processos de contrato (NOT VALID, sem reler legado) e de aditivo; os guards de efeito contratual real já exigiam `PRODUCAO`. As telas mostram o aviso "Integração de assinatura SIMULADA" e o serviço como "Simulado (nenhum documento sai do ERP)". Em `NODE_ENV=production` o simulado é aceito (é o build do UAT), com aviso no log. Nenhuma função SQL foi redefinida.
+- **Envio e conciliação do contrato** (`envio.ts`, tela `contrato/originais/[artefatoId]`): tentativa confirmada no banco antes da chamada externa, resultado em outra transação; perda de resposta vira `ENVIO_INCERTO` e só a conciliação pela chave da tentativa resolve. Só aparece com o driver ativo, conferência da revisão atual e processo do mesmo serviço/ambiente.
+- **Aditivo** (`aditivo-envio.ts`, tela do original do aditivo): mesmo protocolo; `ProcessoFormulario` oferece "Simulado" só com o driver simulado ligado e fonte em SANDBOX, e a ação recusa `SIMULADO` sem o driver. `iniciarTentativaAditivoTx` e `registrarResultadoEnvioAditivoTx` passaram a gravar Evento (`TentativaAssinaturaAditivoIniciada`, `ResultadoEnvioAssinaturaAditivoRegistrado`), que faltava.
+- **Desistência Q165** (`executarCancelamentoAssinaturaDesistencia`, tela `desistencia/documentos`): intenção Q121 → cancelamento no serviço → observação `CONFIRMADO`/`INCERTO`; só a confirmação encerra o processo (`CANCELADO`), e a efetivação já reconhecia esse cancelamento. Repetir com nova chave concilia a mesma intenção; já confirmada, não chama o serviço de novo. A consulta documental separa o cancelamento por desistência do de substituição (antes, uma intenção de desistência aparecia como "cancelamento para substituição").
+- **Idempotência:** as quatro ações aceitam `chaveIdempotencia` (`repeticaoIdempotente`, marca no Evento da tentativa/resultado/observação) e as telas usam `useChaveIdempotencia`; a mesma chave devolve o resultado gravado sem chamar o serviço.
+- **Deploy:** `ASSINATURA_DRIVER` repassada em `docker-compose.coolify.yml` e `docker-compose.prod.yml`, listada em `.env.example`, `deploy/env.production.example` e `SETUP.md` (trava `compose-env.test.ts` conferida por mutação).
+- **Travas de UI:** botões novos em `botoes-mapa.ts` ("Cancelar envio no serviço de assinatura" como `perigo`); a mensagem de resultado do envio (`contrato/resultado-envio.ts`) entrou como exceção ancorada em `enums-rotulos.test.ts`, por ser frase do fluxo e não rótulo do estado.
+- **Fora do escopo:** driver real e webhook autenticado (Q155), conclusão automática a partir do assinado baixado, job de conciliação agendado, e envio de aditivo sobre base de ambiente `HISTORICO` (origem contratual histórica, #285).
+- **Perguntas ao dono (escolhido o mais conservador possível sem quebrar o objetivo):** (1) o simulado é aceito com `NODE_ENV=production` para servir ao UAT; bloquear em produção real exigiria outra variável. (2) Um processo SIMULADO/SANDBOX pode ser fonte do acerto Q246/Q165 (regra existente para SANDBOX, não alterada).
+- **Evidências** (Postgres 16 descartável na 54329, banco próprio do agente):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run` completo: 821 arquivos, 6.241 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
+  - `prisma migrate deploy` do zero em banco novo: 475 migrations aplicadas, saída 0.
+  - Integração dirigida: `contratos/envio-integrado.int.test.ts` 3/3; `aditivo.int.test.ts` cenário novo 1/1; `desistencia-acerto-contratual.int.test.ts` cenário novo 1/1 (envio pelo simulado, cancelamento incerto e depois confirmado, efetivação).
+  - Suítes completas de `src/server/contratos` e `src/server/matricula` (depois da volta do cluster): 57 arquivos, 571 testes passados, 4 ignorados e 2 falhas. As 2 falhas foram nos testes novos de corrida, que o run carregou no meio da edição. Rodados de novo isolados com o código final (`envio-integrado`, `aditivo`, `desistencia-acerto-contratual`): 3 arquivos, 90/90.
+  - Revisões R1, R2 e rigorosa: a conciliação não confirma envelope `CANCELADO`/`RECUSADO` (fica `INCERTO` com o motivo); `ENVIANDO` só é conciliado depois de `PRAZO_CONCILIACAO_ENVIANDO_MS` (10 min), maior que `TIMEOUT_CRIACAO_ENVELOPE_MS` (2 min), que agora é aplicado na criação; a tela só oferece conciliar em `ENVIO_INCERTO` ou `ENVIANDO` vencido; o catálogo de eventos (`docs/12`) foi atualizado; a evidência repetida do cancelamento simulado não varia mais; e o valor bruto de `ASSINATURA_DRIVER` vai só para o log.
+  - `npm run build`: saída 0.
+
+### Port da #62: Q173, aditivo de moeda com a matrícula "limpa" — 2026-10-21
+
+Branch `claude/port-62-q173`, base `main` 80ba5d88. Porta `3d6aa061` da #62 (decisões de 21/09, todas confirmadas em 20/10) sem cherry-pick, conferindo cada peça contra a `main` atual.
+
+- **Fluxo** (molde da Q172 na `main`): `PropostaMoedaAditivo` (Financeiro) → `DecisaoMoedaAditivo` (outro aprovador: Administração ou Financeiro com `financeiro.aprovar_acertos`) → `AplicacaoMoedaAditivo` (o próprio aprovador, só depois da vigência). O trigger `efetivar_moeda_aditivo_173` troca `Matricula.moeda` e a aplicação guarda a moeda anterior. Nada é convertido: cobranças emitidas e créditos ficam na moeda em que nasceram. Proposta, decisão e aplicação são imutáveis no banco; cada uma grava `Evento` (`MoedaAditivoProposta`/`Decidida`/`Aplicada`) na mesma transação. Ações em `contratos/moeda-aditivo.ts`, alvo em `contratos/aditivo-moeda.ts`, tela `financeiro/acertos-moeda/[matriculaId]/[propostaId]`, link na tela do aditivo para quem é do Financeiro ou da Administração.
+- **Matrícula "limpa"** (`pendencias_moeda_antiga_173`, autoridade no banco, espelhada com texto na tela): sem cobrança em aberto, comprovante a conferir, mensalidade cuja cobertura alcance a vigência, saldo ou reserva pendente de horas pré-pagas e permuta vigente, todos na moeda anterior.
+- **Migration** `20261021200000_aplicacao_moeda_aditivo` (era `20260921060000`). `conferir_campos_aplicacao_direta_231` foi copiada da definição vigente (`20261020100000`, Q172), conferida com `diff -w`, e ganhou só o ramo da moeda. A aplicação de moeda prova `MOEDA` e também `TAXA_VALOR`/`ADIANTAMENTO_VALOR` reexpressos na mesma versão, na função SQL e na cadeia TS (`aditivo-aplicacao-campos.ts`).
+- **Diferenças em relação à #62:**
+  - **Fuso da escola:** a cobertura (data civil) e a permuta são comparadas com o dia civil da vigência no fuso da escola. O fuso fica gravado na proposta (`fuso`, também na fotografia) e o banco recusa se ele estiver ausente ou tiver mudado. Na #62 era o dia UTC.
+  - Minutos liquidados no encerramento descontam só o que liquidaram. Na #62, qualquer liquidação zerava o saldo.
+  - A tela segue a Q172 da `main` (`useAcaoCliente`, `FeedbackAcao`, `IdentificacaoRegistro`, paginação), com `useChaveIdempotencia`.
+  - Recusa conhecida libera a correção (`podeRevisar`).
+  - A decisão e a aplicação recusam se a moeda ou o fuso mudaram desde a preparação.
+- **Consumidores** (iguais à base da #62, aplicados sem conflito): `continuidade-preco-tx.ts` (preparação na moeda original; depois da troca, o valor contratado é a referência e período anterior à troca é recusado) e `encerramento-contexto-tx.ts` (cobrança paga ou cancelada na moeda anterior fica fora do acerto).
+- **Perguntas ao dono (escolhido o mais conservador):**
+  - "Reserva pendente" (sexta rodada) foi lida como reserva de horas pré-pagas, como na #62. A reserva de agenda particular e a de vaga de turma só existem em matrícula em preparação e não carregam valor.
+  - Sem fuso institucional configurado, a troca é recusada. Não cai em `America/Sao_Paulo`.
+  - Limites herdados da #62, ainda abertos:
+    - Compensação de cobertura, período integral, recomposição e permuta sobre cobranças antigas continuam recusando moeda diferente da matrícula.
+    - Rótulos de totais em algumas telas financeiras usam a moeda atual.
+    - Falta o link do acerto na página inicial do Financeiro (como na Q172).
+- **TDD:** a integração (`aditivo.int.test.ts`, cenários `PRODUCAO_MENSAL_MOEDA*`) cobre:
+  - fluxo completo, com pendência listada e proposta recusada com a taxa em aberto;
+  - idempotência da proposta, da decisão e da aplicação, e chave com outra entrada recusada;
+  - uma troca em andamento por matrícula;
+  - autoaprovação e aplicação pelo preparador negadas na ação e no banco;
+  - imutabilidade e Eventos;
+  - cobrança antiga intacta em CRC;
+  - prova por campo e aplicação geral liberada;
+  - preço mensal em USD;
+  - dia civil da vigência em America/Sao_Paulo × UTC;
+  - aplicação antes da vigência recusada na ação e no banco;
+  - fuso alterado recusado no banco.
+
+  Há unitários do ramo MOEDA na cadeia TS, da tela e do formulário.
+- **Evidências** (Postgres na 54329, banco descartável `erp_genius_test_q173` com `migrate deploy` do zero, perfil temporário desfeito, banco apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run`: 820 arquivos, 6.144 testes OK em TZ=UTC e em TZ=America/Sao_Paulo. A primeira rodada apontou os manifestos de tela (botões, estados vazios, trilha), atualizados.
+  - Integração de `src/server/{contratos,matricula,financeiro}`: saída 0, 63 arquivos (3 pulados) e 648 testes (4 pulados).
+  - `npm run build`: saída 0.
+
+### Port da #62: origem contratual histórica como fonte de aditivos do contrato legado — 2026-10-21
+
+Port de `db854944` (decisões da quinta e sexta rodada de 21/09, `docs/planejamento/decisoes-2026-09-21.md`), sem cherry-pick, sobre a `main` atual.
+
+- **Modelo:** `PropostaOrigemContratualHistorica` (Secretaria/Administração: PDF assinado em bytes + `pdfHash`, referência, data civil da assinatura, transcrição das condições e projeção no formato da prévia) → `DecisaoOrigemContratualHistorica` (outro administrador declara os hashes conferidos do PDF e da transcrição). `PropostaAditivoContratual` e `PropostaAgendaAditivoParticular` passam a ter `conclusaoOriginalId` **ou** `origemHistoricaId` (CHECK `num_nonnulls = 1`). Migration `20261021400000_origem_contratual_historica` (era `20260921090000`).
+- **Funções SQL redefinidas** (`conferir_fonte_aditivo_117`, `validar_proposta_aditivo_117`, `validar_decisao_aditivo_117`, `validar_artefato_aditivo_117`, `validar_conferencia_assinatura_aditivo_117`, `validar_decisao_alcada_aditivo_117`, `validar_compatibilidade_aplicacao_aditivo_117`, `validar_proposta_agenda_aditivo_117`, `vincular_agenda_proposta_aditivo_117`): partem da definição vigente na `main` (`pg_get_functiondef`), conferida com `diff -w`; só ganham o ramo histórico e os ajudantes `bloquear_fonte_aditivo_117`/`previa_fonte_aditivo_117`. Na `main`, a conferência de modelo/publicação de `conferir_fonte_aditivo_117` fica dentro do ramo da conclusão, então o ramo histórico a repete. Nenhuma outra função vigente lê `conclusaoOriginalId`/`conclusaoFonteId`.
+- **Diferenças em relação à #62:** o guard `guardar_origem_contratual_historica` também confere moeda da matrícula e regime da preparação comercial (a #62 só conferia na ação); telas reescritas com os padrões atuais (`useAcaoCliente`/`FeedbackAcao`, `CampoTexto`, `botaoClasses`, `VoltarPara`, `EstadoVazio`, rótulo `ESTADO_PROPOSTA_DECIDIDA_LABEL`, trilha "Origem histórica"); o resto do TS de aditivos aplicou sem conflito, exceto a importação ao lado da recusa de regime (Q174) e as telas de aditivo.
+- **Alcance:** sobre a origem histórica valem todos os aditivos exceto `TAXA_VALOR`, `TAXA_VENCIMENTO`, `PRIMEIRA_MENSALIDADE_VENCIMENTO` e `ADIANTAMENTO_*` (schema TS e guard SQL). Q172 (adiantamento) não é alcançado; Q174 (regime) continua recusado na preparação.
+- **Limite herdado da #62, explícito desde a R1 (B1):** a base do aditivo histórico tem `ambiente: "HISTORICO"`, e o envio só aceita `SANDBOX`/`PRODUCAO`. Até o dono decidir, o preparo, a aprovação, o envio e a fotografia de agenda sobre a origem são recusados com "Aditivo sobre contrato legado ainda não segue para assinatura; aguarda decisão.", e as telas de aditivos, da proposta e da origem avisam o mesmo. O banco continua aceitando a fonte.
+- **R1 e revisão 5606023454:** a agenda reconfere a integridade da origem (`origemHistoricaIntegra`, que é a mesma regra da base); `assinadoEm` não pode ser posterior a hoje no fuso da escola, na ação e no guard; data inexistente responde 400; o upload confere `arquivo.size` antes de ler; testes exercitam o CHECK de fonte única de fato e `recusar_conclusao_com_origem_historica`.
+- **R2 (C5, C6 e itens 4 e 5 da revisão rigorosa):** a decisão sobre a origem só oferece rejeitar, e a tela de agenda avisa o limite do B1 antes da conferência. A aprovação da origem é recusada (ação e guard) enquanto houver processo de assinatura do contrato não cancelado e sem conclusão: "cancele ou conclua o envio antes". Um fuso institucional inválido gravado gera mensagem própria (422).
+- **Limite do upload (item 3 da R2 rigorosa):** a rota confere `arquivo.size` antes do `arrayBuffer()`, mas `request.formData()` já leu o corpo inteiro. Num upload chunked sem `content-length`, o 413 evita a segunda cópia e a transação, mas não limita a memória. O limite real do tamanho do corpo fica no proxy/servidor (por exemplo, o limite de corpo do proxy reverso do deploy), assim como na rota `/api/upload`.
+- **TDD/integração** (`contratos/origem-historica.int.test.ts`, sobre matrícula M01 real): os 2 cenários da #62 + 1 novo (inserção direta em outra moeda recusada pelo banco — vermelho antes do guard; um Evento por escrita com replay idempotente da proposta e da decisão; aditivo de taxa inserido direto no banco recusado; CHECK de fonte única).
+- **Evidências** (Postgres descartável na 54329, banco `erp_genius_test_orh` com `migrate deploy` do zero, perfil local não versionado; banco apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base; nenhum nos arquivos alterados).
+  - `vitest run` completo: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
+  - Integração de `src/server/contratos`: 166 testes OK (1 pulado por desenho, homologação Q170). Integração de `src/server/matricula`: 403 testes OK (3 pulados por desenho).
+  - `npm run build`: saída 0 (duas tentativas anteriores morreram por falta de memória na máquina compartilhada, sem erro de tipo).
+
+### WhatsApp: desativar de verdade e excluir número sem apagar dados — 2026-10-22
+
+Branch `claude/adm-whatsapp-number-removal-7ecfa1`. Relato: o administrador não conseguia remover um número em Configuração → WhatsApp → Números.
+
+- **Causa:** não existia remoção. Só a caixa "Número ativo" no formulário de edição, e o número inativo continuava na lista, com o telefone reservado (`telefoneE164 @unique` e conflito contado também sobre os inativos). Desativar também não desligava a sessão no motor, e o botão "Desconectar" sumia para número inativo: um número conectado desativado continuava enviando e recebendo, sem controle pela tela.
+- **Desativar** (`desativarNumeroWhatsApp`, botão na linha, com `ConfirmarAcao`): faz logout no motor **antes** de gravar (motor fora do ar recusa e nada muda; número que o motor não conhece passa), grava `ativo = false` e `sessao = DESCONECTADO`, Eventos `NumeroWhatsAppDesconectado` (se havia sessão) e `NumeroWhatsAppDesativado`. Repetir não faz nada. O número continua na lista. **Ativar** (`reativarNumeroWhatsApp`, direto, sem confirmação): volta a ativo e recadastra no motor; o pareamento é refeito no Conectar. "Desconectar" aparece para qualquer número do motor com sessão, ativo ou não, para limpar inativos que ficaram conectados pela regra antiga.
+- **Excluir** (`excluirNumeroWhatsApp`, botão na linha, com `ConfirmarAcao`): desativa e faz logout como acima e marca `NumeroWhatsApp.excluidoEm`. `listarNumerosConfig` e a lista de números dos avisos da agenda filtram `excluidoEm: null`. Conversas, mensagens, intenções, setores e Eventos não são apagados; o inbox continua mostrando o histórico. É recusado quando o número é o remetente da política da régua ou o número dos avisos da agenda (as telas deles apontariam para um número invisível). Repetir pela mesma pessoa devolve ok sem outro Evento (padrão do #166); outra pessoa recebe "Número não encontrado". Excluído não se edita, desativa nem reativa pelo id.
+- **Recadastro do telefone excluído:** "Novo número" com esse telefone **restaura** o registro antigo (limpa `excluidoEm`, grava rótulo, finalidade e dono novos, Evento `NumeroWhatsAppRestaurado`), em vez de recusar pelo `@unique`. O histórico volta junto. Editar outro número para esse telefone é recusado com instrução.
+- **Formulário:** a caixa "Número ativo" saiu; `salvarNumeroWhatsApp` não muda `ativo` na edição (pedir a troca por ele é recusado com "Use \"Desativar\" ou \"Ativar\""), e não recadastra no motor um número inativo. `NumeroWhatsAppSchema.ativo` ficou opcional (só no cadastro, padrão ativo).
+- **Banco:** migration `20261022100000_numero_whatsapp_excluido` — `ADD COLUMN "excluidoEm" TIMESTAMP(3)` e CHECK `excluidoEm IS NULL OR ativo = false`. **ID provisório: precisa ser reservado pelo integrador.**
+- **Travas:** `confirmacoes-mapa.ts` e a cópia literal em `confirmacoes.test.ts` ganham `desativarNumeroWhatsApp` e `excluirNumeroWhatsApp`; `botoes-mapa.ts` ganha `btnPerigo`, "Desativar · Ativar" (perigo|fantasma/sm) e "Excluir". Catálogo de eventos (`docs/12`) com os Eventos novos.
+- **Testes escritos:** integração em `whatsapp/acoes-numero.int.test.ts` (13 cenários: desativar com e sem motor, idempotência, inativo com sessão viva, edição sem mudar ativo, reativar, excluir preservando conversa e mensagem, idempotência por autor, recusas por política e avisos, restauração pelo telefone, alçada); componente em `NumerosPainel.test.ts` e ajuste em `alteracoes-pendentes.test.ts`.
+- **R1 (revisão do #296):** C2 — o `de` do `NumeroWhatsAppDesconectado` é relido dentro da transação (uma conexão concorrente entre o logout e a gravação deixava o histórico desatualizado). C1 não se aplica: `PoliticaComercial` saiu do schema com o CRM antigo, e só `PoliticaRegua` tem `numeroRemetenteId`.
+- **Evidências:** CI do GitHub no head `9feee981` — typecheck, lint, build e `vitest run` (UTC e America/Sao_Paulo) verdes. O worktree local não tem `node_modules` nem `.erp-test-profile`; pela regra de 16/09 nada foi instalado.
+- **Pendências:** integração (`whatsapp/acoes-numero.int.test.ts` e `linha-comercial.int.test.ts`) e a migration num banco descartável **não foram executadas** — o CI não roda `*.int.test.ts`. Reserva do ID da migration pelo integrador. Sem homologação na tela.
+- **Estado**: implementado, integração pendente.
+
+### Inbox: pré-requisito de validação no Windows — 2026-10-22
+
+- **Escopo:** preparação do épico #379. O módulo `aria/_componentes/abas.ts` passa a `abas-aria.ts`, eliminando a colisão de caixa com `Abas.tsx` no Windows. Leituras em três testes normalizam CRLF, preservando as asserções de estilo, confirmação e CI; nenhum workflow foi alterado.
+- **Evidências:** página Aria 12 falhas antes e 13/13 após; recorte de quatro arquivos 90/90; recorte CI 16/16; TypeScript global com heap 8192 e lint global (0 erros, 40 avisos), todos saída 0. A primeira suíte completa revelou três falhas CRLF no CI, corrigidas e verificadas no recorte.
+- **SPEC/limites:** `docs/planejamento/inbox-validacao-windows.md`. Suíte unitária completa final: 839 arquivos, 6.437 testes, saída 0, sem ignorados; não inclui integração. TESTER aprovou o commit exato `58eeb7b3`, sem achados bloqueantes, com 106/106 testes dirigidos e saída 0. Nenhum efeito de banco, mensagem, integração externa ou produção. Pré-requisito validado; merge e deploy não executados.
+### Inbox — pré-requisito Next/SSE — 2026-10-22
+
+Implementação e verificação local concluídas; revisão independente e publicação em andamento. O tipo gerado pelo Next recusava constantes exportadas pela rota SSE. Extraídas para módulo próprio sem alterar valores/comportamento. Reprodução TSC sessão10576 código2/TS2344; após correção sessão59855 código0 para10 testes de rota, TypeScript global com tipos Next presentes e lint dos três arquivos. Relatório `output/inbox-next-sse-report.md`. Regressão da combinação E0 ainda pendente. Sem merge/deploy.
+
+### Inbox E0.1 — #298: classes de cor inexistentes e trava de paleta — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC e histórico de investigação em `output/inbox-298-report.md`; parecer independente em `output/inbox-298-visual/qa/inbox-298-final-review.md`. Merge e deploy não executados.
+
+- **Entrega:** sete classes sem CSS trocadas pelos tokens existentes; parser de literais compartilhado e trava ampliada de cores sem tom. Famílias válidas do Tailwind continuam aceitas; cores inventadas e gradientes proibidos são barrados. Selos passivos são distinguidos de botões sem isentar componentes customizados. Nenhuma mudança de schema, servidor ou permissão.
+- **Código revisado:** TESTER aprovou a fonte `815d863d`, 7 arquivos/110 testes direcionados (64 da trava e 46 do recorte), saída 0, sem ignorados. Parecer final favorável no SHA `ed50a770`, cujo delta contém somente harness ESM, métricas e documentação; sintaxe e diff-check saída 0.
+- **Gates globais:** TSC heap8192, sessão59129, saída 0; Vitest completo unitário, sessão82472, saída 0, 839 arquivos/6.466 testes, sem ignorados/todo/falhas; lint global `eslint . --max-warnings 40`, sessão29757, saída 0, zero erros/40 avisos existentes, sem filtros. TSC/full foram executados em815d863d; o último delta exclusivo do artefato foi coberto pelo lint global e execução real do harness. Integração de banco não se aplica a este recorte visual e não foi executada.
+- **Visual:** capturas antes/depois de lista/conversa/detalhes em1440×900,1024×768,390×844 e temas claro/escuro, sem pageerror. Contador verde sólido, ✓✓ verde e textos secundários legíveis. Enquete/Reserva:24 PNGs de componentes reais isolados, CSS/fontes reais e métricas antes/depois, sem executar envio/finanças. TESTER inspecionou todas as12 imagens depois desses componentes. Evidências em `output/inbox-298-visual/` (aplicativo, harness, métricas e pareceres); consolidação final adiciona somente docs/PNG/JSON, sem alterar fonte validada.
+- **Limites registrados:** drawer390px já corta valores à direita antes/depois; acompanhar na casca do painel#318 e geometria#304. Aviso de chave React duplicada no app dev também é preexistente. Capturas isoladas não homologam operações financeiras. Node local24.16.0 versus22 declarado no projeto; CI será acompanhado no PR. Sem mensagem real, integração externa ou produção.
+
+### Revisão PR382 — B1 leitura da conversa oculta — 22/10/2026
+
+Correção parcial: região real da thread condiciona leitura/zero otimista e repetição pendente. RED/GREEN, full840arquivos6483testes70638exit0, TSC80712exit0 e lintdirigido0, Node22. Browser25181exit0/SSEreal no banco exclusivo ci-integracao: Voltar preserva lidaAte/naolida1, reabrir lê0, duascolunas700px continua lendo. SPEC e relatório output/pr382-qa/revisao-b1.md. Demais itens MEDIUM da PR ainda pendentes; sem merge ou aprovação presumida.
+
+PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao desmontar; ação composta invalida rota uma vez, preservando falha parcial e ação pessoal isolada. TDD RED observado. Fonte final: fullunit23477exit0/840arquivos6485testes sem filtro/ignorados; TSC1446exit0; lintglobal2057exit0/0erros40avisos; integração dirigida ci-integracao73209exit0/2arquivos15testes. Relatório output/pr382-qa/revisao-final.md. C5retarget/CI e re-review externo pendentes; não mergeado.
+
+### PR #386 — revisão C1/C2: notas da Aria em tempo real — 2026-10-22
+
+**Estado: correção e gates locais concluídos; revisão independente, integração da base e CI/retarget pendentes.**
+
+- C2 reproduzido em PostgreSQL real: criação da nota pelo executor e arquivamento por desfazer não notificavam. RED77015 exit1:2falhas/1pass,49ignorados pelo filtro; o handoff já passava pelo trigger de atendimento. Emissão explícita transacional apenas nos dois caminhos faltantes, com tipo/ids e sem conteúdo; handoff não recebe aviso duplicado. Sugestão/SHADOW/rollback não notificam nem persistem nota. Sem papel/permissão/schema/transportes novos.
+- Helper de integração usa LISTEN real e canal privado de barreira para provar entrega/ausência após commit, sem sleeps nem aviso falso no canal do Inbox. URL local validada na lista fechada. Import inicial fora de src fez a guarda confirmacoes falhar; global70197 foi interrompido exit1. Corrigido sem abrir exceção:confirmacoes5415 GREEN59/59 e novo global completo abaixo.
+- C1 evidências locais no perfil exclusivo ci-integracao:92375 exit0,4arquivos/75testes (consultas-pagina,executor-crm,handoff,historico), e93492 exit0,2arquivos/25testes (nota-interna,inbox), sem filtro/ignorados nesses6arquivos. Não é suíte de integração completa. O pedido de rodar no head final após retarget para main permanece pendente; não atribuir este recorte a um futuro head integrado.
+- Gates finais Node22.23.2:unitários12136 exit0,840arquivos/6485testes sem filtro/ignorados;TSC70245 exit0;lintglobal78342 exit0,0erros/40avisos herdados. Base382correções183c incorporada pelo merge localbb543667. Ainda sem merge/deploy destaPR; nenhum envio externo.
+- Registro da dependência:PR381 já merged por squash emea60a8a7,comCI39878884253success eTESTER9e5favorável;64PNGarquivados com roundtrip/hash confirmado no draft autorizado. Incorporar correção381/main antes de retarget das filhas para não reintroduzir imagens.
+### Inbox E0.5 — #302: prazo estourado vivo — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-302-report.md`, parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Branch `codex/inbox-e0-302`, base `1ce8e582` (PR #381). Sem merge/deploy.
+
+- **Entrega:** snapshot estável por lista e um timeout até o próximo prazo; o selo aparece no prazo+1 ms, sem polling ou consulta adicional. Troca SSE usa o relógio real, inclusive para prazo já vencido. Grupos, encerrados e datas inválidas não armam timer. Limpeza na troca/desmontagem e teto nativo preservados. Interfaces exportadas para #309/#312. Sem schema, servidor ou permissão novos.
+- **Testes:** TDD RED com oito falhas de interação real e módulo ausente; GREEN Inbox inteiro com 17 arquivos/168 testes. TESTER aprovou código `1740a337`, recorte de 2 arquivos/19 testes saída 0; delta final `133b935e` apenas documental. Integrador repetiu os 19 testes com Node 22.23.2, saída 0.
+- **Gates globais:** em1740a337, TSC heap8192 sessão39736 saída0; unitário completo sessão86563 saída0,841 arquivos/6485 testes, sem falhas/ignorados/todo; lint global sessão23565 saída0,0 erros/40 avisos preexistentes, sem filtros. Runtime desses gates: Node24.16.0. Não repetidos por alteração exclusiva de docs/capturas.
+- **Visual no Node22.23.2:** 24 PNGs ANTES (integrador sessão24336) e24 DEPOIS (TESTER sessão31652), ambos saída0. Em1440×900,1024×768,390×844, claro/escuro, mesma URL sem reload e prazo do banco intacto: base0→0 e correção0→1 no selo após vencer. Sem pageerror. Imagens/manifestos em `output/inbox-302-visual/`; selo inspecionado e legível nos seis contextos.
+- **Limites:** atualiza o selo dos itens carregados; não inclui atendimento automaticamente no filtro de servidor. Overlay dev preexistente toca parte esquerda do item móvel, sem encobrir selo. Somente fixture descartável, nenhum serviço externo ou produção. CI aguarda retarget para main após integrar381.
+
+### Inbox E0.6 — #303: anexos sem formulário desabilitados com motivo — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-303-report.md`, parecer independente em `output/inbox-303-visual/qa/inbox-303-review.md`. Branch `codex/inbox-e0-303`, base PR #383 (#302). Sem merge/deploy.
+
+- **Entrega:** Contato, Enquete e Localização sempre desabilitados até os formulários da E4. Sem capacidade, mantém aviso MOTOR; com capacidade, informa que o envio pelo Inbox ainda não está disponível. Trava exige handler para todo item habilitado. Documento/Fotos/Áudio e seus handlers, upload e Nota preservados. Sem alteração de schema, servidor, permissão, driver ou contrato de envio.
+- **TDD/recortes:** RED de comportamento e item habilitado sem onClick; GREEN Node22.23.2 com 8 arquivos/131 testes, sem ignorados. TESTER no79a905a2: 2 arquivos/86 testes, saída0 e parecer favorável. Rebase documental para cf5b077b sobre fechamento302 revisado, sem diff emsrc; conflito somente no quadro, preservados302 final e303.
+- **Gates Node22.23.2:** código fe051d41, TSC heap8192 sessão77141 saída0; suíte unitária completa sessão11868 saída0,841 arquivos/6488 testes, zero falhas/ignorados/todo; lint global sessão61660 saída0,0 erros/40 avisos, sem filtros. Últimos commits e rebase sódocs/artefatos, não imputados como novas execuções.
+- **Visual:** 12 PNGs ANTES (integrador sessão34581) e12 DEPOIS (TESTER sessão56440), seis combinações de viewport/tema por fase, saída0 e pageerrors[]. Antes os3 itens estavam habilitados sem ação; depois disabled com motivo individual legível. Documento/Fotos/Áudio habilitados nas duas fases. Capturas/manifestos em `output/inbox-303-visual/`, sem clique nos anexos, upload ou envio.
+- **Ambiente/limites:** capacidade MOTOR simulada somente em número fictício dos bancos descartáveis integracao/tester, endpoints externos vazios. Ao terminar, servidores51088/99153 encerrados e fixtures restauradas para BAILEYS/DESCONECTADO, saídas0. Aviso legado com capacidade ausente coberto pelo teste; foto corresponde a capacidade disponível. Overlay dev preexistente. CI aguarda retarget para main após integrar383.
+
+### Inbox E0.8 — #305: chevron fora do texto e menu na viewport — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-305-report.md`, planejamento em `output/inbox-305-plan.md`, parecer independente em `output/inbox-305-visual/qa/inbox-305-review.md`. Branch `codex/inbox-e0-305`, base PR #384 (#303). Sem merge/deploy.
+
+- **Entrega:** gatilho float reserva espaço antes de autor/texto; menu fixed medido antes de focar, altura limitada com scroll interno. Reutiliza helpers globais para teclado, Escape/Tab, clique fora, scroll externo e resize, sem alterá-los. Atualiza medição/foco ao mudar comandos/capacidades. Nenhum servidor, schema, permissão ou contrato de envio alterado.
+- **TDD/recortes:** RED de SSR/interação com React DOM real; GREEN 31 arquivos/349 testes no Node22. TESTER código4c2424ab: 5 arquivos/46 testes saída0, sem ignorados, parecer favorável. Delta e21ae815 apenas docs/quadro conferido, fontes invariáveis.
+- **Gates Node22.23.2:** TSC heap8192 sessão54239 saída0; full unitário sessão18026 saída0,842 arquivos/6500 testes, zero falhas/ignorados/todo, maxWorkers2; lint global sessão81037 saída0,0 erros/40 avisos, sem exclusões. Diff-check0. Gates não repetidos por consolidação exclusiva de docs/capturas.
+- **Visual:** 128 PNGs e quatro manifestos em `output/inbox-305-visual/`,32 estados por cenário entre antes/depois. BAILEYS:4 menus fora/8 sobreposições antes→0/0 depois. MOTOR fictício:10 fora/8 sobreposições→0/0. Entrada sem autor e saída com autor,3 tamanhos×2 temas e viewport baixa adicional; toque, foco, setas, Escape+retorno, fechamento por scroll externo/resize confirmados. Em390×160, menu144px dentro da tela e overflow interno real236>142 na saída,148>142 na entrada. Pageerrors vazios.
+- **Ambiente/limites:** simulação de capacidade só no banco descartável, nenhum comando enviado. Primeira captura BAILEYS falhou por premissa do harness (esperava2 itens onde há1), corrigida e repetida; não houve alteração de código por isso. Fixtures integracao/tester restauradas para BAILEYS/DESCONECTADO, saída0, servidores QA encerrados. Overlay dev preexistente. CI aguarda retarget para main após integrar384.
+
+### Inbox E0.7 — #304: página sem rolagem dupla — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** Branch `codex/inbox-e0-304`, baseE0 `797994aa`, fonte98c76bd4. SPEC `docs/specs/inbox-rolagem-pagina.md`; relatório `output/inbox-304-report.md`.
+
+- Fechamento: TESTER47165 exit0,20estados/40PNGs depois sem rolagem externa/controles inacessíveis/pageerror; baseline20/20 rolavam. Antes/depois, tentativas do harness e parecer em `output/inbox-304-visual/`. Full combinado7657c528:845arquivos6526testes99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos. Integrações dirigidas26+13testes87157/56869 exit0, sem ignorados. Warning React preexistente em10estados selecionados tratado em corretiva técnica separada. Etapas abaixo são históricas; sem merge/deploy.
+
+- Página limitada à área real do main (barra57px abaixo de sm,53px entre sm e md); Inbox ocupa o restante com flex/min-h-0. Formulário, filtros e ações da conversa têm rolagem interna nas telas baixas, preservando controles e thread. Contexto relativo contém avisos acessíveis absolutos no cabeçalho/painel.
+- TDD RED2/25 e GREEN25/25; pós-rebase fonte98c76bd4: recorte22arquivos/272testes (sessão97122), TSC heap8192 com tiposNext presentes (37381) e lint global sem filtros0erros/40avisos (93477), todos saída0 Node22.23.2. Full histórico em5d44:840arquivos/6480testes saída0 (95297); não atribuído à nova base. TSC inicial falhou por export extra preexistente de rota, corrigido separadamente pelo integrador. Global final301+304 será executado pelo integrador.
+- Aplicativo real:24cenários antes +24depois, seis tamanhos (1440×900,1024×768,390×844,700×768,390×500,1440×500), dois temas, com/sem seleção e formulário aberto. Medição final sessão99646 saída0: documento igual à viewport, zero pageerror, controles alcançáveis e prova geométrica de scroll interno. Capturas/métricas e limites em `output/inbox-304-visual/`.
+- Sem alteração de pacote, lock, schema, servidor/SSE ou permissão; nenhum envio externo. TESTER/homologação e integração/publicação pendentes; não marca E0 concluída.
+
+### Inbox E1.2 — #307: harness de comparação visual — 2026-10-22
+
+**Estado: implementação, aceite visual independente e gates combinados concluídos; pronta para PR, sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
+
+- **Entrega:** núcleo de nomes/combinações/recursos locais, CLI Playwright com `--alvo`, `--estado`, `--base` HTTP local, protótipo `file://` sem acesso externo e demo de sete atendimentos fictícios num BAILEYS desconectado. Guarda exige host/porta locais e um dos cinco nomes de banco exatos de `scripts/test-profile.mjs`; rejeita query/fragmento. Demo reexecutável usa IDs fixos e repara caso parcial, sem alterar o número de outro cenário.
+- **TDD/recortes Node22.23.2:** RED módulo ausente exit1; GREEN núcleo4/4 exit0; RED Lucide `woff2?t` exit1 e GREEN após mapeamento local; RED da integração de reparo parcial exit1 (`Demo parcial`), GREEN integração `vitest.integration.config.ts src/test/visual-inbox.int.test.ts` 1 arquivo/1 teste exit0, nenhum ignorado, exclusivamente no banco `dev-gravacoes`; RED da CLI ausente exit1 e GREEN unitários+dependências2arquivos/9testes exit0, nenhum ignorado. Esses recortes não são suíte completa.
+- **Protótipo offline:** `--alvo prototipo --estado conversa` no Chrome local155/core1.56.1 gerou seis PNGs em `tmp/visual/` (3 tamanhos × 2 temas), saída0 e falhas vazias; desktop escuro e celular claro inspecionados. Recursos npm servidos fisicamente de `node_modules`, Google Fonts vazio. Fonte de reserva offline é limite visual da referência.
+- **Correção P1 da review:** teste RED do módulo ausente (1 arquivo/0 testes, exit1); espera por mensagem/painel/nota da fixture reproduzida com Promises diferidas, login por CSRF+credentials e sessão confirmada em vez de clique antes da hidratação. Pós-correção, unitários+dependências2arquivos/12testes exit0 sem ignorados, TSC Node22 heap8192 exit0, ESLint dirigido exit0 e ESLint global sessão12375 saída0 (0 erros/40 avisos).
+- **Re-review Drawer:** RED com Conversa oculta após abrir `celular-painel` (1/9 falha, exit1). Espera pré-clique exige mensagem; pós-clique exige só painel visível. Celular/tablet GREEN, recorte2arquivos/14testes exit0 sem ignorados, TSC Node22 heap8192 exit0 e ESLint dirigido exit0. Global combinado ainda pendente; não atribuir a ele o lint global anterior.
+- **Rodada4, novo implementador:** espera do aside móvel dentro do viewport e sem transição running; RED3casos/11filtrados exit1, GREEN2arquivos/18testes exit0 sem ignorados. TSC heap8192 sessão31150 exit0; lint dirigido exit0. Primeira captura74860 gerou34PNGs/exit1 por aborto RSC inicial preservado, sem reclassificação. Final60453 exit0:34PNGs(18app16protótipo),0falhas14diagnósticos de GET mensagens recuperado; todos estados inspecionados e quatro painéis app celular/tablet claro/escuro conferidos individualmente. Evidência final em `output/inbox-307-visual-r4-final/`; relatório registra limite da preservação r3. Estilo temporário da foto esconde só toast Next sem issues e mantém diagnósticos.
+- **Fechamento integrado:** TESTER código6a8ab794 favorável,18testes0; captura fonte7e236e64 integrador51505 e TESTER76466, ambosexit0/34PNGs/0falhas/14diagnósticos, estados reais e gavetas inspecionados. Global final76a08316 sessão95778exit0:846arquivos/6547testes semfiltro/semignorados, TSCheap8192 e lint0erros40avisos. Guarda legado detectou literal no teste de integração307; RED1/1exit1, enum tipado preservando valor/guard, GREEN3arquivos19testes0 e integração dirigida1teste0 no perfilintegracao. Delta do teste revisto pelo TESTER; pixels inalterados. Evidências `output/inbox-307-combinado/` e `output/inbox-307-qa/`. Limites: protótipo offline/fonte de reserva, Nextdev, contadores mutáveis ao marcarleitura; não alegar paridadepixel de contadores. Nenhum banco de produção, transporte WhatsApp, schema ou permissão alterados.
+
+### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
+
+**Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
+
+- Linha307 `+5500000000300`, sete contatos/oportunidades `0301`–`0307`, mesmos IDs e vínculos. Reexecução repara apenas telefones legados reconhecidos, em transação; exige BAILEYS desconectado, relações da fixture e ausência de colisão com outro cenário. Recusa telefone modificado, sem sobrescrevê-lo; falha desfaz inclusive o reparo da linha. Não reseta contadores ou outros campos de QA.
+- TDD integração RED sessão39417 exit1:4 falhas/1pass; GREEN87004 exit0:1arquivo/5testes sem filtros/ignorados, exclusivamente `ci-integracao` (`erp_genius_test_ciint`), sem tocar cluster ou outros bancos. Unitários dirigidos visual+dependências:2arquivos/18testes exit0; TSC41721 exit0; ESLint das duas fontes exit0.
+- Ainda não declara C1 inteiro resolvido: PNGs anteriores precisam sair do código e o aceite visual deve ser recapturado com dados fictícios/DOM do protótipo explicitamente anonimizado. Não houve envio WhatsApp ou ativação externa. B1/B2/C2/C5/C6 continuam na fila.
+
+### PR #392 — anonimização explícita do protótipo antes da captura — 2026-10-22
+
+- Helper autocontido `anonimizarTelefonesNoDom`, reutilizável por `page.evaluate` após interações e antes da foto. Substitui formatos +55 no texto/atributos/campos por valores fictícios determinísticos +5500..., sem tocar scripts, estilos, HTML original ou PNG pronto. Preserva telefones já fictícios. Manifesto contém política, versão e contagem, sem valores originais; não é um observador de renderizações futuras.
+- TDD do DOM real: módulo ausente RED exit1; teste Node/Chrome local GREEN exit0,1teste sem ignorados, verifica formatos, identidades equivalentes, campos editados, links tel, repetição sem novas alterações, scripts/estilos intactos e relatório sem originais. Comando em scripts/visual/README.md, separado do Vitest comum.
+- Captura dirigida5962 exit0:6PNGs do protótipo (conversa,3tamanhos,2temas), nenhuma falha; manifesto em `output/pr392-qa/prototipo-anonimizado.json`. Desktop escuro e celular claro inspecionados. PNGs ficam somente no tmp local até arquivamento autorizado. Não representa captura do app nem aceite integral307.
+- Gates da fixture83043f51: global80400 exit0,846arquivos/6541testes sem filtro/ignorados. Após helper: unitários dirigidos2arquivos/18testes exit0, TSC30797 exit0, lint dos3arquivos de código exit0. Global terminou durante a adição do helper; seus testes de DOM/captura são as verificações específicas posteriores, sem atribuir o teste de navegador ao Vitest.
+- Permanecem B1/B2 (dependências), C2 (remoção/arquivo de evidências anteriores), C5/C6 e revalidação externa. C1 ainda exige retirar as imagens antigas com telefones do código; fonte e caminho de recaptura estão corrigidos. Nenhuma integração externa/WhatsApp acionada.
+
+### PR #392 — C1/C2: aceite sanitizado fora do código e retirada das imagens históricas
+
+**Estado: fonte/fixture e evidências sanitizadas verificadas; B2, integração das bases e CI ainda pendentes.** A fixture usa somente linha0300 e contatos0301–0307 no prefixo fictício+5500000000; o protótipo é anonimizado no DOM antes da foto, preservando seu arquivo original.
+
+Recaptura na fonte52a8b315: CLI59879 exit0,34PNGs (18app/16protótipo),0falhas e14diagnósticos de GET abortado recuperado. Oito imagens inspecionadas por amostragem, inclusive os quatro painéis app celular/tablet claro/escuro. Perfil exclusivo ci-integracao; BAILEYS desconectado, sem transporte externo. Primeira tentativa falhou por segredo de autenticação ausente no ambiente; servidor reiniciado com segredo efêmero e a rodada completa passou. Preview parado e bloco AGENTS gerado restaurado, sem outro delta.
+
+ZIP sanitizado `inbox-pr392-aceite-sanitizado-52a8b315.zip`: asset667665737,3.273.148bytes,SHA256893f939070072eeac6c505cfb01a369f9d44b05119b388074d273964167c0a03. Upload autorizado e download/hash confirmados na release DRAFT421321214, não publicada. Só depois foram retirados104PNGs históricos de output/inbox-307-* do estado atual; cópias locais e histórico Git preservados. O ZIP legado de124arquivos/104PNGs fica somente local: a revisão automática rejeitou o envio por conter imagens anteriores à anonimização; nenhuma tentativa de contorno ou envio desse ZIP ocorreu. Referências imutáveis da #297 não mudaram.
+
+Após a retirada, unitários dirigidos visual+dependências2arquivos/18testes e integração real visual-inbox1arquivo/5testes (95623,ci-integracao), ambos exit0 sem filtro/ignorados. Não são suítes completas. A única mudança de configuração B1 foi alinhar comentário ao da #297, com merge-tree RED1→GREEN0; o bloco ignorado permaneceu igual. Sem package/lock/install nesta etapa. B2 permanece aguardando resposta humana à autorização específica do lockfile; C5/C6 serão conciliados na integração/retarget. Índice e limites em output/inbox-307-evidencias.md e output/pr392-qa/recaptura-sanitizada.md.
+## PR #392 — preservar limpeza404 sem alterar B2
+
+Sobre06248af0,64PNG298/3.595.413B herdados coincidem com manifesto404/
+ZIP381 autorizado por tamanho/SHA256/GitOID; backup local conferido, sem
+variantes/upload novos. Retirada sóartefatos e docs,src/scripts/prisma/
+package/lock idênticos06248,stashB2 intacto. QA técnico do porte e decisão
+humana B2 pendentes,sem novo global/DB/browser presumido. Evidência em
+output/pr392-qa/recaptura-sanitizada.md e manifesto privadoqa404-307.
+
+## PR #392 — B2 autorizado e alinhado
+
+Usuário autorizou o integrador a regenerar somente o lockfile offline com scripts ignorados. Comando47463c saída0: trio Playwright1.64.1 alinhado à #280; CLI exige PW_CHROMIUM e guard confere resolução real do core pelo runner. RED1falha/5passes→GREEN6, global846arquivos/6543testes92630, TSCfinal92901, lintfinal71193/40avisos, integração1arquivo/5testes99228 e ChromeDOM1teste12b89d: todos terminais0. Cópia física do core alinhada somente no worktree integrador, backup e115hashes preservados; demais ambientes intactos. Fonte isolada sobrec57, ainda exige composição com main, verificação de conflitos280, TESTER e CI final. Negativos e limites em output/pr392-qa/b2-playwright.md. Não marcar issue concluída antes desses gates.
+### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
+
+**Estado: implementação, revisão independente e global combinado concluídos; pronta para PR.** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
+
+- Contratos centrais IdChipInbox/ContagensChipsInbox, cinco agregados por escopo+filtros (retira somente responsável/não-lidas/prazo), API opt-in sem cursor e SSR após guarda. Estado produtor protege leitura otimista/SSE/filtros e reconcilia pontualmente; sem polling ou cálculo pelo tamanho da página. Saúde pública só id/rótulo/saúde, sem telefone/provedor, sem alterar capacidades.
+- Ruling: schema não possui SIMULADO; usa enums atuais, sem literal proibido ou adapter legado. Opção enviar preserva escopo restrito da rota, incluindo convite somente leitura. #310 antes #308 é coordenação de contrato/page, não aresta funcional obrigatória. Não altera a casca #308.
+- Node22.23.2: GREEN5arquivos82testes unitários (03865f); integração completa2arquivos26testes dev-email56956 exit0; complemento51657 exit0 com3testes/21 fora do filtro prova123além da página50, lidaAte pessoal e convites3→1 com envio. TSCheap8192 sessão93695 exit0; lint dirigido13arquivos0avisos exit0. RED e correções de fixtures/tipos documentados no relatório.
+- Aceite visual reservado à #313 (Task5Step5, sem tela própria nesta entrega), sem homologação presumida. Global final coordenado após combinar309+310; full próprio deliberadamente não executado. TESTER deve revisar SHA exato. Sem schema/migration, pacote/lock, permissão nova, servidor iniciado ou mensagem externa.
+- Congelamento: recorte final10arquivos161testes a0b1e7 exit0 (inclui guardas sem-polling/provedores/paleta/responsivo/botões), lint dirigido final264633 exit0/0avisos e TSCheap8192 final11852 exit0. Node22.23.2 confirmado. Sem mudança de fonte após esses gates, apenas documentação. Full integrado e TESTER ainda pendentes.
+- Fechamento: TESTER noSHA67014764 favorável,6arquivos86testes unitários0 e integração perfiltester78316exit0/2arquivos26testes, sem ignorados. Global combinado com309fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67 sessão15987exit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2,TSCNode22heap8192,lintglobal0erros40avisos. Código310igualaoSHArevisto; mudançasposteriores sódocs/QA. Parecer e logs `output/inbox-310-qa/`. Visual313conformeplano, não presumido.
+
+### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
+
+Branch DEV codex/inbox-310-c1 sobre eb68e314,676/313 imutável. Helper local agrupa50ms fixos,1GET incluindo corpo+1pendência, reconciliação pessoal final preservada. Thread/painel/leitura imediatos, sem SQL/SSEstore/polling/deps/DB/preview. RED consumidor3casos→GREEN42unitários; recorte24/32954301 e lint4fontes967cd5 saída0. TSC5951heap8192 saída0 após limpeza exclusiva do cache gerado dev pelo integrador; dois negativos antigos só tipogerado rota311 fora do head310, preservados. Ledger output/inbox-310-c1-report.md. Aguardam porte equivalente no agregado676 em SHAseparado, QA/browser e publicação; não é concluída/homologada.
+
+### C1 PR394 — correçãoP2 equivalente em voo, revisão pendente
+
+82históriconãoadotado. RED público3d0994 reproduz perda2→3semleitura e faltatrailingcomleiturapendente. invalidarSnapshotEmVoo conserva1pendência somentepara época físicaatual; guardsinvalidação/R6preservados, semreviverAantigoapósA→B→A, semretry/polling. GREEN2arquivos47testes69cceb e lint78e0c3 saída0; recorte6764EXIT0/24arquivos334testes e typegenTSC32952heap8192EXIT0. FonteisoladacorrigidaprontaparaTESTER;porte/QA/browser ainda pendentes. SemDB/preview/deps.
+
+### Inbox E1: design da tela — 2026-10-22
+
+#### E1.1 — #306: tokens, fonte mono e travas
+
+**Estado: implementação e aceite independente concluídos; pronta para PR, sem merge/deploy.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
+
+- Tokens de avatar/balão/pontos, utilitário de fundo e fonte mono local 400–500; Roboto e travas anteriores preservadas. Fonte/licença entregues pelo integrador no commit 3eb87ea6, hash conferido; sem pacote/lock/schema/CDN.
+- TDD RED 9 falhas/33 aprovados; GREEN 5 arquivos/53 testes e lint dirigido sem avisos, saídas 0 Node 22.23.2. CSS compilado com amostra explícita; contraste positivo e autoteste de avatar reprovado.
+- Globais em b8d5128a: TSC heap8192 sessão 50415, full 845 arquivos/6533 testes sessão 99205, lint global 0 erros/40 avisos sessão 59333, todos saída 0 Node 22.23.2. TESTER: 5 arquivos/53 testes, saída 0 e parecer de código favorável.
+- Prova DEV 18 PNGs/6 contextos: fonte local400–500, Roboto preservada, seis trechos reais isolados contidos, dt600 sem afirmar face600 nativa. Pilha anterior explicitamente reconstituída. Aceite formal combinado com307: integrador51505 e TESTER76466, ambos34PNGs/0falhas/14diagnósticos/exit0; fontes400/500+Roboto6/6 independentes. Pares conversa nos3tamanhos/2temas e parecer em `output/inbox-306-comparacao/`. Fonte visual7e236e64; delta76a08316 sóenum de teste307. Global final76a08316 sessão95778 exit0:846arquivos/6547testes, TSCheap8192, lint0erros/40avisos. Sem ignorados e sem suíte completa de integração; integração dirigida3071teste0 registrada à parte.
+
+## PR #391 — C1/C2: mono600 nativa e sem preload global
+
+Asset original e hash preservados; eixo wght100–800 verificado no WOFF.
+Faixa400–600 substitui400–500 após coordenação técnica; dt herdado e contadores
+600 usam face nativa. preload:false na mono, Roboto preservada. TDD RED1/7
+→GREEN5arquivos54testes; TSC75865/lint alterados saída0. Chrome6contextos,
+8trechos reais por contexto,400/500/600 carregados, síntese desativada,
+sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
+DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
+sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
+Integração dos pais, global, parecer/CI do head final continuam pendentes.
+### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
+
+**Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
+
+- C1: trava AST de primário artesanal avalia ancestrais button/link/componentes e contêineres com foco/papel/eventos/spread. A isenção dentro da ação fica restrita a contador compacto numérico (inclusive99+ e sr-only); texto de ação continua detectado. Círculo/check do passo de matrícula existente tem exceção explícita contada por arquivo. Nenhuma fonte de produção alterada. TDD RED15falhas64pass→GREEN79/79.
+- C3:64PNGs retirados do estado atual da branch após upload autorizado e download/hash confirmado do ZIP `inbox-pr381-1ce8e582.zip`, asset667467990,3399189bytes,SHA25626a30c20c415b5acb856bfade252b4f0891ecfa6775bfb2700519890a271df8b. Rascunho de release não publicado; relatórios/manifestos/harness permanecem,README contém link/hash. Arquivos locais e histórico das branches preservados.
+- Gates finais Node22.23.2:suíte unitária completa85347 exit0,839arquivos/6481testes sem filtros/ignorados;TSC30297 exit0;lintglobal12045 exit0,0erros/40avisos herdados. Integração não executada nesta revisão de teste/docs/remoção de imagens.
+- C4:base já main após380; CI anterior39874376426success não substitui CI do novo head. Novo push/revisão independente/CI ainda pendentes neste registro. Sem deploy ou integração externa.
+
+PR381 integrada por squash em `ea60a8a7d29cd1b3d87edf13c6c4c2d0f10ddcac`, após CI39878884253 success (5 jobs) e revisão independente favorável do TESTER no head9e5b5929. ZIP/download/hash confirmados; rascunho não publicado. PR382 incorpora a correção381 para não reintroduzir as imagens e aguarda seu próprio CI/revisão.
+
+### PR #382 — novo C1 medium da revisão R2: retorno sem leitura redundante
+
+**Estado: correção e gates locais concluídos; revisão independente e CI do novo head pendentes.** Retornar à aba com a conversa já lida não chama a ação. Contagem positiva ou entrada recebida com aba/região oculta exige leitura; esse sinal sobrevive a GET antigo ou leitura anterior que termina com zero. A leitura ao abrir e a recuperação de repetição descartada continuam válidas. Sem polling ou alteração de servidor/permissão/schema.
+
+TDD: RED com 2 falhas / 28 passes; GREEN com 4 arquivos / 46 testes dirigidos, incluindo 3 casos novos de alternância e corrida. Fonte sobre 5f29c3ce, já integrada com main/#381. Node 22.23.2: suíte unitária completa 2861, 840 arquivos / 6.503 testes; TypeScript 63783; lint global 33022 (0 erros / 40 avisos herdados); integração 90136, 2 arquivos / 15 testes, sem filtros/ignorados no recorte, exclusivamente ci-integracao. Todos encerrados com saída 0. Não é suíte completa de integração. Relatório em output/pr382-qa/revisao-r2.md. Nenhum merge da #382 presumido; a revisão R2 externa aprovou a correção anterior, mas este novo medium foi tratado antes de integrar.
+
+### PR #382 — R3: falha de leitura não descarta entradas ocultas
+
+**Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** O TESTER rejeitou a5143f2a por P2 reproduzível: após entrada oculta, GET antigo em zero e falha tanto da leitura quanto da recuperação, a indicação era consumida cedo demais e o próximo retorno não tentava novamente. A fonte rejeitada não foi mergeada.
+
+Reprodução no teste oficial: 2 falhas / 31 passes. Agora as entradas ocultas ficam por ID de mensagem; o início do pedido tira uma cópia e somente o sucesso consome as observadas. Uma entrada posterior ao início permanece pendente. A quantidade de IDs únicos preserva a contagem conhecida em falha e não duplica SSE repetido. A conversa lida, sem nova entrada, continua sem ação ao alternar abas; sem retry por timer.
+
+Gates finais Node22.23.2: global88982, 840 arquivos / 6.507 testes; TypeScript30482; lint global87886 (0 erros / 40 avisos herdados); integração5900, 2 arquivos / 15 testes, exclusivamente ci-integracao, sem filtro/ignorados no recorte. Todos encerrados com saída0. Não é a suíte completa de integração. Relatório output/pr382-qa/revisao-r3.md. O CI/parecer de a514 não vale para este delta; aguardar o novo head antes do merge.
+
+### PR #382 — R4: preservar contagem prévia mais entrada oculta
+
+**Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** O TESTER rejeitou ca9 por contagem conhecida2 + entrada oculta1 restaurar2 após falha de leitura/GET. A reprodução oficial foi mais forte, com GET atrasado retornando0: RED1falha/34passes. Nenhuma fonte rejeitada foi mergeada.
+
+Cada entrada oculta única agora incrementa a contagem conhecida ao chegar. GET atrasado não a reduz enquanto há entradas pendentes, e a lista oculta preserva esse mínimo. SSE repetido não incrementa de novo. O sucesso consome somente os IDs observados no começo e ajusta a contagem aos posteriores restantes; falha mantém contador/tentativa no próximo retorno. Sem retry por timer nem chamada redundante ao alternar abas sem entrada.
+
+Node22.23.2, todos encerrados com saída0: recorte4arquivos/51testes; global35541, 842arquivos/6.530testes sem filtro/ignorados, já com main/#383/#384; TypeScript62642; lintglobal71746,0erros/40avisos; integração55774,2arquivos/15testes sem filtro/ignorados, só ci-integracao. Não é suíte completa de integração. A primeira execução do recorte teve quatro rejeições tardias após remoção do document no harness; a referência da página foi capturada na consulta e o recorte reexecutado com saída0. Relatório output/pr382-qa/revisao-r4.md. Aguardar revisão/CI do novo head, sem presumir merge.
+
+### PR #382 — R5: convergência com GET fresco e SSE atrasado
+
+**Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** A R4 foi rejeitada pelo TESTER por contar duas vezes uma mensagem que já estava no GET; a fonte não foi mergeada. O caso oficial reproduziu4 em vez3, com1falha/36passes. R5 captura a época das entradas no início de cada GET: entrada posterior preserva o mínimo novo; sem entrada posterior/sem leitura em voo, o snapshot fresco corrige a contagem, mantendo os IDs sem confirmação para retry. O recorte mantém o caso2+1 com GETs falhos e separa uma resposta realmente iniciada antes do SSE, evitando tratar um GET novo como obsoleto só pelo seu conteúdo.
+
+GREEN4arquivos/53testes. Gates finais Node22.23.2: global4477,842arquivos/6.532testes; TypeScript97106; lintglobal84654,0erros/40avisos; integração26219,2arquivos/15testes sem filtro/ignorados, exclusivamente ci-integracao. Todos encerrados com saída0. Não é a suíte completa de integração. Relatório output/pr382-qa/revisao-r5.md. Sem alteração de API/servidor/schema/permissões/transporte; nova revisão e novo CI exigidos antes do merge. As fontes rejeitadas R2/R3/R4 continuam fora da main.
+
+## PR #382 — R6: contador e confirmação independentes
+
+A R5 bc144a79 foi rejeitada pelo TESTER: um GET fresco zero permanecia em um
+por causa do mínimo de IDs pendentes. A R6 aceita o snapshot da mesma versão
+sem entrada posterior, inclusive zero, e mantém os IDs apenas para retry.
+GET realmente anterior ao SSE preserva a entrada posterior. Sucesso não eleva
+zero fresco; entradas visíveis enfileiradas também ficam pendentes se a aba
+for ocultada antes da repetição. Sem alteração de API, schema ou permissões.
+
+TDD: três casos novos falharam na R5 (37 passes / 3 falhas). O oráculo antigo
+foi corrigido com o TESTER para iniciar o GET antes do SSE, sem enfraquecer
+contagem 2 + 1 sem GET válido, deduplicação ou entrada durante leitura.
+Recorte final: 4 arquivos / 65 testes, saída 0. Gates Node 22.23.2 encerrados
+com saída 0: suíte unitária completa 73160, 842 arquivos / 6.535 testes;
+TypeScript 78883; lint 45672, 0 erros / 40 avisos herdados; integração 9920,
+2 arquivos / 15 testes (preferencias e motor/presenca), sem filtro ou ignorados,
+exclusivamente ci-integracao. Não é suíte completa de integração.
+
+Relatório: output/pr382-qa/revisao-r6.md. Parecer independente no commit exato
+e CI contra main continuam pendentes; não marcar #299 concluída antes deles.
+
+## PR #386 — integração final após #382
+
+Base main 3d756a4e e fonte R6 37a78dfe incorporadas por merges normais,
+547c5d9c/e4f8d099. Conflitos exclusivamente nos acréscimos do quadro, todos
+preservados. Arquivos funcionais específicos de notas comparados sem diferença
+com e4d7119c, que recebeu parecer favorável do TESTER. Sem reintrodução dos
+PNGs arquivados da #381. Diff final sobre main restrito à funcionalidade #300.
+
+C1: aceite repetido no estado integrado, Node22.23.2, ci-integracao exclusivo,
+6 arquivos / 100 testes reais de integração, sem filtro/ignorados, saída0
+(s43509, 369,13s): consultas-pagina, executor-crm, handoff, historico,
+nota-interna e inbox. Não é suíte completa de integração. Recorte unitário
+8 arquivos / 128 testes, saída0; TypeScript13908, saída0. Fonte das notas
+idêntica ao global anterior840/6485 e lint0/40 registrado em e4d7119c;
+não atribuir nova execução global a esta integração.
+
+C2 preserva NOTIFY transacional somente nos dois caminhos faltantes; handoff
+já notifica pelo trigger e não recebe duplicação. Sem permissão/schema/envio
+externo. Retarget para main efetuado; CI do novo head e conferência final
+permanecem pendentes antes do merge.
+
+## PR #387 — C2: trava dos exports da rota SSE
+
+O teste agora inspeciona o namespace real da rota e exige GET/dynamic/runtime,
+únicos exports públicos usados por esta rota. Constantes de controle ficam
+em limites.ts. O contrato foi conferido no validador do Next instalado;
+reexports ou default acidentais também aparecem no namespace e reprovam.
+
+TDD: reintrodução temporária das três constantes como reexport reproduziu
+1 falha / 10 passes. Após retirar o reexport, fonte de produção idêntica à
+correção original: 3 arquivos / 21 testes dirigidos, sem filtro/ignorados,
+saída0. TypeScript44634 e lint dos três arquivos SSE, saída0. Nenhuma nova
+execução de banco ou mudança de reconexão/timeout/Next. Não relacionar ao
+hardnav ainda em investigação na frente313.
+
+Merges normais incorporaram382R6/main3d756 e386e7 para preservar ancestrais.
+Aguardar386 integrado e CI do novo head contra main antes de mergear387.
+
+## PR #391 — gates do estado integrado
+
+Fonte3410df0b incorpora382R6/386/387e main7982 por merges normais. Conflito
+pontual de InboxNovo conciliou ref da região real de conversa com todas as
+classes de altura/rolagem da base389; não descartou nenhuma das regras.
+Arquivos da correção mono permanecem idênticos ao commit7d29f1dc.
+
+Gates Node22.23.2, todos encerrados com saída0: suíte unitária completa17966,
+845arquivos/6.570testes, sem filtro de nomes/ignorados, apenas maxWorkers=2;
+TypeScript47138; lintglobal64541,0erros/40avisos herdados. Não houve nova
+integração de banco (mudança de fonte local sem dados), nem recaptura do
+produto completo após os merges; a amostra isolada de fonte usa os mesmos
+layout/woff2/config/CSS e está registrada em output/pr391-qa.
+
+A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
+e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
+Novo parecer no head exato e CI contra main continuam pendentes.
+
+## PR #385 — C1: capturas fora do estado atual do código
+
+128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
+local antes de retirar do index. Arquivos locais movidos para backup interno
+validado, originais preservados no commit3f7fa9a7 e ancestralidade sem force.
+Pacote legado: output/qa-archives/inbox-pr385-legado-3f7fa9a7.zip,
+5.328.073bytes/133arquivos/128PNG, SHA256
+57772124b6e858b7255677165313bf53debcd53ca61507c9ab72cde99adb1c81.
+Sem novo upload das capturas legadas; README e manifesto de128hashes continuam
+na pasta de evidências. Não é nova homologação visual.
+
+Fontes específicas BalaoMensagem e testes byteiguais a3f7fa9a7 já revisado;
+predecessores382R6/386/387/main7982 recebidos por merges normais, conflitos
+somente no quadro, preservados. Recorte Node22:3arquivos/26testes, saída0,
+sem filtro/ignorados; TypeScript99520 saída0. Sem nova suíte de banco/global
+ou alteração da UI. C5CI e revisão final depois de trazer a maincorrente
+continuam gates antes do merge.
+
+## PR #388 — revisão C2/C3/C4 e gates finais
+
+C2: aviso SSE sem cursor usa recarregar, conservando notas durante consulta e
+falha comum. Limpeza em troca/perda de acesso preservada. C3: quarto argumento
+obrigatório temMaisDepois em itensDaThread, coordenado com a outra frente;
+ConversaAberta repassa ambas as bordas. Notas fora da janela cortada no fim
+ficam ocultas até avançar; limites inclusivos e entrada fora de ordem cobertos.
+
+TDD:6falhas/46passes antes →3arquivos/52testes passando após. Inclui SSE de
+outro atendimento, consulta em voo/falha, consumidor SSR e corte da classe
+HistoricoConversa com fonte em memória1260mensagens, janela600 e recuperação
+da nota ao avançar. Não é teste de banco. Gates Node22.23.2 com saída0:
+full73171,845arquivos/6.566unitários completos (maxWorkers=2, sem filtro/skip),
+TypeScript84277 e lintglobal92738,0erros/40avisos herdados.
+
+C4:40arquivos eram36PNG+4metadados. Os36PNG foram conferidos por tamanho/hash
+contra ZIPlegadoLOCAL antes de retirar do index; originais em9a201c28 ebackup
+local, semforce/novo upload. ZIP4162790bytes, SHA256
+cb4b02a5a1aeffed2efa4d99f257dc6aa77068ae110f54f3922e268cd92651cc.
+README/manifesto e relatório output/pr388-qa/revisao.md preservados. Nenhuma
+nova homologação visual/integração DB é atribuída a esta revisão.
+
+Fonte recebe385corrigida/387/386/R6/main1a56031 por merges normais. Aguardar
+385na main, parecer independente do head exato e CI antes do merge388.
+## PR #389 — C1–C4 e validação final
+
+C1: testes conferem as três contas de altura, o padding do main e as alturas
+reais da barra. C2: composição SSR exige o header direto e o seletor completo
+do teto. Na prova negativa, retirar alturas e inserir wrapper causou duas
+falhas / 25 passes. Produção restaurada sem delta; recorte 3 arquivos / 53
+passou. Nenhuma mudança no header da frente #315. Na casca #308, adaptar a
+guarda às novas classes, sem preservar artificialmente as contas antigas.
+
+C3: Chrome real desta fonte, 8 contextos / 16 estados em 390/700/1024/1440×500,
+dois temas, lista/conversa. Documento de 500 px e controles geometricamente
+alcançáveis por scrollIntoView em todos. Prova de overflow com bloco temporário
+aria-hidden, como o harness original; não é carga real ou acionamento de negócio.
+Zero pageerror, mas overlay Issues do Next dev visível e logs de stream
+encerrado cedo na navegação/fechamento. Sem atribuir causa à #389 nem alegar
+zero diagnósticos de servidor. Duas imagens inspecionadas; métricas baixo.json.
+Este aceite intermediário não homologa #308/#315 automaticamente. Preview39117
+parado, AGENTS restaurado byte a byte; fixture fictícia em ci-integracao.
+
+C4: 107 PNGs conferidos por tamanho/hash contra ZIP legado local e história
+ae4d71b1 antes de retirar do index. Sem force ou novo upload legado. ZIP de
+7.741.141 bytes / 117 arquivos, SHA256
+c0497482162947d74f57d30b4a5857309ab07f2119c568f8d62a09eb2f2c2035.
+README/manifesto preservados; relatório output/pr389-qa/revisao.md.
+
+Gates Node22.23.2 encerrados com saída 0: full80173, 845 arquivos / 6.570 testes
+unitários completos, maxWorkers2 sem filtro/skip; TSC70812; lintglobal47298,
+0 erros / 40 avisos. Pais incorporados por merges normais, conciliando refR6
+com classes de altura. Parecer exato e CI do head final continuam pendentes.
+
+## PR #390 — C1: teste de identidade entre conversas
+
+O teste fica dentro de describe e confere irmãos distintos, estabilidade
+após SSE da mesma conversa e novas keys/atendimentoId ao selecionar outra.
+Keys constantes por tipo reproduziram a falha (1 falha / 40 passes); produção
+restaurada sem delta. Recorte 3 arquivos / 81 testes, TSC19403 e lint alterados
+com saída 0, sem filtro/ignorados. Não houve novo browser/DB ou global local.
+
+Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
+C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
+output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
+legada de quatro elementos por dois, mantendo os contratos de identidade.
+
+## PR #391 — pais integrados e gate contra main
+
+Main8d00124 incorporada por merge normal 8c6930c2. Os arquivos Inbox/conversa
+ficam idênticos à main já aprovada; as fontes/tokens da #391 são idênticos ao
+04e6f2c6 aprovado. Preservados os fixes #388, guardas #389 e identidade #390.
+Recorte pós-merge 11 arquivos / 174 testes, TSC71047 e lint de 14 arquivos
+terminaram 0, sem ignorados/avisos no recorte. Não houve novo global local ou
+browser. Retarget/main e push serão seguidos por CI global e parecer final;
+aguardar esses gates antes do merge. Relatório output/pr391-qa/revisao.md.
+
+## PR #394 — fila C1 e conciliação com R6
+
+Adotado b233, aprovado pelo TESTER, após falha P2 do checkpoint82. Janela fixa
+50 ms, um GET físico com corpo e uma pendência; props equivalentes preservam
+reconciliação sem reabilitar épocas canceladas. Merge4696 com main preserva
+R6: IDs pendentes, época de entradas, visibilidade e GET fresco autoritativo.
+Três testes passam a iniciar efetivamente o GET antes do evento/resultado;
+expectativas de dados intactas. Recorte três arquivos / 81 testes, saída0.
+
+Gates4696 encerrados0: full33127, 848 arquivos / 6.628 testes unitários sem
+filtro/ignorados, maxWorkers2; TSC64771; lint10790 zero erros / 40 avisos.
+DB31266 em ci-integracao/erp_genius_test_ciint: dois arquivos / 26 testes,
+consultas-pagina e opcoes-filtro, sem filtro/ignorados ou concorrência no banco.
+
+Mergec710 incorpora fonte/tokens #391 da main, sem mudar Inbox/servidor310.
+Composição oito arquivos / 135 testes e TSC29938 terminaram0. Não atribuir
+o full anterior ao head novo. Parecer final e CI global contra main pendentes;
+sem novo browser, pacote/lock/schema ou envio. output/pr394-qa/revisao.md.
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
+
+## PR #392 — composição B2 com main
+
+Maincce incorporada: contratos E0 preservados literalmente da main; delta src/scripts restrito aos14caminhos próprios307/B2, manifest/lock/eslint iguais68974544. Quadro com2conflitos preserva amboslados, c412b6 saída0; specs/relatórios anteriores conservammain. Recortecompostob21319 saída0/2arquivos20testes+syntaxCLI/preflightreal/diffcheck. Global/TSC/lint/integração compostos e TESTER ainda pendentes. Merge-tree280 tem só conflito textual de linhaBabel necessária ao protótipo, não divergência Playwright; preservar Babel na resolução futura, ver relatórioB2. Não declarar merge-treeclean nem reatribuir globalisolado à composição.
+
+## PR #392 — gates finais da composição c7
+
+Fontec7bae481 congelada: global65804/c1315c saída0,849arquivos6651testes236,80s,maxWorkers2,semfiltro/skipsnovos;typegen/TSC26045 saída0;lint60950 saída0/0erros40avisos;integração47303 saída0/1arquivo5testes33,36s,ci-integracaoexclusivo. d8674c saída0 confirmafonteimutável;20dirigidosanteriorescompostos0. Chrome12b89d pertenceaoisolado689,helpers/CLIiguaisc7,semrecapturaERP. RegistroapósfonteapenasMD;TESTERindependente/CIremota/mainmergeaindapendentes. RelatórioB2distinguegatesisolados/compostos/resíduoBabel280;nenhumaguardahumanaB2restanteapósautorizaçãoexplícita.

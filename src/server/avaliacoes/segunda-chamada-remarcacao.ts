@@ -9,7 +9,8 @@ import { disponibilidadeRecuperacaoTx } from "./disponibilidade-recuperacao-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
-import { prazoSegundaChamadaVigente } from "./segunda-chamada-prazo";
+import { fusoDoPrazoSegundaChamada, prazoSegundaChamadaVigente } from "./segunda-chamada-prazo";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import {
   canonicalizarPropostaRemarcacaoSegundaChamada,
   DecidirRemarcacaoSegundaChamadaSchema,
@@ -568,6 +569,7 @@ export async function consultarRemarcacoesAgendaSegundaChamada(input: z.input<ty
       const prazoVigente = reserva.disponibilizacaoId
         ? await prazoSegundaChamadaVigente(tx, reserva.disponibilizacaoId)
         : null;
+      const fusoPrazo = fusoDoPrazoSegundaChamada(estado.encontro?.fusoOrigem, await fusoDaEscola(tx));
       return {
         reservaId: d.reservaId,
         identificacao: await identificarMatriculaAvaliacao(tx, reserva.matriculaId, reserva.turmaId),
@@ -577,7 +579,9 @@ export async function consultarRemarcacoesAgendaSegundaChamada(input: z.input<ty
           codigoAvaliacao: reserva.codigoAvaliacao,
           professorAtual: professorAtual ? { id: professorAtual.id, nome: professorAtual.nome } : null,
           prazoVigente: prazoVigente?.toISOString() ?? null,
-          fusoExibicao: estado.encontro?.fusoOrigem ?? "UTC",
+          // Fuso da agenda; sem ela (ou inválido), o da escola — nunca o do servidor (ver fusoDoPrazoSegundaChamada).
+          fusoExibicao: fusoPrazo.fuso,
+          origemFusoExibicao: fusoPrazo.origem,
         },
         atual: estado,
         contextoVigente,

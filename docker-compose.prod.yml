@@ -2,8 +2,11 @@
 # Sobe: Postgres (banco do app) · migrações · app Next standalone ·
 # motor WhatsApp (whatsapp-web-baileys, modo serviço) SÓ na rede interna · Caddy (TLS automático) como única borda.
 #
-# Uso (VPS):   cp deploy/env.production.example .env   →   preencher   →
-#              docker compose -f docker-compose.prod.yml up -d --build
+# O build acontece no GitHub Actions (.github/workflows/image.yml), não na VPS.
+# Este compose APENAS puxa a imagem validada do GHCR (variável APP_IMAGE com digest).
+#
+# Uso (VPS):   cp deploy/env.production.example .env   →   preencher APP_IMAGE e demais vars   →
+#              docker compose -f docker-compose.prod.yml up -d
 # As variáveis ${...} vêm do .env ao lado deste arquivo (compose lê sozinho).
 
 name: erp-genius
@@ -29,10 +32,9 @@ services:
     # ou túnel SSH — nunca porta pública (o banco atual em porta pública é o que a E5 aposenta).
 
   # Migrações ANTES do app (prisma migrate deploy é aditivo e idempotente — nunca reset).
+  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
-    build:
-      context: .
-      target: builder
+    image: ${APP_MIGRATE_IMAGE:?defina no .env}
     command: npx prisma migrate deploy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
@@ -42,8 +44,7 @@ services:
     restart: "no"
 
   app:
-    build:
-      context: .
+    image: ${APP_IMAGE:?defina no .env}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
@@ -58,6 +59,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção real.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
+      # Assinatura eletrônica (Q155): vazio = registro manual. "simulado" SÓ em UAT/demo (driver SIMULADO, nada
+      # é enviado ao cliente; processos ficam SIMULADO/SANDBOX). Não existe driver de fornecedor real ainda.
+      ASSINATURA_DRIVER: ${ASSINATURA_DRIVER:-}
       # Motor WhatsApp na rede interna do compose (nunca a internet).
       MOTOR_URL: http://motor:4317
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no .env}
@@ -114,6 +118,21 @@ services:
     volumes:
       # PGlite, chave do cofre, credenciais e mídia do motor (entra no backup).
       - motor_data:/data
+    healthcheck:
+      # node:24.22.1-bookworm-slim não tem curl/wget; usar node -e com fetch nativo.
+      # 127.0.0.1 (não localhost): evita IPv6 → bind só em IPv4 (HOST=0.0.0.0).
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4317/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          # Baileys: 512MB–1GB para sessões, mídia temporária, PGlite e heaps.
+          # CPU: 0.5–1 core (picos em QR/pareamento, idle baixo).
+          memory: 768M
+          cpus: "0.75"
 
   # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min — degraus de
   # "+30min" (C1/C2) não sobrevivem a um tick horário (virariam ~"+90min" e estourariam a
@@ -121,12 +140,11 @@ services:
   cron:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron
-          -o /dev/null -w "cron tick %{http_code}\n" || true;
-        sleep 300;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron -o /dev/null -w "cron tick %{http_code}\n" || true; sleep 300; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
@@ -137,12 +155,11 @@ services:
   cron-despacho:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/despacho
-          -o /dev/null -w "despacho tick %{http_code}\n" || true;
-        sleep 60;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/despacho -o /dev/null -w "despacho tick %{http_code}\n" || true; sleep 60; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
@@ -153,12 +170,11 @@ services:
   cron-portal-envios:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/portal-aluno/envios/cron
-          -o /dev/null -w "portal-envios tick %{http_code}\n" || true;
-        sleep 60;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/portal-aluno/envios/cron -o /dev/null -w "portal-envios tick %{http_code}\n" || true; sleep 60; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
@@ -169,12 +185,11 @@ services:
   cron-avisos-agenda:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/agenda/avisos/cron
-          -o /dev/null -w "avisos-agenda tick %{http_code}\n" || true;
-        sleep 300;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/agenda/avisos/cron -o /dev/null -w "avisos-agenda tick %{http_code}\n" || true; sleep 300; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:

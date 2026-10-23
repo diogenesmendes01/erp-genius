@@ -6,7 +6,8 @@ import { FORMA_PAGAMENTO_LABEL, rotular } from "@/lib/labels";
 import { listarContextosRecebimentoDestinado } from "@/server/financeiro/consultas";
 import { consultarHistoricoRecebimentos } from "@/server/financeiro/recebimentos-historico";
 import { RecebimentoDestinadoForm } from "./RecebimentoDestinadoForm";
-import { formatarDataCivil } from "@/lib/data-civil";
+import { formatarDiaDoPagamento } from "@/server/operacao/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -15,11 +16,13 @@ export default async function RecebimentosPage({ searchParams }: { searchParams:
   if (!papeis) return <AcessoNegado recurso="o caixa" />;
   const contextos = await listarContextosRecebimentoDestinado();
   const pagina = Number((await searchParams).pagina ?? 1);
-  const historico = await consultarHistoricoRecebimentos({ pagina });
+  // Lote 2 do fuso pessoal: dataPagamento é misto (data digitada ou instante da baixa sem data); o slice UTC punha a
+  // baixa feita à noite na escola no dia seguinte. Sai no dia da escola, sem fuso pessoal.
+  const [historico, fusoEscola] = await Promise.all([consultarHistoricoRecebimentos({ pagina }), fusoDaEscola()]);
   return <section className="mx-auto max-w-4xl space-y-5"><VoltarPara href="/financeiro" /><div><h1 className="text-2xl font-medium">Registrar recebimento com destinações</h1><p className="mt-1 text-sm text-gray-600">Registre um fato de caixa e divida-o entre cobranças já emitidas do mesmo contrato ou deixe o saldo como crédito explícito. Matrículas em preparação aceitam antecipação documentada sem ativação automática.</p></div><RecebimentoDestinadoForm contextos={contextos} />
     <section className="space-y-3"><h2 className="text-xl">Histórico de recebimentos</h2>
       {!historico.ok ? <p role="alert">{historico.erro}</p> : <>{!historico.dado?.itens.length && (pagina > 1 ? <EstadoVazio acao={<Link href="?pagina=1">Ir para a primeira página</Link>}>Nenhum recebimento nesta página.</EstadoVazio> : <EstadoVazio>Nenhum recebimento registrado.</EstadoVazio>)}{historico.dado?.itens.map(r => <article key={r.id} className="space-y-2 rounded border p-3">
-        <h3 className="font-medium">{formatarMoeda(r.valor, r.moeda)} · {rotular(FORMA_PAGAMENTO_LABEL, r.forma)}</h3><p>Matrícula {r.matriculaId} · pagamento em {formatarDataCivil(r.dataPagamento)}</p>
+        <h3 className="font-medium">{formatarMoeda(r.valor, r.moeda)} · {rotular(FORMA_PAGAMENTO_LABEL, r.forma)}</h3><p>Matrícula {r.matriculaId} · pagamento em {formatarDiaDoPagamento(r.dataPagamento, fusoEscola)}</p>
         {r.comprovante ? <a className="underline" href={r.comprovante.url} target="_blank" rel="noopener noreferrer">{r.comprovante.nome}</a> : <p>{r.evidenciaCaixaRegistrada ? "Sem arquivo de comprovante neste recebimento." : "Comprovante individual não identificado no registro histórico."}</p>}
         {r.comentario && <p className="whitespace-pre-wrap">{r.comentario}</p>}
         <ul>{r.destinos.map(v => <li key={v.id}>{v.tipo === "CREDITO_SEM_DESTINO" ? "Crédito sem destino" : `Cobrança ${v.cobrancaId}`} · {formatarMoeda(v.valor, r.moeda)} · {v.evidencia}</li>)}</ul>

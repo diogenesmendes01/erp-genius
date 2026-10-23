@@ -153,11 +153,12 @@ export function CoberturasPainel({
         })}
       </ul>
       {!coberturas.length && <EstadoVazio>Nenhuma cobertura cadastrada.</EstadoVazio>}
+      {/* Revogar é idempotente por natureza (#166, 5º lote): já revogada devolve ok, e a linha travada evita dois Eventos. */}
       {revogando && (
         <ConfirmarAcao
           titulo={`Revogar a cobertura de ${revogando.substituto} sobre a carteira de ${revogando.titular}?`}
           confirmacao="revogação da cobertura"
-          idempotente={false}
+          idempotente
           acao={() => revogarCobertura(revogando.id)}
           aoConcluir={() => revogada(revogando)}
           aoCancelar={() => setRevogando(null)}

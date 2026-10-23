@@ -31,4 +31,11 @@ describe("PainelSetor", () => {
     expect(h({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null })).toContain("Sem registros");
   });
   it("sem painel mostra aviso neutro", () => { expect(h(null)).toContain("Sem detalhes"); });
+  it("rótulo e estado vazio usam texto secundário definido na paleta", () => {
+    const comOportunidade = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: null }, pessoaId: null });
+    const semOportunidade = h({ setor: "COMERCIAL", oportunidade: null, pessoaId: null });
+    expect(comOportunidade).toContain('<dt class="text-gray-600">');
+    expect(semOportunidade).toContain('class="text-sm text-gray-600"');
+    expect(comOportunidade + semOportunidade).not.toContain("text-muted-foreground");
+  });
 });

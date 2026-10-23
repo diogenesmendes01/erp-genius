@@ -10,6 +10,8 @@ vi.mock("@/server/contratos/aditivo-originais", () => ({ consultarOriginaisAditi
 vi.mock("@/server/contratos/aditivo-participantes", () => ({ consultarConferenciasParticipantesAditivo: mocks.participantes }));
 vi.mock("@/server/contratos/aditivo-efeitos-consulta", () => ({ consultarEfeitosAditivo: mocks.efeitos }));
 vi.mock("@/server/contratos/aditivo-acerto-taxa-consulta", () => ({ consultarAcertoTaxaPorProposta: mocks.acerto }));
+// Lote 3 do fuso pessoal: a página resolve o fuso em que a vigência é digitada (pessoal; sem preferência, o da escola).
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("./Formularios", () => ({ PrepararAditivo: () => createElement("div") }));
 vi.mock("../CadastroContratualAplicado", () => ({ CadastroContratualAplicado: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => createElement("div", { "data-fuso-cadastro": preferenciaFusoExibicao }) }));
 vi.mock("./[propostaId]/EstadoCampo", () => ({ EstadoCampo: () => createElement("div") }));
