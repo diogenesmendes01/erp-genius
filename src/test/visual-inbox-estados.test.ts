@@ -53,3 +53,10 @@ it('sem seleção mobile exige lista e conversa oculta, desktop exige área cent
  const rect=f.regiao.getBoundingClientRect;f.regiao.getBoundingClientRect=()=>({...rect(),width:0,height:0});expect(api.semanticaEstado319Pronto('sem-selecao')).toBe(true);
  vi.stubGlobal('window',{innerWidth:1440,innerHeight:900});expect(api.semanticaEstado319Pronto('sem-selecao')).toBe(false);f.regiao.getBoundingClientRect=rect;expect(api.semanticaEstado319Pronto('sem-selecao')).toBe(true);f.criar('aside',{id:'painel-contato'});expect(api.semanticaEstado319Pronto('sem-selecao')).toBe(false);
 });
+it('carregando espera a navegação Home completa antes de CDP e routerPush, sem sleep',async()=>{
+ let completar!:()=>void;const load=new Promise<void>(r=>{completar=r;}),eventos:string[]=[];const criarCDP=vi.fn(async()=>{eventos.push('CDP');return{send:async()=>{},detach:async()=>{}};});
+ const pagina={goto:vi.fn(async(_url:string,opcoes:{waitUntil:string})=>{eventos.push('goto:'+opcoes.waitUntil);if(opcoes.waitUntil==='load'){await load;eventos.push('load');}}),getByLabel:()=>({waitFor:async()=>{}}),waitForFunction:async()=>{},evaluate:vi.fn(async()=>123)};
+ const pendente=api.abrirCarregandoApp(pagina,{newCDPSession:criarCDP},'http://localhost:3111');
+ try{await new Promise<void>(r=>setImmediate(r));expect(criarCDP).not.toHaveBeenCalled();completar();await pendente;expect(criarCDP).toHaveBeenCalledOnce();expect(eventos.indexOf('load')).toBeLessThan(eventos.indexOf('CDP'));}
+ finally{completar();await pendente;}
+});
