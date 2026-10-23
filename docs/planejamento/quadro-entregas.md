@@ -1,5 +1,8 @@
 # Quadro único de entregas
 
+## Inbox — chaves dos painéis irmãos — 22/10/2026
+
+Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
 ## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
 
 Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota inicial e nova sem reload, zero nova mensagem no banco,24 PNGs depois. Evidências e limites em output/inbox-301-visual/. Combinação E0 fonte7657c528:845 arquivos/6526 testes sessão99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Estados abaixo preservam as etapas anteriores; merge/deploy não executados.
@@ -4866,3 +4869,16 @@ Gates Node22.23.2 encerrados com saída 0: full80173, 845 arquivos / 6.570 teste
 unitários completos, maxWorkers2 sem filtro/skip; TSC70812; lintglobal47298,
 0 erros / 40 avisos. Pais incorporados por merges normais, conciliando refR6
 com classes de altura. Parecer exato e CI do head final continuam pendentes.
+
+## PR #390 — C1: teste de identidade entre conversas
+
+O teste fica dentro de describe e confere irmãos distintos, estabilidade
+após SSE da mesma conversa e novas keys/atendimentoId ao selecionar outra.
+Keys constantes por tipo reproduziram a falha (1 falha / 40 passes); produção
+restaurada sem delta. Recorte 3 arquivos / 81 testes, TSC19403 e lint alterados
+com saída 0, sem filtro/ignorados. Não houve novo browser/DB ou global local.
+
+Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
+C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
+output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
+legada de quatro elementos por dois, mantendo os contratos de identidade.
