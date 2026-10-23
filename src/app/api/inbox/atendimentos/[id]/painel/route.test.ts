@@ -25,11 +25,11 @@ describe("GET /api/inbox/atendimentos/[id]/painel", () => {
   it("no escopo → o painel do servidor, sem cache", async () => {
     const u = sessao([Papel.FINANCEIRO]);
     sessaoMock.mockResolvedValue(u);
-    carregarPainel.mockResolvedValue({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [] });
+    carregarPainel.mockResolvedValue({ setor: "FINANCEIRO", matriculaCodigo: "M-1", matriculaId: "m1", cobrancas: [] });
     const r = await chamar();
     expect(r.status).toBe(200);
     expect(r.headers.get("cache-control")).toBe("no-store");
-    expect(await r.json()).toEqual({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [] });
+    expect(await r.json()).toEqual({ setor: "FINANCEIRO", matriculaCodigo: "M-1", matriculaId: "m1", cobrancas: [] });
     expect(carregarPainel).toHaveBeenCalledWith(u, "a1");
   });
 });

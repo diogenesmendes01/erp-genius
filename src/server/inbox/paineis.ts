@@ -23,8 +23,8 @@ export type PainelSetor = DadosSetor & {
 };
 type DadosSetor =
   | { setor: "COMERCIAL"; oportunidade: { id: string; titulo: string; etapa: string; valor: string | null } | null; pessoaId: string | null }
-  | { setor: "FINANCEIRO"; matriculaCodigo: string | null; cobrancas: { id: string; vencimento: string; valor: string; status: string }[] }
-  | { setor: "SECRETARIA"; matriculaCodigo: string | null; documentosPendentes: number | null }
+  | { setor: "FINANCEIRO"; matriculaCodigo: string | null; matriculaId: string | null; cobrancas: { id: string; vencimento: string; valor: string; status: string }[] }
+  | { setor: "SECRETARIA"; matriculaCodigo: string | null; matriculaId: string | null; documentosPendentes: number | null }
   | { setor: "PEDAGOGICO"; turma: string | null; frequenciaPct: number | null };
 
 /** Categorias que a Secretaria espera ver arquivadas na matrícula (não arquivadas) para considerá-la documentada. */
@@ -85,20 +85,20 @@ async function carregarDadosSetor(u: UsuarioSessao, atendimentoId: string): Prom
       const { alunoId, matriculaId } = a, contatoId = a.conversa.contatoId;
       const ativa = autorizado && alunoId && matriculaId && contatoId
         ? await cobrancaAtivaDoAtendimento(matriculaId, alunoId, contatoId) : null;
-      return { setor: "FINANCEIRO", matriculaCodigo: autorizado ? a.matricula?.codigo ?? null : null,
+      return { setor: "FINANCEIRO", matriculaCodigo: autorizado ? a.matricula?.codigo ?? null : null, matriculaId: autorizado ? a.matricula?.id ?? null : null,
         cobrancas: ativa ? [{ id: ativa.id,
           vencimento: ativa.vencimento.estado === "CONFIRMADO" ? ativa.vencimento.dataCivil : "A conferir",
           valor: ativa.saldo.toFixed(2), status: ativa.status }] : [] };
     }
     case "SECRETARIA": {
-      if (!temPapel(u, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR)) return { setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null };
+      if (!temPapel(u, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR)) return { setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null, documentosPendentes: null };
       let pendentes = 0;
       if (a.matriculaId) {
         const presentes = await prisma.documento.findMany({ where: { matriculaId: a.matriculaId, arquivado: false, categoria: { in: [...CATEGORIAS_EXIGIDAS] } }, select: { categoria: true } });
         const tem = new Set(presentes.map((d) => d.categoria));
         pendentes = CATEGORIAS_EXIGIDAS.filter((c) => !tem.has(c)).length;
       }
-      return { setor: "SECRETARIA", matriculaCodigo: a.matricula?.codigo ?? null, documentosPendentes: pendentes };
+      return { setor: "SECRETARIA", matriculaCodigo: a.matricula?.codigo ?? null, matriculaId: a.matricula?.id ?? null, documentosPendentes: pendentes };
     }
     case "PEDAGOGICO": {
       if (!temPapel(u, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR)) return { setor: "PEDAGOGICO", turma: null, frequenciaPct: null };
