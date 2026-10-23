@@ -9,8 +9,9 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { garantirAtendimento } from "./atendimentos";
 import { alternarFavorita, alternarFixada, marcarAtendimentoLido, marcarLida, marcarNaoLida, silenciarConversa } from "./preferencias";
 import { preferenciasDoUsuario } from "./preferencias-consulta";
+import { revalidatePath } from "next/cache";
 
-beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
+beforeEach(async () => { await truncarBanco(); authMock.mockReset(); vi.mocked(revalidatePath).mockClear(); });
 const comoUsuario = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 
 async function cenario() {
@@ -57,6 +58,7 @@ describe("preferências pessoais da inbox (Task 8)", () => {
     expect(await marcarAtendimentoLido(a.id)).toMatchObject({ ok: true });
     expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(0);
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).naoLidas).toBe(0);
+    expect(revalidatePath).toHaveBeenCalledExactlyOnceWith("/inbox");
   });
   it("marcarAtendimentoLido fora do escopo não modifica leitura nem contador", async () => {
     const { fora, a } = await cenario();
@@ -65,6 +67,21 @@ describe("preferências pessoais da inbox (Task 8)", () => {
     expect(await marcarAtendimentoLido(a.id)).toEqual({ ok: false, erro: "Conversa não encontrada ou fora do seu escopo." });
     expect(await prisma.preferenciaConversaUsuario.count()).toBe(0);
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).naoLidas).toBe(2);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+  it("marcarLida isolada continua invalidando a leitura pessoal uma vez", async () => {
+    const { v1, a } = await cenario(); comoUsuario(v1);
+    expect(await marcarLida(a.id)).toMatchObject({ ok: true });
+    expect(revalidatePath).toHaveBeenCalledExactlyOnceWith("/inbox");
+  });
+  it("falha compartilhada invalida uma vez a preferência pessoal já gravada", async () => {
+    const { v1, a } = await cenario(); comoUsuario(v1);
+    const compartilhar = vi.spyOn(await import("./acoes"), "marcarConversaLida").mockResolvedValueOnce({ ok: false, erro: "Falha temporária." });
+    try {
+      expect(await marcarAtendimentoLido(a.id)).toEqual({ ok: false, erro: "Falha temporária." });
+      expect(await prisma.preferenciaConversaUsuario.count({ where: { usuarioId: v1.id, conversaId: a.conversaId } })).toBe(1);
+      expect(revalidatePath).toHaveBeenCalledExactlyOnceWith("/inbox");
+    } finally { compartilhar.mockRestore(); }
   });
   it("silenciar com data e reativar com null", async () => {
     const { v1, a } = await cenario();

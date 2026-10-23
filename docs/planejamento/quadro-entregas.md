@@ -4749,3 +4749,5 @@ Implementação e verificação local concluídas; revisão independente e publi
 ### Revisão PR382 — B1 leitura da conversa oculta — 22/10/2026
 
 Correção parcial: região real da thread condiciona leitura/zero otimista e repetição pendente. RED/GREEN, full840arquivos6483testes70638exit0, TSC80712exit0 e lintdirigido0, Node22. Browser25181exit0/SSEreal no banco exclusivo ci-integracao: Voltar preserva lidaAte/naolida1, reabrir lê0, duascolunas700px continua lendo. SPEC e relatório output/pr382-qa/revisao-b1.md. Demais itens MEDIUM da PR ainda pendentes; sem merge ou aprovação presumida.
+
+PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao desmontar; ação composta invalida rota uma vez, preservando falha parcial e ação pessoal isolada. TDD RED observado. Fonte final: fullunit23477exit0/840arquivos6485testes sem filtro/ignorados; TSC1446exit0; lintglobal2057exit0/0erros40avisos; integração dirigida ci-integracao73209exit0/2arquivos15testes. Relatório output/pr382-qa/revisao-final.md. C5retarget/CI e re-review externo pendentes; não mergeado.

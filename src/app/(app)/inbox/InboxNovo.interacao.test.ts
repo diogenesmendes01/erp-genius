@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   posEfeito: 0,
   contagens: undefined as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
+  aoVisibilidade: null as null | (() => void),
 }));
 const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 vi.mock("react", async (original) => {
@@ -68,7 +69,11 @@ const chamadasPainel: string[] = [];
 beforeEach(() => {
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
-  vi.stubGlobal("document", { visibilityState: "visible" });
+  m.aoVisibilidade = null;
+  vi.stubGlobal("document", { visibilityState: "visible",
+    addEventListener: (tipo: string, f: () => void) => { if (tipo === "visibilitychange") m.aoVisibilidade = f; },
+    removeEventListener: (tipo: string, f: () => void) => { if (tipo === "visibilitychange" && m.aoVisibilidade === f) m.aoVisibilidade = null; },
+  });
   m.g = criarGanchos(); m.efeitos = []; m.aoAviso = null; chamadasPainel.length = 0;
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true }), { status: 200 });
   respostaLista = async () => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null }), { status: 200 });
@@ -102,8 +107,29 @@ it("painéis simultâneos do atendimento têm identidades React distintas", asyn
   }
 });
 const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
+const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
 
 describe("InboxNovo: leitura ao abrir", () => {
+  it("voltar à aba visível lê a conversa exibida sem esperar outro aviso SSE", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(marcar).not.toHaveBeenCalled();
+    expect(typeof m.aoVisibilidade).toBe("function");
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("voltar à aba não lê a thread oculta na lista e remove o listener ao desmontar", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
+    regiaoConversaVisivel = false; tela();
+    expect(typeof m.aoVisibilidade).toBe("function");
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).not.toHaveBeenCalled();
+    for (const e of m.efeitos) if (typeof e.limpar === "function") e.limpar();
+    expect(m.aoVisibilidade).toBeNull();
+  });
   it("Voltar no celular mantém a nova mensagem não lida enquanto a região da conversa está oculta", async () => {
     const t = tela(); await esvaziar(); marcar.mockClear();
     (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
@@ -144,7 +170,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     marcar.mockImplementation(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
     tela();
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-aba", conversaId: "cv1" });
-    vi.stubGlobal("document", { visibilityState: "hidden" }); concluir(); await esvaziar();
+    mudarVisibilidade("hidden"); concluir(); await esvaziar();
     expect(marcar).toHaveBeenCalledTimes(1);
   });
   it("marca o atendimento selecionado pelo deep link inicial", () => {
@@ -165,7 +191,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
     expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
     marcar.mockClear();
-    vi.stubGlobal("document", { visibilityState: "hidden" });
+    mudarVisibilidade("hidden");
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m3", conversaId: "cv1" });
     expect(marcar).not.toHaveBeenCalled();
   });
