@@ -41,3 +41,16 @@ it("falha na preferência não invalida contador nem reconcilia como sucesso",as
  tela().menu.find(i=>i.id==="naoLida")!.aoEscolher(); await new Promise(r=>setTimeout(r,0));
  expect(recontarNaoLidasInbox).not.toHaveBeenCalled(); expect(p.aoMudar).not.toHaveBeenCalled(); expect(tela().feedback).not.toBeNull();
 });
+
+it("C2 encerrado individual mantém Nota por leitura sem liberar agenda ou gestão",()=>{
+ const fechado={...p,atendimento:{...p.atendimento,status:"ENCERRADO" as const}};
+ const a=tela(fechado);
+ expect(a.menu.map(i=>i.id)).toEqual(["naoLida","fixar","silenciar","nota","buscar"]);
+ expect(a.abrirAgendar).toBeNull();expect(a.assumir).toBeNull();expect(a.transferir).toBeNull();
+ a.menu.find(i=>i.id==="nota")!.aoEscolher();
+ expect(elementos(tela(fechado).dialogos).find(n=>typeof n.type==="function"&&n.type.name==="DialogoNota")?.props.atendimentoId).toBe("a");
+});
+it("C2 grupo encerrado permanece sem Nota e sem ações de negócio",()=>{
+ const a=tela({...p,grupo:true,atendimento:{...p.atendimento,status:"ENCERRADO"}});
+ expect(a.menu.map(i=>i.id)).toEqual(["naoLida","fixar","silenciar","buscar"]);expect(a.abrirAgendar).toBeNull();expect(a.assumir).toBeNull();expect(a.transferir).toBeNull();
+});

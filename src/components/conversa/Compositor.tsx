@@ -11,6 +11,8 @@ import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor } from "./respostas-rapidas";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 
+import { useRevisoesRascunhos, type RevisoesRascunhos } from "./rascunhos-conversa";
+
 const SeletorEmoji = lazy(() => import("./SeletorEmoji"));
 
 export const MOTIVO_SEM_ENVIO = "Você não pode enviar nesta conversa.";
@@ -34,6 +36,8 @@ export interface PropsCompositor {
   aoNota(t: string, chaveIdempotencia?: string): Promise<Resultado>;
   /** Compartilhado pelo dono da conversa para conservar tentativa incerta mesmo ao alternar contatos. */
   tentativasNota?: ChavesPorAlvo;
+  /** Dono acima da key do contato: evita apagar uma nova intenção após remontagem. */
+  revisoesRascunhos?: RevisoesRascunhos;
   aoAgendar?: () => void;
   /** O rodapé hospeda a moldura; controles e estados continuam sendo deste componente. */
   contido?: boolean;
@@ -65,7 +69,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {}, tentativasNota, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erro, setErro] = useState("");
@@ -80,6 +84,8 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   const nota = modo === "nota";
   const tentativasLocais = useChavesPorAlvo();
   const tentativas = tentativasNota ?? tentativasLocais;
+  const revisoesLocais = useRevisoesRascunhos();
+  const revisoes = revisoesRascunhos ?? revisoesLocais;
 
   // Troca de atendimento ou de modo: o estado é ajustado no próprio render (estado derivado da prop, com a chave
   // anterior guardada), sem setState dentro de effect (react-hooks/set-state-in-effect). O React descarta este render
@@ -101,8 +107,9 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   }
   useLayoutEffect(() => {
     contextoAtual.current = contexto;
+    revisoes.registrar(chave, contexto, revisaoRascunho.current);
     return () => { if (contextoAtual.current === contexto) contextoAtual.current = null; };
-  }, [contexto]);
+  }, [contexto, chave, revisoes]);
   const contextoVigente = () => contextoAtual.current === contexto;
   useEffect(() => () => {
     descartar.current = true;
@@ -132,9 +139,14 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     );
   }
 
+  function registrarIntencao() {
+    revisaoRascunho.current += 1;
+    revisoes.alterar(chave, contexto, revisaoRascunho.current);
+  }
+
   function mudar(v: string) {
     if (!contextoVigente()) return;
-    revisaoRascunho.current += 1;
+    registrarIntencao();
     setTexto(v);
     gravarRascunho(atendimentoId, modo, v);
   }
@@ -143,7 +155,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     if (!contextoVigente()) return;
     if (!f) return;
     if (f.size === 0 || f.size > MAX_BYTES_MIDIA) { setErro("Arquivo vazio ou acima de 10MB."); return; }
-    revisaoRascunho.current += 1;
+    registrarIntencao();
     setArquivo(f);
     setAnexos(false);
     setErro("");
@@ -181,10 +193,16 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
         if (!url) return;
         r = await aoEnviarMidia(url, corpo);
       } else r = await aoEnviarTexto(corpo);
+      // Sucesso de A em B limpa apenas o armazenamento exato da tentativa confirmada.
+      // Um novo owner (inclusive A→B→A) ou qualquer intenção posterior revoga essa autorização.
+      if (r.ok && revisoes.confere(chave, contexto, revisaoEnviada)) {
+        try { if (localStorage.getItem(chave) === texto) localStorage.removeItem(chave); } catch { /* armazenamento indisponível */ }
+      }
       // A tentativa conclui sua chave, mas não substitui uma intenção editada durante o envio.
       if (!contextoVigente() || revisaoRascunho.current !== revisaoEnviada) return;
       if (!r.ok) { setErro(r.erro); return; }
-      mudar("");
+      registrarIntencao();
+      setTexto("");
       setArquivo(null);
     } catch (e) {
       if (contextoVigente() && revisaoRascunho.current === revisaoEnviada) setErro(e instanceof Error ? e.message : "Falha ao enviar.");
@@ -253,7 +271,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
         <div className="mb-2 flex items-center gap-2 rounded border border-gray-200 bg-surface px-3 py-1.5 text-sm">
           <span className="truncate">{arquivo.name}</span>
           <small className="text-gray-600">{tamanho(arquivo.size)}</small>
-          <button type="button" aria-label="Remover anexo" disabled={enviando} onClick={() => { revisaoRascunho.current += 1; setArquivo(null); }} className="ml-auto rounded p-1 hover:bg-highlight">
+          <button type="button" aria-label="Remover anexo" disabled={enviando} onClick={() => { registrarIntencao(); setArquivo(null); }} className="ml-auto rounded p-1 hover:bg-highlight">
             <IconTrash size={16} aria-hidden />
           </button>
         </div>
