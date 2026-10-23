@@ -190,3 +190,6 @@ Sem-selecao exige lista/hidratação e painel ausente. A área central é visív
 Nenhuma captura final319 foi produzida por este delta.29PNG preliminares472 continuam históricos com fonte/limites explícitos, sem atribuição ao produto317/C2. Formal/inspeção/allowlist/QA/global/publicação aguardam janela do integrador.
 
 A prontidão Home foi corrigida após negativo84095: DOMContentLoaded+routerexistente podia preceder montagem e deixar navegação emHome. A/B real confirmou load como barreira antesCDP, mantendo predicado/timeout; teste causal falha seCDP iniciar antes do load. Não usar resultados84095 como formal concluído nem reatribuir global5e9 ao novo helper.
+
+
+Nos estados painel-erro/painel-vazio, o preparador instala antes da navegação uma barreira para GET sem query de mensagens da conversa exata. Depois da foto, finalizar aguarda o corpo/falha dos requests já iniciados, com limite30s e cleanup, antes de classificar cancelamentos. Não exige resposta200 nem thread visível atrás do painel; requestfailed e classificador continuam intactos. A barreira não aguarda SSE/POST/query/outra conversa, não consulta, não cria retry e não afeta thread-erro500. Formal96724 foi interrompida por veredito anterior ao body; toda a execução permanece negativa, nova formal completa depende de Ready.

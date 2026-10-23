@@ -9,7 +9,7 @@ import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, com
 import { abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
-import { instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
+import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
 const nodeModules = path.join(raiz, "node_modules");
@@ -71,6 +71,7 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   const popoverColuna = ["filtros", "seletor-numero", "nova-conversa"].includes(estado);
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista" || popoverColuna;
   const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
+  const finalizar = ['painel-erro', 'painel-vazio'].includes(estado) ? instalarConclusaoMensagens(pagina, base, id) : undefined;
   await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (popoverColuna) await abrirPopoverColunaApp(pagina, estado, tamanho);
   if (estado === "menu-mais") await abrirMenuConversaApp(pagina, tamanho);
@@ -100,7 +101,7 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
     // Mostra a nota real seguida da autoria/status; rolagem interna explícita, sem sintetizar conteúdo.
     await pagina.getByRole("region", { name: "Conversa", exact: true }).getByRole("note").filter({ hasText: "Família pediu atendimento no período da tarde." }).evaluate(nota => nota.scrollIntoView({ block: "start" }));
   }
-  return { metadados: ausenciaLegitima ? { ausenciaLegitima } : undefined };
+  return { finalizar, metadados: ausenciaLegitima ? { ausenciaLegitima } : undefined };
 }
 
 async function abrirPrototipo(pagina, estado) {

@@ -72,3 +72,27 @@ export async function confirmarPainelVazio(contexto, base, id) {
   if (!dado || dado.setor !== 'COMERCIAL' || dado.oportunidade !== null) throw new Error('Fixture não comprova ausência legítima autorizada.');
   return {status:200,setor:dado.setor,oportunidade:null};
 }
+
+/** Observa somente corpos finitos já iniciados; não muda status nem a política de cancelamentos. */
+export function instalarConclusaoMensagens(pagina, base, id) {
+  const url = base + '/api/inbox/atendimentos/' + encodeURIComponent(id) + '/mensagens';
+  const pendentes = new Set();
+  const registrar = pedido => {
+    if (pedido.method() !== 'GET' || pedido.url() !== url) return;
+    const conclusao = pedido.response().then(resposta => resposta?.finished()).catch(() => undefined);
+    pendentes.add(conclusao);
+    void conclusao.finally(() => pendentes.delete(conclusao));
+  };
+  pagina.on('request', registrar);
+  return async () => {
+    // O veredito considera os requests iniciados até aqui, não SSE ou novas consultas futuras.
+    pagina.off('request', registrar);
+    let timer;
+    try {
+      await Promise.race([
+        Promise.all([...pendentes]),
+        new Promise((_, rejeitar) => { timer = setTimeout(() => rejeitar(new Error('Conclusão das mensagens excedeu30000ms.')), 30000); }),
+      ]);
+    } finally { clearTimeout(timer); }
+  };
+}

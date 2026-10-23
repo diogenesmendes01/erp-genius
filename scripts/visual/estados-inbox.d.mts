@@ -3,3 +3,5 @@ export declare function instalarErroEstado(contexto:BrowserContext,base:string,i
 export declare function semanticaEstado319Pronto(estado:string):boolean;
 export declare function abrirCarregandoApp(pagina:Page,contexto:BrowserContext,base:string):Promise<()=>Promise<void>>;
 export declare function confirmarPainelVazio(contexto:BrowserContext,base:string,id:string):Promise<{status:number;setor:string;oportunidade:null}>;
+
+export declare function instalarConclusaoMensagens(pagina:Page,base:string,id:string):()=>Promise<void>;
