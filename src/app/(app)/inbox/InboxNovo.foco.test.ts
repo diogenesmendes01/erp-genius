@@ -11,7 +11,7 @@ vi.mock("@/server/whatsapp/preferencias",()=>({marcarAtendimentoLido:async()=>({
 vi.mock("@/server/whatsapp/operacoes-atendimento",()=>({abrirAtendimentoInstitucional:vi.fn()}));
 vi.mock("@/server/whatsapp/acoes",()=>({registrarOptOutContato:vi.fn(),removerOptOutContato:vi.fn(),enviarTextoInbox:vi.fn(),enviarMidiaInbox:vi.fn()}));
 // Backend/thread não são objeto deste teste. Região real/Coluna/Popover/form/hook continuam reais.
-vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:()=>createElement("header",null,"Thread")};});
+vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:({aoVoltar}:{aoVoltar():void})=>createElement("header",null,createElement("button",{"aria-label":"Voltar para a lista",onClick:aoVoltar},"Voltar"))};});
 vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react");const I=()=>createElement("span");return{IconPhone:I,IconChevronLeft:I,IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
 let doc:Documento,container:Elemento,root:Root,InboxNovo:typeof Inbox;
 const ouvintes:{alvo:object;tipo:string;f:(e:Event)=>void;captura:boolean}[]=[];
@@ -51,4 +51,7 @@ it.each(["Filtros","Todos os números · 1 conectado"])("seleção local desmont
 it.each(["Filtros","Todos os números · 1 conectado"])("navegação recebida com %s aberto fecha e foca a nova conversa",async(gatilhoNome)=>{
  const p={...props,opcoesFiltro:{setores:["COMERCIAL"],numeros:[{id:"n1",rotulo:"Central",saude:"conectado"}]}} as PropsInboxNovo;
  await render(p);await evento("click",rotulo(gatilhoNome));expect(container.querySelector('[role="dialog"]')!==null).toBe(true);await render({...p,selecionado:"a1"});expect(container.querySelector('[role="dialog"]')===null).toBe(true);expect(doc.activeElement===rotulo("Conversa")).toBe(true);
+});
+it("snapshot que confirma seleção local preserva Nova e seu retorno de foco ao gatilho",async()=>{
+ await render(props);const linha=rotulo("Conversas").querySelectorAll("button").find(e=>e.textContent?.includes("Ana"))!;await evento("click",linha);await evento("click",rotulo("Voltar para a lista"));const gatilho=rotulo("Nova conversa");gatilho.focus();await evento("click",gatilho);await render({...props,selecionado:"a1"});expect(container.querySelector('[role="dialog"]')!==null).toBe(true);expect(container.querySelector('[data-vista="lista"]')!==null).toBe(true);await evento("keydown",rotulo("Fechar"),{key:"Escape"});expect(doc.activeElement===gatilho).toBe(true);
 });
