@@ -72,8 +72,8 @@ describe("BarraMobile (shell abaixo de md)", () => {
 
   it("não lidas da inbox: ponto visual + NOME ACESSÍVEL do botão (o aria-label substitui texto interno)", () => {
     const botao = (html: string) => html.match(/<button[^>]*aria-haspopup="dialog"[^>]*>/)?.[0] ?? "";
-    expect(botao(render(5))).toContain('aria-label="Abrir menu, 5 mensagens não lidas"');
-    expect(botao(render(1))).toContain('aria-label="Abrir menu, 1 mensagem não lida"');
+    expect(botao(render(5))).toContain('aria-label="Abrir menu, 5 conversas não lidas"');
+    expect(botao(render(1))).toContain('aria-label="Abrir menu, 1 conversa não lida"');
     expect(botao(render(0))).toContain('aria-label="Abrir menu"');
     // Nenhum texto sr-only escondido atrás do aria-label (leitor de tela não o anunciaria).
     const conteudo = render(5).match(/<button[^>]*aria-haspopup="dialog"[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? "";
@@ -82,6 +82,6 @@ describe("BarraMobile (shell abaixo de md)", () => {
 
   it("rótulo do botão de menu acompanha o estado", () => {
     expect(rotuloBotaoMenu(true, 5)).toBe("Fechar menu");
-    expect(rotuloBotaoMenu(false, 150)).toBe("Abrir menu, 99+ mensagens não lidas");
+    expect(rotuloBotaoMenu(false, 150)).toBe("Abrir menu, 99+ conversas não lidas");
   });
 });
