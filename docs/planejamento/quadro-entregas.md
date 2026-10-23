@@ -5324,3 +5324,13 @@ produção idêntica; único teste alterado lint0. TESTERexatoe594favorável,
 output/inbox-318-global-final.md e inbox-318-aggregate-review-tester.md.
 Evidências históricas142PNG no ZIPdraft remoto/hash confirmado, sem novas
 imagens noGit. Publicação individual ainda pendente; sem integração presumida.
+
+## PR #399 — C2: integração de tags com Postgres real
+
+Fonte ab8a2d05, paineis.int.test.ts inteiro: um arquivo / 12 testes, sessão55608
+terminou0, Node22.23.2. Perfil ci-integracao/erp_genius_test_ciint exclusivo,
+sem filtro ou ignorados; não é suíte completa de integração. Inclui os três
+cenários novos de tags: origem/ordem, carteira/setor, responsável legal e
+convite/revogação. Sem alteração de produção/testes, envio ou integração externa.
+Relatório output/pr399-qa/integracao.md. C1 HIGH de pais/main/conflitos/CI final
+continua pendente; nenhuma composição posterior é homologada por este recorte.
