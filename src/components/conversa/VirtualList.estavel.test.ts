@@ -11,7 +11,8 @@ const ouvintes: { tipo: string; f: (e: Event) => void; captura: boolean }[] = []
 const frames = new Map<number, FrameRequestCallback>(); let quadroId = 0;
 const chave = (item: Item) => item.id;
 const itens = (n: number) => Array.from({ length: n }, (_, i) => ({ id: "r" + i }));
-const altura = (id: string) => Number(id.slice(1)) % 3 === 0 ? 90 : 50;
+let fracionaria = false;
+const altura = (id: string) => fracionaria ? (Number(id.slice(1)) % 3 === 0 ? 71.75 : 71.875) : Number(id.slice(1)) % 3 === 0 ? 90 : 50;
 const topo = (id: string) => itens(Number(id.slice(1))).reduce((s, i) => s + altura(i.id), 0);
 const botao = (id: string) => scroll.querySelector('[data-row="' + id + '"]');
 const props = (n: number) => ({ items: itens(n), getKey: chave, estimatedHeight: 72, scrollRef: { current: scroll as unknown as HTMLElement }, stableMount: true,
@@ -28,6 +29,7 @@ async function rolarEFocar() {
   botao("r40")!.focus(); await eventos("focusin", botao("r40")!);
 }
 beforeEach(async () => {
+  fracionaria = false;
   const dom = criarDomMinimo(); doc = dom.documento; ouvintes.length = 0; frames.clear();
   vi.stubGlobal("document", doc); vi.stubGlobal("window", dom.janela); vi.stubGlobal("MutationObserver", dom.MutationObserver);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.stubGlobal("getComputedStyle", () => ({ visibility: "visible" }));
@@ -71,4 +73,11 @@ it("SSR default continua sem wrapper e opt-in fornece a mesma estrutura de pai/r
   expect(renderToStaticMarkup(createElement(VirtualList<Item>, p))).toBe('<button data-row="r0">r0</button><button data-row="r1">r1</button>');
   const h = renderToStaticMarkup(createElement(VirtualList<Item>, props(2)));
   expect(h).toContain('data-virtual-key="r0"'); expect(h).not.toContain('absolute'); expect(h).not.toContain('data-virtual-count');
+});
+
+it("opt-in não acumula diferenças subpixel ignoradas perto da altura estimada", async () => {
+  fracionaria = true; await render(99); await rolarEFocar();
+  const antes = (botao("r40") as unknown as HTMLElement).getBoundingClientRect().top;
+  await render(101);
+  expect((botao("r40") as unknown as HTMLElement).getBoundingClientRect().top).toBe(antes);
 });
