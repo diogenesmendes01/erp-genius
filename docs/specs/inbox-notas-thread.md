@@ -9,6 +9,10 @@ Estado: implementação em revisão em 22/10/2026; homologação pendente.
 - As duas origens são mescladas em ordem crescente por `(criadoEm, id)`, inclusive em empate de instante. Para o atendimento, a consulta seleciona primeiro as 50 notas mais recentes com desempate por id e então exclui as arquivadas. O limite não é reposto por notas mais antigas após o filtro.
 - A ação `notasDoAtendimento` mantém sua assinatura e confere o escopo antes da consulta. A consulta interna sem conferência de escopo fica em módulo exclusivo do servidor, fora do módulo de Server Actions, e só é chamada após a verificação da ação ou da rota.
 - Uma nota nova emite `atendimento.atualizado` na mesma transação que grava o evento. O aviso contém apenas tipo e ids do atendimento/conversa, sem texto da nota ou destinatário. Repetição pela mesma chave de idempotência não grava outra nota nem emite aviso. A transação garante que um rollback também cancela o aviso.
+- Notas efetivamente aplicadas pela Aria e seu arquivamento por desfazer também
+  avisam o Inbox na transação do evento. Sugestões ainda não aprovadas e SHADOW
+  não emitem aviso de nota. O handoff já altera o atendimento, cujo trigger avisa
+  após o commit junto com a nota/resumo; não acrescenta um aviso duplicado.
 
 ## Aceite técnico
 
