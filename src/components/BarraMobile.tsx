@@ -8,6 +8,7 @@ import { IconLogout, IconMenu2 } from "@tabler/icons-react";
 import { hrefAtivoMaisLongo, navParaPapeis } from "@/lib/nav";
 import { Drawer } from "./Drawer";
 import { NavLinks, ThemeToggle } from "./Sidebar";
+import { SeloNaoLidasInbox, useNaoLidasInbox } from "./SeloNaoLidasInbox";
 
 /** Largura em que a Sidebar volta (md do Tailwind). */
 export const CONSULTA_MD = "(min-width: 768px)";
@@ -16,7 +17,7 @@ export const CONSULTA_MD = "(min-width: 768px)";
 export function rotuloBotaoMenu(aberta: boolean, naoLidas: number): string {
   if (aberta) return "Fechar menu";
   if (naoLidas <= 0) return "Abrir menu";
-  return `Abrir menu, ${naoLidas > 99 ? "99+" : naoLidas} ${naoLidas === 1 ? "mensagem não lida" : "mensagens não lidas"}`;
+  return `Abrir menu, ${naoLidas > 99 ? "99+" : naoLidas} ${naoLidas === 1 ? "conversa não lida" : "conversas não lidas"}`;
 }
 
 // Shell mobile (docs/42-auditoria-frontend-ux.md, E6): abaixo de md a Sidebar some e esta barra fica
@@ -24,10 +25,12 @@ export function rotuloBotaoMenu(aberta: boolean, naoLidas: number): string {
 // partes entram juntas: esconder a Sidebar sem a barra deixaria o usuário sem logout e sem tema.
 // Alvos de toque: todo controle da barra tem min-h-10/min-w-10 (≥ 40px) e, abaixo de sm, max-sm:min-h-11/
 // max-sm:min-w-11 (≥ 44px); os itens da gaveta (NavLinks) também chegam a 44px abaixo de sm. Ícones de 24px.
-export function BarraMobile({ papeis, nome, naoLidasInbox = 0 }: { papeis: string[]; nome: string; naoLidasInbox?: number }) {
+export function BarraMobile({ papeis, nome, naoLidasInbox: inicialNaoLidas = 0 }: { papeis: string[]; nome: string; naoLidasInbox?: number }) {
   const [aberta, setAberta] = useState(false);
   const pathname = usePathname();
   const itens = navParaPapeis(papeis);
+  const temInbox = itens.some((i) => i.href === "/inbox");
+  const naoLidasInbox = useNaoLidasInbox(inicialNaoLidas, temInbox);
   const ativo = itens.find((i) => i.href === hrefAtivoMaisLongo(pathname, itens.map((x) => x.href)));
   const botao = "inline-flex min-h-10 min-w-10 items-center justify-center rounded-item p-2 text-gray-800 hover:bg-highlight max-sm:min-h-11 max-sm:min-w-11";
 
@@ -53,7 +56,7 @@ export function BarraMobile({ papeis, nome, naoLidasInbox = 0 }: { papeis: strin
           onClick={() => setAberta((a) => !a)}
         >
           <IconMenu2 className="h-6 w-6" aria-hidden />
-          {naoLidasInbox > 0 && <span aria-hidden className="absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid" />}
+          {temInbox && <SeloNaoLidasInbox inicial={inicialNaoLidas} variante="ponto" />}
         </button>
         <span className="flex-1 truncate px-1 text-sm font-medium">{ativo?.label ?? "Genius"}</span>
         <ThemeToggle className={botao} classeIcone="h-6 w-6" />
@@ -71,7 +74,7 @@ export function BarraMobile({ papeis, nome, naoLidasInbox = 0 }: { papeis: strin
         largura="w-72 max-w-[85vw]"
         footer={<p className="truncate text-sm text-gray-600">{nome}</p>}
       >
-        <NavLinks papeis={papeis} naoLidasInbox={naoLidasInbox} rotulo="Menu de navegação" aoNavegar={() => setAberta(false)} />
+        <NavLinks papeis={papeis} naoLidasInbox={inicialNaoLidas} rotulo="Menu de navegação" aoNavegar={() => setAberta(false)} />
       </Drawer>
     </>
   );

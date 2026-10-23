@@ -51,6 +51,9 @@ describe("ListaAtendimentos", () => {
     expect(html({}, { proximo: "cur" })).toContain("Carregar mais");
     expect(html()).not.toContain("Carregar mais");
   });
+  it("contador de não lidas usa o fundo sólido da marca", () => {
+    expect(html({ naoLidas: 3 })).toMatch(/<span class="[^"]*bg-brand-solid[^"]*text-on-brand[^"]*">3<\/span>/);
+  });
   it("lista vazia mostra estado vazio", () => {
     expect(renderToStaticMarkup(createElement(ListaAtendimentos, { itens: [], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn() } as never))).toContain("Nenhuma conversa");
   });

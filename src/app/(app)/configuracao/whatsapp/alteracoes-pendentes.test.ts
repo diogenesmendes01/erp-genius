@@ -10,8 +10,8 @@ const numero = (o: Partial<NumeroConfig> = {}): NumeroConfig => ({
   id: "n1", telefoneE164: "+5511999990001", rotulo: "Secretaria", driver: "MOTOR", finalidade: "COBRANCA",
   providerRef: "n1", sessao: "CONECTADO", donoId: null, donoNome: null, ativo: true, setores: [], triagemResponsavelId: null, ...o,
 });
-const vazio = { telefoneE164: "", rotulo: "", finalidade: "COBRANCA" as const, donoId: "", ativo: true };
-const doNumero = { id: "n1", telefoneE164: "+5511999990001", rotulo: "Secretaria", finalidade: "COBRANCA" as const, donoId: "", ativo: true };
+const vazio = { telefoneE164: "", rotulo: "", finalidade: "COBRANCA" as const, donoId: "" };
+const doNumero = { id: "n1", telefoneE164: "+5511999990001", rotulo: "Secretaria", finalidade: "COBRANCA" as const, donoId: "" };
 
 describe("numeroAlterado", () => {
   it("sem formulário, ou aberto sem mexer (novo ou existente), não há alteração", () => {
@@ -22,7 +22,6 @@ describe("numeroAlterado", () => {
   it("qualquer campo diferente do salvo é alteração; número que sumiu da lista também", () => {
     expect(numeroAlterado({ ...vazio, rotulo: "Vendas" }, [])).toBe(true);
     expect(numeroAlterado({ ...doNumero, rotulo: "Outro" }, [numero()])).toBe(true);
-    expect(numeroAlterado({ ...doNumero, ativo: false }, [numero()])).toBe(true);
     expect(numeroAlterado({ ...doNumero, donoId: "u1" }, [numero()])).toBe(true);
     expect(numeroAlterado(doNumero, [])).toBe(true);
   });

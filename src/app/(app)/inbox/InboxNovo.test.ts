@@ -24,6 +24,20 @@ function html(p: { selecionado?: string | null; extra?: Record<string, unknown> 
 }
 
 describe("InboxNovo", () => {
+  it("o teto do cabeçalho alcança o header direto da conversa real, sem wrapper intermediário", () => {
+    const h = html({ selecionado: "a1" });
+    const encaixe = h.match(/<section aria-label="Conversa" class="([^"]*)"><header(?:\s|>)/);
+    expect(encaixe).not.toBeNull();
+    const classes = encaixe![1].replaceAll("&amp;", "&").replaceAll("&gt;", ">").split(" ");
+    expect(classes).toEqual(expect.arrayContaining(["[&>header]:relative", "[&>header]:min-h-0",
+      "[&>header]:max-h-[40%]", "[&>header]:shrink-0", "[&>header]:overflow-y-auto"]));
+  });
+  it("a caixa cresce no pai, pode encolher e não fixa altura pela viewport", () => {
+    const h = html();
+    const raiz = h.match(/<div data-vista="lista" data-conectado="[01]" class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(raiz).toEqual(expect.arrayContaining(["flex", "min-h-0", "flex-1"]));
+    expect(raiz.some((c) => c.includes("100dvh") || c === "min-h-[420px]")).toBe(false);
+  });
   it("sem conversa selecionada mostra estado vazio, não a primeira", () => {
     const h = html({ selecionado: null });
     expect(h).toContain("Escolha uma conversa");
@@ -92,4 +106,22 @@ describe("mesclarPrimeiraPagina", () => {
     expect(ids(mesclarPrimeiraPagina([it_("a", "2026-10-03"), it_("aberta", "2026-10-04")] as never, [it_("a", "2026-10-03")] as never, null, "aberta"))).toEqual(["aberta", "a"]);
     expect(ids(mesclarPrimeiraPagina([it_("a", "2026-10-03"), it_("aberta", "2026-10-04")] as never, [it_("a", "2026-10-03")] as never, "cur", "aberta"))).toContain("aberta");
   });
+});
+
+it("contagens são opt-in só na primeira página dos parâmetros", () => {
+  expect(paramsDosFiltros({ busca: "Ana" }, null, { contagens: true })).toBe("busca=Ana&contagens=1");
+  expect(paramsDosFiltros({}, "cursor", { contagens: true })).toBe("cursor=cursor");
+  expect(paramsDosFiltros({})).toBe("");
+});
+
+it("casca nova elimina moldura e mantém exatamente um painel do contato", () => {
+  const h = html({ selecionado: "a1" });
+  expect(h).not.toContain("rounded-item border");
+  expect(h.match(/<aside[^>]*aria-label="Painel do contato"/g)).toHaveLength(1);
+  expect(h).not.toContain('aria-label="Detalhes da conversa"');
+  for (const c of ["min-[960px]:w-[300px]", "min-[1100px]:w-[372px]", "min-[960px]:w-[348px]"]) expect(h).toContain(c);
+});
+it("sem seleção não monta painel, com prop false não abre automaticamente", () => {
+  expect(html()).not.toContain('<aside');
+  expect(html({ selecionado: "a1", extra: { abrirPainelPadrao: false } })).not.toContain("min-[1400px]:flex");
 });

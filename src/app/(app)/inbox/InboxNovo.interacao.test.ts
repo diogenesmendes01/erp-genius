@@ -1,5 +1,5 @@
 import { DriverWhatsApp } from "@prisma/client";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Interação do InboxNovo sem DOM (src/test/tela-sem-dom.ts): o componente é chamado como função, com useState/useRef/
@@ -9,15 +9,32 @@ const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
+  modo: null as null | "uma" | "duas" | "tres",
+  contagens: undefined as unknown,
+  avisoThread: null as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
+  aoVisibilidade: null as null | (() => void),
 }));
+const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
     ...real,
-    useState: ((i: unknown) => (m.g ? m.g.useState(i) : real.useState(i as never))) as unknown as typeof real.useState,
+    useSyncExternalStore: (() => m.modo) as unknown as typeof real.useSyncExternalStore,
+    useState: ((i: unknown) => {
+      if (!m.g) return real.useState(i as never);
+      const estado = m.g.useState(i);
+      // Observa o estado produtor por sua forma pública, sem índice de hook ou atributo de teste na UI.
+      if (i && typeof i === "object" && "todas" in i) m.contagens = estado[0];
+      return estado;
+    }) as unknown as typeof real.useState,
     useRef: ((i: unknown) => (m.g ? m.g.useRef(i) : real.useRef(i as never))) as unknown as typeof real.useRef,
-    useCallback: ((f: unknown, d: unknown[]) => (m.g ? f : real.useCallback(f as never, d))) as unknown as typeof real.useCallback,
+    useCallback: ((f: unknown, d: unknown[]) => {
+      if (!m.g) return real.useCallback(f as never, d);
+      const memo = m.g.useRef<{ deps: unknown[]; valor: unknown } | null>(null);
+      if (!memo.current || d.some((v, i) => !Object.is(v, memo.current!.deps[i]))) memo.current = { deps: d, valor: f };
+      return memo.current.valor;
+    }) as unknown as typeof real.useCallback,
     useMemo: ((f: () => unknown, d: unknown[]) => (m.g ? f() : real.useMemo(f, d))) as unknown as typeof real.useMemo,
     useEffect: ((f: () => void | (() => void), d?: unknown[]) => {
       if (!m.g) return real.useEffect(f, d);
@@ -30,18 +47,22 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => { m.aoAviso = f; return { conectado: true }; } }));
-vi.mock("@/components/conversa/useConversa", () => ({ useConversa: () => ({ mensagens: [] }) }));
+vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
+vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLido: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox" }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
+import { ListaAtendimentos } from "./ListaAtendimentos";
+import { PainelAria } from "./PainelAria";
+import { AcoesContato } from "./AcoesContato";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 
 const item = (id: string) => ({
   id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: id,
-  contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: "2026-10-01T02:30:00.000Z", preview: "Oi",
+  contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: id === "a2" ? 2 : 0, ultimaMensagemEm: "2026-10-01T02:30:00.000Z", preview: "Oi",
   linhaComercial: false, status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
 });
 const props = {
@@ -50,20 +71,446 @@ const props = {
 } as unknown as PropsInboxNovo;
 
 let respostaPainel: () => Response;
+let respostaLista: () => Promise<Response>;
+let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
+  m.modo = null;
+  vi.useFakeTimers();
+  regiaoConversaVisivel = true;
+  marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
+  m.aoVisibilidade = null;
+  vi.stubGlobal("document", { visibilityState: "visible",
+    addEventListener: (tipo: string, f: () => void) => { if (tipo === "visibilitychange") m.aoVisibilidade = f; },
+    removeEventListener: (tipo: string, f: () => void) => { if (tipo === "visibilitychange" && m.aoVisibilidade === f) m.aoVisibilidade = null; },
+  });
   m.g = criarGanchos(); m.efeitos = []; m.aoAviso = null; chamadasPainel.length = 0;
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true }), { status: 200 });
+  respostaLista = async () => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null }), { status: 200 });
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
     if (url.endsWith("/painel")) { chamadasPainel.push(url); return respostaPainel(); }
-    return new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null }), { status: 200 });
+    return respostaLista();
   }));
 });
-afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
+afterEach(() => { for (const e of m.efeitos) if (typeof e.limpar === "function") e.limpar(); m.g = null; vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
-const esvaziar = () => new Promise((r) => setTimeout(r, 0));
-function tela(): ReactNode { m.posEfeito = 0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props); }
+const esvaziar = () => vi.advanceTimersByTimeAsync(50);
+function tela(): ReactNode {
+  m.posEfeito = 0;
+  const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props);
+  const secao = elementos(t).find((n) => n.type === "section" && n.props["aria-label"] === "Conversa");
+  const ref = (secao as { ref?: { current: unknown } } | undefined)?.ref;
+  if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [] };
+  return t;
+}
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
+const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+
+describe("InboxNovo: identidades React dos painéis", () => {
+  it("distingue irmãos, conserva a mesma conversa e troca identidades ao selecionar outra", async () => {
+    respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
+    const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
+    tela(); await esvaziar();
+    const anteriores = paineis(tela());
+    expect(anteriores).toHaveLength(2); // uma única montagem do painel da casca308
+    expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
+    for (let i = 0; i < anteriores.length; i += 2) {
+      expect(anteriores[i].key).not.toBeNull();
+      expect(anteriores[i + 1].key).not.toBe(anteriores[i].key);
+    }
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", conversaId: "cv1", mensagemId: null });
+    tela(); await esvaziar();
+    expect(paineis(tela()).map((p) => p.key)).toEqual(anteriores.map((p) => p.key));
+
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    const atuais = paineis(tela());
+    expect(atuais).toHaveLength(2);
+    for (const [i, atual] of atuais.entries()) {
+      expect(atual.props.atendimentoId).toBe("a2");
+      expect(atual.type).toBe(anteriores[i].type);
+      expect(atual.key).not.toBe(anteriores[i].key);
+    }
+  });
+});
+const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
+const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
+
+describe("InboxNovo: leitura ao abrir", () => {
+  it("soma entrada oculta nova à contagem prévia conhecida mesmo com leitura e recuperação falhas", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m-antiga", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-nova-apos-contagem", conversaId: "cv1" });
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
+  it("GET fresco que já inclui a mensagem corrige a contagem após SSE atrasado", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 3 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-ja-incluiu", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-ja-contada", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
+  it("GET iniciado antes da entrada oculta não apaga a contagem quando responde depois", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-contagem", conversaId: "cv1" });
+    await esvaziar(); tela();
+    let concluirAntigo!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-antigo", conversaId: "cv1" });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(concluirAntigo).toBeTypeOf("function"); // GET começou antes da entrada oculta
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-get", conversaId: "cv1" });
+    concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
+  it("entrada oculta mantém contagem conhecida se leitura e GET de recuperação falharem", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    let concluirAntigo!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pre-entrada", conversaId: "cv1" });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(concluirAntigo).toBeTypeOf("function"); // corpo antigo aberto antes do SSE
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-falha", conversaId: "cv1" });
+    concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+  });
+  it("GET fresco zero após SSE aceita leitura de outra aba e mantém tentativa pessoal independente", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-outra-aba", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledTimes(2);
+    await esvaziar();
+  });
+  it("GET fresco da mesma versão corrige zero mesmo se a leitura falhar antes da resposta", async () => {
+    tela(); await esvaziar();
+    respostaLista = async () => new Response("", { status: 503 });
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluirLeitura = ok; }));
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-resposta-perdida", conversaId: "cv1" });
+    let concluirFresco!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirFresco = ok; });
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pos-pedido", conversaId: "cv1" });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(concluirFresco).toBeTypeOf("function"); // consulta na mesma versão, ação ainda pendente
+    respostaLista = async () => new Response("", { status: 503 });
+    concluirLeitura({ ok: false }); await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    concluirFresco(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+  });
+  it("sucesso não transforma IDs pendentes em não lidas depois de GET fresco zero", async () => {
+    tela(); await esvaziar();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => new Response("", { status: 503 });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-primeira", conversaId: "cv1" });
+    await esvaziar(); tela();
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluirLeitura = ok; }));
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-durante", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    concluirLeitura({ ok: true }); await esvaziar(); tela(); marcar.mockClear();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    await esvaziar();
+  });
+  it("entrada oculta com leitura e GET falhos permite tentativa no próximo retorno", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-retry", conversaId: "cv1" });
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("restaura as entradas ocultas únicas conhecidas, sem contar SSE repetido duas vezes", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => new Response("", { status: 503 });
+    for (const mensagemId of ["m-1", "m-1", "m-2"]) m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId, conversaId: "cv1" });
+    await esvaziar(); tela();
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+  });
+  it("sucesso consome só as entradas ocultas observadas antes do pedido", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-antes", conversaId: "cv1" });
+    await esvaziar(); tela();
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-depois", conversaId: "cv1" });
+    concluir(); await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("voltar à aba com zero não lidas e sem mensagem nova não repete a ação de leitura", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    for (let i = 0; i < 3; i++) {
+      mudarVisibilidade("hidden"); m.aoVisibilidade!();
+      mudarVisibilidade("visible"); m.aoVisibilidade!();
+      await esvaziar(); tela();
+    }
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("mensagem recebida oculta continua pendente mesmo se a leitura anterior terminar com zero", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela(); mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-pedido", conversaId: "cv1" });
+    concluir(); await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("retorno recupera repetição descartada por aba oculta antes da conclusão", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-em-voo", conversaId: "cv1" });
+    mudarVisibilidade("hidden"); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledTimes(2);
+  });
+  it("voltar à aba visível lê a conversa exibida sem esperar outro aviso SSE", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(marcar).not.toHaveBeenCalled();
+    expect(typeof m.aoVisibilidade).toBe("function");
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("voltar à aba não lê a thread oculta na lista e remove o listener ao desmontar", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
+    regiaoConversaVisivel = false; tela();
+    expect(typeof m.aoVisibilidade).toBe("function");
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).not.toHaveBeenCalled();
+    for (const e of m.efeitos) if (typeof e.limpar === "function") e.limpar();
+    expect(m.aoVisibilidade).toBeNull();
+  });
+  it("Voltar no celular mantém a nova mensagem não lida enquanto a região da conversa está oculta", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
+    regiaoConversaVisivel = false; tela();
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-lista", conversaId: "cv1" });
+    await esvaziar();
+    expect(marcar).not.toHaveBeenCalled();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    lista(tela()).aoSelecionar("a1");
+    regiaoConversaVisivel = true; tela();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("não lê entrada quando o painel ocupa a vista da conversa no celular", async () => {
+    m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    cabecalho(t).aoAlternarPainel();
+    regiaoConversaVisivel = false; tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-painel", conversaId: "cv1" });
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("a região ainda visível em duas colunas continua lendo após voltar à lista", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar(); tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-desktop", conversaId: "cv1" });
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("descarta repetição pendente ao ocultar a conversa antes da leitura em voo terminar", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    const t = tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-pendente", conversaId: "cv1" });
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
+    regiaoConversaVisivel = false; tela(); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+  });
+  it("descarta repetição pendente quando a aba fica oculta antes da conclusão", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-aba", conversaId: "cv1" });
+    mudarVisibilidade("hidden"); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+  });
+  it("marca o atendimento selecionado pelo deep link inicial", () => {
+    tela();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("ao abrir outra conversa, zera imediatamente o contador da lista", () => {
+    const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+    lista(tela()).aoSelecionar("a2");
+    tela(); // o efeito da nova seleção publica o estado no render seguinte
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
+    expect(marcar).toHaveBeenLastCalledWith("a2");
+  });
+  it("mensagem nova marca apenas a conversa aberta quando a aba está visível", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a2", mensagemId: "m2", conversaId: "cv2" });
+    expect(marcar).not.toHaveBeenCalled();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    marcar.mockClear();
+    mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m3", conversaId: "cv1" });
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("aviso recebido durante uma leitura em voo agenda uma só repetição", async () => {
+    const resolver: (() => void)[] = [];
+    marcar.mockImplementation(() => new Promise((ok) => resolver.push(() => ok({ ok: true }))));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m2", conversaId: "cv1" });
+    expect(marcar).toHaveBeenCalledTimes(1);
+    resolver[0]();
+    await vi.waitFor(() => expect(marcar).toHaveBeenCalledTimes(2));
+  });
+  it("GET da mensagem nova não repõe não lidas enquanto a leitura da conversa aberta está em voo", async () => {
+    tela(); await esvaziar();
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
+    let concluirLista!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirLista = ok; });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar(); // GET começa enquanto a leitura segue pendente
+    concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    concluirLeitura({ ok: true });
+    await esvaziar();
+  });
+  it("GET iniciado antes de abrir outra conversa não desfaz o zero otimista", async () => {
+    tela(); await esvaziar();
+    let concluirLista!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirLista = ok; });
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
+    await esvaziar(); // snapshot iniciado antes da troca de seleção
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
+    lista(tela()).aoSelecionar("a2");
+    tela();
+    concluirLista(pagina([item("a1"), item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
+    concluirLeitura({ ok: true });
+    await esvaziar();
+  });
+  it("GET em voo ainda é tratado como antigo após a leitura concluir; GET novo mostra a contagem atual", async () => {
+    tela(); await esvaziar();
+    let concluirLista!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirLista = ok; });
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar(); // snapshot iniciado antes da conclusão da leitura
+    concluirLeitura({ ok: true });
+    await esvaziar();
+    concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+  });
+  it("falha real da leitura restaura a contagem do servidor", async () => {
+    tela(); await esvaziar();
+    marcar.mockResolvedValue({ ok: false });
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(2);
+  });
+  it("rejeição da ação com GET falho restaura a última contagem conhecida", async () => {
+    tela(); await esvaziar();
+    marcar.mockRejectedValue(new Error("sem conexão"));
+    respostaLista = async () => new Response("", { status: 503 });
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(2);
+  });
+  it("GET da leitura anterior não desfaz a restauração após falha; GET fresco continua válido", async () => {
+    tela(); await esvaziar(); // leitura inicial v1 concluída
+    let concluirAntigo!: (r: Response) => void;
+    let consultas = 0;
+    respostaLista = () => {
+      consultas++;
+      return consultas === 1 ? new Promise((ok) => { concluirAntigo = ok; }) : Promise.resolve(new Response("", { status: 503 }));
+    };
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m0", conversaId: "cv1" });
+    await esvaziar(); // voo v1 permanece aberto
+    marcar.mockResolvedValue({ ok: false });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar(); // a leitura v2 falha; a consulta de reconciliação também falha
+    expect(consultas).toBe(1); // eventos/leitura compartilham uma pendência, sem GET concorrente
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    concluirAntigo(pagina([item("a1"), item("a2")]));
+    await esvaziar();
+    expect(consultas).toBe(2); // recuperação fresca após consumir o corpo antigo
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+  });
+});
 
 describe("InboxNovo: permissão de envio carregando × falhou (C2 da revisão do #218)", () => {
   it("antes do painel chegar o compositor recebe null (carregando), não false", async () => {
@@ -153,5 +600,186 @@ describe("InboxNovo: aviso do SSE recarrega o painel do atendimento aberto (C3 d
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
     tela(); await esvaziar();
     expect(chamadasPainel).toHaveLength(1);
+  });
+});
+
+describe("contagens no estado produtor para os chips", () => {
+  const inicial = { todas: 90, minhas: 4, naoLidas: 8, prazo: 2, fila: 9 };
+  const render = (p: PropsInboxNovo = { ...props, selecionado: null, contagens: inicial }): ReactNode => {
+    m.posEfeito = 0;
+    return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
+  };
+  const resposta = (naoLidas: number) => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null, contagens: { ...inicial, naoLidas } }));
+  it("inicializa do servidor e consolida SSE com atualização final fresca; não calcula pelo tamanho da página", async () => {
+    const resolver: ((r: Response) => void)[] = [];
+    respostaLista = () => new Promise((ok) => resolver.push(ok));
+    render(); expect(m.contagens).toEqual(inicial);
+    const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
+    m.aoAviso!(aviso); await esvaziar(); m.aoAviso!(aviso);
+    expect(resolver).toHaveLength(1);
+    resolver[0](resposta(20)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 20 });
+    expect(resolver).toHaveLength(2); resolver[1](resposta(3)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 3 });
+    expect(vi.mocked(fetch).mock.calls.every(([url]) => String(url).includes("contagens=1"))).toBe(true);
+  });
+  it("troca de filtros preserva os agregados novos mesmo se o GET antigo terminar depois", async () => {
+    let concluir!: (r: Response) => void; respostaLista = () => new Promise((ok) => { concluir = ok; });
+    render(); m.aoAviso!({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    await esvaziar();
+    const p = { ...props, selecionado: null, filtros: { busca: "novo" }, contagens: { ...inicial, todas: 2 } };
+    render(p); render(p); concluir(resposta(30)); await esvaziar(); render(p);
+    expect(m.contagens).toEqual(p.contagens);
+  });
+  it.each([true, false])("leitura em voo não aceita agregado antigo e reconcilia após resultado %s", async (ok) => {
+    let ler!: (r: { ok: boolean }) => void; marcar.mockImplementation(() => new Promise((resolve) => { ler = resolve; }));
+    const resolver: ((r: Response) => void)[] = []; respostaLista = () => new Promise((resolve) => resolver.push(resolve));
+    const p = { ...props, contagens: inicial };
+    render(p); m.aoAviso!({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    await esvaziar();
+    resolver[0](resposta(60)); await esvaziar(); render(p); expect(m.contagens).toEqual(inicial);
+    ler({ ok }); await esvaziar(); expect(resolver).toHaveLength(2);
+    resolver[1](resposta(ok ? 0 : 8)); await esvaziar(); render(p);
+    expect(m.contagens).toEqual({ ...inicial, naoLidas: ok ? 0 : 8 });
+  });
+});
+const cabecalho = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as unknown as import("./ConversaAberta").PropsConversaAberta;
+describe("ligação do painel à casca", () => {
+  it("toggle considera automático efetivo, não apenas escolha true", () => {
+    m.modo = "tres"; vi.stubGlobal("window", { innerWidth: 1440 });
+    expect(cabecalho(tela()).painelAberto).toBe(true);
+    cabecalho(tela()).aoAlternarPainel(); expect(cabecalho(tela()).painelAberto).toBe(false);
+    cabecalho(tela()).aoAlternarPainel(); expect(cabecalho(tela()).painelAberto).toBe(true);
+  });
+  it("abaixo do corte muda vista; ao cruzar três colunas retorna ao automático", () => {
+    m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
+    cabecalho(tela()).aoAlternarPainel(); expect(elementos(tela())[0].props["data-vista"]).toBe("painel");
+    m.modo = "tres"; tela(); const atual = tela();
+    expect(cabecalho(atual).painelAberto).toBe(true); expect(cabecalho(atual).painelAuto).toBe(true);
+    expect(elementos(atual)[0].props["data-vista"]).toBe("conversa");
+  });
+});
+
+describe("C1: recarga de lista e contagens em lote", () => {
+  const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
+  const render = (p: PropsInboxNovo = { ...props, selecionado: null }) => {
+    m.posEfeito=0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode,p);
+  };
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+  it("C1 agrupa20avisos sem atrasar o aviso consumido pela thread", async () => {
+    render();
+    for(let n=0;n<20;n++)m.aoAviso!(aviso);
+    render(); expect(m.avisoThread).toEqual(aviso);
+    expect(fetch).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(49); expect(fetch).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1); expect(fetch).toHaveBeenCalledTimes(1);
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("contagens=1");
+  });
+  it.each([200,503])("C1 não inicia GET2 enquanto body1HTTP%s segue aberto",async status => {
+    let controle!: ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo,{status}))
+      .mockResolvedValue(new Response(JSON.stringify({itens:[],proximo:null})));
+    render();m.aoAviso!(aviso);await vi.advanceTimersByTimeAsync(50);
+    m.aoAviso!(aviso);await vi.advanceTimersByTimeAsync(500);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:[],proximo:null})));controle.close();
+    await vi.advanceTimersByTimeAsync(50);expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+
+describe("C1: fronteiras de leitura e contexto", () => {
+  const inicial={todas:90,minhas:4,naoLidas:8,prazo:2,fila:9};
+  const aviso={tipo:"resync" as const,atendimentoId:null,mensagemId:null,conversaId:""};
+  const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+  const resposta=(n:number)=>new Response(JSON.stringify({itens:props.inicial.itens,proximo:null,contagens:{...inicial,naoLidas:n}}));
+  it.each([true,false])("conclusão leitura=%s exige GET fresco após body anterior mesmo quando snapshot é descartado",async ok=>{
+    let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    let controle!:ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    let resolverFresco!:(r:Response)=>void;
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo))
+      .mockImplementation(()=>new Promise(r=>{resolverFresco=r;}));
+    const p={...props,contagens:inicial};render(p);m.aoAviso!(aviso);await esvaziar();
+    ler({ok});await esvaziar();
+    const ack={...p,filtros:{...p.filtros}};render(ack); // ACK com identidade nova, mesmo contexto público
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(1);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:props.inicial.itens,proximo:null,contagens:{...inicial,naoLidas:60}})));controle.close();
+    await esvaziar();render(ack);expect(m.contagens).toEqual(inicial);
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(2);
+    resolverFresco(resposta(ok?0:8));await esvaziar();render(ack);
+    expect(m.contagens).toEqual({...inicial,naoLidas:ok?0:8});
+  });
+  it("captura fase da leitura no início real do GET e une conclusão ao lote ainda não iniciado",async()=>{
+    let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    respostaLista=async()=>resposta(0);
+    const p={...props,contagens:inicial};render(p);m.aoAviso!(aviso);
+    await vi.advanceTimersByTimeAsync(10);ler({ok:true});
+    await vi.advanceTimersByTimeAsync(40);render(p);
+    expect(m.contagens).toEqual({...inicial,naoLidas:0});
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(1);
+  });
+  it("A→B→A descarta voo antigo, cancela timerB e usa somente filtroA vigente no trailing",async()=>{
+    const a={...props,selecionado:null,filtros:{busca:"A"},contagens:inicial};
+    const b={...a,filtros:{busca:"B"},contagens:{...inicial,todas:2}};
+    let antigo!:(r:Response)=>void;
+    respostaLista=vi.fn().mockImplementationOnce(()=>new Promise(r=>{antigo=r;})).mockResolvedValue(resposta(3));
+    render(a);m.aoAviso!(aviso);await esvaziar();
+    render(b);m.aoAviso!(aviso);render(a);m.aoAviso!(aviso);await esvaziar();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    antigo(resposta(60));await esvaziar();render(a);
+    expect(m.contagens).toEqual({...inicial,naoLidas:3});
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fetch).mock.calls.map(([u])=>String(u))).toEqual([
+      "/api/inbox/atendimentos?busca=A&contagens=1","/api/inbox/atendimentos?busca=A&contagens=1"]);
+  });
+  it("desmontar cancela timer e invalida snapshot que termina após cleanup",async()=>{
+    const p={...props,selecionado:null,contagens:inicial};
+    let concluir!:(r:Response)=>void;respostaLista=()=>new Promise(r=>{concluir=r;});
+    render(p);m.aoAviso!(aviso);await esvaziar();m.aoAviso!(aviso);
+    for(const e of m.efeitos)if(typeof e.limpar==="function")e.limpar();
+    concluir(resposta(70));await vi.advanceTimersByTimeAsync(1000);render(p);
+    expect(m.contagens).toEqual(inicial);expect(fetch).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+
+it("C1 objeto de filtros equivalente não cancela reconciliação pendente", async()=>{
+  const p={...props,selecionado:null,filtros:{busca:"A"}};
+  m.posEfeito=0;m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);
+  m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});
+  m.posEfeito=0;m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,{...p,filtros:{busca:"A"}});
+  await esvaziar();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("busca=A");
+});
+
+describe("C1 P2: snapshot invalidado por props equivalentes durante voo",()=>{
+  const contagens={todas:2,minhas:1,naoLidas:2,prazo:0,fila:0};
+  const aviso={tipo:"resync" as const,atendimentoId:null,mensagemId:null,conversaId:""};
+  const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+  const dados=(n:number)=>({itens:props.inicial.itens,proximo:null,contagens:{...contagens,naoLidas:n}});
+  it.each([false,true])("P2 props equivalentes durantebody exigem snapshot fresco, leituraPendente=%s",async leituraPendente=>{
+    let ler!:(r:{ok:boolean})=>void;
+    if(leituraPendente)marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    let controle!:ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo))
+      .mockResolvedValueOnce(new Response(JSON.stringify(dados(3))))
+      .mockResolvedValue(new Response(JSON.stringify(dados(0))));
+    const p={...props,selecionado:leituraPendente?"a1":null,filtros:{busca:"A"},contagens};
+    render(p);m.aoAviso!(aviso);await esvaziar();
+    const ack={...p,filtros:{busca:"A"}};render(ack);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify(dados(3))));controle.close();
+    await esvaziar();render(ack);
+    if(!leituraPendente)expect(m.contagens).toEqual({...contagens,naoLidas:3});
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(2);
+    if(leituraPendente){
+      expect(m.contagens).toEqual(contagens);
+      ler({ok:true});await esvaziar();render(ack);
+      expect(m.contagens).toEqual({...contagens,naoLidas:0});
+      expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(3);
+    }
   });
 });

@@ -1,0 +1,10 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+const m=vi.hoisted(()=>({sessao:vi.fn(),contar:vi.fn()}));
+vi.mock("@/server/_shared/sessao",async orig=>({...await orig<typeof import("@/server/_shared/sessao")>(),exigirSessao:async()=>{const u=await m.sessao();if(!u)throw new(await orig<typeof import("@/server/_shared/sessao")>()).ErroAutenticacao();return u;}}));
+vi.mock("@/server/inbox/nao-lidas",()=>({contarConversasNaoLidas:m.contar}));
+import { GET } from "./route";
+const usuario={id:"u",nome:"U",papeis:[Papel.FINANCEIRO]};
+beforeEach(()=>{vi.resetAllMocks();m.sessao.mockResolvedValue(usuario);m.contar.mockResolvedValue(4);});
+it("401/403 antes da consulta",async()=>{m.sessao.mockResolvedValue(null);expect((await GET()).status).toBe(401);m.sessao.mockResolvedValue({...usuario,papeis:[Papel.ALUNO]});expect((await GET()).status).toBe(403);expect(m.contar).not.toHaveBeenCalled();});
+it("total pessoal sem cache",async()=>{const r=await GET();expect(await r.json()).toEqual({total:4});expect(r.headers.get("cache-control")).toBe("no-store");expect(m.contar).toHaveBeenCalledWith(usuario);});
