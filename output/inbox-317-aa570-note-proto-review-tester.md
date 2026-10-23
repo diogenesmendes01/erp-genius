@@ -1,0 +1,9 @@
+# QA independente — seletor de Nota no protótipo #317
+
+Fonte exata `aa5703bb7bc8bf5e51c5650cb05d4f6901c8b142`, pai `df9aa83cec1f3c96e9cb1794db58bb3b14021b3b`. Parecer **favorável ao patch isolado**, sem atribuir aprovação da nova captura formal.
+
+O delta contém só quatro arquivos: seletor em `scripts/visual/capturar-inbox.mjs`, regressão offline nova, relatório e quadro. `git diff --exit-code df9..aa570 -- src docs/planejamento/inbox-prototipo scripts/visual/espera-app.mjs scripts/visual/nucleo-captura.mjs` confirmou produção, protótipo HTML e auxiliares idênticos. `git diff --check` e tracked status limpos.
+
+No estado `nota`, a CLI restringe a procura a `[data-m="chat"] footer`, usa texto exato "Nota interna", exige que o próprio elemento encontrado seja `BUTTON`, clica e espera o placeholder real de Nota. O HTML versionado do protótipo mostra texto direto em botão com ícone `icon-lock` e `composerOpen` alternativo ao rodapé travado. A troca resolve o nome acessível com glifo sem aceitar um span solto; não altera referência nem seletor do app. A regressão extrai por AST a função real `abrirPrototipo` da CLI, roda em Chrome offline com um HTML sintético que reproduz o glifo e rejeita o caso span. A extração não carrega `main()`/Next/API/DB; portanto mede o preparador, não o fluxo formal do ERP/protótipo completo.
+
+Execuções próprias com Node 22.23.2: `node --test scripts/visual/nota-prototipo.browser.test.mjs` **2/2, exit 0** (executor `d6a22d`); Vitest visual de rodapé, cabeçalho, coluna, painel e índice **5 arquivos/44 testes, exit 0** (executor `e3f2a2`), sem filtro por nome ou testes ignorados. Não executei TSC, lint, captura formal, preview, banco, suíte global ou instalação. A falha formal anterior e os gates do DEV são evidência externa, não meus resultados. A captura formal de 24 pares deve ser refeita na coordenação do integrador/DEV antes de chamar o estado Nota homologado.
