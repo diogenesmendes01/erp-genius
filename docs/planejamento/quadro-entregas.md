@@ -6252,3 +6252,10 @@ Fonte337832c0:ea1/a5b8MD+4027b1,1blocoquadroconservaambos. C2NotasENCERRADO/grup
 ## PR #403 — QA composta favorável
 
 QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compositor/rascunho/rodapé/ações/menu preservados,JSX/hookConversa intactos,triagemrealInboxativa;patches402398400/Pick401/B2/QA297preservados. Nenhumtestes/DB/browseradicional doTESTER;gatespróprios11/241/TSC/lint40nominais337. Fonteexecutáveligual337apósregistrosMD,402main/CI403aindapendentes.
+## PR #399 integrada; PR401 pronta para CI final
+
+#399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
+
+## PR #401 integrada; PR402 pronta para CI final
+
+#401 squash408dc9a6874fad4979739ff5b3127705504994b9, CI40018129184success5/5, QA47ffavorável, issue315CLOSEDconfirmada. Squashtreeigual1222;402incorpora1222MDsemalterar6aa e squash408INDEXINTEIROigual34f45afa após15conflitos deancestralidade. Fonte6aa/QA1ee9/12-176/TSC/lint40preservados;CI402main2TZaindapendente,semfechar316antecipadamente.
