@@ -1,0 +1,638 @@
+[
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "light",
+    "width": 1440,
+    "height": 900,
+    "alcance": {
+      "top": 584.5,
+      "bottom": 782.5,
+      "painelTop": 0,
+      "painelBottom": 900,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 749.5,
+          "bottom": 773.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 749.5,
+          "bottom": 773.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "light-1440x900-aria.png",
+      "sha256": "28819547ce5fde843c865c9d97ed90efd9659133e8aa9ebaa5fd23c3cb4c1280",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "light",
+    "width": 1024,
+    "height": 768,
+    "alcance": {
+      "top": 578.5,
+      "bottom": 776.5,
+      "painelTop": 0,
+      "painelBottom": 768,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 743.5,
+          "bottom": 767.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 743.5,
+          "bottom": 767.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "light-1024x768-aria.png",
+      "sha256": "1ff97f2fffc5bfa1c473ba9034fc0d6eb8a9a7e8bdd24ee3d9e29ab69f39e93a",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "light",
+    "width": 390,
+    "height": 844,
+    "alcance": {
+      "top": 641.5,
+      "bottom": 839.5,
+      "painelTop": 57,
+      "painelBottom": 844,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 786.5,
+          "bottom": 830.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 786.5,
+          "bottom": 830.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "light-390x844-aria.png",
+      "sha256": "8da888932893e3d78ed438a7658c0f946d497d8267424fa26c30497074645c33",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "light",
+    "width": 1440,
+    "height": 500,
+    "alcance": {
+      "top": 115.5,
+      "bottom": 313.5,
+      "painelTop": 0,
+      "painelBottom": 500,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "light-1440x500-aria.png",
+      "sha256": "d4048186b7d635b30bc493f4d3557073a119e2200b89ee556d21ba8baf16a237",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "light",
+    "width": 1024,
+    "height": 500,
+    "alcance": {
+      "top": 115.5,
+      "bottom": 313.5,
+      "painelTop": 0,
+      "painelBottom": 500,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "light-1024x500-aria.png",
+      "sha256": "9c79bddf8b690d28502b9b81861cf13ece37532c07d48c15147b3ff07da2f3f8",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "light",
+    "width": 390,
+    "height": 500,
+    "alcance": {
+      "top": 111.5,
+      "bottom": 309.5,
+      "painelTop": 57,
+      "painelBottom": 500,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 256.5,
+          "bottom": 300.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 256.5,
+          "bottom": 300.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "light-390x500-aria.png",
+      "sha256": "2368a08a21e5ac54386edc104ffd7171784b3b3108712fc0338e623ee4100e2f",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "dark",
+    "width": 1440,
+    "height": 900,
+    "alcance": {
+      "top": 584.5,
+      "bottom": 782.5,
+      "painelTop": 0,
+      "painelBottom": 900,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 749.5,
+          "bottom": 773.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 749.5,
+          "bottom": 773.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "dark-1440x900-aria.png",
+      "sha256": "6267bb97dfd4a0f4593d0fd547de53fe14c54c7fcad2491b0c3f3b500c104cea",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "dark",
+    "width": 1024,
+    "height": 768,
+    "alcance": {
+      "top": 578.5,
+      "bottom": 776.5,
+      "painelTop": 0,
+      "painelBottom": 768,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 743.5,
+          "bottom": 767.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 743.5,
+          "bottom": 767.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "dark-1024x768-aria.png",
+      "sha256": "05deb481dd2b0c0bd3551725333e2e852a3dfeaf501b45dad6ceb67c711bdd4d",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "dark",
+    "width": 390,
+    "height": 844,
+    "alcance": {
+      "top": 641.5,
+      "bottom": 839.5,
+      "painelTop": 57,
+      "painelBottom": 844,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 786.5,
+          "bottom": 830.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 786.5,
+          "bottom": 830.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "dark-390x844-aria.png",
+      "sha256": "d52a9efdc1b3caea62f0f1f3d6bf211b75e0e1393ee1d36761836eadc74f90bf",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "dark",
+    "width": 1440,
+    "height": 500,
+    "alcance": {
+      "top": 115.5,
+      "bottom": 313.5,
+      "painelTop": 0,
+      "painelBottom": 500,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "dark-1440x500-aria.png",
+      "sha256": "0977cbfcb0a37498c9bbf4a70c6e882cdd46c99ad081901292fbc7fd1e048d8d",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "dark",
+    "width": 1024,
+    "height": 500,
+    "alcance": {
+      "top": 115.5,
+      "bottom": 313.5,
+      "painelTop": 0,
+      "painelBottom": 500,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 280.5,
+          "bottom": 304.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "dark-1024x500-aria.png",
+      "sha256": "e385a3951f4cacf6decbe25358dec31c3325e6b151e5f0cc9fd6e13de56546ff",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "fixturePreparadaPor": "integrador8da526",
+    "tema": "dark",
+    "width": 390,
+    "height": 500,
+    "alcance": {
+      "top": 111.5,
+      "bottom": 309.5,
+      "painelTop": 57,
+      "painelBottom": 500,
+      "botoes": [
+        {
+          "nome": "Aprovar Nota interna",
+          "top": 256.5,
+          "bottom": 300.5,
+          "dentro": true,
+          "disabled": false
+        },
+        {
+          "nome": "Rejeitar Nota interna",
+          "top": 256.5,
+          "bottom": 300.5,
+          "dentro": true,
+          "disabled": false
+        }
+      ]
+    },
+    "focoRejeitar": true,
+    "final": true,
+    "fixture": {
+      "sugestoes": [
+        {
+          "id": "inbox-318-nota-sugerida-ficticia",
+          "acao": "NOTA_INTERNA"
+        }
+      ],
+      "mensagens": 9,
+      "notas": 4
+    },
+    "imagem": {
+      "arquivo": "dark-390x500-aria.png",
+      "sha256": "3095b488f526f1fc078ea0046a14ab423e7c42537122f6d3acf9debd6d6cea82",
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      }
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  }
+]

@@ -1,0 +1,829 @@
+{
+  "versao": 1,
+  "fonteFinalCodigo": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+  "estado": "DEV congelado; TESTER final/global/navegação combinada ainda pendentes",
+  "politica": "Allowlist positiva para arquivo de evidências local; NÃO copiar pasta inteira. PNGs permanecem locais, nenhum PNG neste commit. Telefones fictícios/anonDOMv1 antes das fotos; sem mapa de valores originais.",
+  "limites": [
+    "Formais em d041, equivalência estática de9módulos+JSX até f5; não são QA de navegação/leitura/SSE posterior ao fixURL ou R5382.",
+    "Normais em9dd antes do valor mono; Aria/resize em9e; prova extensa repetida em f5.",
+    "Aria fixture privada do integrador, botões só focados, nunca acionados.",
+    "Triagem/grupo/telefone omitido têm teste de ligação/SSR/integração; sem alegar foto real de casos que não foram preparados.",
+    "Parecer TESTER9e é preliminar; independente final e global do combinado pendentes."
+  ],
+  "quantidades": {
+    "screenshots": 80,
+    "pranchas": 20,
+    "jsons": 9,
+    "probes": 4,
+    "bytesImagens": 12494747
+  },
+  "screenshots": [
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-escuro-desktop-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "9783b698e1b02d080852d44a1edf9601a4ac3996b7a8f37b4a2c5b7163a808a6",
+      "bytes": 172377
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-escuro-tablet-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "4ac66d0f340dad2c2e35ddcb50c5c59279178bbe5f9495b60f8e759278e91e47",
+      "bytes": 130398
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-escuro-celular-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "bbc00eb0534cecf899c9adb111a939a30ba1ae6ef79f95b4f0ba298e79a79b71",
+      "bytes": 31914
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-claro-desktop-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "a50f99f72ccebba9303ef7769f194ba0b57a95ce280bd6820f1bd8f8b6947669",
+      "bytes": 172587
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-claro-tablet-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "53ceda23152be449e51681c8ae06bd8a0874a995b1d2944f598fcf35a9f4593b",
+      "bytes": 132773
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-claro-celular-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "b87a032ddd4786bf7aff520417323a2c1809ab7fad66ded5d182200332e40982",
+      "bytes": 31690
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-escuro-desktop-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "91847b947ccf9fd4b57e735504614029435ec81cfba31841cd991a0c1d9ef959",
+      "bytes": 196695
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-escuro-tablet-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "3cab096d526ccbf82b6181f6563ffb87d2fb3edcaccc15ed1a4c4caf820652af",
+      "bytes": 143271
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-escuro-celular-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "5ce7d50827045563afc451ade7d98138b820f4efdd9d0f06d50a7f7fc3889766",
+      "bytes": 37389
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-claro-desktop-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "53fc285d8fdb8611d8542c5ecf2c96b5d89cbe3f360485287c679dc3e2a6cd53",
+      "bytes": 197841
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-claro-tablet-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "3f6aee918ecd52c951e13df4870b1296b97d63d3faefe38cb2b1887c53f4e926",
+      "bytes": 146028
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-claro-celular-painel-detalhes.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "0b52644468693c63da4ae448b97eefd91d4bd5796904ba63fcd3abafe79e8441",
+      "bytes": 36798
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-escuro-tablet-tablet-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "4ac66d0f340dad2c2e35ddcb50c5c59279178bbe5f9495b60f8e759278e91e47",
+      "bytes": 130398
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-claro-tablet-tablet-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "53ceda23152be449e51681c8ae06bd8a0874a995b1d2944f598fcf35a9f4593b",
+      "bytes": 132773
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-escuro-tablet-tablet-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "3cab096d526ccbf82b6181f6563ffb87d2fb3edcaccc15ed1a4c4caf820652af",
+      "bytes": 143271
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-claro-tablet-tablet-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "3f6aee918ecd52c951e13df4870b1296b97d63d3faefe38cb2b1887c53f4e926",
+      "bytes": 146028
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-escuro-celular-celular-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "bbc00eb0534cecf899c9adb111a939a30ba1ae6ef79f95b4f0ba298e79a79b71",
+      "bytes": 31914
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/app-claro-celular-celular-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "b87a032ddd4786bf7aff520417323a2c1809ab7fad66ded5d182200332e40982",
+      "bytes": 31690
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-escuro-celular-celular-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "5ce7d50827045563afc451ade7d98138b820f4efdd9d0f06d50a7f7fc3889766",
+      "bytes": 37389
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/prototipo-claro-celular-celular-painel.png",
+      "tipo": "formal",
+      "fonte": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+      "sha256": "0b52644468693c63da4ae448b97eefd91d4bd5796904ba63fcd3abafe79e8441",
+      "bytes": 36798
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-390-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "fca192d7d7489595e1be14d9f9f96d2f8f93478852d4ea0ec5d746ff75932baa",
+      "bytes": 17662
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-390-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "9606a00c8e5d63f01813d059ba56ee4b91b3591d5dc9dc5a9dcf9d99ca54b825",
+      "bytes": 19006
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-699-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "74dbc640dd4e4d5e2406d248436c797f71d079eb556a38c06dc22e2030e7c50f",
+      "bytes": 18730
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-699-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "c37cecd401649e63d8e69a47dea6391ccfbdaeaf1d8fc79ba7b58f8b377d3eb1",
+      "bytes": 19653
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-700-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "a778d7b542017f92425f8ada9df7cdeda16c5d63bab08d8336c2cdcfa4b6f5a7",
+      "bytes": 18864
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-700-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "aab3a0dd24f4e6242e1cfdb186c40adfc4cd7006af6f57f188a6d1815f905780",
+      "bytes": 19694
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-959-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "668ef373c4b7662b740647a209995da4960219d68114929ad4f9b3a3a00a32c4",
+      "bytes": 35024
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-959-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "b73f8410c30838ac29e231c74f8489e06c83d51471f32eb6edbba02a8da018ec",
+      "bytes": 34121
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-960-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "24ce07977e1f4aefe37f6a5f459519344128275fd3da599a16d2c57d22f55c7e",
+      "bytes": 85366
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-960-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "f22079cadaa73cb89e51f5c24099077eea78ed24cc62fe6bd3bc1da956d1e77a",
+      "bytes": 84499
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1024-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "a67d5d9e69fa36d579ed5e0678541af01fed35e331fbd033473abdd1e3228032",
+      "bytes": 93855
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1024-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "d490ff19a0b40411fe9f7af406e4da52c8abdd8bb38c83b4fefa0ad392a642a0",
+      "bytes": 92910
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1399-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "d3b26f492140b816a540267594c2ee913ea830fe85c07bd556e198d24be70134",
+      "bytes": 114228
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1399-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "b4f6420911b6bdeec4f5d6a47eefc2e7b2b9f0bcb7112fbb57f1e590963f20bb",
+      "bytes": 113270
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1400-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "b242cd86f1975bc7a357ec7f40e97f921fd0a2f6e86abcc7e4ae9dccea6019b3",
+      "bytes": 115106
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1400-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "89e964e5b351e9d30cd6a5c202f9ebd1a17a1cbf48a1cf16a4c2c04cd5d5e759",
+      "bytes": 114055
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1440-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "b332db9cf127830992d3fe7b58503390b8b61a0893b93e88cb65613bf666fd81",
+      "bytes": 114866
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/light-1440-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "d096e694d081365844b8c67bb876f6f47e7bf1cc811def0fa8a9baa3c18e5a67",
+      "bytes": 113744
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-390-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "4f5c5c57b6f833d5b0d6cd3a26b67664782ce5c92ae5fcc4679e7735f8e69dfd",
+      "bytes": 18089
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-390-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "498a66d69ead1669fcb4e2d680fcb6cba6cfdb627fc0276b045f8965c7e02bab",
+      "bytes": 19007
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-699-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "73e7600ef648c390d6da98bfbea8d6538749913678187a044eb47eaaa8f0fb50",
+      "bytes": 19066
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-699-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "fb2348300cda51d109d27acb3853fc4f73f37c5b8e95e6229eb0b2a799774d32",
+      "bytes": 19870
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-700-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "ea05e625bd6c0609ce7ba0b393786392b1787fb97c61252d77f9f3e8b0133108",
+      "bytes": 19284
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-700-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "b992fb746cb33f6f9eb0a0f45b7fce3851fa0dcdf2a41ba7a3c0ae2139df4e37",
+      "bytes": 19911
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-959-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "2b7d7af534ba2e1183c002d50406a0f21e38e654c13c8743098da14b0159d93c",
+      "bytes": 35346
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-959-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "371b8c8472c64f0620889b8e15a9d31cbce28308044c69ec76147ba5992ea82e",
+      "bytes": 34429
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-960-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "09d0466cedf8034f5c9fe258a39e239b153bf6c781d8048dd2a38b54990d117c",
+      "bytes": 84439
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-960-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "e7d149d56edd581a13e051d4dc4616aa5621a6f32cffcbc206db83c4126c4c58",
+      "bytes": 83896
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1024-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "138493bfd8d0df73c955b9de6d025cae26a572594966da4775b02a75668fe6a6",
+      "bytes": 92527
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1024-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "4d1ebd9f39f34c62ee7546072a8763bccd1cbbec7a365431a449788e94d86ce6",
+      "bytes": 91868
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1399-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "b043a44ba9743dd9370eee1925d22a71af376eb8169f1abb3ac0855b5b731812",
+      "bytes": 112463
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1399-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "80f702d7a2f796a48e49415611f2f8b086f427585b22a5da2e3625f53690804f",
+      "bytes": 111579
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1400-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "d2e0b2602dc01e5d9325258f1123a150a021e857ac2e816c43a27c7ccfcf1cf9",
+      "bytes": 115388
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1400-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "9d1ee963de6ddfba7f437926ebc73af2209286bc226322149bfe887e4afc55b8",
+      "bytes": 114433
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1440-topo.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "12683253fba5b6d80c96aa4b0b88d79099b0744031f4cd6c9671182071d24de7",
+      "bytes": 115081
+    },
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/dark-1440-fim.png",
+      "tipo": "normal500",
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "sha256": "6cb1c1a88e6adb04298171f7790a31e59c3df446d8e078c25c46fd90ca87fcdb",
+      "bytes": 114059
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/light-1440x900-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "28819547ce5fde843c865c9d97ed90efd9659133e8aa9ebaa5fd23c3cb4c1280",
+      "bytes": 210615
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/light-1024x768-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "1ff97f2fffc5bfa1c473ba9034fc0d6eb8a9a7e8bdd24ee3d9e29ab69f39e93a",
+      "bytes": 141089
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/light-390x844-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "8da888932893e3d78ed438a7658c0f946d497d8267424fa26c30497074645c33",
+      "bytes": 34633
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/light-1440x500-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "d4048186b7d635b30bc493f4d3557073a119e2200b89ee556d21ba8baf16a237",
+      "bytes": 126764
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/light-1024x500-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "9c79bddf8b690d28502b9b81861cf13ece37532c07d48c15147b3ff07da2f3f8",
+      "bytes": 103215
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/light-390x500-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "2368a08a21e5ac54386edc104ffd7171784b3b3108712fc0338e623ee4100e2f",
+      "bytes": 24975
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/dark-1440x900-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "6267bb97dfd4a0f4593d0fd547de53fe14c54c7fcad2491b0c3f3b500c104cea",
+      "bytes": 211134
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/dark-1024x768-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "05deb481dd2b0c0bd3551725333e2e852a3dfeaf501b45dad6ceb67c711bdd4d",
+      "bytes": 140428
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/dark-390x844-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "d52a9efdc1b3caea62f0f1f3d6bf211b75e0e1393ee1d36761836eadc74f90bf",
+      "bytes": 35310
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/dark-1440x500-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "0977cbfcb0a37498c9bbf4a70c6e882cdd46c99ad081901292fbc7fd1e048d8d",
+      "bytes": 127514
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/dark-1024x500-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "e385a3951f4cacf6decbe25358dec31c3325e6b151e5f0cc9fd6e13de56546ff",
+      "bytes": 102255
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/dark-390x500-aria.png",
+      "tipo": "aria",
+      "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+      "sha256": "3095b488f526f1fc078ea0046a14ab423e7c42537122f6d3acf9debd6d6cea82",
+      "bytes": 25029
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/light-1440-topo.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "87297bd68cdfd4a7950b212c78f0b2d592aef12d16d51db10d0e6766b4b12531",
+      "bytes": 137458
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/light-1440-fim.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "e536c03c4f4ef7afbf5c8c551fbe10feb07833cf6741940cb07aba1e4c9b24d6",
+      "bytes": 123801
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/light-1024-topo.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "34e90d4c57d754c1ac539e0a38c3a781c81fd9c3d52270cbac81806bca1d2493",
+      "bytes": 113031
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/light-1024-fim.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "f0f178b1f329ea49c5f0e319dddc2fe495257250a902a945a28dd7caa54a73f7",
+      "bytes": 99804
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/light-390-topo.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "a8cb9d0af18f2cc0b629bcc1589e0286d436469d082c653fbbc548656bb89c49",
+      "bytes": 30744
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/light-390-fim.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "b4fd7b7e92b5b056d573b4c68f0ae23955ef5d3c78e13dfa19ebbb64d0a6c76f",
+      "bytes": 23292
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/dark-1440-topo.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "f622f41315af9d56446f8e4ce627d7f4684074d390d35f390ad3be5099ace93a",
+      "bytes": 137443
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/dark-1440-fim.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "6bb79214841a580e1972f31706f4570023135347c665c8661a4a29a222525f31",
+      "bytes": 124218
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/dark-1024-topo.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "bfc8c78d64f0f794f487df02e47befcf8efa3907db371878cab50793266e07fb",
+      "bytes": 111010
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/dark-1024-fim.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "fbbebf0319c769019377337c8752d0af31212b14d513edac18dc94c8e0bcc4e2",
+      "bytes": 98435
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/dark-390-topo.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "426e37c1fb0e01acb90e0a8d9afd7c38ccb42ca2b455d8540819c5e2cb557fc0",
+      "bytes": 30931
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/dark-390-fim.png",
+      "tipo": "extenso500posURL",
+      "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+      "sha256": "f8169d5b5632ca9b3c399612d9cd654efb0dbe1456d04d98b52af755e6a577d6",
+      "bytes": 23748
+    }
+  ],
+  "pranchas": [
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/aria-r1-1.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "3d23f9de29d957068288dc371d0ac09c5c13c5a1ac9c3a0cb49ce966721b6009",
+      "bytes": 468203
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/aria-r1-2.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "1ca34c2ce983e668f65ce19c1a9271f4fd5a870e93232333d46cc48ba8ec56c8",
+      "bytes": 422168
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/normal-r2-1.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "dd0989ec00baf6880117ad4bcd26ebd39bed2af00a20103007bfd195f2a95491",
+      "bytes": 267725
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/normal-r2-2.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "e5539661a183b5b3c2ed8b8cba6025ce4586882525b75dc68ed2df013cbab246",
+      "bytes": 232309
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/normal-r2-3.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "820b8bf6290ab38f5a2daa798ffb28bdf8c561687ef94f8c475689e320ad3a26",
+      "bytes": 215782
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/normal-r2-4.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "461a96946b721fe199850c38290d5d89e3987bb9475976911bf7a771a087add7",
+      "bytes": 251684
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/normal-r2-5.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "6ed79ac2877037027aeec307585d711abcc18cded10bfb4b62dcc71dd68809a5",
+      "bytes": 200755
+    },
+    {
+      "arquivo": "output/inbox-318-probes/pranchas/normal-r2-6.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "9bd988075c0daba7476097140486685e6cd30c05e271694f8ec76c9f4c42f106",
+      "bytes": 194713
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/claro-celular-celular-painel.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "419e20fc672354673d9e990bdc7a4ec75b0964c819d065fedbcb51d168a578f3",
+      "bytes": 58273
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/claro-celular-painel-detalhes.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "d39e118177dbccf58b7bf285f9bad462796747b94e6593a5a04afa8ba3b419dc",
+      "bytes": 58490
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/claro-desktop-painel-detalhes.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "a8f4da038e59ce964639061e2958003b1bf7b1b78de63c89d924740c0fa04bcb",
+      "bytes": 344030
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/claro-tablet-painel-detalhes.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "8c3de0dca51b5d4036442b5470c402c7b4a309c227942d992f77f574a5f43fbf",
+      "bytes": 386220
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/claro-tablet-tablet-painel.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "497e13bfc799edd24492d86d4f416ecc00aeb3c2c6378c2af9ef751b0862bbf2",
+      "bytes": 385996
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/escuro-celular-celular-painel.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "d507cd847a077a521a1cdfec192cac26b85deeeeacf4b9f80880db7665618fa0",
+      "bytes": 66386
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/escuro-celular-painel-detalhes.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "c03e2889f9bf7bab9d5f0fe645fd68c76132422d573e246c6680547b08adc5cb",
+      "bytes": 66540
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/escuro-desktop-painel-detalhes.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "07a417bc355926bc3521a1dbadef00b46313ba96cf1840954b792f6e86512547",
+      "bytes": 383688
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/escuro-tablet-painel-detalhes.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "e9aa2afc44e40b584cf0e08ff6f6d80656334944c46d87e9203a6c4f12b00ce2",
+      "bytes": 413633
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/pranchas/escuro-tablet-tablet-painel.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "04db08555b7ee72ec742f97453ec657adeeb1984ff154cbef9a106210a0ee9ff",
+      "bytes": 413423
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/pranchas/extenso-1.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "4d4e230e69c23ba821296cffb297c5ff9ed622d8dc056a153bc59cfbf6682e11",
+      "bytes": 401622
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/pranchas/extenso-2.png",
+      "tipo": "prancha",
+      "fonte": "composição das fotos positivas, sem editar originais",
+      "sha256": "1dcd5bbe12cbe8931a036b4b45383dc75a0da302a1fff5850f371c9f2b540b2a",
+      "bytes": 360821
+    }
+  ],
+  "jsons": [
+    {
+      "arquivo": "output/inbox-318-probes/normal-r2/medidas.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "9c7724ff26c8e350d1d9489b7b41de3975253c828234b5a18c34e35da9678c04",
+      "bytes": 65612
+    },
+    {
+      "arquivo": "output/inbox-318-probes/aria-r1/medidas.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "da39fc233a4c15bfa505670227ab8df579555c00ed8c466c34e67fa38aa03529",
+      "bytes": 15238
+    },
+    {
+      "arquivo": "output/inbox-318-probes/resize-r4.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "477beba1da463d482e22782d5d5d7f00a14919da27f5c71484caaab811d6e45e",
+      "bytes": 9533
+    },
+    {
+      "arquivo": "output/inbox-318-probes/extenso-r2/medidas.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "3608f4d3c6dba7bbf0e0113eee3235235e041ed33a70ad7807e528ce1dd92a83",
+      "bytes": 13547
+    },
+    {
+      "arquivo": "output/inbox-318-probes/equivalencia-d041-f5b7.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "a34420315171b70cc3e630365bd16c60262ab48bde574042ac1f6e7469c930e5",
+      "bytes": 2766
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/manifesto-painel-detalhes.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "f23b4b1827f3935512652a08971b559a7c910d0a0991bd4c25ddc91a915224c5",
+      "bytes": 7949
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/manifesto-tablet-painel.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "8341e4209eba26092258c30c55dae465cc9864adf45cea3d2bcb4264f7067667",
+      "bytes": 2953
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/manifesto-celular-painel.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "a16eb21eb53c19482d383039286afa4632398d9774bb94934b9127524e7bf50b",
+      "bytes": 2961
+    },
+    {
+      "arquivo": "output/inbox-318-probes/formal-r1/manifesto-combinado.json",
+      "tipo": "metadado positivo",
+      "fonte": "fontes por registro",
+      "sha256": "7c3b5c877413738f67a3e472e3e651c7d18231e6bf5544c97067f6e0c770c389",
+      "bytes": 12897
+    }
+  ],
+  "probes": [
+    {
+      "arquivo": "output/inbox-318-probes/medir-normal-r2.mjs",
+      "tipo": "probe privado sem credenciais embutidas",
+      "fonte": "fonte app explícita no probe",
+      "sha256": "3cfbd6f038fca1d91716c06ce758d0667aa69f106f789d3d9a64f15ce9002658",
+      "bytes": 6699
+    },
+    {
+      "arquivo": "output/inbox-318-probes/medir-aria-r1.mjs",
+      "tipo": "probe privado sem credenciais embutidas",
+      "fonte": "fonte app explícita no probe",
+      "sha256": "0cb073ff70f64d8e18e3698d734669be99b5b2e1fecd3c75aa619bd7248057d3",
+      "bytes": 4656
+    },
+    {
+      "arquivo": "output/inbox-318-probes/medir-resize-r4.mjs",
+      "tipo": "probe privado sem credenciais embutidas",
+      "fonte": "fonte app explícita no probe",
+      "sha256": "27196c63cb66c187a6ecef88c42bbe8d20eb1c5dfc3436a4159423a787c808fc",
+      "bytes": 4053
+    },
+    {
+      "arquivo": "output/inbox-318-probes/medir-extenso-r2.mjs",
+      "tipo": "probe privado sem credenciais embutidas",
+      "fonte": "fonte app explícita no probe",
+      "sha256": "88106b7dc9a644ad5cebf7b4cdd0e5ab8ee5f52e969566a9485f3285a433b20c",
+      "bytes": 5252
+    }
+  ],
+  "excluidos": [
+    "normal-r1",
+    "resize-r1/resize-r2/resize-r3 e logs",
+    "extenso-r1 (fonte anterior, histórico local)",
+    "*.log",
+    "HTML bruto",
+    "refs antigas308/314",
+    "seeds/snapshot/credenciais",
+    "qualquer arquivo fora desta lista"
+  ]
+}

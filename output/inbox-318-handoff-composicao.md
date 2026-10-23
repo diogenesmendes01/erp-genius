@@ -1,17 +1,9 @@
-# Handoff reservado após313 — Inbox318
+# Handoff DEV A — Inbox318
 
-Não aplicar antes de liberação. Fontes exclusivas e SPEC/report em318; shell atual permanece compatível sem contato.
+Código congelado f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff; commit posterior só docs/JSON/probes. Runtime do painel e JSX preservados nos merges313585/359/b10/d95/9c; source própria8b27composição+aa3mono+d041harness. TSC/recorte51files580tests/lintdirigido0 observados nof5,Node22.23.2,semfullpróprio. Integração paineis12/12 é histórica64 e servidor/teste inalterados; banco restaurado pelo integrador.
 
-- InboxNovo: passar contato={id,nome,subtitulo:setor·numeroRotulo,tags:painelDoAberto?.dado?.tags??[],quadrado:false}, abasDoPainel(finalidade), estado ativo associado à seleção e callback. Não key/remontar PainelContato; conservar visivel/sobreposto/className/focarAoAbrir/aoFechar. Preservar todos os guards de id/rede/revogação/leitura/SSE.
-- Corpo Detalhes: LinhaCampo de telefone apenas quando não vazio; PainelSetor; PainelAria; AcoesContato; OptOutContato apenas fora de grupo; PainelTriagem/revisões. Evitar duplicar padding e border dos filhos, sem editar suas regras/props ou retirar aprovação.
-- ConversaAberta: mover só triagem da seleção para o painel. InboxNovo sem seleção conserva a ponte de triagem para não esconder controles.
-- BotaoIcone real313: consumir API/ref para um único fechar36. Atual mantém Botao/ref e rótulo308; aplicar voltar/fechar responsivo sem segundo botão ou hide1100. Shell960/1400 é imutável nesta tarefa. Não editar dialogo.ts.
-- Harness: novo painel-detalhes; manter tablet-painel/celular-painel, hidrataçãoSSE, diagnósticoReact, helperDOM392 após interação/antesfoto e manifestos/fontes. Não executar transportes/ações externas.
-- Guardas: quatro registros exclusivos de PainelContato foram autorizados e aplicados (aba1/key a.id/aria-selected/tag1), sem algoritmos alterados. Merge posterior deve preservar os registros doB313 e guardaAST381/mono312 do integrador.
-- Visual quando liberar: três tamanhos/dois temas app×protótipo; bordas699/700,959/960,1399/1400, altura500 e nomes/tags extensos. Scroller local inclui topo/abas/corpo, avatar não encolhe. Medir alcance de todos os controles, foco/resize, coluna/overlay/uma vista, telefone omitido e grupo semopt-out. Não presumir geometria por classes.
+SPEC:docs/specs/inbox-painel-contato-abas.md. Ledger completo:output/inbox-318-report.md. Parecer preliminar TESTER9e:output/inbox-318-parecer-preliminar-tester-9e080190.md,favorávelparcial. Allowlist:output/inbox-318-probes/allowlist-positiva.json,80screenshots/20pranchas/9JSONs/4probes;PNGsomente local,não copiar pasta inteira.
 
+Fontes visuais distintas:normal9dd(36),Aria9e(12),formal d041(20),extenso repetido f5(12). Equivalência estática9módulos+JSX d041→f5 documentada,sem alegarQA de navegação/leitura/SSE apósfixURL/R5382. Todas selecionadas inspecionadas. ACCNAMECDP,cortes699/700/959/960/1399/1400,resize,altura500 e97caracteres/15tags/rolagematéúltimocontrole positivos. Aprovar/Rejeitar sófocados,nunca acionados.
 
-Atualização: composição acima LIBERADA e implementada após4f1c2049, exceto harness/visual/quadro. Abrir()/NovaConversa/helperdialogo não editados; receber fix313359a23fd por merge normal após checkpoint. BotaoIcone36 real já consumido; validar nome acessível responsivo e geometria no preview quando autorizado. Report registra RED/GREEN e pendência do renome de fixture313 para guarda confirmacoes, sem exceção nova.
-
-
-Fixes313 recebidos:359a23fd→merge1ecddf96; b10ecc98→mergeed1b6593. Composição/controleNovo preservados, renome de fixture continua varrido e confirmacoes verde. Gates combinados47files534tests/TSC/lint18 EXIT0 na fonteed1b6593. HandoffCLI/preview ainda pendentes; ver roteirovisual e relatório, sem aceite presumido.
+Preview50441/browser encerrados;AGENTSNext restaurado apenas10linhas. Snapshot dev-email restaurado pelo integrador34417EXIT0,424hashes válidos;307/314 normalpreservado,fixtures318Aria/longa removidas. SemusoDB/novoambiente. Quadroglobal318,TESTERfinal,globalcombinado/R5382 ePR/push pertencem ao integrador. Não há aceite presumido. Próxima315 é investigação somenteleitura,sembranch/códigoatébase/coordenação.

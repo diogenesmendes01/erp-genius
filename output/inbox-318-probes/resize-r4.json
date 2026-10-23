@@ -1,0 +1,458 @@
+[
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "tema": "light",
+    "passos": [
+      {
+        "width": 1440,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": null,
+        "rect": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      {
+        "width": 1400,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": null,
+        "rect": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      {
+        "width": 1399,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 1051,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1399,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        }
+      },
+      {
+        "width": 1024,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 676,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1024,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        }
+      },
+      {
+        "width": 960,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 612,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 960,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        }
+      },
+      {
+        "width": 959,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 500,
+          "right": 959,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        }
+      },
+      {
+        "width": 700,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 447,
+          "right": 700,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        }
+      },
+      {
+        "width": 699,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 447,
+          "right": 699,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        }
+      },
+      {
+        "width": 390,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 443,
+          "right": 390,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      {
+        "width": 1400,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": null,
+        "rect": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      }
+    ],
+    "retorno": true,
+    "erros": []
+  },
+  {
+    "fonte": "9e080190dbd4d0f011442a8ac35c7881e3c92b7b",
+    "tema": "dark",
+    "passos": [
+      {
+        "width": 1440,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": null,
+        "rect": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      {
+        "width": 1400,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": null,
+        "rect": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      {
+        "width": 1399,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 1051,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1399,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        }
+      },
+      {
+        "width": 1024,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 676,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1024,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        }
+      },
+      {
+        "width": 960,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 612,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 960,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        }
+      },
+      {
+        "width": 959,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 500,
+          "right": 959,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        }
+      },
+      {
+        "width": 700,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 447,
+          "right": 700,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        }
+      },
+      {
+        "width": 699,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 447,
+          "right": 699,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        }
+      },
+      {
+        "width": 390,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": "true",
+        "rect": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 443,
+          "right": 390,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      {
+        "width": 1400,
+        "mesmoAside": true,
+        "mesmoFechar": true,
+        "mesmaAba": true,
+        "focoNoPainel": true,
+        "focoInert": false,
+        "focoVisivel": true,
+        "modal": null,
+        "rect": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      }
+    ],
+    "retorno": true,
+    "erros": []
+  }
+]
