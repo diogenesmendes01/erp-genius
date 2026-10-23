@@ -1,0 +1,90 @@
+{
+  "source": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "purpose": "QA visual independente #320; 12 PNG inspecionados",
+  "files": [
+    {
+      "path": "output/inbox-320-visual-tester/1440x900-light-selecionada.png",
+      "bytes": 161767,
+      "sha256": "9053d7c2aaeb9684a968857c3b9b08490bbf86f31e38dfbfee336a5eec4f96dc",
+      "variant": "1440x900-light",
+      "state": "selecionada"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1440x900-light-filtros.png",
+      "bytes": 64889,
+      "sha256": "e797e66ff2e2302d865e1a420e15d1a11eab7adac7b000473cdc7ad064b3e14a",
+      "variant": "1440x900-light",
+      "state": "filtros"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1440x900-dark-selecionada.png",
+      "bytes": 162265,
+      "sha256": "47aeb76c0bbfdcc0e30d83eb41d841e28f682af3da3ce96893a34570cbf5295c",
+      "variant": "1440x900-dark",
+      "state": "selecionada"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1440x900-dark-filtros.png",
+      "bytes": 66362,
+      "sha256": "fc6a75efcc59dbccc58186626c9391131c45fdffb53ce17132acd078c030f0dc",
+      "variant": "1440x900-dark",
+      "state": "filtros"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1024x768-light-selecionada.png",
+      "bytes": 103826,
+      "sha256": "ede563e8a5c805f84c8abce6460d3f33b36eb54a73a554725137797ac160bf3e",
+      "variant": "1024x768-light",
+      "state": "selecionada"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1024x768-light-filtros.png",
+      "bytes": 55228,
+      "sha256": "963f0a3ae6d9147b5ad33ddd539638330e02188b20f05e11751f2ac3cc5a0f1d",
+      "variant": "1024x768-light",
+      "state": "filtros"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1024x768-dark-selecionada.png",
+      "bytes": 104983,
+      "sha256": "06aba0e513dd0ba301074157da41b9a59feb40b3723995ae0ae4af966e572829",
+      "variant": "1024x768-dark",
+      "state": "selecionada"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/1024x768-dark-filtros.png",
+      "bytes": 56194,
+      "sha256": "8333f87ac8c3b039e384b0914c74d3d9e75cdd52cfb155d63a3af53837f13345",
+      "variant": "1024x768-dark",
+      "state": "filtros"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/320x500-light-selecionada.png",
+      "bytes": 20769,
+      "sha256": "43904e27793c4929301e0e79a1a3d976f00d550d55c14555c6fbbe3099ca95a1",
+      "variant": "320x500-light",
+      "state": "selecionada"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/320x500-light-filtros.png",
+      "bytes": 22722,
+      "sha256": "41857dc7e28ccc361c8d65b7a9b09ee860ec3334738e702ff456bbf31794ff58",
+      "variant": "320x500-light",
+      "state": "filtros"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/320x500-dark-selecionada.png",
+      "bytes": 20870,
+      "sha256": "a67d53fd2fb7bd4967da991d82b1d29367aef0ede404cd4afbbf024a56843d6e",
+      "variant": "320x500-dark",
+      "state": "selecionada"
+    },
+    {
+      "path": "output/inbox-320-visual-tester/320x500-dark-filtros.png",
+      "bytes": 23372,
+      "sha256": "ef809ed88ca22bccadd8970dd9ae0f758819850d17ff06906ba1c47bc472a814",
+      "variant": "320x500-dark",
+      "state": "filtros"
+    }
+  ]
+}

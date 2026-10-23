@@ -1,0 +1,31 @@
+{
+  "issue": 320,
+  "fonteExecutavelIntegrada": "442d1a665e82c7376ce7e8707b3a4d365257c7db",
+  "fonteVisualDevETester": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "freezeDocumentalDev": "9802809e3e065298ab569a20bc556ff5d0caf1cd",
+  "composicaoDocumental": "7a037ad7311e30817522ad5bf4c65171b23ba023",
+  "arquivo": "inbox-320-evidencias-442d.zip",
+  "bytes": 23677284,
+  "sha256": "d4f0168d80a248b081adaa1fabca426b789734aee7b0d0c53cdcdfe54cf5c0a4",
+  "entradas": 272,
+  "pngs": 264,
+  "grupos": {"formalDev": 164, "complementoDev": 88, "tester": 12},
+  "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-320-evidencias-442d.zip",
+  "release": {"id": 421321214, "tag": "inbox-qa-2026-10-22", "draftConfirmado": true, "publicada": false},
+  "verificacao": {
+    "packer": "97c21a: saída 0, 264 PNG e hashes conferidos",
+    "compressao": "84d3be: saída 0, ZIP e sidecar SHA256",
+    "releaseDraft": "33f312: isDraft=true antes do upload",
+    "upload": "6f5778: saída 0, sem clobber",
+    "download": "0785d3: saída 0, bytes/SHA/sidecar idênticos ao original",
+    "qaLocalIndependente": "TESTER: auditoria terminou 0, 272 entradas/271 hashes/3 allowlists/tabela100 e bijeção164 conferidos; parecer output/inbox-320-pacote-review-tester.md"
+  },
+  "limites": [
+    "As fotos pertencem à fonte491; gates globais pertencem à composição442d com produção idêntica.",
+    "O relatório global dentro do ZIP é o checkpoint anterior ao upload. O relatório em Git registra o roundtrip posterior; o ZIP permanece imutável.",
+    "Seis estados não têm referência no protótipo: 36 N/A na tabela de100linhas.",
+    "Duas fotos de erro mostram região independente ainda carregando, identificada na tabela e relatório DEV.",
+    "Em320×500 o placeholder do compositor usa rolagem interna nativa; controles e campo ficam integralmente dentro do viewport.",
+    "Sem PNG em Git, HTML/RSC, JSON bruto da API, scripts, logs, cookies, seeds, snapshots, negativos, pranchas ou fotos diagnósticas no ZIP."
+  ]
+}
