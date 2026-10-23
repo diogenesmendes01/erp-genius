@@ -312,6 +312,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
 
   function abrir(id: string) {
+    focoAoFecharPopover.current = regiaoConversa.current;
+    setNovaConversaAberta(false);
     selecionadoRef.current = id;
     pedirLeitura(id);
     setSelecionado(id);
