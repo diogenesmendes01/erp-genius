@@ -1,0 +1,89 @@
+{
+  "fonteAtual": "317bbb791e07a327766f9462156a89b40c6ddd43",
+  "produtoOriginal": "a86c9ade33606350c1551c6a5759ebecc9366d6b",
+  "fontes": {
+    "formalR2": "317bbb791e07a327766f9462156a89b40c6ddd43",
+    "normalPermissoes": "df9aa83cec1f3c96e9cb1794db58bb3b14021b3b",
+    "C2": "317bbb791e07a327766f9462156a89b40c6ddd43"
+  },
+  "execucoes": {
+    "formalR2": {
+      "session_id": 4941,
+      "exit": 0,
+      "originais": 24
+    },
+    "normalR2": {
+      "session_id": 29367,
+      "exit": 0,
+      "contextos": 8,
+      "originais": 24
+    },
+    "permissoes": {
+      "session_id": 89958,
+      "exit": 0,
+      "contextos": 6,
+      "originais": 12
+    },
+    "C2": {
+      "session_id": 88684,
+      "exit": 0,
+      "contextos": 2,
+      "originais": 10
+    }
+  },
+  "C2": [
+    {
+      "tema": "light",
+      "viewport": [
+        390,
+        844
+      ],
+      "janelaAntes": 165,
+      "janelaDepois": 165,
+      "matchAntes": "inbox-316-busca-msg-000",
+      "matchDepois": "inbox-316-busca-msg-000",
+      "topAntes": 631,
+      "topDepois": 631,
+      "desvioAncora": 0,
+      "mesmoScroller": true,
+      "mesmaVList": true,
+      "mesmoFoco": true,
+      "GETsAposSSE": 1,
+      "URLIncremental": "/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens?depois=<cursor fictício>",
+      "achadosVisiveisAoNavegar": true,
+      "documentY": 0
+    },
+    {
+      "tema": "dark",
+      "viewport": [
+        1440,
+        900
+      ],
+      "janelaAntes": 165,
+      "janelaDepois": 165,
+      "matchAntes": "inbox-316-busca-msg-000",
+      "matchDepois": "inbox-316-busca-msg-000",
+      "topAntes": 575,
+      "topDepois": 575,
+      "desvioAncora": 0,
+      "mesmoScroller": true,
+      "mesmaVList": true,
+      "mesmoFoco": true,
+      "GETsAposSSE": 1,
+      "URLIncremental": "/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens?depois=<cursor fictício>",
+      "achadosVisiveisAoNavegar": true,
+      "documentY": 0
+    }
+  ],
+  "limites": [
+    "70originais positivos,18pranchas; nenhumaPNG emGit.",
+    "Formal antiga16261 inteira e negativos/diagnósticos excluídos.",
+    "Null/503 são transporte controlado; LucasENCERRADO negado real GET200/podeEnviar=false.",
+    "C2 usa fixture isolada159mensagens/4notas/2dias, não ERPprodutivo; ROOT emitiu atendimento.atualizado sem alterarlinhas/resync.",
+    "Referências DOM/foco/âncoraC2 guardadas na baseline manual imediatamente antesSSE. Duranteprepend foram verificadas visibilidade149 e ajuste natural, não comparaçãoDOM pré/pós.",
+    "Navegação explícita pode mudar foco/scroll; a asserção de preservação é apenas no SSE após rolagemmanual.",
+    "EditorResponder80px em320; alvo44 e campo44alto, rolagem interna de texto longo.",
+    "Sem nota/envio/agenda/submit/SQL; idempotência e resultados tardios são cobertura unitária, não transação real no browser.",
+    "C6/transporte posterior não portado nem coberto por estas capturas."
+  ]
+}

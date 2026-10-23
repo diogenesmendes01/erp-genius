@@ -5720,6 +5720,7 @@ limites no globalreport; rodadaformal24 corrigida/globalnovo ainda pendentes.
 
 FFa1ba+merge317bbb→0f80f61d, conflito sóquadro preservado. CLI mudou sóseletorproto e mantémLF/export/helper/estados319; C6nãoportado. DEVNode22: recorte26869 saída0/70files863testes36,72s,maxWorkers2,semfiltros/skip; Chromeofflinebd7ba6 2/2; TSC37494heap8192/lint14fontes74f64a zeroavisos saída0. Semappbrowser/DB/preview/envio/novafunção. Fonte congela para ROOT executar global noOWN antes deReady; formal42+12mobile, retry/paginação/C2/Triagemreal/inspeção/QA/publicação ainda pendentes.29PNG472 históricas não atribuídas àcomposição.
 
+
 ## PR #396 — C6: recuperação autônoma em verificação
 
 Sobre31a9b666, apenas fonte/testes SSE: CLOSED agenda um timer com backoff
@@ -5736,3 +5737,13 @@ dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
 ### #319 — porte isolado C6 verificado, global coordenado pendente
 
 fad43+cherry-pick funcional01a254f5→88fb31d8, sóSSE/testes+SPEC/quadro, sem ancestralidadeampla. Fonte/testes byteiguaisorigem39437068/79a69e0a; único conflitoquadro preserva315/316/317/319 e acrescentaC6. DEVNode22 recorte15393saída0/63files577testes15,25s/maxWorkers2/semfiltrodenomeou skips; lint2fontes6d1807saída0/0avisos/diffcheck0. Semappbrowser/DB/preview/envio. TSC/gatesfad43 sãohistóricospré-C6; global/TSC/TESTER e formal42+12/complementos aguardamROOT nafontecongelada. Nenhuma tarefa320 ou outroporte iniciado.
+
+### #317 — evidências DEV encerradas, publicação/aceite integrado pendentes
+
+Fonte317bbb, formalR2/4941EXIT0 com24/24APP×proto humano+nota/3tamanhos/2temas, todasinspecionadas; formal16261 inteira fora pacote. Complementos24normal+12permissões mantêmdf9/produçãoequivalente semreatribuição: abas/rascunhos/agendaEscape/mesmaDOM/âncora0, Lucasnegado real e null/503transportecontrolado. C2/88684EXIT0:2ctx10PNG/165decorados, pin000/149visíveis, prependcomfoconatural e wheelmanual preservado apósSSErealROOT; GET4→5/5→6/?depois, top631/575 eâncora0/mesmoDOMfoco noSSE, semresync/envio/SQLDEV.
+
+70originais+18pranchas inspecionados; allowlistpositiva explícita98arquivos/88PNG/12.801.910bytes, hashes/fontes em output/inbox-317-probes/allowlist-positiva-final.json e resumo evidencias-final.json. Imagens locais/nenhumaPNG emGit; negativos/HTML/logs/seeds/credenciais/probes fora. ROOT parou53617/restaurou01c7be424hashes551originais, browsersfechados/blocoNextAGENTS isolado removido. Freeze sómetadados/SPEC/report/quadro, produçãoinvariante317bbb; gates anteriores não repetidos/relabelados. GlobalROOT897/7013saída0 informado; QAfinal/publicação/CI eC6posterior sobintegrador, semhomologação presumida.
+
+### #317 — composição final e artefato revisável
+
+Fonte85f (produtoa86+harnessaa570+buscaC2+SSEC6), metadados9005; global56369 EXIT0 897arquivos/7021testes270,09s/maxWorkers2/semfiltro/skips, typegen/TSC38143 e lint49666 EXIT0 (42avisos40src+2stagingprivado). Formal4941 EXIT0 24/24; DEV70originais+18pranchas e TESTER34PNG allowlisted,122PNG/137files no ZIPdraft15.823.526bytes SHA74a17180 conferido por download. Artefato e fontes/limites em output/inbox-317-evidencias-remotas.json e global-final.md. C6 igualisolado01a; visuais anteriores não provam retryC6. SnapshotA424hashes551 e TESTER424hashes1386 restaurados após317, semsend/external/deploy. PublicaçãoPR/CI/revisão/dependências e merge ainda pendentes, issue não fechada.

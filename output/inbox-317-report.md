@@ -83,3 +83,28 @@ Todos48PNG positivos desta etapa (12humano+24normal+12permissões) inspecionados
 Handoff temporário ROOT autorizou somente o seletor nota-protótipo: getByText exato dentro do footer e verificação tagNameBUTTON antes do clique. App/seletor/esperas restantes e toda produção byte-iguais a df9; referência intacta. Regressão executa o preparador real extraído porAST da CLI em Chrome offline, com pseudoelemento no nome e caso de texto solto que deve ser recusado; sem abrir app/DB.
 
 RED ab9827:2/2 por timeout antigo; GREEN8895b9:Node--test2/2pass, lint2fontes e executor49357 terminal0. Recorte698ece:8arquivos/51testes0, TSC72328heap8192 terminal0, diffcheck12068f0; Node22.23.2. Não atribuir globaldf9 ao novo commit de harness; produção é invariante. Nova rodada formal24, fase longa150/C2, QA final e publicação seguem pendentes de ROOT Ready. CLI319 de B não alterada em paralelo.
+
+
+## Formal R2 e complemento C2 encerrados — freeze de evidências
+
+HEAD de execução:317bbb791e07a327766f9462156a89b40c6ddd43. FF e1d716 saída0/rastreados limpos antes do preview. Nenhuma fonte produtiva ou CLI alterada durante as provas. ROOT informou global final317bbb:897arquivos/7013testes saída0; global/typegen/TSC/lint do integrador permanecem evidência própria, não execução DEV.
+
+### Rodada formal positiva
+
+Preview ROOT64670, fixture normal9mensagens4notas, providers externos vazios. Sessão4941 terminalEXIT0,24/24PNG: humano-compositor e nota ×1440×900/1024×768/390×844 ×dois temas ×app/protótipo. Todas inspecionadas em6pranchas; hashes/bytes/fonte por arquivo e hashHTMLreferência em formal-r2/*/manifesto-com-hashes.json. GuardReact/hidratação/rede/anonDOM392 intactos,0falhas. Nota-protótipo usa botão real com texto exato; referênciaHTML não foi editada. A referência preserva menção futura/controles próprios, enquanto o app cumpre capacidades reais e nota semanexo/agenda/voz. TODAexecução16261, inclusive humano12 antes positivos, fica fora do pacote final; parciais6appnota/negativos preservados localmente, sem reaproveitar manifesto.
+
+Os24normaisR2 e12permissões anteriores mantêm fonte df9 explícita e equivalência de produção conferida contra317bbb. Não foram repetidos por mudança de seletor do protótipo/metadados. O recorte não representa transação real de nota/envio: houve somente rascunhos locais e abertura/cancelamento de agenda.
+
+### C2/#402 independente, fixture longa isolada
+
+Após parar64670, ROOT preparou helper316A b87915 saída0 e preview53617 da mesma317bbb:159mensagens(9originais+150privadas)/4notas/2dias/165decorados, semproviderexterno. Não atribuir essa fixture isolada a ERPprodutivo. ROOT, nãoDEV, emitiu atendimento.atualizado por Ready; semresync/alteração de linhas/envio/SQLDEV. Transporte deste registro é f8a690 conforme coordenação; C6 futuro não foi antecipado.
+
+Sessão88684 terminalEXIT0,2contextos(390×844claro/1440×900escuro),10PNG,0React/externos/falhas. Carregar anteriores viaUI preservou foco natural no campo e149 ativo/visível;124→165decorados, scrollTop ajustado naturalmente no prepend. Navegar000 pinou/revelou o achado, e000/149 permaneceram visíveis ao renavegar apósSSE. Apóswheelmanual de480px,baseline390 top631 e1440top575: notificação real causou exatamente1GETincremental?depois porcontexto (4→5 e5→6), corpo terminado; janela165/match000/termo e posição manual mantidos, desvioâncora0px/documentY0. Referências DOM/foco salvas imediatamente antesSSE confirmaram mesmo scroller/VList/foco. Essas referências não foram salvas antes dos primeiros prepends: duranteprepend a prova é de visibilidade/ajuste natural, não comparaçãoDOMpré/pós. Navegação explícita muda intencionalmente foco/scroll; preservação estrita se aplica aoSSE na leitura manual.
+
+Todas10PNG inspecionadas em3pranchas. Browsers/contextos fechados porfinally antes de ROOT parar53617. ROOT restaurou snapshot01c7be saída0,424tabelas/hashes e551originais. DEV nunca semeou/alterou banco. AGENTS tinha só blocoNext10linhas conferido e removido isoladamente, preservando instruções/CRLF.
+
+### Allowlist e limites finais
+
+output/inbox-317-probes/allowlist-positiva-final.json contém98arquivos,88PNG(70originais+18pranchas),12.801.910bytes totais incluindoJSON, hashes conferidos. Seleção positiva explícita: formalR224 +normalR224 +permissões12 +C210. Negativos/formalR1/diagnósticos/HTML/logs/credenciais/seeds/probes privados não entram. NenhumaPNG emGit. Resumo sanitizado em evidencias-final.json e índice inspecao-final.json na mesma pasta; imagens permanecem locais para o integrador empacotar pela allowlist.
+
+Este freeze muda somente metadados/SPEC/report/quadro. Gates produtivos a86 e patchaa57 são os já observados acima; não se repetem por documentos. QAfinal/global/publicação/CI e eventual porteC6 permanecem sobROOT, sem homologação presumida. Não iniciar nova implementação. Sem servidores ou browsers DEV ativos.

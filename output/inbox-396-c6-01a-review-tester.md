@@ -1,0 +1,9 @@
+# QA independente C6/#396 — 01a254f5b4d363d89b2db7d0f53e0f2f9cb06702
+
+Parecer favorável no commit funcional isolado. O delta contra `31a9b666f11d85527f088a0102c3908778593945` altera somente `src/lib/eventos-inbox.ts`, seu teste, SPEC e quadro. Hook/consumidores, backend, package e lock não foram alterados.
+
+A fonte compartilhada continua reservada antes da instalação dos callbacks. Só `CLOSED` libera o ciclo e agenda um timer quando existem assinantes; `CONNECTING` mantém a mesma EventSource e a reconexão nativa. Há um pedido pendente por vez, identificado por objeto, e `abrirFonte` não cria segunda fonte enquanto a atual existe. Backoff programado de 1/2/4/8/16/30 segundos, com teto de 30; `open` reinicia em 1. Nova assinatura cancela o pedido e antecipa a abertura; último unsubscribe cancela timer, fecha fonte e reinicia o ciclo. Callback de fonte/timer antigo não atua no ciclo atual. Exceção síncrona da construtora entra no mesmo caminho de recuperação. `resync` é emitido aos ouvintes antigos na primeira abertura da substituta. Não há `setInterval`, fetch/poll HTTP ou `router.refresh` neste delta.
+
+Recorte próprio com Node 22 e Vitest local, saída terminal 0 (chunk `cb5243`): `eventos-inbox`, `useEventosInbox`, selo e interação, Sidebar e BarraMobile — 6 arquivos, 47 testes. Inspecionei os casos de backoff/teto/reset, nova assinatura, teardown, callback cancelado, construtora que lança, CONNECTING e desmontagem síncrona. A verificação estática não revelou conflito de identidade ou timer órfão nos caminhos examinados.
+
+Limites: não executei DB, Next, navegador ERP, Chrome EventSource local, suíte global ou porte na base moderna. As evidências Chrome/RED/GREEN e gates do autor são externas a este parecer. O status HTTP não é exposto pelo EventSource; uma sessão inválida continuará sujeita ao backoff até 30 s enquanto houver assinantes, sem contornar a autorização do endpoint. A composição e o aceite no head futuro permanecem pendentes.

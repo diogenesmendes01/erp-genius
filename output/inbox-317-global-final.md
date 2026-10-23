@@ -1,4 +1,45 @@
-# #317 — regressão da composição df9, formal ainda pendente
+# #317 — composição final verificada e evidências para PR
+
+Registro atual, 23/10/2026: fonte integrada 85fdfb849007488b87204b9d1ded70ac406cbc28,
+com produto a86, harness bf4/aa570, busca C2 7a e transporte C6 01a. Não contém
+#319. Head9005 acrescenta apenas metadados do DEV; produção permanece igual85f.
+
+- Global integrado sem filtro de nome ou skips adicionais, maxWorkers2:
+  sessão56369 terminal exit0,897 arquivos/7.021 testes,270,09s. Log privado
+  output/inbox-317-85f-global-unit.log. Global anterior317bbb, sessão57940,
+  também terminal exit0:897/7.013,272,97s; não substitui o gate pós-C6.
+- Next typegen seguido de TSC --noEmit --pretty false, heap8192:
+  sessão38143 terminal exit0. ESLint global49666 terminal exit0,0erros/42avisos:
+  40 avisos herdados em fontes e2 em staging318 privado. Nenhum detector ou
+  limite alterado. CI em checkout rastreado continua sendo gate separado.
+- Formal corrigida4941 terminal exit0:24/24PNG app×protótipo, humano+nota,
+  1440×900/1024×768/390×844, dois temas. Todas inspecionadas. A rodada16261
+  inteira, incluindo parciais positivos, fica fora da allowlist final.
+- DEV normal29367 (8contextos/24PNG), permissões89958 (6contextos/12PNG) e
+  C2 ERP88684 (2contextos/10PNG), todos terminal exit0. C2:165itens, busca/pin
+  000 e149, notificações PG reais emitidas apenas pelo integrador; GET4→5 e5→6,
+  top631/575, mesma área/âncora e foco durante SSE, zero falhas/React/externos.
+  Browsers fechados, preview53617 parado e snapshot A restaurado01c7be,
+  424tabelas/hashes conferidos,551linhas originais. Sem mensagens externas.
+- TESTER independente: produtoa86 13/239, extensão df9 5/66, seletor offline
+  Chrome2/2 +Vitest5/44, normal ERP8contextos/24PNG e C2 ERP2contextos/10PNG,
+  todos saída0, com pareceres próprios versionados. C6 isolado01a:6/47próprios,
+  favorável; ROOT conferiu fonte/teste SSE byte-idênticos ao isolado cb4963.
+
+Allowlist DEV explícita:70originais+18pranchas/88PNG, com hashes e fonte por
+grupo; TESTER34PNG. O pacote seleciona apenas esses122PNG positivos e metadados
+sanitizados. Visuais em317bbb/df9 antecedem C6; produção visual equivalente,
+mas não atribuir recuperação CLOSED/C6 às capturas do ERP. Prova HTTP real do
+autor de C6 é helper isolado, com artefato próprio, não E2E do ERP. Variante
+travada permanece desligada na E1; alvos44px e editor visível, sem prometer
+largura ampla em320. Nota e edição não foram enviadas a integrações externas.
+
+Publicação do PR, CI, revisão e merge continuam etapas separadas. Dependências
+#308/#315 e a cadeia até#316 devem ser integradas antes da homologação final.
+O porte C6 é compartilhado da #396 e deve entrar pela atualização das bases;
+nenhum PR publicado de outra frente foi alterado pelo ROOT.
+
+## Histórico de checkpoints anteriores à conclusão visual
 
 Fonte executável df9aa83cec1f3c96e9cb1794db58bb3b14021b3b: produtoa86,
 harnessbf4 e fixC2 7a. Não contém #319. Node22.23.2 local.
