@@ -59,6 +59,7 @@ const MOTIVO_CLAUSULA = "referência da cláusula digitada pela Secretaria na re
 const MOTIVO_CODIGO_AVALIACAO = "código da avaliação (o mesmo de `fontes[].codigo`, ex.: P1), usado quando a fonte não tem título; não é id de registro";
 const MOTIVO_CHAVE_DE_ERRO = "mensagem de validação do campo do formulário: o nome é a chave do campo (paisId, tipoDocumentoId) no objeto de erros, não o id";
 const MOTIVO_VALOR_DE_CONTROLE = "valor do controle de seleção (ids marcados no formulário ou o professor escolhido na prévia); o componente mostra o nome, não o id";
+const MOTIVO_ABA_DO_PAINEL = "chave de navegação tipada IdAbaPainel (detalhes, oportunidades, insights ou atividade), usada para selecionar a aba; não é identificador de registro do ERP";
 const PENDENTE_MOVIMENTACOES = "pendente (fora do item 7): os painéis de pausa, retomada, compensação e encerramento do aluno ainda imprimem ids de cobrança, matrícula e proposta; exigem os rótulos no servidor";
 const PENDENTE_PR158 = "pendente: arquivo em revisão na #158 (paginação), que esta entrega não toca; a troca do id pelo código vem depois do merge dela";
 const PENDENTE_MIGRACAO = "pendente: id interno do registro de destino na conferência da migração (aluno, pagador, cobrança, matrícula); exige o código na consulta";
@@ -69,6 +70,7 @@ const PENDENTE_REMARCACAO = "pendente: a conferência da remarcação lista a re
 
 export const EXCECOES_ID: ExcecaoId[] = [
   { arquivo: "src/app/(app)/inbox/ColunaConversas.tsx", tipo: "prop", trecho: "selecionado={filtros.numeroId ?? null}", alvo: "filtros.numeroId", categoria: "nao-registro", motivo: MOTIVO_VALOR_DE_CONTROLE },
+  { arquivo: "src/app/(app)/inbox/InboxNovo.tsx", tipo: "prop", trecho: "abaAtiva={abaAtiva}", alvo: "abaDoContato.id", categoria: "nao-registro", motivo: MOTIVO_ABA_DO_PAINEL },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", tipo: "texto", trecho: "{r.multa.clausulaId}", alvo: "r.multa.clausulaId", categoria: "codigo", motivo: MOTIVO_CLAUSULA },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", tipo: "texto", trecho: "{acerto.clausulaId}", alvo: "acerto.clausulaId", categoria: "codigo", motivo: MOTIVO_CLAUSULA },
   { arquivo: "src/app/(app)/alunos/[id]/FichaAluno.tsx", tipo: "prop", trecho: "erro={errosEdicao.paisId}", alvo: "errosEdicao.paisId", categoria: "nao-registro", motivo: MOTIVO_CHAVE_DE_ERRO },
@@ -268,6 +270,7 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES_ID.map((e) => `${e.arquivo} :: ${e.tipo} :: ${e.alvo} :: ${e.categoria}${e.vezes ? ` ×${e.vezes}` : ""}`)).toEqual([
       "src/app/(app)/inbox/ColunaConversas.tsx :: prop :: filtros.numeroId :: nao-registro",
+      "src/app/(app)/inbox/InboxNovo.tsx :: prop :: abaDoContato.id :: nao-registro",
       "src/app/(app)/secretaria/CondicoesEncerramento.tsx :: texto :: r.multa.clausulaId :: codigo",
       "src/app/(app)/secretaria/CondicoesEncerramento.tsx :: texto :: acerto.clausulaId :: codigo",
       "src/app/(app)/alunos/[id]/FichaAluno.tsx :: prop :: errosEdicao.paisId :: nao-registro",
