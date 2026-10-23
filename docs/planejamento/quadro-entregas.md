@@ -5399,3 +5399,13 @@ Base3966a incorporada. Aplicação, lista, virtualização, backend e testes sã
 A main2f inclui QA280/003025b1; não é árvore igual ao ancestral6a. Asserção597d25 detectou antes de alterar o merge. Composição normal preserva integralmente43arquivos QA, packageScripts e seed-qa; objetos iguais à main, sem executar E2E/seed/DB e sem alterar schema/migrations. Provas15a121/98cf81 saída0. C2 documenta um timer pendente e fronteiras relativas aos itens, sem rede. C3 documenta agoraInicial no SSR/fallback0. C4 marca dois helpers órfãos como deprecated, preservando API e testes históricos. Três fontes alteram só JSDoc; emit JS igual194,9ce708 saída0.
 
 TSC/lint após mainQA28054202/29352 e após LOW62608/4967: todos terminais0, zero erros/40avisos. QA194 nominal favorável120testes próprios/hash8d559, integrador109nominais; nenhuma reatribuição de global. Fonte atual precisa QA estendida e CI global2TZ antes de merge. Relatório output/pr397-qa/main-comentarios.md; nenhuma regra de ignorar LOW permanece na fila nova.
+
+## Inbox — PR297: comentários e reservas coordenadas
+
+Revisão de todos os comentários C1–C5:3labelsmd/json alinhadas,7emailsestáticos paraexample.com, referênciaD1porsímbolo,22referênciasPNGjámain preservadas semnovoartefato/dependência. Registro output/pr297-qa/revisao-todos.md. Decisões de produto aprovadas em inbox-decisoes-produto.md prevalecem sobre levantamento histórico. CI final/QA/merge ainda pendentes.
+
+Reserva específica322:20261023100000_tarefa_atendimento e20261023110000_tarefa_atendimento_indice (PR408). Reserva337:20261023140000_notificacao_mencao_nota,20261023170000_notificacao_mencao_unicidade_legada e20261023180000_notificacao_mencao_retira_unicidade_global; aplicação somente pelo integrador e conferência de todas as branches/worktrees/bancos descartáveis. Não reutilizar ID aplicado; faixas dos planos não reservam IDs por si. Nenhuma migration nova nesta PR.
+
+## PR #397 — QA643 e planejamento297 incorporado
+
+QA independente643 favorável: identidade43/43QA280 e JS emitido das3anotaçõesLOW igual194; nenhuma nova suíte/DB/browser no parecer. Original SHA256c76c95c69a481260d82908eeb3e11507c65ab558eef1e06db3ba82332666f30c, cópia output/pr397-qa/tester-main-low-643.md. Main3401/#297 incorporada: delta somente documental, decisão canônica com autorização humana de merge e um conflito do quadro com ambos os lados preservados. Executáveis iguais643; CI final2TZ e merge ainda pendentes. Evidências antigas permanecem nominais às fontes declaradas.

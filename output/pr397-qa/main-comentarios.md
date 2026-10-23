@@ -22,4 +22,8 @@ As alterações em três fontes TypeScript são somente comentários. A compara�
 - TypeScript após as anotações LOW:62608/d0f1e3, terminal0; lint global4967/4088ba, terminal0, zero erros e40avisos.
 - Os109 testes do integrador e120 do TESTER permanecem nominais à fonte194; o código funcional foi preservado e o emit das três anotações é idêntico. Não se declara nova suíte global local.
 
-QA independente da extensão com mainQA280 e anotações, CI global final contra main em dois fusos e merge ainda são gates pendentes. Os globais/visuais históricos mantêm suas fontes originais. Não há envio real, nova instalação, migração ou uso de banco nesta revisão.
+QA independente da extensão com mainQA280 e anotações é favorável na fonte6436482954cf6e3cb2d2aa4b8c69aaddf375efb6. O parecer tester-main-low-643.md registra a identidade dos43 caminhos QA280 e do JavaScript emitido, sem atribuir testes ou capturas novos a essa fonte. Original SHA256 c76c95c69a481260d82908eeb3e11507c65ab558eef1e06db3ba82332666f30c, apenas EOF normalizado na cópia versionada.
+
+A incorporação posterior da main3401b59c (#297) acrescenta somente planejamento, relatórios e sete e-mails fictícios do protótipo. O conflito da decisão mantém a redação canônica da main, com a autorização humana de merges. O único bloco do quadro preserva integralmente ambos os lados. Aplicação, scripts, schema, migrations, manifestos, lock e configurações executáveis continuam iguais643; o kit QA280 é preservado. Não há razão funcional para repetir os testes por esse delta documental.
+
+CI global final contra main em dois fusos e merge ainda são gates pendentes. Os globais/visuais históricos mantêm suas fontes originais. Não há envio real, nova instalação, migração ou uso de banco nesta revisão.
