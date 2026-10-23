@@ -1,0 +1,559 @@
+{
+  "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+  "isolado": "b2338414e44845d6c3d830c2a3233966e4072b31",
+  "estado": "DEV medicao e inspecao concluidas; global e publicacao com integrador",
+  "ambiente": {
+    "node": "22.23.2",
+    "next": "16.3.5",
+    "playwright": "1.56.1 top",
+    "chrome": "155",
+    "perfil": "dev-gravacoes",
+    "porta": 3111
+  },
+  "sessoes": {
+    "ui": 26973,
+    "lotes": 76702,
+    "saidaUI": 0,
+    "saidaLotes": 0
+  },
+  "ui": [
+    {
+      "tema": "escuro",
+      "viewport": [
+        390,
+        500
+      ],
+      "fotos": 5,
+      "checks": [
+        {
+          "estado": "filtros"
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero"
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa"
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "selecaoMobile": "Beatriz",
+          "retornoLista": true
+        }
+      ],
+      "resumo": {
+        "getInicios": 2,
+        "getFins": 2,
+        "maximoFetchAteCorpo": 1,
+        "maximoHTTPCDP": 1,
+        "documentosHTTP": 1,
+        "timeOrigins": [
+          1792729378067.2
+        ],
+        "avisosSSE": 0
+      },
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "final": {
+        "url": "/inbox",
+        "foco": "Buscar conversas",
+        "documento": 1792729378067.2
+      },
+      "diagnosticos": [],
+      "falhas": 0
+    },
+    {
+      "tema": "escuro",
+      "viewport": [
+        1440,
+        900
+      ],
+      "fotos": 5,
+      "checks": [
+        {
+          "estado": "filtros"
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero"
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa"
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "estado": "filtros",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "seletor-numero",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "nova-conversa",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        }
+      ],
+      "resumo": {
+        "getInicios": 3,
+        "getFins": 3,
+        "maximoFetchAteCorpo": 1,
+        "maximoHTTPCDP": 1,
+        "documentosHTTP": 1,
+        "timeOrigins": [
+          1792729383265.6
+        ],
+        "avisosSSE": 0
+      },
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "final": {
+        "url": "/inbox",
+        "foco": "Buscar conversas",
+        "documento": 1792729383265.6
+      },
+      "diagnosticos": [],
+      "falhas": 0
+    },
+    {
+      "tema": "claro",
+      "viewport": [
+        390,
+        500
+      ],
+      "fotos": 5,
+      "checks": [
+        {
+          "estado": "filtros"
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero"
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa"
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "selecaoMobile": "Beatriz",
+          "retornoLista": true
+        }
+      ],
+      "resumo": {
+        "getInicios": 2,
+        "getFins": 2,
+        "maximoFetchAteCorpo": 1,
+        "maximoHTTPCDP": 1,
+        "documentosHTTP": 1,
+        "timeOrigins": [
+          1792729388485.1
+        ],
+        "avisosSSE": 0
+      },
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "final": {
+        "url": "/inbox",
+        "foco": "Buscar conversas",
+        "documento": 1792729388485.1
+      },
+      "diagnosticos": [],
+      "falhas": 0
+    },
+    {
+      "tema": "claro",
+      "viewport": [
+        1440,
+        900
+      ],
+      "fotos": 5,
+      "checks": [
+        {
+          "estado": "filtros"
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero"
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa"
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "estado": "filtros",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "seletor-numero",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "nova-conversa",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        }
+      ],
+      "resumo": {
+        "getInicios": 3,
+        "getFins": 3,
+        "maximoFetchAteCorpo": 1,
+        "maximoHTTPCDP": 1,
+        "documentosHTTP": 1,
+        "timeOrigins": [
+          1792729393673.8
+        ],
+        "avisosSSE": 0
+      },
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "final": {
+        "url": "/inbox",
+        "foco": "Buscar conversas",
+        "documento": 1792729393673.8
+      },
+      "diagnosticos": [],
+      "falhas": 0
+    }
+  ],
+  "lotes": {
+    "etapas": [
+      {
+        "marco": "lote-1",
+        "eventosRecebidos": 1,
+        "spanSSEms": 0,
+        "gets": 1,
+        "limitePorJanelas": 1,
+        "atrasoPrimeiroGETms": 53
+      },
+      {
+        "marco": "lote-20",
+        "eventosRecebidos": 20,
+        "spanSSEms": 50.69999999552965,
+        "gets": 1,
+        "limitePorJanelas": 2,
+        "atrasoPrimeiroGETms": 100.39999999850988
+      },
+      {
+        "marco": "lote-50",
+        "eventosRecebidos": 50,
+        "spanSSEms": 92.70000000298023,
+        "gets": 1,
+        "limitePorJanelas": 2,
+        "atrasoPrimeiroGETms": 135.89999999850988
+      },
+      {
+        "marco": "retido-mais50",
+        "eventosRecebidos": 51,
+        "gets": 2,
+        "trailing": 1
+      },
+      {
+        "marco": "ssr-equivalente",
+        "eventosRecebidos": 1,
+        "gets": 2,
+        "refreshInstrumental": true,
+        "propsAntes": {
+          "identidade": 1,
+          "chave": "{}",
+          "selecionado": null
+        },
+        "propsDepois": {
+          "identidade": 2,
+          "chave": "{}",
+          "selecionado": null
+        }
+      },
+      {
+        "marco": "leitura-ui",
+        "eventosRecebidos": 1,
+        "gets": 2,
+        "statusAcao": 200
+      }
+    ],
+    "resumo": {
+      "getInicios": 10,
+      "getFins": 10,
+      "maximoFetchAteCorpo": 1,
+      "maximoHTTPCDP": 1,
+      "documentosHTTP": 1,
+      "timeOrigins": [
+        1792729669307.3
+      ],
+      "avisosSSE": 124
+    },
+    "retencoes": [
+      {
+        "marco": "retido-mais50",
+        "status": 200,
+        "bytes": 38304,
+        "sha256": "e99460e602f7a55ca00deb3960690d83d846fd1c438586e082ef2ed3ca66b11e",
+        "retidaEm": 1792729917250,
+        "retencaoAntesHeadersCliente": true,
+        "liberadaEm": 1792729957695
+      },
+      {
+        "marco": "ssr-equivalente",
+        "status": 200,
+        "bytes": 38304,
+        "sha256": "e99460e602f7a55ca00deb3960690d83d846fd1c438586e082ef2ed3ca66b11e",
+        "retidaEm": 1792729984126,
+        "retencaoAntesHeadersCliente": true,
+        "liberadaEm": 1792729996563
+      },
+      {
+        "marco": "leitura-ui",
+        "status": 200,
+        "bytes": 38304,
+        "sha256": "e99460e602f7a55ca00deb3960690d83d846fd1c438586e082ef2ed3ca66b11e",
+        "retidaEm": 1792730022378,
+        "retencaoAntesHeadersCliente": true,
+        "liberadaEm": 1792730038863
+      }
+    ],
+    "chipsFinais": [
+      {
+        "rotulo": "Todas",
+        "total": "158"
+      },
+      {
+        "rotulo": "Minhas",
+        "total": "102"
+      },
+      {
+        "rotulo": "Não lidas",
+        "total": "76"
+      },
+      {
+        "rotulo": "Prazo estourado",
+        "total": "107"
+      },
+      {
+        "rotulo": "Não atribuídas",
+        "total": "55"
+      }
+    ],
+    "snapshotsLeitura": [
+      {
+        "fase": "leitura-ui",
+        "contagens": {
+          "todas": 158,
+          "minhas": 102,
+          "naoLidas": 76,
+          "prazo": 107,
+          "fila": 55
+        },
+        "itens": 51,
+        "status": 200
+      },
+      {
+        "fase": "leitura-ui",
+        "contagens": {
+          "todas": 158,
+          "minhas": 102,
+          "naoLidas": 76,
+          "prazo": 107,
+          "fila": 55
+        },
+        "itens": 51,
+        "status": 200
+      }
+    ],
+    "falhas": [],
+    "diagnosticos": []
+  },
+  "emissoesROOT": [
+    {
+      "lote": 1,
+      "sessao": "76610a"
+    },
+    {
+      "lote": 20,
+      "sessao": "dec306"
+    },
+    {
+      "lote": 50,
+      "sessao": "dabeac"
+    },
+    {
+      "lote": "retido-primeiro1",
+      "sessao": "68da23"
+    },
+    {
+      "lote": "retido-mais50",
+      "sessao": "5de37e"
+    },
+    {
+      "lote": "SSR1",
+      "sessao": "5e206e"
+    },
+    {
+      "lote": "leituraUI1",
+      "sessao": "f2ce25"
+    }
+  ],
+  "probes": [
+    {
+      "arquivo": "output/inbox-310-c1-browser/probe-ui.mjs",
+      "bytes": 14530,
+      "sha256": "b2f4bde218375733678919aac7751206ba67069262f7e587e2e4d62bbc31f929",
+      "publicar": false
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/probe-lotes.mjs",
+      "bytes": 12510,
+      "sha256": "2b084010f6ac8904bfec82c8ea10ef1c458d2a06317263d5b6b5b63ce8eb3781",
+      "publicar": false
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/instrumentacao.mjs",
+      "bytes": 7446,
+      "sha256": "12f6012de1cd435a2d1b8418c5f9e361c3c19d33280398d07fbf8481db266530",
+      "publicar": false
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/util.mjs",
+      "bytes": 134,
+      "sha256": "b71aa032d2101d8ff31fdaf1679b2962e95bb726eef9a234b4859a69f2f3739b",
+      "publicar": false
+    }
+  ],
+  "limites": [
+    "Prova UI em390x500 e1440x900/dois temas; sem submit/criacao/envio. Navegacao por cliques de linha e Link publico sem aguardar assentamento de POST.",
+    "Retencao route.fetch/fulfill preserva bytes reais antes dos headers do cliente; nao e teste de streaming HTTP. ReadableStream aberto real esta coberto nos unitarios.",
+    "Refresh RSC instrumental separado demonstra nova identidade SSR com mesma chave; nenhum objeto de props fabricado.",
+    "Leitura real respondeu200 e exige snapshot fresco; naoLidas permaneceu76, portanto nao se alega decremento nesta fixture.",
+    "Todos22PNGs inspecionados favoravelmente. Capturas anteriores313 mantem fontes4f/2e e nao sao reatribuidas.",
+    "Negativo privado UIe7730c preservado: GETmensagens abandonado abortado pelo cleanup; prova signal/stack confirma proprietario HistoricoConversa.limpar. Classificador global inalterado.",
+    "Somente ROOT executou pg_notify guardado autocommit, sem alterar linhas. Nenhum SQL/seed/suiteDB pelo DEV.",
+    "Raw traces/corpos/RSC/logs/negativos/scripts privados nao sao publicaveis; allowlist inclui apenas positivos explicitos."
+  ]
+}

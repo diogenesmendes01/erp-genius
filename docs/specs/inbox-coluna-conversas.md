@@ -85,3 +85,7 @@ Allowlist final contém90PNG explícitos com arquivo/bytes/SHA256/tipo/fonte, se
 ### Complemento pendente após C1 da PR394
 
 O porte C1 sobre676 mantém abrir/JSX e contratosR6/syncURL/ACK150/SSRúnico/Virtual da composição4f, mas agrupa recargas por50ms/umGETcorpo/uma pendência. Props equivalentes comGETemvoo exigem trailing fresco sem afrouxar guards. Gates83dirigidos/56arquivos627/typegenTSC82827/lint25da72 saída0. Fotos90do fechamento anterior mantêm fontes e hashes originais4f/2e; não são prova deste agendamento. MediçãoHTTP e complemento de navegação/leitura pós-porte aguardam ambiente/QA coordenados pelo integrador, sem homologação presumida.
+
+### Complemento realizado após C1
+
+Porte3a preserva fontes históricas4f/2e e676. UI26973 saída 0:20 PNG inspecionados em390 × 500/1440 × 900, claro/escuro; popovers/foco/teclado/URL/linha e Link público rápido sem assentamento prévio de POST,1 documento/1 SSE/máximo1 GETcorpo. Lotes76702 saída 0 acrescentam2 PNG inspecionados e prova HTTP real de coalescência/trailing/propsSSR equivalentes/leitura. Allowlist22 e resumo sanitizado em output/inbox-310-c1-allowlist.json/output/inbox-310-c1-evidencias.json. Não houve submit/criação/envio ou nova prova virtual150 nesta rodada; as provas virtuais4f permanecem identificadas, com helperVirtual inalterado. QAglobal e publicação são do integrador.
