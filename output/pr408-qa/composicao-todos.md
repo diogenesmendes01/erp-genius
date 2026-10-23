@@ -20,3 +20,7 @@ PreflightSQL08056a terminal0:487migrations aplicadas, atendimentoId TEXT/is_null
 QA documental45dd favorável, original SHA256 f5184ac9bdc56424903ee7dbdf3f91cbe386441d0c9848a596799e18819fa14d. QA composta7a favorável estática, sem novos testes/DB no parecer: sete caminhos iguaisddf/cea, SQLnullable/FK/CONCURRENTLY e demais produtores/pais preservados. Original SHA256 aad2fc15ad0d081211eb947a423d5db8e3b002d20566b2408bb4b67078eb3d97, cópias tester-patch-45d.md/tester-composicao-7a.md com apenas EOF normalizado.
 
 Global agregadoCEA904/7.118 e gates históricos continuam nominais àquela fonte. Squash407main e CI final408 em dois fusos ainda pendentes. Sem captura, seed, mensagem real ou deploy de aplicação.
+
+## Sincronização final com a main
+
+407 integrada por squash23916ac1e911c7844f28b283d3e154abf0da7b4b, CI40028951056success5/5,904arquivos/7.125unitários em cada fuso, issue321CLOSED. Árvore inteira igualde608281. Sua ancestralidade foi incorporada à candidata0674128e; três blocos do quadro continham somente registros já preservados da candidata e duas linhas em branco, sem conteúdo recebido exclusivo. Índice inteiro igual0674128e antes do commit. Fonte não Markdown igual7a94fc12, sem nova execução de banco/testes após MD/ancestralidade. C3/C4 resolvidos; retargetmain e CI final408 seguem obrigatórios, sem antecipar323/337.
