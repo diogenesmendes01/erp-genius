@@ -5296,3 +5296,9 @@ Fonte7e60dc36 preservada: main61b8ebef tem árvore inteira igual ao ancestral825
 ## PR #396 — composição B2 sem alterar SSE
 
 Base395f8 incorporada: aplicação/testes/backend/SSE iguaisaa42, apenas seis caminhos de tooling B2, CLI uma expressão e README. Trava/package/lock iguaisf8. Provas3de6ea/e0e650 saída0; um conflito do quadro preserva ambos os lados. Recorte04fcc1 terminal0:8arquivos62testes/maxWorkers2/sem filtro ou skips novos; não é global. TSC36132/f0495d e lint14373/2bf43d terminais0/0erros40avisos. Executores anteriores expirados não contados; apenas TSC/lint repetidos. Global860/6756 continua nominal01a254f5; CI global final2TZ e QA independente compostos obrigatórios. Sem novo DB/browser/install; evidências C6 anteriores não reatribuídas. Predecessor395 ainda aguarda QA/merge, nenhuma antecipação funcional.
+
+## PR #396 — QA independente e base395 mergeada
+
+Fonte 83f5947d preservada. O TESTER aprovou nove arquivos / 79 testes próprios (5de06e, saída 0), syntax/help/resoluções/diff check (236822, saída 0) e OIDs (bdf174). Parecer original conferido pelo SHA256 6f8b05ce...; cópia versionada em output/pr396-qa/tester-b2-83.md, com apenas EOF normalizado. O parecer do predecessor395 também é preservado, sem substituir a QA desta fonte.
+
+A main395 363c0e83 tem árvore inteira igual ao ancestral f8 já incorporado. Dois conflitos documentais mantêm a versão83; toda a árvore foi conferida igual a83 antes destes registros (9d5e10, saída 0). O head final acrescenta apenas Markdown. QA concluída, CI global final contra main ainda pendente; nenhum merge antecipado, novo banco, navegador ou instalação.
