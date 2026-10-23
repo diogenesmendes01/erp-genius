@@ -4842,3 +4842,88 @@ layout/woff2/config/CSS e está registrada em output/pr391-qa.
 A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
 e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
 Novo parecer no head exato e CI contra main continuam pendentes.
+
+## PR #385 — C1: capturas fora do estado atual do código
+
+128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
+local antes de retirar do index. Arquivos locais movidos para backup interno
+validado, originais preservados no commit3f7fa9a7 e ancestralidade sem force.
+Pacote legado: output/qa-archives/inbox-pr385-legado-3f7fa9a7.zip,
+5.328.073bytes/133arquivos/128PNG, SHA256
+57772124b6e858b7255677165313bf53debcd53ca61507c9ab72cde99adb1c81.
+Sem novo upload das capturas legadas; README e manifesto de128hashes continuam
+na pasta de evidências. Não é nova homologação visual.
+
+Fontes específicas BalaoMensagem e testes byteiguais a3f7fa9a7 já revisado;
+predecessores382R6/386/387/main7982 recebidos por merges normais, conflitos
+somente no quadro, preservados. Recorte Node22:3arquivos/26testes, saída0,
+sem filtro/ignorados; TypeScript99520 saída0. Sem nova suíte de banco/global
+ou alteração da UI. C5CI e revisão final depois de trazer a maincorrente
+continuam gates antes do merge.
+
+## PR #388 — revisão C2/C3/C4 e gates finais
+
+C2: aviso SSE sem cursor usa recarregar, conservando notas durante consulta e
+falha comum. Limpeza em troca/perda de acesso preservada. C3: quarto argumento
+obrigatório temMaisDepois em itensDaThread, coordenado com a outra frente;
+ConversaAberta repassa ambas as bordas. Notas fora da janela cortada no fim
+ficam ocultas até avançar; limites inclusivos e entrada fora de ordem cobertos.
+
+TDD:6falhas/46passes antes →3arquivos/52testes passando após. Inclui SSE de
+outro atendimento, consulta em voo/falha, consumidor SSR e corte da classe
+HistoricoConversa com fonte em memória1260mensagens, janela600 e recuperação
+da nota ao avançar. Não é teste de banco. Gates Node22.23.2 com saída0:
+full73171,845arquivos/6.566unitários completos (maxWorkers=2, sem filtro/skip),
+TypeScript84277 e lintglobal92738,0erros/40avisos herdados.
+
+C4:40arquivos eram36PNG+4metadados. Os36PNG foram conferidos por tamanho/hash
+contra ZIPlegadoLOCAL antes de retirar do index; originais em9a201c28 ebackup
+local, semforce/novo upload. ZIP4162790bytes, SHA256
+cb4b02a5a1aeffed2efa4d99f257dc6aa77068ae110f54f3922e268cd92651cc.
+README/manifesto e relatório output/pr388-qa/revisao.md preservados. Nenhuma
+nova homologação visual/integração DB é atribuída a esta revisão.
+
+Fonte recebe385corrigida/387/386/R6/main1a56031 por merges normais. Aguardar
+385na main, parecer independente do head exato e CI antes do merge388.
+## PR #389 — C1–C4 e validação final
+
+C1: testes conferem as três contas de altura, o padding do main e as alturas
+reais da barra. C2: composição SSR exige o header direto e o seletor completo
+do teto. Na prova negativa, retirar alturas e inserir wrapper causou duas
+falhas / 25 passes. Produção restaurada sem delta; recorte 3 arquivos / 53
+passou. Nenhuma mudança no header da frente #315. Na casca #308, adaptar a
+guarda às novas classes, sem preservar artificialmente as contas antigas.
+
+C3: Chrome real desta fonte, 8 contextos / 16 estados em 390/700/1024/1440×500,
+dois temas, lista/conversa. Documento de 500 px e controles geometricamente
+alcançáveis por scrollIntoView em todos. Prova de overflow com bloco temporário
+aria-hidden, como o harness original; não é carga real ou acionamento de negócio.
+Zero pageerror, mas overlay Issues do Next dev visível e logs de stream
+encerrado cedo na navegação/fechamento. Sem atribuir causa à #389 nem alegar
+zero diagnósticos de servidor. Duas imagens inspecionadas; métricas baixo.json.
+Este aceite intermediário não homologa #308/#315 automaticamente. Preview39117
+parado, AGENTS restaurado byte a byte; fixture fictícia em ci-integracao.
+
+C4: 107 PNGs conferidos por tamanho/hash contra ZIP legado local e história
+ae4d71b1 antes de retirar do index. Sem force ou novo upload legado. ZIP de
+7.741.141 bytes / 117 arquivos, SHA256
+c0497482162947d74f57d30b4a5857309ab07f2119c568f8d62a09eb2f2c2035.
+README/manifesto preservados; relatório output/pr389-qa/revisao.md.
+
+Gates Node22.23.2 encerrados com saída 0: full80173, 845 arquivos / 6.570 testes
+unitários completos, maxWorkers2 sem filtro/skip; TSC70812; lintglobal47298,
+0 erros / 40 avisos. Pais incorporados por merges normais, conciliando refR6
+com classes de altura. Parecer exato e CI do head final continuam pendentes.
+
+## PR #390 — C1: teste de identidade entre conversas
+
+O teste fica dentro de describe e confere irmãos distintos, estabilidade
+após SSE da mesma conversa e novas keys/atendimentoId ao selecionar outra.
+Keys constantes por tipo reproduziram a falha (1 falha / 40 passes); produção
+restaurada sem delta. Recorte 3 arquivos / 81 testes, TSC19403 e lint alterados
+com saída 0, sem filtro/ignorados. Não houve novo browser/DB ou global local.
+
+Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
+C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
+output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
+legada de quatro elementos por dois, mantendo os contratos de identidade.
