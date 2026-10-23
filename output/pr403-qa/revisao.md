@@ -27,3 +27,20 @@ a correção isolada, preservando edição posterior/desmontagem do Inbox.
 Sem global403 nesta fonte provisória e sem push. Aguardar correção residual,
 QA/artefato complementar e liberação do integrador original antes de publicar.
 Head remoto403 permanece32f9222d; nenhuma mensagem real ou DB executado.
+
+## Residual corrigido, composição final em gates
+
+DEV entregou f896c306d474f76038c3b6c4425c4b0a214a4b6c sobreA7. Token
+lógico da intenção persiste no retorno sem edição, separado do owner;
+confirmação notifica o editor atual compatível para limpar campo+storage.
+Texto/emoji/arquivo posterior, inclusive editar e voltar ao mesmo texto,
+revogam essa autorização. Cleanup do Inbox e contextos/modos mantêm isolamento.
+Sem formato de storage novo, mapa global ou alteração de servidor.
+
+Os dois contraexemplos do integrador foram repetidos na fonte nova com
+oráculo adicional do campo visível:19 testes passaram,ae412b EXIT0.
+O acréscimo exploratório foi retirado restaurando o blob indexado exatof896;
+o source oficial contém17 testesReact reais/StrictMode. Recorte final da
+composição:8 arquivos/100 testes,344b38 EXIT0. TESTERf896 favorável em
+2 arquivos/62 testes próprios,d60052 EXIT0,sem DB/browser/global.
+Global/TSC/lint da composição moderna e liberação de publicação ainda pendentes.

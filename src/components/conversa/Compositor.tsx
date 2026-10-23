@@ -107,8 +107,14 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   }
   useLayoutEffect(() => {
     contextoAtual.current = contexto;
-    revisoes.registrar(chave, contexto, revisaoRascunho.current);
-    return () => { if (contextoAtual.current === contexto) contextoAtual.current = null; };
+    const cancelar = revisoes.registrar(chave, contexto, () => {
+      if (contextoAtual.current !== contexto) return;
+      revisaoRascunho.current += 1;
+      revisoes.alterar(chave, contexto);
+      setTexto("");
+      setArquivo(null);
+    });
+    return () => { cancelar(); if (contextoAtual.current === contexto) contextoAtual.current = null; };
   }, [contexto, chave, revisoes]);
   const contextoVigente = () => contextoAtual.current === contexto;
   useEffect(() => () => {
@@ -141,7 +147,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
 
   function registrarIntencao() {
     revisaoRascunho.current += 1;
-    revisoes.alterar(chave, contexto, revisaoRascunho.current);
+    revisoes.alterar(chave, contexto);
   }
 
   function mudar(v: string) {
@@ -176,6 +182,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     const corpo = texto.trim();
     if (!contextoVigente() || enviando || emCurso.current.has(contexto) || (!corpo && !arquivo)) return;
     const revisaoEnviada = revisaoRascunho.current;
+    const intencaoEnviada = revisoes.capturar(chave, contexto);
     emCurso.current.add(contexto);
     setEnviando(true);
     setErro("");
@@ -194,16 +201,20 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
         r = await aoEnviarMidia(url, corpo);
       } else r = await aoEnviarTexto(corpo);
       // Sucesso de A em B limpa apenas o armazenamento exato da tentativa confirmada.
-      // Um novo owner (inclusive A→B→A) ou qualquer intenção posterior revoga essa autorização.
-      if (r.ok && revisoes.confere(chave, contexto, revisaoEnviada)) {
-        try { if (localStorage.getItem(chave) === texto) localStorage.removeItem(chave); } catch { /* armazenamento indisponível */ }
+      // A→B→A sem editar conserva a intenção; texto/emoji/arquivo novos revogam a limpeza antiga.
+      if (r.ok && intencaoEnviada && revisoes.confere(chave, intencaoEnviada)) {
+        let corresponde = false;
+        try {
+          const persistido = localStorage.getItem(chave);
+          corresponde = persistido === texto || (persistido === null && texto === "");
+          if (corresponde) localStorage.removeItem(chave);
+        } catch { corresponde = true; /* Sem persistência, ainda reconciliamos a intenção visual confirmada. */ }
+        if (corresponde) revisoes.confirmar(chave, intencaoEnviada);
       }
       // A tentativa conclui sua chave, mas não substitui uma intenção editada durante o envio.
       if (!contextoVigente() || revisaoRascunho.current !== revisaoEnviada) return;
       if (!r.ok) { setErro(r.erro); return; }
-      registrarIntencao();
-      setTexto("");
-      setArquivo(null);
+      // A confirmação reconciliou somente o owner atual da mesma intenção.
     } catch (e) {
       if (contextoVigente() && revisaoRascunho.current === revisaoEnviada) setErro(e instanceof Error ? e.message : "Falha ao enviar.");
     } finally {
