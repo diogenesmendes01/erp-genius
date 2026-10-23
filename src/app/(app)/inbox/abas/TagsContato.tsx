@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { IconSparkles } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { posicaoPopover } from "@/lib/popover";
 import type { TagPainel } from "@/server/inbox/paineis";
@@ -80,7 +81,7 @@ function TagsDoAtendimento({ atendimentoId, tags, disponiveis, podeEditar, podeC
     {aberto && podeEditar && <div ref={painel} id={id} onKeyDown={teclado} role="dialog" aria-label="Escolher tag" style={{ position: "fixed", top: 0, left: 0, visibility: "hidden", zIndex: 50 }} className="w-[280px] max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain rounded-dialog border border-gray-200 bg-surface-raised p-2 shadow-popover">
       <input ref={campo} aria-label="Buscar tag" placeholder="Buscar tag" value={busca} maxLength={40} onChange={e => { revisao.current++; setBusca(e.target.value); }} className="mb-2 min-h-11 w-full rounded border border-gray-300 bg-surface px-3 py-2 text-sm" />
       <div className="flex flex-col gap-1">{opcoes.map(t => <Botao key={t.id} variante="fantasma" tamanho="sm" disabled={acao.ocupado} className="justify-start text-left" onClick={() => void executar("atribuir", t.id)}>{t.nome}</Botao>)}
-        {!opcoes.length && <p className="p-2 text-sm text-gray-600">Nenhuma tag encontrada.</p>}
+        {!opcoes.length && <EstadoVazio role="status" className="m-1">Nenhuma tag encontrada.</EstadoVazio>}
         {criar && <Botao variante="fantasma" tamanho="sm" disabled={acao.ocupado} className="justify-start text-left" onClick={() => void executar("criar", busca)}>Criar tag “{busca.trim()}”</Botao>}
       </div>
       <FeedbackAcao erro={acao.erro} />
