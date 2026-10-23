@@ -10,7 +10,7 @@ export function controleBuscaVisivel(regiao: HTMLElement, preferirMenu = false):
 export function ligarAtalhoBusca(regiao: HTMLElement, abrir: () => void): () => void {
  const tecla = (e: KeyboardEvent) => {
   const foco = regiao.ownerDocument.activeElement as HTMLElement | null;
-  if (e.defaultPrevented || e.isComposing || e.altKey || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "f" || !elementoVisivel(regiao) || !foco || !regiao.contains(foco) || foco.closest('[aria-modal="true"]')) return;
+  if (e.defaultPrevented || e.isComposing || e.shiftKey || e.altKey || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "f" || !elementoVisivel(regiao) || !foco || !regiao.contains(foco) || foco.closest('[aria-modal="true"]')) return;
   e.preventDefault(); abrir();
  };
  regiao.addEventListener("keydown", tecla);
