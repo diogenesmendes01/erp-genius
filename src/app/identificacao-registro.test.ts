@@ -68,6 +68,7 @@ const PENDENTE_RECEBIMENTOS = "pendente: o histórico de recebimentos não traz 
 const PENDENTE_REMARCACAO = "pendente: a conferência da remarcação lista a reserva pelo id; aluno e matrícula já estão na identificação logo acima";
 
 export const EXCECOES_ID: ExcecaoId[] = [
+  { arquivo: "src/app/(app)/inbox/ColunaConversas.tsx", tipo: "prop", trecho: "selecionado={filtros.numeroId ?? null}", alvo: "filtros.numeroId", categoria: "nao-registro", motivo: MOTIVO_VALOR_DE_CONTROLE },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", tipo: "texto", trecho: "{r.multa.clausulaId}", alvo: "r.multa.clausulaId", categoria: "codigo", motivo: MOTIVO_CLAUSULA },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", tipo: "texto", trecho: "{acerto.clausulaId}", alvo: "acerto.clausulaId", categoria: "codigo", motivo: MOTIVO_CLAUSULA },
   { arquivo: "src/app/(app)/alunos/[id]/FichaAluno.tsx", tipo: "prop", trecho: "erro={errosEdicao.paisId}", alvo: "errosEdicao.paisId", categoria: "nao-registro", motivo: MOTIVO_CHAVE_DE_ERRO },
@@ -266,6 +267,7 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES_ID.map((e) => `${e.arquivo} :: ${e.tipo} :: ${e.alvo} :: ${e.categoria}${e.vezes ? ` ×${e.vezes}` : ""}`)).toEqual([
+      "src/app/(app)/inbox/ColunaConversas.tsx :: prop :: filtros.numeroId :: nao-registro",
       "src/app/(app)/secretaria/CondicoesEncerramento.tsx :: texto :: r.multa.clausulaId :: codigo",
       "src/app/(app)/secretaria/CondicoesEncerramento.tsx :: texto :: acerto.clausulaId :: codigo",
       "src/app/(app)/alunos/[id]/FichaAluno.tsx :: prop :: errosEdicao.paisId :: nao-registro",

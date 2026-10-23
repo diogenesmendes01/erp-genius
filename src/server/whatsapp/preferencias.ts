@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, type Resultado } from "@/server/_shared";
 import { atendimentoVisivel } from "./atendimentos";
-import { marcarConversaLida } from "./acoes";
+import { marcarConversaLida, marcarConversaLidaAutomatico } from "./acoes";
 
 // Preferências pessoais: tabelas operacionais, sem Evento (precedente: marcarConversaLida em acoes.ts).
 
@@ -66,13 +66,26 @@ export async function marcarLida(atendimentoId: string): Promise<Resultado> {
   return registrarLeituraPessoal(atendimentoId, true);
 }
 
-/** Registra a leitura pessoal e, se autorizada, a leitura compartilhada e no motor. */
+/**
+ * Alias legado de compatibilidade da API de leitura da #299, com invalidação de /inbox.
+ * @deprecated Mantido sem chamador produtivo nesta árvore; o novo Inbox usa
+ * marcarAtendimentoLidoAutomatico. A política de revalidação é fixa no servidor.
+ */
 export async function marcarAtendimentoLido(atendimentoId: string): Promise<Resultado> {
+  return registrarLeituraAtendimento(atendimentoId, true);
+}
+
+/** Caminho automático do Inbox: os mesmos efeitos operacionais, reconciliados por GET e selo. */
+export async function marcarAtendimentoLidoAutomatico(atendimentoId: string): Promise<Resultado> {
+  return registrarLeituraAtendimento(atendimentoId, false);
+}
+
+async function registrarLeituraAtendimento(atendimentoId: string, revalidar: boolean): Promise<Resultado> {
   const pessoal = await registrarLeituraPessoal(atendimentoId, false);
   if (!pessoal.ok) return pessoal;
-  const compartilhada = await marcarConversaLida(atendimentoId);
-  // O sucesso compartilhado já invalida a rota. Se falhar, a preferência pessoal escrita ainda precisa aparecer.
-  if (!compartilhada.ok) revalidatePath("/inbox");
+  const compartilhada = revalidar ? await marcarConversaLida(atendimentoId) : await marcarConversaLidaAutomatico(atendimentoId);
+  // No caminho manual, o sucesso compartilhado já invalida. Se falhar, mantém a invalidação pessoal.
+  if (revalidar && !compartilhada.ok) revalidatePath("/inbox");
   return compartilhada;
 }
 

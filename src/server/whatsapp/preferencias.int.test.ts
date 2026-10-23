@@ -7,7 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { garantirAtendimento } from "./atendimentos";
-import { alternarFavorita, alternarFixada, marcarAtendimentoLido, marcarLida, marcarNaoLida, silenciarConversa } from "./preferencias";
+import { alternarFavorita, alternarFixada, marcarAtendimentoLido, marcarAtendimentoLidoAutomatico, marcarLida, marcarNaoLida, silenciarConversa } from "./preferencias";
 import { preferenciasDoUsuario } from "./preferencias-consulta";
 import { revalidatePath } from "next/cache";
 
@@ -49,6 +49,35 @@ describe("preferências pessoais da inbox (Task 8)", () => {
     expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(0);
     await marcarNaoLida(a.id);
     expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(1);
+  });
+  it("leitura automática persiste pessoal e compartilhada sem revalidar e sem ler pelo participante", async () => {
+    const { v1, v2, a, chegaInbound } = await cenario();
+    const preferenciaParticipante = await prisma.preferenciaConversaUsuario.create({ data: { usuarioId: v2.id, conversaId: a.conversaId, lidaAte: new Date(Date.now() - 60_000) } });
+    await chegaInbound("automatica");
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { naoLidas: 2 } }); comoUsuario(v1);
+    expect(await marcarAtendimentoLidoAutomatico(a.id)).toMatchObject({ ok: true });
+    expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(0);
+    expect((await preferenciasDoUsuario(v2.id, [a.id])).get(a.id)?.naoLidas).toBeGreaterThan(0);
+    expect(await prisma.preferenciaConversaUsuario.findUniqueOrThrow({ where: { id: preferenciaParticipante.id } })).toEqual(preferenciaParticipante);
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).naoLidas).toBe(0);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+  it("leitura automática fora do escopo não grava nem invalida", async () => {
+    const { fora, a } = await cenario();
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { naoLidas: 2 } }); comoUsuario(fora);
+    expect(await marcarAtendimentoLidoAutomatico(a.id)).toEqual({ ok: false, erro: "Conversa não encontrada ou fora do seu escopo." });
+    expect(await prisma.preferenciaConversaUsuario.count()).toBe(0);
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).naoLidas).toBe(2);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+  it("falha compartilhada automática preserva a preferência, sem invalidação de fallback", async () => {
+    const { v1, a } = await cenario(); comoUsuario(v1);
+    const compartilhar = vi.spyOn(await import("./acoes"), "marcarConversaLidaAutomatico").mockResolvedValueOnce({ ok: false, erro: "Falha temporária." });
+    try {
+      expect(await marcarAtendimentoLidoAutomatico(a.id)).toEqual({ ok: false, erro: "Falha temporária." });
+      expect(await prisma.preferenciaConversaUsuario.count({ where: { usuarioId: v1.id, conversaId: a.conversaId } })).toBe(1);
+      expect(revalidatePath).not.toHaveBeenCalled();
+    } finally { compartilhar.mockRestore(); }
   });
   it("marcarAtendimentoLido zera a contagem pessoal e a compartilhada", async () => {
     const { v1, a, chegaInbound } = await cenario();

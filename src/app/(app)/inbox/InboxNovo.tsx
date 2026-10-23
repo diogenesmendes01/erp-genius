@@ -1,9 +1,9 @@
 "use client";
 import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
-import { botaoClasses } from "@/components/Botao";
+import { useSearchParams } from "next/navigation";
 import { NovoAtendimento } from "./NovoAtendimento";
 import { PainelContato } from "./PainelContato";
 import { classesDoPainel, painelEfetivo, proximoEstadoPainel, useModoInbox } from "./painel-inbox";
@@ -14,20 +14,21 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
-import { marcarAtendimentoLido } from "@/server/whatsapp/preferencias";
+import { marcarAtendimentoLidoAutomatico } from "@/server/whatsapp/preferencias";
 import { ConversaAberta } from "./ConversaAberta";
 import type { ItemTriagem, RevisaoEnvio, OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
-import { ListaAtendimentos } from "./ListaAtendimentos";
+import { ColunaConversas } from "./ColunaConversas";
 import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
 import { PainelAria } from "./PainelAria";
-import { PainelFiltros } from "./PainelFiltros";
 import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
 import { criarMarcadorDeLeitura } from "./marcar-lida";
 import { criarAtualizadorEmLote } from "./atualizar-lista-em-lote";
+
+const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export type VistaInbox = "lista" | "conversa" | "painel";
 type EstadoLeitura = { id: string | null; versao: number; fase: "nenhuma" | "pendente" | "sucesso" | "falha"; ultimaContagem: number };
@@ -125,14 +126,20 @@ const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
 export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial }: PropsInboxNovo) {
+  const parametrosDaRota = useSearchParams();
+  const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
+  const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
-  // Estado produtor reservado aos chips (#313), sem inventar contagem pelo tamanho da página.
-  const [, setContagens] = useState(contagensIniciais);
+  // Agregados do servidor, reconciliados por leitura/SSE; nunca pelo tamanho da página.
+  const [contagens, setContagens] = useState(contagensIniciais);
+  const [novaConversaAberta, setNovaConversaAberta] = useState(false);
   const possuiContagensRef = useRef(contagensIniciais !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
+  const [selecionadoRecebido, setSelecionadoRecebido] = useState(selecionadoInicial);
+  const [versaoNavegacao, setVersaoNavegacao] = useState(0);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
   const modo = useModoInbox();
   const [modoVisto, setModoVisto] = useState(modo);
@@ -156,31 +163,56 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // Estado derivado no render, sem key de remontagem: o que não depende do filtro (Drawer, digitação) fica.
   const chaveFiltros = paramsDosFiltros(filtros);
   const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);
-  if (filtrosVistos !== chaveFiltros) {
-    setFiltrosVistos(chaveFiltros);
-    setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
-    setProximo(inicial.proximo);
-    setContagens(contagensIniciais);
-    setSelecionado(selecionadoInicial);
-    setVista(selecionadoInicial ? "conversa" : "lista");
+  const rotaMudou = rotaVista !== selecionadoDaRota;
+  if (rotaMudou) setRotaVista(selecionadoDaRota);
+  if (selecionadoInicial === selecionadoDaRota && (filtrosVistos !== chaveFiltros || selecionadoRecebido !== selecionadoInicial || (rotaMudou && selecionado !== selecionadoDaRota))) {
+    setSelecionadoRecebido(selecionadoInicial);
+    if (filtrosVistos !== chaveFiltros || selecionado !== selecionadoInicial) {
+      setVersaoNavegacao((v) => v + 1);
+      setNovaConversaAberta(false);
+      setFiltrosVistos(chaveFiltros);
+      setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
+      setProximo(inicial.proximo);
+      setContagens(contagensIniciais);
+      setSelecionado(selecionadoInicial);
+      setVista(selecionadoInicial ? "conversa" : "lista");
+    } else {
+      // Revalidação confirma a seleção local: atualiza a primeira página sem perder as já carregadas.
+      setItens((atualLista) => mesclarPrimeiraPagina(atualLista, inicial.itens, inicial.proximo, selecionado));
+      if (itens.length <= inicial.itens.length || !inicial.proximo) setProximo(inicial.proximo);
+      setContagens(contagensIniciais);
+    }
   }
   const selecionadoRef = useRef(selecionado);
   const regiaoConversa = useRef<HTMLElement>(null);
+  const regiaoLista = useRef<HTMLElement>(null);
+  const focoAoFecharPopover = useRef<HTMLElement | null>(null);
+  const navegacaoVista = useRef(versaoNavegacao);
+  // O layout ocorre antes do cleanup passivo do diálogo: não retorna ao gatilho na lista oculta.
+  useEfeitoDeLayout(() => {
+    if (navegacaoVista.current === versaoNavegacao) return;
+    navegacaoVista.current = versaoNavegacao;
+    focoAoFecharPopover.current = selecionadoInicial && regiaoConversa.current?.getClientRects().length
+      ? regiaoConversa.current
+      : regiaoLista.current?.querySelector<HTMLInputElement>('input[type="search"]') ?? null;
+  }, [versaoNavegacao, selecionadoInicial]);
   const entradasPendentesRef = useRef<{ id: string; mensagens: Set<string | null> } | null>(null);
   const versaoEntradasRef = useRef(0);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
   const atualizadorListaRef = useRef<ReturnType<typeof criarAtualizadorEmLote> | null>(null);
+  const navegacaoDaListaRef = useRef(versaoNavegacao);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
   useEffect(() => {
     // Um objeto SSR equivalente não elimina a reconciliação pessoal pendente.
-    if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros) atualizadorListaRef.current?.cancelarPendentes();
+    if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros || navegacaoDaListaRef.current !== versaoNavegacao) atualizadorListaRef.current?.cancelarPendentes();
     else atualizadorListaRef.current?.invalidarSnapshotEmVoo();
+    navegacaoDaListaRef.current = versaoNavegacao;
     filtrosRef.current = filtros;
     // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;
-  }, [chaveFiltros, filtros]);
+  }, [chaveFiltros, filtros, selecionadoInicial, versaoNavegacao]);
   useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
   const executarAtualizacao = useCallback(async (contextoVigente: () => boolean) => {
     const filtro = filtrosRef.current;
@@ -233,7 +265,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const versao = leituraRef.current.versao;
       const entradasNoPedido = entradasPendentesRef.current?.id === id ? new Set(entradasPendentesRef.current.mensagens) : null;
       let sucesso = false;
-      try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ } finally { recontarNaoLidasInbox(); }
+      try { sucesso = (await marcarAtendimentoLidoAutomatico(id)).ok; } catch { /* reconcilia abaixo */ } finally { recontarNaoLidasInbox(); }
       const entradasAtuais = entradasPendentesRef.current;
       if (sucesso && entradasNoPedido && entradasAtuais?.id === id) {
         for (const mensagemId of entradasNoPedido) entradasAtuais.mensagens.delete(mensagemId);
@@ -264,6 +296,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   }, [itens, inicial.itens]);
   useEffect(() => {
     if (selecionado && leituraRef.current.id !== selecionado) pedirLeitura(selecionado);
+    else if (!selecionado && leituraRef.current.id !== null) {
+      leituraRef.current = { id: null, versao: leituraRef.current.versao + 1, fase: "nenhuma", ultimaContagem: 0 };
+    }
   }, [selecionado, pedirLeitura]);
   useEffect(() => {
     const pagina = document;
@@ -336,6 +371,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
 
   function abrir(id: string) {
+    focoAoFecharPopover.current = regiaoConversa.current;
+    setNovaConversaAberta(false);
     selecionadoRef.current = id;
     pedirLeitura(id);
     setSelecionado(id);
@@ -383,22 +420,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
   return (
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
-      <section aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
-        {(sino || opcoesNovaConversa || opcoesFiltro) && <div className="relative min-h-0 max-h-[50%] shrink-0 overflow-y-auto">
-          <header className="flex flex-wrap items-center gap-2 border-b border-gray-200 p-3">
-            <h1 className="mr-auto font-medium">Inbox</h1>
-            {sino}
-            {opcoesNovaConversa && <details className="w-full">
-              <summary className={botaoClasses({ variante: "secundario", tamanho: "sm" }) + " cursor-pointer"}>Abrir atendimento</summary>
-              <div role="region" aria-label="Abrir atendimento" className="mt-2"><NovoAtendimento opcoes={opcoesNovaConversa} /></div>
-            </details>}
-          </header>
-          {opcoesFiltro && <div role="region" aria-label="Filtros de conversas"><PainelFiltros filtros={filtros} setores={opcoesFiltro.setores} numeros={opcoesFiltro.numeros} /></div>}
-        </div>}
-        <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} />
+      <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
+        <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} sino={sino}
+          itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
+          fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
+          focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
+          novaConversa={opcoesNovaConversa ? <NovoAtendimento compacto opcoes={opcoesNovaConversa} /> : undefined} />
       </section>
 
-      <section ref={regiaoConversa} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
+      <section ref={regiaoConversa} tabIndex={-1} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
         {!selecionado ? (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}

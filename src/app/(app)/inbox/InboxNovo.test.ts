@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => null }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { InboxNovo, mesclarPrimeiraPagina, paramsDosFiltros } from "./InboxNovo";
@@ -26,8 +26,12 @@ function html(p: { selecionado?: string | null; extra?: Record<string, unknown> 
 describe("InboxNovo", () => {
   it("o teto do cabeçalho alcança o header direto da conversa real, sem wrapper intermediário", () => {
     const h = html({ selecionado: "a1" });
-    const encaixe = h.match(/<section aria-label="Conversa" class="([^"]*)"><header(?:\s|>)/);
+    const cabecalhoDireto = /<section[^>]*aria-label="Conversa"[^>]*class="([^"]*)"[^>]*><header(?:\s|>)/;
+    const encaixe = h.match(cabecalhoDireto);
     expect(encaixe).not.toBeNull();
+    const comWrapper = h.replace(/(<section[^>]*aria-label="Conversa"[^>]*>)(<header\b)/, "$1<div>$2");
+    expect(comWrapper).not.toBe(h);
+    expect(comWrapper).not.toMatch(cabecalhoDireto);
     const classes = encaixe![1].replaceAll("&amp;", "&").replaceAll("&gt;", ">").split(" ");
     expect(classes).toEqual(expect.arrayContaining(["[&>header]:relative", "[&>header]:min-h-0",
       "[&>header]:max-h-[40%]", "[&>header]:shrink-0", "[&>header]:overflow-y-auto"]));
@@ -56,11 +60,10 @@ describe("InboxNovo", () => {
     const h = html();
     expect(h).toContain("Comercial"); expect(h).not.toContain("Escola"); expect(h).toContain("Na fila");
   });
-  it("com as opções do servidor mostra o PainelFiltros (busca, abas e setores do usuário)", () => {
-    const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola" }] } } });
-    expect(h).toContain('aria-label="Buscar conversas"');
-    for (const t of ["Todas", "Minhas", "Fila", "Não lidas", "Prazo estourado", "Todos os setores"]) expect(h).toContain(t);
-    expect(html()).not.toContain('aria-label="Buscar conversas"');
+  it("com opções do servidor mostra coluna com busca/chips/seletor; sem opções mantém busca e chips", () => {
+    const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola", saude:"conectado" }] } } });
+    for (const t of ["Conversas",'aria-label="Buscar conversas"',"Todas","Minhas","Não lidas","Prazo estourado","Não atribuídas","Todos os números"]) expect(h).toContain(t);
+    expect(html()).toContain('aria-label="Buscar conversas"'); expect(html()).not.toContain("Todos os números");
   });
   it("conversa aberta: o painel por setor carrega da rota e o opt-out do contato está no painel", () => {
     const h = html({ selecionado: "a1" });
