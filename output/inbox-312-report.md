@@ -98,3 +98,11 @@ Todos os browsers foram fechados em finally, sem DBsuite DEV ou transporte. Scri
 ### Pendências deste checkpoint
 
 HelperDOM e referências sanitizadas; depósito remoto autorizado de binários e links confirmados; QA independente do SHA exato e global integrado antes de publicação. Nenhum PNG novo commitado. Originais/negativos/pranchas locais preservados; referências antigas não serão enviadas. Este checkpoint não declara homologação ou conclusão integral.
+
+## Incorporação coordenada da sanitização392
+
+OWNB recebeu83043f51 como37f39fb8 (seed/reparo telefones, NÃO executado DEV) e3f381489 como b6374596 (helperDOM/CLI). Conflitos somente quadro/README/importCLI; preservados ambos históricos, problemaReactNaCaptura, esperarHidratacaoApp e lista-vazia312, acrescentado anonimizarTelefonesNoDom. AGENTS conferido: blocoNext ausente, nada para remover. Sem PNGnovo, DBsuite/seed/install ou sourceprodutiva312 alterada.
+
+Gates dirigidos: dd6995 EXIT0/3arquivos51testes (visual-inbox,visual-inbox-entrada,identificacao-registro); argumento antigo src/lib/inbox-sem-polling.test.ts não encontrou arquivo, portanto guard executado separadamente no caminho real src/app/(app)/inbox/sem-polling.test.ts, b6ff1b EXIT0/2testes. sem-provedores-legados6fff41 EXIT0/1teste. Total observado5arquivos54testes, sem testes ignorados nesses arquivos; não é global. HelperDOM Node/Chrome62941f EXIT0/1teste, sem download. TSC38678/de4bb4 heap8192 EXIT0, lint5fontesafetadas ea5610 EXIT0/0avisos. Integração392 foi verificada pelo autor em outro perfil; não atribuir essa suíte ao DEV B.
+
+Próxima captura somente --alvo prototipo nos3 estados312 (14referências), sem reiniciar preview e sem tocar banco150. Fonte produtiva app permanece a3da8; fonte do harness passa a incluir b6374596 e será anotada separadamente no consolidado. Aplicação14PNG formal anterior mantida íntegra. Ainda pendentes recaptura dasrefs/inspeção/depósito remoto/QA/global.
