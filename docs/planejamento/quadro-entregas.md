@@ -4794,6 +4794,9 @@ sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
 DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
 sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
 Integração dos pais, global, parecer/CI do head final continuam pendentes.
+
+
+
 ### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
 
 Branch DEV codex/inbox-310-c1 sobre eb68e314,676/313 imutável. Helper local agrupa50ms fixos,1GET incluindo corpo+1pendência, reconciliação pessoal final preservada. Thread/painel/leitura imediatos, sem SQL/SSEstore/polling/deps/DB/preview. RED consumidor3casos→GREEN42unitários; recorte24/32954301 e lint4fontes967cd5 saída0. TSC5951heap8192 saída0 após limpeza exclusiva do cache gerado dev pelo integrador; dois negativos antigos só tipogerado rota311 fora do head310, preservados. Ledger output/inbox-310-c1-report.md. Aguardam porte equivalente no agregado676 em SHAseparado, QA/browser e publicação; não é concluída/homologada.
@@ -4936,6 +4939,7 @@ Fonte57587838: sessão54690 terminou exit1 após **862arquivos/6736testes unitá
 - **RulingURL313 atualizado:** Linkpúblico/cnulligual mostrou limite de observar só valorprop. Inbox usa c público via useSearchParams para intenção; URLlocalACK mantém150/cursor/vista/Nova, navegação externaID/null/vazio troca contexto, SSRstale divergente daURL é ignorado. FallbacknullableSSR sem novo relógio/rede. RED2→GREEN72 e REDGETobsoleto1→GREENfinal8arquivos236testes; TSC38867heap8192/lint4fontes44043b EXIT0. Recorte anterior98/978 é pré-últimadep, não global final. SemNext/backend/VirtualList/leitura382/helper/CLI alterados. HardnavNext trace51222 é diagnóstico separado ainda não adjudicado; novas provasChrome/QA/global pendentes.
 
 
+
 ### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
 
 **Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
@@ -5019,6 +5023,7 @@ Fonte57587838: sessão54690 terminou exit1 após **862arquivos/6736testes unitá
 - **Entrega DEV314 para QA:** fonte/harness944e1736, Node22/recorte1214 exit0(51arquivos613testes), TSCheap8192+lint10569 exit0/0avisos. Formal73069+55981 exit0/28PNGs individualmenteinspecionadas; complementos10054 exit0/6contextos24PNGs inspecionados por pranchas,0warnings/externos/overflow. VirtualGREEN0296/6delta0 eidentidade/foco/Tab preservados, runtime029==944porobjetosGit. Manifestos/hashes/política392 em output/inbox-314-visual; nenhumPNGversionado porruling. Negativos/limites no relatório; TESTERexato/globalintegrado pendentes, sem homologação presumida.
 
 - **Congelamento documental314:** preview40152 parado pelo integrador; somenteNextAGENTS restaurado. Allowlistpositiva explícita28formais+24complementos+12virtualGREEN+6pranchas, hashes/fontes/política392, semnegativos/HTMLbruto/refs antigas. PNGs permanecem locais, zeroPNGnoGit. Relatório/SPEC/probes/JSON consolidam944 sem mudar código ou repetir gates por documentação. Aguardando TESTER/global.
+
 
 
 ## PR #395 — C1/C3: limites documentados e foco do opt-out
@@ -5179,6 +5184,8 @@ excluída pela configuração, não repetida. Relatório output/inbox-314-global
 Próximo commit somente documental; publicação do PR e CI/merge permanecem
 separados. Não marcar314 integrada antes da main e fechamento da issue.
 - **Checkpoint313 com baseR6/main/foco:** mergec207 sobre9c porcontrato, preservando syncURL/ACK150/foco/ref382/Virtual314 e incorporando entradasPendentes/contadorR6/OptOut/finally311. Guard381 RED integração1 e regressão2→GREEN apenas6tokens do contador passivo, negativas Salvar/onClick/spread/padding; semexceção porarquivo/analisadornovo/UIalterada. Final97149 EXIT0/99arquivos1015testes, TSC21762heap8192/lint10fontes0avisos EXIT0. Formal52+virtual18 históricas9c inspecionadas/fontes anotadas, semPNGcommit; nãoatribuídas ao mergeR6. TESTERestático9c236testes0; hardnav staleMPANext documentado emresumo causal sanitizado, repetiçãoatual/global/QAvisual/depósitoremoto pendentes. Semhomologação/publicação presumida.
+
+
 
 ### Publicação #314 e contagem de integrações — 23/10/2026
 
@@ -5677,3 +5684,15 @@ do parecer397. Global3971 EXIT0:879arquivos/6.894testes,270,86s,maxWorkers2,
 sem filtros/ignorados. Nexttypegen/TSC50060 e lint29580 EXIT0,0erros40avisos.
 TESTERc221 favorável7/133 próprios,exec3f5f3a EXIT0,sem DB/preview/browser/
 global próprios. CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
+
+## PR #398 — C1: composição local e compatibilidade de testes
+
+Base314-r3@cada334f recebe3975f8/main sem moverc207; fonte67192a57 preserva
+314 e recebe produtores394/R6/prazo puro/Avatar/SSE. Conversa conserva
+decorarThread/stableMount e passa quarto argumento388; testeSSR314 mantido
+junto aos C1/R6. Balões/VList/relógio/scripts314 byteinalteradosaa366.
+Recorte7/1430; global4467 EXIT0:867arquivos/6.819testes,242,16s,maxWorkers2,
+sem filtro/ignorados; lint44100 EXIT0/40. TSC60102 achou4fixtures3args;
+após fim do global, somente quatro false explícitos no teste, produçãoigual.
+Recorte final7/143,TSC84417/lintteste EXIT0; global não repetido parafixtures.
+Sem novo DB/browser. TESTERexato/CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
