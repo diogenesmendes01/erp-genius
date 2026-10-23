@@ -1,7 +1,7 @@
 import { iniciais, tomDoAvatar } from "@/components/Avatar";
 import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import { prazoEstourado } from "./prazo-vivo";
+import { prazoEstourado } from "./prazo-atendimento";
 
 export type TomEstado = "ia" | "aprovacao" | "handoff" | "humano" | "sem-resposta" | "atraso" | "neutro";
 export type BadgeVisual = { tom: TomEstado; texto: string; ponto?: boolean; tracejado?: boolean; icone?: "relogio" | "sem-nome" };
