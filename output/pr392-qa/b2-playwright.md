@@ -24,3 +24,13 @@ O npm preservou os quatro manifestos instalados consultados, mas atualizou o ín
 As primeiras execuções de lint/TSC foram interrompidas com saída 1: o backup físico do pacote antigo estava em `output`, caminho varrido pelas ferramentas. O backup foi movido com verificação dos limites absolutos para `node_modules/.erp-backups`, excluído pelas configurações existentes, e somente esses gates foram repetidos. Nenhuma configuração ou fonte foi afrouxada para ocultar o diagnóstico.
 
 Esta evidência pertence ao patch B2 isolado sobre `c57c8214`. A composição posterior com a main, a conferência de conflitos com #280, a revisão independente no SHA final e a CI final contra main permanecem etapas separadas. Não reatribuir estes gates à composição futura sem verificar o delta. Os PNGs antigos permanecem fora do código; integração final por squash preserva essa ausência no histórico da main.
+
+## Composição com a main
+
+Patch isolado: `68974544ec64363255f30111ffd0074f8f478907`. A main `cce21e19` foi incorporada por merge. Os conflitos produtivos vieram da base E0 antiga, sem mudanças exclusivas da #307 nesses arquivos. Para preservar as revisões já integradas, `src/` e `scripts/` foram conferidos contra a main, mantendo apenas a lista explícita dos dez arquivos do harness e dos quatro testes/guard de dependências da #307/B2. O delta desses diretórios contra a main contém exatamente esses 14 caminhos; nenhum contrato de E0 foi substituído pela versão antiga. Package/lock e eslint permanecem iguais ao patch B2 isolado. Os demais conflitos de SPEC/relatórios de funcionalidades anteriores conservam os arquivos da main. Os dois conflitos do quadro conservaram literalmente ambos os lados, removendo apenas os marcadores com um parser de estados e contagem de blocos verificados (`c412b6`, saída 0).
+
+Recorte da composição antes do commit: `b21319`, saída 0, dois arquivos / 20 testes, syntax check da CLI, preflight real de dependências e diff check. O global/TypeScript/lint/integração desta composição serão registrados separadamente após suas execuções.
+
+### Compatibilidade com #280
+
+O merge-tree do patch isolado com `bab2c9f9` ainda sai com conflito textual em package/lock (`649847`). A inspeção `903cfe` mostra que os dois conflitos agora contêm somente a linha de `@babel/standalone` 7.29.0 deste harness contra um lado vazio da #280. Não há conflito de versão, resolução ou integridade do trio Playwright. A dependência Babel é necessária para servir o protótipo offline e deve ser preservada na integração da #280; não removê-la para tornar o merge automático. Trata-se de uma resolução textual determinada pelo consumidor existente, sem decisão de produto. Este relatório não declara merge-tree limpo com #280.

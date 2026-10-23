@@ -1,0 +1,203 @@
+{
+  "fonte": "7e236e642b49ee96de7146a9a5766c60d2851401",
+  "resultados": [
+    {
+      "tamanho": "desktop",
+      "tema": "escuro",
+      "width": 1440,
+      "height": 900,
+      "ok": true,
+      "externos": [],
+      "erros": [],
+      "monoVar": "\"mono\", \"mono Fallback\"",
+      "monoNome": "\"mono\"",
+      "corpo": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+      "amostraFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+      "carregadas400": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "carregadas500": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "tokens": {
+        "--avatar-4": "#6e62aa",
+        "--bubble-ia": "#2b2a37",
+        "--bubble-note": "#3a3020",
+        "--chat-dot": "#ffffff09"
+      }
+    },
+    {
+      "tamanho": "desktop",
+      "tema": "claro",
+      "width": 1440,
+      "height": 900,
+      "ok": true,
+      "externos": [],
+      "erros": [],
+      "monoVar": "\"mono\", \"mono Fallback\"",
+      "monoNome": "\"mono\"",
+      "corpo": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+      "amostraFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+      "carregadas400": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "carregadas500": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "tokens": {
+        "--avatar-4": "#6e62aa",
+        "--bubble-ia": "#efebfa",
+        "--bubble-note": "#fff7e5",
+        "--chat-dot": "#00000009"
+      }
+    },
+    {
+      "tamanho": "tablet",
+      "tema": "escuro",
+      "width": 1024,
+      "height": 768,
+      "ok": true,
+      "externos": [],
+      "erros": [],
+      "monoVar": "\"mono\", \"mono Fallback\"",
+      "monoNome": "\"mono\"",
+      "corpo": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+      "amostraFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+      "carregadas400": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "carregadas500": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "tokens": {
+        "--avatar-4": "#6e62aa",
+        "--bubble-ia": "#2b2a37",
+        "--bubble-note": "#3a3020",
+        "--chat-dot": "#ffffff09"
+      }
+    },
+    {
+      "tamanho": "tablet",
+      "tema": "claro",
+      "width": 1024,
+      "height": 768,
+      "ok": true,
+      "externos": [],
+      "erros": [],
+      "monoVar": "\"mono\", \"mono Fallback\"",
+      "monoNome": "\"mono\"",
+      "corpo": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+      "amostraFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+      "carregadas400": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "carregadas500": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "tokens": {
+        "--avatar-4": "#6e62aa",
+        "--bubble-ia": "#efebfa",
+        "--bubble-note": "#fff7e5",
+        "--chat-dot": "#00000009"
+      }
+    },
+    {
+      "tamanho": "celular",
+      "tema": "escuro",
+      "width": 390,
+      "height": 844,
+      "ok": true,
+      "externos": [],
+      "erros": [],
+      "monoVar": "\"mono\", \"mono Fallback\"",
+      "monoNome": "\"mono\"",
+      "corpo": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+      "amostraFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+      "carregadas400": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "carregadas500": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "tokens": {
+        "--avatar-4": "#6e62aa",
+        "--bubble-ia": "#2b2a37",
+        "--bubble-note": "#3a3020",
+        "--chat-dot": "#ffffff09"
+      }
+    },
+    {
+      "tamanho": "celular",
+      "tema": "claro",
+      "width": 390,
+      "height": 844,
+      "ok": true,
+      "externos": [],
+      "erros": [],
+      "monoVar": "\"mono\", \"mono Fallback\"",
+      "monoNome": "\"mono\"",
+      "corpo": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+      "amostraFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+      "carregadas400": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "carregadas500": [
+        {
+          "family": "mono",
+          "weight": "400 500",
+          "status": "loaded"
+        }
+      ],
+      "tokens": {
+        "--avatar-4": "#6e62aa",
+        "--bubble-ia": "#efebfa",
+        "--bubble-note": "#fff7e5",
+        "--chat-dot": "#00000009"
+      }
+    }
+  ]
+}

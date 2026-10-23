@@ -7,7 +7,7 @@ import { useConversa } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import type { FiltrosInbox } from "@/server/inbox/filtros";
+import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
 import { marcarAtendimentoLido } from "@/server/whatsapp/preferencias";
@@ -23,6 +23,7 @@ import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
 import { criarMarcadorDeLeitura } from "./marcar-lida";
+import { criarAtualizadorEmLote } from "./atualizar-lista-em-lote";
 
 export type VistaInbox = "lista" | "conversa" | "painel";
 type EstadoLeitura = { id: string | null; versao: number; fase: "nenhuma" | "pendente" | "sucesso" | "falha"; ultimaContagem: number };
@@ -40,10 +41,12 @@ export interface PropsInboxNovo {
   revisoes?: RevisaoEnvio[] | null;
   /** Setores e números do PainelFiltros (`opcoesFiltroInbox`); sem eles a barra de filtros não aparece. */
   opcoesFiltro?: OpcoesFiltroInbox;
+  /** Agregados autorizados; a apresentação em chips é entregue pela etapa 313. */
+  contagens?: ContagensChipsInbox;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
-export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null): string {
+export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null, opcoes: { contagens?: boolean } = {}): string {
   const q = new URLSearchParams();
   if (f.setor) q.set("setor", f.setor);
   if (f.numeroId) q.set("numeroId", f.numeroId);
@@ -53,13 +56,17 @@ export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null): strin
   if (f.prazoEstourado) q.set("prazo", "estourado");
   if (f.busca) q.set("busca", f.busca);
   if (cursor) q.set("cursor", cursor);
+  else if (opcoes.contagens) q.set("contagens", "1");
   return q.toString();
 }
 
-async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<{ itens: ItemListaInbox[]; proximo: string | null } | null> {
+type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?: ContagensChipsInbox };
+
+async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<PaginaInbox | null> {
   try {
-    const r = await fetch(`/api/inbox/atendimentos?${paramsDosFiltros(filtros, cursor)}`, { cache: "no-store", credentials: "same-origin" });
-    return r.ok ? await r.json() as { itens: ItemListaInbox[]; proximo: string | null } : null;
+    const r = await fetch(`/api/inbox/atendimentos?${paramsDosFiltros(filtros, cursor, { contagens: true })}`, { cache: "no-store", credentials: "same-origin" });
+    if (!r.ok) { await r.arrayBuffer(); return null; }
+    return await r.json() as PaginaInbox;
   } catch { return null; }
 }
 
@@ -109,10 +116,13 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[700px]:flex min-[700px]:w-[320px] min-[700px]:shrink-0 min-[1100px]:w-[360px]";
 const COLUNA_CONVERSA = "min-[700px]:flex min-[700px]:min-w-0 min-[700px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais }: PropsInboxNovo) {
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
+  // Estado produtor reservado aos chips (#313), sem inventar contagem pelo tamanho da página.
+  const [, setContagens] = useState(contagensIniciais);
+  const possuiContagensRef = useRef(contagensIniciais !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
@@ -126,69 +136,122 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setFiltrosVistos(chaveFiltros);
     setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
     setProximo(inicial.proximo);
+    setContagens(contagensIniciais);
     setSelecionado(selecionadoInicial);
     setVista(selecionadoInicial ? "conversa" : "lista");
   }
   const selecionadoRef = useRef(selecionado);
+  const regiaoConversa = useRef<HTMLElement>(null);
+  const entradasPendentesRef = useRef<{ id: string; mensagens: Set<string | null> } | null>(null);
+  const versaoEntradasRef = useRef(0);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
+  const atualizadorListaRef = useRef<ReturnType<typeof criarAtualizadorEmLote> | null>(null);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
-  useEffect(() => { filtrosRef.current = filtros; }, [filtros]);
-  const carregarLista = useCallback((filtro: FiltrosInbox) => {
+  useEffect(() => {
+    // Um objeto SSR equivalente não elimina a reconciliação pessoal pendente.
+    if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros) atualizadorListaRef.current?.cancelarPendentes();
+    else atualizadorListaRef.current?.invalidarSnapshotEmVoo();
+    filtrosRef.current = filtros;
+    // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
+    consultasRef.current.aplicada = ++consultasRef.current.iniciada;
+  }, [chaveFiltros, filtros]);
+  useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
+  const executarAtualizacao = useCallback(async (contextoVigente: () => boolean) => {
+    const filtro = filtrosRef.current;
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
+    const entradasNoInicio = versaoEntradasRef.current;
+    const pagina = typeof document === "undefined" ? null : document;
     const pedido = ++consultasRef.current.iniciada;
-    void buscarPagina(filtro, null).then((p) => {
-      if (!p || pedido < consultasRef.current.aplicada) return;
-      const leitura = leituraRef.current;
-      // Após falha, só uma consulta iniciada já nessa fase pode corrigir a contagem restaurada.
-      // Um GET da leitura anterior (ou da fase pendente) pode conter zero anterior à mensagem nova.
-      if (leitura.fase === "falha" && (inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "falha")) return;
-      consultasRef.current.aplicada = pedido;
-      const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
-      const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
-      if (linha && !(leitura.fase === "sucesso" && antiga)) {
-        leitura.ultimaContagem = leitura.fase === "pendente" ? Math.max(leitura.ultimaContagem, linha.naoLidas) : linha.naoLidas;
+    const p = await buscarPagina(filtro, null);
+    if (!contextoVigente() || !p || pedido < consultasRef.current.aplicada) return;
+    const leitura = leituraRef.current;
+    const mesmaLeitura = inicio.id === leitura.id && inicio.versao === leitura.versao;
+    // Uma consulta de outra leitura não pode apagar a restauração após falha.
+    // Na mesma versão, a resposta continua válida mesmo se a ação falhar enquanto o GET está em voo.
+    if (leitura.fase === "falha" && !mesmaLeitura) return;
+    consultasRef.current.aplicada = pedido;
+    // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
+    if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
+      && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
+    const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
+    const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
+    if (linha && !(leitura.fase === "sucesso" && antiga)) {
+      const entrouDepois = entradasNoInicio !== versaoEntradasRef.current;
+      // O GET fresco é autoritativo inclusive em zero (outra aba pode ter lido).
+      // IDs ocultos governam a próxima tentativa, sem impor um mínimo ao contador.
+      leitura.ultimaContagem = mesmaLeitura && !entrouDepois
+        ? linha.naoLidas
+        : Math.max(leitura.ultimaContagem, linha.naoLidas);
+    }
+    setItens((atual) => {
+      const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
+      const vigente = leituraRef.current;
+      const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
+      if (vigente.id === selecionadoRef.current && (entradasPendentesRef.current?.id === vigente.id || vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))) {
+        const otimista = vigente.fase === "pendente" && pagina?.visibilityState === "visible" && regiaoConversa.current?.getClientRects().length;
+        return lista.map((i) => i.id === vigente.id ? { ...i, naoLidas: otimista ? 0 : vigente.ultimaContagem } : i);
       }
-      setItens((atual) => {
-        const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
-        const vigente = leituraRef.current;
-        const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
-        return vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
-          ? zerarNaoLidas(lista, vigente.id!) : lista;
-      });
+      return lista;
     });
   }, []);
+  useEffect(() => {
+    const atualizador = criarAtualizadorEmLote(executarAtualizacao);
+    atualizadorListaRef.current = atualizador;
+    return () => { atualizador.descartar(); atualizadorListaRef.current = null; };
+  }, [executarAtualizacao]);
+  const carregarLista = useCallback(() => { atualizadorListaRef.current?.solicitar(); }, []);
   const marcarLeituraRef = useRef<((id: string) => void) | null>(null);
   useEffect(() => {
     marcarLeituraRef.current = criarMarcadorDeLeitura(async (id) => {
       const versao = leituraRef.current.versao;
+      const entradasNoPedido = entradasPendentesRef.current?.id === id ? new Set(entradasPendentesRef.current.mensagens) : null;
       let sucesso = false;
       try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ }
+      const entradasAtuais = entradasPendentesRef.current;
+      if (sucesso && entradasNoPedido && entradasAtuais?.id === id) {
+        for (const mensagemId of entradasNoPedido) entradasAtuais.mensagens.delete(mensagemId);
+        if (entradasAtuais.mensagens.size === 0) entradasPendentesRef.current = null;
+      }
       const leitura = leituraRef.current;
       if (leitura.id !== id || leitura.versao !== versao) return;
       leitura.fase = sucesso ? "sucesso" : "falha";
       if (sucesso) {
-        leitura.ultimaContagem = 0;
+        const restantes = entradasPendentesRef.current?.id === id ? entradasPendentesRef.current.mensagens.size : 0;
+        leitura.ultimaContagem = Math.min(leitura.ultimaContagem, restantes);
+        setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
+        if (possuiContagensRef.current) carregarLista();
       } else {
         // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
-        carregarLista(filtrosRef.current);
+        carregarLista();
       }
-    });
+    }, (id) => selecionadoRef.current === id && document.visibilityState === "visible" && Boolean(regiaoConversa.current?.getClientRects().length));
     return () => { marcarLeituraRef.current = null; };
   }, [carregarLista]);
   const pedirLeitura = useCallback((id: string, mensagemNova = false) => {
     const anterior = leituraRef.current;
-    const conhecida = anterior.id === id ? anterior.ultimaContagem : (itens.find((i) => i.id === id)?.naoLidas ?? inicial.itens.find((i) => i.id === id)?.naoLidas ?? 0);
-    leituraRef.current = { id, versao: anterior.versao + 1, fase: "pendente", ultimaContagem: mensagemNova ? conhecida + 1 : conhecida };
+    const contagem = anterior.id === id ? anterior.ultimaContagem : (itens.find((i) => i.id === id)?.naoLidas ?? inicial.itens.find((i) => i.id === id)?.naoLidas ?? 0);
+    leituraRef.current = { id, versao: anterior.versao + 1, fase: "pendente", ultimaContagem: mensagemNova ? contagem + 1 : contagem };
     setItens((lista) => zerarNaoLidas(lista, id));
     marcarLeituraRef.current?.(id);
   }, [itens, inicial.itens]);
   useEffect(() => {
     if (selecionado && leituraRef.current.id !== selecionado) pedirLeitura(selecionado);
   }, [selecionado, pedirLeitura]);
+  useEffect(() => {
+    const pagina = document;
+    const aoRetornar = () => {
+      const id = selecionadoRef.current;
+      const leitura = leituraRef.current;
+      const precisaLer = id && (entradasPendentesRef.current?.id === id || (leitura.id === id && leitura.ultimaContagem > 0));
+      if (pagina.visibilityState === "visible" && precisaLer && regiaoConversa.current?.getClientRects().length) pedirLeitura(id);
+    };
+    pagina.addEventListener("visibilitychange", aoRetornar);
+    return () => pagina.removeEventListener("visibilitychange", aoRetornar);
+  }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
   const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
@@ -215,20 +278,27 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // e troca as linhas afetadas, sem refazer a página inteira.
   const recarregarLista = useCallback(() => {
     setVersaoPainel((v) => v + 1);
-    carregarLista(filtros);
-  }, [filtros, carregarLista]);
+    carregarLista();
+  }, [carregarLista]);
   // Aviso que pode mudar a permissão do atendimento aberto (`atendimento.atualizado`: transferência, responsável,
   // status) ou resync: o painel recarrega e, com ele, o podeEnviar do compositor (C3 da revisão do #218). Mensagem
   // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
   // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
-    if (avisoMarcaLida(a, selecionadoRef.current) && typeof document !== "undefined" && document.visibilityState === "visible") {
-      pedirLeitura(a.atendimentoId!, true);
+    if (avisoMarcaLida(a, selecionadoRef.current)) {
+      const repetida = entradasPendentesRef.current?.id === a.atendimentoId && entradasPendentesRef.current.mensagens.has(a.mensagemId);
+      if (!repetida) versaoEntradasRef.current++;
+      // Também registra a entrada visível: sua leitura pode ficar enfileirada e ser
+      // suspensa ao ocultar a aba antes de a ação anterior terminar.
+      if (entradasPendentesRef.current?.id === a.atendimentoId) entradasPendentesRef.current.mensagens.add(a.mensagemId);
+      else entradasPendentesRef.current = { id: a.atendimentoId!, mensagens: new Set([a.mensagemId]) };
+      if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, !repetida);
+      else if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
-    carregarLista(filtros);
-  }, [filtros, carregarLista, pedirLeitura]);
+    carregarLista();
+  }, [carregarLista, pedirLeitura]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
@@ -294,7 +364,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} />
       </section>
 
-      <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
+      <section ref={regiaoConversa} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
         {!selecionado ? (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
