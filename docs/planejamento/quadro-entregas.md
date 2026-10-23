@@ -5182,3 +5182,14 @@ filtro/ignorados,maxWorkers2; TSC83357 e lint95898 zero erros /40 avisos.
 Quatro PNGs positivos do probeB babd/3b em ZIPdraft344.425bytes, SHA c7c4fb49...
 com fontes explícitas; sem recaptura9cf/DB/browser próprio. Parecer final,
 395/#392B2 e CI/main continuam gates. output/pr396-qa/revisao.md.
+## PR #396 — C6: recuperação autônoma em verificação
+
+Sobre31a9b666, apenas fonte/testes SSE: CLOSED agenda um timer com backoff
+1/2/4/8/16/30s, reset emopen e cancelamento no último unsubscribe. Assinatura
+nova antecipa/cancela; CONNECTING nativo e uma fonte física preservados.
+Callback cancelado/antigo não afeta substituta; falha construtora segue retry.
+EventSource não distingue HTTP de autenticação noerro; rota conserva guarda,
+tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
+RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
+prefer-const na fixture de teardown, corrigido sem alterar produção; lint
+dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
