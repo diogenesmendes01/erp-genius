@@ -29,3 +29,5 @@ Somente os quatro registros específicos das guardas foram autorizados: aba1 em 
 InboxNovo, ConversaAberta, dialogo.ts, BotaoIcone, scripts/visual e quadro global permanecem reservados. O handoff deve montar WhatsApp→setor→Aria→ações→opt-out(não grupo)→triagem, manter aprovação Aria e remover somente triagem duplicada da thread selecionada; a ponte sem seleção deve continuar acessível. Preservar guards de seleção/revogação/rede, estado de leitura e uma montagem da casca.
 
 Resultados, REDs, sessões e filtros em output/inbox-318-report.md. Integração permitida foi somente paineis.int.test.ts no dev-email, após snapshot completo do integrador. Ele restaurou424 tabelas/551 registros e confirmou a fixture307/314 normal. Nenhum servidor/preview, seed307/reset extra, outra suíte DB ou full próprio. Sem aceite visual presumido.
+
+Checkpoint exclusivo64e67072 integrado aos contratos313 no9292dcbc, com registros de guardas preservados. Gates combinados45arquivos448testes/TSC/lint0 observados; não incluem composição ou visual318. Detalhes no relatório. A espera pelo handoff de composição/harness continua explícita, sem presumir conclusão da funcionalidade.

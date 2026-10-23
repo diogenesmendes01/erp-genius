@@ -24,3 +24,11 @@ Gates finais após os quatro registros autorizados:80530/fe07f5 EXIT0,36 arquivo
 Integração com composição do Inbox/triagem/estado da aba após handoff313; BotaoIcone real36/rótulo responsivo, preservando um fechar e a ref; normalização de padding/divisórias de filhos sem perder aprovação Aria/ações/opt-out; CLI painel-detalhes + estados atuais, esperas/hidratação/anonDOM392, capturas app×protótipo e provas de altura500/nomes/tags longas/resize/foco. Sem teste real de geometria ainda. TESTER e global coordenado pendentes. Quadro global reservado ao integrador, não editado nesta fase. Não chamar checkpoint parcial de funcionalidade pronta.
 
 Checkpoint exclusivo será integrado à fonte313585753da por autorização do integrador. Composição ainda exige liberação posterior; scripts/visual permanecem comB durante formal313. Banco dev-email restaurado pelo integrador, nenhuma nova suíteDB/preview permitida neste intervalo.
+
+## Checkpoint e integração de contratos313
+
+Checkpoint exclusivo64e67072f17efdbf8e781798eb7b07adaab4cd02. Merge313585753da concluído em9292dcbc58497461a13a78bb246b3033bcbc0081; nenhum conflito produtivo. Conflitos só em inserções adjacentes dos registros de guardas; preservadas todas as entradas313 e quatro318, nenhum algoritmo alterado. Contrato real BotaoIcone aceita rotulo/ref/tamanho36; ainda não consumido pela casca318 neste checkpoint. Harness313 foi apenas recebido pelo merge e permanece exclusivo doB durante captura, sem edição autoral318.
+
+Após merge: Node22.23.2,92538/704135 EXIT0,45 arquivos448 testes, pastaInbox+Avatar/BotaoIcone/dialogo-retorno+paineis-tags+sete guardas; sem ignorados/maxWorkers2. TSCheap8192 82958/cc7763 EXIT0; lint dirigido9906b1 EXIT0/0avisos. Sem nova suíteDB ou preview. Integração12/12 refere-se ao checkpoint64 com paineis/teste inalterados no merge; não foi repetida na base9292 após restauração do banco. Não é full global.
+
+Composição de InboxNovo/ConversaAberta e consumo doBotaoIcone real aguardam a liberação posterior anunciada pelo integrador. scripts/visual continuam reservados aoB, assim como sua captura3111/DB, que não foram tocados. Fonte combinada sem alteração depois desses gates; apenas esta anotação.
