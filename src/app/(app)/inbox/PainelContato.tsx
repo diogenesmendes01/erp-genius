@@ -37,7 +37,7 @@ export function AbasPainel({ abas, abaAtiva, aoTrocarAba, idBase }: { abas: read
   return <div role="tablist" aria-label="Abas do painel do contato" ref={lista} onKeyDown={teclado} className="flex border-b border-gray-200 px-2 pt-1.5">
     {abas.map(a => <button key={a.id} type="button" role="tab" data-aba={a.id} id={base + "-tab-" + a.id} aria-controls={base + "-conteudo"} aria-selected={a.id === ativa} tabIndex={a.id === ativa ? 0 : -1} onClick={() => aoTrocarAba(a.id)}
       className={"flex h-[38px] flex-auto items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-1.5 text-[13px] font-semibold " + (a.id === ativa ? "border-brand-solid text-gray-800" : "border-transparent text-gray-600")}>
-      {a.rotulo}{a.contagem !== undefined && <span className="rounded-[10px] bg-ai-50 px-1.5 py-px font-mono text-[10.5px] font-medium text-ai-700">{a.contagem}</span>}
+      {a.rotulo}{a.contagem !== undefined && <span className="rounded-[10px] bg-ai-50 px-1.5 py-px font-mono tabular-nums text-[10.5px] font-medium text-ai-700">{a.contagem}</span>}
     </button>)}
   </div>;
 }

@@ -6160,11 +6160,48 @@ DEV102PNG positivas inspecionadas (normal54,longa/corrida42,Triagem6),allowlists
 
 Todos os browsers/previews encerrados. Bancos B/TESTER restaurados424hashes originais,4f3b20/322fb1 saída0 (1372/1386linhas); NextAGENTS só bloco gerado removido. Limites: cincoestadossemreferênciaproto recebemN/A;320x500 exige scrolllocal/Tab em algunsestados,janela61px emlonga,semcabimentoinicialpresumido. Negativos inteiros fora dasallowlists; nenhumenvio/integraçãoexterna/deploy. Pendências: CI do checkout rastreado, revisão GitHub e integração emmain; semmarcarissuefechada ouhomologaçãopresumida. Próximafrentefuncional é #320 após handoff da versão validada.
 
+
+### #320 — código DEV: fecho de componentes/travas, E1 ainda pendente
+
+Base16e PR405. PainelFiltros sem consumidor produtivo removido com3testes/scaffold antigos; provaURLvazia migrada e cobertura atual de setores/chips/número preservada. Guarda inbox-e1 e mono/tabular nos4contadores aprovados (badgeColuna=filtros, pontoSelo intacto). ItemLista/Chip4consumidores/contarNaoLidas compartilhado/ações vivas/C3/R6/SSE mantidos; guardas gerais/mapas/sem-polling revalidados sem relaxamento. REDeb1f6b6falhas→GREEN39bc8c11/69; recorte3291089arquivos/972testes0, typegen/TSC92066heap8192/lint15fontes7e2bc1/diff970b810 Node22.23.2. Semskip adicionado, integração nãoexecutada/semDB/preview/fullpróprio. SPEC docs/specs/inbox-fecho-e1.md e relatório output/inbox-320-report.md. QAexata/global/integrações/matriz164+320×500 e publicação pendentesROOT; NÃOmarcarE1concluída.
 ## PR #405 — C1: incorporar main preservando o quadro
 
 R1 GitHub `5626077684` aprovou o head `16e3298d`; seu único MEDIUM pede trazer main antes do merge. Main consultada `cce21e19` incorporada com dois conflitos exclusivamente no quadro, ambos com lado main vazio. Resolução literal dos seis marcadores preservou o quadro completo e toda a árvore do head aprovado (`655831`, saída 0), antes deste registro. A main e a base #403 `68e95d8e` continuam ancestrais. Somente esta entrada e `output/pr405-qa/revisao.md` acrescentam conteúdo; código, testes, scripts, schema e dependências permanecem idênticos. Os PNGs antigos da #298 continuam ausentes. Sem repetir gates por documentação; resultados anteriores permanecem nominais às suas fontes. CI final e integração dos predecessores, incluindo B2 humano da #392, pendentes; nenhuma issue marcada concluída. LOW C2 não implementado conforme autorização.
 
 
+### #320 — primeiraINTROOT falhou por asserçãoSSE de substring; testfix separado
+
+ROOTb509: unidade904/7102,TSC/lintmax40 todos0; INT80680EXIT1 com15arquivos14pass1fail/138testes137pass1fail. Teste de privacidade confundiu trecho u9 permitido emIDpúblico com campo privado. Testfix sóunit/int: parse event/data/terminadores/JSON público+ausência propriedadeprivada; formatter/filtro/app intactos. SeteunitáriosSSEoriginais preservados+1causal: RED4e146a7pass1fail→GREENc0fe9a4arquivos/37testes0; TSC50335heap8192/lintbed2e5/diff74e7520 Node22.23.2. SemDBDEV/preview. SSEintdirigida+15rerun/novoGlobal/QA/matriz164 aguardamROOT; E1nãohomologada.
+
+
+### #320 — entrega DEV visual final e gatesROOT442d observados
+
+FonteOWN491 imutável/produção byteigualb509/ROOT442d. Formal36201 saída0:164PNG100APP64proto/20estados/6N/A; complemento91340 saída0:40contextos88PNG/limiares320..1440/altura500/doistemas,252originais inspecionados51pranchas/23.322.166B. Tabela100linhas em output/inbox-320-app-prototipo.json com diferenças/N/A e limites explícitos dos dois errodesktopdark com outro setor ainda emloading. 1440real224/372/348/header68/buscaLista38/chip28/padding11-10/editor44;320textarea80×44integral/scrollnativo/Tabações alcançáveis/document500/y0. Tipografiacomcontagemreal5chips+1pílula+1badgeFiltro,abaDetalhessemcountN/A+SSR,ponto8pxsemmono. Semsubmit/React/externo;SSEmáx1/ativa1/2construídas sequenciais. Negativo32366inteiro excluído, probe privado corrigido semprodutivo.
+
+ROOT442d informou todosTERM0:unit69820904/7103maxWorkers2,TSC5809heap8192,lint89210max40(40avisos),SSEint5423/11,15INT78114/138maxWorkers1. Primeira80680EXIT1/137+1flaky continua histórica;491sótestfixSSE+docs. QA4914/37+estático32012/161+3/24 favoráveis, fonte/executores distintos das fotos491. Allowlists formal164/complemento88+índice51pranchas/métricas/tabela curados,semPNG/raw/scripts emGit. ROOTstop8165/465168 e restoreA defae5 saída0/424hashes551originais; browsersfechados/AGENTSsóNextrestaurado. CI/artefato remoto/publicação/aceitefinal pendentesROOT; não iniciarE2nem presumirhomologação.
+
+### #320 — fecho técnico E1 preparado para PR
+
+Composição ROOT 7a037ad integra os documentos DEV9802809; código, scripts, schema, dependências e AGENTS continuam idênticos a442d dos gates aprovados (b2eec5/4794a9, saída0). Global:904arquivos/7.103testes; integração do recorte Inbox:15arquivos/138testes; TSC e lint completo0 com40avisos. Falha histórica80680 preservada; patch491 corrigiu apenas a asserçãoSSE e manteve os sete casos anteriores, sem alteração do formatador/autorização.
+
+QA independente: estática b509, testfix491 e visual491 favoráveis. TESTER53837/ce150f saída0;12PNG inspecionadas, placeholder320×500 com rolagem interna nativa, campo/botões inteiros e Tab acessível. Somadas às164formais/88complementares DEV, são264PNG positivas; tabela100 com64referências e36N/A. Duas fotos de erro têm outra região ainda carregando, explicitada por nome; nenhuma estabilidade global foi presumida.
+
+Pacote imutável inbox-320-evidencias-442d.zip:23.677.284bytes/272entradas, SHA d4f0168d80a248b081adaa1fabca426b789734aee7b0d0c53cdcdfe54cf5c0a4. Release DRAFT33f312, upload6f5778/download0785d3 saída0 com bytes/SHA/sidecar iguais. Auditoria LOCAL independente do TESTER saída0:271hashes/bytes, três allowlists originais, tabela/bijeção164, ausência de extras/duplicações de caminhos/traversal/proibidos;14pares de conteúdoPNG idêntico em estados diferentes são declarados. Parecer output/inbox-320-pacote-review-tester.md; roundtrip remoto atribuído ao ROOT.
+
+Previews/browsers encerrados, bancos A551/TESTER1386 restaurados com424hashes originais (defae5/fa0de1); somente blocoNext gerado removido deAGENTS. Nenhum envio real, integração externa ou deploy. Fecho técnico autoriza preparar as próximas duas frentes E2 após o PR concreto; CI/revisão GitHub/dependências/merge emmain continuam pendentes. A issue320 não está fechada nem homologada em produção.
+
+### PR406 — todos os comentários, patch C3 e avaliação C4
+
+Revisão5626682648: retirado somente testeSSEpuramenteunitário duplicado da suíte
+INT; negativa estrutural e IDs públicosu9 permanecem no unitário. Produtor e
+unitário byteidênticos à publicação1bb. ROOT:8unitários0/aae707;10INTrestantes
+completos0/sessão4022/72c72e/28,68s/perfilintegracao487/maxWorkers1;
+TSC98906/9564e30 e lintarquivo5f8dc40. Redução11→10INTintencional, semnovo teste.
+C4avaliado13outputs(7JSON13046linhas/6MD209linhas): mantidos para auditoria dos
+aceites320 e links públicos aoZIP/fontes, semnovoPNG/dump/credencial/probe.
+C2tabelacorpojáatendida, C1CI/maincontinua gate. Relatório
+output/inbox-pr406-review-todos.md; patchaindaprecisaQA/aplicaçãonafontefinal406.
+Não marcar issue320novamente concluída nem atribuir a CI remota a este recorte.
 ## PR405 — todos os comentários da revisão
 
 C2LOWavaliado:21outputs/4863linhas(8JSON4355+13MD508), incluindo15linhasda posteriorrevisao.md. Mantidos registrosfontes/medidas/allowlistsporqueZIP319histórico(140PNG+8MD+manifesto)não duplicaindividualmenteessesJSON. NenhumPNG/execução/browser/downloadnovo. Registro output/inbox-pr405-review-todos.md. C1main/CI/QAfinalapóspaispermanece gate, preservandoQA280/planejamento297/correçõespredecessoras. PatchsomenteMD, código/config/imagensidênticos4af;semnovotesteboboparadocumentação.
@@ -6343,6 +6380,14 @@ QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compos
 ## PR #405 — estados319 compostos e QA favorável
 
 Fonte101c6618:patch73c7/c3+4033e40;1blocoquadroconservaambos, estados/harness319 ecompositor403preservados, sóJSDocalias400backend. Próprio15/237c5f75a,TSC26774/a8d1a3,lint79756/0ea74b terminais0/40avisos. QApatch73favorávelhash0b45...eQAcomposta101favorávelhashcb91772b...versionadas;pareceressemnovotestesDB/browser. C2LOWinventário/custódiaevidênciasexplicitados, C1main/pais403/CI405aindagates. Fonte101preservadaapósMD,nenhumE2antecipado/DB/envio/install/migração. output/pr405-qa/composicao-todos.md.
+
+## PR #406 — composição e integração SSE final
+
+Fonte95fb5e23:cherrySOMENTEd36→8a67sobre1bb+4053bd;quadrocherryapenasentry40613linhassemcontexto323;merge1blocopreservaambos. Unitário5/11715042f,TSC67467/e912cc,lint73890/0539f3terminals0/40. INTeventosssecompleto1/10sessão21775/5d3e46033,05s,perfilciintexclusivo,maxWorkers1/configfechada,semfiltro/skips/clusterchange/migration/provider. C3INTpuraduplicadafoiretirada,unit8preservados. QApatchd36favorávelhash90c442...versionada;C2tabela20estados100APP64refs36NApreservada/C4inventárioavaliado. QAcomposta/405main/CI406aindagates;nenhumE2antecipado,output/pr406-qa/composicao-todos.md.
+
+## PR #406 — QA composta favorável
+
+QA95ffavorávelestática/hash320755...versionada tester-composicao-95f.md;INT10/unit8exatosd36/negativaprivacidadepreservada,sem323ouDDLfuturo. ProdutorInbox/schema8a e pais405/Shift/Pick/B2preservados. SemnovaexecuçãoDB/testesdoparecer;fonte95preservadaapósregistrosMD,405main/CI406aindagates.
 ## PR #399 integrada; PR401 pronta para CI final
 
 #399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
@@ -6358,3 +6403,7 @@ Fonte101c6618:patch73c7/c3+4033e40;1blocoquadroconservaambos, estados/harness319
 ## PR #403 integrada; PR405 pronta para CI final
 
 #403 squash713dca8d219af6b58a35f83a9f2c6091789a1f31, CI40024011516success5/5, QA695bfavorável, issue317CLOSEDconfirmada. Squashtreeigual7a7;incorporação405INDEXINTEIROigual89f8 após8conflitos deancestralidade. Fonte101/QA cb917/15-237/TSC/lint40preservados,apenasMDdepoisgates;CI405main2TZaindapendente,semfechar319antecipadamente.
+
+## PR #405 integrada; PR406 pronta para CI final
+
+#405 squasha38797801128fd99aed392cdb27d8ed60972860d, CI40025543009success5/5, QAcb917favorável, issue319CLOSEDconfirmada. Squashtreeigualf3d4;incorporação406INDEXINTEIROigual58b984após1conflitoquadroporancestralidade. Fonte95/QA320755/unit5-117/INT1-10/TSC/lint40preservados. Tabela20estados100APP64refs36NAe14paresidênticosdeclaradosmantidos;CI406main2TZaindapendente,semfechar320antecipadamente.

@@ -1,0 +1,1684 @@
+{
+  "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "total": 100,
+  "comparaveis": 64,
+  "NA": 36,
+  "estadosNA": [
+    "carregando",
+    "painel-erro",
+    "thread-erro",
+    "painel-vazio",
+    "busca-conversa",
+    "sem-selecao"
+  ],
+  "linhas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "carregando",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-carregando.png",
+      "prototipo": null,
+      "motivoNA": "Fallback real da página não é desenhado no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha carregando-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Fallback real da página não é desenhado no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "carregando",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-carregando.png",
+      "prototipo": null,
+      "motivoNA": "Fallback real da página não é desenhado no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha carregando-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Fallback real da página não é desenhado no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "carregando",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-carregando.png",
+      "prototipo": null,
+      "motivoNA": "Fallback real da página não é desenhado no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha carregando-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Fallback real da página não é desenhado no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "carregando",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-carregando.png",
+      "prototipo": null,
+      "motivoNA": "Fallback real da página não é desenhado no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha carregando-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Fallback real da página não é desenhado no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "carregando",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-carregando.png",
+      "prototipo": null,
+      "motivoNA": "Fallback real da página não é desenhado no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha carregando-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Fallback real da página não é desenhado no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "carregando",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-carregando.png",
+      "prototipo": null,
+      "motivoNA": "Fallback real da página não é desenhado no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha carregando-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Fallback real da página não é desenhado no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte do painel não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-erro-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte do painel não é desenhada no protótipo."
+      ],
+      "observacoes": [
+        "O setor de thread ainda mostra skeleton nesta foto; a foto prova o erro do painel, não a conclusão da carga independente da thread."
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-painel-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte do painel não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-erro-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte do painel não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-painel-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte do painel não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-erro-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte do painel não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte do painel não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-erro-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte do painel não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-painel-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte do painel não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-erro-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte do painel não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-painel-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte do painel não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-erro-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte do painel não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "thread-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-thread-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte da thread não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha thread-erro-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte da thread não é desenhada no protótipo."
+      ],
+      "observacoes": [
+        "O setor de detalhes ainda carrega nesta foto; a foto prova o erro da thread, não a conclusão da carga independente do painel."
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "thread-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-thread-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte da thread não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha thread-erro-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte da thread não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "thread-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-thread-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte da thread não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha thread-erro-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte da thread não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "thread-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-thread-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte da thread não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha thread-erro-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte da thread não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "thread-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-thread-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte da thread não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha thread-erro-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte da thread não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "thread-erro",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-thread-erro.png",
+      "prototipo": null,
+      "motivoNA": "Falha de transporte da thread não é desenhada no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha thread-erro-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Falha de transporte da thread não é desenhada no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-vazio",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-vazio.png",
+      "prototipo": null,
+      "motivoNA": "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-vazio-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-vazio",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-painel-vazio.png",
+      "prototipo": null,
+      "motivoNA": "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-vazio-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-vazio",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-painel-vazio.png",
+      "prototipo": null,
+      "motivoNA": "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-vazio-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-vazio",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-vazio.png",
+      "prototipo": null,
+      "motivoNA": "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-vazio-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-vazio",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-painel-vazio.png",
+      "prototipo": null,
+      "motivoNA": "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-vazio-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-vazio",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-painel-vazio.png",
+      "prototipo": null,
+      "motivoNA": "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha painel-vazio-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nota",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-nota.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-nota.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nota-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Modo Nota real sem mídia e com aviso de equipe; protótipo conserva ações/menções ilustrativas. Nenhuma nota foi registrada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nota",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-nota.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-nota.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nota-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Modo Nota real sem mídia e com aviso de equipe; protótipo conserva ações/menções ilustrativas. Nenhuma nota foi registrada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nota",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-nota.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-nota.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nota-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Modo Nota real sem mídia e com aviso de equipe; protótipo conserva ações/menções ilustrativas. Nenhuma nota foi registrada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nota",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-nota.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-nota.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nota-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Modo Nota real sem mídia e com aviso de equipe; protótipo conserva ações/menções ilustrativas. Nenhuma nota foi registrada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nota",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-nota.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-nota.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nota-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Modo Nota real sem mídia e com aviso de equipe; protótipo conserva ações/menções ilustrativas. Nenhuma nota foi registrada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nota",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-nota.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-nota.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nota-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Modo Nota real sem mídia e com aviso de equipe; protótipo conserva ações/menções ilustrativas. Nenhuma nota foi registrada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "busca-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-busca-conversa.png",
+      "prototipo": null,
+      "motivoNA": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "inspecao": "inspecionado visualmente em prancha busca-conversa-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Busca local E1 não tem comportamento equivalente no protótipo aprovado."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "busca-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-busca-conversa.png",
+      "prototipo": null,
+      "motivoNA": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "inspecao": "inspecionado visualmente em prancha busca-conversa-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Busca local E1 não tem comportamento equivalente no protótipo aprovado."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "busca-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-busca-conversa.png",
+      "prototipo": null,
+      "motivoNA": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "inspecao": "inspecionado visualmente em prancha busca-conversa-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Busca local E1 não tem comportamento equivalente no protótipo aprovado."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "busca-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-busca-conversa.png",
+      "prototipo": null,
+      "motivoNA": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "inspecao": "inspecionado visualmente em prancha busca-conversa-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Busca local E1 não tem comportamento equivalente no protótipo aprovado."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "busca-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-busca-conversa.png",
+      "prototipo": null,
+      "motivoNA": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "inspecao": "inspecionado visualmente em prancha busca-conversa-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Busca local E1 não tem comportamento equivalente no protótipo aprovado."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "busca-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-busca-conversa.png",
+      "prototipo": null,
+      "motivoNA": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "inspecao": "inspecionado visualmente em prancha busca-conversa-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Busca local E1 não tem comportamento equivalente no protótipo aprovado."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP usa conversa autorizada da fixture local, capacidades e estado reais; protótipo mostra aprovação Aria ilustrativa. Não há equivalência de conteúdo/ações externas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP usa conversa autorizada da fixture local, capacidades e estado reais; protótipo mostra aprovação Aria ilustrativa. Não há equivalência de conteúdo/ações externas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP usa conversa autorizada da fixture local, capacidades e estado reais; protótipo mostra aprovação Aria ilustrativa. Não há equivalência de conteúdo/ações externas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP usa conversa autorizada da fixture local, capacidades e estado reais; protótipo mostra aprovação Aria ilustrativa. Não há equivalência de conteúdo/ações externas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP usa conversa autorizada da fixture local, capacidades e estado reais; protótipo mostra aprovação Aria ilustrativa. Não há equivalência de conteúdo/ações externas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP usa conversa autorizada da fixture local, capacidades e estado reais; protótipo mostra aprovação Aria ilustrativa. Não há equivalência de conteúdo/ações externas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-menu-mais.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-menu-mais.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha menu-mais-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Menu projeta capacidades atuais do ERP, separadores e indisponibilidade MOTOR; ações ilustrativas criar tarefa/exportar/mesclar do protótipo ficam fora da E1."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-menu-mais.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-menu-mais.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha menu-mais-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Menu projeta capacidades atuais do ERP, separadores e indisponibilidade MOTOR; ações ilustrativas criar tarefa/exportar/mesclar do protótipo ficam fora da E1."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-menu-mais.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-menu-mais.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha menu-mais-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Menu projeta capacidades atuais do ERP, separadores e indisponibilidade MOTOR; ações ilustrativas criar tarefa/exportar/mesclar do protótipo ficam fora da E1."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-menu-mais.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-menu-mais.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha menu-mais-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Menu projeta capacidades atuais do ERP, separadores e indisponibilidade MOTOR; ações ilustrativas criar tarefa/exportar/mesclar do protótipo ficam fora da E1."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-menu-mais.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-menu-mais.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha menu-mais-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Menu projeta capacidades atuais do ERP, separadores e indisponibilidade MOTOR; ações ilustrativas criar tarefa/exportar/mesclar do protótipo ficam fora da E1."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-menu-mais.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-menu-mais.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha menu-mais-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Menu projeta capacidades atuais do ERP, separadores e indisponibilidade MOTOR; ações ilustrativas criar tarefa/exportar/mesclar do protótipo ficam fora da E1."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-detalhes.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-painel-detalhes.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-detalhes-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Só aba Detalhes entregue na E1, tags autorizadas e campos existentes; protótipo também desenha abas/funil/campos futuros. Overlay tablet e vista celular preservados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-painel-detalhes.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-painel-detalhes.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-detalhes-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Só aba Detalhes entregue na E1, tags autorizadas e campos existentes; protótipo também desenha abas/funil/campos futuros. Overlay tablet e vista celular preservados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-painel-detalhes.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-painel-detalhes.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-detalhes-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Só aba Detalhes entregue na E1, tags autorizadas e campos existentes; protótipo também desenha abas/funil/campos futuros. Overlay tablet e vista celular preservados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-detalhes.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-painel-detalhes.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-detalhes-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Só aba Detalhes entregue na E1, tags autorizadas e campos existentes; protótipo também desenha abas/funil/campos futuros. Overlay tablet e vista celular preservados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-painel-detalhes.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-painel-detalhes.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-detalhes-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Só aba Detalhes entregue na E1, tags autorizadas e campos existentes; protótipo também desenha abas/funil/campos futuros. Overlay tablet e vista celular preservados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-painel-detalhes.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-painel-detalhes.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-detalhes-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Só aba Detalhes entregue na E1, tags autorizadas e campos existentes; protótipo também desenha abas/funil/campos futuros. Overlay tablet e vista celular preservados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-fechado",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-fechado.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-painel-fechado.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-fechado-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Fechamento amplia a thread e revela textos conforme largura útil do header; conteúdo/ações refletem capacidades reais."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-fechado",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-fechado.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-painel-fechado.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha painel-fechado-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Fechamento amplia a thread e revela textos conforme largura útil do header; conteúdo/ações refletem capacidades reais."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "sem-selecao",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-sem-selecao.png",
+      "prototipo": null,
+      "motivoNA": "Sem seleção E1 não tem referência funcional equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha sem-selecao-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Sem seleção E1 não tem referência funcional equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "sem-selecao",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-sem-selecao.png",
+      "prototipo": null,
+      "motivoNA": "Sem seleção E1 não tem referência funcional equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha sem-selecao-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Sem seleção E1 não tem referência funcional equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "sem-selecao",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-sem-selecao.png",
+      "prototipo": null,
+      "motivoNA": "Sem seleção E1 não tem referência funcional equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha sem-selecao-escuro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Sem seleção E1 não tem referência funcional equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "sem-selecao",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-sem-selecao.png",
+      "prototipo": null,
+      "motivoNA": "Sem seleção E1 não tem referência funcional equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha sem-selecao-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Sem seleção E1 não tem referência funcional equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "sem-selecao",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-sem-selecao.png",
+      "prototipo": null,
+      "motivoNA": "Sem seleção E1 não tem referência funcional equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha sem-selecao-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Sem seleção E1 não tem referência funcional equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "sem-selecao",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-sem-selecao.png",
+      "prototipo": null,
+      "motivoNA": "Sem seleção E1 não tem referência funcional equivalente no protótipo.",
+      "inspecao": "inspecionado visualmente em prancha sem-selecao-claro",
+      "parecer": "Estado APP conferido; referência funcional N/A.",
+      "diferencasJustificadas": [
+        "Sem seleção E1 não tem referência funcional equivalente no protótipo."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-humano-compositor.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-humano-compositor.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha humano-compositor-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Responder/Nota e compositor reais preservados. Fixture APP inclui autores Você/Camila/Carlos e notas314; agendamento ilustrativo do protótipo não foi criado nem enviado no ERP."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-humano-compositor.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-humano-compositor.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha humano-compositor-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Responder/Nota e compositor reais preservados. Fixture APP inclui autores Você/Camila/Carlos e notas314; agendamento ilustrativo do protótipo não foi criado nem enviado no ERP."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-humano-compositor.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-humano-compositor.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha humano-compositor-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Responder/Nota e compositor reais preservados. Fixture APP inclui autores Você/Camila/Carlos e notas314; agendamento ilustrativo do protótipo não foi criado nem enviado no ERP."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-humano-compositor.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-humano-compositor.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha humano-compositor-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Responder/Nota e compositor reais preservados. Fixture APP inclui autores Você/Camila/Carlos e notas314; agendamento ilustrativo do protótipo não foi criado nem enviado no ERP."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-humano-compositor.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-humano-compositor.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha humano-compositor-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Responder/Nota e compositor reais preservados. Fixture APP inclui autores Você/Camila/Carlos e notas314; agendamento ilustrativo do protótipo não foi criado nem enviado no ERP."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-humano-compositor.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-humano-compositor.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha humano-compositor-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Responder/Nota e compositor reais preservados. Fixture APP inclui autores Você/Camila/Carlos e notas314; agendamento ilustrativo do protótipo não foi criado nem enviado no ERP."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-filtros.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-filtros.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha filtros-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP filtra setores/status existentes; protótipo ilustra etapas/tags/tipos futuros. Aplicar filtros reais altera seleção/lista conforme contrato313, sem criar dados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-filtros.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-filtros.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha filtros-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP filtra setores/status existentes; protótipo ilustra etapas/tags/tipos futuros. Aplicar filtros reais altera seleção/lista conforme contrato313, sem criar dados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-filtros.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-filtros.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha filtros-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP filtra setores/status existentes; protótipo ilustra etapas/tags/tipos futuros. Aplicar filtros reais altera seleção/lista conforme contrato313, sem criar dados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-filtros.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-filtros.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha filtros-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP filtra setores/status existentes; protótipo ilustra etapas/tags/tipos futuros. Aplicar filtros reais altera seleção/lista conforme contrato313, sem criar dados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-filtros.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-filtros.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha filtros-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP filtra setores/status existentes; protótipo ilustra etapas/tags/tipos futuros. Aplicar filtros reais altera seleção/lista conforme contrato313, sem criar dados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-filtros.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-filtros.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha filtros-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP filtra setores/status existentes; protótipo ilustra etapas/tags/tipos futuros. Aplicar filtros reais altera seleção/lista conforme contrato313, sem criar dados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-seletor-numero.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-seletor-numero.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha seletor-numero-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mostra canal fictício desconectado existente, sem conexão externa; protótipo ilustra quatro canais conectados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-seletor-numero.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-seletor-numero.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha seletor-numero-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mostra canal fictício desconectado existente, sem conexão externa; protótipo ilustra quatro canais conectados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-seletor-numero.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-seletor-numero.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha seletor-numero-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mostra canal fictício desconectado existente, sem conexão externa; protótipo ilustra quatro canais conectados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-seletor-numero.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-seletor-numero.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha seletor-numero-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mostra canal fictício desconectado existente, sem conexão externa; protótipo ilustra quatro canais conectados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-seletor-numero.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-seletor-numero.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha seletor-numero-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mostra canal fictício desconectado existente, sem conexão externa; protótipo ilustra quatro canais conectados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-seletor-numero.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-seletor-numero.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha seletor-numero-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mostra canal fictício desconectado existente, sem conexão externa; protótipo ilustra quatro canais conectados."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-nova-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-nova-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nova-conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mantém finalidade/destinatário/canal e autorização existentes; protótipo ilustra criação/catálogo futuro. Nenhum atendimento foi aberto."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-nova-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-nova-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nova-conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mantém finalidade/destinatário/canal e autorização existentes; protótipo ilustra criação/catálogo futuro. Nenhum atendimento foi aberto."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-nova-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-nova-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nova-conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mantém finalidade/destinatário/canal e autorização existentes; protótipo ilustra criação/catálogo futuro. Nenhum atendimento foi aberto."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-nova-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-nova-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nova-conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mantém finalidade/destinatário/canal e autorização existentes; protótipo ilustra criação/catálogo futuro. Nenhum atendimento foi aberto."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-nova-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-nova-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nova-conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mantém finalidade/destinatário/canal e autorização existentes; protótipo ilustra criação/catálogo futuro. Nenhum atendimento foi aberto."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-nova-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-nova-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha nova-conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "ERP mantém finalidade/destinatário/canal e autorização existentes; protótipo ilustra criação/catálogo futuro. Nenhum atendimento foi aberto."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "lista-vazia",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-desktop-lista-vazia.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-lista-vazia.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha lista-vazia-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Busca zzzz produz vazio real com contagens compatíveis; protótipo mantém thread demonstrativa enquanto APP limpa seleção conforme navegação real."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "lista-vazia",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-lista-vazia.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-lista-vazia.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha lista-vazia-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Busca zzzz produz vazio real com contagens compatíveis; protótipo mantém thread demonstrativa enquanto APP limpa seleção conforme navegação real."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "lista-vazia",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-lista-vazia.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-lista-vazia.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha lista-vazia-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Busca zzzz produz vazio real com contagens compatíveis; protótipo mantém thread demonstrativa enquanto APP limpa seleção conforme navegação real."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "lista-vazia",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-desktop-lista-vazia.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-lista-vazia.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha lista-vazia-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Busca zzzz produz vazio real com contagens compatíveis; protótipo mantém thread demonstrativa enquanto APP limpa seleção conforme navegação real."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "lista-vazia",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-lista-vazia.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-lista-vazia.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha lista-vazia-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Busca zzzz produz vazio real com contagens compatíveis; protótipo mantém thread demonstrativa enquanto APP limpa seleção conforme navegação real."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "lista-vazia",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-lista-vazia.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-lista-vazia.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha lista-vazia-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Busca zzzz produz vazio real com contagens compatíveis; protótipo mantém thread demonstrativa enquanto APP limpa seleção conforme navegação real."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-celular-lista.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-celular-lista.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha celular-lista-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Lista real com chips/contagens e estados ERP; protótipo ilustra filtros/Aria e navegação inferior futuros."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-celular-lista.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-celular-lista.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha celular-lista-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Lista real com chips/contagens e estados ERP; protótipo ilustra filtros/Aria e navegação inferior futuros."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-celular-painel.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-celular-painel.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha celular-painel-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Painel real só Detalhes/tags autorizadas, sem criar abas futuras; navegação ERP global preservada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-celular-painel.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-celular-painel.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha celular-painel-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Painel real só Detalhes/tags autorizadas, sem criar abas futuras; navegação ERP global preservada."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-celular-celular-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-celular-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha celular-conversa-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP conserva header/mobile global ERP e compositor humano da conversa real; protótipo exibe aprovação Aria e navegação inferior ilustrativas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-celular-celular-conversa.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-celular-conversa.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha celular-conversa-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "APP conserva header/mobile global ERP e compositor humano da conversa real; protótipo exibe aprovação Aria e navegação inferior ilustrativas."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-escuro-tablet-tablet-painel.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-tablet-painel.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha tablet-painel-escuro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Overlay real segue espaço útil/Sidebar224 e corte1400; protótipo desenha navegação compacta e abas futuras. Fundo real isolado durante modal."
+      ],
+      "observacoes": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "app": "output/inbox-320-probes/formal-r1/app-claro-tablet-tablet-painel.png",
+      "prototipo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-tablet-painel.png",
+      "motivoNA": null,
+      "inspecao": "inspecionado visualmente em prancha tablet-painel-claro",
+      "parecer": "Estado e hierarquia visual conferidos; diferenças de contrato explicitadas.",
+      "diferencasJustificadas": [
+        "Sidebar ERP224 e barra móvel existentes preservadas; não se copiou navegação do protótipo. Dados locais fictícios e relógio real podem mudar textos/contagens; sem equivalência pixel a pixel.",
+        "Overlay real segue espaço útil/Sidebar224 e corte1400; protótipo desenha navegação compacta e abas futuras. Fundo real isolado durante modal."
+      ],
+      "observacoes": []
+    }
+  ]
+}

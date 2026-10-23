@@ -88,7 +88,4 @@ describe("formato SSE", () => {
   it("event + data + linha em branco", () => {
     expect(formatarSSE(aviso(a))).toBe(`event: mensagem.nova\ndata: ${JSON.stringify(aviso(a))}\n\n`);
   });
-  it("o destinatário de um aviso direcionado não sai no quadro", () => {
-    expect(formatarSSE({ ...aviso(a), tipo: "atendimento.atualizado", mensagemId: null, paraUsuarioId: "u9" })).not.toContain("u9");
-  });
 });

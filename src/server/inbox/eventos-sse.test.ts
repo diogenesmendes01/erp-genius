@@ -78,3 +78,16 @@ describe("formatarSSE", () => {
     expect(quadro.endsWith("\n\n")).toBe(true);
   });
 });
+
+it("IDs públicos podem conter o trecho do destinatário sem vazá-lo", () => {
+  const publico = { tipo: "atendimento.atualizado" as const, atendimentoId: "atendimento-u9", conversaId: "conversa-u9", mensagemId: null };
+  const quadro = formatarSSE({ ...publico, paraUsuarioId: "u9" });
+  const linhas = quadro.split("\n");
+  expect(linhas).toHaveLength(4);
+  expect(linhas[0]).toBe("event: atendimento.atualizado");
+  expect(linhas[1]).toMatch(/^data: /);
+  expect(linhas.slice(2)).toEqual(["", ""]);
+  const dados = JSON.parse(linhas[1].slice("data: ".length));
+  expect(dados).toEqual(publico);
+  expect(dados).not.toHaveProperty("paraUsuarioId");
+});

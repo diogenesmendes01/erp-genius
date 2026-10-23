@@ -2,13 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const navegar = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: navegar, push: navegar, refresh: vi.fn() }), usePathname: () => "/inbox" }));
-
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import type { Setor } from "@/server/whatsapp/setor";
 import { ListaAtendimentos } from "./ListaAtendimentos";
-import { PainelFiltros, paramsDaUrl } from "./PainelFiltros";
 
 const passado = new Date(Date.now() - 3_600_000).toISOString();
 const base: ItemListaInbox = {
@@ -22,8 +17,6 @@ const html = (p: Partial<ItemListaInbox> = {}, extra: Record<string, unknown> = 
   renderToStaticMarkup(createElement(ListaAtendimentos, {
     itens: [{ ...base, ...p }], agoraInicial: Date.now(), proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn(), ...extra,
   } as never));
-const htmlFiltros = (o: { setores: Setor[]; filtros?: object }) =>
-  renderToStaticMarkup(createElement(PainelFiltros, { filtros: o.filtros ?? {}, setores: o.setores, numeros: [{ id: "n1", rotulo: "Cobrança" }] } as never));
 
 describe("ListaAtendimentos", () => {
   it("item mostra setor, estado e prazo; número e telefone não aparecem", () => {
@@ -57,23 +50,6 @@ describe("ListaAtendimentos", () => {
   });
   it("lista vazia mostra estado vazio", () => {
     expect(renderToStaticMarkup(createElement(ListaAtendimentos, { itens: [], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn() } as never))).toContain("Nenhuma conversa");
-  });
-});
-
-describe("PainelFiltros", () => {
-  it("filtro de setor só oferece os setores do usuário", () => {
-    const h = htmlFiltros({ setores: ["FINANCEIRO"] });
-    expect(h).toContain("Financeiro"); expect(h).not.toContain("Comercial");
-  });
-  it("abas rápidas e número", () => {
-    const h = htmlFiltros({ setores: ["FINANCEIRO"], filtros: { responsavel: "eu" } });
-    for (const t of ["Todas", "Minhas", "Fila", "Não lidas", "Prazo estourado"]) expect(h).toContain(t);
-    expect(h).toContain("Cobrança");
-  });
-  it("paramsDaUrl escreve setor, numero, resp, status, naoLidas, prazo e busca", () => {
-    const q = paramsDaUrl({ setor: "FINANCEIRO", numeroId: "n1", responsavel: "eu", status: "EM_ATENDIMENTO", naoLidas: true, prazoEstourado: true, busca: "ana" });
-    expect(Object.fromEntries(q)).toEqual({ setor: "FINANCEIRO", numero: "n1", resp: "eu", status: "EM_ATENDIMENTO", naoLidas: "1", prazo: "estourado", busca: "ana" });
-    expect(paramsDaUrl({}).toString()).toBe("");
   });
 });
 

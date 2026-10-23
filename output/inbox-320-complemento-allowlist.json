@@ -1,0 +1,1340 @@
+{
+  "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "equivalencia": {
+    "origemProduto": "b5094856c326c4fdf559b1833dbe0827868b591a",
+    "composicaoRoot": "442d1a665e82c7376ce7e8707b3a4d365257c7db",
+    "limite": "Produção byteigual; fotos pertencem somente à fonte OWN491, não à HEADROOT442d."
+  },
+  "executor": "91340",
+  "previewRoot": "8165",
+  "totalBytes": 6544458,
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1440x900-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "24e99694c425b03c7937e60635b680894d01c61b7fb1797e4eea3d1f90c912c3",
+      "bytes": 190253,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1440x900-filtro-real.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "abe9eead0b855d8dc65d1dfed295a4a883c65f511f24bf29c4c411d0a4f588b7",
+      "bytes": 118205,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "filtro-Comercial-real",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1440x900-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "bde81e01a26424722c67447833dc5a5f6f614bed4afd85d7d7327766bb88bf9f",
+      "bytes": 168949,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "6a326c23645974967c406de50c78b4fca8b0885294d3c0b9cec5970301cb64b7",
+      "bytes": 25792,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-textarea-inicio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8af7f8b4ced7972c08a8452fcdb4978c0067605405700967d8f2e10dd8fe1f63",
+      "bytes": 27617,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "textarea-rolagem-nativa",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-textarea-fim.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b13669265c5e2b2b34fa4de70652252d068f3577902234aba2d6f67159d21453",
+      "bytes": 27363,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "textarea-rolagem-nativa",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-rodape-apos-tab.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "125e114d4140c481662a35d2c18e8dbbcd95f3845abee6fe1439bb3adbe1cd2e",
+      "bytes": 27328,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "rodape-Tab",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e02f552907b6a8737037a61e99c4363158d0697fc9ab0d4e1598f7a8ff82b085",
+      "bytes": 29006,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-390x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a75b6ecdfa96f9da37adf0641c87d74cb7aadf8cc8ef78adc4f4e478cf2595af",
+      "bytes": 29550,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "390x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-390x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "831d8aaaff1c86f3320ff0c29a7f8ba14ec77ec188db6279de3b590c6bcf91a9",
+      "bytes": 32890,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "390x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-699x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "829fce5829a1cce46743167121a90d676b3b4363126394833f6e898577757429",
+      "bytes": 33984,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "699x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-699x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0b4fad0f8b2e5506ed21b3d5c771aa80f8120c2595d7740c43f1fc33f8e7ac64",
+      "bytes": 37000,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "699x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-700x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "13f86892325960a77522947ff326f08793a23e44677fa28457f03955b2e33034",
+      "bytes": 35077,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "700x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-700x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "886e91d8e9ccedc4a66a46515eead61dacd0c02397808f7f84207fb82fb62647",
+      "bytes": 38233,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "700x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-767x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5b3161a2bfef7b7e8a5b502a8f7c426c5144932c7b18b4341501348bcfcb6e20",
+      "bytes": 35605,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "767x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-767x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a89d7d17b5c72815332e51159127a0b66c6c354300e487f717468a61b720f93c",
+      "bytes": 38853,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "767x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-768x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7d3c01d79fcec9b408c35786cbb5630ab5679a3baeca3263cd2c9b7c50424f17",
+      "bytes": 49621,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "768x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-768x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d105539695bf58b3a9509381229aa5576514c749248269810ff201de57c71050",
+      "bytes": 52143,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "768x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-959x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5e047ce6a41763d054a985ca38b47cb9be242e76fa9adee8af8da566cd871e55",
+      "bytes": 52260,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "959x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-959x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b7a753560db84dc9a7e1729d9875a1e17345f90e4cd2d587a0a6f24b483c1e6f",
+      "bytes": 54813,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "959x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-960x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "87710848dbfd5b55a9fc075b18455e4668e7472b55cb2a99244b1fc484192306",
+      "bytes": 84631,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "960x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-960x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "4213e6b31df4b9da731e3d421fab88184fbdc5dd6a6ba765ee0b0c19ffbd4516",
+      "bytes": 86177,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "960x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1024x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5989c842765fab6e85c0c01298709172378c8a0d78200aa7e9cf1efbb1741448",
+      "bytes": 85707,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1024x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1024x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "12975b05089cb78eef8f6fb1aa713f4d5ac2ac01b51b8ef8c7dad35dddf6da5d",
+      "bytes": 87073,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1024x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1099x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c0d0bf3940de52aaa15502a84c3224b95e861878a4a5b01d7fec46d851035f6a",
+      "bytes": 87110,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1099x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1099x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d191a91c6e152c30c2876846d40d5437cc384b9dc2ed706ab5514139d3309f3b",
+      "bytes": 89989,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1099x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1100x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7d52b0027d61dc5f36d29f462b43b11352579d9e0f766db258764bf315fbebbc",
+      "bytes": 93994,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1100x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1100x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "686c1630df74e45b5260cccbcd4e7813135ebdd494e494def66de954dce67ddb",
+      "bytes": 95268,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1100x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1199x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0748e988f706ca5220628c68506f2b8270b1aeeb8d90cf9d982ffb939bb589f1",
+      "bytes": 96432,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1199x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1199x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "218665f6ac094f2f1dd5dfed5c566baf6c11ad5a43cf920506c6b7ab04b6d0d6",
+      "bytes": 98672,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1199x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1200x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b5f1d7987cab55850a535ed0aca1b8bcf8628d2f2464e328e9d12eb2a10f2804",
+      "bytes": 96135,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1200x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1200x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9075f71fbbe219a107939c1568d49ef607a533770294064f84960a77ccb5d23a",
+      "bytes": 98404,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1200x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1279x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "50d3e598634a860ed37d457808c84cc1ba8aacb9007e97b91bd4fc75102b9ac0",
+      "bytes": 97032,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1279x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1279x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "595f547140002a0f8d3db0d963b786beb889683e868a93371cfe0c27fa8a8e7c",
+      "bytes": 99151,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1279x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1280x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e7bfc7db539073281d0af83ae0f3cf5ed26f90796a6aaffd76b7d188268e6927",
+      "bytes": 97140,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1280x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1280x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a4048b05bf725da8a14f5369f503444d38714c3b25c91d2fbe0ee4fef1f19dad",
+      "bytes": 99715,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1280x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1399x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e57a3f7282812ca973d7f086dd4f8a6e1508fd7499b967cb9ef3f0bd90abc8ec",
+      "bytes": 98609,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1399x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1399x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5a8b9ecede7cb555a4317b4b40178eb2a1ba25669240af5a6c9e43a4e1b21d86",
+      "bytes": 100940,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1399x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1400x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "26eb71730ee82bfa6b9fd49d87953f46c1197d4f16e6ee2e4570310c057dc9fd",
+      "bytes": 110725,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1400x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1400x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7977e9fe39f7e088d7cf5b65aec3b287700f8148d83a8ebd1581366625645b59",
+      "bytes": 99578,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1400x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1440x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9193b1ba7b53f0c98709418a61211cc83027f05d00ed1cebe6590d91bcc6bcf9",
+      "bytes": 111073,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "claro",
+      "tamanho": "1440x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-1440x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "87e86dce34cd51e2f1cec6d953907969f9cc2a427e9fc3305c676eb29d061ba9",
+      "bytes": 99010,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "claro",
+      "tamanho": "1440x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-painel500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1b3470b4f03fa7ac0701195b07044c47a44a3bc03593692c6ff5c4e32e81c084",
+      "bytes": 16752,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "painel-erro-acesso-Tab",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/light-320x500-painel500-apos-tab.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "582db92ab09240ed5d8836fca0de61428d57316e45caafa4bb454b13541258ff",
+      "bytes": 20272,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "painel-erro-acesso-Tab",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1440x900-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "2678e7574f616ac1400413b03edfcd524eb852a6a077e68b3f4cbbb743e22345",
+      "bytes": 191058,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1440x900-filtro-real.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "add94624ac758e921e496ca15106ac232c92ceb70640f7c4c5242ea35aaefa94",
+      "bytes": 119498,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "filtro-Comercial-real",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1440x900-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7878da92b89ec731beb7a2456795066400b8347e1350fc39341baa4fca272635",
+      "bytes": 170390,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0db6d04a587e7a19489be7f75eb1197fa86c014a10b13aea8d2988f00e59c0a0",
+      "bytes": 26000,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-textarea-inicio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c043dcce28d0235a0f898e2cd5f33128efccd5cff0a30265907d4d56ebb22a8a",
+      "bytes": 27891,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "textarea-rolagem-nativa",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-textarea-fim.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ea982dff8ea0f70d25e6d73af5c3f277561d4020f717051730b18d68cd92be49",
+      "bytes": 27609,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "textarea-rolagem-nativa",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-rodape-apos-tab.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9f4c19eae7ed2864b2ab3e9173abbb919c0a6a910cbcca3a4ece71b2e46ff680",
+      "bytes": 27505,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "rodape-Tab",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d95a99e90069479ce0711a0821f9937e033e6503f3bf221b07537396d9b4d7ee",
+      "bytes": 29566,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-390x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3214e35b40e6366900262d4c40321d85d5171d2395a7e4fb2e75b52166e3f6d2",
+      "bytes": 29879,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "390x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-390x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "867c7825ba6a0895f025dc73ea9afb283ad61c17cd72f7054b67bb2b90cfe6a4",
+      "bytes": 33067,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "390x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-699x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f301e107d531e5b3220c41d22bcce14ef0654f66aed22e531e2eaceae6216b0f",
+      "bytes": 34603,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "699x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-699x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9deb9ad08cddb7db6d3486b90e0a46d546312979c67ee24e21a47cadfafb8436",
+      "bytes": 37754,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "699x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-700x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "878fc16ac256dc2412370df90e6d0340aaed72c2a2920d5d7fa94965c04161ef",
+      "bytes": 35858,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "700x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-700x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b7f7b3a142881180676350d877a42bea2d1f8883ab6fe773d16b1674d7cca19e",
+      "bytes": 38844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "700x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-767x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "13548cc94623429dda68a3a107573b3f450f2ce3aa14f2332ce3fec8dfaa6ea6",
+      "bytes": 36266,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "767x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-767x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7a65dfcab445031df38bd9b6d09ed16655214abec6763f0aa540a64c44ed58cc",
+      "bytes": 39238,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "767x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-768x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "81dc7618811d33596d753405f336367fe49f2b4cd4253c5bb7056011b10b4199",
+      "bytes": 50180,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "768x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-768x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c90a57216ae89f7af5c95f2e5ccb80a0b8b62d7bf0ad59ab8af9419a28a6f044",
+      "bytes": 52567,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "768x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-959x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d9b8cde4806d90a8db9ccf5955e2e93e0cbb1ce00268572691fabf7f55951dff",
+      "bytes": 52956,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "959x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-959x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c13f90d5459da5bf03277787a8f2b618f3aa8f77cd5abca5ae36cae01f3b7499",
+      "bytes": 55464,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "959x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-960x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7f37f1cfe41cd538d6f9a9b1b94d65632cd7c1a911f3dc7c5528b5d56bb83f89",
+      "bytes": 86050,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "960x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-960x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "4c771fa6b0ee042d06a896ead50a49bdcd9b51f2761ce1ed7c930960d95fcaeb",
+      "bytes": 87308,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "960x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1024x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5ebd709aa2f7336a78bc4588173183b3dee567b816d4ff31118202dc092bf0a4",
+      "bytes": 86922,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1024x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1024x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "dbe84253ee4c451cc2afe94772d2eb9822a5d0a1a72c52ffa38b1fc1ebad78ce",
+      "bytes": 88192,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1024x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1099x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "556944a0828c872b97e2dabc42168196eaa2726c7848fdfbfe9722b532d4f412",
+      "bytes": 88458,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1099x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1099x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "242410a45623df673a80888ccac6d93ce7df07f1fca8599558e29565dc9bccba",
+      "bytes": 90972,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1099x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1100x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "28dd0440ccf87abe12dfc6baccaf9b6a3f4d1f85b6bdf30ee54845050d86f145",
+      "bytes": 95243,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1100x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1100x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0a0033c40438b1c2ce3e3faaf999acc03e2bc3c679a7f2e18b029acf8e403172",
+      "bytes": 96271,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1100x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1199x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f9f97c5faa5197afe7dc1031a2d25e1c0d7b2151abd2005e1237dcc206d79e00",
+      "bytes": 97498,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1199x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1199x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "08edf3256cafc284eaba50847be02e71ea171b47a8d6526108f9c6162c02c9ed",
+      "bytes": 99608,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1199x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1200x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a1f29457d9ad7a6548d404ba98890c14b2393e79b008a6820eec50f931402496",
+      "bytes": 97265,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1200x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1200x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "75c8401592ffe4588ddeb53814ff72acf706ffd63228b3a9d82dc5ff358bfd4c",
+      "bytes": 99262,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1200x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1279x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e30eade10949115e1b0f1524596dac99601ae6e6548af195c451d60a2ea5cd57",
+      "bytes": 98113,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1279x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1279x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b24c9db3f696aa7b52c80bd2b7f5485b33887b6e406ceaf1b36959210e8c262a",
+      "bytes": 100154,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1279x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1280x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1456732b4b76fe5aefc57f7a7fda9b6868dc6c572d2a1d2aa62398de2d888727",
+      "bytes": 98310,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1280x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1280x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c12ca87f00fc2bc5f480ac8ce5ba837484c590282ad2e848058b21d6078ed208",
+      "bytes": 100558,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1280x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1399x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "380232fc8a9e8675a76bcb2368a7da5ea55896df5bf204a8860822164399ab50",
+      "bytes": 99744,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1399x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1399x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8b1cf15bc5cd05872c844d78ff232588c7b4e428e6ba481287327a9c5e62e193",
+      "bytes": 101902,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1399x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1400x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7d40863bd18da9fc219f5a01b6c1d73bc5b17db39919a90ed6a3ff648ff2247e",
+      "bytes": 112132,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1400x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1400x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "32de51042e9fff5510ffdfd17fec472988af1280e0bc2ab50469b5623d8c0bd4",
+      "bytes": 100626,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1400x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1440x500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "65c3a88bbb90ac89adc10c46ece0c5275ae75e23a49095f55a205fe0ac00c8fa",
+      "bytes": 112193,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "geometria-inicial",
+      "tema": "escuro",
+      "tamanho": "1440x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-1440x500-interacoes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7ff59b9ec3d83def4a433dd1788be1d72cc3692940aa5896c5da354e3db6aa77",
+      "bytes": 100062,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "interacoes-locais",
+      "tema": "escuro",
+      "tamanho": "1440x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-painel500-inicial.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8276d0357d25a8e89e9541a075619d580d28d042fa953a187c0f6c0c24545532",
+      "bytes": 17095,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "painel-erro-acesso-Tab",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/dark-320x500-painel500-apos-tab.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d3fabc55391d70653710758258575a76199a0cc9a3a378b0faf8504a8b295d7e",
+      "bytes": 20196,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "alvo": "app",
+      "estado": "painel-erro-acesso-Tab",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    }
+  ],
+  "limites": [
+    "88 originais positivos de40contextos, dois temas:1440x900 e18largurasx500 mais erro320x500.",
+    "Rodada32366/complemento-r1 negativa INTEIRA excluída; nenhum parcial reutilizado.",
+    "Medições reais/Tab/rascunhos locais sem submit/envio; erro500 somente transporte controlado no endpoint exato.",
+    "SSEmáxima1/ativa1 por contexto,2construídas sequencialmente por navegação; não declarar1total.",
+    "Pranchas derivadas/diagnósticos/scripts/requests não integram esta allowlist."
+  ]
+}

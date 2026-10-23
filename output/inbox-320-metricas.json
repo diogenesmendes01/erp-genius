@@ -1,0 +1,7527 @@
+{
+  "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "equivalencia": {
+    "origemProduto": "b5094856c326c4fdf559b1833dbe0827868b591a",
+    "composicaoRoot": "442d1a665e82c7376ce7e8707b3a4d365257c7db",
+    "limite": "Produção byteigual; fotos pertencem somente à fonte OWN491, não à HEADROOT442d."
+  },
+  "executor": "91340",
+  "previewRoot": "8165",
+  "node": "v22.23.2",
+  "contextos": 40,
+  "imagens": 88,
+  "resultado": "exit0",
+  "amostras": [
+    {
+      "tema": "claro",
+      "tamanho": "1440x900",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 900,
+          "right": 224,
+          "bottom": 900
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 900,
+          "right": 596,
+          "bottom": 900
+        },
+        "painel": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 900,
+          "right": 1440,
+          "bottom": 900
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 307.125,
+        "compositor": {
+          "x": 768,
+          "y": 842,
+          "w": 256,
+          "h": 44,
+          "right": 1024,
+          "bottom": 886
+        },
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": {
+        "estado": "filtro-Comercial-real",
+        "tipografia": {
+          "dom": 1,
+          "visiveis": 1,
+          "amostras": [
+            {
+              "texto": "1",
+              "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "tabular": "tabular-nums",
+              "visivel": true,
+              "rect": {
+                "x": 469,
+                "y": 30,
+                "w": 15,
+                "h": 15,
+                "right": 484,
+                "bottom": 45
+              }
+            }
+          ],
+          "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+        },
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        }
+      },
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "320x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 320,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320,
+          "bottom": 125
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 216,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 80,
+          "h": 44,
+          "right": 252,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 40,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 48,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "textarea": [
+        {
+          "estado": "inicial",
+          "textarea": {
+            "nome": "Escreva uma mensagem",
+            "tag": "TEXTAREA",
+            "rect": {
+              "x": 172,
+              "y": 442,
+              "w": 80,
+              "h": 44,
+              "right": 252,
+              "bottom": 486
+            },
+            "scrollTop": 0,
+            "scrollLeft": 0,
+            "scrollHeight": 102,
+            "scrollWidth": 78,
+            "clientHeight": 42,
+            "clientWidth": 78,
+            "overflowY": "auto",
+            "overflowX": "auto",
+            "visivel": true,
+            "intersecao": {
+              "w": 80,
+              "h": 44
+            },
+            "integral": true
+          },
+          "toolbar": {
+            "x": 16,
+            "y": 442,
+            "w": 288,
+            "h": 44,
+            "right": 304,
+            "bottom": 486
+          },
+          "controles": [
+            {
+              "nome": "Responder",
+              "rect": {
+                "x": 16,
+                "y": 368,
+                "w": 78.03125,
+                "h": 44,
+                "right": 94.03125,
+                "bottom": 412
+              },
+              "integral": true
+            },
+            {
+              "nome": "Anexar",
+              "rect": {
+                "x": 16,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 60,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Agendar mensagem",
+              "rect": {
+                "x": 68,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 112,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Emojis",
+              "rect": {
+                "x": 120,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 164,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Escreva uma mensagem",
+              "rect": {
+                "x": 172,
+                "y": 442,
+                "w": 80,
+                "h": 44,
+                "right": 252,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Gravar mensagem de voz",
+              "rect": {
+                "x": 260,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 304,
+                "bottom": 486
+              },
+              "integral": true
+            }
+          ],
+          "documento": {
+            "w": 320,
+            "h": 500,
+            "y": 0
+          }
+        },
+        {
+          "estado": "textarea-inicio-nativo",
+          "textarea": {
+            "nome": "Escreva uma mensagem",
+            "tag": "TEXTAREA",
+            "rect": {
+              "x": 172,
+              "y": 442,
+              "w": 80,
+              "h": 44,
+              "right": 252,
+              "bottom": 486
+            },
+            "scrollTop": 12,
+            "scrollLeft": 0,
+            "scrollHeight": 142,
+            "scrollWidth": 78,
+            "clientHeight": 42,
+            "clientWidth": 78,
+            "overflowY": "auto",
+            "overflowX": "auto",
+            "visivel": true,
+            "intersecao": {
+              "w": 80,
+              "h": 44
+            },
+            "integral": true
+          },
+          "toolbar": {
+            "x": 16,
+            "y": 442,
+            "w": 288,
+            "h": 44,
+            "right": 304,
+            "bottom": 486
+          },
+          "controles": [
+            {
+              "nome": "Responder",
+              "rect": {
+                "x": 16,
+                "y": 368,
+                "w": 78.03125,
+                "h": 44,
+                "right": 94.03125,
+                "bottom": 412
+              },
+              "integral": true
+            },
+            {
+              "nome": "Anexar",
+              "rect": {
+                "x": 16,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 60,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Agendar mensagem",
+              "rect": {
+                "x": 68,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 112,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Emojis",
+              "rect": {
+                "x": 120,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 164,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Escreva uma mensagem",
+              "rect": {
+                "x": 172,
+                "y": 442,
+                "w": 80,
+                "h": 44,
+                "right": 252,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Enviar",
+              "rect": {
+                "x": 260,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 304,
+                "bottom": 486
+              },
+              "integral": true
+            }
+          ],
+          "documento": {
+            "w": 320,
+            "h": 500,
+            "y": 0
+          }
+        },
+        {
+          "estado": "textarea-fim-nativo",
+          "textarea": {
+            "nome": "Escreva uma mensagem",
+            "tag": "TEXTAREA",
+            "rect": {
+              "x": 172,
+              "y": 442,
+              "w": 80,
+              "h": 44,
+              "right": 252,
+              "bottom": 486
+            },
+            "scrollTop": 87,
+            "scrollLeft": 0,
+            "scrollHeight": 142,
+            "scrollWidth": 78,
+            "clientHeight": 42,
+            "clientWidth": 78,
+            "overflowY": "auto",
+            "overflowX": "auto",
+            "visivel": true,
+            "intersecao": {
+              "w": 80,
+              "h": 44
+            },
+            "integral": true
+          },
+          "toolbar": {
+            "x": 16,
+            "y": 442,
+            "w": 288,
+            "h": 44,
+            "right": 304,
+            "bottom": 486
+          },
+          "controles": [
+            {
+              "nome": "Responder",
+              "rect": {
+                "x": 16,
+                "y": 368,
+                "w": 78.03125,
+                "h": 44,
+                "right": 94.03125,
+                "bottom": 412
+              },
+              "integral": true
+            },
+            {
+              "nome": "Anexar",
+              "rect": {
+                "x": 16,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 60,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Agendar mensagem",
+              "rect": {
+                "x": 68,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 112,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Emojis",
+              "rect": {
+                "x": 120,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 164,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Escreva uma mensagem",
+              "rect": {
+                "x": 172,
+                "y": 442,
+                "w": 80,
+                "h": 44,
+                "right": 252,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Enviar",
+              "rect": {
+                "x": 260,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 304,
+                "bottom": 486
+              },
+              "integral": true
+            }
+          ],
+          "documento": {
+            "w": 320,
+            "h": 500,
+            "y": 0
+          }
+        }
+      ],
+      "Tab": {
+        "visitados": [
+          "Responder",
+          "Anexar",
+          "Agendar mensagem",
+          "Emojis",
+          "Escreva uma mensagem",
+          "Enviar",
+          "",
+          "Pular para o conteúdoInboxFusoMenuPermutasMudanças acadêmicasComissõesMatrículas",
+          "Pular para o conteúdo"
+        ],
+        "limite": "Somente Tab/foco; nenhuma ativação das ações de negócio."
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "390x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 390,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390,
+          "bottom": 125
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 266.390625,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 150,
+          "h": 44,
+          "right": 322,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 40,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 48,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "699x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 699,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 68,
+          "right": 699,
+          "bottom": 121
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 459,
+          "h": 44,
+          "right": 631,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 36,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 44,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "700x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 700,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 68,
+          "right": 700,
+          "bottom": 121
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 460,
+          "h": 44,
+          "right": 632,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 36,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 44,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "767x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 767,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 767,
+          "h": 68,
+          "right": 767,
+          "bottom": 121
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 527,
+          "h": 44,
+          "right": 699,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 767,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 36,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 44,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 767,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 767,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "768x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 768,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 224,
+          "y": 0,
+          "w": 544,
+          "h": 68,
+          "right": 768,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 336.84375,
+        "compositor": {
+          "x": 396,
+          "y": 442,
+          "w": 304,
+          "h": 44,
+          "right": 700,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 768,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 768,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 768,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "959x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 959,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 68,
+          "right": 959,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 396,
+          "y": 442,
+          "w": 495,
+          "h": 44,
+          "right": 891,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 959,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 959,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 959,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "claro",
+      "tamanho": "960x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 960,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 300,
+          "h": 500,
+          "right": 524,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 436,
+          "h": 68,
+          "right": 960,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 263,
+          "h": 38,
+          "right": 505,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 269.96875,
+        "compositor": {
+          "x": 696,
+          "y": 442,
+          "w": 196,
+          "h": 44,
+          "right": 892,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 960,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 960,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1024x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1024,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 300,
+          "h": 500,
+          "right": 524,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 500,
+          "h": 68,
+          "right": 1024,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 263,
+          "h": 38,
+          "right": 505,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 309.59375,
+        "compositor": {
+          "x": 696,
+          "y": 442,
+          "w": 260,
+          "h": 44,
+          "right": 956,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1024,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1099x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1099,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 300,
+          "h": 500,
+          "right": 524,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 575,
+          "h": 68,
+          "right": 1099,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 263,
+          "h": 38,
+          "right": 505,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 356.03125,
+        "compositor": {
+          "x": 696,
+          "y": 442,
+          "w": 335,
+          "h": 44,
+          "right": 1031,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1099,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1099,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1100x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1100,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 504,
+          "h": 68,
+          "right": 1100,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 312.09375,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 264,
+          "h": 44,
+          "right": 1032,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1100,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1100,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1199x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1199,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 603,
+          "h": 68,
+          "right": 1199,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 373.375,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 363,
+          "h": 44,
+          "right": 1131,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1199,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1199,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1200x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1200,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 604,
+          "h": 68,
+          "right": 1200,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 374.015625,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 364,
+          "h": 44,
+          "right": 1132,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1200,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1200,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1279x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1279,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 683,
+          "h": 68,
+          "right": 1279,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 443,
+          "h": 44,
+          "right": 1211,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1279,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1279,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1280x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1280,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 684,
+          "h": 68,
+          "right": 1280,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 444,
+          "h": 44,
+          "right": 1212,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1280,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1280,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1399x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1399,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 803,
+          "h": 68,
+          "right": 1399,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 563,
+          "h": 44,
+          "right": 1331,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1399,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1400x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1400,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 282.375,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 216,
+          "h": 44,
+          "right": 984,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1400,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "1440x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1440,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 307.125,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 256,
+          "h": 44,
+          "right": 1024,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(27, 135, 85)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1440,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "claro",
+      "tamanho": "320x500",
+      "erroPainel": true,
+      "inicial": null,
+      "filtroReal": null,
+      "final": null,
+      "textarea": [],
+      "retry": {
+        "estado": "acesso-retry-real",
+        "tabs": 2,
+        "alcancou": true,
+        "retryAntes": {
+          "x": 18,
+          "y": 514.5,
+          "width": 105.8125,
+          "height": 44
+        },
+        "retryDepois": {
+          "x": 18,
+          "y": 346.5,
+          "width": 105.8125,
+          "height": 44
+        },
+        "geometriaInicial": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 443,
+          "right": 320,
+          "bottom": 500
+        },
+        "geometriaDepois": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 443,
+          "right": 320,
+          "bottom": 500
+        }
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1440x900",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 900,
+          "right": 224,
+          "bottom": 900
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 900,
+          "right": 596,
+          "bottom": 900
+        },
+        "painel": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 900,
+          "right": 1440,
+          "bottom": 900
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 307.125,
+        "compositor": {
+          "x": 768,
+          "y": 842,
+          "w": 256,
+          "h": 44,
+          "right": 1024,
+          "bottom": 886
+        },
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": {
+        "estado": "filtro-Comercial-real",
+        "tipografia": {
+          "dom": 1,
+          "visiveis": 1,
+          "amostras": [
+            {
+              "texto": "1",
+              "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "tabular": "tabular-nums",
+              "visivel": true,
+              "rect": {
+                "x": 469,
+                "y": 30,
+                "w": 15,
+                "h": 15,
+                "right": 484,
+                "bottom": 45
+              }
+            }
+          ],
+          "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+        },
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        }
+      },
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "320x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 320,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320,
+          "bottom": 125
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 216,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 80,
+          "h": 44,
+          "right": 252,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 40,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 48,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "textarea": [
+        {
+          "estado": "inicial",
+          "textarea": {
+            "nome": "Escreva uma mensagem",
+            "tag": "TEXTAREA",
+            "rect": {
+              "x": 172,
+              "y": 442,
+              "w": 80,
+              "h": 44,
+              "right": 252,
+              "bottom": 486
+            },
+            "scrollTop": 0,
+            "scrollLeft": 0,
+            "scrollHeight": 102,
+            "scrollWidth": 78,
+            "clientHeight": 42,
+            "clientWidth": 78,
+            "overflowY": "auto",
+            "overflowX": "auto",
+            "visivel": true,
+            "intersecao": {
+              "w": 80,
+              "h": 44
+            },
+            "integral": true
+          },
+          "toolbar": {
+            "x": 16,
+            "y": 442,
+            "w": 288,
+            "h": 44,
+            "right": 304,
+            "bottom": 486
+          },
+          "controles": [
+            {
+              "nome": "Responder",
+              "rect": {
+                "x": 16,
+                "y": 368,
+                "w": 78.03125,
+                "h": 44,
+                "right": 94.03125,
+                "bottom": 412
+              },
+              "integral": true
+            },
+            {
+              "nome": "Anexar",
+              "rect": {
+                "x": 16,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 60,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Agendar mensagem",
+              "rect": {
+                "x": 68,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 112,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Emojis",
+              "rect": {
+                "x": 120,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 164,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Escreva uma mensagem",
+              "rect": {
+                "x": 172,
+                "y": 442,
+                "w": 80,
+                "h": 44,
+                "right": 252,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Gravar mensagem de voz",
+              "rect": {
+                "x": 260,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 304,
+                "bottom": 486
+              },
+              "integral": true
+            }
+          ],
+          "documento": {
+            "w": 320,
+            "h": 500,
+            "y": 0
+          }
+        },
+        {
+          "estado": "textarea-inicio-nativo",
+          "textarea": {
+            "nome": "Escreva uma mensagem",
+            "tag": "TEXTAREA",
+            "rect": {
+              "x": 172,
+              "y": 442,
+              "w": 80,
+              "h": 44,
+              "right": 252,
+              "bottom": 486
+            },
+            "scrollTop": 12,
+            "scrollLeft": 0,
+            "scrollHeight": 142,
+            "scrollWidth": 78,
+            "clientHeight": 42,
+            "clientWidth": 78,
+            "overflowY": "auto",
+            "overflowX": "auto",
+            "visivel": true,
+            "intersecao": {
+              "w": 80,
+              "h": 44
+            },
+            "integral": true
+          },
+          "toolbar": {
+            "x": 16,
+            "y": 442,
+            "w": 288,
+            "h": 44,
+            "right": 304,
+            "bottom": 486
+          },
+          "controles": [
+            {
+              "nome": "Responder",
+              "rect": {
+                "x": 16,
+                "y": 368,
+                "w": 78.03125,
+                "h": 44,
+                "right": 94.03125,
+                "bottom": 412
+              },
+              "integral": true
+            },
+            {
+              "nome": "Anexar",
+              "rect": {
+                "x": 16,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 60,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Agendar mensagem",
+              "rect": {
+                "x": 68,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 112,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Emojis",
+              "rect": {
+                "x": 120,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 164,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Escreva uma mensagem",
+              "rect": {
+                "x": 172,
+                "y": 442,
+                "w": 80,
+                "h": 44,
+                "right": 252,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Enviar",
+              "rect": {
+                "x": 260,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 304,
+                "bottom": 486
+              },
+              "integral": true
+            }
+          ],
+          "documento": {
+            "w": 320,
+            "h": 500,
+            "y": 0
+          }
+        },
+        {
+          "estado": "textarea-fim-nativo",
+          "textarea": {
+            "nome": "Escreva uma mensagem",
+            "tag": "TEXTAREA",
+            "rect": {
+              "x": 172,
+              "y": 442,
+              "w": 80,
+              "h": 44,
+              "right": 252,
+              "bottom": 486
+            },
+            "scrollTop": 87,
+            "scrollLeft": 0,
+            "scrollHeight": 142,
+            "scrollWidth": 78,
+            "clientHeight": 42,
+            "clientWidth": 78,
+            "overflowY": "auto",
+            "overflowX": "auto",
+            "visivel": true,
+            "intersecao": {
+              "w": 80,
+              "h": 44
+            },
+            "integral": true
+          },
+          "toolbar": {
+            "x": 16,
+            "y": 442,
+            "w": 288,
+            "h": 44,
+            "right": 304,
+            "bottom": 486
+          },
+          "controles": [
+            {
+              "nome": "Responder",
+              "rect": {
+                "x": 16,
+                "y": 368,
+                "w": 78.03125,
+                "h": 44,
+                "right": 94.03125,
+                "bottom": 412
+              },
+              "integral": true
+            },
+            {
+              "nome": "Anexar",
+              "rect": {
+                "x": 16,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 60,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Agendar mensagem",
+              "rect": {
+                "x": 68,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 112,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Emojis",
+              "rect": {
+                "x": 120,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 164,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Escreva uma mensagem",
+              "rect": {
+                "x": 172,
+                "y": 442,
+                "w": 80,
+                "h": 44,
+                "right": 252,
+                "bottom": 486
+              },
+              "integral": true
+            },
+            {
+              "nome": "Enviar",
+              "rect": {
+                "x": 260,
+                "y": 442,
+                "w": 44,
+                "h": 44,
+                "right": 304,
+                "bottom": 486
+              },
+              "integral": true
+            }
+          ],
+          "documento": {
+            "w": 320,
+            "h": 500,
+            "y": 0
+          }
+        }
+      ],
+      "Tab": {
+        "visitados": [
+          "Responder",
+          "Anexar",
+          "Agendar mensagem",
+          "Emojis",
+          "Escreva uma mensagem",
+          "Enviar",
+          "",
+          "Pular para o conteúdoInboxFusoMenuPermutasMudanças acadêmicasComissõesMatrículas",
+          "Pular para o conteúdo"
+        ],
+        "limite": "Somente Tab/foco; nenhuma ativação das ações de negócio."
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "390x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 390,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390,
+          "bottom": 125
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 266.390625,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 150,
+          "h": 44,
+          "right": 322,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 40,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 48,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "699x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 699,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 68,
+          "right": 699,
+          "bottom": 121
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 459,
+          "h": 44,
+          "right": 631,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 36,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 44,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "700x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 700,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 68,
+          "right": 700,
+          "bottom": 121
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 460,
+          "h": 44,
+          "right": 632,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 36,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 44,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "767x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 767,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 767,
+          "h": 68,
+          "right": 767,
+          "bottom": 121
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 172,
+          "y": 442,
+          "w": 527,
+          "h": 44,
+          "right": 699,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 767,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": true,
+          "rect": {
+            "x": 36,
+            "y": 10,
+            "w": 8,
+            "h": 8,
+            "right": 44,
+            "bottom": 18
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 767,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "N/A visual: total zero ou navegação oculta; SSR SeloNaoLidasInbox.test.ts cobre pílula/zero/ponto"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 767,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "768x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 768,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 224,
+          "y": 0,
+          "w": 544,
+          "h": 68,
+          "right": 768,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 336.84375,
+        "compositor": {
+          "x": 396,
+          "y": 442,
+          "w": 304,
+          "h": 44,
+          "right": 700,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 768,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 768,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 768,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "959x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 959,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 68,
+          "right": 959,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            0
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 396,
+          "y": 442,
+          "w": 495,
+          "h": 44,
+          "right": 891,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 959,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 0,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 959,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": [],
+      "semSelecao": {
+        "estado": "sem-selecao-mobile",
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "documento": {
+          "w": 959,
+          "h": 500,
+          "y": 0
+        }
+      }
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "960x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 960,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 300,
+          "h": 500,
+          "right": 524,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 436,
+          "h": 68,
+          "right": 960,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 263,
+          "h": 38,
+          "right": 505,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 269.96875,
+        "compositor": {
+          "x": 696,
+          "y": 442,
+          "w": 196,
+          "h": 44,
+          "right": 892,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 960,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 960,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1024x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1024,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 300,
+          "h": 500,
+          "right": 524,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 500,
+          "h": 68,
+          "right": 1024,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 263,
+          "h": 38,
+          "right": 505,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 309.59375,
+        "compositor": {
+          "x": 696,
+          "y": 442,
+          "w": 260,
+          "h": 44,
+          "right": 956,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1024,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1099x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1099,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 300,
+          "h": 500,
+          "right": 524,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 575,
+          "h": 68,
+          "right": 1099,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 263,
+          "h": 38,
+          "right": 505,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 356.03125,
+        "compositor": {
+          "x": 696,
+          "y": 442,
+          "w": 335,
+          "h": 44,
+          "right": 1031,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1099,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1099,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1100x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1100,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 504,
+          "h": 68,
+          "right": 1100,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 312.09375,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 264,
+          "h": 44,
+          "right": 1032,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1100,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1100,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1199x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1199,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 603,
+          "h": 68,
+          "right": 1199,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 373.375,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 363,
+          "h": 44,
+          "right": 1131,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1199,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1199,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1200x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1200,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 604,
+          "h": 68,
+          "right": 1200,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 374.015625,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 364,
+          "h": 44,
+          "right": 1132,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1200,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1200,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1279x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1279,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 683,
+          "h": 68,
+          "right": 1279,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 443,
+          "h": 44,
+          "right": 1211,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1279,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1279,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1280x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1280,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 684,
+          "h": 68,
+          "right": 1280,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 444,
+          "h": 44,
+          "right": 1212,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1280,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1280,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1399x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1399,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 803,
+          "h": 68,
+          "right": 1399,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 385.21875,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 563,
+          "h": 44,
+          "right": 1331,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1399,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1400x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1400,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 282.375,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 216,
+          "h": 44,
+          "right": 984,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1400,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "1440x500",
+      "erroPainel": false,
+      "inicial": {
+        "estado": "inicial",
+        "viewport": {
+          "w": 1440,
+          "h": 500
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "w": 224,
+          "h": 500,
+          "right": 224,
+          "bottom": 500
+        },
+        "lista": {
+          "x": 224,
+          "y": 0,
+          "w": 372,
+          "h": 500,
+          "right": 596,
+          "bottom": 500
+        },
+        "painel": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "buscaLista": {
+          "x": 242,
+          "y": 80,
+          "w": 335,
+          "h": 38,
+          "right": 577,
+          "bottom": 118
+        },
+        "buscaConversa": null,
+        "chips": {
+          "quantidade": 5,
+          "alturas": [
+            28
+          ]
+        },
+        "padding": {
+          "top": 11,
+          "bottom": 11,
+          "left": 10,
+          "right": 10
+        },
+        "baloesMax": 307.125,
+        "compositor": {
+          "x": 768,
+          "y": 442,
+          "w": 256,
+          "h": 44,
+          "right": 1024,
+          "bottom": 486
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1,
+        "tipografia": {
+          "chips": {
+            "dom": 5,
+            "visiveis": 5,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ]
+          },
+          "selosNumericos": {
+            "dom": 1,
+            "visiveis": 1,
+            "amostras": [
+              {
+                "fontFamily": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+                "tabular": "tabular-nums"
+              }
+            ],
+            "limite": "Amostra DOM visível"
+          },
+          "abasPainel": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "limite": "N/A visual E1: só Detalhes sem contagem; SSR PainelContato.test.ts contagem isolada"
+          },
+          "badgeFiltros": {
+            "dom": 0,
+            "visiveis": 0,
+            "amostras": [],
+            "significado": "Quantidade de filtros setor/status aplicados; não é sino"
+          }
+        },
+        "pontoMenu": {
+          "texto": "",
+          "classe": "absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid",
+          "visivel": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "computed": {
+            "width": "8px",
+            "height": "8px",
+            "background": "rgb(33, 192, 99)",
+            "fontFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+            "tabular": "normal"
+          }
+        }
+      },
+      "filtroReal": null,
+      "final": {
+        "estado": "interacoes-concluidas",
+        "documento": {
+          "w": 1440,
+          "h": 500,
+          "y": 0
+        },
+        "mesmoScroller": true,
+        "mesmaVList": true,
+        "painelUnico": 1
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "320x500",
+      "erroPainel": true,
+      "inicial": null,
+      "filtroReal": null,
+      "final": null,
+      "textarea": [],
+      "retry": {
+        "estado": "acesso-retry-real",
+        "tabs": 2,
+        "alcancou": true,
+        "retryAntes": {
+          "x": 18,
+          "y": 514.5,
+          "width": 105.8125,
+          "height": 44
+        },
+        "retryDepois": {
+          "x": 18,
+          "y": 346.5,
+          "width": 105.8125,
+          "height": 44
+        },
+        "geometriaInicial": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 443,
+          "right": 320,
+          "bottom": 500
+        },
+        "geometriaDepois": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 443,
+          "right": 320,
+          "bottom": 500
+        }
+      },
+      "rede": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0
+      },
+      "falhas": [],
+      "errosReactHTTP": [],
+      "externos": []
+    }
+  ],
+  "fontes": {
+    "capturar-inbox.mjs": "7d9436eb4ecdc0a77cbd82e4c8fba9483726a39627c375569a89ad5e835cf211",
+    "nucleo-captura.mjs": "6c05dc7f724dde2ab8e0cf5ea794b7d53cbc7539ab7c7015f7b435bdab707fc1",
+    "espera-app.mjs": "89a11dbb5de3e3b57d11d96e819e42e25d5cc38c42eb1c572ea4c8ae5cd90811",
+    "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711",
+    "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce"
+  },
+  "probesPrivados": {
+    "r2": "cb3fab0ea035050d0c9a182b28f6af377d3b1b7b194c39490706cd4ab752c9b1",
+    "comum": "8d34cc1cc578c42023658d2e1eecdc1742fa48696e0a3fa2c8af2d1e4c2965e7"
+  },
+  "limites": [
+    "Métricas selecionadas do probe privado; sem requests/JSONAPI/credenciais.",
+    "44do compositor é altura do campo/alvos, não largura mínima do textarea. Em320campo80x44inteiro e scrollnativo permite início/fim/edição.",
+    "38 é busca DA LISTA; busca NA CONVERSA preserva altura acessível316 e não foi forçada a38.",
+    "Rótulos/contagens reais; contagemDOM e visíveis explícitas. Selo escondido na navegação mobile não é prova visual da pílula; ponto8px medido separado.",
+    "14estadoscomparáveis+6estadosAPPsemreferência; nenhuma paridade de negócio presumida com protótipo.",
+    "Métricas tipográficas repetidas resumidas por tipo/DOM/visíveis e computed real; manifestos privados completos preservam todas as rects/ancestrais e não são o pacote."
+  ]
+}

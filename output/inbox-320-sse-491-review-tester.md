@@ -1,0 +1,9 @@
+# QA independente do patch SSE test-only — #320
+
+**SHA exato:** `491de47c06403c96724b09701bbc20a187d1ae59`, pai `b5094856c326c4fdf559b1833dbe0827868b591a`. **Parecer favorável ao patch de teste.** O parecer estático da produção b509 permanece válido: `git diff --quiet` dos arquivos `src` exceto os dois testes SSE saiu 0; nenhuma mudança em formatador, filtro, autorização, banco, cliente ou UI. `git diff --check` saiu 0.
+
+A falha integrada original do integrador (`80680`, 15 arquivos/138 testes, 137 passaram/1 falhou, `exit 1`) era a asserção `not.toContain("u9")` em um quadro que legitimamente continha `u9` dentro de um CUID público. O novo teste integrado cria IDs públicos determinísticos `atendimento-u9` e `conversa-u9`, exige as quatro linhas do quadro SSE, evento, prefixo `data: `, duas quebras finais e JSON igual aos quatro campos públicos; `paraUsuarioId` é verificado como propriedade ausente. Assim, o teste distingue dados públicos do destinatário privado sem proibir uma substring válida. Os outros casos integrados e o setup DB permanecem.
+
+O teste unitário existente preserva os sete casos anteriores e acrescenta um caso causal com os mesmos IDs públicos. Ele importa `formatarSSE` da produção; Prisma e escopo são mockados, sem conexão ao banco. Recorte próprio Node 22.23.2, `--maxWorkers=2`: `src/server/inbox/eventos-sse.test.ts`, `src/app/api/inbox/eventos/route.test.ts`, `src/lib/eventos-inbox.test.ts` e `src/app/(app)/inbox/inbox-e1.test.ts`, executor `8d3f52`, **4 arquivos/37 testes, exit 0**, sem filtro `-t` ou skips acrescentados. O aviso `vite-tsconfig-paths` foi informativo. Nenhuma integração foi executada no banco TESTER.
+
+O gate integrado de 15 arquivos precisa ser repetido e terminar 0 no banco reservado pelo integrador; a execução `80680` não pode ser contada como aprovação. Visual 164+320×500 e publicação da #320/E1 também continuam pendentes. Não atribuo TSC, lint ou RED/GREEN do DEV A como execução própria.
