@@ -6092,3 +6092,8 @@ Todos os browsers/previews encerrados. Bancos B/TESTER restaurados424hashes orig
 ## PR #405 — C1: incorporar main preservando o quadro
 
 R1 GitHub `5626077684` aprovou o head `16e3298d`; seu único MEDIUM pede trazer main antes do merge. Main consultada `cce21e19` incorporada com dois conflitos exclusivamente no quadro, ambos com lado main vazio. Resolução literal dos seis marcadores preservou o quadro completo e toda a árvore do head aprovado (`655831`, saída 0), antes deste registro. A main e a base #403 `68e95d8e` continuam ancestrais. Somente esta entrada e `output/pr405-qa/revisao.md` acrescentam conteúdo; código, testes, scripts, schema e dependências permanecem idênticos. Os PNGs antigos da #298 continuam ausentes. Sem repetir gates por documentação; resultados anteriores permanecem nominais às suas fontes. CI final e integração dos predecessores, incluindo B2 humano da #392, pendentes; nenhuma issue marcada concluída. LOW C2 não implementado conforme autorização.
+
+
+## PR405 — todos os comentários da revisão
+
+C2LOWavaliado:21outputs/4863linhas(8JSON4355+13MD508), incluindo15linhasda posteriorrevisao.md. Mantidos registrosfontes/medidas/allowlistsporqueZIP319histórico(140PNG+8MD+manifesto)não duplicaindividualmenteessesJSON. NenhumPNG/execução/browser/downloadnovo. Registro output/inbox-pr405-review-todos.md. C1main/CI/QAfinalapóspaispermanece gate, preservandoQA280/planejamento297/correçõespredecessoras. PatchsomenteMD, código/config/imagensidênticos4af;semnovotesteboboparadocumentação.
