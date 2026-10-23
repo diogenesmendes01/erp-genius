@@ -1,0 +1,642 @@
+[
+  {
+    "sha256": "d306cf45a872dc56ab274b7b3555fd790b2b5f5be908316cef5a5bebfdb0ed2a",
+    "bytes": 3476,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "c05cef7b87c8820970e9a1a2dd8665c116af8fed298fbfdf98614bd25d9aae69",
+    "bytes": 110342,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "9ea167045fd9829794fbcfe44b0d13d3d5d3766129b4dfd58e2dbe46141139ca",
+    "bytes": 5795,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "02a8c8ec8f26ac5fb498242c50d9e0ce94a72bc25aa1b30a67468e395532a091",
+    "bytes": 109113,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "0f4262f57f5f71fe9a2e9747d019b8f07d6daae340211138e115b5549d7ed00e",
+    "bytes": 3270,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "6fa6d92e088d45690e56c4fa8c76dd5f3fa4cba7be6f7c93024681db31ee9bf5",
+    "bytes": 110650,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "097a63389cde2010e929bb12966998bea023515e01ff3a0953d8afbf27bef6e2",
+    "bytes": 5237,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "8eaaad9c2a1d14f4f815967045d83c5b631eff4c5c4e8a0e80aaf316a0fc2aa0",
+    "bytes": 109217,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1024x768-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "2094491d15175e00d38e3b4a488bf83d58fcda0e398a868e10843f347eff94e6",
+    "bytes": 3480,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "7761fad8d79bf1a0e039158d77deb8d73e0e1d73eb639657d02747f5f2faaf8b",
+    "bytes": 134887,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "b0011fbdaa8a20d582e1faee7e2a8341a81c8e6b984c000145bb94e327f657e1",
+    "bytes": 5824,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "3f2163f87a3ca752ffa409370eaecbe7a35c716659bdaa7b4e2b909136f9c895",
+    "bytes": 133838,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "1ea228fb168b6683bff43c2295401ff3536022199bf648412cca1150cb7cbd97",
+    "bytes": 3279,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "fcff7a75b7aa29a4d91df1dc3a2b2f93b58283a829c657381fdd96fcbb86c944",
+    "bytes": 136831,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "008a40e06922ca70efb9c0eeffe491390604a589ba1884abde55f3240cacd555",
+    "bytes": 5266,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "22939a762f81d5c7e3dc77e106528efc9a0bd454f77b061645729abdd23acced",
+    "bytes": 135414,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/1440x900-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "8e1a89febcfa215cc12470c178f70696306b1840a8c62209f8cc1707257a761a",
+    "bytes": 3347,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "770ecf6da1019d43f4253d35c0528a42e36f4deb1eda06435e2afc612fe72815",
+    "bytes": 22284,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "1f990e7521db77015256aa8e4a8772015002823772de477490396ef7f5941302",
+    "bytes": 8001,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "db71b34d12726cfb94e7e8306749de492edb37b1d2fcd83ede7a466e468b071e",
+    "bytes": 22379,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "d6e23832b64e18b44353614f15f7d7e77d8e37ad15ef873f023d835e6c8d6c6b",
+    "bytes": 3101,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "4145f30ca772d42bb4b35db3f305de71d44b1cc3708f08c680dcbb5d6cb2c0bb",
+    "bytes": 23218,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "a952fa30e3c1e1f4753c0960ba6b50db18bbf9bf665a05a3eac74bb04e5f9107",
+    "bytes": 8324,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "a83d32712b01c560cb72b0e99084370d59f12548a27218e2196b91d1495356db",
+    "bytes": 23376,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x320-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "0147eb744595dfc5f6a375e79338305ee121cb881f6c7c54801597816306365a",
+    "bytes": 3221,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "430c17aea4bf789177630fae680a1a5f9483a52cabd78c400e2bf6b833e92c98",
+    "bytes": 53278,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "d7370d7cbce1293257f53a86f6872e6fb0f9b586b46570968a3bbdb1535cf0b3",
+    "bytes": 6362,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "524cd676812942d86503c3f20a016a6a398123fbbe375b3dc31860ab6e980749",
+    "bytes": 53134,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "b5298607aeca11743cd564d64a1f65feaa3a8c18c4c33b78efa4de5567683ebf",
+    "bytes": 2926,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "7e9a533d7bd98633f67b802f712d1ba6923c0b6c91ecf454953977b0a15a858c",
+    "bytes": 54264,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "958ad1c6b9ffef7a02538a8349b3765d1ee32fe23d859b978ff39e6968ea3d12",
+    "bytes": 5787,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "50a5ae6f22b7f5298d6d1c32f82a029988f5ff1b1d2d2840b15b844c5c5e3f55",
+    "bytes": 53675,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-antes/390x844-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "cbe000e2b2c29c521bddb9748c700f2062aa61578350b286c146f4bdf5da373b",
+    "bytes": 4490,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "30473cabe8f10d5e4448c06577f354e8860c928e773af2944a7cc3a3bad0d37c",
+    "bytes": 110343,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "a6ccc074f04847dd887c6d802a34b12e8e09193b76e1511b90ef6e16c6eb0c77",
+    "bytes": 5747,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "0c3e69aba893be402f9ad0013ad05f0e9bfa9d11cf9b133f2779d68866d4d51f",
+    "bytes": 108844,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "4687fec95308d5d269487e8b26c7c03e0851427b8bc400d21e4751b2c10f3fc9",
+    "bytes": 4416,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "523cff18a2d63e42519880dd5f9342aeafa2ffbcb3d22c3ff296659b14b5af93",
+    "bytes": 111470,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "d0f81a517652d82e7a2f7a894153502f5220dd8c4c8fcf4ff2e2715927f1e452",
+    "bytes": 5394,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "09bb0e1fa1c15b727daed9d4d859cd83f4562a3edc41b663fe83d02fd89c57ae",
+    "bytes": 109653,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1024x768-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "7c6e4f47cba5c047901c5077bf55c247229c8b10d82e8f596e6b3f62fc1c216f",
+    "bytes": 4609,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "f79e6293cdeb9b814eeaa509749c67e942ca4a4495e14280edb84f2e287f0582",
+    "bytes": 135761,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "972a9a4c158d2221bf040a4448386b0dba0051f262f7e2310d1fa429af5ee94b",
+    "bytes": 7423,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "a00490a7e58313083820bd9909325cec7da52f875c38eb2d263a1c58f4f08854",
+    "bytes": 134473,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "21301c61946cdea79d8289866e7b1d3702263ec903f014c335795cb6833887d8",
+    "bytes": 4616,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "cf9a21cb1dfc37c11058ff97fa51396e47d69c13ceeb3e0d2c42323286d57078",
+    "bytes": 138085,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "bd0519747dd1ff090e5084962610c8432af777682b7438a3c6a25cf121134b83",
+    "bytes": 7053,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "00439dd4d6cfb248d5b708dcec257ede4d28a6e3bf2bd471e37dd447a008352c",
+    "bytes": 136451,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/1440x900-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "20db9a016ca97e1ec9cc5e1feeb1bb0e46f8552f50966d95819dba1cecdb2a08",
+    "bytes": 5230,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "6295f46a0c6d9dfc6ccdedb92bda633adf0c05031e77c0ea6c11a8329ada20fd",
+    "bytes": 21793,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "d8a8be4e47aa055b56c3cc551f4304c372c324f862e142e4104d9755a6d2ad43",
+    "bytes": 7227,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "b5b4d89fb23fe2c0ebe980ce77efbd61bb45a7cf7d212fbc8ba8283be9831e5c",
+    "bytes": 22010,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "82fe6840e9bb82c346ccb861ba54b31641ad381d4ceaa37fed54b718addb1f94",
+    "bytes": 5331,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "f133d4ab9151a6bd5fcc8f7e3063a26cdba3b01b333369040a576ce0997c5f0e",
+    "bytes": 23038,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "1f0325730ea83cfc5b1630525e8b0c35ac6dad8c44c29821a0409edeca1740c4",
+    "bytes": 7585,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "146dcbd8e5662fb03d8034a01e7bc7da6ebf63fb2ae7dd674fa2450367794b76",
+    "bytes": 23295,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x320-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "ecaa75e14ee4c9c6e5beca7611f7efca166c62a56346336be1c51915fd25ad48",
+    "bytes": 3851,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "a6f89519baa085ab804c57b4fe6a0ed6190f924b2d1a3159c5eae5e4f8e965c2",
+    "bytes": 53955,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "4d759ed6de6706ca122fbfb1b75b9771117ade4c78258a10ba304161bf9cbe2b",
+    "bytes": 6549,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "abcf96c5431a6cb4deb83cbda158b27cdfe77ff35b6de5ae0514ed2c4aae05be",
+    "bytes": 53230,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "e660c4278e31add2c94c4af745d8c3bff379a90efaccc78e46acc970e1fddbfb",
+    "bytes": 3636,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "e4fc3a8dfdb04a98ed532386a5f8a8c2803d853095d26e22e9018675de74c7bc",
+    "bytes": 55241,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "bf0556e60311435387904154b77b16bdc6da3b6a21ce988445a3710074f601b3",
+    "bytes": 6087,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "92332fb180b53c8a74aa01063af13685baf4222dafabfb9624be815d2fc5bd95",
+    "bytes": 54194,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-depois/390x844-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "05275a1e0eca3448417081a530fb0dd142076543e5da06105d365e3a25a9409e",
+    "bytes": 3486,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "89d5c0d1073113f55d1554b452e1603dd83ac9f10f1cd1f47011be97ea76fee0",
+    "bytes": 110709,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "888848180df0e8d97006441cc48c83baaf92ca31cf52a2ee7c4493952435984b",
+    "bytes": 5770,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "880102c1188cfb4bc217e0f4cd1a5fa9571c21066a97ae3ef5688718f0646d99",
+    "bytes": 110147,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "dad7fdfd05ffee6a8ae684b0a474a3e112a7737817a7ac52d50dc5221736557a",
+    "bytes": 3252,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "70773d3b48d2d69767e98110e89b25bbc19b168863249e4a2471d7e53af9e629",
+    "bytes": 110790,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "578cf91c1e784ab7dfadec8c732987feb480d6ae49ec9b30a0881979b6c5a474",
+    "bytes": 5195,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "3165840a31083d457d7c7d86a647da2afbc7a9f62caf7cabc98ffcf38ebfae47",
+    "bytes": 110238,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1024x768-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "24e26c4f79fb1d00e3cbd34297cdc65b934440284b4da9c545924e2e6999388d",
+    "bytes": 3492,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "ed0324074a231080c6c02fd9635451dd1b2d79c94021a9599d97e6ff378de99d",
+    "bytes": 137071,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "8d4bb1c01926add6e4ed1fc1167a43e10f459edeb9541c722ef1d6bb58054b19",
+    "bytes": 5799,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "24b438ca4c8c23456c01cd045519b9ef9dec51271ebdb8f5be160306624b5c35",
+    "bytes": 137514,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "d9c97befdbbe89bf30b829b622e8a9bd03a9cece19281a1feec5fc43ef122a7e",
+    "bytes": 3260,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "d1923010195bce7fbb76fe4e0bdfd5132a3844ed4f529ecc2957c6e4d4a62fc0",
+    "bytes": 138380,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "a4464c8a5099a6ea523db00b1ff03296ac46f922a7638154d74b7160e04f57ad",
+    "bytes": 5224,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "84bb6958c899ed3eedc7021c080650bf5409c79f307529a8f911712f3cb46cf9",
+    "bytes": 138947,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/1440x900-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "40ffc89b36a0ff80057661b4d22ae5069fdf5a177b7af1a44fffdb23b83b5082",
+    "bytes": 3504,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "3ebd172f20274a00ed9ad265e7c744018b50524a0cf67625d86c9e3fb1b819fa",
+    "bytes": 11000,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "e69d815015772b58f6a35827c4d338154cf8aba296321b891efa8d9736d3771d",
+    "bytes": 7883,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "4b85064677c9710e3b1dab3348b4114b4c0377da58f8d3d2f334e90c7b41a2cd",
+    "bytes": 10981,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "08074e0fa27ad85762fb7cd5b1421fd7bdfa6b6687b859e0955dbe3ffc4b85e7",
+    "bytes": 3425,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "c8e56399f80e88d7cca1a30c6230595e8fc7cd845cc41ea128a0ed536e58218d",
+    "bytes": 11416,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "a81bbcb017b489d272db598e058814006e3b405142ef3091e1250aca2296f5a4",
+    "bytes": 8370,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "8af368a8e86cd6b26defb3e4c7457aa683aa2902f905a6b3526d585612e36921",
+    "bytes": 11584,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x160-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "6403e3510c72770220b5c81e050d4c64a6de3122841b82942a2c249414810e8b",
+    "bytes": 3244,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "c320b3a8fa39ee1fce997936ec1a87e2951e77f102821bab8bd8b73ce586562f",
+    "bytes": 54473,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "26896142f499abb22228b1c02ead199065e55948a3cac92be2c6bfa83ddec2ba",
+    "bytes": 5682,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "a39760cb940d2edc57e9458c288970c947bc5ce6b5e3aaa8775b4a8c29cd7362",
+    "bytes": 53485,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "0aed31015fe4fa2727ed51f55d07bb2a6770e746db0bbba2d5f2dedbf18bfa94",
+    "bytes": 2965,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "79374b477d7272a30309a3467d6e1b4a9559197ddf6cd6dde4306ab9190ed1be",
+    "bytes": 55267,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "ca927446a4f3d0684b861493f0b53a97950b24e2266ea50a69f87a8d028faca4",
+    "bytes": 5184,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "54b4664474729fd8f6caed814707c64f6ef9f8a906eafd5ba7ccb0580b5d2046",
+    "bytes": 54072,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-antes/390x844-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "f100e9f8427a6d9157a4093d0f9dedbdd86581278c1157d74c754892c2c634e5",
+    "bytes": 3988,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "4413d01ddc7dffab541cdacc410eaff9d2da62e9938e9c98d02816ddfd277077",
+    "bytes": 108513,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "dd00fb182d6889b19ee23b9d67983736d8e91afd71a6980d59bb1c75b17ddcbd",
+    "bytes": 8032,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "6bc7202878be3dc32ccd7f3b5aa98f84c7e638a8325916d99bf3e0288707d348",
+    "bytes": 114201,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "00483dd27712f29c2823f4cd2a79303ad1fe35abca3c646cc0450911c0e42eeb",
+    "bytes": 3895,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "5de7775579f4440a5d3215c8c49db5129c0d39c6d8fa39178b08e944d2cfc25e",
+    "bytes": 108955,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "0343e56a31112df2dbe0995446db9161355bcbf52a95016561ccdb8e3c102836",
+    "bytes": 7272,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "b75904f83a05506fc3c1f2c8111981949514acde04f3440f2955fea59181f943",
+    "bytes": 114173,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1024x768-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "a314cac4da0a0f290ed00517332a660d25bb5756bcaf01471a8760be8a0e38f6",
+    "bytes": 4598,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "0fefca9ead69b15fb1dee986a007fc83749b0b6eb12a0f58a73e4bc64b9fade3",
+    "bytes": 137583,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "8ef36a06f1e9d80bbb11a55d9b5d7db73e8814e8f371d9be24c37b3d954fe11c",
+    "bytes": 7396,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "21ab2ab0174653cd06fc2478e943182471ea7af3292e59b0f0ef36e65a1515ff",
+    "bytes": 138171,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "8fe2eab21a07515261f480717ff2709235ed113dc30451c55af4cde3c6b1f1d4",
+    "bytes": 4555,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "55fef209e52e9aaed857595dfe46a51823bd6fc74fc9a393c4ba09a8dcf057ea",
+    "bytes": 139590,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "c3cb16dbc0deaf6ce018c1c691970164b1f55600ea0b9ffda529175a18332bf4",
+    "bytes": 7033,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "ef9cb4025d7807b2780144fe7955d758fe3badf5c24231cb8805c5691d2edabc",
+    "bytes": 139907,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/1440x900-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "aaa15a342bb4ba7cb2ad16a5f220c89f0c0bb8d616c60e2a964bdb9839631f23",
+    "bytes": 6340,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "22647d9bc6ce19a934c8de7248bd6f9adc9aa2a47c76468fce25741725e9dad9",
+    "bytes": 10881,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "b9c134cb89450d95af0b64581130329aa2030e20657969185bab79319be3b8c3",
+    "bytes": 6427,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "def32656b403479a3ac003d3e81ae90d0d1344950dfe208c053e2537e5f85c99",
+    "bytes": 9805,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "cb630576f447ac7b797fc9ae628deba4447f9754bf5e35e0a3ce34dfdde081fc",
+    "bytes": 6355,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "e1611c542d3f675d47c22b896059302c83b9a9d693b3156fc99f02b76894c73b",
+    "bytes": 11629,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "606d44736f094da3b0276969c590d7848e2149def4137a3c143b12b5ea05934c",
+    "bytes": 6994,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "b24c7c4bfe0d71c9451d6e5f643519cb1410abb47259b0f1986748a117195d4d",
+    "bytes": 10665,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x160-light-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "fa3518a47daa031c47a17d9d8ad2c2a27f466909c170ff802accf077b7e2e962",
+    "bytes": 3850,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-dark-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "2f8f38fdf64b8ab0f3188adacaec2cafd1c80ccd48f5fdd14369c1fd39e6f7b5",
+    "bytes": 53988,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-dark-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "4d8a3d595a623ab289d0dc2dabdd61059c051115c2253aebb177f2f3112d362a",
+    "bytes": 6180,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-dark-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "10f158cb5adbcdfc8f777f949b66fed7e4ec11cbcb88a8a4d7361bc3c089f076",
+    "bytes": 55067,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-dark-saida-com-autor-menu.png"
+  },
+  {
+    "sha256": "343f48aecd5b74a372d1c3f9ca469f36b1b576116e238a3f449d1653404af91d",
+    "bytes": 3593,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-light-entrada-sem-autor-bolha.png"
+  },
+  {
+    "sha256": "18a89a71bdba55565e3cb3f0516b70e0f9673a811cbb2bea6793d21a8975382c",
+    "bytes": 55012,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-light-entrada-sem-autor-menu.png"
+  },
+  {
+    "sha256": "ba4713f97626439a9c95d04e4ac33ffa8c56ff22c41ee1a83b5e19819685ee48",
+    "bytes": 5668,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-light-saida-com-autor-bolha.png"
+  },
+  {
+    "sha256": "f541b54f3f11fb4b43a5c6884316bc257614d53560d810db5911229fce8b519d",
+    "bytes": 55744,
+    "arquivo": "output/inbox-305-visual/menu-mensagem-motor-depois/390x844-light-saida-com-autor-menu.png"
+  }
+]

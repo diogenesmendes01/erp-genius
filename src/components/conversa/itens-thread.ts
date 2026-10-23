@@ -4,11 +4,12 @@ import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consul
 export type ItemThread = { tipo: "mensagem"; id: string; m: MensagemThread } | { tipo: "nota"; id: string; n: NotaInternaThread };
 
 /** Notas não mudam cursores nem o limite das mensagens; aparecem somente dentro da janela carregada. */
-export function itensDaThread(mensagens: MensagemThread[], notas: NotaInternaThread[], temMaisAntes: boolean): ItemThread[] {
+export function itensDaThread(mensagens: MensagemThread[], notas: NotaInternaThread[], temMaisAntes: boolean, temMaisDepois: boolean): ItemThread[] {
   const primeira = mensagens.length ? mensagens.reduce((min, m) => m.criadoEm < min ? m.criadoEm : min, mensagens[0].criadoEm) : null;
+  const ultima = mensagens.length ? mensagens.reduce((max, m) => m.criadoEm > max ? m.criadoEm : max, mensagens[0].criadoEm) : null;
   const itens: ItemThread[] = [
     ...mensagens.map((m): ItemThread => ({ tipo: "mensagem", id: m.id, m })),
-    ...notas.filter((n) => !temMaisAntes || !primeira || n.criadoEm >= primeira)
+    ...notas.filter((n) => (!temMaisAntes || !primeira || n.criadoEm >= primeira) && (!temMaisDepois || !ultima || n.criadoEm <= ultima))
       .map((n): ItemThread => ({ tipo: "nota", id: `nota:${n.id}`, n })),
   ];
   return itens.sort((a, b) => {
