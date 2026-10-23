@@ -6566,3 +6566,13 @@ Retirados apenas do índice os 97 PNGs históricos das issues #299/#302/#303 (25
 ## Revisão pós-merge — curadoria de textos e rastreabilidade (23/10/2026)
 
 Corrigidos JSDoc de identidade estável (383 C1), mapas Task 8/Task 3 (385 C2/386 C4), posição do metadado inicial e espaços históricos (386 C5/387 C3), referência do parecer de chaves (390 C2), EOF/prefixos pessoais de logs (391 C3/392 C3/394 C3), avisos locais das capturas retiradas (392 C9) e curadoria explícita dos logs/sondas (393 C6/395 C7). Originais e hashes preservados; 16 logs conferidos e cinco manifestos conservaram todos os campos originais. Processo 81434/76233d terminal 0; JSDoc emite o mesmo JS. Não houve nova captura, chamada externa, mudança de resultado histórico ou nova execução dos testes desses registros. QA da curadoria e regressão da combinação final permanecem pendentes.
+
+## Composição final das revisões pós-merge — 23/10/2026
+
+Rodada anterior integrada: 31 PRs (297 e 380–409), 26 issues funcionais originais encerradas (298–323, de 81). A #409 foi mergeada em 710fe568, CI 40030930049 com cinco checks aprovados; o integrador ROOT assumiu a publicação seguinte. Esta composição complementar não representa uma nova issue funcional entregue.
+
+Branch codex/inbox-posmerge-reviews-r1 criada diretamente da main 710fe568. Somente nove patches selecionados foram reaplicados com trailers de origem; fonte executável final 29c2bf199988455fba123887de6429af6ac606e7. O único conflito no quadro preservou a base e acrescentou a seção 384; mudanças documentais posteriores de curadoria também foram mantidas. Nenhuma história agregada foi publicada.
+
+Gates da fonte final: unitário completo sessão 55132/096015, saída 0, 910 arquivos/7.159 testes, 214,04 s, sem filtro de nome/skips; configuração unitária exclui integração. Next typegen e TypeScript 92277/d91229, saída 0. Lint 16623/cb7c17, saída 0, zero erros/40 avisos herdados. TESTER independente no SHA exato: 5 arquivos/159 testes bc59c1, saída 0; comparação e transpilação b47df1 comprovaram JS idêntico à fonte previamente revisada. Não reatribuir INT24 ou auditoria de ZIP nominal a esta fonte final.
+
+Relatório output/inbox-posmerge-reviews-r1-report.md e seis pareceres integrais indexados por SHA em output/inbox-posmerge-qa/README.md. Os 97 PNG históricos e os 98 arquivos locais que colidiriam com a troca de checkout foram preservados em backups privados verificados. Nenhuma credencial, PNG, ZIP privado ou script administrativo integra a publicação. Sem schema/dependências/envio real/deploy. CI remoto dos cinco checks e revisão de novos comentários permanecem pendentes antes do merge desta PR complementar.
