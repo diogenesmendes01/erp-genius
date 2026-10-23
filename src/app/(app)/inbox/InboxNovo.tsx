@@ -51,8 +51,6 @@ export interface PropsInboxNovo {
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
-  /** Snapshot único do servidor, compartilhado com lista/thread na hidratação. */
-  agoraInicial?: number;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
