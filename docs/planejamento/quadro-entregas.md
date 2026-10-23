@@ -5715,3 +5715,8 @@ Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, 
 ### #317 — PR403 C2 menu alinhado à regra20 vigente
 
 Somente projeção local: Nota individual disponível em ENCERRADO, mantendo grupos sem Nota e gates de envio/agenda/gestão fechados. Servidor/escopo inalterados. RED212ccc→GREEN02e329; combinação C3+C2:13arquivos/319testes13331, TSC85482 heap8192 e lint8fontes4d0679/teste5c48e7 saída0 Node22.23.2. TSC1949 inicial era fixture com literal alargado, corrigido. Sem DB/browser/full próprios. Complemento visual do menu encerrado, QA exata/global integrado/publicação pendentes do ROOT. Fontes visuais históricas preservadas no relatório.
+
+
+### #317 — PR403 complemento29f e expectativa legada alinhada
+
+8PNG/2contextos positivos028fd6 inspecionados: Lucas-origem real ENCERRADO/GET200/enviofalse, Nota menu+rodapé/dialogo semsubmit e foco,1SSE simultânea/ativa (2construçõessequenciais). Allowlist positiva11arquivos em output/inbox-317-probes/review403-menu-allowlist.json; negativosR1 fora. Contrato legado AcoesAtendimento.test foi RED5be328 e atualizado só para Nota porleitura, preservando/ampliando todos negativos de negócio. GREEN9/126e86102, TSC94141/lint0b692d/diff1988510 Node22.23.2. Produção29f invariante; semPNG emGit/full/DBDEV. SnapshotA restaurado7e0eeb peloROOT; semserver/browserA. QAexata/global integrado/publicação pendentesROOT.

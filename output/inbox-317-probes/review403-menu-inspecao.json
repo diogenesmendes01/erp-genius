@@ -1,0 +1,20 @@
+{
+  "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+  "executor": "028fd6",
+  "inspecionados": [
+    "review403-menu-r2/light-390-responder-bloqueado.png",
+    "review403-menu-r2/light-390-menu-nota.png",
+    "review403-menu-r2/light-390-dialogo-sem-submit.png",
+    "review403-menu-r2/light-390-rodape-nota.png",
+    "review403-menu-r2/dark-1440-responder-bloqueado.png",
+    "review403-menu-r2/dark-1440-menu-nota.png",
+    "review403-menu-r2/dark-1440-dialogo-sem-submit.png",
+    "review403-menu-r2/dark-1440-rodape-nota.png"
+  ],
+  "pranchas": [
+    "review403-menu-r2/prancha-light.png",
+    "review403-menu-r2/prancha-dark.png"
+  ],
+  "resultado": "8/8 inspecionadas: menu mostra Nota sem comandos de gestão; rodapé Responder negado/Nota disponível; diálogo sem conteúdo e sem submit; sem overflow novo.",
+  "limites": "Grupo não capturado; C3 só testes React reais, nenhum sucessoERP forjado; foco retorno ao gatilho medido; SSE máximo1 simultânea/1 ativa,2 construções sequenciais."
+}
