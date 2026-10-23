@@ -5644,3 +5644,15 @@ próprio efetivo11files177tests exit0 (10/173 a18105 +1/4 c62554), diff0.
 Não atribuir global do autor à composição317. Prova ERP com SSE/paginação,
 formal317, QA/browser e globalROOT ainda pendentes. Report
 output/inbox-317-c2-integracao.md registra fontes e caminho inexistente não contado.
+
+### #317 — global df9 e QA normal, formal ainda pendente
+
+ROOT global15595 exit0:897files7013tests238,47s, sem filtros/skips adicionais,
+maxWorkers2; typegen/TSC61131heap8192 e lintglobal77102 exit0/42avisos
+(40src+2staging318), sem relaxar regras. TESTER extensão df9 própria5/66 zero,
+browser normal2d486d zero:8ctx24PNG, rascunhos/abas/foco/DOM/44px/agendaEscape;
+Lucas fechado real comprovou Responder negado/Nota disponível. DEV29367 normal
+8ctx24PNG e89958 permissões6ctx12PNG exit0. CLIformal16261 exit1 no seletor
+nota-protótipo com glifo acessível; humano12positivo e6appnota parciais preservados
+separados, sem aceite final. A corrigirá seletor isolado; C2 ERP longo/SSE em QA.
+Report output/inbox-317-global-final.md registra fontes e pendências, não concluída.
