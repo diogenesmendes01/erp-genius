@@ -1,0 +1,408 @@
+{
+  "capturas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "app-escuro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [
+        "requestfailed: http://localhost:3111/inbox?c=inbox-demo-mariana-307&_rsc=R-GM7tUZU1MCeV8A net::ERR_ABORTED"
+      ],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "app-escuro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "app-escuro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "app-claro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "app-claro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "app-claro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "sem-selecao",
+      "arquivo": "app-escuro-desktop-sem-selecao.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "sem-selecao",
+      "arquivo": "app-claro-desktop-sem-selecao.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "app-escuro-celular-celular-lista.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "app-claro-celular-celular-lista.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "app-escuro-celular-celular-painel.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "app-claro-celular-celular-painel.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "app-escuro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "app-claro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "app-escuro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "app-claro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3111/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ]
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "prototipo-escuro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "prototipo-escuro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "prototipo-escuro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "prototipo-claro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "prototipo-claro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "prototipo-claro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "prototipo-escuro-celular-celular-lista.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "prototipo-claro-celular-celular-lista.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "prototipo-escuro-celular-celular-painel.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "prototipo-claro-celular-celular-painel.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "prototipo-escuro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "prototipo-claro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "prototipo-escuro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": []
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "prototipo-claro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": []
+    }
+  ]
+}
