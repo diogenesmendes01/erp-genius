@@ -5425,3 +5425,14 @@ Global98604 EXIT0:863arquivos/6.788testes,235,08s,maxWorkers2,sem filtros/
 ignorados; Nexttypegen/TSC27444 e lint44188 EXIT0,0erros40avisos anteriores.
 Sem novo DB/browser. TESTER332 favorável10/91 próprios,exec78633d EXIT0,
 sem DB/Next/browser/global próprios; CI/main/392B2 pendentes.
+## PR #398 — C1: composição local e compatibilidade de testes
+
+Base314-r3@cada334f recebe3975f8/main sem moverc207; fonte67192a57 preserva
+314 e recebe produtores394/R6/prazo puro/Avatar/SSE. Conversa conserva
+decorarThread/stableMount e passa quarto argumento388; testeSSR314 mantido
+junto aos C1/R6. Balões/VList/relógio/scripts314 byteinalteradosaa366.
+Recorte7/1430; global4467 EXIT0:867arquivos/6.819testes,242,16s,maxWorkers2,
+sem filtro/ignorados; lint44100 EXIT0/40. TSC60102 achou4fixtures3args;
+após fim do global, somente quatro false explícitos no teste, produçãoigual.
+Recorte final7/143,TSC84417/lintteste EXIT0; global não repetido parafixtures.
+Sem novo DB/browser. TESTERexato/CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
