@@ -5225,3 +5225,18 @@ filtro/ignorados,maxWorkers2; TSC83357 e lint95898 zero erros /40 avisos.
 Quatro PNGs positivos do probeB babd/3b em ZIPdraft344.425bytes, SHA c7c4fb49...
 com fontes explícitas; sem recaptura9cf/DB/browser próprio. Parecer final,
 395/#392B2 e CI/main continuam gates. output/pr396-qa/revisao.md.
+
+## PR #397 — C1: base atualizada, prazo puro e SSE recuperável
+
+Base312-r3@b32b19c0 recebe main5f/3953fc/39631a/392/393 por merges normais,
+sem mover base6e original. Fonteaa99 mantém Item/Lista/VirtualList doacbb;
+prazo-vivo só reexporta a regra pura393 sem duplicação/import inútil.
+RelógioSSR29→30/timerúnico preservados. 91→aa99 muda só3arquivosSSEbabd.
+Quadro/README preservam seções e linhas únicas, sem perder fechamento310.
+
+Global35662 terminou0:863 arquivos /6.780 testes unitários sem filtro/skip,
+maxWorkers2; Nexttypegen/TSC29759 e lint86227 terminaram0/40avisos herdados.
+DB89303 anterior na91 terminou0:3arquivos29testes, ciint exclusivo, backend
+idêntico depoisSSE. TESTERaa99favorável13arquivos177próprios0, OIDs eSSR
+conferidos. Sem novo browser/DB noaa99. Pais/392B2 eCI/main ainda gates;
+output/pr397-qa/revisao.md, sem instalação/lock/schema/envio/deploy.
