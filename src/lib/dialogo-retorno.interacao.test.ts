@@ -2,10 +2,10 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } from "@/test/dom-minimo";
-import type { TelaRetorno, NavegacaoRetorno } from "@/test/dialogo-retorno.test.fixture";
+import type { TelaRetorno, NavegacaoRetorno } from "@/test/dialogo-retorno.fixture";
 let doc:Documento,container:Elemento,root:Root,Tela:typeof TelaRetorno,Navegacao:typeof NavegacaoRetorno;
 let alvo:{current:HTMLElement|null};const ouvintes=new Set<(e:KeyboardEvent)=>void>();let ligacoes:number;
-beforeEach(async()=>{const dom=criarDomMinimo();doc=dom.documento;ouvintes.clear();ligacoes=0;Object.assign(doc,{addEventListener(t:string,f:(e:KeyboardEvent)=>void){if(t==="keydown"){ouvintes.add(f);ligacoes++;}},removeEventListener(t:string,f:(e:KeyboardEvent)=>void){if(t==="keydown")ouvintes.delete(f);}});vi.stubGlobal("document",doc);vi.stubGlobal("window",dom.janela);vi.stubGlobal("MutationObserver",dom.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const {createRoot}=await import("react-dom/client");({TelaRetorno:Tela,NavegacaoRetorno:Navegacao}=await import("@/test/dialogo-retorno.test.fixture"));container=doc.createElement("div");doc.body.appendChild(container);root=createRoot(container as unknown as HTMLElement);alvo={current:null};});
+beforeEach(async()=>{const dom=criarDomMinimo();doc=dom.documento;ouvintes.clear();ligacoes=0;Object.assign(doc,{addEventListener(t:string,f:(e:KeyboardEvent)=>void){if(t==="keydown"){ouvintes.add(f);ligacoes++;}},removeEventListener(t:string,f:(e:KeyboardEvent)=>void){if(t==="keydown")ouvintes.delete(f);}});vi.stubGlobal("document",doc);vi.stubGlobal("window",dom.janela);vi.stubGlobal("MutationObserver",dom.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);const {createRoot}=await import("react-dom/client");({TelaRetorno:Tela,NavegacaoRetorno:Navegacao}=await import("@/test/dialogo-retorno.fixture"));container=doc.createElement("div");doc.body.appendChild(container);root=createRoot(container as unknown as HTMLElement);alvo={current:null};});
 afterEach(async()=>{if(root)await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
 const obter=(n:string)=>container.querySelector('[aria-label="'+n+'"]')!;
 async function render(aberto:boolean,explicito=false,isolar=false,versao=0){await act(async()=>root.render(createElement(Tela,{aberto,explicito,isolar,versao,focoAoFecharRef:alvo})));}
