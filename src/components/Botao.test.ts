@@ -38,6 +38,7 @@ describe("Botao (E1)", () => {
       secundario: "border border-border-soft bg-transparent text-brand-700 hover:bg-highlight",
       perigo: "bg-danger text-white hover:brightness-95",
       fantasma: "text-brand-700 hover:bg-highlight",
+      neutro: "border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight",
     });
     expect(TAMANHOS_BOTAO).toEqual({ sm: "px-3 py-1 text-xs", md: "px-4 py-1.5 text-sm", lg: "px-[22px] py-2.5 text-sm" });
   });
@@ -66,4 +67,10 @@ describe("Botao (E1)", () => {
     expect(html).toContain('disabled=""');
     expect((Botao as unknown as { render?: unknown }).render).toBeTypeOf("function"); // forwardRef
   });
+});
+
+// #315: variante opt-in preserva os alvos existentes.
+it("neutro usa borda neutra sem alterar o mínimo móvel", () => {
+  expect(botaoClasses({ variante: "neutro" })).toContain("border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight");
+  expect(botaoClasses({ variante: "neutro" })).toContain("max-sm:min-h-11");
 });
