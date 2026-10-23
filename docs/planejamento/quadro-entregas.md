@@ -5624,3 +5624,15 @@ DB89303 anterior na91 terminou0:3arquivos29testes, ciint exclusivo, backend
 idêntico depoisSSE. TESTERaa99favorável13arquivos177próprios0, OIDs eSSR
 conferidos. Sem novo browser/DB noaa99. Pais/392B2 eCI/main ainda gates;
 output/pr397-qa/revisao.md, sem instalação/lock/schema/envio/deploy.
+## PR #400 — C1: ancestralidade e composição local verificadas
+
+Nova base313-r3@633e53e6 preserva5f6 original; b1dafc5 registra main5f por
+merge normal com árvore inteira idêntica5f6 após comparação de conflitos
+falsos do squash394, documentos repetidos e imagens já arquivadas. Depois
+recebe3976e6 e08f7fada compõe o head400, sem alterar InboxNovo/leiturasf51/
+R6/URL/ACK/Conversa/scripts/package/lock do92d. Delta produtivo nove arquivos
+de prazo puro/Avatar acessível/SSEbabd, documentos distintos preservados.
+Recorte8/1500; global74482 EXIT0:879arquivos/6.886testes,242,57s,maxWorkers2,
+sem filtros/ignorados. Nexttypegen/TSC47616 e lint96198 EXIT0,0erros40avisos.
+BackendC2 idêntico260a, integração anterior20testes nominal. TESTER08f
+solicitado; CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
