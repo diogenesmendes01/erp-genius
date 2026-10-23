@@ -5734,3 +5734,13 @@ sem filtro/ignorados; lint44100 EXIT0/40. TSC60102 achou4fixtures3args;
 após fim do global, somente quatro false explícitos no teste, produçãoigual.
 Recorte final7/143,TSC84417/lintteste EXIT0; global não repetido parafixtures.
 Sem novo DB/browser. TESTERexato/CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
+## PR #399 — C1: composição local dos pais
+
+Base318-r3@167856f4 recebe4003b/398bc4,originaisf534preservados. Merge398
+na base alterou só docs; preservadosparametros313/URL/ACK. Fonte33236c6e
+contraee498 difere em15arquivos produtores394/R6/puro/Avatar/SSE; painel,
+Conversa/LinhaCampo/backendpaineis/testDB/scripts/package/lock idênticos.
+Recorte8/1330; global20394 EXIT0:883arquivos/6.926testes,266,18s,maxWorkers2,
+sem filtros/ignorados. Nexttypegen/TSC95347 e lint60640 EXIT0,0erros40avisos.
+DB12 anteriorab8 nominal, sem novo DB/browser. TESTERexato/CI/main/392B2
+pendentes. output/pr399-qa/ancestralidade.md, sem homologação presumida.
