@@ -5314,3 +5314,13 @@ prop, trecho e alvo, com motivo específico e cópia literal; nenhum algoritmo,
 limite, produtor ou UI foi alterado. RED isolado29tests1falha; GREEN3files97
 testes saída0; lint do arquivo0. Negativos/logs preservados. Regressão global
 após o registro ainda pendente, sem chamar a execução4490 de aprovada.
+### #318 — global final e parecer incremental
+
+Fontee5941b8c3644370451f3e7a13610cce223adf5c5: unit25190 saída0,
+881arquivos/6.886testes/230,26s,maxWorkers2,semfiltro/skip; typegen0,
+TSC85080heap8192saída0. Lintglobal3ec1252zeroerros42avisos conhecidos,
+produção idêntica; único teste alterado lint0. TESTERexatoe594favorável,
+13/166+3/99 próprios saída0, sem novoDB/browser/global. Relatórios
+output/inbox-318-global-final.md e inbox-318-aggregate-review-tester.md.
+Evidências históricas142PNG no ZIPdraft remoto/hash confirmado, sem novas
+imagens noGit. Publicação individual ainda pendente; sem integração presumida.
