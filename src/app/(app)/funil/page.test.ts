@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { papeisDoGuardArquivo } from "@/test/guard-pagina";
 
 const mocks = vi.hoisted(() => ({
+  conversa: vi.fn(async () => ({ atendimentoId: "at-336", aberta: true })),
   usuario: { valor: { id: "u1", nome: "U", papeis: ["VENDEDOR"], permissoes: [] as string[] } },
   carregar: vi.fn(),
   listarFiltros: vi.fn(async () => [] as unknown[]),
@@ -25,6 +26,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { configuracaoOperacional: { findUnique
 vi.mock("./FunilCliente", () => ({ FunilCliente: mocks.cliente }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 
+vi.mock("@/server/inbox/atalhos", () => ({ atendimentoParaAbrir: mocks.conversa }));
 import Page from "./page";
 
 const semOportunidades = [{ etapa: "NOVO", total: 0, somaPorMoeda: [], cartoes: [], possuiMais: false }];
@@ -72,4 +74,15 @@ describe("/funil (página)", () => {
     await renderPagina({}, comOportunidade);
     expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ fuso: "America/Costa_Rica", preferenciaFusoExibicao: null });
   });
+});
+
+it("#336 só consulta conversa depois da oportunidade autorizada e transporta o DTO", async () => {
+  mocks.conversa.mockClear();
+  await renderPagina({}, semOportunidades);
+  await renderPagina({ o: "fora" }, semOportunidades);
+  expect(mocks.conversa).not.toHaveBeenCalled();
+  mocks.obter.mockResolvedValueOnce({ id: "op336", pessoaId: "p336" });
+  await renderPagina({ o: "op336" }, comOportunidade);
+  expect(mocks.conversa).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: "u1" }), { leadId: "op336", pessoaId: "p336" });
+  expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ aberta: { conversa: { atendimentoId: "at-336", aberta: true } } });
 });

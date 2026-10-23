@@ -13,6 +13,7 @@ import { moverEtapaEmLote } from "@/server/crm/oportunidades";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { ColunaFunil, FiltrosFunil } from "@/server/crm/funil";
 import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico";
+import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
 import { FUSO_PADRAO, type AcaoDoCartao } from "./CartaoOportunidade";
 import { ListaFunil } from "./ListaFunil";
 import { hrefSalvo } from "./href-salvo";
@@ -27,7 +28,7 @@ type Props = {
   filtros: FiltrosFunil;
   dirOrdem: "asc" | "desc";
   salvos: { id: string; nome: string; filtros: Record<string, string> }[];
-  aberta: { oportunidade: DetalheOportunidade; historico: ItemHistorico[] } | null;
+  aberta: { oportunidade: DetalheOportunidade; historico: ItemHistorico[]; conversa?: ConversaParaAbrir | null } | null;
   oportunidadeNaoEncontrada: boolean;
   capacidades: CapacidadeCrm[];
   podeAtribuir: boolean;
@@ -185,6 +186,7 @@ export function FunilCliente({
           key={aberta.oportunidade.id}
           oportunidade={aberta.oportunidade}
           historico={aberta.historico}
+          conversa={aberta.conversa}
           capacidades={capacidades}
           vendedores={vendedores}
           paises={paises}

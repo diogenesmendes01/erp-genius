@@ -176,3 +176,18 @@ describe("FichaContato: fuso pessoal de exibição", () => {
     expect(renderFicha(d, ["funil.ver"], [], { fuso: "America/Sao_Paulo", preferenciaFusoExibicao: null })).toContain("20/10/2026, 23:30");
   });
 });
+
+describe("entradas autorizadas da conversa (#336)", () => {
+  it("cabeçalho oferece Abrir e Agendar somente com conversa aberta", () => {
+    const aberto = renderFicha(detalhe, [], [], { conversa: { atendimentoId: "c 1&outra", aberta: true } });
+    expect(aberto).toContain('href="/inbox?c=c%201%26outra"');
+    expect(aberto).toContain('href="/inbox?c=c%201%26outra&amp;agendar=1"');
+    expect(aberto).toContain("Abrir conversa"); expect(aberto).toContain("Agendar mensagem");
+    const encerrado = renderFicha(detalhe, [], [], { conversa: { atendimentoId: "a1", aberta: false } });
+    expect(encerrado).toContain('href="/inbox?c=a1"'); expect(encerrado).not.toContain("Agendar mensagem");
+  });
+  it("ausência da prop ou conversa nula preserva ficha sem atalhos", () => {
+    expect(renderFicha(detalhe, [])).not.toContain("Abrir conversa");
+    expect(renderFicha(detalhe, [], [], { conversa: null })).not.toContain("Abrir conversa");
+  });
+});

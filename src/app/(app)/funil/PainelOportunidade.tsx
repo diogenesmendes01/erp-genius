@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { hrefConversa } from "@/lib/href-conversa";
+import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
+
 import { useRouter } from "next/navigation";
 import { EtapaLead, Temperatura } from "@prisma/client";
 import { Drawer } from "@/components/Drawer";
@@ -37,6 +40,7 @@ const ABAS: { id: Aba; rotulo: string }[] = [
 const CAMPO = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11";
 
 type Props = {
+  conversa?: ConversaParaAbrir | null;
   oportunidade: DetalheOportunidade;
   historico: ItemHistorico[];
   capacidades: CapacidadeCrm[];
@@ -68,7 +72,7 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade" }: Props) {
+export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade", conversa }: Props) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
@@ -146,6 +150,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
           <span className="rounded-full bg-brand-bg px-2 py-0.5 font-medium text-brand-800">{ETAPA_LABEL[op.etapa]}</span>
           <span className={`rounded-full px-2 py-0.5 font-medium ${TEMPERATURA_CLS[op.temperatura]}`}>{TEMPERATURA_LABEL[op.temperatura]}</span>
           {op.codigo && <span className="text-gray-600">{op.codigo}</span>}
+          {conversa && <div className="flex flex-wrap gap-x-3">
+            <Link href={hrefConversa(conversa.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>
+            {conversa.aberta && <Link href={hrefConversa(conversa.atendimentoId, { agendar: true })} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Agendar mensagem</Link>}
+          </div>}
         </div>
 
         <div role="tablist" aria-label="Seções da oportunidade" className="mb-4 flex gap-1 border-b border-gray-200">
