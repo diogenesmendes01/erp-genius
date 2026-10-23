@@ -1,6 +1,7 @@
 import { EtapaLead, Prisma, type AcaoAgenteIA } from "@prisma/client";
 import { exigirAgendamentoNaJanela, recusaForaDaJanela } from "@/server/whatsapp/janela-agendamento";
 import { registrarEvento } from "@/server/_shared/evento";
+import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { validarValorCampo } from "@/server/crm/campos";
@@ -494,6 +495,8 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
         autorId: null,
         payload: payloadDaAria(acao.id, { nota: payload.texto }),
       });
+      const atendimento = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId }, select: { id: true, conversaId: true } });
+      await avisarAtendimentoAtualizado(tx, atendimento);
       break;
     }
     case "CONDICAO_COMERCIAL": {
