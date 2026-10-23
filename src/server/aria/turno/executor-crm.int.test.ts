@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { diaUtilAs } from "@/test/janela-envio";
+import { comAvisosInbox } from "@/test/avisos-inbox";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { montarContextoTurno } from "./contexto";
@@ -106,10 +107,37 @@ describe("executor: ações no CRM", () => {
   });
 
   it("nota_interna_vira_evento_sem_mensagem", async () => {
-    const a = await exec({ acao: "NOTA_INTERNA", texto: "Prefere noite", justificativa: "x" });
+    const { resultado: a, avisos } = await comAvisosInbox(() => exec({ acao: "NOTA_INTERNA", texto: "Prefere noite", justificativa: "x" }));
     expect(a.status).toBe("EXECUTADA");
     expect(await ultimoEvento("NotaInterna")).toMatchObject({ agregadoTipo: "AtendimentoWhatsApp", agregadoId: c.at.id, autorId: null, payload: { nota: "Prefere noite", ator: "ARIA" } });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(avisos).toContainEqual({ tipo: "atendimento.atualizado", atendimentoId: c.at.id, conversaId: c.at.conversaId, mensagemId: null });
+    expect(JSON.stringify(avisos)).not.toContain("Prefere noite");
+  });
+
+  it.each(["SUGERIR", "SHADOW"] as const)("nota %s não publica aviso nem evento efetivo", async (modo) => {
+    const { resultado, avisos } = await comAvisosInbox(() => exec(
+      { acao: "NOTA_INTERNA", texto: "Ainda não aplicada", justificativa: "x" },
+      modo === "SUGERIR" ? "SUGERIR" : "EXECUTAR", { simulado: modo === "SHADOW" },
+    ));
+    expect(resultado.status).toBe(modo === "SUGERIR" ? "SUGERIDA" : "SIMULADA");
+    expect(avisos).toEqual([]);
+    expect(await prisma.evento.count({ where: { tipo: "NotaInterna" } })).toBe(0);
+  });
+
+  it("nota revertida por rollback não publica aviso nem persiste o evento", async () => {
+    const { avisos } = await comAvisosInbox(async () => {
+      await expect(prisma.$transaction(async (tx) => {
+        const ctx = await montarContextoTurno(c.at.id, tx);
+        await executarAcaoCrm(tx, {
+          turnoId: c.turno.id, ctx, proposta: { acao: "NOTA_INTERNA", texto: "Revertida", justificativa: "x" },
+          destino: "EXECUTAR", modo: "EXECUTA", simulado: false, confianca: 90,
+        });
+        throw new Error("Reverter nota");
+      })).rejects.toThrow("Reverter nota");
+    });
+    expect(avisos).toEqual([]);
+    expect(await prisma.evento.count({ where: { tipo: "NotaInterna" } })).toBe(0);
   });
 
   it("agendar_mensagem_cria_intencao_ia_agendada", async () => {
