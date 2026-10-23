@@ -6118,3 +6118,16 @@ QA independente: estática b509, testfix491 e visual491 favoráveis. TESTER53837
 Pacote imutável inbox-320-evidencias-442d.zip:23.677.284bytes/272entradas, SHA d4f0168d80a248b081adaa1fabca426b789734aee7b0d0c53cdcdfe54cf5c0a4. Release DRAFT33f312, upload6f5778/download0785d3 saída0 com bytes/SHA/sidecar iguais. Auditoria LOCAL independente do TESTER saída0:271hashes/bytes, três allowlists originais, tabela/bijeção164, ausência de extras/duplicações de caminhos/traversal/proibidos;14pares de conteúdoPNG idêntico em estados diferentes são declarados. Parecer output/inbox-320-pacote-review-tester.md; roundtrip remoto atribuído ao ROOT.
 
 Previews/browsers encerrados, bancos A551/TESTER1386 restaurados com424hashes originais (defae5/fa0de1); somente blocoNext gerado removido deAGENTS. Nenhum envio real, integração externa ou deploy. Fecho técnico autoriza preparar as próximas duas frentes E2 após o PR concreto; CI/revisão GitHub/dependências/merge emmain continuam pendentes. A issue320 não está fechada nem homologada em produção.
+
+### PR406 — todos os comentários, patch C3 e avaliação C4
+
+Revisão5626682648: retirado somente testeSSEpuramenteunitário duplicado da suíte
+INT; negativa estrutural e IDs públicosu9 permanecem no unitário. Produtor e
+unitário byteidênticos à publicação1bb. ROOT:8unitários0/aae707;10INTrestantes
+completos0/sessão4022/72c72e/28,68s/perfilintegracao487/maxWorkers1;
+TSC98906/9564e30 e lintarquivo5f8dc40. Redução11→10INTintencional, semnovo teste.
+C4avaliado13outputs(7JSON13046linhas/6MD209linhas): mantidos para auditoria dos
+aceites320 e links públicos aoZIP/fontes, semnovoPNG/dump/credencial/probe.
+C2tabelacorpojáatendida, C1CI/maincontinua gate. Relatório
+output/inbox-pr406-review-todos.md; patchaindaprecisaQA/aplicaçãonafontefinal406.
+Não marcar issue320novamente concluída nem atribuir a CI remota a este recorte.
