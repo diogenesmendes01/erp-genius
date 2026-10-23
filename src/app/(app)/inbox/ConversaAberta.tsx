@@ -151,7 +151,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList
-          items={itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes)}
+          items={itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes, conversa.temMaisDepois)}
           getKey={(i) => i.id}
           estimatedHeight={72}
           scrollRef={rolagem}

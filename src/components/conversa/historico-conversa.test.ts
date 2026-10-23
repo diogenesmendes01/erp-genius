@@ -3,6 +3,7 @@ import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consul
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import { fonteErp } from "./fonte-erp";
 import { HistoricoConversa, LIMITE_HISTORICO, reagirAoAviso, type FonteHistorico, type PaginaHistorico } from "./historico-conversa";
+import { itensDaThread } from "./itens-thread";
 
 const msg = (i: number): MensagemThread => ({
   id: `m${String(i).padStart(5, "0")}`, direcao: "ENTRADA", tipo: "TEXTO", corpo: `c${i}`, midiaPath: null, status: "RECEBIDA", origem: null,
@@ -35,6 +36,39 @@ const ids = (h: HistoricoConversa) => h.getState().mensagens.map((m) => m.id);
 const nota = (id: string): NotaInternaThread => ({ id, nota: id, autorNome: "Ana", criadoEm: msg(0).criadoEm, origem: "atendimento" });
 
 describe("HistoricoConversa", () => {
+  it.each([true, false])("SSE preserva notas sem cursor durante a consulta e sua falha: sucesso=%s", async (sucesso) => {
+    const antiga = nota("n1"), nova = nota("n2");
+    let concluir!: (p: PaginaHistorico) => void, rejeitar!: (e: Error) => void;
+    const pagina = vi.fn().mockResolvedValueOnce({ mensagens: [], notas: [antiga], antes: null, depois: null, temMais: false })
+      .mockImplementationOnce(() => new Promise<PaginaHistorico>((ok, erro) => { concluir = ok; rejeitar = erro; }));
+    const h = new HistoricoConversa({ pagina });
+    await h.abrir("a");
+    const publicados: string[][] = [];
+    h.subscribe(() => publicados.push(h.getState().notas.map((n) => n.id)));
+    const pedido = reagirAoAviso(h, "a", { tipo: "mensagem.status", atendimentoId: "outro", conversaId: "cv", mensagemId: "m" });
+    expect(h.getState().notas).toEqual([antiga]);
+    expect(publicados.every((ids) => ids.join() === "n1")).toBe(true);
+    if (sucesso) concluir({ mensagens: [], notas: [antiga, nova], antes: null, depois: null, temMais: false });
+    else rejeitar(new Error("rede indisponível"));
+    await pedido;
+    expect(h.getState().notas).toEqual(sucesso ? [antiga, nova] : [antiga]);
+    expect(h.getState().erro).toBe(sucesso ? "" : "rede indisponível");
+  });
+
+  it("janela de 600 mensagens oculta notas acima do fim cortado e as recupera ao avançar", async () => {
+    const f = fonteFalsa({ a: 1260 });
+    const recente = { ...nota("recente"), criadoEm: msg(1259).criadoEm };
+    const h = new HistoricoConversa({ pagina: async (id, o, s) => ({ ...(await f.pagina(id, o, s)), notas: [recente] }) });
+    await h.abrir("a");
+    for (let i = 0; i < 10; i++) await h.maisAntigas();
+    let estado = h.getState();
+    expect(estado.mensagens).toHaveLength(LIMITE_HISTORICO);
+    expect(estado.temMaisDepois).toBe(true);
+    expect(itensDaThread(estado.mensagens, estado.notas, estado.temMaisAntes, estado.temMaisDepois).some((i) => i.tipo === "nota")).toBe(false);
+    await h.maisNovas(); estado = h.getState();
+    expect(estado.temMaisDepois).toBe(false);
+    expect(itensDaThread(estado.mensagens, estado.notas, estado.temMaisAntes, estado.temMaisDepois).some((i) => i.id === "nota:recente")).toBe(true);
+  });
   it("abrir publica notas; antes mantém; depois substitui inclusive por vazio; recarregar reconcilia", async () => {
     const base = fonteFalsa({ a: 150 }), h = new HistoricoConversa({
       pagina: async (id, o, s) => ({ ...(await base.pagina(id, o, s)), notas: o.antes ? null : notas }),
