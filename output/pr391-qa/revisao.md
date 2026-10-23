@@ -32,3 +32,20 @@ sem filtro/ignorados (maxWorkers=2); TSC47138 saída0; lintglobal64541 saída0,
 0erros/40avisos herdados. Fontes da correção idênticas a7d29. Integração do
 refR6 com classes de altura389 conciliada explicitamente. Dependências E0 e
 CI/revisão final ainda pendentes; sem nova suíte DB ou recaptura completa.
+
+## Integração final com main — 23/10/2026
+
+O merge normal 8c6930c2 incorpora main8d00124, já com #385/#388/#389/#390.
+Conflitos dos arquivos E0 foram confrontados com a main aprovada: preservados
+o quarto argumento da janela de notas, a recarga sem cursor e as novas guardas
+de altura/keys. A árvore de Inbox e conversa é agora idêntica à main. Tokens,
+WOFF, faixa 400–600 e preload da #391 permanecem idênticos ao04e6f2c6 aprovado.
+Quadro conciliado com trechos literais, preservando registros distintos.
+
+Recorte após integração, saída 0: 11 arquivos / 174 testes (fontes/contraste,
+conversa, histórico, janela, página e interações Inbox). TypeScript71047 saiu0;
+lint dos 14 arquivos TypeScript envolvidos saiu0, sem avisos. Sem filtro de
+testes ou ignorados nesse recorte. Não houve novo global local ou browser;
+o global anterior acima não é atribuído a este head. O CI contra main fará
+a regressão global do novo head. Parecer independente final e CI são gates
+antes do merge. Nenhum pacote/lock/schema foi alterado.

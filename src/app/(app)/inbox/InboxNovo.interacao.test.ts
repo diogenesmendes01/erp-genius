@@ -180,7 +180,8 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirAntigo!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-antigo", conversaId: "cv1" });
-    await esvaziar(); // o corpo deste GET precisa existir antes do próximo evento/resultado
+    await vi.advanceTimersByTimeAsync(50);
+    expect(concluirAntigo).toBeTypeOf("function"); // GET começou antes da entrada oculta
     respostaLista = async () => new Response("", { status: 503 });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-get", conversaId: "cv1" });
     concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
@@ -193,7 +194,8 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirAntigo!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pre-entrada", conversaId: "cv1" });
-    await esvaziar(); // o corpo deste GET precisa existir antes do próximo evento/resultado
+    await vi.advanceTimersByTimeAsync(50);
+    expect(concluirAntigo).toBeTypeOf("function"); // corpo antigo aberto antes do SSE
     respostaLista = async () => new Response("", { status: 503 });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-falha", conversaId: "cv1" });
     concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
@@ -231,7 +233,8 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirFresco!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirFresco = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pos-pedido", conversaId: "cv1" });
-    await esvaziar(); // o corpo deste GET precisa existir antes do próximo evento/resultado
+    await vi.advanceTimersByTimeAsync(50);
+    expect(concluirFresco).toBeTypeOf("function"); // consulta na mesma versão, ação ainda pendente
     respostaLista = async () => new Response("", { status: 503 });
     concluirLeitura({ ok: false }); await esvaziar();
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);

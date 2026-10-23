@@ -1,0 +1,18 @@
+# QA independente #394 — porte moderno 3a005097678bb15ec3fde14af4f4175cba8c279d
+
+Base de comparação funcional 676026b3; pai imediato b49414f0 era checkpoint parcial rejeitado. O helper atualizar-lista-em-lote.ts é byte idêntico ao b2338414 isolado que passou na revisão anterior (git diff --quiet exit 0, executor 04f9a8). Este parecer trata a composição exata 3a005097, não o futuro browser nem um commit de merge.
+
+## Resultado
+
+**Favorável ao código e aos recortes independentes.** O delta produtivo da composição limita-se ao helper e ao consumidor InboxNovo. A fila mantém janela fixa de 50 ms, um GET de primeira página+contagens até o body terminar e uma pendência consolidada. Filtros e estado de leitura são capturados no início efetivo do GET. A troca pública de filtros ou versaoNavegacao cancela a época; um objeto SSR equivalente durante voo marca trailing antes de invalidar consultasRef.aplicada. A mudança não troca guardas R6 de entrada posterior, zero fresco autoritativo, IDs pendentes, nem o método automático f51; o finally da leitura ainda chama recontarNaoLidasInbox, e sucesso/falha ainda enfileiram reconciliação. Eventos de thread/painel, seleção, cursor e JSX permanecem fora do atraso de lote.
+
+O diff 676026b3..3a005097 mostrou apenas InboxNovo/helper como fonte produtiva alterada, além de testes/docs. Os usos de carregarLista passaram a pedir à fila sem capturar filtro velho. O efeito de navegação compara chave pública e versaoNavegacao; o ACK equivalente usa invalidarSnapshotEmVoo. HTTP 503 aguarda arrayBuffer antes de liberar voo, 200 aguarda json. Sem nova consulta autônoma após falha se não houver gatilho real. git diff --check 676026b3..3a005097 encerrou exit 0 (55482f); AGENTS.md e src/app do worktree TESTER seguem limpos.
+
+## Provas próprias
+
+- Node22 local, executor 0677fd: 5 arquivos/106 testes oficiais de helper, InboxNovo interações/unitário, SSE e marcador, exit 0, sem filtro/skip.
+- Harness privado original output/inbox-382-r2-adversarial.test.ts foi copiado para output/inbox-394-r6-private.test.ts, com config própria output/vitest-394-r6-private.config.ts. As adaptações foram necessárias para o novo tempo/limite: espera real de 65 ms para a janela de 50, início efetivo do GET antes do SSE/leitura nos casos chamados antigos, expectativa de um GET enquanto o primeiro body segue aberto e um trailing depois dele, e mock useCallback que respeita dependências reais para não desmontar o helper em cada render. Os resultados exigidos de leitura/contagem e os casos zero fresco, duplicatas, entrada durante ação, troca de atendimento e retry ao voltar visível permaneceram. O diff entre o harness original e a cópia foi inspecionado (6c6349).
+- Primeira passagem após mudar só o relógio: 35/39, quatro falhas de cronologia antiga, executor ecef1d. Após corrigir marcos causais e mock de lifecycle, os 39 adversariais R6 passaram, executor 7cad46 exit 0, sem skips.
+- Prova privada adicional do P2: SSE sozinho inicia GET; render SSR com filtros equivalentes chega enquanto body está aberto; resposta antiga é invalidada e um único GET fresco retorna contagem e linha 3. Passou filtrada em 334c03 (1/40 com 39 skips por -t) e no conjunto final 40/40 sem filtro/skip em c531c7 exit 0. Esse caso não depende de conclusão de leitura para criar pendência.
+
+Não editei código ou testes DEV, apenas os harnesses privados em output. Não rodei banco, browser, integração, TSC nem suíte global; 56/627 e demais gates do autor são relato externo. A prova real em preview B para SSE/lotes/Link segue separada e deve ser registrada antes da publicação. Nenhum bloqueio de código foi encontrado nesta revisão exata.

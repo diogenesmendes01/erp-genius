@@ -1,6 +1,6 @@
 # PR394/#310 — revisão C1: lote da lista e contagens
 
-Estado DEV: implementação isolada sobre eb68e31423333222a6bbe96284dfba9c45246ab8, branch codex/inbox-310-c1. Não incorpora #313/R6/automático nem suas telas. O porte no agregado atual é outro SHA;676026b3 e artefatos313 permanecem imutáveis. Revisão independente, medição browser e publicação aguardam integrador.
+Estado DEV final: fonte isolada corrigida b2338414e44845d6c3d830c2a3233966e4072b31 sobre eb68; porte agregado corrigido 3a005097678bb15ec3fde14af4f4175cba8c279d sobre676. As duas linhas permanecem separadas, sem merge313→310. Revisão independente e medição browser coordenada concluídas no porte3a; adoção, global e publicação competem ao integrador. Os checkpoints82/b494 e seus negativos são históricos e não foram adotados.
 
 ## Achado e contrato aprovado
 
@@ -64,3 +64,32 @@ Gates finais do porte, código observado:
 - Typegen/TSC82827 heap8192 EXIT0; ESLint4fontes25da72 EXIT0/0avisos; diffcheck0. Nenhum gerado/dependência/AGENTS/next-env mudou.
 
 Fonte disponível para review exato e medição browser coordenada após parecer. Sem DB/preview/install/ownfull/push. Capturas anteriores313 continuam atribuídas à fonte4f, e não comprovam este agendamento C1; requerem complemento pós-porte. Adoção/global/publicação seguem com integrador.
+
+## Fechamento DEV — browser real no porte 3a, 23/10/2026
+
+TESTER independente informou parecer favorável no SHA exato 3a:5 arquivos/106 testes, mais40 adversariais R6/P2 próprios, saída 0. Gates DEV continuam atribuídos aos SHAs corrigidos: isolado24 arquivos/334 testes e porte56 arquivos/627 testes, typegen/TSC heap 8192 e lint de 4 fontes sem avisos, todos saída 0. Fonte não mudou durante a medição; nenhum novo global foi executado pelo DEV.
+
+Preview B3111 executor23046, Node22/Next16.3.5/Playwright1.56.1top/Chrome155, perfildev-gravacoes com provedores vazios e dados fictícios. Complemento UI26973 terminou saída 0:4 contextos em390 × 500 e1440 × 900, dois temas,20 PNG. Aplicar/remover/Limpar filtros, busca+chip, seleção de linha, fechamento de popovers, Tab/ShiftTab/Escape/CtrlMetaK e Link público rápido terminaram em/inbox com foco na busca. Não se aguardou assentamento de POST antes de navegar. Cada contexto manteve1 documento/timeOrigin, SSE máxima 1 e máximo1 GETlista+contagens até o corpo. Todas20imagens foram inspecionadas favoravelmente. Não houve submit/criação/envio nem E2E da actionNova.
+
+O primeiro probe UIe7730c terminou saída1 por uma premissa privada: exigia recuperar GETmensagens da conversa que o próprio Link abandonava. Negativo preservado, sem classificar como defeito de navegação. O observador posterior comprovou AbortSignal→HistoricoConversa.limpar→commitHookEffectListUnmount, URL final sem aquele c e foco visível. O predicado privado aceita somente essa cadeia exata; o classificador global e os guards React/rede permaneceram intactos. Traces/stack/logs brutos ficam privados.
+
+Probe de lotes76702 terminou saída 0,124 notificações reais recebidas, zero falhas/diagnósticos. Somente ROOT emitiu pg_notify guardado em autocommit, sem alterar linhas. Resultados observados:
+
+| Cenário | SSE recebidos | Span de entrega | GETs lista+contagens |
+| --- | ---: | ---: | ---: |
+| Lote1 |1|0 ms|1|
+| Lote20 |20|50,7 ms|1|
+| Lote50 |50|92,7 ms|1|
+| GET real retido, depois 50 avisos |51|retenção explícita|2: inicial+1 trailing|
+| SSR equivalente com GET retido |1|refresh instrumental separado|2: inicial+1 trailing|
+| Leitura real com GET anterior retido |1|ação real200|2: inicial+1 trailing|
+
+A janela configurada continua fixa50 ms; os atrasos efetivamente observados até o início do GET foram53/100,4/135,9 ms nos lotes1/20/50, sujeitos ao event loop e à entrega SSE. O teste não promete latência de parede50 ms. Não extrapola50eventos arbitrariamente distribuídos para uma única consulta.
+
+Na retenção, route.fetch/fulfill preservou status/bytes reais (hash registrado), segurando a resposta ANTES dos headers do cliente. Não é prova de streaming; o body aberto com ReadableStream real permanece coberto pelos unitários. O refresh RSC real mudou identidade de filtros1→2 com chave{} e seleção null constantes, sem fabricar props ou emitir outros avisos: o snapshot invalidado conservou exatamente1 trailing fresco. A leitura da Beatriz respondeu200 e também reconciliou depois do corpo antigo. As5 contagens DOM finais coincidem com HTTP fresco (158/102/76/107/55); não lidas já era 76, portanto não se alega decremento nesta fixture.
+
+No probe inteiro:10 GETs concluídos (incluindo calibração), máximo1 HTTP viaCDP e1 fetch até consumir corpo,1 documento/timeOrigin e1 SSE simultânea. StrictMode criou/fechou a primeira instância antes da segunda, sem sobreposição. Duas imagens finais foram inspecionadas com lista correta antes da leitura e Beatriz/conversa/painel após ela; não há painel vazio nem estado indevido.
+
+Allowlist positiva explícita em output/inbox-310-c1-allowlist.json:22 PNG,1.771.729bytes, cada arquivo com bytes/SHA256/tipo/fonte 3a/inspeção. Resumo sanitizado em output/inbox-310-c1-evidencias.json separa métricas, sessões, hashes de probes e limitações; não contém corpos, RSC, cookies, HTML ou traces. Scripts e manifestos brutos continuam locais, foraGit/ZIP. Capturas3134f/2e e676 permanecem imutáveis, sem reatribuição ao schedulerC1. Nenhum PNG novo foi incluído no Git.
+
+Todos os browsers foram fechados antes de ROOT parar23046 (CtrlC/saída1 esperada). ROOT informou restauração f809d6 saída 0 com424 hashes originais/1.372 linhas e fixture3 mensagens/1 nota; DEV não executou SQL/seed/suíteDB. Depois do stop foi conferido e removido exclusivamente o bloco Next gerado  em AGENTS. Depósito remoto/global/adoção/publicação seguem com integrador; não há homologação presumida.
