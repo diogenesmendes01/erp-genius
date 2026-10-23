@@ -4796,6 +4796,18 @@ Usuário autorizou o integrador a regenerar somente o lockfile offline com scrip
 - Aceite visual reservado à #313 (Task5Step5, sem tela própria nesta entrega), sem homologação presumida. Global final coordenado após combinar309+310; full próprio deliberadamente não executado. TESTER deve revisar SHA exato. Sem schema/migration, pacote/lock, permissão nova, servidor iniciado ou mensagem externa.
 - Congelamento: recorte final10arquivos161testes a0b1e7 exit0 (inclui guardas sem-polling/provedores/paleta/responsivo/botões), lint dirigido final264633 exit0/0avisos e TSCheap8192 final11852 exit0. Node22.23.2 confirmado. Sem mudança de fonte após esses gates, apenas documentação. Full integrado e TESTER ainda pendentes.
 
+### Inbox E1.6 — #311: selo pessoal e SSE compartilhado — 2026-10-22
+
+**Estado: entrega DEV com prova visual inspecionada; TESTER e global integrado pendentes.** Branch codex/inbox-e1-311 sobre103a507d. SPEC docs/specs/inbox-nao-lidas-menu.md; ledger output/inbox-311-report.md; imagens/manifestos output/inbox-311-visual. Nenhum PR/push pelo DEV.
+
+- Contagem pessoal usa a condição extraída de #310 e escopo inteiro, sem filtros/paginação; zero sem papel antes de consultar. API com sessão/papel/no-store. SSR sem rede/mutação em render; Sidebar224 e geometria global preservadas. InboxNovo apenas finally da leitura. Uma SSE por aba, assinantes independentes, resync dirigido a quem monta tarde, descarte/StrictMode protegidos. Loja com GET único e uma repetição pendente, geração/dispose/auth/erro testados; rótulos dizem conversas.
+- TDD: módulos ausentes RED; API/consumidores RED; backend RED; demo--entrada RED; testes adicionais RED para assinante tardio/propSSR com outro consumidor montado. Extração inicial com CRLF incorreta gerou parse/TSC vermelho e foi corrigida antes dos GREEN. Integração dirigida dev-gravacoes2arquivos27testes exit0 sessão67611 (nao-lidas+consultas-pagina); demo/trigger+reparo3072arquivos2testes exit0 sessão9095. Nenhum ignorado; não é suíte completa de integração. JanelaDB encerrada antes do preparo visual.
+- Visual final95056 exit0:24PNG app,0falhas0diagnósticos; seis referências protótipo18038 exit0. Todos os estados/temas/tamanhos inspecionados, 2→1→2→1. Duas abas SSEativa/máxima1 cada, GETmáximo1. Ruling Step5: Home desmonta chat entre queda e subida; chat aberto auto-lê entrada e mantém1 sem loop. Reset marca apenas preferências pessoais dos dois alvos; não restaura compartilhados. Tentativas negativas preservadas em output/inbox-311-visual-tentativa1/2, sem chamar falha de harness de correção produtiva.
+- Full próprio21392 terminou exit1:855arquivos/6647testes, só guard botoes falhou por literal no JSX mobile. Simplificação sem alterar guard/pixels; GREEN final32arquivos359testes exit0 sessão42967, sem filtros/ignorados dentro do recorte listado no ledger. Lint dirigido23arquivos exit0. Lint global anterior1345 exit0/40avisos e TSC97388 exit0 são anteriores à simplificação; novo TypeScript e global integrado devem ser registrados separadamente. Não atribuir full verde ao fix antes do integrador.
+- Sem schema/migração, transporte externo, pacote/lock ou modificação da casca #308. Preview e autenticação fictícia preparados/parados pelo integrador. Protótipo offline tem outra navegação; não se afirma paridade integral com a casca futura.
+
+- Fechamento DEV: TSC final heap8192 sessão39406 exit0 após simplificação mobile. Fonte sem alterações após recorte359/TSC/lintdirigido. Global integrado e TESTER continuam pendentes.
+
 ### Inbox E1.3 — #308: casca em tela cheia e painel único — 2026-10-22
 
 **Estado: implementação e provas DEV concluídas; revisão independente, aceite visual e global combinado pendentes.** Branch codex/inbox-e1-308, base103a507d. SPEC docs/specs/inbox-casca-tela-cheia.md, relatório output/inbox-308-report.md; sem publicação/merge/deploy pelo DEV.
@@ -5381,3 +5393,9 @@ A main395 363c0e83 tem árvore inteira igual ao ancestral f8 já incorporado. Do
 ## PR #397 — composição B2 preservando lista e itens
 
 Base3966a incorporada. Aplicação, lista, virtualização, backend e testes são iguais ao head d3c; somente seis caminhos de tooling mudaram. Guard/package/lock/ESLint iguais6a, CLI muda uma expressão. Verificações b8b279 e7a61c3 terminaram0; único conflito do quadro preserva ambos os lados. Recorte740dc8 terminal0:9arquivos109testes, maxWorkers2, sem filtros internos/skips. Typegen/TSC55556/29da33 e lint13633/4e26ea terminais0, zero erros/40 avisos. Global863/6788 continua nominal332; CI global final2TZ e QA independente obrigatórios. Sem novo DB/browser/install; source visual não reatribuída.
+
+## PR #397 — mainQA280 e todos os comentários LOW
+
+A main2f inclui QA280/003025b1; não é árvore igual ao ancestral6a. Asserção597d25 detectou antes de alterar o merge. Composição normal preserva integralmente43arquivos QA, packageScripts e seed-qa; objetos iguais à main, sem executar E2E/seed/DB e sem alterar schema/migrations. Provas15a121/98cf81 saída0. C2 documenta um timer pendente e fronteiras relativas aos itens, sem rede. C3 documenta agoraInicial no SSR/fallback0. C4 marca dois helpers órfãos como deprecated, preservando API e testes históricos. Três fontes alteram só JSDoc; emit JS igual194,9ce708 saída0.
+
+TSC/lint após mainQA28054202/29352 e após LOW62608/4967: todos terminais0, zero erros/40avisos. QA194 nominal favorável120testes próprios/hash8d559, integrador109nominais; nenhuma reatribuição de global. Fonte atual precisa QA estendida e CI global2TZ antes de merge. Relatório output/pr397-qa/main-comentarios.md; nenhuma regra de ignorar LOW permanece na fila nova.

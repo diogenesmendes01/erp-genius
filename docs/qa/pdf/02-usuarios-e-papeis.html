@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Usuários e papéis</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  table.matriz td small { font-size: 7.8pt; line-height: 1.3; display: inline-block; }
+  table.matriz td.center { vertical-align: middle; }
+  table.matriz th, table.matriz td { padding: 3px 6px; }
+  table.matriz .chip { font-size: 7.6pt; padding: 0 6px; }
+  .callout .chip { background: var(--surface); border: 1px solid currentColor; line-height: 1.4; }
+  .card p strong { color: var(--text-primary); font-weight: 500; }
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 9pt; color: var(--text-secondary); margin: 4px 0 10px; }
+  .legenda b { font-weight: 600; }
+  .legenda .ok { color: var(--success-text); }
+  .legenda .no { color: var(--danger-text); }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <div class="mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Genius</div>
+  </div>
+  <div>
+    <div class="kicker">Kit do QA · UAT v1 · Documento 02</div>
+    <h1>Usuários e papéis</h1>
+    <p class="subtitle">Quem é quem no ERP Genius durante o teste: os 8 papéis, os usuários de teste, o que cada um vê no menu e o que cada um consegue abrir.</p>
+    <dl class="meta">
+      <dt>Versão</dt><dd>22/10/2026</dd>
+      <dt>Base</dt><dd>Código da main atual (commit 9e3d1d3c), lido em 21/10/2026</dd>
+      <dt>Público</dt><dd>QA júnior que vai executar o roteiro de testes</dd>
+      <dt>Fontes</dt><dd>Guia de usuários e papéis do kit, relatório de auditoria 01 (acesso e papéis) e auditoria consolidada</dd>
+    </dl>
+  </div>
+  <div class="band">Nenhuma senha aparece neste documento. As senhas de teste chegam a você por um canal privado.</div>
+</section>
+
+<h1>Sumário</h1>
+<div class="toc"><ol>
+  <li><span class="num">1.</span> Como ler este documento <span class="desc">Apelidos, marcas e regras básicas</span></li>
+  <li><span class="num">2.</span> Os 8 papéis <span class="desc">O que cada papel faz e nunca faz</span></li>
+  <li><span class="num">3.</span> Os usuários de teste <span class="desc">Apelido, e-mail, papéis e uso</span></li>
+  <li><span class="num">4.</span> Preparação pelo gestor <span class="desc">Seeds, senhas, alçadas e permissões</span></li>
+  <li><span class="num">5.</span> O que cada papel vê no menu <span class="desc">Menu lateral e sub-abas</span></li>
+  <li><span class="num">6.</span> O que cada papel abre <span class="desc">Matriz de acesso por área</span></li>
+  <li><span class="num">7.</span> Alçadas de desconto <span class="desc">Limites, pedidos e aprovações</span></li>
+  <li><span class="num">8.</span> Portal do aluno <span class="desc">Conta própria, convite e bloqueador B4</span></li>
+  <li><span class="num">9.</span> Armadilhas <span class="desc">Erros comuns antes de abrir bug</span></li>
+</ol></div>
+
+<h2><span class="num">1.</span>Como ler este documento</h2>
+<p class="lead">Você vai testar o sistema no papel de várias pessoas diferentes. Este guia diz quem é cada pessoa, o que ela deve ver e o que ela não pode fazer.</p>
+
+<dl class="terms">
+  <dt>UAT</dt><dd>O ambiente de teste de aceitação. É onde você testa antes de o sistema ir para a produção.</dd>
+  <dt>Papel</dt><dd>O tipo de trabalho da pessoa no sistema, por exemplo Vendedor ou Financeiro. O papel define o menu e as telas que abrem.</dd>
+  <dt>Usuário de teste</dt><dd>Uma conta de pessoa fictícia, criada só para o teste. Cada uma tem um ou mais papéis.</dd>
+  <dt>Apelido</dt><dd>O nome curto do usuário de teste no roteiro: ADM, GC, VEND-A, FIN-2 e assim por diante.</dd>
+  <dt>Escopo</dt><dd>A parte dos dados que o usuário enxerga. O vendedor vê a própria carteira; o professor vê as próprias turmas.</dd>
+  <dt>Alçada</dt><dd>O desconto máximo que a pessoa aplica sem pedir aprovação (seção 7).</dd>
+  <dt>Seed</dt><dd>Um script que o DEV roda para criar os dados iniciais, entre eles os usuários de teste.</dd>
+</dl>
+
+<div class="callout brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3.5 5.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 11.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 17.5l1.5 1.5l2.5 -2.5" /><path d="M11 6l9 0" /><path d="M11 12l9 0" /><path d="M11 18l9 0" /></svg><div><div class="title">Os apelidos são os nomes do roteiro</div><p>Quando um cenário diz “entre como VEND-A”, use o usuário da linha VEND-A da seção 3. Um usuário pode ter mais de um papel. Nesse caso, o menu e o acesso são a soma dos papéis. O Administrador passa em todo controle de acesso.</p></div></div>
+
+<div class="callout danger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><div><div class="title">Senhas nunca ficam em documento</div><p>As senhas de UAT chegam por canal privado. Não escreva a senha em ticket, print, gravação de tela nem no chat do time. Não use a senha de desenvolvimento do seed principal: ela não vale no UAT.</p></div></div>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" /><path d="M3 7l9 6l9 -6" /></svg><div><div class="title">E-mail sempre em minúsculas <span class="chip warning">X1</span></div><p>O login converte o e-mail digitado para minúsculas. O cadastro grava o e-mail como foi digitado. Um usuário criado com letra maiúscula nunca consegue entrar. Crie e digite todo e-mail em minúsculas.</p></div></div>
+
+<h3>As marcas que aparecem no texto</h3>
+<table class="compact">
+  <thead><tr><th style="width:16%">Marca</th><th style="width:28%">Significa</th><th>O que você faz</th></tr></thead>
+  <tbody>
+    <tr><td><span class="chip info">R13</span></td><td>Decisão pendente do PO (dono do produto)</td><td>Registre o que viu. Não abra bug: o comportamento ainda pode ser o esperado.</td></tr>
+    <tr><td><span class="chip warning">X2</span></td><td>Bug provável, já conhecido</td><td>Confirme o comportamento e cite a marca no registro, para não duplicar o bug.</td></tr>
+    <tr><td><span class="chip danger">B4</span></td><td>Bloqueador do UAT</td><td>O cenário não roda até alguém resolver. Marque como bloqueado.</td></tr>
+  </tbody>
+</table>
+
+
+<section>
+<h2><span class="num">2.</span>Os 8 papéis</h2>
+<p class="lead">O sistema tem 8 papéis. Sete são da equipe da escola. O oitavo, Aluno, é um papel antigo: o aluno de verdade entra pelo portal do aluno.</p>
+<div class="cards">
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3" /><path d="M11 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 12l0 2.5" /></svg> Administrador <span class="chip brand" style="margin-left:auto">ADM</span></div>
+  <p><strong>Faz:</strong> Configura o sistema: usuários, países, operação, prazos do portal e WhatsApp. Decide como direção. Passa em todo controle de papel e em toda permissão.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Aumentar os próprios papéis, permissões ou alçadas. Aprovar o próprio pedido. Desativar a si mesmo.</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> ADM, ADM-2</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M17 10h2a2 2 0 0 1 2 2v1" /><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M3 13v-1a2 2 0 0 1 2 -2h2" /></svg> Gerente comercial <span class="chip brand" style="margin-left:auto">GC</span></div>
+  <p><strong>Faz:</strong> Acompanha a equipe de vendedores: Funil, Carteira, Relatórios e Comissões da equipe. Aprova descontos da equipe na aba Aprovações. Usa o Agente de IA e a aba CRM da Configuração.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Operar cobrança. Ver o próprio pedido ou pedidos de fora da equipe. Aprovar desconto acima da própria alçada.</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> GC</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9" /><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" /><path d="M12 12l0 .01" /><path d="M3 13a20 20 0 0 0 18 0" /></svg> Vendedor <span class="chip brand" style="margin-left:auto">VEN</span></div>
+  <p><strong>Faz:</strong> Trabalha a própria carteira: leads, funil, contatos, tarefas e matrículas. Aplica desconto dentro da própria alçada.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Ver a carteira de outro vendedor (salvo cobertura). Aprovar desconto. Abrir o painel financeiro.</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> VEND-A, VEND-B, VEND-0</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Gerente pedagógico <span class="chip brand" style="margin-left:auto">GP</span></div>
+  <p><strong>Faz:</strong> Cuida do Acadêmico, do Diário, do Catálogo e das Turmas. Confirma o serviço nas Permutas. Abre a ficha do aluno sem dados de contato.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Ver contato do aluno. Abrir as movimentações do aluno. Decidir o que ele mesmo preparou: quem decide é o GP-2.</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> GP, GP-2</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M8 19h-3a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v11a1 1 0 0 1 -1 1" /><path d="M11 17a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -1" /></svg> Professor <span class="chip brand" style="margin-left:auto">PRO</span></div>
+  <p><strong>Faz:</strong> Registra aulas no Diário e lança avaliações e recuperações das próprias turmas. Informa indisponibilidades.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Ver aluno de outra turma (aparece “não encontrado”). Ver documento, contato, endereço ou valores. Abrir o financeiro comercial.</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> PROF, PROF-2</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg> Financeiro <span class="chip brand" style="margin-left:auto">FIN</span></div>
+  <p><strong>Faz:</strong> Opera o painel financeiro: cobranças, conferência, retomadas, comissões, descontos, visão geral e câmbio. Abre Empresas. Prepara acertos, permutas e créditos.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Conferir o próprio informe ou decidir o que ele mesmo preparou. Quem decide é outro FIN com permissão (FIN-2).</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> FIN, FIN-2</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" /><path d="M9 12l.01 0" /><path d="M13 12l2 0" /><path d="M9 16l.01 0" /><path d="M13 16l2 0" /></svg> Secretaria acadêmica <span class="chip brand" style="margin-left:auto">SEC</span></div>
+  <p><strong>Faz:</strong> Cuida de matrículas, contratos e modelos contratuais. Prepara o convite do portal e acompanha os envios. Registra o informe de pagamento, desistências e reservas.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Abrir o painel financeiro (vê só a ficha financeira do aluno). Gerenciar turmas (R14). Abrir Empresas (X2).</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> SEC</p>
+</div>
+<div class="card">
+  <div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" /></svg> Aluno <span class="chip brand" style="margin-left:auto">ALUNO</span></div>
+  <p><strong>Faz:</strong> Papel antigo num usuário da equipe. Quem tem só esse papel vai para uma página que explica o acesso do aluno. O aluno de verdade usa o portal, com conta própria.</p>
+  <p style="margin-top:4px"><strong>Nunca faz:</strong> Operar qualquer tela da equipe. Entrar no portal do aluno com a conta da equipe.</p>
+  <p style="margin-top:4px"><strong>Usuário de teste:</strong> ALUNO-EQUIPE</p>
+</div>
+</div>
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">A Home muda conforme o papel</div><p>ADM e GC veem a Home de gestão. O professor vê turmas e aulas experimentais. Os demais (VEN, GP, FIN e SEC) veem “Olá, nome” com atalhos iguais aos do menu. A Home do GC fica vazia se ele não tiver vendedores vinculados.</p></div></div>
+</section>
+
+<section>
+<h2><span class="num">3.</span>Os usuários de teste</h2>
+<p class="lead">São 17 usuários da equipe e um aluno do portal. “Origem” diz quem cria o usuário: o seed principal, o seed de QA ou o convite do portal.</p>
+<div class="keep"><h3>Direção</h3>
+<table class="compact"><thead><tr><th style="width:15%">Apelido</th><th style="width:25%">E-mail</th><th style="width:15%">Papéis</th><th style="width:11%">Origem</th><th>Para que serve</th></tr></thead><tbody>
+<tr><td><strong>ADM</strong></td><td>admin@genius.com</td><td><span class="chip brand">ADM</span></td><td>seed</td><td>Configuração completa, usuários, prazos do portal e decisões de direção.</td></tr>
+<tr><td><strong>ADM-2</strong></td><td>admin2@genius.com</td><td><span class="chip brand">ADM</span></td><td>seed de QA</td><td>O “outro administrador”. Decide o que o ADM pediu (desconto, bolsa, perdão, troca de e-mail do portal, modelos contratuais) e concede permissões ou alçadas ao ADM.</td></tr>
+</tbody></table></div>
+<div class="keep"><h3>Comercial</h3>
+<table class="compact"><thead><tr><th style="width:15%">Apelido</th><th style="width:25%">E-mail</th><th style="width:15%">Papéis</th><th style="width:11%">Origem</th><th>Para que serve</th></tr></thead><tbody>
+<tr><td><strong>GC</strong></td><td>gerente@genius.com</td><td><span class="chip brand">GC</span></td><td>seed de QA</td><td>Gerente comercial isolado: escopo de equipe, aba Aprovações do Financeiro, coberturas e Configuração › CRM.</td></tr>
+<tr><td><strong>VEND-A</strong></td><td>joao@genius.com</td><td><span class="chip brand">VEN</span></td><td>seed</td><td>Carteira própria. Desconto dentro e acima da alçada.</td></tr>
+<tr><td><strong>VEND-B</strong></td><td>vendedor2@genius.com</td><td><span class="chip brand">VEN</span></td><td>seed de QA</td><td>Leads e alunos de outro vendedor (escopo por linha). Cobertura de carteira.</td></tr>
+<tr><td><strong>VEND-0</strong></td><td>vendedor3@genius.com</td><td><span class="chip brand">VEN</span></td><td>seed de QA</td><td>Vendedor sem autonomia: todo desconto vai para aprovação. Também é o usuário do teste de desativação.</td></tr>
+</tbody></table></div>
+<div class="keep"><h3>Pedagógico</h3>
+<table class="compact"><thead><tr><th style="width:15%">Apelido</th><th style="width:25%">E-mail</th><th style="width:15%">Papéis</th><th style="width:11%">Origem</th><th>Para que serve</th></tr></thead><tbody>
+<tr><td><strong>GP</strong></td><td>gp@genius.com</td><td><span class="chip brand">GP</span></td><td>seed de QA</td><td>Acadêmico, Diário, Catálogo, Turmas, Permutas (confirma o serviço) e ficha de aluno sem contato.</td></tr>
+<tr><td><strong>GP-2</strong></td><td>gp2@genius.com</td><td><span class="chip brand">GP</span></td><td>seed de QA</td><td>Segunda pessoa da gestão pedagógica. Decide o que o GP prepara: regra de avaliação, calendário, grade, admissão e mudanças acadêmicas.</td></tr>
+<tr><td><strong>PROF</strong></td><td>carla@genius.com</td><td><span class="chip brand">PRO</span></td><td>seed</td><td>Escopo por turma: só vê alunos das próprias turmas. Precisa de uma turma com alunos.</td></tr>
+<tr><td><strong>PROF-2</strong></td><td>professor2@genius.com</td><td><span class="chip brand">PRO</span></td><td>seed de QA</td><td>Turma de outro professor, troca de professor e aula experimental atribuída a outro.</td></tr>
+</tbody></table></div>
+<div class="keep"><h3>Financeiro e secretaria</h3>
+<table class="compact"><thead><tr><th style="width:15%">Apelido</th><th style="width:25%">E-mail</th><th style="width:15%">Papéis</th><th style="width:11%">Origem</th><th>Para que serve</th></tr></thead><tbody>
+<tr><td><strong>FIN</strong></td><td>financeiro@genius.com</td><td><span class="chip brand">FIN</span></td><td>seed de QA</td><td>Painel financeiro, conferência de informe e Empresas. Prepara acertos, permutas, uso e devolução de crédito.</td></tr>
+<tr><td><strong>FIN-2</strong></td><td>financeiro2@genius.com</td><td><span class="chip brand">FIN</span></td><td>seed de QA</td><td>Segunda pessoa do Financeiro, com a permissão “Aprovar acertos e compensações financeiras”. Decide o que o FIN preparou e confere o informe da SEC.</td></tr>
+<tr><td><strong>SEC</strong></td><td>secretaria@genius.com</td><td><span class="chip brand">SEC</span></td><td>seed de QA</td><td>Matrículas, contratos, convite e envios do portal, Modelos contratuais e informe de pagamento.</td></tr>
+</tbody></table></div>
+<div class="keep"><h3>Papéis combinados</h3>
+<table class="compact"><thead><tr><th style="width:15%">Apelido</th><th style="width:25%">E-mail</th><th style="width:15%">Papéis</th><th style="width:11%">Origem</th><th>Para que serve</th></tr></thead><tbody>
+<tr><td><strong>GC+V</strong></td><td>mariana@genius.com</td><td><span class="chip brand">GC</span> <span class="chip brand">VEN</span></td><td>seed</td><td>Acúmulo de papéis e autoaprovação negada. Não serve para testar o GC isolado.</td></tr>
+<tr><td><strong>FIN+SEC</strong></td><td>ana@genius.com</td><td><span class="chip brand">FIN</span> <span class="chip brand">SEC</span></td><td>seed</td><td>Autoconferência negada: a mesma pessoa informa e tenta conferir. Não serve para isolar papéis.</td></tr>
+<tr><td><strong>VEND+PROF</strong></td><td>venprof@genius.com</td><td><span class="chip brand">VEN</span> <span class="chip brand">PRO</span></td><td>seed de QA</td><td>O escopo de professor não abre o financeiro comercial. Menu com a união dos dois papéis.</td></tr>
+</tbody></table></div>
+<div class="keep"><h3>Aluno</h3>
+<table class="compact"><thead><tr><th style="width:15%">Apelido</th><th style="width:25%">E-mail</th><th style="width:15%">Papéis</th><th style="width:11%">Origem</th><th>Para que serve</th></tr></thead><tbody>
+<tr><td><strong>ALUNO-EQUIPE</strong></td><td>alunoequipe@genius.com</td><td><span class="chip brand">ALUNO</span></td><td>seed de QA</td><td>Usuário da equipe só com o papel Aluno. Ao entrar, vai para uma página que explica o acesso próprio do aluno. Não opera nada.</td></tr>
+<tr><td><strong>Aluno do portal</strong></td><td>e-mail real de uma caixa que o QA lê</td><td><span class="chip brand">não é da equipe</span></td><td>convite</td><td>Ativação, login, recuperação, sair e escopo do portal do aluno (seção 8).</td></tr>
+</tbody></table></div>
+
+<div class="callout brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M17 10h2a2 2 0 0 1 2 2v1" /><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M3 13v-1a2 2 0 0 1 2 -2h2" /></svg><div><div class="title">Por que existem os “segundos” usuários: ADM-2, GP-2 e FIN-2</div><p>Quase toda decisão no ERP Genius exige outra pessoa. Quem pede não aprova. Quem informa não confere. Quem prepara não decide. Por isso você precisa de uma segunda pessoa com o mesmo papel.</p>
+<p>Não use o Administrador como atalho. Ele passa em todo controle e em toda permissão. Se ele aprova, você não descobre se o papel certo conseguiria aprovar. Use o GC para desconto da equipe, o GP-2 para decisões pedagógicas, o FIN-2 para acertos e compensações e o ADM-2 para o que exige outro administrador.</p></div></div>
+
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4c.96 0 1.84 .338 2.53 .901" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M16 19h6" /><path d="M19 16v6" /></svg><div><div class="title">Duas sessões ao mesmo tempo</div><p>Para testar quem pede e quem aprova, use uma janela normal e uma anônima (ou dois navegadores), cada uma com um usuário.</p></div></div>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">“FIN-2” tem dois sentidos nos relatórios</div><p>No relatório 08 da auditoria, “FIN-2” é a ana (FIN+SEC). Neste kit e no relatório 07, FIN-2 é o financeiro2@genius.com.</p></div></div>
+
+<ul>
+  <li>Só o FIN-2 tem permissão extra. As outras 6 o ADM concede pela tela quando o cenário pedir.</li>
+  <li>VEND+PROF não está na equipe de nenhum gerente. Se o cenário pedir, o ADM vincula pela tela.</li>
+  <li>GC+V e FIN+SEC não isolam papel. Para testar um papel sozinho, use GC, FIN ou SEC.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="num">4.</span>Preparação pelo gestor</h2>
+<p class="lead">Antes de você começar, o DEV e o Administrador preparam os usuários. A ordem importa: cada passo depende do anterior. Confira se tudo foi feito antes do primeiro cenário.</p>
+<ol class="steps">
+  <li><div><div class="title">Seed principal (DEV)</div><p>Cria os 5 usuários de desenvolvimento (ADM, GC+V, VEND-A, FIN+SEC e PROF), o catálogo e o canal de WhatsApp desligado. Esses 5 nascem com uma senha de desenvolvimento conhecida, que não pode valer no UAT.</p></div></li>
+  <li><div><div class="title">Seed de QA (DEV)</div><p>Roda com uma senha de QA definida no ambiente. Sem ela, o script para e não grava nada. Cria os outros 12 usuários, grava as alçadas, vincula os vendedores ao GC e dá a permissão extra ao FIN-2. Nos 5 usuários do seed principal, só grava alçadas e gerente do VEND-A e do GC+V.</p></div></li>
+  <li><div><div class="title">Senhas (ADM, em Configuração › Usuários)</div><p>O ADM troca a senha dos 5 usuários do seed principal, inclusive a dele. Não existe troca de senha pelo próprio usuário nem “esqueci minha senha” na equipe. As senhas chegam a você por canal privado.</p></div></li>
+  <li><div><div class="title">Alçadas de desconto</div><p>O ADM confere a coluna de desconto da lista de usuários. Ela mostra “taxa% / mensalidade%”, e campo vazio aparece como 0%. Valores esperados: VEND-A 10/10, VEND-B 10/10, VEND-0 vazio, GC 20/20 e GC+V 15/15. Todos os outros ficam vazios.</p></div></li>
+  <li><div><div class="title">Gerente comercial da equipe</div><p>O campo “Gerente comercial da equipe” de VEND-A, VEND-B, VEND-0 e GC+V aponta para o GC. Sem esse vínculo, o GC vê Funil, Carteira, Relatórios e Aprovações vazios.</p></div></li>
+  <li><div><div class="title">Permissão extra</div><p>Só o FIN-2 tem a permissão “Aprovar acertos e compensações financeiras”. As outras permissões o ADM concede pela tela quando o cenário pedir.</p></div></li>
+  <li><div><div class="title">Prazos do portal (ADM, em Configuração › Operação)</div><p>Os 4 prazos do portal do aluno ficam preenchidos antes de qualquer convite. Sem eles, nada do portal funciona.</p></div></li>
+</ol>
+
+<h3>As permissões extras</h3>
+<p>Permissão extra é uma caixa no cadastro do usuário que libera uma ação além do papel. O ADM marca e desmarca em Configuração › Usuários. O ADM passa em todas sem marcar nada.</p>
+<table class="compact">
+  <thead><tr><th style="width:38%">Permissão (rótulo na tela)</th><th>Para que serve no teste</th></tr></thead>
+  <tbody>
+    <tr><td>Aprovar acertos e compensações financeiras</td><td>O FIN com ela (FIN-2) decide o que outro FIN preparou: compensação de permuta, uso e devolução de crédito, acertos de aditivo e acerto de desistência. Sempre outra pessoa.</td></tr>
+    <tr><td>Executar devoluções financeiras aprovadas</td><td>Executa a devolução de crédito já aprovada. Ninguém do seed tem.</td></tr>
+    <tr><td>Registrar recebimento no caixa</td><td>Recebimento direto no caixa por quem não é FIN.</td></tr>
+    <tr><td>Configurar política de comissão</td><td>Mostra a aba Política de comissão para FIN e GC.</td></tr>
+    <tr><td>Exportar alunos, leads e contatos (3 permissões)</td><td>Libera as exportações.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Re-rodar o seed de QA desfaz ajustes</div><p>Nos 12 usuários de QA, ele volta senha, papéis, alçadas, gerente, permissões e “ativo”. Isso reativa um usuário depois do teste de desativação, mas apaga o que o ADM mudou pela tela. Combine com o time antes de re-rodar no meio de um ciclo.</p></div></div>
+
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7" /><path d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3" /><path d="M9.7 17l4.6 0" /></svg><div><div class="title">Se o seed de QA não puder rodar</div><p>O ADM cria os usuários pela tela com os mesmos dados da seção 3, sempre com e-mail em minúsculas. O ADM consegue criar outro ADM, mas não aumenta os próprios papéis, permissões ou alçadas: quem faz isso para ele é o ADM-2.</p></div></div>
+</section>
+
+<section>
+<h2><span class="num">5.</span>O que cada papel vê no menu</h2>
+<p class="lead">O menu lateral mostra só os itens dos papéis do usuário, nesta ordem. A Home não é o primeiro item: para ADM, FIN e GP, o primeiro é Permutas.</p>
+<p>O sistema relê os papéis a cada página. Se o ADM tira um papel de alguém logado, o item some no próximo clique, sem novo login. O rodapé do menu tem o nome, o link “Fuso” (Preferências), o tema e “Sair”.</p>
+<div class="keep"><h4>Direção e comercial</h4>
+<table class="compact"><thead><tr><th style="width:22%">Usuários</th><th>Itens do menu, na ordem da tela</th><th class="center" style="width:9%">Itens</th></tr></thead><tbody>
+<tr><td><strong><span class="nowrap">ADM</span>, <span class="nowrap">ADM-2</span></strong></td><td>Permutas, Mudanças acadêmicas, Comissões, Matrículas, Envios do portal, Diário de aulas, Home, Funil, Relatórios, Agente de IA, Carteira, Contatos, Tarefas, Inbox, Alunos, Financeiro, Empresas, Configuração</td><td class="center">18</td></tr>
+<tr><td><strong><span class="nowrap">GC</span></strong></td><td>Comissões, Matrículas, Home, Funil, Relatórios, Agente de IA, Carteira, Contatos, Tarefas, Inbox, Financeiro, Empresas <span class="chip warning">X2</span><br><small>Sem Configuração <span class="chip info">R13</span></small></td><td class="center">12</td></tr>
+<tr><td><strong><span class="nowrap">VEND-A</span>, <span class="nowrap">VEND-B</span>, <span class="nowrap">VEND-0</span></strong></td><td>Comissões, Matrículas, Home, Funil, Relatórios, Carteira, Contatos, Tarefas, Inbox</td><td class="center">9</td></tr>
+</tbody></table></div>
+<div class="keep"><h4>Pedagógico</h4>
+<table class="compact"><thead><tr><th style="width:22%">Usuários</th><th>Itens do menu, na ordem da tela</th><th class="center" style="width:9%">Itens</th></tr></thead><tbody>
+<tr><td><strong><span class="nowrap">GP</span>, <span class="nowrap">GP-2</span></strong></td><td>Permutas, Mudanças acadêmicas, Diário de aulas, Home, Inbox, Alunos, Configuração</td><td class="center">7</td></tr>
+<tr><td><strong><span class="nowrap">PROF</span>, <span class="nowrap">PROF-2</span></strong></td><td>Mudanças acadêmicas, Diário de aulas, Home, Inbox, Alunos</td><td class="center">5</td></tr>
+</tbody></table></div>
+<div class="keep"><h4>Financeiro e secretaria</h4>
+<table class="compact"><thead><tr><th style="width:22%">Usuários</th><th>Itens do menu, na ordem da tela</th><th class="center" style="width:9%">Itens</th></tr></thead><tbody>
+<tr><td><strong><span class="nowrap">FIN</span>, <span class="nowrap">FIN-2</span></strong></td><td>Permutas, Comissões, Home, Tarefas, Inbox, Alunos, Financeiro, Empresas</td><td class="center">8</td></tr>
+<tr><td><strong><span class="nowrap">SEC</span></strong></td><td>Mudanças acadêmicas, Matrículas, Envios do portal, Home, Contatos, Tarefas, Inbox, Alunos, Empresas <span class="chip warning">X2</span>, Configuração</td><td class="center">10</td></tr>
+</tbody></table></div>
+<div class="keep"><h4>Papéis combinados e aluno</h4>
+<table class="compact"><thead><tr><th style="width:22%">Usuários</th><th>Itens do menu, na ordem da tela</th><th class="center" style="width:9%">Itens</th></tr></thead><tbody>
+<tr><td><strong><span class="nowrap">GC+V</span></strong></td><td>Igual ao GC: os itens do vendedor já estão no menu do gerente comercial.</td><td class="center">12</td></tr>
+<tr><td><strong><span class="nowrap">FIN+SEC</span></strong></td><td>Permutas, Mudanças acadêmicas, Comissões, Matrículas, Envios do portal, Home, Contatos, Tarefas, Inbox, Alunos, Financeiro, Empresas, Configuração</td><td class="center">13</td></tr>
+<tr><td><strong><span class="nowrap">VEND+PROF</span></strong></td><td>Mudanças acadêmicas, Comissões, Matrículas, Diário de aulas, Home, Funil, Relatórios, Carteira, Contatos, Tarefas, Inbox, Alunos</td><td class="center">12</td></tr>
+<tr><td><strong><span class="nowrap">ALUNO-EQUIPE</span></strong></td><td>Nenhum. Ele é levado à página do portal antes de ver o menu.</td><td class="center">0</td></tr>
+</tbody></table></div>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Menu não é permissão</div><p>Um item no menu não garante que a página abre. Empresas aparece para GC e SEC, mas a página nega <span class="chip warning">X2</span>. Antes de abrir bug de acesso, compare com a matriz da seção 6.</p></div></div>
+
+<h3>Sub-abas da Configuração</h3>
+<p>Abrem a Configuração: ADM, GC, GP e SEC. Ao abrir Configuração, o sistema leva à primeira aba do papel. Com uma aba só, a pessoa cai direto nela.</p>
+<table class="compact matriz">
+  <thead><tr><th>Aba</th><th class="center" style="width:12%">ADM</th><th class="center" style="width:12%">GC</th><th class="center" style="width:12%">GP</th><th class="center" style="width:12%">SEC</th></tr></thead>
+  <tbody>
+<tr><td>Países</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Modelos contratuais</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td></tr>
+<tr><td>Catálogo</td><td class="center ok">✓</td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">—</td></tr>
+<tr><td>Turmas</td><td class="center ok">✓</td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">— <span class="chip info">R14</span></td></tr>
+<tr><td>Usuários</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Operação (inclui os prazos do portal)</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Preparação de migração</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>CRM (Distribuição e SLA, Tags e campos, Respostas rápidas, Metas; IA só ADM)</td><td class="center ok">✓</td><td class="center ok">✓ <span class="chip info">R13</span></td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>WhatsApp</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+  </tbody>
+</table>
+<p class="muted">Resumo: o ADM vê as 9 abas. O GC vê só CRM. O GP vê Catálogo e Turmas. A SEC vê só Modelos contratuais. FIN+SEC vê o mesmo que a SEC.</p>
+
+<div class="keep">
+<h3>Sub-abas do Acadêmico</h3>
+<p>A barra de abas some quando o papel tem uma aba só. O ADM vê as 16.</p>
+<table class="compact">
+  <thead><tr><th style="width:12%">Papel</th><th>Abas</th><th class="center" style="width:9%">Total</th></tr></thead>
+  <tbody>
+    <tr><td><span class="chip brand">GP</span></td><td>Mudanças acadêmicas, Avaliações, Recuperações, Segundas chamadas pendentes, Agendas de segunda chamada, Regras de avaliação, Correções, Aproveitamentos, Reposições, Indisponibilidades docentes, Grades, Quantidade de aulas, Calendário, Admissões</td><td class="center">14</td></tr>
+    <tr><td><span class="chip brand">PRO</span></td><td>Mudanças acadêmicas, Avaliações, Recuperações, Minhas recuperações, Minhas segundas chamadas, Indisponibilidades docentes</td><td class="center">6</td></tr>
+    <tr><td><span class="chip brand">SEC</span></td><td>Mudanças acadêmicas, Segundas chamadas pendentes, Agendas de segunda chamada, Aproveitamentos, Reposições, Indisponibilidades docentes, Grades, Quantidade de aulas, Calendário, Admissões</td><td class="center">10</td></tr>
+  </tbody>
+</table>
+<p class="muted">Algumas sub-telas abrem para papéis que a aba não tem (por exemplo, uma correção específica abre para o professor). Nesse caso a barra aparece sem aba marcada. É intencional.</p>
+</div>
+
+<div class="keep">
+<h3>Sub-abas do Diário</h3>
+<p>O ADM vê as 7.</p>
+<table class="compact">
+  <thead><tr><th style="width:12%">Papel</th><th>Abas</th><th class="center" style="width:9%">Total</th></tr></thead>
+  <tbody>
+    <tr><td><span class="chip brand">GP</span></td><td>Aulas, Encontros, Pendências, Regularizações de aula, Exceções de gravação, Regularizações de gravação</td><td class="center">6</td></tr>
+    <tr><td><span class="chip brand">PRO</span></td><td>Aulas, Encontros, Pendências, Regularizações de aula, Reposições, Exceções de gravação</td><td class="center">6</td></tr>
+    <tr><td><span class="chip brand">SEC</span></td><td>Só Encontros, sem barra. Não há item de menu: a SEC chega pelo Acadêmico.</td><td class="center">1</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="keep">
+<h3>Abas do Financeiro</h3>
+<p>Abrem o painel: ADM, FIN e GC. Se você pede na URL uma aba sem permissão, o sistema mostra a aba padrão, sem erro.</p>
+<table class="compact">
+  <thead><tr><th style="width:22%">Usuários</th><th>Abas</th></tr></thead>
+  <tbody>
+    <tr><td><strong>ADM</strong></td><td>Cobranças, A conferir, Retomadas, Comissões, Descontos, Visão geral, Política de comissão, Aprovações, Câmbio</td></tr>
+    <tr><td><strong>FIN, FIN-2, FIN+SEC</strong></td><td>Cobranças, A conferir, Retomadas, Comissões, Descontos, Visão geral, Câmbio. Política de comissão só com a permissão “Configurar política de comissão”.</td></tr>
+    <tr><td><strong>GC, GC+V</strong></td><td>Comissões <span class="chip warning">X4</span>, Descontos, Aprovações. Lê e aprova; não opera cobrança. Política de comissão só com a permissão “Configurar política de comissão”.</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<section class="section">
+<h2><span class="num">6.</span>O que cada papel abre</h2>
+<p class="lead">A matriz mostra o que cada papel abre de fato, digitando a URL ou clicando. Ela vale mais que o menu. Use-a antes de abrir qualquer bug de acesso.</p>
+<ul>
+  <li>O <strong>ADM abre tudo</strong> e não aparece nas colunas.</li>
+  <li>O <strong>ALUNO-EQUIPE</strong> vai para a página do portal em qualquer tela da equipe.</li>
+  <li>Sem login, qualquer tela da equipe leva ao login e, depois de entrar, volta à página pedida.</li>
+  <li>Usuário com dois papéis abre a soma das colunas dos dois.</li>
+</ul>
+<div class="legenda">
+  <span><b class="ok">✓</b> abre</span>
+  <span><b class="ok">✓</b> <small>com texto</small>: abre só a parte do usuário (escopo)</span>
+  <span><b class="no">—</b> não abre</span>
+  <span><span class="chip info">R1</span> decisão pendente</span>
+  <span><span class="chip warning">X3</span> bug provável</span>
+</div>
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg><div><div class="title">Três jeitos de negar acesso</div><p>Quando não abre, você vê uma de três coisas: a URL muda para a página “Acesso negado”; a URL fica e aparece “Você não tem permissão para acessar ...”; ou, em duas telas, a tela de erro genérica <span class="chip warning">X3</span>. As duas primeiras são esperadas. A terceira é o bug X3.</p></div></div>
+
+<h3 class="mt0">Comercial e pedagógico: GC, VEN, GP e PRO</h3>
+<table class="compact matriz"><thead><tr><th>Área</th><th class="center" style="width:16%">GC</th><th class="center" style="width:16%">VEN</th><th class="center" style="width:16%">GP</th><th class="center" style="width:16%">PRO</th></tr></thead><tbody>
+<tr><th colspan="5" style="background:var(--brand-bg);color:var(--brand-text)">Geral</th></tr>
+<tr><td>Home e Preferências</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center ok">✓</td></tr>
+<tr><td>Inbox</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center ok">✓</td></tr>
+<tr><th colspan="5" style="background:var(--brand-bg);color:var(--brand-text)">Comercial</th></tr>
+<tr><td>Funil, Carteira e Relatórios</td><td class="center ok">✓ <small>equipe</small></td><td class="center ok">✓ <small>própria + coberturas</small></td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Agente de IA</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Contatos</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Tarefas</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Comissões</td><td class="center ok">✓ <small>equipe</small></td><td class="center ok">✓ <small>própria</small></td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><th colspan="5" style="background:var(--brand-bg);color:var(--brand-text)">Matrículas e secretaria</th></tr>
+<tr><td>Contratação da oportunidade</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Nova matrícula (fluxo antigo) <span class="chip info">R1</span></td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Matrículas (lista)</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Avisos de agenda, desistências, envios do portal e reservas</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Matrícula: preparação e reserva</td><td class="center ok">✓</td><td class="center ok">✓</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Matrícula: contrato, emissão e nova reserva</td><td class="center ok">✓ <small>só alçadas de aditivo</small></td><td class="center no">—</td><td class="center ok">✓ <small>alçadas e agenda de aditivo</small></td><td class="center no">—</td></tr>
+<tr><td>Matrícula: pagador, condições, continuidade e entrada particular</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Matrícula: ocorrências financeiras, fechamento de horas e compensações</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Matrícula: autorizações de comunicação e desistência</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Matrícula: disponibilidade e indisponibilidade da oferta</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">—</td></tr>
+<tr><th colspan="5" style="background:var(--brand-bg);color:var(--brand-text)">Alunos</th></tr>
+<tr><td>Lista, ficha do aluno e alunos da turma</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓ <small>sem contato</small></td><td class="center ok">✓ <small>só as próprias turmas</small></td></tr>
+<tr><td>Ficha financeira do aluno</td><td class="center ok">✓ <small>resumo comercial da equipe</small></td><td class="center ok">✓ <small>resumo comercial da carteira</small></td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Ficha acadêmica do aluno</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center ok">✓</td></tr>
+<tr><td>Movimentações do aluno</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Agenda de aditivo do aluno</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">—</td></tr>
+<tr><td>Créditos do aluno</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Acesso ao portal (na ficha do aluno)</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><th colspan="5" style="background:var(--brand-bg);color:var(--brand-text)">Acadêmico, diário e financeiro</th></tr>
+<tr><td>Acadêmico</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center ok">✓</td></tr>
+<tr><td>Diário</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center ok">✓</td></tr>
+<tr><td>Painel financeiro</td><td class="center ok">✓ <small>3 abas</small> <span class="chip warning">X4</span></td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Acertos, continuidade, desistências, migração e recebimentos</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Permutas</td><td class="center no">— <span class="chip warning">X3</span></td><td class="center no">— <span class="chip warning">X3</span></td><td class="center ok">✓</td><td class="center no">— <span class="chip warning">X3</span></td></tr>
+<tr><td>Empresas</td><td class="center no">— <small>menu mostra</small> <span class="chip warning">X2</span></td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><th colspan="5" style="background:var(--brand-bg);color:var(--brand-text)">Configuração</th></tr>
+<tr><td>Configuração (entrada) <span class="chip info">R13</span></td><td class="center ok">✓ <small>leva a CRM</small> <span class="chip info">R13</span></td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">—</td></tr>
+<tr><td>Países, Usuários, Operação e Preparação de migração</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>Presença da migração (linha)</td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">—</td></tr>
+<tr><td>Catálogo e Turmas <span class="chip info">R14</span></td><td class="center no">—</td><td class="center no">—</td><td class="center ok">✓</td><td class="center no">—</td></tr>
+<tr><td>Modelos contratuais</td><td class="center no">— <small>erro</small> <span class="chip warning">X3</span></td><td class="center no">—</td><td class="center no">— <small>erro</small> <span class="chip warning">X3</span></td><td class="center no">—</td></tr>
+<tr><td>CRM</td><td class="center ok">✓ <small>sem a seção IA</small></td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+<tr><td>WhatsApp</td><td class="center no">— <small>volta para a Home</small></td><td class="center no">—</td><td class="center no">—</td><td class="center no">—</td></tr>
+</tbody></table>
+</section>
+
+<section class="section">
+<h3 class="mt0">Financeiro e secretaria: FIN e SEC, com observações</h3>
+<table class="compact matriz"><thead><tr><th>Área</th><th class="center" style="width:15%">FIN</th><th class="center" style="width:15%">SEC</th><th style="width:36%">Observação</th></tr></thead><tbody>
+<tr><th colspan="4" style="background:var(--brand-bg);color:var(--brand-text)">Geral</th></tr>
+<tr><td>Home e Preferências</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small>A Home muda conforme o papel.</small></td></tr>
+<tr><td>Inbox</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small>Mostra só as conversas do seu atendimento.</small></td></tr>
+<tr><th colspan="4" style="background:var(--brand-bg);color:var(--brand-text)">Comercial</th></tr>
+<tr><td>Funil, Carteira e Relatórios</td><td class="center no">—</td><td class="center no">—</td><td><small>GC sem vendedores vinculados vê tudo vazio.</small></td></tr>
+<tr><td>Agente de IA</td><td class="center no">—</td><td class="center no">—</td><td><small></small></td></tr>
+<tr><td>Contatos</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Tarefas</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Comissões</td><td class="center ok">✓</td><td class="center no">—</td><td><small></small></td></tr>
+<tr><th colspan="4" style="background:var(--brand-bg);color:var(--brand-text)">Matrículas e secretaria</th></tr>
+<tr><td>Contratação da oportunidade</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Nova matrícula (fluxo antigo) <span class="chip info">R1</span></td><td class="center no">—</td><td class="center ok">✓</td><td><small>R1: destino do fluxo em aberto. A SEC abre, mas não consegue salvar.</small></td></tr>
+<tr><td>Matrículas (lista)</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Avisos de agenda, desistências, envios do portal e reservas</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Matrícula: preparação e reserva</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Matrícula: contrato, emissão e nova reserva</td><td class="center ok">✓ <small>só alçadas de aditivo</small></td><td class="center ok">✓</td><td><small>O contrato é da SEC. Outros papéis só veem as alçadas e a agenda do aditivo.</small></td></tr>
+<tr><td>Matrícula: pagador, condições, continuidade e entrada particular</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Matrícula: ocorrências financeiras, fechamento de horas e compensações</td><td class="center ok">✓</td><td class="center no">—</td><td><small></small></td></tr>
+<tr><td>Matrícula: autorizações de comunicação e desistência</td><td class="center ok">✓ <small>só a parte financeira da desistência</small></td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Matrícula: disponibilidade e indisponibilidade da oferta</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><th colspan="4" style="background:var(--brand-bg);color:var(--brand-text)">Alunos</th></tr>
+<tr><td>Lista, ficha do aluno e alunos da turma</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small>O PRO não vê documento, contato, endereço nem valores. Aluno de outra turma aparece como “não encontrado”.</small></td></tr>
+<tr><td>Ficha financeira do aluno</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Ficha acadêmica do aluno</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Movimentações do aluno</td><td class="center ok">✓</td><td class="center ok">✓</td><td><small>O GP não abre.</small></td></tr>
+<tr><td>Agenda de aditivo do aluno</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Créditos do aluno</td><td class="center ok">✓</td><td class="center no">—</td><td><small></small></td></tr>
+<tr><td>Acesso ao portal (na ficha do aluno)</td><td class="center no">—</td><td class="center ok">✓</td><td><small>Também o ADM.</small></td></tr>
+<tr><th colspan="4" style="background:var(--brand-bg);color:var(--brand-text)">Acadêmico, diário e financeiro</th></tr>
+<tr><td>Acadêmico</td><td class="center no">—</td><td class="center ok">✓</td><td><small>Abas diferentes por papel (seção 5).</small></td></tr>
+<tr><td>Diário</td><td class="center no">—</td><td class="center ok">✓ <small>só Encontros</small></td><td><small>Gravação da aula: a própria tela decide.</small></td></tr>
+<tr><td>Painel financeiro</td><td class="center ok">✓</td><td class="center no">—</td><td><small>A SEC não abre o painel: vê a ficha financeira do aluno. X4: GC na aba Comissões pode dar erro.</small></td></tr>
+<tr><td>Acertos, continuidade, desistências, migração e recebimentos</td><td class="center ok">✓</td><td class="center no">—</td><td><small></small></td></tr>
+<tr><td>Permutas</td><td class="center ok">✓</td><td class="center no">— <span class="chip warning">X3</span></td><td><small>X3: quem não pode vê a tela de erro genérica, não “Acesso negado”.</small></td></tr>
+<tr><td>Empresas</td><td class="center ok">✓</td><td class="center no">— <small>menu mostra</small> <span class="chip warning">X2</span></td><td><small>X2: o item aparece no menu, mas a página nega.</small></td></tr>
+<tr><th colspan="4" style="background:var(--brand-bg);color:var(--brand-text)">Configuração</th></tr>
+<tr><td>Configuração (entrada) <span class="chip info">R13</span></td><td class="center no">—</td><td class="center ok">✓</td><td><small>R13: o GC não tem o item no menu, mas abre pela URL e pelo link “Definir metas”.</small></td></tr>
+<tr><td>Países, Usuários, Operação e Preparação de migração</td><td class="center no">—</td><td class="center no">—</td><td><small>Só o ADM.</small></td></tr>
+<tr><td>Presença da migração (linha)</td><td class="center no">—</td><td class="center ok">✓</td><td><small></small></td></tr>
+<tr><td>Catálogo e Turmas <span class="chip info">R14</span></td><td class="center no">—</td><td class="center no">— <span class="chip info">R14</span></td><td><small>R14: a SEC não gerencia turmas; o doc 37 diz GP e SEC.</small></td></tr>
+<tr><td>Modelos contratuais</td><td class="center no">—</td><td class="center ok">✓</td><td><small>X3: GC e GP que digitam a URL veem a tela de erro.</small></td></tr>
+<tr><td>CRM</td><td class="center no">—</td><td class="center no">—</td><td><small>A seção IA é só do ADM.</small></td></tr>
+<tr><td>WhatsApp</td><td class="center no">—</td><td class="center no">—</td><td><small>Só o ADM vê as seções.</small></td></tr>
+</tbody></table>
+<p class="muted">Fora da área da equipe: a página antiga do portal é pública e é o destino do ALUNO-EQUIPE. O portal do aluno só abre com a conta do aluno (seção 8). Nenhum papel da equipe entra nele.</p>
+</section>
+
+<section>
+<h2><span class="num">7.</span>Alçadas de desconto</h2>
+<p class="lead">Alçada é o desconto máximo que a pessoa aplica sozinha. Acima dele, o desconto vira um pedido que outra pessoa aprova.</p>
+
+<div class="cards">
+  <div class="card"><div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M16 17a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M6 7a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M6 18l12 -12" /></svg> Desconto máximo na taxa (%)</div><p>Vale para a cobrança da taxa de matrícula, na ficha financeira e na preparação comercial.</p></div>
+  <div class="card"><div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M16 17a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M6 7a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M6 18l12 -12" /></svg> Desconto máximo na mensalidade (%)</div><p>Vale para a mensalidade, nas mesmas telas. Taxa e mensalidade são conferidas separadamente.</p></div>
+</div>
+
+<h3>Como a regra funciona</h3>
+<ul>
+  <li><strong>Vazio é 0%</strong>, não “sem limite”. Vale para qualquer papel, inclusive ADM e FIN. Na lista de usuários, vazio aparece como 0%.</li>
+  <li>O desconto é <strong>acumulado</strong> sobre o valor original da cobrança: 5% e depois mais 7% na mesma cobrança contam 12%.</li>
+  <li>Cobrança que não é taxa nem mensalidade não tem limite próprio: qualquer desconto nela vai para aprovação.</li>
+  <li>Aumentar o valor ou adiar o vencimento não passa por alçada <span class="chip info">R12</span>.</li>
+  <li>A alçada não tem vigência. O sistema guarda só a data da última mudança. Um pedido aberto <strong>antes</strong> da mudança só o ADM aprova (“Alçada alterada após o pedido. Encaminhe à direção.”).</li>
+  <li>O ADM não aumenta a própria alçada. Ele recebe “Outro administrador deve conceder aumento das suas permissões ou alçadas.”. Quem faz é o ADM-2.</li>
+</ul>
+
+<div class="keep">
+<h3>Valores gravados pelo seed de QA</h3>
+<table class="compact">
+  <thead><tr><th>Usuário</th><th class="center">Taxa</th><th class="center">Mensalidade</th><th>Gerente comercial</th></tr></thead>
+  <tbody>
+    <tr><td><strong>GC</strong></td><td class="center">20%</td><td class="center">20%</td><td>— (é o gerente da equipe)</td></tr>
+    <tr><td><strong>GC+V</strong></td><td class="center">15%</td><td class="center">15%</td><td>GC</td></tr>
+    <tr><td><strong>VEND-A</strong></td><td class="center">10%</td><td class="center">10%</td><td>GC</td></tr>
+    <tr><td><strong>VEND-B</strong></td><td class="center">10%</td><td class="center">10%</td><td>GC</td></tr>
+    <tr><td><strong>VEND-0</strong></td><td class="center">vazio (0%)</td><td class="center">vazio (0%)</td><td>GC</td></tr>
+    <tr><td><strong>Todos os outros</strong>, inclusive ADM e FIN</td><td class="center">vazio (0%)</td><td class="center">vazio (0%)</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="keep">
+<h3>Exemplo: a mensalidade do VEND-A</h3>
+<p>O VEND-A tem 10% de alçada na mensalidade. O GC, gerente dele, tem 20%.</p>
+<div class="flow">
+  <div class="node neutral">VEND-A dá 5%</div><div class="arrow">→</div>
+  <div class="node">Aplica direto: cabe nos 10%</div><div class="arrow">→</div>
+  <div class="node neutral">Mais 7%: acumula 12%</div><div class="arrow">→</div>
+  <div class="node">Vira pedido. O GC aprova: 12% cabe nos 20%</div>
+</div>
+<ol class="steps">
+  <li><div><div class="title">VEND-A dá 5% na mensalidade</div><p>Cabe na alçada de 10%. O sistema aplica e mostra “Preço ajustado dentro da alçada.”.</p></div></li>
+  <li><div><div class="title">VEND-A dá mais 7% na mesma mensalidade</div><p>O acumulado passa a 12%, acima dos 10%. O desconto vira pedido na aba Aprovações do Financeiro.</p></div></li>
+  <li><div><div class="title">GC entra e aprova</div><p>12% cabe nos 20% do GC, e o VEND-A é da equipe dele. O GC aprova.</p></div></li>
+  <li><div><div class="title">E se o VEND-A pedisse 30%?</div><p>Passa da alçada do GC. Ele recebe “Desconto acima da sua alçada. Encaminhe à direção.”, e quem aprova é o ADM.</p></div></li>
+</ol>
+</div>
+
+<h3>Quem pede e quem aprova</h3>
+<table class="compact">
+  <thead><tr><th style="width:42%">Situação</th><th>Resultado</th></tr></thead>
+  <tbody>
+    <tr><td>VEN pede dentro da própria alçada</td><td class="ok">Aplica direto: “Preço ajustado dentro da alçada.”</td></tr>
+    <tr><td>VEN pede acima da própria alçada</td><td>Vira pedido na aba Aprovações. Aprova o GC da equipe do vendedor, se couber na alçada do GC, ou o ADM.</td></tr>
+    <tr><td>Pedido acima da alçada do GC</td><td>O GC recebe “Desconto acima da sua alçada. Encaminhe à direção.”. O ADM aprova.</td></tr>
+    <tr><td>GC ou ADM pede acima da própria alçada (inclui GC+V e o ADM, com alçada vazia)</td><td>Só outro ADM aprova: o ADM-2.</td></tr>
+    <tr><td>FIN pede acima da própria alçada (vazia no seed)</td><td>Vira pedido. Aprova o GC da equipe do vendedor dono do lead, ou o ADM.</td></tr>
+    <tr><td>Bolsa</td><td>Sempre vai para aprovação. Só o ADM aprova, e precisa ser outra pessoa.</td></tr>
+    <tr><td>Perdão de dívida</td><td>Só o ADM pede. Outro ADM aprova.</td></tr>
+    <tr><td>Quem pediu tenta aprovar o próprio pedido</td><td class="no">“A conferência exige outra pessoa, mesmo quando você acumula papéis.”</td></tr>
+    <tr><td>Pedido aberto antes de a alçada do GC mudar</td><td>Só o ADM aprova.</td></tr>
+  </tbody>
+</table>
+<p>Na aba Aprovações, o GC não vê o próprio pedido, os pedidos de fora da equipe nem os que exigem a direção. A exceção de preço na preparação comercial da matrícula segue a mesma lógica: decide o GC (com o lead na equipe e alçada suficiente) ou o ADM, sempre outra pessoa.</p>
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7" /><path d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3" /><path d="M9.7 17l4.6 0" /></svg><div><div class="title">Todo desconto está indo para aprovação?</div><p>Confira os dois campos de alçada do usuário antes de abrir bug. Até esta versão, os seeds preenchiam um campo antigo que nenhuma regra lê, e todo vendedor ficava com 0% de autonomia <span class="chip danger">B7</span>.</p></div></div>
+</section>
+
+<section>
+<h2><span class="num">8.</span>Portal do aluno</h2>
+<p class="lead">O portal do aluno é uma área separada do ERP. O aluno entra com uma conta própria, que não é um usuário da equipe. Nenhum seed cria essa conta: ela nasce de um convite.</p>
+
+<div class="cards">
+  <div class="card"><div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg> Duas portas separadas</div><p>A sessão da equipe não abre o portal, e a sessão do portal não abre o ERP. A equipe nunca vê a senha, o token nem o link do aluno.</p></div>
+  <div class="card"><div class="title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M19 22v.01" /><path d="M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" /></svg> ALUNO-EQUIPE não é o aluno do portal</div><p>Ele só confirma que um usuário da equipe com papel Aluno não opera nada. O aluno real entra pela tela de login do portal.</p></div>
+</div>
+
+<h3>Como a conta nasce</h3>
+<ol class="steps">
+  <li><div><div class="title">Pré-condições</div><p>O ADM preencheu os 4 prazos do portal em Configuração › Operação. O DEV configurou o envio de e-mail real. Existe um aluno cadastrado com o e-mail de uma caixa que você lê.</p></div></li>
+  <li><div><div class="title">SEC ou ADM prepara o convite</div><p>Na ficha do aluno, aba Acesso ao portal. O convite só vale para o e-mail atual do cadastro. A fila de envio aparece em Envios do portal.</p></div></li>
+  <li><div><div class="title">O aluno ativa a conta</div><p>Ele recebe o e-mail, abre o link de ativação e define a senha, com 12 caracteres ou mais e confirmação. Depois, entra em “Suas reposições”.</p></div></li>
+  <li><div><div class="title">Login, recuperação e sair</div><p>Nas próximas vezes, o aluno entra pela tela “Área de reposições” e recupera a senha pela tela de recuperação. O botão “Sair” encerra a sessão e volta ao login.</p></div></li>
+</ol>
+
+<div class="callout danger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M12.802 2.165l5.575 2.389c.48 .206 .863 .589 1.07 1.07l2.388 5.574c.22 .512 .22 1.092 0 1.604l-2.389 5.575c-.206 .48 -.589 .863 -1.07 1.07l-5.574 2.388c-.512 .22 -1.092 .22 -1.604 0l-5.575 -2.389a2.036 2.036 0 0 1 -1.07 -1.07l-2.388 -5.574a2.036 2.036 0 0 1 0 -1.604l2.389 -5.575c.206 -.48 .589 -.863 1.07 -1.07l5.574 -2.388a2.036 2.036 0 0 1 1.604 0" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg><div><div class="title">Em UAT, o portal depende de uma decisão <span class="chip danger">B4</span> <span class="chip info">R3</span></div><p>O portal não tem modo simulado. O link de ativação só nasce quando o e-mail sai de verdade. Sem o envio real, o convite fica “Preparado” para sempre, e ativação, login e recuperação não podem ser testados. O PO escolhe entre uma chave de teste de e-mail para uma caixa do time ou uma ferramenta de DEV que gera o link. Até lá, marque esses cenários como bloqueados.</p></div></div>
+
+<h3>O que o aluno vê</h3>
+<table class="compact">
+  <thead><tr><th style="width:30%">Tela</th><th>O que mostra</th></tr></thead>
+  <tbody>
+    <tr><td>Suas reposições</td><td>A tela inicial do portal, com as reposições do aluno.</td></tr>
+    <tr><td>Detalhe da reposição</td><td>Vídeo, entrega e relato de indisponibilidade.</td></tr>
+    <tr><td>Resultados</td><td>A frente acadêmica e os resultados parciais.</td></tr>
+    <tr><td>Preferências</td><td>O fuso de exibição.</td></tr>
+  </tbody>
+</table>
+<p>Nada da área da equipe abre para o aluno. Para ver conteúdo, ele precisa de uma matrícula com reposição autorizada.</p>
+
+<h3>Comportamentos para conferir</h3>
+<ul>
+  <li>Link já usado, vencido ou substituído: “Este link não está mais disponível...”.</li>
+  <li>Recuperação de senha: a resposta é sempre a mesma, com ou sem conta. Ao trocar a senha, todas as sessões anteriores são encerradas.</li>
+  <li>Bloqueio: 5 senhas erradas em 15 minutos bloqueiam o e-mail. No portal, o bloqueio fica gravado e sobrevive ao reinício do servidor.</li>
+  <li>Convite para conta já ativada é recusado: o aluno deve usar a recuperação de acesso.</li>
+  <li>Troca de e-mail assistida: SEC ou ADM prepara com motivo e evidência, o aluno valida o novo e-mail e <strong>outro</strong> ADM decide. Se o mesmo ADM tentar decidir, recebe “Outra pessoa da Administração deve decidir a troca de e-mail.”.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="num">9.</span>Armadilhas</h2>
+<p class="lead">Estes são os erros mais comuns ao testar papéis. Leia antes de abrir um bug de acesso.</p>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" /><path d="M3 7l9 6l9 -6" /></svg><div><div class="title">E-mail com letra maiúscula não entra <span class="chip warning">X1</span></div><p>Um usuário criado como Teste.QA@genius.com nunca entra: o sistema responde “E-mail ou senha incorretos.”. O login busca o e-mail em minúsculas, e o cadastro guarda como foi digitado. Também dá para criar dois usuários que diferem só nas maiúsculas: é o mesmo bug. Crie todo usuário em minúsculas.</p></div></div>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 21l18 0" /><path d="M9 8l1 0" /><path d="M9 12l1 0" /><path d="M9 16l1 0" /><path d="M14 8l1 0" /><path d="M14 12l1 0" /><path d="M14 16l1 0" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" /></svg><div><div class="title">Menu Empresas aparece para quem não abre <span class="chip warning">X2</span></div><p>GC e SEC veem o item Empresas no menu, mas a página só abre para FIN e ADM. Registre citando o X2, sem abrir um bug novo.</p></div></div>
+
+<div class="callout warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Tela de erro em vez de “Acesso negado” <span class="chip warning">X3</span></div><p>Permutas e Modelos contratuais negam acesso com a tela de erro genérica “Não foi possível carregar esta tela”. O certo seria “Acesso negado”. Acontece com quem não tem o papel e digita a URL: em Permutas, GC, VEN, PRO e SEC; em Modelos contratuais, GC e GP.</p></div></div>
+
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">GC sem Configuração no menu <span class="chip info">R13</span></div><p>O gerente comercial não tem o item Configuração no menu, mas abre a aba CRM pela URL e pelo link “Definir metas”, em Relatórios › Equipe. É decisão pendente: registre o que viu e não abra bug.</p></div></div>
+
+<div class="callout info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke- stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Secretaria e turmas <span class="chip info">R14</span></div><p>Hoje a SEC não gerencia turmas: só ADM e GP abrem Catálogo e Turmas. O documento de papéis diz GP e SEC. É decisão pendente: registre o que viu e não abra bug.</p></div></div>
+
+<h3>Outros cuidados</h3>
+<ul class="check">
+  <li><strong>Alçada vazia é 0%.</strong> Se todo desconto vai para aprovação, confira os dois campos antes de abrir bug.</li>
+  <li><strong>GC sem equipe vê tudo vazio.</strong> Funil, Carteira, Relatórios, Comissões e Aprovações dependem dos vendedores vinculados. Se o ADM muda o vínculo, o escopo muda na hora.</li>
+  <li><strong>Não use o ADM como segundo decisor.</strong> Ele passa em tudo e esconde erros de papel. Use GC, GP-2, FIN-2 ou ADM-2.</li>
+  <li><strong>Bloqueio de login da equipe.</strong> 5 senhas erradas em 15 minutos bloqueiam aquele e-mail, até para a senha certa, com a mesma mensagem de senha errada. O bloqueio zera quando o servidor reinicia.</li>
+  <li><strong>Senha.</strong> Só o ADM redefine. Trocar a senha não encerra as sessões abertas <span class="chip warning">X12</span>. Ao editar outro usuário, o navegador pode preencher a senha do ADM no campo “Nova senha” <span class="chip warning">X11</span>: confira se o campo está vazio antes de salvar.</li>
+  <li><strong>Usuário desativado</strong> vai para o login no próximo clique e vê “E-mail ou senha incorretos.”. Não há aviso de conta desativada. O ADM não desativa a si mesmo.</li>
+  <li><strong>Sessão longa.</strong> A sessão da equipe dura até 30 dias. Não é bug sem decisão do PO.</li>
+  <li><strong>Re-rodar o seed de QA</strong> devolve os usuários de QA ao estado inicial e pode fazer pedidos abertos exigirem o ADM. Combine com o time.</li>
+</ul>
+</section>
+
+</body>
+</html>
