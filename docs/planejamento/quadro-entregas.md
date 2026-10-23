@@ -5589,3 +5589,8 @@ Achado TESTER cf7: foco body a cada Carregar anteriores (724d9e/eacb0e); probe S
 ### #319 — checkpoint estático, UI e integração317 pendentes
 
 Branch OWN codex/inbox-e1-319 sobre294. Estados de página/thread/painel/semseleção com skeleton real960/1100/1400, sem ocultar notas388; erro público com retry/handoff síncrono, sem restaurar foco apósawait. VirtualList/busca/pin316 e hooksInbox R6/fila394/SSE396 preservados; lowerblockCompositor/ações/header byte-igual294 para merge coordenado A317. Mapas somente3Botao exatos e remoção da isenção raw migrada. REDs/negativos preservados em relatório, GREEN final9927/61arquivos861testes, TSC13787heap8192 e lint13fontes688eae0avisos terminaram saída0. SPEC inbox-estados.md/report output/inbox-319-report.md. NÃOconcluída: revisão exata, integração317, handoffCLI, imagens/inspeção/medição5estados+320×500 e globalROOT ainda obrigatórios. Sem ownfull/DB/SQL/seed/servidor/deps/envio; nenhum binário novo ou homologação presumida.
+
+
+### #319 — navegador preliminar472, formal combinado pendente
+
+QA estática independente11files306saída0 favorável condicional. Probes privados a62951/2d7b25/608110/33841/12443 saída0, desktopclaro1440×900+escuro320×500;29PNG inspecionados/2.777.875bytes com allowlistSHA. GETvazio200 real; erros500exatos/retry200, focoTabnatural12443 e notas/pin preservados60→120→153msgs/2notas/157itens.8873/90071negativos privados preservados e premissas descritas, sem alterarproduto/guard/CLI. Triagem ausente eC2#402/composição317 exigem formal posterior. ROOT encerroupreview22285/restaurou424hashes1372originais bfa460; DEV removeu sóAGENTSNext. Fonte472 imutável; sem ownfull/DB/servidor/envio. SPEC/report/allowlist/evidências explícitos, não concluída nem homologada.

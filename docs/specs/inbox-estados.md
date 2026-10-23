@@ -31,3 +31,8 @@ A317 é dona do rodapé/compositor e, até handoff, do harness visual. A integra
 Após handoff/preview coordenado: sem-selecao/carregando/painel-erro/thread-erro/lista-vazia em1440×900,1024×768,390×844 e320×500, dois temas; probes adicionais de loading parcial, painel vazio, retry, seleção rápida e foco/busca/paginação. Latência/HTTP500 são controles privados e exatos do transporte local, sem afrouxar guardas globais. O protótipo não desenha todos esses estados; declarar quais referências realmente existem (lista vazia já possui listEmpty) e a ausência das demais, sem fabricar referência funcional. Global e publicação ficam com integrador.
 
 Sem schema/deps/package/lock, SQL/seed, servidor iniciado pelo DEV, transporte externo ou envio de mensagem.
+
+
+## Checkpoint preliminar de navegador472
+
+Em1440×900 claro/320×500 escuro foram observados fallback real sob latência, erros500 públicos/retry real200, ausência legítima comprovada porGET200 e paginação até157itens decorados preservando notas/pin/foco.29PNG inspecionados permanecem locais com allowlist explícita em output/inbox-319-preliminar-allowlist.json. Métricas, negativos e limites no report/evidencias-preliminares. A fixture não contémTriagem; sua ordem visual presente não foi comprovada. O scroll próprio do painel/thread permite alcançar retry porTab, sem alterar documento; estado inicial e alcançado separados. Fonte472 ainda antecede composição317/C2#402: não é formal final nem homologação/global.
