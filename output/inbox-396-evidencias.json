@@ -1,0 +1,84 @@
+{
+  "fonte": "babd1fe60c99483923b7c78411f639081acff486",
+  "sessao": "d56ad6",
+  "exit": 0,
+  "probe": {
+    "arquivo": "output/inbox-396-browser/probe-closed.mjs",
+    "sha256": "d46c98de5e77f20ded6c10947e19f7b0381b5703862a5dcc7464648f6c0fcecd",
+    "publicar": false
+  },
+  "viewport": [
+    1440,
+    900
+  ],
+  "tema": "claro",
+  "injecao": {
+    "status": 503,
+    "rota": "/api/inbox/eventos",
+    "vezes": 1,
+    "transporte": "route.fulfill privado; depois passthrough ao servidor SSE real"
+  },
+  "nativeError": [
+    {
+      "tipo": "erro-nativo",
+      "id": 2,
+      "readyState": 2,
+      "instante": 1792730917604,
+      "fase": "home"
+    }
+  ],
+  "antesNavegar": {
+    "fontes": 2,
+    "ativos": 0,
+    "documento": 1792730916993.4,
+    "url": "/home"
+  },
+  "sidebarPreservada": true,
+  "final": {
+    "fontes": 3,
+    "ativos": 1,
+    "maximo": 1,
+    "documento": 1792730916993.4,
+    "url": "/inbox",
+    "conectado": "1",
+    "recontagensPorResync": 1
+  },
+  "respostasSSE": [
+    {
+      "status": 503,
+      "esperado503": true,
+      "instante": 1792730917604
+    },
+    {
+      "status": 200,
+      "esperado503": false,
+      "instante": 1792730918626
+    }
+  ],
+  "documentosHTTP": 1,
+  "diagnosticos": [
+    {
+      "tipo": "503-privado-controlado",
+      "status": 503
+    },
+    {
+      "tipo": "console-503-privado"
+    }
+  ],
+  "falhas": [],
+  "cadeiaRecontagem": {
+    "observada": true,
+    "origem": "fonte.onopen → avisar → aoAviso → recontar → executar → fetch /api/inbox/nao-lidas",
+    "quantidade": 1,
+    "rawStackPublicavel": false
+  },
+  "limites": [
+    "Falha503 é injeção privada de transporte local, não deploy real. Nenhum evento SSE/props/JSON de negócio fabricado.",
+    "Listener error nativo registra readyState2 antes de onerror produtivo. StrictMode criou e fechou fonte1; fonte2 recebeu503; fonte3 recuperou. Máximo1ativa.",
+    "Somente nova assinatura por Link público recupera CLOSED; intervalo de observação250ms sem retry autônomo não é prova de carga prolongada.",
+    "Sidebar DOM permaneceu conectado e idêntico; recontagem por fanout resync observada. Não houve mutação de dado, SQL, envio ou submit.",
+    "Duas capturas demonstram estado da UI histórica311 no SHA babd. Não são referência estética da composição atual313/315.",
+    "Pré-flight anterior falhou por export inexistente do harness histórico, antes de browser; negativo preservado. PredicadoReact idêntico copiado só ao probe privado, sem alterar guard global.",
+    "Rawstack/trace/logs/probe/negativos permanecem privados foraGit/ZIP. Somente doisPNG positivos explicitados na allowlist são publicáveis."
+  ]
+}
