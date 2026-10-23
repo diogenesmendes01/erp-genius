@@ -1,0 +1,5617 @@
+{
+  "fase": "antes",
+  "fonte": "797994aaab6f53017b72a808cf0de92abf827ac5",
+  "perfil": "integracao",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "selecionada": false,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "scrollY": 0,
+          "htmlScrollHeight": 1045,
+          "htmlClientHeight": 900,
+          "bodyScrollHeight": 1045,
+          "bodyClientHeight": 1045,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 1216,
+            "height": 1045,
+            "bottom": 1045,
+            "clientHeight": 1045,
+            "scrollHeight": 1045,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 1152,
+            "height": 981,
+            "bottom": 1013,
+            "clientHeight": 981,
+            "scrollHeight": 981,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 241,
+            "width": 1152,
+            "height": 772,
+            "bottom": 1013,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 242,
+            "width": 360,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 617,
+            "y": 242,
+            "width": 470,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 1087,
+            "y": 242,
+            "width": 320,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 1152,
+            "height": 137,
+            "bottom": 225,
+            "clientHeight": 135,
+            "scrollHeight": 135,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 242,
+            "width": 359,
+            "height": 170,
+            "bottom": 412,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 412,
+              "width": 359,
+              "height": 600,
+              "bottom": 1012,
+              "clientHeight": 600,
+              "scrollHeight": 600,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 617,
+              "y": 242,
+              "width": 470,
+              "height": 770,
+              "bottom": 1012,
+              "clientHeight": 770,
+              "scrollHeight": 770,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 250,
+            "width": 343,
+            "height": 34,
+            "bottom": 284,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 381.33,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 497.66,
+            "y": 370,
+            "width": 110.34,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 258,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "selecionada": true,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "scrollY": 0,
+          "htmlScrollHeight": 1045,
+          "htmlClientHeight": 900,
+          "bodyScrollHeight": 1045,
+          "bodyClientHeight": 1045,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 1216,
+            "height": 1045,
+            "bottom": 1045,
+            "clientHeight": 1045,
+            "scrollHeight": 1045,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 1152,
+            "height": 981,
+            "bottom": 1013,
+            "clientHeight": 981,
+            "scrollHeight": 981,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 241,
+            "width": 1152,
+            "height": 772,
+            "bottom": 1013,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 242,
+            "width": 360,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 617,
+            "y": 242,
+            "width": 470,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 1087,
+            "y": 242,
+            "width": 320,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 1152,
+            "height": 137,
+            "bottom": 225,
+            "clientHeight": 135,
+            "scrollHeight": 135,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 242,
+            "width": 359,
+            "height": 170,
+            "bottom": 412,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 412,
+              "width": 359,
+              "height": 600,
+              "bottom": 1012,
+              "clientHeight": 600,
+              "scrollHeight": 600,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 617,
+              "y": 449,
+              "width": 470,
+              "height": 506,
+              "bottom": 955,
+              "clientHeight": 506,
+              "scrollHeight": 506,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 717,
+              "y": 964,
+              "width": 314,
+              "height": 40,
+              "bottom": 1004,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 250,
+            "width": 343,
+            "height": 34,
+            "bottom": 284,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 381.33,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 497.66,
+            "y": 370,
+            "width": 110.34,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": {
+            "x": 717,
+            "y": 964,
+            "width": 314,
+            "height": 40,
+            "bottom": 1004,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 145
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 646,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "selecionada": false,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "scrollY": 0,
+          "htmlScrollHeight": 1045,
+          "htmlClientHeight": 900,
+          "bodyScrollHeight": 1045,
+          "bodyClientHeight": 1045,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 1216,
+            "height": 1045,
+            "bottom": 1045,
+            "clientHeight": 1045,
+            "scrollHeight": 1045,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 1152,
+            "height": 981,
+            "bottom": 1013,
+            "clientHeight": 981,
+            "scrollHeight": 981,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 241,
+            "width": 1152,
+            "height": 772,
+            "bottom": 1013,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 242,
+            "width": 360,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 617,
+            "y": 242,
+            "width": 470,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 1087,
+            "y": 242,
+            "width": 320,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 1152,
+            "height": 137,
+            "bottom": 225,
+            "clientHeight": 135,
+            "scrollHeight": 135,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 242,
+            "width": 359,
+            "height": 170,
+            "bottom": 412,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 412,
+              "width": 359,
+              "height": 600,
+              "bottom": 1012,
+              "clientHeight": 600,
+              "scrollHeight": 600,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 617,
+              "y": 242,
+              "width": 470,
+              "height": 770,
+              "bottom": 1012,
+              "clientHeight": 770,
+              "scrollHeight": 770,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 250,
+            "width": 343,
+            "height": 34,
+            "bottom": 284,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 381.33,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 497.66,
+            "y": 370,
+            "width": 110.34,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 258,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "selecionada": true,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "scrollY": 0,
+          "htmlScrollHeight": 1045,
+          "htmlClientHeight": 900,
+          "bodyScrollHeight": 1045,
+          "bodyClientHeight": 1045,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 1216,
+            "height": 1045,
+            "bottom": 1045,
+            "clientHeight": 1045,
+            "scrollHeight": 1045,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 1152,
+            "height": 981,
+            "bottom": 1013,
+            "clientHeight": 981,
+            "scrollHeight": 981,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 241,
+            "width": 1152,
+            "height": 772,
+            "bottom": 1013,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 242,
+            "width": 360,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 617,
+            "y": 242,
+            "width": 470,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 1087,
+            "y": 242,
+            "width": 320,
+            "height": 770,
+            "bottom": 1012,
+            "clientHeight": 770,
+            "scrollHeight": 770,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 1152,
+            "height": 137,
+            "bottom": 225,
+            "clientHeight": 135,
+            "scrollHeight": 135,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 242,
+            "width": 359,
+            "height": 170,
+            "bottom": 412,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 412,
+              "width": 359,
+              "height": 600,
+              "bottom": 1012,
+              "clientHeight": 600,
+              "scrollHeight": 600,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 617,
+              "y": 449,
+              "width": 470,
+              "height": 506,
+              "bottom": 955,
+              "clientHeight": 506,
+              "scrollHeight": 506,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 717,
+              "y": 964,
+              "width": 314,
+              "height": 40,
+              "bottom": 1004,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 250,
+            "width": 343,
+            "height": 34,
+            "bottom": 284,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 381.33,
+            "y": 370,
+            "width": 110.33,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 497.66,
+            "y": 370,
+            "width": 110.34,
+            "height": 33,
+            "bottom": 403,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": {
+            "x": 717,
+            "y": 964,
+            "width": 314,
+            "height": 40,
+            "bottom": 1004,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 145
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 646,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "selecionada": false,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 768,
+          "innerWidth": 1024,
+          "scrollY": 0,
+          "htmlScrollHeight": 933,
+          "htmlClientHeight": 768,
+          "bodyScrollHeight": 933,
+          "bodyClientHeight": 933,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 800,
+            "height": 933,
+            "bottom": 933,
+            "clientHeight": 933,
+            "scrollHeight": 933,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 736,
+            "height": 869,
+            "bottom": 901,
+            "clientHeight": 869,
+            "scrollHeight": 869,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 261,
+            "width": 736,
+            "height": 640,
+            "bottom": 901,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 262,
+            "width": 320,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 577,
+            "y": 262,
+            "width": 414,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 736,
+            "height": 157,
+            "bottom": 245,
+            "clientHeight": 155,
+            "scrollHeight": 155,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 262,
+            "width": 319,
+            "height": 170,
+            "bottom": 432,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 432,
+              "width": 319,
+              "height": 468,
+              "bottom": 900,
+              "clientHeight": 468,
+              "scrollHeight": 468,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 577,
+              "y": 262,
+              "width": 414,
+              "height": 638,
+              "bottom": 900,
+              "clientHeight": 638,
+              "scrollHeight": 638,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 270,
+            "width": 303,
+            "height": 34,
+            "bottom": 304,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 368,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 471,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 258,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "selecionada": true,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 768,
+          "innerWidth": 1024,
+          "scrollY": 0,
+          "htmlScrollHeight": 933,
+          "htmlClientHeight": 768,
+          "bodyScrollHeight": 933,
+          "bodyClientHeight": 933,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 800,
+            "height": 933,
+            "bottom": 933,
+            "clientHeight": 933,
+            "scrollHeight": 933,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 736,
+            "height": 869,
+            "bottom": 901,
+            "clientHeight": 869,
+            "scrollHeight": 869,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 261,
+            "width": 736,
+            "height": 640,
+            "bottom": 901,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 262,
+            "width": 320,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 577,
+            "y": 262,
+            "width": 414,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 736,
+            "height": 157,
+            "bottom": 245,
+            "clientHeight": 155,
+            "scrollHeight": 155,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 262,
+            "width": 319,
+            "height": 170,
+            "bottom": 432,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 432,
+              "width": 319,
+              "height": 468,
+              "bottom": 900,
+              "clientHeight": 468,
+              "scrollHeight": 468,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 577,
+              "y": 503,
+              "width": 414,
+              "height": 340,
+              "bottom": 843,
+              "clientHeight": 340,
+              "scrollHeight": 340,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 677,
+              "y": 852,
+              "width": 258,
+              "height": 40,
+              "bottom": 892,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 270,
+            "width": 303,
+            "height": 34,
+            "bottom": 304,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 368,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 471,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": {
+            "x": 677,
+            "y": 852,
+            "width": 258,
+            "height": 40,
+            "bottom": 892,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 165
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 680,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "selecionada": false,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 768,
+          "innerWidth": 1024,
+          "scrollY": 0,
+          "htmlScrollHeight": 933,
+          "htmlClientHeight": 768,
+          "bodyScrollHeight": 933,
+          "bodyClientHeight": 933,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 800,
+            "height": 933,
+            "bottom": 933,
+            "clientHeight": 933,
+            "scrollHeight": 933,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 736,
+            "height": 869,
+            "bottom": 901,
+            "clientHeight": 869,
+            "scrollHeight": 869,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 261,
+            "width": 736,
+            "height": 640,
+            "bottom": 901,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 262,
+            "width": 320,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 577,
+            "y": 262,
+            "width": 414,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 736,
+            "height": 157,
+            "bottom": 245,
+            "clientHeight": 155,
+            "scrollHeight": 155,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 262,
+            "width": 319,
+            "height": 170,
+            "bottom": 432,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 432,
+              "width": 319,
+              "height": 468,
+              "bottom": 900,
+              "clientHeight": 468,
+              "scrollHeight": 468,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 577,
+              "y": 262,
+              "width": 414,
+              "height": 638,
+              "bottom": 900,
+              "clientHeight": 638,
+              "scrollHeight": 638,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 270,
+            "width": 303,
+            "height": 34,
+            "bottom": 304,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 368,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 471,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 258,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "selecionada": true,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 768,
+          "innerWidth": 1024,
+          "scrollY": 0,
+          "htmlScrollHeight": 933,
+          "htmlClientHeight": 768,
+          "bodyScrollHeight": 933,
+          "bodyClientHeight": 933,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 224,
+            "y": 0,
+            "width": 800,
+            "height": 933,
+            "bottom": 933,
+            "clientHeight": 933,
+            "scrollHeight": 933,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 256,
+            "y": 32,
+            "width": 736,
+            "height": 869,
+            "bottom": 901,
+            "clientHeight": 869,
+            "scrollHeight": 869,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 256,
+            "y": 261,
+            "width": 736,
+            "height": 640,
+            "bottom": 901,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 257,
+            "y": 262,
+            "width": 320,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 577,
+            "y": 262,
+            "width": 414,
+            "height": 638,
+            "bottom": 900,
+            "clientHeight": 638,
+            "scrollHeight": 638,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 256,
+            "y": 88,
+            "width": 736,
+            "height": 157,
+            "bottom": 245,
+            "clientHeight": 155,
+            "scrollHeight": 155,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 257,
+            "y": 262,
+            "width": 319,
+            "height": 170,
+            "bottom": 432,
+            "clientHeight": 169,
+            "scrollHeight": 169,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 257,
+              "y": 432,
+              "width": 319,
+              "height": 468,
+              "bottom": 900,
+              "clientHeight": 468,
+              "scrollHeight": 468,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 577,
+              "y": 503,
+              "width": 414,
+              "height": 340,
+              "bottom": 843,
+              "clientHeight": 340,
+              "scrollHeight": 340,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 677,
+              "y": 852,
+              "width": 258,
+              "height": 40,
+              "bottom": 892,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 265,
+            "y": 270,
+            "width": 303,
+            "height": 34,
+            "bottom": 304,
+            "clientHeight": 32,
+            "scrollHeight": 32,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 265,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 368,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 471,
+            "y": 390,
+            "width": 97,
+            "height": 33,
+            "bottom": 423,
+            "clientHeight": 31,
+            "scrollHeight": 31,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": {
+            "x": 677,
+            "y": 852,
+            "width": 258,
+            "height": 40,
+            "bottom": 892,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 165
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 422,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 680,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "selecionada": false,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 1221,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1221,
+          "bodyClientHeight": 1221,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 1164,
+            "bottom": 1221,
+            "clientHeight": 1164,
+            "scrollHeight": 1164,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 1132,
+            "bottom": 1205,
+            "clientHeight": 1132,
+            "scrollHeight": 1132,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 716,
+            "bottom": 1205,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 714,
+            "bottom": 1204,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 490,
+            "width": 355,
+            "height": 315,
+            "bottom": 805,
+            "clientHeight": 314,
+            "scrollHeight": 314,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 805,
+              "width": 355,
+              "height": 399,
+              "bottom": 1204,
+              "clientHeight": 399,
+              "scrollHeight": 399,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 498,
+            "width": 339,
+            "height": 44,
+            "bottom": 542,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 652,
+            "width": 339,
+            "height": 44,
+            "bottom": 696,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 25,
+            "y": 702,
+            "width": 339,
+            "height": 44,
+            "bottom": 746,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 25,
+            "y": 752,
+            "width": 339,
+            "height": 44,
+            "bottom": 796,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 567,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": false
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "selecionada": true,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 1221,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1221,
+          "bodyClientHeight": 1221,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 1164,
+            "bottom": 1221,
+            "clientHeight": 1164,
+            "scrollHeight": 1164,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 1132,
+            "bottom": 1205,
+            "clientHeight": 1132,
+            "scrollHeight": 1132,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 716,
+            "bottom": 1205,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 714,
+            "bottom": 1204,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 819,
+              "width": 356,
+              "height": 328,
+              "bottom": 1147,
+              "clientHeight": 328,
+              "scrollHeight": 328,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 117,
+              "y": 1156,
+              "width": 200,
+              "height": 40,
+              "bottom": 1196,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "setor": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "numero": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "status": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "compositor": {
+            "x": 117,
+            "y": 1156,
+            "width": 200,
+            "height": 40,
+            "bottom": 1196,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": false
+        },
+        "setor": {
+          "visivel": false
+        },
+        "numero": {
+          "visivel": false
+        },
+        "status": {
+          "visivel": false
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 63
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 314
+        }
+      },
+      "rolagemLista": {
+        "disponivel": false
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 788,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "selecionada": false,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 1221,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1221,
+          "bodyClientHeight": 1221,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 1164,
+            "bottom": 1221,
+            "clientHeight": 1164,
+            "scrollHeight": 1164,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 1132,
+            "bottom": 1205,
+            "clientHeight": 1132,
+            "scrollHeight": 1132,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 716,
+            "bottom": 1205,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 714,
+            "bottom": 1204,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 490,
+            "width": 355,
+            "height": 315,
+            "bottom": 805,
+            "clientHeight": 314,
+            "scrollHeight": 314,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 805,
+              "width": 355,
+              "height": 399,
+              "bottom": 1204,
+              "clientHeight": 399,
+              "scrollHeight": 399,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 498,
+            "width": 339,
+            "height": 44,
+            "bottom": 542,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 652,
+            "width": 339,
+            "height": 44,
+            "bottom": 696,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 25,
+            "y": 702,
+            "width": 339,
+            "height": 44,
+            "bottom": 746,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 25,
+            "y": 752,
+            "width": 339,
+            "height": 44,
+            "bottom": 796,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 567,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": false
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "selecionada": true,
+      "contratual": true,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 1221,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1221,
+          "bodyClientHeight": 1221,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 1164,
+            "bottom": 1221,
+            "clientHeight": 1164,
+            "scrollHeight": 1164,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 1132,
+            "bottom": 1205,
+            "clientHeight": 1132,
+            "scrollHeight": 1132,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 716,
+            "bottom": 1205,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 714,
+            "bottom": 1204,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 819,
+              "width": 356,
+              "height": 328,
+              "bottom": 1147,
+              "clientHeight": 328,
+              "scrollHeight": 328,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 117,
+              "y": 1156,
+              "width": 200,
+              "height": 40,
+              "bottom": 1196,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "setor": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "numero": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "status": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "compositor": {
+            "x": 117,
+            "y": 1156,
+            "width": 200,
+            "height": 40,
+            "bottom": 1196,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": false
+        },
+        "setor": {
+          "visivel": false
+        },
+        "numero": {
+          "visivel": false
+        },
+        "status": {
+          "visivel": false
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 63
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 314
+        }
+      },
+      "rolagemLista": {
+        "disponivel": false
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 788,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 700,
+      "height": 844,
+      "tema": "light",
+      "selecionada": false,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 700,
+          "scrollY": 0,
+          "htmlScrollHeight": 1037,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1037,
+          "bodyClientHeight": 1037,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 53,
+            "width": 700,
+            "height": 984,
+            "bottom": 1037,
+            "clientHeight": 984,
+            "scrollHeight": 984,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 69,
+            "width": 668,
+            "height": 952,
+            "bottom": 1021,
+            "clientHeight": 952,
+            "scrollHeight": 952,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 305,
+            "width": 668,
+            "height": 716,
+            "bottom": 1021,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 306,
+            "width": 320,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 337,
+            "y": 306,
+            "width": 346,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 125,
+            "width": 668,
+            "height": 164,
+            "bottom": 289,
+            "clientHeight": 162,
+            "scrollHeight": 162,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 306,
+            "width": 319,
+            "height": 191,
+            "bottom": 497,
+            "clientHeight": 190,
+            "scrollHeight": 190,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 497,
+              "width": 319,
+              "height": 523,
+              "bottom": 1020,
+              "clientHeight": 523,
+              "scrollHeight": 523,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 337,
+              "y": 306,
+              "width": 346,
+              "height": 714,
+              "bottom": 1020,
+              "clientHeight": 714,
+              "scrollHeight": 714,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 314,
+            "width": 303,
+            "height": 44,
+            "bottom": 358,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 128,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 231,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 443,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 258,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 700,
+      "height": 844,
+      "tema": "light",
+      "selecionada": true,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 700,
+          "scrollY": 0,
+          "htmlScrollHeight": 1037,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1037,
+          "bodyClientHeight": 1037,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 53,
+            "width": 700,
+            "height": 984,
+            "bottom": 1037,
+            "clientHeight": 984,
+            "scrollHeight": 984,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 69,
+            "width": 668,
+            "height": 952,
+            "bottom": 1021,
+            "clientHeight": 952,
+            "scrollHeight": 952,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 305,
+            "width": 668,
+            "height": 716,
+            "bottom": 1021,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 306,
+            "width": 320,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 337,
+            "y": 306,
+            "width": 346,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 125,
+            "width": 668,
+            "height": 164,
+            "bottom": 289,
+            "clientHeight": 162,
+            "scrollHeight": 162,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 306,
+            "width": 319,
+            "height": 191,
+            "bottom": 497,
+            "clientHeight": 190,
+            "scrollHeight": 190,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 497,
+              "width": 319,
+              "height": 523,
+              "bottom": 1020,
+              "clientHeight": 523,
+              "scrollHeight": 523,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 337,
+              "y": 563,
+              "width": 346,
+              "height": 400,
+              "bottom": 963,
+              "clientHeight": 400,
+              "scrollHeight": 400,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 437,
+              "y": 972,
+              "width": 190,
+              "height": 40,
+              "bottom": 1012,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 314,
+            "width": 303,
+            "height": 44,
+            "bottom": 358,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 128,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 231,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": {
+            "x": 437,
+            "y": 972,
+            "width": 190,
+            "height": 40,
+            "bottom": 1012,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 193
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 443,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 716,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 700,
+      "height": 844,
+      "tema": "dark",
+      "selecionada": false,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 700,
+          "scrollY": 0,
+          "htmlScrollHeight": 1037,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1037,
+          "bodyClientHeight": 1037,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 53,
+            "width": 700,
+            "height": 984,
+            "bottom": 1037,
+            "clientHeight": 984,
+            "scrollHeight": 984,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 69,
+            "width": 668,
+            "height": 952,
+            "bottom": 1021,
+            "clientHeight": 952,
+            "scrollHeight": 952,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 305,
+            "width": 668,
+            "height": 716,
+            "bottom": 1021,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 306,
+            "width": 320,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 337,
+            "y": 306,
+            "width": 346,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 125,
+            "width": 668,
+            "height": 164,
+            "bottom": 289,
+            "clientHeight": 162,
+            "scrollHeight": 162,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 306,
+            "width": 319,
+            "height": 191,
+            "bottom": 497,
+            "clientHeight": 190,
+            "scrollHeight": 190,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 497,
+              "width": 319,
+              "height": 523,
+              "bottom": 1020,
+              "clientHeight": 523,
+              "scrollHeight": 523,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 337,
+              "y": 306,
+              "width": 346,
+              "height": 714,
+              "bottom": 1020,
+              "clientHeight": 714,
+              "scrollHeight": 714,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 314,
+            "width": 303,
+            "height": 44,
+            "bottom": 358,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 128,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 231,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 443,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 258,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 700,
+      "height": 844,
+      "tema": "dark",
+      "selecionada": true,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 844,
+          "innerWidth": 700,
+          "scrollY": 0,
+          "htmlScrollHeight": 1037,
+          "htmlClientHeight": 844,
+          "bodyScrollHeight": 1037,
+          "bodyClientHeight": 1037,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 53,
+            "width": 700,
+            "height": 984,
+            "bottom": 1037,
+            "clientHeight": 984,
+            "scrollHeight": 984,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 69,
+            "width": 668,
+            "height": 952,
+            "bottom": 1021,
+            "clientHeight": 952,
+            "scrollHeight": 952,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 305,
+            "width": 668,
+            "height": 716,
+            "bottom": 1021,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 306,
+            "width": 320,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 337,
+            "y": 306,
+            "width": 346,
+            "height": 714,
+            "bottom": 1020,
+            "clientHeight": 714,
+            "scrollHeight": 714,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 125,
+            "width": 668,
+            "height": 164,
+            "bottom": 289,
+            "clientHeight": 162,
+            "scrollHeight": 162,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 306,
+            "width": 319,
+            "height": 191,
+            "bottom": 497,
+            "clientHeight": 190,
+            "scrollHeight": 190,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 497,
+              "width": 319,
+              "height": 523,
+              "bottom": 1020,
+              "clientHeight": 523,
+              "scrollHeight": 523,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 337,
+              "y": 563,
+              "width": 346,
+              "height": 400,
+              "bottom": 963,
+              "clientHeight": 400,
+              "scrollHeight": 400,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            },
+            {
+              "elemento": "textarea",
+              "x": 437,
+              "y": 972,
+              "width": 190,
+              "height": 40,
+              "bottom": 1012,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 314,
+            "width": 303,
+            "height": 44,
+            "bottom": 358,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "numero": {
+            "x": 128,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "status": {
+            "x": 231,
+            "y": 444,
+            "width": 97,
+            "height": 44,
+            "bottom": 488,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "compositor": {
+            "x": 437,
+            "y": 972,
+            "width": 190,
+            "height": 40,
+            "bottom": 1012,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 193
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 443,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 0,
+        "maxTeste": 716,
+        "moveu": true,
+        "comEspacadorTemporario": true
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 500,
+      "tema": "light",
+      "selecionada": false,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 500,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 925,
+          "htmlClientHeight": 500,
+          "bodyScrollHeight": 925,
+          "bodyClientHeight": 925,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 868,
+            "bottom": 925,
+            "clientHeight": 868,
+            "scrollHeight": 868,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 836,
+            "bottom": 909,
+            "clientHeight": 836,
+            "scrollHeight": 836,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 420,
+            "bottom": 909,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 418,
+            "bottom": 908,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 490,
+            "width": 355,
+            "height": 315,
+            "bottom": 805,
+            "clientHeight": 314,
+            "scrollHeight": 314,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 805,
+              "width": 355,
+              "height": 103,
+              "bottom": 908,
+              "clientHeight": 103,
+              "scrollHeight": 122,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 19
+            }
+          ],
+          "conversa": [],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 498,
+            "width": 339,
+            "height": 44,
+            "bottom": 542,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 652,
+            "width": 339,
+            "height": 44,
+            "bottom": 696,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "numero": {
+            "x": 25,
+            "y": 702,
+            "width": 339,
+            "height": 44,
+            "bottom": 746,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "status": {
+            "x": 25,
+            "y": 752,
+            "width": 339,
+            "height": 44,
+            "bottom": 796,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 42
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 382
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 19,
+        "maxTeste": 19,
+        "moveu": true,
+        "comEspacadorTemporario": false
+      },
+      "rolagemThread": {
+        "disponivel": false
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 500,
+      "tema": "light",
+      "selecionada": true,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 500,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 925,
+          "htmlClientHeight": 500,
+          "bodyScrollHeight": 925,
+          "bodyClientHeight": 925,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 868,
+            "bottom": 925,
+            "clientHeight": 868,
+            "scrollHeight": 868,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 836,
+            "bottom": 909,
+            "clientHeight": 836,
+            "scrollHeight": 836,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 420,
+            "bottom": 909,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 418,
+            "bottom": 908,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 819,
+              "width": 356,
+              "height": 32,
+              "bottom": 851,
+              "clientHeight": 32,
+              "scrollHeight": 272,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 240
+            },
+            {
+              "elemento": "textarea",
+              "x": 117,
+              "y": 860,
+              "width": 200,
+              "height": 40,
+              "bottom": 900,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "setor": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "numero": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "status": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "compositor": {
+            "x": 117,
+            "y": 860,
+            "width": 200,
+            "height": 40,
+            "bottom": 900,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": false
+        },
+        "setor": {
+          "visivel": false
+        },
+        "numero": {
+          "visivel": false
+        },
+        "status": {
+          "visivel": false
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 425
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": false
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 240,
+        "maxTeste": 240,
+        "moveu": true,
+        "comEspacadorTemporario": false
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 500,
+      "tema": "dark",
+      "selecionada": false,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 500,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 925,
+          "htmlClientHeight": 500,
+          "bodyScrollHeight": 925,
+          "bodyClientHeight": 925,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 868,
+            "bottom": 925,
+            "clientHeight": 868,
+            "scrollHeight": 868,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 836,
+            "bottom": 909,
+            "clientHeight": 836,
+            "scrollHeight": 836,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 420,
+            "bottom": 909,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 418,
+            "bottom": 908,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 17,
+            "y": 490,
+            "width": 355,
+            "height": 315,
+            "bottom": 805,
+            "clientHeight": 314,
+            "scrollHeight": 314,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 805,
+              "width": 355,
+              "height": 103,
+              "bottom": 908,
+              "clientHeight": 103,
+              "scrollHeight": 122,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 19
+            }
+          ],
+          "conversa": [],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 25,
+            "y": 498,
+            "width": 339,
+            "height": 44,
+            "bottom": 542,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": true
+          },
+          "setor": {
+            "x": 25,
+            "y": 652,
+            "width": 339,
+            "height": 44,
+            "bottom": 696,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "numero": {
+            "x": 25,
+            "y": 702,
+            "width": 339,
+            "height": 44,
+            "bottom": 746,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "status": {
+            "x": 25,
+            "y": 752,
+            "width": 339,
+            "height": 44,
+            "bottom": 796,
+            "clientHeight": 42,
+            "scrollHeight": 42,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "compositor": null
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 42
+        },
+        "setor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 382
+        },
+        "numero": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "status": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": true,
+        "maxReal": 19,
+        "maxTeste": 19,
+        "moveu": true,
+        "comEspacadorTemporario": false
+      },
+      "rolagemThread": {
+        "disponivel": false
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 500,
+      "tema": "dark",
+      "selecionada": true,
+      "contratual": false,
+      "medidas": {
+        "documento": {
+          "innerHeight": 500,
+          "innerWidth": 390,
+          "scrollY": 0,
+          "htmlScrollHeight": 925,
+          "htmlClientHeight": 500,
+          "bodyScrollHeight": 925,
+          "bodyClientHeight": 925,
+          "semRolagemPagina": false
+        },
+        "geometria": {
+          "main": {
+            "x": 0,
+            "y": 57,
+            "width": 390,
+            "height": 868,
+            "bottom": 925,
+            "clientHeight": 868,
+            "scrollHeight": 868,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "raiz": {
+            "x": 16,
+            "y": 73,
+            "width": 358,
+            "height": 836,
+            "bottom": 909,
+            "clientHeight": 836,
+            "scrollHeight": 836,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "caixa": {
+            "x": 16,
+            "y": 489,
+            "width": 358,
+            "height": 420,
+            "bottom": 909,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "hidden",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "lista": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "conversa": {
+            "x": 17,
+            "y": 490,
+            "width": 356,
+            "height": 418,
+            "bottom": 908,
+            "clientHeight": 418,
+            "scrollHeight": 418,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "detalhes": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "formulario": {
+            "x": 16,
+            "y": 133,
+            "width": 358,
+            "height": 340,
+            "bottom": 473,
+            "clientHeight": 338,
+            "scrollHeight": 338,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "flex",
+            "visibility": "visible"
+          },
+          "filtros": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "visible",
+            "display": "block",
+            "visibility": "visible"
+          }
+        },
+        "rolagens": {
+          "lista": [],
+          "conversa": [
+            {
+              "elemento": "div",
+              "x": 17,
+              "y": 819,
+              "width": 356,
+              "height": 32,
+              "bottom": 851,
+              "clientHeight": 32,
+              "scrollHeight": 272,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 240
+            },
+            {
+              "elemento": "textarea",
+              "x": 117,
+              "y": 860,
+              "width": 200,
+              "height": 40,
+              "bottom": 900,
+              "clientHeight": 38,
+              "scrollHeight": 38,
+              "scrollTop": 0,
+              "overflowY": "auto",
+              "display": "block",
+              "visibility": "visible",
+              "maxScroll": 0
+            }
+          ],
+          "formulario": [],
+          "filtros": []
+        },
+        "controles": {
+          "abrir": null,
+          "busca": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "inline-block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "setor": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "numero": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "status": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "bottom": 0,
+            "clientHeight": 0,
+            "scrollHeight": 0,
+            "scrollTop": 0,
+            "overflowY": "clip",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          },
+          "compositor": {
+            "x": 117,
+            "y": 860,
+            "width": 200,
+            "height": 40,
+            "bottom": 900,
+            "clientHeight": 38,
+            "scrollHeight": 38,
+            "scrollTop": 0,
+            "overflowY": "auto",
+            "display": "block",
+            "visibility": "visible",
+            "naViewport": false
+          }
+        }
+      },
+      "alcance": {
+        "abrir": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        },
+        "busca": {
+          "visivel": false
+        },
+        "setor": {
+          "visivel": false
+        },
+        "numero": {
+          "visivel": false
+        },
+        "status": {
+          "visivel": false
+        },
+        "mensagem": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 425
+        },
+        "compositor": {
+          "visivel": true,
+          "alcançado": true,
+          "deslocamentoDocumento": 0
+        }
+      },
+      "rolagemLista": {
+        "disponivel": false
+      },
+      "rolagemThread": {
+        "disponivel": true,
+        "maxReal": 240,
+        "maxTeste": 240,
+        "moveu": true,
+        "comEspacadorTemporario": false
+      },
+      "rolagemFormulario": {
+        "disponivel": false
+      },
+      "rolagemFiltros": {
+        "disponivel": false
+      },
+      "erros": []
+    }
+  ],
+  "falhas": [],
+  "diagnosticos": []
+}

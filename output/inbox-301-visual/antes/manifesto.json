@@ -1,0 +1,176 @@
+{
+  "fase": "antes",
+  "fonte": "797994aaab6f53017b72a808cf0de92abf827ac5",
+  "perfil": "integracao",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "fonte": "antes",
+      "inicial": [
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705038456.7
+        },
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705038373.2
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ]
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "fonte": "antes",
+      "inicial": [
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705041535.4
+        },
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705043236.5
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ]
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "fonte": "antes",
+      "inicial": [
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705045337.8
+        },
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705047114.4
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ]
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "fonte": "antes",
+      "inicial": [
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705049207.3
+        },
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 0,
+          "timeOrigin": 1792705051034.8
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "fonte": "antes",
+      "inicial": [
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705053280.5
+        },
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 0,
+          "timeOrigin": 1792705055045.7
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "fonte": "antes",
+      "inicial": [
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 3,
+          "timeOrigin": 1792705057067.6
+        },
+        {
+          "quantidade": 0,
+          "linhas": [],
+          "mensagens": 0,
+          "timeOrigin": 1792705058865.9
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ]
+    }
+  ],
+  "falhas": []
+}
