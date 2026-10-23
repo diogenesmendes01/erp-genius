@@ -5731,3 +5731,8 @@ tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
 RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
 prefer-const na fixture de teardown, corrigido sem alterar produção; lint
 dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
+
+
+### #319 — porte isolado C6 verificado, global coordenado pendente
+
+fad43+cherry-pick funcional01a254f5→88fb31d8, sóSSE/testes+SPEC/quadro, sem ancestralidadeampla. Fonte/testes byteiguaisorigem39437068/79a69e0a; único conflitoquadro preserva315/316/317/319 e acrescentaC6. DEVNode22 recorte15393saída0/63files577testes15,25s/maxWorkers2/semfiltrodenomeou skips; lint2fontes6d1807saída0/0avisos/diffcheck0. Semappbrowser/DB/preview/envio. TSC/gatesfad43 sãohistóricospré-C6; global/TSC/TESTER e formal42+12/complementos aguardamROOT nafontecongelada. Nenhuma tarefa320 ou outroporte iniciado.

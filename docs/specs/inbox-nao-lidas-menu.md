@@ -74,3 +74,10 @@ No SHA babd, TESTER independente favorável (7 arquivos/41 testes, saída0 infor
 ### B1 no agregado315/396
 
 Helper e testes byte-equivalentes a babd na fonte3b813. Repetição browser16dde0 saída0 comprovou503exato→CLOSEDnativo→nova assinatura pelo Link público com Sidebar preservada→SSE200real/resync, máximo1ativa/umdocumento. DoisPNG atuais inspecionados, semPG/SQL/envio. Resumo e allowlist atual-3b813 ficam separados dos isolados; sem nova lógica ou binário noGit. Gate global agregado permanece com integrador.
+
+
+### Porte funcional C6 na composição319
+
+Cherry-pick exclusivo01a254f5 sobre fad43 gerou88fb31d8, sem merge de ancestralidade do outro chat. Fonte/testeSSE OIDs39437068b4d81228af58f9499f31c6392d54684b e79a69e0aac722e76548efa013cb9511d3b5aaa13 são idênticos ao commit funcional. SóSSE/testes e estaSPEC/quadro receberam o porte; harness/CLI/estados319/C2/rodapé317 permaneceram intactos. Conflito sóquadro: históricos OWN preservados e seçãoC6 adicionada.
+
+GateDEV Node22: recorte15393 terminou saída0/63arquivos577testes,15,25s,maxWorkers2, sem filtro de nome/skip; inclui SSEcompartilhado, todoInbox319, Selo/Sidebar/BarraMobile, histórico/useConversa/VirtualList, Esqueleto e fluxo/harness319. Lint2fontes6d1807 --max-warnings0 terminou0/0avisos; diffcheck nofreeze. Configuração unitária exclui integração: não é global, nenhum DB/SQL/browser/preview/envio foi executado. TSC37494 e recorte70/863 anteriores continuam históricos pré-C6, sem reatribuição àfonte portadas. Global/TSC final e extensão TESTER sobintegrador antesReady; provas visuais históricas não aceitam C6 por inferência.
