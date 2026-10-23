@@ -4937,3 +4937,15 @@ Recorte próprio Node22: 28 arquivos / 303 testes, saída 0, incluindo a pasta
 Inbox, os dois testes do selo e eventos-inbox; sem banco ou filtro de nome.
 Log: output/inbox-r6-base-314-recorte.log. Não equivale ao gate global nem
 à aprovação independente da R6; ambos continuam pendentes no agregado final.
+## PR #395 — C1/C3: limites documentados e foco do opt-out
+
+Issue #308 recebeu adendo dos limiares 960/1400 px e lista 300/372 px, com a
+justificativa da Sidebar 224 px e medições da SPEC. Protótipo preservado.
+Botão de origem do opt-out permanece habilitado; o modal já isola o fundo
+com inert, e o helper global não foi alterado. TDD RED 2 falhas → GREEN
+6 arquivos / 33 testes, sem filtro/ignorados; TypeScript 52955 e lint dos
+arquivos alterados, saída 0. Chrome real 12/12 contextos (Voltar/Escape,
+1440/1024/390, dois temas) devolveu foco, conservou painel e não confirmou
+opt-out. Banco ci-integracao: 7 contatos fictícios, nenhum opt-out ativo.
+Relatório output/pr395-qa/foco.md e JSON. B1/C2 dependem de merges normais dos
+pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
