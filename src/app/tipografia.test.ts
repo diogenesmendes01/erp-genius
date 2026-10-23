@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { create } from "fontkit";
 
 // docs/18: Roboto variável (100–900); a UI usa só os pesos 400, 500 e 600.
 const HASH_JETBRAINS = "18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e";
@@ -26,12 +27,22 @@ describe("tipografia — Roboto e JetBrains Mono locais", () => {
     expect(readFileSync("src/app/fonts/LICENSE-JetBrainsMono.txt", "utf-8")).toContain("SIL OPEN FONT LICENSE Version 1.1");
   });
 
-  it("layout registra JetBrains Mono 400–500 e aplica ambas as variáveis", () => {
+  it("layout registra JetBrains Mono 400–600 sem preload global e aplica ambas as variáveis", () => {
     const layout = readFileSync("src/app/layout.tsx", "utf-8");
     expect(layout).toMatch(/jetbrains-mono-latin-wght\.woff2/);
-    expect(layout).toMatch(/weight:\s*"400 500"/);
+    const mono = layout.match(/const mono = localFont\(\{([\s\S]*?)\}\);/)?.[1];
+    expect(mono).toMatch(/weight:\s*"400 600"/);
+    expect(mono).toMatch(/preload:\s*false/);
     expect(layout).toMatch(/variable:\s*"--font-mono"/);
     expect(layout).toMatch(/className=\{`\$\{roboto\.variable\} \$\{mono\.variable\}`\}/);
+  });
+
+  it("o asset mono tem eixo nativo até 600 e cobre códigos, hashes e templates existentes", () => {
+    const fonte = create(readFileSync("src/app/fonts/jetbrains-mono-latin-wght.woff2"));
+    if (!("variationAxes" in fonte)) throw new Error("Esperada uma fonte variável, sem coleção.");
+    expect(fonte.variationAxes.wght?.min).toBeLessThanOrEqual(400);
+    expect(fonte.variationAxes.wght?.max).toBeGreaterThanOrEqual(600);
+    for (const c of "0123456789ABCDEFabcdef{}+-SHA256Código") expect(fonte.hasGlyphForCodePoint(c.codePointAt(0)!)).toBe(true);
   });
 
   it("hash da fonte mono confere com o asset entregue pelo integrador", () => {
