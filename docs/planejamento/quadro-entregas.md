@@ -5261,3 +5261,11 @@ Não é Next/ERP/DB/proxy. ZIP positivo2PNG/5arquivos38.437B, SHA256
 361b6f89e7e4dcc0eb59bcfdd3503910195b544b36f1575cf2baa1caee5190b0,
 asset668211207/DRAFT421321214,download/hash conferidos. Report c6.md em
 output/pr396-qa. Porte nos dependentes, CI/main/392B2 ainda pendentes.
+## PR #397 — extensão C6 por merge normal
+
+Base312-r3@b569 recebe396bc09; fonte332fc7c6 adiciona contra6e6 apenas
+fonte/teste SSE, objetos iguais01a254f5. Item/Lista/VirtualList/prazo/hook,
+backend/scripts/package/lock intactos. Quadro preserva ambas as entradas.
+Global98604 EXIT0:863arquivos/6.788testes,235,08s,maxWorkers2,sem filtros/
+ignorados; Nexttypegen/TSC27444 e lint44188 EXIT0,0erros40avisos anteriores.
+Sem novo DB/browser. TESTER exato solicitado; CI/main/392B2 pendentes.
