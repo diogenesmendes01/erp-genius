@@ -13,6 +13,12 @@ com integrador/TESTER.
   são recusados antes da conexão. A fixture usa IDs fixos, número BAILEYS
   desconectado e sete atendimentos individuais. Reexecução não duplica; a
   criação parcial é completada por upserts no próprio cenário.
+  A linha usa `+5500000000300`; contatos/oportunidades usam `0301` a `0307`
+  no mesmo prefixo fictício. Ao reexecutar a versão antiga, repara somente os
+  telefones legados reconhecidos dos IDs fixos, em uma transação. Exige linha
+  BAILEYS desconectada e vínculos contato/oportunidade/conversa da demo;
+  telefone modificado, vínculo inesperado ou colisão com terceiro aborta tudo.
+  Não restaura outros campos mutados durante o QA.
 - `nucleo-captura.mjs` fornece viewports, temas, estados, nomes e combinações.
   `caminhoNoNpm` mapeia URLs de `unpkg.com` para `node_modules`, retirando a
   versão do pacote e a query de fonte Lucide. O caminho final é conferido
@@ -33,6 +39,12 @@ com integrador/TESTER.
   confirmado, fica em `diagnosticos`; qualquer outro aborto continua falha.
   O estilo transitório da screenshot oculta só o toast Next sem issues, mantendo
   indicadores com issues e listeners de erros. Nenhum componente produtivo muda.
+  Antes da foto do protótipo, `anonimizarTelefonesNoDom` substitui telefones
+  brasileiros exibidos por valores fictícios determinísticos `+5500...`.
+  Inclui texto, atributos visuais/acessíveis, links `tel:` e valores de campos;
+  preserva números já fictícios, scripts e estilos. Não altera o HTML original.
+  Cada captura declara política/versão/contagem em `anonimizacao`, sem registrar
+  os telefones originais. Reaplicar após qualquer interação que renderize dados.
 - `tmp/visual/` contém PNGs e manifesto. `conversa` produz exatamente 12 PNGs
   nos dois alvos, três tamanhos e dois temas; o protótipo isolado produz seis.
   A referência offline pode ter tipografia de reserva diferente da imagem

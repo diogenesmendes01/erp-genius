@@ -1,0 +1,25 @@
+{
+  "perfil": "ci-integracao",
+  "banco": "erp_genius_test_ciint",
+  "transporte": "SSE real + fixture BAILEYS desconectada",
+  "evidencias": [
+    {
+      "caso": "390px Voltar + entrada via trigger/SSE real",
+      "leiturasAntes": 1,
+      "leiturasDepois": 1,
+      "naoLidas": 1,
+      "lidaAtePreservado": true
+    },
+    {
+      "caso": "reabrir a mesma conversa",
+      "novaLeitura": true,
+      "naoLidas": 0
+    },
+    {
+      "caso": "700px duas colunas com vista lista retida",
+      "novaLeitura": true,
+      "naoLidas": 0
+    }
+  ],
+  "falhas": []
+}

@@ -83,3 +83,20 @@ A demo aceita `--entrada thiago` (ou outra chave fictícia fechada) para inserir
 O preparo muda somente preferências pessoais do Admin: Thiago/Ventura explicitamente não lidas, outras cinco lidas; compartilhados/fixada/silenciada são preservados. Gera 24 PNGs em output/inbox-311-visual, nas quatro fases2→1→2→1, três tamanhos e dois temas. Antes de provocar a subida, navega Home por Link para desmontar a seleção: chat selecionado lê entrada automaticamente. Outra entrada com chat aberto prova reconciliação para1 sem loop. A segunda aba também confirma2, cada aba com uma SSE simultânea e no máximo um GET da contagem em voo.
 
 A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; valida gaveta no viewport e Sidebar224. Mantém diagnóstico de rede e só oculta toast Next sem issues durante a foto. Em erro escreve manifesto-incompleto; não sobrescreva uma tentativa negativa antes de preservá-la. A CLI principal permanece responsável pelas referências offline app×protótipo.
+
+# Telefones em evidências
+
+A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
+os valores antigos reconhecidos no próprio cenário. O harness anonimiza os
+telefones do DOM do protótipo imediatamente antes da foto e declara essa
+transformação no manifesto, preservando o arquivo HTML original.
+
+Harnesses de outras issues podem importar `anonimizarTelefonesNoDom` de
+`./anonimizar-telefones.mjs` e executar
+`const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom)` depois
+das interações e antes de `screenshot`. Salvar o retorno no manifesto; não salvar
+um mapa dos valores originais. Reaplicar depois de nova renderização.
+
+O teste do DOM real usa Chrome já instalado, sem baixar navegador:
+`PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
+Esse teste dirigido de navegador é separado da suíte unitária Vitest.
