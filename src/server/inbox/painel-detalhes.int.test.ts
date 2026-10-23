@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { pessoaDoAtendimento, carregarCabecalhoPainel, carregarDetalhesPainel } from "./painel-detalhes";
 import { carregarPainel } from "./paineis";
+import { capacidadesCrm } from "@/server/crm/permissoes";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 let seq = 0;
@@ -162,6 +163,54 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     await prisma.pessoaTag.create({ data: { pessoaId: c.pessoa.id, tagId: inativa.id } });
     expect((await carregarCabecalhoPainel(c.dono, c.a.id))?.tagsDisponiveis).toEqual([{ id: tag.id, nome: tag.nome }]);
     expect((await carregarPainel(c.dono, c.a.id))?.tags).toEqual([{ rotulo: "Histórica", ia: true }]);
+  });
+  it.each([Papel.FINANCEIRO, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO])("D13 aprovado: %s convidado comercial recebe Pessoa/empresa/B2B sem contatos.ver; ausência, revogação, expiração e outro setor não ampliam acesso", async papel => {
+    const c = await cenario(), convidado = await criarUsuario([papel]);
+    expect(capacidadesCrm(convidado.papeis).has("contatos.ver")).toBe(false);
+    const empresa = await prisma.empresa.create({ data: { nome: "Empresa autorizada fictícia409", documento: "DOC-FICTICIO-409", segmentoMercado: "Educação fictícia", porte: "Pequena fictícia", site: "https://empresa.example.test" } });
+    const pessoa = await prisma.pessoa.update({ where: { id: c.pessoa.id }, data: { email: "pessoa409@example.test", cidade: "Cidade fictícia", cargo: "Diretora fictícia", linkedin: "https://linkedin.example.test/pessoa409", origemCanal: "WHATSAPP", empresaId: empresa.id } });
+    const interlocutor = await prisma.pessoa.create({ data: { nome: "Interlocutor autorizado fictício409", cargo: "RH fictício" } });
+    await prisma.oportunidade.update({ where: { id: c.op.id }, data: { b2b: true, empresaId: empresa.id } });
+    await prisma.contatoWhatsApp.update({ where: { id: c.contato.id }, data: { pessoaId: interlocutor.id } });
+    await prisma.participanteOportunidade.createMany({ data: [{ oportunidadeId: c.op.id, pessoaId: pessoa.id, papel: "INFLUENCIADOR" }, { oportunidadeId: c.op.id, pessoaId: interlocutor.id, papel: "DECISOR" }] });
+    const campo = await prisma.campoPersonalizado.create({ data: { nome: "Campo CRM fictício409", tipo: "TEXTO", alvo: "PESSOA" } });
+    await prisma.valorCampoPersonalizado.create({ data: { campoId: campo.id, pessoaId: pessoa.id, valor: "Valor privado CRM fictício409" } });
+    const tag = await prisma.tag.create({ data: { nome: "Catálogo ativo fictício409", cor: "NEUTRA" } });
+    expect((await carregarDetalhesPainel(c.dono, c.a.id))?.campos).toHaveLength(1);
+    expect((await carregarCabecalhoPainel(c.dono, c.a.id))?.tagsDisponiveis).toEqual([{ id: tag.id, nome: tag.nome }]);
+    const negar = async () => {
+      expect(await carregarDetalhesPainel(convidado, c.a.id)).toBeNull();
+      expect(await carregarCabecalhoPainel(convidado, c.a.id)).toBeNull();
+      expect(await pessoaDoAtendimento(convidado, c.a.id)).toBeNull();
+    };
+    await negar(); // Sem convite: a fixture contém PII, mas o papel não alcança este atendimento comercial.
+    const convite = await convidar(c.a.id, c.dono, convidado);
+    const detalhes = await carregarDetalhesPainel(convidado, c.a.id);
+    expect(detalhes?.pessoa).toEqual({ id: pessoa.id, nome: pessoa.nome, email: pessoa.email, cidade: pessoa.cidade, cargo: pessoa.cargo, linkedin: pessoa.linkedin, origemCanal: "WHATSAPP", telefone: c.contato.telefoneE164,
+      empresa: { id: empresa.id, nome: empresa.nome, documento: empresa.documento, segmentoMercado: empresa.segmentoMercado, porte: empresa.porte, site: empresa.site } });
+    expect(detalhes?.oportunidade).toMatchObject({ id: c.op.id, b2b: true });
+    expect(detalhes?.b2b).toEqual({ empresa: { id: empresa.id, nome: empresa.nome }, decisor: true, participantes: expect.arrayContaining([
+      { pessoaId: pessoa.id, nome: pessoa.nome, papel: "INFLUENCIADOR", cargo: pessoa.cargo, naConversa: false, hrefConversa: null },
+      { pessoaId: interlocutor.id, nome: interlocutor.nome, papel: "DECISOR", cargo: interlocutor.cargo, naConversa: true, hrefConversa: null },
+    ]) });
+    expect(detalhes?.b2b?.participantes).toHaveLength(2);
+    expect(detalhes?.campos).toEqual([]); // A exceção contextual não libera os campos personalizados do CRM.
+    expect(await carregarCabecalhoPainel(convidado, c.a.id)).toMatchObject({ pessoaId: pessoa.id, subtitulo: "Falando com Interlocutor autorizado fictício409 · Decisor", tagsDisponiveis: [], capacidades: { veLead: true, verContato: false, editarContato: false, editarTags: false } });
+    await prisma.participanteAtendimentoWhatsApp.update({ where: { id: convite.id }, data: { revogadoEm: new Date() } });
+    await negar();
+    await prisma.participanteAtendimentoWhatsApp.update({ where: { id: convite.id }, data: { revogadoEm: null, inicio: new Date(Date.now() - 120_000), fim: new Date(Date.now() - 60_000) } });
+    await negar();
+    const cat = await seedCatalogoMinimo();
+    const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno setorial fictício409", paisId: cat.pais.id, telefoneE164: "+550000004" + seq, whatsapp: true } });
+    const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC" } });
+    const contatoAluno = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id } });
+    const conversaAluno = await prisma.conversaWhatsApp.create({ data: { numeroId: c.numero.id, contatoId: contatoAluno.id } });
+    for (const finalidade of ["PEDAGOGICO", "SECRETARIA", "FINANCEIRO"] as const) {
+      const setorial = await prisma.atendimentoWhatsApp.create({ data: { conversaId: conversaAluno.id, contextoChave: finalidade + "::409", finalidade, leadId: c.op.id, alunoId: aluno.id, matriculaId: matricula.id } });
+      await convidar(setorial.id, c.dono, convidado);
+      expect(await carregarDetalhesPainel(convidado, setorial.id)).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
+      expect(await carregarCabecalhoPainel(convidado, setorial.id)).toMatchObject({ pessoaId: null, subtitulo: null, tagsDisponiveis: [] });
+    }
   });
   it("pool1: autorização carteira/cobertura/equipe/convite na MESMA tx e revogação imediata", async () => {
     const c = await cenario();
