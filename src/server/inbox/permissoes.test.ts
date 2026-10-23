@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Papel } from "@prisma/client";
-import { podeExecutar, TIPOS_DESVINCULAVEIS, type AcaoInbox, type ContextoAcao } from "./permissoes";
+import { capacidadesPainel, podeExecutar, TIPOS_DESVINCULAVEIS, type AcaoInbox, type ContextoAcao } from "./permissoes";
 
 describe("matriz de permissões do Inbox (doc 03)", () => {
   it.each([
@@ -61,5 +61,64 @@ describe("assumir em linha de vendas (C3 da revisão da 3C)", () => {
 describe("vínculos que cada setor desfaz (D8)", () => {
   it("comercial desfaz a oportunidade; secretaria e financeiro, aluno e responsável; pedagógico nada", () => {
     expect(TIPOS_DESVINCULAVEIS).toEqual({ COMERCIAL: ["lead"], SECRETARIA: ["aluno", "responsavel"], FINANCEIRO: ["aluno", "responsavel"], PEDAGOGICO: [] });
+  });
+});
+
+
+describe("projeção das capacidades do painel em contexto já autorizado", () => {
+  const usuario = (...papeis: Papel[]) => ({ id: "u1", papeis });
+  it("comercial com lead visível projeta edição do vendedor sem conceder configuração global da Aria", () => {
+    expect(capacidadesPainel(usuario(Papel.VENDEDOR), { finalidade: "COMERCIAL", veLead: true })).toEqual({
+      veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: false, moverEtapa: true,
+      tarefas: true, tarefasEquipe: false, desfazerAria: false, verEmpresa: false,
+    });
+    // D1 do responsável exige contexto/autorização da #354: veLead não equivale a ser responsável.
+  });
+  it("lead invisível não libera edição/tag/etapa/Aria nem mesmo ao administrador", () => {
+    for (const papel of [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR]) {
+      expect(capacidadesPainel(usuario(papel), { finalidade: "COMERCIAL", veLead: false })).toMatchObject({
+        veLead: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, desfazerAria: false,
+      });
+    }
+  });
+  it("gerente comercial conserva matriz CRM/Aria sem receber acesso à empresa", () => {
+    expect(capacidadesPainel(usuario(Papel.GERENTE_COMERCIAL), { finalidade: "COMERCIAL", veLead: true })).toEqual({
+      veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: true, moverEtapa: true,
+      tarefas: true, tarefasEquipe: true, desfazerAria: true, verEmpresa: false,
+    });
+  });
+  it("administrador conserva as capacidades dos produtores em comercial autorizado", () => {
+    expect(capacidadesPainel(usuario(Papel.ADMINISTRADOR), { finalidade: "COMERCIAL", veLead: true })).toEqual({
+      veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: true, moverEtapa: true,
+      tarefas: true, tarefasEquipe: true, desfazerAria: true, verEmpresa: true,
+    });
+  });
+  it.each(["FINANCEIRO", "SECRETARIA", "PEDAGOGICO"] as const)("D13: %s não recebe ações comerciais pela presença de lead", finalidade => {
+    expect(capacidadesPainel(usuario(Papel.ADMINISTRADOR), { finalidade, veLead: true })).toMatchObject({
+      veLead: true, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, desfazerAria: false,
+    });
+  });
+  it("financeiro tem tarefas e empresa, sem contato/CRM comercial", () => {
+    expect(capacidadesPainel(usuario(Papel.FINANCEIRO), { finalidade: "FINANCEIRO", veLead: false })).toEqual({
+      veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false,
+      tarefas: true, tarefasEquipe: false, desfazerAria: false, verEmpresa: true,
+    });
+  });
+  it("secretaria conserva leitura de contato/tarefas sem edição comercial nem empresa", () => {
+    expect(capacidadesPainel(usuario(Papel.SECRETARIA_ACADEMICA), { finalidade: "SECRETARIA", veLead: false })).toEqual({
+      veLead: false, verContato: true, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false,
+      tarefas: true, tarefasEquipe: false, desfazerAria: false, verEmpresa: false,
+    });
+  });
+  it.each([Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.ALUNO])("%s não ganha tarefas ou ações CRM", papel => {
+    expect(capacidadesPainel(usuario(papel), { finalidade: "PEDAGOGICO", veLead: false })).toEqual({
+      veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false,
+      tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false,
+    });
+  });
+  it("papéis acumulados unem capacidades atuais, sem elevar vendedor à configuração Aria", () => {
+    expect(capacidadesPainel(usuario(Papel.VENDEDOR, Papel.FINANCEIRO), { finalidade: "COMERCIAL", veLead: true })).toMatchObject({
+      editarContato: true, moverEtapa: true, criarTag: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: true,
+    });
   });
 });

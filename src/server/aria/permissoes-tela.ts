@@ -1,5 +1,5 @@
 import { Papel } from "@prisma/client";
-import { ErroPermissao, type UsuarioSessao } from "../_shared";
+import { ErroPermissao, type UsuarioSessao } from "../_shared/sessao";
 import type { ConfigAria } from "./config-schema";
 
 export type CapacidadeAria =
@@ -24,7 +24,7 @@ const GERENTE: CapacidadeAria[] = [
 ];
 
 /** DF5-13: Administrador faz tudo; Gerente Comercial opera, mas não muda matriz, estado nem provedor. */
-export function capacidadesAria(u: UsuarioSessao): Set<CapacidadeAria> {
+export function capacidadesAria(u: Pick<UsuarioSessao, "papeis">): Set<CapacidadeAria> {
   if (u.papeis.includes(Papel.ADMINISTRADOR)) return new Set(TODAS);
   if (u.papeis.includes(Papel.GERENTE_COMERCIAL)) return new Set(GERENTE);
   return new Set();

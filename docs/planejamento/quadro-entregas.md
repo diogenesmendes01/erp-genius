@@ -4724,6 +4724,10 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 
 **Estado: implementação, aceite visual independente e gates combinados concluídos; [PR392 aberto](https://github.com/diogenesmendes01/erp-genius/pull/392), sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
 
+### Inbox E1.2 — #307: harness de comparação visual — 2026-10-22
+
+**Estado: implementação, aceite visual independente e gates combinados concluídos; pronta para PR, sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
+
 - **Entrega:** núcleo de nomes/combinações/recursos locais, CLI Playwright com `--alvo`, `--estado`, `--base` HTTP local, protótipo `file://` sem acesso externo e demo de sete atendimentos fictícios num BAILEYS desconectado. Guarda exige host/porta locais e um dos cinco nomes de banco exatos de `scripts/test-profile.mjs`; rejeita query/fragmento. Demo reexecutável usa IDs fixos e repara caso parcial, sem alterar o número de outro cenário.
 - **TDD/recortes Node22.23.2:** RED módulo ausente exit1; GREEN núcleo4/4 exit0; RED Lucide `woff2?t` exit1 e GREEN após mapeamento local; RED da integração de reparo parcial exit1 (`Demo parcial`), GREEN integração `vitest.integration.config.ts src/test/visual-inbox.int.test.ts` 1 arquivo/1 teste exit0, nenhum ignorado, exclusivamente no banco `dev-gravacoes`; RED da CLI ausente exit1 e GREEN unitários+dependências2arquivos/9testes exit0, nenhum ignorado. Esses recortes não são suíte completa.
 - **Protótipo offline:** `--alvo prototipo --estado conversa` no Chrome local155/core1.56.1 gerou seis PNGs em `tmp/visual/` (3 tamanhos × 2 temas), saída0 e falhas vazias; desktop escuro e celular claro inspecionados. Recursos npm servidos fisicamente de `node_modules`, Google Fonts vazio. Fonte de reserva offline é limite visual da referência.
@@ -4745,6 +4749,8 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - **Gate309 R2:** global combinado285/sessão15860 exit1(849/850arquivos;6633passaram/1falha), única falha da guarda AST em iniciais. RED dirigido1falha/49passaram exit1; expressão simplificada no flatMap original preservando todos casosUnicode, sem alterar guarda/profundidade/exceções. GREEN12arquivos147testes exit0 sem ignorados; lint dirigido exit0; TSC heap8192 sessão75216 exit0. Não rodou full novoDEV; global combinado e re-review pendentes.
 - **Fechamento:** TESTER aprovou bcda5a04 no recorte4arquivos83testes0/diffcheck0; expressão Unicode e guarda preservadas. Global final combinado309+310 fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67 sessão15987 acompanhada atéexit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2, TSCNode22heap8192 e lintglobal0erros40avisos. Parecer e logs em `output/inbox-309-qa/`; negativo15860 identificadoàparte. Merge da base3a no branch309 resolveu sóquadro e preservou código309exato. Sem merge/deploy.
 
+
+### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
 ### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
 
 **Estado: implementação, revisão independente e global combinado concluídos; [PR394 aberto](https://github.com/diogenesmendes01/erp-genius/pull/394).** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
@@ -6190,6 +6196,28 @@ Pacote imutável inbox-320-evidencias-442d.zip:23.677.284bytes/272entradas, SHA 
 
 Previews/browsers encerrados, bancos A551/TESTER1386 restaurados com424hashes originais (defae5/fa0de1); somente blocoNext gerado removido deAGENTS. Nenhum envio real, integração externa ou deploy. Fecho técnico autoriza preparar as próximas duas frentes E2 após o PR concreto; CI/revisão GitHub/dependências/merge emmain continuam pendentes. A issue320 não está fechada nem homologada em produção.
 
+### E2 — #321/#322 em paralelo após abertura da PR #406
+
+PR #406 da issue320 aberta e anexada: head1bb721b7/base4054af, confirmação GitHub7dcdbf saída0. Revisão/CI/dependências/merge sob coordenação do outro integrador; sem nova alteração na branch publicada. Contagem neste instante:10issues fechadas e13outras comPRaberto, sem contar a limpeza técnica404.
+
+DEV A assume321 e DEV B322, cada um em seu worktree/banco, a partir de1bb. Reserva ROOT15573/2ca1b4 saída0:452refs distintos e quatro bancos descartáveis com485migrations; IDs20261023100000/20261023110000 ausentes, colunaTarefa.atendimentoId ausente. Os dois IDs foram reservados exclusivamente para322 em docs/planejamento/inbox-e2-reservas-migracoes.md; nenhumaDDLaplicada neste checkpoint. SnapshotE1B será restaurado antes daDDL, e snapshotE2novo será criado antes de testesGREENtruncantes. A única janelaDB por banco será preservada.
+
+O usuário autorizou explicitamente a correçãoB2 da PR392, incluindo o comando npm install --package-lock-only --ignore-scripts --offline paraPlaywright1.64.1 e testes. O outro integrador executa no próprio worktree; ROOT/DEVs/TESTER não duplicam o comando. SHA/gates finais e QA independente ainda pendentes antes de propagação coordenada para os ambientes. A autorização elimina a pendência humana anterior, sem presumir CI ou merge aprovados.
+
+### #321 — E2.1 aviso transacional e projeção de capacidades (DEV)
+
+Base PR4061bb721b7, branch codex/inbox-e2-321. Novo avisarAtendimento reutiliza UPDATEid=id/trigger sóIDs no commit; rollback não publica. Helper de escopo delega na mesma tx, locks/convites/revogação/destinatário privado inalterados. CapacidadesPainel10campos projeta contexto já autorizado das matrizesCRM/Aria: sem acesso novo porveLead, sem edição comercial foraCOMERCIAL, empresaAdmin/Financeiro. D1vendedorRESPONSÁVEL é dependência contextual/autorização#354, não abrir matriz/config global; D13/dadospedagógico/abas atuais preservados. capacidadesAria sóPick<papeis>/import direto da mesma classeErroPermissao, ajuste coordenado sem mudança emvalidarAlteracaoPorPapel.
+
+RED17c1e9 50anteriorespass/13novosfalham; REDint7cb60b importausente/0testes. GREEN7421d3 3/77; recorteSSR61501 7/138 corrigido para hookreal em87466/512e65 14arquivos193testes0, unitsemINT/sem-t/skipsnovos. IntegraçãoAexclusiva sequencial32292/48e2f2 2/8 e22922/b84d78 2/18 (commit/autocommit/rollback/payloadPGreal/IDausente+participantes/poolcompletos), terminal0; semSQLmanual/seed/transportes. TSC14927/9d4395heap8192 e lint47771/0e7f79max0/6fontes ambos0, Node22.23.2. BancoA declarado livre após suites; snapshot551/restore/bundler/inbox peloROOT. UI N/Ainfra; SSR não é prova de bundle. SPECdocs/specs/inbox-aviso-capacidades-painel.md e reportoutput/inbox-321-report.md. QAexata/global integrado/publicação/CI pendentes; não encerrarE2nem presumirhomologação.
+
+### #322 — vínculo da tarefa ao atendimento, gates DEV aprovados
+
+Base B `1bb721b7`, branch `codex/inbox-e2-322`. Campo opcional somente na criação, validação de leitura na mesma tx, idempotência incluindo atendimento e preservando hash legado; Aria usa o ID confiável do turno. Edição e extensões D10 permanecem no escopo existente. UI N/A: produtor backend.
+
+RED91946:25pass/17fail (três Aria causais e14 de fixture, não contadas como feature). Fixture corrigida sem relaxar guardas; RED73553:14casos/nove falhas causais/cinco pass. Após revisão e reserva ROOT, schema/duas SQL aplicados pelo integrador: Prisma5.22/28331 saída0, validação FK/índice/legadaNULL2db2d4 saída0; snapshot novoE267fd6e,424tabelas/1.374registros/487migrations, originais preservados. Nenhum helper E1 após DDL.
+
+GREEN78268: quatro arquivos completos/62testes/173,05s/maxWorkers1/sem filtro ou skips, saída0. Unitário dirigido6/43, TSC65848 heap8192 e lint4/zero avisos também0. Banco liberado após GREEN; ROOT restaurou E2 em23337c saída0:424 hashes/1.374registros/487migrations e fixture3mensagens/1nota preservada. Report/evidências/SPEC registram contratos, hashes, negativos e limites. Nenhum global próprio ou preview; QA exata, global integrado e publicação pendentes, sem homologação presumida.
+
 ### PR406 — todos os comentários, patch C3 e avaliação C4
 
 Revisão5626682648: retirado somente testeSSEpuramenteunitário duplicado da suíte
@@ -6388,6 +6416,18 @@ Fonte95fb5e23:cherrySOMENTEd36→8a67sobre1bb+4053bd;quadrocherryapenasentry4061
 ## PR #406 — QA composta favorável
 
 QA95ffavorávelestática/hash320755...versionada tester-composicao-95f.md;INT10/unit8exatosd36/negativaprivacidadepreservada,sem323ouDDLfuturo. ProdutorInbox/schema8a e pais405/Shift/Pick/B2preservados. SemnovaexecuçãoDB/testesdoparecer;fonte95preservadaapósregistrosMD,405main/CI406aindagates.
+
+## PR #407 — fundações321 compostas, INT exigida concluída
+
+Fonte57530e8c:3258+40621979, deltaSRCresidualEXATAMENTE6arquivos321/OIDs3258. B1Pickee565/harness164/QA280/297/B2/mergeauthpreservados,paismain406/retarget/CIaindagates. Quadro4blocospreservambos,2docs307conflitosapenaslinhaembranco→406. C1INTaviso+participantes completos2/8sessão2842/36809aterminal0,31,13s,perfilciintexclusivo/configintegration/maxWorkers1;semfiltro/skips/provider/cluster/migrationchange. Unitário5/894c12ea,TSC98357/7e7d0f e lint94412/289af8terminals0/40avisos. C3diffbaselineexplícito/C4projeçãofornececonsumer323semnovaalçadaD1,sem322323antecipado. QAcomposta/final406main/CI407pendentes;output/pr407-qa/composicao-todos.md.
+
+## PR #407 — QA composta favorável
+
+QA575favorávelestática/hash103b9688...versionada tester-composicao-575.md;6paths321/OIDs3258, UI/harness/Pick/B2/schema485/QA280297preservados,sem322/323futuro. NenhumDB/testeadicional doparecer,lintpróprio94412/289af8terminou0/40depoisinspeção. Fonte575preservadaapósMD;406main/B1final/CI407aindagates.
+
+## PR #406 integrada; PR407 sincronizada com a main
+
+406squash4b3c39434f2e48273cd45fee483ca9dbc9b25955, CI40027085473success5/5, QA320755 e gates próprios favoráveis, issue320CLOSED confirmada. Auditoria298–320:23issues fechadas;321–323 seguem abertas antes dos merges. Árvore squash406 igualb955; merge97339323 à407 resolveu apenas dois blocos de ancestralidade do quadro, índice inteiro igual69adef. Fonte executável575/QA103b/INT2-8/unit5-89/TSC/lint40 preservados. B1Pick/harness/main e C2quadro resolvidos; retarget407main/CI final ainda pendentes, sem antecipar322323.
 ## PR #399 integrada; PR401 pronta para CI final
 
 #399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.

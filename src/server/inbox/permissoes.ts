@@ -1,5 +1,7 @@
 import { Papel } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
+import { capacidadesCrm } from "@/server/crm/permissoes";
+import { capacidadesAria } from "@/server/aria/permissoes-tela";
 import { ehGerenteDoSetor, setoresVisiveisNoInbox, type Setor } from "@/server/whatsapp/setor";
 
 /** Funções do Inbox sujeitas a alçada (doc 03; plano 03-fase-inbox, Tarefa 14). */
@@ -71,4 +73,41 @@ export function podeExecutar(u: Pick<UsuarioSessao, "id" | "papeis">, acao: Acao
       // D8: só o Administrador ou o gerente do setor do atendimento (ehGerenteDoSetor já inclui o administrador).
       return TIPOS_DESVINCULAVEIS[ctx.setor].length > 0 && gerenteDoSetor;
   }
+}
+
+
+export type CapacidadesPainel = {
+  veLead: boolean;
+  verContato: boolean;
+  editarContato: boolean;
+  editarTags: boolean;
+  criarTag: boolean;
+  moverEtapa: boolean;
+  tarefas: boolean;
+  tarefasEquipe: boolean;
+  desfazerAria: boolean;
+  verEmpresa: boolean;
+};
+
+/**
+ * Projeção de um contexto JÁ autorizado; não concede acesso ao atendimento/lead/pessoa.
+ * D13: ações comerciais só no comercial e sobre lead visível. A consulta mantém os filtros de dados do setor.
+ * D1 do vendedor responsável depende do contexto e autorização da #354: veLead não prova responsabilidade.
+ */
+export function capacidadesPainel(u: Pick<UsuarioSessao, "id" | "papeis">, ctx: { finalidade: Setor; veLead: boolean }): CapacidadesPainel {
+  const crm = capacidadesCrm(u.papeis);
+  const comercialVisivel = ctx.finalidade === "COMERCIAL" && ctx.veLead;
+  const editarContato = comercialVisivel && crm.has("contatos.editar");
+  return {
+    veLead: ctx.veLead,
+    verContato: crm.has("contatos.ver"),
+    editarContato,
+    editarTags: editarContato,
+    criarTag: editarContato && crm.has("carteira.equipe"),
+    moverEtapa: comercialVisivel && crm.has("funil.mover"),
+    tarefas: crm.has("tarefas.ver"),
+    tarefasEquipe: crm.has("tarefas.equipe"),
+    desfazerAria: comercialVisivel && capacidadesAria(u).has("decidirHistorico"),
+    verEmpresa: u.papeis.includes(Papel.ADMINISTRADOR) || u.papeis.includes(Papel.FINANCEIRO),
+  };
 }
