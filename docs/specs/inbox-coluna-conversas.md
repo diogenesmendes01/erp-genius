@@ -53,3 +53,9 @@ Ao clicar linha da lista, Coluna encerra qualquer popover e encaminha a seleçã
 ### Confirmação de seleção local por revalidação
 
 Propc que apenas confirma o id já selecionado localmente não muda contexto: primeira página fresca é mesclada pelo contrato existente, preservando páginas extras/cursor e vista/popover/foco. Filtros diferentes ou id/null recebido diferente da seleção atual continuam reiniciando a página e fechando Nova. O alvo de foco só acompanha navegação real, não a confirmação tardia de leitura. Regressões150→snapshotSSR50comdadosfrescos/retorno/resize, confirmação com Nova aberta/Escape e navegações externas. Não modifica VirtualList, backend ou Next; corrida URL antiga permanece uma investigação separada até prova real. Gates98arquivos973testes/TSC/lint3fontes EXIT0, browser pós-fix pendente.
+
+### Checkpoint R6 da base corrente
+
+SyncURL/ACK150/foco313 foram compostos com leituraR6 (entradas por ID, contador independente e snapshot fresco autoritativo), OptOut/foco da base e finally311. Recorte99arquivos1015testes, TSCheap8192 e lint10fontes: EXIT0. A guarda381 ganhou apenas os seis tokens do contador de filtros autorizado; mantém passividade e negativas de ação, sem exceção por arquivo. Histórico/códigos no ledger.
+
+A formal histórica52PNG e virtual18PNG da fonte9c foram inspecionadas, com hashes/fontes separados do protótipo/harness. Não representam recaptura após R6. TESTER estático exato9c favorável236testes; browser na base corrente, adjudicação do hardnav documentada no resumo causal sanitizado, global integrado e depósito remoto continuam pendentes. Nenhum PNG novo noGit e nenhum aceite presumido.

@@ -1,15 +1,13 @@
-# Evidência DEV #311
+# Evidências da issue #311
 
-Fonte: delta #311 sobre103a507d8a8fda7a6758a4eee46177d4c3ce7a67, congelado no commit que contém este arquivo. Captura local final sessão95056, exit0, preview3111/dev-gravacoes preparado pelo integrador, somente fixture fictícia.
+[ZIP sanitizado de revisão](https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-311-evidencias-2f68.zip), asset667561601, 5.058.283 bytes.
 
-24PNG app: antes2; lida1; entrada-sem-selecao2; entrada-chat-aberto1. Cada fase tem desktop1440×900, tablet1024×768, celular390×844, claro/escuro. Celular mostra gaveta Menu para conferir a pílula; o ponto do botão permanece coberto pelo menu nesse estado. Pranchas inspecao-* são derivações dos PNGs originais, sem alterar pixels dos originais.
+SHA256: `9ef7b6d1ab42aada9c6e4ebac142501430372a32ed189e8673857e9d3022bf83`.
 
-Inspeção visual DEV: as oito imagens de cada viewport apresentam selo legível 2/1/2/1 nos temas escuro/claro. Menu mobile totalmente aberto, sem branco/transição; tablet/desktop Sidebar224 preservada. Não há texto fantasma de transição na rodada final. Fotos de chat aberto contêm as duas entradas fictícias reais. A nova mensagem é lida automaticamente conforme #299.
+Upload e download conferidos na release **draft** autorizada. O pacote contém 33 PNGs positivos: 24 capturas do selo, seis referências do protótipo e três pranchas, com hashes individuais. Não inclui HTML bruto ou tentativas negativas. O app usa telefones fictícios; as referências receberam anonimização explícita do DOM antes da captura.
 
-manifesto.json é saída original do harness, zero falhas/diagnósticos. Monitor em cada aba: SSEativa1/máxima1, GETmáximo1; duas fontes criadas sequencialmente pelo StrictMode. A segunda aba Home também chegou2 após entrada sem reload. Leituras do chat aberto limitadas pelo harness a no máximo duas ações após nova entrada.
+Fonte integrada2f68e8f4, anterior às mudanças312/314: captura89381 exit0, sem falhas ou diagnósticos. Sequência2→1→2→1 em três tamanhos e dois temas, duas abas, máximo de uma SSE e um GET HTTP ativo por aba, medido até requestfinished. Todas as24capturas foram inspecionadas. TESTER independente favorável no combinado86093f4d; não se presume nova revisão no2f.
 
-Ruling: entre lida e entrada-sem-selecao navega Home por Link, desmontando a seleção. Permanecer com chat selecionado implica auto-leitura e impede subida estável; não houve alteração da regra produtiva.
+Global combinado19074:857arquivos/6.680testes unitários e TypeScript exit0; lint final66935 exit0 com40avisos herdados. Candidato separadoe67d26ca: sessão7949,29arquivos/347testes unitários, TypeScript e lint dirigido exit0, sem avisos. Sem filtros ou ignorados nos unitários executados.
 
-Referências do protótipo: CLI existente --alvo prototipo --estado conversa, sessão18038 exit0, seisPNG e prototipo-manifesto.json; recursos offline locais. A chamada anterior sem PW_CHROMIUM saiu1 antes de abrir navegador. Comparação de tokens verde do selo; protótipo possui outra casca/navegação, fora do escopo311.
-
-Negativos anteriores: output/inbox-311-visual-tentativa1 preserva12PNG/README, falha de asserção de segunda aba antes da hidratação, sem manifesto gerado. Tentativa2 preserva README, nenhum PNG novo/manifesto: preparo pessoal inadequado com sharedThiago0. Não se apresentam imagens novas como antigas.
+Os46PNGs históricos, incluindo tentativas negativas, foram retirados apenas do índice após o arquivamento dos positivos sanitizados. As cópias locais e os commits históricos permanecem. JSONs antigos registram suas próprias fontes; o pacote acima identifica o conjunto atual de revisão. Sem envio real ou deploy.
