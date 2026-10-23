@@ -4735,3 +4735,7 @@ variantes/upload novos. Retirada sóartefatos e docs,src/scripts/prisma/
 package/lock idênticos06248,stashB2 intacto. QA técnico do porte e decisão
 humana B2 pendentes,sem novo global/DB/browser presumido. Evidência em
 output/pr392-qa/recaptura-sanitizada.md e manifesto privadoqa404-307.
+
+## PR #392 — B2 autorizado e alinhado
+
+Usuário autorizou o integrador a regenerar somente o lockfile offline com scripts ignorados. Comando47463c saída0: trio Playwright1.64.1 alinhado à #280; CLI exige PW_CHROMIUM e guard confere resolução real do core pelo runner. RED1falha/5passes→GREEN6, global846arquivos/6543testes92630, TSCfinal92901, lintfinal71193/40avisos, integração1arquivo/5testes99228 e ChromeDOM1teste12b89d: todos terminais0. Cópia física do core alinhada somente no worktree integrador, backup e115hashes preservados; demais ambientes intactos. Fonte isolada sobrec57, ainda exige composição com main, verificação de conflitos280, TESTER e CI final. Negativos e limites em output/pr392-qa/b2-playwright.md. Não marcar issue concluída antes desses gates.

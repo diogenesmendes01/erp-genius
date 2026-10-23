@@ -47,3 +47,27 @@ it("recusa ferramenta de teste ausente", () => {
   rmSync(join(raiz, "node_modules/ferramenta/package.json"));
   expect(() => conferirDependenciasInstaladas(raiz)).toThrow("ferramenta: lock=2.0.0, instalada=ausente");
 });
+
+function prepararPlaywright(coreDoRunner: string) {
+  const raiz = preparar();
+  const manifesto = JSON.parse(readFileSync(join(raiz, "package.json"), "utf8"));
+  Object.assign(manifesto.devDependencies, { "@playwright/test": "1.64.1", "playwright-core": "1.64.1" });
+  writeFileSync(join(raiz, "package.json"), JSON.stringify(manifesto));
+  const lock = JSON.parse(readFileSync(join(raiz, "package-lock.json"), "utf8"));
+  lock.packages[""] = manifesto;
+  for (const nome of ["@playwright/test", "playwright-core"]) lock.packages[`node_modules/${nome}`] = { version: "1.64.1" };
+  writeFileSync(join(raiz, "package-lock.json"), JSON.stringify(lock));
+  for (const [nome, version] of [["@playwright/test", "1.64.1"], ["playwright", "1.64.1"], ["playwright-core", "1.64.1"], ["playwright/node_modules/playwright-core", coreDoRunner]]) {
+    mkdirSync(join(raiz, "node_modules", nome), { recursive: true });
+    writeFileSync(join(raiz, "node_modules", nome, "package.json"), JSON.stringify({ version }));
+  }
+  return raiz;
+}
+
+it("recusa core divergente resolvido pelo runner mesmo com dependências diretas corretas", () => {
+  expect(() => conferirDependenciasInstaladas(prepararPlaywright("1.56.1"))).toThrow("Playwright: harness=1.64.1, runner=1.56.1");
+});
+
+it("aceita harness e runner resolvendo a mesma versão, inclusive cópia física aninhada", () => {
+  expect(() => conferirDependenciasInstaladas(prepararPlaywright("1.64.1"))).not.toThrow();
+});
