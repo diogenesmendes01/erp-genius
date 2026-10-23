@@ -15,4 +15,6 @@ C3 LOW: remove somente o caso puramente formatador duplicado de eventos-sse.int.
 
 QA independente do patchd36 favorável: teste unitário SSE inteiro1/8,02325f terminal0, inspeção de cobertura/identidade; não executou DB/INT nessa QA. Original SHA256 90c44235b2fab77c82b7e8d8955497cbd80564ec6d732f6214723c29317a2418, em tester-patch-d36.md com apenas EOF normalizado. Os10INT do ROOT em seu snapshot487 permanecem nominais àquele patch, separados da execução própria acima.
 
-QA composta, squash405main e CI final ainda pendentes. Global904/7.103 e264PNG320 pertencem às suas fontes históricas;14pares idênticos foram declarados no aceite, sem nova equivalência visual inferida aqui. Nenhuma nova captura, seed, envio real ou deploy.
+QA composta95f é favorável estática: INT e unitário SSE iguaisd36; dez casos auth/TTL/grupos preservados e negativa estrutural no unitário; produtorInbox/schema iguais8a e pais405/Shift/Pick/B2 preservados. Não executou testes/DB/browser nessa extensão. Original SHA256 320755cde61f076537fa5d8cccf5311e28b45d09853246a8965e2c2d813f1576, em tester-composicao-95f.md com apenas EOF normalizado. Nenhum pai323 foi incorporado.
+
+Squash405main e CI final ainda pendentes. Global904/7.103 e264PNG320 pertencem às suas fontes históricas;14pares idênticos foram declarados no aceite, sem nova equivalência visual inferida aqui. Nenhuma nova captura, seed, envio real ou deploy.

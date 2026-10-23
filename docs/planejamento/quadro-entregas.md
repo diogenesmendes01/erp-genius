@@ -6384,3 +6384,7 @@ Fonte101c6618:patch73c7/c3+4033e40;1blocoquadroconservaambos, estados/harness319
 ## PR #406 — composição e integração SSE final
 
 Fonte95fb5e23:cherrySOMENTEd36→8a67sobre1bb+4053bd;quadrocherryapenasentry40613linhassemcontexto323;merge1blocopreservaambos. Unitário5/11715042f,TSC67467/e912cc,lint73890/0539f3terminals0/40. INTeventosssecompleto1/10sessão21775/5d3e46033,05s,perfilciintexclusivo,maxWorkers1/configfechada,semfiltro/skips/clusterchange/migration/provider. C3INTpuraduplicadafoiretirada,unit8preservados. QApatchd36favorávelhash90c442...versionada;C2tabela20estados100APP64refs36NApreservada/C4inventárioavaliado. QAcomposta/405main/CI406aindagates;nenhumE2antecipado,output/pr406-qa/composicao-todos.md.
+
+## PR #406 — QA composta favorável
+
+QA95ffavorávelestática/hash320755...versionada tester-composicao-95f.md;INT10/unit8exatosd36/negativaprivacidadepreservada,sem323ouDDLfuturo. ProdutorInbox/schema8a e pais405/Shift/Pick/B2preservados. SemnovaexecuçãoDB/testesdoparecer;fonte95preservadaapósregistrosMD,405main/CI406aindagates.
