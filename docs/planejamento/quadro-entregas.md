@@ -5665,3 +5665,20 @@ Lucas fechado real comprovou Responder negado/Nota disponível. DEV29367 normal
 nota-protótipo com glifo acessível; humano12positivo e6appnota parciais preservados
 separados, sem aceite final. A corrigirá seletor isolado; C2 ERP longo/SSE em QA.
 Report output/inbox-317-global-final.md registra fontes e pendências, não concluída.
+
+### #317 — normal df9 validado; correção isolada do seletor de nota
+
+Formal16261 parcial negativo: humano12OK, appnota6 fora do pacote completo por timeout do nome acessível com glifo no protótipo. NormalR2/29367 saída0:8ctx24PNG/mesmoDOM/âncora0px/teclado/rascunhos/agendaEscape/busca/320×500. Permissões89958 saída0:6ctx12PNG, Lucas negado real e null/503 transporte controlado, semsubmit/envio/DB.48positivos inspecionados; imagens locais, formalnota continua pendente.
+
+Handoff ROOT somente seletor do protótipo, getByText exato+verificaBUTTON; nenhuma UI/reference alterada. REDab98272/2→GREENChromeoffline2/2/lint2fontes493570,8arquivos51testes698ece0/TSC72328heap81920/diffcheck12068f0 Node22.23.2. Produto byte-igualdf9; global897/7013 informado peloROOT é df9, não reatribuído ao novo harness. Preview99570 parado ROOT, browsers fechados/AGENTSNext isolado restaurado. Rodadaformal24/faseC2/QAfinal/publicação pendentes.
+
+### #317 — gate integrado do seletor e QA C2 no ERP
+
+ROOT incorporou aa5703 após parecer favorável próprioTESTER Chrome2/2 eVitest5/44.
+GatesROOT: Chromeoffline2/2 e1a24d, Vitestefetivo8/51(b1a235+cbffff),TSC12776
+e lint2dc9fe5 exit0. Produção/protótipo inalterados, apenas CLI/regrChrome.
+TESTER C2ERP2ctx14374/89308 exit0:10PNG1179830B, paginação/pin000visível,
+umSSE+umGET200bodyporcontexto, manual12716/11859 e focoexternopreservados,
+uma fonteativa/zeroerros. ROOT emitiu avisos8c7ee0/f8d488; snapshotTESTER
+restaurado393c28/424hashes1386 e A e27558/551, previewsparados. Pareceres e
+limites no globalreport; rodadaformal24 corrigida/globalnovo ainda pendentes.
