@@ -4,6 +4,9 @@
 
 Oito implementações com PR individual aberto e anexado:298→381,299→382,300→386,301→388,302→383,303→384,304→389,305→385. Pré-requisitos380/387/390 separados. Mapa de dependências, gates e limites em `docs/planejamento/inbox-e0-fechamento.md`. Fonte integrada99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. E0 validada localmente, sem merge/deploy; E1–E4 ainda não implementadas. Texto “PR em publicação” nas entradas antigas é histórico; links reais constam no fechamento.
 
+## Inbox — chaves dos painéis irmãos — 22/10/2026
+
+Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
 ## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
 
 Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota inicial e nova sem reload, zero nova mensagem no banco,24 PNGs depois. Evidências e limites em output/inbox-301-visual/. Combinação E0 fonte7657c528:845 arquivos/6526 testes sessão99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Estados abaixo preservam as etapas anteriores; merge/deploy não executados.
@@ -5321,3 +5324,70 @@ SHA256a5ddcdd7179558a5696fc7e0867dd839c84a63ae0f094ed527729ec99814aa20.
 TESTER313favorável4f18/285+39R6 e browserpróprio13PNG/desktopclaro/móvelescuro.
 PR313aguarda a correção HIGH394 de excesso de GETs/lotes SSE antes da composição
 final; DEV B trabalha fixisolado310 e portepara313, sem misturar os diffs.
+## PR #389 — C1–C4 e validação final
+
+C1: testes conferem as três contas de altura, o padding do main e as alturas
+reais da barra. C2: composição SSR exige o header direto e o seletor completo
+do teto. Na prova negativa, retirar alturas e inserir wrapper causou duas
+falhas / 25 passes. Produção restaurada sem delta; recorte 3 arquivos / 53
+passou. Nenhuma mudança no header da frente #315. Na casca #308, adaptar a
+guarda às novas classes, sem preservar artificialmente as contas antigas.
+
+C3: Chrome real desta fonte, 8 contextos / 16 estados em 390/700/1024/1440×500,
+dois temas, lista/conversa. Documento de 500 px e controles geometricamente
+alcançáveis por scrollIntoView em todos. Prova de overflow com bloco temporário
+aria-hidden, como o harness original; não é carga real ou acionamento de negócio.
+Zero pageerror, mas overlay Issues do Next dev visível e logs de stream
+encerrado cedo na navegação/fechamento. Sem atribuir causa à #389 nem alegar
+zero diagnósticos de servidor. Duas imagens inspecionadas; métricas baixo.json.
+Este aceite intermediário não homologa #308/#315 automaticamente. Preview39117
+parado, AGENTS restaurado byte a byte; fixture fictícia em ci-integracao.
+
+C4: 107 PNGs conferidos por tamanho/hash contra ZIP legado local e história
+ae4d71b1 antes de retirar do index. Sem force ou novo upload legado. ZIP de
+7.741.141 bytes / 117 arquivos, SHA256
+c0497482162947d74f57d30b4a5857309ab07f2119c568f8d62a09eb2f2c2035.
+README/manifesto preservados; relatório output/pr389-qa/revisao.md.
+
+Gates Node22.23.2 encerrados com saída 0: full80173, 845 arquivos / 6.570 testes
+unitários completos, maxWorkers2 sem filtro/skip; TSC70812; lintglobal47298,
+0 erros / 40 avisos. Pais incorporados por merges normais, conciliando refR6
+com classes de altura. Parecer exato e CI do head final continuam pendentes.
+
+## PR #390 — C1: teste de identidade entre conversas
+
+O teste fica dentro de describe e confere irmãos distintos, estabilidade
+após SSE da mesma conversa e novas keys/atendimentoId ao selecionar outra.
+Keys constantes por tipo reproduziram a falha (1 falha / 40 passes); produção
+restaurada sem delta. Recorte 3 arquivos / 81 testes, TSC19403 e lint alterados
+com saída 0, sem filtro/ignorados. Não houve novo browser/DB ou global local.
+
+Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
+C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
+output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
+legada de quatro elementos por dois, mantendo os contratos de identidade.
+
+### Base #313 — revisões 389/390 na casca atual
+
+Merge normaldf6c466a incorpora389b095 e teste390. Produção InboxNovo/page
+byteigual9b78 antes do merge; conflito preservou fundo-conversa/refR6/classes
+atuais. Guardas usam as contas de altura308 com margens negativas e os dois
+blocos do painel único, conservando os três oráculos de identidade390.
+Recorte3arquivos/83testes saída0; lint dos três testes saída0. TypeScript16010
+heap8192 saída0. Sem DB/browser novo/global nesta composição.
+
+GitHub304closed04:00:39UTC, squash389main e4674f9d3f2b218a8b37558168c6109df47b29fd.
+Total8/81issuesintegradas:298,299,300,301,302,303,304,305. PR390teste ainda
+aguardaCI/headfinal; revisões de E1 e HIGH394 seguem separadas.
+
+### #313 — composição dos testes 389/390 com foco real
+
+Recebida basefe9ff2f5/389390 por merge normal. Produção/harness preservados
+iguais4f; apenas guardas das dependências e documentação foram atualizadas.
+Primeirorecorte3arquivos94testes saiu1/93passes: o seletorSSR exigia section
+sem atributo tabindex, acrescentado por313para foco. Ajuste só na captura
+atributos do seletor, mantendo header filho DIRETO e todas as classes. Prova
+negativa adiciona wrapper ao HTML real e exige rejeição. GREEN3/94 e lint3
+saída0, sem ignorados. Contagem de painéis390 segue2, preservando estabilidade
+SSE e troca de keys/atendimentoId. Sem novoDB/browser; global final apósporte
+HIGH394 continua pendente e imagens4f permanecem fonte visual identificada.
