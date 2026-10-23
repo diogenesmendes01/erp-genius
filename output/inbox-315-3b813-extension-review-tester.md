@@ -1,0 +1,9 @@
+# Extensão QA #315 — 3b813fadb7c956a588a660959ecd68b2211de0a5
+
+Parecer favorável à composição exata. Comparação com `f436b4fff4550b897bef27a1d42ab0594679a1f5`: `CabecalhoConversa.tsx`, `MenuConversa.tsx`, `ConversaAberta.tsx`, `AcoesAtendimento.tsx` e `InboxNovo.tsx` têm OIDs idênticos; a prova visual própria anterior do cabeçalho/menu continua delimitada àquela UI. O único arquivo produtivo distinto em `src` é `src/lib/eventos-inbox.ts`, OID `f8a690e2731187a063893a03a19c8cc0b474a101`, byteigual ao #396 `babd1fe60c99483923b7c78411f639081acff486` já revisado por mim. O restante do delta executável são quatro arquivos de testes.
+
+A guarda `TEXTO_JA_ROTULADO` registra exatamente duas ocorrências de `visual.status` no cabeçalho; a produção deriva esse valor de `estadoVisualCabecalho`, que traduz os estados antes do título e do texto do selo. O SSR novo cobre os quatro estados (`Na fila`, `Em atendimento`, `Aguardando cliente`, `Encerrado`) e exige ausência do enum cru. A contagem AST não foi alargada globalmente. As provas novas do SSE cobrem CLOSED com assinantes antigos, CONNECTING nativo sem segunda fonte, callbacks da fonte velha e CLOSED síncrono durante instalação; a produção é a mesma do parecer #396.
+
+Recorte próprio em Node 22 local, executor `33751`, código de saída 0: 8 arquivos/207 testes, sem filtro por nome nem ignorados (Cabecalho, Menu, useAcoes, ConversaAberta, InboxNovo, useEventosInbox, eventos-inbox e enums-rotulos). `git diff --check` no delta `f436..3b813` encerrou sem saída. Não executei DB, browser, TypeScript, lint ou suíte global neste head. Os gates globais 886 arquivos/6.940 testes, typegen, TSC e lint zero informados pelo integrador são evidência dele, não execuções minhas.
+
+Esta extensão não amplia a homologação visual histórica #315 para fluxos de envio ou ações de negócio; apenas confirma que a UI testada é byteigual e que a composição SSE/guarda passou no recorte próprio.

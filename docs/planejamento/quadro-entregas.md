@@ -5551,3 +5551,19 @@ Fonte babd: DEV31arquivos365testes/TSC19799heap8192/lint3fontes saída0; TESTER 
 ### PR396 B1/C1 — porte de runtime no agregado315 validado pelo DEV
 
 OWN3b813 com helper/testes byte-equivalentes a babd; nenhum código396novo. Probe16dde0 saída0 repete503privadoexato→CLOSEDnativo→LinkHomeInbox preservando Sidebar→SSEreal200/resync,1ativa/1documento,0falhas/2diagnósticos esperados.2PNG atuais inspecionados/177.342bytes, allowlist e resumo output/inbox-396-allowlist-atual-3b813.json/evidencias-atual-3b813.json separados dos isolados. SemPG/SQL/submit/envio/binárioGit. ROOT informou4/99/TSC80706/lint30775 saída0 (42avisos), global89018 ainda ativo; sem ownfull/aceiteglobal presumido. Preview5179 encerrado/DBdeecd4 restaurado peloROOT, blocoNextAGENTS removido isoladamente. B1/C1DEV entregues; global/publicação main/r3 sobcoordenação.
+
+### #315 — composição final pronta para PR
+
+Fonte3b813 e headdocumental4be: global89018 EXIT0,886arquivos/6.940testes,
+250,63s semfiltro/skip; typegend3a0,TSC80706heap81920,lint30775global0erros/
+42avisos(40fontes+2staging318). TESTER3b próprio8/20733751 saída0; cabeçalho
+invariante5dc/f436, SSEhelperigualbabd revisto7/41 e browserisolado/agregado
+CLOSED503→novaassinaturaSSEreal200/máximo1/Sidebarpreservada. Registroexato
+visual.status2ocorrências e4SSRestados mantém traduções semalterar detector.
+Pacotes315142PNG e3964PNGremotosDRAFT/hashconferidos; relatórios e limites em
+output/inbox-315-global-final.md. PR/CI/pais/merge continuam gates separados.
+
+PR400/#313 aberto/anexado, headinicial260a; outra frente registrou C2 integração
+20testes completos preferências/presença saída0 no ciint, headdocumental92d493b.
+Fontebyteigual260; C1ancestralidade/CIpendente. GitHub310closed04:42:04UTC,
+main5f476a19e88abd2545ecbb717a1b4653ea2b8df1. Total10/81integradas:298–306e310.
