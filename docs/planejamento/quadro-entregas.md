@@ -4656,6 +4656,15 @@ Correção parcial: região real da thread condiciona leitura/zero otimista e re
 
 PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao desmontar; ação composta invalida rota uma vez, preservando falha parcial e ação pessoal isolada. TDD RED observado. Fonte final: fullunit23477exit0/840arquivos6485testes sem filtro/ignorados; TSC1446exit0; lintglobal2057exit0/0erros40avisos; integração dirigida ci-integracao73209exit0/2arquivos15testes. Relatório output/pr382-qa/revisao-final.md. C5retarget/CI e re-review externo pendentes; não mergeado.
 
+### PR #386 — revisão C1/C2: notas da Aria em tempo real — 2026-10-22
+
+**Estado: correção e gates locais concluídos; revisão independente, integração da base e CI/retarget pendentes.**
+
+- C2 reproduzido em PostgreSQL real: criação da nota pelo executor e arquivamento por desfazer não notificavam. RED77015 exit1:2falhas/1pass,49ignorados pelo filtro; o handoff já passava pelo trigger de atendimento. Emissão explícita transacional apenas nos dois caminhos faltantes, com tipo/ids e sem conteúdo; handoff não recebe aviso duplicado. Sugestão/SHADOW/rollback não notificam nem persistem nota. Sem papel/permissão/schema/transportes novos.
+- Helper de integração usa LISTEN real e canal privado de barreira para provar entrega/ausência após commit, sem sleeps nem aviso falso no canal do Inbox. URL local validada na lista fechada. Import inicial fora de src fez a guarda confirmacoes falhar; global70197 foi interrompido exit1. Corrigido sem abrir exceção:confirmacoes5415 GREEN59/59 e novo global completo abaixo.
+- C1 evidências locais no perfil exclusivo ci-integracao:92375 exit0,4arquivos/75testes (consultas-pagina,executor-crm,handoff,historico), e93492 exit0,2arquivos/25testes (nota-interna,inbox), sem filtro/ignorados nesses6arquivos. Não é suíte de integração completa. O pedido de rodar no head final após retarget para main permanece pendente; não atribuir este recorte a um futuro head integrado.
+- Gates finais Node22.23.2:unitários12136 exit0,840arquivos/6485testes sem filtro/ignorados;TSC70245 exit0;lintglobal78342 exit0,0erros/40avisos herdados. Base382correções183c incorporada pelo merge localbb543667. Ainda sem merge/deploy destaPR; nenhum envio externo.
+- Registro da dependência:PR381 já merged por squash emea60a8a7,comCI39878884253success eTESTER9e5favorável;64PNGarquivados com roundtrip/hash confirmado no draft autorizado. Incorporar correção381/main antes de retarget das filhas para não reintroduzir imagens.
 ### Inbox E0.5 — #302: prazo estourado vivo — 2026-10-22
 
 **Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-302-report.md`, parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Branch `codex/inbox-e0-302`, base `1ce8e582` (PR #381). Sem merge/deploy.
@@ -4771,7 +4780,17 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 
 - Fechamento: TESTER noSHA67014764 favorável,6arquivos86testes unitários0 e integração perfiltester78316exit0/2arquivos26testes, sem ignorados. Global combinado com309fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67 sessão15987exit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2,TSCNode22heap8192,lintglobal0erros40avisos. Código310igualaoSHArevisto; mudançasposteriores sódocs/QA. Parecer e logs `output/inbox-310-qa/`. Visual313conformeplano, não presumido.
 
+## PR #391 — C1/C2: mono600 nativa e sem preload global
 
+Asset original e hash preservados; eixo wght100–800 verificado no WOFF.
+Faixa400–600 substitui400–500 após coordenação técnica; dt herdado e contadores
+600 usam face nativa. preload:false na mono, Roboto preservada. TDD RED1/7
+→GREEN5arquivos54testes; TSC75865/lint alterados saída0. Chrome6contextos,
+8trechos reais por contexto,400/500/600 carregados, síntese desativada,
+sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
+DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
+sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
+Integração dos pais, global, parecer/CI do head final continuam pendentes.
 ### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
 
 **Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
@@ -5050,3 +5069,58 @@ Gate global repetido por essa mudança, executor93927 observado até saída0:
 excluída pela configuração, não repetida. Relatório output/inbox-314-global-final.md.
 Próximo commit somente documental; publicação do PR e CI/merge permanecem
 separados. Não marcar314 integrada antes da main e fechamento da issue.
+## PR #386 — integração final após #382
+
+Base main 3d756a4e e fonte R6 37a78dfe incorporadas por merges normais,
+547c5d9c/e4f8d099. Conflitos exclusivamente nos acréscimos do quadro, todos
+preservados. Arquivos funcionais específicos de notas comparados sem diferença
+com e4d7119c, que recebeu parecer favorável do TESTER. Sem reintrodução dos
+PNGs arquivados da #381. Diff final sobre main restrito à funcionalidade #300.
+
+C1: aceite repetido no estado integrado, Node22.23.2, ci-integracao exclusivo,
+6 arquivos / 100 testes reais de integração, sem filtro/ignorados, saída0
+(s43509, 369,13s): consultas-pagina, executor-crm, handoff, historico,
+nota-interna e inbox. Não é suíte completa de integração. Recorte unitário
+8 arquivos / 128 testes, saída0; TypeScript13908, saída0. Fonte das notas
+idêntica ao global anterior840/6485 e lint0/40 registrado em e4d7119c;
+não atribuir nova execução global a esta integração.
+
+C2 preserva NOTIFY transacional somente nos dois caminhos faltantes; handoff
+já notifica pelo trigger e não recebe duplicação. Sem permissão/schema/envio
+externo. Retarget para main efetuado; CI do novo head e conferência final
+permanecem pendentes antes do merge.
+
+## PR #387 — C2: trava dos exports da rota SSE
+
+O teste agora inspeciona o namespace real da rota e exige GET/dynamic/runtime,
+únicos exports públicos usados por esta rota. Constantes de controle ficam
+em limites.ts. O contrato foi conferido no validador do Next instalado;
+reexports ou default acidentais também aparecem no namespace e reprovam.
+
+TDD: reintrodução temporária das três constantes como reexport reproduziu
+1 falha / 10 passes. Após retirar o reexport, fonte de produção idêntica à
+correção original: 3 arquivos / 21 testes dirigidos, sem filtro/ignorados,
+saída0. TypeScript44634 e lint dos três arquivos SSE, saída0. Nenhuma nova
+execução de banco ou mudança de reconexão/timeout/Next. Não relacionar ao
+hardnav ainda em investigação na frente313.
+
+Merges normais incorporaram382R6/main3d756 e386e7 para preservar ancestrais.
+Aguardar386 integrado e CI do novo head contra main antes de mergear387.
+
+## PR #391 — gates do estado integrado
+
+Fonte3410df0b incorpora382R6/386/387e main7982 por merges normais. Conflito
+pontual de InboxNovo conciliou ref da região real de conversa com todas as
+classes de altura/rolagem da base389; não descartou nenhuma das regras.
+Arquivos da correção mono permanecem idênticos ao commit7d29f1dc.
+
+Gates Node22.23.2, todos encerrados com saída0: suíte unitária completa17966,
+845arquivos/6.570testes, sem filtro de nomes/ignorados, apenas maxWorkers=2;
+TypeScript47138; lintglobal64541,0erros/40avisos herdados. Não houve nova
+integração de banco (mudança de fonte local sem dados), nem recaptura do
+produto completo após os merges; a amostra isolada de fonte usa os mesmos
+layout/woff2/config/CSS e está registrada em output/pr391-qa.
+
+A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
+e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
+Novo parecer no head exato e CI contra main continuam pendentes.
