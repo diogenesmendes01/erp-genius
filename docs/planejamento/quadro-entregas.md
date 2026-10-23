@@ -5182,7 +5182,7 @@ filtro/ignorados,maxWorkers2; TSC83357 e lint95898 zero erros /40 avisos.
 Quatro PNGs positivos do probeB babd/3b em ZIPdraft344.425bytes, SHA c7c4fb49...
 com fontes explícitas; sem recaptura9cf/DB/browser próprio. Parecer final,
 395/#392B2 e CI/main continuam gates. output/pr396-qa/revisao.md.
-## PR #396 — C6: recuperação autônoma em verificação
+## PR #396 — C6: recuperação autônoma verificada localmente
 
 Sobre31a9b666, apenas fonte/testes SSE: CLOSED agenda um timer com backoff
 1/2/4/8/16/30s, reset emopen e cancelamento no último unsubscribe. Assinatura
@@ -5192,4 +5192,13 @@ EventSource não distingue HTTP de autenticação noerro; rota conserva guarda,
 tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
 RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
 prefer-const na fixture de teardown, corrigido sem alterar produção; lint
-dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
+dirigido posterior0. Global01a22304 EXIT0:860arquivos/6.756testes,sem
+filtros/ignorados,maxWorkers2,262,87s. TSC5638/lint97309 EXIT0,0erros40avisos.
+TESTER01a favorável6/47 próprios,cb5243 EXIT0,sem DB/browser/global próprios.
+Chromehelper/EventSource/HTTP reais locais ff9c5d EXIT0:503→1008ms→200 sem
+remontar dois ouvintes; CONNECTING nativo no mesmo objeto; teardown impede
+retry1300ms/remount200, máximo1stream/1documento/foco mantido,0pageerror.
+Não é Next/ERP/DB/proxy. ZIP positivo2PNG/5arquivos38.437B, SHA256
+361b6f89e7e4dcc0eb59bcfdd3503910195b544b36f1575cf2baa1caee5190b0,
+asset668211207/DRAFT421321214,download/hash conferidos. Report c6.md em
+output/pr396-qa. Porte nos dependentes, CI/main/392B2 ainda pendentes.
