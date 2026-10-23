@@ -59,10 +59,11 @@ describe("AcoesAtendimento", () => {
   it("não existe Arquivar; preferências dizem 'só para você'", () => {
     const h = html({}); expect(h).not.toContain("Arquivar"); expect(h).toContain("só você");
   });
-  it("encerrado: só as preferências pessoais", () => {
+  it("encerrado: Nota por leitura e preferências pessoais, sem envio, agenda ou gestão", () => {
     const h = html({ papeis: [Papel.GERENTE_COMERCIAL], status: "ENCERRADO" });
-    for (const t of ["Transferir", "Encerrar atendimento", "Nota interna", "Assumir"]) expect(h).not.toContain(t);
+    for (const t of ["Transferir", "Encerrar atendimento", "Assumir", "Agendar mensagem", "Convites e agendamentos", "Atribuir", "Devolver para a fila", "Convidar", "Bloquear contato"]) expect(h).not.toContain(t);
     expect(h).toContain("Fixar");
+    expect(h).toMatch(/<button>Nota interna<\/button>/);
   });
 
   describe("C3: Assumir numa linha de vendas só para quem não seria recusado", () => {

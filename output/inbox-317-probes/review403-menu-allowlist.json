@@ -1,0 +1,82 @@
+{
+  "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+  "executor": "028fd6",
+  "originais": 8,
+  "pranchas": 2,
+  "arquivos": [
+    {
+      "arquivo": "review403-menu-r2/light-390-responder-bloqueado.png",
+      "sha256": "b345c8d7d4415e2fd052f3213ef84e6c75994a0d1d6e50f1265620afaefc211e",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 17256
+    },
+    {
+      "arquivo": "review403-menu-r2/light-390-menu-nota.png",
+      "sha256": "2dc0d4fb134005cef4d074cdc2176d6e9283d5f7940b2a76b5139548745b2956",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 21755
+    },
+    {
+      "arquivo": "review403-menu-r2/light-390-dialogo-sem-submit.png",
+      "sha256": "4b778b07869cbeb88dc1c14b6f258ac37159c86cbc346331e0d33608bc658c20",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 23628
+    },
+    {
+      "arquivo": "review403-menu-r2/light-390-rodape-nota.png",
+      "sha256": "c8f6b3f6068fc82853317ffc1f500c1d5e6e1cb49a5c8c031fc34695644c0f67",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 23355
+    },
+    {
+      "arquivo": "review403-menu-r2/dark-1440-responder-bloqueado.png",
+      "sha256": "9d5bd142f911bc90a39e51fae17e9e2b41d1008d8e11f3882c514fb116af709a",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 146437
+    },
+    {
+      "arquivo": "review403-menu-r2/dark-1440-menu-nota.png",
+      "sha256": "1d2ef109aba7951e03aae72874b4fa2c9b9dfbc2047a252aef1bca74235188f2",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 154048
+    },
+    {
+      "arquivo": "review403-menu-r2/dark-1440-dialogo-sem-submit.png",
+      "sha256": "5545d3a02218a6aabff2aff6e03437702f21208ca7eede30e51351ad5de141a7",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 147883
+    },
+    {
+      "arquivo": "review403-menu-r2/dark-1440-rodape-nota.png",
+      "sha256": "18ac9ac6b5e2a407309f1acaba899ee20773573116c4073294425a296af9c266",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 152816
+    },
+    {
+      "arquivo": "review403-menu-r2/manifesto.json",
+      "sha256": "c7c0b7dea576a1293e2a57a506a0166f249de5eb20314d006748d7424ad6ff09",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 10692
+    },
+    {
+      "arquivo": "review403-menu-r2/prancha-light.png",
+      "sha256": "1d400c3d3036d1077ca7dc8a6ec7857e0fe6c405f6f40cb86cda1591a981d7ee",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 92260
+    },
+    {
+      "arquivo": "review403-menu-r2/prancha-dark.png",
+      "sha256": "9d5c70da3b77dadad14eb2c3b673aeb5bdedd4d8f4b5b259274360ac274f0788",
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "bytes": 435475
+    }
+  ],
+  "totalBytes": 1225605,
+  "excluidos": [
+    "review403-menu-r1",
+    "formal16261",
+    "diagnósticos/negativos",
+    "visuais317bbb/df9"
+  ],
+  "limite": "Complemento app-only independente dos históricos; fontes explícitas, sem PNG emGit."
+}

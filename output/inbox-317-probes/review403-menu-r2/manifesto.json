@@ -1,0 +1,354 @@
+{
+  "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+  "fontes": {
+    "probe": "2ce2216907a44f07571bf894344835b144512ac1a3776f2c0c439777fe3c4662",
+    "anonDOM": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+    "espera": "89a11dbb5de3e3b57d11d96e819e42e25d5cc38c42eb1c572ea4c8ae5cd90811",
+    "guardReact": "3a5d1d75809bd8baef30d58725ebaf071186a679391e1f8845b49aa642be8370"
+  },
+  "previewRoot": 13667,
+  "node": "v22.23.2",
+  "limites": "GETs reais sem domínio forjado. Sem submit/envio/nota gravada/DBDEV. Grupo não capturado: nenhuma fixture real de grupo selecionada. C3 comprovado por testes React; sem sucesso ERP simulado. Sem reatribuir visuais317bbb/df9.",
+  "resultados": [
+    {
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "tema": "light",
+      "width": 390,
+      "height": 844,
+      "identidade": {
+        "endpoint": "/api/inbox/atendimentos?status=ENCERRADO",
+        "http": 200,
+        "item": {
+          "id": "inbox-demo-lucas-origem-307",
+          "status": "ENCERRADO",
+          "finalidade": "SECRETARIA",
+          "grupo": false,
+          "nome": "Lucas Andrade"
+        }
+      },
+      "painel": {
+        "endpoint": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel",
+        "http": 200,
+        "podeEnviar": false,
+        "setor": "SECRETARIA"
+      },
+      "rotulos": [
+        "Marcar como não lida",
+        "Fixar conversasó você",
+        "Silenciar8 h · só você",
+        "Nota interna",
+        "Buscar na conversa"
+      ],
+      "alvos": [
+        {
+          "nome": "Mais ações da conversa",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "nome": "Nota interna",
+          "w": 101.515625,
+          "h": 44
+        },
+        {
+          "nome": "Nota interna",
+          "w": 376,
+          "h": 44
+        }
+      ],
+      "focos": [
+        {
+          "estado": "dialogo-nota",
+          "nome": "",
+          "dentroConversa": false,
+          "dialogo": true
+        },
+        {
+          "estado": "dialogo-fechado",
+          "nome": "Mais ações da conversa",
+          "dentroConversa": true,
+          "dialogo": false
+        },
+        {
+          "estado": "rodape-nota",
+          "nome": "Escreva uma nota interna",
+          "dentroConversa": true,
+          "dialogo": false
+        }
+      ],
+      "estado": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0,
+        "documentY": 0,
+        "overflow": false
+      },
+      "requests": [
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/nao-lidas"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/eventos"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/nao-lidas"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/mensagens"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/mensagens"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos?contagens=1"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/nao-lidas"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos?contagens=1"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/mensagens"
+        }
+      ],
+      "imagens": [
+        {
+          "arquivo": "light-390-responder-bloqueado.png",
+          "sha256": "b345c8d7d4415e2fd052f3213ef84e6c75994a0d1d6e50f1265620afaefc211e",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-menu-nota.png",
+          "sha256": "2dc0d4fb134005cef4d074cdc2176d6e9283d5f7940b2a76b5139548745b2956",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-dialogo-sem-submit.png",
+          "sha256": "4b778b07869cbeb88dc1c14b6f258ac37159c86cbc346331e0d33608bc658c20",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-rodape-nota.png",
+          "sha256": "c8f6b3f6068fc82853317ffc1f500c1d5e6e1cb49a5c8c031fc34695644c0f67",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+      "tema": "dark",
+      "width": 1440,
+      "height": 900,
+      "identidade": {
+        "endpoint": "/api/inbox/atendimentos?status=ENCERRADO",
+        "http": 200,
+        "item": {
+          "id": "inbox-demo-lucas-origem-307",
+          "status": "ENCERRADO",
+          "finalidade": "SECRETARIA",
+          "grupo": false,
+          "nome": "Lucas Andrade"
+        }
+      },
+      "painel": {
+        "endpoint": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel",
+        "http": 200,
+        "podeEnviar": false,
+        "setor": "SECRETARIA"
+      },
+      "rotulos": [
+        "Marcar como não lida",
+        "Fixar conversasó você",
+        "Silenciar8 h · só você",
+        "Nota interna",
+        "Buscar na conversa"
+      ],
+      "alvos": [
+        {
+          "nome": "Mais ações da conversa",
+          "w": 36,
+          "h": 36
+        },
+        {
+          "nome": "Nota interna",
+          "w": 101.515625,
+          "h": 44
+        },
+        {
+          "nome": "Nota interna",
+          "w": 276,
+          "h": 38
+        }
+      ],
+      "focos": [
+        {
+          "estado": "dialogo-nota",
+          "nome": "",
+          "dentroConversa": false,
+          "dialogo": true
+        },
+        {
+          "estado": "dialogo-fechado",
+          "nome": "Mais ações da conversa",
+          "dentroConversa": true,
+          "dialogo": false
+        },
+        {
+          "estado": "rodape-nota",
+          "nome": "Escreva uma nota interna",
+          "dentroConversa": true,
+          "dialogo": false
+        }
+      ],
+      "estado": {
+        "ativos": 1,
+        "maximos": 1,
+        "criados": 2,
+        "submits": 0,
+        "documentY": 0,
+        "overflow": false
+      },
+      "requests": [
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/nao-lidas"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/eventos"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/nao-lidas"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/mensagens"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/mensagens"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos?contagens=1"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/nao-lidas"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/painel"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos/inbox-demo-lucas-origem-307/mensagens"
+        },
+        {
+          "metodo": "GET",
+          "caminho": "/api/inbox/atendimentos?contagens=1"
+        }
+      ],
+      "imagens": [
+        {
+          "arquivo": "dark-1440-responder-bloqueado.png",
+          "sha256": "9d5bd142f911bc90a39e51fae17e9e2b41d1008d8e11f3882c514fb116af709a",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-menu-nota.png",
+          "sha256": "1d2ef109aba7951e03aae72874b4fa2c9b9dfbc2047a252aef1bca74235188f2",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-dialogo-sem-submit.png",
+          "sha256": "5545d3a02218a6aabff2aff6e03437702f21208ca7eede30e51351ad5de141a7",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-rodape-nota.png",
+          "sha256": "18ac9ac6b5e2a407309f1acaba899ee20773573116c4073294425a296af9c266",
+          "fonte": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+          "anonimizacao": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}
