@@ -4,7 +4,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { registrarEvento } from "@/server/_shared";
-import { listarAtendimentosPagina, listarMensagensPagina, obterItemListaInbox } from "./consultas-pagina";
+import { contarChipsInbox, listarAtendimentosPagina, listarMensagensPagina, obterItemListaInbox } from "./consultas-pagina";
 import { codificarCursor, cursorThreadValido } from "./cursor";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
@@ -66,6 +66,7 @@ describe("lista paginada por cursor", () => {
     expect(p3.proximo).toBeNull();
     const todosIds = [...p1.itens, ...p2.itens, ...p3.itens].map((i) => i.id);
     expect(new Set(todosIds).size).toBe(120);
+    expect((await contarChipsInbox(sess(admin), {})).todas).toBe(123); // não se limita aos 50 itens carregados
     expect(todosIds).toEqual([...criados].sort().reverse());
   });
 
@@ -126,6 +127,8 @@ describe("lista paginada por cursor", () => {
     } finally { espiao.mockRestore(); }
     // Outro usuário (sem preferência) não herda a leitura de admin: vale o contador compartilhado (0).
     const outroAdm = await criarUsuario([Papel.ADMINISTRADOR]);
+    expect((await contarChipsInbox(sess(admin), {})).naoLidas).toBe(1);
+    expect((await contarChipsInbox(sess(outroAdm), {})).naoLidas).toBe(0);
     expect((await listarAtendimentosPagina(sess(outroAdm), { naoLidas: true }, null)).itens).toHaveLength(0);
   });
 
@@ -351,6 +354,8 @@ describe("lista só com envio (destino do encaminhar, Fase 4D)", () => {
     const ids = async (o?: { enviar?: boolean }) => (await listarAtendimentosPagina(sess(fin), {}, null, undefined, o)).itens.map((i) => i.id);
     expect(await ids()).toEqual([comEnvio.id, semEnvio.id, encerrado.id]);
     expect(await ids({ enviar: true })).toEqual([comEnvio.id]);
+    expect((await contarChipsInbox(sess(fin), {})).todas).toBe(3);
+    expect((await contarChipsInbox(sess(fin), {}, { enviar: true })).todas).toBe(1);
   });
   it("com `enviar` o número inativo também sai, e os filtros (número, busca) continuam valendo", async () => {
     const a = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
@@ -359,5 +364,55 @@ describe("lista só com envio (destino do encaminhar, Fase 4D)", () => {
     expect(await ids({ numeroId: "outro" })).toEqual([]);
     await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
     expect(await ids({})).toEqual([]);
+  });
+});
+
+describe("contagens dos chips (universo autorizado, além da página)", () => {
+  it("retira somente os três filtros dos chips, mantém setor/número/status/busca e conta atendimentos", async () => {
+    const a = await criarAtendimento(null, { naoLidas: 9 });
+    const b = await criarAtendimento(null);
+    const c = await criarAtendimento(null, { naoLidas: 3 });
+    const fora = await criarAtendimento(null, { naoLidas: 50 });
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: admin.id, prazoRespostaEm: new Date("2020-01-01") } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.id }, data: { responsavelId: outro.id, encerradoEm: new Date(), status: "ENCERRADO" } });
+    for (const item of [a, b, c]) await prisma.conversaWhatsApp.update({ where: { id: item.conversaId }, data: { contato: { update: { nomeExibicao: "Alvo" } } } });
+    await prisma.conversaWhatsApp.update({ where: { id: fora.conversaId }, data: { contato: { update: { nomeExibicao: "Outro" } } } });
+    const filtros = { setor: "SECRETARIA" as const, numeroId, busca: "Alvo", responsavel: "fila", naoLidas: true, prazoEstourado: true };
+    expect(await contarChipsInbox(sess(admin), filtros)).toEqual({ todas: 3, minhas: 1, naoLidas: 2, prazo: 1, fila: 1 });
+    expect(await contarChipsInbox(sess(admin), { ...filtros, status: "ENCERRADO" })).toEqual({ todas: 1, minhas: 0, naoLidas: 1, prazo: 0, fila: 0 });
+    expect(await contarChipsInbox(sess(admin), { ...filtros, numeroId: "inexistente" })).toEqual({ todas: 0, minhas: 0, naoLidas: 0, prazo: 0, fila: 0 });
+    expect(await contarChipsInbox(sess(admin), { ...filtros, setor: "COMERCIAL" })).toEqual({ todas: 0, minhas: 0, naoLidas: 0, prazo: 0, fila: 0 });
+    expect(await contarChipsInbox(sess(outro), {})).toEqual({ todas: 0, minhas: 0, naoLidas: 0, prazo: 0, fila: 0 });
+  });
+  it("não lidas são pessoais: lidaAte e marca explícita não usam a soma compartilhada", async () => {
+    const a = await criarAtendimento(null, { naoLidas: 20 });
+    const b = await criarAtendimento(null);
+    await prisma.preferenciaConversaUsuario.create({ data: { usuarioId: admin.id, conversaId: a.conversaId, lidaAte: new Date() } });
+    await prisma.preferenciaConversaUsuario.create({ data: { usuarioId: admin.id, conversaId: b.conversaId, marcadaNaoLida: true } });
+    expect((await contarChipsInbox(sess(admin), {})).naoLidas).toBe(1);
+  });
+  it("prazo estrito exclui instante exato, respondido e encerrado; fila exclui encerrados", async () => {
+    const agora = new Date("2026-10-22T12:00:00Z");
+    for (const extra of [
+      { prazoRespostaEm: new Date(agora.getTime() - 1) },
+      { prazoRespostaEm: agora },
+      { prazoRespostaEm: new Date(agora.getTime() - 1), primeiraRespostaEm: agora },
+      { prazoRespostaEm: new Date(agora.getTime() - 1), encerradoEm: agora, status: "ENCERRADO" as const },
+    ]) {
+      const a = await criarAtendimento(null);
+      await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: extra });
+    }
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(agora);
+    try { expect(await contarChipsInbox(sess(admin), {})).toMatchObject({ todas: 4, prazo: 1, fila: 3 }); }
+    finally { vi.useRealTimers(); }
+  });
+  it("envio restringe as contagens pelo mesmo escopo da lista (aberto e número ativo)", async () => {
+    const a = await criarAtendimento(null), b = await criarAtendimento(null);
+    await prisma.atendimentoWhatsApp.update({ where: { id: b.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    expect((await contarChipsInbox(sess(admin), {}, { enviar: true })).todas).toBe(1);
+    expect((await listarAtendimentosPagina(sess(admin), {}, null, 50, { enviar: true })).itens.map((i) => i.id)).toEqual([a.id]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
+    expect((await contarChipsInbox(sess(admin), {}, { enviar: true })).todas).toBe(0);
+    expect((await contarChipsInbox(sess(admin), {})).todas).toBe(2);
   });
 });
