@@ -1,5 +1,9 @@
 # Quadro único de entregas
 
+## Pós-merge PR396 C5 — hook compartilhado — 23/10/2026
+
+Teste ReactDOM real de useEventosInbox com EventSource falso/semrede:3casos ligados ao módulo produtivo, conectado/callback atualizado semreassinar/2consumidores1fonte/cleanup/StrictMode/ausênciadeEventSource. Mutação callback obsoleto1fail/2pass, fonte restaurada byteexata; GREEN6/49 e amplo11/367 terminais0. TSC79557/lint6fontes0 após última mudançaexecutável. Helperantigo e runtimehook/SSE/loja preservados. Report output/inbox-posmerge-guardas-report.md separa todosgates/limites. Semnovo global/browser/PNG/deps/schema/migration/push; QAintegrador pendente.
+
 ## Pós-merge PR396 C3/C4 — montagem e legado — 23/10/2026
 
 AvaliaçãoC3 explícita na SPEC: resync tardio cobre snapshotSSR antigo e recontagem pessoal cobre leitura semNOTIFY; custo de GETs redundantes de montagem aceito, sem afirmar otimização/coalescência. C4 remove função/export contarNaoLidas sem callerprod (barrel só export*), preserva consulta atual do selo e troca duasasserts/import do testeLC, sem enfraquecer escopo0/1. INT30761 completo1/24 terminal0 no banco integracao487 EXCLUSIVO, depois liberado; perfilrestauradoRootf6de8b, bancoB490 intacto. Unit11/367/TSC79557/lint0 na fonte finalexecutável. QA/publicação integrador, sempresunçãoCI.
