@@ -122,7 +122,7 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
         {!ehNota && pix && <CartaoPix pix={pix} />}
         {m.corpo && (ehNota || (!enquete && !pix)) && <p className="whitespace-pre-wrap break-words">{m.corpo}</p>}
         <div className="mt-0.5 flex flex-wrap items-center justify-end gap-1 font-mono text-[10.5px] tabular-nums text-gray-600">
-          {ehNota && <span className="font-sans">{nota?.autorNome ?? "Autor não informado"}</span>}
+          {ehNota && <span className="font-sans">{nota?.autorNome?.trim() || "Autor não informado"}</span>}
           {!ehNota && m.apagada && <span>Apagada para todos</span>}
           {!ehNota && m.favorita && <IconStar size={12} aria-label="Favorita" />}
           <time dateTime={m.criadoEm}>{hora(m.criadoEm, fuso)}</time>
