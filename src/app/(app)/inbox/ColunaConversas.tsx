@@ -24,6 +24,9 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, faixaAria, a
  const router = useRouter(); const caminho = usePathname() ?? "/inbox";
  const [popover, setPopover] = useState<"filtros" | "numero" | "nova" | null>(null);
  const novaAberta = novaConversaAberta ?? popover === "nova";
+ const [selecaoVista, setSelecaoVista] = useState(lista.selecionado);
+ if (selecaoVista !== lista.selecionado) { setSelecaoVista(lista.selecionado); setPopover(null); }
+ function selecionar(id: string) { setPopover(null); aoFecharNovaConversa?.(); lista.aoSelecionar(id); }
  const [busca, setBusca] = useState(filtros.busca ?? ""); const [buscaVista, setBuscaVista] = useState(filtros.busca);
  if (buscaVista !== filtros.busca) { setBuscaVista(filtros.busca); setBusca(filtros.busca ?? ""); }
  const campoBusca = useRef<HTMLInputElement>(null); const retornoLocal = useRef<HTMLElement | null>(null);
@@ -75,7 +78,7 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, faixaAria, a
     <button type="button" className="text-xs text-gray-600" onClick={() => remover()}>Limpar</button>
    </div>}
   </div>
-  <ListaAtendimentos {...lista} />
+  <ListaAtendimentos {...lista} aoSelecionar={selecionar} />
   {!novaAberta && popover === "filtros" && <PopoverFiltros filtros={filtros} setores={opcoesFiltro?.setores ?? []} aoAplicar={aplicar} aoFechar={() => setPopover(null)} focoAoFechar={focoRetorno} />}
   <PopoverColuna titulo="Nova conversa" aberto={novaAberta && !!novaConversa} aoFechar={fecharNova} focoAoFechar={focoRetorno}>{novaConversa}</PopoverColuna>
  </div>;

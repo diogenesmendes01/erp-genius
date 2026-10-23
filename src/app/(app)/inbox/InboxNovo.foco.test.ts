@@ -35,3 +35,20 @@ it("navegação recebida fechaNovo e foca regiãoConversa, nunca o gatilho na co
 it("CtrlK naNova controlada peloInbox termina no campo real e mantém somente um formulárioNovo",async()=>{
  await render(props);const gatilho=rotulo("Nova conversa");gatilho.focus();await evento("click",gatilho);const modal=container.querySelector('[role="dialog"]')!;expect(modal.querySelectorAll('form')).toHaveLength(1);await evento("keydown",rotulo("Fechar"),{key:"k",ctrlKey:true,metaKey:false});expect(container.querySelector('[role="dialog"]')).toBeNull();expect(doc.activeElement===rotulo("Buscar conversas")).toBe(true);
 });
+it("seleção local fechaNova antes de ocultar coluna e devolve foco à conversa visível sem listener residual",async()=>{
+ await render(props);const gatilho=rotulo("Nova conversa");const atalhos=ouvintes.filter(o=>o.tipo==="keydown").length;gatilho.focus();await evento("click",gatilho);expect(container.querySelector('[role="dialog"]')).not.toBeNull();const focoGatilho=vi.spyOn(gatilho,"focus");
+ const linha=rotulo("Conversas").querySelectorAll("button").find(e=>e.textContent?.includes("Ana"))!;expect(linha).toBeTruthy();await evento("click",linha);
+ expect(container.querySelector('[data-vista="conversa"]')).not.toBeNull();expect(container.querySelector('[role="dialog"]')).toBeNull();expect(doc.activeElement===rotulo("Conversa")).toBe(true);expect(focoGatilho).not.toHaveBeenCalled();expect(ouvintes.filter(o=>o.tipo==="keydown")).toHaveLength(atalhos);
+});
+it.each(["Filtros","Todos os números · 1 conectado"])("seleção local desmonta %s, inclusive ao reabrir a mesma conversa",async(gatilhoNome)=>{
+ const p={...props,opcoesFiltro:{setores:["COMERCIAL"],numeros:[{id:"n1",rotulo:"Central",saude:"conectado"}]}} as PropsInboxNovo;
+ await render(p);const atalhos=ouvintes.filter(o=>o.tipo==="keydown").length;
+ for(let rodada=0;rodada<2;rodada++){
+  if(rodada)await evento("click",rotulo("Voltar para a lista"));const gatilho=rotulo(gatilhoNome);gatilho.focus();await evento("click",gatilho);expect(container.querySelector('[role="dialog"]')!==null).toBe(true);const spy=vi.spyOn(gatilho,"focus");
+  const linha=rotulo("Conversas").querySelectorAll("button").find(e=>e.textContent?.includes("Ana"))!;await evento("click",linha);expect(container.querySelector('[role="dialog"]')===null).toBe(true);expect(doc.activeElement===rotulo("Conversa")).toBe(true);expect(spy).not.toHaveBeenCalled();expect(ouvintes.filter(o=>o.tipo==="keydown")).toHaveLength(atalhos);spy.mockRestore();
+ }
+});
+it.each(["Filtros","Todos os números · 1 conectado"])("navegação recebida com %s aberto fecha e foca a nova conversa",async(gatilhoNome)=>{
+ const p={...props,opcoesFiltro:{setores:["COMERCIAL"],numeros:[{id:"n1",rotulo:"Central",saude:"conectado"}]}} as PropsInboxNovo;
+ await render(p);await evento("click",rotulo(gatilhoNome));expect(container.querySelector('[role="dialog"]')!==null).toBe(true);await render({...p,selecionado:"a1"});expect(container.querySelector('[role="dialog"]')===null).toBe(true);expect(doc.activeElement===rotulo("Conversa")).toBe(true);
+});

@@ -319,6 +319,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
 
   function abrir(id: string) {
+    focoAoFecharPopover.current = regiaoConversa.current;
+    setNovaConversaAberta(false);
     selecionadoRef.current = id;
     pedirLeitura(id);
     setSelecionado(id);
