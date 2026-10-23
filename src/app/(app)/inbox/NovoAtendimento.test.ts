@@ -37,3 +37,11 @@ describe("NovoAtendimento", () => {
     expect(html).not.toContain("Nenhum destinatário no seu escopo");
   });
 });
+
+it("compacto retira só moldura do formulário e mantém destinatário/canal/action única",()=>{
+ const opcoes={destinos:[{chave:"SECRETARIA:a1",nome:"Secretaria · Ana",finalidade:"SECRETARIA",alunoId:"a1"}],numeros:[],comercial:false};
+ const h=renderToStaticMarkup(createElement(NovoAtendimento,{opcoes,compacto:true} as never));const form=h.match(/<form[^>]*class="([^"]+)"/)?.[1]??"";
+ expect(form).not.toContain("rounded-lg");expect(form).not.toContain("border-gray-200");expect(form).not.toContain("bg-surface");expect(form.split(/\s+/)).not.toContain("p-3");
+ expect(h.match(/<form/g)).toHaveLength(1);expect(h).toContain("Finalidade e destinatário");expect(h).toContain("Canal da escola");expect(h).toContain("Abrir atendimento");
+ const normal=renderToStaticMarkup(createElement(NovoAtendimento,{opcoes} as never));expect(normal).toContain("rounded-lg border border-gray-200 bg-surface p-3");
+});

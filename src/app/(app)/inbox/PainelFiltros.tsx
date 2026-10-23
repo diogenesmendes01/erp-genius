@@ -13,18 +13,8 @@ export interface PropsPainelFiltros {
   numeros: { id: string; rotulo: string }[];
 }
 
-/** Filtros no formato da URL da tela: setor, numero, resp, status, naoLidas=1, prazo=estourado e busca. */
-export function paramsDaUrl(f: FiltrosInbox): URLSearchParams {
-  const q = new URLSearchParams();
-  if (f.setor) q.set("setor", f.setor);
-  if (f.numeroId) q.set("numero", f.numeroId);
-  if (f.responsavel) q.set("resp", f.responsavel);
-  if (f.status) q.set("status", f.status);
-  if (f.naoLidas) q.set("naoLidas", "1");
-  if (f.prazoEstourado) q.set("prazo", "estourado");
-  if (f.busca) q.set("busca", f.busca);
-  return q;
-}
+import { paramsDaUrl } from "./filtros-url";
+export { paramsDaUrl } from "./filtros-url";
 
 const CAMPO = "w-full min-w-0 rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 

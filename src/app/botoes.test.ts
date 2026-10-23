@@ -36,6 +36,9 @@ const FONTE_DO_BOTAO = "src/components/Botao.tsx";
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
+  "src/app/(app)/inbox/ChipsFiltro.tsx": 1, // filtros rápidos, grupo rotulado com aria-pressed
+  "src/app/(app)/inbox/PopoverFiltros.tsx": 2, // seleção única de setor e status
+  "src/app/(app)/inbox/SeletorNumero.tsx": 2, // itens do seletor, não ação de negócio
   "src/app/(app)/inbox/ItemConversa.tsx": 1, // item de lista: seleção anuncia aria-current, não ação de negócio
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
@@ -64,6 +67,11 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/components/BotaoIcone.tsx": ["rotulo"],
+  "src/app/(app)/inbox/ChipsFiltro.tsx": ["key c.id"],
+  "src/app/(app)/inbox/ColunaConversas.tsx": ['"Remover filtro " + f.rotulo', "Limpar"],
+  "src/app/(app)/inbox/PopoverFiltros.tsx": ["key s", "key s"],
+  "src/app/(app)/inbox/SeletorNumero.tsx": ["rotulo", "Todos os números", "instavel · Instável"],
   "src/app/(app)/inbox/ItemConversa.tsx": ["(sem nome)"], // só a linha de conversa: nome dinâmico, seleção em aria-current
   "src/app/(app)/aria/_componentes/Campos.tsx": ["Ligado · Desligado"], // interruptor (role=switch): liga/desliga, é estado e não ação
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx": ["Remover documento"], // ícone de lixeira
@@ -1165,6 +1173,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
+  { arquivo: "src/components/BotaoIcone.tsx", rotulo: "rotulo", motivo: "primitivo de ícone: ativo é apresentação do estado anunciado pelo chamador em aria-expanded; Fechar não alterna estado" },
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
   { arquivo: "src/app/(app)/contatos/FichaContato.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected, que é o atributo próprio da aba; aria-pressed não vale para tab" },
