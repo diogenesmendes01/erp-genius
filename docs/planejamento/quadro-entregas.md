@@ -6536,3 +6536,8 @@ SobreROOT4829, temCapacidade substitui variável ambígua;3botõesdisabled refer
 ## Follow-up pós-merge385 C3 — referências verificadas dos manifestos
 
 Somente quatro paths no parecer histórico305 foram corrigidos de inbox-capturas para inbox-305-visual/menu-mensagem-{antes,depois,motor-antes,motor-depois}/manifesto.json. Destinos rastreados/reais conferidos d4dce3 e repetidos antespatch; hashes/SHAs/pareceres/imagens mantidos. Nenhuma novaQAvisual/upload/PNG/src/harness/deps. Relatório output/inbox-posmerge-ui-review.md contém os quatroOIDs. Identidade produtiva contra50a4 e diffcheck0; não atribuir novaexecução dos gates384 a estasMD. Demais documentos do inventário seguem ROOT.
+
+
+## Follow-up pós-merge395 C6 — Escape normal e consumido pelo editor
+
+Decisão explícita: não ignorar inputs genericamente; Escape normal emcoluna fecha/retornafoco/reabrecommesmocampo+rascunho; e.defaultPrevented do editorfilho mantémaberto. PatchsóguardlocalPainelContato, semhelperdialogo/global/negócio/IME. RED2bbd1e1falha10passes→GREENc06e2b11/11, casosReactDOM reais+DOMmínimo;9antigosincldiálogos/isolamentopreservados. Gatefinalcombinado384/39510690/d629e611arquivos288testes0;TSC58024/e8d12fheap8192,lint5fontes71decb0 Node22.23.2, sem-t/skipsnovos. SemDB/browser/PNG/Prisma/deps/global/push. SPECcasca+output/inbox-posmerge-ui-review.md registramcontrato/limites e3commits porárea. QAexata/composição/CI seguemintegrador; não reatribuir fotos históricas.
