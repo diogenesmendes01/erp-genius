@@ -27,6 +27,21 @@ Atalhos:
 
 Para rodar localmente, ver [`SETUP.md`](SETUP.md).
 
+## Massa de dados de QA
+
+Ambiente de QA apenas. Nunca rode em produção real.
+
+1. `QA_SEED_PASSWORD=... npm run seed:qa`: contas de todos os perfis (a senha vem só do ambiente, nunca do repositório).
+2. `QA_SEED_PASSWORD=... QA_DADOS_JSON=/caminho/fora/do/repo.json npm run seed:qa-dados`: configuração (réguas e automações em `SHADOW`, preços oficiais CR/PA, câmbio), professores, turmas, alunos, matrículas e histórico, cobranças e baixas, calendário, aulas, presenças e notas, CRM, B2B, WhatsApp e a conta do portal do aluno. O JSON com os dados reais **não** é versionado. Sem ele, só a massa inventada é gravada. `QA_HOJE=AAAA-MM-DD` fixa a data de referência.
+3. `QA_CLEANUP_CONFIRMAR=sim npm run cleanup:qa`: remove todos os registros com id `qa_*`.
+
+Convenções:
+- Ids determinísticos `qa_<entidade>_<chave>`, gravados com upsert ou `createMany({ skipDuplicates })`, então o seed é idempotente e pode ser reexecutado.
+- Registros inventados usam o prefixo `QA-`, e-mails `@qa.geniusidiomas.test` e telefones `+5060000xxxx`.
+- Baixas passam por `Recebimento` + `DestinacaoRecebimento`, como no app. Não há mensagens `NA_FILA` nem solicitações de envio do portal.
+- Recebimentos e versões de calendário são imutáveis no app. Por isso a limpeza roda numa transação com `session_replication_role = replica`, e exige um papel com permissão para isso.
+- A limpeza não reverte os valores das linhas de `PrecoReferencia` preexistentes que o seed atualizou para a tabela oficial.
+
 ## Status
 
 A consolidação da SPEC está em desenvolvimento local. Consulte o [quadro de entregas](docs/planejamento/quadro-entregas.md) para evidências e pendências. Integrações externas continuam desligadas até homologação; este merge não autoriza produção.
