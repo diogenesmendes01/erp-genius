@@ -19,7 +19,7 @@ export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: bo
   ...(o.pode("notaInterna") ? [item("nota", "Nota interna", IconNote)] : []),
   ...(o.pode("agendar") ? [item("agendar", "Agendar mensagem", IconClock)] : []),
   ...(o.pode("convidar") || o.pode("agendar") ? [item("pendentes", "Convites e agendamentos", IconCalendarEvent)] : []),
-  item("buscar", "Buscar na conversa", IconSearch, { dica: "Em breve", desabilitado: true, divisorDepois: true }),
+  item("buscar", "Buscar na conversa", IconSearch, { divisorDepois: true }),
   ...(o.pode("atribuir") ? [item("atribuir", "Atribuir", IconUserCheck)] : []),
   ...(o.pode("devolver") ? [item("devolver", "Devolver para a fila", IconArrowBackUp)] : []),
   ...(o.pode("convidar") ? [item("convidar", "Convidar", IconUserPlus, { divisorDepois: true })] : []),

@@ -1,0 +1,8 @@
+import { createElement, createRef } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, it } from "vitest";
+import { VirtualList } from "@/components/conversa/VirtualList";
+import { decorarThread, itensDaThread, type ItemThreadVisual } from "@/components/conversa/itens-thread";
+import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consultas-inbox";
+import { encontrarMensagens } from "./busca-conversa";
+it("pin do ID real monta achado fora da janela com dias/notas intercalados sem tocar a lista padrão",()=>{const msgs=Array.from({length:150},(_,i)=>({id:'m['+i+']',corpo:i===149?'Matrícula':'outro',criadoEm:new Date(Date.UTC(2026,9,20+Math.floor(i/50),12,i%50)).toISOString(),direcao:'ENTRADA'})) as MensagemThread[];const notas=msgs.filter((_,i)=>i%10===0).map((m,i)=>({id:'n'+i,nota:'Matrícula da nota',criadoEm:m.criadoEm,origem:'atendimento'})) as NotaInternaThread[];const visual=decorarThread(itensDaThread(msgs,notas,false,false),{fuso:'UTC',agora:new Date('2026-10-22T12:00:00Z'),transferidoDe:'Comercial'});const id=encontrarMensagens(msgs,'matricula')[0];const render=(pins:string[])=>renderToStaticMarkup(createElement(VirtualList<ItemThreadVisual>,{items:visual,getKey:i=>i.id,renderItem:i=>createElement('p',{'data-prova':i.id},i.id),scrollRef:createRef<HTMLDivElement>(),estimatedHeight:72,stableMount:true,pinKeys:pins}));expect(visual.length).toBeGreaterThan(150);expect(visual.findIndex(i=>i.id===id)).toBeGreaterThan(149);expect(render([])).not.toContain('data-prova="m[149]"');expect(render([id])).toContain('data-prova="m[149]"');expect(encontrarMensagens(msgs,'matricula')).toEqual(['m[149]']);});
