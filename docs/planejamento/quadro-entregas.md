@@ -4975,3 +4975,20 @@ Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
 C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
 output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
 legada de quatro elementos por dois, mantendo os contratos de identidade.
+
+## PR #393 — C2/C4: cálculo puro e selo acessível
+
+Regra de prazo extraída para módulo puro, com reexport compatível no relógio
+cliente. Estado visual deixa de importar módulo cliente. Selo IA expõe nome
+“Aria atendendo”; Avatar comum mantém markup decorativo idêntico. TDD duas
+falhas causais antes, recorte 4 arquivos / 57 testes depois. Uma guarda global
+apontou literal legado na fixture nova; execução interrompida com saída 1,
+fixture corrigida para SIMULADO e guarda preservada. Global repetido 85183
+terminou 0: 849 arquivos / 6.645 testes unitários, sem filtro/ignorados,
+maxWorkers2. TSC73432 e lint57857 terminaram 0; lint tem 40 avisos herdados.
+
+Chrome offline: 40 pares × dois temas, 80 comparações de geometria/estilo,
+40 nomes IA acessíveis e markup comum idêntico. Mesma fonte fallback; não é
+tela Next/RSC completa. Duas imagens inspecionadas e locais. Sem DB/envio.
+Relatório output/pr393-qa/revisao.md. Parecer do head final e CI pendentes;
+#392/B2 ainda bloqueia a integração da pilha em main por decisão humana.

@@ -42,6 +42,20 @@ um componente.tsx e os consumidores ficam dentro das superfícies previstas.
 
 Verificações e pendências estão no quadro único e em output/inbox-309-report.md.
 
+## Revisão de fronteira de execução e acessibilidade
+
+A regra `prazoEstourado` reside em `prazo-atendimento.ts`, sem diretiva cliente.
+`estado-visual.ts` importa essa regra pura e `prazo-vivo.ts` preserva o reexport
+para os consumidores existentes. O critério estrito de vencimento não muda.
+Uma guarda de dependência calcula estados mesmo quando o módulo cliente do
+relógio está indisponível; isso não equivale a uma renderização RSC completa.
+
+Com `selo="ia"`, o Avatar expõe `role="img"` e o nome “Aria atendendo”. Sem
+selo, permanece decorativo com `aria-hidden`, com markup idêntico ao anterior.
+Os atributos não acrescentam nós, classes ou alterações geométricas. A prova
+isolada em Chrome usa os componentes SSR e CSS locais, com a mesma fonte de
+fallback antes/depois; não substitui o aceite das telas consumidoras.
+
 ## Aceite dos produtores
 
 Fonte309final bcda5a04bb849579dea79ef46a2ffb333b6ab6f3: iniciais são capitalizadas e limitadas por ponto Unicode no flatMap original, sem expansão acima de duas nem corte de pares surrogate. A simplificação preserva a análise estática de identificação, sem alterar suas guardas/exceções/profundidade. TESTER4arquivos83testes0 e parecer favorável. Global combinado com310 na fonte103a507d sessão15987exit0:850arquivos/6634testes,TSCheap8192 e lint0erros40avisos,Node22.23.2. Parecer/logs em `output/inbox-309-qa/`. Publicação sobre baseE1estável3a, sem alteração de código309 após esta revisão. Visual dos consumidores novos segue Step5/Task7; não há tela própria nesta issue.
