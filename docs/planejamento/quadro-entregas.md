@@ -5023,3 +5023,15 @@ Status confirmado no GitHub em23/10: #299 fechada às02:31:28UTC após merge
 do PR382 na main3d756a4e (R6 exata37a78dfe, TESTER54+39 e5checksCI verdes).
 Total4/81issues integradas: #298,#299,#302,#303. As demais com PR aberto
 não são contadas como concluídas.
+## PR #395 — C1/C3: limites documentados e foco do opt-out
+
+Issue #308 recebeu adendo dos limiares 960/1400 px e lista 300/372 px, com a
+justificativa da Sidebar 224 px e medições da SPEC. Protótipo preservado.
+Botão de origem do opt-out permanece habilitado; o modal já isola o fundo
+com inert, e o helper global não foi alterado. TDD RED 2 falhas → GREEN
+6 arquivos / 33 testes, sem filtro/ignorados; TypeScript 52955 e lint dos
+arquivos alterados, saída 0. Chrome real 12/12 contextos (Voltar/Escape,
+1440/1024/390, dois temas) devolveu foco, conservou painel e não confirmou
+opt-out. Banco ci-integracao: 7 contatos fictícios, nenhum opt-out ativo.
+Relatório output/pr395-qa/foco.md e JSON. B1/C2 dependem de merges normais dos
+pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
