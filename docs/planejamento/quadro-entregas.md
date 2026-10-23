@@ -6073,3 +6073,10 @@ ROOTliberoupublicaçãoapósgates;sourcefinalC3/menuidênticosf896,MDposteriores
 nãoalteramcódigo. Pacote85f preservado+menuA7/29f16PNG1677732B/SHA4faa6...
 remoto/hash/DRAFTconfirmados,fontes/limites explícitos,sem alegarE2EenvioC3.
 CI/main/392B2 pendentes. output/pr403-qa contémpareceresindependentescurados.
+
+
+### #319 — entrega visualDEV final4fade e ambiente restaurado
+
+Fonte executável4fade imutável: formal3127(42PNG)+mobile22954(12PNG), longa56958(30PNG)+corrida66806(12PNG;preflight70678separado0),Triagem66205(6PNG), todas saídas0 e102PNG inspecionadas. Allowlists explícitas normal54/longa42/triagem6 em output/inbox-319-*-allowlist.json,9.015.418B; SHA normal1165…/longaa6e2…/triagem8a79…. Validador400868 saída0, nenhum binário/raw/probe/negativo emGit. GET200 nativoCDPexato+finished/body,1documento/SSEmáx1/0falhas por contexto. N/Aprotótipo5estados; mobile janela61px/alerta e nota parciais/retryTab6 e painel-vazio após scroll local estão explicitamente limitados, sem alegar cabimento inicial. Triagem banner>=960 acima do vazio/mobilecentraloculta, semAPIextra/envio. Negativos integrais10159/92223/83659/84095/96724/88639/51674/85691 preservados, sem reaproveitar parciais.
+
+ROOT informou global moderno903arquivos/7101testes/TSC/lint0 e TESTERestático13/2120; nãoéfullDEV nem atribuídoaCLIantiga. Todos browsersfechados,preview20486paradoCtrlC1esperado/3111livre;restauraçãoFINAL4f3b20 saída0 preservou424hashes/1372originais/canônica3msgs1nota. ApenasNextAGENTSgerado removido apósstop. Commit final sóreport/SPEC/quadro/3allowlists+2evidênciasmetadatasanitizadas; fonte4fade permaneceigual. QA Triagem1769/pacote remoto/publicação aguardamROOT; não presumirhomologação/PR/upload. Sem320.

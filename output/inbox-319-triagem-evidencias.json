@@ -1,0 +1,354 @@
+{
+  "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+  "provas": [
+    {
+      "execucao": "output/inbox-319-final-probes/triagem-final-real-claro-1440-2026-10-23T08-34-23.384Z",
+      "tema": "claro",
+      "tamanho": {
+        "width": 1440,
+        "height": 900
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "estado": {
+        "urlC": null,
+        "triagemTexto": "Triagem administrativa · 1 mensagens sem finalidade",
+        "triagemRect": {
+          "x": 621,
+          "y": 25,
+          "width": 794,
+          "height": 20,
+          "top": 25,
+          "right": 1415,
+          "bottom": 45,
+          "left": 621
+        },
+        "vazioRect": {
+          "x": 942.453125,
+          "y": 472,
+          "width": 151.078125,
+          "height": 22.5,
+          "top": 472,
+          "right": 1093.53125,
+          "bottom": 494.5,
+          "left": 942.453125
+        },
+        "conversaDisplay": "flex",
+        "listaDisplay": "flex",
+        "listaRect": {
+          "x": 224,
+          "y": 0,
+          "width": 372,
+          "height": 900,
+          "top": 0,
+          "right": 596,
+          "bottom": 900,
+          "left": 224
+        },
+        "painelPresente": 0,
+        "docScroll": [
+          0,
+          0
+        ],
+        "viewport": [
+          1440,
+          900
+        ],
+        "ordem": true
+      }
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/triagem-final-real-escuro-1440-2026-10-23T08-34-27.734Z",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 1440,
+        "height": 900
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "estado": {
+        "urlC": null,
+        "triagemTexto": "Triagem administrativa · 1 mensagens sem finalidade",
+        "triagemRect": {
+          "x": 621,
+          "y": 25,
+          "width": 794,
+          "height": 20,
+          "top": 25,
+          "right": 1415,
+          "bottom": 45,
+          "left": 621
+        },
+        "vazioRect": {
+          "x": 942.453125,
+          "y": 472,
+          "width": 151.078125,
+          "height": 22.5,
+          "top": 472,
+          "right": 1093.53125,
+          "bottom": 494.5,
+          "left": 942.453125
+        },
+        "conversaDisplay": "flex",
+        "listaDisplay": "flex",
+        "listaRect": {
+          "x": 224,
+          "y": 0,
+          "width": 372,
+          "height": 900,
+          "top": 0,
+          "right": 596,
+          "bottom": 900,
+          "left": 224
+        },
+        "painelPresente": 0,
+        "docScroll": [
+          0,
+          0
+        ],
+        "viewport": [
+          1440,
+          900
+        ],
+        "ordem": true
+      }
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/triagem-final-real-claro-1024-2026-10-23T08-34-29.639Z",
+      "tema": "claro",
+      "tamanho": {
+        "width": 1024,
+        "height": 768
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "estado": {
+        "urlC": null,
+        "triagemTexto": "Triagem administrativa · 1 mensagens sem finalidade",
+        "triagemRect": {
+          "x": 549,
+          "y": 25,
+          "width": 450,
+          "height": 20,
+          "top": 25,
+          "right": 999,
+          "bottom": 45,
+          "left": 549
+        },
+        "vazioRect": {
+          "x": 698.453125,
+          "y": 406,
+          "width": 151.078125,
+          "height": 22.5,
+          "top": 406,
+          "right": 849.53125,
+          "bottom": 428.5,
+          "left": 698.453125
+        },
+        "conversaDisplay": "flex",
+        "listaDisplay": "flex",
+        "listaRect": {
+          "x": 224,
+          "y": 0,
+          "width": 300,
+          "height": 768,
+          "top": 0,
+          "right": 524,
+          "bottom": 768,
+          "left": 224
+        },
+        "painelPresente": 0,
+        "docScroll": [
+          0,
+          0
+        ],
+        "viewport": [
+          1024,
+          768
+        ],
+        "ordem": true
+      }
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/triagem-final-real-escuro-1024-2026-10-23T08-34-31.551Z",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 1024,
+        "height": 768
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "estado": {
+        "urlC": null,
+        "triagemTexto": "Triagem administrativa · 1 mensagens sem finalidade",
+        "triagemRect": {
+          "x": 549,
+          "y": 25,
+          "width": 450,
+          "height": 20,
+          "top": 25,
+          "right": 999,
+          "bottom": 45,
+          "left": 549
+        },
+        "vazioRect": {
+          "x": 698.453125,
+          "y": 406,
+          "width": 151.078125,
+          "height": 22.5,
+          "top": 406,
+          "right": 849.53125,
+          "bottom": 428.5,
+          "left": 698.453125
+        },
+        "conversaDisplay": "flex",
+        "listaDisplay": "flex",
+        "listaRect": {
+          "x": 224,
+          "y": 0,
+          "width": 300,
+          "height": 768,
+          "top": 0,
+          "right": 524,
+          "bottom": 768,
+          "left": 224
+        },
+        "painelPresente": 0,
+        "docScroll": [
+          0,
+          0
+        ],
+        "viewport": [
+          1024,
+          768
+        ],
+        "ordem": true
+      }
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/triagem-final-real-claro-320-2026-10-23T08-34-33.529Z",
+      "tema": "claro",
+      "tamanho": {
+        "width": 320,
+        "height": 500
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "estado": {
+        "urlC": null,
+        "triagemTexto": "Triagem administrativa · 1 mensagens sem finalidade",
+        "triagemRect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "vazioRect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "conversaDisplay": "none",
+        "listaDisplay": "flex",
+        "listaRect": {
+          "x": 0,
+          "y": 57,
+          "width": 320,
+          "height": 443,
+          "top": 57,
+          "right": 320,
+          "bottom": 500,
+          "left": 0
+        },
+        "painelPresente": 0,
+        "docScroll": [
+          0,
+          0
+        ],
+        "viewport": [
+          320,
+          500
+        ],
+        "ordem": true
+      }
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/triagem-final-real-escuro-320-2026-10-23T08-34-35.386Z",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 320,
+        "height": 500
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "estado": {
+        "urlC": null,
+        "triagemTexto": "Triagem administrativa · 1 mensagens sem finalidade",
+        "triagemRect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "vazioRect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "conversaDisplay": "none",
+        "listaDisplay": "flex",
+        "listaRect": {
+          "x": 0,
+          "y": 57,
+          "width": 320,
+          "height": 443,
+          "top": 57,
+          "right": 320,
+          "bottom": 500,
+          "left": 0
+        },
+        "painelPresente": 0,
+        "docScroll": [
+          0,
+          0
+        ],
+        "viewport": [
+          320,
+          500
+        ],
+        "ordem": true
+      }
+    }
+  ],
+  "corposRscOuApiIncluidos": false
+}

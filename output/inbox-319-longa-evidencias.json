@@ -1,0 +1,1674 @@
+{
+  "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+  "provas": [
+    {
+      "execucao": "output/inbox-319-final-probes/longa-native-claro-1024-2026-10-23T08-19-35.855Z",
+      "cenario": "longa-native",
+      "tema": "claro",
+      "tamanho": {
+        "width": 1024,
+        "height": 768
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": null,
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "notasMontadas": [
+          "inbox-demo-nota-beatriz-307"
+        ],
+        "foco": "Buscar na conversa"
+      },
+      "notaDuranteCarga": {
+        "montada": 1,
+        "rect": {
+          "x": 559,
+          "y": 341.8125,
+          "width": 430,
+          "height": 113.109375
+        },
+        "pendente": true,
+        "limite": "Rolagem instrumental real parafoto da nota; nãoéprova de foco."
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          1024,
+          768
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 559,
+          "y": -7009,
+          "width": 430,
+          "height": 40,
+          "top": -7009,
+          "right": 989,
+          "bottom": -6969,
+          "left": 559
+        },
+        "retry": {
+          "x": 843.78125,
+          "y": -7001,
+          "width": 103.8125,
+          "height": 24,
+          "top": -7001,
+          "right": 947.59375,
+          "bottom": -6977,
+          "left": 843.78125
+        },
+        "scroll": {
+          "scrollTop": 7217,
+          "clientHeight": 498,
+          "scrollHeight": 9480,
+          "rect": {
+            "x": 524,
+            "y": 149,
+            "width": 500,
+            "height": 498,
+            "top": 149,
+            "right": 1024,
+            "bottom": 647,
+            "left": 524
+          }
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetry": 6,
+      "erroParcialDepoisTeclado": {
+        "x": 843.78125,
+        "y": 216,
+        "width": 103.8125,
+        "height": 24
+      },
+      "listaInertAntesFechar": null,
+      "listaInertDepoisFechar": null,
+      "painelAModal": null,
+      "focoAntesFechar": null,
+      "focoDepoisFechar": null,
+      "focoFinal": null,
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 12624,
+          "sha256": "0c33db289f4f56c5b12ea2d2ded4a0166c920ec7aace6c018fc4d4e175b8722b",
+          "mensagens": 33,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjFUMjE6MTQ6NTAuMTIwWiIsImlkIjoiaW5ib3gtZGVtby1tc2ctYmVhdHJpei1vbnRlbS0zMDcifQ",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAyOSJ9",
+          "temMais": false,
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/longa-native-claro-1440-2026-10-23T08-19-00.955Z",
+      "cenario": "longa-native",
+      "tema": "claro",
+      "tamanho": {
+        "width": 1440,
+        "height": 900
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": null,
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "notasMontadas": [
+          "inbox-demo-nota-beatriz-307"
+        ],
+        "foco": "Buscar na conversa"
+      },
+      "notaDuranteCarga": {
+        "montada": 1,
+        "rect": {
+          "x": 630.71875,
+          "y": 407.8125,
+          "width": 426.5625,
+          "height": 113.109375
+        },
+        "pendente": true,
+        "limite": "Rolagem instrumental real parafoto da nota; nãoéprova de foco."
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 630.71875,
+          "y": -6963,
+          "width": 426.5625,
+          "height": 40,
+          "top": -6963,
+          "right": 1057.28125,
+          "bottom": -6923,
+          "left": 630.71875
+        },
+        "retry": {
+          "x": 913.78125,
+          "y": -6955,
+          "width": 103.8125,
+          "height": 24,
+          "top": -6955,
+          "right": 1017.59375,
+          "bottom": -6931,
+          "left": 913.78125
+        },
+        "scroll": {
+          "scrollTop": 7171,
+          "clientHeight": 630,
+          "scrollHeight": 9501,
+          "rect": {
+            "x": 596,
+            "y": 149,
+            "width": 496,
+            "height": 630,
+            "top": 149,
+            "right": 1092,
+            "bottom": 779,
+            "left": 596
+          }
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetry": 6,
+      "erroParcialDepoisTeclado": {
+        "x": 913.78125,
+        "y": 216,
+        "width": 103.8125,
+        "height": 24
+      },
+      "listaInertAntesFechar": null,
+      "listaInertDepoisFechar": null,
+      "painelAModal": null,
+      "focoAntesFechar": null,
+      "focoDepoisFechar": null,
+      "focoFinal": null,
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 12624,
+          "sha256": "0c33db289f4f56c5b12ea2d2ded4a0166c920ec7aace6c018fc4d4e175b8722b",
+          "mensagens": 33,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjFUMjE6MTQ6NTAuMTIwWiIsImlkIjoiaW5ib3gtZGVtby1tc2ctYmVhdHJpei1vbnRlbS0zMDcifQ",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAyOSJ9",
+          "temMais": false,
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/longa-native-claro-320-2026-10-23T08-20-07.370Z",
+      "cenario": "longa-native",
+      "tema": "claro",
+      "tamanho": {
+        "width": 320,
+        "height": 500
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": null,
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "notasMontadas": [
+          "inbox-demo-nota-beatriz-307"
+        ],
+        "foco": "Buscar na conversa"
+      },
+      "notaDuranteCarga": {
+        "montada": 1,
+        "rect": {
+          "x": 10,
+          "y": 259.9375,
+          "width": 300,
+          "height": 133.40625
+        },
+        "pendente": true,
+        "limite": "Rolagem instrumental real parafoto da nota; nãoéprova de foco."
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          320,
+          500
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 10,
+          "y": -7782,
+          "width": 300,
+          "height": 87.5,
+          "top": -7782,
+          "right": 310,
+          "bottom": -7694.5,
+          "left": 10
+        },
+        "retry": {
+          "x": 108.09375,
+          "y": -7746.5,
+          "width": 103.8125,
+          "height": 44,
+          "top": -7746.5,
+          "right": 211.90625,
+          "bottom": -7702.5,
+          "left": 108.09375
+        },
+        "scroll": {
+          "scrollTop": 8150,
+          "clientHeight": 61,
+          "scrollHeight": 10596,
+          "rect": {
+            "x": 0,
+            "y": 296,
+            "width": 320,
+            "height": 61,
+            "top": 296,
+            "right": 320,
+            "bottom": 357,
+            "left": 0
+          }
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetry": 6,
+      "erroParcialDepoisTeclado": {
+        "x": 108.09375,
+        "y": 304.5,
+        "width": 103.8125,
+        "height": 44
+      },
+      "listaInertAntesFechar": null,
+      "listaInertDepoisFechar": null,
+      "painelAModal": null,
+      "focoAntesFechar": null,
+      "focoDepoisFechar": null,
+      "focoFinal": null,
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 12624,
+          "sha256": "0c33db289f4f56c5b12ea2d2ded4a0166c920ec7aace6c018fc4d4e175b8722b",
+          "mensagens": 33,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjFUMjE6MTQ6NTAuMTIwWiIsImlkIjoiaW5ib3gtZGVtby1tc2ctYmVhdHJpei1vbnRlbS0zMDcifQ",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAyOSJ9",
+          "temMais": false,
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/longa-native-escuro-1024-2026-10-23T08-19-51.647Z",
+      "cenario": "longa-native",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 1024,
+        "height": 768
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": null,
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "notasMontadas": [
+          "inbox-demo-nota-beatriz-307"
+        ],
+        "foco": "Buscar na conversa"
+      },
+      "notaDuranteCarga": {
+        "montada": 1,
+        "rect": {
+          "x": 559,
+          "y": 341.8125,
+          "width": 430,
+          "height": 113.109375
+        },
+        "pendente": true,
+        "limite": "Rolagem instrumental real parafoto da nota; nãoéprova de foco."
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          1024,
+          768
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 559,
+          "y": -7009,
+          "width": 430,
+          "height": 40,
+          "top": -7009,
+          "right": 989,
+          "bottom": -6969,
+          "left": 559
+        },
+        "retry": {
+          "x": 843.78125,
+          "y": -7001,
+          "width": 103.8125,
+          "height": 24,
+          "top": -7001,
+          "right": 947.59375,
+          "bottom": -6977,
+          "left": 843.78125
+        },
+        "scroll": {
+          "scrollTop": 7217,
+          "clientHeight": 498,
+          "scrollHeight": 9480,
+          "rect": {
+            "x": 524,
+            "y": 149,
+            "width": 500,
+            "height": 498,
+            "top": 149,
+            "right": 1024,
+            "bottom": 647,
+            "left": 524
+          }
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetry": 6,
+      "erroParcialDepoisTeclado": {
+        "x": 843.78125,
+        "y": 216,
+        "width": 103.8125,
+        "height": 24
+      },
+      "listaInertAntesFechar": null,
+      "listaInertDepoisFechar": null,
+      "painelAModal": null,
+      "focoAntesFechar": null,
+      "focoDepoisFechar": null,
+      "focoFinal": null,
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 12624,
+          "sha256": "0c33db289f4f56c5b12ea2d2ded4a0166c920ec7aace6c018fc4d4e175b8722b",
+          "mensagens": 33,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjFUMjE6MTQ6NTAuMTIwWiIsImlkIjoiaW5ib3gtZGVtby1tc2ctYmVhdHJpei1vbnRlbS0zMDcifQ",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAyOSJ9",
+          "temMais": false,
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/longa-native-escuro-1440-2026-10-23T08-19-19.960Z",
+      "cenario": "longa-native",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 1440,
+        "height": 900
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": null,
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "notasMontadas": [
+          "inbox-demo-nota-beatriz-307"
+        ],
+        "foco": "Buscar na conversa"
+      },
+      "notaDuranteCarga": {
+        "montada": 1,
+        "rect": {
+          "x": 630.71875,
+          "y": 407.8125,
+          "width": 426.5625,
+          "height": 113.109375
+        },
+        "pendente": true,
+        "limite": "Rolagem instrumental real parafoto da nota; nãoéprova de foco."
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 630.71875,
+          "y": -6963,
+          "width": 426.5625,
+          "height": 40,
+          "top": -6963,
+          "right": 1057.28125,
+          "bottom": -6923,
+          "left": 630.71875
+        },
+        "retry": {
+          "x": 913.78125,
+          "y": -6955,
+          "width": 103.8125,
+          "height": 24,
+          "top": -6955,
+          "right": 1017.59375,
+          "bottom": -6931,
+          "left": 913.78125
+        },
+        "scroll": {
+          "scrollTop": 7171,
+          "clientHeight": 630,
+          "scrollHeight": 9501,
+          "rect": {
+            "x": 596,
+            "y": 149,
+            "width": 496,
+            "height": 630,
+            "top": 149,
+            "right": 1092,
+            "bottom": 779,
+            "left": 596
+          }
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetry": 6,
+      "erroParcialDepoisTeclado": {
+        "x": 913.78125,
+        "y": 216,
+        "width": 103.8125,
+        "height": 24
+      },
+      "listaInertAntesFechar": null,
+      "listaInertDepoisFechar": null,
+      "painelAModal": null,
+      "focoAntesFechar": null,
+      "focoDepoisFechar": null,
+      "focoFinal": null,
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 12624,
+          "sha256": "0c33db289f4f56c5b12ea2d2ded4a0166c920ec7aace6c018fc4d4e175b8722b",
+          "mensagens": 33,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjFUMjE6MTQ6NTAuMTIwWiIsImlkIjoiaW5ib3gtZGVtby1tc2ctYmVhdHJpei1vbnRlbS0zMDcifQ",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAyOSJ9",
+          "temMais": false,
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/longa-native-escuro-320-2026-10-23T08-20-23.011Z",
+      "cenario": "longa-native",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 320,
+        "height": 500
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": null,
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "notasMontadas": [
+          "inbox-demo-nota-beatriz-307"
+        ],
+        "foco": "Buscar na conversa"
+      },
+      "notaDuranteCarga": {
+        "montada": 1,
+        "rect": {
+          "x": 10,
+          "y": 259.9375,
+          "width": 300,
+          "height": 133.40625
+        },
+        "pendente": true,
+        "limite": "Rolagem instrumental real parafoto da nota; nãoéprova de foco."
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          320,
+          500
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 10,
+          "y": -7782,
+          "width": 300,
+          "height": 87.5,
+          "top": -7782,
+          "right": 310,
+          "bottom": -7694.5,
+          "left": 10
+        },
+        "retry": {
+          "x": 108.09375,
+          "y": -7746.5,
+          "width": 103.8125,
+          "height": 44,
+          "top": -7746.5,
+          "right": 211.90625,
+          "bottom": -7702.5,
+          "left": 108.09375
+        },
+        "scroll": {
+          "scrollTop": 8150,
+          "clientHeight": 61,
+          "scrollHeight": 10596,
+          "rect": {
+            "x": 0,
+            "y": 296,
+            "width": 320,
+            "height": 61,
+            "top": 296,
+            "right": 320,
+            "bottom": 357,
+            "left": 0
+          }
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetry": 6,
+      "erroParcialDepoisTeclado": {
+        "x": 108.09375,
+        "y": 304.5,
+        "width": 103.8125,
+        "height": 44
+      },
+      "listaInertAntesFechar": null,
+      "listaInertDepoisFechar": null,
+      "painelAModal": null,
+      "focoAntesFechar": null,
+      "focoDepoisFechar": null,
+      "focoFinal": null,
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23477,
+          "sha256": "2ecc2439f698ab1a5f26cdf41ceab23eb17be4abc84ef05d4f21ba3cb69ec428",
+          "mensagens": 60,
+          "notas": [
+            "inbox-demo-nota-beatriz-307",
+            "inbox-319-estados-nota-recente"
+          ],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA5MCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTc6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTE0OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 23042,
+          "sha256": "c695416bc75418b9a08d63c74ca0766572d15738ac381d7299c243be9afc7472",
+          "mensagens": 60,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjEuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAzMCJ9",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTY6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTA4OSJ9",
+          "temMais": true,
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 12624,
+          "sha256": "0c33db289f4f56c5b12ea2d2ded4a0166c920ec7aace6c018fc4d4e175b8722b",
+          "mensagens": 33,
+          "notas": [],
+          "antes": "eyJlbSI6IjIwMjYtMTAtMjFUMjE6MTQ6NTAuMTIwWiIsImlkIjoiaW5ib3gtZGVtby1tc2ctYmVhdHJpei1vbnRlbS0zMDcifQ",
+          "depois": "eyJlbSI6IjIwMjYtMTAtMjJUMjI6NTU6MjAuMTIwWiIsImlkIjoiaW5ib3gtMzE5LWVzdGFkb3MtbXNnLTAyOSJ9",
+          "temMais": false,
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/corrida-painel-native-claro-1024-2026-10-23T08-32-13.622Z",
+      "cenario": "corrida-painel-native",
+      "tema": "claro",
+      "tamanho": {
+        "width": 1024,
+        "height": 768
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": true,
+      "final": {
+        "urlC": "inbox-demo-thiago-307",
+        "paineis": 1,
+        "heading": "Thiago Moreira",
+        "docScroll": [
+          0,
+          0
+        ],
+        "timeOrigin": 1792744334434.7
+      },
+      "notaDuranteCarga": null,
+      "erroParcialInicial": null,
+      "tabsAteRetry": null,
+      "erroParcialDepoisTeclado": null,
+      "listaInertAntesFechar": {
+        "inert": true,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 300,
+          "height": 768,
+          "top": 0,
+          "right": 524,
+          "bottom": 768,
+          "left": 224
+        }
+      },
+      "listaInertDepoisFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 300,
+          "height": 768,
+          "top": 0,
+          "right": 524,
+          "bottom": 768,
+          "left": 224
+        }
+      },
+      "painelAModal": "true",
+      "focoAntesFechar": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato"
+      },
+      "focoDepoisFechar": {
+        "tag": "BUTTON",
+        "texto": "",
+        "aria": "Painel do contato",
+        "rect": {
+          "x": 934,
+          "y": 15.5,
+          "width": 36,
+          "height": 36,
+          "top": 15.5,
+          "right": 970,
+          "bottom": 51.5,
+          "left": 934
+        }
+      },
+      "focoFinal": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato",
+        "rect": {
+          "x": 687,
+          "y": 10,
+          "width": 36,
+          "height": 36,
+          "top": 10,
+          "right": 723,
+          "bottom": 46,
+          "left": 687
+        }
+      },
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 616,
+          "sha256": "5ad9f60e10aa65f4b9ec757b2c4fe61e51ac3a2bcf269ad47847458290cdba68",
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 612,
+          "sha256": "461733b104e4ef8225316636c03b978de0e523002d26173c63d9b242d18b2105",
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/corrida-painel-native-claro-1440-2026-10-23T08-31-57.376Z",
+      "cenario": "corrida-painel-native",
+      "tema": "claro",
+      "tamanho": {
+        "width": 1440,
+        "height": 900
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": true,
+      "final": {
+        "urlC": "inbox-demo-thiago-307",
+        "paineis": 1,
+        "heading": "Thiago Moreira",
+        "docScroll": [
+          0,
+          0
+        ],
+        "timeOrigin": 1792744318458.7
+      },
+      "notaDuranteCarga": null,
+      "erroParcialInicial": null,
+      "tabsAteRetry": null,
+      "erroParcialDepoisTeclado": null,
+      "listaInertAntesFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 372,
+          "height": 900,
+          "top": 0,
+          "right": 596,
+          "bottom": 900,
+          "left": 224
+        }
+      },
+      "listaInertDepoisFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 372,
+          "height": 900,
+          "top": 0,
+          "right": 596,
+          "bottom": 900,
+          "left": 224
+        }
+      },
+      "painelAModal": null,
+      "focoAntesFechar": {
+        "tag": "BUTTON",
+        "texto": "BLBeatriz Lima19:14BUSCA 319 AÇÃO MATRÍCULA — marcador final fictício.Com vocêComercialPrazo estourado · 10 h 2 min",
+        "aria": null
+      },
+      "focoDepoisFechar": {
+        "tag": "BUTTON",
+        "texto": "BLBeatriz Lima19:14BUSCA 319 AÇÃO MATRÍCULA — marcador final fictício.Com vocêComercialPrazo estourado · 10 h 2 min",
+        "aria": null,
+        "rect": {
+          "x": 232,
+          "y": 556,
+          "width": 355,
+          "height": 116.5,
+          "top": 556,
+          "right": 587,
+          "bottom": 672.5,
+          "left": 232
+        }
+      },
+      "focoFinal": {
+        "tag": "BUTTON",
+        "texto": "TMThiago Moreira20:22Entrada fictícia #311 para thiago.ComercialPrazo estourado · 11 h 2 minNa fila",
+        "aria": null,
+        "rect": {
+          "x": 232,
+          "y": 322.5,
+          "width": 355,
+          "height": 116.5,
+          "top": 322.5,
+          "right": 587,
+          "bottom": 439,
+          "left": 232
+        }
+      },
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 616,
+          "sha256": "5ad9f60e10aa65f4b9ec757b2c4fe61e51ac3a2bcf269ad47847458290cdba68",
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 612,
+          "sha256": "461733b104e4ef8225316636c03b978de0e523002d26173c63d9b242d18b2105",
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/corrida-painel-native-claro-320-2026-10-23T08-32-29.451Z",
+      "cenario": "corrida-painel-native",
+      "tema": "claro",
+      "tamanho": {
+        "width": 320,
+        "height": 500
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": true,
+      "final": {
+        "urlC": "inbox-demo-thiago-307",
+        "paineis": 1,
+        "heading": "Thiago Moreira",
+        "docScroll": [
+          0,
+          0
+        ],
+        "timeOrigin": 1792744350603.3
+      },
+      "notaDuranteCarga": null,
+      "erroParcialInicial": null,
+      "tabsAteRetry": null,
+      "erroParcialDepoisTeclado": null,
+      "listaInertAntesFechar": {
+        "inert": true,
+        "display": "none",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "listaInertDepoisFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 0,
+          "y": 57,
+          "width": 320,
+          "height": 443,
+          "top": 57,
+          "right": 320,
+          "bottom": 500,
+          "left": 0
+        }
+      },
+      "painelAModal": "true",
+      "focoAntesFechar": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato"
+      },
+      "focoDepoisFechar": {
+        "tag": "BUTTON",
+        "texto": "",
+        "aria": "Painel do contato",
+        "rect": {
+          "x": 222,
+          "y": 72.5,
+          "width": 36,
+          "height": 36,
+          "top": 72.5,
+          "right": 258,
+          "bottom": 108.5,
+          "left": 222
+        }
+      },
+      "focoFinal": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato",
+        "rect": {
+          "x": 10,
+          "y": 67,
+          "width": 36,
+          "height": 36,
+          "top": 67,
+          "right": 46,
+          "bottom": 103,
+          "left": 10
+        }
+      },
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 616,
+          "sha256": "5ad9f60e10aa65f4b9ec757b2c4fe61e51ac3a2bcf269ad47847458290cdba68",
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 612,
+          "sha256": "461733b104e4ef8225316636c03b978de0e523002d26173c63d9b242d18b2105",
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/corrida-painel-native-escuro-1024-2026-10-23T08-32-21.441Z",
+      "cenario": "corrida-painel-native",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 1024,
+        "height": 768
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": true,
+      "final": {
+        "urlC": "inbox-demo-thiago-307",
+        "paineis": 1,
+        "heading": "Thiago Moreira",
+        "docScroll": [
+          0,
+          0
+        ],
+        "timeOrigin": 1792744342419
+      },
+      "notaDuranteCarga": null,
+      "erroParcialInicial": null,
+      "tabsAteRetry": null,
+      "erroParcialDepoisTeclado": null,
+      "listaInertAntesFechar": {
+        "inert": true,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 300,
+          "height": 768,
+          "top": 0,
+          "right": 524,
+          "bottom": 768,
+          "left": 224
+        }
+      },
+      "listaInertDepoisFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 300,
+          "height": 768,
+          "top": 0,
+          "right": 524,
+          "bottom": 768,
+          "left": 224
+        }
+      },
+      "painelAModal": "true",
+      "focoAntesFechar": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato"
+      },
+      "focoDepoisFechar": {
+        "tag": "BUTTON",
+        "texto": "",
+        "aria": "Painel do contato",
+        "rect": {
+          "x": 934,
+          "y": 15.5,
+          "width": 36,
+          "height": 36,
+          "top": 15.5,
+          "right": 970,
+          "bottom": 51.5,
+          "left": 934
+        }
+      },
+      "focoFinal": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato",
+        "rect": {
+          "x": 687,
+          "y": 10,
+          "width": 36,
+          "height": 36,
+          "top": 10,
+          "right": 723,
+          "bottom": 46,
+          "left": 687
+        }
+      },
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 616,
+          "sha256": "5ad9f60e10aa65f4b9ec757b2c4fe61e51ac3a2bcf269ad47847458290cdba68",
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 612,
+          "sha256": "461733b104e4ef8225316636c03b978de0e523002d26173c63d9b242d18b2105",
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/corrida-painel-native-escuro-1440-2026-10-23T08-32-05.565Z",
+      "cenario": "corrida-painel-native",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 1440,
+        "height": 900
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": true,
+      "final": {
+        "urlC": "inbox-demo-thiago-307",
+        "paineis": 1,
+        "heading": "Thiago Moreira",
+        "docScroll": [
+          0,
+          0
+        ],
+        "timeOrigin": 1792744326557.6
+      },
+      "notaDuranteCarga": null,
+      "erroParcialInicial": null,
+      "tabsAteRetry": null,
+      "erroParcialDepoisTeclado": null,
+      "listaInertAntesFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 372,
+          "height": 900,
+          "top": 0,
+          "right": 596,
+          "bottom": 900,
+          "left": 224
+        }
+      },
+      "listaInertDepoisFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 372,
+          "height": 900,
+          "top": 0,
+          "right": 596,
+          "bottom": 900,
+          "left": 224
+        }
+      },
+      "painelAModal": null,
+      "focoAntesFechar": {
+        "tag": "BUTTON",
+        "texto": "BLBeatriz Lima19:14BUSCA 319 AÇÃO MATRÍCULA — marcador final fictício.Com vocêComercialPrazo estourado · 10 h 2 min",
+        "aria": null
+      },
+      "focoDepoisFechar": {
+        "tag": "BUTTON",
+        "texto": "BLBeatriz Lima19:14BUSCA 319 AÇÃO MATRÍCULA — marcador final fictício.Com vocêComercialPrazo estourado · 10 h 2 min",
+        "aria": null,
+        "rect": {
+          "x": 232,
+          "y": 556,
+          "width": 355,
+          "height": 116.5,
+          "top": 556,
+          "right": 587,
+          "bottom": 672.5,
+          "left": 232
+        }
+      },
+      "focoFinal": {
+        "tag": "BUTTON",
+        "texto": "TMThiago Moreira20:22Entrada fictícia #311 para thiago.ComercialPrazo estourado · 11 h 2 minNa fila",
+        "aria": null,
+        "rect": {
+          "x": 232,
+          "y": 322.5,
+          "width": 355,
+          "height": 116.5,
+          "top": 322.5,
+          "right": 587,
+          "bottom": 439,
+          "left": 232
+        }
+      },
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 616,
+          "sha256": "5ad9f60e10aa65f4b9ec757b2c4fe61e51ac3a2bcf269ad47847458290cdba68",
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 612,
+          "sha256": "461733b104e4ef8225316636c03b978de0e523002d26173c63d9b242d18b2105",
+          "semIntercepcao200": true
+        }
+      ]
+    },
+    {
+      "execucao": "output/inbox-319-final-probes/corrida-painel-native-escuro-320-2026-10-23T08-32-37.601Z",
+      "cenario": "corrida-painel-native",
+      "tema": "escuro",
+      "tamanho": {
+        "width": 320,
+        "height": 500
+      },
+      "exit": 0,
+      "documentos": 1,
+      "sseMaximo": 1,
+      "falhas": 0,
+      "aPendenteAoEscolherB": true,
+      "final": {
+        "urlC": "inbox-demo-thiago-307",
+        "paineis": 1,
+        "heading": "Thiago Moreira",
+        "docScroll": [
+          0,
+          0
+        ],
+        "timeOrigin": 1792744358510.4
+      },
+      "notaDuranteCarga": null,
+      "erroParcialInicial": null,
+      "tabsAteRetry": null,
+      "erroParcialDepoisTeclado": null,
+      "listaInertAntesFechar": {
+        "inert": true,
+        "display": "none",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "listaInertDepoisFechar": {
+        "inert": false,
+        "display": "flex",
+        "rect": {
+          "x": 0,
+          "y": 57,
+          "width": 320,
+          "height": 443,
+          "top": 57,
+          "right": 320,
+          "bottom": 500,
+          "left": 0
+        }
+      },
+      "painelAModal": "true",
+      "focoAntesFechar": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato"
+      },
+      "focoDepoisFechar": {
+        "tag": "BUTTON",
+        "texto": "",
+        "aria": "Painel do contato",
+        "rect": {
+          "x": 222,
+          "y": 72.5,
+          "width": 36,
+          "height": 36,
+          "top": 72.5,
+          "right": 258,
+          "bottom": 108.5,
+          "left": 222
+        }
+      },
+      "focoFinal": {
+        "tag": "BUTTON",
+        "texto": "Voltar para a conversaFechar painel",
+        "aria": "Fechar painel do contato",
+        "rect": {
+          "x": 10,
+          "y": 67,
+          "width": 36,
+          "height": 36,
+          "top": 67,
+          "right": 46,
+          "bottom": 103,
+          "left": 10
+        }
+      },
+      "transportes200": [
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 616,
+          "sha256": "5ad9f60e10aa65f4b9ec757b2c4fe61e51ac3a2bcf269ad47847458290cdba68",
+          "semIntercepcao200": true
+        },
+        {
+          "status": 200,
+          "requestfinished": true,
+          "finished": null,
+          "bytes": 612,
+          "sha256": "461733b104e4ef8225316636c03b978de0e523002d26173c63d9b242d18b2105",
+          "semIntercepcao200": true
+        }
+      ]
+    }
+  ],
+  "corposRscOuApiIncluidos": false
+}
