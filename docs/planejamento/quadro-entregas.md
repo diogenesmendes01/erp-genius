@@ -6122,3 +6122,6 @@ QA266favorávelestática, original47f69e99...versionado tester-composicao-266.md
 ## PR #402 — QA composta e fonte preservada
 
 QA6aafavorávelestática/hash1ee9e13c... versionada tester-composicao-6aa.md; DOM/hook/testesf94 eprodutores401preservados, semnovotestesDB/browser doparecer. Merge4012252sódocs/ancestralidade,1blocoquadroconservaambos,fonte6aaexecutáveligual. QAconcluída,401main/CI402aindagates.
+## PR #399 integrada; PR401 pronta para CI final
+
+#399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
