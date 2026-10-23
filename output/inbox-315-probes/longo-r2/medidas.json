@@ -1,0 +1,774 @@
+{
+  "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+  "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+  "resultados": [
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "light",
+      "width": 320,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 106,
+          "client": 106,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Voltar para a lista",
+            "x": 10,
+            "right": 46,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 172,
+            "right": 216,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 222,
+            "right": 258,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 264,
+            "right": 308,
+            "w": 44,
+            "h": 44
+          }
+        ],
+        "doc": {
+          "w": 320,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "light-320-nome.png",
+          "sha256": "96cf2a4a42c529adaf85b0b16a354412eaa027c180a0e9be7942aa05a1d92557",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320-menu.png",
+          "sha256": "8795ebe639806fe33bba7b78750badfd2f71466a56a304169f13ea4971a307c2",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320-painel-fim.png",
+          "sha256": "75e114021be824c82b86069dd335f26ee5fcdddd04091ccce06c671443db8d7a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "light",
+      "width": 390,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 176,
+          "client": 176,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Voltar para a lista",
+            "x": 10,
+            "right": 46,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 242,
+            "right": 286,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 292,
+            "right": 328,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 334,
+            "right": 378,
+            "w": 44,
+            "h": 44
+          }
+        ],
+        "doc": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "light-390-nome.png",
+          "sha256": "c70e43b2898bf2c2b314acaacf7b7dfe556180ee18317a1d90ed315dcfdf66cc",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-menu.png",
+          "sha256": "60f7015a0f624753a6ee455e88efb966663a5ff7829ba82d093574fbafa03688",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-painel-fim.png",
+          "sha256": "f4d2ec41a2890ed7fdb7838d9a34db62ba31a444b9dd5397d89390dcc4ded84c",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "light",
+      "width": 1400,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 114.046875,
+          "client": 114,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Buscar na conversa",
+            "x": 877,
+            "right": 913,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 919,
+            "right": 956,
+            "w": 37,
+            "h": 36
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 962,
+            "right": 998,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 1004,
+            "right": 1040,
+            "w": 36,
+            "h": 36
+          }
+        ],
+        "doc": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "light-1400-nome.png",
+          "sha256": "fa67d868267fd7625b377e8d2504e2353386132a5d3d868e6d9442c98618e0f5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1400-menu.png",
+          "sha256": "fc598bc7e2fec704a4480ffc32de72fc6adbac685a9f04af9377c6fe31c616fe",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1400-painel-fim.png",
+          "sha256": "7d83241d6fc14985bfb3f1230ab6d5706377da7fe9418a8a1a76fe38ca264694",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "light",
+      "width": 1440,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 154.046875,
+          "client": 154,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Buscar na conversa",
+            "x": 917,
+            "right": 953,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 959,
+            "right": 996,
+            "w": 37,
+            "h": 36
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 1002,
+            "right": 1038,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 1044,
+            "right": 1080,
+            "w": 36,
+            "h": 36
+          }
+        ],
+        "doc": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "light-1440-nome.png",
+          "sha256": "968c879e3bb755b1bcc381c065debfde6793877c633df308f86bf639e6d80602",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-menu.png",
+          "sha256": "c08a4f847add73150340443aa6676d7fdbc2c2d3bca89bc14b5f91af1930ba60",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-painel-fim.png",
+          "sha256": "2e48a5e34b7cd2918a078aab371894f848086eb066cc4d36877231bd747ecfa0",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "dark",
+      "width": 320,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 106,
+          "client": 106,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Voltar para a lista",
+            "x": 10,
+            "right": 46,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 172,
+            "right": 216,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 222,
+            "right": 258,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 264,
+            "right": 308,
+            "w": 44,
+            "h": 44
+          }
+        ],
+        "doc": {
+          "w": 320,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "dark-320-nome.png",
+          "sha256": "0719b6ddfcc8b91d5502c34f7c818868dddc71aa401d714667afa5c18c166783",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320-menu.png",
+          "sha256": "48bec2dd47a68b1076e4c09112e9654248ae08c85277c719aee577e31a628819",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320-painel-fim.png",
+          "sha256": "9576e233905809e27ec82f80aa7568b9f349d7621a3347b26c4d8a6f52c23771",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "dark",
+      "width": 390,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 176,
+          "client": 176,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Voltar para a lista",
+            "x": 10,
+            "right": 46,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 242,
+            "right": 286,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 292,
+            "right": 328,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 334,
+            "right": 378,
+            "w": 44,
+            "h": 44
+          }
+        ],
+        "doc": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "dark-390-nome.png",
+          "sha256": "7d1d7577931f1e8c49ab6c9d0416e4b9ed62c2d457630c168d1e1decf0276da0",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-menu.png",
+          "sha256": "317607d8bdb0104b04c0e5da715f40d3f67f591deea3158c222425351d2606d0",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-painel-fim.png",
+          "sha256": "0e5ca45711c3e3b4c1e4ca19e04939531fb5fb144f0d4b275d2559f56cbb1837",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "dark",
+      "width": 1400,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 114.046875,
+          "client": 114,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Buscar na conversa",
+            "x": 877,
+            "right": 913,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 919,
+            "right": 956,
+            "w": 37,
+            "h": 36
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 962,
+            "right": 998,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 1004,
+            "right": 1040,
+            "w": 36,
+            "h": 36
+          }
+        ],
+        "doc": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1400-nome.png",
+          "sha256": "99126909ec000c57cb202bebf620490230e17d2afb43fe6afbabf5467978a7b5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1400-menu.png",
+          "sha256": "b2f6e2d06dfe233be08aa875f7ecb707af88de5e025ae36175b28523779d3d1e",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1400-painel-fim.png",
+          "sha256": "bde45b8a706409d47471de8bd06c583a9c329617e939b429cbe040549aa65cd4",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+      "fixture": "dccdf8: nome97 +12tagsprivadas +3canonicas; integrador aplicou após restauro guardado",
+      "tema": "dark",
+      "width": 1440,
+      "height": 500,
+      "metrica": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092
+        },
+        "nome": {
+          "length": 97,
+          "title": 97,
+          "w": 154.046875,
+          "client": 154,
+          "scroll": 693,
+          "overflow": "ellipsis"
+        },
+        "controles": [
+          {
+            "nome": "Buscar na conversa",
+            "x": 917,
+            "right": 953,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Transferir",
+            "x": 959,
+            "right": 996,
+            "w": 37,
+            "h": 36
+          },
+          {
+            "nome": "Painel do contato",
+            "x": 1002,
+            "right": 1038,
+            "w": 36,
+            "h": 36
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "x": 1044,
+            "right": 1080,
+            "w": 36,
+            "h": 36
+          }
+        ],
+        "doc": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "painel": {
+        "nome": 97,
+        "tags": 15,
+        "unico": true
+      },
+      "alcance": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1440-nome.png",
+          "sha256": "aaee3afa0a7bdcce47b0e9a573b2c2d20d7785c72aa09ea95162253d4cced1e0",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-menu.png",
+          "sha256": "61491a73a6db14148dd99c79a1350f2654848da82557990c41c0c49072629e98",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-painel-fim.png",
+          "sha256": "ce0d2e669ee907f791b80004b31b73fa97c54ce91690849eb6c7e7f6631bd925",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}

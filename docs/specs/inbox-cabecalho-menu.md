@@ -29,3 +29,15 @@ Merge normal4fcdc6cad73c3ad8782405c29db8770122fa8432 em8b3c46ac475b8e881691b49a0
 Gates exatos8b Node22.23.2: recorte106arquivos1058testes sessão47282 exit0 (Inbox+componentes+guardas+retornodiálogo+leituraautomática+5harness;semfiltrosdenome/skips;integraçãoDBexcluídapelaconfiguração);TSC50243heap8192 exit0;lint24fontes0avisos exit0;gitdiffcheck0. Nenhuma suíteglobalprópria. Fonteproduto congelada8b; próximosartefatosdocumentaisnãoalteramruntime.
 
 Provasprivadasf7 continuam identificadas comoanteriores à composição; não são homologaçãoda8b. Próximo: previewcoordenado, formal44PNGs conversa/humano-compositor/menu-mais/celular-conversa/tablet-painel nosdoistemas, nomeslongos97 apósformalnormal, revisãoTESTER/globalintegrado peloROOT. Banco/fixturecanônicos preservados; não há processobrowser/DEVativo nemenvio de negócio.
+
+## Provas atuais e fechamento DEV — 23/10/2026
+
+Fonte visual efeb0e1f259bb295e4cfb39789c30807820ce337, runtime8b3c46ac475b8e881691b49a0d8139707771236d. Formal3772 EXIT0:44PNG (22app/22protótipo), conversa/humano-compositor/menu-mais nos3tamanhos e2temas, celular-conversa/tablet-painel nos2temas. Todas inspecionadas em22pranchas. Manifestos registram alguns GET cancelados e recuperados; nenhuma falha fatal/React/externos.
+
+Complemento longo12809 EXIT0:8contextos/24PNG,320/390/1400/1440×500×2temas, nome97 comtitle completo/ellipsis e15tags confirmadas antesmedição. Header68,controles dentro, motivo de bloqueio integral e último controle do painel alcançável por rolagem.24fotos inspecionadas em8pranchas e desktop original. Tentativa38148 EXIT1 preservada local, pois probe mediu tags antesGET; correção somente na prontidão do probe, nenhum patch deproduto. Não se clicou em Registraropt-out ou outra ação de negócio.
+
+Allowlist positiva atual em output/inbox-315-probes/allowlist-positiva-final.json:44formais+24longas+30pranchas, metadados e2probes/copier selecionados individualmente comSHA256; 107arquivos/14040081bytes. PNGs permanecem locais, não versionados. Hashes das68capturas conferidos; helperDOM392v1 em ambos alvos apósinteração/antesfoto. Negativos/HTMLbruto/logs/refsantigas excluídos. Provasf7 anteriores mantêm allowlist separada.
+
+Preview71311 encerrado peloROOT; snapshotA restaurado0fcd3b EXIT0,424tabelas comhashes originais; banco307/314 normal, sem browsers/servidorDEV. Conferidas/restauradas só10linhasNextAGENTS. Diferenças intencionais contra protótipo: D7ERP automático,D15bloqueio indisponível,D16preferência pessoal,Sidebar224/cortes9601400,Detalhes318únicaaba e controles futuros316/317; não se declara igualdade pixel a pixel da página inteira.
+
+Pendentes finais: incorporar registro NÃO-REGISTRO específico da aba do contato enviado peloROOT e sua guarda dirigida; revisão independente TESTER/global coordenado pelo integrador. Recorte106/1058 de8b não incluiu a nova guarda de identificação; não é global e não autoriza presumir homologação. Fonte visual/runtime mantidos, sem pacote/schema/backend/DB/envio.

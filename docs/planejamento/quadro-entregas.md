@@ -5296,3 +5296,7 @@ não estender esse gate ao novo código388 antes da nova verificação.
 ### #315 — freeze da composição313automática/388
 
 Fonte8b3c46ac, merge4fcdc6normal comúnico conflito documental preservado. Header/controller/menu315 byteiguaisf7; hooksROOTintactos, thread388 temMaisDepois real/stableMount314 preservados. Node22:106arquivos1058testes47282,TSC50243heap8192,lint24fontes0avisos,diffcheck todos exit0. Provasprivadasf7 34casos74PNG/27pranchas inspecionadas, não atribuídasà8b. Formal44PNG/nomelongo/TESTER/globalcoordenadospendentes; nenhuma homologação presumida.
+
+### #315 — provas atuais DEV, sem homologação presumida
+
+Runtime8b/fontevisualefeb: formal3772 EXIT0 44PNG app×protótipo(22/22), longo12809 EXIT0 8contextos24PNG nome97/15tags/altura500. Inspecionadas todas68 em30pranchas, hashes conferidos. Allowlist positiva final output/inbox-315-probes/allowlist-positiva-final.json; PNGs locais nãoGit; negativos separados. Recorte106/1058,TSC50243/lint24 de8b continuam registrados, sem ownfull. Preview71311 parado/snapshot424hashes restaurado0fcd3b; sóNextAGENTS removido. Guarda específica de identificaçãoROOT, TESTER e global integrado pendentes.
