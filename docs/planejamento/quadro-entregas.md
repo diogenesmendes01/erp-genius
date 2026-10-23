@@ -5720,3 +5720,8 @@ Somente projeção local: Nota individual disponível em ENCERRADO, mantendo gru
 ### #317 — PR403 complemento29f e expectativa legada alinhada
 
 8PNG/2contextos positivos028fd6 inspecionados: Lucas-origem real ENCERRADO/GET200/enviofalse, Nota menu+rodapé/dialogo semsubmit e foco,1SSE simultânea/ativa (2construçõessequenciais). Allowlist positiva11arquivos em output/inbox-317-probes/review403-menu-allowlist.json; negativosR1 fora. Contrato legado AcoesAtendimento.test foi RED5be328 e atualizado só para Nota porleitura, preservando/ampliando todos negativos de negócio. GREEN9/126e86102, TSC94141/lint0b692d/diff1988510 Node22.23.2. Produção29f invariante; semPNG emGit/full/DBDEV. SnapshotA restaurado7e0eeb peloROOT; semserver/browserA. QAexata/global integrado/publicação pendentesROOT.
+
+
+### #317 — PR403 C3 retorno sem edição, revisão vigente
+
+A7 ainda falhava em A→B→A sem editar;10React prévios não cobriam essa sequência. RED persistência1ae16f e visual6808cf (2casos cada)→GREEN: token de intenção separado de owner, notificação local commitada por chave para limpar storage+campo atual somente sem intenção posterior; retorno seguinte vazio. Edição/texto igual/emoji/arquivo/storageexterno/erro/incerto/cleanup integral preservados. Remount sem editar agora não invalida sozinho; substitui critério conservador histórico. Gates2293:14arquivos/325testes, TSC57710heap8192/lint3fontes9fc451/diff537006 saída0 Node22.23.2. Sem DB/browser/full próprios; visuais29f históricos paraC3novo. QA exata/global/publicação pendentesROOT.
