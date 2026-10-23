@@ -1,8 +1,9 @@
 # Quadro único de entregas
 
-## Inbox — chaves dos painéis irmãos — 22/10/2026
+## Fechamento Inbox E0 — 22/10/2026
 
-Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
+Oito implementações com PR individual aberto e anexado:298→381,299→382,300→386,301→388,302→383,303→384,304→389,305→385. Pré-requisitos380/387/390 separados. Mapa de dependências, gates e limites em `docs/planejamento/inbox-e0-fechamento.md`. Fonte integrada99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. E0 validada localmente, sem merge/deploy; E1–E4 ainda não implementadas. Texto “PR em publicação” nas entradas antigas é histórico; links reais constam no fechamento.
+
 ## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
 
 Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota inicial e nova sem reload, zero nova mensagem no banco,24 PNGs depois. Evidências e limites em output/inbox-301-visual/. Combinação E0 fonte7657c528:845 arquivos/6526 testes sessão99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Estados abaixo preservam as etapas anteriores; merge/deploy não executados.
@@ -15,6 +16,9 @@ Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota 
 - Rebase de #301 de `9853be83` para #300 publicada `30706754`, com conflito exclusivamente no quadro resolvido preservando as seções #300 FINAL e #301. Base sem mudança em `src`; o delta empilhado contém só #301. No SHA pós-rebase `4803b061`, o mesmo recorte dirigido **29 arquivos / 320 testes** saiu **0**, nenhum ignorado, Node 22.23.2. O integrador/TESTER prepararão fixture e servidores em bancos descartáveis; este DEV não iniciou servidor nem envio externo.
 - Gates globais no SHA documental `09222757` (fonte idêntica a `4803b061`), Node 22.23.2: TypeScript `--noEmit` heap 8192, sessão `23074` até saída **0**; Vitest completo sem filtro, `--maxWorkers=2`, **842 arquivos / 6.490 testes**, sessão `54811` até saída **0**, nenhum ignorado; `eslint . --max-warnings 40`, sessão `96249` até saída **0**, **0 erros / 40 avisos** herdados.
 - Rebase dos três commits da #301 sobre E0 integrada `797994aa`, sem conflito; diff contra base contém só 12 arquivos #301 e preserva quadro das demais issues. No SHA `33d0a991`, Node 22.23.2: recorte dirigido com os mesmos filtros **32 arquivos / 354 testes**, saída **0**, nenhum ignorado; TSC heap 8192 sessão `26262` até saída **0**; `eslint . --max-warnings 40` sessão `26917` até saída **0**, **0 erros / 40 avisos** herdados. Vitest completo da combinação #301 + #304 será executado pelo integrador; revisão TESTER, visual e homologação ainda pendentes.
+## Inbox — chaves dos painéis irmãos — 22/10/2026
+
+Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
 
 ## Inbox E0.3 — notas na rota e aviso transacional (#300, 22/10/2026)
 
@@ -4700,6 +4704,29 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - TDD RED2/25 e GREEN25/25; pós-rebase fonte98c76bd4: recorte22arquivos/272testes (sessão97122), TSC heap8192 com tiposNext presentes (37381) e lint global sem filtros0erros/40avisos (93477), todos saída0 Node22.23.2. Full histórico em5d44:840arquivos/6480testes saída0 (95297); não atribuído à nova base. TSC inicial falhou por export extra preexistente de rota, corrigido separadamente pelo integrador. Global final301+304 será executado pelo integrador.
 - Aplicativo real:24cenários antes +24depois, seis tamanhos (1440×900,1024×768,390×844,700×768,390×500,1440×500), dois temas, com/sem seleção e formulário aberto. Medição final sessão99646 saída0: documento igual à viewport, zero pageerror, controles alcançáveis e prova geométrica de scroll interno. Capturas/métricas e limites em `output/inbox-304-visual/`.
 - Sem alteração de pacote, lock, schema, servidor/SSE ou permissão; nenhum envio externo. TESTER/homologação e integração/publicação pendentes; não marca E0 concluída.
+
+### Inbox E1: design da tela — 2026-10-22
+
+#### E1.1 — #306: tokens, fonte mono e travas
+
+**Estado: implementação e aceite independente concluídos; pronta para PR, sem merge/deploy.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
+
+- Tokens de avatar/balão/pontos, utilitário de fundo e fonte mono local 400–500; Roboto e travas anteriores preservadas. Fonte/licença entregues pelo integrador no commit 3eb87ea6, hash conferido; sem pacote/lock/schema/CDN.
+- TDD RED 9 falhas/33 aprovados; GREEN 5 arquivos/53 testes e lint dirigido sem avisos, saídas 0 Node 22.23.2. CSS compilado com amostra explícita; contraste positivo e autoteste de avatar reprovado.
+- Globais em b8d5128a: TSC heap8192 sessão 50415, full 845 arquivos/6533 testes sessão 99205, lint global 0 erros/40 avisos sessão 59333, todos saída 0 Node 22.23.2. TESTER: 5 arquivos/53 testes, saída 0 e parecer de código favorável.
+- Prova DEV 18 PNGs/6 contextos: fonte local400–500, Roboto preservada, seis trechos reais isolados contidos, dt600 sem afirmar face600 nativa. Pilha anterior explicitamente reconstituída. Aceite formal combinado com307: integrador51505 e TESTER76466, ambos34PNGs/0falhas/14diagnósticos/exit0; fontes400/500+Roboto6/6 independentes. Pares conversa nos3tamanhos/2temas e parecer em `output/inbox-306-comparacao/`. Fonte visual7e236e64; delta76a08316 sóenum de teste307. Global final76a08316 sessão95778 exit0:846arquivos/6547testes, TSCheap8192, lint0erros/40avisos. Sem ignorados e sem suíte completa de integração; integração dirigida3071teste0 registrada à parte.
+
+## PR #391 — C1/C2: mono600 nativa e sem preload global
+
+Asset original e hash preservados; eixo wght100–800 verificado no WOFF.
+Faixa400–600 substitui400–500 após coordenação técnica; dt herdado e contadores
+600 usam face nativa. preload:false na mono, Roboto preservada. TDD RED1/7
+→GREEN5arquivos54testes; TSC75865/lint alterados saída0. Chrome6contextos,
+8trechos reais por contexto,400/500/600 carregados, síntese desativada,
+sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
+DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
+sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
+Integração dos pais, global, parecer/CI do head final continuam pendentes.
 ### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
 
 **Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
@@ -4798,6 +4825,24 @@ hardnav ainda em investigação na frente313.
 Merges normais incorporaram382R6/main3d756 e386e7 para preservar ancestrais.
 Aguardar386 integrado e CI do novo head contra main antes de mergear387.
 
+## PR #391 — gates do estado integrado
+
+Fonte3410df0b incorpora382R6/386/387e main7982 por merges normais. Conflito
+pontual de InboxNovo conciliou ref da região real de conversa com todas as
+classes de altura/rolagem da base389; não descartou nenhuma das regras.
+Arquivos da correção mono permanecem idênticos ao commit7d29f1dc.
+
+Gates Node22.23.2, todos encerrados com saída0: suíte unitária completa17966,
+845arquivos/6.570testes, sem filtro de nomes/ignorados, apenas maxWorkers=2;
+TypeScript47138; lintglobal64541,0erros/40avisos herdados. Não houve nova
+integração de banco (mudança de fonte local sem dados), nem recaptura do
+produto completo após os merges; a amostra isolada de fonte usa os mesmos
+layout/woff2/config/CSS e está registrada em output/pr391-qa.
+
+A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
+e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
+Novo parecer no head exato e CI contra main continuam pendentes.
+
 ## PR #385 — C1: capturas fora do estado atual do código
 
 128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
@@ -4882,3 +4927,13 @@ Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
 C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
 output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
 legada de quatro elementos por dois, mantendo os contratos de identidade.
+
+## PR #391 — pais integrados e gate contra main
+
+Main8d00124 incorporada por merge normal 8c6930c2. Os arquivos Inbox/conversa
+ficam idênticos à main já aprovada; as fontes/tokens da #391 são idênticos ao
+04e6f2c6 aprovado. Preservados os fixes #388, guardas #389 e identidade #390.
+Recorte pós-merge 11 arquivos / 174 testes, TSC71047 e lint de 14 arquivos
+terminaram 0, sem ignorados/avisos no recorte. Não houve novo global local ou
+browser. Retarget/main e push serão seguidos por CI global e parecer final;
+aguardar esses gates antes do merge. Relatório output/pr391-qa/revisao.md.
