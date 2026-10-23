@@ -39,3 +39,9 @@ No layout anterior ao cleanup passivo, Inbox escolhe a regiãoConversa realmente
 Checkpoint pré-merge314: recorte92arquivos869testes/TSCheap8192/lint28fontes0avisos com EXIT0, logs/negativos em output/inbox-313-report.md. Tests de React DOM real sobre DOMmínimo cobrem foco, URL, retorno explícito/null/isolamento e navegação. Geometria390 desses testes é explícita; não substitui Chrome/CSS real. Somente ícones decorativos e fronteiras externas de roteador/servidor/SSE foram substituídos onde necessário.
 
 Antes de aceite: incorporarA243 preservando autoria/dias/notas/stableMount e SSR; deltaCLI coordenado filtros/seletor-numero/nova-conversa, preservando estados314/guardReact/anonimizaçãoDOM/hidratação. Prova real nos3viewports/2temas, inclusive390×500/rodapé/foco/pilha e lista>100 após integração. Nenhum servidor/DB/seed/dependência acionado pelo DEV. PNGs locais/hashes/ZIP autorizado, sem novos binários emGit; QAexata/global/publicação pelo integrador.
+
+### Checkpoint integrado pré-visual
+
+Fonte313 bbf07e93 integrada comA314final243c9348 em e5ef0e5c; agoraInicial único, autoria/dias/notas, stableMount opt-in da thread e ref382 preservados. Somente quadro teve conflito, com ambos os históricos conservados. Recorte final pós-merge+harness96arquivos904testes, TypeScriptheap8192 e lint38fontes/0avisos: todos EXIT0 (detalhes/negativos no ledger). Não equivale ao global integrado.
+
+Harness autorizado acrescenta filtros/seletor-numero/nova-conversa nos3tamanhos/2temas/app×protótipo, sem submeter formulário. Espera lista/hidratação antes do clique, conteúdo e geometria final do popover/rodapé antes da foto; preserva estados314, guardReact e anonimizaçãoDOM392. Plano formal313:52PNG incluindo conversa e celular-lista. Nenhuma captura313 real ocorreu neste checkpoint; aguardam ambiente/decisãoB2, foco/rolagem390×500, URL/contagens reais, >100/stableMount, TESTER exato e global. Status continua parcial e sem homologação.
