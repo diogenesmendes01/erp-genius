@@ -5644,3 +5644,10 @@ próprio efetivo11files177tests exit0 (10/173 a18105 +1/4 c62554), diff0.
 Não atribuir global do autor à composição317. Prova ERP com SSE/paginação,
 formal317, QA/browser e globalROOT ainda pendentes. Report
 output/inbox-317-c2-integracao.md registra fontes e caminho inexistente não contado.
+
+
+### #317 — normal df9 validado; correção isolada do seletor de nota
+
+Formal16261 parcial negativo: humano12OK, appnota6 fora do pacote completo por timeout do nome acessível com glifo no protótipo. NormalR2/29367 saída0:8ctx24PNG/mesmoDOM/âncora0px/teclado/rascunhos/agendaEscape/busca/320×500. Permissões89958 saída0:6ctx12PNG, Lucas negado real e null/503 transporte controlado, semsubmit/envio/DB.48positivos inspecionados; imagens locais, formalnota continua pendente.
+
+Handoff ROOT somente seletor do protótipo, getByText exato+verificaBUTTON; nenhuma UI/reference alterada. REDab98272/2→GREENChromeoffline2/2/lint2fontes493570,8arquivos51testes698ece0/TSC72328heap81920/diffcheck12068f0 Node22.23.2. Produto byte-igualdf9; global897/7013 informado peloROOT é df9, não reatribuído ao novo harness. Preview99570 parado ROOT, browsers fechados/AGENTSNext isolado restaurado. Rodadaformal24/faseC2/QAfinal/publicação pendentes.

@@ -64,3 +64,22 @@ O produto a86c9ade33606350c1551c6a5759ebecc9366d6b permanece byte-igual. Novo co
 Prontidão317 valida duas abas/seleção/painel e campo atual, header68, controles44 e viewport; nota sem agenda/anexo/voz e sem promessa de menção no app. Abrir nota espera thread real/hidratação e aciona só tab; protótipo usa sua aba/placeholder originais, menção histórica documentada como divergência. Manifesto/fonteApp/hashes, guardReact/hidratação/rede e anonDOM392 após interações/antesfoto preservados.
 
 Formal aguarda C2/#402 congelado e preview fornecido pelo integrador. Testes DOM mínimos não medem CSS real; os tamanhos declarados são plano de captura, não aceite visual. TESTER estático do produto a86 em andamento. Nenhuma captura antiga é atribuída ao compositor317.
+
+
+## Fonte formal df9 e correção isolada de seletor do protótipo
+
+ROOT forneceu df9aa83cec1f3c96e9cb1794db58bb3b14021b3b (a86+bf4+C2/metadata316, sem estados319); FF próprio0e01fe saída0, tracked clean antes do preview. ROOT informou global15595 saída0 com897arquivos/7013testes e TSC/lint próprios; não são gates DEV reexecutados neste relatório.
+
+Preview ROOT99570, Node22/Next16.3.5, fixture normal307/314 (9mensagens4notas), providers externos vazios. DEV não executou DB/seed/submit/envio/nota/agenda de negócio. Saídas observadas:
+
+- Formal16261 EXIT1: humano-compositor12/12 OK com manifesto próprio. Nota app6/6 OK, mas primeiro protótipo falhou antes do manifesto do estado. Seis appnota preservados como parciais negativos em formal-r1-negativo-nota; não contam para formal completa e não usam manifesto anterior humano.
+- Diagnóstico789ffc EXIT0: botão real da referência tem textContent Nota interna, mas nome acessível contém glifo Lucide antes do texto. Footer e placeholder existem. Sem alterar HTML da referência.
+- NormalR1/15972 EXIT1 por seletor privado: overflowY=auto selecionava também HEADER; nenhum achado de produto. Mantido negativo. ProbeR2 usa filho com rows reais.
+- NormalR2/29367 EXIT0:8contextos320/390/1024/1440×500/dois temas,24PNG,0React/externos. Abas/clique/setas/Home/End/Tab, rascunhos separados, agenda única abrir/Escape/retorno de foco, busca316, A→B→A via lista. Mesmos nós reais do scroller/VList e desvio de âncora0px nas interações da mesma conversa. DocumentoY0/semoverflow; header68/controles44. Larguras medidas do editorResponder:80px em320,150px em390,260px em1024,256px em1440 com painel; altura44. Em320 o texto longo rola dentro do textarea estreito, sem ocultar controles; não alegar editor amplo nesse corte.
+- Permissões89958 EXIT0:6contextos390×500/dois temas,12PNG. Lucas-origem ENCERRADO real retornou GET200/podeEnviar=false; null retém GET real e503 responde apenas endpoint exato, rotulados transporte controlado. Nota permanece editável; liberação/retry recupera editorResponder. Sem simular domínio nem comprovar autorização servidor por esse transporte. Respostas HTTP reais e screenshots separados em permissoes-r1.
+
+Todos48PNG positivos desta etapa (12humano+24normal+12permissões) inspecionados em12pranchas locais, sem binários noGit. Nota parcial6 e demais negativos fora da futura allowlist positiva. Diretório privado output/inbox-317-probes. Todos os contextos/browsers DEV fechados antes do ROOT parar99570; NextAGENTS tinha somente10linhas geradas conferidas e foi restaurado isoladamente, regras originais preservadas.
+
+Handoff temporário ROOT autorizou somente o seletor nota-protótipo: getByText exato dentro do footer e verificação tagNameBUTTON antes do clique. App/seletor/esperas restantes e toda produção byte-iguais a df9; referência intacta. Regressão executa o preparador real extraído porAST da CLI em Chrome offline, com pseudoelemento no nome e caso de texto solto que deve ser recusado; sem abrir app/DB.
+
+RED ab9827:2/2 por timeout antigo; GREEN8895b9:Node--test2/2pass, lint2fontes e executor49357 terminal0. Recorte698ece:8arquivos/51testes0, TSC72328heap8192 terminal0, diffcheck12068f0; Node22.23.2. Não atribuir globaldf9 ao novo commit de harness; produção é invariante. Nova rodada formal24, fase longa150/C2, QA final e publicação seguem pendentes de ROOT Ready. CLI319 de B não alterada em paralelo.

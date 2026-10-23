@@ -141,7 +141,9 @@ async function abrirPrototipo(pagina, estado) {
   }
   if (estado === "nota") {
     const rodape = root.locator('[data-m="chat"] footer');
-    await rodape.getByRole("button", { name: "Nota interna", exact: true }).click();
+    const nota = rodape.getByText("Nota interna", { exact: true });
+    if (!(await nota.evaluate(e => e.tagName === "BUTTON"))) throw new Error("O texto Nota interna do protótipo não é um botão.");
+    await nota.click();
     await rodape.getByPlaceholder("Nota interna · @ para mencionar", { exact: true }).waitFor({ state: "visible" });
   } else if (estado === "humano-compositor") {
     await root.locator('[data-m="chat"] footer').getByPlaceholder("Escreva uma mensagem", { exact: true }).waitFor({ state: "visible" });
