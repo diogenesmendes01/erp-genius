@@ -5714,3 +5714,8 @@ umSSE+umGET200bodyporcontexto, manual12716/11859 e focoexternopreservados,
 uma fonteativa/zeroerros. ROOT emitiu avisos8c7ee0/f8d488; snapshotTESTER
 restaurado393c28/424hashes1386 e A e27558/551, previewsparados. Pareceres e
 limites no globalreport; rodadaformal24 corrigida/globalnovo ainda pendentes.
+
+
+### #319 — composição C2+nota317 verificada DEV, global e formal pendentes
+
+FFa1ba+merge317bbb→0f80f61d, conflito sóquadro preservado. CLI mudou sóseletorproto e mantémLF/export/helper/estados319; C6nãoportado. DEVNode22: recorte26869 saída0/70files863testes36,72s,maxWorkers2,semfiltros/skip; Chromeofflinebd7ba6 2/2; TSC37494heap8192/lint14fontes74f64a zeroavisos saída0. Semappbrowser/DB/preview/envio/novafunção. Fonte congela para ROOT executar global noOWN antes deReady; formal42+12mobile, retry/paginação/C2/Triagemreal/inspeção/QA/publicação ainda pendentes.29PNG472 históricas não atribuídas àcomposição.

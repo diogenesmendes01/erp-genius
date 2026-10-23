@@ -41,3 +41,8 @@ Em1440×900 claro/320×500 escuro foram observados fallback real sob latência, 
 ## Harness319 após handoff317
 
 Composição produtiva93a5 e harness317bf4ad incorporados noOWN; delta319 não modifica app. CLI acrescenta carregando/painel-erro/thread-erro/painel-vazio, sem-seleção nos3tamanhos e mantém lista-vazia:42PNG no recorte,12APP320×500 adicionais privados. Cinco estados têm N/Afuncional explícito; só lista-vazia possui referência do protótipo. Helper testado aceita500 somente do GETlocal exato efetivamente interceptado, certifica vazio com200real e observa fallbackreal sob latência sem fabricarHTML/RSC. Prontidão valida estado/viewport; carregar página só espera hidratação depoisfoto. Nota317/busca316/anonDOM392/guardas existentes preservados. TDD/gates e negativos no report. C2#402, Ready, formal, inspeção/QA/global/publicação ainda pendentes.
+
+
+## Fonte composta para gates finais
+
+Composição DEV0f80f61d incorpora C2 e o patch isolado nota-protótipo317; helper/ESTADOS319 preservados, CLIforçadaLF pelo atributo específico. DEV observou recorte70arquivos863testes, NodeChromeoffline2, TSCheap8192 e lint14fontes semavisos, todos saída0. Não é global nem prova deUI. Integrador executará global com fonte imóvel antes do Ready e formal42PNG+12mobile/complementos; evidências472 permanecem preliminares. C6SSE não portado. Detalhes/comandos/limites em output/inbox-319-report.md.
