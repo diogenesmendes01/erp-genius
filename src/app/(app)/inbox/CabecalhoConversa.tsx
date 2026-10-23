@@ -11,7 +11,9 @@ export type AtendimentoAberto = Pick<ItemListaInbox, "id" | "contatoId" | "conta
 export type PropsCabecalhoConversa = { atendimento: AtendimentoAberto; acoes: AcoesCabecalho; painelAberto: boolean; aoAlternarPainel(): void; aoBuscar(): void; usuarioId: string; painelAuto: boolean; buscaAberta: boolean; aoVoltar(): void };
 export function CabecalhoConversa({ atendimento, acoes, painelAberto, aoAlternarPainel, aoBuscar, usuarioId, painelAuto, buscaAberta, aoVoltar }: PropsCabecalhoConversa) {
  const visual = estadoVisualCabecalho(atendimento, usuarioId);
- return <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface pl-2.5 pr-3">
+ return <header className="flex h-[68px] shrink-0 items-center gap-1.5 border-b border-gray-200 bg-surface pl-2.5 pr-3">
+  {/* A consulta envolve somente identidade/ações: o Menu fica fora para manter position:fixed no viewport. */}
+  <div className="min-w-0 flex-1 [container-type:inline-size]"><div className="flex w-full items-center gap-2.5">
   <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
   <span className="shrink-0 max-[699px]:hidden"><Avatar nome={atendimento.contatoNome} tamanho={40} tom={tomDoAvatar(atendimento.contatoId)} /></span>
   <div className="min-w-0 flex-1 leading-[1.3]">
@@ -20,10 +22,11 @@ export function CabecalhoConversa({ atendimento, acoes, painelAberto, aoAlternar
   </div>
   <div className="flex shrink-0 items-center gap-1.5">
    <BotaoIcone tamanho={36} rotulo="Buscar na conversa" title="Buscar na conversa — Em breve" disabled ativo={buscaAberta} onClick={aoBuscar} className="max-[699px]:hidden"><IconSearch size={17} /></BotaoIcone>
-   {acoes.transferir && <Botao variante="neutro" ocupado={acoes.transferir.ocupado} onClick={acoes.transferir.aoEscolher} aria-label="Transferir" className="h-9 shrink-0 max-[1199px]:px-2.5 max-sm:min-w-11"><IconArrowsExchange size={15} aria-hidden /><span className="hidden min-[1200px]:inline">Transferir</span></Botao>}
-   {acoes.assumir && <Botao ocupado={acoes.assumir.ocupado} onClick={acoes.assumir.aoEscolher} aria-label="Assumir conversa" className="h-9 shrink-0 max-[699px]:px-2.5 max-sm:min-w-11"><IconHandStop size={15} aria-hidden /><span className="hidden min-[700px]:inline min-[1200px]:hidden">Assumir</span><span className="hidden min-[1200px]:inline">Assumir conversa</span></Botao>}
+   {acoes.transferir && <Botao variante="neutro" ocupado={acoes.transferir.ocupado} onClick={acoes.transferir.aoEscolher} aria-label="Transferir" title={acoes.transferir.rotulo} className="h-9 min-w-9 shrink-0 max-[1199px]:px-2.5 [@container(max-width:575.98px)]:px-2.5 max-sm:min-w-11"><IconArrowsExchange size={15} aria-hidden /><span className="hidden min-[1200px]:[@container(min-width:576px)]:inline">Transferir</span></Botao>}
+   {acoes.assumir && <Botao ocupado={acoes.assumir.ocupado} onClick={acoes.assumir.aoEscolher} aria-label="Assumir conversa" title={acoes.assumir.rotulo} className="h-9 min-w-9 shrink-0 max-[699px]:px-2.5 [@container(max-width:431.98px)]:px-2.5 max-sm:min-w-11"><IconHandStop size={15} aria-hidden /><span className="hidden min-[700px]:[@container(min-width:432px)]:inline min-[1200px]:[@container(min-width:576px)]:hidden">Assumir</span><span className="hidden min-[1200px]:[@container(min-width:576px)]:inline">Assumir conversa</span></Botao>}
    <BotaoIcone tamanho={36} rotulo="Painel do contato" ativo={painelAberto} aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel} className={painelAuto ? "min-[1400px]:bg-gray-100" : ""}><IconLayoutSidebarRight size={17} /></BotaoIcone>
-   <MenuConversa itens={acoes.menu} />
   </div>
+  </div></div>
+  <MenuConversa itens={acoes.menu} />
  </header>;
 }
