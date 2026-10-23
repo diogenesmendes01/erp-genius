@@ -6439,3 +6439,7 @@ QA575favorávelestática/hash103b9688...versionada tester-composicao-575.md;6pat
 ## PR #403 integrada; PR405 pronta para CI final
 
 #403 squash713dca8d219af6b58a35f83a9f2c6091789a1f31, CI40024011516success5/5, QA695bfavorável, issue317CLOSEDconfirmada. Squashtreeigual7a7;incorporação405INDEXINTEIROigual89f8 após8conflitos deancestralidade. Fonte101/QA cb917/15-237/TSC/lint40preservados,apenasMDdepoisgates;CI405main2TZaindapendente,semfechar319antecipadamente.
+
+## PR #405 integrada; PR406 pronta para CI final
+
+#405 squasha38797801128fd99aed392cdb27d8ed60972860d, CI40025543009success5/5, QAcb917favorável, issue319CLOSEDconfirmada. Squashtreeigualf3d4;incorporação406INDEXINTEIROigual58b984após1conflitoquadroporancestralidade. Fonte95/QA320755/unit5-117/INT1-10/TSC/lint40preservados. Tabela20estados100APP64refs36NAe14paresidênticosdeclaradosmantidos;CI406main2TZaindapendente,semfechar320antecipadamente.
