@@ -5391,3 +5391,18 @@ negativa adiciona wrapper ao HTML real e exige rejeição. GREEN3/94 e lint3
 saída0, sem ignorados. Contagem de painéis390 segue2, preservando estabilidade
 SSE e troca de keys/atendimentoId. Sem novoDB/browser; global final apósporte
 HIGH394 continua pendente e imagens4f permanecem fonte visual identificada.
+### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
+
+Branch DEV codex/inbox-310-c1 sobre eb68e314,676/313 imutável. Helper local agrupa50ms fixos,1GET incluindo corpo+1pendência, reconciliação pessoal final preservada. Thread/painel/leitura imediatos, sem SQL/SSEstore/polling/deps/DB/preview. RED consumidor3casos→GREEN42unitários; recorte24/32954301 e lint4fontes967cd5 saída0. TSC5951heap8192 saída0 após limpeza exclusiva do cache gerado dev pelo integrador; dois negativos antigos só tipogerado rota311 fora do head310, preservados. Ledger output/inbox-310-c1-report.md. Aguardam porte equivalente no agregado676 em SHAseparado, QA/browser e publicação; não é concluída/homologada.
+
+### C1 PR394 — checkpoint parcial do porte, P2 em correção
+
+Porte OWN sobre676 preserva todoscontratosR6/313;78unitários e recorte56/62248154/typegenTSC64437/lint94055b saída0. NÃOAPROVADO: TESTERexato82demonstrou ACKequivalente duranteGET semleitura descarta snapshot e não produz trailing. Requer correçãoemAMBOSisolado/porte semapagar guards;82eestecheckpoint ficam históricos. SemDB/preview/publicação, #313676imutável.
+
+### C1 PR394 — correçãoP2 equivalente em voo, revisão pendente
+
+82históriconãoadotado. RED público3d0994 reproduz perda2→3semleitura e faltatrailingcomleiturapendente. invalidarSnapshotEmVoo conserva1pendência somentepara época físicaatual; guardsinvalidação/R6preservados, semreviverAantigoapósA→B→A, semretry/polling. GREEN2arquivos47testes69cceb e lint78e0c3 saída0; recorte6764EXIT0/24arquivos334testes e typegenTSC32952heap8192EXIT0. FonteisoladacorrigidaprontaparaTESTER;porte/QA/browser ainda pendentes. SemDB/preview/deps.
+
+### C1 PR394 — porte P2 corrigido, pronto para QA exata
+
+Isolado b2338414 sobre82/eb68 (24/334+TSC32952/lint78e0c3 saída0) e porte sobre676/b494 separados; jamais merge313→310. Porte preserva R6/finally311/f51/syncURL/ACK150/SSR/Virtual, cancelar por contextoREAL+versaoREAL e elseinvalidarSnapshotEmVoo porépoca numérica. Prova de texto: abrir/JSX igual676 e blocosleitura/visibilidade/SSE iguais salvo chamadasfila; helper igualb233.83unit9ed709, recorte56/62773762,typegenTSC82827heap8192,lint4fontes25da72 terminaram0. Semskip/filtro/DB/preview/deps/global próprio. TESTERexato/mediçãoHTTPbrowser/complemento313/global/adoção/publicação pendentes; fotos3134f mantêmfontehistórica, semreatribuição.
