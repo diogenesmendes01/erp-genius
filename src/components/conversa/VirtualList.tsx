@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable react-hooks/refs, react-hooks/exhaustive-deps --
-   Porte fiel do motor (lógica sem mudança): as alturas medidas ficam em refs lidas na renderização de propósito
-   (layout virtual recalculado por `revision`), e o layout effect sem dependências é o ciclo de ancoragem/foco. */
+   As alturas medidas ficam em refs lidas na renderização de propósito
+   (layout virtual recalculado por `revision`), e o layout effect sem dependências é o ciclo de ancoragem/foco.
+   No opt-in stableMount esse ciclo mede e acompanha o scroll também antes do limiar. */
 
 import {
   Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState,
@@ -21,6 +22,8 @@ export type VirtualListProps<T> = {
   scrollRef: RefObject<HTMLElement | null>;
   estimatedHeight: number;
   threshold?: number;
+  /** Preserve row DOM/focus across the threshold; opt-in only, with natural flow below it. */
+  stableMount?: boolean;
   /** Extra pixels mounted above and below the viewport. */
   overscan?: number;
   /** Keep open menu anchors or other interactive rows mounted. */
@@ -40,7 +43,7 @@ function controlsIn(row?: HTMLElement) {
 
 export function VirtualList<T>({
   items, getKey, renderItem, scrollRef, estimatedHeight, threshold = 100, overscan = 600, pinKeys = [],
-  transitionAnchor, isItemFocusable,
+  transitionAnchor, isItemFocusable, stableMount = false,
 }: VirtualListProps<T>) {
   const enabled = items.length > threshold;
   const root = useRef<HTMLDivElement>(null);
@@ -65,7 +68,7 @@ export function VirtualList<T>({
   if (candidate) pins.push(candidate);
   const transitionKey = seededAnchor.current?.key ?? transitionAnchor?.key;
   if (transitionKey) pins.push(transitionKey);
-  const indexes = virtualIndexes(layout, range, pins);
+  const indexes = stableMount && !enabled ? keys.map((_, index) => index) : virtualIndexes(layout, range, pins);
 
   const listOffset = useCallback(() => {
     const container = scrollRef.current, list = root.current;
@@ -82,7 +85,12 @@ export function VirtualList<T>({
   }, [scrollRef, listOffset]);
 
   useLayoutEffect(() => {
-    if (!enabled) {previous.current = null; seededAnchor.current = undefined; providedAnchor.current = undefined; return;}
+    if (!enabled) {
+      previous.current = stableMount ? layout : null;
+      seededAnchor.current = undefined; providedAnchor.current = undefined;
+      if (stableMount) readViewport();
+      return;
+    }
     const container = scrollRef.current;
     const old = previous.current;
     if (transitionAnchor && transitionAnchor !== providedAnchor.current) {seededAnchor.current = transitionAnchor; providedAnchor.current = transitionAnchor;}
@@ -146,7 +154,7 @@ export function VirtualList<T>({
 
   // Ancestor refs attach after child layout effects on the first mount.
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled && !stableMount) return;
     const container = scrollRef.current, list = root.current;
     if (!container || !list) return;
     let frame = 0;
@@ -192,7 +200,7 @@ export function VirtualList<T>({
       resize.disconnect();
       observer.current = null;
     };
-  }, [enabled, scrollRef, listOffset, readViewport, estimatedHeight]);
+  }, [enabled, stableMount, scrollRef, listOffset, readViewport, estimatedHeight]);
 
   useEffect(() => () => {if (focusFrame.current) cancelAnimationFrame(focusFrame.current);}, []);
   useLayoutEffect(() => {
@@ -200,7 +208,7 @@ export function VirtualList<T>({
   }, [layout]);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!enabled || event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return;
     const target = event.target as HTMLElement, row = target.closest<HTMLDivElement>('[data-virtual-key]');
     const key = row?.dataset.virtualKey;
     if (!row || key === undefined) return;
@@ -215,18 +223,18 @@ export function VirtualList<T>({
     setCandidate(nextKey);
   }
 
-  if (!enabled) return <>{items.map((item, index) => <Fragment key={keys[index]}>{renderItem(item, index)}</Fragment>)}</>;
+  if (!enabled && !stableMount) return <>{items.map((item, index) => <Fragment key={keys[index]}>{renderItem(item, index)}</Fragment>)}</>;
   return <div
-    className="relative w-full shrink-0 [overflow-anchor:none]" ref={root} style={{height: layout.total}}
-    data-virtual-count={items.length}
+    className="relative w-full shrink-0 [overflow-anchor:none]" ref={root} style={enabled ? {height: layout.total} : undefined}
+    data-virtual-count={enabled ? items.length : undefined}
     onKeyDownCapture={onKeyDown}
     onFocusCapture={event => setFocused((event.target as HTMLElement).closest<HTMLElement>('[data-virtual-key]')?.dataset.virtualKey)}
     onBlurCapture={event => {
       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(undefined);
     }}
   >{indexes.map(index => <div
-    className="absolute left-0 top-0 flow-root w-full [overflow-anchor:none]" key={keys[index]} data-virtual-key={keys[index]}
-    style={{top: layout.offsets[index]}}
+    className={enabled ? "absolute left-0 top-0 flow-root w-full [overflow-anchor:none]" : "flow-root w-full [overflow-anchor:none]"} key={keys[index]} data-virtual-key={keys[index]}
+    style={enabled ? {top: layout.offsets[index]} : undefined}
     ref={node => {
       const old = nodes.current.get(keys[index]);
       if (old) observer.current?.unobserve(old);
