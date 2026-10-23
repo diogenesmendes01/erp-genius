@@ -4681,3 +4681,24 @@ Node22.23.2, todos encerrados com saída0: recorte4arquivos/51testes; global3554
 **Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** A R4 foi rejeitada pelo TESTER por contar duas vezes uma mensagem que já estava no GET; a fonte não foi mergeada. O caso oficial reproduziu4 em vez3, com1falha/36passes. R5 captura a época das entradas no início de cada GET: entrada posterior preserva o mínimo novo; sem entrada posterior/sem leitura em voo, o snapshot fresco corrige a contagem, mantendo os IDs sem confirmação para retry. O recorte mantém o caso2+1 com GETs falhos e separa uma resposta realmente iniciada antes do SSE, evitando tratar um GET novo como obsoleto só pelo seu conteúdo.
 
 GREEN4arquivos/53testes. Gates finais Node22.23.2: global4477,842arquivos/6.532testes; TypeScript97106; lintglobal84654,0erros/40avisos; integração26219,2arquivos/15testes sem filtro/ignorados, exclusivamente ci-integracao. Todos encerrados com saída0. Não é a suíte completa de integração. Relatório output/pr382-qa/revisao-r5.md. Sem alteração de API/servidor/schema/permissões/transporte; nova revisão e novo CI exigidos antes do merge. As fontes rejeitadas R2/R3/R4 continuam fora da main.
+
+## PR #382 — R6: contador e confirmação independentes
+
+A R5 bc144a79 foi rejeitada pelo TESTER: um GET fresco zero permanecia em um
+por causa do mínimo de IDs pendentes. A R6 aceita o snapshot da mesma versão
+sem entrada posterior, inclusive zero, e mantém os IDs apenas para retry.
+GET realmente anterior ao SSE preserva a entrada posterior. Sucesso não eleva
+zero fresco; entradas visíveis enfileiradas também ficam pendentes se a aba
+for ocultada antes da repetição. Sem alteração de API, schema ou permissões.
+
+TDD: três casos novos falharam na R5 (37 passes / 3 falhas). O oráculo antigo
+foi corrigido com o TESTER para iniciar o GET antes do SSE, sem enfraquecer
+contagem 2 + 1 sem GET válido, deduplicação ou entrada durante leitura.
+Recorte final: 4 arquivos / 65 testes, saída 0. Gates Node 22.23.2 encerrados
+com saída 0: suíte unitária completa 73160, 842 arquivos / 6.535 testes;
+TypeScript 78883; lint 45672, 0 erros / 40 avisos herdados; integração 9920,
+2 arquivos / 15 testes (preferencias e motor/presenca), sem filtro ou ignorados,
+exclusivamente ci-integracao. Não é suíte completa de integração.
+
+Relatório: output/pr382-qa/revisao-r6.md. Parecer independente no commit exato
+e CI contra main continuam pendentes; não marcar #299 concluída antes deles.
