@@ -6016,3 +6016,7 @@ QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composica
 ## PR #399 — QA composta e integração C2 final
 
 Fontea5ecee15:patch461/c962+332compostos semantecipar319/E2;QAcompostafavorávelhash5d5e36...,patch461favorável130testespróprios/hash07f1...,pareceresversionados. Próprio9/18736daee,TSC19125/6fb917,lint27244/7d342a terminais0/40avisos. C2paineis.int completo1/12sessão40250/245fd8terminal0,36,07s,perfilciintegracaoexclusivo. Complemento3/30sessão81795/9f1ea7terminal0 (10CRMtags+20leitura/presença) separado;nenhumfiltro/skipsnovos/envio/migração. C3snapshotmesmoID/C4overlay9601400/C5propsórfãos/C6inventário naSPEC/report. Merge400db6sódocs/ancestralidade,fontea5preservada. CI/main400/merge399aindagates;output/pr399-qa/composicao-todos.md.
+
+## PR #401 — composição do cabeçalho e todos os comentários
+
+Fonte266b180e:7e988310patch474+399978compostos;1blocoquadroconservaambos,Conversa mantém315/Cabecalho/useAcoes comremoçãopropsórfãos399;teste315preservado,estadoPickee565intacto. JSConversaemitigual7e. Próprio10/201837b4b+2/5ceba6d,TSC40454/5b1118,lint85407/521e25 terminais0/40avisos,semglobalDB. QA474favorávelhash17259...versionada;QAcomposta/399main/CI401aindagates. C2buscafutura316/C3cortes9601400/C4recontaapenasok/C5inventário documentados; output/pr401-qa/composicao-todos.md. Semenvio/captura/migração/install.
