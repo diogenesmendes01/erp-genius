@@ -69,7 +69,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 94 PNGs: 48 do app e 46 do protótipo. O painel do
+`--estado todos` produz 106 PNGs: 54 do app e 52 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -123,3 +123,12 @@ Estados filtros, seletor-numero e nova-conversa acrescentam36PNG, três tamanhos
 O protótipo usa seus próprios gatilhos e conteúdo, incluindo fluxo D9 futuro apenas como referência; nenhum botão de criação/envio é acionado. AnonimizaçãoDOM392 continua após as interações/antesfoto e declarada no manifesto; HTML original intacto. Estados314/autoria/hidratação/guardReact e diagnóstico de rede são preservados. Formal313: conversa12+filtros12+seletor12+Nova12+celular-lista4=52PNG. Prova390×500/teclado/navegação e >100itens exige complemento coordenado; não se presume aceite por gerar arquivos.
 
 Nos selects nativos de NovoAtendimento, o nome do label implícito inclui texto das options; a espera usa regex ancorada no rótulo do campo. Regressão real/offline: node --test scripts/visual/espera-app.browser.test.mjs (Chrome local, sem app/DB).
+
+
+## Painel do contato (#318)
+
+painel-detalhes acrescenta12PNG (três tamanhos/dois temas/app×protótipo). Com tablet-painel e celular-painel, o recorte formal318 tem20PNG. Todos os estados313/314 permanecem. A CLI abre o painel único só quando ele não está visível, após conteúdo da thread e hidratação; não fecha acidentalmente a coluna automática desktop.
+
+A prontidão318 exige o setor visível e cabeçalho canônicoMariana/avatar132, tagsAdulto/Inglês/Noite com marca semautor naNoite, apenasDetalhes ativa e umfechar36, painel inteiro no viewport e transições terminadas. A fixture vem do integrador; a CLI não semeia nem executa ações. AprovaçãoAria/triagem e altura500/textos extensos são complementos privados coordenados, sem clicar ações de negócio. Divergências do protótipo: sóDetalhes, conteúdo ERP atual, sem editar/+tag e subtítulo setor/número; shell960/1400 substitui o hide1100 antigo.
+
+Informe INBOX_VISUAL_FONTE com o SHA exato do app para as evidências finais. O manifesto registra fonteApp e hashes SHA256 dos quatro módulos de captura/prontidão/anonimização. AnonimizaçãoDOM392 é reaplicada depois das interações e antes de cada foto em ambos os alvos, registrando política/versão/substituições; a demoApp já usa números fictícios. Não anexar captura com fonte nula como QA final. GuardasReact/rede/hidratação continuam reprovando falhas.

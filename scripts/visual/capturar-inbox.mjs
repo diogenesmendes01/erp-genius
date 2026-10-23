@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
@@ -67,10 +68,11 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
   await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (popoverColuna) await abrirPopoverColunaApp(pagina, estado, tamanho);
-  if (estado === "celular-painel" || estado === "tablet-painel") {
+  if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
-    await pagina.getByRole("button", { name: "Painel do contato" }).click();
+    await esperarHidratacaoApp(pagina);
+    if (!(await pagina.locator('aside[aria-label="Painel do contato"]').isVisible())) await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
   }
   if (estado === "painel-fechado") {
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -111,15 +113,18 @@ async function abrirPrototipo(pagina, estado) {
     await lista.getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
   }
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
-  if (estado === "humano-compositor" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
+  if (estado === "humano-compositor" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel" || estado === "painel-detalhes") {
     const chat = root.locator('[data-m="chat"]');
     if (!(await chat.isVisible())) await root.getByText(estado === "humano-compositor" ? "Beatriz Lima" : "Mariana Costa", { exact: true }).first().click();
     await chat.waitFor({ state: "visible" });
   }
-  if (estado === "celular-painel" || estado === "tablet-painel") {
+  if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     const detalhes = root.getByTitle("Painel do contato");
-    await detalhes.first().click();
-    await root.locator('[data-m="panel"]').waitFor({ state: "visible" });
+    if (!(await root.locator('[data-m="panel"]').isVisible())) await detalhes.first().click();
+    const painel = root.locator('[data-m="panel"]');
+    await painel.waitFor({ state: "visible" });
+    await painel.getByText("Mariana Costa", { exact: true }).first().waitFor({ state: "visible" });
+    await painel.getByText("Detalhes", { exact: true }).waitFor({ state: "visible" });
   }
   if (estado === "painel-fechado") {
     await root.getByTitle("Painel do contato").first().click();
@@ -140,6 +145,7 @@ async function main() {
   await mkdir(destino, { recursive: true });
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
   const capturas = [];
+  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
   try {
     for (const tarefa of tarefas) {
       const [width, height] = TAMANHOS[tarefa.tamanho];
@@ -168,7 +174,7 @@ async function main() {
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
         const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
-        const anonimizacao = tarefa.alvo === "prototipo" ? await pagina.evaluate(anonimizarTelefonesNoDom) : null;
+        const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom);
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
         await Promise.all(conclusoes);
@@ -183,7 +189,7 @@ async function main() {
       } finally { await contexto.close(); }
     }
   } finally { await browser.close(); }
-  await writeFile(path.join(destino, "manifesto.json"), JSON.stringify({ capturas }, null, 2) + "\n");
+  await writeFile(path.join(destino, "manifesto.json"), JSON.stringify({ fonteApp: process.env.INBOX_VISUAL_FONTE ?? null, fontesHarness, capturas }, null, 2) + "\n");
   if (capturas.some((c) => c.falhas.length)) throw new Error("Captura visual registrou falhas; veja tmp/visual/manifesto.json.");
   process.stdout.write(`Capturas concluídas: ${capturas.length} em ${destino}\n`);
 }

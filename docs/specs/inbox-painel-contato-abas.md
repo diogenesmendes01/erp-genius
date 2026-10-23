@@ -33,3 +33,10 @@ Somente quatro registros específicos de guardas foram autorizados: aba1 em NAO_
 Integração permitida foi somente paineis.int.test.ts no dev-email após snapshot completo do integrador:12testes EXIT0. Ele restaurou424 tabelas/551 registros e confirmou fixture307/314 normal9mensagens4notas. Não repetirDB sem janela. Não houve seed/reset extra, instalação, package/lock/schema, transportes, servidorDEV ou full próprio318.
 
 Após composição e fixes313: Node22.23.2, recorte47arquivos534testes EXIT0, TSCheap8192 EXIT0, lint18afetados0/0avisos. Não é suíte global. Scripts/visual/CLI seguem exclusivosB até handoff, quadro global não editado peloA. Roteiro em output/inbox-318-roteiro-visual.md inclui três tamanhos/dois temas app×protótipo, cortes699/700,959/960,1399/1400, altura500, nomes/tags longos, foco/resize/portal e nome acessível computado. Usar primeiro as tags canônicas autorizadas da Mariana e AriaBeatriz, sem novo preparoDB por suposição. Aceite visual/TESTER/global ainda não executados.
+
+
+## Harness318 e limites atuais
+
+HandoffCLI recebido; estado painel-detalhes cobre os3tamanhos canônicos/2temas/2alvos,12PNG. Com tablet-painel/celular-painel são20formais; totaltodos106,estados313/314 preservados. Prontidão318 exige conteúdo autorizado/cabeçalho/avatar132/tags canônicas/Detalhesativa/fechar36/geometria/transição,sem exigir threadoculta. Manifesto grava fonteApp/hashes4módulos e anonDOM392 nosdoisalvos apósinterações/antesfoto. CLI não criafixture/seed nem submete ações.
+
+Probes reais normais:18cenários emaltura500 naslarguras390/699/700/959/960/1024/1399/1400/1440,2temas,ACCNAMECDP/foco/rolagem/únicainstância/zerooverflow. Resize:2temas×10passos conforme automático308,mesmosnós e foco visível/nãoinert. Aria:fixture privada do integrador318,12cenários nos3tamanhos/alturascanônicas e500,aprovação/rejeição alcançáveis porTab/rolagem semacionar. Sugestão e9msgs4notas preservadas emGETposterior; dadosnão gerados porIA. Textos/tags extensos e triagem semfixture real permanecem limites explícitos atépreparocoordenado. O relatório distingue fonte9dd normal,9e resize/Aria e futurosformais, semaceite posteriorpresumido.
