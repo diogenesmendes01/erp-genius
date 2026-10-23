@@ -1,7 +1,7 @@
 export type AlvoVisual = "app" | "prototipo";
 export type TemaVisual = "escuro" | "claro";
 export type TamanhoVisual = "desktop" | "tablet" | "celular";
-export type EstadoVisual = { tamanhos: TamanhoVisual[]; prototipo: boolean; referencia?: string };
+export type EstadoVisual = { tamanhos: TamanhoVisual[]; prototipo: boolean; referencia?: string; motivoSemReferencia?: string };
 export declare const TAMANHOS: Readonly<Record<TamanhoVisual, readonly [number, number]>>;
 export declare const TEMAS: readonly TemaVisual[];
 export declare const ESTADOS: Readonly<Record<string, EstadoVisual>>;

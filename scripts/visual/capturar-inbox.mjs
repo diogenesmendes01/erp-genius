@@ -9,6 +9,8 @@ import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, com
 import { abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
+import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
+
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
 const nodeModules = path.join(raiz, "node_modules");
 const destino = path.join(raiz, "tmp", "visual");
@@ -60,12 +62,16 @@ async function prepararRede(contexto, alvo, base, falhas) {
   });
 }
 
-async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
-  await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com", process.env.INBOX_VISUAL_SENHA ?? "genius123");
-  const id = ["humano-compositor", "busca-conversa", "nota"].includes(estado) ? ids.beatriz : ids.mariana;
+export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
+  await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? (estado === "painel-vazio" ? "joao@genius.com" : "admin@genius.com"), process.env.INBOX_VISUAL_SENHA ?? "genius123");
+  if (estado === "carregando") return { finalizar: await abrirCarregandoApp(pagina, contexto, base), metadados: { fallbackReal: true, latenciaLocalMs: 3000, medicaoStreaming: false } };
+  const id = ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
+  const ausenciaLegitima = estado === "painel-vazio" ? await confirmarPainelVazio(contexto, base, id) : undefined;
+  const estado319 = ["painel-erro", "thread-erro", "painel-vazio"].includes(estado);
   const popoverColuna = ["filtros", "seletor-numero", "nova-conversa"].includes(estado);
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista" || popoverColuna;
   const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
+  const finalizar = ['painel-erro', 'painel-vazio'].includes(estado) ? instalarConclusaoMensagens(pagina, base, id) : undefined;
   await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (popoverColuna) await abrirPopoverColunaApp(pagina, estado, tamanho);
   if (estado === "menu-mais") await abrirMenuConversaApp(pagina, tamanho);
@@ -81,13 +87,21 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
     await esperarConteudoApp(pagina, "conversa", tamanho);
     await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
   }
-  await esperarConteudoApp(pagina, estado, tamanho);
-  await esperarHidratacaoApp(pagina);
+  if (estado319) {
+    await esperarHidratacaoApp(pagina);
+    if (["painel-erro", "painel-vazio"].includes(estado) && !(await pagina.locator('#painel-contato').isVisible())) await pagina.getByRole("button", {name:"Painel do contato",exact:true}).click();
+    await pagina.waitForFunction(semanticaEstado319Pronto, estado);
+  } else {
+    await esperarConteudoApp(pagina, estado, tamanho);
+    await esperarHidratacaoApp(pagina);
+    if (estado === "sem-selecao") await pagina.waitForFunction(semanticaEstado319Pronto, estado);
+  }
   if (estado === "humano-compositor" || estado === "nota") {
     await pagina.waitForFunction(semanticaRodapePronto, estado === "nota" ? "nota" : "responder");
     // Mostra a nota real seguida da autoria/status; rolagem interna explícita, sem sintetizar conteúdo.
     await pagina.getByRole("region", { name: "Conversa", exact: true }).getByRole("note").filter({ hasText: "Família pediu atendimento no período da tarde." }).evaluate(nota => nota.scrollIntoView({ block: "start" }));
   }
+  return { finalizar, metadados: ausenciaLegitima ? { ausenciaLegitima } : undefined };
 }
 
 async function abrirPrototipo(pagina, estado) {
@@ -163,7 +177,7 @@ async function main() {
   await mkdir(destino, { recursive: true });
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
   const capturas = [];
-  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
+  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
   try {
     for (const tarefa of tarefas) {
       const [width, height] = TAMANHOS[tarefa.tamanho];
@@ -178,31 +192,36 @@ async function main() {
           if (alvo === "prototipo") { localStorage.setItem("crm-role", "admin"); localStorage.setItem("crm-push-asked", "1"); }
         }, { alvo: tarefa.alvo, tema: tarefa.tema });
         await prepararRede(contexto, tarefa.alvo, o.base, falhas);
+        const erroControlado = await instalarErroEstado(contexto, o.base, ids?.beatriz, tarefa.alvo === "app" ? tarefa.estado : "");
         const pagina = await contexto.newPage();
         pagina.on("pageerror", (erro) => falhas.push(`pageerror: ${erro.message}`));
         pagina.on("console", (mensagem) => { if (tarefa.alvo === "app" && problemaReactNaCaptura(mensagem.text())) falhas.push(`React: ${mensagem.text()}`); });
-        pagina.on("requestfailed", (pedido) => abortados.push({ url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
+        pagina.on("requestfailed", (pedido) => abortados.push({ pedidoReal: pedido, url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
         pagina.on("requestfinished", (pedido) => {
           if (pedido.method() !== "GET") return;
           conclusoes.push(pedido.response().then((resposta) => { if (resposta?.ok()) concluidos.add(`GET ${pedido.url()}`); }));
         });
-        pagina.on("response", (resposta) => { if (resposta.status() === 404) falhas.push(`404: ${resposta.url()}`); });
+        pagina.on("response", (resposta) => { if (resposta.status() >= 400 && !erroControlado.respostaEsperada(resposta)) falhas.push(`HTTP ${resposta.status()}: ${resposta.url()}`); });
         pagina.setDefaultTimeout(30_000);
-        if (tarefa.alvo === "app") await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho);
+        let estadoApp;
+        if (tarefa.alvo === "app") estadoApp = await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho);
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
         const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
         const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom);
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
+        await estadoApp?.finalizar?.();
+        await erroControlado.finalizar(pagina);
         await Promise.all(conclusoes);
-        const diagnosticos = [];
+        const diagnosticos = [...erroControlado.diagnosticos];
         for (const pedido of abortados) {
           const registro = `requestfailed: ${pedido.url} ${pedido.erro}`;
-          if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
+          if (erroControlado.cancelamentoEsperado(pedido.pedidoReal, pedido.erro)) diagnosticos.push(`GET500 controlado cancelado e substituído por headers500 observados/erro público pronto: ${pedido.url}`);
+          else if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }
-        capturas.push({ ...tarefa, ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
+        capturas.push({ ...tarefa, ...estadoApp?.metadados, ...(ESTADOS[tarefa.estado].motivoSemReferencia ? {referenciaFuncionalPrototipo:null,motivoSemReferencia:ESTADOS[tarefa.estado].motivoSemReferencia} : {}), ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
         process.stdout.write(`${nome}: ${falhas.length ? `FALHAS ${falhas.length}` : "OK"}\n`);
       } finally { await contexto.close(); }
     }
@@ -212,4 +231,4 @@ async function main() {
   process.stdout.write(`Capturas concluídas: ${capturas.length} em ${destino}\n`);
 }
 
-main().catch((erro) => { console.error(erro); process.exitCode = 1; });
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((erro) => { console.error(erro); process.exitCode = 1; });

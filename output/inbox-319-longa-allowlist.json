@@ -1,0 +1,466 @@
+{
+  "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+  "execucoes": {
+    "longa": {
+      "session_id": 56958,
+      "exit": 0,
+      "contextos": 6,
+      "png": 30
+    },
+    "preflightCorrida": {
+      "session_id": 70678,
+      "exit": 0,
+      "contextos": 2,
+      "png": 0,
+      "incluirFotos": false
+    },
+    "corrida": {
+      "session_id": 66806,
+      "exit": 0,
+      "contextos": 6,
+      "png": 12
+    }
+  },
+  "inspecao": {
+    "concluida": true,
+    "pngInspecionadas": 42,
+    "metodo": "Inspeção visual das seis pranchas de cinco quadros da longa e seis pares da corrida, mais originais completos desktop/tablet; originais PNG preservados sem recorte.",
+    "limites": [
+      "Mobile320x500: scroller da thread tem61px nos estados de busca; nota e alerta podem aparecer parcialmente, retry fica integralmente visível apósTab6. Não afirma cabimento inicial do alerta.",
+      "Foto da nota após rolagem real instrumental não prova foco natural. Pin000 final e nota126.5 são etapas separadas; não exigida montagem simultânea.",
+      "Corrida: painel modal sobreposto é fechado por botão real em<1400; volta para lista apenas<960. Diagnóstico inert lê DOM oculto, ações só em controles visíveis.",
+      "Somente GET200 nativo via continue+CDP URLexata e requestfinished/finished/body. Injeção500 exata só na paginação com alerta público; classificador global preservado.",
+      "Telefones+5500 são dados fictícios/pseudônimos preservados pelo helper, não substituídos por label."
+    ]
+  },
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1024-2026-10-23T08-19-35.855Z/anteriores200-cdp-conteudo-preservado.png",
+      "bytes": 142315,
+      "sha256": "d96e5e04fdb3a3eb2eb7be7c9ba9e4103c036b5aca6b85bb4a7bedc66b287ff1",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-conteudo-preservado",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1024-2026-10-23T08-19-35.855Z/anteriores200-cdp-nota-real.png",
+      "bytes": 145493,
+      "sha256": "2669297e21fda274c4112c912808fb4f5673620f9f6a91af4a6c7f5d26abe885",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-nota-real",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1024-2026-10-23T08-19-35.855Z/erro-parcial-apos-teclado-pin-preservado.png",
+      "bytes": 141927,
+      "sha256": "fc78d8a2bc404cc95bfb1cddeaa0fe919db3f1a96d8a1d70bf3d5493d0e65d31",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "erro-parcial-apos-teclado-pin-preservado",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1024-2026-10-23T08-19-35.855Z/retry200-cdp-conteudo-preservado.png",
+      "bytes": 139313,
+      "sha256": "d1fa3492f363989b09491897ffdfb2bed1b1d4421c78dc5497effa19b23cae00",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "retry200-cdp-conteudo-preservado",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1024-2026-10-23T08-19-35.855Z/virtual157-busca-pin-final.png",
+      "bytes": 134914,
+      "sha256": "59fc2bbe8df098299849fe0a9d23e790eea731e32862aa84a922b044b574a34e",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "virtual157-busca-pin-final",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1440-2026-10-23T08-19-00.955Z/anteriores200-cdp-conteudo-preservado.png",
+      "bytes": 203422,
+      "sha256": "f5efea0aebfaaa9d54d872ffcb76f66ed1d260cb8edce34f664027780825e6b9",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-conteudo-preservado",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1440-2026-10-23T08-19-00.955Z/anteriores200-cdp-nota-real.png",
+      "bytes": 207977,
+      "sha256": "9aacb7da7a1bc8cfab33e77fab73745a75924b2811d21a2ed91c45339310a674",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-nota-real",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1440-2026-10-23T08-19-00.955Z/erro-parcial-apos-teclado-pin-preservado.png",
+      "bytes": 201988,
+      "sha256": "c85f0da691d3d06ece5c83e6c5a2d1ae2aa92ae2d4df465ace08baebd9b0ebdd",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "erro-parcial-apos-teclado-pin-preservado",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1440-2026-10-23T08-19-00.955Z/retry200-cdp-conteudo-preservado.png",
+      "bytes": 203899,
+      "sha256": "31abdaaa9fe8b124017649850e46f0183f892674f884763999911c58604b57c2",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "retry200-cdp-conteudo-preservado",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-1440-2026-10-23T08-19-00.955Z/virtual157-busca-pin-final.png",
+      "bytes": 197437,
+      "sha256": "dd98a40a0c5afa8d39f16e58f121fd86d075b02d042326146a4bb868375f3c96",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "virtual157-busca-pin-final",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-320-2026-10-23T08-20-07.370Z/anteriores200-cdp-conteudo-preservado.png",
+      "bytes": 25740,
+      "sha256": "720ff8cff5c710f7f204c4ef33e2318c701099d7f2a0de620c24374840279a02",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-conteudo-preservado",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-320-2026-10-23T08-20-07.370Z/anteriores200-cdp-nota-real.png",
+      "bytes": 27019,
+      "sha256": "238a5616ed27b445014ccdb61647d55f42facdb102dde0a57cc9656c9b848638",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-nota-real",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-320-2026-10-23T08-20-07.370Z/erro-parcial-apos-teclado-pin-preservado.png",
+      "bytes": 24183,
+      "sha256": "b19dbe99822508216ea3b7cbc5a92172c6a034ad22f2a9d889a4796418b6146b",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "erro-parcial-apos-teclado-pin-preservado",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-320-2026-10-23T08-20-07.370Z/retry200-cdp-conteudo-preservado.png",
+      "bytes": 25987,
+      "sha256": "c7842dd5009f9b03c3486beba3519c4b41abbefb838cf8b410c8529ab2ee4026",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "retry200-cdp-conteudo-preservado",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-claro-320-2026-10-23T08-20-07.370Z/virtual157-busca-pin-final.png",
+      "bytes": 27065,
+      "sha256": "aea50327fd1383499addb5df84e6245553df5ff048bd268e338247477480aace",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "virtual157-busca-pin-final",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1024-2026-10-23T08-19-51.647Z/anteriores200-cdp-conteudo-preservado.png",
+      "bytes": 144920,
+      "sha256": "9bf870e8f5a793bf4404eac749b724b5511913b752caea7aca7fdd14800d8c22",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-conteudo-preservado",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1024-2026-10-23T08-19-51.647Z/anteriores200-cdp-nota-real.png",
+      "bytes": 148017,
+      "sha256": "2d7b9afa5d2a2cfdb00dfa03bf34ba5e3fddbfe7c12e2c76fe415bee2ee0be9c",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-nota-real",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1024-2026-10-23T08-19-51.647Z/erro-parcial-apos-teclado-pin-preservado.png",
+      "bytes": 143496,
+      "sha256": "170656f673a7b47f4912977c0d85e9df2932c7819f95fc745b9e6e203ae16531",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "erro-parcial-apos-teclado-pin-preservado",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1024-2026-10-23T08-19-51.647Z/retry200-cdp-conteudo-preservado.png",
+      "bytes": 141394,
+      "sha256": "8f354a7dfe67296ecc2fe664405c7ed77111f99e4233ede71ca0d9d60808263c",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "retry200-cdp-conteudo-preservado",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1024-2026-10-23T08-19-51.647Z/virtual157-busca-pin-final.png",
+      "bytes": 137371,
+      "sha256": "4cba67b85faa508a7217fa7db1856c69f474d0eb971de19e72a327f7c374e7b2",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "virtual157-busca-pin-final",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1440-2026-10-23T08-19-19.960Z/anteriores200-cdp-conteudo-preservado.png",
+      "bytes": 205687,
+      "sha256": "e54f23ca01f624745e2de16efc6d09cd87864604fc73f37bb3949a36a84b7030",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-conteudo-preservado",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1440-2026-10-23T08-19-19.960Z/anteriores200-cdp-nota-real.png",
+      "bytes": 210976,
+      "sha256": "48dd8d6f8e2a6ce71ceca92d33c8348ce152fa8f5661d442a52a0fde0c393949",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-nota-real",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1440-2026-10-23T08-19-19.960Z/erro-parcial-apos-teclado-pin-preservado.png",
+      "bytes": 203288,
+      "sha256": "99d89f73c043d9b903f20347b491ed10cd08361b74ed1862b8db38b9709c8e90",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "erro-parcial-apos-teclado-pin-preservado",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1440-2026-10-23T08-19-19.960Z/retry200-cdp-conteudo-preservado.png",
+      "bytes": 206300,
+      "sha256": "d0dadecdb948e8ccb410da2e647311a20b62583d4754d3cde442332f96f0f6b2",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "retry200-cdp-conteudo-preservado",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-1440-2026-10-23T08-19-19.960Z/virtual157-busca-pin-final.png",
+      "bytes": 199350,
+      "sha256": "3b6c91aa006e4dcfbff53d04c8a99ed5bf7fa83e3af721b7b1f4027bb410751e",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "virtual157-busca-pin-final",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-320-2026-10-23T08-20-23.011Z/anteriores200-cdp-conteudo-preservado.png",
+      "bytes": 25926,
+      "sha256": "ac1abd9314bd029f8741fde834c96aaff6ee239d0c859f466199762830f9b354",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-conteudo-preservado",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-320-2026-10-23T08-20-23.011Z/anteriores200-cdp-nota-real.png",
+      "bytes": 27204,
+      "sha256": "ef9205829f620b4f408b09e62c25c07b1fe1cfeebc3d5feb0cd5dbe9d5f5b109",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "anteriores200-cdp-nota-real",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-320-2026-10-23T08-20-23.011Z/erro-parcial-apos-teclado-pin-preservado.png",
+      "bytes": 24244,
+      "sha256": "a30d3591569de95054d53c3f308ceb797eb307df045373b597bb17dbb0e5ca5e",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "erro-parcial-apos-teclado-pin-preservado",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-320-2026-10-23T08-20-23.011Z/retry200-cdp-conteudo-preservado.png",
+      "bytes": 26217,
+      "sha256": "d62dc3ba9e0d78ccecd44065f36737b3bc92af3daf62eab1376a9d12291b8c64",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "retry200-cdp-conteudo-preservado",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/longa-native-escuro-320-2026-10-23T08-20-23.011Z/virtual157-busca-pin-final.png",
+      "bytes": 27432,
+      "sha256": "a591f2d82487081cd222f15731c826808e3475e72ca8c9ac602bf51c3921fbfe",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-longa-nativa",
+      "estado": "virtual157-busca-pin-final",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-claro-1024-2026-10-23T08-32-13.622Z/corrida-painel-a-pendente.png",
+      "bytes": 131030,
+      "sha256": "48381bd74b14fa28ffbb2e2a759000264db8729cf2c8ec151820b7a4f1e91ff8",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-painel-a-pendente",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-claro-1024-2026-10-23T08-32-13.622Z/corrida-b-final-apos-a200.png",
+      "bytes": 124586,
+      "sha256": "ffa61616a3b329bb72880de23da4a47b3ad5ca8b41bb290268ef698c122775c4",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-b-final-apos-a200",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-claro-1440-2026-10-23T08-31-57.376Z/corrida-painel-a-pendente.png",
+      "bytes": 190888,
+      "sha256": "657be04b2f1ee187025e4cee69037222606bf292e3615c17ef9236edd1a3e08c",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-painel-a-pendente",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-claro-1440-2026-10-23T08-31-57.376Z/corrida-b-final-apos-a200.png",
+      "bytes": 163667,
+      "sha256": "7661f0545ee2dd519dbedb1d84923033608eb17da9201e4b9fe70e87fbf60770",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-b-final-apos-a200",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-claro-320-2026-10-23T08-32-29.451Z/corrida-painel-a-pendente.png",
+      "bytes": 14261,
+      "sha256": "545e7610adda7d36532adcab8115e45346799d3add35a78f02b6600524c61d66",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-painel-a-pendente",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-claro-320-2026-10-23T08-32-29.451Z/corrida-b-final-apos-a200.png",
+      "bytes": 14894,
+      "sha256": "f057d7894973e7cd05fa1957329679207f63f1b69f19128520824b7e1738e483",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-b-final-apos-a200",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-escuro-1024-2026-10-23T08-32-21.441Z/corrida-painel-a-pendente.png",
+      "bytes": 131043,
+      "sha256": "d2622c797d61356bc099b27741baf6e7a84375ea64783e6794d16b32c44778a3",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-painel-a-pendente",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-escuro-1024-2026-10-23T08-32-21.441Z/corrida-b-final-apos-a200.png",
+      "bytes": 123564,
+      "sha256": "d55f33347109a0043a3e6a7a2309833a4071dd32456d650ebc5845caecf83f33",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-b-final-apos-a200",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-escuro-1440-2026-10-23T08-32-05.565Z/corrida-painel-a-pendente.png",
+      "bytes": 193595,
+      "sha256": "a10b700cbce8b8ea0e49654437432026e380fffd3d64a87ed3dff948bd11903d",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-painel-a-pendente",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-escuro-1440-2026-10-23T08-32-05.565Z/corrida-b-final-apos-a200.png",
+      "bytes": 165028,
+      "sha256": "b10eab723b91e54d756e220ed389dc739d064bcc1e006612e5f320b4f9f519e2",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-b-final-apos-a200",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-escuro-320-2026-10-23T08-32-37.601Z/corrida-painel-a-pendente.png",
+      "bytes": 14553,
+      "sha256": "4268843f8a97d38b373d77e61ec68adac74306f6a2126654adb6d6e442d99be3",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-painel-a-pendente",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/corrida-painel-native-escuro-320-2026-10-23T08-32-37.601Z/corrida-b-final-apos-a200.png",
+      "bytes": 15112,
+      "sha256": "a1b453f9edf5b14f16faadf518b47b18a2aa61e2b78c83e548b83dcc92e2f585",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-corrida-painel",
+      "estado": "corrida-b-final-apos-a200",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    }
+  ],
+  "totalBytes": 5002722,
+  "metadadosSanitizados": "output/inbox-319-longa-evidencias.json",
+  "excluidosIntegrais": [
+    "corrida10159",
+    "corrida92223",
+    "corrida83659"
+  ],
+  "pacote": "Somente array arquivos; nenhum manifesto bruto, probe, prancha, log, RSC, HTML, snapshot, seed ou negativo."
+}

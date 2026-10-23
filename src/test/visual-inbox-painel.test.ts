@@ -5,7 +5,7 @@ afterEach(() => vi.unstubAllGlobals());
 it("painel-detalhes cobre três tamanhos/dois temas sem reduzir estados313/314", () => {
   const novas = combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-detalhes"] });
   expect(novas).toHaveLength(12); expect(new Set(novas.map(c => c.tamanho))).toEqual(new Set(["desktop", "tablet", "celular"]));
-  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS) })).toHaveLength(136);
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS) })).toHaveLength(164);
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["tablet-painel", "celular-painel"] })).toHaveLength(8);
 });
 it.each(["painel-detalhes", "tablet-painel", "celular-painel"])("%s aguarda setor e semântica318 sem exigir thread oculta", async estado => {

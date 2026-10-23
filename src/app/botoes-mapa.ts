@@ -1126,6 +1126,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "inbox/RodapeConversa.tsx": ["<Botao> Nota interna → neutro/md", "<Botao> Assumir para responder → primario/md"],
   "inbox/CabecalhoConversa.tsx": ["<Botao> Transferir → neutro/md", "<Botao> Assumir · Assumir conversa → primario/md"],
+  "inbox/ConversaAberta.tsx": ["<Botao> Mensagens anteriores → fantasma/sm", "<Botao> Tentar de novo → fantasma/sm"],
+  "inbox/InboxNovo.tsx": ["<Botao> Tentar de novo → secundario/sm"],
   "inbox/PainelContato.tsx": ["<Botao> Fechar → fantasma/sm"],
   "inbox/NovoAtendimento.tsx": [
     "<button> Abrir atendimento → primario/lg",

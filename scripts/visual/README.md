@@ -72,7 +72,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 136 PNGs: 72 do app e 64 do protótipo. O painel do
+`--estado todos` produz 164 PNGs: 100 do app e 64 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -157,3 +157,28 @@ A prontidão do app exige cabeçalho68, duas abas com seleção coerente/tabpane
 No protótipo, nota usa sua aba original e placeholder Nota interna · @ para mencionar; a menção é apenas diferença histórica da referência, não funcionalidade implementada no app. A CLI não altera HTML da referência, não aciona Enviar, Assumir ou agenda. AnonDOM392 apósinterações/antesfoto, manifesto com fonteApp/hashes4módulos, hidrataçãoSSE/guardReact/rede continuam intactos. Produto e harness têm fontes distintas e precisam ser registrados; não atribuir capturas anteriores ao novo compositor.
 
 Geometria/foco/scroll/identidade real a320×500, estados de permissão, idempotência e resultados tardios precisam de complementos coordenados e QA independente. Os testes unitários de prontidão não substituem navegador real. Formal/browser aguardam integração coordenadaC2/#402 e preview do integrador; nenhum browser/DB foi usado ao preparar este deltaCLI.
+
+
+## Estados #319 (harness preparado; formal aguarda composiçãoC2/Ready)
+
+Estados APP-only carregando, painel-erro, thread-erro e painel-vazio, além de sem-selecao ampliado aos três tamanhos. Lista-vazia mantém seus6APP+6refs reais. O recorte319 consiste em36APP+6refs=42PNG (1440×900,1024×768,390×844;dois temas). Complemento320×500 dos6estados/dois temas será privado,12APP adicionais, sem mudar TAMANHOS global. A matriz global164 preserva nota/humano-compositor317, busca316, autoria314 e estados313/315/318.
+
+Para o recorte, executar os cinco estados APP-only com --alvo app e lista-vazia com --alvo ambos, sempre um estado por invocação. Preservar tmp/visual/manifesto.json e os arquivos em diretório próprio antes da chamada seguinte. O manifesto explicita referenciaFuncionalPrototipo:null e motivoSemReferencia para os cinco estados sem referência funcional; não fabrica HTML/props/pixels de protótipo. A referência funcional existente listEmpty continua real e passa por anonimizaçãoDOM392.
+
+Carregando autentica, aguarda o evento real load de /home antes de ativarCDP e navega pelo router real para /inbox com busca única sob latênciaCDP3000ms; exige loading.tsx real, anúncio/título únicos e casca contida. Fotografa o fallback antes de aguardar hidratação do Inbox. Após a foto, retira a latência, espera hidratação/SSE e confirma mesmoTimeOrigin; não aborta propositalmente o request. É fallback observado sob latência, não medição de chunks/streaming. Nenhum HTML/RSC/resposta de negócio é fabricado.
+
+Painel-erro/thread-erro injetam500 só no GETsemquery do endpoint exato de Beatriz/painel ou mensagens e origem local. Apenas a mesma identidade Request efetivamente interceptada pode classificar sua resposta500 como diagnóstico esperado. POST, outro contato/path/origem/query ou qualquer outro status não são aceitos. Todo HTTP>=400 restante reprova; React/hidratação/pageerror/externos/requestfailed e classificador existente de GET substituído continuam ativos. A foto exige alerta público/retryenabled inteiros no viewport; no painel móvel abre a única instância após hidratação. Não faz retry/envio pela CLI; complementos privados provarão retry real200 e teclado sem refoco tardio apósC2.
+
+Painel-vazio usa fakeJoão por padrão quando INBOX_VISUAL_EMAIL não foi definido; os demais estados usam fakeAdmin. Override de email continua respeitado e pode reprovar preflight se enxergar uma oportunidade. Antes de abrir a UI, GETreal200 autorizado deve retornar objetoCOMERCIAL com oportunidade:null;500/404/403/401/null ou oportunidade visível falham em vez de virar ausência. Só então espera aviso neutro semalerta no painel. Não há seed/SQL ou transformação de JSON.
+
+Sem-selecao exige lista/hidratação e painel ausente. A área central é visível a partir de960, enquanto no celular a vista lista permanece com a conversa oculta; não força CSS para fotografar estado inexistente. Triagem não estava na fixture preliminar472: complemento com produtor real será fase coordenada separada. Esperas originais317/316 ficam byteiguais ao handoffbf4ad; somente novo helper estados-inbox/declarações e ligação da CLI tratam319. Todos os5módulos do harness têm SHA no manifesto. CLI exporta abrirApp para teste de fluxo sem executar main ao importar; chamada direta e --help permanecem iguais.
+
+Nenhuma captura final319 foi produzida por este delta.29PNG preliminares472 continuam históricos com fonte/limites explícitos, sem atribuição ao produto317/C2. Formal/inspeção/allowlist/QA/global/publicação aguardam janela do integrador.
+
+A prontidão Home foi corrigida após negativo84095: DOMContentLoaded+routerexistente podia preceder montagem e deixar navegação emHome. A/B real confirmou load como barreira antesCDP, mantendo predicado/timeout; teste causal falha seCDP iniciar antes do load. Não usar resultados84095 como formal concluído nem reatribuir global5e9 ao novo helper.
+
+
+Nos estados painel-erro/painel-vazio, o preparador instala antes da navegação uma barreira para GET sem query de mensagens da conversa exata. Depois da foto, finalizar aguarda o corpo/falha dos requests já iniciados, com limite30s e cleanup, antes de classificar cancelamentos. Não exige resposta200 nem thread visível atrás do painel; requestfailed e classificador continuam intactos. A barreira não aguarda SSE/POST/query/outra conversa, não consulta, não cria retry e não afeta thread-erro500. Formal96724 foi interrompida por veredito anterior ao body; toda a execução permanece negativa, nova formal completa depende de Ready.
+
+
+Nos estados de erro, o contrato500controlado diagnostica somente net::ERR_ABORTED de Request efetivamente injetado/fulfill500concluído, GETorigem/path/semquery exatos, após headers500 observados de OUTRO Request POSTERIOR da mesmaURL também injetado/fulfillconcluído e alerta/retry públicos reais revalidados. Não espera nem consome body500: o cliente rejeita !ok antes de lê-lo. Não afirma HTTP200recuperado ou corpo consumido. Sem substituto observado/estado público, continua falha; o classificador global e a barreira de200 permanecem iguais. Observadorresponse pré-navegação, limite30s de estado público e cleanup; Request sóem memória. Negativos e ruling substituído documentados no report. Toda formal88639 e o preflight52089 permanecem negativos, sem reutilização de parciais.

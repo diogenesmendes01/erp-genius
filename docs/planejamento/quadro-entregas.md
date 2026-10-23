@@ -5752,6 +5752,24 @@ sobrebasecomum294, seçõescompartilhadascoordenadas; nenhuma terceira função.
 Base29479848, branch própria preservando316/27b. Rodape com abas Responder/Nota, CampoTexto/agenda real/variante travada sem ativação Aria E1. Coordenador local mantém UMA instância de ações/diálogos; mesma conversa preserva caminho React scroller/VList, troca real pode remontar. Nota individual separada da permissão de envio; idempotência opcional por atendimento+texto e guarda de contexto/revisão contra resultados antigos, sem backend novo. Registros exatos de guardas aprovados; detector intacto.
 
 RED final a27db5 confirmou perda de edição/anexo durante await; GREEN97237343/43 inclui upload substituído e nota/emoji. Após patch: Node22.23.2, recorte7989 saída0 com72 arquivos/809 testes,34,75s/maxWorkers2/sem filtro de nome ou ignorados; TSC57095 heap8192 e lint11 fontes fa7780 --max-warnings0 saída0. Gates38827/72/803 e33289 são históricos anteriores ao patch final. Sem ownfull/DB/browser, sem imagens317. CLI, visual app×protótipo/320×500, QA independente e global integrado pendentes; C2/#402 reservado a outra frente, fonte de busca intacta na base294. SPEC docs/specs/inbox-rodape-compositor.md e relatório output/inbox-317-report.md; nenhuma homologação presumida.
+### #319 — checkpoint estático, UI e integração317 pendentes
+
+Branch OWN codex/inbox-e1-319 sobre294. Estados de página/thread/painel/semseleção com skeleton real960/1100/1400, sem ocultar notas388; erro público com retry/handoff síncrono, sem restaurar foco apósawait. VirtualList/busca/pin316 e hooksInbox R6/fila394/SSE396 preservados; lowerblockCompositor/ações/header byte-igual294 para merge coordenado A317. Mapas somente3Botao exatos e remoção da isenção raw migrada. REDs/negativos preservados em relatório, GREEN final9927/61arquivos861testes, TSC13787heap8192 e lint13fontes688eae0avisos terminaram saída0. SPEC inbox-estados.md/report output/inbox-319-report.md. NÃOconcluída: revisão exata, integração317, handoffCLI, imagens/inspeção/medição5estados+320×500 e globalROOT ainda obrigatórios. Sem ownfull/DB/SQL/seed/servidor/deps/envio; nenhum binário novo ou homologação presumida.
+
+
+### #319 — navegador preliminar472, formal combinado pendente
+
+QA estática independente11files306saída0 favorável condicional. Probes privados a62951/2d7b25/608110/33841/12443 saída0, desktopclaro1440×900+escuro320×500;29PNG inspecionados/2.777.875bytes com allowlistSHA. GETvazio200 real; erros500exatos/retry200, focoTabnatural12443 e notas/pin preservados60→120→153msgs/2notas/157itens.8873/90071negativos privados preservados e premissas descritas, sem alterarproduto/guard/CLI. Triagem ausente eC2#402/composição317 exigem formal posterior. ROOT encerroupreview22285/restaurou424hashes1372originais bfa460; DEV removeu sóAGENTSNext. Fonte472 imutável; sem ownfull/DB/servidor/envio. SPEC/report/allowlist/evidências explícitos, não concluída nem homologada.
+
+### #319 — composição preliminar com #317
+
+ROOT conciliou coordenador/rodapé a86c9ade com estados472e17fd na branch própria
+319. Primeiro recorte12arquivos:311pass/1fail por seletor legado
+CabecalhoControlado no novo teste319; ajustado só para CabecalhoConversa real,
+sem enfraquecer identidade/pin/termo. GREEN013e72 exit0:12/312,8,81s, sem filtros
+de nome ou skips. TSC63460heap8192 após ajuste e lint9fontes748069 zeroavisos, exit0.
+Não é global nem aceite; C2#402, CLI, imagens formais e QA da composição pendem.
+Evidências em output/inbox-317-319-composicao-checkpoint.md.
 
 ### #317 — revisão estática independente e harness congelado
 
@@ -5766,6 +5784,11 @@ fonte C2/Ready para capturas317. Parecer em output/inbox-317-static-review-teste
 ### #317 — CLI preparada separadamente, formal pendente
 
 Produto a86c9ade imutável enviado ao TESTER. RED8a9d756/6→GREENff1da18arquivos51testes; TSC38512heap8192/lint8fontes be4324/diffcheck c07e2e saída0 Node22. Estado nota12PNG e humano+nota24 formais planejadas, total136 CLI preservando estados prévios. Espera317 exige abas/campo/alvos44/header68/viewport; aviso footer separado de notas reais314, sem relaxar comandos/status/mídia. Sem browser/DB/PNG, nenhuma geometria real alegada. Formal/QA/global aguardam C2/#402 e janela ROOT. Produto e harness têm fontes distintas; capturas antigas não contam para317.
+
+
+### #319 — harness após handoff317, formal aguardaC2
+
+OWN93a5+bf4ad→dbb64b23, conflito somentequadro preservando históricos. DeltaCLI/helper/ESTADOS/testes/README, nenhum srcprodutivo; nota317/esperas/anonDOM intactos. REDs337787/35ae08/e7933f e CLI9321ef preservados; ligaçãoCRLF corrigida após lint36bf69. Recorte41761 saída0/15files307semfiltros; TSC82627 tuplemock falhou2 e após tipo sófixture TSCae2ba3heap8192 saída0; a1c7082files14+lint11zeroavisos saída0.42PNG+12mobile planejados, N/Aexplícito; nenhuma nova captura formal ouhomologação. C2#402/Ready/fixtureTriagem/complementos/TESTER/globalROOT/publicação pendentes. Sem ownfull/DB/preview/install/envio.
 ## PR #402 — C2: rolagem manual preservada, gates locais aprovados
 
 Correção isolada sobre d8dde4a1, só hook/teste: registra área/ID/scrollTop da
@@ -5813,6 +5836,15 @@ nota-protótipo com glifo acessível; humano12positivo e6appnota parciais preser
 separados, sem aceite final. A corrigirá seletor isolado; C2 ERP longo/SSE em QA.
 Report output/inbox-317-global-final.md registra fontes e pendências, não concluída.
 
+### #319 — C2+harness e compatibilidade de import no Windows
+
+ROOT compôs2f7b5a0d com3178aed/C2, conflito sóquadro. Primeiro72124 exit1:
+57arquivos624testes aprovados, suíte fluxo semexec por SyntaxError. Mesmos
+blobs/versões; Node--check/--help0, experimento f5deab confirmou causalmente
+CRLF no shebang e restaurou bytes. Atributo eol=lf apenas para CLI resolve sem
+alterar lógica/package/lock. Mesmo recorte21327 exit0:58files628tests15,98s,
+TSC44335 exit0. Ainda pendem patchnota317, global/QA/formal/Triagem; report
+output/inbox-319-c2-harness-integracao.md não declara issue concluída.
 ### #317 — normal df9 validado; correção isolada do seletor de nota
 
 Formal16261 parcial negativo: humano12OK, appnota6 fora do pacote completo por timeout do nome acessível com glifo no protótipo. NormalR2/29367 saída0:8ctx24PNG/mesmoDOM/âncora0px/teclado/rascunhos/agendaEscape/busca/320×500. Permissões89958 saída0:6ctx12PNG, Lucas negado real e null/503 transporte controlado, semsubmit/envio/DB.48positivos inspecionados; imagens locais, formalnota continua pendente.
@@ -5829,6 +5861,12 @@ umSSE+umGET200bodyporcontexto, manual12716/11859 e focoexternopreservados,
 uma fonteativa/zeroerros. ROOT emitiu avisos8c7ee0/f8d488; snapshotTESTER
 restaurado393c28/424hashes1386 e A e27558/551, previewsparados. Pareceres e
 limites no globalreport; rodadaformal24 corrigida/globalnovo ainda pendentes.
+
+
+### #319 — composição C2+nota317 verificada DEV, global e formal pendentes
+
+FFa1ba+merge317bbb→0f80f61d, conflito sóquadro preservado. CLI mudou sóseletorproto e mantémLF/export/helper/estados319; C6nãoportado. DEVNode22: recorte26869 saída0/70files863testes36,72s,maxWorkers2,semfiltros/skip; Chromeofflinebd7ba6 2/2; TSC37494heap8192/lint14fontes74f64a zeroavisos saída0. Semappbrowser/DB/preview/envio/novafunção. Fonte congela para ROOT executar global noOWN antes deReady; formal42+12mobile, retry/paginação/C2/Triagemreal/inspeção/QA/publicação ainda pendentes.29PNG472 históricas não atribuídas àcomposição.
+
 
 ## PR #396 — C6: recuperação autônoma em verificação
 
@@ -5912,6 +5950,10 @@ prefer-const na fixture de teardown, corrigido sem alterar produção; lint
 dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
 
 
+### #319 — porte isolado C6 verificado, global coordenado pendente
+
+fad43+cherry-pick funcional01a254f5→88fb31d8, sóSSE/testes+SPEC/quadro, sem ancestralidadeampla. Fonte/testes byteiguaisorigem39437068/79a69e0a; único conflitoquadro preserva315/316/317/319 e acrescentaC6. DEVNode22 recorte15393saída0/63files577testes15,25s/maxWorkers2/semfiltrodenomeou skips; lint2fontes6d1807saída0/0avisos/diffcheck0. Semappbrowser/DB/preview/envio. TSC/gatesfad43 sãohistóricospré-C6; global/TSC/TESTER e formal42+12/complementos aguardamROOT nafontecongelada. Nenhuma tarefa320 ou outroporte iniciado.
+
 ### #317 — evidências DEV encerradas, publicação/aceite integrado pendentes
 
 Fonte317bbb, formalR2/4941EXIT0 com24/24APP×proto humano+nota/3tamanhos/2temas, todasinspecionadas; formal16261 inteira fora pacote. Complementos24normal+12permissões mantêmdf9/produçãoequivalente semreatribuição: abas/rascunhos/agendaEscape/mesmaDOM/âncora0, Lucasnegado real e null/503transportecontrolado. C2/88684EXIT0:2ctx10PNG/165decorados, pin000/149visíveis, prependcomfoconatural e wheelmanual preservado apósSSErealROOT; GET4→5/5→6/?depois, top631/575 eâncora0/mesmoDOMfoco noSSE, semresync/envio/SQLDEV.
@@ -5923,6 +5965,17 @@ Fonte317bbb, formalR2/4941EXIT0 com24/24APP×proto humano+nota/3tamanhos/2temas,
 Fonte85f (produtoa86+harnessaa570+buscaC2+SSEC6), metadados9005; global56369 EXIT0 897arquivos/7021testes270,09s/maxWorkers2/semfiltro/skips, typegen/TSC38143 e lint49666 EXIT0 (42avisos40src+2stagingprivado). Formal4941 EXIT0 24/24; DEV70originais+18pranchas e TESTER34PNG allowlisted,122PNG/137files no ZIPdraft15.823.526bytes SHA74a17180 conferido por download. Artefato e fontes/limites em output/inbox-317-evidencias-remotas.json e global-final.md. C6 igualisolado01a; visuais anteriores não provam retryC6. SnapshotA424hashes551 e TESTER424hashes1386 restaurados após317, semsend/external/deploy. PublicaçãoPR/CI/revisão/dependências e merge ainda pendentes, issue não fechada.
 
 
+### #319 — prontidão Home do harness corrigida, recaptura pendente
+
+Formal84095 saída1 timeoutcarregando; execução inteira fora daallowlistfinal. A/B64168 helperreal: DCLantesmount/zero fallback/URLHome/manifestoexit1 versusload/fallbackreal/predicadoigual/exit0. ROOTparou94575 e autorizou1linhagotohomewaitUntil load antesCDP/routerPush; semalterarprodução/predicado/timeouts/JSON2xx/protótipo/guardas/sleep. AGENTSNext removido isoladamente, CRLF original. RED4b27341fail10pass→GREENbb4c6510files66testes0; TSC29431heap8192/lint2fontes5a2b82zeroavisos saída0. Global5e9899/7054 histórico préajuste, nãoatribuídoanovaCLI. Sem browser/DB/previewapósstop; formal42+12 e fases150/Triagem aguardamnovoReady.
+
+
+### #319 — barreira finita de corpo no harness, nova formal pendente
+
+Negativo96724 em1b6: painel-erro foi fotografado antes de GET substituto terminar; dois cancelamentos reprovaram classificador ainda sem recuperação concluída. Toda a formal excluída da allowlist. Diagnóstico85f744 com routefetch/fulfill200 é limitado; causal dd988c com CDP/latência real exata, sem interceptar200, confirmou false/false antes e true/true após requestfinished, 1doc/SSEmáx1. ROOT parou20932/restaurou snapshotB3b6192; blocoNext removido isoladamente. Delta autorizado sóharness/testes/docs: painel-erro/painel-vazio observam GET exato antes do goto e aguardam corpo/falha até30s antes do veredito, cleanup, sem exigir200/alterar guardas/classificador/foto/predicados. REDf7baec2falhas→GREENaf6ac1/33bf7311testes0; recorte13226 14files246testes0; TSC71693 sótipo do deferred corrigido, final pendente nofreeze; lint4fontes5d16f7zero. Fonte produtiva igual1b6/5e9, nenhum global novo. Formal42+12/inspeção/fase150/Triagem/QA/publicação continuam pendentes; sem320.
+
+Gates finais da barreira: TSC42755 heap8192 saída0 observado, lint4fontes5d16f7 saída0/0avisos, diffcheck/Nodecheck/help cbde28 saída0; produção/AGENTS intactos. Fonte congelada aguardando Ready para nova formal inteira.
+
 ### #317 — PR403 C3 armazenamento confirmado (revisão)
 
 Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, sem escrever em outro contexto nem apagar edição nova. Remount/cleanup integral revogam callbacks conservadoramente. RED causal real/StrictMode preservado no relatório;10arquivos/257testes, TSC77347/lint8d25f7 saída0 Node22.23.2. Sem full/DB/browser nesta revisão; visual antigo explicitamente histórico. C2 menu, QA independente e integração/publicação pendentes.
@@ -5933,10 +5986,22 @@ Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, 
 Somente projeção local: Nota individual disponível em ENCERRADO, mantendo grupos sem Nota e gates de envio/agenda/gestão fechados. Servidor/escopo inalterados. RED212ccc→GREEN02e329; combinação C3+C2:13arquivos/319testes13331, TSC85482 heap8192 e lint8fontes4d0679/teste5c48e7 saída0 Node22.23.2. TSC1949 inicial era fixture com literal alargado, corrigido. Sem DB/browser/full próprios. Complemento visual do menu encerrado, QA exata/global integrado/publicação pendentes do ROOT. Fontes visuais históricas preservadas no relatório.
 
 
+### #319 — identidade da injeção500, formal ainda pendente
+
+Formal88639 negativa inteira:18PNG anteriores passaram, mas seisthread-erro tiveram doisabortos da própriainjeção500 sem200possível. Causal ada905 comprovou identidade/timing no helperreal; ROOT parou88451/restaurou b00915/424hashes1372 e aprovou extensão estrita somentecontrato500. Exige Request efetivamenteinjetado/fulfillconcluído, GETURLsemquery eERR_ABORTEDexatos, substituto posteriorMESMAURL finalizado500/body e estado públicopronto; demaisfalhas continuamreprovando, classificador global intacto. Observerpré-navegação/finalizadorpósfoto30s/cleanup, Request sóem memória. RED12→GREEN34, adversariais adicionais e gates finais nofreeze. Nenhuma produção/DB/envio/deps/novo global; formal42+12 e fases150/Triagem/QA/publicação seguempendentes. Nãoiniciar320.
+
+Gates do contrato500: recorte64047 saída0/15files259testes19,11s/maxWorkers2/semfiltroouskip, TSC81473heap8192zero, lint4fontes2f5b4dzero/0avisos, diffcheck/check/help501123zero. Novo teste cobre13casos controlados, além dos guardas. Produção/AGENTS intactos; sem browser/DB desde stop e sem novo global. Freeze aguardandoReady/preflight antes de repetirformal42+12.
+
 ### #317 — PR403 complemento29f e expectativa legada alinhada
 
 8PNG/2contextos positivos028fd6 inspecionados: Lucas-origem real ENCERRADO/GET200/enviofalse, Nota menu+rodapé/dialogo semsubmit e foco,1SSE simultânea/ativa (2construçõessequenciais). Allowlist positiva11arquivos em output/inbox-317-probes/review403-menu-allowlist.json; negativosR1 fora. Contrato legado AcoesAtendimento.test foi RED5be328 e atualizado só para Nota porleitura, preservando/ampliando todos negativos de negócio. GREEN9/126e86102, TSC94141/lint0b692d/diff1988510 Node22.23.2. Produção29f invariante; semPNG emGit/full/DBDEV. SnapshotA restaurado7e0eeb peloROOT; semserver/browserA. QAexata/global integrado/publicação pendentesROOT.
 
+
+### #319 — ruling500 revisado por evidência real, nova formal pendente
+
+FF846→afd08 autorizado, owner317C3/menu/A7 e estados319 preservados; recorteunido33177 67files773testes/TSC88551/lint15fontesce85dd todos0. Preflightreal52089 no Ready57416 terminou1 antesformal: Request500com erro público não consumia body e finished não encerrava; bodyvazio18264 também1, CDPpassivo e97bda confirmou headers500/dataReceived semfim, nãoéaceiteUI. ROOT retirou exigência excessiva finished500: contrato vigente requer Requestcancelado efetivamenteinjetado/fulfill500concluído, GETURLsemquery/ERR_ABORTEDexatos, OUTRO RequestPOSTERIOR mesmaURL comheaders500observados/injeção/fulfillconcluído e alerta/retrypúblicosrevalidados. Semissofalha; semdreno/fetchwrapper/alegarbodyconsumido ou200recuperado. GLOBAL/barreira200 intactos. ROOTparou57416/restaurou47bb95, AGENTSNext isoladamente removido. REDfiel2fail12pass→GREEN4files36testes; gates finais nofreeze. Novaformal42+12 e preflight/longa/Triagem/QA/publicação pendentes.
+
+Gates do rulingheaders500: recorte40409 15files260testes20,15s/TSC21486heap8192/lint3fontes39df56/diffcheckcheckhelp7aa68d todos saída0; lint0avisos. Barreira200/global e produção iguaisafd08, trackedAGENTSoriginal. Freeze7files apenasharness/teste/docs, sem novo global e formalpendenteReady/preflight.
 dirigido posterior0. Global01a22304 EXIT0:860arquivos/6.756testes,sem
 filtros/ignorados,maxWorkers2,262,87s. TSC5638/lint97309 EXIT0,0erros40avisos.
 TESTER01a favorável6/47 próprios,cb5243 EXIT0,sem DB/browser/global próprios.
@@ -6081,6 +6146,28 @@ remoto/hash/DRAFTconfirmados,fontes/limites explícitos,sem alegarE2EenvioC3.
 CI/main/392B2 pendentes. output/pr403-qa contémpareceresindependentescurados.
 
 
+### #319 — entrega visualDEV final4fade e ambiente restaurado
+
+Fonte executável4fade imutável: formal3127(42PNG)+mobile22954(12PNG), longa56958(30PNG)+corrida66806(12PNG;preflight70678separado0),Triagem66205(6PNG), todas saídas0 e102PNG inspecionadas. Allowlists explícitas normal54/longa42/triagem6 em output/inbox-319-*-allowlist.json,9.015.418B; SHA normal1165…/longaa6e2…/triagem8a79…. Validador400868 saída0, nenhum binário/raw/probe/negativo emGit. GET200 nativoCDPexato+finished/body,1documento/SSEmáx1/0falhas por contexto. N/Aprotótipo5estados; mobile janela61px/alerta e nota parciais/retryTab6 e painel-vazio após scroll local estão explicitamente limitados, sem alegar cabimento inicial. Triagem banner>=960 acima do vazio/mobilecentraloculta, semAPIextra/envio. Negativos integrais10159/92223/83659/84095/96724/88639/51674/85691 preservados, sem reaproveitar parciais.
+
+ROOT informou global moderno903arquivos/7101testes/TSC/lint0 e TESTERestático13/2120; nãoéfullDEV nem atribuídoaCLIantiga. Todos browsersfechados,preview20486paradoCtrlC1esperado/3111livre;restauraçãoFINAL4f3b20 saída0 preservou424hashes/1372originais/canônica3msgs1nota. ApenasNextAGENTSgerado removido apósstop. Commit final sóreport/SPEC/quadro/3allowlists+2evidênciasmetadatasanitizadas; fonte4fade permaneceigual. QA Triagem1769/pacote remoto/publicação aguardamROOT; não presumirhomologação/PR/upload. Sem320.
+
+### #319 — revisão individual pronta, evidências remotas e QA final
+
+Base empilhada `codex/inbox-e1-base-319` em403 publicado68e95d8e; branch de revisão `codex/inbox-e1-319-integracao`. Código integrado b8edd5d/identidade documental09df7316 preservado. ROOT global36316 saída0:903arquivos/7101testes,272,01s,maxWorkers2,unitários sem filtros de nome/skips adicionais; integração excluída pela configuração. Nexttypegen/TSC15978 e lint92079 saída0,0erros/42avisos locais (40src+2stagingprivados318), gateCI40 não alterado. TESTER composição137c14 saída0/13arquivos212testes e identidade documental06f378; harness4fade92623a saída0/36testes.
+
+DEV102PNG positivas inspecionadas (normal54,longa/corrida42,Triagem6),allowlists/fontes4fade explícitas. TESTER32PNG históricas5e9 separadas de6PNG atuaisTriagem1769,726635 saída0; não atribuir visuais à confirmaçãoC3. Pacote `inbox-319-evidencias-b8.zip`:140PNG/149arquivos/12.106.367B,SHA0972487e1b482aaf5058dff7482585b2404bd09751be7de9c90503f1a37b68c5. Release DRAFT confirmada5fbb67,upload92c045/download17c576 saída0 e bytes/SHA iguais; metadados em output/inbox-319-evidencias-remotas.json. QA ZIP LOCAL independente e4b75e saída0:148/148arquivos listados com hashes/tamanhos/cincoallowlists/fontes,semextras/duplicatas/traversal/proibidos; parecer output/inbox-319-pacote-review-tester.md. Roundtrip remoto é do integrador.
+
+Todos os browsers/previews encerrados. Bancos B/TESTER restaurados424hashes originais,4f3b20/322fb1 saída0 (1372/1386linhas); NextAGENTS só bloco gerado removido. Limites: cincoestadossemreferênciaproto recebemN/A;320x500 exige scrolllocal/Tab em algunsestados,janela61px emlonga,semcabimentoinicialpresumido. Negativos inteiros fora dasallowlists; nenhumenvio/integraçãoexterna/deploy. Pendências: CI do checkout rastreado, revisão GitHub e integração emmain; semmarcarissuefechada ouhomologaçãopresumida. Próximafrentefuncional é #320 após handoff da versão validada.
+
+## PR #405 — C1: incorporar main preservando o quadro
+
+R1 GitHub `5626077684` aprovou o head `16e3298d`; seu único MEDIUM pede trazer main antes do merge. Main consultada `cce21e19` incorporada com dois conflitos exclusivamente no quadro, ambos com lado main vazio. Resolução literal dos seis marcadores preservou o quadro completo e toda a árvore do head aprovado (`655831`, saída 0), antes deste registro. A main e a base #403 `68e95d8e` continuam ancestrais. Somente esta entrada e `output/pr405-qa/revisao.md` acrescentam conteúdo; código, testes, scripts, schema e dependências permanecem idênticos. Os PNGs antigos da #298 continuam ausentes. Sem repetir gates por documentação; resultados anteriores permanecem nominais às suas fontes. CI final e integração dos predecessores, incluindo B2 humano da #392, pendentes; nenhuma issue marcada concluída. LOW C2 não implementado conforme autorização.
+
+
+## PR405 — todos os comentários da revisão
+
+C2LOWavaliado:21outputs/4863linhas(8JSON4355+13MD508), incluindo15linhasda posteriorrevisao.md. Mantidos registrosfontes/medidas/allowlistsporqueZIP319histórico(140PNG+8MD+manifesto)não duplicaindividualmenteessesJSON. NenhumPNG/execução/browser/downloadnovo. Registro output/inbox-pr405-review-todos.md. C1main/CI/QAfinalapóspaispermanece gate, preservandoQA280/planejamento297/correçõespredecessoras. PatchsomenteMD, código/config/imagensidênticos4af;semnovotesteboboparadocumentação.
 ## PR403 — C4/C5/C7 e mapa integral R1 (revisão documental)
 
 Base68e95d8e preservada; zero delta runtime/testes/scripts/deps. C4 intencional: texto tem rascunhos separados, File/voz de Responder temporários são descartados/interrompidos ao mudar modo; não há promessa de preservar anexo ou cancelar POST/envio já iniciado. C5 mapeado na SPEC aos nomes reais e ao alcance SSR/harness/17ReactDOMStrictMode, sem inventar assertivas CSS ou prova de microfone. C7 inventário próprio a8→68e22outputs/1.826linhas (14MD501+8JSON1325), links/fontes/hashes históricos curados, zeroPNG/probescript novo. C2 Nota por leitura inclusive ENCERRADO e C3f896/741 intactos. Recorte8/1028b5363, TSC4700/7ca537, lint10fontes227ef7 saída0 Node22.23.2; lint inicial a6fa9e falhou por caminho inexistente no comando, corrigido sem fonte. C1/main/CI/retarget e C6 conflitos docs seguem integrador; semDB/browser/global/push. Relatório output/inbox-pr403-review-todos.md; não reatribuir imagens29f/A7/317bbb/df9 ao C3final.
@@ -6252,6 +6339,10 @@ Fonte337832c0:ea1/a5b8MD+4027b1,1blocoquadroconservaambos. C2NotasENCERRADO/grup
 ## PR #403 — QA composta favorável
 
 QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compositor/rascunho/rodapé/ações/menu preservados,JSX/hookConversa intactos,triagemrealInboxativa;patches402398400/Pick401/B2/QA297preservados. Nenhumtestes/DB/browseradicional doTESTER;gatespróprios11/241/TSC/lint40nominais337. Fonteexecutáveligual337apósregistrosMD,402main/CI403aindapendentes.
+
+## PR #405 — estados319 compostos e QA favorável
+
+Fonte101c6618:patch73c7/c3+4033e40;1blocoquadroconservaambos, estados/harness319 ecompositor403preservados, sóJSDocalias400backend. Próprio15/237c5f75a,TSC26774/a8d1a3,lint79756/0ea74b terminais0/40avisos. QApatch73favorávelhash0b45...eQAcomposta101favorávelhashcb91772b...versionadas;pareceressemnovotestesDB/browser. C2LOWinventário/custódiaevidênciasexplicitados, C1main/pais403/CI405aindagates. Fonte101preservadaapósMD,nenhumE2antecipado/DB/envio/install/migração. output/pr405-qa/composicao-todos.md.
 ## PR #399 integrada; PR401 pronta para CI final
 
 #399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
@@ -6263,3 +6354,7 @@ QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compos
 ## PR #402 integrada; PR403 pronta para CI final
 
 #402 squashd7255884aa17c563b08b21a30d1e0d3f1ff5638e, CI40019446915success5/5apósretrySOMENTESPnoMESMOSHAf060(primeirotimeout20minsemfalhatesteregistrada), QA1ee9favorável, issue316CLOSEDconfirmada. Squashtreeigualf060; incorporação403INDEXINTEIROigual278 após12conflitos deancestralidade. Fonte337/QA695b/11-241/TSC/lint40preservados;CI403main2TZaindapendente,semfechar317antecipadamente.
+
+## PR #403 integrada; PR405 pronta para CI final
+
+#403 squash713dca8d219af6b58a35f83a9f2c6091789a1f31, CI40024011516success5/5, QA695bfavorável, issue317CLOSEDconfirmada. Squashtreeigual7a7;incorporação405INDEXINTEIROigual89f8 após8conflitos deancestralidade. Fonte101/QA cb917/15-237/TSC/lint40preservados,apenasMDdepoisgates;CI405main2TZaindapendente,semfechar319antecipadamente.
