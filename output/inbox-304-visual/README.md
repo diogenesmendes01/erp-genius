@@ -1,7 +1,13 @@
-# Evidências DEV — #304
+# Evidências históricas da PR #389
 
-`antes/metricas.json` e `depois/metricas.json` contêm as 24 medições de cada fase (6 tamanhos × temas claro/escuro × lista/selecionado). O formulário está aberto, como na página atual. Métricas sem credenciais/cookies. Capturas feitas no app local real; transportes externos desativados. O harness público `capturar.mjs` usa apenas variáveis INBOX_VISUAL_EMAIL, INBOX_VISUAL_PASSWORD e INBOX_VISUAL_ATENDIMENTO de fixture local; não gravar seus valores. Execução manual com Node22/Chrome local e Playwright já preparado pelo integrador, sem instalação.
+Os 107 PNGs originais permanecem no commit `ae4d71b1`, sem force, e no pacote
+local `output/qa-archives/inbox-pr389-legado-ae4d71b1.zip`:
+7.741.141 bytes, 117 arquivos, SHA256
+`c0497482162947d74f57d30b4a5857309ab07f2119c568f8d62a09eb2f2c2035`.
 
-Versionadas: todas as 24 PNGs oficiais antes/depois em 1440×900,1024×768,390×844, claro/escuro, lista/selecionado. Exemplos extras depois:700×768 escuro selecionado,390×500 claro selecionado,1440×500 claro selecionado. As outras21 PNGs extras permanecem localmente. As48 capturas somadas com métricas/harness ocupam cerca de3,7MiB; seleção reduz a carga do diff sem omitir nenhum estado oficial.
+Cada PNG foi comparado por tamanho/hash antes de sair do index. O manifesto
+versionado conserva os 107 caminhos, tamanhos e hashes. Nenhum novo upload
+legado foi feito. O pacote pode ser reconstituído pelo commit e esta pasta.
 
-Antes há overflow em todos os casos; depois nenhum. Prova de scroll interno usa conteúdo temporário aria-hidden para produzir overflow na fixture curta; não testa paginação. Acesso a controles é verificado por scrollIntoView dentro das regiões, sem executar ações. Limites e histórico das duas falhas intermediárias estão no relatório/SPEC. Badges do Next dev não foram ocultados. Não há mensagem/envio real nem homologação de negócio.
+A revisão de telas baixas possui métricas positivas em `output/pr389-qa`;
+não é homologação automática da casca #308 ou do cabeçalho #315 posteriores.
