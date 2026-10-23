@@ -59,6 +59,16 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     expect(await pessoaDoAtendimento(c.dono, c.a.id)).toBeNull();
     expect(await carregarDetalhesPainel(c.dono, c.a.id)).toMatchObject({ pessoa: null, oportunidade: { id: c.op.id }, campos: [] });
   });
+  it.each(["sem pessoa", "responsável legal"] as const)("catálogo de tags exige identidade autorizada: %s, mesmo com editarTags", async caso => {
+    const c = await cenario();
+    const tag = await prisma.tag.create({ data: { nome: "Catálogo ativo fictício", cor: "NEUTRA" } });
+    expect(await prisma.tag.count({ where: { id: tag.id, ativo: true } })).toBe(1);
+    if (caso === "sem pessoa") await prisma.oportunidade.update({ where: { id: c.op.id }, data: { pessoaId: null } });
+    else await prisma.responsavel.create({ data: { nome: "Responsável fictícia", pessoaId: c.pessoa.id } });
+    const cabecalho = await carregarCabecalhoPainel(c.dono, c.a.id);
+    expect(cabecalho).toMatchObject({ pessoaId: null, capacidades: { veLead: true, editarTags: true } });
+    expect(cabecalho?.tagsDisponiveis).toEqual([]);
+  });
   it("sem lead: fallback somente à pessoa do contato dentro do escopo, não por telefone", async () => {
     const c = await cenario();
     await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { leadId: null } });

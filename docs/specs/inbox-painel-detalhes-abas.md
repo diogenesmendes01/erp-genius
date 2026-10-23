@@ -38,3 +38,7 @@ Pedido de pool1 é validado em transações reais: carteira própria, equipe, co
 Gates DEV finais observados em Node22.23.2:15arquivos143unit (1be1d1);9arquivos80INT em duas sessões exclusivas A14422/32185;TSC10376 heap8192/lint12fontes77357a max0/diffcheck0. Sem filtro de nome/skips novos nas execuções finais; RED D13 isolado -t/10filtrados só histórico. Banco liberado ao ROOT após sessão32185 terminal0, restauraçãoE2/QA/global integrado ainda sob coordenação. UI N/A, sem homologação presumida.
 
 Evidência EXTERNA do integrador após liberar o banco: ROOT def141 terminal0, snapshotE2 A restaurado,424hashes conferidos/553registros originais/fixture9mensagens4notas preservada. Nenhum preview ou nova suíte A iniciada; essa restauração não foi executada pelo DEV. Gates DEV acima permanecem os mesmos; QA independente/global integrado/publicação aguardam coordenação.
+
+## Correção P2 após QA de6076
+
+Catálogo de tags exige simultaneamente pessoa resolvida válida e capacidades.editarTags. A capacidade projetada pode continuar true para lead autorizado sem pessoa/legal; isso não autoriza consultar catálogo sem alvo. Guarda local pessoa && capacidades.editarTags, sem mudar matriz321/escopos. RED não vazio com tag ativa e editarTags=true nos dois contextos; unitário prova ausência da consulta. Nominais6076 não cobriam essa borda e permanecem históricos. Pós-patch:15/145unit,3/28INTcompletos,TSCheap8192/lint3fontes/max0/diffcheck0,Node22. RechecagemQA/global integrado e restore desta janela E2 sob coordenaçãoROOT.

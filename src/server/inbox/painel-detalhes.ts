@@ -80,7 +80,7 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   const { fonte } = nomeEFonteDoAtendimento(a);
   return {
     pessoaId: pessoa?.id ?? null,
-    tagsDisponiveis: capacidades.editarTags ? (await tagsAtivas()).map(({ id, nome }) => ({ id, nome })) : [],
+    tagsDisponiveis: pessoa && capacidades.editarTags ? (await tagsAtivas()).map(({ id, nome }) => ({ id, nome })) : [],
     subtitulo: a.finalidade === "COMERCIAL" ? subtituloContato({ b2b: op?.b2b ?? false, produto: op ? op.planoPrevisto ?? op.nome : null, cargo: pessoa?.cargo ?? null, empresa: op?.empresa?.nome ?? null, interlocutor: interlocutor ? { nome: interlocutor.pessoa.nome, papel: interlocutor.papel } : null }) : null,
     quadrado: op?.b2b === true,
     semNome: fonte === "contato" && !a.conversa.contato.nomeExibicao?.trim() && !a.conversa.contato.nomePerfil?.trim(),

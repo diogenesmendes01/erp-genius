@@ -39,3 +39,15 @@ Recorte final unitário15arquivos143testes (1be1d1) conserva guardas sem-polling
 Não houve global próprio: global integrado e QA independente do commit exato sob coordenação ROOT. Nenhum bundle/browser foi executado pelo DEV; grafo servidor cresce via paineis→painel-detalhes→ficha-dados e importa tipos de painel nos consumidores atuais. Recomenda-se compilação focada /inbox pelo integrador se necessário, sem inventar UI nova/matriz visual. UI N/A para esta infraestrutura. PR/push/CI remota/merge pendentes.
 
 Evidência EXTERNA do integrador após liberar o banco: ROOT def141 terminal0, snapshotE2 A restaurado,424hashes conferidos/553registros originais/fixture9mensagens4notas preservada. Nenhum preview ou nova suíte A iniciada; essa restauração não foi executada pelo DEV. Gates DEV acima permanecem os mesmos; QA independente/global integrado/publicação aguardam coordenação.
+
+## P2 da QA independente — catálogo exige pessoa válida
+
+A revisão de6076cd818fc397d0aedc6059e09ecac775255edc encontrou defeito real não coberto pelos gates nominais anteriores: tagsDisponiveis só verificava capacidades.editarTags; lead autorizado sem Pessoa ou responsável legal ainda retornava catálogo ativo. Os resultados143unit/80INT e globalROOT nominal não provavam essa borda e permanecem atribuídos à fonte antiga.
+
+TDD antes do patch: RED28794a terminal1, nove casos antigos de tags passam e dois novos falham por CONSULTAR catálogo, com produtor real/matriz321 preservados. RED DBb92f3a terminal1:dois casos reais novos criam tag ativa e comprovam veLead=true/editarTags=true/pessoaIdnull, mas recebem lista não vazia. Filtro -t 'catálogo de tags exige' apenas nesse RED;11casos ficaram filtrados e não contaram como executados. Nenhum teste vacuamente vazio.
+
+Correção produtiva mínima: pessoa && capacidades.editarTags antes de tagsAtivas. Nenhuma matriz321, autorização de atendimento/pessoa/lead, Db, dadosE1, Aria/envio, SSE ou schema alterado. Positivo existente pessoa válida+catálogo ativo continua coberto. Testes unitários novos também comprovam que tagsAtivas nem é chamada nas duas negativas.
+
+Gates pós-patch Node22.23.2:unitf08c63 terminal0,15arquivos145testes completos/maxWorkers2; INT session57187/8ad6d7 terminal0,3arquivos28testes completos119.00s (painel-detalhes.int13 + paineis.int + paineis-envio.int),configintegration/perfildev-email/maxWorkers1,sem filtro/skips novos. TSCsession31727/716fcd heap8192 terminal0;lint0a92fd3fontes/max0 terminal0;diffcheck337eec0. Somente bloco Next10linhas BEGIN/END conferido e restaurado em AGENTS, instruções reais preservadas.
+
+Banco A declarado LIVRE ao ROOT após57187 terminar; nenhum processo DB/browser/preview ativo. Restauração E2 desta nova janela aguardando integrador, exclusivamente helper323; nenhuma SQLmanual/seed/Prisma/install peloDEV. Rechecagem independente/global integrado/publicação pendentes no novo SHA; não reatribuir gates nominais6076 ao patch.
