@@ -29,3 +29,25 @@ fonte QA243c9348, cujo parecer independente e36 fotos próprias constam no
 ZIP remoto verificado. Não se declara nova captura de navegador em7e71.
 O commit seguinte altera somente documentação; revisão incremental final e
 publicação permanecem etapas separadas.
+
+## Agregado final com foco do opt-out e main
+
+Fonte final executada: `cf1ab4e1591a77937f5afc1c8f4f408dcdebc32d`.
+Base final: `codex/inbox-e1-base-314@c207079db14d07ebc1b73de81ebb4a303663647d`.
+Desde7e71, entrou somente OptOutContato e seu teste da fonte4818f43e, além
+dos merges/documentação. A main3d756 foi integrada por merge normal; seus
+três arquivos em conflito eram byteiguais à R637a, já recebida na base,
+e foram preservados os contratos mais recentes da composição.
+
+Por essa mudança produtiva, o gate global foi repetido no executor93927,
+observado até saída terminal0: 865 arquivos/6.773 testes unitários,
+next typegen, TypeScript heap8192 e lint global0erros/40avisos herdados.
+Sem filtros de arquivo/nome ou skips reportados; a configuração continua
+excluindo integração DB. Logs: output/inbox-314-cf1-global-{unitarios,typegen,tsc,lint}.log.
+
+TESTER independente no candidato exato cf1: parecer favorável, nove arquivos
+e93 testes próprios com saída0. Conferiu que os cinco módulos da thread são
+byteiguais a243, InboxNovo é igual ao agregado7e e o delta OptOut é igual481.
+Relatório: output/inbox-314-incremental-cf1-review-tester.md. Não repetiu
+DB/browser/global; a QA visual243 permanece identificada como histórica.
+O próximo commit modifica somente documentação/evidências textuais.

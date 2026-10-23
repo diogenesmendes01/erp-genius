@@ -5035,3 +5035,18 @@ arquivos alterados, saída 0. Chrome real 12/12 contextos (Voltar/Escape,
 opt-out. Banco ci-integracao: 7 contatos fictícios, nenhum opt-out ativo.
 Relatório output/pr395-qa/foco.md e JSON. B1/C2 dependem de merges normais dos
 pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
+
+### #314 — composição final verificada com foco395 e ancestralidade main
+
+Fontecf1ab4e1591a77937f5afc1c8f4f408dcdebc32d, basec207079d. Desde7e71,
+o único delta produtivo é OptOutContato+teste, byteigual4818f43e; os módulos
+da thread continuam byteiguais243 e InboxNovo/R6 igual7e71. TESTER exato cf1
+favorável, nove arquivos/93 testes próprios exit0; parecer preservado em
+output/inbox-314-incremental-cf1-review-tester.md.
+
+Gate global repetido por essa mudança, executor93927 observado até saída0:
+865 arquivos/6.773 testes unitários, next typegen, TSC e lintglobal0erros,
+40avisos herdados, Node22.23.2. Sem filtro/skips reportados; integraçãoDB
+excluída pela configuração, não repetida. Relatório output/inbox-314-global-final.md.
+Próximo commit somente documental; publicação do PR e CI/merge permanecem
+separados. Não marcar314 integrada antes da main e fechamento da issue.
