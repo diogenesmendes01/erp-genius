@@ -35,3 +35,18 @@ objetos dos nove arquivos e demais módulos preservados conferidos. Sem DB,
 browser ou global próprios. C1 de código resolvido localmente; retarget/main,
 CI e #392/B2 continuam gates antes do merge. O novo C6 da revisão396 será
 tratado separadamente, sem atribuir retentativa inexistente a este resultado.
+
+## Extensão C6 posterior
+
+Fonte `c221bdb36b22e25141f8c58ac5498fa1db5a839f`, sobref64d2afe,
+recebe base313-r3@4119b6c por merge normal. Apenas os dois arquivos SSE
+mudam, objetos idênticos01a254f5. Todo o resto de src/scripts/backend,
+leitura f51/R6/URL/ACK, package/lock permanece idêntico ao f64. A atualização
+posterior da base para b29e7c20 e da composição muda apenas dois MD do parecer397.
+
+Global finalc221:879 arquivos/6.894 testes unitários,sessão3971 EXIT0,
+270,86s,maxWorkers2,sem filtros/ignorados. Next typegen/TSC50060 e lint29580
+EXIT0,0 erros/40 avisos anteriores. TESTER exatoc221 favorável:sete arquivos/
+133 testes próprios,exec3f5f3a EXIT0, incluindo fila/leitura/foco; sem DB,
+preview/browser/global próprios. Não há nova recaptura ou reatribuição de
+evidências históricas. CI/main/#392B2 ainda pendentes antes do merge.

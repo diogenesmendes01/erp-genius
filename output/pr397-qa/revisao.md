@@ -48,6 +48,7 @@ as entradas preservadas. Sem novo DB/browser ou reatribuição de evidências.
 
 Global final332:863 arquivos/6.788 testes unitários,sessão98604 EXIT0,
 235,08s,maxWorkers2,sem filtros/ignorados. Next typegen/TSC27444 e lint44188
-EXIT0,0 erros/40 avisos anteriores. TESTER da composição exata solicitado;
-parecer01a anterior limita-se ao compartilhamento isolado. CI/main/#392B2
+EXIT0,0 erros/40 avisos anteriores. TESTER332 favorável:dez arquivos/91
+testes próprios,exec78633d EXIT0,sem DB/Next/browser/global próprios;
+confirmou os objetos SSE iguais01a e demais consumidores preservados. CI/main/#392B2
 continuam gates antes do merge.

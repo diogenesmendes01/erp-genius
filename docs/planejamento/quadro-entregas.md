@@ -5666,4 +5666,14 @@ fonte/teste SSE, objetos iguais01a254f5. Item/Lista/VirtualList/prazo/hook,
 backend/scripts/package/lock intactos. Quadro preserva ambas as entradas.
 Global98604 EXIT0:863arquivos/6.788testes,235,08s,maxWorkers2,sem filtros/
 ignorados; Nexttypegen/TSC27444 e lint44188 EXIT0,0erros40avisos anteriores.
-Sem novo DB/browser. TESTER exato solicitado; CI/main/392B2 pendentes.
+Sem novo DB/browser. TESTER332 favorável10/91 próprios,exec78633d EXIT0,
+sem DB/Next/browser/global próprios; CI/main/392B2 pendentes.
+## PR #400 — extensão C6 verificada
+
+Fontec221bdb3 sobre f64 recebe base313-r3@4119; só fonte/teste SSE diferem,
+objetos iguais01a254f5. Restante de src/scripts/backend/f51/R6/URL/ACK e
+package/lock inalterados. Base posteriorb29e/composição só acrescentam MD
+do parecer397. Global3971 EXIT0:879arquivos/6.894testes,270,86s,maxWorkers2,
+sem filtros/ignorados. Nexttypegen/TSC50060 e lint29580 EXIT0,0erros40avisos.
+TESTERc221 favorável7/133 próprios,exec3f5f3a EXIT0,sem DB/preview/browser/
+global próprios. CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
