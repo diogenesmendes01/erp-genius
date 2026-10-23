@@ -3,11 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
 import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { agendarMensagem, cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
+import type { NotaInternaThread } from "./consultas-inbox";
+import { notasInternasDoAtendimento } from "./notas-consulta";
 import { despacharFila } from "./despachante";
 import { copiarMidiaParaSaida } from "./midia";
 
@@ -39,27 +42,18 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
       const a = await atendimentoVisivel(u, atendimentoId, false, tx);
       if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
       await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota, ...marca } });
+      await avisarAtendimentoAtualizado(tx, a);
     });
     revalidatePath("/inbox");
   });
 }
 
 /** Notas do atendimento, mais recentes primeiro; vazio se o atendimento não é visível ao usuário. */
-export async function notasDoAtendimento(atendimentoId: string): Promise<{ id: string; nota: string; autorNome: string | null; criadoEm: string }[]> {
+export async function notasDoAtendimento(atendimentoId: string): Promise<NotaInternaThread[]> {
   const u = await exigirSessao();
   const id = z.string().min(1).parse(atendimentoId);
   if (!(await atendimentoVisivel(u, id))) return [];
-  const notas = await prisma.evento.findMany({
-    where: { agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, tipo: "NotaInterna" },
-    orderBy: { criadoEm: "desc" }, take: 50, include: { autor: { select: { nome: true } } },
-  });
-  // Nota da Aria desfeita fica arquivada: o Evento original permanece, mas a nota sai da lista.
-  const arquivadas = new Set(
-    (await prisma.evento.findMany({ where: { agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, tipo: "NotaInternaArquivada" }, select: { payload: true } }))
-      .map((e) => (e.payload as { eventoId?: unknown } | null)?.eventoId)
-      .filter((v): v is string => typeof v === "string"),
-  );
-  return notas.filter((e) => !arquivadas.has(e.id)).map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "", autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
+  return notasInternasDoAtendimento(id);
 }
 
 /** Número fixo do atendimento (o da conversa), sem conferir escopo: serve só para montar a entrada da repetição. */
