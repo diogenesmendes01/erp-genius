@@ -1,5 +1,9 @@
 # Quadro único de entregas
 
+## Pós-merge PR380 C3 — portabilidade Git — 23/10/2026
+
+DEV B sobre4829: guarda dos caminhos rastreados no índice (case-insensitive), fixture Git adversarial sem materialização e LF apenas srcTS/TSX/workflow, preservando CLI/regras e sem renormalização massiva. RED3falhas/1passe→GREEN4/4; recorte composto11/367, TSC79557 e lint6fontes terminais0. SPEC guardas-portabilidade-git. Sem DB neste recorte; QA independente/global integrado permanecem integrador.
+
 ## Fechamento Inbox E0 — 22/10/2026
 
 Oito implementações com PR individual aberto e anexado:298→381,299→382,300→386,301→388,302→383,303→384,304→389,305→385. Pré-requisitos380/387/390 separados. Mapa de dependências, gates e limites em `docs/planejamento/inbox-e0-fechamento.md`. Fonte integrada99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. E0 validada localmente, sem merge/deploy; E1–E4 ainda não implementadas. Texto “PR em publicação” nas entradas antigas é histórico; links reais constam no fechamento.
