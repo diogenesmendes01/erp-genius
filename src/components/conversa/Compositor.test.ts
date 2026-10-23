@@ -196,7 +196,18 @@ describe("Compositor", () => {
     p={...p,atendimentoId:'at2'};tela();digitar(tela(),'nota B');if(fim==='ok')resolver({ok:true});else rejeitar(new Error('sem resposta'));
     await esvaziar();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('nota B');expect(renderToStaticMarkup(createElement('div',null,tela()))).not.toContain(MSG_RESULTADO_INCERTO);
     if(fim==='ok')expect(tentativas.para(alvo).atual).not.toBe(original);else expect(tentativas.para(alvo).atual).toBe(original);
-    p={...p,atendimentoId:'at1'};tela();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('nota A');
+    p={...p,atendimentoId:'at1'};tela();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe(fim==='ok'?'':'nota A');
+  });
+
+  it.each(['responder','nota'] as const)('C3 sucesso confirmado fora do contexto limpa somente o armazenamento enviado em%s', async modo => {
+    m.g=criarGanchos();let resolver!:(r:{ok:true})=>void;const pendente=new Promise<{ok:true}>(r=>{resolver=r;});
+    let p=props({modo,aoEnviarTexto:()=>pendente,aoNota:()=>pendente});const tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'  texto A enviado  ');clicarBotao(tela(),'Enviar');p={...p,atendimentoId:'at2'};tela();digitar(tela(),'rascunho B');
+    resolver({ok:true});await esvaziar();
+    expect(armazenamento.has('conversa-rascunho:at1:'+modo)).toBe(false);
+    expect(armazenamento.get('conversa-rascunho:at2:'+modo)).toBe('rascunho B');
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('rascunho B');
+    p={...p,atendimentoId:'at1'};tela();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('');
   });
 
   it.each(['ok','falha'])('resultado %s da tentativa anterior não apaga edição deliberada e novo anexo na mesma conversa',async(fim)=>{
