@@ -5268,4 +5268,5 @@ fonte/teste SSE, objetos iguais01a254f5. Item/Lista/VirtualList/prazo/hook,
 backend/scripts/package/lock intactos. Quadro preserva ambas as entradas.
 Global98604 EXIT0:863arquivos/6.788testes,235,08s,maxWorkers2,sem filtros/
 ignorados; Nexttypegen/TSC27444 e lint44188 EXIT0,0erros40avisos anteriores.
-Sem novo DB/browser. TESTER exato solicitado; CI/main/392B2 pendentes.
+Sem novo DB/browser. TESTER332 favorável10/91 próprios,exec78633d EXIT0,
+sem DB/Next/browser/global próprios; CI/main/392B2 pendentes.
