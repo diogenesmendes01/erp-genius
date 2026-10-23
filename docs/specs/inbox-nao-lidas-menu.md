@@ -34,7 +34,7 @@ Revisão independente e gate global integrado #308+#311 permanecem a cargo do in
 
 ## Revisão PR396 B1 — recuperação de uma fonte CLOSED
 
-O estado da fonte física segue readyState: CONNECTING mantém a reconexão nativa; CLOSED invalida seus callbacks, fecha o recurso e libera a referência compartilhada. Não existe timer, backoff ou retry automático criado pela aplicação. A próxima assinatura/remontagem cria uma fonte única e recupera também os assinantes que continuaram montados, como a Sidebar. Sem nova assinatura, a fonte permanece desconectada; após autenticação expirada, a rota continua exigindo sessão/papel e não há loop de tentativas.
+O estado da fonte física segue readyState: CONNECTING mantém a reconexão nativa; CLOSED invalida seus callbacks, fecha o recurso e libera a referência compartilhada. Na revisão B1 isolada, só uma nova assinatura recuperava a fonte; a revisão C6 abaixo acrescenta recuperação automática para os ouvintes que continuam montados. A rota continua exigindo sessão/papel.
 
 Cada ciclo físico tem identidade própria, reservada antes de criar/instalar listeners. Encerramento definitivo libera essa identidade antes de notificar consumidores, inclusive se um callback síncrono montar outro consumidor. O retorno da instalação antiga não sobrescreve a fonte nova. Callbacks open/error/event atrasados da fonte antiga são ignorados. A primeira abertura da substituta entrega um resync coletivo para cobrir o intervalo desconectado; reconexão nativa mantém o resync existente. Cleanup/último unsubscribe e assinaturas com o mesmo callback continuam idempotentes e independentes.
 
@@ -45,6 +45,27 @@ O tipo FonteEventos inclui readyState somente leitura, compatível com EventSour
 O compartilhamento é por aba: usuários autorizados mantêm uma SSE física inclusive fora da tela Inbox. Múltiplas abas multiplicam conexões e consultas de contagem; a loja conserva no máximo um GET incluindo corpo mais uma pendência por aba, sem consolidar abas. Em HTTP/1.1 os limites de conexões por navegador/origem podem restringir esse uso. Recomenda-se verificar e configurar HTTP/2 no proxy antes de operação com muitas abas; a negociação de streams não equivale a capacidade ilimitada. A configuração efetiva do proxy não foi verificada nem alterada nesta entrega. Referências: [modelo EventSource no HTML Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html#processing-model) e [limites documentados pelo MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
 
 B1/C1 são o único escopo desta revisão. C2 de base/CI pertence ao integrador; C3–C5 estão diferidos. Gates e pendências de porte/revisão/browser constam em output/inbox-396-report.md. Nenhum aceite visual/global é presumido.
+
+### Revisão C6 — recuperação sem nova assinatura
+
+Com assinantes ativos, CLOSED agenda uma única retentativa após1s, dobrando
+para2/4/8/16s e limitando a espera em30s. Abertura bem-sucedida reinicia em1s
+e entrega resync aos ouvintes antigos. Novo assinante antecipa a abertura e
+cancela o timer pendente; último unsubscribe cancela timer/fonte e reinicia
+o ciclo. Identidade do pedido impede que callback cancelado afete outro ciclo.
+CONNECTING mantém exclusivamente o retry nativo; não há consulta periódica,
+setInterval ou router.refresh. Falha síncrona ao construir substituta segue
+o mesmo backoff, sem exceção solta no timer.
+
+EventSource não expõe o status HTTP no onerror: falhas definitivas de sessão
+também podem voltar a tentar com espera máxima30s enquanto houver assinantes;
+nenhum pedido contorna autenticação. Sem assinantes não há tentativa. Esta
+política de transporte não altera a loja GET, autorização ou regras do motor.
+
+RED causal quatro falhas/oito passes; GREEN quinze testes de compartilhamento
+e recorte quatro arquivos/34 testes EXIT0. Cobertura de limite/reset, teardown,
+antecipação, callback cancelado, construção indisponível e CONNECTING nativo.
+Gates finais/Chrome/revisão independente ainda pendentes no congelamento C6.
 
 ### Evidência B1 isolada
 

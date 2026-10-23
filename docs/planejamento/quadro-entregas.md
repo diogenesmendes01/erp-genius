@@ -5719,3 +5719,15 @@ limites no globalreport; rodadaformal24 corrigida/globalnovo ainda pendentes.
 ### #319 — composição C2+nota317 verificada DEV, global e formal pendentes
 
 FFa1ba+merge317bbb→0f80f61d, conflito sóquadro preservado. CLI mudou sóseletorproto e mantémLF/export/helper/estados319; C6nãoportado. DEVNode22: recorte26869 saída0/70files863testes36,72s,maxWorkers2,semfiltros/skip; Chromeofflinebd7ba6 2/2; TSC37494heap8192/lint14fontes74f64a zeroavisos saída0. Semappbrowser/DB/preview/envio/novafunção. Fonte congela para ROOT executar global noOWN antes deReady; formal42+12mobile, retry/paginação/C2/Triagemreal/inspeção/QA/publicação ainda pendentes.29PNG472 históricas não atribuídas àcomposição.
+
+## PR #396 — C6: recuperação autônoma em verificação
+
+Sobre31a9b666, apenas fonte/testes SSE: CLOSED agenda um timer com backoff
+1/2/4/8/16/30s, reset emopen e cancelamento no último unsubscribe. Assinatura
+nova antecipa/cancela; CONNECTING nativo e uma fonte física preservados.
+Callback cancelado/antigo não afeta substituta; falha construtora segue retry.
+EventSource não distingue HTTP de autenticação noerro; rota conserva guarda,
+tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
+RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
+prefer-const na fixture de teardown, corrigido sem alterar produção; lint
+dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
