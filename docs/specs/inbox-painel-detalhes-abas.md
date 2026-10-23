@@ -42,3 +42,39 @@ Evidência EXTERNA do integrador após liberar o banco: ROOT def141 terminal0, s
 ## Correção P2 após QA de6076
 
 Catálogo de tags exige simultaneamente pessoa resolvida válida e capacidades.editarTags. A capacidade projetada pode continuar true para lead autorizado sem pessoa/legal; isso não autoriza consultar catálogo sem alvo. Guarda local pessoa && capacidades.editarTags, sem mudar matriz321/escopos. RED não vazio com tag ativa e editarTags=true nos dois contextos; unitário prova ausência da consulta. Nominais6076 não cobriam essa borda e permanecem históricos. Pós-patch:15/145unit,3/28INTcompletos,TSCheap8192/lint3fontes/max0/diffcheck0,Node22. RechecagemQA/global integrado e restore desta janela E2 sob coordenaçãoROOT.
+
+
+## PR409 R1 — decisão D13 e rastreabilidade vigente
+
+Base desta revisão:58b2d4b8574772dc70232cbe05188041c03cfe99. C1 da review5633341791 recebeu decisão humana explícita em23/10: “Permitir esses dados para qualquer convidado autorizado na conversa comercial”. Isso confirma o comportamento existente; nenhum gate contatos.ver é acrescentado à projeção contextual de Pessoa/empresa/participantes B2B. Não altera capacidadesCrm/CRM global: os três papéis FINANCEIRO/PROFESSOR/GERENTE_PEDAGOGICO continuam sem contatos.ver, os campos personalizados permanecem[] para eles e editarContato/editarTags não passam a ser permitidos. Convite só de leitura também não ganha envio.
+
+A autorização continua passando por escopoAtendimentos e podeVerLeadNaThread vigente; não existe fallback com lead negado/sem pessoa/legal nem aproximação por telefone. Pessoa principal e interlocutor efetivo continuam distintos. Sem convite, revogado ou expirado, esses papéis não alcançam o atendimento comercial da fixture; fora do COMERCIAL, inclusive PEDAGOGICO, a exceção não se aplica e os DTOs sensíveis seguem vazios. Resumo contextual de empresa não libera /empresas global. Documento/nascimento futuros e demais campos D13 permanecem em suas próprias tasks.
+
+Os três casos novos de painel-detalhes.int.test.ts usam it.each para esses papéis e PII não vazia: Pessoa com email/cidade/cargo/linkedin/origem/telefone, empresa com documento/segmento/porte/site e dois participantes B2B com cargos. Antes do convite a consulta nega; vigente devolve os DTOs completos; revogação e expiração negam novamente. Convite ainda vigente em PEDAGOGICO/SECRETARIA/FINANCEIRO mantém Detalhesvazio/cabeçalhosempessoa. Campo personalizado e catálogo ativo são criados e visíveis ao dono para provar que campos[]/tagsDisponiveis[] do convidado não são ausência vacuosa. Testes são contratuais sobre comportamento já implementado: não se inventa RED de um patch runtime inexistente.
+
+### C6/C7/C8 — contratos e limite intencional
+
+- C6 já está fixado nos Contratos aprovados: ficha principal é lead.pessoa, enquanto naConversa/subtítulo/decisor usam contato.pessoaId efetivo entre os participantes da oportunidade autorizada. Sem correspondência, nenhum destaque/decisornull. Task16 e UI devem consumir esse contrato, não trocar pela ficha principal.
+- C7: subtítulo B2B sem cargo/empresa/interlocutor é stringvazia intencional. A futura UI324 deve tratar stringvazia como ausente; não inventar rótulo ou renderizar linha vazia. Esta infraestrutura não afirma que324 foi implementada.
+- C8: carregarPainel ainda resolve dadossetoriais e cabeçalho separadamente, com duas passagens de autorização/consulta; nenhuma otimização/caching/transação global foi introduzida. Consolidar posteriormente exige preservar alinhamento de identidade/veLead e contextoDb. Esta revisão não promete um snapshot atômico do painel inteiro nem mede desempenho.
+
+### C9 — mapa dos critérios da Task3 aos nomes reais
+
+Nomes/linhas originais são da fonte58b2; a inserção de novos casos pode deslocar posições. Caminhos relativos a src/server/inbox salvo indicação. Testes mais amplos foram preservados sem renomear.
+
+| Critério no plano | Caso(s) reais e oráculo |
+| --- | --- |
+| comercial: pessoa, oportunidade e campos; ✦ só no campo que a Aria preencheu por último | painel-detalhes.int.test.ts: carteira: DTO mínimo, valor decimal e moeda do país; cabeçalho e agregado usam a mesma pessoa + campos: último evento por pessoa/campo e desempate id, sem dados de empresa/payload no DTO |
+| regra_6_e_linha_alheia_nao_carregam_pessoa | linha alheia autoriza conversa mas não lead nem fallback pelo contato; fora do escopo é null + lead sem pessoa ou responsável legal não usa pessoa do contato |
+| oportunidade_sem_pessoa | lead sem pessoa ou responsável legal não usa pessoa do contato; oportunidade é preservada, pessoa/campos ficam vazios; catálogo de tags exige identidade autorizada: %s, mesmo com editarTags cobre sempessoa/legal com catálogo ativo |
+| fora do comercial não traz nada da pessoa (D13) | D13 filtra pela finalidade mesmo em multirrole e não retorna telefone; novos três casos de convite também cobrem PED/SEC/FIN |
+| pessoa semlead e fallback | sem lead: fallback somente à pessoa do contato dentro do escopo, não por telefone, incluindo mescla/legal/carteira |
+| B2B e interlocutor | B2B: ficha principal difere do interlocutor efetivo, empresa contextual não amplia capacidade global; campos/cargos/naConversa/decisor são explicitamente verificados |
+| empresa nula e subtítulo/nome | B2B sem empresa mantém quadrado, bloco null e subtítulo sem dado inventado; semNome segue fonte real com trim, incluindo lead sem Pessoa |
+| carregarPainel leva o cabeçalho | carteira: DTO mínimo... verifica carregarPainel pessoaId/cabecalho.pessoaId; caso semlead verifica agregado; paineis.int.test.ts mantém contratos setoriais com cabeçalho esperado |
+| tags/autoria | tags disponíveis só ativas e edição autorizada; vínculos históricos E1 preservados; paineis.int.test.ts pessoa comercial visível traz ordem por nome e marca sem autor, sem filtrar vínculo histórico e convite vigente autoriza tags e revogação retira o painel inteiro |
+| Db/pool1/carteira/equipe/cobertura/convite | pool1: autorização carteira/cobertura/equipe/convite na MESMA tx e revogação imediata; whatsapp/visibilidade-lead-db.test.ts prova não pedir cliente global |
+| rota detalhes/abas/autenticação | painel-abas.test.ts Detalhes preserva o resultado autorizado e o null do produtor; %s não consulta nem fabrica dados antes da entrega; rota painel/[aba]/route.test.ts cobre auth/códigos/no-store |
+| decisão C1 nova explicitada | D13 aprovado: %s convidado comercial recebe Pessoa/empresa/B2B sem contatos.ver; ausência, revogação, expiração e outro setor não ampliam acesso, expandido para FINANCEIRO/PROFESSOR/GERENTE_PEDAGOGICO |
+
+C2 requer os dois arquivos INT completos desta revisão, com configintegration/maxWorkers1/perfilA e Ready/snapshot nominal; resultados finais no relatório output/inbox-pr409-review-todos.md. C3CI, C4composição/pais/main/QA280 e C5quadro permanecem com integrador. As correções de revisão398 e402 precisam entrar na composição final dos pais; esta revisão409 não as copia parcialmente nem reescreve seus hooks/contratos. QA/global/CI anteriores continuam atribuídos às fontes originais, sem homologação presumida.
