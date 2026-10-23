@@ -5637,3 +5637,33 @@ sem filtros/ignorados. Nexttypegen/TSC47616 e lint96198 EXIT0,0erros40avisos.
 BackendC2 idêntico260a, integração anterior20testes nominal. TESTER08f
 favorável10/163 próprios,execafb4ce EXIT0; sem DB/browser/global próprios.
 CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
+
+
+## PR #396 — C6: recuperação autônoma verificada localmente
+
+Sobre31a9b666, apenas fonte/testes SSE: CLOSED agenda um timer com backoff
+1/2/4/8/16/30s, reset emopen e cancelamento no último unsubscribe. Assinatura
+nova antecipa/cancela; CONNECTING nativo e uma fonte física preservados.
+Callback cancelado/antigo não afeta substituta; falha construtora segue retry.
+EventSource não distingue HTTP de autenticação noerro; rota conserva guarda,
+tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
+RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
+prefer-const na fixture de teardown, corrigido sem alterar produção; lint
+dirigido posterior0. Global01a22304 EXIT0:860arquivos/6.756testes,sem
+filtros/ignorados,maxWorkers2,262,87s. TSC5638/lint97309 EXIT0,0erros40avisos.
+TESTER01a favorável6/47 próprios,cb5243 EXIT0,sem DB/browser/global próprios.
+Chromehelper/EventSource/HTTP reais locais ff9c5d EXIT0:503→1008ms→200 sem
+remontar dois ouvintes; CONNECTING nativo no mesmo objeto; teardown impede
+retry1300ms/remount200, máximo1stream/1documento/foco mantido,0pageerror.
+Não é Next/ERP/DB/proxy. ZIP positivo2PNG/5arquivos38.437B, SHA256
+361b6f89e7e4dcc0eb59bcfdd3503910195b544b36f1575cf2baa1caee5190b0,
+asset668211207/DRAFT421321214,download/hash conferidos. Report c6.md em
+output/pr396-qa. Porte nos dependentes, CI/main/392B2 ainda pendentes.
+## PR #397 — extensão C6 por merge normal
+
+Base312-r3@b569 recebe396bc09; fonte332fc7c6 adiciona contra6e6 apenas
+fonte/teste SSE, objetos iguais01a254f5. Item/Lista/VirtualList/prazo/hook,
+backend/scripts/package/lock intactos. Quadro preserva ambas as entradas.
+Global98604 EXIT0:863arquivos/6.788testes,235,08s,maxWorkers2,sem filtros/
+ignorados; Nexttypegen/TSC27444 e lint44188 EXIT0,0erros40avisos anteriores.
+Sem novo DB/browser. TESTER exato solicitado; CI/main/392B2 pendentes.

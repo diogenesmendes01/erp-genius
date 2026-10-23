@@ -37,3 +37,17 @@ As evidências visuais anteriores da fonte4b6 permanecem identificadas no
 inventário remoto; não são recaptura desta composição. Não houve novo
 browser próprio. Retarget/main e CI final dependem dos pais395/396/392/393
 e da decisão humana392/B2. Sem pacote/lock/install/schema/envio ou deploy.
+# Propagação C6 da #396
+
+Fonte332fc7c66f65f7800c66525ef456a4608d59c5b2 por merge normal da
+base312-r3@b56943c752756f2e1beacecc47bd3151377c1f28, que recebe396bc09.
+Contra6e6, delta produtivo somente eventos-inbox.ts e seu teste, objetos
+idênticos ao funcional01a254f5 aprovado. Item/Lista/VirtualList/prazo/hook,
+backend, scripts e package/lock inalterados. Conflito só no quadro, ambas
+as entradas preservadas. Sem novo DB/browser ou reatribuição de evidências.
+
+Global final332:863 arquivos/6.788 testes unitários,sessão98604 EXIT0,
+235,08s,maxWorkers2,sem filtros/ignorados. Next typegen/TSC27444 e lint44188
+EXIT0,0 erros/40 avisos anteriores. TESTER da composição exata solicitado;
+parecer01a anterior limita-se ao compartilhamento isolado. CI/main/#392B2
+continuam gates antes do merge.
