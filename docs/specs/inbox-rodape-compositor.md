@@ -46,3 +46,12 @@ FormalR2 na317bbb:24PNGapp×protótipo/humano+nota/trêstamanhos/doistemas, sess
 C2longa317bbb:2ctx10PNG/165decorados, foco natural ao carregar anteriores/149 preservado e000 pinado visível; wheelmanual preservado após atendimento.atualizado real emitido sóROOT (GETincremental?depois, semresync/alterarlinhas). Top631/575 eâncora0px mantidos, mesmosScroller/VList/foco noSSE. Renavegação revela000/149. Fixture isolada150privadas+9originais/4notas, semalegarERPprodutivo; banco restaurado01c7be424hashes peloROOT.
 
 70originais+18pranchas inspecionados, allowlistpositiva-final.json e evidencias-final.json; todaformalantiga16261 eparciais/negativos excluídos. SemPNG emGit/submit/envio/SQLDEV. Resultados tardios/idempotência continuam coberturaunitária, não transação real no browser. UI eCLI inalteradas neste freeze documental; QA/global/publicação eporteC6 posteriores dointegrador.
+
+
+### Revisão PR403 C3 — armazenamento da tentativa confirmada
+
+Correção sobre a fonte publicada32f9222d8240b77fab1d656043d7399be9226d76. Antes, o guard visual retornava em outro contexto sem remover o rascunho já enviado. Agora a confirmação ok limpa somente a chave do modo/contato original quando owner commitado, revisão e texto bruto persistido ainda coincidem. A limpeza visual atual não repete escrita incondicional no armazenamento. Texto/emoji/arquivo incrementam revisão; erro/incerto mantêm rascunho e a política de idempotência existente.
+
+O mapa é local à ConversaAberta acima da key, repassado opcionalmente ao Compositor; fallback local é chamado incondicionalmente. Registro só no layout effect, sem mutação no render. Remontar o mesmo rascunho cria novo owner e revoga conservadoramente a confirmação antiga, mesmo com texto igual. Desmontar o dono integral invalida o mapa antigo: confirmação daquela sessão já não pode limpar storage depois de novo Inbox. Sem sincronização global, novo formato de localStorage, backend ou alteração da Thread/R6.
+
+REDc65bb8:45testes/3falhas; RED React real/StrictModef0551d:1/1falha de persistência. REDe f5b85 (ef5b85): comparação bruta protegida ainda era apagada pela escrita visual; GREEN final10arquivos/257testes sessão48686 saída0, incluindo10testes React reais/StrictMode,43 regressões anteriores e2novos testes controlados. TSC77347 heap8192 e lint8d25f7 cincofontes saída0, Node22.23.2. Lint21b158 inicial falhou por warning do mock, corrigido. Recorte não é full. Sem DB/preview/browser/envios. Visuais317bbb/df9 são históricos; QA independente/global integrado permanecem coordenados.

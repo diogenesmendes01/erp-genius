@@ -5705,3 +5705,8 @@ Fonte317bbb, formalR2/4941EXIT0 com24/24APP×proto humano+nota/3tamanhos/2temas,
 ### #317 — composição final e artefato revisável
 
 Fonte85f (produtoa86+harnessaa570+buscaC2+SSEC6), metadados9005; global56369 EXIT0 897arquivos/7021testes270,09s/maxWorkers2/semfiltro/skips, typegen/TSC38143 e lint49666 EXIT0 (42avisos40src+2stagingprivado). Formal4941 EXIT0 24/24; DEV70originais+18pranchas e TESTER34PNG allowlisted,122PNG/137files no ZIPdraft15.823.526bytes SHA74a17180 conferido por download. Artefato e fontes/limites em output/inbox-317-evidencias-remotas.json e global-final.md. C6 igualisolado01a; visuais anteriores não provam retryC6. SnapshotA424hashes551 e TESTER424hashes1386 restaurados após317, semsend/external/deploy. PublicaçãoPR/CI/revisão/dependências e merge ainda pendentes, issue não fechada.
+
+
+### #317 — PR403 C3 armazenamento confirmado (revisão)
+
+Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, sem escrever em outro contexto nem apagar edição nova. Remount/cleanup integral revogam callbacks conservadoramente. RED causal real/StrictMode preservado no relatório;10arquivos/257testes, TSC77347/lint8d25f7 saída0 Node22.23.2. Sem full/DB/browser nesta revisão; visual antigo explicitamente histórico. C2 menu, QA independente e integração/publicação pendentes.
