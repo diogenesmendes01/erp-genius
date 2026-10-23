@@ -5,7 +5,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { autenticarApp, esperarConteudoApp } from "./espera-app.mjs";
+import { autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
 const nodeModules = path.join(raiz, "node_modules");
@@ -62,7 +63,8 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com", process.env.INBOX_VISUAL_SENHA ?? "genius123");
   const id = estado === "humano-compositor" ? ids.beatriz : ids.mariana;
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista";
-  await pagina.goto(`${base}/inbox${semSelecao ? "" : `?c=${encodeURIComponent(id)}`}`, { waitUntil: "domcontentloaded" });
+  const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
+  await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (estado === "celular-painel" || estado === "tablet-painel") {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -73,6 +75,7 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
     await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
   }
   await esperarConteudoApp(pagina, estado, tamanho);
+  await esperarHidratacaoApp(pagina);
 }
 
 async function abrirPrototipo(pagina, estado) {
@@ -80,6 +83,11 @@ async function abrirPrototipo(pagina, estado) {
   await pagina.goto(`${pathToFileURL(prototipo).href}?c=${c}`, { waitUntil: "load" });
   const root = pagina.locator('[data-m="root"]');
   await root.waitFor({ state: "visible" });
+  if (estado === "lista-vazia") {
+    const lista = root.locator('[data-m="list"]');
+    await lista.getByPlaceholder("Buscar conversas, contatos, tags").fill("zzzz");
+    await lista.getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
+  }
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
   if (estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
     const chat = root.locator('[data-m="chat"]');
@@ -138,6 +146,7 @@ async function main() {
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
         const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
+        const anonimizacao = tarefa.alvo === "prototipo" ? await pagina.evaluate(anonimizarTelefonesNoDom) : null;
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
         await Promise.all(conclusoes);
@@ -147,7 +156,7 @@ async function main() {
           if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }
-        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas, diagnosticos });
+        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
         process.stdout.write(`${nome}: ${falhas.length ? `FALHAS ${falhas.length}` : "OK"}\n`);
       } finally { await contexto.close(); }
     }

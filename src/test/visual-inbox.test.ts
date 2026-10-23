@@ -6,9 +6,27 @@ import {
   ESTADOS, TAMANHOS, TEMAS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo,
 } from "../../scripts/visual/nucleo-captura.mjs";
 import { exigirBancoDescartavel } from "../../scripts/visual/demo-inbox";
-import { autenticarApp, esperarConteudoApp } from "../../scripts/visual/espera-app.mjs";
+import { autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "../../scripts/visual/espera-app.mjs";
 
 describe("harness visual do Inbox", () => {
+  it("conteúdo SSR não libera a foto antes da assinatura SSE confirmar hidratação", async () => {
+    let liberar!: () => void;
+    const hidratada = new Promise<void>((resolve) => { liberar = resolve; });
+    const waitFor = vi.fn(() => hidratada);
+    const locator = vi.fn(() => ({ waitFor }));
+    let terminou = false;
+    const espera = esperarHidratacaoApp({ locator } as unknown as Parameters<typeof esperarHidratacaoApp>[0]).then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    expect(locator).toHaveBeenCalledWith('[data-conectado="1"]');
+    liberar();
+    await espera;
+    expect(terminou).toBe(true);
+  });
+  it("falha de prontidão da hidratação reprova a captura em vez de ser ignorada", async () => {
+    const pagina = { locator: () => ({ waitFor: async () => { throw new Error("Inbox não hidratou/conectou"); } }) };
+    await expect(esperarHidratacaoApp(pagina as unknown as Parameters<typeof esperarHidratacaoApp>[0])).rejects.toThrow("Inbox não hidratou/conectou");
+  });
   it("CLI documenta as opções sem abrir browser nem banco", () => {
     const r = spawnSync(process.execPath, ["scripts/visual/capturar-inbox.mjs", "--help"], { cwd: process.cwd(), encoding: "utf8" });
     expect(r.status).toBe(0);
@@ -190,4 +208,27 @@ it("warnings React de chave e hidratação invalidam captura do app; HMR normal 
   expect(problemaReactNaCaptura('Encountered two children with the same key, a')).toBe(true);
   expect(problemaReactNaCaptura('Hydration failed because the server rendered HTML did not match')).toBe(true);
   expect(problemaReactNaCaptura('[Fast Refresh] done in 500ms')).toBe(false);
+});
+
+it("lista-vazia acrescenta doze pares app/protótipo nos três tamanhos", () => {
+  const tarefas = combinacoes({ alvos: ["app", "prototipo"], estados: ["lista-vazia"] });
+  expect(tarefas).toHaveLength(12);
+  expect(new Set(tarefas.map(t => t.tamanho))).toEqual(new Set(["desktop", "tablet", "celular"]));
+});
+it("lista-vazia espera o vazio real e ausência de itens, sem pedir thread oculta", async () => {
+  let liberarVazio!: () => void, liberarZero!: () => void;
+  const vazio = new Promise<void>(ok => { liberarVazio = ok; });
+  const zero = new Promise<void>(ok => { liberarZero = ok; });
+  const pagina = {
+    getByRole: (_r: string, o: { name: string }) => {
+      if (o.name !== "Conversas") throw Error("Não deve exigir thread/painel: " + o.name);
+      return { getByText: (texto: string) => { expect(texto).toBe("Nenhuma conversa neste filtro."); return { waitFor: () => vazio }; } };
+    },
+    waitForFunction: () => zero,
+  };
+  let terminou = false;
+  const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "lista-vazia", "celular").then(() => { terminou = true; });
+  await Promise.resolve(); expect(terminou).toBe(false);
+  liberarVazio(); await Promise.resolve(); expect(terminou).toBe(false);
+  liberarZero(); await espera; expect(terminou).toBe(true);
 });

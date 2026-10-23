@@ -12,8 +12,21 @@ export async function autenticarApp(contexto, base, email, senha) {
   if (!sessao.ok() || (await sessao.json()).user?.email !== email) throw new Error("Sessão da demo não foi autenticada.");
 }
 
+/** O conteúdo pode vir de SSR; a conexão só acontece após a assinatura cliente hidratar. */
+export async function esperarHidratacaoApp(pagina) {
+  await pagina.locator('[data-conectado="1"]').waitFor({ state: "visible" });
+}
+
 /** Espera o conteúdo identificável da fixture, não somente o contêiner inicial da tela. */
 export async function esperarConteudoApp(pagina, estado, tamanho) {
+  if (estado === "lista-vazia") {
+    await pagina.getByRole("region", { name: "Conversas", exact: true }).getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
+    await pagina.waitForFunction(() => {
+      const vazio = document.querySelector('[aria-label="Conversas"] [data-estado-vazio]');
+      return !!vazio && !vazio.parentElement.querySelector("button");
+    });
+    return;
+  }
   if (estado === "celular-painel" || estado === "tablet-painel") {
     // Após abrir o painel único, InboxNovo oculta a região Conversa; a mensagem já foi aguardada antes do clique.
     await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });

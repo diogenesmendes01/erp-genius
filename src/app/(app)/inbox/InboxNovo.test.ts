@@ -44,9 +44,9 @@ describe("InboxNovo", () => {
     expect(h).toContain("Ana");
     expect(h).toContain("Beto");
   });
-  it("a lista é a ListaAtendimentos: setor, número e status em cada linha", () => {
+  it("a lista usa estado visual e setor, sem número em cada linha", () => {
     const h = html();
-    expect(h).toContain("Comercial"); expect(h).toContain("Escola"); expect(h).toContain("Em atendimento");
+    expect(h).toContain("Comercial"); expect(h).not.toContain("Escola"); expect(h).toContain("Na fila");
   });
   it("com as opções do servidor mostra o PainelFiltros (busca, abas e setores do usuário)", () => {
     const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola" }] } } });
@@ -106,6 +106,10 @@ it("contagens são opt-in só na primeira página dos parâmetros", () => {
   expect(paramsDosFiltros({})).toBe("");
 });
 
+it("passa usuário para o badge pessoal do item", () => {
+  const h = html({ extra: { inicial: { itens: [{ ...item("a1", "Ana"), responsavelId: "u1", responsavelNome: "Usuário atual" }], proximo: null } } });
+  expect(h).toContain("Com você"); expect(h).not.toContain("Com Usuário");
+});
 it("casca nova elimina moldura e mantém exatamente um painel do contato", () => {
   const h = html({ selecionado: "a1" });
   expect(h).not.toContain("rounded-item border");
@@ -116,4 +120,14 @@ it("casca nova elimina moldura e mantém exatamente um painel do contato", () =>
 it("sem seleção não monta painel, com prop false não abre automaticamente", () => {
   expect(html()).not.toContain('<aside');
   expect(html({ selecionado: "a1", extra: { abrirPainelPadrao: false } })).not.toContain("min-[1400px]:flex");
+});
+
+it("encaminha agoraInicial da página à lista sem recalcular durante SSR", () => {
+  const T = Date.UTC(2026, 9, 22, 12);
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(T + 60_000);
+    const h = html({ extra: { agoraInicial: T, inicial: { itens: [{ ...item("a1", "Ana"), prazoRespostaEm: new Date(T - 29 * 60_000).toISOString() }], proximo: null } } });
+    expect(h).toContain("Prazo estourado · 29 min"); expect(h).not.toContain("30 min");
+  } finally { vi.useRealTimers(); }
 });
