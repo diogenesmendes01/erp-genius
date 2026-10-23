@@ -5787,3 +5787,12 @@ Recorte8/1330; global20394 EXIT0:883arquivos/6.926testes,266,18s,maxWorkers2,
 sem filtros/ignorados. Nexttypegen/TSC95347 e lint60640 EXIT0,0erros40avisos.
 DB12 anteriorab8 nominal, sem novo DB/browser. TESTERexato/CI/main/392B2
 pendentes. output/pr399-qa/ancestralidade.md, sem homologação presumida.
+## PR #401 — C1: composição local dos pais
+
+Base315-r3@ab14161d recebe3995b776f, originais4ddd preservados; sourcebase
+inteira igual399. Fonte5a308c62 contra d32 só oito arquivos puro/Avatar/SSE
+e testes; cabeçalho/menu/ações/Conversa/scripts/package/lock idênticosd32.
+Conflitos sóquadro, históricos preservados. Recorte6/81 e global42416 EXIT0:
+887arquivos/6.950testes,242,41s,maxWorkers2,sem filtros/ignorados. Nexttypegen/
+TSC61138 e lint86951 EXIT0,0erros40avisos. Sem novo DB/browser. TESTERexato/
+CI/main/392B2 pendentes. output/pr401-qa/revisao.md; C2/#403 tratado àparte.
