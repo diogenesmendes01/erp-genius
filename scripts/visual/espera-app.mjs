@@ -28,8 +28,8 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
       await dialogo.getByRole("group", { name: "Status", exact: true }).waitFor({ state: "visible" });
       await dialogo.getByRole("button", { name: "Mostrar conversas", exact: true }).waitFor({ state: "visible" });
     } else if (estado === "nova-conversa") {
-      await dialogo.getByLabel("Finalidade e destinatário", { exact: true }).waitFor({ state: "visible" });
-      await dialogo.getByLabel("Canal da escola", { exact: true }).waitFor({ state: "visible" });
+      await dialogo.getByLabel(/^Finalidade e destinatário/).waitFor({ state: "visible" });
+      await dialogo.getByLabel(/^Canal da escola/).waitFor({ state: "visible" });
       await dialogo.getByRole("button", { name: "Abrir atendimento", exact: true }).waitFor({ state: "visible" });
     } else await dialogo.getByRole("button", { name: "Todos os números", exact: true }).waitFor({ state: "visible" });
     await pagina.waitForFunction(semanticaPopoverColunaPronta, tituloColuna);
