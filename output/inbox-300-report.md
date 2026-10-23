@@ -33,3 +33,11 @@ Gates globais no SHA de código `288c62e1` (Node 22.23.2): TSC `--noEmit` com he
 - C1 evidências locais no perfil exclusivo ci-integracao:92375 exit0,4arquivos/75testes (consultas-pagina,executor-crm,handoff,historico), e93492 exit0,2arquivos/25testes (nota-interna,inbox), sem filtro/ignorados nesses6arquivos. Não é suíte de integração completa. O pedido de rodar no head final após retarget para main permanece pendente; não atribuir este recorte a um futuro head integrado.
 - Gates finais Node22.23.2:unitários12136 exit0,840arquivos/6485testes sem filtro/ignorados;TSC70245 exit0;lintglobal78342 exit0,0erros/40avisos herdados. Base382correções183c incorporada pelo merge localbb543667. Ainda sem merge/deploy destaPR; nenhum envio externo.
 - Registro da dependência:PR381 já merged por squash emea60a8a7,comCI39878884253success eTESTER9e5favorável;64PNGarquivados com roundtrip/hash confirmado no draft autorizado. Incorporar correção381/main antes de retarget das filhas para não reintroduzir imagens.
+
+## Integração final da revisão
+
+Após merge normal da fonte R6 da #382 e da main3d756a4e, arquivos específicos
+das notas permaneceram byte a byte iguais a e4d7119c. Conflitos apenas no
+quadro, preservando ambos os registros. Aceite C1 repetido em ci-integracao:
+6 arquivos / 100 testes, saída0, sessão43509, sem filtro/ignorados; recorte
+unitário8/128 e TSC13908 saída0. Não é integração global. CI final pendente.
