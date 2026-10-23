@@ -51,3 +51,8 @@ Composição DEV0f80f61d incorpora C2 e o patch isolado nota-protótipo317; help
 ### Prontidão do preparador de carregando
 
 O preparador aguarda o evento real load da navegaçãoHome antes de ativarCDP e solicitar routerPush; existência do router apósDOMContentLoaded não garantia montagem. A/B real5e9 demonstrou Homepermanente/zero fallback versus fallbackpronto, e TDD causal cobre CDPsomenteapósload. Predicado geométrico/timeouts/latência permanecem iguais, semsleep/fabricação. Formal84095 interrompido é negativo histórico inteiro, não pacote final; repetição42+12 exige novoReady/fonteexata. Gatesdirigidos66/TSC/lint0 no report, global5e9 éanterior e não reatribuído.
+
+
+### Conclusão finita antes de classificar cancelamentos dos estados de painel
+
+Em painel-erro/painel-vazio, a foto mantém a prontidão própria do painel. Observador instalado antes da navegação registra somente GET sem query de mensagens da conversa exata; finalizar aguarda término do corpo (ou falha real) dos requests já iniciados, limite30s/cleanup, antes do veredito. Não exige200 nem conversa visível oculta pelo painel. O classificador de cancelamento continua exigindo recuperação concluída da mesma URL; falha não recuperada reprova. Nenhum outro estado/status/diagnóstico é afrouxado. Negativo96724 e prova causal CDP real dd988c estão preservados no report; formal42+12 ainda pendente, sem reatribuir global5e9.

@@ -5741,3 +5741,10 @@ fad43+cherry-pick funcional01a254f5→88fb31d8, sóSSE/testes+SPEC/quadro, sem a
 ### #319 — prontidão Home do harness corrigida, recaptura pendente
 
 Formal84095 saída1 timeoutcarregando; execução inteira fora daallowlistfinal. A/B64168 helperreal: DCLantesmount/zero fallback/URLHome/manifestoexit1 versusload/fallbackreal/predicadoigual/exit0. ROOTparou94575 e autorizou1linhagotohomewaitUntil load antesCDP/routerPush; semalterarprodução/predicado/timeouts/JSON2xx/protótipo/guardas/sleep. AGENTSNext removido isoladamente, CRLF original. RED4b27341fail10pass→GREENbb4c6510files66testes0; TSC29431heap8192/lint2fontes5a2b82zeroavisos saída0. Global5e9899/7054 histórico préajuste, nãoatribuídoanovaCLI. Sem browser/DB/previewapósstop; formal42+12 e fases150/Triagem aguardamnovoReady.
+
+
+### #319 — barreira finita de corpo no harness, nova formal pendente
+
+Negativo96724 em1b6: painel-erro foi fotografado antes de GET substituto terminar; dois cancelamentos reprovaram classificador ainda sem recuperação concluída. Toda a formal excluída da allowlist. Diagnóstico85f744 com routefetch/fulfill200 é limitado; causal dd988c com CDP/latência real exata, sem interceptar200, confirmou false/false antes e true/true após requestfinished, 1doc/SSEmáx1. ROOT parou20932/restaurou snapshotB3b6192; blocoNext removido isoladamente. Delta autorizado sóharness/testes/docs: painel-erro/painel-vazio observam GET exato antes do goto e aguardam corpo/falha até30s antes do veredito, cleanup, sem exigir200/alterar guardas/classificador/foto/predicados. REDf7baec2falhas→GREENaf6ac1/33bf7311testes0; recorte13226 14files246testes0; TSC71693 sótipo do deferred corrigido, final pendente nofreeze; lint4fontes5d16f7zero. Fonte produtiva igual1b6/5e9, nenhum global novo. Formal42+12/inspeção/fase150/Triagem/QA/publicação continuam pendentes; sem320.
+
+Gates finais da barreira: TSC42755 heap8192 saída0 observado, lint4fontes5d16f7 saída0/0avisos, diffcheck/Nodecheck/help cbde28 saída0; produção/AGENTS intactos. Fonte congelada aguardando Ready para nova formal inteira.
