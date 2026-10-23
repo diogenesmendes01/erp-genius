@@ -28,3 +28,13 @@ versionados de output/inbox-307-* (104 PNGs) sem modificar os originais;
 contém imagens anteriores à anonimização e tentativas históricas, não foi
 enviado ao GitHub e não serve
 como aceite sanitizado atual. Referências imutáveis da #297 não são alteradas.
+## Preservação da limpeza404 no head307
+
+Sobre06248af0, retirados64PNG298 herdados da base antiga. Todos os64
+coincidem por tamanho/SHA256/GitOID com o manifesto404/ZIP381 autorizado,
+3.595.413bytes. Backup local dedicado conferido antes de retirar do índice;
+sem variantes adicionais ou novo upload. src/scripts/prisma/package/lock
+permanecem byteidênticos06248. A proposta B2 continua somente preservada,
+sem aplicar stash, instalar dependências ou mudar lock. Revisão técnica do
+porte e a decisão humana B2 seguem pendentes; não atribuir novo global
+ou aceite visual a essa alteração exclusivamente documental/de artefatos.

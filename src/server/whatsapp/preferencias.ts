@@ -66,7 +66,11 @@ export async function marcarLida(atendimentoId: string): Promise<Resultado> {
   return registrarLeituraPessoal(atendimentoId, true);
 }
 
-/** Registra a leitura pessoal e, se autorizada, a leitura compartilhada e no motor. */
+/**
+ * Alias legado de compatibilidade da API de leitura da #299, com invalidação de /inbox.
+ * @deprecated Mantido sem chamador produtivo nesta árvore; o novo Inbox usa
+ * marcarAtendimentoLidoAutomatico. A política de revalidação é fixa no servidor.
+ */
 export async function marcarAtendimentoLido(atendimentoId: string): Promise<Resultado> {
   return registrarLeituraAtendimento(atendimentoId, true);
 }
