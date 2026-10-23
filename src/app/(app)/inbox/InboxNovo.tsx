@@ -23,6 +23,7 @@ import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
 import { criarMarcadorDeLeitura } from "./marcar-lida";
+import { criarAtualizadorEmLote } from "./atualizar-lista-em-lote";
 
 export type VistaInbox = "lista" | "conversa" | "painel";
 type EstadoLeitura = { id: string | null; versao: number; fase: "nenhuma" | "pendente" | "sucesso" | "falha"; ultimaContagem: number };
@@ -64,7 +65,8 @@ type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?
 async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<PaginaInbox | null> {
   try {
     const r = await fetch(`/api/inbox/atendimentos?${paramsDosFiltros(filtros, cursor, { contagens: true })}`, { cache: "no-store", credentials: "same-origin" });
-    return r.ok ? await r.json() as PaginaInbox : null;
+    if (!r.ok) { await r.arrayBuffer(); return null; }
+    return await r.json() as PaginaInbox;
   } catch { return null; }
 }
 
@@ -142,41 +144,50 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
+  const atualizadorListaRef = useRef<ReturnType<typeof criarAtualizadorEmLote> | null>(null);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
   useEffect(() => {
+    // Um objeto SSR equivalente não elimina a reconciliação pessoal pendente.
+    if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros) atualizadorListaRef.current?.cancelarPendentes();
     filtrosRef.current = filtros;
     // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;
   }, [chaveFiltros, filtros]);
   useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
-  const carregarLista = useCallback((filtro: FiltrosInbox) => {
+  const executarAtualizacao = useCallback(async (contextoVigente: () => boolean) => {
+    const filtro = filtrosRef.current;
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
     const pedido = ++consultasRef.current.iniciada;
-    void buscarPagina(filtro, null).then((p) => {
-      if (!p || pedido < consultasRef.current.aplicada) return;
-      const leitura = leituraRef.current;
-      // Após falha, só uma consulta iniciada já nessa fase pode corrigir a contagem restaurada.
-      // Um GET da leitura anterior (ou da fase pendente) pode conter zero anterior à mensagem nova.
-      if (leitura.fase === "falha" && (inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "falha")) return;
-      consultasRef.current.aplicada = pedido;
-      // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
-      if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
-        && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
-      const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
-      const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
-      if (linha && !(leitura.fase === "sucesso" && antiga)) {
-        leitura.ultimaContagem = leitura.fase === "pendente" ? Math.max(leitura.ultimaContagem, linha.naoLidas) : linha.naoLidas;
-      }
-      setItens((atual) => {
-        const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
-        const vigente = leituraRef.current;
-        const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
-        return vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
-          ? zerarNaoLidas(lista, vigente.id!) : lista;
-      });
+    const p = await buscarPagina(filtro, null);
+    if (!contextoVigente() || !p || pedido < consultasRef.current.aplicada) return;
+    const leitura = leituraRef.current;
+    // Após falha, só uma consulta iniciada já nessa fase pode corrigir a contagem restaurada.
+    // Um GET da leitura anterior (ou da fase pendente) pode conter zero anterior à mensagem nova.
+    if (leitura.fase === "falha" && (inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "falha")) return;
+    consultasRef.current.aplicada = pedido;
+    // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
+    if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
+      && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
+    const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
+    const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
+    if (linha && !(leitura.fase === "sucesso" && antiga)) {
+      leitura.ultimaContagem = leitura.fase === "pendente" ? Math.max(leitura.ultimaContagem, linha.naoLidas) : linha.naoLidas;
+    }
+    setItens((atual) => {
+      const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
+      const vigente = leituraRef.current;
+      const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
+      return vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
+        ? zerarNaoLidas(lista, vigente.id!) : lista;
     });
   }, []);
+  useEffect(() => {
+    const atualizador = criarAtualizadorEmLote(executarAtualizacao);
+    atualizadorListaRef.current = atualizador;
+    return () => { atualizador.descartar(); atualizadorListaRef.current = null; };
+  }, [executarAtualizacao]);
+  const carregarLista = useCallback(() => { atualizadorListaRef.current?.solicitar(); }, []);
   const marcarLeituraRef = useRef<((id: string) => void) | null>(null);
   useEffect(() => {
     marcarLeituraRef.current = criarMarcadorDeLeitura(async (id) => {
@@ -188,11 +199,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       leitura.fase = sucesso ? "sucesso" : "falha";
       if (sucesso) {
         leitura.ultimaContagem = 0;
-        if (possuiContagensRef.current) carregarLista(filtrosRef.current);
+        if (possuiContagensRef.current) carregarLista();
       } else {
         // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
-        carregarLista(filtrosRef.current);
+        carregarLista();
       }
     });
     return () => { marcarLeituraRef.current = null; };
@@ -233,8 +244,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // e troca as linhas afetadas, sem refazer a página inteira.
   const recarregarLista = useCallback(() => {
     setVersaoPainel((v) => v + 1);
-    carregarLista(filtros);
-  }, [filtros, carregarLista]);
+    carregarLista();
+  }, [carregarLista]);
   // Aviso que pode mudar a permissão do atendimento aberto (`atendimento.atualizado`: transferência, responsável,
   // status) ou resync: o painel recarrega e, com ele, o podeEnviar do compositor (C3 da revisão do #218). Mensagem
   // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
@@ -245,8 +256,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       pedirLeitura(a.atendimentoId!, true);
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
-    carregarLista(filtros);
-  }, [filtros, carregarLista, pedirLeitura]);
+    carregarLista();
+  }, [carregarLista, pedirLeitura]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
