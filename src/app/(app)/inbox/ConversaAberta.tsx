@@ -22,10 +22,8 @@ import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-resposta
 import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
-import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { AcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
 import { AcoesMensagem, type AcaoMensagem } from "./AcoesMensagem";
-import { PainelTriagem } from "./PainelTriagem";
 
 export interface PropsConversaAberta {
   item: ItemListaInbox | null;
@@ -39,9 +37,6 @@ export interface PropsConversaAberta {
   /** O painel não carregou: "Tentar de novo" do compositor (C2 da revisão do #218). */
   falhaPermissao?: () => void;
   destinos?: DestinoTransferencia[];
-  /** Triagem do número (a quem `listarTriagemWhatsApp` aceita) e revisão de envio incerto (administrador); nulos para os demais. */
-  triagem?: ItemTriagem[] | null;
-  revisoes?: RevisaoEnvio[] | null;
   aoVoltar(): void;
   aoAlternarPainel(): void;
   painelAberto?: boolean;
@@ -91,7 +86,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAlternarPainel, painelAberto, aoMudar, agoraInicial }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, aoMudar, agoraInicial }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
   const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
@@ -151,7 +146,6 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         )}
       </header>
       <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
-        {(triagem || revisoes) && <div className="mb-3"><PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} /></div>}
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList stableMount

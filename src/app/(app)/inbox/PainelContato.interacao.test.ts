@@ -4,7 +4,11 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } from "@/test/dom-minimo";
 import type { PainelContato as Painel } from "./PainelContato";
 let doc: Documento, container: Elemento, root: Root, PainelContato: typeof Painel;
-let render: (visivel: boolean, sobreposto: boolean) => Promise<void>;
+let render: (visivel: boolean, sobreposto: boolean, enriquecido?: boolean) => Promise<void>;
+vi.mock("@tabler/icons-react", () => ({
+  IconChevronLeft: (p: object) => createElement("span", p), IconX: (p: object) => createElement("span", p), IconSparkles: (p: object) => createElement("span", p),
+}));
+// O DOM mínimo não implementa namespaces SVG; mock apenas dos três ícones decorativos.
 const ouvintes: { alvo: object; tipo: string; f: (e: Event) => void; captura: boolean }[] = [];
 function eventos(alvo: object) { return {
   addEventListener(tipo: string, f: (e: Event) => void, captura = false) { ouvintes.push({ alvo, tipo, f, captura }); },
@@ -29,13 +33,13 @@ beforeEach(async () => {
   vi.stubGlobal("document", doc); vi.stubGlobal("window", dom.janela); vi.stubGlobal("MutationObserver", dom.MutationObserver); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const { createRoot } = await import("react-dom/client"); ({ PainelContato } = await import("./PainelContato"));
   container = doc.createElement("div"); doc.body.appendChild(container); Object.assign(container, eventos(container)); root = createRoot(container as unknown as HTMLElement);
-  function Tela({ inicial, modal }: { inicial: boolean; modal: boolean }) {
+  function Tela({ inicial, modal, enriquecido }: { inicial: boolean; modal: boolean; enriquecido?: boolean }) {
     const [aberto, setAberto] = useState(inicial);
     return createElement("div", null,
       createElement("button", { "aria-controls": "painel-contato", onClick: () => setAberto(true) }, "Painel"),
-      createElement(PainelContato, { visivel: aberto, sobreposto: modal && aberto, className: "", focarAoAbrir: true, aoFechar: () => setAberto(false) }, createElement("input", { "aria-label": "Campo preservado" })));
+      createElement(PainelContato, { visivel: aberto, sobreposto: modal && aberto, className: "", contato: enriquecido ? { id: "c1", nome: "Mariana Costa", subtitulo: "Comercial", tags: [] } : undefined, focarAoAbrir: true, aoFechar: () => setAberto(false) }, createElement("input", { "aria-label": "Campo preservado" })));
   }
-  render = async (visivel, sobreposto) => { await act(async () => root.render(createElement(Tela, { inicial: visivel, modal: sobreposto }))); };
+  render = async (visivel, sobreposto, enriquecido) => { await act(async () => root.render(createElement(Tela, { inicial: visivel, modal: sobreposto, enriquecido }))); };
 });
 afterEach(async () => { if (root) await act(async () => root.unmount()); desligarObservadores(); vi.unstubAllGlobals(); });
 it("abrir sobreposição foca fechar; Tab fica no painel; Escape fecha e retorna ao gatilho", async () => {
@@ -83,4 +87,26 @@ it("troca overlay para coluna ou unmount libera somente isolamento próprio", as
   await render(true, true); expect(lateral.inert).toBe(true);
   await act(async () => root.unmount()); expect(lateral.inert).toBe(false);
   const { createRoot } = await import("react-dom/client"); root = createRoot(container as unknown as HTMLElement);
+});
+
+it("cabeçalho enriquecido conserva único fechar, isolamento, Tab/Escape e retorno", async () => {
+  await render(false, true, true); trigger().focus(); await disparar("click", trigger());
+  expect(container.querySelectorAll('[aria-label="Fechar painel do contato"]').length).toBe(1); expect(doc.activeElement === fechar()).toBe(true);
+  expect(container.querySelector('[role="tab"]')?.getAttribute('aria-selected')).toBe('true');
+  const campo = container.querySelector('input')!; campo.focus(); await disparar('keydown', campo, 'Tab'); expect(doc.activeElement === fechar()).toBe(true);
+  await disparar('keydown', fechar(), 'Escape'); expect(painel().inert).toBe(true); expect(doc.activeElement === trigger()).toBe(true);
+});
+it("cabeçalho novo não remonta painel/campo na troca coluna/overlay", async () => {
+  await render(true, false, true); const caixa=painel(), campo=container.querySelector('input')! as Elemento & {value: string}; campo.value='rascunho318';
+  await render(true, true, true); expect(painel() === caixa).toBe(true); expect(container.querySelector('input') === campo).toBe(true); expect(campo.value).toBe('rascunho318');
+  await render(true, false, true); expect(container.querySelector('input') === campo).toBe(true);
+});
+it("abas controladas usam setas/Home/End para selecionar e mover foco", async () => {
+  const { AbasPainel } = await import('./PainelContato');
+  function Abas() { const [ativa, setAtiva] = useState<'detalhes'|'atividade'>('detalhes'); return createElement(AbasPainel, { abas: [{id:'detalhes',rotulo:'Detalhes'},{id:'atividade',rotulo:'Atividade'}], abaAtiva: ativa, aoTrocarAba: id => setAtiva(id as 'detalhes'|'atividade') }); }
+  await act(async()=>root.render(createElement(Abas))); const tabs=container.querySelectorAll('[role="tab"]'); tabs[0].focus();
+  await disparar('keydown',tabs[0],'ArrowRight'); expect(doc.activeElement === tabs[1]).toBe(true); expect(tabs[1].getAttribute('aria-selected')).toBe('true');
+  await disparar('keydown',tabs[1],'Home'); expect(doc.activeElement === tabs[0]).toBe(true); expect(tabs[0].getAttribute('tabindex')).toBe('0');
+  await disparar('keydown',tabs[0],'End'); expect(doc.activeElement === tabs[1]).toBe(true);
+  await disparar('keydown',tabs[1],'ArrowRight'); expect(doc.activeElement === tabs[0]).toBe(true);
 });
