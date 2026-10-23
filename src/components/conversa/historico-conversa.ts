@@ -133,11 +133,11 @@ export class HistoricoConversa {
     } catch (e) { this.falhou(e, g); }
   };
 
-  /** Só o que veio depois do último cursor (aviso `mensagem.nova`); sem cursor (conversa vazia) abre as mais recentes. */
+  /** Só o que veio depois do último cursor; sem cursor, reconcilia mantendo notas já exibidas. */
   maisNovas = async () => {
     if (!this.id) return;
     if (this.ocupado()) { this.pendenteNovas = true; return; }
-    if (!this.state.depois) { await this.abrir(this.id); return; }
+    if (!this.state.depois) { await this.recarregar(); return; }
     const g = this.geracao;
     this.publicar({ carregandoNovas: true, erro: "" });
     try {
