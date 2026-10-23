@@ -139,7 +139,7 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
   "src/app/(app)/funil/EdicaoOportunidade.tsx": [
     "{rotulo} · opcional · input",
     "Próximo follow-up · opcional · input",
-    "Experimental (data e hora) · opcional · input",
+    "Experimental (data e hora) · opcional · CampoDataHoraLocal",
     "Data da proposta · opcional · input",
     '{rotulo} · obrigatório se k === "nome" · input · erro: k === "nome" ? erroNome : null',
     "País · opcional · select",
@@ -169,7 +169,7 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Motivo do convite · obrigatório · CampoTexto",
     "Nota · obrigatório · CampoTexto · dica",
     "Mensagem · obrigatório · CampoTexto",
-    "Enviar em · obrigatório · input · erro: erroQuando",
+    "Enviar em · obrigatório · CampoDataHoraLocal · erro: erroQuando",
   ],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": [
     "Nome · obrigatório · input · erro: errosPasso1.primeiroNome",

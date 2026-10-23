@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   confirmarIndisponibilidadeOperacional,
-  liberarEntregaOperacional,
-  prorrogarEtapaOperacional,
   publicarMaterialOperacional,
   retomarIndisponibilidadeOperacional,
   substituirAvaliadorReposicaoOperacional,
@@ -17,6 +15,8 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
+import { liberarEntregaOperacionalLocal, prorrogarEtapaOperacionalLocal } from "@/server/diario/reposicao-local";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
 export type OperacaoEntrega = {
@@ -74,16 +74,16 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Publicar e abrir prazo</button>
     </form> : <><p role="status">Material publicado em {data(operacao.material.publicadoEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}). Situação: {operacao.material.disponivel ? "disponível" : "indisponível"}.</p>{operacao.material.fonteTrocaElegivel && <Link href={`/diario/reposicoes/${encodeURIComponent(operacao.reposicaoId)}/troca-fonte`} className="inline-block text-sm text-brand-700 underline">Conferir e adotar a publicação corrigida da aula original</Link>}</>}
     <p role="status">{operacao.etapa.correcaoId ? "Etapa atual: correção solicitada." : "Etapa atual: primeira entrega."} Prazo vigente: {data(operacao.etapa.prazoAte, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}).</p>
-    {operacao.material && operacao.etapa.prazoAte && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => prorrogarEtapaOperacional({ reposicaoId: operacao.reposicaoId, solicitacaoCorrecaoId: operacao.etapa.correcaoId, prazoAnterior: operacao.etapa.prazoAte, novoPrazo: new Date(String(dados.get("novoPrazo") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
+    {operacao.material && operacao.etapa.prazoAte && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => prorrogarEtapaOperacionalLocal({ reposicaoId: operacao.reposicaoId, solicitacaoCorrecaoId: operacao.etapa.correcaoId, prazoAnterior: operacao.etapa.prazoAte, novoPrazoLocal: String(dados.get("novoPrazo") ?? ""), fuso: fusoExibicao, motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Prorrogar etapa vigente</p>
-      <label className="block">Novo prazo (horário local)<input name="novoPrazo" type="datetime-local" required className="block rounded border p-2" /></label>
+      <label className="block">Novo prazo<CampoDataHoraLocal name="novoPrazo" fuso={fusoExibicao} required className="block rounded border p-2" /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Prorrogar prazo conferido</button>
     </form>}
-    {operacao.liberacao.podeLiberar && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => liberarEntregaOperacional({ reposicaoId: operacao.reposicaoId, expiraEm: new Date(String(dados.get("expiraEm") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
+    {operacao.liberacao.podeLiberar && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => liberarEntregaOperacionalLocal({ reposicaoId: operacao.reposicaoId, expiraLocal: String(dados.get("expiraEm") ?? ""), fuso: fusoExibicao, motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Liberação específica para matrícula {rotular(STATUS_MATRICULA_LABEL, operacao.matriculaStatus).toLowerCase()}</p>
       {operacao.liberacao.expiraEm && <p className="text-sm">Liberação vigente até {data(operacao.liberacao.expiraEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}).</p>}
-      <label className="block">Expira em (horário local)<input name="expiraEm" type="datetime-local" required className="block rounded border p-2" /></label>
+      <label className="block">Expira em<CampoDataHoraLocal name="expiraEm" fuso={fusoExibicao} required className="block rounded border p-2" /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Liberar entrega específica</button>
     </form>}

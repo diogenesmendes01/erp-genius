@@ -23,6 +23,9 @@ import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico"
 import { ModalPerda } from "./ModalPerda";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
+import { formatarDiaDaEscola, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
 type Aba = "oportunidade" | "detalhes" | "atividade";
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -41,13 +44,20 @@ type Props = {
   /** Países operacionais, para editar os dados da oportunidade. */
   paises?: { id: string; nome: string }[];
   aoFechar: () => void;
-  /** Fuso institucional para exibir datas; o padrão é o do CartaoOportunidade. */
+  /** Fuso institucional: regras e datas civis (follow-up); o padrão é o do CartaoOportunidade. */
   fuso?: string;
+  /** Fuso pessoal de exibição dos instantes; sem ele (ou inválido), o institucional. */
+  preferenciaFusoExibicao?: string | null;
   abaInicial?: Aba;
 };
 
-const dataHora = (d: Date | string, fuso: string) =>
-  new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short", timeStyle: "short" }).format(new Date(d));
+/** Instante (criação, histórico, experimental): fuso pessoal de exibição; sem ele, o da escola. */
+const dataHora = (d: Date | string, preferencia: string | null, fuso: string) => formatarInstanteExibicao(d, preferencia, fuso).texto;
+/**
+ * O follow-up é data civil gravada no fuso da escola: sai como dia, sem hora e sem fuso pessoal (como no cartão).
+ * Fuso inválido não derruba o painel: cai no dia UTC, como os instantes caem no fallback do helper.
+ */
+const diaCivil = (d: Date | string, fuso: string) => formatarDiaDaEscola(d, fuso);
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
@@ -58,7 +68,7 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, abaInicial = "oportunidade" }: Props) {
+export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade" }: Props) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
@@ -66,8 +76,15 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   // segunda nota. Por isso ela tem executor próprio; as outras ações do painel seguem sem chave.
   const acaoNota = useAcaoCliente({ idempotente: true });
   const tentativaNota = useChaveIdempotencia();
+  // O link de pagamento também recebe chave (#166): o reenvio não grava outro LinkPagamentoEnviado nem move a
+  // âncora da régua "link sem pagamento". Executor próprio, como a nota.
+  const acaoLink = useAcaoCliente({ idempotente: true });
+  const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
+  // A experimental é digitada no fuso pessoal (sem preferência, o da escola), escrito ao lado do campo; o servidor
+  // converte (antes: `new Date(valor)` no fuso do navegador).
+  const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");
   const [confirmaDono, setConfirmaDono] = useState(false);
@@ -87,6 +104,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
 
   async function rodar(f: () => ReturnType<typeof enviarProposta>, sucesso: string, depois?: () => void) {
     acaoNota.limpar();
+    acaoLink.limpar();
     const d = await acao.executar(f, sucesso);
     if (d?.tipo === "ok") {
       router.refresh();
@@ -94,8 +112,20 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
     }
   }
 
+  async function registrarLink() {
+    acao.limpar();
+    acaoNota.limpar();
+    const d = await acaoLink.executar(() => registrarLinkPagamento(taxa!.cobrancaId, link, { chaveIdempotencia: tentativaLink.atual }), "Link de pagamento registrado.");
+    tentativaLink.depoisDo(d);
+    if (d?.tipo === "ok") {
+      router.refresh();
+      setLink("");
+    }
+  }
+
   async function registrarNota() {
     acao.limpar();
+    acaoLink.limpar();
     const d = await acaoNota.executar(() => registrarNotaInterna(op.id, { nota, chaveIdempotencia: tentativaNota.atual }), "Nota registrada.");
     tentativaNota.depoisDo(d);
     if (d?.tipo === "ok") {
@@ -143,7 +173,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <dl>
               <Linha rotulo="Valor previsto">{op.valorPrevisto && op.moeda ? formatarMoeda(op.valorPrevisto, op.moeda) : "Não informado"}</Linha>
               <Linha rotulo="Próximo passo">{op.proximaAcao ?? "Sem próximo passo"}</Linha>
-              {op.dataExperimental && <Linha rotulo="Experimental">{dataHora(op.dataExperimental, fuso)}</Linha>}
+              {op.dataExperimental && <Linha rotulo="Experimental">{dataHora(op.dataExperimental, preferenciaFusoExibicao, fuso)}</Linha>}
               {op.etapa === EtapaLead.PERDIDO && op.motivoPerda && <Linha rotulo="Motivo da perda">{MOTIVO_PERDA_LABEL[op.motivoPerda]}</Linha>}
               <Linha rotulo="Responsável">
                 {podeAtribuir ? (
@@ -194,13 +224,13 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               <div className="grid gap-2">
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Data e hora da experimental</span>
-                  <input type="datetime-local" className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
+                  <CampoDataHoraLocal fuso={fusoExperimental} className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
                 </label>
                 <div>
                   <Botao
                     variante="secundario"
                     disabled={!dataExp || acao.ocupado}
-                    onClick={() => rodar(() => agendarExperimental(op.id, { dataISO: new Date(dataExp).toISOString() }), "Experimental agendada.")}
+                    onClick={() => rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental }), "Experimental agendada.")}
                   >Agendar experimental</Botao>
                 </div>
               </div>
@@ -212,14 +242,15 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 {taxa!.linkPagamento && (
                   <p className="break-all text-xs text-gray-600">Link atual: {taxa!.linkPagamento}</p>
                 )}
-                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado} onChange={(e) => setLink(e.target.value)} />
+                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado || acaoLink.ocupado} onChange={(e) => setLink(e.target.value)} />
                 <div>
                   <Botao
                     variante="secundario"
-                    disabled={!link.trim() || acao.ocupado}
-                    onClick={() => rodar(() => registrarLinkPagamento(taxa!.cobrancaId, link), "Link de pagamento registrado.", () => setLink(""))}
+                    disabled={!link.trim() || acao.ocupado || acaoLink.ocupado}
+                    onClick={() => void registrarLink()}
                   >Registrar link de pagamento</Botao>
                 </div>
+                <FeedbackAcao erro={acaoLink.erro} sucesso={acaoLink.sucesso} />
               </div>
             )}
 
@@ -242,8 +273,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <dl>
               <Linha rotulo="Tipo">{op.b2b ? "Empresa (B2B)" : "Pessoa física"}</Linha>
               <Linha rotulo="País">{op.pais ?? "Não informado"}</Linha>
-              <Linha rotulo="Criada em">{dataHora(op.criadoEm, fuso)}</Linha>
-              {op.proximoFollowUp && <Linha rotulo="Próximo follow-up">{dataHora(op.proximoFollowUp, fuso)}</Linha>}
+              <Linha rotulo="Criada em">{dataHora(op.criadoEm, preferenciaFusoExibicao, fuso)}</Linha>
+              {op.proximoFollowUp && <Linha rotulo="Próximo follow-up">{diaCivil(op.proximoFollowUp, fuso)}</Linha>}
             </dl>
             {op.pessoaId && (
               <p className="text-sm">
@@ -252,7 +283,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
             <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />
             <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
-            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} />
+            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} />
             <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
           </div>
         )}
@@ -283,7 +314,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 {[...historico].reverse().map((i) => (
                   <li key={i.id} className="border-b border-gray-200 py-2 text-sm">
                     <p className="text-gray-900">{i.rotulo}</p>
-                    <p className="text-xs text-gray-600">{dataHora(i.em, fuso)}{i.autor ? ` · ${i.autor}` : ""}</p>
+                    <p className="text-xs text-gray-600">{dataHora(i.em, preferenciaFusoExibicao, fuso)}{i.autor ? ` · ${i.autor}` : ""}</p>
                   </li>
                 ))}
               </ol>

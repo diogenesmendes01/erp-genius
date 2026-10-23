@@ -117,6 +117,7 @@ describe("trilha de navegação", () => {
     // Segmento intermediário sem página não vira elo: a trilha sobe ao ancestral que é página.
     expect(resumo("/financeiro/acertos-vencimento/cm0xyz9/cp1q2w3")).toEqual(["Financeiro → /financeiro", "Acerto do vencimento"]);
     expect(resumo("/financeiro/acertos-adiantamento/cm0xyz9/cp1q2w3")).toEqual(["Financeiro → /financeiro", "Acerto do adiantamento"]);
+    expect(resumo("/financeiro/acertos-moeda/cm0xyz9/cp1q2w3")).toEqual(["Financeiro → /financeiro", "Trocas de moeda → /financeiro/acertos-moeda", "Troca de moeda"]);
     expect(resumo("/academico/segundas-chamadas/reservas/cs1d2f3/remarcacao")).toEqual(["Acadêmico → /academico", "Remarcação da segunda chamada"]);
   });
 

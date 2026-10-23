@@ -158,6 +158,8 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/financeiro/acertos-cobertura/*/*": "Correção de cobertura",
   "/financeiro/acertos-taxa": "Acertos de taxa",
   "/financeiro/acertos-taxa/*/*": "Acerto da taxa",
+  "/financeiro/acertos-moeda": "Trocas de moeda",
+  "/financeiro/acertos-moeda/*/*": "Troca de moeda",
   // Sem lista própria: a tela sobe direto para o Financeiro (é para lá que o "voltar" dela leva).
   "/financeiro/acertos-vencimento/*/*": "Acerto do vencimento",
   "/financeiro/acertos-adiantamento/*/*": "Acerto do adiantamento",
@@ -166,6 +168,8 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/financeiro/migracao": "Conciliação da migração",
   "/financeiro/migracao/*": "Linha da migração",
   "/financeiro/permuta": "Permutas",
+  // Q171/Q167C: sem lista própria; o "voltar" leva às permutas.
+  "/financeiro/permuta/excedente/*": "Excedente de permuta",
   "/financeiro/recebimentos": "Recebimentos",
 
   // Matrículas (o registro tem o próprio cabeçalho com as seções). As seções têm o MESMO nome da aba
@@ -185,6 +189,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/matriculas/*/contrato/aditivos/*/alcadas": "Alçadas",
   "/matriculas/*/contrato/aditivos/*/originais/*": "Original para assinatura",
   "/matriculas/*/contrato/originais/*": "Original para assinatura",
+  "/matriculas/*/contrato/origem-historica": "Origem histórica",
   "/matriculas/*/contrato/previas/*": "Prévia contratual",
   "/matriculas/*/contrato/previas/*/participantes": "Participantes",
   "/matriculas/*/contrato/substituicoes": "Substituições",

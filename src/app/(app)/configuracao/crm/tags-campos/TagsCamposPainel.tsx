@@ -107,10 +107,11 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
       <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarCampoDaTela({ id: campoId, nome: cNome, tipo: cTipo, alvo: cAlvo, opcoes: cTipo === "SELECAO" ? cOpcoes.split("\n").map((s) => s.trim()).filter(Boolean) : [], obrigatorio: cObrig, ...(campoId ? {} : { chaveIdempotencia: tentativaCampo.atual }) }), limparCampo, campoId ? undefined : tentativaCampo)}>{acao.ocupado ? "Salvando…" : campoId ? "Salvar campo" : "Criar campo"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />
+    {/* Arquivar tag e campo: idempotentes por natureza (#166, 5º lote), o reenvio de quem arquivou devolve ok. */}
     {arquivandoTag && <ConfirmarAcao
       titulo={`Arquivar a tag ${arquivandoTag.nome}?`}
       confirmacao="arquivamento da tag"
-      idempotente={false}
+      idempotente
       acao={() => arquivarTagDaTela(arquivandoTag.id)}
       aoConcluir={() => { setArquivandoTag(null); if (tagId === arquivandoTag.id) limparTag(); router.refresh(); }}
       aoCancelar={() => setArquivandoTag(null)}
@@ -120,7 +121,7 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
     {arquivandoCampo && <ConfirmarAcao
       titulo={`Arquivar o campo ${arquivandoCampo.nome}?`}
       confirmacao="arquivamento do campo"
-      idempotente={false}
+      idempotente
       digitacao={{ rotulo: `Digite ${arquivandoCampo.nome} para confirmar`, esperado: arquivandoCampo.nome }}
       acao={() => arquivarCampoDaTela(arquivandoCampo.id, arquivandoCampo.nome)}
       aoConcluir={() => { setArquivandoCampo(null); if (campoId === arquivandoCampo.id) limparCampo(); router.refresh(); }}

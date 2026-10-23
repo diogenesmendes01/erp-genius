@@ -1,5 +1,7 @@
 # Deploy do ERP Genius no Coolify (v4.3.23+)
-# Build pack: Docker Compose · repo Git · deploy automático no merge do main.
+# Build pack: Docker Compose · repo Git · imagem pré-construída no GHCR.
+# O build acontece no GitHub Actions (.github/workflows/image.yml), não na VPS.
+# O Coolify APENAS puxa a imagem validada (variável APP_IMAGE com digest).
 #
 # Coolify cuida do domínio e TLS via Traefik (porta 80/443 ocupadas por ele), portanto
 # o Caddy é OMITIDO. Nenhum serviço publica porta no host — o Traefik roteia o app na
@@ -34,10 +36,9 @@ services:
     # SEM ports: banco na rede interna, nunca internet pública.
 
   # Migrações ANTES do app (prisma migrate deploy — aditivo e idempotente).
+  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
-    build:
-      context: .
-      target: builder
+    image: ${APP_MIGRATE_IMAGE:?defina no Coolify}
     command: npx prisma migrate deploy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
@@ -47,13 +48,7 @@ services:
     restart: "no"
 
   app:
-    build:
-      context: .
-      args:
-        # SHA do commit para o /api/health (#165). SOURCE_COMMIT é variável pré-definida do Coolify; no
-        # build ela só traz o commit com "Include Source Commit in Build" ligado (General → Build). Desligado,
-        # ou fora do Coolify, o /api/health responde "desconhecido".
-        GIT_SHA: ${SOURCE_COMMIT:-}
+    image: ${APP_IMAGE:?defina no Coolify}
     restart: unless-stopped
     environment:
       # Coolify gera SERVICE_FQDN_APP_3000 a partir do domínio configurado no painel.
@@ -75,6 +70,10 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
+      # Assinatura eletrônica (Q155): vazio = registro manual do assinado. "simulado" SÓ em UAT/demo: envio e
+      # cancelamento usam o driver SIMULADO (nada é enviado ao cliente; processos ficam SIMULADO/SANDBOX e as
+      # telas avisam). Não existe driver de fornecedor real ainda.
+      ASSINATURA_DRIVER: ${ASSINATURA_DRIVER:-}
       # Motor WhatsApp na rede interna do compose (nunca a internet).
       MOTOR_URL: http://motor:4317
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no Coolify}
@@ -130,6 +129,9 @@ services:
   motor:
     image: ${MOTOR_IMAGE:?defina no Coolify}
     restart: unless-stopped
+    networks:
+      - default
+      - coolify
     environment:
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no Coolify}
       MOTOR_MODE: servico
@@ -138,9 +140,27 @@ services:
       HOST: "0.0.0.0"
       PORT: "4317"
       WA_DATA_DIR: /data
+      DATABASE_URL: ${MOTOR_DATABASE_URL:?defina no Coolify}
+      MASTER_KEY: ${MOTOR_MASTER_KEY:?defina no Coolify}
     volumes:
-      # PGlite, chave do cofre, credenciais e mídia do motor (entra no backup).
+      # Mídia WhatsApp, credenciais e chave do cofre (entra no backup). PGlite foi substituído
+      # por Postgres dedicado (DATABASE_URL aponta para banco criado no Coolify).
       - motor_data:/data
+    healthcheck:
+      # node:24.22.1-bookworm-slim não tem curl/wget; usar node -e com fetch nativo.
+      # 127.0.0.1 (não localhost): evita IPv6 → bind só em IPv4 (HOST=0.0.0.0).
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4317/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          # Baileys: 512MB–1GB para sessões, mídia temporária, PGlite e heaps.
+          # CPU: 0.5–1 core (picos em QR/pareamento, idle baixo).
+          memory: 768M
+          cpus: "0.75"
     # SEM ports: o motor não sai para a internet.
 
   # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min.
@@ -202,3 +222,7 @@ volumes:
   db_data:
   uploads:
   motor_data:
+
+networks:
+  coolify:
+    external: true

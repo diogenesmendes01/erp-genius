@@ -559,11 +559,18 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum aditivo com condições de taxa nesta página.",
     "compacto · Nenhum aditivo formaliza condições de taxa.",
   ],
+  "src/app/(app)/financeiro/acertos-moeda/page.tsx": [
+    "compacto · Nenhum aditivo de moeda nesta página.",
+    "compacto · Nenhum aditivo formaliza troca de moeda.",
+  ],
   "src/app/(app)/financeiro/acertos-adiantamento/[matriculaId]/[propostaId]/page.tsx": [
     "bloco · Nenhuma proposta de acerto registrada.",
   ],
   "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx": [
     "bloco · Nenhuma proposta de acerto registrada.",
+  ],
+  "src/app/(app)/financeiro/acertos-moeda/[matriculaId]/[propostaId]/page.tsx": [
+    "bloco · Nenhuma proposta de troca registrada.",
   ],
   "src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal.tsx": [
     "bloco · Nenhuma matrícula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
@@ -582,6 +589,15 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/financeiro/migracao/page.tsx": [
     "compacto · Nenhuma linha financeira nesta página.",
     "compacto · Nenhuma linha financeira da migração para conciliar.",
+  ],
+  // Q171/Q167C: destinação do excedente e uso do saldo restrito a serviços.
+  "src/app/(app)/financeiro/permuta/excedente/[matriculaId]/page.tsx": [
+    "bloco · Nenhuma cobrança desta matrícula foi compensada por permuta.",
+    "bloco · Nenhuma destinação registrada.",
+    "bloco · Nenhum saldo de serviços nesta matrícula.",
+    "bloco · Nenhuma cobrança em aberto abatível agora (ou há uso aguardando decisão, cobrança em pausa ou compro",
+    "bloco · Saldo totalmente utilizado.",
+    "bloco · Nenhum uso registrado.",
   ],
   "src/app/(app)/financeiro/permuta/page.tsx": [
     "bloco · Nenhum acordo nesta página.",
@@ -721,6 +737,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum modelo de aditivo aprovado está disponível.",
     "compacto · Nenhuma proposta nesta página.",
     "compacto · Nenhuma proposta de aditivo registrada para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/origem-historica/page.tsx": [
+    "compacto · Nenhuma origem histórica registrada.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/originais/[artefatoId]/page.tsx": [
     "compacto · Nenhuma conferência registrada.",

@@ -117,6 +117,7 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
     const resultado = await atualizarDatas(leadV1, {
       proximoFollowUp: "2026-09-10",
       dataExperimental: "2026-09-11T09:30",
+      fusoDataExperimental: "America/Sao_Paulo",
       dataProposta: "2026-09-12",
     });
     expect(resultado.ok, resultado.ok ? "" : resultado.erro).toBe(true);
@@ -125,7 +126,14 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
     expect(evento?.payload).toMatchObject({
       proximoFollowUpCivil: "2026-09-10",
       dataPropostaCivil: "2026-09-12",
-      dataExperimental: expect.stringMatching(/Z$/),
+      // Lote 3 do fuso pessoal: 09:30 digitado em São Paulo, convertido no servidor com o fuso explícito.
+      dataExperimental: "2026-09-11T12:30:00.000Z",
     });
+  });
+
+  it("experimental digitada sem fuso é recusada (nunca o fuso do processo)", async () => {
+    logadoComo(vendedor1.id);
+    const resultado = await atualizarDatas(leadV1, { dataExperimental: "2026-09-11T09:30" });
+    expect(resultado).toEqual({ ok: false, erro: expect.stringMatching(/fuso válido/) });
   });
 });

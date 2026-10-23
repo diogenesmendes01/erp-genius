@@ -6,8 +6,10 @@ import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 export function DecisaoAcerto({ alunoId, rascunhoId }: { alunoId: string; rascunhoId: string }) {
-  // A decisão não recebe chave de idempotência; na falha de transporte vale a mensagem própria de decisão.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a mesma decisão do mesmo decisor, com o mesmo motivo e as mesmas
+  // autorizações, devolve a decisão já registrada (server/matricula/encerramento-decisao.ts). Na falha de
+  // transporte vale a mensagem própria de decisão.
+  const acao = useAcaoCliente({ idempotente: true });
   return <form onSubmit={async event => {
     event.preventDefault(); const f = new FormData(event.currentTarget);
     const d = await acao.executar(() => decidirAcertoEncerramento({ alunoId, rascunhoId, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")), autorizaRetroatividade: f.has("retro"), autorizaExcecaoMulta: f.has("multa") }),

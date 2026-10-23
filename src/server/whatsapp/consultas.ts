@@ -28,6 +28,7 @@ export interface NumeroConfig {
 export async function listarNumerosConfig(): Promise<NumeroConfig[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const numeros = await prisma.numeroWhatsApp.findMany({
+    where: { excluidoEm: null }, // excluído some da configuração; o histórico continua no inbox
     orderBy: { criadoEm: "asc" },
     include: { dono: { select: { nome: true } } },
   });
@@ -107,7 +108,7 @@ export async function carregarConfiguracaoAvisosAgenda(): Promise<ConfiguracaoAv
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const [config, numeros, templates] = await Promise.all([
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } }),
-    prisma.numeroWhatsApp.findMany({ where: { finalidade: "AGENDA" }, select: { id: true, rotulo: true, driver: true, finalidade: true, providerRef: true, ativo: true }, orderBy: { criadoEm: "asc" } }),
+    prisma.numeroWhatsApp.findMany({ where: { finalidade: "AGENDA", excluidoEm: null }, select: { id: true, rotulo: true, driver: true, finalidade: true, providerRef: true, ativo: true }, orderBy: { criadoEm: "asc" } }),
     prisma.templateWhatsApp.findMany({ where: ONDE_MODELO_REGUA, select: { id: true, nome: true, idioma: true, categoria: true, statusMeta: true, metaTemplateId: true, corpo: true }, orderBy: { nome: "asc" } }),
   ]);
   return { numeroAvisosAgendaId: config?.numeroAvisosAgendaId ?? null, templateAvisosAgendaId: config?.templateAvisosAgendaId ?? null, numeros, templates };

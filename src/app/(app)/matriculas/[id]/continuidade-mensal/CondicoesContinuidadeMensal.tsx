@@ -8,6 +8,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -29,7 +30,13 @@ const rotuloDiaSemana = new Map(diasDaSemana);
 
 const data = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 
-export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
+/**
+ * `vigenteDesde` é data civil e sai como está. Registro (`criadaEm`) e decisão (`decididaEm`) são instantes: o dia
+ * no fuso pessoal de exibição; sem preferência, no da escola (antes, o dia UTC, que punha o registro da noite no dia
+ * seguinte). O fuso sai escrito junto do dia, como nas outras telas do lote (review do #289, item F).
+ */
+export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao = null, fusoEscola }: { dados: Dados; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
+  const dia = (instante: string) => { const x = formatarInstanteExibicao(instante, preferenciaFusoExibicao, fusoEscola, "data"); return `${x.texto} (${x.fuso})`; };
   const router = useRouter();
   // Preparar e decidir não levam chave de idempotência: na falha de transporte, conferir antes de repetir.
   // A decisão preserva a orientação própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.
@@ -149,7 +156,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
     {!d.versoes.length && <EstadoVazio>Nenhuma versão registrada.</EstadoVazio>}
     {d.versoes.map(versao => <article key={versao.id} className="space-y-2 rounded border p-4">
       <h3>Versão {versao.versao} · {versao.status === "APROVADA" ? "Aprovada" : versao.status === "REJEITADA" ? "Rejeitada" : "Aguardando revisão"}</h3>
-      <p>{versao.preparador.nome} · {data(versao.criadaEm)} · contrato vinculado</p>
+      <p>{versao.preparador.nome} · {dia(versao.criadaEm)} · contrato vinculado</p>
       {versao.regras ? <>
         <p>Vigente desde {data(versao.regras.vigenteDesde)} · {formatarMoeda(versao.regras.valorOriginal, versao.regras.moeda)} original · {formatarMoeda(versao.regras.valorNegociado, versao.regras.moeda)} negociado</p>
         <p>{versao.regras.regraCobertura.referencia === "MES_CIVIL" ? "Cobertura por mês civil" : `Cobertura por ciclo desde ${formatarDataCivil(versao.regras.regraCobertura.dataReferencia)}`} · vencimento no dia {versao.regras.diaVencimento} · antecedência de {versao.regras.antecedenciaDias} dias</p>
@@ -160,7 +167,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
         <p className="whitespace-pre-wrap">Cláusula: {versao.regras.continuidadeContratada.clausula}</p>
       </> : <p role="alert">{versao.naoConferida ? "Esta versão não informa a referência do vencimento. Ela precisa de conferência; prepare uma nova versão completa para substituí-la, sem alterar este histórico." : "As regras desta versão precisam de conferência."}</p>}
       <p>{versao.motivo}</p>
-      {versao.decisor && <p>Decisão de {versao.decisor.nome}: {versao.motivoDecisao}{versao.decididaEm && ` · ${data(versao.decididaEm)}`}</p>}
+      {versao.decisor && <p>Decisão de {versao.decisor.nome}: {versao.motivoDecisao}{versao.decididaEm && ` · ${dia(versao.decididaEm)}`}</p>}
       {versao.podeDecidir && <form className="space-y-2" onSubmit={async evento => {
         evento.preventDefault();
         const formulario = new FormData(evento.currentTarget);

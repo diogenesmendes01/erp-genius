@@ -60,4 +60,15 @@ describe("AgendaInicialSegundaChamadaPage", () => {
   await renderizar();
   expect(fusoInicialPassado()).toBe("");
  });
+ // Lote 2 do fuso pessoal: o registro da proposta é instante (fuso pessoal, sem preferência o da agenda); o horário
+ // proposto é publicado no fuso da agenda e mantém esse fuso. Expectativas fixas em TZ=UTC e America/Sao_Paulo.
+ it("registro da proposta no fuso pessoal; horário proposto no fuso da agenda", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, itens: [{ ...item, criadaEm: "2026-09-02T02:30:00.000Z" }] } });
+  mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "Asia/Tokyo" } });
+  const comPreferencia = await renderizar();
+  expect(comPreferencia).toContain("Proposta de Secretaria em 02/09/2026, 11:30 (Asia/Tokyo).");
+  expect(comPreferencia).toContain("Horário proposto: 02/10/2026, 09:00 até 02/10/2026, 10:00 (America/Sao_Paulo).");
+  mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } });
+  expect(await renderizar()).toContain("Proposta de Secretaria em 01/09/2026, 23:30 (America/Sao_Paulo).");
+ });
 });

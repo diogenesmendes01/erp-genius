@@ -11,6 +11,8 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
+import { concluirReposicaoGravadaLocal } from "@/server/diario/reposicao-local";
 
 export type EntregaGravadaPendente = { id: string; entregueEm: string; resumo: string; atividade: string; evidencia: string };
 
@@ -41,9 +43,10 @@ export function ReposicaoDocente({ reposicaoId, versaoAnterior, modalidade, orig
           const r = await solicitarCorrecaoEntregaReposicao({ reposicaoId, entregaId: entrega.id, comentario: String(dados.get("comentarioCorrecao") ?? "") });
           if (!r.ok) { setErro(r.erro); return; } router.refresh(); return;
         }
-        const instante = new Date(String(dados.get("validadaEm") ?? ""));
-        if (!Number.isFinite(instante.getTime())) { setErro("Informe uma data e horário de validação válidos."); return; }
-        const r = await concluirReposicaoIndividual({ reposicaoId, versaoAnterior, entregaId: entrega.id, validadaEm: instante.toISOString(), evidencia: String(dados.get("evidencia") ?? "") });
+        // A validação é lida no fuso escrito ao lado do campo e convertida no servidor (antes: fuso do dispositivo).
+        const validadaLocal = String(dados.get("validadaEm") ?? "").trim();
+        if (!validadaLocal) { setErro("Informe uma data e horário de validação válidos."); return; }
+        const r = await concluirReposicaoGravadaLocal({ reposicaoId, versaoAnterior, entregaId: entrega.id, validadaLocal, fuso: fusoExibicao, evidencia: String(dados.get("evidencia") ?? "") });
         if (!r.ok) { setErro(r.erro); return; } router.refresh();
       } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
@@ -51,7 +54,7 @@ export function ReposicaoDocente({ reposicaoId, versaoAnterior, modalidade, orig
     <p>Origem: {descreverParticipacaoOrigem(origem.participacao)}, de {data(origem.inicio, fusoExibicao)} a {data(origem.fim, fusoExibicao)} (exibido em {fusoExibicao}; origem {origem.fuso}). A validação regulariza somente esta aula e preserva o registro original.</p>
     {avisoOrigemCorrigida}
     <details><summary>Entrega do aluno em {data(entrega.entregueEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {origem.fuso})</summary><p className="mt-2 whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="mt-2 whitespace-pre-wrap">Atividade: {entrega.atividade}</p><p className="mt-2 whitespace-pre-wrap">Evidência: {entrega.evidencia}</p></details>
-    <label className="block">Data e horário da validação<input type="datetime-local" name="validadaEm" required step="1" className="block rounded border p-2" /></label><p className="text-sm">O horário é informado no fuso do dispositivo e será registrado em UTC.</p>
+    <label className="block">Data e horário da validação<CampoDataHoraLocal name="validadaEm" fuso={fusoExibicao} required step="1" className="block rounded border p-2" /></label>
     <label className="block">Evidência da validação<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
     <button name="operacao" value="VALIDAR" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Validando…" : "Confirmar reposição"}</button>
     <div className="border-t pt-3"><label className="block">Comentário para solicitar correção<CampoTexto name="comentarioCorrecao" minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label><button name="operacao" value="CORRIGIR" formNoValidate className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-2`}>Pedir correção ao aluno</button></div>

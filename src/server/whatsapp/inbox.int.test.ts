@@ -171,7 +171,7 @@ describe("opt-out (S10)", () => {
     const r1 = await registrarOptOutContato(contato.id);
     expect(r1.ok).toBe(true);
     const r2 = await registrarOptOutContato(contato.id);
-    expect(r2.ok).toBe(false); // já em opt-out
+    expect(r2.ok).toBe(true); // #166 (5º lote): o reenvio de quem registrou devolve ok, sem outro Evento
 
     expect((await eventosDo("ContatoWhatsApp", contato.id)).filter((e) => e.tipo === "OptOutRegistrado")).toHaveLength(1);
   });

@@ -9,6 +9,7 @@ import type { listarContextoRetomada, listarPropostasRetomada } from "@/server/r
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -21,6 +22,12 @@ type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const principal = botaoClasses({ tamanho: "lg" });
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
+// Mensagem da proposta pelo status devolvido (#282, C3): o reenvio da mesma tentativa devolve a proposta original,
+// que pode já ter sido decidida por outra pessoa no intervalo; aí nada foi gravado e a tela não anuncia uma nova.
+function mensagemProposta(dado: { status: string } | undefined): string {
+  if (!dado || dado.status === "PENDENTE") return "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.";
+  return `Esta proposta já foi decidida: ${dado.status === "APROVADA" ? "aprovada" : "rejeitada"}. Para uma nova retomada, faça uma nova proposta.`;
+}
 const data = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 
 export function RetomadasPainel({ contexto, propostas, erroConsulta, preferenciaFusoExibicao = null }: { contexto?: Contexto | null; propostas: Propostas; erroConsulta?: string | null; preferenciaFusoExibicao?: string | null }) {
@@ -29,9 +36,11 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
   const [motivo, setMotivo] = useState("");
   const [datas, setDatas] = useState<Record<string, string>>({});
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  // Idempotentes por natureza (#166): a proposta pendente idêntica, do mesmo solicitante, é devolvida sem novo
-  // registro; a mesma decisão, do mesmo aprovador e com o mesmo motivo, também (server/retomada/acoes.ts).
+  // Proposta com chave de idempotência (#166, N3 da R1 do #274): o reenvio da mesma tentativa devolve a proposta
+  // original mesmo se outra pessoa a rejeitou no intervalo; a chave só muda depois do sucesso. A mesma decisão, do
+  // mesmo aprovador e com o mesmo motivo, é devolvida por natureza (server/retomada/acoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // O resultado aparece junto da proposta nova ("proposta") ou da proposta decidida (id).
   const [alvo, setAlvo] = useState<string | null>(null);
   const ocupado = acao.ocupado;
@@ -49,9 +58,12 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
     const d = await acao.executar(() => solicitarRetomada(contexto.alunoId, {
       opcao, motivo,
       novosVencimentos: opcao === "REPROGRAMAR_PARCELAS" ? contexto.parcelas.map((p) => ({ cobrancaId: p.cobrancaId, vencimento: datas[p.cobrancaId] ?? p.vencimento.slice(0, 10) })) : [],
-    }), "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.");
+      chaveIdempotencia: tentativa.atual,
+    }), mensagemProposta);
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
-    setOpcao(""); setMotivo(""); setDatas({});
+    // Já decidida: os dados ficam no formulário para uma nova proposta deliberada (a chave já é outra).
+    if (d.dado?.status === "PENDENTE" || !d.dado) { setOpcao(""); setMotivo(""); setDatas({}); }
     router.refresh();
   }
 

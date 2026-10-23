@@ -11,7 +11,7 @@ export async function prepararConvitePortalAluno(input: { alunoId: string; chave
   return identidade.prepararConvitePortalAluno(input);
 }
 
-export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; novoEmail: string; motivo: string; evidencia: string }) {
+export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; novoEmail: string; motivo: string; evidencia: string; chaveIdempotencia?: string }) {
   return identidade.prepararTrocaEmailPortalAluno(input);
 }
 

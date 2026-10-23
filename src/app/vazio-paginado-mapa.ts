@@ -18,6 +18,7 @@ export const MAPA_VAZIO_PAGINADO: readonly string[] = [
   "src/app/(app)/alunos/[id]/movimentacoes/page.tsx | pedidos.pagina > 1 | Nenhum pedido registrado nesta página.",
   "src/app/(app)/diario/page.tsx | antes | nesta página",
   "src/app/(app)/financeiro/acertos-cobertura/page.tsx | pagina > 1 | Nenhum aditivo de cobertura foi encontrado nesta página.",
+  "src/app/(app)/financeiro/acertos-moeda/page.tsx | pagina > 1 | Nenhum aditivo de moeda nesta página.",
   "src/app/(app)/financeiro/acertos-taxa/page.tsx | pagina > 1 | Nenhum aditivo com condições de taxa nesta página.",
   "src/app/(app)/financeiro/migracao/page.tsx | pagina > 1 | Nenhuma linha financeira nesta página.",
   "src/app/(app)/financeiro/permuta/page.tsx | pagina > 1 | Nenhum acordo nesta página.",

@@ -10,7 +10,7 @@ import { EXCECOES_CAMPO, MAPA_CAMPOS, type ExcecaoCampo } from "./campos-mapa";
 // `<Campo rotulo="Nome" obrigatorio erro={…}>{(campo) => <input {...campo} />}</Campo>`.
 //
 // A migração é por ÁREA (AREAS_MIGRADAS, que só cresce). Nelas, pelo AST do TypeScript:
-// - todo controle obrigatório — <input>/<select>/campo de texto longo, CampoTexto, CampoMoeda, CampoFuso
+// - todo controle obrigatório — <input>/<select>/campo de texto longo, CampoTexto, CampoMoeda, CampoFuso, CampoDataHoraLocal
 //   (obrigatório por padrão) ou componente local que repassa `id` — com `required` ou `aria-required`
 //   (também por spread de objeto literal, `{...{ required: true }}`) passa pelo Campo; fora dele, só com
 //   rótulo ligado E aria-invalid ligado a um valor (não constante);
@@ -41,7 +41,7 @@ const AREAS_MIGRADAS: { pasta: string; subpastas: boolean }[] = [
 const RAIZES = ["src/app", "src/components"];
 const FONTE_DO_CAMPO = "src/components/Campo.tsx";
 const NATIVOS = new Set(["input", "select", "textarea"]);
-const DO_DESIGN_SYSTEM = new Set(["CampoTexto", "CampoMoeda", "CampoFuso"]);
+const DO_DESIGN_SYSTEM = new Set(["CampoTexto", "CampoMoeda", "CampoFuso", "CampoDataHoraLocal"]);
 /** Nomes que a trava segue quando renomeados no import ou numa constante. */
 const CANONICOS = new Set(["Campo", ...DO_DESIGN_SYSTEM]);
 /** Atributos que a ligação do Campo entrega — escritos à mão no controle, sobrescrevem a ligação. */
@@ -483,7 +483,7 @@ describe("detector do Campo (autoteste)", () => {
     expect(DA_LIGACAO).toEqual(["id", "aria-required", "aria-invalid", "aria-describedby"]);
     expect(TIPOS_SEM_ROTULO).toEqual(["hidden", "submit", "button", "reset", "image"]);
     expect([...NATIVOS]).toEqual(["input", "select", "textarea"]);
-    expect([...DO_DESIGN_SYSTEM]).toEqual(["CampoTexto", "CampoMoeda", "CampoFuso"]);
+    expect([...DO_DESIGN_SYSTEM]).toEqual(["CampoTexto", "CampoMoeda", "CampoFuso", "CampoDataHoraLocal"]);
     expect(AREAS_MIGRADAS).toEqual([
       { pasta: "src/app/(app)/matriculas/nova", subpastas: true },
       { pasta: "src/app/(app)/alunos/[id]", subpastas: false },

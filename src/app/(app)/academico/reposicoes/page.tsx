@@ -7,7 +7,8 @@ import { consultarOperacaoEntregaReposicao } from "@/server/diario/reposicao-ent
 import { ReposicoesEquipe, SolicitarReposicao } from "@/app/(app)/diario/reposicoes/ReposicoesEquipe";
 import type { OperacaoEntrega } from "@/app/(app)/diario/reposicoes/OperacaoEntregaReposicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
@@ -20,9 +21,12 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
   const podeOperarEntrega = usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
   const { matriculaId, cursor, origemCursor, busca: buscaBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim().slice(0, 100);
-  const preferencia = await consultarPreferenciaFusoEquipe();
+  const [preferencia, fusoEscola] = await Promise.all([consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
-  const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
+  // B1 da review do #290: este fuso também é o dos CAMPOS de entrada da operação da entrega (novo prazo da etapa,
+  // "Expira em" da liberação). Pessoal; sem preferência, o da escola — nunca UTC presumido (antes, o fallback era
+  // "UTC" e 25/10 23:59 digitado em São Paulo gravava 3 horas antes). O mesmo vale para os horários exibidos.
+  const fusoExibicao = fusoDoCampoLocal(preferenciaFusoExibicao, fusoEscola);
   const encontradas = !matriculaId && busca.length >= 2 ? await buscarMatriculasParaReposicao({ busca }) : null;
   return <div className="space-y-5">
     <VoltarPara href="/academico" />

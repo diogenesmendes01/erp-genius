@@ -7,7 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
-import { agendarMensagemNoAtendimento } from "./acoes-conversa";
+import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal } from "./acoes-conversa";
+import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { transferirAtendimento } from "./acoes-atendimento";
 import { despacharFila } from "./despachante";
 import { diaUtilAs } from "@/test/janela-envio";
@@ -44,6 +45,19 @@ describe("agendar mensagem pelo atendimento", () => {
     expect(await status(r)).not.toBe("PENDENTE");
     expect(["DESPACHADA", "SIMULADA"]).toContain(await status(r));
     expect(await prisma.evento.count({ where: { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id } })).toBe(1);
+  });
+
+  // Lote 3 do fuso pessoal nas telas: o Inbox manda o texto do datetime-local e o fuso escrito ao lado do campo; o
+  // servidor converte. O mesmo horário digitado em São Paulo e em San José são instantes diferentes.
+  it("horário digitado é convertido no servidor, no fuso informado; fuso inválido é recusado sem agendar", async () => {
+    const { vend, a } = await cenario();
+    comoUsuario(vend);
+    const quando = util(10);
+    const local = valorCampoLocal(quando, "America/Sao_Paulo");
+    const r = await agendarMensagemNoAtendimentoLocal({ atendimentoId: a.id, texto: "Lembrete", quandoLocal: local, fuso: "America/Sao_Paulo" });
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: idDe(r) } })).agendadaPara?.toISOString()).toBe(new Date(Math.floor(quando.getTime() / 60_000) * 60_000).toISOString());
+    expect(await agendarMensagemNoAtendimentoLocal({ atendimentoId: a.id, texto: "Outro", quandoLocal: local, fuso: "Lua/Base" })).toEqual({ ok: false, erro: expect.stringMatching(/fuso válido/) });
+    expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: a.id } })).toBe(1);
   });
 
   it("não sai depois de transferência", async () => {

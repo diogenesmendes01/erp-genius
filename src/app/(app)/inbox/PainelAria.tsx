@@ -7,6 +7,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ACAO_AGENTE_IA_LABEL, MOTIVO_PAUSA_IA_LABEL } from "@/lib/labels";
 import { aprovarAcaoAria, devolverParaAria, rejeitarAcaoAria } from "@/server/aria/acoes";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 export function textoPausaAria(motivo: MotivoPausaAtendimentoIA | null): string {
   return motivo ? `Aria pausada · ${MOTIVO_PAUSA_IA_LABEL[motivo]}` : "Aria pausada";
@@ -17,9 +18,7 @@ export function PainelAria({ atendimentoId, aria, fuso, aoMudar }: { atendimento
   const acao = useAcaoCliente({ idempotente: false });
   if (!aria || (!aria.pausada && aria.sugestoes.length === 0)) return null;
 
-  const hora = (iso: string) => {
-    try { return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: fuso ?? "UTC" }).format(new Date(iso)); } catch { return iso; }
-  };
+  const hora = (iso: string) => formatarInstanteExibicao(iso, fuso, "UTC", "hora").texto;
   async function decidir(fn: () => ReturnType<typeof devolverParaAria>, ok: string) {
     const d = await acao.executar(fn, ok);
     if (d?.tipo === "ok") aoMudar();

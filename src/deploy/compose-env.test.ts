@@ -15,6 +15,8 @@ const SO_TESTE_PREFIXOS = ["HOMOLOGACAO_UI_", "QA_"];
 const DA_IMAGEM = ["NODE_ENV", "GIT_SHA"];
 // Montadas pelo compose a partir de outras variáveis (não aparecem cruas no env de produção).
 const DERIVADAS_NO_COMPOSE = ["DATABASE_URL", "NEXTAUTH_URL", "MOTOR_URL"];
+// Definidas no compose mas não repassadas ao app (são usadas na definição de serviços, não no environment).
+const DO_COMPOSE = ["APP_IMAGE", "APP_MIGRATE_IMAGE", "MOTOR_IMAGE"];
 
 const soTeste = (v: string) => SO_TESTE_EXATAS.has(v) || SO_TESTE_PREFIXOS.some((p) => v.startsWith(p));
 const ehArquivoDeTeste = (arq: string) => /\.test\.tsx?$/.test(arq) || arq.split(/[\\/]/).includes("test");
@@ -53,7 +55,7 @@ function secao(texto: string, nome: string): string {
 }
 
 const lidas = lidasPeloCodigo();
-const producao = [...lidas.keys()].filter((v) => !soTeste(v) && !DA_IMAGEM.includes(v)).sort();
+const producao = [...lidas.keys()].filter((v) => !soTeste(v) && !DA_IMAGEM.includes(v) && !DO_COMPOSE.includes(v)).sort();
 
 describe("variáveis lidas pelo código", () => {
   it("a varredura encontra as variáveis conhecidas (o regex não quebrou)", () => {
@@ -85,6 +87,25 @@ for (const arq of ["docker-compose.coolify.yml", "docker-compose.prod.yml"]) {
       for (const v of producao.filter((x) => x.endsWith("_ENABLED"))) {
         expect(env).toContain(`${v}: \${${v}:-false}`);
       }
+    });
+  });
+
+  describe(`${arq}: imagens dos serviços`, () => {
+    const compose = ler(arq);
+    it("app usa image: ${APP_IMAGE:?...} (obrigatório, fail closed)", () => {
+      expect(secao(compose, "app")).toMatch(/^\s*image:\s+\$\{APP_IMAGE:\?[^}]+\}/m);
+    });
+    it("app não tem build: (build acontece no CI)", () => {
+      expect(secao(compose, "app")).not.toMatch(/^\s*build:/m);
+    });
+    it("migrate usa image: ${APP_MIGRATE_IMAGE:?...} (builder stage com Prisma CLI)", () => {
+      expect(secao(compose, "migrate")).toMatch(/^\s*image:\s+\$\{APP_MIGRATE_IMAGE:\?[^}]+\}/m);
+    });
+    it("migrate não tem build: (usa a imagem validada do builder)", () => {
+      expect(secao(compose, "migrate")).not.toMatch(/^\s*build:/m);
+    });
+    it("motor usa image: ${MOTOR_IMAGE:?...} (obrigatório)", () => {
+      expect(secao(compose, "motor")).toMatch(/^\s*image:\s+\$\{MOTOR_IMAGE:\?[^}]+\}/m);
     });
   });
 }

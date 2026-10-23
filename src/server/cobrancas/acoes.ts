@@ -12,7 +12,7 @@ import {
   ErroPermissao,
   type Resultado,
 } from "@/server/_shared";
-import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, sqlBuscaIdempotente } from "@/server/_shared/idempotencia";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { exigirConferenciaIndependente } from "@/server/financeiro/regras";
@@ -80,12 +80,39 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
 
 const PedidoAcessoSchema = z.object({ matriculaId: z.string().min(1), bloquear: z.boolean(), motivo: z.string().trim().min(5, "Informe o motivo da solicitação (mínimo 5 caracteres).").max(2000) });
 
-/** Solicitar não restringe: FIN/SEC propõe e outra pessoa da administração decide. */
-async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: string): Promise<Resultado<{ solicitacaoId: string }>> {
+/** Opções da tentativa: com `chaveIdempotencia` (#166), o reenvio devolve a solicitação já registrada. */
+export type OpcoesSolicitacaoAcesso = { chaveIdempotencia?: string };
+
+const MSG_CONFLITO_ACESSO = "Esta tentativa já foi usada com outro pedido. Recarregue a página e confira as solicitações antes de repetir.";
+
+/**
+ * Solicitar não restringe: FIN/SEC propõe e outra pessoa da administração decide.
+ * Com `chaveIdempotencia` (#166), a busca roda depois do papel e antes das validações de estado: o reenvio da
+ * mesma tentativa devolve a solicitação original mesmo já decidida (antes, a rejeição no meio fazia o reenvio
+ * abrir outro pedido, e a aprovação o fazia ser recusado). A mesma chave com outra entrada recebe a mesma recusa,
+ * exista a matrícula ou não.
+ */
+async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: string, opcoes?: OpcoesSolicitacaoAcesso): Promise<Resultado<{ solicitacaoId: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
     const dados = PedidoAcessoSchema.parse({ matriculaId, bloquear, motivo });
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(opcoes?.chaveIdempotencia), dados);
     const solicitacaoId = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        // Trava comum aos dois pedidos (C4 da R1 do #291): a de `repeticaoIdempotente` inclui o tipo, e restringir e
+        // liberar com a mesma chave ao mesmo tempo não se esperariam.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`idem:acesso-aulas:${autor.id}:${marca.chaveIdempotencia}`}, 0))`;
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: bloquear ? "RestricaoAulasSolicitada" : "LiberacaoAulasSolicitada", agregadoTipo: "Matricula", autorId: autor.id, marca,
+          mensagemConflito: MSG_CONFLITO_ACESSO,
+        });
+        if (repetido) return String((repetido.payload as { solicitacaoId?: unknown }).solicitacaoId);
+        // A mesma chave no pedido inverso (restringir × liberar): outra entrada, mesma recusa.
+        const [inverso] = await tx.$queryRaw<{ id: string }[]>(sqlBuscaIdempotente({
+          tipo: bloquear ? "LiberacaoAulasSolicitada" : "RestricaoAulasSolicitada", agregadoTipo: "Matricula", autorId: autor.id, chaveIdempotencia: marca.chaveIdempotencia,
+        }));
+        if (inverso) throw new ErroRegra(MSG_CONFLITO_ACESSO);
+      }
       await bloquearMatriculas(tx, [matriculaId]);
       const matricula = await tx.matricula.findUnique({ where: { id: matriculaId } });
       if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
@@ -101,7 +128,7 @@ async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: 
       } });
       await registrarEvento(tx, {
         tipo: bloquear ? "RestricaoAulasSolicitada" : "LiberacaoAulasSolicitada", agregadoTipo: "Matricula", agregadoId: matriculaId,
-        autorId: autor.id, payload: { solicitacaoId: pedido.id, motivo: dados.motivo, versaoMatricula: matricula.acessoVersao },
+        autorId: autor.id, payload: { solicitacaoId: pedido.id, motivo: dados.motivo, versaoMatricula: matricula.acessoVersao, ...marca },
       });
       return pedido.id;
     });
@@ -110,12 +137,12 @@ async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: 
   });
 }
 
-export async function bloquearAcesso(matriculaId: string, motivo?: string) {
-  return solicitarAcesso(matriculaId, true, motivo);
+export async function bloquearAcesso(matriculaId: string, motivo?: string, opcoes?: OpcoesSolicitacaoAcesso) {
+  return solicitarAcesso(matriculaId, true, motivo, opcoes);
 }
 
-export async function desbloquearAcesso(matriculaId: string, motivo?: string) {
-  return solicitarAcesso(matriculaId, false, motivo);
+export async function desbloquearAcesso(matriculaId: string, motivo?: string, opcoes?: OpcoesSolicitacaoAcesso) {
+  return solicitarAcesso(matriculaId, false, motivo, opcoes);
 }
 
 export async function decidirSolicitacaoAcessoAulas(solicitacaoId: string, input: { aprovar: boolean; motivo: string }): Promise<Resultado> {

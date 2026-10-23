@@ -40,8 +40,8 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
   "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 2, // aba ativa da barra de seções (marca = selecionada): o <Link> e o literal
-  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
+  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // círculo numérico/check do passo no assistente, sem superfície de ação própria
   "src/app/(app)/funil/PainelOportunidade.tsx": 1, // aba do painel da oportunidade (role=tab, selecionada = marca)
   "src/app/(app)/contatos/FichaContato.tsx": 1, // aba da ficha do contato (role=tab, selecionada = marca)
   "src/app/(app)/relatorios/page.tsx": 2, // aba ativa da tela de Relatórios (seleção, não ação; fundo bg-brand-solid, igual ao SubTabs): o literal e o <a>
@@ -55,7 +55,6 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   // selecionada = fundo) e a célula do emoji (item de grade).
   "src/components/conversa/SeletorEmoji.tsx": 4,
   "src/components/Menu.tsx": 1, // item do menu de ações (role=menuitem, hover translúcido): o papel é do menu, não do Botao
-  "src/components/Sidebar.tsx": 1, // contador de não lidas (o item ativo agora é seleção suave, bg-brand-bg)
   "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: seleção, não ação; fundo bg-brand-solid): o literal e o <Link>
 };
 
@@ -210,10 +209,61 @@ export function botoesCrus(fonte: string): string[] {
     andar(raiz);
     return { texto: partes.join(" ").trim(), usaBotao };
   };
+  const classeEmElementoSemAcao = (n: ts.Node): boolean => {
+    let ancestral: ts.Node | undefined = n.parent;
+    while (ancestral && !ts.isJsxAttribute(ancestral) && !ts.isSourceFile(ancestral)) ancestral = ancestral.parent;
+    if (!ancestral || !ts.isJsxAttribute(ancestral) || ancestral.name.getText(sf) !== "className") return false;
+    const elemento = ancestral.parent?.parent;
+    if (!elemento || !(ts.isJsxOpeningElement(elemento) || ts.isJsxSelfClosingElement(elemento))
+      || !["span", "div"].includes(elemento.tagName.getText(sf))) return false;
+    // Só selos/contêineres comprovadamente passivos: componentes podem encapsular botões,
+    // e spread, papel, foco ou eventos impedem garantir que span/div não tenha ação.
+    const atributosPassivos = (el: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => el.attributes.properties.every((p) => ts.isJsxAttribute(p)
+      && !/^(role|tabIndex|on[A-Z])/.test(p.name.getText(sf)));
+    if (!atributosPassivos(elemento)) return false;
+    const proprio = ts.isJsxOpeningElement(elemento) ? elemento.parent : elemento;
+    let dentroDeAcao = false;
+    for (let pai: ts.Node | undefined = proprio.parent; pai; pai = pai.parent) {
+      const abertura = ts.isJsxElement(pai) ? pai.openingElement : ts.isJsxSelfClosingElement(pai) ? pai : null;
+      if (abertura && (/^(button|a|Link|Botao)$|^[A-Z]/.test(abertura.tagName.getText(sf)) || !atributosPassivos(abertura))) {
+        dentroDeAcao = true;
+        break;
+      }
+    }
+    if (!dentroDeAcao) return true;
+    // A linha interativa pode conter seu contador, mas não uma superfície de ação
+    // disfarçada no filho. A exceção fica restrita à pílula compacta e numérica.
+    if (elemento.tagName.getText(sf) !== "span" || !ts.isJsxElement(proprio)) return false;
+    const classes = ancestral.initializer ? classesDe(ancestral.initializer).texto.split(/\s+/).filter(Boolean) : [];
+    const classeDeContador = /^(rounded-full|bg-brand-solid|text-on-brand|px-(1|1\.5|2)|py-0\.5|min-w-(4|5)|h-(4|5)|inline-flex|items-center|justify-center|text-(xs|\[10px\])|font-medium|leading-none|tabular-nums)$/;
+    if (!classes.includes("rounded-full") || !classes.some((c) => /^px-/.test(c)) || !classes.every((c) => classeDeContador.test(c))) return false;
+    let temNumero = false;
+    const numero = (valor: ts.Expression): boolean => {
+      if (ts.isConditionalExpression(valor)) return numero(valor.whenTrue) && numero(valor.whenFalse);
+      if (ts.isNumericLiteral(valor) || (ts.isStringLiteral(valor) && /^\d+\+?$/.test(valor.text))) return true;
+      const nome = ts.isPropertyAccessExpression(valor) ? valor.name.text : ts.isIdentifier(valor) ? valor.text : "";
+      return /^(naoLidas\w*|quantidade|total|count)$/.test(nome);
+    };
+    for (const filho of proprio.children) {
+      if (ts.isJsxText(filho)) {
+        if (!filho.text.trim()) continue;
+        if (!/^\d+$/.test(filho.text.trim())) return false;
+      } else if (ts.isJsxExpression(filho) && filho.expression) {
+        if (!numero(filho.expression)) return false;
+      } else if (ts.isJsxElement(filho) && filho.openingElement.tagName.getText(sf) === "span"
+        && filho.openingElement.attributes.properties.length === 1
+        && filho.openingElement.attributes.properties[0].getText(sf) === 'className="sr-only"'
+        && filho.children.every(ts.isJsxText)) {
+        continue; // descrição acessível do contador não desenha nem aciona botão
+      } else return false;
+      temNumero = true;
+    }
+    return temNumero;
+  };
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
       const t = n.text.split(/\s+/);
-      if (!t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && (t.includes("text-white") || t.includes("text-on-brand"))) achados.push(`primário: "${n.text}"`);
+      if (!classeEmElementoSemAcao(n) && !t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && (t.includes("text-white") || t.includes("text-on-brand"))) achados.push(`primário: "${n.text}"`);
     }
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Link", "a"].includes(n.tagName.getText(sf))) {
       const tag = n.tagName.getText(sf);
@@ -1267,9 +1317,54 @@ describe("botões nas áreas migradas", () => {
     expect(sobrando).toEqual([]);
   });
 
+  it.each([
+    '<Botao className="bg-danger text-white">Excluir</Botao>',
+    '<MeuBotao className="bg-brand-solid text-on-brand">Salvar</MeuBotao>',
+    '<button className="bg-brand-solid text-on-brand">Salvar</button>',
+    '<Link href="/x" className="bg-brand-solid text-on-brand">Salvar</Link>',
+    '<a href="/x" className="bg-danger text-white">Excluir</a>',
+  ])("o detector preserva primários artesanais em componentes e ações nativas: %s", (fonte) => {
+    expect(botoesCrus(fonte)).toHaveLength(1);
+  });
+
+  it.each(["button", "Link", "a", "Botao", "Acao"].flatMap((tag) => ["span", "div"].map((filho) =>
+    `<${tag}><div><${filho} className="bg-brand-solid px-4 py-2 text-on-brand">Salvar</${filho}></div></${tag}>`)))
+  ("não isenta um primário artesanal desenhado no filho da ação: %s", (fonte) => {
+    expect(botoesCrus(fonte)).toHaveLength(1);
+  });
+
+  it.each(['role="button"', 'onClick={agir}', 'tabIndex={0}', '{...props}'])
+  ("não isenta primário dentro de contêiner possivelmente interativo: %s", (atributo) => {
+    expect(botoesCrus(`<div ${atributo}><span className="bg-brand-solid text-on-brand">Salvar</span></div>`)).toHaveLength(1);
+  });
+
+  it("preserva contador compacto numérico dentro da linha interativa, mas não texto de ação", () => {
+    expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{i.naoLidas}</span></button>')).toEqual([]);
+    expect(botoesCrus('<Link href="/x"><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">3</span></Link>')).toEqual([]);
+    expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">Salvar</span></button>')).toHaveLength(1);
+    expect(botoesCrus('<Link href="/inbox"><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{naoLidasInbox > 99 ? "99+" : naoLidasInbox}<span className="sr-only"> mensagens não lidas</span></span></Link>')).toEqual([]);
+    expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{count > 99 ? "Salvar" : count}</span></button>')).toHaveLength(1);
+  });
+
+  it.each(["span", "div"].flatMap((tag) => [
+    'role="button"',
+    'role="link"',
+    'role={papel}',
+    'tabIndex={-1}',
+    'onClick={agir}',
+    'onKeyDown={agir}',
+    'onPointerDown={agir}',
+    '{...props}',
+  ].map((atributo) => `<${tag} ${atributo} className="bg-brand-solid text-on-brand">Salvar</${tag}>`)))
+  ("o detector não isenta span/div com ação ou atributos não verificáveis: %s", (fonte) => {
+    expect(botoesCrus(fonte)).toHaveLength(1);
+  });
+
   it("o detector pega todas as formas: atributo, expressão, template, concatenação, brand-600, secundário curto", () => {
     const casos = [
       '<button className="rounded-md bg-brand-solid px-4 py-2 text-sm text-white">x</button>',
+      '<button className="rounded-full bg-brand-solid px-1.5 text-on-brand">x</button>',
+      '<Link href="/x" className="rounded-full bg-brand-solid px-1.5 text-on-brand">x</Link>',
       '<button className={"rounded-md bg-brand-solid px-4 py-2 text-white"}>x</button>',
       "<button className={`rounded bg-brand-solid px-3 py-2 text-white ${a}`}>x</button>",
       '<button className="rounded bg-brand-600 px-3 py-2 text-white">x</button>',
@@ -1296,6 +1391,9 @@ describe("botões nas áreas migradas", () => {
       'const btnSec = botaoClasses({ variante: "secundario" }); <button className={btnSec + " mt-3"}>x</button>',
       '<input className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />',
       '<input className="file:bg-brand-solid file:text-white text-sm" />',
+      '<span className="rounded-full bg-brand-solid px-1.5 text-on-brand">3</span>',
+      '<span className={"rounded-full bg-brand-solid px-1.5 text-on-brand"}>3</span>',
+      '<div className="rounded-full bg-brand-solid px-1.5 text-on-brand">3</div>',
       '<button className="text-sm text-brand-700 hover:underline">x</button>',
       '<Link href="/x" className="block rounded border p-3 underline">Card da lista</Link>',
       '<Link href="/x" className={botaoClasses({ variante: "secundario" })}>Abrir</Link>',

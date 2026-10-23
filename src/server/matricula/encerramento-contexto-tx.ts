@@ -10,6 +10,7 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
         condicoesEncerramento: { orderBy: { versao: "desc" } },
         compensacoesCobertura: { orderBy: { id: "asc" }, include: { dias: { orderBy: { diaOrigem: "asc" }, include: { programacao: true } } } },
         cobrancas: { orderBy: [{ vencimento: "asc" }, { id: "asc" }], include: {
+          comprasHoras: { select: { id: true } },
           emissaoFechamentoHoras: { select: { id: true, decisaoId: true, memoria: true, itens: { orderBy: { id: "asc" }, select: { id: true, conferenciaId: true, valor: true } } } },
           utilizacoesCreditoPropostas: { where: { decisao: { aprovada: true } }, orderBy: { id: "asc" }, select: { id: true, creditoId: true, valor: true, decisao: { select: { id: true } }, credito: { select: { moeda: true, matriculaId: true } } } },
           destinacoesRecebimento: { orderBy: { id: "asc" }, select: { id: true, valor: true, recebimento: { select: { id: true, moeda: true, dataPagamento: true } } } },
@@ -58,7 +59,18 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
               : null,
           })),
       );
+      // Q173: cobrança liquidada (ou cancelada) na moeda anterior a uma troca aplicada é histórico do contrato.
+      // A troca só é aplicada com a matrícula "limpa" e depois do fim da cobertura paga, então ela não entra no acerto.
+      const trocasMoeda = await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId: m.id } } }, select: { moedaAnterior: true } });
+      const moedasAnteriores = new Set(trocasMoeda.map((troca) => troca.moedaAnterior));
+      // R2 do #284 (B1): adiantamento de horas pago sem compra registrada não é histórico. Fica visível no acerto, com a
+      // conferência de moeda divergente, em vez de sumir.
+      const adiantamentoSemCompra = (c: { tipo: string; status: string; comprasHoras: unknown[]; emissaoFechamentoHoras: unknown }) =>
+        c.tipo === "HORA_PARTICULAR" && c.status === "PAGO" && !c.comprasHoras.length && !c.emissaoFechamentoHoras;
+      const historicaEmMoedaAnterior = (c: { moeda: string; status: string; tipo: string; comprasHoras: unknown[]; emissaoFechamentoHoras: unknown }) =>
+        c.moeda !== m.moeda && moedasAnteriores.has(c.moeda) && (c.status === "PAGO" || c.status === "CANCELADA") && !adiantamentoSemCompra(c);
       const cobrancas = m.cobrancas
+        .filter((c) => !historicaEmMoedaAnterior(c))
         .filter(
           (c) =>
             !c.aplicacoesPeriodoIntegral.some(

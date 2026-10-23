@@ -47,6 +47,12 @@ export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
       const proposta = await tx.propostaCorrecaoAula.findUnique({ where: { id: d.propostaCorrecaoAulaId }, select: { id: true, encontroId: true, versao: true, entradaHash: true, encontro: { select: { matriculaId: true } } } });
       if (!proposta?.encontro.matriculaId) throw new ErroRegra("A revisão financeira exige aula particular identificada.");
       const foto = await fotoAtualTx(tx, proposta.id, tipo);
+      if (!foto && tipo === "AULA_NAO_COBRAVEL") {
+        // Q173 (R2 do #284, B2): aula paga com horas compradas antes de uma troca de moeda não devolve minutos. O banco
+        // recusa (fotografia e estorno); aqui só explicamos o motivo.
+        const reserva = await tx.reservaHorasCompradas.findFirst({ where: { encontroId: proposta.encontroId }, select: { compra: { select: { moeda: true, matricula: { select: { moeda: true } } } } } });
+        if (reserva && reserva.compra.moeda !== reserva.compra.matricula.moeda) throw new ErroRegra(`Esta aula foi paga com horas compradas em ${reserva.compra.moeda}, antes da troca de moeda da matrícula para ${reserva.compra.matricula.moeda}. Os minutos não voltam a essa compra: não há como usá-los nem liquidá-los na moeda anterior. A correção acadêmica pode seguir sem a declaração de não cobrável; o tratamento financeiro desta aula fica com a Administração.`);
+      }
       if (!foto) throw new ErroRegra(tipo === "AULA_NAO_COBRAVEL"
         ? "Esta aula não admite a declaração de não cobrável: exige aula particular conferida com valor e cobrança em aberto sem recebimentos ou fatura quitada, ou aula paga com horas pré-pagas ainda não liberadas, estornadas nem liquidadas no encerramento. Pagamento parcial, crédito, permuta, pausa ou comprovante a conferir exigem conferência específica."
         : "A fotografia não comprova equivalência Q92 sem alteração de valores. Pendências, reservas não consumidas, cancelamentos e outros efeitos financeiros seguem fluxo próprio.");

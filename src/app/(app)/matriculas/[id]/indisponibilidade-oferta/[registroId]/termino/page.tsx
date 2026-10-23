@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarTerminosIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-termino";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { TerminoIndisponibilidadeOferta } from "./TerminoIndisponibilidadeOferta";
 import { VoltarPara } from "@/components/VoltarPara";
 
@@ -25,9 +26,10 @@ export default async function TerminoPage({
   });
   if (!registro) notFound();
 
-  const [resultado, configuracao] = await Promise.all([
+  const [resultado, configuracao, preferencia] = await Promise.all([
     consultarTerminosIndisponibilidadeOferta({ registroId, pagina }),
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
+    consultarPreferenciaFusoEquipe(),
   ]);
   const fuso = FusoInstitucionalSchema.safeParse(configuracao?.fusoInstitucional);
 
@@ -35,6 +37,6 @@ export default async function TerminoPage({
     <VoltarPara href={`/matriculas/${matriculaId}/indisponibilidade-oferta`} para="Relatos de indisponibilidade" />
     <h1 className="text-2xl">Término da indisponibilidade</h1>
     <p>Registre o último dia em que a oferta esteve indisponível. Esta data não representa uma data de retorno e não altera cobranças.</p>
-    {!resultado.ok || !resultado.dado ? <p role="alert">{resultado.ok ? "Histórico de términos indisponível." : resultado.erro}</p> : <TerminoIndisponibilidadeOferta registroId={registro.id} inicio={registro.inicio.toISOString().slice(0, 10)} dados={resultado.dado} fusoInstitucional={fuso.success ? fuso.data : null} />}
+    {!resultado.ok || !resultado.dado ? <p role="alert">{resultado.ok ? "Histórico de términos indisponível." : resultado.erro}</p> : <TerminoIndisponibilidadeOferta registroId={registro.id} inicio={registro.inicio.toISOString().slice(0, 10)} dados={resultado.dado} fusoInstitucional={fuso.success ? fuso.data : null} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />}
   </div>;
 }

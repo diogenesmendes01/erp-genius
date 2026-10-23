@@ -138,11 +138,12 @@ export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fonte
 
       {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
 
+      {/* Arquivar é idempotente por natureza (#166, 5º lote): o reenvio de quem arquivou devolve ok sem outro Evento. */}
       {arquivando && (
         <ConfirmarAcao
           titulo={`Arquivar a fonte ${arquivando.nome}?`}
           confirmacao={`o arquivamento de ${arquivando.nome}`}
-          idempotente={false}
+          idempotente
           acao={() => arquivarFonte(arquivando.id)}
           aoConcluir={() => { setArquivando(null); router.refresh(); }}
           aoCancelar={() => setArquivando(null)}

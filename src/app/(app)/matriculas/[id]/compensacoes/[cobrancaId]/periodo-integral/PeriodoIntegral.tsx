@@ -65,16 +65,27 @@ function MemoriaCalculo({ memoria }: { memoria: Memoria }) {
   </section>;
 }
 
+/**
+ * Registro, decisão e aplicação são instantes (lote 3 do fuso pessoal nas telas): fuso pessoal de exibição; sem
+ * preferência, o da escola (antes, UTC), com o fuso escrito.
+ */
+export function instanteDoPeriodoIntegral(valor: string, preferenciaFusoExibicao: string | null, fusoEscola: string) {
+  const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, fusoEscola);
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso})`;
+}
+
 export function PeriodoIntegral({
   matriculaId,
   cobrancaId,
   dados: d,
   preferenciaFusoExibicao = null,
+  fusoEscola,
 }: {
   matriculaId: string;
   cobrancaId: string;
   dados: Dados;
   preferenciaFusoExibicao?: string | null;
+  fusoEscola: string;
 }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
@@ -85,10 +96,7 @@ export function PeriodoIntegral({
   const periodo = useInicioDoPeriodo();
   const chave = useRef<string | null>(null);
   const classe = "block w-full rounded border p-2";
-  const instanteAdministrativo = (valor: string) => {
-    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
-    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
-  };
+  const instanteAdministrativo = (valor: string) => instanteDoPeriodoIntegral(valor, preferenciaFusoExibicao, fusoEscola);
 
   return <div className="space-y-4">
     <p>Esta tela registra a proposta e a decisão. A aplicação financeira permanece em uma etapa posterior.</p>

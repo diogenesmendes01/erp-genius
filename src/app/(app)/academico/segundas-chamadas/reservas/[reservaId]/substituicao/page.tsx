@@ -7,13 +7,17 @@ import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoIanaValido } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
+/** Horário publicado no fuso da agenda. Fuso gravado inválido não derruba a tela: sai em UTC, e a tela diz isso. */
 function periodo(inicio: string, fim: string, fuso: string) {
+  const valido = fusoIanaValido(fuso);
   const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short", timeStyle: "short", timeZone: fuso,
+    dateStyle: "short", timeStyle: "short", timeZone: valido ? fuso : "UTC",
   }).format(new Date(valor));
-  return `${formatar(inicio)} até ${formatar(fim)} (${fuso})`;
+  return `${formatar(inicio)} até ${formatar(fim)} (${valido ? fuso : `UTC; fuso da agenda não reconhecido: ${fuso}`})`;
 }
 function resumoConferido(snapshot: { professorNome: string; inicio: string; fim: string; fusoOrigem: string }) {
   if (!snapshot.professorNome || !snapshot.inicio || !snapshot.fim || !snapshot.fusoOrigem) return "Dados históricos insuficientes para exibir o responsável e horário conferidos.";
@@ -31,18 +35,20 @@ export default async function Page({
   const { reservaId } = await params;
   const { substitutoId, antesVersao } = await searchParams;
   const versao = antesVersao && /^\d+$/.test(antesVersao) ? Number(antesVersao) : undefined;
-  const [resultado, preferencia] = await Promise.all([consultarSubstituicaoAgendaSegundaChamada({
+  const [resultado, preferencia, fusoEscola] = await Promise.all([consultarSubstituicaoAgendaSegundaChamada({
     reservaId,
     ...(substitutoId ? { substitutoId } : {}),
     ...(versao ? { antesVersao: versao } : {}),
-  }), consultarPreferenciaFusoEquipe()]);
-  // Registro e decisão no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6): antes, ISO cru.
-  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
-  const instante = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
+  }), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   if (!resultado.ok || !resultado.dado) {
     return <section className="space-y-3"><VoltarPara href="/academico/segundas-chamadas/agendas" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   }
   const d = resultado.dado;
+  // Registro e decisão são instantes (lote 3 do fuso pessoal nas telas): fuso pessoal de exibição; sem preferência,
+  // o da agenda (como na agenda inicial do lote 2) e, sem agenda válida, o da escola — antes, UTC. O fuso é escrito.
+  // O horário do encontro é publicado no fuso da agenda e mantém esse fuso (`periodo`).
+  const fusoOrigem = fusoIanaValido(d.encontro.fusoOrigem) ? d.encontro.fusoOrigem : fusoEscola;
+  const instante = (valor: Date | string) => { const e = formatarInstanteExibicao(valor, preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoOrigem); return `${e.texto} (${e.fuso})`; };
   const base = `/academico/segundas-chamadas/reservas/${encodeURIComponent(reservaId)}/substituicao`;
   return <section className="space-y-4">
     <VoltarPara href="/academico/segundas-chamadas/agendas" />

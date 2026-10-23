@@ -14,6 +14,7 @@ import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -21,11 +22,14 @@ function dataCivil(valor: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 }
 
-/** Sem fuso da escola, o instante sai em UTC formatado e rotulado; o aviso de configuração aparece uma vez no topo (docs/42 L939). */
-function instanteDoEvento(valor: string, fusoInstitucional: string | null) {
-  const instante = new Date(valor);
-  if (!fusoInstitucional) return `${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(instante)} UTC`;
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoInstitucional }).format(instante);
+/**
+ * Instante de registro (proposta, confirmação, decisão): no fuso pessoal de exibição, com o fuso dito; sem
+ * preferência, no fuso da escola (sem rótulo, como antes). Sem fuso da escola nem preferência, sai em UTC formatado e
+ * rotulado; o aviso de configuração aparece uma vez no topo (docs/42 L939).
+ */
+function instanteDoEvento(valor: string, fusoInstitucional: string | null, preferencia: string | null) {
+  const e = formatarInstanteExibicao(valor, preferencia, fusoInstitucional ?? "UTC");
+  return e.fuso === fusoInstitucional ? e.texto : `${e.texto} ${e.fuso}`;
 }
 
 export function TerminoIndisponibilidadeOferta({
@@ -33,11 +37,13 @@ export function TerminoIndisponibilidadeOferta({
   inicio,
   dados: d,
   fusoInstitucional,
+  preferenciaFusoExibicao = null,
 }: {
   registroId: string;
   inicio: string;
   dados: Dados;
   fusoInstitucional: string | null;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
@@ -98,8 +104,8 @@ export function TerminoIndisponibilidadeOferta({
       <h3>Último dia indisponível: {dataCivil(proposta.fim)}</h3>
       <p className="whitespace-pre-wrap">{proposta.motivo}</p>
       <p className="whitespace-pre-wrap">Evidência: {proposta.evidenciaTexto}</p>
-      <p>Proposta registrada em {instanteDoEvento(proposta.criadaEm, fusoInstitucional)}.</p>
-      {proposta.decisao ? <section className="rounded bg-gray-100 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
+      <p>Proposta registrada em {instanteDoEvento(proposta.criadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p>
+      {proposta.decisao ? <section className="rounded bg-gray-100 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
       {proposta.podeDecidir && <form className="space-y-2" onSubmit={evento => {
         evento.preventDefault();
         const formulario = new FormData(evento.currentTarget);
