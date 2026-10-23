@@ -6388,3 +6388,10 @@ Fonte95fb5e23:cherrySOMENTEd36→8a67sobre1bb+4053bd;quadrocherryapenasentry4061
 ## PR #406 — QA composta favorável
 
 QA95ffavorávelestática/hash320755...versionada tester-composicao-95f.md;INT10/unit8exatosd36/negativaprivacidadepreservada,sem323ouDDLfuturo. ProdutorInbox/schema8a e pais405/Shift/Pick/B2preservados. SemnovaexecuçãoDB/testesdoparecer;fonte95preservadaapósregistrosMD,405main/CI406aindagates.
+## PR #399 integrada; PR401 pronta para CI final
+
+#399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
+
+## PR #401 integrada; PR402 pronta para CI final
+
+#401 squash408dc9a6874fad4979739ff5b3127705504994b9, CI40018129184success5/5, QA47ffavorável, issue315CLOSEDconfirmada. Squashtreeigual1222;402incorpora1222MDsemalterar6aa e squash408INDEXINTEIROigual34f45afa após15conflitos deancestralidade. Fonte6aa/QA1ee9/12-176/TSC/lint40preservados;CI402main2TZaindapendente,semfechar316antecipadamente.
