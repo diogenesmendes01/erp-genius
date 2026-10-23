@@ -112,7 +112,7 @@ describe("harness visual do Inbox", () => {
       getByText: () => ({ waitFor: async () => undefined }),
       getByRole: () => ({ getByText: () => ({ waitFor: () => nota }) }),
     };
-    const pagina = { getByRole: (_role: string, opcoes: { name: string }) => opcoes.name === "Conversa" ? conversa : { waitFor: async () => undefined } };
+    const pagina = { waitForFunction: async () => undefined, getByRole: (_role: string, opcoes: { name: string }) => opcoes.name === "Conversa" ? conversa : { waitFor: async () => undefined } };
     let terminou = false;
     const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "humano-compositor", "desktop").then(() => { terminou = true; });
     await Promise.resolve();
