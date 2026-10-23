@@ -5585,3 +5585,17 @@ Achado TESTER cf7: foco body a cada Carregar anteriores (724d9e/eacb0e); probe S
 ### #316 — complemento natural47b e freeze documental para QA
 
 19766 EXIT0:8ctx24PNG virtual (foco natural em cada carga/última,149preservado,pin000/149)+8ctx8PNG foco externo duranteGETUIpendente.40332 EXIT0:6ctx30PNG resync real,cincofases165/2→60/0→165/1→60/1→165/2,semrefoco/GETs5→6→8→9→11,0React/externos.108originais positivos inspecionados;allowlist162arquivos150PNG/42pranchas,fonte47b nos62complementos e46normaiscf7históricas explícitas;APP-onlysemprototipo. PNGforaGit/negativosseparados. ROOT parou81169/restaurou282f2f424hashes551linhas;semDEVprocessos. Sódocs/JSON/probes nestecommit;gates74/787/TSC36307/lint0 são47bexatos,nãofull. TESTER/global/publicação integrados pendentes,semhomologação presumida.
+
+### #316 — regressão final e aceite independente
+
+Agregado29479848 mantém busca/harness47b e fila/SSE3153b, conflitos apenasquadro
+maisregistroBuscaConversa dentrodesuperfície; ambos preservados. Global35731
+EXIT0:893arquivos/6.971testes,250,94s,semfiltro/skip,maxWorkers2; typegenceb4ff0,
+TSC76171heap81920,lint92608global0erros/42avisos(40fontes+2staging318).
+TESTER29416/289próprios851830, sourceOIDsmatch47b/3b. Browser47b26PNGpositivos,
+8ctxvirtuais+2GETretidos apósbody/estado/focoexterno. DEV47b22ctx62PNG atuais,
+46originaiscf7históricos,176PNG noZIPremoto18.303.140B/SHA157ddfc4.../asset668039386,
+download/hashconferidosDRAFT421321214. Evidência/limites emoutput/inbox-316-global-final.md.
+PR401/#315 aberto/anexado headd32e7411/base4ddd, review/CI/pais/merge separados.
+Não considerar316concluída antesmerge/fechamento. A317/B319 liberados emparalelo
+sobrebasecomum294, seçõescompartilhadascoordenadas; nenhuma terceira função.
