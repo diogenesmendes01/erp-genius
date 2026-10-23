@@ -39,8 +39,11 @@ perfil**. O integrador inicia o servidor de captura; exemplo de configuração:
 usa `next start -p 3017`. Não inicie/paralise o cluster para capturar telas.
 
 No Windows, defina `PW_CHROMIUM=C:/Program Files/Google/Chrome/Application/chrome.exe`.
-No Linux, a CLI usa o Chromium local em `/opt/pw-browsers/chromium-1194/…` por
-padrão. O harness usa `playwright-core`; nunca baixa um navegador. Exemplos:
+Em qualquer sistema, `PW_CHROMIUM` deve apontar para o navegador local disponível;
+não há um caminho ou revisão de Chromium fixados pela CLI. O harness usa
+`playwright-core` 1.64.1, alinhado a `@playwright/test` e `playwright` 1.64.1.
+A trava de dependências verifica também a resolução real do core pelo runner,
+incluindo cópias aninhadas. O harness nunca baixa um navegador. Exemplos:
 
 ```text
 node scripts/visual/capturar-inbox.mjs --alvo ambos --estado conversa --base http://127.0.0.1:3017
@@ -112,23 +115,6 @@ O teste do DOM real usa Chrome já instalado, sem baixar navegador:
 Esse teste dirigido de navegador é separado da suíte unitária Vitest.
 
 Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.
-
-# Telefones em evidências
-
-A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
-os valores antigos reconhecidos no próprio cenário. O harness anonimiza os
-telefones do DOM do protótipo imediatamente antes da foto e declara essa
-transformação no manifesto, preservando o arquivo HTML original.
-
-Harnesses de outras issues podem importar `anonimizarTelefonesNoDom` de
-`./anonimizar-telefones.mjs` e executar
-`const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom)` depois
-das interações e antes de `screenshot`. Salvar o retorno no manifesto; não salvar
-um mapa dos valores originais. Reaplicar depois de nova renderização.
-
-O teste do DOM real usa Chrome já instalado, sem baixar navegador:
-`PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
-Esse teste dirigido de navegador é separado da suíte unitária Vitest.
 
 ## Thread por autor (#314)
 

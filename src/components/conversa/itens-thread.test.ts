@@ -125,3 +125,29 @@ it("decorar paginação preserva âncora de mensagem e chaves mesmo ao trocar r�
  expect(ancora?.key).toBe("a");expect(restoreVirtualAnchor(buildVirtualLayout(mais.map(i=>i.id),new Map(),50),ancora)).toBe(165);
  expect(antes.find(i=>i.id==="dia:2026-10-22")).toMatchObject({rotulo:"Hoje"});expect(mais.find(i=>i.id==="dia:2026-10-22")).toMatchObject({rotulo:"Ontem"});
 });
+
+
+describe("C3 PR398: data inválida não duplica separador", () => {
+  it.each(["mensagem", "nota"] as const)("preserva o último dia válido ao atravessar %s sem criadoEm válido", tipo => {
+    const itens: import("./itens-thread").ItemThread[] = [
+      { tipo: "mensagem", id: "antes", m: mensagem("antes", "2026-10-22T12:00:00Z") },
+      tipo === "nota" ? { tipo: "nota", id: "nota:invalida", n: nota("invalida", "data inválida") } : { tipo: "mensagem", id: "invalida", m: mensagem("invalida", "data inválida") },
+      { tipo: "mensagem", id: "depois", m: mensagem("depois", "2026-10-22T12:01:00Z") },
+    ];
+    const visual = decorarThread(itens, { fuso: "UTC", agora: new Date("2026-10-22T13:00:00Z") });
+    expect(visual.filter(i => i.tipo === "dia").map(i => i.id)).toEqual(["dia:2026-10-22"]);
+    expect(new Set(visual.map(i => i.id)).size).toBe(visual.length);
+    expect(visual.filter(i => i.tipo === "mensagem" || i.tipo === "nota").map(i => i.id)).toEqual(itens.map(i => i.id));
+    expect(visual.find(i => i.id === itens[1].id)).toMatchObject({ emSequencia: false });
+  });
+  it("data inválida inicial não inventa dia e mudança civil real continua criando separador", () => {
+    const itens: import("./itens-thread").ItemThread[] = [
+      { tipo: "nota", id: "nota:invalida", n: nota("invalida", "data inválida") },
+      { tipo: "mensagem", id: "ontem", m: mensagem("ontem", "2026-10-21T12:00:00Z") },
+      { tipo: "mensagem", id: "hoje", m: mensagem("hoje", "2026-10-22T12:00:00Z") },
+    ];
+    const visual = decorarThread(itens, { fuso: "UTC", agora: new Date("2026-10-22T13:00:00Z") });
+    expect(visual[0]).toMatchObject({ id: "nota:invalida", emSequencia: false });
+    expect(visual.filter(i => i.tipo === "dia")).toEqual([{ tipo: "dia", id: "dia:2026-10-21", rotulo: "Ontem" }, { tipo: "dia", id: "dia:2026-10-22", rotulo: "Hoje" }]);
+  });
+});

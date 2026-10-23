@@ -1,0 +1,10 @@
+# QA independente estática — PR #403 C4/C5/C7
+
+Fonte exata: `a5b8b75ac052e722671c735128d16b22f5b62489`, pai `68e95d8e9cea0842ccdab441be475c302fe9c7e3`. Parecer favorável à extensão documental, sem achado alto/médio. O delta tem três MD e 97 linhas adicionadas; zero alteração executável (`48be85`). OIDs de `src`, `scripts`, `prisma`, `package.json` e `package-lock.json` são idênticos pai/head (`d48a7f`); checkout rastreado limpo.
+
+- C4: a descrição corresponde ao `Compositor.tsx`: chave de rascunho separa atendimento/modo; mudança de contexto zera `arquivo`; cleanup marca descarte e para `MediaRecorder`; `onstop` encerra tracks e evita anexo de contexto velho; `getUserMedia` tardio também encerra tracks. O upload já iniciado usa `fetch` sem `AbortController`; depois da resposta, a revisão/contexto bloqueiam uso da URL antiga. A SPEC não promete cancelar POST ou envio já despachado, nem reivindica prova real de microfone nesta rodada (`bb317a`).
+- C5: os caminhos e nomes reais de `RodapeConversa`, `Compositor`, testes de interação e os 17 casos ReactDOM/StrictMode existem. A Task12 do plano consultado no ROOT existe, mas esse arquivo não integra esta branch; a SPEC explicita essa origem. A tabela separa marcação testada, CSS inspecionado e capturas históricas, sem transformá-los em asserções inexistentes (`d77308`).
+- C7: recalculei o inventário do delta próprio `a8dba58c..68e95d8e` em `output`: 22 arquivos, 1.826 linhas adicionadas, zero removidas, 14 MD e 8 JSON (`87fb4b`). O índice `output/pr403-qa/revisao.md` e os links/metadados dos dois ZIPs existem no checkout. Não fiz download, roundtrip ou reauditoria das imagens; seus hashes/fontes permanecem históricos, sem atribuição a C3 final.
+- `git diff --check` pai..HEAD retornou 0 (`b7c37b`). Não há nova evidência de browser/ERP produzida por este patch.
+
+Não executei testes, banco, browser, Prisma, instalação, typecheck ou lint por se tratar de MD. Os gates e capturas do DEV/integração pertencem às fontes nominais dele. C1/main/CI/retarget e C6/conflitos documentais seguem com o integrador; C2/C3 anteriores não foram rehomologados aqui.
