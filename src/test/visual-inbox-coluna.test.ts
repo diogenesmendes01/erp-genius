@@ -17,7 +17,7 @@ it.each([['filtros','Filtros'],['nova-conversa','Nova conversa'],['seletor-numer
 });
 it.each([['filtros','Filtrar conversas','Mostrar conversas'],['nova-conversa','Nova conversa','Finalidade e destinatário'],['seletor-numero','Ver conversas de','Todos os números']])("prontidão%s não confunde contêiner visível com conteúdo e geometria finais",async(estado,titulo,controle)=>{
  let conteudoPronto!:()=>void,geometriaPronta!:()=>void;const conteudo=new Promise<void>(r=>{conteudoPronto=r;}),geometria=new Promise<void>(r=>{geometriaPronta=r;});const nomes:string[]=[];
- const localizar=(name:string):unknown=>({waitFor:()=>name===controle?conteudo:Promise.resolve(),getByRole:(_r:string,o:{name:string})=>localizar(o.name),getByLabel:(n:string)=>localizar(n)});
+ const localizar=(name:string):unknown=>({waitFor:()=>name===controle?conteudo:Promise.resolve(),getByRole:(_r:string,o:{name:string})=>localizar(o.name),getByLabel:(n:string|RegExp)=>localizar(typeof n === "string" ? n : controle)});
  const pagina={getByRole:(_r:string,o:{name:string})=>{nomes.push(o.name);return localizar(o.name);},waitForFunction:()=>geometria};let fim=false;const p=esperarConteudoApp(pagina as never,estado,'celular').then(()=>{fim=true;});await Promise.resolve();expect(fim).toBe(false);conteudoPronto();await Promise.resolve();expect(fim).toBe(false);geometriaPronta();await p;expect(nomes[0]).toBe(titulo);
 });
 it("não libera folha fora do viewport, em transição ou com ação final fora da área visível",()=>{
