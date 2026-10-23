@@ -2146,7 +2146,7 @@ Formato do índice. Arquivo irmão para criação em lote: `2026-10-22-inbox-pro
 
 ### [Inbox E1.8] Coluna Conversas (D17)
 
-- **Labels:** `inbox`, `etapa-1`, `ui`, `bloqueado-por-decisao`
+- **Labels:** `inbox`, `etapa-1`, `ui`, `decisao-pendente`
 
 **Objetivo:** Criar a coluna com cabeçalho, seletor de número (todos os papéis, D17), filtros em popover, nova conversa em popover, busca com ⌘K, chips com contagem e slot `faixaAria`.
 
@@ -2195,7 +2195,7 @@ Implementa o padrão da coluna "Padrão enquanto aberta" do índice. Se a decis�
 
 ### [Inbox E1.10] Cabeçalho de 68 px e menu ⋮ (D7, D15, D16)
 
-- **Labels:** `inbox`, `etapa-1`, `ui`, `bloqueado-por-decisao`
+- **Labels:** `inbox`, `etapa-1`, `ui`, `decisao-pendente`
 
 **Objetivo:** Cabeçalho de 68 px com Buscar, Transferir, Assumir, Painel e ⋮; as ações atuais vão para o `MenuConversa`, sem status manual (D7), com Bloquear desabilitado (D15) e não lida pessoal (D16).
 
@@ -2220,7 +2220,7 @@ Implementa o padrão da coluna "Padrão enquanto aberta" do índice. Se a decis�
 
 ### [Inbox E1.11] Busca na conversa (D19)
 
-- **Labels:** `inbox`, `etapa-1`, `ui`, `bloqueado-por-decisao`
+- **Labels:** `inbox`, `etapa-1`, `ui`, `decisao-pendente`
 
 **Objetivo:** Barra de busca nas mensagens carregadas, sem acento e sem caixa, com navegação, destaque no balão e ⌘F dentro da conversa (D19).
 

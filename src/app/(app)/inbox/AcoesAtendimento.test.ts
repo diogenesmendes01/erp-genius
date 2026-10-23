@@ -100,7 +100,7 @@ describe("ConversaAberta", () => {
       optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null, linhaComercial: false, status: "ABERTO_SEM_RESPONSAVEL", responsavelNome: null, prazoRespostaEm: null,
       fixada: false, silenciada: false, grupo: false, responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null };
     const conversa = { mensagens: [], notas: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: vi.fn() };
-    const h = renderToStaticMarkup(createElement(ConversaAberta, { item, usuario: { id: "eu", papeis: [Papel.FINANCEIRO] }, fuso: null, conversa, aoVoltar: vi.fn(), aoAbrirPainel: vi.fn(), aoMudar: vi.fn() } as never));
+    const h = renderToStaticMarkup(createElement(ConversaAberta, { item, usuario: { id: "eu", papeis: [Papel.FINANCEIRO] }, fuso: null, conversa, aoVoltar: vi.fn(), aoAlternarPainel: vi.fn(), aoMudar: vi.fn() } as never));
     for (const t of ["Maria Souza", "Financeiro", "Cobrança", "Na fila", "Sem responsável", "Assumir"]) expect(h).toContain(t);
     expect(h).not.toContain("+5511999990000");
   });
@@ -131,7 +131,7 @@ describe("revogar convite e cancelar agendamento pedem confirmação; diálogos 
     expect(ambos).toContain("h-dvh w-full max-w-none rounded-none");
   });
   it("revogar e cancelar só rodam dentro da prop `acao` de um ConfirmarAcao (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8");
+    const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8").replace(/\r\n/g, "\n");
     const usos = (nome: string) => fonte.match(new RegExp(`${nome}\\(`, "g"))?.length ?? 0;
     expect(usos("revogarParticipante")).toBe(1);
     expect(usos("cancelarAgendamentoDoAtendimento")).toBe(1);

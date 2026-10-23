@@ -1,0 +1,5 @@
+# QA #310
+
+Fonte31067014764f664a6602f9f6b2992e5594d3ad775cc, TESTERfavorável:6arquivos86unitários0;integração2arquivos26testes0perfiltester78316,semignorados. DEV161unitários0/26integração0dev-email,complemento3testes0com21fora dofiltro, TSC/lintdirigido0.
+
+Global final combinado com309nafonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67, sessão15987exit0:850arquivos/6634testes semfiltros/ignorados/maxWorkers2,TSCheap8192,lint0erros40avisos,Node22.23.2. Logs/parecer anexos. Código310exatoaoSHArevisto; estePRnãoadicionaconsumidoresvisuais doschips,queentramna313conformeStep5.

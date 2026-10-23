@@ -1,7 +1,7 @@
 "use client";
 
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { IconUsersGroup } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -9,6 +9,7 @@ import { ItemLista } from "@/components/ItemLista";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { prazoEstourado, useAgoraDosPrazos } from "./prazo-vivo";
 
 export interface PropsListaAtendimentos {
   itens: ItemListaInbox[];
@@ -23,12 +24,9 @@ function horaCurta(iso: string | null, fuso: string | null): string {
   return iso ? formatarInstanteExibicao(iso, fuso, "UTC", "hora").texto : "";
 }
 
-const estourado = (i: ItemListaInbox, agora: number) =>
-  !i.grupo && i.status !== "ENCERRADO" && !!i.prazoRespostaEm && new Date(i.prazoRespostaEm).getTime() < agora;
-
 export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, aoCarregarMais, fuso = null }: PropsListaAtendimentos) {
   const rolagem = useRef<HTMLDivElement>(null);
-  const [agora] = useState(() => Date.now());
+  const agora = useAgoraDosPrazos(itens);
 
   function linha(i: ItemListaInbox) {
     // Regra 5: o item nunca mostra telefone (pedagógico em especial); o nome identifica o contato.
@@ -39,7 +37,7 @@ export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, a
         inicio={i.grupo
           ? <span data-testid="icone-grupo" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-bg text-brand-800"><IconUsersGroup size={20} aria-label="Grupo" /></span>
           : <Avatar nome={i.contatoNome} />}
-        meta={<span className="flex flex-col items-end gap-1"><span>{horaCurta(i.ultimaMensagemEm, fuso)}</span>{i.naoLidas > 0 && <span className="rounded-full bg-brand px-1.5 text-on-brand">{i.naoLidas}</span>}</span>}
+        meta={<span className="flex flex-col items-end gap-1"><span>{horaCurta(i.ultimaMensagemEm, fuso)}</span>{i.naoLidas > 0 && <span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{i.naoLidas}</span>}</span>}
         selecionado={i.id === selecionado}
         onClick={() => aoSelecionar(i.id)}
       />
@@ -63,7 +61,7 @@ export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, a
               <span>{i.numeroRotulo}</span>
               {!i.grupo && <span>{rotular(STATUS_ATENDIMENTO_LABEL, i.status)}</span>}
               {!i.grupo && i.responsavelNome && <span>{i.responsavelNome}</span>}
-              {estourado(i, agora) && <span className="font-medium text-red-700">Prazo estourado</span>}
+              {prazoEstourado(i, agora) && <span className="font-medium text-red-700">Prazo estourado</span>}
             </p>
           </div>
         )}

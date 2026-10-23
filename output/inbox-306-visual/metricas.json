@@ -1,0 +1,1550 @@
+{
+  "origem": "Fonte atual no app3110; baseline mono reconstruída pela pilha default do Tailwind3, sem alegar captura do app antigo. Trechos JSX reais extraídos sem imports de ações. CSS compilado de globals/config reais; fontes Next reais carregadas. Só dados fictícios.",
+  "pilhaAnterior": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+  "proveniencia": [
+    {
+      "nome": "Código de certificado (12 hex, formato do gerador)",
+      "arquivo": "src/app/certificado/[codigo]/page.tsx",
+      "linha": 30,
+      "sha256Trecho": "12a9aa9885f9f4cace79fb328001eee83443f399061cb3632280d8f832f4d733",
+      "jsx": "<div><dt className=\"inline text-gray-500\">Código: </dt><dd className=\"inline font-mono\">{codigo.toUpperCase()}</dd></div>"
+    },
+    {
+      "nome": "Hash SHA-256 do PDF (64 caracteres)",
+      "arquivo": "src/app/(app)/matriculas/[id]/contrato/origem-historica/page.tsx",
+      "linha": 36,
+      "sha256Trecho": "048ce5f592f6a866277a4dea15b745ae9dbd9b84241df3544032b72a20f2a21c",
+      "jsx": "<p className=\"font-mono text-sm break-all\">SHA-256 do PDF: {p.pdfHash}</p>"
+    },
+    {
+      "nome": "Hash da transcrição (64 caracteres)",
+      "arquivo": "src/app/(app)/matriculas/[id]/contrato/origem-historica/page.tsx",
+      "linha": 37,
+      "sha256Trecho": "7edfd5e3ad35e62d10b69e423fe0ecb9e3f2b2ef713577992b320fe0aad34a83",
+      "jsx": "<p className=\"font-mono text-sm break-all\">Hash da transcrição: {p.transcricaoHash}</p>"
+    },
+    {
+      "nome": "Input de conferência (rolagem própria esperada)",
+      "arquivo": "src/app/(app)/matriculas/[id]/contrato/origem-historica/Formularios.tsx",
+      "linha": 104,
+      "sha256Trecho": "2d1ceebb06a7bcb7fade1c6f921b9bfefcd3e1e82bed90c2f47a8f07e54f3e42",
+      "jsx": "<label className=\"block\">Hash SHA-256 do PDF conferido<input name=\"pdfHashConferido\" required pattern=\"^[a-fA-F0-9]{64}$\" className=\"block w-full rounded border p-2 font-mono\" /></label>"
+    },
+    {
+      "nome": "Código fictício de pareamento (nenhuma ação de motor)",
+      "arquivo": "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx",
+      "linha": 511,
+      "sha256Trecho": "e125e9ccdd0bf43d64b6ded915603bda5698a2d8db38c135e1863f6bdb49f163",
+      "jsx": "<p className=\"font-mono text-2xl tracking-widest text-gray-800\">{codigo}</p>"
+    },
+    {
+      "nome": "Variável de contrato: dt solicita 600; faixa local registrada 400–500",
+      "arquivo": "src/app/(app)/configuracao/contratos/[codigo]/page.tsx",
+      "linha": 47,
+      "sha256Trecho": "3997736b9b3eb2937970fcf806eb786b17dc74a533e0c8e045da0340bb4fe347",
+      "jsx": "<dt className=\"font-mono\">{`{{${campo.chave}}}`}</dt>"
+    }
+  ],
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "fonte": {
+        "mono": "'mono', 'mono Fallback'",
+        "sans": "'roboto', 'roboto Fallback'",
+        "carregadas": [
+          1,
+          1
+        ],
+        "faces": [
+          {
+            "familia": "roboto",
+            "peso": "100 900",
+            "estado": "loaded"
+          },
+          {
+            "familia": "roboto Fallback",
+            "peso": "normal",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono",
+            "peso": "400 500",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono Fallback",
+            "peso": "normal",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          }
+        ],
+        "tokens": {
+          "--avatar-4": "#6e62aa",
+          "--bubble-ia": "#efebfa",
+          "--bubble-note": "#fff7e5",
+          "--chat-dot": "rgba(0, 0, 0, 0.035)"
+        },
+        "bodyFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif"
+      },
+      "medicoes": [
+        {
+          "fase": "anterior-reconstituida",
+          "documentWidth": 1440,
+          "viewportWidth": 1440,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 92.375,
+              "altura": 17,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        },
+        {
+          "fase": "mono-local",
+          "documentWidth": 1440,
+          "viewportWidth": 1440,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 100.8125,
+              "altura": 18,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        }
+      ],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "fonte": {
+        "mono": "'mono', 'mono Fallback'",
+        "sans": "'roboto', 'roboto Fallback'",
+        "carregadas": [
+          1,
+          1
+        ],
+        "faces": [
+          {
+            "familia": "roboto",
+            "peso": "100 900",
+            "estado": "loaded"
+          },
+          {
+            "familia": "roboto Fallback",
+            "peso": "normal",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono",
+            "peso": "400 500",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono Fallback",
+            "peso": "normal",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          }
+        ],
+        "tokens": {
+          "--avatar-4": "#6e62aa",
+          "--bubble-ia": "#2b2a37",
+          "--bubble-note": "#3a3020",
+          "--chat-dot": "rgba(255, 255, 255, 0.035)"
+        },
+        "bodyFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif"
+      },
+      "medicoes": [
+        {
+          "fase": "anterior-reconstituida",
+          "documentWidth": 1440,
+          "viewportWidth": 1440,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 92.375,
+              "altura": 17,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        },
+        {
+          "fase": "mono-local",
+          "documentWidth": 1440,
+          "viewportWidth": 1440,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 100.8125,
+              "altura": 18,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        }
+      ],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "fonte": {
+        "mono": "'mono', 'mono Fallback'",
+        "sans": "'roboto', 'roboto Fallback'",
+        "carregadas": [
+          1,
+          1
+        ],
+        "faces": [
+          {
+            "familia": "roboto",
+            "peso": "100 900",
+            "estado": "loaded"
+          },
+          {
+            "familia": "roboto Fallback",
+            "peso": "normal",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono",
+            "peso": "400 500",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono Fallback",
+            "peso": "normal",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          }
+        ],
+        "tokens": {
+          "--avatar-4": "#6e62aa",
+          "--bubble-ia": "#efebfa",
+          "--bubble-note": "#fff7e5",
+          "--chat-dot": "rgba(0, 0, 0, 0.035)"
+        },
+        "bodyFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif"
+      },
+      "medicoes": [
+        {
+          "fase": "anterior-reconstituida",
+          "documentWidth": 1024,
+          "viewportWidth": 1024,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 92.375,
+              "altura": 17,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        },
+        {
+          "fase": "mono-local",
+          "documentWidth": 1024,
+          "viewportWidth": 1024,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 100.8125,
+              "altura": 18,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        }
+      ],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "fonte": {
+        "mono": "'mono', 'mono Fallback'",
+        "sans": "'roboto', 'roboto Fallback'",
+        "carregadas": [
+          1,
+          1
+        ],
+        "faces": [
+          {
+            "familia": "roboto",
+            "peso": "100 900",
+            "estado": "loaded"
+          },
+          {
+            "familia": "roboto Fallback",
+            "peso": "normal",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono",
+            "peso": "400 500",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono Fallback",
+            "peso": "normal",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          }
+        ],
+        "tokens": {
+          "--avatar-4": "#6e62aa",
+          "--bubble-ia": "#2b2a37",
+          "--bubble-note": "#3a3020",
+          "--chat-dot": "rgba(255, 255, 255, 0.035)"
+        },
+        "bodyFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif"
+      },
+      "medicoes": [
+        {
+          "fase": "anterior-reconstituida",
+          "documentWidth": 1024,
+          "viewportWidth": 1024,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 92.375,
+              "altura": 17,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        },
+        {
+          "fase": "mono-local",
+          "documentWidth": 1024,
+          "viewportWidth": 1024,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 100.8125,
+              "altura": 18,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 20,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 42,
+              "clientWidth": 940,
+              "scrollWidth": 940,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 32,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 942,
+              "altura": 24,
+              "clientWidth": 942,
+              "scrollWidth": 942,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        }
+      ],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "fonte": {
+        "mono": "'mono', 'mono Fallback'",
+        "sans": "'roboto', 'roboto Fallback'",
+        "carregadas": [
+          1,
+          1
+        ],
+        "faces": [
+          {
+            "familia": "roboto",
+            "peso": "100 900",
+            "estado": "loaded"
+          },
+          {
+            "familia": "roboto Fallback",
+            "peso": "normal",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono",
+            "peso": "400 500",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono Fallback",
+            "peso": "normal",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          }
+        ],
+        "tokens": {
+          "--avatar-4": "#6e62aa",
+          "--bubble-ia": "#efebfa",
+          "--bubble-note": "#fff7e5",
+          "--chat-dot": "rgba(0, 0, 0, 0.035)"
+        },
+        "bodyFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif"
+      },
+      "medicoes": [
+        {
+          "fase": "anterior-reconstituida",
+          "documentWidth": 390,
+          "viewportWidth": 390,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 92.375,
+              "altura": 17,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 40,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 40,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 44,
+              "clientWidth": 330,
+              "scrollWidth": 579,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 32,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 24,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        },
+        {
+          "fase": "mono-local",
+          "documentWidth": 390,
+          "viewportWidth": 390,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 100.8125,
+              "altura": 18,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 60,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 60,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 44,
+              "clientWidth": 330,
+              "scrollWidth": 630,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 32,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 24,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        }
+      ],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "fonte": {
+        "mono": "'mono', 'mono Fallback'",
+        "sans": "'roboto', 'roboto Fallback'",
+        "carregadas": [
+          1,
+          1
+        ],
+        "faces": [
+          {
+            "familia": "roboto",
+            "peso": "100 900",
+            "estado": "loaded"
+          },
+          {
+            "familia": "roboto Fallback",
+            "peso": "normal",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono",
+            "peso": "400 500",
+            "estado": "loaded"
+          },
+          {
+            "familia": "mono Fallback",
+            "peso": "normal",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist",
+            "peso": "400 600",
+            "estado": "unloaded"
+          },
+          {
+            "familia": "__nextjs-Geist Mono",
+            "peso": "400 600",
+            "estado": "unloaded"
+          }
+        ],
+        "tokens": {
+          "--avatar-4": "#6e62aa",
+          "--bubble-ia": "#2b2a37",
+          "--bubble-note": "#3a3020",
+          "--chat-dot": "rgba(255, 255, 255, 0.035)"
+        },
+        "bodyFamily": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif"
+      },
+      "medicoes": [
+        {
+          "fase": "anterior-reconstituida",
+          "documentWidth": 390,
+          "viewportWidth": 390,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 92.375,
+              "altura": 17,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 40,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 40,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 44,
+              "clientWidth": 330,
+              "scrollWidth": 579,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 32,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+              "largura": 332,
+              "altura": 24,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        },
+        {
+          "fase": "mono-local",
+          "documentWidth": 390,
+          "viewportWidth": 390,
+          "sans": "roboto, \"roboto Fallback\", \"Segoe UI\", Roboto, system-ui, sans-serif",
+          "amostras": [
+            {
+              "amostra": "0",
+              "tag": "DD",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 100.8125,
+              "altura": 18,
+              "clientWidth": 0,
+              "scrollWidth": 0,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "1",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 60,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "2",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 60,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "break-all",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "3",
+              "tag": "INPUT",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 44,
+              "clientWidth": 330,
+              "scrollWidth": 630,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "4",
+              "tag": "P",
+              "peso": "400",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 32,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "2.4px",
+              "sintese": "weight style small-caps"
+            },
+            {
+              "amostra": "5",
+              "tag": "DT",
+              "peso": "600",
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "largura": 332,
+              "altura": 24,
+              "clientWidth": 332,
+              "scrollWidth": 332,
+              "dentro": true,
+              "quebra": "normal",
+              "tracking": "normal",
+              "sintese": "weight style small-caps"
+            }
+          ]
+        }
+      ],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}

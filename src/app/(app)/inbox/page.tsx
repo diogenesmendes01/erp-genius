@@ -3,10 +3,9 @@ import { ErroPermissao, exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
-import { listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { contarChipsInbox, listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import { InboxNovo } from "./InboxNovo";
-import { NovoAtendimento } from "./NovoAtendimento";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { listarNotificacoes } from "@/server/crm/notificacoes";
@@ -39,7 +38,7 @@ export default async function InboxPage({
     throw e;
   });
 
-  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola] = await Promise.all([
+  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola, contagens] = await Promise.all([
     listarAtendimentosPagina(usuario, filtros, cursor),
     listarOpcoesAtendimento(),
     triagemOuNula(),
@@ -49,6 +48,7 @@ export default async function InboxPage({
     // Sino (SLA): o aviso de prazo estourado abre o atendimento aqui (?c=).
     listarNotificacoes(usuario),
     fusoDaEscola(),
+    contarChipsInbox(usuario, filtros),
   ]);
   // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
   if (c && !inicial.itens.some((i) => i.id === c)) {
@@ -60,19 +60,11 @@ export default async function InboxPage({
   const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-medium">Inbox</h1>
-        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />
-      </div>
-      <div className="mt-4">
-        <NovoAtendimento opcoes={opcoes} />
-      </div>
-      <div className="mt-4">
-        <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
-          destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
-          triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} />
-      </div>
+    <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
+      <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
+        destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
+        triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens}
+        opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />
     </div>
   );
 }

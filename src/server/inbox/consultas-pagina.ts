@@ -11,9 +11,11 @@ import {
   type ConversaResumo, type MensagemThread, type NotaInternaThread,
 } from "@/server/whatsapp/consultas-inbox";
 import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
+import { notasInternasDoAtendimento } from "@/server/whatsapp/notas-consulta";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
-import type { FiltrosInbox } from "./filtros";
+import type { ContagensChipsInbox, FiltrosInbox } from "./filtros";
+import { condicaoNaoLidaPessoal } from "./nao-lidas";
 
 export interface ItemListaInbox extends ConversaResumo {
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
@@ -29,29 +31,6 @@ const LIMITE_FIXADAS = 100;
 const LIMITE_THREAD = 60;
 const LIMITE_THREAD_MAX = 100;
 
-/**
- * Atendimentos com não lida PARA ESTE usuário (mesma regra de preferenciasDoUsuario), em qualquer posição da lista.
- * Vira condição da própria consulta paginada (sempre combinada com o escopo), sem varrer o banco todo:
- * - marcada como não lida pelo usuário;
- * - sem leitura registrada (lidaAte nulo ou sem preferência) e contador compartilhado > 0;
- * - com leitura registrada: ENTRADA depois de lidaAte, achada a partir das preferências DO USUÁRIO
- *   (limitadas às conversas dele) e não de todos os atendimentos.
- */
-async function condicaoNaoLidaPessoal(usuarioId: string): Promise<Prisma.AtendimentoWhatsAppWhereInput> {
-  const comLeitura = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    SELECT DISTINCT a."id" FROM "PreferenciaConversaUsuario" p
-    JOIN "AtendimentoWhatsApp" a ON a."conversaId" = p."conversaId"
-    WHERE p."usuarioId" = ${usuarioId} AND p."lidaAte" IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM "MensagemWhatsApp" m
-        WHERE m."atendimentoId" = a."id" AND m."direcao" = 'ENTRADA' AND m."criadoEm" > p."lidaAte")`);
-  return { OR: [
-    { conversa: { preferenciasUsuarios: { some: { usuarioId, marcadaNaoLida: true } } } },
-    { naoLidas: { gt: 0 }, conversa: { preferenciasUsuarios: { none: { usuarioId, lidaAte: { not: null } } } } },
-    { id: { in: comLeitura.map((l) => l.id) } },
-  ] };
-}
-
 /** Filtros da URL como condições; sempre combinadas com o escopo (nunca o substituem). */
 async function condicoesDosFiltros(u: UsuarioSessao, f: FiltrosInbox): Promise<Prisma.AtendimentoWhatsAppWhereInput[]> {
   const c: Prisma.AtendimentoWhatsAppWhereInput[] = [];
@@ -65,6 +44,22 @@ async function condicoesDosFiltros(u: UsuarioSessao, f: FiltrosInbox): Promise<P
   if (f.busca) c.push(whereBuscaConversas(f.busca));
   if (f.naoLidas) c.push(await condicaoNaoLidaPessoal(u.id));
   return c;
+}
+
+/** Agregados do mesmo universo autorizado, retirando somente os filtros controlados pelos chips. */
+export async function contarChipsInbox(
+  u: UsuarioSessao, f: FiltrosInbox, opcoes: { enviar?: boolean } = {},
+): Promise<ContagensChipsInbox> {
+  const filtrosBase = { ...f, responsavel: undefined, naoLidas: undefined, prazoEstourado: undefined };
+  const base = [await escopoAtendimentos(u, { enviar: opcoes.enviar === true }), ...await condicoesDosFiltros(u, filtrosBase)];
+  const contar = (extra: Prisma.AtendimentoWhatsAppWhereInput[] = []) => prisma.atendimentoWhatsApp.count({ where: { AND: [...base, ...extra] } });
+  const naoLida = await condicaoNaoLidaPessoal(u.id);
+  const [todas, minhas, naoLidas, prazo, fila] = await Promise.all([
+    contar(), contar([{ responsavelId: u.id }]), contar([naoLida]),
+    contar(await condicoesDosFiltros(u, { prazoEstourado: true })),
+    contar([{ responsavelId: null, encerradoEm: null }]),
+  ]);
+  return { todas, minhas, naoLidas, prazo, fila };
 }
 
 const fixadaDoUsuario = (usuarioId: string): Prisma.AtendimentoWhatsAppWhereInput =>
@@ -146,7 +141,7 @@ const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: 
  */
 export async function listarMensagensPagina(
   u: UsuarioSessao, atendimentoId: string, o: { antes?: string; depois?: string; limite?: number } = {},
-): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[]; antes: string | null; depois: string | null; temMais: boolean } | null> {
+): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[] | null; antes: string | null; depois: string | null; temMais: boolean } | null> {
   const atendimento = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] },
     select: { id: true, finalidade: true, leadId: true },
@@ -177,10 +172,14 @@ export async function listarMensagensPagina(
     participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
     propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
-  // Notas internas só na primeira carga (sem cursor), e só para quem pode ver o lead (LC-L02).
-  const verNotas = !pos && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId
+  // `antes` só acrescenta mensagens antigas: null informa ao cliente que as notas não mudaram.
+  // A rota já conferiu escopo do atendimento; notas do lead exigem escopo comercial separado (LC-L02).
+  const verNotasLead = !cAntes && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId
     && await podeVerLeadNaThread(u, atendimento.id, atendimento.leadId, Date.now());
-  const notas = verNotas ? await notasDoLead(atendimento.leadId!) : [];
+  const notas = cAntes ? null : [
+    ...await notasInternasDoAtendimento(atendimento.id),
+    ...(verNotasLead ? await notasDoLead(atendimento.leadId!) : []),
+  ].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm) || a.id.localeCompare(b.id));
   return {
     mensagens, notas,
     // Sempre os dois cursores da página (null só se vazia): `antes` pede as anteriores à primeira mensagem e

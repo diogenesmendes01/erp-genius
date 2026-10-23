@@ -1,0 +1,9 @@
+# Inbox — revisão TESTER do aviso React de chaves duplicadas
+
+**Parecer favorável** no SHA exato `05db5a7d94835dd02afbe4f215eb0188a8974507`, base `797994aa`. O diff de produção muda só as chaves dos irmãos `PainelAria` e `AcoesContato` para `aria:${atendimentoId}` e `acoes:${atendimentoId}`. Elas ficam distintas entre irmãos e continuam mudando ao trocar atendimento. Não há mudança de dados, ações ou layout. `git diff --check` exit 0.
+
+O teste novo monta os dois irmãos nas cópias desktop e Drawer e exige chaves não nulas e distintas em cada par; ele reproduziu o warning antes da correção segundo o relatório DEV. TESTER executou `InboxNovo.interacao.test.ts` em Node **22.23.2**: **1 arquivo/21 testes, exit 0**, sem banco, filtro de nome ou skips. TSC/lint globais exit 0 foram registrados pelo integrador/DEV; não repeti o full suite.
+
+Validação de navegador no banco descartável `tester`, servidor local `3109`, fonte acima: 1440×900, 1024×768, 390×844, 700×844 e 390×500 em claro/escuro. O listener de `console` foi armado antes da navegação; em cada contexto esperei `section[aria-label="Cadastro do contato"]` montar, primeiro após selecionar por clique e depois em entrada direta com `?c`. **10/10 contextos sem warning duplicate-key nas duas entradas, `pageerrors=[]`, sessão 64980 exit 0**. Antes do fix, a captura #304 registrara warning em 10/10 estados selecionados com o mesmo ID do atendimento. Manifesto e 20 PNGs: `output/inbox-capturas/painel-keys-depois/`. Inspecionei imagens desktop claro e celular escuro.
+
+A primeira rodada do meu capturador (sessão 45659, exit 0) esperava apenas o botão de opt-out, presente antes do carregamento dos irmãos; preservei seu manifesto como `manifesto-primeira-tentativa.json` e **não** a conto como prova. A segunda rodada aguardou explicitamente o painel de contato carregado e gerou o manifesto final. O roteiro abriu telas; não enviou mensagens, não executou ações de contato e não alterou banco.

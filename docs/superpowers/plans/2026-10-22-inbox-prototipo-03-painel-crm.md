@@ -990,7 +990,7 @@ Regras:
   - "Hoje 18:00" só entra se 18:00 de hoje, no `fuso`, ainda não passou;
   - "Segunda" é a próxima segunda; numa segunda, a da semana seguinte;
   - um atalho cujo valor local não existe no fuso (`instanteDoCampoLocal` com `ok: false`) fica de fora.
-  
+
   Para tarefa, o `fuso` é sempre o da escola, porque a tarefa grava a data civil e a hora nele.
 - **Tarefa do atendimento:** é a que tem `atendimentoId === a.id`, ou `leadId === a.leadId` quando há lead, sempre dentro de `escopoTarefas(u, tarefas.equipe)`. Os wrappers recusam as outras com "Tarefa não encontrada.".
 - `ia` vale para `origem` `IA` ou `IA_SUGERIDA`; `atrasada = grupoDaTarefa(…) === "ATRASADAS"`; `hora` sai no `fusoOrigem`; `podeAgir` só nas abertas.
@@ -1584,14 +1584,14 @@ Regras:
   2. o atendimento não encerrado do `leadId`, com a `ultimaMensagemEm` mais recente;
   3. o atendimento não encerrado de um contato com o `pessoaId`;
   4. o atendimento encerrado mais recente das mesmas fontes.
-  
+
   `aberta = status !== "ENCERRADO"`. Quem não tem papel de `PAPEIS_INBOX` recebe `null`.
 - **Links** (só texto, D21): "Abrir conversa" (`hrefConversa(id)`) e, quando a conversa está aberta, "Agendar mensagem" (`hrefConversa(id, { agendar: true })`). Onde ficam:
   - Funil: no topo do painel da oportunidade, ao lado do código;
   - Tarefas: abaixo do status, quando a tarefa tem `atendimentoId`, `leadId` ou `pessoaId`;
   - Contatos: no cabeçalho da ficha;
   - Agente (Histórico): "Abrir conversa" na linha, quando `atendimentoId` não é nulo.
-  
+
   Sem conversa, nada aparece.
 - **B2B (Task 5):** `hrefConversa` do participante, a partir de `atendimentoParaAbrir(u, { pessoaId })`.
 

@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Como reportar bugs</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  /* Fluxo de decisão (SVG) */
+  .fd .q { fill: var(--surface); stroke: var(--border-soft); stroke-width: 1; }
+  .fd .o-success { fill: var(--success-bg); }
+  .fd .o-neutral { fill: var(--neutral-muted); }
+  .fd .o-danger { fill: var(--danger-bg); }
+  .fd .o-info { fill: var(--info-bg); }
+  .fd .o-warning { fill: var(--warning-bg); }
+  .fd .o-brand { fill: var(--brand-bg); stroke: var(--brand-border); stroke-width: 1; }
+  .fd text { font-family: Roboto, "Segoe UI", sans-serif; }
+  .fd .qt { font-size: 12.5px; font-weight: 500; fill: var(--text-primary); }
+  .fd .qn { font-size: 11px; font-weight: 600; fill: var(--brand-text); }
+  .fd .ot { font-size: 12.5px; font-weight: 600; }
+  .fd .os { font-size: 11px; }
+  .fd .t-success { fill: var(--success-text); }
+  .fd .t-neutral { fill: var(--text-secondary); }
+  .fd .t-danger { fill: var(--danger-text); }
+  .fd .t-info { fill: var(--info-text); }
+  .fd .t-warning { fill: var(--warning-text); }
+  .fd .t-brand { fill: var(--brand-text); }
+  .fd .ln { stroke: var(--text-terciary); stroke-width: 1.3; fill: none; }
+  .fd .lb { font-size: 10.5px; font-weight: 500; fill: var(--text-terciary); }
+  .fd .head { fill: var(--text-terciary); }
+
+  /* Anatomia: bom × ruim */
+  .compare { display: grid; grid-template-columns: 1.45fr 1fr; gap: 10px; margin: 8px 0 12px; align-items: start; }
+  .card.good { border-color: var(--brand-border); }
+  .card.bad { border-color: rgba(179, 0, 43, 0.25); }
+  .card .tag { font-size: 8.5pt; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .card .tag svg { width: 14px; height: 14px; }
+  .card.good .tag { color: var(--brand-text); }
+  .card.bad .tag { color: var(--danger-text); }
+  .field { padding: 2.5px 0; border-bottom: 1px dotted var(--border); font-size: 9pt; break-inside: avoid; }
+  .field:last-child { border-bottom: 0; }
+  .field .k { display: block; font-size: 8pt; font-weight: 500; color: var(--text-terciary); }
+  .field .v { color: var(--text-primary); }
+  .field ol { margin: 0; padding-left: 16px; }
+  .field ol li { margin-bottom: 0; }
+  .field .v.empty { color: var(--text-terciary); font-style: italic; }
+  .bad .field .v { color: var(--text-secondary); }
+  .miss { font-size: 8.6pt; color: var(--danger-text); display: flex; gap: 4px; margin-top: 2px; line-height: 1.35; }
+  .miss svg { width: 12px; height: 12px; flex: none; margin-top: 1px; }
+
+  /* Severidade */
+  .sev .card .title { justify-content: space-between; }
+  .sev .card p + p { margin-top: 6px; }
+  .sev .card .ex { color: var(--text-primary); }
+  .chip.neutral { background: var(--neutral-muted); color: var(--text-secondary); }
+
+  /* Passos do formulário */
+  .steps > li .title .chip { margin-left: 6px; font-weight: 500; vertical-align: 1px; }
+  .steps > li .ex { margin-top: 3px; font-size: 9pt; color: var(--text-primary); }
+  .steps > li .ex code { font-size: 8.6pt; }
+
+  /* Quadro */
+  .board .node { flex-direction: column; gap: 2px; padding: 8px 4px; }
+  .board .node small { font-size: 8pt; font-weight: 400; color: inherit; opacity: 0.85; }
+
+  /* Nunca colocar */
+  .never .card .title svg { color: var(--danger-text); }
+  .never .card p.instead { color: var(--text-primary); margin-top: 6px; }
+
+  ul.check li { break-inside: avoid; margin-bottom: 3px; }
+  ul.check li .muted { display: block; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<!-- ============================== CAPA ============================== -->
+<section class="cover">
+  <div>
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Genius</div>
+  </div>
+  <div>
+    <div class="kicker">Kit do QA · UAT v1 · Documento 04</div>
+    <h1>Como reportar bugs</h1>
+    <p class="subtitle">Do cenário que falhou até uma issue que o dev consegue repetir e corrigir sem precisar te perguntar nada.</p>
+    <dl class="meta">
+      <dt>Versão</dt><dd>22/10/2026</dd>
+      <dt>Público</dt><dd>QA júnior, primeiro ciclo do UAT v1</dd>
+      <dt>Base</dt><dd>Fluxo de bugs do kit, template “Bug” do GitHub, roteiro de testes manuais e auditoria consolidada de 21/10 (commit <code>9e3d1d3c</code>)</dd>
+      <dt>Leitura</dt><dd>15 minutos. Guarde a última página aberta durante o teste.</dd>
+    </dl>
+  </div>
+  <div class="band">Regra que vale mais que todas as outras: nunca cole senha, token, dado real de aluno nem o QR do WhatsApp numa issue, num print ou no chat.</div>
+</section>
+
+<!-- ============================== SUMÁRIO + 1 ============================== -->
+<h1>Sumário</h1>
+<div class="toc">
+  <ol>
+    <li><span class="num">1</span>Por que um bom relato importa<span class="desc">O que está em jogo</span></li>
+    <li><span class="num">2</span>Antes de abrir: é bug mesmo?<span class="desc">Fluxo de decisão e marcadores do roteiro</span></li>
+    <li><span class="num">3</span>Onde e como abrir<span class="desc">Cada campo do formulário do GitHub</span></li>
+    <li><span class="num">4</span>Anatomia de um bom relato<span class="desc">Um exemplo bom e um ruim, lado a lado</span></li>
+    <li><span class="num">5</span>Severidade<span class="desc">Crítico, alto, médio e baixo</span></li>
+    <li><span class="num">6</span>Etiquetas e o quadro<span class="desc">Quem move a issue e quando ela fecha</span></li>
+    <li><span class="num">7</span>O que nunca colocar numa issue<span class="desc">Senhas, dados reais, QR do WhatsApp</span></li>
+    <li><span class="num">8</span>Divergência entre doc e sistema<span class="desc">R# e a etiqueta decisao-pendente</span></li>
+    <li><span class="num">9</span>Checklist antes de enviar<span class="desc">Para conferir antes do “Submit”</span></li>
+  </ol>
+</div>
+
+<h2><span class="num">1</span>Por que um bom relato importa</h2>
+<p class="lead">Seu relato é a única coisa que o dev tem do bug. Ele não estava do seu lado quando a tela deu erro.</p>
+<p>Quem corrige lê a issue horas ou dias depois. Às vezes é outra pessoa, que nunca abriu aquela tela. Se faltar o usuário, o aluno ou o valor, o dev tenta adivinhar. Quando não consegue repetir, a issue volta para você com “não reproduz”, e o bug continua lá.</p>
+<p>Um bom relato faz três coisas:</p>
+<div class="cards three">
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6h9" /><path d="M11 12h9" /><path d="M12 18h8" /><path d="M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4" /><path d="M6 10v-6l-2 2" /></svg> Deixa repetir</div><p>Alguém que nunca viu o sistema segue os seus passos e vê o mesmo erro.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 16h10" /><path d="M11 16l4 4" /><path d="M11 16l4 -4" /><path d="M13 8h-10" /><path d="M13 8l-4 4" /><path d="M13 8l-4 -4" /></svg> Mostra a diferença</div><p>Fica claro o que deveria acontecer, o que aconteceu e de onde vem o esperado.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3" /><path d="M11 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 12l0 2.5" /></svg> Protege pessoas</div><p>Não expõe senha nem dado de aluno. A issue fica no GitHub para sempre.</p></div>
+</div>
+<div class="callout brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /><path d="M12 6l-3.293 3.293a1 1 0 0 0 0 1.414l.543 .543c.69 .69 1.81 .69 2.5 0l1 -1a3.182 3.182 0 0 1 4.5 0l2.25 2.25" /><path d="M12.5 15.5l2 2" /><path d="M15 13l2 2" /></svg><div><div class="title">Você não está acusando ninguém</div><p>Reportar bug é parte do trabalho de todo mundo, não uma crítica ao dev. Escreva o que viu, sem adjetivos (“absurdo”, “de novo”). Fatos curtos resolvem mais rápido.</p></div></div>
+
+<!-- ============================== 2 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">2</span>Antes de abrir: é bug mesmo?</h2>
+<p class="lead">Nem todo resultado estranho vira issue. O roteiro já marca o que é conhecido. Siga as perguntas de cima para baixo e pare na primeira resposta “sim”.</p>
+
+<figure>
+<svg class="fd" viewBox="0 0 680 468" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluxo de decisão antes de abrir uma issue">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M0 0L10 5L0 10z"/>
+    </marker>
+  </defs>
+
+  <!-- linha 1 -->
+  <rect class="q" x="1" y="4" width="330" height="54" rx="10"/>
+  <text class="qn" x="16" y="26">1</text>
+  <text class="qt" x="32" y="26">O sistema fez exatamente o que está</text>
+  <text class="qt" x="32" y="44">em “Resultado esperado”?</text>
+  <line class="ln" x1="331" y1="31" x2="386" y2="31" marker-end="url(#seta)"/>
+  <text class="lb" x="348" y="25">sim</text>
+  <rect class="o-success" x="390" y="4" width="289" height="54" rx="10"/>
+  <text class="ot t-success" x="404" y="26">Passou</text>
+  <text class="os t-success" x="404" y="44">Se havia 🐞 X#, anote “X# não reproduz”.</text>
+  <line class="ln" x1="166" y1="58" x2="166" y2="80" marker-end="url(#seta)"/>
+  <text class="lb" x="174" y="73">não</text>
+
+  <!-- linha 2 -->
+  <rect class="q" x="1" y="82" width="330" height="54" rx="10"/>
+  <text class="qn" x="16" y="104">2</text>
+  <text class="qt" x="32" y="104">O cenário ficou fora deste ciclo?</text>
+  <text class="os t-neutral" x="32" y="122">Ex.: o PO tirou o fluxo legado (R1).</text>
+  <line class="ln" x1="331" y1="109" x2="386" y2="109" marker-end="url(#seta)"/>
+  <text class="lb" x="348" y="103">sim</text>
+  <rect class="o-neutral" x="390" y="82" width="289" height="54" rx="10"/>
+  <text class="ot t-neutral" x="404" y="104">Não aplicável</text>
+  <text class="os t-neutral" x="404" y="122">Anote o motivo na planilha.</text>
+  <line class="ln" x1="166" y1="136" x2="166" y2="158" marker-end="url(#seta)"/>
+  <text class="lb" x="174" y="151">não</text>
+
+  <!-- linha 3 -->
+  <rect class="q" x="1" y="160" width="330" height="54" rx="10"/>
+  <text class="qn" x="16" y="182">3</text>
+  <text class="qt" x="32" y="182">O roteiro marca 🛑 B# e aconteceu</text>
+  <text class="qt" x="32" y="200">o que está descrito?</text>
+  <line class="ln" x1="331" y1="187" x2="386" y2="187" marker-end="url(#seta)"/>
+  <text class="lb" x="348" y="181">sim</text>
+  <rect class="o-danger" x="390" y="160" width="289" height="54" rx="10"/>
+  <text class="ot t-danger" x="404" y="182">Bloqueado (B#)</text>
+  <text class="os t-danger" x="404" y="200">Não abra bug. Já tem dono. Siga em frente.</text>
+  <line class="ln" x1="166" y1="214" x2="166" y2="236" marker-end="url(#seta)"/>
+  <text class="lb" x="174" y="229">não</text>
+
+  <!-- linha 4 -->
+  <rect class="q" x="1" y="238" width="330" height="54" rx="10"/>
+  <text class="qn" x="16" y="260">4</text>
+  <text class="qt" x="32" y="260">O roteiro marca ⚠️ R#</text>
+  <text class="qt" x="32" y="278">(decisão pendente)?</text>
+  <line class="ln" x1="331" y1="265" x2="386" y2="265" marker-end="url(#seta)"/>
+  <text class="lb" x="348" y="259">sim</text>
+  <rect class="o-info" x="390" y="238" width="289" height="54" rx="10"/>
+  <text class="ot t-info" x="404" y="260">Registrar o observado</text>
+  <text class="os t-info" x="404" y="278">Na planilha, com o R#. Não abra bug.</text>
+  <line class="ln" x1="166" y1="292" x2="166" y2="314" marker-end="url(#seta)"/>
+  <text class="lb" x="174" y="307">não</text>
+
+  <!-- linha 5 -->
+  <rect class="q" x="1" y="316" width="330" height="54" rx="10"/>
+  <text class="qn" x="16" y="338">5</text>
+  <text class="qt" x="32" y="338">O roteiro marca 🐞 X#</text>
+  <text class="qt" x="32" y="356">(bug provável) e o defeito aconteceu?</text>
+  <line class="ln" x1="331" y1="343" x2="386" y2="343" marker-end="url(#seta)"/>
+  <text class="lb" x="348" y="337">sim</text>
+  <rect class="o-warning" x="390" y="316" width="289" height="54" rx="10"/>
+  <text class="ot t-warning" x="404" y="338">Falhou · abrir issue citando o X#</text>
+  <text class="os t-warning" x="404" y="356">No título e no campo “Referência na auditoria”.</text>
+  <line class="ln" x1="166" y1="370" x2="166" y2="406" marker-end="url(#seta)"/>
+  <text class="lb" x="174" y="392">não</text>
+
+  <!-- final -->
+  <rect class="o-brand" x="1" y="410" width="678" height="54" rx="10"/>
+  <text class="ot t-brand" x="16" y="432">Falhou · abrir issue normalmente</text>
+  <text class="os t-brand" x="16" y="450">Abra antes de seguir para o próximo cenário e anote o número da issue na planilha de resultados.</text>
+</svg>
+<figcaption>Pare na primeira resposta “sim”. Só os dois últimos destinos viram issue.</figcaption>
+</figure>
+
+<h3>Os outros marcadores do roteiro</h3>
+<dl class="terms">
+  <dt>ℹ️ Não é bug</dt><dd>Parece estranho, mas é a regra atual. Confira que acontece como descrito. Só é falha se acontecer outra coisa.</dd>
+  <dt>[DEV]</dt><dd>O cenário precisa de um passo fora da tela (banco, cron, mensagem recebida simulada). Peça ao DEV de plantão. Sem apoio, marque “Bloqueado ([DEV])”.</dd>
+  <dt>⏭ Adiado</dt><dd>A pré-condição só existe mais adiante no ciclo. Pule, anote “adiado” e volte depois.</dd>
+  <dt>rel. 0N #x</dt><dd>Achado de um relatório da auditoria que ainda não entrou nas listas B, X ou R. Trate igual ao marcador que vem junto.</dd>
+</dl>
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">De onde vêm B#, X# e R#</div><p><strong>B#</strong> são bloqueadores do UAT, com quem resolve. <strong>X#</strong> são bugs que a auditoria leu no código e você confirma na tela. <strong>R#</strong> são decisões que o PO ainda não tomou. Os três estão na auditoria consolidada, seções 2, 3 e 4.</p></div></div>
+</section>
+
+<!-- ============================== 3 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">3</span>Onde e como abrir</h2>
+<p class="lead">Tudo fica no GitHub do projeto: Issues para reportar, Projects para acompanhar. Não existe outra ferramenta.</p>
+
+<div class="flow">
+  <div class="node neutral">Procure nas issues se o bug já existe</div><div class="arrow">→</div>
+  <div class="node neutral">Issues › New issue</div><div class="arrow">→</div>
+  <div class="node">Template “Bug”</div><div class="arrow">→</div>
+  <div class="node neutral">Preencha os campos abaixo</div><div class="arrow">→</div>
+  <div class="node neutral">Submit e anote o número na planilha</div>
+</div>
+<p class="muted">Campos obrigatórios travam o envio se ficarem vazios. A ordem abaixo é a do formulário.</p>
+
+<ol class="steps">
+  <li><div><div class="title">Título <span class="chip danger">obrigatório</span></div>
+    <p>Comece pelo ID do cenário e, se houver, pelo X#. Depois, o que acontece, em uma linha. Se não veio do roteiro, comece pelo módulo.</p>
+    <div class="ex"><code>[FIN-18] Desconto acumulado de 12% aplicado direto por vendedor com alçada de 10%</code><br><code>[CFG-22][X1] Usuário com e-mail em maiúsculas não consegue entrar</code></div></div></li>
+  <li><div><div class="title">Ambiente <span class="chip danger">obrigatório</span></div>
+    <p>Escolha <strong>UAT v1</strong>. É o único ambiente de teste. As outras opções não se aplicam ao seu ciclo.</p></div></li>
+  <li><div><div class="title">Módulo <span class="chip danger">obrigatório</span></div>
+    <p>A área onde o erro aparece, não onde você começou. Desconto errado na ficha do aluno é “Financeiro”. Na dúvida, “Outro”, e explique em Observações.</p></div></li>
+  <li><div><div class="title">Severidade <span class="chip danger">obrigatório</span></div>
+    <p>Crítico, Alto, Médio ou Baixo. Veja a seção 5. O gestor pode ajustar depois.</p></div></li>
+  <li><div><div class="title">Versão do UAT <span class="chip danger">obrigatório</span></div>
+    <p>Abra o endereço do UAT seguido de <code>/api/health</code>. A resposta tem um campo <code>sha</code>: copie o valor. É ele que diz qual versão do sistema estava no ar. Se aparecer “desconhecido”, escreva isso e avise o gestor.</p>
+    <div class="ex"><code>{"ok":true,"sha":"9e3d1d3c…","timestamp":"…"}</code> → cole <code>9e3d1d3c…</code></div></div></li>
+  <li><div><div class="title">Papel e usuário usados <span class="chip danger">obrigatório</span></div>
+    <p>O papel e o apelido do roteiro, ou o e-mail de teste. <strong>Nunca a senha.</strong></p>
+    <div class="ex"><code>Vendedor (VEND-A, joao@genius.com)</code></div></div></li>
+  <li><div><div class="title">Referência na auditoria <span class="chip">opcional</span></div>
+    <p>Se o roteiro marcou o cenário com 🐞 X#, escreva o código. Ele aponta a causa provável e poupa horas do dev. Sem X#, deixe vazio.</p>
+    <div class="ex"><code>X6</code> ou <code>rel. 07 #22</code></div></div></li>
+  <li><div><div class="title">ID do cenário no roteiro <span class="chip danger">obrigatório</span></div>
+    <p>O ID da linha do roteiro, como <code>FIN-12</code>. Achou o bug fora do roteiro? Escreva “exploratório”.</p></div></li>
+  <li><div><div class="title">Passos para reproduzir <span class="chip danger">obrigatório</span></div>
+    <p>Numerados, a partir do login. Use os dados reais do teste: código do aluno QA, cobrança, valor, opção escolhida. Copie do roteiro e ajuste ao que você fez de fato.</p></div></li>
+  <li><div><div class="title">Resultado esperado <span class="chip danger">obrigatório</span></div>
+    <p>O que deveria acontecer e de onde vem isso: o roteiro, um doc ou uma decisão do gestor. Uma ou duas frases.</p></div></li>
+  <li><div><div class="title">Resultado obtido <span class="chip danger">obrigatório</span></div>
+    <p>O que aconteceu. Se apareceu mensagem, copie o texto exato, entre aspas. Não junte com o esperado.</p></div></li>
+  <li><div><div class="title">Evidência <span class="chip">opcional, mas quase sempre necessária</span></div>
+    <p>Arraste um print, um vídeo curto ou o trace do Playwright (<code>.zip</code>). Recorte ou borre qualquer dado pessoal antes de anexar.</p></div></li>
+  <li><div><div class="title">Frequência <span class="chip danger">obrigatório</span></div>
+    <p>Sempre, Às vezes ou Só uma vez. Repita os passos pelo menos mais uma vez antes de responder.</p></div></li>
+  <li><div><div class="title">Observações <span class="chip">opcional</span></div>
+    <p>Contorno que você achou, o que você tentou de diferente, relação com outra issue (<code>#123</code>). Hipótese de causa é bem-vinda, desde que marcada como hipótese.</p></div></li>
+</ol>
+<div class="callout warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">O sha mudou no meio do dia?</div><p>Cada merge na main faz deploy automático no UAT. Confira <code>/api/health</code> no início de cada dia de teste. Se o sha mudar, anote a hora e repita os cenários que falharam antes de abrir a issue.</p></div></div>
+</section>
+
+<!-- ============================== 4 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">4</span>Anatomia de um bom relato</h2>
+<p class="lead">O mesmo bug, contado de dois jeitos. Cenário FIN-18 do roteiro: o vendedor dá um desconto que, somado ao anterior, passa da alçada dele. <span class="muted">(Exemplo fictício.)</span></p>
+
+<div class="compare">
+  <div class="card good">
+    <div class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3" /></svg> Assim o dev resolve</div>
+    <div class="field"><span class="k">Título</span><span class="v"><strong>[FIN-18] Desconto acumulado de 12% aplicado direto por vendedor com alçada de 10%</strong></span></div>
+    <div class="field"><span class="k">Ambiente · Módulo · Severidade</span><span class="v">UAT v1 · Financeiro · <span class="chip warning">Alto</span></span></div>
+    <div class="field"><span class="k">Versão do UAT</span><span class="v"><code>9e3d1d3c</code></span></div>
+    <div class="field"><span class="k">Papel e usuário</span><span class="v">Vendedor (VEND-A, joao@genius.com)</span></div>
+    <div class="field"><span class="k">Referência na auditoria · ID do cenário</span><span class="v"><span class="empty">(vazio: o cenário não tem X#)</span> · FIN-18</span></div>
+    <div class="field"><span class="k">Passos para reproduzir</span><div class="v"><ol>
+      <li>Entrar como VEND-A.</li>
+      <li>Abrir Alunos › QA-ALUNO-01 › Financeiro.</li>
+      <li>Na mensalidade de novembro, que já tem 5% de desconto (FIN-17), clicar em Renegociar.</li>
+      <li>Escolher Desconto, novo valor 12% abaixo da referência, vigência “Apenas esta cobrança”. Confirmar.</li>
+    </ol></div></div>
+    <div class="field"><span class="k">Resultado esperado</span><span class="v">“Pedido encaminhado para aprovação independente.” e o valor não muda. O desconto acumulado (5% + 7% = 12%) passa da alçada de 10% do VEND-A (roteiro, FIN-18).</span></div>
+    <div class="field"><span class="k">Resultado obtido</span><span class="v">Apareceu “Preço ajustado dentro da alçada.” e o valor caiu 12% na hora. Nenhum pedido apareceu em Financeiro › Aprovações do GC.</span></div>
+    <div class="field"><span class="k">Evidência</span><span class="v">Print antes e depois da mensalidade e vídeo de 20 s, só com dados QA.</span></div>
+    <div class="field"><span class="k">Frequência</span><span class="v">Sempre (3 de 3, também na mensalidade de dezembro).</span></div>
+    <div class="field"><span class="k">Observações</span><span class="v">Com 11% numa mensalidade sem desconto anterior, o pedido vai para aprovação corretamente. Hipótese: o desconto anterior não entra na soma.</span></div>
+  </div>
+
+  <div class="card bad">
+    <div class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 13v-8a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v7a1 1 0 0 0 1 1h3a4 4 0 0 1 4 4v1a2 2 0 0 0 4 0v-5h3a2 2 0 0 0 2 -2l-1 -5a2 3 0 0 0 -2 -2h-7a3 3 0 0 0 -3 3" /></svg> Assim volta para você</div>
+    <div class="field"><span class="k">Título</span><span class="v">Desconto não funciona</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Sem ID do cenário. Não diz o que acontece.</div></div>
+    <div class="field"><span class="k">Severidade</span><span class="v"><span class="chip danger">Crítico</span></span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Exagero: o fluxo segue funcionando.</div></div>
+    <div class="field"><span class="k">Versão do UAT</span><span class="v">a de hoje</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Sem sha, ninguém sabe qual código testar.</div></div>
+    <div class="field"><span class="k">Papel e usuário</span><span class="v">admin</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Papel errado. O bug é de alçada do vendedor.</div></div>
+    <div class="field"><span class="k">Passos para reproduzir</span><span class="v">Tentei dar desconto e deu errado.</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Sem aluno, cobrança, valor nem o desconto que já existia.</div></div>
+    <div class="field"><span class="k">Esperado e obtido</span><span class="v">Era pra ir pra aprovação mas não foi, acho.</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Misturados. Sem a mensagem exata. “Acho” pede outra tentativa.</div></div>
+    <div class="field"><span class="k">Evidência</span><span class="v">Print da tela inteira, com outra aba aberta mostrando um aluno real.</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Expõe dado pessoal. Recorte e use só dados QA.</div></div>
+    <div class="field"><span class="k">Frequência</span><span class="v">Sempre</span>
+      <div class="miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>Com uma tentativa só, ainda não dá para dizer.</div></div>
+  </div>
+</div>
+
+<div class="callout success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg><div><div class="title">O teste do estranho</div><p>Antes de enviar, imagine alguém que nunca abriu o ERP Genius lendo só a sua issue. Ele consegue chegar na mesma tela, com o mesmo usuário e o mesmo dado, e ver o mesmo erro? Se sim, está pronta.</p></div></div>
+</section>
+
+<!-- ============================== 5 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">5</span>Severidade</h2>
+<p class="lead">A severidade diz quanto o bug atrapalha quem usa o sistema. Não é a sua opinião sobre a dificuldade de corrigir.</p>
+
+<div class="cards sev">
+  <div class="card"><div class="title"><span>Crítico</span><span class="chip danger">sev:critico</span></div>
+    <p>Impede um fluxo principal (login, contratação, pagamento, lançamento de nota) ou corrompe dados. Não há contorno.</p>
+    <p class="ex">Ex.: a Secretaria confirma o recebimento e o saldo da mensalidade fica negativo. Ou nenhum papel consegue salvar notas na QA-TURMA-A1.</p></div>
+  <div class="card"><div class="title"><span>Alto</span><span class="chip warning">sev:alto</span></div>
+    <p>O fluxo principal funciona com contorno, ou uma regra de negócio está errada com impacto financeiro, acadêmico ou de permissão.</p>
+    <p class="ex">Ex.: desconto acima da alçada aplicado sem aprovação (FIN-18). Ou um vendedor abre a ficha financeira de aluno de outra carteira.</p></div>
+  <div class="card"><div class="title"><span>Médio</span><span class="chip info">sev:medio</span></div>
+    <p>Funcionalidade secundária errada, validação faltando ou dado errado na tela.</p>
+    <p class="ex">Ex.: mover oportunidades em lote mostra “Etapa atualizada.” mesmo quando todas foram recusadas (X7). Ou a promessa de pagamento aceita uma data no passado.</p></div>
+  <div class="card"><div class="title"><span>Baixo</span><span class="chip neutral">sev:baixo</span></div>
+    <p>Texto, alinhamento ou detalhe visual. Não muda o resultado de nenhuma ação.</p>
+    <p class="ex">Ex.: botão escrito “Informar pagameto”. Ou um ícone desalinhado na lista de cobranças no celular.</p></div>
+</div>
+
+<table class="keep">
+  <thead><tr><th>Pergunta rápida</th><th>Se a resposta for sim</th></tr></thead>
+  <tbody>
+    <tr><td>Alguém fica impedido de fazer o trabalho principal, ou um dado foi estragado?</td><td><span class="chip danger">Crítico</span></td></tr>
+    <tr><td>Envolve dinheiro, nota, frequência ou quem pode ver o quê?</td><td><span class="chip warning">Alto</span></td></tr>
+    <tr><td>Algo secundário dá errado, mas o resto do fluxo segue?</td><td><span class="chip info">Médio</span></td></tr>
+    <tr><td>É só aparência ou texto?</td><td><span class="chip neutral">Baixo</span></td></tr>
+  </tbody>
+</table>
+<div class="callout info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Severidade não é prioridade do roteiro</div><p>P1, P2 e P3 no roteiro dizem a ordem de execução dos cenários. A severidade diz o tamanho do estrago de um bug. Um cenário P3 pode revelar um bug crítico.</p></div></div>
+</section>
+
+<!-- ============================== 6 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">6</span>Etiquetas e o quadro</h2>
+<p class="lead">Etiquetas dizem o que a issue é. O quadro diz em que pé ela está.</p>
+
+<h3>Etiquetas</h3>
+<p>O template coloca <code>bug</code> sozinho. As outras o gestor confere e ajusta na triagem, a partir do que você preencheu.</p>
+<table>
+  <thead><tr><th style="width:22%">Grupo</th><th>Etiquetas</th><th style="width:36%">Significado</th></tr></thead>
+  <tbody>
+    <tr><td>Tipo</td><td><span class="chip">bug</span></td><td>Defeito encontrado em teste.</td></tr>
+    <tr><td>Severidade</td><td><span class="chip danger">sev:critico</span> <span class="chip warning">sev:alto</span> <span class="chip info">sev:medio</span> <span class="chip neutral">sev:baixo</span></td><td>O tamanho do estrago (seção 5).</td></tr>
+    <tr><td>Módulo</td><td><code>mod:acesso</code> <code>mod:config</code> <code>mod:crm</code> <code>mod:inbox</code> <code>mod:matricula</code> <code>mod:alunos</code> <code>mod:portal</code> <code>mod:academico</code> <code>mod:diario</code> <code>mod:financeiro</code> <code>mod:empresas</code> <code>mod:aria</code></td><td>A área do sistema. Ajuda a mandar para o dev certo.</td></tr>
+    <tr><td>Situação</td><td colspan="2"><dl class="terms mb0 mt0">
+      <dt><span class="chip ai">decisao-pendente</span></dt><dd>Comportamento que o PO ainda não decidiu (seção 8).</dd>
+      <dt><span class="chip">nao-reproduz</span></dt><dd>Ninguém conseguiu repetir com os passos da issue.</dd>
+      <dt><span class="chip">duplicada</span></dt><dd>Já existe outra issue para o mesmo bug.</dd>
+      <dt><span class="chip brand">mapeado-auditoria</span></dt><dd>O bug tem X# na auditoria.</dd></dl></td></tr>
+  </tbody>
+</table>
+
+<h3>O quadro (GitHub Projects)</h3>
+<div class="flow board">
+  <div class="node neutral">Novo<small>QA · automático</small></div><div class="arrow">→</div>
+  <div class="node neutral">Em análise<small>Gestor</small></div><div class="arrow">→</div>
+  <div class="node neutral">Corrigindo<small>Dev</small></div><div class="arrow">→</div>
+  <div class="node neutral">Pronto para reteste<small>Dev</small></div><div class="arrow">→</div>
+  <div class="node">Fechado<small>QA</small></div>
+</div>
+<table class="keep">
+  <thead><tr><th style="width:24%">Coluna</th><th style="width:22%">Quem move</th><th>O que significa</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Novo</strong></td><td>QA (automático ao abrir)</td><td>Aberta. Ninguém olhou ainda.</td></tr>
+    <tr><td><strong>Em análise</strong></td><td>Gestor</td><td>Confirmada, ou aguardando decisão do PO.</td></tr>
+    <tr><td><strong>Corrigindo</strong></td><td>Dev</td><td>Em desenvolvimento, com PR aberto.</td></tr>
+    <tr><td><strong>Pronto para reteste</strong></td><td>Dev</td><td>Deploy feito no UAT. Confira o sha em <code>/api/health</code> antes de retestar.</td></tr>
+    <tr><td><strong>Fechado</strong></td><td>QA</td><td>O reteste passou. Se falhou, volta para “Corrigindo” com comentário.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><div><div class="title">Só o QA fecha</div><p>O dev não fecha a própria correção. Quando a issue chega em “Pronto para reteste”, você repete os passos da issue no UAT. Passou: comente com o sha testado e feche. Falhou: comente o que viu e devolva para “Corrigindo”. Um bug fechado sem reteste volta a abrir.</p></div></div>
+</section>
+
+<!-- ============================== 7 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">7</span>O que nunca colocar numa issue</h2>
+<p class="lead">Uma issue é lida por muita gente e fica guardada para sempre. Editar depois não apaga: o GitHub mantém o histórico de edições.</p>
+
+<div class="cards never">
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg> Senhas e tokens</div>
+    <p>Nem a sua, nem a de usuário de teste. Nem links que carregam um token, como o de pagamento ou o de ativação do portal.</p>
+    <p class="instead">No lugar: o papel e o apelido (VEND-A, GP-2) ou o e-mail de teste. As senhas chegam por canal privado e ficam lá.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg> Dados reais de aluno</div>
+    <p>Nome, e-mail, telefone ou documento de pessoa real, inclusive em prints e vídeos. O UAT tem dados reais importados.</p>
+    <p class="instead">No lugar: registros que começam com QA (QA-ALUNO-01) e telefones fictícios no formato <code>+506 8888 01xx</code>.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M7 17l0 .01" /><path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M7 7l0 .01" /><path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M17 7l0 .01" /><path d="M14 14l3 0" /><path d="M20 14l0 .01" /><path d="M14 14l0 3" /><path d="M14 20l3 0" /><path d="M17 17l3 0" /><path d="M20 17l0 3" /></svg> QR do WhatsApp</div>
+    <p>Nunca escaneie o QR com um celular real e nunca tire print dele. Algumas ações da Inbox chamam o motor sem a trava de segurança (X15).</p>
+    <p class="instead">No lugar: descreva em texto que a tela de conexão apareceu e onde.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg> Print com coisa demais</div>
+    <p>Tela inteira com outras abas, notificações, gerenciador de senhas aberto. Trace do Playwright em que uma senha foi digitada.</p>
+    <p class="instead">No lugar: recorte só a área do erro. Na dúvida sobre um trace, pergunte ao DEV antes de anexar.</p></div>
+</div>
+
+<div class="callout danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5" /><path d="M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5" /><path d="M14 5.5a1.5 1.5 0 0 1 3 0v6.5" /><path d="M17 7.5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47" /></svg><div><div class="title">Colou algo que não devia?</div><p>Avise o gestor na hora, pelo canal privado. Se foi senha, ela precisa ser trocada: apagar o texto da issue não basta. Não tente resolver sozinho em silêncio.</p></div></div>
+
+</section>
+
+<!-- ============================== 8 ============================== -->
+<section class="section">
+<h2 class="mt0"><span class="num">8</span>Divergência entre doc e sistema</h2>
+<p class="lead">Às vezes o sistema faz uma coisa e um documento diz outra. Você não decide quem está certo. Você registra.</p>
+
+<div class="cards">
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M16 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M11 6h5a2 2 0 0 1 2 2v8" /><path d="M14 9l-3 -3l3 -3" /><path d="M13 18h-5a2 2 0 0 1 -2 -2v-8" /><path d="M10 15l3 3l-3 3" /></svg> Já está na auditoria (R#)</div>
+    <p>O roteiro marca ⚠️ <strong>decisão pendente (R#)</strong>. Execute o cenário, <strong>registre o observado</strong> na coluna Observação da planilha e anote o R#. <strong>Não abra bug.</strong></p>
+    <p style="margin-top:6px">No fim do ciclo esses cenários vão para o PO.</p></div>
+  <div class="card"><div class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9h8" /><path d="M8 13h6" /><path d="M14 18h-1l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v4.5" /><path d="M19 22v.01" /><path d="M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" /></svg> É nova (não está na auditoria)</div>
+    <p>Abra a issue normalmente e marque com <span class="chip ai">decisao-pendente</span>. Em “Resultado esperado”, cite a fonte (qual doc ou cenário). Em “Resultado obtido”, o que o sistema faz.</p>
+    <p style="margin-top:6px">Não escreva que o doc está errado, nem que o código está.</p></div>
+</div>
+
+<div class="flow">
+  <div class="node neutral">Você registra o observado</div><div class="arrow">→</div>
+  <div class="node neutral">O PO decide</div><div class="arrow">→</div>
+  <div class="node">Vira bug (código errado) ou correção de doc ou SPEC (doc errado)</div><div class="arrow">→</div>
+  <div class="node neutral">O roteiro é atualizado</div>
+</div>
+
+<div class="callout warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Cuidado com docs antigos</div><p>Alguns docs ainda descrevem o sistema anterior (o CRM de leads e pipeline, por exemplo). Para o esperado, use o roteiro atual.</p></div></div>
+
+<!-- ============================== 9 ============================== -->
+<h2><span class="num">9</span>Checklist antes de enviar</h2>
+<p class="lead">Confira item por item antes de clicar em “Submit”. Leva um minuto e evita a issue voltar.</p>
+
+<ul class="check">
+  <li><strong>É bug mesmo.</strong> Passei pelo fluxo da seção 2: não é B#, R# nem “Não é bug”.<span class="muted">Se o cenário tem X#, o defeito descrito aconteceu de verdade.</span></li>
+  <li><strong>Não é duplicada.</strong> Procurei nas issues abertas pelo ID do cenário e por palavras do erro.</li>
+  <li><strong>Repeti.</strong> Fiz os passos pelo menos duas vezes e a frequência reflete isso.</li>
+  <li><strong>Título</strong> começa com o ID do cenário (e o X#, se houver) e diz o que acontece em uma linha.</li>
+  <li><strong>Ambiente</strong> é UAT v1 e a <strong>versão</strong> é o sha de <code>/api/health</code> de agora.</li>
+  <li><strong>Papel e usuário</strong> têm o apelido ou o e-mail de teste, sem senha.</li>
+  <li><strong>ID do cenário</strong> preenchido, ou “exploratório”.</li>
+  <li><strong>Passos</strong> numerados desde o login, com os dados QA usados (aluno, cobrança, valor).</li>
+  <li><strong>Esperado e obtido</strong> em campos separados, com a fonte do esperado e a mensagem exata do obtido.</li>
+  <li><strong>Severidade</strong> escolhida pela seção 5, não pelo susto.</li>
+  <li><strong>Evidência</strong> anexada e recortada: sem dado pessoal, sem outras abas, sem QR, sem senha.</li>
+  <li><strong>Nada sensível</strong> em nenhum campo: senha, token, link com token, dado real de aluno.</li>
+  <li><strong>Divergência nova?</strong> Marquei com <code>decisao-pendente</code> e citei a fonte.</li>
+  <li><strong>Depois do envio:</strong> anotei o número da issue na planilha de resultados, na linha do cenário.</li>
+</ul>
+
+</section>
+
+</body>
+</html>

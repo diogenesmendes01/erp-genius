@@ -1,0 +1,39 @@
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.11 C:/Users/Mendes/.codex/worktrees/b92c/erp-genius
+
+ ❯ src/app/identificacao-registro.test.ts (29 tests | 1 failed) 33ms
+     × nenhum id cru chega a texto, atributo de texto ou prop de componente — exceções ancoradas 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/identificacao-registro.test.ts > id cru fora da tela (docs/43 §6 item 7) > nenhum id cru chega a texto, atributo de texto ou prop de componente — exceções ancoradas
+AssertionError: expected { …(2) } to deeply equal { semExcecao: [], soltas: [] }
+
+- Expected
++ Received
+
+  {
+-   "semExcecao": [],
++   "semExcecao": [
++     "src/components/Avatar.tsx: [opaco] {iniciais(nome) || \"#\"} — id Array.from(letra.toLocaleUpperCase(\"pt-BR\"))",
++   ],
+    "soltas": [],
+  }
+
+ ❯ src/app/identificacao-registro.test.ts:260:54
+    258|
+    259|   it("nenhum id cru chega a texto, atributo de texto ou prop de compon…
+    260|     expect(conferirExcecoesId(achados, EXCECOES_ID)).toEqual({ semExce…
+       |                                                      ^
+    261|   });
+    262|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 849 passed (850)
+      Tests  1 failed | 6633 passed (6634)
+   Start at  19:52:15
+   Duration  214.74s (transform 15.25s, setup 0ms, import 182.11s, tests 103.15s, environment 55ms)
+

@@ -110,7 +110,12 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `NomeContatoReparado` | Reparo único (`scripts/reparar-nome-contato-whatsapp.ts`, após a migração 20260929120000): nome do contato igual ao perfil da própria linha (pushName de mensagem fromMe) volta a vazio em `nomeExibicao`/`nomePerfil` | Sistema (script operado pelo admin) | `{ motivo, antes: { nomeExibicao, nomePerfil } }` |
 | `ReguaRetomada` | "Retomar régua" na thread — libera o silêncio pós-inbound (S4) sem promessa/pagamento | Financeiro/Secretaria | `{ conversaId }` |
 | `NumeroWhatsAppCriado` | Cadastro de número na config | Admin | `{ telefoneE164, driver, finalidade }` |
-| `NumeroWhatsAppAlterado` | Edição do número — inclui **troca de driver** (D26) | Admin | `{ antes, depois }` |
+| `NumeroWhatsAppAlterado` | Edição do número — inclui **troca de driver** (D26). Não muda `ativo` (ativar/desativar têm Evento próprio) | Admin | `{ antes, depois }` |
+| `NumeroWhatsAppDesativado` | "Desativar" na tela de Números: logout no motor antes de gravar; o número fica na lista, inativo | Admin | `{ sessaoAntes }` |
+| `NumeroWhatsAppReativado` | "Ativar" na tela de Números: volta a ativo e é recadastrado no motor; o pareamento é refeito no Conectar | Admin | `{}` |
+| `NumeroWhatsAppDesconectado` | Logout do número no motor ("Desconectar", ou ao desativar/excluir um número com sessão) | Admin | `{ de }` |
+| `NumeroWhatsAppExcluido` | "Excluir" na tela de Números: desativa, faz logout e marca `excluidoEm` — some da configuração; conversas, mensagens e Eventos ficam. Recusado se o número é remetente da política da régua ou dos avisos da agenda | Admin | `{ telefoneE164, rotulo, ativoAntes, sessaoAntes }` |
+| `NumeroWhatsAppRestaurado` | "Novo número" com o telefone de um número excluído: o registro antigo volta (com o histórico) com rótulo, finalidade e dono novos | Admin | `{ excluidoEm, antes, depois }` |
 | `NumeroWhatsAppConectado` | Sessão Baileys abriu (QR lido) — via webhook `connection.update` ou poll | Sistema | `{ via, de }` |
 | `SessaoBaileysCaiu` | Sessão que estava CONECTADO caiu — fila degrada p/ "acumula + alerta" | Sistema | `{ via }` |
 | `TemplateCriado` / `TemplateAlterado` | Editor de template (edição de aprovado volta a rascunho) | Admin | `{ nome, ... }` / `{ antes, depois }` |

@@ -27,11 +27,14 @@
 
 ## Decisões do dono
 
+> A tabela abaixo preserva o levantamento de22/10. As respostas posteriores já foram registradas em [inbox-decisoes-produto.md](../../planejamento/inbox-decisoes-produto.md) e prevalecem sobre padrões/labels históricos dos cinco planos. Aprovação de escopo não significa entrega implementada. O estado de execução é o quadro de entregas e as issues do épico #379; não reabrir perguntas já respondidas.
+
+
 Enquanto uma decisão estiver aberta, vale a **regra atual do ERP** (coluna "Padrão"). Task que depende de uma decisão aberta cita o ID no título da issue e recebe a label `bloqueado-por-decisao`. Quando a resposta vier, o executor atualiza esta tabela no mesmo PR da task.
 
 | ID | Pergunta | Padrão enquanto aberta | Bloqueia |
 |---|---|---|---|
-| D1 | Vendedor dono da conversa pode aprovar, rejeitar e desfazer sugestões da Aria? | Só Admin e Gerente Comercial (`consultas-inbox.ts:280`) | E3 |
+| D1 | Vendedor dono da conversa pode aprovar, rejeitar e desfazer sugestões da Aria? | Só Admin e Gerente Comercial (`capacidadesAria` em `src/server/aria/permissoes-tela.ts` (capacidade `decidirHistorico`)) | E3 |
 | D2 | Sugestão aprovada em pacote (mensagem, etapa e tarefa) e com edição? Texto editado sai como Aria ou humano? | Uma sugestão por vez, sem edição | E3 |
 | D3 | Compositor travado enquanto a IA atende? "Assumir" pausa a Aria (motivo `MANUAL`)? | Compositor livre; Aria pausa ao primeiro envio humano | E3 |
 | D4 | Interruptor "Aria ativa" no Inbox? Papéis? Motivo obrigatório? | Fora do Inbox | E3 |
@@ -96,7 +99,9 @@ Os valores exatos e os demais tokens vêm da análise parte 1, §1; o plano 02 o
 
 ## Migrations
 
-O integrador reserva estes IDs; nenhuma migration fora da faixa da etapa.
+As faixas abaixo são o planejamento inicial. A reserva de um ID específico exige registro prévio pelo integrador no [quadro de entregas](../../planejamento/quadro-entregas.md), conferência de todas as branches/worktrees e bancos descartáveis e coordenação com outras frentes. A faixa no plano sozinha não impede colisões. Nunca reutilizar ID de migration aplicada.
+
+Reservas específicas desta execução: #322 usa20261023100000_tarefa_atendimento e20261023110000_tarefa_atendimento_indice (PR #408); #337 reserva20261023140000_notificacao_mencao_nota,20261023170000_notificacao_mencao_unicidade_legada e20261023180000_notificacao_mencao_retira_unicidade_global, ainda sem PR nesta revisão. Novos IDs dependem da mesma coordenação.
 
 | Etapa | Faixa |
 |---|---|

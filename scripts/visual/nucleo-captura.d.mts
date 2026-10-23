@@ -1,0 +1,13 @@
+export type AlvoVisual = "app" | "prototipo";
+export type TemaVisual = "escuro" | "claro";
+export type TamanhoVisual = "desktop" | "tablet" | "celular";
+export type EstadoVisual = { tamanhos: TamanhoVisual[]; prototipo: boolean; referencia?: string };
+export declare const TAMANHOS: Readonly<Record<TamanhoVisual, readonly [number, number]>>;
+export declare const TEMAS: readonly TemaVisual[];
+export declare const ESTADOS: Readonly<Record<string, EstadoVisual>>;
+export declare function nomeDaCaptura(alvo: AlvoVisual, tema: TemaVisual, tamanho: TamanhoVisual, estado: string): string;
+export declare function caminhoNoNpm(url: string, nodeModules: string): string;
+export declare function tipoDoArquivo(caminho: string): string;
+export declare function cancelamentoDeMensagensRecuperado(pedido: { url: string; method: string; erro: string }, concluidos: Set<string>, base: string, conteudoCarregado: boolean): boolean;
+export declare function combinacoes(opcoes: { alvos: AlvoVisual[]; estados: string[] }): { alvo: AlvoVisual; tema: TemaVisual; tamanho: TamanhoVisual; estado: string }[];
+export declare function problemaReactNaCaptura(texto: string): boolean;

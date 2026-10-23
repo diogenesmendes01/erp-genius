@@ -1,0 +1,1196 @@
+{
+  "fase": "depois",
+  "fonte": "33d0a99174bc2d00601ad91b08037bc3eac4a74b",
+  "perfil": "tester",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "fonte": "depois",
+      "inicial": [
+        {
+          "quantidade": 7,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705153938.4
+        },
+        {
+          "quantidade": 7,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705155670.4
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ],
+      "mensagensNoBanco": {
+        "antes": 3,
+        "depois": 3
+      },
+      "aoVivo": {
+        "ambosViram": true,
+        "semReload": true,
+        "notaNovaEm": [
+          8,
+          8
+        ],
+        "loads": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "fonte": "depois",
+      "inicial": [
+        {
+          "quantidade": 8,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705159286.9
+        },
+        {
+          "quantidade": 8,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705161092.7
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ],
+      "mensagensNoBanco": {
+        "antes": 3,
+        "depois": 3
+      },
+      "aoVivo": {
+        "ambosViram": true,
+        "semReload": true,
+        "notaNovaEm": [
+          9,
+          9
+        ],
+        "loads": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "fonte": "depois",
+      "inicial": [
+        {
+          "quantidade": 9,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705164379.8
+        },
+        {
+          "quantidade": 9,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705166081
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ],
+      "mensagensNoBanco": {
+        "antes": 3,
+        "depois": 3
+      },
+      "aoVivo": {
+        "ambosViram": true,
+        "semReload": true,
+        "notaNovaEm": [
+          10,
+          10
+        ],
+        "loads": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "fonte": "depois",
+      "inicial": [
+        {
+          "quantidade": 10,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            },
+            {
+              "id": "cmvk2dcki001sitjjj73lhepo",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:28.099Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705169355.5
+        },
+        {
+          "quantidade": 10,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            },
+            {
+              "id": "cmvk2dcki001sitjjj73lhepo",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:28.099Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705171138.9
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ],
+      "mensagensNoBanco": {
+        "antes": 3,
+        "depois": 3
+      },
+      "aoVivo": {
+        "ambosViram": true,
+        "semReload": true,
+        "notaNovaEm": [
+          11,
+          11
+        ],
+        "loads": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "fonte": "depois",
+      "inicial": [
+        {
+          "quantidade": 11,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            },
+            {
+              "id": "cmvk2dcki001sitjjj73lhepo",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:28.099Z"
+            },
+            {
+              "id": "cmvk2dggo001zitjjzjtivyjy",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:33.144Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705174398.1
+        },
+        {
+          "quantidade": 11,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            },
+            {
+              "id": "cmvk2dcki001sitjjj73lhepo",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:28.099Z"
+            },
+            {
+              "id": "cmvk2dggo001zitjjzjtivyjy",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:33.144Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705176213
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ],
+      "mensagensNoBanco": {
+        "antes": 3,
+        "depois": 3
+      },
+      "aoVivo": {
+        "ambosViram": true,
+        "semReload": true,
+        "notaNovaEm": [
+          12,
+          12
+        ],
+        "loads": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "fonte": "depois",
+      "inicial": [
+        {
+          "quantidade": 12,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            },
+            {
+              "id": "cmvk2dcki001sitjjj73lhepo",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:28.099Z"
+            },
+            {
+              "id": "cmvk2dggo001zitjjzjtivyjy",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:33.144Z"
+            },
+            {
+              "id": "cmvk2dkis0026itjjlbjgg72y",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:38.404Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705179645.4
+        },
+        {
+          "quantidade": 12,
+          "linhas": [
+            {
+              "id": "inbox-demo-nota-inicial-301",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:36",
+              "iso": "2026-10-22T21:36:26.027Z"
+            },
+            {
+              "id": "cmvk2b70f0008itjj1w1c7b9f",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:47.583Z"
+            },
+            {
+              "id": "cmvk2bawg000fitjjqfm2ynv5",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:52.624Z"
+            },
+            {
+              "id": "cmvk2beqj000mitjjkwefh8gr",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:37",
+              "iso": "2026-10-22T21:37:57.595Z"
+            },
+            {
+              "id": "cmvk2bim4000titjjto625ell",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:02.620Z"
+            },
+            {
+              "id": "cmvk2bmfb0010itjjg430icll",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:07.560Z"
+            },
+            {
+              "id": "cmvk2bq9y0017itjj5m8204di",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:38",
+              "iso": "2026-10-22T21:38:12.550Z"
+            },
+            {
+              "id": "cmvk2d4qa001eitjjpe3w3bxg",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:17.938Z"
+            },
+            {
+              "id": "cmvk2d8r5001litjjqp45az8c",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:23.153Z"
+            },
+            {
+              "id": "cmvk2dcki001sitjjj73lhepo",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:28.099Z"
+            },
+            {
+              "id": "cmvk2dggo001zitjjzjtivyjy",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:33.144Z"
+            },
+            {
+              "id": "cmvk2dkis0026itjjlbjgg72y",
+              "origem": "atendimento",
+              "rotulo": true,
+              "autor": "Admin de demonstração",
+              "hora": "18:39",
+              "iso": "2026-10-22T21:39:38.404Z"
+            }
+          ],
+          "mensagens": 3,
+          "timeOrigin": 1792705181447.2
+        }
+      ],
+      "erros": [
+        [],
+        []
+      ],
+      "loads": [
+        0,
+        0
+      ],
+      "mensagensNoBanco": {
+        "antes": 3,
+        "depois": 3
+      },
+      "aoVivo": {
+        "ambosViram": true,
+        "semReload": true,
+        "notaNovaEm": [
+          13,
+          13
+        ],
+        "loads": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "falhas": []
+}
