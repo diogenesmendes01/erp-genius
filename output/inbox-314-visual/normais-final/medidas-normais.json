@@ -1,0 +1,1082 @@
+[
+  {
+    "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "tema": "light",
+    "width": 1440,
+    "height": 900,
+    "contagem": {
+      "mensagens": 9,
+      "notas": 4,
+      "temMais": false,
+      "antes": true
+    },
+    "autoriaAPI": {
+      "voce": true,
+      "anterior": true
+    },
+    "metricas": {
+      "autores": {
+        "voce": {
+          "cabecalho": null,
+          "texto": "314 Você: confirmei os detalhes para a família.21:14"
+        },
+        "camila": {
+          "cabecalho": "Camila",
+          "texto": "Camila314 Camila: organizei o atendimento.21:15"
+        },
+        "carlos": {
+          "cabecalho": "Carlos",
+          "texto": "Carlos314 Carlos: vou conferir os horários.21:15"
+        },
+        "carlos-sequencia": {
+          "cabecalho": null,
+          "texto": "314 Carlos: retorno em seguida.21:16"
+        },
+        "aria": {
+          "cabecalho": "Aria · IA",
+          "texto": "Aria · IA314 Aria: resumo fictício persistido, sem geração ou envio.21:16"
+        }
+      },
+      "voceAnterior": "Você",
+      "antesVoce": "inbox-demo-msg-beatriz-falhou-307",
+      "notas": [
+        {
+          "id": "inbox-314-nota-atendimento",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota do atendimento.\nConferir os horários da família.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "role": "note",
+          "texto": "Nota da oportunidade · só equipe314 Nota da oportunidade.\nFamília prefere o período da tarde.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota histórica sem autor identificado.Autor não informado21:18",
+          "acoes": 0
+        }
+      ],
+      "linhas": [
+        {
+          "id": "inbox-314-msg-ontem",
+          "x": 630.71875,
+          "right": 860.390625,
+          "width": 229.671875
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-ontem-307",
+          "x": 630.71875,
+          "right": 910.546875,
+          "width": 279.828125
+        },
+        {
+          "id": "inbox-demo-nota-beatriz-307",
+          "x": 750.15625,
+          "right": 1057.28125,
+          "width": 307.125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-307",
+          "x": 630.71875,
+          "right": 862.03125,
+          "width": 231.3125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-falhou-307",
+          "x": 898.09375,
+          "right": 1057.28125,
+          "width": 159.1875
+        },
+        {
+          "id": "inbox-314-msg-voce",
+          "x": 750.15625,
+          "right": 1057.28125,
+          "width": 307.125
+        },
+        {
+          "id": "inbox-314-msg-camila",
+          "x": 803.890625,
+          "right": 1057.28125,
+          "width": 253.390625
+        },
+        {
+          "id": "inbox-314-msg-carlos",
+          "x": 810.34375,
+          "right": 1057.28125,
+          "width": 246.9375
+        },
+        {
+          "id": "inbox-314-msg-carlos-sequencia",
+          "x": 836.84375,
+          "right": 1057.28125,
+          "width": 220.4375
+        },
+        {
+          "id": "inbox-314-msg-aria",
+          "x": 750.15625,
+          "right": 1057.28125,
+          "width": 307.125
+        },
+        {
+          "id": "inbox-314-nota-atendimento",
+          "x": 841.328125,
+          "right": 1057.28125,
+          "width": 215.953125
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "x": 819.890625,
+          "right": 1057.28125,
+          "width": 237.390625
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "x": 772.140625,
+          "right": 1057.28125,
+          "width": 285.140625
+        }
+      ],
+      "dias": [
+        {
+          "rotulo": "Ontem",
+          "desvioCentro": 0.0078125
+        },
+        {
+          "rotulo": "Hoje",
+          "desvioCentro": 0.0078125
+        }
+      ],
+      "lida": true,
+      "erroLegado": true,
+      "thread": {
+        "x": 596,
+        "right": 1092,
+        "width": 496
+      },
+      "documento": {
+        "width": 1440,
+        "height": 900
+      },
+      "scroll": {
+        "height": 636,
+        "scrollHeight": 1180
+      }
+    },
+    "menuOk": {
+      "dentro": true,
+      "foco": true
+    },
+    "retorno": true,
+    "transferencia": {
+      "foraHeader": true,
+      "emThread": true,
+      "texto": "Transferido de Secretaria"
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "tema": "light",
+    "width": 1024,
+    "height": 768,
+    "contagem": {
+      "mensagens": 9,
+      "notas": 4,
+      "temMais": false,
+      "antes": true
+    },
+    "autoriaAPI": {
+      "voce": true,
+      "anterior": true
+    },
+    "metricas": {
+      "autores": {
+        "voce": {
+          "cabecalho": null,
+          "texto": "314 Você: confirmei os detalhes para a família.21:14"
+        },
+        "camila": {
+          "cabecalho": "Camila",
+          "texto": "Camila314 Camila: organizei o atendimento.21:15"
+        },
+        "carlos": {
+          "cabecalho": "Carlos",
+          "texto": "Carlos314 Carlos: vou conferir os horários.21:15"
+        },
+        "carlos-sequencia": {
+          "cabecalho": null,
+          "texto": "314 Carlos: retorno em seguida.21:16"
+        },
+        "aria": {
+          "cabecalho": "Aria · IA",
+          "texto": "Aria · IA314 Aria: resumo fictício persistido, sem geração ou envio.21:16"
+        }
+      },
+      "voceAnterior": "Você",
+      "antesVoce": "inbox-demo-msg-beatriz-falhou-307",
+      "notas": [
+        {
+          "id": "inbox-314-nota-atendimento",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota do atendimento.\nConferir os horários da família.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "role": "note",
+          "texto": "Nota da oportunidade · só equipe314 Nota da oportunidade.\nFamília prefere o período da tarde.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota histórica sem autor identificado.Autor não informado21:18",
+          "acoes": 0
+        }
+      ],
+      "linhas": [
+        {
+          "id": "inbox-314-msg-ontem",
+          "x": 559,
+          "right": 788.671875,
+          "width": 229.671875
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-ontem-307",
+          "x": 559,
+          "right": 838.828125,
+          "width": 279.828125
+        },
+        {
+          "id": "inbox-demo-nota-beatriz-307",
+          "x": 679.40625,
+          "right": 989,
+          "width": 309.59375
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-307",
+          "x": 559,
+          "right": 790.3125,
+          "width": 231.3125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-falhou-307",
+          "x": 829.8125,
+          "right": 989,
+          "width": 159.1875
+        },
+        {
+          "id": "inbox-314-msg-voce",
+          "x": 679.40625,
+          "right": 989,
+          "width": 309.59375
+        },
+        {
+          "id": "inbox-314-msg-camila",
+          "x": 735.609375,
+          "right": 989,
+          "width": 253.390625
+        },
+        {
+          "id": "inbox-314-msg-carlos",
+          "x": 742.0625,
+          "right": 989,
+          "width": 246.9375
+        },
+        {
+          "id": "inbox-314-msg-carlos-sequencia",
+          "x": 768.5625,
+          "right": 989,
+          "width": 220.4375
+        },
+        {
+          "id": "inbox-314-msg-aria",
+          "x": 679.40625,
+          "right": 989,
+          "width": 309.59375
+        },
+        {
+          "id": "inbox-314-nota-atendimento",
+          "x": 773.046875,
+          "right": 989,
+          "width": 215.953125
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "x": 751.609375,
+          "right": 989,
+          "width": 237.390625
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "x": 703.859375,
+          "right": 989,
+          "width": 285.140625
+        }
+      ],
+      "dias": [
+        {
+          "rotulo": "Ontem",
+          "desvioCentro": 0.0078125
+        },
+        {
+          "rotulo": "Hoje",
+          "desvioCentro": 0.0078125
+        }
+      ],
+      "lida": true,
+      "erroLegado": true,
+      "thread": {
+        "x": 524,
+        "right": 1024,
+        "width": 500
+      },
+      "documento": {
+        "width": 1024,
+        "height": 768
+      },
+      "scroll": {
+        "height": 504,
+        "scrollHeight": 1180
+      }
+    },
+    "menuOk": {
+      "dentro": true,
+      "foco": true
+    },
+    "retorno": true,
+    "transferencia": {
+      "foraHeader": true,
+      "emThread": true,
+      "texto": "Transferido de Secretaria"
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "tema": "light",
+    "width": 390,
+    "height": 844,
+    "contagem": {
+      "mensagens": 9,
+      "notas": 4,
+      "temMais": false,
+      "antes": true
+    },
+    "autoriaAPI": {
+      "voce": true,
+      "anterior": true
+    },
+    "metricas": {
+      "autores": {
+        "voce": {
+          "cabecalho": null,
+          "texto": "314 Você: confirmei os detalhes para a família.21:14"
+        },
+        "camila": {
+          "cabecalho": "Camila",
+          "texto": "Camila314 Camila: organizei o atendimento.21:15"
+        },
+        "carlos": {
+          "cabecalho": "Carlos",
+          "texto": "Carlos314 Carlos: vou conferir os horários.21:15"
+        },
+        "carlos-sequencia": {
+          "cabecalho": null,
+          "texto": "314 Carlos: retorno em seguida.21:16"
+        },
+        "aria": {
+          "cabecalho": "Aria · IA",
+          "texto": "Aria · IA314 Aria: resumo fictício persistido, sem geração ou envio.21:16"
+        }
+      },
+      "voceAnterior": "Você",
+      "antesVoce": "inbox-demo-msg-beatriz-falhou-307",
+      "notas": [
+        {
+          "id": "inbox-314-nota-atendimento",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota do atendimento.\nConferir os horários da família.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "role": "note",
+          "texto": "Nota da oportunidade · só equipe314 Nota da oportunidade.\nFamília prefere o período da tarde.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota histórica sem autor identificado.Autor não informado21:18",
+          "acoes": 0
+        }
+      ],
+      "linhas": [
+        {
+          "id": "inbox-314-msg-ontem",
+          "x": 10,
+          "right": 239.671875,
+          "width": 229.671875
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-ontem-307",
+          "x": 10,
+          "right": 276.390625,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-demo-nota-beatriz-307",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-307",
+          "x": 10,
+          "right": 241.3125,
+          "width": 231.3125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-falhou-307",
+          "x": 220.8125,
+          "right": 380,
+          "width": 159.1875
+        },
+        {
+          "id": "inbox-314-msg-voce",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-314-msg-camila",
+          "x": 126.609375,
+          "right": 380,
+          "width": 253.390625
+        },
+        {
+          "id": "inbox-314-msg-carlos",
+          "x": 133.0625,
+          "right": 380,
+          "width": 246.9375
+        },
+        {
+          "id": "inbox-314-msg-carlos-sequencia",
+          "x": 159.5625,
+          "right": 380,
+          "width": 220.4375
+        },
+        {
+          "id": "inbox-314-msg-aria",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-314-nota-atendimento",
+          "x": 164.046875,
+          "right": 380,
+          "width": 215.953125
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "x": 142.609375,
+          "right": 380,
+          "width": 237.390625
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        }
+      ],
+      "dias": [
+        {
+          "rotulo": "Ontem",
+          "desvioCentro": 0.0078125
+        },
+        {
+          "rotulo": "Hoje",
+          "desvioCentro": 0.0078125
+        }
+      ],
+      "lida": true,
+      "erroLegado": true,
+      "thread": {
+        "x": 0,
+        "right": 390,
+        "width": 390
+      },
+      "documento": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "height": 415,
+        "scrollHeight": 1193
+      }
+    },
+    "menuOk": {
+      "dentro": true,
+      "foco": true
+    },
+    "retorno": true,
+    "transferencia": {
+      "foraHeader": true,
+      "emThread": true,
+      "texto": "Transferido de Secretaria"
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "tema": "dark",
+    "width": 1440,
+    "height": 900,
+    "contagem": {
+      "mensagens": 9,
+      "notas": 4,
+      "temMais": false,
+      "antes": true
+    },
+    "autoriaAPI": {
+      "voce": true,
+      "anterior": true
+    },
+    "metricas": {
+      "autores": {
+        "voce": {
+          "cabecalho": null,
+          "texto": "314 Você: confirmei os detalhes para a família.21:14"
+        },
+        "camila": {
+          "cabecalho": "Camila",
+          "texto": "Camila314 Camila: organizei o atendimento.21:15"
+        },
+        "carlos": {
+          "cabecalho": "Carlos",
+          "texto": "Carlos314 Carlos: vou conferir os horários.21:15"
+        },
+        "carlos-sequencia": {
+          "cabecalho": null,
+          "texto": "314 Carlos: retorno em seguida.21:16"
+        },
+        "aria": {
+          "cabecalho": "Aria · IA",
+          "texto": "Aria · IA314 Aria: resumo fictício persistido, sem geração ou envio.21:16"
+        }
+      },
+      "voceAnterior": "Você",
+      "antesVoce": "inbox-demo-msg-beatriz-falhou-307",
+      "notas": [
+        {
+          "id": "inbox-314-nota-atendimento",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota do atendimento.\nConferir os horários da família.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "role": "note",
+          "texto": "Nota da oportunidade · só equipe314 Nota da oportunidade.\nFamília prefere o período da tarde.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota histórica sem autor identificado.Autor não informado21:18",
+          "acoes": 0
+        }
+      ],
+      "linhas": [
+        {
+          "id": "inbox-314-msg-ontem",
+          "x": 630.71875,
+          "right": 860.390625,
+          "width": 229.671875
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-ontem-307",
+          "x": 630.71875,
+          "right": 910.546875,
+          "width": 279.828125
+        },
+        {
+          "id": "inbox-demo-nota-beatriz-307",
+          "x": 750.15625,
+          "right": 1057.28125,
+          "width": 307.125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-307",
+          "x": 630.71875,
+          "right": 862.03125,
+          "width": 231.3125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-falhou-307",
+          "x": 898.09375,
+          "right": 1057.28125,
+          "width": 159.1875
+        },
+        {
+          "id": "inbox-314-msg-voce",
+          "x": 750.15625,
+          "right": 1057.28125,
+          "width": 307.125
+        },
+        {
+          "id": "inbox-314-msg-camila",
+          "x": 803.890625,
+          "right": 1057.28125,
+          "width": 253.390625
+        },
+        {
+          "id": "inbox-314-msg-carlos",
+          "x": 810.34375,
+          "right": 1057.28125,
+          "width": 246.9375
+        },
+        {
+          "id": "inbox-314-msg-carlos-sequencia",
+          "x": 836.84375,
+          "right": 1057.28125,
+          "width": 220.4375
+        },
+        {
+          "id": "inbox-314-msg-aria",
+          "x": 750.15625,
+          "right": 1057.28125,
+          "width": 307.125
+        },
+        {
+          "id": "inbox-314-nota-atendimento",
+          "x": 841.328125,
+          "right": 1057.28125,
+          "width": 215.953125
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "x": 819.890625,
+          "right": 1057.28125,
+          "width": 237.390625
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "x": 772.140625,
+          "right": 1057.28125,
+          "width": 285.140625
+        }
+      ],
+      "dias": [
+        {
+          "rotulo": "Ontem",
+          "desvioCentro": 0.0078125
+        },
+        {
+          "rotulo": "Hoje",
+          "desvioCentro": 0.0078125
+        }
+      ],
+      "lida": true,
+      "erroLegado": true,
+      "thread": {
+        "x": 596,
+        "right": 1092,
+        "width": 496
+      },
+      "documento": {
+        "width": 1440,
+        "height": 900
+      },
+      "scroll": {
+        "height": 636,
+        "scrollHeight": 1180
+      }
+    },
+    "menuOk": {
+      "dentro": true,
+      "foco": true
+    },
+    "retorno": true,
+    "transferencia": {
+      "foraHeader": true,
+      "emThread": true,
+      "texto": "Transferido de Secretaria"
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "tema": "dark",
+    "width": 1024,
+    "height": 768,
+    "contagem": {
+      "mensagens": 9,
+      "notas": 4,
+      "temMais": false,
+      "antes": true
+    },
+    "autoriaAPI": {
+      "voce": true,
+      "anterior": true
+    },
+    "metricas": {
+      "autores": {
+        "voce": {
+          "cabecalho": null,
+          "texto": "314 Você: confirmei os detalhes para a família.21:14"
+        },
+        "camila": {
+          "cabecalho": "Camila",
+          "texto": "Camila314 Camila: organizei o atendimento.21:15"
+        },
+        "carlos": {
+          "cabecalho": "Carlos",
+          "texto": "Carlos314 Carlos: vou conferir os horários.21:15"
+        },
+        "carlos-sequencia": {
+          "cabecalho": null,
+          "texto": "314 Carlos: retorno em seguida.21:16"
+        },
+        "aria": {
+          "cabecalho": "Aria · IA",
+          "texto": "Aria · IA314 Aria: resumo fictício persistido, sem geração ou envio.21:16"
+        }
+      },
+      "voceAnterior": "Você",
+      "antesVoce": "inbox-demo-msg-beatriz-falhou-307",
+      "notas": [
+        {
+          "id": "inbox-314-nota-atendimento",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota do atendimento.\nConferir os horários da família.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "role": "note",
+          "texto": "Nota da oportunidade · só equipe314 Nota da oportunidade.\nFamília prefere o período da tarde.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota histórica sem autor identificado.Autor não informado21:18",
+          "acoes": 0
+        }
+      ],
+      "linhas": [
+        {
+          "id": "inbox-314-msg-ontem",
+          "x": 559,
+          "right": 788.671875,
+          "width": 229.671875
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-ontem-307",
+          "x": 559,
+          "right": 838.828125,
+          "width": 279.828125
+        },
+        {
+          "id": "inbox-demo-nota-beatriz-307",
+          "x": 679.40625,
+          "right": 989,
+          "width": 309.59375
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-307",
+          "x": 559,
+          "right": 790.3125,
+          "width": 231.3125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-falhou-307",
+          "x": 829.8125,
+          "right": 989,
+          "width": 159.1875
+        },
+        {
+          "id": "inbox-314-msg-voce",
+          "x": 679.40625,
+          "right": 989,
+          "width": 309.59375
+        },
+        {
+          "id": "inbox-314-msg-camila",
+          "x": 735.609375,
+          "right": 989,
+          "width": 253.390625
+        },
+        {
+          "id": "inbox-314-msg-carlos",
+          "x": 742.0625,
+          "right": 989,
+          "width": 246.9375
+        },
+        {
+          "id": "inbox-314-msg-carlos-sequencia",
+          "x": 768.5625,
+          "right": 989,
+          "width": 220.4375
+        },
+        {
+          "id": "inbox-314-msg-aria",
+          "x": 679.40625,
+          "right": 989,
+          "width": 309.59375
+        },
+        {
+          "id": "inbox-314-nota-atendimento",
+          "x": 773.046875,
+          "right": 989,
+          "width": 215.953125
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "x": 751.609375,
+          "right": 989,
+          "width": 237.390625
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "x": 703.859375,
+          "right": 989,
+          "width": 285.140625
+        }
+      ],
+      "dias": [
+        {
+          "rotulo": "Ontem",
+          "desvioCentro": 0.0078125
+        },
+        {
+          "rotulo": "Hoje",
+          "desvioCentro": 0.0078125
+        }
+      ],
+      "lida": true,
+      "erroLegado": true,
+      "thread": {
+        "x": 524,
+        "right": 1024,
+        "width": 500
+      },
+      "documento": {
+        "width": 1024,
+        "height": 768
+      },
+      "scroll": {
+        "height": 504,
+        "scrollHeight": 1180
+      }
+    },
+    "menuOk": {
+      "dentro": true,
+      "foco": true
+    },
+    "retorno": true,
+    "transferencia": {
+      "foraHeader": true,
+      "emThread": true,
+      "texto": "Transferido de Secretaria"
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "tema": "dark",
+    "width": 390,
+    "height": 844,
+    "contagem": {
+      "mensagens": 9,
+      "notas": 4,
+      "temMais": false,
+      "antes": true
+    },
+    "autoriaAPI": {
+      "voce": true,
+      "anterior": true
+    },
+    "metricas": {
+      "autores": {
+        "voce": {
+          "cabecalho": null,
+          "texto": "314 Você: confirmei os detalhes para a família.21:14"
+        },
+        "camila": {
+          "cabecalho": "Camila",
+          "texto": "Camila314 Camila: organizei o atendimento.21:15"
+        },
+        "carlos": {
+          "cabecalho": "Carlos",
+          "texto": "Carlos314 Carlos: vou conferir os horários.21:15"
+        },
+        "carlos-sequencia": {
+          "cabecalho": null,
+          "texto": "314 Carlos: retorno em seguida.21:16"
+        },
+        "aria": {
+          "cabecalho": "Aria · IA",
+          "texto": "Aria · IA314 Aria: resumo fictício persistido, sem geração ou envio.21:16"
+        }
+      },
+      "voceAnterior": "Você",
+      "antesVoce": "inbox-demo-msg-beatriz-falhou-307",
+      "notas": [
+        {
+          "id": "inbox-314-nota-atendimento",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota do atendimento.\nConferir os horários da família.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "role": "note",
+          "texto": "Nota da oportunidade · só equipe314 Nota da oportunidade.\nFamília prefere o período da tarde.Carlos21:17",
+          "acoes": 0
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "role": "note",
+          "texto": "Nota interna · só equipe314 Nota histórica sem autor identificado.Autor não informado21:18",
+          "acoes": 0
+        }
+      ],
+      "linhas": [
+        {
+          "id": "inbox-314-msg-ontem",
+          "x": 10,
+          "right": 239.671875,
+          "width": 229.671875
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-ontem-307",
+          "x": 10,
+          "right": 276.390625,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-demo-nota-beatriz-307",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-307",
+          "x": 10,
+          "right": 241.3125,
+          "width": 231.3125
+        },
+        {
+          "id": "inbox-demo-msg-beatriz-falhou-307",
+          "x": 220.8125,
+          "right": 380,
+          "width": 159.1875
+        },
+        {
+          "id": "inbox-314-msg-voce",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-314-msg-camila",
+          "x": 126.609375,
+          "right": 380,
+          "width": 253.390625
+        },
+        {
+          "id": "inbox-314-msg-carlos",
+          "x": 133.0625,
+          "right": 380,
+          "width": 246.9375
+        },
+        {
+          "id": "inbox-314-msg-carlos-sequencia",
+          "x": 159.5625,
+          "right": 380,
+          "width": 220.4375
+        },
+        {
+          "id": "inbox-314-msg-aria",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        },
+        {
+          "id": "inbox-314-nota-atendimento",
+          "x": 164.046875,
+          "right": 380,
+          "width": 215.953125
+        },
+        {
+          "id": "inbox-314-nota-oportunidade",
+          "x": 142.609375,
+          "right": 380,
+          "width": 237.390625
+        },
+        {
+          "id": "inbox-314-nota-sem-autor",
+          "x": 113.609375,
+          "right": 380,
+          "width": 266.390625
+        }
+      ],
+      "dias": [
+        {
+          "rotulo": "Ontem",
+          "desvioCentro": 0.0078125
+        },
+        {
+          "rotulo": "Hoje",
+          "desvioCentro": 0.0078125
+        }
+      ],
+      "lida": true,
+      "erroLegado": true,
+      "thread": {
+        "x": 0,
+        "right": 390,
+        "width": 390
+      },
+      "documento": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "height": 415,
+        "scrollHeight": 1193
+      }
+    },
+    "menuOk": {
+      "dentro": true,
+      "foco": true
+    },
+    "retorno": true,
+    "transferencia": {
+      "foraHeader": true,
+      "emThread": true,
+      "texto": "Transferido de Secretaria"
+    },
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  }
+]

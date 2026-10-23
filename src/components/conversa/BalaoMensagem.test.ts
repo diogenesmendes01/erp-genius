@@ -1,7 +1,8 @@
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
+import { notaComoMensagem } from "./itens-thread";
 import { BalaoMensagem } from "./BalaoMensagem";
 import { CartaoPix } from "./CartaoPix";
 import { EnqueteLeitura } from "./EnqueteLeitura";
@@ -103,4 +104,35 @@ describe("QuadroDocumento", () => {
     expect(h).not.toContain("<iframe");
     expect(h).toContain("Abrir em nova aba");
   });
+});
+
+const visual = (p: Partial<MensagemThread>, extra: Partial<ComponentProps<typeof BalaoMensagem>> = {}) => renderToStaticMarkup(createElement(BalaoMensagem,{m:{...base,...p},fuso:"America/Sao_Paulo",aoComando:()=>{},recursos:()=>false,...extra}));
+describe("balões por autoria e sequência", () => {
+  it("entrada tem cauda esquerda e participante só em grupo",()=>{
+    const h=visual({direcao:"ENTRADA",origem:null},{autor:"cliente"});
+    for(const c of ["bg-entry","rounded-tl-[4px]","max-w-[min(560px,72%)]","leading-[1.45]"])expect(h).toContain(c);
+    expect(h).not.toContain('mb-[3px]');
+    expect(visual({direcao:"ENTRADA",participanteNome:"Pai do João"},{autor:"cliente"})).toContain("Pai do João");
+  });
+  it("humano próprio é Você; outra pessoa mantém nome e cor de contraste306",()=>{
+    expect(visual({propria:true,autorNome:"Carlos"},{autor:"humano"})).toContain("Você");
+    const h=visual({propria:false,autorNome:"Camila"},{autor:"humano"});
+    expect(h).toContain("Camila");expect(h).toContain("text-brand-800");expect(h).toContain("bg-entry-accent");
+  });
+  it("Aria roxa e primeira autoria; sequência sem autor/cauda",()=>{
+    const h=visual({origem:"IA"},{autor:"aria"});expect(h).toContain("bg-bubble-ia");expect(h).toContain("Aria · IA");expect(h).toContain("text-ai-700");
+    const seq=visual({origem:"IA"},{autor:"aria",emSequencia:true});expect(seq).not.toContain("rounded-tr-[4px]");expect(seq).not.toContain("Aria · IA");
+  });
+  it("hora mono10,5/status13 e destaque de busca preservam erro/lida",()=>{
+    const h=visual({status:"LIDA"},{autor:"humano",destacada:true});expect(h).toContain("font-mono");expect(h).toContain("text-[10.5px]");expect(h).toMatch(/<svg[^>]*width="13"/);expect(h).toContain("ring-2 ring-amber-600");
+    expect(visual({status:"FALHOU"},{autor:"humano"})).toContain("Não enviada");
+  });
+  it("nota preserva origem/autor/hora/XSS e não cria menu/status/mídia mesmo com props impróprias",()=>{
+    const n={id:"n",nota:"linha1\n<script>segura</script>",autorNome:"Ana",criadoEm:"2026-10-17T15:30:00Z",origem:"atendimento" as const};
+    const h=visual({...notaComoMensagem(n),tipo:"IMAGEM",midiaPath:"/api/whatsapp/midia/m",status:"ENVIADA",templateNome:"modelo externo"},{autor:"nota",nota:n,menuAberto:true});
+    for(const c of ['role="note"','data-nota-id="n"',"bg-bubble-note","border-dashed","border-amber-600","Nota interna · só equipe","Ana","12:30","linha1\n&lt;script&gt;segura&lt;/script&gt;"])expect(h).toContain(c);
+    for(const proibido of ["Opções da mensagem",'role="menu"','title="Enviada"',"<img",'Modelo:'])expect(h).not.toContain(proibido);
+    const oportunidade={...n,origem:"oportunidade" as const,autorNome:null};const outro=visual(notaComoMensagem(oportunidade),{autor:"nota",nota:oportunidade});expect(outro).toContain("Nota da oportunidade · só equipe");expect(outro).toContain("Autor não informado");
+  });
+  it("mensagem sem comandos também não oferece gatilho sem ação",()=>{expect(visual({},{comandos:[]})).not.toContain("Opções da mensagem");});
 });

@@ -1,0 +1,539 @@
+{
+  "versao": 1,
+  "issue": 314,
+  "fontes": {
+    "app": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "harness": "944e1736683aae58d85d00c6751dc8093b449b07",
+    "prototipoHtmlSha256": "3ef115c8eb95091b0841a69af982442cf8db7d9f0f96bd2b7b9c8f46e6901845",
+    "helperDom": {
+      "arquivo": "scripts/visual/anonimizar-telefones.mjs",
+      "sha256": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+      "versao": 1,
+      "politica": "telefones +55 do DOM anonimizados após interações e antes da foto; HTML original intacto; app usa fixture fictícia com +5500"
+    }
+  },
+  "execucoes": {
+    "node": "22.23.2",
+    "chrome": "local",
+    "prototipo": {
+      "session_id": 73069,
+      "exit_code": 0
+    },
+    "app": {
+      "session_id": 55981,
+      "exit_code": 0
+    }
+  },
+  "capturas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "app-escuro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "946b265cc1f619c334555044016af1cc3501020225b69489d36a804c11042c17",
+      "bytes": 40462,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "app-claro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "94fae8200a1c58b58524d489c121611cad26568652a6b39f79ff123d30e83efc",
+      "bytes": 40840,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "app-escuro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "6601efc75d57c4174b835581c709458676bed271294dc65cb9b5b9a4998e65fb",
+      "bytes": 159317,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "app-escuro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "3e22c0b8530df79bb1da54bc8b754a1a86dc11a0b8e9ba903d193c26729f9323",
+      "bytes": 112064,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "app-escuro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "946b265cc1f619c334555044016af1cc3501020225b69489d36a804c11042c17",
+      "bytes": 40462,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "app-claro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "1dc5f791001261cbba72ec6ce4e03c5b656d0ca46d664683aa865bf0cbea5290",
+      "bytes": 159368,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "app-claro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "242220033c9b0b501afbf6c408181a5f639459fb3a1ceb6de6b2be862d5f6b30",
+      "bytes": 111840,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "app-claro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "94fae8200a1c58b58524d489c121611cad26568652a6b39f79ff123d30e83efc",
+      "bytes": 40840,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "e8bf7e825822fa548ac9d09f36272364a30e59757badeaf50ecc7abe7ac8bd67",
+      "bytes": 192055,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "9d168cdd16d7dd4c2edf848fe15ef4704326ff3b12352fb6a659a72e64751372",
+      "bytes": 136976,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "b1aaeec72a033e60e16a6b319ab36317dfafbe575472f26e8d3fdefa75461bb0",
+      "bytes": 58101,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "fa94c69543b2d9a8bdd827fdd5fd7b304055b665b1800adc11e188fd8d2cbd5a",
+      "bytes": 191481,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "9f82a3bfe9426a2391038b48832c69e4f4b9a21af37f81dff67556f95b9de4aa",
+      "bytes": 135798,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null,
+      "sha256": "2f105dba5a666afd44796c5ca62759b6f32f7ddf687f5f5115ec92304dc9b24f",
+      "bytes": 57866,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "prototipo-escuro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "bb67ef17bbc8f93b080fec7d5f00c56dc5e640da473c7ccd958365ce5f6387b0",
+      "bytes": 44360,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "prototipo-claro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02",
+      "bytes": 54029,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "prototipo-escuro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "4d3a7e4715602d49c7e86615ee7c2557980b269cc5f08c746c1211d298de9572",
+      "bytes": 196671,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "prototipo-escuro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "55e0f3e3c0d85d3b5ca5e89a33a23b8a227d37f52ad98fd936f21f69a6d4c3f5",
+      "bytes": 128785,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "prototipo-escuro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "69c8232fe0bc96c47c002da0d223a91585faa726ab6078a70713103a34982dde",
+      "bytes": 54251,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "prototipo-claro-desktop-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "53fc285d8fdb8611d8542c5ecf2c96b5d89cbe3f360485287c679dc3e2a6cd53",
+      "bytes": 197841,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "prototipo-claro-tablet-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "8ee76130c71d7f7b68eec8fab9bdb5565dd8e33d0fd5e0484e055e9f27258fb2",
+      "bytes": 128889,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "prototipo-claro-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02",
+      "bytes": 54029,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "6e64f2ee5ec485f9c34a167e233c147e98c0f93a6a8bd9640f6796b05c66e751",
+      "bytes": 188584,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "e99420edcad620db8cbd7ce8daa6ab56932c706d5c9de0ac5bb9a61722bc34ef",
+      "bytes": 124848,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "871a6d8a1836e3c58099dc763a46a5a7c0e0ec8932212df1ade98c6854270f3a",
+      "bytes": 54000,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "dc0e380b07b290f76906a96491ad3377e05e4f0915710cdc9434b8d492559ed4",
+      "bytes": 188573,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "f077fe1f4790ccf9334daa1615b93eaf3bd195b88ca431b5ac6169025f9d0d8a",
+      "bytes": 123773,
+      "inspecao": "individual, DEV A"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "51b3062993f17565cff4170a11544a63a57c4909c9a9891a5f7766cff0617df3",
+      "bytes": 52874,
+      "inspecao": "individual, DEV A"
+    }
+  ],
+  "limites": [
+    "PNGs preservados somente localmente por orientação do integrador; não versionados.",
+    "Inspeção DEV não substitui aceite TESTER.",
+    "Protótipo contém cartões futuros E2/E3/E4; nenhuma ação de negócio foi executada.",
+    "Janela visível do protótipo celular pode iniciar em trecho distinto por auto-scroll do original; conteúdo/projeto original intacto."
+  ]
+}
