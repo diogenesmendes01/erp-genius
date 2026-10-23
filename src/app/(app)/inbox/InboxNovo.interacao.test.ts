@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
+  modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   avisoThread: null as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
@@ -19,6 +20,7 @@ vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
     ...real,
+    useSyncExternalStore: (() => m.modo) as unknown as typeof real.useSyncExternalStore,
     useState: ((i: unknown) => {
       if (!m.g) return real.useState(i as never);
       const estado = m.g.useState(i);
@@ -73,6 +75,7 @@ let respostaLista: () => Promise<Response>;
 let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
+  m.modo = null;
   vi.useFakeTimers();
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
@@ -109,7 +112,7 @@ describe("InboxNovo: identidades React dos painéis", () => {
     const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
     tela(); await esvaziar();
     const anteriores = paineis(tela());
-    expect(anteriores).toHaveLength(4); // painel desktop e Drawer desta fonte
+    expect(anteriores).toHaveLength(2); // uma única montagem do painel da casca308
     expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
     for (let i = 0; i < anteriores.length; i += 2) {
       expect(anteriores[i].key).not.toBeNull();
@@ -122,7 +125,7 @@ describe("InboxNovo: identidades React dos painéis", () => {
     lista(tela()).aoSelecionar("a2");
     tela(); await esvaziar();
     const atuais = paineis(tela());
-    expect(atuais).toHaveLength(4);
+    expect(atuais).toHaveLength(2);
     for (const [i, atual] of atuais.entries()) {
       expect(atual.props.atendimentoId).toBe("a2");
       expect(atual.type).toBe(anteriores[i].type);
@@ -358,8 +361,9 @@ describe("InboxNovo: leitura ao abrir", () => {
     expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
   });
   it("não lê entrada quando o painel ocupa a vista da conversa no celular", async () => {
+    m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
     const t = tela(); await esvaziar(); marcar.mockClear();
-    (conversa(t) as unknown as { aoAbrirPainel(): void }).aoAbrirPainel();
+    cabecalho(t).aoAlternarPainel();
     regiaoConversaVisivel = false; tela();
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-painel", conversaId: "cv1" });
     expect(marcar).not.toHaveBeenCalled();
@@ -637,6 +641,23 @@ describe("contagens no estado produtor para os chips", () => {
     expect(m.contagens).toEqual({ ...inicial, naoLidas: ok ? 0 : 8 });
   });
 });
+const cabecalho = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as unknown as import("./ConversaAberta").PropsConversaAberta;
+describe("ligação do painel à casca", () => {
+  it("toggle considera automático efetivo, não apenas escolha true", () => {
+    m.modo = "tres"; vi.stubGlobal("window", { innerWidth: 1440 });
+    expect(cabecalho(tela()).painelAberto).toBe(true);
+    cabecalho(tela()).aoAlternarPainel(); expect(cabecalho(tela()).painelAberto).toBe(false);
+    cabecalho(tela()).aoAlternarPainel(); expect(cabecalho(tela()).painelAberto).toBe(true);
+  });
+  it("abaixo do corte muda vista; ao cruzar três colunas retorna ao automático", () => {
+    m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
+    cabecalho(tela()).aoAlternarPainel(); expect(elementos(tela())[0].props["data-vista"]).toBe("painel");
+    m.modo = "tres"; tela(); const atual = tela();
+    expect(cabecalho(atual).painelAberto).toBe(true); expect(cabecalho(atual).painelAuto).toBe(true);
+    expect(elementos(atual)[0].props["data-vista"]).toBe("conversa");
+  });
+});
+
 describe("C1: recarga de lista e contagens em lote", () => {
   const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
   const render = (p: PropsInboxNovo = { ...props, selecionado: null }) => {

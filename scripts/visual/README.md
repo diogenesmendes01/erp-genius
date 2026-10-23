@@ -72,10 +72,17 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 34 PNGs: 18 do app e 16 do protótipo. O painel do
+`--estado todos` produz 38 PNGs: 20 do app e 18 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
+
+## Atualização da casca #308
+
+O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
+
+A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
+
 # Telefones em evidências
 
 A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
@@ -92,3 +99,5 @@ um mapa dos valores originais. Reaplicar depois de nova renderização.
 O teste do DOM real usa Chrome já instalado, sem baixar navegador:
 `PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
 Esse teste dirigido de navegador é separado da suíte unitária Vitest.
+
+Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.

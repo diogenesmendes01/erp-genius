@@ -1,0 +1,94 @@
+[
+  {
+    "width": 1024,
+    "raizes": [
+      {
+        "seletor": "section[aria-label=\"Conversas\"]",
+        "inert": true
+      },
+      {
+        "seletor": "section[aria-label=\"Conversa\"]",
+        "inert": true
+      },
+      {
+        "seletor": "aside.sticky",
+        "inert": true
+      }
+    ],
+    "nosAT": [
+      {
+        "seletor": "section[aria-label=\"Conversas\"]",
+        "ignorado": true
+      },
+      {
+        "seletor": "section[aria-label=\"Conversa\"]",
+        "ignorado": true
+      },
+      {
+        "seletor": "aside.sticky",
+        "ignorado": true
+      }
+    ],
+    "role": "dialog",
+    "modal": "true",
+    "externo": {
+      "x": 297.4296875,
+      "y": 73,
+      "inert": true,
+      "alvoClicavel": false,
+      "texto": "Abrir atendimento"
+    },
+    "cliqueRecebido": false,
+    "arvoreContemNovo": false,
+    "nosATExternos": [],
+    "acaoExecutada": false,
+    "colunaSolta": true,
+    "umaSolta": true
+  },
+  {
+    "width": 390,
+    "raizes": [
+      {
+        "seletor": "section[aria-label=\"Conversas\"]",
+        "inert": true
+      },
+      {
+        "seletor": "section[aria-label=\"Conversa\"]",
+        "inert": true
+      },
+      {
+        "seletor": "aside.sticky",
+        "inert": true
+      }
+    ],
+    "nosAT": [
+      {
+        "seletor": "section[aria-label=\"Conversas\"]",
+        "ignorado": true
+      },
+      {
+        "seletor": "section[aria-label=\"Conversa\"]",
+        "ignorado": true
+      },
+      {
+        "seletor": "aside.sticky",
+        "ignorado": true
+      }
+    ],
+    "role": "dialog",
+    "modal": "true",
+    "externo": {
+      "x": 0,
+      "y": 0,
+      "inert": true,
+      "alvoClicavel": false,
+      "texto": "Abrir atendimento"
+    },
+    "cliqueRecebido": false,
+    "arvoreContemNovo": false,
+    "nosATExternos": [],
+    "acaoExecutada": false,
+    "colunaSolta": true,
+    "umaSolta": true
+  }
+]

@@ -100,7 +100,7 @@ describe("ConversaAberta", () => {
       optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null, linhaComercial: false, status: "ABERTO_SEM_RESPONSAVEL", responsavelNome: null, prazoRespostaEm: null,
       fixada: false, silenciada: false, grupo: false, responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null };
     const conversa = { mensagens: [], notas: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: vi.fn() };
-    const h = renderToStaticMarkup(createElement(ConversaAberta, { item, usuario: { id: "eu", papeis: [Papel.FINANCEIRO] }, fuso: null, conversa, aoVoltar: vi.fn(), aoAbrirPainel: vi.fn(), aoMudar: vi.fn() } as never));
+    const h = renderToStaticMarkup(createElement(ConversaAberta, { item, usuario: { id: "eu", papeis: [Papel.FINANCEIRO] }, fuso: null, conversa, aoVoltar: vi.fn(), aoAlternarPainel: vi.fn(), aoMudar: vi.fn() } as never));
     for (const t of ["Maria Souza", "Financeiro", "Cobrança", "Na fila", "Sem responsável", "Assumir"]) expect(h).toContain(t);
     expect(h).not.toContain("+5511999990000");
   });

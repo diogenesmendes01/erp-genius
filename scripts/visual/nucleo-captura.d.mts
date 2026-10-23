@@ -10,3 +10,4 @@ export declare function caminhoNoNpm(url: string, nodeModules: string): string;
 export declare function tipoDoArquivo(caminho: string): string;
 export declare function cancelamentoDeMensagensRecuperado(pedido: { url: string; method: string; erro: string }, concluidos: Set<string>, base: string, conteudoCarregado: boolean): boolean;
 export declare function combinacoes(opcoes: { alvos: AlvoVisual[]; estados: string[] }): { alvo: AlvoVisual; tema: TemaVisual; tamanho: TamanhoVisual; estado: string }[];
+export declare function problemaReactNaCaptura(texto: string): boolean;

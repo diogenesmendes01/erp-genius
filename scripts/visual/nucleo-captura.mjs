@@ -8,6 +8,7 @@ export const TAMANHOS = Object.freeze({ desktop: [1440, 900], tablet: [1024, 768
 export const TEMAS = Object.freeze(["escuro", "claro"]);
 export const ESTADOS = Object.freeze({
   conversa: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-escuro-admin-desktop.png") },
+  "painel-fechado": { tamanhos: ["desktop"], prototipo: true },
   "sem-selecao": { tamanhos: ["desktop"], prototipo: false },
   "humano-compositor": { tamanhos: ["desktop"], prototipo: true, referencia: referencia("prototipo-claro-admin-desktop-humano-compositor.png") },
   "celular-lista": { tamanhos: ["celular"], prototipo: true },
@@ -64,4 +65,9 @@ export function combinacoes({ alvos, estados }) {
     for (const tema of TEMAS) for (const tamanho of definido.tamanhos) resultado.push({ alvo, tema, tamanho, estado });
   }
   return resultado;
+}
+
+/** Falhas React visíveis no console também invalidam a casca, mesmo sem pageerror. */
+export function problemaReactNaCaptura(texto) {
+  return /hydration|hydrating|hydrated|did not match|didn't match|Each child in a list should have a unique|two children with the same key/i.test(texto);
 }

@@ -1,0 +1,248 @@
+{
+  "tipo": "probe CSS temporária no compositor humano real preenchido; não é screenshot de aceite",
+  "medidas": [
+    {
+      "thread": 320,
+      "campo": 105.28125,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 213.28125,
+          "right": 308
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 336,
+      "campo": 121.28125,
+      "scrollWidth": 336,
+      "clientWidth": 336,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 229.28125,
+          "right": 324
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 348,
+      "campo": 133.28125,
+      "scrollWidth": 348,
+      "clientWidth": 348,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 241.28125,
+          "right": 336
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 360,
+      "campo": 145.28125,
+      "scrollWidth": 360,
+      "clientWidth": 360,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 253.28125,
+          "right": 348
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 372,
+      "campo": 157.28125,
+      "scrollWidth": 372,
+      "clientWidth": 372,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 265.28125,
+          "right": 360
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 390,
+      "campo": 175.28125,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 283.28125,
+          "right": 378
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 400,
+      "campo": 185.28125,
+      "scrollWidth": 400,
+      "clientWidth": 400,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 293.28125,
+          "right": 388
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 416,
+      "campo": 201.28125,
+      "scrollWidth": 416,
+      "clientWidth": 416,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 309.28125,
+          "right": 404
+        }
+      ],
+      "todosDentro": true
+    },
+    {
+      "thread": 436,
+      "campo": 221.28125,
+      "scrollWidth": 436,
+      "clientWidth": 436,
+      "controles": [
+        {
+          "nome": "Anexar",
+          "width": 36,
+          "x": 12,
+          "right": 48
+        },
+        {
+          "nome": "Emojis",
+          "width": 36,
+          "x": 56,
+          "right": 92
+        },
+        {
+          "nome": "Enviar",
+          "width": 94.71875,
+          "x": 329.28125,
+          "right": 424
+        }
+      ],
+      "todosDentro": true
+    }
+  ]
+}
