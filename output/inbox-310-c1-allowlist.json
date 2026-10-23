@@ -1,0 +1,197 @@
+{
+  "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+  "quantidade": 22,
+  "bytes": 1771729,
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-curto-filtros.png",
+      "bytes": 29043,
+      "sha256": "f3756af9a1c64cdfa458fafab031bd12113c805784beab915540cce7f9d40211",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-curto-seletor-numero.png",
+      "bytes": 29283,
+      "sha256": "ee55f9ba52887f9b127afb93618233d98698e06f20f9ea006ebc53f8de198919",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-curto-nova-conversa.png",
+      "bytes": 32899,
+      "sha256": "ad39eaac2695a0f80cc28b37616299e53df2853c288c8ab9f00aebd7d2e5f7a4",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-curto-filtros-aplicados.png",
+      "bytes": 42739,
+      "sha256": "79b9dd65ffce98ea23fe9f121c03254bf8f22479323e50422e0dc132ff588b98",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-curto-navegacao-final.png",
+      "bytes": 41419,
+      "sha256": "1eae74f99d63b418d76d21743cfcf8285bb2427efb304f6e880261038e6e7e5e",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-desktop-filtros.png",
+      "bytes": 105086,
+      "sha256": "f7347b33c481ed8d85bee7be16b2b86f1f539c9a05a80834c4943e5ebd8ce6b8",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-desktop-seletor-numero.png",
+      "bytes": 106336,
+      "sha256": "2c462e678ddd5fdb7187b27e883bb050c664a7955c24f5b901b7610f39418e91",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-desktop-nova-conversa.png",
+      "bytes": 109449,
+      "sha256": "5be1db79aa2998adfbc8635691dd4e0d39c647c1f793c7070885fd899f30a396",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-desktop-filtros-aplicados.png",
+      "bytes": 125232,
+      "sha256": "a985744e0ad23ddd4cbf50958862fc77080b9a608e586fd846cd2d9712fdf937",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/escuro-desktop-navegacao-final.png",
+      "bytes": 120518,
+      "sha256": "5696b7bf81ee6b30259cad1a58fd9c5dd286a1671e469860d9621a711c7d5deb",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-curto-filtros.png",
+      "bytes": 28008,
+      "sha256": "b8260d1242bc5aa7b762729f2da511006e5457de5e31df5efc50dc77c42388fb",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-curto-seletor-numero.png",
+      "bytes": 27823,
+      "sha256": "e96abf5a9918b498c207b01c940c04154d638b12a53b3a805b3a758959de5eaf",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-curto-nova-conversa.png",
+      "bytes": 31525,
+      "sha256": "43533d6cbcf03b2a014118f64b19f72bfbb6d5872a6b5355cd2c8dadd167d73b",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-curto-filtros-aplicados.png",
+      "bytes": 42291,
+      "sha256": "26b6a64c673bad642172e29bbc1cc3463f3f17fce80ceb4e5ce80d0463dbc44b",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-curto-navegacao-final.png",
+      "bytes": 40536,
+      "sha256": "bec1d7e8b49d23587b7c0e8105182fd1fc746046663b576e967a6e6ee384244c",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-desktop-filtros.png",
+      "bytes": 104669,
+      "sha256": "49df9de7c6e085608cfbbdaa2be2b26bdadc435a4de100424ec481628de0b73e",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-desktop-seletor-numero.png",
+      "bytes": 105398,
+      "sha256": "3b4f4f6d22da4356c0b7c029e79197d90f389ecd09395f124a6db0dde06d9e89",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-desktop-nova-conversa.png",
+      "bytes": 108509,
+      "sha256": "05300ffbf58c6b511ab398bf062aae870706528783abbc4d83f4999b68f64bfb",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-desktop-filtros-aplicados.png",
+      "bytes": 124218,
+      "sha256": "f8c5923a605c122accb9e0c8d3e0362978790df87a6c8b2c3b3e2c884b6be117",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/ui-2026-10-23T04-22-57.186Z/claro-desktop-navegacao-final.png",
+      "bytes": 118305,
+      "sha256": "f75ba020f89c100db5612e6ad94b8bfc902c7847f96d61b9909dd2cbf218d97f",
+      "tipo": "complemento-UI",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/lotes-2026-10-23T04-27-47.373Z/antes-leitura.png",
+      "bytes": 116349,
+      "sha256": "b99dc85ac4397869fded1a98aaa991086a0cf3095abeadc7fbaaa0d3f9622859",
+      "tipo": "medicao-lotes",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-310-c1-browser/lotes-2026-10-23T04-27-47.373Z/lote-leitura-final.png",
+      "bytes": 182094,
+      "sha256": "c3a42404eeb9197dc5cbe9a49199661c2bcaedb691715cf8f70d50e594d56e73",
+      "tipo": "medicao-lotes",
+      "fonte": "3a005097678bb15ec3fde14af4f4175cba8c279d",
+      "inspecao": "favoravel"
+    }
+  ],
+  "metadados": [
+    "output/inbox-310-c1-evidencias.json"
+  ],
+  "excluir": [
+    "negativos",
+    "rawlogs",
+    "traces",
+    "corpos",
+    "RSC",
+    "HTML",
+    "snapshots",
+    "seeds",
+    "scripts privados"
+  ]
+}
