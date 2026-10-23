@@ -5930,3 +5930,15 @@ Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar pu
 ## PR #397 integrada; ancestralidade398 pronta para CI
 
 #397 squashb98da36314a719e118d1e9da510cb966311c0fc7, CI40013125860 success5/5, freshhead/main/comments/threads conferidos, issue312CLOSED confirmada. #398696e6270 incorpora squashb98 com árvore inteira igual794 após três conflitos resolvidos por identidade integral; fontes executáveisd441 preservadas. QAcomposta e CI398 serão paralelos, ambos gates antes demerge; não há conclusão antecipada da issue314.
+
+## PR #400 — QA composta e integração complementar
+
+QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composicao-cb.md; QA predecessora39870ec/hashf669 também versionada. Fontecb preservada após332f3cb1, apenasMD/ancestralidade397. Integração complementar NOMINALa5ece399:preferencias+motor/presenca20casos, junto10crm/tags,3/30sessão81795/9f1ea7terminal0,perfilciint exclusivo; arquivosINT epreferencias400 byteiguais àfonteexecutada. SemtesteDBconcorrente,envio,migraçãoouclusterchange. CI400final/398main ainda gates, não fechar313antecipadamente.
+
+## PR #398 integrada; PR400 pronta para CI final
+
+#398 squash34c63fb456ffdd786e54635b14cc507decc9e812, CI40014397587success5/5 eQAfinal70ecfavorável, issue314CLOSEDconfirmada. Squashtreeigual70ec; incorporação à400mantém INDEXINTEIROigual317be3b2 apósseisconflitos deancestralidade. Fontecb897eQA400d546preservadas; somenteMDapósúltimosgates. CI400main2TZaindapendente, semanteciparfechamento313.
+
+## PR #399 — QA composta e integração C2 final
+
+Fontea5ecee15:patch461/c962+332compostos semantecipar319/E2;QAcompostafavorávelhash5d5e36...,patch461favorável130testespróprios/hash07f1...,pareceresversionados. Próprio9/18736daee,TSC19125/6fb917,lint27244/7d342a terminais0/40avisos. C2paineis.int completo1/12sessão40250/245fd8terminal0,36,07s,perfilciintegracaoexclusivo. Complemento3/30sessão81795/9f1ea7terminal0 (10CRMtags+20leitura/presença) separado;nenhumfiltro/skipsnovos/envio/migração. C3snapshotmesmoID/C4overlay9601400/C5propsórfãos/C6inventário naSPEC/report. Merge400db6sódocs/ancestralidade,fontea5preservada. CI/main400/merge399aindagates;output/pr399-qa/composicao-todos.md.
