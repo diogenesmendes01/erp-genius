@@ -21,6 +21,12 @@ ignorados. Next typegen/TSC95347 e lint60640 EXIT0,0 erros/40 avisos anteriores.
 A integração de tags anterior permanece nominal aoab8:paineis.int inteiro,
 doze testes EXIT0,55608,ci-integracao exclusivo. Backend e teste byteinalterados
 nessa composição; não houve nova execução DB ou captura de navegador.
-Não reatribuir capturas antigas ao novo SHA. TESTER exato solicitado;
+Não reatribuir capturas antigas ao novo SHA. TESTER332 favorável:recortes
+próprios11/196(5d29b9) e3/23(97d094),saídas0,sem DB/browser/global/TSC/lint;
+confirmou identidade de painel/backend/scripts/deps e produtores revisados.
 CI/main/#392B2 continuam gates antes do merge. Sem instalação, migração,
 mensagem real, integração externa ou deploy.
+
+Base318-r3 posterior278615a9 recebe QA398/limpeza404; somente docs mudam
+depois do332,zero delta src/scripts/prisma/package/lock. Nenhum PNG298 na
+base ou no head. Maincce21e19 preserva a retirada técnica404 já aprovada.
