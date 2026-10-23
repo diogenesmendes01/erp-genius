@@ -1,0 +1,9 @@
+# QA independente — composição #409
+
+Fonte exata: `1dd4af919ce0a5824a58995f6bf7ff2479df34aa`. Pais verificados: `b0c92c1daa44319c09f8cc284937ff1f75c71bf3` (#323 com cherry D13) e `7e5cb70b97fdd76ae8f84b5b6ca0fd7bc5cc73d5` (#408). **Parecer estático favorável**, sem achado alto ou médio.
+
+A comparação `#408..HEAD` traz exatamente **12 caminhos `src` de #323**, mais documentação/pareceres e os dois arquivos documentais conciliados. Auditoria de OIDs própria, executor `665b9f`, **exit 0**: os **12/12 objetos `src` são idênticos ao pai `b0c92c1d`**; o arquivo `painel-detalhes.int.test.ts` é idêntico ao patch D13 `dc726812e39d4defc24ff5f3d31455f8e6dd4952`; os outros **11/11** são idênticos à fonte #323 corrigida `0c61fb628ad3a2c63b1963f943b6d8e159c9b9b2`. Isso confirma o teste D13 não vácuo na composição sem nova alteração de produção. `scripts`, `prisma`, `package/lock`, `e2e`, `.github`, documentação QA e planos do protótipo não têm delta contra #408; o schema 487 e a base B2 permanecem. Nenhuma migração #337/#490 foi trazida por este merge.
+
+Nos dois conflitos documentais, `inbox-decisoes-produto.md` preserva o texto atualizado da base #408 sobre autorização de merges **após verificação** e acrescenta apenas o esclarecimento humano D13. O apêndice permite Pessoa/empresa/participantes B2B a convidado vigente no atendimento **COMERCIAL**, sem liberar CRM global, campos personalizados sem `contatos.ver`, outros setores, pessoa legal ou operações de edição/envio. O quadro mantém as entradas #323/P2 e #408 e adiciona PR409 com as tentativas de fixture e os gates atribuídos ao DEV; não declara QA/global/CI da composição como concluídos.
+
+Limites: auditoria por OID/diff e leitura documental no worktree TESTER. Não executei unitários, integração, banco, navegador, instalação nem inspeção funcional nova. A integração própria do publicador e o gate final da composição continuam externos a este parecer. Rastreados limpos após o checkout exato.
