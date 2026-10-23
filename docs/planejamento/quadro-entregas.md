@@ -5297,3 +5297,20 @@ para ocultá-los. Não é suíte completa de integração DB. Relatório
 output/inbox-313-global-final.md. TESTERestático próprio4f18/285+39R6saída0.
 DEV e TESTER em browser nos próprios worktrees/bancos; formal/QAfinal/ZIP/PR
 continuam pendentes. Nenhum aceite visual ou integração presumidos.
+### #318 — composição com leitura automática e borda posterior das notas
+
+Merge normalD31 sobre313f5349 resultou3ec69a93, sem conflito produtivo.
+PainelContato/LinhaCampo/paineis byteiguaisD31; Inbox difere de313 apenas na
+composição318 e preserva hooksURL/f51/R6. Thread mantém stableMount/decoração
+e quarto argumento real temMaisDepois. Recorte56arquivos/597testes32229,
+TSC6574 e lint6fontes:saída0. Typegen0,TSCglobal87912/lintglobal1252saída0
+(42avisos conhecidos,dois no staging privado). Sem banco/browser próprios.
+
+Global4490 saiu1:881arquivos/6.886testes, uma falha/6.885passes. Único ofensor
+identificacao-registro era abaAtiva={abaAtiva} derivada de abaDoContato.id,
+chave tipada de navegação (detalhes/oportunidades/insights/atividade), sem ID
+interno de registro. Registro nao-registro estritamente ancorado por arquivo,
+prop, trecho e alvo, com motivo específico e cópia literal; nenhum algoritmo,
+limite, produtor ou UI foi alterado. RED isolado29tests1falha; GREEN3files97
+testes saída0; lint do arquivo0. Negativos/logs preservados. Regressão global
+após o registro ainda pendente, sem chamar a execução4490 de aprovada.
