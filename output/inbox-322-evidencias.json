@@ -1,0 +1,168 @@
+{
+  "issue": 322,
+  "base": "1bb721b7e6e72bbfd8f5f8fe7f3f944bef0440b3",
+  "branch": "codex/inbox-e2-322",
+  "escopo": "Vínculo opcional Tarefa.atendimentoId, somente criação humana/Aria e payload; UI N/A nesta issue backend.",
+  "arquivosExecutaveis": [
+    {
+      "arquivo": "prisma/schema.prisma",
+      "bytes": 435981,
+      "sha256": "82756077ef0cee1e56e839134e148f90ad404131c26de107cb00f936372363b3",
+      "gitBlob": "1f575691cde242124c1493b8406121e8830a6f7e"
+    },
+    {
+      "arquivo": "prisma/migrations/20261023100000_tarefa_atendimento/migration.sql",
+      "bytes": 325,
+      "sha256": "40aabd258e58320de9bd4ca99ae8b3547109a30691b68e54909fccc89e8f1fc8",
+      "gitBlob": "8a881162eb2c3a95379ca82a7f0ffc18279996a0"
+    },
+    {
+      "arquivo": "prisma/migrations/20261023110000_tarefa_atendimento_indice/migration.sql",
+      "bytes": 197,
+      "sha256": "741196c6f3a78a91b5987a75bcda9a72057ecbfa21af13e5ed764af653be1aed",
+      "gitBlob": "19db3bedf7834d6ddd5b04e25a5f624d23f83509"
+    },
+    {
+      "arquivo": "src/server/crm/tarefas.ts",
+      "bytes": 22122,
+      "sha256": "4d9cce5881616d43ca0ddff8394b666dbd279b8deab863ab0502fbc5f1fb2850",
+      "gitBlob": "723b4d917f26bf13e9ec930b8294a130c1fb8cda"
+    },
+    {
+      "arquivo": "src/server/crm/tarefa-atendimento.int.test.ts",
+      "bytes": 12348,
+      "sha256": "513e93f9976a837ec6504d74eff4871b109d2cc2264a79d15d3a29d91476a874",
+      "gitBlob": "62122bfdb388d0b8b88da522ad526a7b9b4d12ac"
+    },
+    {
+      "arquivo": "src/server/aria/turno/executor.ts",
+      "bytes": 28254,
+      "sha256": "07c316f22d6d8303b246a39bbaef3db231de73c686921f08878ad62abff3d614",
+      "gitBlob": "b3b74732a2544814dae2e6a631c0d3d179815c63"
+    },
+    {
+      "arquivo": "src/server/aria/turno/executor-crm.int.test.ts",
+      "bytes": 20457,
+      "sha256": "a69fc2088f3051c42e63f754baa50eba0c6ca593d326715f83decfe635cd67cb",
+      "gitBlob": "1d36c3e2d97b64aeebb56cf45d49df3bcf79fc0f"
+    }
+  ],
+  "dev": {
+    "redInicial": {
+      "session_id": 91946,
+      "exit": 1,
+      "arquivos": 2,
+      "testes": 42,
+      "passaram": 25,
+      "falharamFeatureAria": 3,
+      "falharamFixtureCrm": 14,
+      "duracaoSegundos": 212.59,
+      "limite": "As falhas de fixture não são RED da funcionalidade; log privado preservado."
+    },
+    "redCrmCorrigido": {
+      "session_id": 73553,
+      "exit": 1,
+      "arquivos": 1,
+      "testes": 14,
+      "passaram": 5,
+      "falharamFeature": 9,
+      "duracaoSegundos": 39.33
+    },
+    "greenIntegracao": {
+      "session_id": 78268,
+      "exit": 0,
+      "arquivos": [
+        "src/server/crm/tarefa-atendimento.int.test.ts",
+        "src/server/aria/turno/executor-crm.int.test.ts",
+        "src/server/crm/criar-tarefa-idempotencia.int.test.ts",
+        "src/server/crm/tarefas.int.test.ts"
+      ],
+      "testes": 62,
+      "duracaoSegundos": 173.05,
+      "maxWorkers": 1,
+      "filtroDeNome": false,
+      "skips": 0,
+      "config": "vitest.integration.config.ts",
+      "perfil": "dev-gravacoes",
+      "banco": "erp_genius_test_dev_gravacoes"
+    },
+    "unitDirigido": {
+      "execucao": "15d492",
+      "exit": 0,
+      "arquivos": 6,
+      "testes": 43,
+      "duracaoSegundos": 4.28,
+      "maxWorkers": 2,
+      "suiteCompleta": false
+    },
+    "tsc": {
+      "session_id": 65848,
+      "exit": 0,
+      "heapMb": 8192,
+      "noEmit": true
+    },
+    "lint": {
+      "execucao": "1a8c3d",
+      "exit": 0,
+      "arquivos": 4,
+      "avisos": 0
+    }
+  },
+  "integrador": {
+    "reserva": {
+      "execucao": "2ca1b4",
+      "exit": 0,
+      "refsGitDistintas": 452,
+      "bancos": 4,
+      "migrationsAnteriores": 485,
+      "commitRegistro": "2b30f519"
+    },
+    "restauroE1AntesDdl": {
+      "execucao": "416b6d",
+      "exit": 0,
+      "tabelas": 424,
+      "registros": 1372
+    },
+    "prismaMigrations": {
+      "session_id": 28331,
+      "execucao": "2fa10b",
+      "exit": 0,
+      "versaoPrisma": "5.22.0",
+      "geradoSomenteB": true
+    },
+    "validacaoDdl": {
+      "execucao": "2db2d4",
+      "exit": 0,
+      "coluna": "TEXT nullable",
+      "fk": "RESTRICT/CASCADE validada",
+      "indice": "btree exato atendimentoId,status; sem predicado; indisvalid e indisready verdadeiros",
+      "migrationsConcluidas": 2,
+      "legadas": "Uma tarefa fictícia criada antes do DDL permaneceu null; fixture temporária removida."
+    },
+    "snapshotE2": {
+      "execucao": "67fd6e",
+      "exit": 0,
+      "tabelas": 424,
+      "registros": 1374,
+      "migrations": 487,
+      "fixtureOriginal": "3 mensagens/1 nota preservadas",
+      "helperSomenteIntegrador": "output/preservar-banco-322-b.mjs"
+    },
+    "restauroFinalE2": {
+      "execucao": "23337c",
+      "exit": 0,
+      "tabelas": 424,
+      "registros": 1374,
+      "migrations": 487,
+      "fixtureOriginal": "3 mensagens/1 nota preservadas",
+      "helper": "Novo helper322 do integrador; nenhum helperE1 após DDL"
+    }
+  },
+  "limites": [
+    "Nenhum SQL, migrate, generate, install, package/lock, preview ou provedor externo executado pelo DEV.",
+    "Não usar helper ou snapshot E1 após DDL; somente baseline E2 do integrador.",
+    "Não houve full global DEV. QA independente no commit exato, global integrado e publicação são pendentes do integrador.",
+    "Logs privados e snapshots não integram o commit. As métricas ROOT são identificadas como comunicadas pelo integrador.",
+    "D10 permanece nas tasks próprias; edição não troca o vínculo; nenhum novo endpoint ou permissão."
+  ]
+}
