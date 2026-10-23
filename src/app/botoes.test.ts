@@ -36,6 +36,7 @@ const FONTE_DO_BOTAO = "src/components/Botao.tsx";
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
+  "src/app/(app)/inbox/PainelContato.tsx": 1, // aba: seleção em aria-selected, não ação de negócio
   "src/app/(app)/inbox/ChipsFiltro.tsx": 1, // filtros rápidos, grupo rotulado com aria-pressed
   "src/app/(app)/inbox/PopoverFiltros.tsx": 2, // seleção única de setor e status
   "src/app/(app)/inbox/SeletorNumero.tsx": 2, // itens do seletor, não ação de negócio
@@ -68,6 +69,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/inbox/PainelContato.tsx": ["key a.id"], // aba do painel (role=tab)
   "src/components/BotaoIcone.tsx": ["rotulo"],
   "src/app/(app)/inbox/ChipsFiltro.tsx": ["key c.id"],
   "src/app/(app)/inbox/ColunaConversas.tsx": ['"Remover filtro " + f.rotulo', "Limpar"],
@@ -1213,6 +1215,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
+  { arquivo: "src/app/(app)/inbox/PainelContato.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected; aria-pressed não vale para tab" },
   { arquivo: "src/components/BotaoIcone.tsx", rotulo: "rotulo", motivo: "primitivo de ícone: ativo é apresentação do estado anunciado pelo chamador em aria-expanded; Fechar não alterna estado" },
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },

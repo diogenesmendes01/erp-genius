@@ -34,8 +34,13 @@ describe("PainelSetor", () => {
   it("rótulo e estado vazio usam texto secundário definido na paleta", () => {
     const comOportunidade = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: null }, pessoaId: null });
     const semOportunidade = h({ setor: "COMERCIAL", oportunidade: null, pessoaId: null });
-    expect(comOportunidade).toContain('<dt class="text-gray-600">');
+    expect(comOportunidade).toContain('<dt class="text-[12.5px] text-gray-600">');
     expect(semOportunidade).toContain('class="text-sm text-gray-600"');
     expect(comOportunidade + semOportunidade).not.toContain("text-muted-foreground");
   });
+});
+
+it("conteúdo do setor não acrescenta padding externo ao corpo da aba", () => {
+ const t = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: null }, pessoaId: null });
+ expect(t).not.toContain("p-4"); expect(h(null)).not.toContain("p-4"); expect(t).toContain("text-[12.5px]");
 });

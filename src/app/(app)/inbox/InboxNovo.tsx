@@ -5,7 +5,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import type { Papel } from "@prisma/client";
 import { useSearchParams } from "next/navigation";
 import { NovoAtendimento } from "./NovoAtendimento";
-import { PainelContato } from "./PainelContato";
+import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
+import { LinhaCampo } from "./LinhaCampo";
+import { IconPhone } from "@tabler/icons-react";
 import { classesDoPainel, painelEfetivo, proximoEstadoPainel, useModoInbox } from "./painel-inbox";
 import { useConversa } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
@@ -355,6 +357,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
+  const [abaDoContato, setAbaDoContato] = useState<{ atendimentoId: string | null; id: IdAbaPainel }>({ atendimentoId: selecionado, id: "detalhes" });
+  // Ajuste condicionado à seleção, sem remontar a casca ou esperar um efeito após o paint.
+  if (abaDoContato.atendimentoId !== selecionado) setAbaDoContato({ atendimentoId: selecionado, id: "detalhes" });
+  const abas = abasDoPainel(atual?.finalidade ?? "");
+  const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
 
   function abrir(id: string) {
     focoAoFecharPopover.current = regiaoConversa.current;
@@ -381,28 +388,27 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setCarregandoMais(false);
   }
 
+  // Os blocos antigos preservam suas ações; só a composição local retira padding/borda duplicados.
+  const secaoDetalhes = "-mx-[18px] px-[18px] empty:hidden [&>section]:border-t-0 [&>section]:p-0";
   const painel = atual ? (
-    <div>
-      <div className="space-y-2 p-4 text-sm">
-        <p className="font-medium">{atual.contatoNome}</p>
-        {atual.contatoTelefone && <p className="text-gray-600">{atual.contatoTelefone}</p>}
-        <p className="text-gray-600">{atual.numeroRotulo} · {rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade)}</p>
-      </div>
-      {painelSetor?.id === atual.id
+    <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">
+      {atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
+      <div className={secaoDetalhes}>{painelSetor?.id === atual.id
         ? <PainelSetor painel={painelSetor.dado} />
-        : <p className="p-4 text-sm text-gray-600">Carregando detalhes…</p>}
-      {painelSetor?.id === atual.id && painelSetor.dado?.aria && (
+        : <p className="text-sm text-gray-600">Carregando detalhes…</p>}</div>
+      {painelSetor?.id === atual.id && painelSetor.dado?.aria && <div className={secaoDetalhes}>
         <PainelAria key={`aria:${atual.id}`} atendimentoId={atual.id} aria={painelSetor.dado.aria} fuso={fuso} aoMudar={recarregarLista} />
-      )}
-      {painelSetor?.id === atual.id && painelSetor.dado?.acoes && (
+      </div>}
+      {painelSetor?.id === atual.id && painelSetor.dado?.acoes && <div className={secaoDetalhes}>
         <AcoesContato key={`acoes:${atual.id}`} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} optOut={atual.optOut} fuso={fuso} aoMudar={recarregarLista} />
-      )}
-      {!atual.grupo && (
+      </div>}
+      {!atual.grupo && <div className={secaoDetalhes}>
         <OptOutContato key={atual.contatoId} contatoId={atual.contatoId} nome={atual.contatoNome} optOut={atual.optOut}
           podeReautorizar={usuario.papeis.includes("ADMINISTRADOR")} aoMudar={recarregarLista} />
-      )}
+      </div>}
+      {(triagem || revisoes) && <div className={secaoDetalhes}><PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} /></div>}
     </div>
-  ) : <p className="p-4 text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
+  ) : <p className="text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
 
   return (
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -433,8 +439,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}
             destinos={destinos}
-            triagem={triagem}
-            revisoes={revisoes}
             aoVoltar={() => setVista("lista")}
             aoAlternarPainel={alternarPainel}
             painelAberto={painelVisivel ?? undefined}
@@ -444,7 +448,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         )}
       </section>
 
-      {selecionado && <PainelContato visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres"}
+      {selecionado && <PainelContato contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
+        subtitulo: rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade) + " · " + atual.numeroRotulo,
+        tags: painelDoAberto?.dado?.tags ?? [], quadrado: false } : undefined}
+        abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => { if (abas.some(a => a.id === id)) setAbaDoContato({ atendimentoId: selecionado, id }); }} visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres"}
         aoFechar={fecharPainel} focarAoAbrir={painelAberto === true} className={classesDoPainel(painelAberto, vista)}>{painel}</PainelContato>}
     </div>
   );
