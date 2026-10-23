@@ -20,6 +20,7 @@ const BORDA = /^border(?:-[a-z]+-\d+|-border-soft)?$/;
 
 /** Conferidos dentro de superfície branca (ou que são o próprio fundo da página). Arquivo → quantidade permitida. */
 const DENTRO_DE_SUPERFICIE: Record<string, { quantidade: number; motivo: string }> = {
+  "src/app/(app)/inbox/ColunaConversas.tsx": { quantidade: 1, motivo: "busca dentro da região Conversas bg-surface da casca InboxNovo" },
   "src/app/(app)/academico/MudancasAcademicasPainel.tsx": { quantidade: 2, motivo: "dentro do bloco/artigo bg-surface" },
   "src/app/(app)/alunos/ImportarAlunosModal.tsx": { quantidade: 2, motivo: "dentro do Modal (bg-surface-raised)" },
   "src/app/(app)/configuracao/turmas/ImportarTurmasModal.tsx": { quantidade: 1, motivo: "dentro do Modal (bg-surface-raised)" },

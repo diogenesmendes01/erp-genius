@@ -93,18 +93,21 @@ const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutE
  * não anunciaria. Por isso a limpeza de um efeito de layout solta o fundo dentro do próprio commit; a
  * limpeza passiva, que vem depois, só devolve o foco (soltar de novo não faz nada).
  */
-export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFechar, bloquearFechamento = false, focoInicial, isolar }: {
+export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFechar, bloquearFechamento = false, focoInicial, focoAoFechar, isolar }: {
   aberto: boolean;
   aoFechar: () => void;
   bloquearFechamento?: boolean;
   focoInicial?: RefObject<HTMLElement | null>;
+  /** Ausente retorna ao gatilho; ref explícito null suprime retorno. Lido no cleanup. */
+  focoAoFechar?: RefObject<HTMLElement | null>;
   isolar?: RefObject<HTMLElement | null>;
 }) {
   // O callback mais recente, sem reinstalar os ouvintes a cada render do chamador.
   const fechar = useRef(aoFechar);
   const bloqueado = useRef(bloquearFechamento);
   const inicial = useRef(focoInicial);
-  useEffect(() => { fechar.current = aoFechar; bloqueado.current = bloquearFechamento; inicial.current = focoInicial; });
+  const retorno = useRef(focoAoFechar);
+  useEffect(() => { fechar.current = aoFechar; bloqueado.current = bloquearFechamento; inicial.current = focoInicial; retorno.current = focoAoFechar; });
   // Quem desfaz o isolamento do fundo, enquanto ele vale (soltarUmaVez: a primeira limpeza que rodar solta).
   const soltar = useRef<(() => void) | undefined>(undefined);
 
@@ -147,7 +150,8 @@ export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFecha
       soltarFundo?.(); // normalmente já solto pela limpeza de layout, no commit
       if (soltar.current === soltarFundo) soltar.current = undefined;
       // Devolve o foco a quem abriu, se ele ainda está na página.
-      if (anterior && document.contains(anterior)) anterior.focus();
+      const destino = retorno.current === undefined ? anterior : retorno.current.current;
+      if (destino && document.contains(destino)) destino.focus();
     };
   }, [aberto, ref, isolar]);
 }
