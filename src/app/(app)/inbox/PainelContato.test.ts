@@ -29,3 +29,12 @@ it("mantém fallback308 e escapa textos de contato/tag", () => {
   const h = p({ contato: { ...contato, nome: "<script>x</script>", tags: [{ rotulo: "<img onerror=x>", ia: false }] } });
   expect(h).toContain("&lt;script&gt;"); expect(h).toContain("&lt;img onerror=x&gt;"); expect(h).not.toContain("<script>");
 });
+
+
+it("cabeçalho usa BotaoIcone36 real, um controle com nomes responsivos sem posição conflitante", () => {
+  const h = p();
+  const botao = h.match(/<button[^>]*aria-label="Fechar painel do contato"[^>]*>/)?.[0] ?? "";
+  expect(botao).toContain("h-[36px] w-[36px]"); expect(botao).toContain("aria-labelledby="); expect(botao).not.toContain("absolute");
+  expect(h).toContain("Voltar para a conversa"); expect(h).toContain("Fechar painel");
+  expect(h).toContain("absolute left-2.5 top-2.5");
+});

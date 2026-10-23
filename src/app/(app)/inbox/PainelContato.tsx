@@ -6,6 +6,7 @@ import { Avatar, tomDoAvatar } from "@/components/Avatar";
 import type { TagPainel } from "@/server/inbox/paineis";
 export type { TagPainel } from "@/server/inbox/paineis";
 import { Botao } from "@/components/Botao";
+import { BotaoIcone } from "@/components/BotaoIcone";
 import { useDialogo } from "@/lib/dialogo";
 import { isolarFundoDoPainel } from "./isolamento-painel";
 const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -73,10 +74,12 @@ export function PainelContato({ visivel, sobreposto, className, aoFechar, childr
     soltarFundo.current = soltar;
     return () => { soltar(); if (soltarFundo.current === soltar) soltarFundo.current = undefined; };
   }, [sobreposto]);
-  const botaoFechar = <Botao variante="fantasma" tamanho="sm" ref={fechar} aria-label="Fechar painel do contato" onClick={aoFechar}
-    className={contato ? "absolute left-2.5 top-2.5 min-h-10" : "min-h-10"}>
-    {contato ? <><span className="min-[700px]:hidden"><IconChevronLeft size={20} aria-hidden /></span><span className="hidden min-[700px]:inline"><IconX size={20} aria-hidden /></span></> : "Fechar"}
-  </Botao>;
+  const botaoFechar = contato ? <div className="absolute left-2.5 top-2.5">
+    <BotaoIcone tamanho={36} ref={fechar} rotulo="Fechar painel do contato" aria-labelledby={idBase + "-fechar"} onClick={aoFechar}>
+      <span className="min-[700px]:hidden"><IconChevronLeft size={20} aria-hidden /></span><span className="hidden min-[700px]:inline"><IconX size={20} aria-hidden /></span>
+      <span id={idBase + "-fechar"} className="sr-only"><span className="min-[700px]:hidden">Voltar para a conversa</span><span className="hidden min-[700px]:inline">Fechar painel</span></span>
+    </BotaoIcone>
+  </div> : <Botao variante="fantasma" tamanho="sm" ref={fechar} aria-label="Fechar painel do contato" onClick={aoFechar} className="min-h-10">Fechar</Botao>;
   return (
     <aside id="painel-contato" ref={painel} aria-label="Painel do contato" role={sobreposto ? "dialog" : undefined}
       aria-modal={sobreposto ? true : undefined} aria-hidden={visivel === false ? true : undefined} tabIndex={-1}
