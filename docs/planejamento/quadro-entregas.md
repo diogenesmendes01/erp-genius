@@ -6027,3 +6027,7 @@ Fonte266b180e:7e988310patch474+399978compostos;1blocoquadroconservaambos,Convers
 ## PR #401 — QA composta e fonte preservada após399efa
 
 QA266favorávelestática, original47f69e99...versionado tester-composicao-266.md; atribuiçãodosgatesexternoscorrigida para10/201+2/5próprios401 (não9/187399), nenhumtesterepetido/hashantigo5d6nãofinal. Merge399efa(main4000c) sódocs/ancestralidade,quadro1blocopreservambos e fonte266preservada. QAconcluída,399main/CI401aindagates.
+
+## PR #399 integrada; PR401 pronta para CI final
+
+#399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
