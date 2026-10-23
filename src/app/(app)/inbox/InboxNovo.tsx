@@ -49,6 +49,8 @@ export interface PropsInboxNovo {
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
+  /** Referência de dia civil da renderização do servidor, estável durante seleção/SSE. */
+  agoraThread?: string;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
@@ -120,7 +122,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraThread }: PropsInboxNovo) {
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
@@ -358,6 +360,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             item={atual}
             usuario={usuario}
             fuso={fuso}
+            agoraThread={agoraThread}
             conversa={conversa}
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}

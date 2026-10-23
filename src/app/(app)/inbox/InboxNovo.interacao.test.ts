@@ -60,7 +60,7 @@ const item = (id: string) => ({
 });
 const props = {
   inicial: { itens: [item("a1"), item("a2")], proximo: null }, filtros: {}, selecionado: "a1",
-  usuario: { id: "u1", papeis: ["VENDEDOR"] }, fuso: null,
+  usuario: { id: "u1", papeis: ["VENDEDOR"] }, fuso: null, agoraThread: "2026-03-29T23:30:00.000Z",
 } as unknown as PropsInboxNovo;
 
 let respostaPainel: () => Response;
@@ -355,4 +355,11 @@ describe("ligação do painel à casca", () => {
     expect(cabecalho(atual).painelAberto).toBe(true); expect(cabecalho(atual).painelAuto).toBe(true);
     expect(elementos(atual)[0].props["data-vista"]).toBe("conversa");
   });
+});
+
+it("referência civil do SSR permanece estável ao selecionar e receber SSE",async()=>{
+ const referencia=(t:ReactNode)=>(elementos(t).find(n=>n.type===ConversaAberta)!.props as {agoraThread?:string}).agoraThread;
+ expect(referencia(tela())).toBe(props.agoraThread);
+ lista(tela()).aoSelecionar("a2");await esvaziar();expect(referencia(tela())).toBe(props.agoraThread);
+ m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a2",mensagemId:"m314",conversaId:"cv2"});await esvaziar();expect(referencia(tela())).toBe(props.agoraThread);
 });
