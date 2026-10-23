@@ -1,0 +1,1195 @@
+{
+  "fonteProdutoFinal": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+  "fonteHarness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "referenciaFuncionalPrototipo": null,
+  "motivoSemReferencia": "Busca local316 não tem referência funcional equivalente no protótipo; seis formais são APP-only.",
+  "fontesPorGrupo": {
+    "formal-r2": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+    "normal-r2": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+    "isolamento-r2": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+    "virtual-r3": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+    "foco-await-r3": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+    "resync-r2": "47b8ac0d85c29e30a55137d59c53affd7e916ecc"
+  },
+  "politica": "Allowlist positiva explícita; dados fictícios e helper DOM392v1 após interações/antes foto. Não copiar pasta inteira. PNGs locais fora do Git. Exclui negativos, HTML bruto, logs, lançador privado de credenciais, seeds/snapshots e refs antigas.",
+  "equivalencia": "cf7→47b altera produção somente no handler Carregar anteriores: foco síncrono antes da carga e guard ocupado/semMaisAntes. Fotos normais cf7 permanecem históricas e não comprovam foco corrigido; complemento natural exato47b cobre o delta. Nenhuma fonte posterior é presumida sob esses gates.",
+  "execucoes": {
+    "normalFormalIsolamento": {
+      "session_id": 76764,
+      "exit": 0,
+      "contextosNormais": 16,
+      "contextosIsolamento": 4,
+      "png": 46,
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb"
+    },
+    "virtualEFocoExterno": {
+      "session_id": 19766,
+      "exit": 0,
+      "contextos": 16,
+      "png": 32,
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc"
+    },
+    "resyncNatural": {
+      "session_id": 40332,
+      "exit": 0,
+      "contextos": 6,
+      "png": 30,
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "mutacoesRoot": {
+        "ocultar": "0b4183 EXIT0",
+        "restaurar": "de1cb3 EXIT0"
+      }
+    }
+  },
+  "inspecao": "108 capturas originais inspecionadas:6 formais diretamente +102 em42pranchas; sem novo overflow/corte de controles. Baselines47b estáveis após2RAF; seis baselinescf7 deficientes ficam fora, preservadas separadamente.",
+  "limites": [
+    "Busca somente mensagens carregadas até600; notas/dias/eventos não são resultados.",
+    "Prova de edição do corpo usa resync real coordenado; evento status comum não repõe mensagem anterior ao cursor.",
+    "Foco externo durante await usa retenção da GET antes=explicitamente disparada pela UI, sem POST/DB.",
+    "Campos/menus/formulários apenas navegação, nenhuma ação de negócio/envio/IA.",
+    "Recortes não equivalem a suíte completa; TESTER e global integrado ROOT pendentes."
+  ],
+  "resumo": {
+    "arquivos": 162,
+    "png": 150,
+    "originais": 108,
+    "pranchas": 42,
+    "bytes": 16290226
+  },
+  "arquivos": [
+    {
+      "arquivo": "formal-r2/manifesto.json",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 5459,
+      "sha256": "d88dbbb810782b6d9831bacbb960a9e797668bca3d778e9c8f22f04ec3f71b55"
+    },
+    {
+      "arquivo": "formal-r2/app-escuro-desktop-busca-conversa.png",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 190969,
+      "sha256": "90debada5205e2e5c7d2e3975684b35d1c63208fbce5571c582caa056a14e024"
+    },
+    {
+      "arquivo": "formal-r2/app-escuro-tablet-busca-conversa.png",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 128435,
+      "sha256": "368fde8e11d52eb8bde319902fc1c562d7e320e1fe65a2d855d86cd8fd7a77e0"
+    },
+    {
+      "arquivo": "formal-r2/app-escuro-celular-busca-conversa.png",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 48089,
+      "sha256": "a2d97930b4aaa9520d81e911f010705fa21f01c6b4fd733c9f8a866e7f5ae8ed"
+    },
+    {
+      "arquivo": "formal-r2/app-claro-desktop-busca-conversa.png",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 189307,
+      "sha256": "2d556ad5714a49f71e3d51b2906003c7694e2276726bf1a6a591a84467423306"
+    },
+    {
+      "arquivo": "formal-r2/app-claro-tablet-busca-conversa.png",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 127090,
+      "sha256": "4dfb358a858189bd407ce639d80cfca78e30b34389be7d9708a845f448fb2319"
+    },
+    {
+      "arquivo": "formal-r2/app-claro-celular-busca-conversa.png",
+      "grupo": "formal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 47050,
+      "sha256": "7da33aeb15c9e0f898ce5b5875dcd0d4cdcd2b925fa807c16dca7d50aec435d4"
+    },
+    {
+      "arquivo": "normal-r2/medidas.json",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 28530,
+      "sha256": "88f092f7a5fa88ab8022c5f382d04bfb08b7a22f1454e292a73f1ee729a9c91b"
+    },
+    {
+      "arquivo": "normal-r2/light-1440x900-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 197483,
+      "sha256": "ae749346eaaafe8d569eedf7ce841fa3e8d35d7492a9b6acc405331ea181cafd"
+    },
+    {
+      "arquivo": "normal-r2/light-1440x900-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 198040,
+      "sha256": "8ec947bd37eef37b77b7c707c85e318fc71aaa8ecfd3e2001e89515b84c9e0c2"
+    },
+    {
+      "arquivo": "normal-r2/light-1024x768-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 131963,
+      "sha256": "ce4f13728e42ec0e0c5b69bb0cf3461577796791ec2a2e89666878f81220a53e"
+    },
+    {
+      "arquivo": "normal-r2/light-1024x768-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 132627,
+      "sha256": "71204cd84c08546dc07839c433aea7c9a7ed78e103925771cb56f765d65a4353"
+    },
+    {
+      "arquivo": "normal-r2/light-390x844-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 46584,
+      "sha256": "193559aedf591e6882c3c1f147d520b2b77b705f356423d6bf57134d9cb59945"
+    },
+    {
+      "arquivo": "normal-r2/light-390x844-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 46901,
+      "sha256": "3b1ca0549b5bf8bad9979e1d235b98feb941623826a7f3204a7abfd7b4e98033"
+    },
+    {
+      "arquivo": "normal-r2/light-320x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 26455,
+      "sha256": "9d80705009806db50d83338b3337b0cd16236b7c22df45abc3848d83e29908bd"
+    },
+    {
+      "arquivo": "normal-r2/light-320x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 26929,
+      "sha256": "697ed4b6dd433ff12e41c7238dff15a26b3117f4e10ce5df409d1f81aec8dee3"
+    },
+    {
+      "arquivo": "normal-r2/light-390x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 29967,
+      "sha256": "d2ccf241733a7cd3d6f927c7c4242ca9bd15a85c403bb533e5954c70c5ea24ba"
+    },
+    {
+      "arquivo": "normal-r2/light-390x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 30385,
+      "sha256": "bc35fb856aef81d263224b748d257581992e91c725856654fb4036a5376a0651"
+    },
+    {
+      "arquivo": "normal-r2/light-699x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 34197,
+      "sha256": "cddad99d905c1378fe8df0f7f29b1ef678f28cadd9211fdb760217c5f17cd0da"
+    },
+    {
+      "arquivo": "normal-r2/light-699x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 34693,
+      "sha256": "6d6966999150b7c3024566233cd102ae52f74ce340ff292fd885ba4ac5f0555a"
+    },
+    {
+      "arquivo": "normal-r2/light-700x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 36094,
+      "sha256": "7ae199af4df4cf15c325f2be5098af2705d3663cc73d297fb0904373e93a7967"
+    },
+    {
+      "arquivo": "normal-r2/light-700x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 36681,
+      "sha256": "de74db27b19b83897dae654cb9b8957e1da085f32bc62ae71490883d596dd335"
+    },
+    {
+      "arquivo": "normal-r2/light-1400x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 112498,
+      "sha256": "991b241dc909f3ed3181772c89bb7821f30bbfd8c2f4c231bed999b3bfe73930"
+    },
+    {
+      "arquivo": "normal-r2/light-1400x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 112955,
+      "sha256": "560aaef6f5a413d1ad280039b0392bd3701acc1d41ef0dda1455e1caef3f5b60"
+    },
+    {
+      "arquivo": "normal-r2/dark-1440x900-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 190833,
+      "sha256": "543055ae85d96f785b9d86735997c9ecaa5587ac11cc63c140309b03b2be52d6"
+    },
+    {
+      "arquivo": "normal-r2/dark-1440x900-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 191398,
+      "sha256": "7c53ca8933be92c2d884d7cdf4d61f56f8c2ce81ada77587feafafe795dd8256"
+    },
+    {
+      "arquivo": "normal-r2/dark-1024x768-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 128407,
+      "sha256": "459f9af60494a1d8ba53c2f21d7194b4dbe7f3aa4371edfbfea7996b7b0d0531"
+    },
+    {
+      "arquivo": "normal-r2/dark-1024x768-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 129205,
+      "sha256": "f3fa1f0bc6fddedf04803530419e710ac6382216079baf15cfb823eb6c7e1639"
+    },
+    {
+      "arquivo": "normal-r2/dark-390x844-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 47599,
+      "sha256": "b00ea9ea6226db1f924ed7c9756cfd2c980313571c91d5edba2d86691374e933"
+    },
+    {
+      "arquivo": "normal-r2/dark-390x844-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 47949,
+      "sha256": "dc6c8c0185dd4916005e5c79f0e72a70da711537a99c6fecaeafa9d4623116f4"
+    },
+    {
+      "arquivo": "normal-r2/dark-320x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 27258,
+      "sha256": "cfb03bc3e1d4e2dc7d4f8e6a445c86d1d9ca83924b2d44df60ee29783c732e73"
+    },
+    {
+      "arquivo": "normal-r2/dark-320x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 27704,
+      "sha256": "3772e5916177ebf76a9905200f6bd92b9cb7a590f35bfb19f0df54a598c58cf1"
+    },
+    {
+      "arquivo": "normal-r2/dark-390x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 30573,
+      "sha256": "8c6e3f16c5c682c3468ac2ed160653aff0f5f366979f26a82042126234eb7702"
+    },
+    {
+      "arquivo": "normal-r2/dark-390x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 30971,
+      "sha256": "057b77aa936f28dbb4b8eeff2232345d2cdab9c2d839c8d2703f7cc0b11cf430"
+    },
+    {
+      "arquivo": "normal-r2/dark-699x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 35214,
+      "sha256": "ad29d582c166f9857068518c91277188dc133e24976807ac6f6c93e6ec09a87d"
+    },
+    {
+      "arquivo": "normal-r2/dark-699x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 35732,
+      "sha256": "249702f3b06df5e2b362e13be8c17cde4a1af4a927ef17da26d827a9916e95da"
+    },
+    {
+      "arquivo": "normal-r2/dark-700x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 37353,
+      "sha256": "4c5e91515618598823bc9b13928c09105012fcdfd8b3af7c070b085595b4e168"
+    },
+    {
+      "arquivo": "normal-r2/dark-700x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 37881,
+      "sha256": "67e830bd8b856cb371d5aa7fde85273879811f7c14e7e69a4cb32da4c14072e1"
+    },
+    {
+      "arquivo": "normal-r2/dark-1400x500-primeiro.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 113912,
+      "sha256": "eba1f454e297657ccf77ebb4be6bbc89f80b82205f0151198ad0ae7fe946e2b5"
+    },
+    {
+      "arquivo": "normal-r2/dark-1400x500-atalho.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 114402,
+      "sha256": "5ca3b4e49152821bcbb2bcc815dcd89fc4cf085c4487e8f7f259b50a4801b915"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-1024x768.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 66441,
+      "sha256": "94a351cbc3bb6759cc8cfc52a01ab7b2c672c372f7b0e599780a5367933f1af0"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-1400x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 45963,
+      "sha256": "413e26de07859480572389c1f64ffc4d55f0e802ff8248c66578cb1ede02ccc9"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-1440x900.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 77176,
+      "sha256": "77339ed496af9551eec047fbe0c2c4af665af5c3d60348c9a323dc34d5f324a1"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-320x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 36998,
+      "sha256": "32f28ac5740b64cffd60a2dba22624aa9b886089e1d0e3a11e9f17953a55a84f"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-390x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 41524,
+      "sha256": "63a2c6b0eecc0f9686d5e908d823752287894b4e11c94babbe21c36b59b0f12e"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-390x844.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 63406,
+      "sha256": "f5af807456352d7a29a82c2effa6a1ee8e93bddee25523ca305f7dc7e845b4e4"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-699x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 52307,
+      "sha256": "73f4239a282d4a792be53c6be58bed2a7005995aecb1f696f3c322b96040e097"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/dark-700x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 54433,
+      "sha256": "dec90d3238903883484966127e6298b63743a132050566239ef361cf5f45f4b4"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-1024x768.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 63566,
+      "sha256": "93ea9a50cdef5c1563c69e26e60b915dcd4d59de02f2bc01cc9fbb99fb87efc0"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-1400x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 43758,
+      "sha256": "f7840fa9ea3eba93ad804ea7d535ae771518c08612021b8d692c715b07a7457f"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-1440x900.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 74822,
+      "sha256": "260d8838c77b0fce635cae6c99549268b644f8084d08118624c0738b84390ee2"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-320x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 34952,
+      "sha256": "6590edf5f13c8001e572bdd1bbb55cb7f9f41d2523c19f44685a1abd05b50190"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-390x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 39493,
+      "sha256": "faf7678fb82a910677798f961b561825de0d7f5116eeca8decd60748a3703d7d"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-390x844.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 61344,
+      "sha256": "34dbfffbf3931a918bb2086691ed1d2c3b22c9378b1e6e406ca3dad154323c95"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-699x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 49263,
+      "sha256": "d13823adc5f0334f580f1c055e7cedac588a3cd82b1ccb0a5c5189b40d0686d3"
+    },
+    {
+      "arquivo": "normal-r2/pranchas/light-700x500.png",
+      "grupo": "normal-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 51407,
+      "sha256": "c2f385c431b3f70e4faa730cd377697335bc8395f250f463753e31cf8d49293f"
+    },
+    {
+      "arquivo": "isolamento-r2/medidas.json",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 4448,
+      "sha256": "85d289006abb5b25874d036c638bfd6f99e5e85485a92f9119e618d1d68f8afd"
+    },
+    {
+      "arquivo": "isolamento-r2/light-390-modal.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 41163,
+      "sha256": "98ec8106dd4d69326dd86ad6569db6064fb5c4b2b3872703ba6f554ced2a2386"
+    },
+    {
+      "arquivo": "isolamento-r2/light-390-troca.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 20110,
+      "sha256": "c35bf6e76f28be62d5bfd2176aa5dd58f99db9d3486e63bced55aa1c1cf4e50c"
+    },
+    {
+      "arquivo": "isolamento-r2/light-1440-modal.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 174276,
+      "sha256": "a24c09195cdc6f41eb30589f1892fb5e855c6b888689d503bababcc91ad16d89"
+    },
+    {
+      "arquivo": "isolamento-r2/light-1440-troca.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 148899,
+      "sha256": "96a8cf7732a3928a72ea5fe9046f8f8e642479c079ad11a89ac9bd74771aa553"
+    },
+    {
+      "arquivo": "isolamento-r2/dark-390-modal.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 39501,
+      "sha256": "b9bc88165d83283a9cdf6797fa841a9b1b0aecb1b5c1f2cae3bc2be624949a90"
+    },
+    {
+      "arquivo": "isolamento-r2/dark-390-troca.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 20456,
+      "sha256": "0d4b2cea63cf2622641211119c178624d1250f32600451a8f6189be1ed1c4e7a"
+    },
+    {
+      "arquivo": "isolamento-r2/dark-1440-modal.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 165859,
+      "sha256": "07f3fd31e419119d23f5962898b3114ee3832ae85df99b992b155e8e30cd805c"
+    },
+    {
+      "arquivo": "isolamento-r2/dark-1440-troca.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 149547,
+      "sha256": "e70efd2b563913184ce8ea7e1cbbbe78a6770dca9fa0d961e6a1f8f70c27b2ea"
+    },
+    {
+      "arquivo": "isolamento-r2/pranchas/dark-1440x844.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 311643,
+      "sha256": "d6f15e77817d7cb4bb52f296d5a52a022a149bc3c1de28e0581b4570be8371b6"
+    },
+    {
+      "arquivo": "isolamento-r2/pranchas/dark-390x844.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 66279,
+      "sha256": "1fad8a110f4c013e51abaf3d75d10e2436bf41ea0122a64b9bd4032318b12aaa"
+    },
+    {
+      "arquivo": "isolamento-r2/pranchas/light-1440x844.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 312538,
+      "sha256": "3a7341fb30f2cda2681555d93efda1dc99a387fb7feeacbd57fd97f55a1dbdf2"
+    },
+    {
+      "arquivo": "isolamento-r2/pranchas/light-390x844.png",
+      "grupo": "isolamento-r2",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 66082,
+      "sha256": "33ab0a698a1a1c56bd98acb6dccb689f587f709e4192854476feaca5a5d0111e"
+    },
+    {
+      "arquivo": "virtual-r3/medidas.json",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 23813,
+      "sha256": "efa67256634d2a2e1e81f169b787fbb1dbdbbcebf9b4118754900361306ae6d0"
+    },
+    {
+      "arquivo": "virtual-r3/light-1440-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 200523,
+      "sha256": "50971d3a00c6f3c9ed505f916005b7d196d3ed1ab7296be23cb93a8c21ffac14"
+    },
+    {
+      "arquivo": "virtual-r3/light-1440-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 195460,
+      "sha256": "1b0ee5d8d076f0a57aa53bad816f7d4613433da4fc19e30e7cc517da9d19dcb9"
+    },
+    {
+      "arquivo": "virtual-r3/light-1440-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 198862,
+      "sha256": "a3d30060475a350dc935216706ffd02436732b1c20a402001d009e39141ed741"
+    },
+    {
+      "arquivo": "virtual-r3/light-1024-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 139525,
+      "sha256": "ca00f7df7db1e1aa6b7a84247479b882c1d3a0d27ca06a973bd44294e89b9a5c"
+    },
+    {
+      "arquivo": "virtual-r3/light-1024-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 135119,
+      "sha256": "31e7cbae1b3b127b4bdcc3044e5b188b1eb2a008878d47c5fa1fc9f32ac8b701"
+    },
+    {
+      "arquivo": "virtual-r3/light-1024-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 136627,
+      "sha256": "e7b1c3fc1f732355d2e3281fe1963cce5492f1188f6868edea593e974a78a783"
+    },
+    {
+      "arquivo": "virtual-r3/light-390-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 33457,
+      "sha256": "83322fbe692a89619a91ee6477980b5ec6ec0634c3b4d11088c3f32fd76d6742"
+    },
+    {
+      "arquivo": "virtual-r3/light-390-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 29340,
+      "sha256": "775c0a6fd4e418435f6de465600bfbb6ea32c41ec69f7b1071c33d193055a9f9"
+    },
+    {
+      "arquivo": "virtual-r3/light-390-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 32745,
+      "sha256": "0e39097c9a32daeb334cced04b9a7d32d3143b3b576af99a6e26020fd8b5fcee"
+    },
+    {
+      "arquivo": "virtual-r3/light-320-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 24810,
+      "sha256": "0b82401292892b3f2083c99a992f212b2eabc9bcb0af3e7b32624587aefae977"
+    },
+    {
+      "arquivo": "virtual-r3/light-320-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 25852,
+      "sha256": "a1fd99178fb9b3f1f2ef9b7164b9ef13f2cb74781d7627640df9973a6df8aca1"
+    },
+    {
+      "arquivo": "virtual-r3/light-320-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 26856,
+      "sha256": "0d5e6a9c652eeac3f7aa0be9cc036f0c5205432b10316715011cee1a4afeb918"
+    },
+    {
+      "arquivo": "virtual-r3/dark-1440-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 202700,
+      "sha256": "12a038bc5550904772127fcca1f0a7316e84e954a84cd62ac4bd51cde3161834"
+    },
+    {
+      "arquivo": "virtual-r3/dark-1440-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 198010,
+      "sha256": "3f72b57b3bad8205d1d768ea5b65810f9bb80bae0bf7c3d72c69b53a8da0ccad"
+    },
+    {
+      "arquivo": "virtual-r3/dark-1440-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 201452,
+      "sha256": "05edcb46305911ced64e02793711246b162c1ed186ff7cc13dd5defe50ef3569"
+    },
+    {
+      "arquivo": "virtual-r3/dark-1024-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 141829,
+      "sha256": "4352fdeed49fbe2214a2d19036bd164cfca7356d57400f13271df892245bc455"
+    },
+    {
+      "arquivo": "virtual-r3/dark-1024-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 137858,
+      "sha256": "568d0f283bdcf5c2b9234ece08f79d5ef5dd55c80ee7ab69b6bb5ff001e395ed"
+    },
+    {
+      "arquivo": "virtual-r3/dark-1024-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 139061,
+      "sha256": "5cc39deb71826fbb5dc679cd194421c4bfde78e09f090e322fe5b33ff1122272"
+    },
+    {
+      "arquivo": "virtual-r3/dark-390-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 34534,
+      "sha256": "b4c69898fd7c3a808b3d4a5e047362c01d20c265c5ae26c7d688b62ff6e328cb"
+    },
+    {
+      "arquivo": "virtual-r3/dark-390-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 30002,
+      "sha256": "27c5b57c1cda50d7e0ef7d6b7f4873c891213845ce08e8968e126352773d99c5"
+    },
+    {
+      "arquivo": "virtual-r3/dark-390-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 33504,
+      "sha256": "a12a0150c56a1ca8716436c2e510e5f7f76d3043fc66725f5d1c5cda679a1aa0"
+    },
+    {
+      "arquivo": "virtual-r3/dark-320-janela-parcial.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 25324,
+      "sha256": "b64aa64774a5ec4ab24417b1d431016d14cdb53699058cd8b4855fb3cce85157"
+    },
+    {
+      "arquivo": "virtual-r3/dark-320-primeiro-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 26680,
+      "sha256": "d7facf9f232f5c4bf4840486b0dbf7c3284b95a717f3d67c5966eae5fc0ad35b"
+    },
+    {
+      "arquivo": "virtual-r3/dark-320-segundo-pin.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 27747,
+      "sha256": "cd944d28f3f0ebee073d3fc9bcfdc928576e236d27d4510595e2e321ca0889be"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/dark-1024.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 148252,
+      "sha256": "0dc37397919baeea1a7885e1a1c60be5ba361e6a6a50df068092c3f39cad7ccb"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/dark-1440.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 170659,
+      "sha256": "966070cdeb6d72150b90830d8be588257b6aec761bd952fee534247917ad3b81"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/dark-320.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 59574,
+      "sha256": "567c2012ef755c8f2f2259803c6f79caea7e4399a51f319fbe4b2b4e3d3d5d90"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/dark-390.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 74039,
+      "sha256": "72f97a632b08aa5312cdf5a033c8e29d1cd500c9da0cf2744443846d8fb1a75f"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/light-1024.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 142250,
+      "sha256": "aef4d553b4d0dd5317ce1e5e4e400821d063656844ccdd6799c38255e40e41b2"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/light-1440.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 163725,
+      "sha256": "8515adbb3623389fd59e5464d33f9d584eecf0d808b294da58751c1e2b2b6e52"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/light-320.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 55722,
+      "sha256": "3bc282706e22b24811a4371df5403576812c0ba03f84c95e90eb260d6121eb1e"
+    },
+    {
+      "arquivo": "virtual-r3/pranchas/light-390.png",
+      "grupo": "virtual-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 70068,
+      "sha256": "1b6c88bb6f79128e6f8a276e634bc6299e1e9579240fa3cd7d0d14234f9bb191"
+    },
+    {
+      "arquivo": "foco-await-r3/medidas.json",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 4982,
+      "sha256": "ee3419b85e49cec3d4b2acc27ebf6f4184abb7db18008bc385694e0f2f0bcda2"
+    },
+    {
+      "arquivo": "foco-await-r3/light-1440.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 200238,
+      "sha256": "bade92d2564e8484577c98dc6d340284a17d8bfaef22742da7afe2debf9d1fc5"
+    },
+    {
+      "arquivo": "foco-await-r3/light-1024.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 139982,
+      "sha256": "5a97aad8038950dc918df4bdb2b2bf1d2a1c454cc5dd3b488fdf2f9de959b0a5"
+    },
+    {
+      "arquivo": "foco-await-r3/light-390.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 34375,
+      "sha256": "fb8037dce25acdd866d913a31bb7ebb11e8e7a71231797de718dd7b153dda57b"
+    },
+    {
+      "arquivo": "foco-await-r3/light-320.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 26018,
+      "sha256": "a1f0941f9a6a6ac6c3144e6e6d6b2bc57a819aa78c979c513dc6608ae8713907"
+    },
+    {
+      "arquivo": "foco-await-r3/dark-1440.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 202310,
+      "sha256": "6f38ce0f3841cc4aa5d1dc9187df11ce09410825aaed70e952e5b612946698e8"
+    },
+    {
+      "arquivo": "foco-await-r3/dark-1024.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 141926,
+      "sha256": "ee8fc473fe34c8e4e7792e709ed40d42f8161333741db896dec66ea3c681bc7d"
+    },
+    {
+      "arquivo": "foco-await-r3/dark-390.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 34991,
+      "sha256": "a6ec5075861e64d5912305fa609d9b000c9cb2b9d1f365bc8390f318f7b4c140"
+    },
+    {
+      "arquivo": "foco-await-r3/dark-320.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 26462,
+      "sha256": "0417781946388b53c19120d05dde6b06fd7807bfc52ef7a29e25d40861f469d7"
+    },
+    {
+      "arquivo": "foco-await-r3/pranchas/dark.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 525048,
+      "sha256": "2072746c43193c00340210b59bc8fc4fe6d4f74a9717c63095965590864ffbd7"
+    },
+    {
+      "arquivo": "foco-await-r3/pranchas/light.png",
+      "grupo": "foco-await-r3",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 466777,
+      "sha256": "d1ece6df5f2b0741eac79a23b6f4122db23b915d23b12b1ab3721a564d68050c"
+    },
+    {
+      "arquivo": "resync-r2/medidas.json",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 21527,
+      "sha256": "cc90d9f9028b1b403b5484855ad7fc20116cbda693d9ad568545b16ccd7b8b1b"
+    },
+    {
+      "arquivo": "resync-r2/light-1440-baseline149.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 199038,
+      "sha256": "6cc9b4ae0deccb2efe86b8100dd9c897b92fd584adb76e79a5a1017d2a280bfe"
+    },
+    {
+      "arquivo": "resync-r2/light-1440-oculto60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 205775,
+      "sha256": "047a4467f0e656068cad5055d5b7f65f653f64f507c3ed860a0f3c0f064905a2"
+    },
+    {
+      "arquivo": "resync-r2/light-1440-oculto165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 195575,
+      "sha256": "805c8242fee797540b6ba100bf04a732b0353f9d69daccaa3f9caf2f0ded34e5"
+    },
+    {
+      "arquivo": "resync-r2/light-1440-restaurado60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 200966,
+      "sha256": "ee9dfe0855064fb1e1167fe913bdfd6d094f0e814f2804f56500ca6b71882955"
+    },
+    {
+      "arquivo": "resync-r2/light-1440-restaurado165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 199335,
+      "sha256": "3e29bb4935178159989adbd3687e3f055a8a2ea05f013f83b9f2e780e31c76a8"
+    },
+    {
+      "arquivo": "resync-r2/light-1024-baseline149.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 136794,
+      "sha256": "62097892025798277d1acfbd9a51771b2e44c085c9cf8b54f672346c2bf6d890"
+    },
+    {
+      "arquivo": "resync-r2/light-1024-oculto60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 142877,
+      "sha256": "11ace70d1c140cf68c85e3441f60472a8116a841e48bba93aacfea865a2dc47d"
+    },
+    {
+      "arquivo": "resync-r2/light-1024-oculto165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 135131,
+      "sha256": "7a91e65bb10e64506307079ea9a3f4380d19c7dd085a60336a56ad751bcdc52a"
+    },
+    {
+      "arquivo": "resync-r2/light-1024-restaurado60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 140133,
+      "sha256": "ae6f58ad845849611a198fd3372c6fd781db3149fbdaf301669b30cc26c164d7"
+    },
+    {
+      "arquivo": "resync-r2/light-1024-restaurado165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 136778,
+      "sha256": "deabfee2dbcbec3d19f5833c7c2b1719fb09019afb0ed8456a5d46b6d8a0b703"
+    },
+    {
+      "arquivo": "resync-r2/light-390-baseline149.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 54645,
+      "sha256": "36414425ac87066343235218d7ecc31cd6121f4cbba713cf64f774344bcf58de"
+    },
+    {
+      "arquivo": "resync-r2/light-390-oculto60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 59471,
+      "sha256": "1df580e061cd95d26a717769cc6d3327ff590f4bafff23020a1ba067edbf72f6"
+    },
+    {
+      "arquivo": "resync-r2/light-390-oculto165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 51901,
+      "sha256": "df452a7c3ca2c8562e62b3f9ee79b60d38a6a41229eb3d511abc23fca807eff3"
+    },
+    {
+      "arquivo": "resync-r2/light-390-restaurado60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 56897,
+      "sha256": "5679d4d9d1aa84282809e485efb421e0f1800d3b688681f00efa32c276f0aaba"
+    },
+    {
+      "arquivo": "resync-r2/light-390-restaurado165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 54645,
+      "sha256": "36414425ac87066343235218d7ecc31cd6121f4cbba713cf64f774344bcf58de"
+    },
+    {
+      "arquivo": "resync-r2/dark-1440-baseline149.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 201628,
+      "sha256": "6fc787842fb886d28037670e7be5f405ae2d9103d0e2470e81ef3848f713bdec"
+    },
+    {
+      "arquivo": "resync-r2/dark-1440-oculto60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 207366,
+      "sha256": "930c86016a0fef2b44c4267acaca353cc880dc90c0af5fbfe9bf3295c9e43ac8"
+    },
+    {
+      "arquivo": "resync-r2/dark-1440-oculto165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 198156,
+      "sha256": "5cb3fc442c7e2264d7eabb35c19328a4ff28592d2cc0b81a5c1d57deff4b5c18"
+    },
+    {
+      "arquivo": "resync-r2/dark-1440-restaurado60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 202970,
+      "sha256": "08f28a5fc26a30eafd52a11723f75e482b8d4025ac00c2fefb6c059b5f6a1ca6"
+    },
+    {
+      "arquivo": "resync-r2/dark-1440-restaurado165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 201870,
+      "sha256": "2e563fc6498d567b76f0b26fb79d6c1ac3520b02a65d085f082e9124d1cf6377"
+    },
+    {
+      "arquivo": "resync-r2/dark-1024-baseline149.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 139235,
+      "sha256": "244b9ba357e38e59a26aa72a17681dbf22fa77685718ef23724ffde87c286e0a"
+    },
+    {
+      "arquivo": "resync-r2/dark-1024-oculto60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 144786,
+      "sha256": "07dfe70de442385ac9940a59f2dd89107cd7ef5667008a3bd678699acdaaa681"
+    },
+    {
+      "arquivo": "resync-r2/dark-1024-oculto165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 137891,
+      "sha256": "faaedd038cc9b430682ef1a494ad55616b9e8a833a4f720f9760aa9f312c1d34"
+    },
+    {
+      "arquivo": "resync-r2/dark-1024-restaurado60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 142283,
+      "sha256": "7ee7e9b2e247e37492d5fb8ec94a54ff8f3d45c6dbd113e996a87d3dbfc0476e"
+    },
+    {
+      "arquivo": "resync-r2/dark-1024-restaurado165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 139261,
+      "sha256": "6ec3f18792c4ff79eb75d1799fd94ee24da2ea0b20c1168b2f6685bbf23bacec"
+    },
+    {
+      "arquivo": "resync-r2/dark-390-baseline149.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 56637,
+      "sha256": "5ec711db095caf89744bb4e12e93ae662e80cd1c27a33677588245a2b1583f11"
+    },
+    {
+      "arquivo": "resync-r2/dark-390-oculto60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 61800,
+      "sha256": "827d99b386b79614ac5865f1a035d144b24f07e5ea8bcd4f7258e408d0ebdbf7"
+    },
+    {
+      "arquivo": "resync-r2/dark-390-oculto165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 53432,
+      "sha256": "bbaa2222e854219b74c7dd00bdd1ced9aed5d5e063af0eec51735092ae4125f9"
+    },
+    {
+      "arquivo": "resync-r2/dark-390-restaurado60.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 59191,
+      "sha256": "03e5b0e318d6c1ae4247d907c7d6ff8a35279dbda5fdf02960d34ea61ec4d39b"
+    },
+    {
+      "arquivo": "resync-r2/dark-390-restaurado165.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 56637,
+      "sha256": "5ec711db095caf89744bb4e12e93ae662e80cd1c27a33677588245a2b1583f11"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/dark-1024-0.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 154128,
+      "sha256": "1aefdc234d475091b322db5873e15de3d9726d52ae21f37af604c1d0e79a59ed"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/dark-1024-1.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 101644,
+      "sha256": "15636483a010b76617dc251116d7cc026e6dc6bcd673124b4d51629ee131463b"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/dark-1440-0.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 179020,
+      "sha256": "f12c2298deed71dbe1e57e946a2841a461a63905d0c49a30d122de9559528678"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/dark-1440-1.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 116727,
+      "sha256": "15fc6eeace8deb1080d8b88b3841607812571e613ffebb3f02fcacefc519ada2"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/dark-390-0.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 146396,
+      "sha256": "697909a45078a1d0e465ad3e9da1fe393361c19202874af83be4b29c7cea24ad"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/dark-390-1.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 99033,
+      "sha256": "fcde6744bbfa6a967f0e3d4c730fca9cdf9892aa0faa7f4fdb37f08dcb2945b9"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/light-1024-0.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 149690,
+      "sha256": "4f39e0acc89495101a054be61aab5dce8f2ff690daa84fd4e01f2bfeda5a1412"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/light-1024-1.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 98042,
+      "sha256": "af514cdd4432e55701a662619e2f700d7df06bc8c217086e423d6f0df103f0b5"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/light-1440-0.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 173982,
+      "sha256": "d39210efc8e9994c919ce9a1ee2f7e629af53756eb524b3be2c76c6c76fb6f46"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/light-1440-1.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 112825,
+      "sha256": "fb89f7789b798b636c4f3caf3c67bbc4e22fa49159ce393ac3016e7c01c516fe"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/light-390-0.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 142887,
+      "sha256": "c16c61bbc3eae3d1067c574b8fe96c9e5576d1d4d1a2edba7a26af95110c63ea"
+    },
+    {
+      "arquivo": "resync-r2/pranchas/light-390-1.png",
+      "grupo": "resync-r2",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 95835,
+      "sha256": "66ae11fd34aec4952aea77df97691fcb6897b270b2824a3fc8bfd64be39a6be6"
+    },
+    {
+      "arquivo": "medir-normal-r2.mjs",
+      "grupo": "probe privado sem credenciais literais",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 8105,
+      "sha256": "d3c44ab0fafe5ac7ba78a999f603aa66899cbf1781892680412fcd3309d641ec"
+    },
+    {
+      "arquivo": "medir-isolamento-r2.mjs",
+      "grupo": "probe privado sem credenciais literais",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 4754,
+      "sha256": "9c5778519e4c201d23c89ab9fbd5f3d147a4296f0888c0347edb9ea49ae0d5c0"
+    },
+    {
+      "arquivo": "copiar-formal-r2.mjs",
+      "grupo": "probe privado sem credenciais literais",
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "bytes": 1173,
+      "sha256": "2c161f30d3210a7f13ad3b6d9fa1be932621bf33327162764a2cdc23dbd67d24"
+    },
+    {
+      "arquivo": "medir-virtual-r3.mjs",
+      "grupo": "probe privado sem credenciais literais",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 7813,
+      "sha256": "5995dd4a006dbbcf144e0559a89593aa2ef9b5b1b95b8cea0bdc17e697b72365"
+    },
+    {
+      "arquivo": "medir-foco-await-r3.mjs",
+      "grupo": "probe privado sem credenciais literais",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 4707,
+      "sha256": "00d1909adffcd3907f7fd04afe225eed2bd7b2a4efbd267a4cad796bb416a1c3"
+    },
+    {
+      "arquivo": "medir-resync-r2.mjs",
+      "grupo": "probe privado sem credenciais literais",
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "bytes": 6320,
+      "sha256": "6079cb9c85d50d65a892de1b6afc6b746a3f9ae1015f79b7911b4894fa730c11"
+    }
+  ]
+}

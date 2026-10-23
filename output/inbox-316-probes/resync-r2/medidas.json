@@ -1,0 +1,654 @@
+{
+  "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+  "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "politica": "SSE real resync transacional do integrador, não mensagem.status comum; somente comandos UI de paginação.",
+  "resultados": [
+    {
+      "tema": "light",
+      "width": 1440,
+      "height": 900,
+      "fases": [
+        {
+          "fase": "baseline149",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 5,
+          "imagem": {
+            "arquivo": "light-1440-baseline149.png",
+            "sha256": "6cc9b4ae0deccb2efe86b8100dd9c897b92fd584adb76e79a5a1017d2a280bfe",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "Nenhuma",
+          "id": null,
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 6,
+          "imagem": {
+            "arquivo": "light-1440-oculto60.png",
+            "sha256": "047a4467f0e656068cad5055d5b7f65f653f64f507c3ed860a0f3c0f064905a2",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-000",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 8,
+          "imagem": {
+            "arquivo": "light-1440-oculto165.png",
+            "sha256": "805c8242fee797540b6ba100bf04a732b0353f9d69daccaa3f9caf2f0ded34e5",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 9,
+          "imagem": {
+            "arquivo": "light-1440-restaurado60.png",
+            "sha256": "ee9dfe0855064fb1e1167fe913bdfd6d094f0e814f2804f56500ca6b71882955",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 11,
+          "imagem": {
+            "arquivo": "light-1440-restaurado165.png",
+            "sha256": "3e29bb4935178159989adbd3687e3f055a8a2ea05f013f83b9f2e780e31c76a8",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoPreparadoAposComandoUI": false
+    },
+    {
+      "tema": "light",
+      "width": 1024,
+      "height": 768,
+      "fases": [
+        {
+          "fase": "baseline149",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 5,
+          "imagem": {
+            "arquivo": "light-1024-baseline149.png",
+            "sha256": "62097892025798277d1acfbd9a51771b2e44c085c9cf8b54f672346c2bf6d890",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "Nenhuma",
+          "id": null,
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 6,
+          "imagem": {
+            "arquivo": "light-1024-oculto60.png",
+            "sha256": "11ace70d1c140cf68c85e3441f60472a8116a841e48bba93aacfea865a2dc47d",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-000",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 8,
+          "imagem": {
+            "arquivo": "light-1024-oculto165.png",
+            "sha256": "7a91e65bb10e64506307079ea9a3f4380d19c7dd085a60336a56ad751bcdc52a",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 9,
+          "imagem": {
+            "arquivo": "light-1024-restaurado60.png",
+            "sha256": "ae6f58ad845849611a198fd3372c6fd781db3149fbdaf301669b30cc26c164d7",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 11,
+          "imagem": {
+            "arquivo": "light-1024-restaurado165.png",
+            "sha256": "deabfee2dbcbec3d19f5833c7c2b1719fb09019afb0ed8456a5d46b6d8a0b703",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoPreparadoAposComandoUI": false
+    },
+    {
+      "tema": "light",
+      "width": 390,
+      "height": 844,
+      "fases": [
+        {
+          "fase": "baseline149",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 5,
+          "imagem": {
+            "arquivo": "light-390-baseline149.png",
+            "sha256": "36414425ac87066343235218d7ecc31cd6121f4cbba713cf64f774344bcf58de",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "Nenhuma",
+          "id": null,
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 6,
+          "imagem": {
+            "arquivo": "light-390-oculto60.png",
+            "sha256": "1df580e061cd95d26a717769cc6d3327ff590f4bafff23020a1ba067edbf72f6",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-000",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 8,
+          "imagem": {
+            "arquivo": "light-390-oculto165.png",
+            "sha256": "df452a7c3ca2c8562e62b3f9ee79b60d38a6a41229eb3d511abc23fca807eff3",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 9,
+          "imagem": {
+            "arquivo": "light-390-restaurado60.png",
+            "sha256": "5679d4d9d1aa84282809e485efb421e0f1800d3b688681f00efa32c276f0aaba",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 11,
+          "imagem": {
+            "arquivo": "light-390-restaurado165.png",
+            "sha256": "36414425ac87066343235218d7ecc31cd6121f4cbba713cf64f774344bcf58de",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoPreparadoAposComandoUI": false
+    },
+    {
+      "tema": "dark",
+      "width": 1440,
+      "height": 900,
+      "fases": [
+        {
+          "fase": "baseline149",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 5,
+          "imagem": {
+            "arquivo": "dark-1440-baseline149.png",
+            "sha256": "6fc787842fb886d28037670e7be5f405ae2d9103d0e2470e81ef3848f713bdec",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "Nenhuma",
+          "id": null,
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 6,
+          "imagem": {
+            "arquivo": "dark-1440-oculto60.png",
+            "sha256": "930c86016a0fef2b44c4267acaca353cc880dc90c0af5fbfe9bf3295c9e43ac8",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-000",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 8,
+          "imagem": {
+            "arquivo": "dark-1440-oculto165.png",
+            "sha256": "5cb3fc442c7e2264d7eabb35c19328a4ff28592d2cc0b81a5c1d57deff4b5c18",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 9,
+          "imagem": {
+            "arquivo": "dark-1440-restaurado60.png",
+            "sha256": "08f28a5fc26a30eafd52a11723f75e482b8d4025ac00c2fefb6c059b5f6a1ca6",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 11,
+          "imagem": {
+            "arquivo": "dark-1440-restaurado165.png",
+            "sha256": "2e563fc6498d567b76f0b26fb79d6c1ac3520b02a65d085f082e9124d1cf6377",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoPreparadoAposComandoUI": false
+    },
+    {
+      "tema": "dark",
+      "width": 1024,
+      "height": 768,
+      "fases": [
+        {
+          "fase": "baseline149",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 5,
+          "imagem": {
+            "arquivo": "dark-1024-baseline149.png",
+            "sha256": "244b9ba357e38e59a26aa72a17681dbf22fa77685718ef23724ffde87c286e0a",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "Nenhuma",
+          "id": null,
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 6,
+          "imagem": {
+            "arquivo": "dark-1024-oculto60.png",
+            "sha256": "07dfe70de442385ac9940a59f2dd89107cd7ef5667008a3bd678699acdaaa681",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-000",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 8,
+          "imagem": {
+            "arquivo": "dark-1024-oculto165.png",
+            "sha256": "faaedd038cc9b430682ef1a494ad55616b9e8a833a4f720f9760aa9f312c1d34",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 9,
+          "imagem": {
+            "arquivo": "dark-1024-restaurado60.png",
+            "sha256": "7ee7e9b2e247e37492d5fb8ec94a54ff8f3d45c6dbd113e996a87d3dbfc0476e",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 11,
+          "imagem": {
+            "arquivo": "dark-1024-restaurado165.png",
+            "sha256": "6ec3f18792c4ff79eb75d1799fd94ee24da2ea0b20c1168b2f6685bbf23bacec",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoPreparadoAposComandoUI": false
+    },
+    {
+      "tema": "dark",
+      "width": 390,
+      "height": 844,
+      "fases": [
+        {
+          "fase": "baseline149",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 5,
+          "imagem": {
+            "arquivo": "dark-390-baseline149.png",
+            "sha256": "5ec711db095caf89744bb4e12e93ae662e80cd1c27a33677588245a2b1583f11",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "Nenhuma",
+          "id": null,
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 6,
+          "imagem": {
+            "arquivo": "dark-390-oculto60.png",
+            "sha256": "827d99b386b79614ac5865f1a035d144b24f07e5ea8bcd4f7258e408d0ebdbf7",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "oculto165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-000",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 8,
+          "imagem": {
+            "arquivo": "dark-390-oculto165.png",
+            "sha256": "bbaa2222e854219b74c7dd00bdd1ced9aed5d5e063af0eec51735092ae4125f9",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado60",
+          "focoPreparadoPeloProbe": false,
+          "contador": "1 de 1",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 0,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 9,
+          "imagem": {
+            "arquivo": "dark-390-restaurado60.png",
+            "sha256": "03e5b0e318d6c1ae4247d907c7d6ff8a35279dbda5fdf02960d34ea61ec4d39b",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        },
+        {
+          "fase": "restaurado165",
+          "focoPreparadoPeloProbe": false,
+          "contador": "2 de 2",
+          "id": "inbox-316-busca-msg-149",
+          "totalVisual": 165,
+          "campoFocado": true,
+          "documentY": 0,
+          "consultas": 11,
+          "imagem": {
+            "arquivo": "dark-390-restaurado165.png",
+            "sha256": "5ec711db095caf89744bb4e12e93ae662e80cd1c27a33677588245a2b1583f11",
+            "politica": {
+              "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+              "versao": 1,
+              "substituicoes": 0
+            }
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoPreparadoAposComandoUI": false
+    }
+  ],
+  "mutacoesRoot": {
+    "ocultar": {
+      "executor": "0b4183",
+      "exit": 0
+    },
+    "restaurar": {
+      "executor": "de1cb3",
+      "exit": 0
+    },
+    "limite": "Somente corpo privado149 e resync transacional; sem alteração do produtor comum de status."
+  }
+}
