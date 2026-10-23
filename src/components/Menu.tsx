@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, type CSSProperties, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { acaoTecladoMenu, posicaoPopover } from "@/lib/popover";
 
 export const CLASSE_PAINEL_MENU = "min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover";
@@ -71,11 +71,12 @@ export function ligarMenuAberto(o: {
   };
 }
 
-type ItemMenu = { rotulo: string; icone?: ReactNode; perigo?: boolean; desabilitado?: boolean; aoEscolher: () => void };
+export type ItemMenu = { rotulo: string; icone?: ReactNode; dica?: string; divisorDepois?: boolean; perigo?: boolean; desabilitado?: boolean; aoEscolher: () => void };
 
 // Menu de ações. Posição e teclado vêm de funções puras (@/lib/popover); aqui só se ligam eventos.
-export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: ReactNode; itens: ItemMenu[] }) {
-  const [aberto, setAberto] = useState(false);
+export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatilho = "", abertoInicial = false, folhaNoCelular = false }: { rotulo: string; gatilho: ReactNode; itens: ItemMenu[]; densidade?: "padrao" | "compacta"; classeGatilho?: string; abertoInicial?: boolean; folhaNoCelular?: boolean }) {
+  const compacto = densidade === "compacta";
+  const [aberto, setAberto] = useState(abertoInicial);
   const [pos, setPos] = useState<{ topo: number; esquerda: number } | null>(null);
   const gatilhoRef = useRef<HTMLButtonElement>(null);
   const painelRef = useRef<HTMLDivElement>(null);
@@ -129,7 +130,7 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
         aria-expanded={aberto}
         aria-controls={aberto ? id : undefined}
         onClick={() => (aberto ? fechar(false) : setAberto(true))}
-        className="inline-flex items-center justify-center rounded-md max-sm:min-h-11 max-sm:min-w-11 hover:bg-highlight"
+        className={("inline-flex items-center justify-center rounded-md max-sm:min-h-11 max-sm:min-w-11 hover:bg-highlight " + classeGatilho).trim()}
       >
         {gatilho}
       </button>
@@ -139,11 +140,11 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
           id={id}
           role="menu"
           aria-label={rotulo}
-          style={{ position: "fixed", top: pos?.topo ?? 0, left: pos?.esquerda ?? 0, visibility: pos ? "visible" : "hidden", zIndex: 50 }}
-          className={CLASSE_PAINEL_MENU}
+          style={folhaNoCelular ? { "--menu-top": (pos?.topo ?? 0) + "px", "--menu-left": (pos?.esquerda ?? 0) + "px", visibility: pos ? "visible" : "hidden", zIndex: 50 } as CSSProperties : { position: "fixed", top: pos?.topo ?? 0, left: pos?.esquerda ?? 0, visibility: pos ? "visible" : "hidden", zIndex: 50 }}
+          className={(compacto ? "w-[290px] max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain rounded-dialog border border-gray-200 bg-surface-raised p-1.5 shadow-popover" : CLASSE_PAINEL_MENU) + (folhaNoCelular ? " fixed top-[var(--menu-top)] left-[var(--menu-left)] max-[699px]:inset-x-0 max-[699px]:bottom-0 max-[699px]:top-auto max-[699px]:w-auto max-[699px]:max-h-[85dvh] max-[699px]:overflow-y-auto max-[699px]:overscroll-contain max-[699px]:rounded-t-[18px]" : "")}
         >
           {itens.map((item, indice) => (
-            <button
+            <Fragment key={indice}><button
               key={indice}
               type="button"
               role="menuitem"
@@ -152,11 +153,12 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
                 fechar(true);
                 item.aoEscolher();
               }}
-              className={`${CLASSE_ITEM_MENU} ${item.perigo ? "text-red-700" : "text-gray-800"}`}
+              className={`${compacto ? "flex min-h-[38px] max-[699px]:min-h-11 w-full items-center gap-[11px] rounded-lg px-2.5 py-2 text-left text-[13.5px] hover:bg-highlight focus-visible:bg-highlight disabled:cursor-not-allowed disabled:text-disabled" : CLASSE_ITEM_MENU} ${item.perigo ? "text-red-700" : "text-gray-800"}`}
             >
-              {item.icone}
-              {item.rotulo}
-            </button>
+              {compacto ? item.icone && <span className="w-[18px] shrink-0" aria-hidden>{item.icone}</span> : item.icone}
+              {compacto ? <span className="min-w-0 flex-1">{item.rotulo}</span> : item.rotulo}
+              {item.dica && <span className="ml-auto max-w-[52%] text-[11.5px] text-gray-400">{item.dica}</span>}
+            </button>{item.divisorDepois && <div role="separator" className="mx-1.5 my-1 h-px bg-gray-200" />}</Fragment>
           ))}
         </div>
       )}

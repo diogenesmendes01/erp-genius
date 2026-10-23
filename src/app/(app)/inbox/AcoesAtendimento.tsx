@@ -8,9 +8,9 @@ import { Campo } from "@/components/Campo";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
-import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
@@ -22,13 +22,16 @@ import { fusoDoCampoLocal, instanteDoCampoLocal } from "@/server/operacao/fuso-e
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { listarConvitesEAgendamentos, listarPessoasParaAtendimento, type AgendamentoAtivo, type ConviteAtivo } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "@/server/whatsapp/operacoes-atendimento";
-import { alternarFixada, silenciarConversa } from "@/server/whatsapp/preferencias";
+import { alternarFixada, silenciarConversa, marcarNaoLida } from "@/server/whatsapp/preferencias";
 import type { Resultado } from "@/server/_shared/resultado";
 import type { Setor } from "@/server/whatsapp/setor";
+
+import { itensDoMenuConversa, type AcoesCabecalho } from "./MenuConversa";
 
 export interface DestinoTransferencia { chave: string; nome: string; finalidade: Setor; disponivel?: boolean }
 
 export interface PropsAcoesAtendimento {
+  grupo?: boolean;
   atendimento: { id: string; finalidade: Setor; responsavelId: string | null; status: StatusAtendimentoWhatsApp };
   usuario: { id: string; papeis: Papel[] };
   setoresDoNumero: Setor[];
@@ -68,7 +71,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso }: PropsAcoesAtendimento) {
+export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   // Fixar alterna o estado: o reenvio desfaria o primeiro clique, então fica sem garantia de repetição.
@@ -77,37 +80,34 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
   const responsavel = useAcaoCliente({ idempotente: true });
   const aberto = atendimento.status !== "ENCERRADO";
   const ctx = { setor: atendimento.finalidade, responsavelId: atendimento.responsavelId, linhaComercial, donoLinhaId };
-  const pode = (a: Parameters<typeof podeExecutar>[1]) => aberto && podeExecutar(usuario, a, ctx);
+  const pode = (a: Parameters<typeof podeExecutar>[1]) => !grupo && aberto && podeExecutar(usuario, a, ctx);
 
-  async function rodar(acao: () => Promise<Resultado>, sucesso: string, executor: typeof direta = direta) {
+  async function rodar(acao: () => Promise<Resultado>, sucesso: string, executor: typeof direta = direta, aposSucesso?: () => void) {
     setAviso(null);
     direta.limpar(); responsavel.limpar();
     const d = await executor.executar(acao, sucesso);
-    if (d?.tipo === "ok") { setAviso(sucesso); aoMudar?.(); }
+    if (d?.tipo === "ok") { aposSucesso?.(); setAviso(sucesso); aoMudar?.(); }
   }
   const concluir = (msg: string) => { setDialogo(null); setAviso(msg); aoMudar?.(); };
   // Revogar convite / cancelar agendamento: o diálogo de pendências continua aberto para as próximas.
   const avisar = (qual: "convite" | "agendamento") => { setAviso(qual === "convite" ? "Convite revogado." : "Agendamento cancelado."); aoMudar?.(); };
 
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Ações do atendimento">
-        {pode("assumir") && <Botao tamanho="sm" ocupado={responsavel.ocupado} onClick={() => void rodar(() => assumirAtendimento(atendimento.id), "Atendimento assumido.", responsavel)}>Assumir</Botao>}
-        {pode("devolver") && <Botao tamanho="sm" variante="secundario" ocupado={responsavel.ocupado} onClick={() => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.", responsavel)}>Devolver para a fila</Botao>}
-        {pode("atribuir") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("atribuir")}>Atribuir</Botao>}
-        {pode("transferir") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("transferir")}>Transferir</Botao>}
-        {pode("convidar") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("convidar")}>Convidar</Botao>}
-        {pode("notaInterna") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("nota")}>Nota interna</Botao>}
-        {pode("agendar") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("agendar")}>Agendar mensagem</Botao>}
-        {(pode("convidar") || pode("agendar")) && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("pendentes")}>Convites e agendamentos</Botao>}
-        {pode("encerrar") && <Botao tamanho="sm" variante="perigo" onClick={() => setDialogo("encerrar")}>Encerrar atendimento</Botao>}
-        {pode("bloquear") && <Botao tamanho="sm" variante="secundario" disabled title={AVISO_RECURSO_MOTOR}>Bloquear</Botao>}
-        <Botao tamanho="sm" variante="fantasma" ocupado={direta.ocupado} aria-pressed={fixada} onClick={() => void rodar(() => alternarFixada(atendimento.id), fixada ? "Conversa desafixada." : "Conversa fixada.")}>{fixada ? "Desafixar" : "Fixar"}</Botao>
-        <Botao tamanho="sm" variante="fantasma" ocupado={direta.ocupado} aria-pressed={silenciada} onClick={() => void rodar(() => silenciarConversa(atendimento.id, silenciada ? null : new Date(Date.now() + SILENCIO_HORAS * 3_600_000).toISOString()), silenciada ? "Notificações reativadas." : `Silenciada por ${SILENCIO_HORAS} horas.`)}>{silenciada ? "Reativar notificações" : "Silenciar"}</Botao>
-      </div>
-      <p className="text-xs text-gray-500">Fixar e silenciar valem só para você.</p>
-      <FeedbackAcao erro={direta.erro ?? responsavel.erro} sucesso={aviso} />
-
+  const ocupado = direta.ocupado || responsavel.ocupado;
+  const abrirAgendar = pode("agendar") ? () => setDialogo("agendar") : null;
+  const assumir = pode("assumir") ? { rotulo: "Assumir conversa", ocupado, aoEscolher: () => void rodar(() => assumirAtendimento(atendimento.id), "Atendimento assumido.", responsavel) } : null;
+  const transferir = pode("transferir") ? { rotulo: "Transferir", ocupado, aoEscolher: () => setDialogo("transferir") } : null;
+  const menu = itensDoMenuConversa({ pode, fixada, silenciada, acoes: {
+    naoLida: () => void rodar(() => marcarNaoLida(atendimento.id), "Conversa marcada como não lida só para você.", responsavel, recontarNaoLidasInbox),
+    fixar: () => void rodar(() => alternarFixada(atendimento.id), fixada ? "Conversa desafixada." : "Conversa fixada."),
+    silenciar: () => void rodar(() => silenciarConversa(atendimento.id, silenciada ? null : new Date(Date.now() + SILENCIO_HORAS * 3_600_000).toISOString()), silenciada ? "Notificações reativadas." : "Silenciada por " + SILENCIO_HORAS + " horas."),
+    nota: () => setDialogo("nota"), agendar: () => setDialogo("agendar"), pendentes: () => setDialogo("pendentes"), buscar: aoBuscar,
+    atribuir: () => setDialogo("atribuir"), devolver: () => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.", responsavel),
+    convidar: () => setDialogo("convidar"), encerrar: () => setDialogo("encerrar"), bloquear: () => {},
+  }}).map(item => ({ ...item, desabilitado: item.desabilitado || ocupado }));
+  const erro = direta.erro ?? responsavel.erro;
+  const feedback = erro || aviso ? <div className="border-b border-gray-200 bg-surface px-3 py-1.5"><FeedbackAcao erro={erro} sucesso={aviso} /></div> : null;
+  const dialogos = (
+    <>
       {dialogo === "atribuir" && <DialogoPessoa atendimentoId={atendimento.id} modo="atribuir" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento atribuído.")} />}
       {dialogo === "convidar" && <DialogoPessoa atendimentoId={atendimento.id} modo="convidar" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Convite enviado.")} />}
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
@@ -127,8 +127,9 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
           <p>O atendimento sai da fila e das listas abertas. Uma nova mensagem do contato abre outro atendimento; este não é reaberto.</p>
         </ConfirmarAcao>
       )}
-    </div>
+    </>
   );
+  return { assumir, transferir, menu, dialogos, feedback, abrirAgendar };
 }
 
 interface PropsDialogo { aoFechar: () => void; aoConcluir: () => void }
