@@ -1,4 +1,5 @@
 import { Client } from "pg";
+import type { Prisma } from "@prisma/client";
 
 // Barramento de tempo real do inbox (E6): um único pg.Client por processo faz LISTEN no canal
 // e repassa os avisos (só ids, sem conteúdo) aos assinantes. O NOTIFY só chega no commit.
@@ -17,6 +18,12 @@ export type AvisoInbox = {
    */
   paraUsuarioId?: string;
 };
+
+/** NOTIFY transacional: só ids, entregue após o commit a quem o SSE considerar no escopo. */
+export async function avisarAtendimentoAtualizado(tx: Prisma.TransactionClient, a: { id: string; conversaId: string }): Promise<void> {
+  const aviso: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId };
+  await tx.$executeRaw`SELECT pg_notify(${CANAL_INBOX}, ${JSON.stringify(aviso)})`;
+}
 
 type Estado = {
   assinantes: Set<(a: AvisoInbox) => void>;
