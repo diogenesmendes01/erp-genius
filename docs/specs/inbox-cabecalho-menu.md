@@ -54,4 +54,6 @@ Não muda permissões/servidor ou a regra de nota interna. C2 da revisão403
 permanece separado na funcionalidade317.
 Recorte6/81 e global42416 EXIT0:887arquivos/6.950testes,sem filtros/ignorados;
 Nexttypegen/TSC61138 e lint86951 EXIT0,0erros40avisos anteriores. Sem novo
-DB/browser. TESTERexato/CI/main/#392B2 pendentes. output/pr401-qa/revisao.md.
+DB/browser. TESTER5a favorável9/118 próprios,143668 EXIT0,sem DB/browser/
+global/TSC/lint. Basedca8c5d5 recebe sódocsQA/404,source/deps iguais5a,
+zeroPNG298. CI/main/#392B2 pendentes. output/pr401-qa/revisao.md.

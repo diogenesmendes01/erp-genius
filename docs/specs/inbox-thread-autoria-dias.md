@@ -61,4 +61,8 @@ lint global44100 EXIT0/40 avisos anteriores. TSC60102 identificou quatro
 fixtures314 com três argumentos; adaptação posterior somente no teste passa
 false explícito. Recorte final7/143,TSC84417 e lint do teste EXIT0. Nenhum
 runtime posterior ao global, sem repetir o global pela adaptação de fixtures.
-TESTER exato/CI/main/#392B2 pendentes. output/pr398-qa/revisao.md.
+TESTERbc4 favorável7/148 próprios,d722b1 EXIT0,sem DB/browser/global/TSC;
+CI/main/#392B2 pendentes. Baseb23ff13b recebe limpeza404(sóPNG/docs),
+runtime/scripts/deps iguaisbc4. Quatro variantes legadas preservadas só
+em backup local antes da retirada, sem reatribuição aoZIP381.
+output/pr398-qa/revisao.md.
