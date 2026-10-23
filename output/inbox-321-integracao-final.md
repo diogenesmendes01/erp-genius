@@ -59,3 +59,23 @@ não foram restaurados scripts antigos por causa dos conflitos de merge.
 SPEC: `docs/specs/inbox-aviso-capacidades-painel.md`. Relatório DEV:
 `output/inbox-321-report.md`. Parecer independente:
 `output/inbox-321-review-tester.md`.
+
+## Verificação da branch individual com B2
+
+O DEV A verificou o checkout exato
+`281ac3ad95e4e5797614d39438b553d8f6c59d85` no próprio worktree, sem banco,
+browser, geração Prisma ou instalação. Evidências terminais comunicadas ao
+integrador: nominais3arquivos/77testes (efd792, saída0),
+dependências/harness13arquivos/93testes (88a2dc, saída0), TypeScript heap8192
+(sessão57435/d2faf6, saída0), lint21fontes (09d06b, saída0).
+Preflight74d121 e resolução realc32e63, saída0: test, playwright, core do runner
+e core direto estão em1.64.1.
+
+Produção/prisma dessa branch é idêntica a9d; scripts modernos são idênticos a
+cea. A igualdade com main b6 limita-se a manifesto, lock e às duas guardas
+`src/test/dependencias.ts`/`dependencias.test.ts`. Guardas AST de botões,
+fundo, identificação e enums preservam os registros mais recentes da E1;
+não se alega que todas as guardas sejam iguais à main anterior.
+
+O commit posterior de publicação atualiza somente este documento, preservando
+os executáveis do checkout281 validado.
