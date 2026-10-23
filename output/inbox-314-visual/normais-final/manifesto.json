@@ -1,0 +1,130 @@
+{
+  "fonte": "944e1736683aae58d85d00c6751dc8093b449b07",
+  "session_id": 10054,
+  "exit_code": 0,
+  "node": "22.23.2",
+  "inspecao": "24 PNGs nas6pranchas por contexto;28formais também individualmente inspecionados",
+  "capturas": [
+    {
+      "arquivo": "dark-1024-autores.png",
+      "sha256": "5ead9665d2803e3e26b9a9b87097d698ba9d077f0d5f07a9ccc92b263a30972a",
+      "bytes": 136128
+    },
+    {
+      "arquivo": "dark-1024-notas.png",
+      "sha256": "96c70c649a887dd6fa5ece4cab80b1139970596f6c11e191deed4b7cb60d8689",
+      "bytes": 146124
+    },
+    {
+      "arquivo": "dark-1024-thread-topo.png",
+      "sha256": "5d76e139f5e88f187ac88041f07bed3d37d4c71e8f56b6eda45a1bcd15dbcce5",
+      "bytes": 131563
+    },
+    {
+      "arquivo": "dark-1024-transferencia.png",
+      "sha256": "03099e780fb7b1756e6b523e315cfdf707cce4b4cb641ac5828bf28e371736b5",
+      "bytes": 111690
+    },
+    {
+      "arquivo": "dark-1440-autores.png",
+      "sha256": "ac80771d1b04b396081ca53d4abdacc90cc0beb1342abb612b304b364efad918",
+      "bytes": 187316
+    },
+    {
+      "arquivo": "dark-1440-notas.png",
+      "sha256": "1b8a013f79d63335c860583d33bcba4a76eb6c0faad0254d6d540ebfdf8d5b46",
+      "bytes": 200398
+    },
+    {
+      "arquivo": "dark-1440-thread-topo.png",
+      "sha256": "ac80771d1b04b396081ca53d4abdacc90cc0beb1342abb612b304b364efad918",
+      "bytes": 187316
+    },
+    {
+      "arquivo": "dark-1440-transferencia.png",
+      "sha256": "20f6345c8936027630072d3bbbc63c6b6d3b83301bae2839985cf0211d4d7e87",
+      "bytes": 159193
+    },
+    {
+      "arquivo": "dark-390-autores.png",
+      "sha256": "c3a55a2ff9ae45a37d3e403620cb135c08b27fa14dd149e0d8ba6bca178f06a8",
+      "bytes": 57333
+    },
+    {
+      "arquivo": "dark-390-notas.png",
+      "sha256": "37f1312e257c80440b01a973ef83f34c95f0ef280c645c6d615536fce30b8c9d",
+      "bytes": 64847
+    },
+    {
+      "arquivo": "dark-390-thread-topo.png",
+      "sha256": "368c851586dd0c92a32052eb160fb9db588bab55804d8c145b1d21d3515d4f9b",
+      "bytes": 52615
+    },
+    {
+      "arquivo": "dark-390-transferencia.png",
+      "sha256": "091de6fc163501d487d7afc4916120457dbeb7ce4c78ff7e347b72d0ee488350",
+      "bytes": 41253
+    },
+    {
+      "arquivo": "light-1024-autores.png",
+      "sha256": "a96815d1d93aef226d951df208b3d43163d4f4e039eaf270a8b6c4c3e3a84d3e",
+      "bytes": 135009
+    },
+    {
+      "arquivo": "light-1024-notas.png",
+      "sha256": "4b5d4b73a4e40561535faf705e6b1327ead358ed37082fff4a5ebb2a94a59395",
+      "bytes": 144623
+    },
+    {
+      "arquivo": "light-1024-thread-topo.png",
+      "sha256": "eedaf85c9916c906369abf332b42c05dfa872790026fa4e28d56e68b16c22959",
+      "bytes": 130963
+    },
+    {
+      "arquivo": "light-1024-transferencia.png",
+      "sha256": "1af376f73e2ff3d0977972bbf89eccdeb0bebef9c01fd2d53c5551d0e0df2142",
+      "bytes": 112649
+    },
+    {
+      "arquivo": "light-1440-autores.png",
+      "sha256": "d474b93825397669dab40a298f346b32ad2e655af9f15a6fcc8c5af0e20e8409",
+      "bytes": 187000
+    },
+    {
+      "arquivo": "light-1440-notas.png",
+      "sha256": "3f29c6e4263262f56c1343371b27ecaea43d043bdaba2eb4cd1031365eea1746",
+      "bytes": 199271
+    },
+    {
+      "arquivo": "light-1440-thread-topo.png",
+      "sha256": "d474b93825397669dab40a298f346b32ad2e655af9f15a6fcc8c5af0e20e8409",
+      "bytes": 187000
+    },
+    {
+      "arquivo": "light-1440-transferencia.png",
+      "sha256": "41e66076451e9e44b3e384bd616a6d556463dae08e41a10244c8ba5aa7966e0e",
+      "bytes": 160748
+    },
+    {
+      "arquivo": "light-390-autores.png",
+      "sha256": "b146e7f350eb42fef459933118d6d873483019c2daba40049a635a6510f2c811",
+      "bytes": 56921
+    },
+    {
+      "arquivo": "light-390-notas.png",
+      "sha256": "f4fcb8b344b592a1874502c2eccc8618b613958e48715d4b4b414b12e125ad7c",
+      "bytes": 63936
+    },
+    {
+      "arquivo": "light-390-thread-topo.png",
+      "sha256": "fff2428e25e4b637a92429097d614402243f122c10a3b6ffebf057bc26e2208f",
+      "bytes": 52720
+    },
+    {
+      "arquivo": "light-390-transferencia.png",
+      "sha256": "ebe074a5c075c700e98547b3adc6e1d5c7d3ea6b6506b25e4a4f8cee53d2f938",
+      "bytes": 41812
+    }
+  ],
+  "limite": "prova privada; XSS comprovado em testeSSR, sem payloadbrowser; não executarenvio/DB"
+}

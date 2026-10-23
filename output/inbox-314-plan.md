@@ -13,3 +13,9 @@ Rulings: brand-strong para autor humano (contraste306); sem sombra nos balões; 
 Estado: etapas1–3 implementadas e recorte46arquivos567testes/TSC/lint verdes no checkpoint epoch; etapa4 parcial, aguardando fixture/preview/harness para geometria e visual. Nenhum aceite presumido.
 
 Ruling de checkpoint: contrato ISO5a43 substituído pelo epoch comum312. Mesmo instante no primeiro paint SSR/hidratação; cliente renova ao assinar/receber conteúdo/trocar seleção, sem timer ou snapshot getter instável. Props opcionais inválidas usam0 no servidor. Novo teste hydrateRoot real cobre23:59→00:01→mensagem00:02, identidade do nó e onRecoverableError vazio.
+
+Após prova privada virtual6/6GREEN029, merge/handoff dd141→b0eea9ca e limpeza fixture somente integrador: A agora ownsCLI/núcleo/esperas/README, deltaformal humano3sizes/prontidão implementado por TDD. Finalrecorte51arquivos613/TSC/lint0. Próximo preview formal28PNG; nenhuma DBmutação/full próprio.
+
+Estado final DEV: formal28ecomplementos24inspecionados, virtual6/6GREEN/runtimeidêntico944. Fontes sem mudança apósgates51/613/TSC/lint; consolidar somente docs/JSON/probes, semPNG. Aguardando parada preview/restoreNextAGENTS, commitdocumental, TESTERexato eglobalcoordenado.
+
+Preview40152 encerrado/NextAGENTSrestaurado. Allowlist positiva70PNGs/15documentosprobes pronta, sem copiar pasta inteira ou versionarPNG; negativos separados. Somente consolidação documental após944, QA/global coordenados pendentes.

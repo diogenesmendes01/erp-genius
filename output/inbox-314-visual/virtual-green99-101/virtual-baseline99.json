@@ -1,0 +1,2546 @@
+[
+  {
+    "tema": "light",
+    "width": 1440,
+    "height": 900,
+    "paginas": 2,
+    "antes": {
+      "geometria": {
+        "clientTop": 0,
+        "listOffset": 18,
+        "rootTop": -3276,
+        "firstRowTop": -3276,
+        "anchorRowTop": 286.90625,
+        "somaPre": 3562.90625,
+        "descartadasRegraAnterior": 27,
+        "deltaDescartado": 5.0625,
+        "alturas": [
+          {
+            "key": "dia:2026-10-21",
+            "height": 40
+          },
+          {
+            "key": "inbox-314-msg-ontem",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-ontem-307",
+            "height": 71.8125
+          },
+          {
+            "key": "nota:inbox-demo-nota-beatriz-307",
+            "height": 98.8125
+          },
+          {
+            "key": "dia:2026-10-22",
+            "height": 40
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-307",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-000",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-001",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-002",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-003",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-004",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-005",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-006",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-007",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-008",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-009",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-010",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-011",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-012",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-013",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-014",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-015",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-016",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-017",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-018",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-019",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-020",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-021",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-022",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-023",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-024",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-025",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-026",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-027",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-028",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-029",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-030",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-031",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-032",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-033",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-034",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-035",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-036",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-037",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-038",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-039",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-040",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-041",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-042",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-043",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-044",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-045",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-046",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-047",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-048",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-049",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-050",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-051",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-052",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-053",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-054",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-055",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-056",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-057",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-058",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-059",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-060",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-061",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-062",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-063",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-064",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-065",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-066",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-067",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-068",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-069",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-070",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-071",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-072",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-073",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-074",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-075",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-076",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-077",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-078",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-079",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-080",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-081",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-082",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-083",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-falhou-307",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-voce",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-camila",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos-sequencia",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-aria",
+            "height": 96.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-atendimento",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-oportunidade",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-sem-autor",
+            "height": 78.515625
+          }
+        ]
+      },
+      "offset": 79.90625,
+      "scrollTop": 3501,
+      "foco": true,
+      "mensagens": 93,
+      "notas": 4,
+      "virtual": false
+    },
+    "erros": [],
+    "externos": []
+  },
+  {
+    "tema": "light",
+    "width": 1024,
+    "height": 768,
+    "paginas": 2,
+    "antes": {
+      "geometria": {
+        "clientTop": 0,
+        "listOffset": 18,
+        "rootTop": -3276,
+        "firstRowTop": -3276,
+        "anchorRowTop": 286.90625,
+        "somaPre": 3562.90625,
+        "descartadasRegraAnterior": 27,
+        "deltaDescartado": 5.0625,
+        "alturas": [
+          {
+            "key": "dia:2026-10-21",
+            "height": 40
+          },
+          {
+            "key": "inbox-314-msg-ontem",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-ontem-307",
+            "height": 71.8125
+          },
+          {
+            "key": "nota:inbox-demo-nota-beatriz-307",
+            "height": 98.8125
+          },
+          {
+            "key": "dia:2026-10-22",
+            "height": 40
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-307",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-000",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-001",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-002",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-003",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-004",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-005",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-006",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-007",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-008",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-009",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-010",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-011",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-012",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-013",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-014",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-015",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-016",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-017",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-018",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-019",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-020",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-021",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-022",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-023",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-024",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-025",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-026",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-027",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-028",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-029",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-030",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-031",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-032",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-033",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-034",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-035",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-036",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-037",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-038",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-039",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-040",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-041",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-042",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-043",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-044",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-045",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-046",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-047",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-048",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-049",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-050",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-051",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-052",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-053",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-054",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-055",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-056",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-057",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-058",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-059",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-060",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-061",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-062",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-063",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-064",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-065",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-066",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-067",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-068",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-069",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-070",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-071",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-072",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-073",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-074",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-075",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-076",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-077",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-078",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-079",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-080",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-081",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-082",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-083",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-falhou-307",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-voce",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-camila",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos-sequencia",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-aria",
+            "height": 96.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-atendimento",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-oportunidade",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-sem-autor",
+            "height": 78.515625
+          }
+        ]
+      },
+      "offset": 79.90625,
+      "scrollTop": 3501,
+      "foco": true,
+      "mensagens": 93,
+      "notas": 4,
+      "virtual": false
+    },
+    "erros": [],
+    "externos": []
+  },
+  {
+    "tema": "light",
+    "width": 390,
+    "height": 844,
+    "paginas": 2,
+    "antes": {
+      "geometria": {
+        "clientTop": 0,
+        "listOffset": 12,
+        "rootTop": -3395.203125,
+        "firstRowTop": -3395.203125,
+        "anchorRowTop": 451.859375,
+        "somaPre": 3847.0625,
+        "descartadasRegraAnterior": 27,
+        "deltaDescartado": 5.0625,
+        "alturas": [
+          {
+            "key": "dia:2026-10-21",
+            "height": 40
+          },
+          {
+            "key": "inbox-314-msg-ontem",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-ontem-307",
+            "height": 71.8125
+          },
+          {
+            "key": "nota:inbox-demo-nota-beatriz-307",
+            "height": 98.8125
+          },
+          {
+            "key": "dia:2026-10-22",
+            "height": 40
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-307",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-000",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-001",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-002",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-003",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-004",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-005",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-006",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-007",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-008",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-009",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-010",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-011",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-012",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-013",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-014",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-015",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-016",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-017",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-018",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-019",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-020",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-021",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-022",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-023",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-024",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-025",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-026",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-027",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-028",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-029",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-030",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-031",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-032",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-033",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-034",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-035",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-036",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-037",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-038",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-039",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-040",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-041",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-042",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-043",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-044",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-045",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-046",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-047",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-048",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-049",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-050",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-051",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-052",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-053",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-054",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-055",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-056",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-057",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-058",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-059",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-060",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-061",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-062",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-063",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-064",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-065",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-066",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-067",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-068",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-069",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-070",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-071",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-072",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-073",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-074",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-075",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-076",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-077",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-078",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-079",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-080",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-081",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-082",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-083",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-falhou-307",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-voce",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-camila",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos-sequencia",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-aria",
+            "height": 96.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-atendimento",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-oportunidade",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-sem-autor",
+            "height": 98.8125
+          }
+        ]
+      },
+      "offset": 80.0625,
+      "scrollTop": 3779,
+      "foco": true,
+      "mensagens": 93,
+      "notas": 4,
+      "virtual": false
+    },
+    "erros": [],
+    "externos": []
+  },
+  {
+    "tema": "dark",
+    "width": 1440,
+    "height": 900,
+    "paginas": 2,
+    "antes": {
+      "geometria": {
+        "clientTop": 0,
+        "listOffset": 18,
+        "rootTop": -3276,
+        "firstRowTop": -3276,
+        "anchorRowTop": 286.90625,
+        "somaPre": 3562.90625,
+        "descartadasRegraAnterior": 27,
+        "deltaDescartado": 5.0625,
+        "alturas": [
+          {
+            "key": "dia:2026-10-21",
+            "height": 40
+          },
+          {
+            "key": "inbox-314-msg-ontem",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-ontem-307",
+            "height": 71.8125
+          },
+          {
+            "key": "nota:inbox-demo-nota-beatriz-307",
+            "height": 98.8125
+          },
+          {
+            "key": "dia:2026-10-22",
+            "height": 40
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-307",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-000",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-001",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-002",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-003",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-004",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-005",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-006",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-007",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-008",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-009",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-010",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-011",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-012",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-013",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-014",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-015",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-016",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-017",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-018",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-019",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-020",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-021",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-022",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-023",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-024",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-025",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-026",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-027",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-028",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-029",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-030",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-031",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-032",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-033",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-034",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-035",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-036",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-037",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-038",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-039",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-040",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-041",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-042",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-043",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-044",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-045",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-046",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-047",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-048",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-049",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-050",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-051",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-052",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-053",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-054",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-055",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-056",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-057",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-058",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-059",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-060",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-061",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-062",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-063",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-064",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-065",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-066",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-067",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-068",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-069",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-070",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-071",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-072",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-073",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-074",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-075",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-076",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-077",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-078",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-079",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-080",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-081",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-082",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-083",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-falhou-307",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-voce",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-camila",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos-sequencia",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-aria",
+            "height": 96.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-atendimento",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-oportunidade",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-sem-autor",
+            "height": 78.515625
+          }
+        ]
+      },
+      "offset": 79.90625,
+      "scrollTop": 3501,
+      "foco": true,
+      "mensagens": 93,
+      "notas": 4,
+      "virtual": false
+    },
+    "erros": [],
+    "externos": []
+  },
+  {
+    "tema": "dark",
+    "width": 1024,
+    "height": 768,
+    "paginas": 2,
+    "antes": {
+      "geometria": {
+        "clientTop": 0,
+        "listOffset": 18,
+        "rootTop": -3276,
+        "firstRowTop": -3276,
+        "anchorRowTop": 286.90625,
+        "somaPre": 3562.90625,
+        "descartadasRegraAnterior": 27,
+        "deltaDescartado": 5.0625,
+        "alturas": [
+          {
+            "key": "dia:2026-10-21",
+            "height": 40
+          },
+          {
+            "key": "inbox-314-msg-ontem",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-ontem-307",
+            "height": 71.8125
+          },
+          {
+            "key": "nota:inbox-demo-nota-beatriz-307",
+            "height": 98.8125
+          },
+          {
+            "key": "dia:2026-10-22",
+            "height": 40
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-307",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-000",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-001",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-002",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-003",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-004",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-005",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-006",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-007",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-008",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-009",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-010",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-011",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-012",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-013",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-014",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-015",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-016",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-017",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-018",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-019",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-020",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-021",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-022",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-023",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-024",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-025",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-026",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-027",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-028",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-029",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-030",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-031",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-032",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-033",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-034",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-035",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-036",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-037",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-038",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-039",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-040",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-041",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-042",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-043",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-044",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-045",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-046",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-047",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-048",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-049",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-050",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-051",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-052",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-053",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-054",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-055",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-056",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-057",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-058",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-059",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-060",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-061",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-062",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-063",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-064",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-065",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-066",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-067",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-068",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-069",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-070",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-071",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-072",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-073",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-074",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-075",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-076",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-077",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-078",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-079",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-080",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-081",
+            "height": 92.109375
+          },
+          {
+            "key": "inbox-314-virtual-msg-082",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-083",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-falhou-307",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-voce",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-camila",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos-sequencia",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-aria",
+            "height": 96.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-atendimento",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-oportunidade",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-sem-autor",
+            "height": 78.515625
+          }
+        ]
+      },
+      "offset": 79.90625,
+      "scrollTop": 3501,
+      "foco": true,
+      "mensagens": 93,
+      "notas": 4,
+      "virtual": false
+    },
+    "erros": [],
+    "externos": []
+  },
+  {
+    "tema": "dark",
+    "width": 390,
+    "height": 844,
+    "paginas": 2,
+    "antes": {
+      "geometria": {
+        "clientTop": 0,
+        "listOffset": 12,
+        "rootTop": -3395.203125,
+        "firstRowTop": -3395.203125,
+        "anchorRowTop": 451.859375,
+        "somaPre": 3847.0625,
+        "descartadasRegraAnterior": 27,
+        "deltaDescartado": 5.0625,
+        "alturas": [
+          {
+            "key": "dia:2026-10-21",
+            "height": 40
+          },
+          {
+            "key": "inbox-314-msg-ontem",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-ontem-307",
+            "height": 71.8125
+          },
+          {
+            "key": "nota:inbox-demo-nota-beatriz-307",
+            "height": 98.8125
+          },
+          {
+            "key": "dia:2026-10-22",
+            "height": 40
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-307",
+            "height": 77.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-000",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-001",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-002",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-003",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-004",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-005",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-006",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-007",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-008",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-009",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-010",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-011",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-012",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-013",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-014",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-015",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-016",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-017",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-018",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-019",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-020",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-021",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-022",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-023",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-024",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-025",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-026",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-027",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-028",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-029",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-030",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-031",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-032",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-033",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-034",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-035",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-036",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-037",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-038",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-039",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-040",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-041",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-042",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-043",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-044",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-045",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-046",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-047",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-048",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-049",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-050",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-051",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-052",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-053",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-054",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-055",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-056",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-057",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-058",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-059",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-060",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-061",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-062",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-063",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-064",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-065",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-066",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-067",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-068",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-069",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-070",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-071",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-072",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-073",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-074",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-075",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-076",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-077",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-078",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-079",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-080",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-081",
+            "height": 112.40625
+          },
+          {
+            "key": "inbox-314-virtual-msg-082",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-virtual-msg-083",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-demo-msg-beatriz-falhou-307",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-voce",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-camila",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos",
+            "height": 76.515625
+          },
+          {
+            "key": "inbox-314-msg-carlos-sequencia",
+            "height": 71.8125
+          },
+          {
+            "key": "inbox-314-msg-aria",
+            "height": 96.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-atendimento",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-oportunidade",
+            "height": 98.8125
+          },
+          {
+            "key": "nota:inbox-314-nota-sem-autor",
+            "height": 98.8125
+          }
+        ]
+      },
+      "offset": 80.0625,
+      "scrollTop": 3779,
+      "foco": true,
+      "mensagens": 93,
+      "notas": 4,
+      "virtual": false
+    },
+    "erros": [],
+    "externos": []
+  }
+]

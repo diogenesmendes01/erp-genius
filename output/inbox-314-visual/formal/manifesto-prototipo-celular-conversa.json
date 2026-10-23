@@ -1,0 +1,36 @@
+{
+  "capturas": [
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "prototipo-escuro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "prototipo-claro-celular-celular-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      }
+    }
+  ]
+}

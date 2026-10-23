@@ -14,7 +14,7 @@ BalaoMensagem usa entrada, verde humano, roxo IA ou nota tracejada, cauda soment
 
 Nota é adaptação estritamente visual, com role=note e data-nota-id, origem no rótulo e autor (ou Autor não informado) na linha da hora. Não tem menu, gatilho, status do transporte, modelo, mídia, enquete, Pix ou visualizador, mesmo com props de mensagem impróprias. Não dispara action; não recebe comandos externos. NotaNaThread e seu teste foram retirados após busca de consumidores; contratos de origem/autor/hora/quebras/XSS portados ao teste do balão.
 
-EventoSistema e SeparadorDia trazem caixa própria flex/justify-center: self-center isolado seria ineficaz nos Fragments ou wrappers flow-root do VirtualList. isItemFocusable exclui dia/evento/nota sem comandos, sem mudar o motor compartilhado. Casca304/308 conserva rolagem interna; padding da thread7%, celular até699px10px. Transferência sai do cabeçalho e aparece como evento, mantendo action de escopo e guard de resposta antiga/seleção.
+EventoSistema e SeparadorDia trazem caixa própria flex/justify-center: self-center isolado seria ineficaz nos Fragments ou wrappers flow-root do VirtualList. isItemFocusable exclui dia/evento/nota sem comandos, sem mudar o comportamento padrão do motor compartilhado. Casca304/308 conserva rolagem interna; padding da thread7%, celular até699px10px. Transferência sai do cabeçalho e aparece como evento, mantendo action de escopo e guard de resposta antiga/seleção.
 
 ## Dia civil, fuso e SSR
 
@@ -31,3 +31,19 @@ SSR isolado sem epoch válido usa referência neutra0 e datas absolutas usuais, 
 Relatório de RED/GREEN e gates: output/inbox-314-report.md. Proposta de fixture somente por escrito: output/inbox-314-fixture-proposta.md, não executada pelo DEV. Não há foto, seed, servidor ou suíte DB nesta entrega parcial. Prova pura de âncora confirma key/offset após paginação; não é medição real da transição99→101 linhas.
 
 Faltam preparação/preview coordenados, medições dos balões/menu/scroll/virtualização e fotos app×protótipo dos estados conversa/humano-compositor/celular-conversa,3 tamanhos×2 temas, além de prova complementar Lucas transferido e autoria/status. TESTER deve revisar SHA exato; global combinado é do integrador, sem full próprio. Nenhum aceite visual ou conclusão integral presumidos.
+
+## Ajuste coordenado da montagem virtual
+
+A prova Chrome no648 mostrou RED6/6 em99→101: troca Fragment→div recriava rows e perdia foco; desktops/tablets voltavam ao topo, celular saltava a âncora. Ruling do integrador autoriza stableMount opt-in no VirtualList compartilhado, ativado somente pela thread. O default continua Fragments/SSR idêntico; lista312 não recebe a opção. A thread mantém pai/div/key dos rows desde o fluxo natural curto até posição absoluta longa. Medição, scroll e foco são acompanhados antes do limiar; layout anterior usa alturas reais para ancoragem. Abaixo do limiar Tab continua nativo; acima preserva isItemFocusable/pins/transição/resize/cleanup/overflowAnchor existentes. Sem altura fixa, timer, polling ou rede extra. Teste ReactDOM prova identidade do botão/row/pai, foco/offset em99→101 com alturas90/50 e retorno101→99; prova real final ainda pendente.
+
+A precisão da medição opt-in é0,001px: diferenças subpixel menores que0,5 por linha não podem ser descartadas ao sair do fluxo natural, pois se acumulam em salto da âncora. O limiar0,5 dos consumidores padrão não foi alterado. TDD inclui sequência de alturas71,75/71,875 versus estimativa72; não usa altura fixa para o layout.
+
+Chrome real na fonte02905042 confirmou identidade/foco/âncora99→101 em6/6contextos: delta0px, Tab seguinte correto,20–24rows montadas, sem warning/overflow/rede extra. As medições prévias confirmaram que5,0625px acumulados vinham das frações descartadas pela regra antiga, não de padding/listOffset. Manifesto privado no relatório; formal app×protótipo ainda separado/pendente.
+
+## Harness formal314 após handoff312
+
+Base dd141 integrada com312/hidratação/anonDOM392/382; conflito de quadro preservou históricos. humano-compositor cobre3tamanhos nos2temas e2alvos, conversa+humano+celular-conversa totalizam28PNGs. Prontidão verifica autoriaVocê, separador civil, status de saída e nota real sem comandos/mídia; sequência de notas não exige cabeçalho repetido. A CLI ancora a nota307 com scroll interno e abreBeatriz no protótipo celular. Notas/autores314adicionais e Lucas são complementos privados; não se exigeHoje fixo de seed histórico. GuardReact, conexãoSSE e anonimizaçãoDOM392antesfoto/manifesto conservados.
+
+## Evidências finais DEV
+
+Fonte/harness944e1736: recorte51arquivos613testes/TSCheap8192/lintdirigido0 comNode22. Formal28PNG app×protótipo concluído e individualmente inspecionado; complemento24PNG/API/DOM/menu nos6contextos inspecionado por pranchas; virtual12PNG/6contextos delta0/mesmo nó e foco no029, runtime idêntico ao944 porobjetoGit. Hashes/política392 efontes exatas em output/inbox-314-visual/formal/manifesto-final.json, normais-final/manifesto.json evirtual-green99-101/manifesto.json. PNGs somente locais por ruling; negativos separados. Detalhes/limites históricos no relatório. TESTER/globalcoordenado pendentes, sem aceite presumido.

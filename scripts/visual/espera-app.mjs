@@ -50,7 +50,10 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
   await conversa.waitFor({ state: "visible" });
   const humano = estado === "humano-compositor";
   await conversa.getByText(humano ? "Quero matricular meu filho Pedro." : "Quero saber o valor do Inglês Intensivo B1.", { exact: true }).waitFor({ state: "visible" });
-  if (humano) await conversa.getByRole("note").getByText("Família pediu atendimento no período da tarde.", { exact: true }).waitFor({ state: "visible" });
+  if (humano) {
+    await conversa.getByRole("note").getByText("Família pediu atendimento no período da tarde.", { exact: true }).waitFor({ state: "visible" });
+    await pagina.waitForFunction(semanticaThreadHumanaPronta);
+  }
   if (estado === "painel-fechado") {
     await pagina.waitForFunction(() => {
       const painel = document.querySelector('aside[aria-label="Painel do contato"]');
@@ -59,4 +62,18 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
   } else if (tamanho === "desktop") {
     await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
   }
+}
+
+/** Callback DOM autocontido: não libera foto de contêiner vazio/markup anterior à thread314. */
+export function semanticaThreadHumanaPronta() {
+  const conversa = document.querySelector('section[aria-label="Conversa"]');
+  if (!conversa) return false;
+  const mensagens = [...conversa.querySelectorAll('[data-mensagem-id]')];
+  const status = '[title="Enviando"],[title="Enviada"],[title="Entregue"],[title="Lida"],[title="Não enviada"]';
+  const autor = mensagens.some(m => [...m.querySelectorAll('span')].some(s => s.textContent?.trim() === 'Você'));
+  const notas = [...conversa.querySelectorAll('[role="note"]')];
+  const nota = notas.some(n => n.textContent.includes('Nota interna')) && notas.every(n => n.getAttribute('data-nota-id')
+    && !n.querySelector('button,[role="menu"],img,video,audio') && !n.querySelector(status));
+  const dia = [...conversa.querySelectorAll('[data-virtual-key]')].some(n => n.getAttribute('data-virtual-key')?.startsWith('dia:') && n.textContent.trim());
+  return autor && nota && dia && mensagens.some(m => m.querySelector(status));
 }
