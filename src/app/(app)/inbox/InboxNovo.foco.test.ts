@@ -8,7 +8,7 @@ const rota313=vi.hoisted(()=>({busca:null as string|null}));
 vi.mock("next/navigation",()=>({useRouter:()=>({replace:vi.fn(),push:vi.fn()}),usePathname:()=>"/inbox",useSearchParams:()=>rota313.busca===null?null:new URLSearchParams(rota313.busca)}));
 vi.mock("./useEventosInbox",()=>({useEventosInbox:()=>({conectado:true})}));
 vi.mock("@/components/conversa/useConversa",()=>({useConversa:()=>({mensagens:[]})}));
-vi.mock("@/server/whatsapp/preferencias",()=>({marcarAtendimentoLido:async()=>({ok:true})}));
+vi.mock("@/server/whatsapp/preferencias",()=>({marcarAtendimentoLidoAutomatico:async()=>({ok:true})}));
 vi.mock("@/server/whatsapp/operacoes-atendimento",()=>({abrirAtendimentoInstitucional:vi.fn()}));
 vi.mock("@/server/whatsapp/acoes",()=>({registrarOptOutContato:vi.fn(),removerOptOutContato:vi.fn(),enviarTextoInbox:vi.fn(),enviarMidiaInbox:vi.fn()}));
 // Backend/thread não são objeto deste teste. Região real/Coluna/Popover/form/hook continuam reais.

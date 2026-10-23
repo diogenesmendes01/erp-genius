@@ -329,6 +329,15 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
 
 /** Zera o contador de não-lidas ao abrir a thread (tabela operacional — sem evento). */
 export async function marcarConversaLida(conversaId: string): Promise<Resultado> {
+  return registrarConversaLida(conversaId, true);
+}
+
+/** A leitura automática reconcilia lista/chips/selo no cliente, sem revalidar a árvore da rota. */
+export async function marcarConversaLidaAutomatico(conversaId: string): Promise<Resultado> {
+  return registrarConversaLida(conversaId, false);
+}
+
+async function registrarConversaLida(conversaId: string, revalidar: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const conversa = await conversaVisivel(autor, conversaId);
@@ -346,7 +355,7 @@ export async function marcarConversaLida(conversaId: string): Promise<Resultado>
         console.error("[marcarConversaLida] message.read falhou:", e instanceof Error ? e.name : "erro");
       }
     }
-    revalidatePath("/inbox");
+    if (revalidar) revalidatePath("/inbox");
   });
 }
 

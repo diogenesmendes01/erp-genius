@@ -35,3 +35,7 @@ Abrir uma conversa no Inbox não registra a leitura. O indicador pessoal usa `Pr
 Testes unitários da tela e da consolidação; integração de preferência, contador compartilhado, escopo e presença do motor com banco descartável; TypeScript e lint com saída 0. Conferir visualmente o desaparecimento do contador ao abrir em 1440×900, 1024×768 e 390×844, claro e escuro. Registrar filtros, testes ignorados e evidências no quadro de entregas antes de considerar a issue concluída.
 
 Referências: [funções oficiais do Inbox](../planejamento/funcoes-do-inbox.md), [quadro único](../planejamento/quadro-entregas.md), issue #299.
+
+## Experimento de leitura automática sem revalidar a árvore
+
+Follow-up técnico da integração313, sujeito a A/B de navegação rápida. marcarConversaLida e marcarAtendimentoLido manuais continuam invalidando exatamente uma vez, incluindo fallback pessoal em falha compartilhada; marcarLida isolada também permanece. Os novos wrappers automáticos fixam internamente revalidar=false e não recebem essa opção do cliente. As mesmas verificações de sessão/escopo e escritas operacionais são compartilhadas. Inbox automático conserva GET lista/chips, selo finally e proteçõesR6; nenhum transporte ou política de autorização mudou. Integração dirigida2arquivos20testes e unitáriosdirigidos aprovados, mas a experiência do browser/global ainda não autoriza adoção definitiva. Relatóriooutput/inbox-313-report.md.
