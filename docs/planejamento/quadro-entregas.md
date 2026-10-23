@@ -6541,3 +6541,7 @@ Somente quatro paths no parecer histórico305 foram corrigidos de inbox-capturas
 ## Follow-up pós-merge395 C6 — Escape normal e consumido pelo editor
 
 Decisão explícita: não ignorar inputs genericamente; Escape normal emcoluna fecha/retornafoco/reabrecommesmocampo+rascunho; e.defaultPrevented do editorfilho mantémaberto. PatchsóguardlocalPainelContato, semhelperdialogo/global/negócio/IME. RED2bbd1e1falha10passes→GREENc06e2b11/11, casosReactDOM reais+DOMmínimo;9antigosincldiálogos/isolamentopreservados. Gatefinalcombinado384/39510690/d629e611arquivos288testes0;TSC58024/e8d12fheap8192,lint5fontes71decb0 Node22.23.2, sem-t/skipsnovos. SemDB/browser/PNG/Prisma/deps/global/push. SPECcasca+output/inbox-posmerge-ui-review.md registramcontrato/limites e3commits porárea. QAexata/composição/CI seguemintegrador; não reatribuir fotos históricas.
+
+## Revisão pós-merge — arquivo de capturas E0 (23/10/2026)
+
+Retirados apenas do índice os 97 PNGs históricos das issues #299/#302/#303 (25/48/24), após comparar arquivos locais com blobs main8c e reabrir/conferir 97/97 entradas do ZIP local. Arquivo de 4.484.568 bytes, SHA-256 fc84c7c070c10e5bfc478594894d7f4bb2ca40c9d8c8f9d9ed5ffb2b6e56b76a. Catálogo em output/inbox-posmerge-arquivo-capturas.json; SPEC inbox-curadoria-evidencias.md e README locais documentam a política. Processo12482/8ddf21 terminal0. Imagens físicas e histórico preservados, nenhum upload ou nova captura. Não equivale a nova execução de testes, merge ou deploy; QA do catálogo e integração final seguem pendentes.
