@@ -5768,3 +5768,10 @@ Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, 
 ### #317 — PR403 C2 menu alinhado à regra20 vigente
 
 Somente projeção local: Nota individual disponível em ENCERRADO, mantendo grupos sem Nota e gates de envio/agenda/gestão fechados. Servidor/escopo inalterados. RED212ccc→GREEN02e329; combinação C3+C2:13arquivos/319testes13331, TSC85482 heap8192 e lint8fontes4d0679/teste5c48e7 saída0 Node22.23.2. TSC1949 inicial era fixture com literal alargado, corrigido. Sem DB/browser/full próprios. Complemento visual do menu encerrado, QA exata/global integrado/publicação pendentes do ROOT. Fontes visuais históricas preservadas no relatório.
+
+
+### #319 — identidade da injeção500, formal ainda pendente
+
+Formal88639 negativa inteira:18PNG anteriores passaram, mas seisthread-erro tiveram doisabortos da própriainjeção500 sem200possível. Causal ada905 comprovou identidade/timing no helperreal; ROOT parou88451/restaurou b00915/424hashes1372 e aprovou extensão estrita somentecontrato500. Exige Request efetivamenteinjetado/fulfillconcluído, GETURLsemquery eERR_ABORTEDexatos, substituto posteriorMESMAURL finalizado500/body e estado públicopronto; demaisfalhas continuamreprovando, classificador global intacto. Observerpré-navegação/finalizadorpósfoto30s/cleanup, Request sóem memória. RED12→GREEN34, adversariais adicionais e gates finais nofreeze. Nenhuma produção/DB/envio/deps/novo global; formal42+12 e fases150/Triagem/QA/publicação seguempendentes. Nãoiniciar320.
+
+Gates do contrato500: recorte64047 saída0/15files259testes19,11s/maxWorkers2/semfiltroouskip, TSC81473heap8192zero, lint4fontes2f5b4dzero/0avisos, diffcheck/check/help501123zero. Novo teste cobre13casos controlados, além dos guardas. Produção/AGENTS intactos; sem browser/DB desde stop e sem novo global. Freeze aguardandoReady/preflight antes de repetirformal42+12.

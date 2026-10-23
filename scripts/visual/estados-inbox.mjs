@@ -1,19 +1,50 @@
-
-/** Intercepta só o GET inicial exato. Uma resposta real não injetada nunca vira diagnóstico esperado. */
+/** Só a identidade efetivamente injetada500 pode compor um diagnóstico controlado. */
 export async function instalarErroEstado(contexto, base, id, estado) {
-  const pedidos = new WeakSet(), diagnosticos = [];
+  const pedidos = new WeakSet(), injetados = new WeakSet(), ordens = new WeakMap();
+  const diagnosticos = [], conclusoes = [], concluidos = new Map();
+  let ordem = 0, pronto = false;
   const tipo = estado === 'painel-erro' ? 'painel' : estado === 'thread-erro' ? 'mensagens' : null;
+  const caminho = tipo ? '/api/inbox/atendimentos/' + encodeURIComponent(id) + '/' + tipo : null;
+  const urlExata = caminho ? base + caminho : null;
+  const respostaEsperada = resposta => resposta.status() === 500 && pedidos.has(resposta.request());
+  const observar = resposta => {
+    if (!respostaEsperada(resposta)) return;
+    const pedido = resposta.request();
+    conclusoes.push(resposta.finished().then(erro => {
+      if (erro === null) concluidos.set(pedido.url(), Math.max(concluidos.get(pedido.url()) ?? 0, ordens.get(pedido)));
+    }).catch(() => undefined));
+  };
   if (tipo) {
-    const caminho = `/api/inbox/atendimentos/${encodeURIComponent(id)}/${tipo}`;
     await contexto.route(u => u.origin === base && u.pathname === caminho && !u.search, async rota => {
       const pedido = rota.request();
       if (pedido.method() !== 'GET') return rota.fallback();
       pedidos.add(pedido);
+      ordens.set(pedido, ++ordem);
       diagnosticos.push({ tipo: '500-controlado-exato', metodo: 'GET', caminho });
-      return rota.fulfill({ status: 500, contentType: 'text/plain', headers: {'cache-control':'no-store'}, body: 'Falha controlada privada da captura319.' });
+      await rota.fulfill({ status: 500, contentType: 'text/plain', headers: {'cache-control':'no-store'}, body: 'Falha controlada privada da captura319.' });
+      injetados.add(pedido);
     });
+    contexto.on('response', observar);
   }
-  return { diagnosticos, respostaEsperada: resposta => resposta.status() === 500 && pedidos.has(resposta.request()) };
+  return {
+    diagnosticos, respostaEsperada,
+    async finalizar(pagina) {
+      if (!tipo) return;
+      let timer;
+      try {
+        await Promise.race([
+          (async () => { await pagina.waitForFunction(semanticaEstado319Pronto, estado); await Promise.all(conclusoes); })(),
+          new Promise((_, rejeitar) => { timer = setTimeout(() => rejeitar(new Error('Conclusão do500 controlado excedeu30000ms.')), 30000); }),
+        ]);
+        pronto = true;
+      } finally { clearTimeout(timer); contexto.off('response', observar); }
+    },
+    cancelamentoEsperado(pedido, erro) {
+      return !!tipo && pronto && erro === 'net::ERR_ABORTED' && pedido.method() === 'GET'
+        && pedido.url() === urlExata && injetados.has(pedido)
+        && (concluidos.get(pedido.url()) ?? 0) > ordens.get(pedido);
+    },
+  };
 }
 
 /** Callback autocontido para evaluate/waitForFunction; nenhuma alteração de conteúdo/estilo. */
