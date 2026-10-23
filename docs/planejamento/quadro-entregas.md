@@ -6008,3 +6008,8 @@ ROOTliberoupublicaçãoapósgates;sourcefinalC3/menuidênticosf896,MDposteriores
 nãoalteramcódigo. Pacote85f preservado+menuA7/29f16PNG1677732B/SHA4faa6...
 remoto/hash/DRAFTconfirmados,fontes/limites explícitos,sem alegarE2EenvioC3.
 CI/main/392B2 pendentes. output/pr403-qa contémpareceresindependentescurados.
+
+
+## PR403 — C4/C5/C7 e mapa integral R1 (revisão documental)
+
+Base68e95d8e preservada; zero delta runtime/testes/scripts/deps. C4 intencional: texto tem rascunhos separados, File/voz de Responder temporários são descartados/interrompidos ao mudar modo; não há promessa de preservar anexo ou cancelar POST/envio já iniciado. C5 mapeado na SPEC aos nomes reais e ao alcance SSR/harness/17ReactDOMStrictMode, sem inventar assertivas CSS ou prova de microfone. C7 inventário próprio a8→68e22outputs/1.826linhas (14MD501+8JSON1325), links/fontes/hashes históricos curados, zeroPNG/probescript novo. C2 Nota por leitura inclusive ENCERRADO e C3f896/741 intactos. Recorte8/1028b5363, TSC4700/7ca537, lint10fontes227ef7 saída0 Node22.23.2; lint inicial a6fa9e falhou por caminho inexistente no comando, corrigido sem fonte. C1/main/CI/retarget e C6 conflitos docs seguem integrador; semDB/browser/global/push. Relatório output/inbox-pr403-review-todos.md; não reatribuir imagens29f/A7/317bbb/df9 ao C3final.
