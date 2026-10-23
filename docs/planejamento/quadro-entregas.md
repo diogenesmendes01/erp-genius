@@ -6093,3 +6093,8 @@ Todos os browsers/previews encerrados. Bancos B/TESTER restaurados424hashes orig
 ### #320 — código DEV: fecho de componentes/travas, E1 ainda pendente
 
 Base16e PR405. PainelFiltros sem consumidor produtivo removido com3testes/scaffold antigos; provaURLvazia migrada e cobertura atual de setores/chips/número preservada. Guarda inbox-e1 e mono/tabular nos4contadores aprovados (badgeColuna=filtros, pontoSelo intacto). ItemLista/Chip4consumidores/contarNaoLidas compartilhado/ações vivas/C3/R6/SSE mantidos; guardas gerais/mapas/sem-polling revalidados sem relaxamento. REDeb1f6b6falhas→GREEN39bc8c11/69; recorte3291089arquivos/972testes0, typegen/TSC92066heap8192/lint15fontes7e2bc1/diff970b810 Node22.23.2. Semskip adicionado, integração nãoexecutada/semDB/preview/fullpróprio. SPEC docs/specs/inbox-fecho-e1.md e relatório output/inbox-320-report.md. QAexata/global/integrações/matriz164+320×500 e publicação pendentesROOT; NÃOmarcarE1concluída.
+
+
+### #320 — primeiraINTROOT falhou por asserçãoSSE de substring; testfix separado
+
+ROOTb509: unidade904/7102,TSC/lintmax40 todos0; INT80680EXIT1 com15arquivos14pass1fail/138testes137pass1fail. Teste de privacidade confundiu trecho u9 permitido emIDpúblico com campo privado. Testfix sóunit/int: parse event/data/terminadores/JSON público+ausência propriedadeprivada; formatter/filtro/app intactos. SeteunitáriosSSEoriginais preservados+1causal: RED4e146a7pass1fail→GREENc0fe9a4arquivos/37testes0; TSC50335heap8192/lintbed2e5/diff74e7520 Node22.23.2. SemDBDEV/preview. SSEintdirigida+15rerun/novoGlobal/QA/matriz164 aguardamROOT; E1nãohomologada.
