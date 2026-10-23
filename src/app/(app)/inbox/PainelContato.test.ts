@@ -22,7 +22,8 @@ it("mantém um único fechar e um scroller local também no cabeçalho extenso",
 });
 it("contagem de uma aba isolada usa mono e tomIA; aba ativa inválida cai na primeira", () => {
   const h = renderToStaticMarkup(createElement(AbasPainel, { abas: [{ id: "atividade", rotulo: "Atividade", contagem: 5 }], abaAtiva: "detalhes", aoTrocarAba() {} }));
-  for (const t of ["font-mono", "bg-ai-50", "text-ai-700", 'aria-selected="true"', ">5<"]) expect(h).toContain(t);
+  for (const t of ["font-mono", "tabular-nums", "bg-ai-50", "text-ai-700", 'aria-selected="true"', ">5<"]) expect(h).toContain(t);
+  expect(h).toMatch(/<span class="(?=[^"]*font-mono)(?=[^"]*tabular-nums)[^"]*">5<\/span>/);
 });
 it("mantém fallback308 e escapa textos de contato/tag", () => {
   expect(p({ contato: undefined })).toContain(">Painel do contato<");

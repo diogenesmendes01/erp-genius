@@ -50,7 +50,7 @@ export interface PropsInboxNovo {
   /** Triagem e revisão de envio (Task 33): nulas para quem `listarTriagemWhatsApp` / `listarRevisoesEnvio` recusam. */
   triagem?: ItemTriagem[] | null;
   revisoes?: RevisaoEnvio[] | null;
-  /** Setores e números do PainelFiltros (`opcoesFiltroInbox`); sem eles a barra de filtros não aparece. */
+  /** Setores e números dos filtros da coluna (`opcoesFiltroInbox`); sem eles a barra de filtros não aparece. */
   opcoesFiltro?: OpcoesFiltroInbox;
   /** Agregados autorizados; a apresentação em chips é entregue pela etapa 313. */
   contagens?: ContagensChipsInbox;
@@ -163,7 +163,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   }
   const [eventoRecente, setEventoRecente] = useState<AvisoInbox | null>(null);
   const [carregandoMais, setCarregandoMais] = useState(false);
-  // Filtro novo (o PainelFiltros troca a URL e a página traz outra primeira página): a lista recomeça dela.
+  // Filtro novo (os controles da coluna trocam a URL e a página traz outra primeira página): a lista recomeça dela.
   // Estado derivado no render, sem key de remontagem: o que não depende do filtro (Drawer, digitação) fica.
   const chaveFiltros = paramsDosFiltros(filtros);
   const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);

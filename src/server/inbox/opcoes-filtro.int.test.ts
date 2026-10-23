@@ -16,7 +16,7 @@ async function numero(rotulo: string, finalidade: "VENDAS" | "COBRANCA", setores
   } });
 }
 
-describe("opções do PainelFiltros", () => {
+describe("opções dos filtros da coluna", () => {
   it("financeiro vê só os números que servem os seus setores; administrador vê todos; sem setor, nada", async () => {
     const cobranca = await numero("Cobrança", "COBRANCA");
     const vendas = await numero("Vendas", "VENDAS");

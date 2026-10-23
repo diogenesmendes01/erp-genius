@@ -60,7 +60,7 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, faixaAria, a
       aoEscolher={(id) => aplicar({ ...filtros, numeroId: id ?? undefined })} />}
     </div>
     <BotaoIcone rotulo="Filtros" ativo={!novaAberta && popover === "filtros"} aria-haspopup="dialog" aria-expanded={!novaAberta && popover === "filtros"} onClick={(e) => popover === "filtros" ? setPopover(null) : abrir("filtros", e.currentTarget)}><IconFilter size={17} aria-hidden />
-     {total > 0 && <span aria-hidden className="absolute right-[3px] top-[3px] h-[15px] min-w-[15px] rounded-full bg-brand-solid px-1 font-mono text-[9.5px] font-semibold text-on-brand">{total}</span>}
+     {total > 0 && <span aria-hidden className="absolute right-[3px] top-[3px] h-[15px] min-w-[15px] rounded-full bg-brand-solid px-1 font-mono tabular-nums text-[9.5px] font-semibold text-on-brand">{total}</span>}
     </BotaoIcone>
     <BotaoIcone rotulo="Nova conversa" ativo={novaAberta} aria-haspopup="dialog" aria-expanded={novaAberta} disabled={!novaConversa} onClick={(e) => abrirNova(e.currentTarget)}><IconEdit size={17} aria-hidden /></BotaoIcone>
     {sino}

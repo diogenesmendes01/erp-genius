@@ -16,7 +16,7 @@ export function saudeDoNumero(n: { driver: DriverWhatsApp; sessao: SessaoNumero;
 export interface OpcoesFiltroInbox { setores: Setor[]; numeros: { id: string; rotulo: string; saude: SaudeNumero }[] }
 
 /**
- * Opções do PainelFiltros: os setores que o usuário enxerga no inbox e os números que servem algum deles
+ * Opções dos filtros da coluna: os setores que o usuário enxerga no inbox e os números que servem algum deles
  * (administrador: todos). Só rótulo, id e saúde; nenhum telefone. O filtro só restringe: o escopo do atendimento
  * continua valendo na consulta da lista.
  */

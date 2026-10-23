@@ -6,6 +6,7 @@ it("preserva formato público e codifica busca sem perder setor/número/status",
  expect(Object.fromEntries(paramsDaUrl(f))).toEqual({setor:"FINANCEIRO",numero:"n1",resp:"eu",status:"EM_ATENDIMENTO",naoLidas:"1",prazo:"estourado",busca:"Ana & Beto"});
  expect(hrefDosFiltros("/inbox",{ busca:"Ana & Beto",numeroId:"n1" })).toBe("/inbox?numero=n1&busca=Ana+%26+Beto");
  expect(hrefDosFiltros("/inbox",{})).toBe("/inbox");
+ expect(paramsDaUrl({}).toString()).toBe("");
 });
 it("chip substitui só as dimensões rápidas, não muta origem nem deixa flags antigas", () => {
  const f: FiltrosInbox={setor:"FINANCEIRO",numeroId:"n1",status:"ENCERRADO",busca:"ana",responsavel:"u9",naoLidas:true,prazoEstourado:true};
