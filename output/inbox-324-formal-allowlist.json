@@ -1,0 +1,608 @@
+{
+  "fonteProduto": "2396a6c7703d0717a523d93f51a210a75f588135",
+  "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+  "previewRoot": 13519,
+  "totalBytes": 2665062,
+  "arquivos": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/app-escuro-desktop-painel-detalhes.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "65a39615f9aa97864613bf1867f3b1a36ef543669df9961a77b239d4dc4ce9f9",
+      "bytes": 162655,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/app-escuro-tablet-painel-detalhes.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "4c4b50061feee536e906c3b84e424b8b4852fa49007084eab01f02de0cc0bab6",
+      "bytes": 122820,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/app-escuro-celular-painel-detalhes.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "47b0c6e585f70718231545f6b76a8ea99d17e42117f428ba1fd87062764820f2",
+      "bytes": 31356,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/app-claro-desktop-painel-detalhes.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "0fe2f4bb58a791988cbc8cdd50788138a9c821c4415a00520bd356995c951692",
+      "bytes": 162394,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/app-claro-tablet-painel-detalhes.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "67de22ba0f51f7868ce95815d2ee8513e341d9449813e68daa33c645cdef48e1",
+      "bytes": 124721,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/app-claro-celular-painel-detalhes.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "305806b2ff2e5eb1469695468ebc30375f3c5f07176427ff0f34f298aa228493",
+      "bytes": 31097,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-escuro-desktop-painel-detalhes.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "f9f678a608189d8c6d32a244fe206b885edce20a0c3f5e0ced2a970fe0c70a1e",
+      "bytes": 197010,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c1",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-escuro-tablet-painel-detalhes.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "d4a201aa7b0164587ea8d9c6357644fcd4dc7955f4c827ad95004d923134407d",
+      "bytes": 143578,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c1",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-escuro-celular-painel-detalhes.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "271d5285dcc1985a47a96d5def1cbd52d9b2c01b4e6054118a7bf30f1c9ae681",
+      "bytes": 37684,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c1",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-claro-desktop-painel-detalhes.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "9f7b209410601ec29629158481408a59dd7449566d4f177024c67b8e4dab58ed",
+      "bytes": 198168,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c1",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-claro-tablet-painel-detalhes.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "16f3893154203d52c2f90067161350b5b4327e35d4e6afd2ef779bfc3a336791",
+      "bytes": 146349,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c1",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-claro-celular-painel-detalhes.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "b0e3ddc2fed0a5db13fa194b45ca584c5cc416da713d67267d89df1ed0f8e29f",
+      "bytes": 37098,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c1",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-sem-nome",
+      "painelSemNomeReal": {
+        "status": 200,
+        "semNome": true,
+        "podeEditarNome": true
+      },
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/app-escuro-desktop-painel-sem-nome.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "c68fde5cf511f1c4c8af3086cb319349a0eeb47ed9baebd9aba32c83c89a205c",
+      "bytes": 159121,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-sem-nome",
+      "painelSemNomeReal": {
+        "status": 200,
+        "semNome": true,
+        "podeEditarNome": true
+      },
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/app-escuro-tablet-painel-sem-nome.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "97598afbf269a6cabc491efc16bbe8a3927b284b3cd6022ede0b5ce2bf7d2df9",
+      "bytes": 121804,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-sem-nome",
+      "painelSemNomeReal": {
+        "status": 200,
+        "semNome": true,
+        "podeEditarNome": true
+      },
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/app-escuro-celular-painel-sem-nome.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "285b9166f766d2421897000888ad9823896bee9e42ae5e075823132948bfde8b",
+      "bytes": 32712,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-sem-nome",
+      "painelSemNomeReal": {
+        "status": 200,
+        "semNome": true,
+        "podeEditarNome": true
+      },
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/app-claro-desktop-painel-sem-nome.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "7dc298d34ab2649e6a55eb69f9b7826bdf1be74d1ea050a53bf4f2d86a631e08",
+      "bytes": 158983,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-sem-nome",
+      "painelSemNomeReal": {
+        "status": 200,
+        "semNome": true,
+        "podeEditarNome": true
+      },
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/app-claro-tablet-painel-sem-nome.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "485a7d8bcedc66dd960574cadee8dd4bfc0598965f812dc6396cb0d4f6d2c5cb",
+      "bytes": 123191,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-sem-nome",
+      "painelSemNomeReal": {
+        "status": 200,
+        "semNome": true,
+        "podeEditarNome": true
+      },
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/app-claro-celular-painel-sem-nome.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "b14133c849a91252c12cd8c53c0d064cef144c749ac6058364bc2d62a3cad7c5",
+      "bytes": 32122,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": true
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-sem-nome",
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-escuro-desktop-painel-sem-nome.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 4
+      },
+      "sha256": "a62955da5a7c854c7b573d7bbbfa8aa998749b913863043a5cff336a4042f67b",
+      "bytes": 156537,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-sem-nome",
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-escuro-tablet-painel-sem-nome.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 4
+      },
+      "sha256": "7f054b8361054ff12156d23ee3f45c7980d38ba0bd34be2ee234e3cd2abb97d9",
+      "bytes": 123720,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-sem-nome",
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-escuro-celular-painel-sem-nome.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 4
+      },
+      "sha256": "fe8cde63e5e07896fcf9e336b67ffded59b741d92db83960ba0cf8139e6288d8",
+      "bytes": 40230,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-sem-nome",
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-claro-desktop-painel-sem-nome.png",
+      "width": 1440,
+      "height": 900,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 4
+      },
+      "sha256": "80f9a46e688f684c95a92f10f4091f56e65f23aeec5135f5fa022778c123ecf0",
+      "bytes": 157288,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-sem-nome",
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-claro-tablet-painel-sem-nome.png",
+      "width": 1024,
+      "height": 768,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 4
+      },
+      "sha256": "1ca54e9d7a3edef68df3b86b01827881998c5b43b59812db21a594c9bbc4cc83",
+      "bytes": 124663,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-sem-nome",
+      "arquivo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-claro-celular-painel-sem-nome.png",
+      "width": 390,
+      "height": 844,
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 4
+      },
+      "sha256": "d41b16591ad102a8abae645b10e74de34c226d1852a863a869c25c4124fb3303",
+      "bytes": 39761,
+      "fonte": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+      "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+      "inspecao": "Inspecionada na prancha do estado/tema; original preservado",
+      "fonteReferencia": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9",
+      "verificacoes": {
+        "falhas": 0,
+        "cancelamentoGetRecuperado": false
+      }
+    }
+  ],
+  "limites": [
+    "Somente24PNG originais, pranchas derivadas separadas.",
+    "HTML original c9/noName:true; PNGpré-exportado semnome inexiste.",
+    "Compara alvo real; não alega dados/layout global idênticos ao protótipo.",
+    "App sóDetalhes/capacidadesCRM/ausência de promessa Aria; protótipo histórico possui abas/cópia diferentes."
+  ]
+}

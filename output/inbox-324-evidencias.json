@@ -1,0 +1,806 @@
+{
+  "fonteProduto": "2396a6c7703d0717a523d93f51a210a75f588135",
+  "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+  "preflight": {
+    "executor": "c0d2c2",
+    "saida": 0,
+    "novoContatoReal200": true,
+    "semNome": true,
+    "podeEditarNome": true,
+    "marianaPessoaAutorizadaTresTags": true
+  },
+  "execucoes": [
+    {
+      "grupo": "Formal24",
+      "sessao": 51579,
+      "terminal": "c8be34",
+      "saida": 0
+    },
+    {
+      "grupo": "Normal32",
+      "sessao": 97048,
+      "terminal": "4bfaba",
+      "saida": 0
+    },
+    {
+      "grupo": "Bordas12",
+      "terminal": "ab3275",
+      "saida": 0
+    },
+    {
+      "grupo": "Alcance desktop8",
+      "sessao": 1575,
+      "terminal": "f7a864",
+      "saida": 0
+    },
+    {
+      "grupo": "Alcance móvel8R3",
+      "terminal": "0851cd",
+      "saida": 0
+    },
+    {
+      "grupo": "CRUDtags6",
+      "terminal": "2881f4",
+      "saida": 0
+    },
+    {
+      "grupo": "Nome4",
+      "terminal": "86d4ff",
+      "saida": 0
+    },
+    {
+      "grupo": "Longo/falha3",
+      "terminal": "5b8db1",
+      "saida": 0
+    }
+  ],
+  "alcanceMovel": [
+    {
+      "width": 320,
+      "tema": "claro",
+      "salvar": {
+        "texto": "Salvar",
+        "top": 456,
+        "bottom": 500,
+        "left": 31,
+        "right": 88.375,
+        "width": 57.375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 22,
+            "client": 443,
+            "total": 920
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "ultimo": {
+        "texto": "Registrar opt-out",
+        "top": 432.25,
+        "bottom": 476.25,
+        "left": 18,
+        "right": 134.84375,
+        "width": 116.84375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 477,
+            "client": 443,
+            "total": 920
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "tabs": 5,
+      "semSubmit": true,
+      "devtoolsUI": [
+        "Indicador já oculto: operação oficial Hide observada61926/primeirocontexto, semnova alteração"
+      ],
+      "indicadorOcultoPorPreferenciaOficial": true,
+      "falhas": []
+    },
+    {
+      "width": 320,
+      "tema": "escuro",
+      "salvar": {
+        "texto": "Salvar",
+        "top": 456,
+        "bottom": 500,
+        "left": 31,
+        "right": 88.375,
+        "width": 57.375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 22,
+            "client": 443,
+            "total": 920
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "ultimo": {
+        "texto": "Registrar opt-out",
+        "top": 432.25,
+        "bottom": 476.25,
+        "left": 18,
+        "right": 134.84375,
+        "width": 116.84375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 477,
+            "client": 443,
+            "total": 920
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "tabs": 5,
+      "semSubmit": true,
+      "devtoolsUI": [
+        "Indicador já oculto: operação oficial Hide observada61926/primeirocontexto, semnova alteração"
+      ],
+      "indicadorOcultoPorPreferenciaOficial": true,
+      "falhas": []
+    },
+    {
+      "width": 390,
+      "tema": "claro",
+      "salvar": {
+        "texto": "Salvar",
+        "top": 456,
+        "bottom": 500,
+        "left": 31,
+        "right": 88.375,
+        "width": 57.375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 2,
+            "client": 443,
+            "total": 848
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "ultimo": {
+        "texto": "Registrar opt-out",
+        "top": 432.25,
+        "bottom": 476.25,
+        "left": 18,
+        "right": 134.84375,
+        "width": 116.84375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 405,
+            "client": 443,
+            "total": 848
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "tabs": 5,
+      "semSubmit": true,
+      "devtoolsUI": [
+        "Indicador já oculto: operação oficial Hide observada61926/primeirocontexto, semnova alteração"
+      ],
+      "indicadorOcultoPorPreferenciaOficial": true,
+      "falhas": []
+    },
+    {
+      "width": 390,
+      "tema": "escuro",
+      "salvar": {
+        "texto": "Salvar",
+        "top": 456,
+        "bottom": 500,
+        "left": 31,
+        "right": 88.375,
+        "width": 57.375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 2,
+            "client": 443,
+            "total": 848
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "ultimo": {
+        "texto": "Registrar opt-out",
+        "top": 432.25,
+        "bottom": 476.25,
+        "left": 18,
+        "right": 134.84375,
+        "width": 116.84375,
+        "height": 44,
+        "visivel": true,
+        "ancestrais": [
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 405,
+            "client": 443,
+            "total": 848
+          },
+          {
+            "tag": "ASIDE",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          },
+          {
+            "tag": "DIV",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "client": 443,
+            "total": 443
+          }
+        ],
+        "docY": 0
+      },
+      "tabs": 5,
+      "semSubmit": true,
+      "devtoolsUI": [
+        "Indicador já oculto: operação oficial Hide observada61926/primeirocontexto, semnova alteração"
+      ],
+      "indicadorOcultoPorPreferenciaOficial": true,
+      "falhas": []
+    }
+  ],
+  "bordas": [
+    {
+      "viewportWidth": 1399,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 1111,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 1391,
+        "bottom": 421
+      },
+      "tema": "claro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 1399,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 1400,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 1112,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 1392,
+        "bottom": 421
+      },
+      "tema": "claro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 1400,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 959,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 671,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 951,
+        "bottom": 421
+      },
+      "tema": "claro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 959,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 960,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 672,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 952,
+        "bottom": 421
+      },
+      "tema": "claro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 960,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 699,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 411,
+        "y": 340,
+        "width": 280,
+        "height": 134,
+        "right": 691,
+        "bottom": 474
+      },
+      "tema": "claro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 699,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 700,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 412,
+        "y": 340,
+        "width": 280,
+        "height": 134,
+        "right": 692,
+        "bottom": 474
+      },
+      "tema": "claro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 700,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 1399,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 1111,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 1391,
+        "bottom": 421
+      },
+      "tema": "escuro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 1399,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 1400,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 1112,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 1392,
+        "bottom": 421
+      },
+      "tema": "escuro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 1400,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 959,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 671,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 951,
+        "bottom": 421
+      },
+      "tema": "escuro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 959,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 960,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 672,
+        "y": 287,
+        "width": 280,
+        "height": 134,
+        "right": 952,
+        "bottom": 421
+      },
+      "tema": "escuro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 960,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 699,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 411,
+        "y": 340,
+        "width": 280,
+        "height": 134,
+        "right": 691,
+        "bottom": 474
+      },
+      "tema": "escuro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 699,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    },
+    {
+      "viewportWidth": 700,
+      "viewportHeight": 500,
+      "popover": {
+        "x": 412,
+        "y": 340,
+        "width": 280,
+        "height": 134,
+        "right": 692,
+        "bottom": 474
+      },
+      "tema": "escuro",
+      "sse": {
+        "criadas": 2,
+        "ativas": 1,
+        "max": 1
+      },
+      "doc": {
+        "w": 700,
+        "h": 500,
+        "x": 0,
+        "y": 0
+      },
+      "mesmoPainel": true,
+      "mesmoScroller": true
+    }
+  ],
+  "longas": [
+    {
+      "tipo": "longo real",
+      "nomes": [
+        "Validação 324 longa 1 turno noturno",
+        "Validação 324 longa 2 turno noturno",
+        "Validação 324 longa 3 turno noturno",
+        "Validação 324 longa 4 turno noturno"
+      ],
+      "quatroTagsCriadasPorUI": true,
+      "linksRemovidos": true,
+      "entidadesAguardamRestauro": true,
+      "tabs": 7,
+      "medida": {
+        "texto": "Registrar opt-out",
+        "top": 431.5,
+        "bottom": 475.5,
+        "scrollTop": 681,
+        "scrollHeight": 1124,
+        "clientHeight": 443,
+        "docY": 0,
+        "docHeight": 500
+      }
+    },
+    {
+      "tipo": "UI controlada transporte503",
+      "controladas": 1,
+      "backendExecutado": false,
+      "buscaPreservada": true,
+      "alerta": "Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação."
+    }
+  ],
+  "autorizacaoHumana": "Sim, autorizar esses testes locais e a restauração",
+  "negativos": [
+    {
+      "grupo": "BordasR1",
+      "sessao": 55464,
+      "terminal": "7383bc",
+      "saida": 1,
+      "causa": "Probe esperava painelautoaberto abaixo1400; contrato exige gatilho manual."
+    },
+    {
+      "grupo": "AlcanceR1móvel",
+      "quantidadeFotos": 8,
+      "causa": "Nextindicador sobrepõe início doscontroles; preservados/foraallowlist."
+    },
+    {
+      "grupo": "AlcanceR2",
+      "sessao": 61926,
+      "terminal": "ea7ec1",
+      "saida": 1,
+      "quantidadeFotos": 2,
+      "causa": "Hide oficial persistiu; próximo contexto esperava botão jáoculto. R3 trata ausênciaobservada."
+    },
+    {
+      "grupo": "Auto-reviewCRUD",
+      "execucao": false,
+      "causa": "Rejeição antesdeCreateProcess porausência deautorizaçãohumana direta; autorizaçãoliteral recebida antes da execução2881f4."
+    }
+  ],
+  "ambiente": {
+    "previewRoot": 13519,
+    "stop": {
+      "executor": "fb027a",
+      "saida": 1,
+      "esperada": "Ctrl+C, não gate"
+    },
+    "portaLivre": {
+      "executor": "266e94",
+      "saida": 0
+    },
+    "restauro": {
+      "executor": "74efd6",
+      "saida": 0,
+      "tabelasHashes": 424,
+      "mensagens": 9,
+      "notas": 4,
+      "snapshot323Mantido": true
+    },
+    "agents": {
+      "conferencia": "009033",
+      "restore": "b911de",
+      "saida": 0
+    },
+    "todosBrowsersFechados": true
+  },
+  "limites": [
+    "UIadminfictício; papéis/escopo/CASconcorrente cobertos pelos testes de código, não simulados nesta provaUI.",
+    "503controlado nãoexecutou backend; nenhum sucesso/JSONdepermissão fabricado.",
+    "Salvar termina emy500semmargem; nenhumclipping ou rolagemdocumento apósTab.",
+    "OitoframesmóveisR1 e doisparciaisR2 nãoestão entre97positivos.",
+    "Global/QAfinal/reconstruçãoPR/CI ainda nãoalegados peloDEV."
+  ]
+}

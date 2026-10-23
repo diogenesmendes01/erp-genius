@@ -1,0 +1,169 @@
+{
+  "fonteProduto": "2396a6c7703d0717a523d93f51a210a75f588135",
+  "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+  "fonteReferencia": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+  "linhas": [
+    {
+      "estado": "painel-detalhes",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "app": "output/inbox-324-formal-r1/painel-detalhes/app-claro-desktop-painel-detalhes.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-claro-desktop-painel-detalhes.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App inclui remoçãohumana× e+tag autorizados; marca✦somenteNoite semautor.",
+        "E1 mostra sóDetalhes; referência histórica também contém abas futuras eoutrosdadosCRM."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-detalhes",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "app": "output/inbox-324-formal-r1/painel-detalhes/app-claro-tablet-painel-detalhes.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-claro-tablet-painel-detalhes.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App inclui remoçãohumana× e+tag autorizados; marca✦somenteNoite semautor.",
+        "E1 mostra sóDetalhes; referência histórica também contém abas futuras eoutrosdadosCRM."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-detalhes",
+      "tema": "claro",
+      "tamanho": "celular",
+      "app": "output/inbox-324-formal-r1/painel-detalhes/app-claro-celular-painel-detalhes.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-claro-celular-painel-detalhes.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App inclui remoçãohumana× e+tag autorizados; marca✦somenteNoite semautor.",
+        "E1 mostra sóDetalhes; referência histórica também contém abas futuras eoutrosdadosCRM."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-detalhes",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "app": "output/inbox-324-formal-r1/painel-detalhes/app-escuro-desktop-painel-detalhes.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-escuro-desktop-painel-detalhes.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App inclui remoçãohumana× e+tag autorizados; marca✦somenteNoite semautor.",
+        "E1 mostra sóDetalhes; referência histórica também contém abas futuras eoutrosdadosCRM."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-detalhes",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "app": "output/inbox-324-formal-r1/painel-detalhes/app-escuro-tablet-painel-detalhes.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-escuro-tablet-painel-detalhes.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App inclui remoçãohumana× e+tag autorizados; marca✦somenteNoite semautor.",
+        "E1 mostra sóDetalhes; referência histórica também contém abas futuras eoutrosdadosCRM."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-detalhes",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "app": "output/inbox-324-formal-r1/painel-detalhes/app-escuro-celular-painel-detalhes.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-detalhes/prototipo-escuro-celular-painel-detalhes.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App inclui remoçãohumana× e+tag autorizados; marca✦somenteNoite semautor.",
+        "E1 mostra sóDetalhes; referência histórica também contém abas futuras eoutrosdadosCRM."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-sem-nome",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "app": "output/inbox-324-formal-r1/painel-sem-nome/app-claro-desktop-painel-sem-nome.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-claro-desktop-painel-sem-nome.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App usa contato fictício324 legítimo semPessoa/lead; protótipo c9 contém conversa/oportunidade/tags deexemplo.",
+        "App explica preenchimento manual factual, sempromessa deperguntaautomáticaAria.",
+        "App organiza campo/Salvar verticalmente, com44px móvel eCAS; referência histórica osorganiza horizontalmente."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-sem-nome",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "app": "output/inbox-324-formal-r1/painel-sem-nome/app-claro-tablet-painel-sem-nome.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-claro-tablet-painel-sem-nome.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App usa contato fictício324 legítimo semPessoa/lead; protótipo c9 contém conversa/oportunidade/tags deexemplo.",
+        "App explica preenchimento manual factual, sempromessa deperguntaautomáticaAria.",
+        "App organiza campo/Salvar verticalmente, com44px móvel eCAS; referência histórica osorganiza horizontalmente."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-sem-nome",
+      "tema": "claro",
+      "tamanho": "celular",
+      "app": "output/inbox-324-formal-r1/painel-sem-nome/app-claro-celular-painel-sem-nome.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-claro-celular-painel-sem-nome.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App usa contato fictício324 legítimo semPessoa/lead; protótipo c9 contém conversa/oportunidade/tags deexemplo.",
+        "App explica preenchimento manual factual, sempromessa deperguntaautomáticaAria.",
+        "App organiza campo/Salvar verticalmente, com44px móvel eCAS; referência histórica osorganiza horizontalmente."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-sem-nome",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "app": "output/inbox-324-formal-r1/painel-sem-nome/app-escuro-desktop-painel-sem-nome.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-escuro-desktop-painel-sem-nome.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App usa contato fictício324 legítimo semPessoa/lead; protótipo c9 contém conversa/oportunidade/tags deexemplo.",
+        "App explica preenchimento manual factual, sempromessa deperguntaautomáticaAria.",
+        "App organiza campo/Salvar verticalmente, com44px móvel eCAS; referência histórica osorganiza horizontalmente."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-sem-nome",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "app": "output/inbox-324-formal-r1/painel-sem-nome/app-escuro-tablet-painel-sem-nome.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-escuro-tablet-painel-sem-nome.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App usa contato fictício324 legítimo semPessoa/lead; protótipo c9 contém conversa/oportunidade/tags deexemplo.",
+        "App explica preenchimento manual factual, sempromessa deperguntaautomáticaAria.",
+        "App organiza campo/Salvar verticalmente, com44px móvel eCAS; referência histórica osorganiza horizontalmente."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    },
+    {
+      "estado": "painel-sem-nome",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "app": "output/inbox-324-formal-r1/painel-sem-nome/app-escuro-celular-painel-sem-nome.png",
+      "prototipo": "output/inbox-324-formal-r1/painel-sem-nome/prototipo-escuro-celular-painel-sem-nome.png",
+      "parecer": "Alvos funcionais prontos e legíveis; diferenças contratuais explícitas",
+      "diferencas": [
+        "App usa contato fictício324 legítimo semPessoa/lead; protótipo c9 contém conversa/oportunidade/tags deexemplo.",
+        "App explica preenchimento manual factual, sempromessa deperguntaautomáticaAria.",
+        "App organiza campo/Salvar verticalmente, com44px móvel eCAS; referência histórica osorganiza horizontalmente."
+      ],
+      "shell": "Cortes960/1400 eSidebar224 herdados308, semretorno ao1100 do protótipo; não é mudança324."
+    }
+  ]
+}

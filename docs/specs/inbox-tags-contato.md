@@ -22,7 +22,7 @@ Contrato compartilhado aprovado e implementado: alterarTagNaTransacao conserva a
 
 TDD: SSR/pureza/segurança, ReactDOM com troca e promessas antigas, integrações de papéis/escopos/idempotência/autoria/rollback/NOTIFY/concorrência e regressão CRM. Node 22.23.2 e executáveis locais; uma suíte por vez no dev-email 487, snapshot E2 #323 restaurado somente pelo integrador. Sessões e códigos estão em output/inbox-324-report.md. Checkpoint: recorte 64 arquivos / 756 testes, TSC heap8192 e lint dirigido zero, saídas terminais 0. Integração cinco arquivos / 53 casos e arquivo de actions final com 15 casos, ambos saída 0 em execuções distintas; não são uma execução única nem a suíte global.
 
-Visual obrigatório ainda pendente: painel-detalhes e painel-sem-nome, 1440×900 / 1024×768 / 390×844 nos dois temas, mais altura500, tags extensas/foco/teclado/popover. Fixture real semnome exige preparo coordenado; não alterar seed histórica nem inventar DOM. Sem DB no browser/produção/envio/instalação/Prisma/package/lock.
+Visual DEV executado sobre produto2396/harnessce658:24formais app×protótipo nos3tamanhos/2temas, mais73complementares de altura500, bordas, foco/teclado/rolagem e CRM local autorizado. Allowlists/hashes/limites e negativos estão em output/inbox-324-report.md e output/inbox-324-visual-parecer.md. Referência semnome originalHTML c9/noName:true, PNGpré-exportado ausente. Sem promessa automática Aria. QAfinal/globalintegrado/PR/CI ainda pendentes.
 
 ## Regressão de perda de acesso e rastreabilidade
 
@@ -50,3 +50,9 @@ Produto 2396a6c7703d0717a523d93f51a210a75f588135 permanece byte idêntico; somen
 A matriz anterior164 permanece; painel-sem-nome acrescenta12, total176 (106 app/70 protótipo). Recorte formal desta issue:24 imagens, dois estados×três tamanhos×dois temas×dois alvos. Preflight real c0d2c2 saída0 confirmou GET200/semNome=true/podeEditarNome=true do contato324 e Mariana com pessoa/três tags. Preview13519 controlado pelo integrador; restauro823a46 e fixturee11a8f0 são operações externas. Nenhuma imagem capturada neste checkpoint.
 
 Referência funcional sem nome: HTML original docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html, conversa c9/noName:true, SHA2567698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf. O PNG pré-exportado prototipo-estado-painel-sem-nome.png não existe; nenhuma referência foi fabricada. Manifestos devem distinguir produto app, harness e HTML original; a cópia antiga da referência sobre Aria não representa promessa da app. Captura/inspeção/QA/global/publicação continuam pendentes.
+
+## Aceitação visual e segurança da prova
+
+97PNG originais positivos,26pranchas derivadas separadas;8móveisR1 obstruídos pelo indicadorNext e2parciaisR2 ficam fora da allowlist. RecapturaR3 usa somente Preferences→Hide oficial observado, sem CSS/DOM/app modificado. Salvar móvel44px termina emy500sem margem, acessível porTab e rolagem local; último controle e cabeçalho com4tagslongas alcançáveis sem scroll do documento. Normal1440claro semnome não prova a thread independente jácarregada.
+
+A UI real local criou/atribuiu/removeu tags Mariana e salvou nome somente no NOVO contato324 após autorizaçãohumana explícita; vínculos/autoria canônicos preservados. Resultado real confirmado porGET/reload;503étransportecontrolado separado. ROOT restauro74efd6/0 conferiu424hashes/fixture9msg4notas após fechar todos browsers e pararpreview. SemPNG/scriptprivado/log/credencial versionado; sómetadados curados. Ownership doCLI entregue aB337 noce658; produção2396 permanece congelada.
