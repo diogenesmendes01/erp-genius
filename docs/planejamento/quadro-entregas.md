@@ -5328,3 +5328,7 @@ prop, trecho e alvo, com motivo específico e cópia literal; nenhum algoritmo,
 limite, produtor ou UI foi alterado. RED isolado29tests1falha; GREEN3files97
 testes saída0; lint do arquivo0. Negativos/logs preservados. Regressão global
 após o registro ainda pendente, sem chamar a execução4490 de aprovada.
+
+### #315 — freeze após guarda de navegação da aba
+
+Mergee594→f6f104d8, conflito sóquadro/amboshistóricos. Contra8b, src/scripts mudam somente registro identificação (nenhumaUI/harness):29testes/lint0 observados819428.68capturas atuais+30pranchas/allowlist107hashes conferidos. Produto/visual8b/efeb invariantes; gates106/1058/TSC50243/lint24 são históricos exatos8b, sem novaexecução global. TESTER/globalROOT pendentes; bancosnapshot424hashes restaurado e sem processosDEV.
