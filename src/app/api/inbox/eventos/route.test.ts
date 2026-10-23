@@ -16,6 +16,7 @@ vi.mock("@/server/_shared/sessao", async (orig) => {
 });
 vi.mock("@/server/inbox/barramento", () => ({ assinarInbox: vi.fn(() => m.sair), iniciarEscuta: vi.fn(async () => {}) }));
 import { GET } from "./route";
+import * as rota from "./route";
 import { REVALIDAR_MS, RETRY_MS, VIDA_MAX_MS } from "./limites";
 
 const AGORA = new Date("2026-10-19T12:00:00.000Z").getTime();
@@ -48,6 +49,11 @@ const abrir = async () => {
 };
 
 describe("GET /api/inbox/eventos", () => {
+  it("mantém apenas handler e configurações de rota nos exports públicos", () => {
+    // Next valida o namespace da rota; constantes de controle ficam em limites.ts.
+    // Inspecionar o módulo real também detecta reexports e export default acidentais.
+    expect(Object.keys(rota).sort()).toEqual(["GET", "dynamic", "runtime"]);
+  });
   it("sem sessão → 401", async () => {
     m.sessao.mockResolvedValue("SEM_SESSAO");
     expect((await GET(new Request("http://x/api/inbox/eventos"))).status).toBe(401);
