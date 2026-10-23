@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconChevronLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
 import { BotaoIcone } from "@/components/BotaoIcone";
@@ -9,7 +9,7 @@ import { itensDaThread, decorarThread, autorDoItem, notaComoMensagem } from "@/c
 import { useAgoraDaThread } from "@/components/conversa/agora-thread";
 import { EventoSistema } from "@/components/conversa/EventoSistema";
 import { SeparadorDia } from "@/components/conversa/SeparadorDia";
-import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
+import { MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import type { ConversaHook } from "@/components/conversa/useConversa";
@@ -22,6 +22,10 @@ import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
+import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
+import type { AcoesCabecalho } from "./MenuConversa";
+import { useRevisoesRascunhos } from "@/components/conversa/rascunhos-conversa";
+import { RodapeConversa } from "./RodapeConversa";
 import { CabecalhoConversa } from "./CabecalhoConversa";
 import { BuscaConversa } from "./BuscaConversa";
 import { useBuscaConversa } from "./useBuscaConversa";
@@ -89,6 +93,8 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
 }
 
 export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial }: PropsConversaAberta) {
+  const tentativasNota = useChavesPorAlvo();
+  const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
   const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
@@ -114,16 +120,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
   // null (carregando) só chega ao compositor; os comandos da mensagem exigem o envio confirmado.
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
 
-  return (
-    <>
-      {item ? <CabecalhoControlado key={item.id} buscaAberta={buscaAberta} aoBuscar={abrirBusca} item={item} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoVoltar={aoVoltar} aoAlternarPainel={aoAlternarPainel} painelAberto={painelAberto} painelAuto={painelAuto} /> : (
-        <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface px-3">
-          <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
-          <p className="min-w-0 flex-1 truncate">Conversa</p>
-          <BotaoIcone tamanho={36} rotulo="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel}><IconLayoutSidebarRight size={17} /></BotaoIcone>
-        </header>
-      )}
-      {buscaAberta && <BuscaConversa termo={termo} aoMudar={mudarBusca} total={achados.length} posicao={posicao} campoRef={campoRef}
+  const barraBusca = buscaAberta && <BuscaConversa termo={termo} aoMudar={mudarBusca} total={achados.length} posicao={posicao} campoRef={campoRef}
         aoAnterior={() => navegarBusca(-1)} aoProximo={() => navegarBusca(1)} aoFechar={fecharBusca}
         temMaisAntes={conversa.temMaisAntes} temMaisDepois={conversa.temMaisDepois} carregandoAntigas={conversa.carregandoAntigas} aoCarregarAntigas={() => {
           if (conversa.carregandoAntigas || !conversa.temMaisAntes) return;
@@ -131,7 +128,19 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           // sem restaurar depois e tomar foco que o usuário moveu durante a espera.
           campoRef.current?.focus({preventScroll: true});
           void conversa.maisAntigas();
-        }} />}
+        }} />;
+
+  const renderizarConversa = (acoes: AcoesCabecalho | null) => (
+    <>
+      {item && acoes ? <CabecalhoConversa atendimento={item} acoes={acoes} usuarioId={usuario.id} painelAberto={painelAberto === true} painelAuto={painelAuto === true} aoAlternarPainel={aoAlternarPainel} buscaAberta={buscaAberta} aoBuscar={abrirBusca} aoVoltar={aoVoltar} /> : (
+        <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface px-3">
+          <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
+          <p className="min-w-0 flex-1 truncate">Conversa</p>
+          <BotaoIcone tamanho={36} rotulo="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel}><IconLayoutSidebarRight size={17} /></BotaoIcone>
+        </header>
+      )}
+      {acoes?.feedback}{acoes?.dialogos}
+      {barraBusca}
       <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
@@ -158,15 +167,19 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         />
       </div>
       {item ? (
-        <Compositor
+        <RodapeConversa
           atendimentoId={item.id}
-          modo="responder"
+          modo="compositor"
+          podeAnotar={!item.grupo}
+          tentativasNota={tentativasNota}
+          revisoesRascunhos={revisoesRascunhos}
+          aoAgendar={acoes?.abrirAgendar ?? undefined}
           podeEnviar={envioLiberado}
           falhaPermissao={item.status === "ENCERRADO" ? undefined : falhaPermissao}
           capacidades={capacidades}
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
-          aoNota={(nota) => registrarNotaAtendimento({ atendimentoId: item.id, nota })}
+          aoNota={(nota, chaveIdempotencia) => registrarNotaAtendimento({ atendimentoId: item.id, nota, chaveIdempotencia })}
           respostas={respostas}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />
@@ -178,14 +191,15 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       )}
     </>
   );
+  return item ? <CoordenadorAcoesConversa key={item.id} item={item} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca}>{renderizarConversa}</CoordenadorAcoesConversa> : renderizarConversa(null);
 }
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
-function CabecalhoControlado({ item, usuario, fuso, destinos, aoMudar, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, buscaAberta, aoBuscar }: { item: ItemListaInbox; buscaAberta: boolean; aoBuscar(): void } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoVoltar" | "aoAlternarPainel" | "painelAberto" | "painelAuto">) {
+function CoordenadorAcoesConversa({ item, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aoBuscar(): void; children(acoes: AcoesCabecalho): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar">) {
   const acoes = useAcoesAtendimento({
     atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
     usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
     linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar,
   });
-  return <><CabecalhoConversa atendimento={item} acoes={acoes} usuarioId={usuario.id} painelAberto={painelAberto === true} painelAuto={painelAuto === true} aoAlternarPainel={aoAlternarPainel} buscaAberta={buscaAberta} aoBuscar={aoBuscar} aoVoltar={aoVoltar} />{acoes.feedback}{acoes.dialogos}</>;
+  return children(acoes);
 }

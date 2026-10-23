@@ -12,6 +12,7 @@ vi.mock("react", async (original) => {
     ...real,
     useState: ((i: unknown) => (m.g ? m.g.useState(i) : real.useState(i as never))) as unknown as typeof real.useState,
     useRef: ((i: unknown) => (m.g ? m.g.useRef(i) : real.useRef(i as never))) as unknown as typeof real.useRef,
+    useLayoutEffect: ((f: () => void, d?: unknown[]) => (m.g ? f() : real.useLayoutEffect(f, d))) as unknown as typeof real.useLayoutEffect,
     useEffect: ((f: () => void, d?: unknown[]) => (m.g ? undefined : real.useEffect(f, d))) as unknown as typeof real.useEffect,
   };
 });
@@ -19,6 +20,8 @@ vi.mock("react", async (original) => {
 import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, AVISO_ANEXO_EM_BREVE, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
+import { criarChavesPorAlvo } from "@/lib/chave-idempotencia";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
 
@@ -74,7 +77,7 @@ describe("Compositor", () => {
     digitar(tela(), "combinar com a coordenação");
     clicarBotao(tela(), "Enviar");
     await esvaziar();
-    expect(p.aoNota).toHaveBeenCalledWith("combinar com a coordenação");
+    expect(p.aoNota).toHaveBeenCalledWith("combinar com a coordenação", expect.any(String));
     expect(p.aoEnviarTexto).not.toHaveBeenCalled();
     expect(p.aoEnviarMidia).not.toHaveBeenCalled();
   });
@@ -101,6 +104,167 @@ describe("Compositor", () => {
     await esvaziar();
     expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("Janela de 24h fechada.");
     expect(armazenamento.get("conversa-rascunho:at1:responder")).toBe("Oi");
+  });
+
+  it.each(["ok", "falha", "rejeicao"])('resultado antigo %s não limpa texto/arquivo nem publica erro no novo atendimento', async (fim) => {
+    m.g = criarGanchos();
+    let resolver!: (r: {ok:true}|{ok:false;erro:string}) => void, rejeitar!: (e:Error) => void;
+    const pendente = new Promise<{ok:true}|{ok:false;erro:string}>((resolve,reject)=>{resolver=resolve;rejeitar=reject;});
+    let p=props({aoEnviarTexto:()=>pendente});
+    const tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'texto A');clicarBotao(tela(),'Enviar');
+    p={...p,atendimentoId:'at2'};tela();digitar(tela(),'texto B');
+    const arquivo={name:'B.pdf',size:200,type:'application/pdf'};
+    const input=elementos(tela()).find(n=>n.type==='input'&&n.props['aria-label']==='Escolher arquivo')!;
+    (input.props.onChange as (e:unknown)=>void)({target:{files:[arquivo],value:'B.pdf'}});
+    if(fim==='rejeicao')rejeitar(new Error('falha antiga'));else resolver(fim==='ok'?{ok:true}:{ok:false,erro:'falha antiga'});
+    await esvaziar();
+    const t=tela();expect(elementos(t).find(n=>n.type===CampoTexto)!.props.value).toBe('texto B');
+    expect(armazenamento.get('conversa-rascunho:at2:responder')).toBe('texto B');
+    const h=renderToStaticMarkup(createElement('div',null,t));expect(h).toContain('B.pdf');expect(h).not.toContain('falha antiga');
+  });
+  it('trocar para nota durante envio libera a nova aba e a conclusão antiga não apaga seu rascunho',async()=>{
+    m.g=criarGanchos();let resolver!:(r:{ok:true})=>void;
+    const pendente=new Promise<{ok:true}>(r=>{resolver=r;});let p=props({aoEnviarTexto:()=>pendente});const tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'resposta A');clicarBotao(tela(),'Enviar');
+    p={...p,modo:'nota'};tela();digitar(tela(),'nota independente');
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.disabled).toBe(false);
+    resolver({ok:true});await esvaziar();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('nota independente');
+    expect(armazenamento.get('conversa-rascunho:at1:nota')).toBe('nota independente');
+  });
+  it('participante com leitura e sem envio pode escrever nota sem chamar transporte',async()=>{
+    m.g=criarGanchos();const p=props({modo:'nota',podeEnviar:false});const tela=()=>m.g!.renderizar(Compositor,p);
+    expect(elementos(tela()).some(n=>n.type===CampoTexto)).toBe(true);
+    digitar(tela(),'nota da equipe');clicarBotao(tela(),'Enviar');await esvaziar();
+    expect(p.aoNota).toHaveBeenCalled();expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+  });
+
+  it('nota reutiliza chave após falha, separa texto/contexto e renova somente no sucesso',async()=>{
+    m.g=criarGanchos();const chamadas:{texto:string;chave?:string}[]=[];let ok=false;
+    const aoNota=async(texto:string,chave?:string)=>{chamadas.push({texto,chave});return ok?{ok:true as const}:{ok:false as const,erro:'falha controlada'};};
+    let p=props({modo:'nota',aoNota});const tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'nota A');clicarBotao(tela(),'Enviar');await esvaziar();clicarBotao(tela(),'Enviar');await esvaziar();
+    expect(chamadas[0].chave).toEqual(expect.any(String));expect(chamadas[1].chave).toBe(chamadas[0].chave);
+    digitar(tela(),'nota alterada');clicarBotao(tela(),'Enviar');await esvaziar();expect(chamadas[2].chave).not.toBe(chamadas[0].chave);
+    p={...p,atendimentoId:'at2'};tela();digitar(tela(),'nota A');clicarBotao(tela(),'Enviar');await esvaziar();expect(chamadas[3].chave).not.toBe(chamadas[0].chave);
+    p={...p,atendimentoId:'at1'};tela();digitar(tela(),'nota A');ok=true;clicarBotao(tela(),'Enviar');await esvaziar();expect(chamadas[4].chave).toBe(chamadas[0].chave);
+    digitar(tela(),'nota A');clicarBotao(tela(),'Enviar');await esvaziar();expect(chamadas[5].chave).not.toBe(chamadas[0].chave);
+  });
+
+  it('A→B→A não aceita resultado do primeiro A como resultado do rascunho atual',async()=>{
+    m.g=criarGanchos();let resolver!:(r:{ok:true})=>void;const pendente=new Promise<{ok:true}>(r=>{resolver=r;});let p=props({aoEnviarTexto:()=>pendente});const tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'primeiro A');clicarBotao(tela(),'Enviar');p={...p,atendimentoId:'at2'};tela();tela();p={...p,atendimentoId:'at1'};tela();digitar(tela(),'novo rascunho A');
+    resolver({ok:true});await esvaziar();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('novo rascunho A');expect(armazenamento.get('conversa-rascunho:at1:responder')).toBe('novo rascunho A');
+  });
+  it('dois cliques no mesmo handler antes do render iniciam só uma tentativa',async()=>{
+    m.g=criarGanchos();let chamadas=0,resolver!:(r:{ok:true})=>void;const pendente=new Promise<{ok:true}>(r=>{resolver=r;});const p=props({modo:'nota',aoNota:()=>{chamadas++;return pendente;}}),tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'nota');const t=tela();clicarBotao(t,'Enviar');clicarBotao(t,'Enviar');expect(chamadas).toBe(1);resolver({ok:true});await esvaziar();
+  });
+  it('agendar só aparece com callback real e fora da nota',()=>{
+    m.g=criarGanchos();let abertos=0;let p=props({aoAgendar:()=>{abertos++;}});const tela=()=>m.g!.renderizar(Compositor,p);
+    const b=elementos(tela()).find(n=>n.props['aria-label']==='Agendar mensagem')!;expect(b).toBeDefined();(b.props.onClick as ()=>void)();expect(abertos).toBe(1);
+    p={...p,modo:'nota'};tela();expect(elementos(tela()).some(n=>n.props['aria-label']==='Agendar mensagem')).toBe(false);
+    p={...p,modo:'responder',aoAgendar:undefined};tela();expect(elementos(tela()).some(n=>n.props['aria-label']==='Agendar mensagem')).toBe(false);
+  });
+
+  it('upload antigo não despacha mídia nem modifica arquivo/texto de outra conversa',async()=>{
+    let resolver!:(r:{ok:boolean;json():Promise<{url:string}>})=>void;const pendente=new Promise<{ok:boolean;json():Promise<{url:string}>}>(r=>{resolver=r;});
+    vi.stubGlobal('fetch',()=>pendente);vi.stubGlobal('FormData',class{append(){}});m.g=criarGanchos();
+    let p=props();const tela=()=>m.g!.renderizar(Compositor,p);
+    const escolher=(name:string)=>{const el=elementos(tela()).find(n=>n.type==='input'&&n.props['aria-label']==='Escolher arquivo')!;(el.props.onChange as (e:unknown)=>void)({target:{files:[{name,size:100,type:'application/pdf'}],value:name}});};
+    escolher('A.pdf');digitar(tela(),'legenda A');clicarBotao(tela(),'Enviar');p={...p,atendimentoId:'at2'};tela();escolher('B.pdf');digitar(tela(),'legenda B');
+    resolver({ok:true,json:async()=>({url:'/api/files/whatsapp-out/antigo.pdf'})});await esvaziar();
+    expect(p.aoEnviarMidia).not.toHaveBeenCalled();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('legenda B');expect(renderToStaticMarkup(createElement('div',null,tela()))).toContain('B.pdf');
+  });
+  it.each([null,false])('nota mantém leitura individual independente do estado de envio %s ou falha de envio',podeEnviar=>{
+    const h=html({modo:'nota',podeEnviar,falhaPermissao:()=>{}});expect(h).toContain('Escreva uma nota interna');expect(h).not.toContain(FALHA_PERMISSAO_ENVIO);expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+  });
+
+  it('falha de transporte de nota mantém tentativa e orienta retentar sem presumir erro de negócio',async()=>{
+    m.g=criarGanchos();const chaves:(string|undefined)[]=[];const p=props({modo:'nota',aoNota:async(_texto,chave)=>{chaves.push(chave);throw new Error('rede interrompida');}}),tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'nota incerta');clicarBotao(tela(),'Enviar');await esvaziar();
+    expect(renderToStaticMarkup(createElement('div',null,tela()))).toContain(MSG_RESULTADO_INCERTO);
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('nota incerta');clicarBotao(tela(),'Enviar');await esvaziar();expect(chaves[1]).toBe(chaves[0]);
+  });
+
+  it.each(['ok','incerto'])('resultado tardio %s renova só a tentativa confirmada de A sem escrever estado de B',async(fim)=>{
+    let sequencia=0;const tentativas=criarChavesPorAlvo(()=>String(++sequencia));m.g=criarGanchos();
+    let resolver!:(r:{ok:true})=>void,rejeitar!:(e:Error)=>void;const pendente=new Promise<{ok:true}>((r,j)=>{resolver=r;rejeitar=j;});
+    let p=props({modo:'nota',tentativasNota:tentativas,aoNota:()=>pendente});const tela=()=>m.g!.renderizar(Compositor,p);
+    tela();expect(sequencia).toBe(0);digitar(tela(),'nota A');clicarBotao(tela(),'Enviar');
+    const alvo=JSON.stringify(['at1','nota A']),original=tentativas.para(alvo).atual;
+    p={...p,atendimentoId:'at2'};tela();digitar(tela(),'nota B');if(fim==='ok')resolver({ok:true});else rejeitar(new Error('sem resposta'));
+    await esvaziar();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('nota B');expect(renderToStaticMarkup(createElement('div',null,tela()))).not.toContain(MSG_RESULTADO_INCERTO);
+    if(fim==='ok')expect(tentativas.para(alvo).atual).not.toBe(original);else expect(tentativas.para(alvo).atual).toBe(original);
+    p={...p,atendimentoId:'at1'};tela();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe(fim==='ok'?'':'nota A');
+  });
+
+  it.each(['responder','nota'] as const)('C3 sucesso confirmado fora do contexto limpa somente o armazenamento enviado em%s', async modo => {
+    m.g=criarGanchos();let resolver!:(r:{ok:true})=>void;const pendente=new Promise<{ok:true}>(r=>{resolver=r;});
+    let p=props({modo,aoEnviarTexto:()=>pendente,aoNota:()=>pendente});const tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'  texto A enviado  ');clicarBotao(tela(),'Enviar');p={...p,atendimentoId:'at2'};tela();digitar(tela(),'rascunho B');
+    resolver({ok:true});await esvaziar();
+    expect(armazenamento.has('conversa-rascunho:at1:'+modo)).toBe(false);
+    expect(armazenamento.get('conversa-rascunho:at2:'+modo)).toBe('rascunho B');
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('rascunho B');
+    p={...p,atendimentoId:'at1'};tela();expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('');
+  });
+
+  it.each(['ok','falha'])('resultado %s da tentativa anterior não apaga edição deliberada e novo anexo na mesma conversa',async(fim)=>{
+    m.g=criarGanchos();let resolver!:(r:{ok:true}|{ok:false;erro:string})=>void;const pendente=new Promise<{ok:true}|{ok:false;erro:string}>(r=>{resolver=r;});
+    const p=props({aoEnviarTexto:()=>pendente,respostas:[{id:'r',atalho:'/preco',titulo:'Preço',corpo:'Novo rascunho preparado'}]}),tela=()=>m.g!.renderizar(Compositor,p);
+    digitar(tela(),'/pre');clicarBotao(tela(),'Enviar');
+    // A sugestão e o seletor de arquivo continuam acionáveis enquanto o envio aguarda.
+    clicarBotao(tela(),'/preco Preço');
+    const seletor=elementos(tela()).find(n=>n.type==='input'&&n.props['aria-label']==='Escolher arquivo')!;
+    (seletor.props.onChange as (e:unknown)=>void)({target:{files:[{name:'nova-intencao.pdf',size:100,type:'application/pdf'}],value:'novo'}});
+    resolver(fim==='ok'?{ok:true}:{ok:false,erro:'erro da tentativa antiga'});await esvaziar();
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('Novo rascunho preparado');
+    expect(armazenamento.get('conversa-rascunho:at1:responder')).toBe('Novo rascunho preparado');
+    const h=renderToStaticMarkup(createElement('div',null,tela()));expect(h).toContain('nova-intencao.pdf');expect(h).not.toContain('erro da tentativa antiga');
+  });
+
+  it.each(['ok','falha'])('upload antigo %s não substitui novo anexo escolhido na mesma conversa', async (fim) => {
+    m.g = criarGanchos();
+    let resolver!: (r: {ok:boolean; json(): Promise<{url?:string;erro?:string}>}) => void;
+    vi.stubGlobal('fetch', () => new Promise(r => { resolver = r; }));
+    vi.stubGlobal('FormData', class { append() {} });
+    const p = props(), tela = () => m.g!.renderizar(Compositor, p);
+    const escolher = (name:string) => {
+      const input = elementos(tela()).find(n => n.type === 'input' && n.props['aria-label'] === 'Escolher arquivo')!;
+      (input.props.onChange as (e:unknown)=>void)({target:{files:[{name,size:100,type:'application/pdf'}],value:name}});
+    };
+    escolher('original.pdf'); digitar(tela(), 'legenda original'); clicarBotao(tela(), 'Enviar');
+    escolher('novo.pdf');
+    resolver({ok:fim==='ok',json:async()=>fim==='ok'?{url:'/arquivo-original.pdf'}:{erro:'upload antigo falhou'}});
+    await esvaziar();
+    expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+    const h = renderToStaticMarkup(createElement('div', null, tela()));
+    expect(h).toContain('novo.pdf'); expect(h).not.toContain('upload antigo falhou');
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.disabled).toBe(false);
+  });
+
+  it.each(['ok','incerto'])('edição por emoji preserva nota e chave da tentativa %s original', async (fim) => {
+    m.g = criarGanchos();
+    let sequencia = 0;
+    const tentativas = criarChavesPorAlvo(() => String(++sequencia));
+    let resolver!: (r:{ok:true})=>void, rejeitar!: (e:Error)=>void;
+    const pendente = new Promise<{ok:true}>((r,j)=>{resolver=r;rejeitar=j;});
+    const p = props({modo:'nota',tentativasNota:tentativas,aoNota:()=>pendente});
+    const tela = () => m.g!.renderizar(Compositor,p);
+    digitar(tela(),'nota original');
+    (elementos(tela()).find(n=>n.props['aria-label']==='Emojis')!.props.onClick as ()=>void)();
+    clicarBotao(tela(),'Enviar');
+    const original = tentativas.para(JSON.stringify(['at1','nota original'])).atual;
+    const seletor = elementos(tela()).find(n=>typeof n.props.aoEmoji==='function')!;
+    (seletor.props.aoEmoji as (v:string)=>void)('😀');
+    if(fim==='ok') resolver({ok:true}); else rejeitar(new Error('sem resposta'));
+    await esvaziar();
+    expect(elementos(tela()).find(n=>n.type===CampoTexto)!.props.value).toBe('nota original😀');
+    expect(armazenamento.get('conversa-rascunho:at1:nota')).toBe('nota original😀');
+    expect(renderToStaticMarkup(createElement('div',null,tela()))).not.toContain(MSG_RESULTADO_INCERTO);
+    const atual = tentativas.para(JSON.stringify(['at1','nota original'])).atual;
+    if(fim==='ok') expect(atual).not.toBe(original); else expect(atual).toBe(original);
   });
 
   it("sem podeEnviar: compositor bloqueado com motivo", () => {
@@ -261,7 +425,7 @@ describe("Compositor", () => {
 });
 
 describe("Compositor: permissão de envio carregando, falhou ou negada (C2 da revisão do #218)", () => {
-  const semCampo = (h: string) => expect(h).not.toContain("Digite uma mensagem");
+  const semCampo = (h: string) => expect(h).not.toContain("Escreva uma mensagem");
   it("carregando (podeEnviar null): mostra Carregando…, não o motivo, e não envia", () => {
     const h = html({ podeEnviar: null });
     expect(h).toContain(CARREGANDO_ENVIO);
@@ -288,7 +452,7 @@ describe("Compositor: permissão de envio carregando, falhou ou negada (C2 da re
     expect(h).toContain(MOTIVO_SEM_ENVIO);
     expect(h).not.toContain(CARREGANDO_ENVIO);
     semCampo(h);
-    expect(html({ podeEnviar: true })).toContain("Digite uma mensagem");
+    expect(html({ podeEnviar: true })).toContain("Escreva uma mensagem");
   });
 });
 
