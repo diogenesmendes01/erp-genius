@@ -1,0 +1,147 @@
+{
+  "fonte": "0290504236eb18a4d7b2a53bc6c2f925bf75b19f",
+  "execucao": {
+    "session_id": 45698,
+    "chunk": "21dcb6",
+    "exit_code": 0,
+    "node": "22.23.2"
+  },
+  "tipo": "prova privada de interação, não aceite formal app × protótipo",
+  "inspecao": "12 PNGs individualmente inspecionados pelo DEV A",
+  "casos": [
+    {
+      "tema": "light",
+      "width": 1440,
+      "height": 900,
+      "offsetAntes": 79.90625,
+      "offsetDepois": 79.90625,
+      "delta": 0,
+      "identidade": true,
+      "foco": "inbox-314-virtual-msg-040",
+      "tab": "inbox-314-virtual-msg-041",
+      "montados": 24,
+      "deltaAntigoDescartado": 5.0625,
+      "falhas": []
+    },
+    {
+      "tema": "light",
+      "width": 1024,
+      "height": 768,
+      "offsetAntes": 79.90625,
+      "offsetDepois": 79.90625,
+      "delta": 0,
+      "identidade": true,
+      "foco": "inbox-314-virtual-msg-040",
+      "tab": "inbox-314-virtual-msg-041",
+      "montados": 23,
+      "deltaAntigoDescartado": 5.0625,
+      "falhas": []
+    },
+    {
+      "tema": "light",
+      "width": 390,
+      "height": 844,
+      "offsetAntes": 80.0625,
+      "offsetDepois": 80.0625,
+      "delta": 0,
+      "identidade": true,
+      "foco": "inbox-314-virtual-msg-040",
+      "tab": "inbox-314-virtual-msg-041",
+      "montados": 20,
+      "deltaAntigoDescartado": 5.0625,
+      "falhas": []
+    },
+    {
+      "tema": "dark",
+      "width": 1440,
+      "height": 900,
+      "offsetAntes": 79.90625,
+      "offsetDepois": 79.90625,
+      "delta": 0,
+      "identidade": true,
+      "foco": "inbox-314-virtual-msg-040",
+      "tab": "inbox-314-virtual-msg-041",
+      "montados": 24,
+      "deltaAntigoDescartado": 5.0625,
+      "falhas": []
+    },
+    {
+      "tema": "dark",
+      "width": 1024,
+      "height": 768,
+      "offsetAntes": 79.90625,
+      "offsetDepois": 79.90625,
+      "delta": 0,
+      "identidade": true,
+      "foco": "inbox-314-virtual-msg-040",
+      "tab": "inbox-314-virtual-msg-041",
+      "montados": 23,
+      "deltaAntigoDescartado": 5.0625,
+      "falhas": []
+    },
+    {
+      "tema": "dark",
+      "width": 390,
+      "height": 844,
+      "offsetAntes": 80.0625,
+      "offsetDepois": 80.0625,
+      "delta": 0,
+      "identidade": true,
+      "foco": "inbox-314-virtual-msg-040",
+      "tab": "inbox-314-virtual-msg-041",
+      "montados": 20,
+      "deltaAntigoDescartado": 5.0625,
+      "falhas": []
+    }
+  ],
+  "arquivos": [
+    {
+      "nome": "dark-1024-virtual101.png",
+      "sha256": "5474c112a183a42d47714aa83b1455b505e5f6b9c573c0cb3608a9970282fb33"
+    },
+    {
+      "nome": "dark-1024-virtual99.png",
+      "sha256": "1b372b079272b79f53320bf43ce2543c0c754674d75abf98d9547ae68f9fc8c8"
+    },
+    {
+      "nome": "dark-1440-virtual101.png",
+      "sha256": "18c70d36a273336f2a7ed1caee1e58523a915cbf3d11603343545fdba9b7436b"
+    },
+    {
+      "nome": "dark-1440-virtual99.png",
+      "sha256": "28c1a7fc50bc6731770ab897a20c16b561b4f584237a3dbea412b1616527ef39"
+    },
+    {
+      "nome": "dark-390-virtual101.png",
+      "sha256": "7f0472fb57f5a3e558b893a123d4e72b06dd3397facb934a7f60aec4ac040a13"
+    },
+    {
+      "nome": "dark-390-virtual99.png",
+      "sha256": "bf44b2a4de8d09d8569d25e7ba3c3ec1cf6db717ef28b45c5b52ef91884e0961"
+    },
+    {
+      "nome": "light-1024-virtual101.png",
+      "sha256": "8b04959401da5206c40d498e11680920f6965bdbca0d0e24cb32d49d40987b9c"
+    },
+    {
+      "nome": "light-1024-virtual99.png",
+      "sha256": "93f0124cbb5f389fa2f44deb53e3d3f1360219aac81b359a52e194e986db16f3"
+    },
+    {
+      "nome": "light-1440-virtual101.png",
+      "sha256": "3a8a8d51b10a1915158b3225bab29232d330add72d0fd07a8cd697c3bff0c8d7"
+    },
+    {
+      "nome": "light-1440-virtual99.png",
+      "sha256": "0c28edc5117ebc34ad04f543c3b5ddd90e4844c21548f6945bda9330f7af392e"
+    },
+    {
+      "nome": "light-390-virtual101.png",
+      "sha256": "d297b56617d8b755c7377cb4e67fb3869a06df2ed5369e13d1a686a0899cf399"
+    },
+    {
+      "nome": "light-390-virtual99.png",
+      "sha256": "8503497accdc25ae1c6f9b032246aec3b733418d90e43e5e276326f4d5e53f89"
+    }
+  ]
+}

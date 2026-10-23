@@ -72,10 +72,16 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 50 PNGs: 26 do app e 24 do protótipo. O painel do
+`--estado todos` produz 58 PNGs: 30 do app e 28 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
+
+## Atualização da casca #308
+
+O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
+
+A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
 
 ## Selo pessoal do menu (#311)
 
@@ -90,12 +96,6 @@ A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; v
 ## Estado de lista vazia (#312)
 
 #312 acrescenta `--estado lista-vazia`: app em `?busca=zzzz` sem seleção, protótipo com busca real `zzzz`, três tamanhos e dois temas (12PNGs). A espera exige EstadoVazio visível e nenhum item da lista; os passos dos demais estados permanecem iguais.
-
-## Atualização da casca #308
-
-O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
-
-A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
 
 # Telefones em evidências
 
@@ -115,3 +115,9 @@ O teste do DOM real usa Chrome já instalado, sem baixar navegador:
 Esse teste dirigido de navegador é separado da suíte unitária Vitest.
 
 Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.
+
+## Thread por autor (#314)
+
+`humano-compositor` agora cobre1440×900,1024×768 e390×844 nos dois temas,12PNGs app×protótipo. Junto de `conversa` e `celular-conversa`, são28capturas formais. A prontidão humana exige a mensagem/nota real307, autorVocê, separador civil identificado, status de saída e notas sem comandos/mídia/status de transporte; não depende de data fixa Hoje no seed histórico. Casos LIDA/FALHOU e autoresCamila/Carlos/origens314 usam a fixture complementar privada preparada pelo integrador e probes sem envio/alteraçãoDB.
+
+No app humano, a CLI rola internamente até a nota307, para mostrar nota seguida da autoria/status sem sintetizar conteúdo; as notas/autores adicionais podem exigir fotos complementares. No protótipo celular abreBeatriz antes da foto. HidrataçãoSSE, guardasReact/rede e anonimizaçãoDOM392 após interações/antesfoto com registro no manifesto permanecem ativos. A fixture314 de99→101 é prova privada separada e deve ser retirada pelo integrador com guards antes do formal; não executar seed ou limpeza automática pela CLI.

@@ -1,5 +1,13 @@
 # #311 — ledger DEV B
 
+## Fechamento do integrador e TESTER
+
+Fonte combinada final86093f4d46765a87a1f6a277776e046213414cd1. R1singular83c6ec36(root1f1bc886) eR2corpoHTTP7d27c031(root86093f4d) corrigem achados independentes. R2guardaResponse e drena corpo ainda não consumido antes de liberar a busca seguinte; preservaJSONnormal,401/403,erro/5xx,geração/remount/pendente,semabortouSSEextra. RED5falhas emstreamcontrolado;GREEN7arquivos37,TSC/lint0 noDEV.
+
+TESTER R1/helper:5arquivos32+4arquivos20exit0; R2:7arquivos44exit0. Navegador noSHA860 confirmou HTTPbodymax1 comdrain terminando antesGETnovo,duasabas2→1→2→1/SSE1ativa/GET1emvoo/rótulo singular real, sempageerror/warning. Evidência negativa c7bodyobsoleto,probes/manifestosbrutos e derivado comSHAverificadopreservados; corrigiu-se provenance hardcodedc7 do harnessprivado sem apagar bruto. Parecer finaloutput/inbox-311-qa/parecer-tester-r2.md.
+
+GlobalFINAL50503 no860 **EXIT0**:857arquivos6673testes unitários, semfiltro/ignorados,maxWorkers2,TSCheap8192 e lintglobal0erros40avisos. Não substituir por esse resultado o fullDEV21392vermelho; são fontes distintas. APIs/schema/SQL não mudaram após integrações27+2testes aprovadas. Publicação dosPRs e links remotos de evidências ainda pendentes; semmerge/deploy pelo integrador desta frente.
+
 Base103a507d8a8fda7a6758a4eee46177d4c3ce7a67; branchcodex/inbox-e1-311. Task6/índice aprovados, corpo lido no root. Ownership: servidor/API/sharedSSE/store/selo/navegação/layoutcount/demo; InboxNovo sófinally da leitura. Casca e CLI visual principal pertencem ao DEV A308.
 
 Ruling: trigger20261017100000 já publica mensagem.nova ao INSERT pós-commit; --entrada não emitirá NOTIFY manual. Store não terá singleton no servidor nem fetch em render. Transporte mantém reconexão nativa/EventSource e API anterior por compatibilidade.
