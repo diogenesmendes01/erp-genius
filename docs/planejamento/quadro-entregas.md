@@ -6526,3 +6526,8 @@ Fonte1dd4af91:b0c/dc726+4087e5;deltaEXATAMENTE12src323/OIDsb0c,INTnovoD13igualdc
 ## PR #405 integrada; PR406 pronta para CI final
 
 #405 squasha38797801128fd99aed392cdb27d8ed60972860d, CI40025543009success5/5, QAcb917favorável, issue319CLOSEDconfirmada. Squashtreeigualf3d4;incorporação406INDEXINTEIROigual58b984após1conflitoquadroporancestralidade. Fonte95/QA320755/unit5-117/INT1-10/TSC/lint40preservados. Tabela20estados100APP64refs36NAe14paresidênticosdeclaradosmantidos;CI406main2TZaindapendente,semfechar320antecipadamente.
+
+
+## Follow-up pós-merge384 C2/C3 — descrições dos anexos
+
+SobreROOT4829, temCapacidade substitui variável ambígua;3botõesdisabled referenciam avisos reais por aria-describedby/useId incondicional, IDsúnicos entreinstâncias e estáveis na montagem. Sem mudar texto/label/disabled/capacidades/Aria/Assumir. RED19dbfc2falhas17anteriorespassaram→GREEN8cb0092/64; guardas/rodapé98408/6420b18/145;TSC22022/93e8f3,lint3fontesb2079f todos0Node22.23.2, sem-t/skipsnovos. Mocklocal usa g.useId jáexistente, helperscompartilhados intactos. SPEC317mapeiaTask6 aos nomes reais(C2), preservando testes. SemDB/browser/PNG/deps/push; fotos históricas não são QA desta semântica; QAexata/integrador pendentes. Relatório output/inbox-posmerge-ui-review.md. Próximos395/links385 emcommitsseparados.

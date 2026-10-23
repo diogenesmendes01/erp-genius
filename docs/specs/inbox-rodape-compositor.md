@@ -147,3 +147,25 @@ Os MD preservam execução nominal, negativos e pareceres independentes. Os JSON
 O pacote original317 (85f) tem122PNG/137arquivos/15.823.526B, SHA256 74a17180135461a99a50e6e48e45b42280ef4b804321607ce3480645ca27f4aa. O complemento menuC2 tem16PNG/21arquivos/1.677.732B, SHA256 4faa6c22ef72e4614d293c869d0986aca56047ee57a5ed5eeb4800490ebaa60c. São metadados históricos conferidos pelo integrador original; nesta rodada não houve download/reupload/inspeção nova das imagens. Fontes317bbb/df9 e29f/A7 não são QA visual de C3f896/741.
 
 C1 (main/CI/retarget/composição) e C6 (conflitos documentais de pais) permanecem com o integrador. Esta revisão não resolve esses gates por declaração nem modifica inbox-nao-lidas-menu.md.
+
+
+## Follow-up pós-merge PR384 C3 — descrição dos anexos
+
+Base própria4829a27424c2cf6091f5f7c5ea545a888fc0be06, sem portar parcialmente main/fila. Os três itens indisponíveis do menuAnexar mantêm rótulos, disabled e motivos já existentes. A variável local passa a temCapacidade; cada botão referencia por aria-describedby o small que mostra o motivo real. useId é chamado incondicionalmente no compositor; o recurso fornece só o sufixo do ID. IDs ficam estáveis na mesma montagem e distintos entre instâncias, sem derivar identidade de contato/telefone ou criar contador global.
+
+Dois testes ReactDOM/StrictMode sobre DOMmínimo comprovam seis relações em dois compositores, aviso correto com capacidade parcial/semcapacidade, unicidade e estabilidade após capacidades/reabertura. Não substituem leitor de tela/navegador/CSS; nenhum envio/nota foi acionado. RED19dbfc:2falhas/17anteriorespassaram por ausência de aria-describedby. GREEN8cb009:2arquivos64testes, incluindo19ReactDOM/StrictMode e45controlados. MocklocalCompositor.test apenas usa o useId já existente em tela-sem-dom; helper compartilhado intacto. Guardas/rodapé11841a→6420b1:8arquivos145testes0, semfiltro/skipsnovos. Lint3fontesb2079f0; TSCfinal no relatório. Regras Aria/Assumir/nota/permissões não mudam; fotos históricas não são reatribuídas a esta mudança semântica.
+
+
+### PR384 C2 — Task6 para os nomes reais dos testes
+
+Plano01-correcoes/Task6, consultado noROOT, sem alterar nomes de testes maiores:
+
+| Critério/nome da Task6 | Nome real em Compositor.test.ts / alcance |
+| --- | --- |
+| com o motor conectado, contato, enquete e localização seguem desabilitados com o aviso de que o envio pelo Inbox ainda não existe | com capacidade do motor, os três anexos seguem desabilitados com motivo do Inbox — três recursos presentes, disabled e AVISO_ANEXO_EM_BREVE, sem aviso de motor ausente |
+| nenhum item habilitado do menu Anexar fica sem ação | Mesmo nome real — percorre capacidades vazias/presentes, exige itens habilitados e handlers reais |
+| sem motor mantém o motivo existente | contato, enquete e localização ficam visíveis e desabilitados com o aviso do motor |
+| capacidades parciais não habilitam formulários inexistentes | capacidades parciais mostram o motivo correspondente em cada anexo, sempre desabilitado |
+| modo Nota preservado | modo Nota não oferece Anexar nem avisos de anexos, mesmo com capacidades do motor |
+
+Os dois casos novos PR384C3 de Compositor.rascunho.interacao.test.ts acrescentam relações de descrição/IDs reais em ReactDOM/StrictMode; não substituem os contratos acima nem ativam formulários E4. A denominação do primeiro caso usa capacidade como dado efetivo, sem inventar conexão real no teste. TSC22022→93e8f3 terminou0 após fonte/testes finais; diferenças posteriores são somente esta documentação.
