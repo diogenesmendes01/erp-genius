@@ -5710,3 +5710,8 @@ Fonte85f (produtoa86+harnessaa570+buscaC2+SSEC6), metadados9005; global56369 EXI
 ### #317 — PR403 C3 armazenamento confirmado (revisão)
 
 Fonte publicada32f9222d; fix local de owner/revisão por rascunho acima da key, sem escrever em outro contexto nem apagar edição nova. Remount/cleanup integral revogam callbacks conservadoramente. RED causal real/StrictMode preservado no relatório;10arquivos/257testes, TSC77347/lint8d25f7 saída0 Node22.23.2. Sem full/DB/browser nesta revisão; visual antigo explicitamente histórico. C2 menu, QA independente e integração/publicação pendentes.
+
+
+### #317 — PR403 C2 menu alinhado à regra20 vigente
+
+Somente projeção local: Nota individual disponível em ENCERRADO, mantendo grupos sem Nota e gates de envio/agenda/gestão fechados. Servidor/escopo inalterados. RED212ccc→GREEN02e329; combinação C3+C2:13arquivos/319testes13331, TSC85482 heap8192 e lint8fontes4d0679/teste5c48e7 saída0 Node22.23.2. TSC1949 inicial era fixture com literal alargado, corrigido. Sem DB/browser/full próprios. Complemento visual do menu encerrado, QA exata/global integrado/publicação pendentes do ROOT. Fontes visuais históricas preservadas no relatório.
