@@ -184,7 +184,7 @@ describe("ConversaAberta: recursos do motor pelas capacidades do número (merge 
 it("decora a thread no fuso usando referência explícita SSR e preserva nota sem comandos",()=>{
  const mensagens: MensagemThread[]=[{id:"m1",direcao:"ENTRADA",tipo:"TEXTO",corpo:"Olá",midiaPath:null,status:"RECEBIDA",origem:null,autorNome:null,templateNome:null,criadoEm:"2026-10-22T02:30:00Z",participanteNome:null,favorita:false,clientMessageId:null}];
  const notas: NotaInternaThread[]=[{id:"n1",nota:"Nota só equipe",autorNome:"Ana",criadoEm:"2026-10-22T12:00:00Z",origem:"oportunidade"}];
- const props=propsConversa({podeEnviar:true,fuso:"America/Sao_Paulo",agoraThread:"2026-10-22T13:00:00Z",conversa:{...conversaVazia,mensagens,notas}});
+ const props=propsConversa({podeEnviar:true,fuso:"America/Sao_Paulo",agoraInicial:Date.parse("2026-10-22T13:00:00Z"),conversa:{...conversaVazia,mensagens,notas}});
  const h=renderToStaticMarkup(createElement(ConversaAberta,props));
  for(const c of ['px-[7%]','max-[699px]:px-2.5','>Ontem<','>Hoje<','role="note"','Nota da oportunidade · só equipe'])expect(h).toContain(c);
  expect((h.match(/aria-label="Opções da mensagem"/g)||[]).length).toBe(1);
