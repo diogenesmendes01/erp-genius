@@ -6248,3 +6248,7 @@ QA6aafavorávelestática/hash1ee9e13c... versionada tester-composicao-6aa.md; DO
 ## PR #403 — composição e comentários do compositor
 
 Fonte337832c0:ea1/a5b8MD+4027b1,1blocoquadroconservaambos. C2NotasENCERRADO/gruposemNota eC3rascunho17StrictModepreservados;JSConversamoduleigualea1apósremoverpropsórfãos399,prova47efc5. Próprio11/241f7aa42,TSC89337/b086ec e lint61306/bb66aa terminais0/40avisos;semglobal/DB/browser. C4limitesanexo/voz/upload/envio,C5mapatestes,C7inventário naSPEC. QApatcha5b8favorávelhashf543...versionada;QAcomposta/402main/CI403aindagates. Nenhum319/E2antecipado;output/pr403-qa/composicao-todos.md.
+
+## PR #403 — QA composta favorável
+
+QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compositor/rascunho/rodapé/ações/menu preservados,JSX/hookConversa intactos,triagemrealInboxativa;patches402398400/Pick401/B2/QA297preservados. Nenhumtestes/DB/browseradicional doTESTER;gatespróprios11/241/TSC/lint40nominais337. Fonteexecutáveligual337apósregistrosMD,402main/CI403aindapendentes.

@@ -13,4 +13,6 @@ C4 LOW: SPEC esclarece que trocar modo descarta File e gravação temporários; 
 - Provas26ca5f/080888/47efc5 confirmam compositor/ações/troca de alvo preservados, patchShift402 e dias/autoria398 intactos, schema/manifestos/lock iguais ao pai402. Nenhuma alteração de transporte ou autorização de servidor.
 - QA documental a5b8 favorável, original SHA256 f543f685192997d305c46739264d5892cf9c656f637f8e38a9acf4550f219e9f, em tester-patch-a5b.md com apenas EOF normalizado. Os8/102 do DEV são nominais ao patch documental/68e; o parecer não executou novos testes/DB/browser.
 
-QA composta, squash402main e CI final ainda pendentes. Global899/7.046 pertence à fonte741; capturas317 e complemento de menuC2 conservam suas fontes nominais e não comprovam C3 ERP. Nenhuma recaptura, instalação, migração, banco, seed, envio ou deploy nesta composição.
+QA composta337 é favorável estática: compositor/rascunho/rodapé/ações/menu/ReactDOM iguais ao paiea1; busca402/thread398/alias400/Pick401/B2/schema/QA297 iguais7b1; Conversa só remove tipos/props órfãos, com JSX/hooks intactos e triagem real no Inbox. Nenhuma execução de testes/DB/browser no parecer. Original SHA256 695b09d280a602c3c8a24ab167e870b2aa43c9331c1759fa2981cae0399abb1e, em tester-composicao-337.md com apenas EOF normalizado.
+
+Squash402main e CI final ainda pendentes. Global899/7.046 pertence à fonte741; capturas317 e complemento de menuC2 conservam suas fontes nominais e não comprovam C3 ERP. Nenhuma recaptura, instalação, migração, banco, seed, envio ou deploy nesta composição.
