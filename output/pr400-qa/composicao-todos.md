@@ -14,4 +14,12 @@ C3 LOW: alias legado documentado sem mudar a política de revalidação. Parecer
 - Next typegen/TypeScript sessão94403, terminal0 em8be42f. Lint global sessão21031, terminal0 em3bba19: zero erros/40avisos herdados.
 - Manifestos/lock/ESLint/guardas iguais794 e patch398 preservado. Backend igual17, exceto as anotações herdadas já declaradas. Nenhuma instalação, migração, seed ou captura.
 
-Global879/6.894 permanece nominalc221bdb3; visualizações313 e complemento394 mantêm seus commits/fontes históricos. QA composta e CI global final contra main nos dois fusos ainda são gates, sem reatribuir execuções antigas a este head.
+Global879/6.894 permanece nominalc221bdb3; visualizações313 e complemento394 mantêm seus commits/fontes históricos.
+
+## QA e integração complementar
+
+QA independente cb897/e704 é favorável, por comparação estática dos objetos: alias/INT/filtros/Coluna/InboxNovo.interacao iguais17; JS de InboxNovo igual17; thread e dependências iguais794. Não executou novos testes/DB. Parecer original SHA256 d54649b2d5e9d1705f93fb1aa59ef0bf6f70a671cc453d989593ff9c85bf409a, copiado em tester-composicao-cb.md com apenas EOF normalizado. O parecer da predecessora39870ec também é preservado, SHA256 f669cafa127b1577a02906e73699a2f1a6bfc652e90d37ecd0beb9f150265100.
+
+Complemento de integração nominal à candidata399 a5ecee15: preferencias.int.test.ts e whatsapp/motor/presenca.int.test.ts (20 casos), junto de crm/tags.int.test.ts (10 casos), três arquivos/30testes, America/Sao_Paulo, configintegration, maxWorkers1, terminal0 81795/9f1ea7. Banco exclusivo ci-integracao/erp_genius_test_ciint em localhost54329; setup só confere migrations, nenhuma suíte simultânea ou mensagem externa. Ambos os arquivos INT e preferencias.ts são byte idênticos entre a5ece e esta candidata400; a execução pertence explicitamente à fontea5, não é global nem uma nova execução neste head400. A integração do painel399 foi uma execução separada, não faz parte dos20casos400.
+
+Incorporação dos documentos/ancestralidade397main e39870ec em332f3cb1 preservou todos os executáveis de cb897 (bd9a64, terminal0); um conflito do quadro manteve ambos os lados. CI global final contra main nos dois fusos e merge posterior à398 continuam gates obrigatórios.

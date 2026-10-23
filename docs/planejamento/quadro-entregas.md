@@ -5867,3 +5867,7 @@ Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar pu
 ## PR #397 integrada; ancestralidade398 pronta para CI
 
 #397 squashb98da36314a719e118d1e9da510cb966311c0fc7, CI40013125860 success5/5, freshhead/main/comments/threads conferidos, issue312CLOSED confirmada. #398696e6270 incorpora squashb98 com árvore inteira igual794 após três conflitos resolvidos por identidade integral; fontes executáveisd441 preservadas. QAcomposta e CI398 serão paralelos, ambos gates antes demerge; não há conclusão antecipada da issue314.
+
+## PR #400 — QA composta e integração complementar
+
+QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composicao-cb.md; QA predecessora39870ec/hashf669 também versionada. Fontecb preservada após332f3cb1, apenasMD/ancestralidade397. Integração complementar NOMINALa5ece399:preferencias+motor/presenca20casos, junto10crm/tags,3/30sessão81795/9f1ea7terminal0,perfilciint exclusivo; arquivosINT epreferencias400 byteiguais àfonteexecutada. SemtesteDBconcorrente,envio,migraçãoouclusterchange. CI400final/398main ainda gates, não fechar313antecipadamente.
