@@ -5942,3 +5942,7 @@ QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composica
 ## PR #399 — QA composta e integração C2 final
 
 Fontea5ecee15:patch461/c962+332compostos semantecipar319/E2;QAcompostafavorávelhash5d5e36...,patch461favorável130testespróprios/hash07f1...,pareceresversionados. Próprio9/18736daee,TSC19125/6fb917,lint27244/7d342a terminais0/40avisos. C2paineis.int completo1/12sessão40250/245fd8terminal0,36,07s,perfilciintegracaoexclusivo. Complemento3/30sessão81795/9f1ea7terminal0 (10CRMtags+20leitura/presença) separado;nenhumfiltro/skipsnovos/envio/migração. C3snapshotmesmoID/C4overlay9601400/C5propsórfãos/C6inventário naSPEC/report. Merge400db6sódocs/ancestralidade,fontea5preservada. CI/main400/merge399aindagates;output/pr399-qa/composicao-todos.md.
+
+## PR #400 integrada; PR399 pronta para CI final
+
+#400 squash0cfff251a4475137b421b3926e1048a4998ad5a3, CI40015569278 success5/5, QAcompostad546favorável, issue313CLOSEDconfirmada. Squashtreeigualdb6; incorporação à399INDEXINTEIROigual978 após12conflitos deancestralidade. Fontea5,QA5d5,recorte9/187 eINTpaineis1/12(+30complementares) preservados. C1main/paisresolvidos,CI399final2TZaindapendente;semfechar318antecipadamente.
