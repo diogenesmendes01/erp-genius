@@ -6096,3 +6096,8 @@ Base16e PR405. PainelFiltros sem consumidor produtivo removido com3testes/scaffo
 ## PR #405 — C1: incorporar main preservando o quadro
 
 R1 GitHub `5626077684` aprovou o head `16e3298d`; seu único MEDIUM pede trazer main antes do merge. Main consultada `cce21e19` incorporada com dois conflitos exclusivamente no quadro, ambos com lado main vazio. Resolução literal dos seis marcadores preservou o quadro completo e toda a árvore do head aprovado (`655831`, saída 0), antes deste registro. A main e a base #403 `68e95d8e` continuam ancestrais. Somente esta entrada e `output/pr405-qa/revisao.md` acrescentam conteúdo; código, testes, scripts, schema e dependências permanecem idênticos. Os PNGs antigos da #298 continuam ausentes. Sem repetir gates por documentação; resultados anteriores permanecem nominais às suas fontes. CI final e integração dos predecessores, incluindo B2 humano da #392, pendentes; nenhuma issue marcada concluída. LOW C2 não implementado conforme autorização.
+
+
+### #320 — primeiraINTROOT falhou por asserçãoSSE de substring; testfix separado
+
+ROOTb509: unidade904/7102,TSC/lintmax40 todos0; INT80680EXIT1 com15arquivos14pass1fail/138testes137pass1fail. Teste de privacidade confundiu trecho u9 permitido emIDpúblico com campo privado. Testfix sóunit/int: parse event/data/terminadores/JSON público+ausência propriedadeprivada; formatter/filtro/app intactos. SeteunitáriosSSEoriginais preservados+1causal: RED4e146a7pass1fail→GREENc0fe9a4arquivos/37testes0; TSC50335heap8192/lintbed2e5/diff74e7520 Node22.23.2. SemDBDEV/preview. SSEintdirigida+15rerun/novoGlobal/QA/matriz164 aguardamROOT; E1nãohomologada.

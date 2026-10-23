@@ -39,3 +39,14 @@ ROOT coordenará global unitário/lintmáximo40, oito integrações src/server/i
 CLI final preservada:20estados,100app+64protótipo=164PNG na matriz herdada, três tamanhos aplicáveis/dois temas e N/A explícito quando sem referência. Executar a matriz completa na fonte320 apósReady, com complementos320×500/limiares/foco/teclado/rolagem. Sidebar224, cortes960/1400 e todas as diferenças justificadas anteriores permanecem. Sem seleção mobile mostra lista/conversa oculta; painel500 pode exigir scroll/teclado ao último controle. Não encerrar por classes ou presumir tudo visível no primeiro quadro.
 
 Somente evidências positivas allowlisted/hashes/fontes e pranchas inspecionadas entram no pacote final; nenhum HTML/RSC/JSONAPIbruto/negativo/log/seed/snapshot/credencial. DEV não inicia SQL/seed/servidor/integração externa/push/PR. Aprovação independente, publicação e CI são gates externos ainda pendentes.
+
+
+## Gate integrado inicial e correção test-only SSE
+
+ROOT na fonteb509: unidade49569 encerrou0 (904arquivos/7102testes), TSC65095 e lint54293 max-warnings40 encerraram0 (0erros/40avisos). Esses gates são doROOT, não execuçõesDEV. A PRIMEIRA integração80680 encerrouEXIT1:15arquivos (14pass/1fail),138testes (137pass/1fail). O caso eventos-sse.int.test.ts92 procurava a substringu9 no quadro inteiro; um ID público gerado legitimamente continha esse trecho. O formatter já removia paraUsuarioId corretamente. Não houve vazamento nem mudança produtiva para contornar o teste.
+
+Correção mínima: somente esse casoINT usa IDs públicos fixos atendimento-u9/conversa-u9 e valida estrutura event/data/duasquebras, parseJSON dos4campos públicos exatamente preservados e ausência da propriedade privada. O arquivo UNIT existente manteve seus7casos/mocks integralmente (blob original como prefixo conferido em74e752) e recebeu1novo caso com IDs públicos contendo o mesmo trecho do destinatário. Importa formatarSSE real; dependênciasPrisma/escopo já eram mockadas, sem DB.
+
+RED causal4e146a:8casos/7pass1fail com a asserção antiga. GREENc0fe9a:4arquivos/37testes (SSEunit8/8, rotaSSE, clienteeventos e guardainbox-e1), saída0. TSC50335 heap8192, lint2fontesbed2e5 e diff74e752 saída0, Node22.23.2. Nenhum skip ou integraçãoDEV. Em comparação com b509, os únicos deltas src deste checkpoint são os dois arquivos de teste; app/formatter/filtro/permissões/IDs reais gerados continuam byteiguais.
+
+ROOT coordenará SSEintdirigida, repetição15INT e novo global; nenhum resultado pendente foi presumido. Preparo privado da matriz164/complementos está offline; Ready para browser/fixtureA ainda obrigatório. Fonte/hashes da futura captura devem refletir o checkpoint exato, registrando b509 como origem produtiva equivalente. E1 permanece pendente de QA/gates/visual/publicação.
