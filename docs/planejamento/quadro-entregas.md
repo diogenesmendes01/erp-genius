@@ -6343,3 +6343,10 @@ QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compos
 ## PR #405 — estados319 compostos e QA favorável
 
 Fonte101c6618:patch73c7/c3+4033e40;1blocoquadroconservaambos, estados/harness319 ecompositor403preservados, sóJSDocalias400backend. Próprio15/237c5f75a,TSC26774/a8d1a3,lint79756/0ea74b terminais0/40avisos. QApatch73favorávelhash0b45...eQAcomposta101favorávelhashcb91772b...versionadas;pareceressemnovotestesDB/browser. C2LOWinventário/custódiaevidênciasexplicitados, C1main/pais403/CI405aindagates. Fonte101preservadaapósMD,nenhumE2antecipado/DB/envio/install/migração. output/pr405-qa/composicao-todos.md.
+## PR #399 integrada; PR401 pronta para CI final
+
+#399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
+
+## PR #401 integrada; PR402 pronta para CI final
+
+#401 squash408dc9a6874fad4979739ff5b3127705504994b9, CI40018129184success5/5, QA47ffavorável, issue315CLOSEDconfirmada. Squashtreeigual1222;402incorpora1222MDsemalterar6aa e squash408INDEXINTEIROigual34f45afa após15conflitos deancestralidade. Fonte6aa/QA1ee9/12-176/TSC/lint40preservados;CI402main2TZaindapendente,semfechar316antecipadamente.

@@ -15,4 +15,8 @@ C1 HIGH: código/pais conciliados; publicação aguarda399main e CI final nos do
 
 QA composta266 é favorável, estática: cabeçalho/menu/useAcoes/estado iguais7e; painel/backend/schema/thread/alias/deps/planejamento297 iguais978; composição da Conversa e triagem real preservadas. Parecer original corrigido somente na atribuição dos gates externos: SHA256 47f69e9929e3af6f73f5481e513119885d2caa711399cab88171d991d3a6adb2, em tester-composicao-266.md com apenas EOF normalizado. O hash anterior5d6 não foi versionado nem usado como parecer final; citava9/187 da399 em vez dos10/201+2/5 desta401. Nenhuma nova execução resultou dessa correção documental.
 
-Incorporação posterior de399efa, já contendo main4000c, adiciona somente registros/ancestralidade sem alterar a fontexecutável266. Um bloco do quadro preserva ambos os lados. Integração do squash399main e CI final ainda pendentes. Global887/6.950 e imagens315 pertencem às suas fontes históricas. Nenhuma nova captura, banco, instalação, migração, seed, mensagem real ou deploy.
+Incorporação posterior de399efa, já contendo main4000c, adiciona somente registros/ancestralidade sem alterar a fontexecutável266. Um bloco do quadro preserva ambos os lados.
+
+#399 integrou por squash8c079d49 após CI40016922055 success5/5, QA e12INT do painel favoráveis; issue318 fechada. O squash tem árvore inteira igualefa. Sua incorporação à401 gerou dez conflitos de ancestralidade; mantive as versões já compostas e provei o índice inteiro igual2252 antes de confirmar o merge. Nenhum executável, teste ou documento distinto mudou; a fonte266 e seus gates permanecem preservados, sem repetição por esse merge. CI final401 em dois fusos continua gate antes do merge.
+
+Global887/6.950 e imagens315 pertencem às suas fontes históricas. Nenhuma nova captura, banco, instalação, migração, seed, mensagem real ou deploy.
