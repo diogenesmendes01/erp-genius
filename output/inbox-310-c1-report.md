@@ -41,3 +41,26 @@ Porte inicial955259 terminou4falhas/72pass: quatro fixtures ainda resolviam corp
 Recorte atual48154 EXIT0:56arquivos622testes semfiltro/skip, maxWorkers2; typegen/TSC64437heap8192 EXIT0; lint4fontes94055b EXIT0/0avisos. Warnings herdados de SSRVirtual e fixture de prazo comkeyduplicada foram mantidos integralmente, não ignorados. Esses gates descrevem este checkpoint PARCIAL, não aprovação do P2 abaixo.
 
 TESTERexato82 encontrou P2 real: GET SSE inicia, chegam props filtros de nova identidade/mesma chave, effectincrementa aplicada e descarta body sem criar pendência; contagem ficaSSRvelha. A fixture anterior cobria caso com pendência jácriada por fim de leitura, não SSEisolado. A correção precisa manter guards e avisar fila da invalidação de voo no MESMO contexto, produzindo trailing fresco; não se adotará82 nem este porte antes de novosRED/GREEN. SemDB/preview. Negativo independente em output/inbox-394-equivalent-private.test.ts doTESTER, originalpreservado. Próximo commit corretivo será isolado sobre82 e portado aqui; este checkpoint sópermite trocarOWNbranch semperder trabalho.
+
+## P2 pós-review: props equivalentes invalidam GET em voo
+
+82a7a32f é checkpoint HISTÓRICO, não aprovado para adoção. TESTER reproduziu SSE sem leitura: ao atualizar props com outro objeto filtros de mesma chave DURANTE o body, o guard incrementa aplicada, descarta o snapshot, e a fila antes ficava sem pendência. Estado pessoal permanecia2 em vez de3. A primeira fixture do DEV só cobria ACK com pendência já criada pelo fim da leitura, portanto não excluía este bug.
+
+RED público3d0994 EXIT1:2fail/34skip. Sem leitura, esperado naoLidas3 recebido2; com leitura ainda pendente, esperados2GETs recebidos1. Usa Response/ReadableStream real com headers antes do body; não mocka o helper nem aguarda leitura para produzir o defeito.
+
+Correção: invalidarSnapshotEmVoo marca1pendência somente se voo físico pertence à época numérica atual. O effect do consumidor continua incrementando aplicada e mantendo todos guards, mas avisa a fila antes disso quando as props são equivalentes. Contexto REAL mudou→cancelar; época cancelada nunca é reabilitada pela chave textual igual emA→B→A. Idle não consulta, timerprévoo jácapturará props atuais e mantém fronteira50ms,20invalidações no voo deixam só1trailing. Body continua serial e erro sem pendência não repete.
+
+GREEN69cceb EXIT0:2arquivos47testes semskip, incluindo as duas variantes públicas e3novos testes do helper (idle/prévoo; lote20; épocaA→B→Aantiga). A leitura pendente continua recusando agregado; só seu resultado agenda a próxima consulta fresca na fase final, sem piso de IDs ou subtração heurística. Lint4fontes78e0c3 EXIT0. Recorte6764 EXIT0:24arquivos334testes semskip/filtro, maxWorkers2; typegen/TSC32952heap8192 EXIT0. Commit corretivo sobre82 pronto para revisão exata; permanece pendente porte mínimo sobre checkpoint parcialb494; QAindependente/browser/adoção pendentes, semDB/preview neste trabalho.
+
+## Porte P2 corrigido — candidato para QA exata
+
+Linha isolada PR394: b2338414e44845d6c3d830c2a3233966e4072b31 sobre82a7a32f sobreeb68. Linha agregada: b49414f0 sobre676026b3 recebe somente o commit corretivo b233 conciliado; não existe merge313→310. Histórico82 e porteb494 permanecem visíveis como checkpoints não adotados.
+
+A conciliação do consumidor conserva a condição de cancelamento por chaveREAL OU versaoNavegacaoREAL e acrescenta else invalidarSnapshotEmVoo. ACKlocal/objeto equivalente não mudam época; guard existente ainda invalida resposta e fila garante trailing. Números de época impedem reviver vooA antigo ao retornarA. Helper byte-equivalente ao isoladob233. Todos contratos produtivos de leituraR6/autoridadefreshzero/IDs independentes/finally311/f51automático foram preservados: verificação por comparação de texto confirmou blocos de leitura/visibilidade/SSE iguais ao676 salvo as chamadas de fila; abrir() e todo JSX final são byte-equivalentes ao676. Sem toque emVirtualList/ConversaAberta/useDialogo/SQL/Next/deps.
+
+Gates finais do porte, código observado:
+- 9ed709 EXIT0:2arquivos83testes, semskip; inclui os47doisolado e contratosR6/URL/150. P2 público falso/verdadeiro agora recebe trailing; caso150preserva cursor/vista/Nova junto da reconciliação.
+- 73762 EXIT0:56arquivos627testes semfiltro/skip, maxWorkers2. Recorte Inbox inteiro+componentesConversa+serverconsultas/filtros/opções/leituraautomática+APIroute+ASTidentificação/confirmações+tipografia. Inclui guardssem-polling, SSR/hidratação e VirtualList medido/stableMount. Warnings herdadosSSR/keyfixture preservados; não é suíte global.
+- Typegen/TSC82827 heap8192 EXIT0; ESLint4fontes25da72 EXIT0/0avisos; diffcheck0. Nenhum gerado/dependência/AGENTS/next-env mudou.
+
+Fonte disponível para review exato e medição browser coordenada após parecer. Sem DB/preview/install/ownfull/push. Capturas anteriores313 continuam atribuídas à fonte4f, e não comprovam este agendamento C1; requerem complemento pós-porte. Adoção/global/publicação seguem com integrador.
