@@ -5336,3 +5336,7 @@ Mergee594→f6f104d8, conflito sóquadro/amboshistóricos. Contra8b, src/scripts
 ## #316 — checkpoint DEV A, visual pendente
 
 Branchprópria sobre3155dcimutável. Busca local carregada(NFD/marcas/case/espaços),IDsreconciliadosSSE/paginação,header/menu315habilitados,pinKeys+rolagemsomenteThreadstableMount/decorada314/388,semconsultanova/VListalgoritmo/helperdialogo/read/backend. Plano/rulingfocovisívelmobileaprovados. Node22:67files734testes32180/TSC80835heap8192/lint18fontes0avisos,diffcheck0. Registroherdado315guardafundoseparado31fd; entradas316específicas autorizadas. Browser/CLIapp-only/TESTER/globalcoordenado pendentes, nenhuma homologação presumida. SPEC docs/specs/inbox-busca-conversa.md; relatório output/inbox-316-report.md. SemDB/preview/install/envio.
+
+### #316 — fix do primeiro achado e cursor removido
+
+RED469f94/21a10e confirmou fallback149nãopersistido e cursor removidoressuscitando. Fix3linhashook/testmínimos autorizadoROOT: persiste/reconciliaIDsembackend/VList/remount. Recorte44920 73files780tests/TSC30745heap8192/lint2fontes0avisos EXIT0Node22. Provasnormais1415(+virtual41039) preservadashistóricas,nãoatribuídasàfontecorrigida. Repetiçãoruntimeafetado/formal/SSEresynccoordenado/TESTER/global pendentes.

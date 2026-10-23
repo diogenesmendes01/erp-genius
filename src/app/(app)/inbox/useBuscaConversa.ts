@@ -14,6 +14,8 @@ export function useBuscaConversa(atendimentoId: string | null, mensagens: readon
  const termo = aberta ? estado.termo : "";
  const achados = useMemo(() => encontrarMensagens(mensagens, termo), [mensagens, termo]);
  const atual = aberta ? (estado.achado && achados.includes(estado.achado) ? estado.achado : achados[0] ?? null) : null;
+ // Grava também o primeiro fallback: páginas/SSE posteriores preservam seu ID, não seu índice.
+ if (aberta && estado.achado !== atual) setEstado(s => ({...s, achado: atual}));
  const abrir = useCallback((atalho = false) => {
   if (!atendimentoId) return;
   if (campoRef.current) { campoRef.current.focus({preventScroll: true}); return; }
