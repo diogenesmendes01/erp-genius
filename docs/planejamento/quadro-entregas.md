@@ -5340,3 +5340,8 @@ Branchprópria sobre3155dcimutável. Busca local carregada(NFD/marcas/case/espa�
 ### #316 — fix do primeiro achado e cursor removido
 
 RED469f94/21a10e confirmou fallback149nãopersistido e cursor removidoressuscitando. Fix3linhashook/testmínimos autorizadoROOT: persiste/reconciliaIDsembackend/VList/remount. Recorte44920 73files780tests/TSC30745heap8192/lint2fontes0avisos EXIT0Node22. Provasnormais1415(+virtual41039) preservadashistóricas,nãoatribuídasàfontecorrigida. Repetiçãoruntimeafetado/formal/SSEresynccoordenado/TESTER/global pendentes.
+
+
+### #316 — handoff síncrono de foco ao paginar, QA pendente
+
+Achado TESTER cf7: foco body a cada Carregar anteriores (724d9e/eacb0e); probe SSE antigo refocava e não cobria. Ruling ROOT: focar campo antes da carga, sem restore após await. Patch restrito ao handler de ConversaAberta e testes: RED ac5f41 3/7 → GREEN92e416 3/19; recortes disjuntos17837 66/713 +b2b66c 8/74, TSC36307heap8192/lint2fontes0avisos/diffcheck0, Node22.23.2. Não altera VList/backend/leitura/harness. Imagens cf7 históricas; novo complemento natural de foco/paginação/SSE, inspeção/allowlist, TESTER e global ROOT pendentes. Banco A original restaurado c233ea/424 hashes e sem preview/browser. SPEC e report detalham fontes/negativos/limites.

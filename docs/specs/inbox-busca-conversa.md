@@ -25,3 +25,8 @@ Prova virtual1415 41039 EXIT0:8contextos24PNG,165visuais/2cliquesUI paraantigas,
 ROOT autorizou descongelar apenas hook/test. Trêslinhas persistem tambémfallback/reconciliação emestado porID viaajusteguardadoduranterender,semefeito/polling/remount/backend/VList. Casosprimeirodefault149→000entra,remoção/reaparição/zero/1caractere cobertos. GREEN78efad8testes/lint2fontes0avisos EXIT0; recorte44920 EXIT0:73arquivos780testes,33.71s,maxWorkers2,semnomefilter/skips/DB;TSC30745heap8192 EXIT0. Histórico1415 eimagens permanecemnominais; novo runtimeafetado/formais/SSEresync/TESTER/global integradopendentes, não estendergates/imagens anterioresànova fonte.
 
 SSEhistóricopreexistente: evento comum→maisNovas e cursor(criadoEm,id)>último,nãotrazediçãoapenasdocorpo149. Prova coordenada seráresync realtransacional doROOT, querecarregajanela60; nenhuma mudança backend316. Scriptsprivados aguardamIDs/totais/sinaissemDBDEV, não capturam ou refocam artificiosamente paraapagarperdadefocoSSE. Todosbrowsersfechadosduranteofix.
+
+
+## Foco durante Carregar anteriores
+
+A ativação legítima entrega foco ao campo da mesma barra ANTES de iniciar maisAntigas; carregandoAntigas ou ausência de página anterior bloqueia o handler. O campo permanece focado quando o controle fica ocupado, é recriado ou desaparece na última página. Não há restauração assíncrona: mover foco para fora, fechar, trocar ou reabrir a busca durante a espera não permite à carga antiga tomar foco. Red/GREEN e limites do DOM mínimo estão no report; comprovação Chrome dirigida no SHA novo e QA independente ainda pendentes.
