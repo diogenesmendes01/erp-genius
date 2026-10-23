@@ -34,7 +34,7 @@ const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
   status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
   responsavelId: "u1", numeroDonoId: null, setoresDoNumero: ["COMERCIAL"], atendimentoOrigemId: null, capacidades: [], ...o,
 });
-const conversaVazia = { mensagens: [], notas: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
+const conversaVazia = { mensagens: [], notas: [], temMaisAntes: false, temMaisDepois: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
 const propsConversa = (o: Partial<PropsConversaAberta> & { podeEnviar: boolean | null }): PropsConversaAberta => ({
   item: item(), usuario, fuso: null, conversa: conversaVazia, aoVoltar: () => {}, aoAbrirPainel: () => {}, aoMudar: () => {}, ...o,
 });
@@ -44,6 +44,13 @@ const msg: MensagemThread = {
 };
 
 describe("ConversaAberta: notas internas na thread", () => {
+  it("não renderiza nota posterior à janela quando ainda há mensagens mais novas para carregar", () => {
+    const n: NotaInternaThread = { id: "fora", nota: "Fora da janela carregada", autorNome: "Ana", criadoEm: "2026-10-17T16:00:00.000Z", origem: "atendimento" };
+    const conversa = { ...conversaVazia, mensagens: [msg], notas: [n], temMaisDepois: true } as ConversaHook;
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true, conversa })));
+    expect(h).toContain("Olá");
+    expect(h).not.toContain(n.nota);
+  });
   it("mostra nota com as mensagens na ordem temporal e sem comandos externos", () => {
     const n: NotaInternaThread = { id: "e1", nota: "Combinar desconto", autorNome: "Ana", criadoEm: "2026-10-17T16:00:00.000Z", origem: "atendimento" };
     const conversa = { ...conversaVazia, mensagens: [msg], notas: [n] } as ConversaHook;
