@@ -6473,6 +6473,9 @@ QA575favorávelestática/hash103b9688...versionada tester-composicao-575.md;6pat
 ## PR #408 — SQL487 validado e 62INT exigidos aprovados
 
 Fonte7a94fc12:e6c/45ddMD+4077ca, deltaEXATAMENTE7paths322/OIDsddfCEA;quadro6preservambos,sem323337futuro. Preflightb53fd1ciint485+SÓ2pendentes322/zeroatividadealheia;CLIapply2ePrismaClientown487sessão35919/2a60eaTERMINAL0,semnpm/package/lockchange. SQL08056a0nullableTEXT/FKrestrictcascadevalidada/índiceindisvalid+indisreadytrue/487migrations. Próprios3/721f836f, INT4/62sessão81621/2677ed180,27sconfigintegration/maxWorkers1/profileciintexclusivo semfiltro/skipsnovos, TSC66347/74421a e lint6984/09b8b3terminals0/40. QApatch45f518eQAcomposta7aaad2favoráveisversionadas; C1HIGHcomprovadoporINTlocal, C2CI/C3pais407main/C4quadro/C5mapatestesregistrados. Ciintlivreagora487/clienteown487;nenhumoutroDB/cluster/provider tocado. CI408final/pais407mainaindagates, output/pr408-qa/composicao-todos.md.
+## PR #406 integrada; PR407 sincronizada com a main
+
+406squash4b3c39434f2e48273cd45fee483ca9dbc9b25955, CI40027085473success5/5, QA320755 e gates próprios favoráveis, issue320CLOSED confirmada. Auditoria298–320:23issues fechadas;321–323 seguem abertas antes dos merges. Árvore squash406 igualb955; merge97339323 à407 resolveu apenas dois blocos de ancestralidade do quadro, índice inteiro igual69adef. Fonte executável575/QA103b/INT2-8/unit5-89/TSC/lint40 preservados. B1Pick/harness/main e C2quadro resolvidos; retarget407main/CI final ainda pendentes, sem antecipar322323.
 ## PR #399 integrada; PR401 pronta para CI final
 
 #399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.

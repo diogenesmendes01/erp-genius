@@ -16,3 +16,7 @@ C1 MEDIUM: os dois arquivos INT exigidos rodaram completos na fonte575, oito cas
 QA composta575 é favorável estática: delta src próprio exatamente os seis caminhos321, OIDs iguais3258/9d; UI/harness/B2/schema485/migrations/deps/QA280297 iguais406, sem322/323. Não repetiu testes/DB/browser nessa extensão. Parecer original SHA256 103b9688351eca6aca4ce6ef9ef8f8f627cf5cfc7a5ea79b57b261b63979398e, em tester-composicao-575.md com apenas EOF normalizado. O lint próprio terminou0/40avisos após a inspeção inicial do TESTER, conforme registro acima.
 
 As execuções históricas da fonte9d/281 e agregadosROOT permanecem nominais; não substituem os gates próprios acima. Squash406main, CI final contra main nos dois fusos e merge ainda pendentes. Sem captura, seed, envio real ou deploy nesta composição.
+
+## Sincronização final com a main
+
+A PR406 foi integrada por squash4b3c39434f2e48273cd45fee483ca9dbc9b25955, CI40027085473 com cinco checks aprovados e issue320CLOSED. Sua árvore inteira é igual ao headb9551174. Merge97339323 incorporou essa ancestralidade à candidata69adef: somente o quadro apresentou dois blocos de ancestralidade, ambos sem conteúdo exclusivo recebido; a resolução preservou o quadro da candidata e o índice inteiro foi conferido igual69adef antes do commit. Toda a fonte não Markdown permanece exatamente57530e8c, já testada e inspecionada. Pickee565 e harness moderno permanecem iguais à main406. B1 e C2 estão tecnicamente resolvidos; CI final407 contra main nos dois fusos permanece obrigatório antes do merge.
