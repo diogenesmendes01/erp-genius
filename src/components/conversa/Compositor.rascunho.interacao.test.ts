@@ -59,15 +59,16 @@ it.each(["responder", "nota"] as const)("C3 %s: erro e resultado incerto conserv
     await act(async () => root.render(null));
   }
 });
-it.each(["texto", "arquivo"] as const)("C3 A→B→A: novo owner preserva intenção de %s mesmo com texto final igual", async intencao => {
+it.each([["responder", "texto"], ["responder", "arquivo"], ["nota", "texto"]] as const)("C3 A→B→A em %s: novo owner preserva intenção de %s mesmo com texto final igual", async (modo, intencao) => {
   let concluir!: (r: { ok: true }) => void;
-  const p = props({ aoEnviarTexto: () => new Promise(r => { concluir = r; }) });
+  const pendente = new Promise<{ ok: true }>(r => { concluir = r; });
+  const p = props({ modo, aoEnviarTexto: () => pendente, aoNota: () => pendente });
   await montar(p); await digitar("mesmo texto"); await enviar();
-  await montar(props({ atendimentoId: "B" })); await montar(props());
+  await montar(props({ atendimentoId: "B", modo })); await montar(props({ modo }));
   if (intencao === "texto") { await digitar("edição nova"); await digitar("mesmo texto"); }
   else await anexar("novo.txt");
   await act(async () => concluir({ ok: true }));
-  expect(storage.get("conversa-rascunho:A:responder")).toBe("mesmo texto");
+  expect(storage.get("conversa-rascunho:A:" + modo)).toBe("mesmo texto");
   expect(ui.campo.value).toBe("mesmo texto");
   if (intencao === "arquivo") expect(host.textContent).toContain("novo.txt");
 });
@@ -86,6 +87,7 @@ it("C3 modos têm armazenamento separado mesmo no mesmo contato", async () => {
   await digitar("resposta enviada"); await enviar(); await montar(props({ modo: "nota" })); await digitar("nota não enviada");
   await act(async () => concluir({ ok: true }));
   expect(storage.has("conversa-rascunho:A:responder")).toBe(false); expect(storage.get("conversa-rascunho:A:nota")).toBe("nota não enviada");
+  expect(ui.campo.value).toBe("nota não enviada");
 });
 it("C3 comparação do texto bruto protege armazenamento alterado fora da tentativa", async () => {
   let concluir!: (r: { ok: true }) => void;
@@ -104,4 +106,44 @@ it("C3 mídia já despachada: sucesso em B limpa só legenda enviada e preserva 
   await act(async () => concluir({ ok: true }));
   expect(storage.has("conversa-rascunho:A:responder")).toBe(false);
   expect(storage.get("conversa-rascunho:B:responder")).toBe("legenda B"); expect(host.textContent).toContain("b.txt");
+});
+
+it.each(["responder", "nota"] as const)("C3 retorno sem editar %s: A→B→A não transforma remontagem em intenção nova", async modo => {
+ let concluir!: (r:{ok:true})=>void;
+ const pendente=new Promise<{ok:true}>(r=>{concluir=r;});
+ await montar(props({modo,aoEnviarTexto:()=>pendente,aoNota:()=>pendente}));
+ await digitar("  texto confirmado  ");await enviar();
+ await montar(props({atendimentoId:"B",modo}));
+ await montar(props({modo}));
+ expect(ui.campo.value).toBe("  texto confirmado  ");
+ await act(async()=>concluir({ok:true}));
+ expect(storage.has("conversa-rascunho:A:"+modo)).toBe(false);
+ expect(ui.campo.value).toBe("");
+ await montar(props({atendimentoId:"B",modo}));await montar(props({modo}));
+ expect(ui.campo.value).toBe("");
+});
+
+it.each(["responder", "nota"] as const)("C3 retorno sem editar %s: erro/incerto não limpa armazenamento nem campo de A", async modo => {
+ for (const resultado of ["erro", "incerto"] as const) {
+  let concluir!: (r:{ok:false;erro:string})=>void;let rejeitar!:(e:Error)=>void;
+  const pendente=new Promise<{ok:false;erro:string}>((r,j)=>{concluir=r;rejeitar=j;});
+  await montar(props({modo,aoEnviarTexto:()=>pendente,aoNota:()=>pendente}));await digitar("incerta "+resultado);await enviar();
+  await montar(props({atendimentoId:"B",modo}));await montar(props({modo}));
+  await act(async()=>{if(resultado==="erro")concluir({ok:false,erro:"Negado"});else rejeitar(new Error("Failed to fetch"));});
+  expect(storage.get("conversa-rascunho:A:"+modo)).toBe("incerta "+resultado);expect(ui.campo.value).toBe("incerta "+resultado);
+  await act(async()=>root.render(null));
+ }
+});
+it("C3 retorno protege armazenamento externo e o campo carregado dessa edição", async()=>{
+ let concluir!:(r:{ok:true})=>void;
+ await montar(props({aoEnviarTexto:()=>new Promise(r=>{concluir=r;})}));await digitar("enviado");await enviar();
+ await montar(props({atendimentoId:"B"}));storage.set("conversa-rascunho:A:responder","externo posterior");await montar(props());
+ await act(async()=>concluir({ok:true}));
+ expect(storage.get("conversa-rascunho:A:responder")).toBe("externo posterior");expect(ui.campo.value).toBe("externo posterior");
+});
+it("C3 armazenamento indisponível não impede reconciliação visual da intenção confirmada",async()=>{
+ let concluir!:(r:{ok:true})=>void;
+ await montar(props({aoEnviarTexto:()=>new Promise(r=>{concluir=r;})}));await digitar("texto enviado");await enviar();
+ vi.stubGlobal("localStorage",{getItem(){throw Error("sem acesso");},removeItem(){throw Error("sem acesso");}});
+ await act(async()=>concluir({ok:true}));expect(ui.campo.value).toBe("");
 });
