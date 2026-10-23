@@ -1,0 +1,17 @@
+{
+  "familia": "mono",
+  "fontes": [
+    {
+      "peso": "400 600",
+      "src": "url(\"../media/jetbrains_mono_latin_wght-s.2rmhnsrc80fag.woff2\") format(\"woff2\")"
+    }
+  ],
+  "arquivos": [
+    "jetbrains_mono_latin_wght-s.2rmhnsrc80fag.woff2"
+  ],
+  "preloads": [
+    "http://localhost:3112/_next/static/media/roboto_variable-s.p.3ios-b8csxu9r.woff2"
+  ],
+  "monoPreloadNoDOM": false,
+  "monoPreloadNoHeader": false
+}
