@@ -4700,3 +4700,15 @@ Implementação e verificação local concluídas; revisão independente e publi
 - TDD RED 9 falhas/33 aprovados; GREEN 5 arquivos/53 testes e lint dirigido sem avisos, saídas 0 Node 22.23.2. CSS compilado com amostra explícita; contraste positivo e autoteste de avatar reprovado.
 - Globais em b8d5128a: TSC heap8192 sessão 50415, full 845 arquivos/6533 testes sessão 99205, lint global 0 erros/40 avisos sessão 59333, todos saída 0 Node 22.23.2. TESTER: 5 arquivos/53 testes, saída 0 e parecer de código favorável.
 - Prova DEV 18 PNGs/6 contextos: fonte local400–500, Roboto preservada, seis trechos reais isolados contidos, dt600 sem afirmar face600 nativa. Pilha anterior explicitamente reconstituída. Aceite formal combinado com307: integrador51505 e TESTER76466, ambos34PNGs/0falhas/14diagnósticos/exit0; fontes400/500+Roboto6/6 independentes. Pares conversa nos3tamanhos/2temas e parecer em `output/inbox-306-comparacao/`. Fonte visual7e236e64; delta76a08316 sóenum de teste307. Global final76a08316 sessão95778 exit0:846arquivos/6547testes, TSCheap8192, lint0erros/40avisos. Sem ignorados e sem suíte completa de integração; integração dirigida3071teste0 registrada à parte.
+
+## PR #391 — C1/C2: mono600 nativa e sem preload global
+
+Asset original e hash preservados; eixo wght100–800 verificado no WOFF.
+Faixa400–600 substitui400–500 após coordenação técnica; dt herdado e contadores
+600 usam face nativa. preload:false na mono, Roboto preservada. TDD RED1/7
+→GREEN5arquivos54testes; TSC75865/lint alterados saída0. Chrome6contextos,
+8trechos reais por contexto,400/500/600 carregados, síntese desativada,
+sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
+DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
+sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
+Integração dos pais, global, parecer/CI do head final continuam pendentes.

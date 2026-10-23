@@ -22,18 +22,19 @@
   (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 600 em `globals.css`.
   `src/app/tipografia.test.ts` confere a fonte, o hash e falha se um peso maior voltar ao código.
 
-- Fonte mono: **JetBrains Mono 5.3.0**, variável local registrada apenas nos pesos **400–500**,
+- Fonte mono: **JetBrains Mono 5.3.0**, variável local registrada nos pesos **400–600**,
   `font-display: swap`, em `src/app/fonts/jetbrains-mono-latin-wght.woff2`, com
   `LICENSE-JetBrainsMono.txt` (SIL Open Font License 1.1). SHA256:
   `18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e`.
   O integrador entregou o asset e a licença; não há fonte ou runtime de CDN. A variável
   `--font-mono` alimenta `font-mono` com fallback `ui-monospace`, `SFMono-Regular`, `Menlo`, `monospace`.
   Horas, contagens e telefones usam `font-mono tabular-nums` nas tasks consumidoras do Inbox;
-  Roboto permanece a fonte do texto. Registrar 600 para mono não faz parte desta entrega:
-  contadores futuros com `font-semibold` precisam resolver o peso na sua própria task.
-  O `dt.font-mono` já existente nas variáveis de contrato herda 600 do CSS base: a amostra
-  foi conferida com a face 400–500 carregada e síntese de peso permitida pelo navegador,
-  sem recorte/overflow externo. Isso não declara uma face 600 nativa; a faixa contratada permanece.
+  Roboto permanece a fonte do texto. A revisão C1 da PR #391 confirmou no WOFF original
+  o eixo `wght` 100–800 e ampliou a declaração para incluir 600 nativo: atende tanto
+  `dt.font-mono`, que herda 600 do CSS base, quanto contadores com `font-semibold`,
+  evitando síntese de negrito. Nenhum asset foi alterado ou acrescentado.
+  A mono usa `preload: false` (C2): só é carregada quando um elemento a utiliza;
+  páginas sem mono não antecipam esse recurso. Roboto mantém seu preload atual.
   A mudança também alcança os usos existentes de `font-mono` em códigos, hashes e templates.
 
 ## Cantos & bordas
