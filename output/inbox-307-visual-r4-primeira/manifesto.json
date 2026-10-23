@@ -1,4 +1,13 @@
 {
+  "curadoriaPosMerge": {
+    "registroHistorico": true,
+    "pngsRetiradosDaArvoreAtual": true,
+    "representaAceiteAtual": false,
+    "indice": "output/inbox-307-evidencias.md",
+    "assetSanitizado": 667665737,
+    "sha256ZipSanitizado": "893f939070072eeac6c505cfb01a369f9d44b05119b388074d273964167c0a03",
+    "observacao": "Os caminhos originais identificam a execução histórica; o ZIP legado não foi enviado. Não houve nova captura nesta curadoria."
+  },
   "capturas": [
     {
       "alvo": "app",

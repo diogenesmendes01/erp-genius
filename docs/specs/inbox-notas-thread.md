@@ -19,3 +19,17 @@ Estado: implementação em revisão em 22/10/2026; homologação pendente.
 Integração isolada de criação, aviso e repetição; paginação antes/depois, arquivamento, empate e permissões de atendimento/lead; regressão do Inbox, pool, idempotência e Aria. TypeScript, Vitest completo e ESLint global com saída 0 antes de congelar a entrega. Sem migration ou mudança de permissão global.
 
 Referências: issue #300, [quadro único](../planejamento/quadro-entregas.md).
+
+## Rastreabilidade da Task 3 após a revisão #386 C4
+
+Os nomes finais ampliam os exemplos do plano E0; não eliminam os casos pedidos.
+
+| Critério do plano | Caso efetivamente executável | Arquivo |
+| --- | --- | --- |
+| Página inicial e depois trazem notas; antes devolve null | `notas do atendimento não comercial vêm na carga e em depois; antes devolve null` | `src/server/inbox/consultas-pagina.int.test.ts` |
+| Nota arquivada não volta à página | `notas arquivadas não voltam e só as 50 mais recentes são consultadas` | mesmo arquivo |
+| Nota do lead tem origem oportunidade somente para quem pode vê-lo | `mescla notas do atendimento e da oportunidade por data/id sem vazar lead pela linha` | mesmo arquivo |
+| Nota e aviso transacional somente com IDs | `emite atendimento.atualizado só com ids após gravar a nota` | `src/server/whatsapp/nota-interna.int.test.ts` |
+| Repetição idempotente não duplica aviso | `repetição idempotente devolve a mesma nota sem novo aviso` | mesmo arquivo |
+
+`notasInternasDoAtendimento` fica em `src/server/whatsapp/notas-consulta.ts`, módulo interno de servidor, e é chamado por `consultas-pagina.ts` e `acoes-conversa.ts` depois de suas verificações de escopo. As telas #301 e #314 recebem o DTO pela rota/histórico; não importam esse helper de servidor no cliente. O nome e a separação de módulos preservam a fronteira das Server Actions. Este mapa não representa nova execução dos testes históricos.

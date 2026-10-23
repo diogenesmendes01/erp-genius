@@ -247,3 +247,9 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 - **Barra mobile:** mesmos estados da sidebar (`rounded-item`, `hover:bg-highlight`, `bg-surface-muted`); botões com `max-sm:min-h-11 max-sm:min-w-11`; itens da gaveta (a mesma `NavLinks`) com `max-sm:min-h-11`.
 - **Sub-abas:** pílula `rounded-full px-3 py-1.5 text-sm max-sm:min-h-11`; ativa `bg-brand-solid text-on-brand font-medium`, inativa `text-gray-600 hover:bg-highlight`.
 - A estrutura de menus (`src/lib/nav.ts`) não muda. A trilha (`Trilha.tsx`) não precisou de ajuste: já usa só tokens.
+
+## Revisão PR381 C2 — ring-offset
+
+A guarda de paleta não isenta o sufixo solto offset como se fosse utilitário sem cor: ring-offset sem valor é recusado. ring-inset continua utilitário, ring-offset-white continua cor permitida e ring-offset-2 continua espessura. O ajuste retira apenas offset de NAO_E_COR.ring, sem ampliar regex, tokens ou limites.
+
+Regressão acrescentada ao caso existente: RED526623 uma falha/sete passes; recorte GREEN26e18f seis arquivos/49 testes e ampliado91114 onze arquivos/367 testes, saídas0. Não é mudança de UI/tema nem suíte global.

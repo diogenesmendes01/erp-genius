@@ -11,3 +11,7 @@ Fonte integrada2f68e8f4, anterior às mudanças312/314: formal29530 exit0,0falha
 Global19074:857arquivos/6.680testes unitários e TypeScript exit0, sem filtros ou ignorados. Lint final66935 exit0:40avisos herdados. Sem envio externo ou deploy. Limite preexistente da confirmação de opt-out está no relatório e não é declarado corrigido.
 
 Os40PNGs históricos foram retirados apenas do índice após confirmação do depósito remoto; cópias locais e commits anteriores foram preservados. JSONs/probes versionados registram tentativas históricas; o pacote acima é o artefato sanitizado para revisão.
+
+## Curadoria das sondas históricas — revisão #395 C7
+
+Os cinco arquivos MJS desta pasta são sondas da execução original e permanecem para explicar as medições e tentativas registradas nos JSONs. Seus caminhos de Chrome/Windows refletem o executor daquele momento: não são ferramentas portáveis nem entradas de CI. O harness reutilizável atual fica em scripts/visual; não se promove nem executa automaticamente uma sonda histórica. Os 18 arquivos (306.161 bytes no corte da auditoria) foram avaliados como um conjunto pequeno de proveniência; o aceite visual sanitizado é o ZIP já indicado acima. Nada nesta curadoria gera nova captura, amplia homologação ou reenvia imagens antigas.

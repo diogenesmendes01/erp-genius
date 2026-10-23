@@ -6,7 +6,7 @@ Implementação da E1 Task6 sobre #299 e #310. O menu conta **conversas pessoalm
 
 condicaoNaoLidaPessoal foi extraída sem mudar sua regra: marcação pessoal explícita; ausência de leitura pessoal com contador compartilhado positivo; ou ENTRADA posterior a lidaAte pessoal. consultas-pagina e contarConversasNaoLidas usam a mesma condição combinada com escopoAtendimentos. Sem papel Inbox a contagem retorna zero antes de qualquer consulta.
 
-GET /api/inbox/nao-lidas exige sessão e papel em cada chamada, responde { total } com Cache-Control: no-store, 401 sem sessão e 403 sem acesso. Contagens não seguem filtros da lista nem o tamanho da página. Não há schema, migração ou permissão nova. contarNaoLidas legado permanece porque ainda possui consumidores/testes fora deste recorte.
+GET /api/inbox/nao-lidas exige sessão e papel em cada chamada, responde { total } com Cache-Control: no-store, 401 sem sessão e 403 sem acesso. Contagens não seguem filtros da lista nem o tamanho da página. Não há schema, migração ou permissão nova. A função legada contarNaoLidas não faz parte da API ativa: a revisão pós-merge C4 abaixo remove sua soma compartilhada, sem alterar contarConversasNaoLidas pessoal.
 
 ## Cliente e ciclo de vida
 
@@ -44,7 +44,7 @@ O tipo FonteEventos inclui readyState somente leitura, compatível com EventSour
 
 O compartilhamento é por aba: usuários autorizados mantêm uma SSE física inclusive fora da tela Inbox. Múltiplas abas multiplicam conexões e consultas de contagem; a loja conserva no máximo um GET incluindo corpo mais uma pendência por aba, sem consolidar abas. Em HTTP/1.1 os limites de conexões por navegador/origem podem restringir esse uso. Recomenda-se verificar e configurar HTTP/2 no proxy antes de operação com muitas abas; a negociação de streams não equivale a capacidade ilimitada. A configuração efetiva do proxy não foi verificada nem alterada nesta entrega. Referências: [modelo EventSource no HTML Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html#processing-model) e [limites documentados pelo MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
 
-B1/C1 são o único escopo desta revisão. C2 de base/CI pertence ao integrador; C3–C5 estão diferidos. Gates e pendências de porte/revisão/browser constam em output/inbox-396-report.md. Nenhum aceite visual/global é presumido.
+Na revisão histórica B1/C1, C2 de base/CI pertencia ao integrador e C3–C5 ficaram diferidos. As revisões pós-merge abaixo substituem esse adiamento pelos resultados específicos, sem reatribuir gates ou capturas da fonte antiga. O relatório histórico output/inbox-396-report.md conserva sua origem.
 
 ### Revisão C6 — recuperação sem nova assinatura
 
@@ -96,3 +96,17 @@ Helper e testes byte-equivalentes a babd na fonte3b813. Repetição browser16dde
 Cherry-pick exclusivo01a254f5 sobre fad43 gerou88fb31d8, sem merge de ancestralidade do outro chat. Fonte/testeSSE OIDs39437068b4d81228af58f9499f31c6392d54684b e79a69e0aac722e76548efa013cb9511d3b5aaa13 são idênticos ao commit funcional. SóSSE/testes e estaSPEC/quadro receberam o porte; harness/CLI/estados319/C2/rodapé317 permaneceram intactos. Conflito sóquadro: históricos OWN preservados e seçãoC6 adicionada.
 
 GateDEV Node22: recorte15393 terminou saída0/63arquivos577testes,15,25s,maxWorkers2, sem filtro de nome/skip; inclui SSEcompartilhado, todoInbox319, Selo/Sidebar/BarraMobile, histórico/useConversa/VirtualList, Esqueleto e fluxo/harness319. Lint2fontes6d1807 --max-warnings0 terminou0/0avisos; diffcheck nofreeze. Configuração unitária exclui integração: não é global, nenhum DB/SQL/browser/preview/envio foi executado. TSC37494 e recorte70/863 anteriores continuam históricos pré-C6, sem reatribuição àfonte portadas. Global/TSC final e extensão TESTER sobintegrador antesReady; provas visuais históricas não aceitam C6 por inferência.
+
+### Revisão pós-merge C3/C4 — montagem e consulta legada
+
+C3: o resync sintético de uma assinatura tardia preserva a atualização desde o snapshot SSR quando a fonte já estava aberta. A recontagem pessoal ao assinar também é necessária porque marcar como lida pessoalmente pode não emitir NOTIFY global. Montagem client-side pode, portanto, repetir GET de lista/painel/thread e da contagem, mesmo com valor SSR disponível. Esse é o custo redundante aceito para manter freshness; não se afirma consolidação, cancelamento ou ausência de pedidos extras que não foram comprovados. Nenhuma otimização de SSE, loja, fila394 ou leitura R6 foi introduzida por esta revisão.
+
+C4: busca completa em src/scripts e no barrel consultas confirmou contarNaoLidas apenas na declaração e em duas assertivas de linha-comercial.int.test.ts, sem chamador produtivo. Conforme o pedido do plano, a função/export de soma compartilhada foi removida. O teste passa a chamar contarConversasNaoLidas, a consulta pessoal real do selo; mantém vendedor sem escopo=0 e gerente autorizado=1, além de todas as demais assertivas. Não há alias fictício, alteração de ACL, consulta ativa, handler ou API SSE.
+
+Integração linha-comercial completa: sessão30761, um arquivo/24casos, terminal0, sem filtro/ignorados, configintegration/maxWorkers1 no perfil temporário integracao/banco descartável487 reservado pelo integrador. Transportes vazios, nenhuma mensagem externa. Não é suíte completa de integração; o bancoB490 não foi usado. O integrador restaurou o perfil dev-gravacoes após liberar a janela.
+
+### Revisão pós-merge C5 — ligação real do hook
+
+useEventosInbox.interacao.test.ts monta ReactDOM real e usa o hook e módulo de compartilhamento produtivos; somente EventSource é substituída por transporte falso sem rede. Dois consumidores mostram Desconectado/Conectado, recebem os avisos e compartilham uma fonte. Rerender atualiza o callback sem reinscrever; desmontar um consumidor mantém o outro, e o último fecha a fonte. StrictMode limpa ciclos antigos sem duas fontes ativas, callbacks posteriores ao descarte são ignorados e ausência de EventSource mantém desconectado.
+
+Os três casos passaram na fonte original. Uma mutação temporária que congelava o callback no primeiro effect reproduziu uma falha/dois passes; o finally restaurou exatamente os bytes do hook, e GREEN6/49 mais o recorte amplo11/367 terminaram0. É prova de sensibilidade do teste existente em comportamento correto, não alegação de bug runtime novo. O hook, produtor, singletonSSE e loja não mudaram. Os três testes históricos do helper reexportado foram preservados.

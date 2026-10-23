@@ -147,3 +147,44 @@ it("C3 armazenamento indisponível não impede reconciliação visual da intenç
  vi.stubGlobal("localStorage",{getItem(){throw Error("sem acesso");},removeItem(){throw Error("sem acesso");}});
  await act(async()=>concluir({ok:true}));expect(ui.campo.value).toBe("");
 });
+
+
+function itensTemporariamenteIndisponiveis() {
+  return Array.from(host.querySelectorAll('button')).filter(b => ['Contato', 'Enquete', 'Localização'].includes(b.textContent));
+}
+async function abrirAnexos(indices = [0]) {
+  const botoes = Array.from(host.querySelectorAll('button')).filter(b => b.getAttribute('aria-label') === 'Anexar');
+  await act(async () => { for (const indice of indices) eventos(botoes[indice]).onClick(); });
+}
+it('PR384 C3: cada anexo indisponível descreve seu motivo real, com IDs únicos entre dois compositores', async () => {
+  await act(async () => root.render(createElement(StrictMode, null, createElement('div', null,
+    createElement(Compositor, props({ atendimentoId: 'A', capacidades: ['enquete'] })),
+    createElement(Compositor, props({ atendimentoId: 'B', capacidades: [] }))))));
+  await abrirAnexos([0, 1]);
+  const itens = itensTemporariamenteIndisponiveis();
+  expect(itens).toHaveLength(6);
+  const ids = itens.map(b => b.getAttribute('aria-describedby'));
+  expect(ids.every(id => typeof id === 'string' && id.length > 0)).toBe(true);
+  expect(new Set(ids).size).toBe(6);
+  const avisos = ids.map(id => host.querySelectorAll('small').find(s => s.getAttribute('id') === id));
+  expect(avisos.every(Boolean)).toBe(true);
+  expect(avisos.map(s => s!.textContent)).toEqual([
+    'Disponível quando o motor próprio da escola entrar em uso.',
+    'O envio deste tipo pelo Inbox ainda não está disponível.',
+    'Disponível quando o motor próprio da escola entrar em uso.',
+    'Disponível quando o motor próprio da escola entrar em uso.',
+    'Disponível quando o motor próprio da escola entrar em uso.',
+    'Disponível quando o motor próprio da escola entrar em uso.',
+  ]);
+  for (const item of itens) expect(item.getAttribute('disabled')).not.toBeNull();
+});
+it('PR384 C3: descrição mantém o ID ao atualizar capacidades e reabrir o menu sem alterar os rótulos', async () => {
+  await montar(props({ capacidades: ['enquete'] })); await abrirAnexos();
+  const ids = itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'));
+  expect(ids.every(Boolean)).toBe(true);
+  await montar(props({ capacidades: [] }));
+  expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
+  await abrirAnexos(); await abrirAnexos();
+  expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
+  expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Contato', 'Enquete', 'Localização']);
+});
