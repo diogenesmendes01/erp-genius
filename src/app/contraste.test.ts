@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
 import { BASE_BOTAO, TAMANHOS_BOTAO, VARIANTES_BOTAO, type TamanhoBotao, type VarianteBotao } from "@/components/Botao";
 import { contraste, corSobre, hexParaRgb } from "../../scripts/medicao-ux/nucleo.mjs";
-import { contraste as contrasteLocal, corSobre as corSobreLocal, hexParaRgb as hexLocal, paresDeContraste, razao, reprovados, reprovadosSolidos, selecaoImpossivelSobre, semComentarios, temasDoCss, token } from "./contraste-nucleo";
+import { contraste as contrasteLocal, corSobre as corSobreLocal, hexParaRgb as hexLocal, paresDeContraste, paresTexto, razao, reprovados, reprovadosSolidos, selecaoImpossivelSobre, semComentarios, temasDoCss, token } from "./contraste-nucleo";
 import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_FUNDO_DA_MARCA, SUPERFICIES, SUPERFICIES_DA_SELECAO } from "./contraste-mapa";
 
 // Trava de contraste (docs/43-medicao-auditoria-ux.md §6 item 5; docs/42 §7.4 "pares de token reprovando AA").
@@ -128,6 +128,16 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
       (["claro", "escuro"] as const).flatMap((tema) => COPIA_SUPERFICIES_DA_SELECAO.map((s) => `${tema} --brand-solid/${s}`)),
     );
     expect(reprovados(pares)).toEqual([]);
+  });
+
+  it("balões e autores da thread passam 4,5:1 nos dois temas", () => {
+    expect(reprovados([
+      ...paresTexto("--text-primary", ["--bubble-ia", "--bubble-note", "--entry", "--entry-accent"], 4.5),
+      ...paresTexto("--text-secondary", ["--bubble-ia", "--bubble-note", "--entry", "--entry-accent"], 4.5),
+      ...paresTexto("--ai-text", ["--bubble-ia"], 4.5),
+      ...paresTexto("--warning-text", ["--bubble-note"], 4.5),
+      ...paresTexto("--brand-strong", ["--entry-accent"], 4.5),
+    ])).toEqual([]);
   });
 
   it("autoteste da seleção (1.4.11): --brand-solid que passa no branco e some na superfície reprova; a faixa do escuro é estreita", () => {
