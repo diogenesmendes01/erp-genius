@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -62,9 +62,11 @@ async function prepararRede(contexto, alvo, base, falhas) {
 async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com", process.env.INBOX_VISUAL_SENHA ?? "genius123");
   const id = estado === "humano-compositor" ? ids.beatriz : ids.mariana;
-  const semSelecao = estado === "sem-selecao" || estado === "celular-lista";
+  const popoverColuna = ["filtros", "seletor-numero", "nova-conversa"].includes(estado);
+  const semSelecao = estado === "sem-selecao" || estado === "celular-lista" || popoverColuna;
   const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
   await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
+  if (popoverColuna) await abrirPopoverColunaApp(pagina, estado, tamanho);
   if (estado === "celular-painel" || estado === "tablet-painel") {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -87,6 +89,22 @@ async function abrirPrototipo(pagina, estado) {
   await pagina.goto(`${pathToFileURL(prototipo).href}?c=${c}`, { waitUntil: "load" });
   const root = pagina.locator('[data-m="root"]');
   await root.waitFor({ state: "visible" });
+  if (["filtros", "seletor-numero", "nova-conversa"].includes(estado)) {
+    const lista = root.locator('[data-m="list"]');
+    await lista.waitFor({ state: "visible" });
+    await lista.getByText("Mariana Costa", { exact: true }).first().waitFor({ state: "visible" });
+    if (estado === "seletor-numero") {
+      await lista.getByRole("button", { name: /Todos os WhatsApp/ }).click();
+      await lista.getByText("Ver conversas de", { exact: true }).waitFor({ state: "visible" });
+      await lista.getByText("Gerenciar números em Configurações", { exact: true }).waitFor({ state: "visible" });
+    } else {
+      await lista.getByTitle(estado === "filtros" ? "Filtros" : "Nova conversa", { exact: true }).click();
+      const folha = lista.locator('[data-m="sheet"]').filter({ hasText: estado === "filtros" ? "Filtrar conversas" : "Nova conversa" });
+      await folha.waitFor({ state: "visible" });
+      if (estado === "filtros") await folha.getByRole("button", { name: /^Mostrar .* conversas$/ }).waitFor({ state: "visible" });
+      else await folha.getByPlaceholder("Nome ou número com DDD", { exact: true }).waitFor({ state: "visible" });
+    }
+  }
   if (estado === "lista-vazia") {
     const lista = root.locator('[data-m="list"]');
     await lista.getByPlaceholder("Buscar conversas, contatos, tags").fill("zzzz");

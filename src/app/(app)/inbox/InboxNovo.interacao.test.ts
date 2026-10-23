@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
+  parametros313: null as string | null,
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   avisoThread: null as unknown,
@@ -49,13 +50,13 @@ vi.mock("react", async (original) => {
 vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => { m.aoAviso = f; return { conectado: true }; } }));
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
-vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLido: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox" }));
+vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
-import { ListaAtendimentos } from "./ListaAtendimentos";
+import { ColunaConversas } from "./ColunaConversas";
 import { PainelAria } from "./PainelAria";
 import { AcoesContato } from "./AcoesContato";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
@@ -75,8 +76,9 @@ let respostaLista: () => Promise<Response>;
 let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
-  m.modo = null;
   vi.useFakeTimers();
+  m.modo = null;
+  m.parametros313 = null;
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   m.aoVisibilidade = null;
@@ -95,16 +97,16 @@ beforeEach(() => {
 afterEach(() => { for (const e of m.efeitos) if (typeof e.limpar === "function") e.limpar(); m.g = null; vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 const esvaziar = () => vi.advanceTimersByTimeAsync(50);
-function tela(): ReactNode {
+function tela(p: PropsInboxNovo = props): ReactNode {
   m.posEfeito = 0;
-  const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props);
+  const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
   const secao = elementos(t).find((n) => n.type === "section" && n.props["aria-label"] === "Conversa");
   const ref = (secao as { ref?: { current: unknown } } | undefined)?.ref;
   if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [] };
   return t;
 }
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
-const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
 describe("InboxNovo: identidades React dos painéis", () => {
   it("distingue irmãos, conserva a mesma conversa e troca identidades ao selecionar outra", async () => {
@@ -112,7 +114,7 @@ describe("InboxNovo: identidades React dos painéis", () => {
     const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
     tela(); await esvaziar();
     const anteriores = paineis(tela());
-    expect(anteriores).toHaveLength(2); // uma única montagem do painel da casca308
+    expect(anteriores).toHaveLength(2); // uma única montagem do painel
     expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
     for (let i = 0; i < anteriores.length; i += 2) {
       expect(anteriores[i].key).not.toBeNull();
@@ -396,7 +398,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
   });
   it("ao abrir outra conversa, zera imediatamente o contador da lista", () => {
-    const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+    const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
     lista(tela()).aoSelecionar("a2");
     tela(); // o efeito da nova seleção publica o estado no render seguinte
     expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
@@ -665,6 +667,55 @@ it("referência civil do SSR permanece estável ao selecionar e receber SSE",asy
  m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a2",mensagemId:"m314",conversaId:"cv2"});await esvaziar();expect(referencia(tela())).toBe(props.agoraInicial);
 });
 
+const navegar313=(p:PropsInboxNovo)=>{tela(p);return tela(p);};
+const coluna313=(t:ReactNode)=>elementos(t).find(n=>n.type===ColunaConversas)!.props as unknown as import("./ColunaConversas").PropsColunaConversas;
+it("navegação AppRouter troca c real e fechaNova, mas prop inalterada conserva seleção local",async()=>{
+ tela();await esvaziar();coluna313(tela()).aoNovaConversa();expect(coluna313(tela()).novaConversaAberta).toBe(true);
+ const navegada={...props,selecionado:"a2"};const t=navegar313(navegada);expect(coluna313(t).selecionado).toBe("a2");expect(coluna313(t).novaConversaAberta).toBe(false);expect(elementos(t)[0].props["data-vista"]).toBe("conversa");
+ coluna313(t).aoSelecionar("a1");expect(coluna313(tela(navegada)).selecionado).toBe("a1");
+});
+it("navegação c→null retorna lista e não deixa a conversa anterior selecionada",async()=>{
+ tela();await esvaziar();const t=navegar313({...props,selecionado:null});expect(coluna313(t).selecionado).toBeNull();expect(elementos(t)[0].props["data-vista"]).toBe("lista");expect(elementos(t).some(n=>n.type===ConversaAberta)).toBe(false);
+});
+it("filtro e navegação concorrentes usam juntos a nova página e o novo selecionado",async()=>{
+ tela();await esvaziar();const novo={...props,filtros:{busca:"nova"},selecionado:"a3",inicial:{itens:[item("a3")],proximo:"p3"}} as PropsInboxNovo;
+ const t=navegar313(novo);expect(coluna313(t).selecionado).toBe("a3");expect(coluna313(t).itens.map(i=>i.id)).toEqual(["a3"]);expect(coluna313(t).proximo).toBe("p3");expect(coluna313(t).filtros).toEqual({busca:"nova"});
+});
+it("navegar para null descarta repetição e falha tardia da leitura anterior",async()=>{
+ let concluir!:(r:{ok:boolean})=>void;marcar.mockImplementationOnce(()=>new Promise(r=>{concluir=r;}));
+ const inicial={...props,inicial:{itens:[{...item("a1"),naoLidas:7},item("a2")],proximo:null}} as PropsInboxNovo;
+ tela(inicial);m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a1",mensagemId:"m313",conversaId:"cv1"});
+ const navegada={...inicial,selecionado:null,inicial:{itens:[{...item("a1"),naoLidas:3},item("a2")],proximo:null}} as PropsInboxNovo;
+ navegar313(navegada);concluir({ok:false});await esvaziar();const t=tela(navegada);expect(marcar).toHaveBeenCalledTimes(1);expect(coluna313(t).itens.find(i=>i.id==="a1")?.naoLidas).toBe(3);
+});
+it("revalidação confirma seleção local e mescla50frescos sem descartar150/paginação nem vista após retorno/resize",async()=>{
+ habilitarRota313();
+ const itens=Array.from({length:150},(_,i)=>({...item("v"+i),ultimaMensagemEm:new Date(Date.UTC(2026,9,1,12)-i*1000).toISOString()}));const p={...props,selecionado:null,inicial:{itens:itens.slice(0,50),proximo:"cursor50"}} as PropsInboxNovo;
+ let cursor=50;respostaLista=async()=>{const inicio=cursor;cursor+=50;return new Response(JSON.stringify({itens:itens.slice(inicio,cursor),proximo:cursor<150?"cursor100":null}))};marcar.mockImplementation(()=>new Promise(()=>{}));
+ tela(p);coluna313(tela(p)).aoCarregarMais();await esvaziar();coluna313(tela(p)).aoCarregarMais();await esvaziar();expect(coluna313(tela(p)).itens).toHaveLength(150);coluna313(tela(p)).aoSelecionar("v35");const aberta=tela(p);(cabecalho(aberta) as unknown as {aoVoltar():void}).aoVoltar();m.modo="uma";tela(p);
+ const fresca={...p,selecionado:"v35",contagens:{todas:151,minhas:3,naoLidas:4,prazo:2,fila:1},inicial:{itens:itens.slice(0,50).map((v,i)=>i===0?{...v,preview:"Snapshot atualizado"}:v),proximo:"cursor50"}} as PropsInboxNovo;
+ let t=navegar313(fresca);expect(coluna313(t).itens).toHaveLength(150);expect(coluna313(t).proximo).toBeNull();expect(coluna313(t).itens[0].preview).toBe("Snapshot atualizado");expect(coluna313(t).contagens).toEqual(fresca.contagens);expect(coluna313(t).selecionado).toBe("v35");expect(elementos(t)[0].props["data-vista"]).toBe("lista");m.modo="duas";t=navegar313(fresca);m.modo="uma";t=navegar313(fresca);expect(coluna313(t).itens).toHaveLength(150);expect(coluna313(t).selecionado).toBe("v35");
+});
+it("ack da seleção local conserva Nova aberta; somente mudança externa real fecha",()=>{
+ const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");coluna313(tela(p)).aoNovaConversa();const ack={...p,selecionado:"a2"};expect(coluna313(navegar313(ack)).novaConversaAberta).toBe(true);expect(coluna313(navegar313({...ack,selecionado:"a1"})).novaConversaAberta).toBe(false);
+});
+function habilitarRota313(consulta="") {
+ m.parametros313=consulta;const local={href:"http://localhost/inbox"+(consulta?"?"+consulta:"")};vi.stubGlobal("window",{innerWidth:390,location:local,history:{replaceState(_d:unknown,_t:string,url:URL|string){local.href=String(url);m.parametros313=new URL(local.href).search.slice(1);}}});
+}
+it.each(["","c="])("Link para Inbox(%s) fechaNova e limpa seleção mesmo com propnull igual ao SSR anterior",(consulta)=>{
+ habilitarRota313();const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);coluna313(tela(p)).aoNovaConversa();expect(coluna313(tela(p)).novaConversaAberta).toBe(true);expect(m.parametros313).toBe("c=a2");m.parametros313=consulta;const t=navegar313(p);expect(coluna313(t).selecionado).toBeNull();expect(coluna313(t).novaConversaAberta).toBe(false);expect(elementos(t)[0].props["data-vista"]).toBe("lista");
+});
+it("URL avança para idnovo e snapshotSSRantigo não reverte seleção/página nem repete leitura antiga",async()=>{
+ habilitarRota313("c=a1");let concluir!:(v:{ok:boolean})=>void;marcar.mockImplementationOnce(()=>new Promise(r=>{concluir=r;}));tela(props);m.parametros313="c=a2";const novo={...props,selecionado:"a2",inicial:{itens:[{...item("a2"),preview:"Novo snapshot"}],proximo:null}} as PropsInboxNovo;const t=navegar313(novo);expect(coluna313(t).selecionado).toBe("a2");const chamadas=marcar.mock.calls.length;
+ const antiga={...props,inicial:{itens:[{...item("a1"),preview:"Antigo"}],proximo:null}} as PropsInboxNovo;navegar313(antiga);concluir({ok:false});await esvaziar();const atual=tela(antiga);expect(coluna313(atual).selecionado).toBe("a2");expect(coluna313(atual).itens.some(i=>i.preview==="Antigo")).toBe(false);expect(marcar.mock.calls.length).toBe(chamadas);
+});
+it("URLlocal confirma própria seleção antes de SSR e conservaNova/vista até propcorrespondente chegar",()=>{
+ habilitarRota313();const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);coluna313(tela(p)).aoNovaConversa();const t=navegar313(p);expect(coluna313(t).selecionado).toBe("a2");expect(coluna313(t).novaConversaAberta).toBe(true);const ack=navegar313({...p,selecionado:"a2"});expect(coluna313(ack).novaConversaAberta).toBe(true);
+});
+it("Linkc→null compropnull igual invalida GET anterior da conversa selecionada",async()=>{
+ habilitarRota313();const p={...props,selecionado:null};marcar.mockImplementation(()=>new Promise(()=>{}));let concluir!:(r:Response)=>void;respostaLista=()=>new Promise(r=>{concluir=r;});tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});await esvaziar();m.parametros313="";navegar313(p);concluir(new Response(JSON.stringify({itens:[{...item("a1"),preview:"Snapshot GET obsoleto"}],proximo:null})));await esvaziar();expect(coluna313(tela(p)).itens.some(i=>i.preview==="Snapshot GET obsoleto")).toBe(false);
+});
+
 describe("C1: recarga de lista e contagens em lote", () => {
   const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
   const render = (p: PropsInboxNovo = { ...props, selecionado: null }) => {
@@ -760,6 +811,45 @@ it("C1 objeto de filtros equivalente não cancela reconciliação pendente", asy
   await esvaziar();
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("busca=A");
+});
+
+it("C1 ACKlocal150 conserva páginas/cursor/vista/Nova e reconciliação após leitura com body antigo e filtro equivalente",async()=>{
+  habilitarRota313();
+  const itens=Array.from({length:150},(_,i)=>({...item("v"+i),ultimaMensagemEm:new Date(Date.UTC(2026,9,1,12)-i*1000).toISOString()}));
+  const contagens={todas:150,minhas:100,naoLidas:75,prazo:100,fila:50};
+  const p={...props,selecionado:null,contagens,inicial:{itens:itens.slice(0,50),proximo:"cursor50"}} as PropsInboxNovo;
+  let cursor=50;
+  respostaLista=async()=>{const inicio=cursor;cursor+=50;return new Response(JSON.stringify({itens:itens.slice(inicio,cursor),proximo:cursor<150?"cursor100":null}));};
+  tela(p);coluna313(tela(p)).aoCarregarMais();await esvaziar();coluna313(tela(p)).aoCarregarMais();await esvaziar();
+  expect(coluna313(tela(p)).itens).toHaveLength(150);
+  let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+  coluna313(tela(p)).aoSelecionar("v35");const aberta=tela(p);
+  (cabecalho(aberta) as unknown as {aoVoltar():void}).aoVoltar();tela(p);coluna313(tela(p)).aoNovaConversa();
+  let controle!:ReadableStreamDefaultController<Uint8Array>;
+  const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+  let fresco!:(r:Response)=>void;
+  respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo)).mockImplementation(()=>new Promise(r=>{fresco=r;}));
+  m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});await esvaziar();
+  ler({ok:true});await esvaziar();
+  const ack={...p,selecionado:"v35",filtros:{...p.filtros},inicial:{...p.inicial,itens:p.inicial.itens.map((x,i)=>i===0?{...x,preview:"SSR fresco"}:x)}};
+  navegar313(ack);
+  controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:p.inicial.itens,proximo:"cursor50",contagens:{...contagens,naoLidas:99}})));controle.close();
+  await esvaziar();
+  fresco(new Response(JSON.stringify({itens:p.inicial.itens,proximo:"cursor50",contagens:{...contagens,naoLidas:0}})));
+  await esvaziar();
+  const t=tela(ack),c=coluna313(t);
+  expect(c.itens).toHaveLength(150);expect(c.proximo).toBeNull();expect(c.selecionado).toBe("v35");
+  expect(c.novaConversaAberta).toBe(true);expect(elementos(t)[0].props["data-vista"]).toBe("lista");
+  expect(c.contagens).toEqual({...contagens,naoLidas:0});
+  expect(vi.mocked(respostaLista)).toHaveBeenCalledTimes(2);
+});
+it("C1 navegação URLreal para null cancela lote ainda não iniciado sem alterar sincronização313",async()=>{
+  habilitarRota313("c=a1");marcar.mockImplementation(()=>new Promise(()=>{}));
+  const p={...props,contagens:{todas:2,minhas:1,naoLidas:1,prazo:0,fila:0}};
+  tela(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});
+  m.parametros313="";const vazia={...p,selecionado:null};navegar313(vazia);await esvaziar();
+  expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(0);
+  expect(coluna313(tela(vazia)).selecionado).toBeNull();expect(vi.getTimerCount()).toBe(0);
 });
 
 describe("C1 P2: snapshot invalidado por props equivalentes durante voo",()=>{

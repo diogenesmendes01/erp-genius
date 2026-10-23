@@ -36,3 +36,11 @@ Mudança pública real de filtros cancela lote antigo/invalida voo; objetos equi
 ### C1 P2 — invalidação de snapshot no mesmo contexto
 
 PropsSSR de identidade nova/mesmos valores mantêm a época, mas o guard de snapshots continua invalidando GET em voo. A fila recebe invalidarSnapshotEmVoo e conserva1trailing fresco SOMENTE para voo da época atual; não revive A antigo apósA→B→A. Idle/prévoo não geram consulta adicional. RED público sem leitura/lerpendente reproduz2→3perdido; correção preserva todosguards e autoridade do snapshot fresco.82écheckpoint histórico não adotado; Fontecorrigida:24/334,TSC32952heap8192/lint4fontes78e0c3 saída0; QA/porte pendentes em relatórioC1.
+
+### Porte do consumidor atual
+
+O mesmo helper do isoladob233 foi portado sobre676 sem levar código313 à PR394. Consumidor cancela apenas chave públicaREAL ou versaoNavegacaoREAL; props equivalentes invalidam snapshot emvoo e conservam1trailing. GuardsR6/freshzero e reconciliação pessoal final/finally311/automático preservados. Gatesporte83dirigidos/56arquivos627testes/typegenTSC82827heap8192/lint4fontes25da72 saída0; QA/browser/global/adoção pendentes, semDB/preview próprios.
+
+### C1 — evidência real do porte corrigido
+
+Fonte 3a, TESTER: 5 arquivos/106 testes + 40 casos R6/P2 próprios saída 0 informado pelo integrador. UI26973 saída 0 em4 contextos/dois temas: Link público e leituras rápidas sem esperar POST antes de navegar, foco final busca,1 documento/1 SSE e1 GET incluindo corpo. Lotes76702 saída 0:1/20/50notificações reais→1 GET cada (spans0/50,7/92,7 ms);51 avisos com HTTP retido→inicial+1 trailing. RefreshRSC real com nova identidade/mesma chave e leitura real200 com body antigo também exigiram só1 trailing. Cinco contagens DOM iguais ao HTTP fresco; não lidas76jáera76, sem alegar decremento. Retenção preserva bytes reais antes dos headers, não streaming.22 PNG inspecionados/allowlist e resumo sanitizado no relatórioC1, sem novosbináriosGit. Global/adoção/publicação permanecem com integrador.

@@ -4,6 +4,9 @@
 
 Oito implementações com PR individual aberto e anexado:298→381,299→382,300→386,301→388,302→383,303→384,304→389,305→385. Pré-requisitos380/387/390 separados. Mapa de dependências, gates e limites em `docs/planejamento/inbox-e0-fechamento.md`. Fonte integrada99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. E0 validada localmente, sem merge/deploy; E1–E4 ainda não implementadas. Texto “PR em publicação” nas entradas antigas é histórico; links reais constam no fechamento.
 
+## Inbox — chaves dos painéis irmãos — 22/10/2026
+
+Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
 ## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
 
 Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota inicial e nova sem reload, zero nova mensagem no banco,24 PNGs depois. Evidências e limites em output/inbox-301-visual/. Combinação E0 fonte7657c528:845 arquivos/6526 testes sessão99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Estados abaixo preservam as etapas anteriores; merge/deploy não executados.
@@ -4706,25 +4709,6 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - Aplicativo real:24cenários antes +24depois, seis tamanhos (1440×900,1024×768,390×844,700×768,390×500,1440×500), dois temas, com/sem seleção e formulário aberto. Medição final sessão99646 saída0: documento igual à viewport, zero pageerror, controles alcançáveis e prova geométrica de scroll interno. Capturas/métricas e limites em `output/inbox-304-visual/`.
 - Sem alteração de pacote, lock, schema, servidor/SSE ou permissão; nenhum envio externo. TESTER/homologação e integração/publicação pendentes; não marca E0 concluída.
 
-### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
-
-**Estado: implementação, revisão independente e global combinado concluídos; pronta para PR.** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
-
-- Contratos centrais IdChipInbox/ContagensChipsInbox, cinco agregados por escopo+filtros (retira somente responsável/não-lidas/prazo), API opt-in sem cursor e SSR após guarda. Estado produtor protege leitura otimista/SSE/filtros e reconcilia pontualmente; sem polling ou cálculo pelo tamanho da página. Saúde pública só id/rótulo/saúde, sem telefone/provedor, sem alterar capacidades.
-- Ruling: schema não possui SIMULADO; usa enums atuais, sem literal proibido ou adapter legado. Opção enviar preserva escopo restrito da rota, incluindo convite somente leitura. #310 antes #308 é coordenação de contrato/page, não aresta funcional obrigatória. Não altera a casca #308.
-- Node22.23.2: GREEN5arquivos82testes unitários (03865f); integração completa2arquivos26testes dev-email56956 exit0; complemento51657 exit0 com3testes/21 fora do filtro prova123além da página50, lidaAte pessoal e convites3→1 com envio. TSCheap8192 sessão93695 exit0; lint dirigido13arquivos0avisos exit0. RED e correções de fixtures/tipos documentados no relatório.
-- Aceite visual reservado à #313 (Task5Step5, sem tela própria nesta entrega), sem homologação presumida. Global final coordenado após combinar309+310; full próprio deliberadamente não executado. TESTER deve revisar SHA exato. Sem schema/migration, pacote/lock, permissão nova, servidor iniciado ou mensagem externa.
-- Congelamento: recorte final10arquivos161testes a0b1e7 exit0 (inclui guardas sem-polling/provedores/paleta/responsivo/botões), lint dirigido final264633 exit0/0avisos e TSCheap8192 final11852 exit0. Node22.23.2 confirmado. Sem mudança de fonte após esses gates, apenas documentação. Full integrado e TESTER ainda pendentes.
-- Fechamento: TESTER noSHA67014764 favorável,6arquivos86testes unitários0 e integração perfiltester78316exit0/2arquivos26testes, sem ignorados. Global combinado com309fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67 sessão15987exit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2,TSCNode22heap8192,lintglobal0erros40avisos. Código310igualaoSHArevisto; mudançasposteriores sódocs/QA. Parecer e logs `output/inbox-310-qa/`. Visual313conformeplano, não presumido.
-
-### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
-
-Branch DEV codex/inbox-310-c1 sobre eb68e314,676/313 imutável. Helper local agrupa50ms fixos,1GET incluindo corpo+1pendência, reconciliação pessoal final preservada. Thread/painel/leitura imediatos, sem SQL/SSEstore/polling/deps/DB/preview. RED consumidor3casos→GREEN42unitários; recorte24/32954301 e lint4fontes967cd5 saída0. TSC5951heap8192 saída0 após limpeza exclusiva do cache gerado dev pelo integrador; dois negativos antigos só tipogerado rota311 fora do head310, preservados. Ledger output/inbox-310-c1-report.md. Aguardam porte equivalente no agregado676 em SHAseparado, QA/browser e publicação; não é concluída/homologada.
-
-### C1 PR394 — correçãoP2 equivalente em voo, revisão pendente
-
-82históriconãoadotado. RED público3d0994 reproduz perda2→3semleitura e faltatrailingcomleiturapendente. invalidarSnapshotEmVoo conserva1pendência somentepara época físicaatual; guardsinvalidação/R6preservados, semreviverAantigoapósA→B→A, semretry/polling. GREEN2arquivos47testes69cceb e lint78e0c3 saída0; recorte6764EXIT0/24arquivos334testes e typegenTSC32952heap8192EXIT0. FonteisoladacorrigidaprontaparaTESTER;porte/QA/browser ainda pendentes. SemDB/preview/deps.
-
 ### Inbox E1: design da tela — 2026-10-22
 
 #### E1.1 — #306: tokens, fonte mono e travas
@@ -4837,6 +4821,17 @@ Usuário autorizou o integrador a regenerar somente o lockfile offline com scrip
 
 - Fechamento: TESTER noSHA67014764 favorável,6arquivos86testes unitários0 e integração perfiltester78316exit0/2arquivos26testes, sem ignorados. Global combinado com309fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67 sessão15987exit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2,TSCNode22heap8192,lintglobal0erros40avisos. Código310igualaoSHArevisto; mudançasposteriores sódocs/QA. Parecer e logs `output/inbox-310-qa/`. Visual313conformeplano, não presumido.
 
+## PR #391 — C1/C2: mono600 nativa e sem preload global
+
+Asset original e hash preservados; eixo wght100–800 verificado no WOFF.
+Faixa400–600 substitui400–500 após coordenação técnica; dt herdado e contadores
+600 usam face nativa. preload:false na mono, Roboto preservada. TDD RED1/7
+→GREEN5arquivos54testes; TSC75865/lint alterados saída0. Chrome6contextos,
+8trechos reais por contexto,400/500/600 carregados, síntese desativada,
+sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
+DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
+sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
+Integração dos pais, global, parecer/CI do head final continuam pendentes.
 
 
 ### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
@@ -4939,6 +4934,48 @@ Nova branch `codex/inbox-e1-revisoes` preserva refs publicadas. Fonte39283043f51
 
 - Checkpoint visual DEV312 na fonte a3da8: formal11405 EXIT0/28PNG inspecionadas/0falhas/6diagnósticos; aplicação14PNG sanitizada, referências14PNG ainda originais e PROIBIDAS para publicação até helperDOM/recaptura coordenados. SSR d539e4 EXIT0 prova29→30 com relógio somente browser, linha/nomeSSR preservados e1SSE/0erros. Virtual28814 EXIT0:150casos,6contextos/18PNG inspecionadas, janela10–18rows, alturas90.5–143px, Tab/ShiftTab/seleção35/retorno/âncora/resize preservados. Tipografia3f93f1 EXIT0 confirmaAvatar44/nome14-600/prévia13/horaMono11.5/contadorMono11-600. Detalhes, hashes e negativos no ledger; sem PNGcommit. Permanecem helperDOM/refs sanitizadas, depósito remoto, QAexata e global integrado; não concluída/homologada neste checkpoint. Não repetidos gates de app por mudança somente documental.
 
+### Inbox E1.9 — #314: balões por autor, notas e dias — 2026-10-22
+
+**Estado: fontes e TDD da entrega parcial concluídos; aplicação visual/fixture, TESTER e global pendentes.** Branch codex/inbox-e1-314, base c7e85eb2. SPEC docs/specs/inbox-thread-autoria-dias.md; relatório output/inbox-314-report.md. Sem publicação/merge/deploy pelo DEV.
+
+- Decoração preserva janela/ordem/keys das mensagens/notas, acrescenta dia civil e evento de transferência autorizado. Sequência não apaga mudança Você→Camila→Carlos, origem ou autor de nota. Balões por semântica, cauda, hora mono, nota tracejada sem comandos/status/mídia; conserva role note, autoria, XSS, menu305 e capacidades. Evento/separador centralizam sem depender de flex do VirtualList. Sem alterar motor compartilhado.
+- Ontem por calendário no fuso resolvido, com DST London/ano/bissexto testados. agoraInicial?:number comum312 é epoch único page→Inbox→Conversa. SnapshotSSR/hidratação coincide; após assinatura/revisão de mensagens/notas ou seleção, usa relógio real cliente cacheado. Sem timer/polling; apenas ociosidade total pode manter rótulo até próxima revisão. Contrato anterior ISO5a43 é histórico. text-brand-800 consome --brand-strong para contraste306, sem mudar paleta.
+- Node22.23.2: checkpoint5a43:recorte91616 exit0,45arquivos562testes sem ignorados; TSCheap8192 31722 exit0; lint d73921 exit0/0avisos (históricos). REDs e tentativas no relatório. Nenhum full próprio, suíte DB, seed, schema, pacote/lock, permissão ou ação externa.
+- Sem evidência visual314 ainda. Propostas de fixture/handoff apenasMD; B312 possui harness até freeze. Aguardar prova real de geometria/menu/scroll/virtualização, nota/autores/status/Lucas transferido e fotos dos3estados nos3tamanhos/2temas app×protótipo. Não presume aceite por renderização SSR ou pela geometria308.
+
+- **Checkpoint tempo SSR314:** agoraInicial epoch comum312 e snapshot cliente cacheado por revisão. hydrateRoot23:59→00:01 preserva nó/HTML sem mismatch e atualiza após assinatura; mensagem00:02, notas e seleção usam relógio cliente, sem timer. RED8af03c→GREEN73testes. Recorte final Node22:91484/434ae0 exit0,46arquivos567testes sem ignorados; TSCheap8192 46721/c25777 exit0; lint dirigido a6d879 exit0/0avisos. Nenhuma edição de harness/Lista312. Fixture preparada pelo integrador, medidas/visual/TESTER/global ainda pendentes.
+
+- **Prova privada314 e ajuste coordenado:** normal25155 exit0,6contextos24PNGs inspecionados; virtual67184 no648 RED6/6 identidade/foco/âncora99→101. Ruling autoriza VirtualList stableMount opt-in SOMENTEthread, default/SSR/lista312 preservados. ReactDOM GREEN2arquivos7testes, recorte52058 exit0/47arquivos570testes e lint0; TSC/prova real pós-fix e formal app×protótipo pendentes. Nenhum full próprio/DB ou aceite presumido; negativos preservados.
+
+- **Precisão opt-in314:** primeira correção preservou DOM/foco mas browser37490 acusou +5,0625px6/6; negativo preservado. TDD subpixel56badb RED→e53f1a GREEN8testes ajusta precisão somente opt-in/default intacto. Recorte final93037 exit0/47arquivos571testes, TSC61560 exit0, lintbc6805 exit0/0avisos, Node22. Browserfinal/formal/TESTER/global pendentes.
+
+- **GREEN real virtual314:** fonte02905042,45698 exit0:6/6mesmo nó/pai/raiz/botão/foco, Tab seguinte, deltaâncora0px/scroll intacto e20–24rows/101itens;0warnings/externos/overflow.12PNGs individuais inspecionados +JSON/manifesto em output/inbox-314-visual/virtual-green99-101. Prova privada não substitui formal; aguarda base/handoff312 e limpeza coordenadafixture, TESTER/global.
+
+### Regressão agregada312/314 com revisões382/392
+
+Fonte57587838: sessão54690 terminou exit1 após **862arquivos/6736testes unitários exit0**, sem filtros ou ignorados; TypeScript detectou duas declarações iguais de `agoraInicial` em posições diferentes da interface, consequência do merge312/314. Removida apenas a declaração redundante de tipo, sem mudar runtime. Repetição85277 concluiu TypeScript e lint global exit0,40avisos herdados/0erros. Os unitários não foram repetidos por essa remoção exclusivamente de tipo. Logs em output/inbox-312-314-global-{unitarios,tsc,tsc-final,lint-final}.log. Parecer TESTER estático favorável575:11arquivos/147testes exit0, incluindo integração382. QA visual de314 e aceite independente das provas312 ainda pendentes; não fecha as issues nem presume PR/publicação.
+
+### Inbox E1.8 — #313: Coluna Conversas — checkpoint DEV2026-10-22
+
+**Estado: implementação parcial pré-merge314; UI/QA/global pendentes.** Branch codex/inbox-e1-313 sobredd141ac2; SPEC docs/specs/inbox-coluna-conversas.md, ledger output/inbox-313-report.md. Coluna/Chips/Seletor/PopoverFiltros/PopoverColuna/URL/BotaoIcone28tipado/Novo compacto, sem actionnova/DB/schema/permissão/rede. D17seletortodos,GerenciarsóAdmin; agoraInicial único/Lista312/ref382/contagens/SSE preservados. Rulings autorizados: controleNova noInbox; focoAoFechar opcional no useDialogo(defaultinalterado,refnullsuprime); navegação sóquando propselecionadoInicial muda, descartando GET/leitura antiga e foco antescleanup. Registros de guard pontuais, sem mudar analisadores. Checkpoint92arquivos869testes/TSC69361heap8192/lint28fontes0avisos EXIT0; negativos/limites no ledger. HarnessA314 intocado, incorporarA243 e validarrecortes antesdeltaCLI. Nenhum preview/DB/deps/PNGcommit/PR/push. Não homologada; QAexata/global/visual ainda obrigatórios.
+
+### Inbox E1.9 — #314: evidências do freeze coordenado
+
+- **Handoff formal314:** merge dd141/312 concluído b0eea9ca, uma propSSR e históricos preservados. TDDhumano3sizes/prontidão (nota em sequência aceita sem duplicar cabeçalho). FinalNode22:1214 exit0/51arquivos613testes, TSCheap8192+lint10569 exit0/0avisos. Fonte pronta para preview/captura28PNG coordenados; não presume visual/TESTER/global.
+
+- **Entrega DEV314 para QA:** fonte/harness944e1736, Node22/recorte1214 exit0(51arquivos613testes), TSCheap8192+lint10569 exit0/0avisos. Formal73069+55981 exit0/28PNGs individualmenteinspecionadas; complementos10054 exit0/6contextos24PNGs inspecionados por pranchas,0warnings/externos/overflow. VirtualGREEN0296/6delta0 eidentidade/foco/Tab preservados, runtime029==944porobjetosGit. Manifestos/hashes/política392 em output/inbox-314-visual; nenhumPNGversionado porruling. Negativos/limites no relatório; TESTERexato/globalintegrado pendentes, sem homologação presumida.
+
+- **Congelamento documental314:** preview40152 parado pelo integrador; somenteNextAGENTS restaurado. Allowlistpositiva explícita28formais+24complementos+12virtualGREEN+6pranchas, hashes/fontes/política392, semnegativos/HTMLbruto/refs antigas. PNGs permanecem locais, zeroPNGnoGit. Relatório/SPEC/probes/JSON consolidam944 sem mudar código ou repetir gates por documentação. Aguardando TESTER/global.
+
+- **Checkpoint integrado pré-visual313:** fontebbf07e93 + mergeA314final243c9348 em e5ef0e5c; somente conflito documental, ambos históricos mantidos. SSR/agoraInicial único/ref382/seleção313 e stableMount314 preservados. Após handoff, harness acrescenta filtros/seletor-numero/nova-conversa com prontidão por conteúdo/geometria/hidratação, guardReact/anonimizaçãoDOM392/estados314 intactos; RED8→GREEN31. Recorte final37661 EXIT0/96arquivos904testes, TSC92038heap8192 EXIT0, lint38fontes019862 EXIT0/0avisos. Nenhum Chrome/DB/preview/deps/PNG novo; formal52PNG/foco390×500/virtual>100/TESTER/global e decisãoB2 ainda pendentes. Guarda381 do contador312 permanece reparo separado do integrador. Não concluída/homologada.
+
+- **RevisãoR1 produtiva313:** TESTER585 P2 seleção de linha deixava Nova na coluna oculta. REDoficial1falha e extensãoautorizada Filtros/Seletor4falhas; correção mínimaInbox.abrir/Coluna encerra popovers e define focoConversa antescleanup, inclusive mesmoid/propnova. GREEN57dirigidos; adicional2testes submitmockado(actionúnica/trava/chave/routerpush) sem envio. Recorte61994 EXIT0/97arquivos911testes, TSC69170 EXIT0, lint50c6327fontes EXIT0/0avisos. FontesUI alteradas apenasInboxNovo/Coluna; helper/painel/contratos preservados. Fotos585 históricas, recaptura Chrome/QA/global ainda pendentes; sem homologação.
+
+- **Correção de confirmação local313:** Virtual53556 negativo expôs revalidação propc igual à seleção local descartando150→50 e voltando vista. RED oficial corrigido3falhas→GREEN49; InboxNovo agora mescla snapshot50fresco sem descartar extras/cursor/vista/popover e sómuda foco por navegação real. NenhumVirtualList/backend/Next alterado. Recorte96148 EXIT0/98arquivos973testes, TSC59248heap8192 EXIT0, lint1369413fontes0avisos. Browser pós-fix e investigação da corridaURL34510 permanecem pendentes; não atribuir formal2e882 à nova fonte.
+
+- **RulingURL313 atualizado:** Linkpúblico/cnulligual mostrou limite de observar só valorprop. Inbox usa c público via useSearchParams para intenção; URLlocalACK mantém150/cursor/vista/Nova, navegação externaID/null/vazio troca contexto, SSRstale divergente daURL é ignorado. FallbacknullableSSR sem novo relógio/rede. RED2→GREEN72 e REDGETobsoleto1→GREENfinal8arquivos236testes; TSC38867heap8192/lint4fontes44043b EXIT0. Recorte anterior98/978 é pré-últimadep, não global final. SemNext/backend/VirtualList/leitura382/helper/CLI alterados. HardnavNext trace51222 é diagnóstico separado ainda não adjudicado; novas provasChrome/QA/global pendentes.
+
+
 ### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
 
 **Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
@@ -5022,6 +5059,7 @@ Fonte57587838: sessão54690 terminou exit1 após **862arquivos/6736testes unitá
 - **Entrega DEV314 para QA:** fonte/harness944e1736, Node22/recorte1214 exit0(51arquivos613testes), TSCheap8192+lint10569 exit0/0avisos. Formal73069+55981 exit0/28PNGs individualmenteinspecionadas; complementos10054 exit0/6contextos24PNGs inspecionados por pranchas,0warnings/externos/overflow. VirtualGREEN0296/6delta0 eidentidade/foco/Tab preservados, runtime029==944porobjetosGit. Manifestos/hashes/política392 em output/inbox-314-visual; nenhumPNGversionado porruling. Negativos/limites no relatório; TESTERexato/globalintegrado pendentes, sem homologação presumida.
 
 - **Congelamento documental314:** preview40152 parado pelo integrador; somenteNextAGENTS restaurado. Allowlistpositiva explícita28formais+24complementos+12virtualGREEN+6pranchas, hashes/fontes/política392, semnegativos/HTMLbruto/refs antigas. PNGs permanecem locais, zeroPNGnoGit. Relatório/SPEC/probes/JSON consolidam944 sem mudar código ou repetir gates por documentação. Aguardando TESTER/global.
+
 
 ## PR #395 — C1/C3: limites documentados e foco do opt-out
 
@@ -5160,6 +5198,12 @@ opt-out. Banco ci-integracao: 7 contatos fictícios, nenhum opt-out ativo.
 Relatório output/pr395-qa/foco.md e JSON. B1/C2 dependem de merges normais dos
 pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
 
+- **Checkpoint313 com baseR6/main/foco:** mergec207 sobre9c porcontrato, preservando syncURL/ACK150/foco/ref382/Virtual314 e incorporando entradasPendentes/contadorR6/OptOut/finally311. Guard381 RED integração1 e regressão2→GREEN apenas6tokens do contador passivo, negativas Salvar/onClick/spread/padding; semexceção porarquivo/analisadornovo/UIalterada. Final97149 EXIT0/99arquivos1015testes, TSC21762heap8192/lint10fontes0avisos EXIT0. Formal52+virtual18 históricas9c inspecionadas/fontes anotadas, semPNGcommit; nãoatribuídas ao mergeR6. TESTERestático9c236testes0; hardnav staleMPANext documentado emresumo causal sanitizado, repetiçãoatual/global/QAvisual/depósitoremoto pendentes. Semhomologação/publicação presumida.
+
+- **Experimento técnico313/cache de leitura:** a208 ainda reproduz hardnav em Linkpúblico (negativo49540 preservado). Apóscausa observada de duas tarefasB incompletas→retryMPAstale, wrappersautomáticos reutilizam helpersprivados semrevalidatePath; legadosmanuais invalidam1vez, flagsinternasfixas, auth/escritas/motor/NOTIFY/GET/seloR6 preservados, semNext/ordemhistoryalterados. RED7→GREEN11servidor; recorte43297 EXIT0/100arquivos1026, TSC20905/66410heap8192 e lint9fontes0avisosEXIT0. DBisolado/snapshotintegrador:87224negativo porpremissaparticipantesemlidaAte corrigida sónafixture,39942 EXIT0/2arquivos20testes, bancoliberadopararestauraçãoantespreview. CheckpointEXPERIMENTAL separado dea208, adoção dependeA/B rápido Router/Sidebar+açãoemvoo semesperaPOST; NÃOconcluída/homologada/publicada. RawRSC/PNGnovos foraGit/ZIP.
+
+- **Adoção técnica313/f51:** integrador+TESTERexato(4/81+39R6,0) adotaram wrappersautomáticos semrevalidate, legadosintactos. MESMOLinkpúblico antesfalhavaMPAB ema208, agora62981 exit0/4ctx; leituraAUTOrealretida atéapósURLMariana4e5471 exit0, CDPmismatch3alvos/0pausas. RouterERR_ABORTED deconversaabandonada preservado comcleanupobservado, semguardglobalrelaxado. Inspeção20complementospositivos/hash:15V2+5V3clarocurto, fotoDraweremtransição excluída/preservada; V3 sóesperafotoCSSfinal. NenhumPNG/raw/RSCnoGit/ZIP. Preview40527parado; falta merge391/formalAPP26/virtual/baseatual/QA/global/publicação, semhomologaçãofinal.
+
 ### #314 — composição final verificada com foco395 e ancestralidade main
 
 Fontecf1ab4e1591a77937f5afc1c8f4f408dcdebc32d, basec207079d. Desde7e71,
@@ -5174,8 +5218,60 @@ Gate global repetido por essa mudança, executor93927 observado até saída0:
 excluída pela configuração, não repetida. Relatório output/inbox-314-global-final.md.
 Próximo commit somente documental; publicação do PR e CI/merge permanecem
 separados. Não marcar314 integrada antes da main e fechamento da issue.
+- **Checkpoint313 com baseR6/main/foco:** mergec207 sobre9c porcontrato, preservando syncURL/ACK150/foco/ref382/Virtual314 e incorporando entradasPendentes/contadorR6/OptOut/finally311. Guard381 RED integração1 e regressão2→GREEN apenas6tokens do contador passivo, negativas Salvar/onClick/spread/padding; semexceção porarquivo/analisadornovo/UIalterada. Final97149 EXIT0/99arquivos1015testes, TSC21762heap8192/lint10fontes0avisos EXIT0. Formal52+virtual18 históricas9c inspecionadas/fontes anotadas, semPNGcommit; nãoatribuídas ao mergeR6. TESTERestático9c236testes0; hardnav staleMPANext documentado emresumo causal sanitizado, repetiçãoatual/global/QAvisual/depósitoremoto pendentes. Semhomologação/publicação presumida.
 
 
+### Publicação #314 e contagem de integrações — 23/10/2026
+
+PR398 aberto e anexado: https://github.com/diogenesmendes01/erp-genius/pull/398.
+Head aa366a0c06a9b4ec72076420594745513f888c59, base c207079d; ambos enviados.
+TESTER confirmou o head final no próprio worktree: delta de quatro documentos
+desde cf1, árvores src/scripts/prisma/package/lock idênticas, estendendo o
+parecer favorável9/93. Gates globais do código cf1:865/6773, typegen/TSC/lint
+com saída0 e40avisos herdados. Revisão externa/CI/integração ainda pendentes.
+
+GitHub confirmou #300 fechada às02:51:30UTC após squash do PR386 na
+main7982e415, com cinco checksCI verdes e parecer incremental favorável.
+Total5/81issues integradas:298,299,300,302,303. Dezesseis issues têm PR
+(298–312 e314); abrir PR não significa concluir a issue.
+
+### #318 — QA independente e evidências arquivadas
+
+TESTER favorável no freeze156d1a6f:13arquivos/138testes próprios,12contextos
+normais24PNG,20passos resize e6contextos extremos18PNG, todos finais exit0.
+Nome97/15tags e Aria fictícia alcançáveis por teclado/rolagem em altura500;
+nenhum envio/aprovação/opt-out acionado. AllowlistDEV113 e TESTER48 com
+hashes/tamanhos conferidos. Fonte pós-baseR6 d31f4213 preserva a composição
+318 e os hooks de a208; gates de composição A52/616/TSC/lint0. Não estender
+a QA visual histórica156 à leitura/SSE posterior sem verificação própria.
+
+ZIP sanitizado142PNG/167arquivos:15.982.197bytes, asset667770036,
+SHA256c8e08228150f9d09bef0efe100b846cb3fec849987076d9b515cef0cd76fec8b.
+Upload/download/hash confirmados na release DRAFT421321214, sem publicação.
+Link: https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-318-evidencias-156d.zip.
+Só allowlists positivas; zero HTML/log/negativos/seeds/snapshots/RSC no ZIP,
+nenhum PNG novo no Git. Relatório output/inbox-318-final-review-tester.md.
+Snapshots A e TESTER restaurados por hashes após parar os previews; dados
+canônicos preservados. Global agregado e PR318 aguardam a base313 corrente.
+
+### #313 — bloqueio de navegação e experimento coordenado
+
+Agregado de preparação e698693f conserva os executáveis do freeze B a208.
+O browser na base atual ainda reproduz Link público para /inbox retornando
+indevidamente a Beatriz. Patch RSC antigo entra com mpa=true antes da guarda
+de árvore no Next16.3.5; nenhuma alteração de Next/node_modules foi feita.
+Não há PR313 nem homologação presumida desse fluxo. B fará TDD e A/B do
+caminho automático de leitura sem revalidatePath, preservando integralmente
+os exports manuais, permissões, preferência pessoal, motor e falha parcial.
+A mudança só será adotada se o mesmo fluxo rápido passar sem waits artificiais.
+
+Snapshot B preservado e roundtrip9c8077 exit0:424tabelas/1372linhas, hashes
+iguais; perfildev-gravacoes exclusivo. Fixture real B é307 (3mensagens/1nota),
+lista150 conservada. A premissa inicial9/4 de A/tester foi recusada antes de
+qualquer alteração; diagnóstico confirmado e validação corrigida para B.
+Uma suíte de integração B por vez, depois restauro pelo integrador antes
+do próximo preview. A315 trabalha somente header/menu/componentes, sem
+alterar hooks ou backend de B; no máximo duas frentes de implementação.
 ## PR #386 — integração final após #382
 
 Base main 3d756a4e e fonte R6 37a78dfe incorporadas por merges normais,
@@ -5231,6 +5327,11 @@ layout/woff2/config/CSS e está registrada em output/pr391-qa.
 A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
 e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
 Novo parecer no head exato e CI contra main continuam pendentes.
+- **Experimento técnico313/cache de leitura:** a208 ainda reproduz hardnav em Linkpúblico (negativo49540 preservado). Apóscausa observada de duas tarefasB incompletas→retryMPAstale, wrappersautomáticos reutilizam helpersprivados semrevalidatePath; legadosmanuais invalidam1vez, flagsinternasfixas, auth/escritas/motor/NOTIFY/GET/seloR6 preservados, semNext/ordemhistoryalterados. RED7→GREEN11servidor; recorte43297 EXIT0/100arquivos1026, TSC20905/66410heap8192 e lint9fontes0avisosEXIT0. DBisolado/snapshotintegrador:87224negativo porpremissaparticipantesemlidaAte corrigida sónafixture,39942 EXIT0/2arquivos20testes, bancoliberadopararestauraçãoantespreview. CheckpointEXPERIMENTAL separado dea208, adoção dependeA/B rápido Router/Sidebar+açãoemvoo semesperaPOST; NÃOconcluída/homologada/publicada. RawRSC/PNGnovos foraGit/ZIP.
+
+- **Base atual391 noDEV313:** merge normalf8d2 sobre047/f51, quadroamboshistóricos e refs/focoInbox preservados, sem alteração dos hooks/leitura/Conversa/VirtualList. Gates61045 EXIT0/102arquivos1045testes, TSC51351heap8192/lint13fontes16be200avisos EXIT0; diffcheck0. Aguarda previewcoordenado/formalAPP26+virtual150atuais; protótipos26imutáveis2e e complementos20f51 identificados àparte. SemDB/Next/deps/ownfull/PNGnovo, global/publicação peloROOT.
+
+
 ### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
 
 **Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
@@ -5299,6 +5400,57 @@ nova homologação visual/integração DB é atribuída a esta revisão.
 
 Fonte recebe385corrigida/387/386/R6/main1a56031 por merges normais. Aguardar
 385na main, parecer independente do head exato e CI antes do merge388.
+
+### Base #313 — composição da revisão #388 e atualização de integrações
+
+#305 fechada em 23/10/2026 às03:23:39UTC, PR385 integrado na main
+ eea8a6b4. Total6/81issues integradas:298,299,300,302,303,305.
+PR aberto não conta como issue concluída.
+
+Merge normal f9011fef na base f8d2cc preserva decoração314, stableMount,
+autoria/dias/notas e foco/paginação. Consumidor decorado passa temMaisDepois
+real como quarto argumento obrigatório; quatro chamadas de testes antigos
+explicitam janela sem mensagens posteriores. Não foi introduzido default.
+Recorte próprio6arquivos/75testes, TypeScript56905 heap8192 e lint dos seis
+arquivos integrados terminaram com saída0. Sem banco/browser próprios.
+TESTER na revisão f901:3arquivos/52testes próprios e36hashes de PNG locais
+conferidos. Suíte global da composição313 anterior92faa:877/6848 saída0;
+não estender esse gate ao novo código388 antes da nova verificação.
+
+### #313 — regressão global após composição #388
+
+Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432/base9b78b1e9, Node22.23.2:
+unit37524 saída0,877arquivos/6.854testes/254,94s,maxWorkers2,semfiltro/skip;
+typegen0,TSC95820heap8192 saída0,lint47827 saída0/0erros42avisos.
+40avisos herdados das fontes+2 de probe privado no staging318, sem alteração
+para ocultá-los. Não é suíte completa de integração DB. Relatório
+output/inbox-313-global-final.md. TESTERestático próprio4f18/285+39R6saída0.
+DEV e TESTER em browser nos próprios worktrees/bancos; formal/QAfinal/ZIP/PR
+continuam pendentes. Nenhum aceite visual ou integração presumidos.
+### #313 — freeze DEV da composição4f com provas atuais
+
+Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432 inclui fontes391/leitura automática adotada/388temMaisDepois real. DEV recorte16/369/TSC11375heap8192/lint6fontes a60e94 saída0. ROOT informou global EXATO4f37524:877/6854, typegen/TSC95820/lint47827 saída0(40avisosSrc herdados+2stagingprivado). Nenhum ownfull/DB novo.
+
+FormalAPP43844 saída0/26PNG; virtual10555 saída0/18PNG/6contextos150comalturasvariáveis/foco/seleção/resize; Link público rápido15517 saída0/20PNG/4contextos390×500 e1440×900. Todas64APP atuais inspecionadas favoravelmente.26protos2e882 imutáveis previamenteinspecionados/hashrevalidado, separados das capturasAPP4f. Allowlist90PNG/8.847.776bytes com arquivo/bytes/SHA256/tipo/fonte em output/inbox-313-visual/allowlist-final-4fcdc6ca.json e resumo-final-4fcdc6ca.json. Complemento histórico20f51 fora do pacote atual. Nenhum submit/criação/envio real; actionNova coberta por submitmockado, sem E2E externo. Não se esperaramPOSTsassentarem antes da navegação. Negativos e corpos/traces privados permanecem foraGit/ZIP; zero novosbinários noGit. Preview68948 encerrado e bancoB restaurado peloROOT. Depósito remoto/URL, revisão final agregada e publicação permanecem com integrador; nenhuma homologação presumida.
+
+### Publicação #318 e contagem atual — 23/10/2026
+
+PR399 aberto/anexado: https://github.com/diogenesmendes01/erp-genius/pull/399.
+Headab8a2d0599dd5ee89d967e4f4befdf4352d3a1be, base318f5349eed,
+ambasbranches enviadas. Produto e594, head só documentos; gates e parecer
+final declarados no corpo. Revisão/CI/retarget/merge com a frente integradora.
+Não marcar318 concluída antes da main/fechamento.
+
+GitHub confirmou301closed03:37:37UTC, squash388main821e0f08574664a47530f24c5964e35c59dfdbe7.
+Total7/81issuesintegradas:298,299,300,301,302,303,305. Dezesseteissues
+comPR(298–312,314,318), vintePRstotais incluindo três técnicos.
+
+Pacote313 positivo publicado só na releaseDRAFT421321214, upload/download/hash
+confirmados:9.587.080bytes/110arquivos103PNG,asset667877120,sidecar667877119,
+SHA256a5ddcdd7179558a5696fc7e0867dd839c84a63ae0f094ed527729ec99814aa20.
+TESTER313favorável4f18/285+39R6 e browserpróprio13PNG/desktopclaro/móvelescuro.
+PR313aguarda a correção HIGH394 de excesso de GETs/lotes SSE antes da composição
+final; DEV B trabalha fixisolado310 e portepara313, sem misturar os diffs.
 ## PR #389 — C1–C4 e validação final
 
 C1: testes conferem as três contas de altura, o padding do main e as alturas
@@ -5342,6 +5494,71 @@ C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
 output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
 legada de quatro elementos por dois, mantendo os contratos de identidade.
 
+### Base #313 — revisões 389/390 na casca atual
+
+Merge normaldf6c466a incorpora389b095 e teste390. Produção InboxNovo/page
+byteigual9b78 antes do merge; conflito preservou fundo-conversa/refR6/classes
+atuais. Guardas usam as contas de altura308 com margens negativas e os dois
+blocos do painel único, conservando os três oráculos de identidade390.
+Recorte3arquivos/83testes saída0; lint dos três testes saída0. TypeScript16010
+heap8192 saída0. Sem DB/browser novo/global nesta composição.
+
+GitHub304closed04:00:39UTC, squash389main e4674f9d3f2b218a8b37558168c6109df47b29fd.
+Total8/81issuesintegradas:298,299,300,301,302,303,304,305. PR390teste ainda
+aguardaCI/headfinal; revisões de E1 e HIGH394 seguem separadas.
+
+### #313 — composição dos testes 389/390 com foco real
+
+Recebida basefe9ff2f5/389390 por merge normal. Produção/harness preservados
+iguais4f; apenas guardas das dependências e documentação foram atualizadas.
+Primeirorecorte3arquivos94testes saiu1/93passes: o seletorSSR exigia section
+sem atributo tabindex, acrescentado por313para foco. Ajuste só na captura
+atributos do seletor, mantendo header filho DIRETO e todas as classes. Prova
+negativa adiciona wrapper ao HTML real e exige rejeição. GREEN3/94 e lint3
+saída0, sem ignorados. Contagem de painéis390 segue2, preservando estabilidade
+SSE e troca de keys/atendimentoId. Sem novoDB/browser; global final apósporte
+HIGH394 continua pendente e imagens4f permanecem fonte visual identificada.
+### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
+
+Branch DEV codex/inbox-310-c1 sobre eb68e314,676/313 imutável. Helper local agrupa50ms fixos,1GET incluindo corpo+1pendência, reconciliação pessoal final preservada. Thread/painel/leitura imediatos, sem SQL/SSEstore/polling/deps/DB/preview. RED consumidor3casos→GREEN42unitários; recorte24/32954301 e lint4fontes967cd5 saída0. TSC5951heap8192 saída0 após limpeza exclusiva do cache gerado dev pelo integrador; dois negativos antigos só tipogerado rota311 fora do head310, preservados. Ledger output/inbox-310-c1-report.md. Aguardam porte equivalente no agregado676 em SHAseparado, QA/browser e publicação; não é concluída/homologada.
+
+### C1 PR394 — checkpoint parcial do porte, P2 em correção
+
+Porte OWN sobre676 preserva todoscontratosR6/313;78unitários e recorte56/62248154/typegenTSC64437/lint94055b saída0. NÃOAPROVADO: TESTERexato82demonstrou ACKequivalente duranteGET semleitura descarta snapshot e não produz trailing. Requer correçãoemAMBOSisolado/porte semapagar guards;82eestecheckpoint ficam históricos. SemDB/preview/publicação, #313676imutável.
+
+### C1 PR394 — correçãoP2 equivalente em voo, revisão pendente
+
+82históriconãoadotado. RED público3d0994 reproduz perda2→3semleitura e faltatrailingcomleiturapendente. invalidarSnapshotEmVoo conserva1pendência somentepara época físicaatual; guardsinvalidação/R6preservados, semreviverAantigoapósA→B→A, semretry/polling. GREEN2arquivos47testes69cceb e lint78e0c3 saída0; recorte6764EXIT0/24arquivos334testes e typegenTSC32952heap8192EXIT0. FonteisoladacorrigidaprontaparaTESTER;porte/QA/browser ainda pendentes. SemDB/preview/deps.
+
+### C1 PR394 — porte P2 corrigido, pronto para QA exata
+
+Isolado b2338414 sobre82/eb68 (24/334+TSC32952/lint78e0c3 saída0) e porte sobre676/b494 separados; jamais merge313→310. Porte preserva R6/finally311/f51/syncURL/ACK150/SSR/Virtual, cancelar por contextoREAL+versaoREAL e elseinvalidarSnapshotEmVoo porépoca numérica. Prova de texto: abrir/JSX igual676 e blocosleitura/visibilidade/SSE iguais salvo chamadasfila; helper igualb233.83unit9ed709, recorte56/62773762,typegenTSC82827heap8192,lint4fontes25da72 terminaram0. Semskip/filtro/DB/preview/deps/global próprio. TESTERexato/mediçãoHTTPbrowser/complemento313/global/adoção/publicação pendentes; fotos3134f mantêmfontehistórica, semreatribuição.
+### Base #313 — correção isolada394 com R6
+
+Merge normal4696b422 na basefe9. Conflitos preservam casca308, decoração314,
+quatro argumentos388, stableMount e dois painéis390; fila/helper/consumidor394
+incorporados. Testes mantêm ambos beforeEach (modo e relógio), todos os casos
+da casca e da fila; nenhum oráculo de contagem afrouxado. Recorte4280e2→80b420
+terminou0:42arquivos/524testes, semskip, Node22/maxWorkers2. Não é suíteglobal
+nem integração. Base não incorpora ColunaConversas313 ou cabeçalho315.
+QAexata/global/DB da isolada394 permanecem com TESTER e outra frente; esta
+composição da base não presume esses resultados. Próximo merge publica313
+com o fix310 como dependência identificada, preservando PR por funcionalidade.
+
+### #313 — regressão final após394 e contagem atual
+
+Fonte9c68e91:global39296 terminou0,878arquivos/6.880testes,244,88s,
+maxWorkers2 semfiltro/skip; não é suíteDB. Typegen9fa0bd0,TSC25390heap81920,
+lintglobal479700erros42avisos (40fontes+2stagingprivado318). Merged1299473
+incorpora696 publicado apenasdocumental, executáveisbyteiguais9c68.
+Complemento3a HTTPrealDEV B:20PNG/4contextos,124avisosrecebidos, máximo1GET
+inclbody/1SSE,51duranteHTTPretido→1trailing,SSRidentidadeequivalente e leitura
+UIreconciliamsemconcorrer. PareceresTESTER3a/4696/c710 própriosfavoráveis;
+metadados finais/publicação/CI seguem necessários antes de fechar313.
+
+GitHub306closed04:29:22UTC, squash391mainb287f9043566bfea7c18447506355df552c273de.
+**Total9/81integradas:298–306.** PRsabertosnãocontamcomoconcluídos. Release
+de evidências permaneceDRAFT; semmensagensreais, ativaçãoexterna oudeploy.
 ## PR #393 — C2/C4: cálculo puro e selo acessível
 
 Regra de prazo extraída para módulo puro, com reexport compatível no relógio
@@ -5386,6 +5603,21 @@ Mergec710 incorpora fonte/tokens #391 da main, sem mudar Inbox/servidor310.
 Composição oito arquivos / 135 testes e TSC29938 terminaram0. Não atribuir
 o full anterior ao head novo. Parecer final e CI global contra main pendentes;
 sem novo browser, pacote/lock/schema ou envio. output/pr394-qa/revisao.md.
+
+## PR #400 — C2: integração da escrita automática
+
+Fonte260a4599: preferencias.int e motor/presenca.int completos, dois arquivos /
+20 testes, sessão44027 terminou0 no ci-integracao/erp_genius_test_ciint exclusivo.
+Sem filtro/ignorados; não é suíte completa. Escrita pessoal/compartilhada,
+escopo/falha parcial e ausência de revalidate na automática conferidas;
+invalidação manual e comando motor simulado preservados. Postgres real,
+mocks de auth/cache/motor; nenhum envio externo. Sem alteração de produção
+ou teste. Relatório output/pr400-qa/leitura-integracao.md. C1 HIGH de pais,
+main/retarget e CI final permanece pendente.
+
+### C1 PR394 — entrega DEV corrigida e complemento real no porte 3a
+
+Isolado b233 e porte 3a separados, sem merge313→310. TESTER favorável5/106+40R6/P2 próprios0 informado peloROOT. Gates DEV corrigidos isolado24 arquivos/334 testes/porte56 arquivos/627 testes+typegenTSC/lint0 permanecem exatos; sem ownfull. UI26973 saída 0/20 PNG inspecionados:4 contextos/dois temas/foco/teclado/filtros/Link público rápido sem esperar POST antes da navegação. Lotes76702 saída 0/2 PNG inspecionados:124 avisos reais,1/20/50→1 GET cada; retenção51→inicial+1 trailing, SSRidentidade nova/chaveigual e leitura200→trailing fresco, máximos HTTP/body/SSE1 e1 documento. DOM5 contagens=HTTP fresco, sem alegar decremento76→76. Negativo privado de abort da conversa abandonada preservado/proprietário comprovado, guard global intacto. Allowlist22 PNG/1.771.729bytes e resumo sanitizado em output/inbox-310-c1-allowlist.json/evidencias.json; nenhum binário/rawtrace noGit. Preview23046 encerrado peloROOT, banco restaurado f809d6/424 hashes e bloco NextAGENTS removido isoladamente. Depósito remoto, global, adoção/publicação pendentes do integrador; nenhuma homologação presumida.
 
 ## PR #393 — C2/C4: cálculo puro e selo acessível
 
@@ -5450,6 +5682,20 @@ DB89303 anterior na91 terminou0:3arquivos29testes, ciint exclusivo, backend
 idêntico depoisSSE. TESTERaa99favorável13arquivos177próprios0, OIDs eSSR
 conferidos. Sem novo browser/DB noaa99. Pais/392B2 eCI/main ainda gates;
 output/pr397-qa/revisao.md, sem instalação/lock/schema/envio/deploy.
+## PR #400 — C1: ancestralidade e composição local verificadas
+
+Nova base313-r3@633e53e6 preserva5f6 original; b1dafc5 registra main5f por
+merge normal com árvore inteira idêntica5f6 após comparação de conflitos
+falsos do squash394, documentos repetidos e imagens já arquivadas. Depois
+recebe3976e6 e08f7fada compõe o head400, sem alterar InboxNovo/leiturasf51/
+R6/URL/ACK/Conversa/scripts/package/lock do92d. Delta produtivo nove arquivos
+de prazo puro/Avatar acessível/SSEbabd, documentos distintos preservados.
+Recorte8/1500; global74482 EXIT0:879arquivos/6.886testes,242,57s,maxWorkers2,
+sem filtros/ignorados. Nexttypegen/TSC47616 e lint96198 EXIT0,0erros40avisos.
+BackendC2 idêntico260a, integração anterior20testes nominal. TESTER08f
+favorável10/163 próprios,execafb4ce EXIT0; sem DB/browser/global próprios.
+CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
+
 
 ## PR #396 — C6: recuperação autônoma verificada localmente
 
@@ -5480,6 +5726,32 @@ Global98604 EXIT0:863arquivos/6.788testes,235,08s,maxWorkers2,sem filtros/
 ignorados; Nexttypegen/TSC27444 e lint44188 EXIT0,0erros40avisos anteriores.
 Sem novo DB/browser. TESTER332 favorável10/91 próprios,exec78633d EXIT0,
 sem DB/Next/browser/global próprios; CI/main/392B2 pendentes.
+## PR #400 — extensão C6 verificada
+
+Fontec221bdb3 sobre f64 recebe base313-r3@4119; só fonte/teste SSE diferem,
+objetos iguais01a254f5. Restante de src/scripts/backend/f51/R6/URL/ACK e
+package/lock inalterados. Base posteriorb29e/composição só acrescentam MD
+do parecer397. Global3971 EXIT0:879arquivos/6.894testes,270,86s,maxWorkers2,
+sem filtros/ignorados. Nexttypegen/TSC50060 e lint29580 EXIT0,0erros40avisos.
+TESTERc221 favorável7/133 próprios,exec3f5f3a EXIT0,sem DB/preview/browser/
+global próprios. CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
+
+
+## PR #400 — LOWs C3/C4/C5 (DEV B)
+
+Base exata3b852c54, branch codex/inbox-pr400-review-todos. C3 sóJSDoc
+@deprecated: alias legado299 preservado, sem callerprodutivo nestaárvore;
+Inbox usaAutomatico com política fixa no servidor. JS emitido semcomentários
+idêntico antes/depois (SHA1c84aacf6c3b95b466a9257a6fdb023c8a010be96442dec7d804e1befcc95e9d),
+sem alterar corpo/assinatura/imports. C5 SPEC alinha Conversas/1conectado aos
+testes existentes. C4 inventário/curadoria/ZIPshistóricos no relatório
+output/inbox-pr400-review-todos.md, sem apagar ou reatribuir evidências.
+
+UTCef39c4 e SPa361ad EXIT0:8arquivos139testes emcadafuso, semfiltro/ignorados;
+TSC56267 e lint2fcadb EXIT0/0avisos. Schema igual402/cliente jácompatível,
+nenhumDB/Prisma/preview/browser/deps/harness/PNG/global/push. C2 continua20INT
+nominais260a/44027, não reexecutados nestehead. C1/main/CI e C6conflitos do
+quadro pertencem ao integrador; revisão independente e merge pendentes.
 ## PR #398 — C1: composição local e compatibilidade de testes
 
 Base314-r3@cada334f recebe3975f8/main sem moverc207; fonte67192a57 preserva
@@ -5589,6 +5861,17 @@ QA independente643 favorável: identidade43/43QA280 e JS emitido das3anotações
 
 Fonte d441c631: patch isolado d5/e11 preservado, candidata3970473/main3401/QA280/B2 incorporados; dois blocos do quadro preservam ambos os lados. C3/C4 corrigidos; C5 limite de snapshot ocioso documentado; C6 mapa nominal da SPEC. Gates próprios: 13 arquivos/183 testes por fuso UTC495885/SP556266, TypeScript37331/b7b921 e lint99368/7d248f terminais0, zero erros/40avisos. Não é suíte global/DB. QA exata d5 favorável, hash3d235d2a... em tester-patch-d5.md. QA composta, squash397main e CI398 permanecem pendentes. Sem publicação antecipada, captura nova, banco, instalação ou deploy; output/pr398-qa/composicao-todos.md.
 
+## PR #400 — composição local de todos os comentários
+
+Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar publicação/merge. Quadro6blocos preserva ambos; testeInbox400 integralmente preservado, thread398 idêntica794 e B2/QA280 mantidos. C3 alias legado documentado, C4 artefatos avaliados, C5 SPEC alinhada. Recorte12/208b514c0, TSC94403/8be42f e lint21031/3bba19 terminais0/40avisos. IntegraçãoC2 nominal260a20testes, arquivosINTiguais, preferencias sóJSDoc; nenhuma nova DB. QA616 favorável hashde3107... versionada tester-patch-616.md. QA composta e pais397/398main/CI final2TZ ainda gates; output/pr400-qa/composicao-todos.md.
 ## PR #397 integrada; ancestralidade398 pronta para CI
 
 #397 squashb98da36314a719e118d1e9da510cb966311c0fc7, CI40013125860 success5/5, freshhead/main/comments/threads conferidos, issue312CLOSED confirmada. #398696e6270 incorpora squashb98 com árvore inteira igual794 após três conflitos resolvidos por identidade integral; fontes executáveisd441 preservadas. QAcomposta e CI398 serão paralelos, ambos gates antes demerge; não há conclusão antecipada da issue314.
+
+## PR #400 — QA composta e integração complementar
+
+QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composicao-cb.md; QA predecessora39870ec/hashf669 também versionada. Fontecb preservada após332f3cb1, apenasMD/ancestralidade397. Integração complementar NOMINALa5ece399:preferencias+motor/presenca20casos, junto10crm/tags,3/30sessão81795/9f1ea7terminal0,perfilciint exclusivo; arquivosINT epreferencias400 byteiguais àfonteexecutada. SemtesteDBconcorrente,envio,migraçãoouclusterchange. CI400final/398main ainda gates, não fechar313antecipadamente.
+
+## PR #398 integrada; PR400 pronta para CI final
+
+#398 squash34c63fb456ffdd786e54635b14cc507decc9e812, CI40014397587success5/5 eQAfinal70ecfavorável, issue314CLOSEDconfirmada. Squashtreeigual70ec; incorporação à400mantém INDEXINTEIROigual317be3b2 apósseisconflitos deancestralidade. Fontecb897eQA400d546preservadas; somenteMDapósúltimosgates. CI400main2TZaindapendente, semanteciparfechamento313.
