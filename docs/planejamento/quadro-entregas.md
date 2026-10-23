@@ -5300,3 +5300,31 @@ Fonte8b3c46ac, merge4fcdc6normal comúnico conflito documental preservado. Heade
 ### #315 — provas atuais DEV, sem homologação presumida
 
 Runtime8b/fontevisualefeb: formal3772 EXIT0 44PNG app×protótipo(22/22), longo12809 EXIT0 8contextos24PNG nome97/15tags/altura500. Inspecionadas todas68 em30pranchas, hashes conferidos. Allowlist positiva final output/inbox-315-probes/allowlist-positiva-final.json; PNGs locais nãoGit; negativos separados. Recorte106/1058,TSC50243/lint24 de8b continuam registrados, sem ownfull. Preview71311 parado/snapshot424hashes restaurado0fcd3b; sóNextAGENTS removido. Guarda específica de identificaçãoROOT, TESTER e global integrado pendentes.
+
+### #313 — regressão global após composição #388
+
+Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432/base9b78b1e9, Node22.23.2:
+unit37524 saída0,877arquivos/6.854testes/254,94s,maxWorkers2,semfiltro/skip;
+typegen0,TSC95820heap8192 saída0,lint47827 saída0/0erros42avisos.
+40avisos herdados das fontes+2 de probe privado no staging318, sem alteração
+para ocultá-los. Não é suíte completa de integração DB. Relatório
+output/inbox-313-global-final.md. TESTERestático próprio4f18/285+39R6saída0.
+DEV e TESTER em browser nos próprios worktrees/bancos; formal/QAfinal/ZIP/PR
+continuam pendentes. Nenhum aceite visual ou integração presumidos.
+### #318 — composição com leitura automática e borda posterior das notas
+
+Merge normalD31 sobre313f5349 resultou3ec69a93, sem conflito produtivo.
+PainelContato/LinhaCampo/paineis byteiguaisD31; Inbox difere de313 apenas na
+composição318 e preserva hooksURL/f51/R6. Thread mantém stableMount/decoração
+e quarto argumento real temMaisDepois. Recorte56arquivos/597testes32229,
+TSC6574 e lint6fontes:saída0. Typegen0,TSCglobal87912/lintglobal1252saída0
+(42avisos conhecidos,dois no staging privado). Sem banco/browser próprios.
+
+Global4490 saiu1:881arquivos/6.886testes, uma falha/6.885passes. Único ofensor
+identificacao-registro era abaAtiva={abaAtiva} derivada de abaDoContato.id,
+chave tipada de navegação (detalhes/oportunidades/insights/atividade), sem ID
+interno de registro. Registro nao-registro estritamente ancorado por arquivo,
+prop, trecho e alvo, com motivo específico e cópia literal; nenhum algoritmo,
+limite, produtor ou UI foi alterado. RED isolado29tests1falha; GREEN3files97
+testes saída0; lint do arquivo0. Negativos/logs preservados. Regressão global
+após o registro ainda pendente, sem chamar a execução4490 de aprovada.

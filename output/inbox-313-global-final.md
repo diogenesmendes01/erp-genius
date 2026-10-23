@@ -36,3 +36,29 @@ de navegação estão no resumo causal sanitizado, identificados pelas fontes.
 
 Formal APP atual, QA final exata, ZIP remoto e PR individual ainda pendentes.
 Não declarar #313 integrada antes de CI, merge e fechamento da issue.
+
+## Composição final com revisão #388
+
+Fonte executada: **`4fcdc6cad73c3ad8782405c29db8770122fa8432`**,
+base **`9b78b1e996a73b07532ef952ef9163fd7627642d`**. A base incorpora
+#388/f901 e seu head final6c por merges normais, incluindo main385.
+O consumidor decorado passa `conversa.temMaisDepois` como quarto argumento
+obrigatório; preserva autoria, dias, notas e stableMount. Chamadas antigas dos
+testes explicitam a ausência de corte posterior, sem default no produtor.
+
+Gates desta fonte, acompanhados até a saída terminal **0**:
+
+- Vitest global `run --maxWorkers=2`, executor **37524**:
+  **877 arquivos / 6.854 testes**, 254,94 s, sem filtros/ignorados reportados.
+  Integração DB continua excluída pela configuração; não é suíte completa
+  de integração.
+- Next `typegen`: saída **0**.
+- TypeScript `--noEmit`, heap8192, executor **95820**: saída **0**.
+- ESLint global, executor **47827**: saída **0**, **0 erros / 42 avisos**,
+  os mesmos40 de fontes anteriores mais2 do staging privado já descritos.
+
+Logs: `output/inbox-313-notas388-global-{unitarios,typegen,tsc,lint}.log`.
+Recorte de composição da base:6 arquivos/75 testes, TSC56905 e lint6,
+todos saída0. TESTER próprio no4f:18 arquivos/285 testes mais39adversariaisR6,
+ambos saída0. Browser independente e capturas DEV ainda em andamento;
+esses gates não substituem a validação visual nem o CI do futuro PR.
