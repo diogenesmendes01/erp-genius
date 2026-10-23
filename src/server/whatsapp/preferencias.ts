@@ -52,21 +52,28 @@ export async function marcarNaoLida(atendimentoId: string): Promise<Resultado> {
   });
 }
 
-export async function marcarLida(atendimentoId: string): Promise<Resultado> {
+async function registrarLeituraPessoal(atendimentoId: string, revalidar: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const { usuarioId, conversaId } = await conversaDoAtendimento(atendimentoId);
     const lidaAte = new Date();
     await prisma.preferenciaConversaUsuario.upsert({
       where: chave(usuarioId, conversaId), create: { usuarioId, conversaId, lidaAte }, update: { lidaAte, marcadaNaoLida: false } });
-    revalidatePath("/inbox");
+    if (revalidar) revalidatePath("/inbox");
   });
+}
+
+export async function marcarLida(atendimentoId: string): Promise<Resultado> {
+  return registrarLeituraPessoal(atendimentoId, true);
 }
 
 /** Registra a leitura pessoal e, se autorizada, a leitura compartilhada e no motor. */
 export async function marcarAtendimentoLido(atendimentoId: string): Promise<Resultado> {
-  const pessoal = await marcarLida(atendimentoId);
+  const pessoal = await registrarLeituraPessoal(atendimentoId, false);
   if (!pessoal.ok) return pessoal;
-  return marcarConversaLida(atendimentoId);
+  const compartilhada = await marcarConversaLida(atendimentoId);
+  // O sucesso compartilhado já invalida a rota. Se falhar, a preferência pessoal escrita ainda precisa aparecer.
+  if (!compartilhada.ok) revalidatePath("/inbox");
+  return compartilhada;
 }
 
 export async function alternarFavorita(mensagemId: string): Promise<Resultado> {
