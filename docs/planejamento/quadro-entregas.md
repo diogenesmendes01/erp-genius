@@ -5286,3 +5286,9 @@ arquivos integrados terminaram com saída0. Sem banco/browser próprios.
 TESTER na revisão f901:3arquivos/52testes próprios e36hashes de PNG locais
 conferidos. Suíte global da composição313 anterior92faa:877/6848 saída0;
 não estender esse gate ao novo código388 antes da nova verificação.
+
+### #313 — freeze DEV da composição4f com provas atuais
+
+Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432 inclui fontes391/leitura automática adotada/388temMaisDepois real. DEV recorte16/369/TSC11375heap8192/lint6fontes a60e94 saída0. ROOT informou global EXATO4f37524:877/6854, typegen/TSC95820/lint47827 saída0(40avisosSrc herdados+2stagingprivado). Nenhum ownfull/DB novo.
+
+FormalAPP43844 saída0/26PNG; virtual10555 saída0/18PNG/6contextos150comalturasvariáveis/foco/seleção/resize; Link público rápido15517 saída0/20PNG/4contextos390×500 e1440×900. Todas64APP atuais inspecionadas favoravelmente.26protos2e882 imutáveis previamenteinspecionados/hashrevalidado, separados das capturasAPP4f. Allowlist90PNG/8.847.776bytes com arquivo/bytes/SHA256/tipo/fonte em output/inbox-313-visual/allowlist-final-4fcdc6ca.json e resumo-final-4fcdc6ca.json. Complemento histórico20f51 fora do pacote atual. Nenhum submit/criação/envio real; actionNova coberta por submitmockado, sem E2E externo. Não se esperaramPOSTsassentarem antes da navegação. Negativos e corpos/traces privados permanecem foraGit/ZIP; zero novosbinários noGit. Preview68948 encerrado e bancoB restaurado peloROOT. Depósito remoto/URL, revisão final agregada e publicação permanecem com integrador; nenhuma homologação presumida.

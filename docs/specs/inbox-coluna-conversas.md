@@ -1,6 +1,6 @@
 # Coluna Conversas — #313
 
-Task8 do plano docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md, base dd141ac28b34c9c3d90470c60960be18b7da6a45. Implementação DEV em andamento; prova visual, QA independente e global integrado ainda pendentes. Nenhum aceite presumido.
+Task8 do plano docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md, base dd141ac28b34c9c3d90470c60960be18b7da6a45. Implementação DEV congelada; composição produtiva4fcdc6ca verificada em browser e gates dirigidos. O integrador informou global4f aprovado. Depósito remoto e publicação permanecem com o integrador. Os checkpoints abaixo conservam o histórico de etapas; o fechamento corrente está na última seção.
 
 ## Escopo e composição
 
@@ -71,3 +71,13 @@ O integrador adotou tecnicamente o caminho automático f51 após A/B público r�
 ### Base atual de fontes391
 
 Basef8d2 incorporada após adoçãof51, preservando todos os hooks/contratos313/R6. Gates102arquivos1045testes/TSCheap8192/lint13fontes0avisos EXIT0. RecapturaAPP26/virtual na fonte agregada atual é obrigatória; protótipo26imutável2e882 e complementos20f51 conservam fontes/hashes separados. Global integrado e publicação ficam com integrador; não há aceite final nesta etapa.
+
+### Fechamento DEV na composição atual4f — 23/10/2026
+
+Fonte produtiva/harness4fcdc6cad73c3ad8782405c29db8770122fa8432 inclui fontes391, leitura automática adotada e caller388 com temMaisDepois real. Antes do preview: recorte16arquivos369testes, TSC11375 heap8192 e lint6fontes a60e94 terminaram com saída0. Não é suíte global. O integrador informou global exato4f sessão37524:877arquivos6854testes, typegen/TSC95820 e lint47827 saída0;40avisosSrc herdados+2stagingprivado, sem novo erro. Nenhum novo gate global foi executado pelo DEV.
+
+FormalAPP sessão43844 saída0:26PNG em conversa/filtros/seletor/nova/celular-lista, dois temas e três viewports quando cabível; zero falhas e seis GETs cancelados/recuperados reconhecidos pelo classificador existente. Todas foram inspecionadas com estado, geometria e rodapés corretos. Protótipo26imutável2e88216481bd5889070d572e1a867baeec21b668 teve hash revalidado, com anonimizaçãoDOM declarada; não é uma captura da aplicação atual.
+
+Virtual150 sessão10555 saída0:6contextos/18PNG,50→100→150, alturas variáveis, janela limitada, Tab0→35/ShiftTab35→0, seleção/retorno móvel e resize300/372/retorno; medição mantém seleção e registra âncora observada, sem prometer centralização da linha. Complemento público atual sessão15517 saída0:4contextos/20PNG em390×500/1440×900 e dois temas. Tab/ShiftTab/Escape/CtrlMetaK, aplicar/remover/Limpar URL, linhas com popover aberto e Link público rápido terminaram com foco na busca e máximo1SSE. Não se esperou assentamento dePOST antes de navegar; a foto final aguarda apenas CSSfinito/Drawer fora da viewport. Não houve submit/criação/envio real, nem SQL do DEV. Não é E2E da actionNova; os testes de submitmockado permanecem a prova desse contrato.
+
+Allowlist final contém90PNG explícitos com arquivo/bytes/SHA256/tipo/fonte, separados em26APP4f+26proto2e+18virtual4f+20complemento4f. Resumo sanitizado em output/inbox-313-visual/resumo-final-4fcdc6ca.json e allowlist-final-4fcdc6ca.json. Todos64APP atuais foram inspecionados;26protos já inspecionados permanecem idênticos. Complemento histórico20f51 está fora do pacote atual; negativos/HTML/RSC/rawlogs/traces/snapshots/seeds não são publicáveis e continuam privados. Nenhum PNG novo emGit. Preview68948 encerrado pelo integrador e blocoNextAGENTS removido isoladamente. DepósitoZIP remoto, revisão final da composição e publicação ainda competem ao integrador; não há homologação presumida.
