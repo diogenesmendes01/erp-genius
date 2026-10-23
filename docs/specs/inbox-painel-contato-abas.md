@@ -63,5 +63,7 @@ backend/testesDB/scripts/package/lock ficam idênticosaoee498. Produtores
 Recorte8/133 e global20394 EXIT0:883arquivos/6.926testes,sem filtros/ignorados;
 Nexttypegen/TSC95347 e lint60640 EXIT0,0erros40avisos anteriores. Integração
 DB12 permanece nominalab8, arquivos idênticos; sem novo DB/browser nessa
-composição. TESTER exato/CI/main/#392B2 pendentes. Evidências e limites em
+composição. TESTER332 favorável11/196+3/23 próprios,saídas0,sem DB/browser/
+global/TSC/lint; CI/main/#392B2 pendentes. Base278615a9 recebe sódocs do
+parecer398/limpeza404,source/deps iguais332 e zeroPNG298. Evidências e limites em
 output/pr399-qa/ancestralidade.md.

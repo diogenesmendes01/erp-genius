@@ -72,3 +72,8 @@ são reatribuídas ao fff. Relatório original inbox-317-c2-e2e-tester.md.
 Integram o [ZIP317](https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-317-evidencias-85f.zip),
 com fontes por grupo; recuperaçãoC6 possui prova separada. CI/main/#392B2
 permanecem gates antes do merge.
+
+A base316-r3 posterior037a2c3f recebe apenas MD dos pareceres398/399/401
+e limpeza404; src/scripts/prisma/package/lock continuam iguaisfff0095c,
+zeroPNG298. A comparação de objetos mantém os gates e a origem das provas;
+não há repetição de suíte por essa atualização exclusivamente documental.

@@ -78,4 +78,5 @@ Nexttypegen/TSC14950 e lint73243 EXIT0,0erros40avisos. TESTERfff favorável
 ComplementoTESTERERP nominal317df9 em390claro/1440escuro verificou paginação/
 pin/linha visível e manual/foco preservados após1SSE+1GET real porcontexto.
 Capturas/limites não são reatribuídos ao fff/C6; detalhespr402-qa/revisao.md.
-CI/main/#392B2 pendentes; não concluir a issue antes do merge.
+CI/main/#392B2 pendentes; não concluir a issue antes do merge. Base posterior
+037a2c3f recebe sóMDQA/404,source/deps iguaisfff e zeroPNG298.

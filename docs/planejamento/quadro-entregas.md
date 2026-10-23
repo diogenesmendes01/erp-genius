@@ -5862,4 +5862,32 @@ e lint73243 EXIT0/40. TESTERfff favorável10/13303568d0,sem DB/browser/global.
 C2ERP nominaldf9/317:2ctx/10PNG,159msgs4notas/paginação/pin visível,manual
 12716/11859/foco mantidos após1SSE+1GET2xxreal/body porcontexto. Snapshot
 restaurado peloROOT,semnovaslinhas. Limites e fontes explícitosreport402;
-não reatribuir capturas ao fff/C6. CI/main/392B2 pendentes.
+não reatribuir capturas ao fff/C6. Base posterior037a2c3f sóMDQA/404,
+source/deps iguaisfff,zeroPNG298. CI/main/392B2 pendentes.
+
+TSC61138 e lint86951 EXIT0,0erros40avisos. Sem novo DB/browser. TESTER5a
+favorável9/118 próprios,143668 EXIT0,sem DB/browser/global/TSC/lint. Base
+dca8c5d5 sódocsQA/404,source/deps iguais5a,zeroPNG298. CI/main/392B2
+pendentes. output/pr401-qa/revisao.md; C2/#403 tratado àparte.
+
+DB12 anteriorab8 nominal, sem novo DB/browser. TESTER332 favorável11/196
+e3/23 próprios,saídas0,sem DB/browser/global/TSC/lint. Base278615a9 recebe
+sódocsQA398/404,source/deps iguais332,zeroPNG298. CI/main/392B2 pendentes.
+output/pr399-qa/ancestralidade.md, sem homologação presumida.
+
+Sem novo DB/browser. TESTERbc4 favorável7/148 próprios,d722b1 EXIT0;
+baseb23ff13b recebe404ca5 retirando64PNG298,sóPNG/docs,src/scripts/depsiguais.
+Quatro variantes diferentesmain/ZIP381 foram preservadasLOCAL/hash/OID antes
+de retirar, sem novo upload. CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
+
+
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
