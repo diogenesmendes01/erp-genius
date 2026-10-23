@@ -54,8 +54,8 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
   "src/components/BarraMobile.tsx": 2, // botões só de ícone da barra do celular (menu, sair)
   "src/components/Chip.tsx": 1, // primitivo de filtro em pílula (selecionado = accent-soft): seleção, não ação
-  // Compositor da conversa: 5 botões só de ícone (remover anexo, anexar, emojis, parar e gravar voz).
-  "src/components/conversa/Compositor.tsx": 5,
+  // Task12: somente Remover anexo (padding) e Enviar (primário) entram em botoesCrus; todos os ícones são nomeados abaixo.
+  "src/components/conversa/Compositor.tsx": 2,
   // Seletor de emoji: aba ativa (role=tab, selecionada = fundo), 2 fichas de categoria (recentes e grupos,
   // selecionada = fundo) e a célula do emoji (item de grade).
   "src/components/conversa/SeletorEmoji.tsx": 4,
@@ -69,6 +69,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/inbox/RodapeConversa.tsx": ["Responder", "Nota interna"], // abas com aria-selected
   "src/app/(app)/inbox/PainelContato.tsx": ["key a.id"], // aba do painel (role=tab)
   "src/components/BotaoIcone.tsx": ["rotulo"],
   "src/app/(app)/inbox/ChipsFiltro.tsx": ["key c.id"],
@@ -98,8 +99,8 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/components/conversa/BalaoMensagem.tsx": ["Opções da mensagem", "i.rotulo"],
   "src/components/conversa/VisualizadorMidia.tsx": ["Abrir imagem", "Reproduzir vídeo", "Abrir"],
   // Compositor: ícones (remover anexo, anexar, emojis, parar e gravar voz) e itens do menu de anexo (role=menuitem,
-  // CLASSE_ITEM_MENU; "(sem nome)" são o item do motor, cujo rótulo vem de ITENS_MOTOR, e a sugestão de resposta rápida do atalho /). Enviar passa pelo <Botao>.
-  "src/components/conversa/Compositor.tsx": ["Remover anexo", "(sem nome)", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz"],
+  // CLASSE_ITEM_MENU; "(sem nome)" são o item do motor, cujo rótulo vem de ITENS_MOTOR, e a sugestão de resposta rápida do atalho /). Agendar e Enviar são controles circulares rotulados.
+  "src/components/conversa/Compositor.tsx": ["Remover anexo", "(sem nome)", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Agendar mensagem", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz", "Enviar"],
   // Seletor de emoji: abas (role=tab), fichas de categoria (recentes e grupos, no grupo rotulado) e a célula do emoji.
   // Fechar e "Mostrar mais emojis" passam pelo <Botao>.
   "src/components/conversa/SeletorEmoji.tsx": ["Emojis", "GIFs", "Figurinhas", "🕘", "rotulo", "`${e.label} ${e.emoji}`"],
@@ -1215,6 +1216,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
+  { arquivo: "src/components/conversa/Compositor.tsx", rotulo: "Enviar", motivo: "comando de envio, não interruptor: cor indica modo Responder/Nota; ocupado é anunciado em aria-busy" },
   { arquivo: "src/app/(app)/inbox/PainelContato.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected; aria-pressed não vale para tab" },
   { arquivo: "src/components/BotaoIcone.tsx", rotulo: "rotulo", motivo: "primitivo de ícone: ativo é apresentação do estado anunciado pelo chamador em aria-expanded; Fechar não alterna estado" },
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
