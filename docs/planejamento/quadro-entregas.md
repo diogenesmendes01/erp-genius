@@ -4837,3 +4837,32 @@ nova homologação visual/integração DB é atribuída a esta revisão.
 
 Fonte recebe385corrigida/387/386/R6/main1a56031 por merges normais. Aguardar
 385na main, parecer independente do head exato e CI antes do merge388.
+
+## PR #389 — C1–C4 e validação final
+
+C1: testes conferem as3contas de altura, padding main e alturas reais da barra.
+C2: composição SSR real exige header direto e seletor completo do teto.
+Prova negativa temporária tirou alturas e colocou wrapper:2falhas/25passes;
+restaurado código de produção byteigual ao HEAD, recorte3arquivos/53testes0.
+Nenhuma mudança no header da frente315; guardas devem acompanhar classes
+novas ao integrar a casca308, sem preservar artificialmente contas antigas.
+
+C3: Chrome real desta fonte389,8contextos/16estados em390/700/1024/1440×500,
+2temas,lista/conversa:documento500px e controles geometricamente alcançáveis
+por scrollIntoView emtodos. Prova de overflow combloco temporárioaria-hidden,
+como harness original, não carga real nem acionamento de negócio. Nenhum
+abrir/envio clicado;0pageerrors, mas overlayIssuesNextdev visível e logs de
+streamencerrado cedo em navegação/fechamento. Sematribuir causa389 oualegar
+0diagnósticos servidor. Duasimagensinspecionadas, métricasbaixo.json; esse
+aceiteintermediário nãohomologa automaticamente308/315. Preview39117parado,
+AGENTS originalrestauradobyteabyte, ciint sófixturefictícia/transporteinativo.
+
+C4:107PNGverificados individualmentecontraZIPLEGADOLOCAL/históriaae4d71b1 e
+retiradosdoindex,semforce/novoupload. ZIP7741141bytes/117files, SHA256
+c0497482162947d74f57d30b4a5857309ab07f2119c568f8d62a09eb2f2c2035.
+README/manifestopreservados;relatóriooutput/pr389-qa/revisao.md.
+
+GatesNode22.23.2todosencerradossaída0:full80173,845arquivos/6570unitários
+completos,maxWorkers2semfiltro/skip;TSC70812;lintglobal47298,0erros40avisos.
+Predecessores385/388/387/386/R6/mainpor mergesnormais;refR6+classesaltura
+conciliadossemperdernenhum. Parecerexato/CIeintegraçãomaincorrente pendentes.
