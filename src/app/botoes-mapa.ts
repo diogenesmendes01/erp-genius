@@ -1124,6 +1124,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/BuscaConversa.tsx": [
     "<Botao> Carregar anteriores → fantasma/sm",
   ],
+  "inbox/RodapeConversa.tsx": ["<Botao> Nota interna → neutro/md", "<Botao> Assumir para responder → primario/md"],
   "inbox/CabecalhoConversa.tsx": ["<Botao> Transferir → neutro/md", "<Botao> Assumir · Assumir conversa → primario/md"],
   "inbox/PainelContato.tsx": ["<Botao> Fechar → fantasma/sm"],
   "inbox/NovoAtendimento.tsx": [
@@ -1270,7 +1271,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "src/components/conversa/Compositor.tsx": [
     "<Botao> Tentar de novo → secundario/sm",
-    "<Botao> Enviar → primario/md",
   ],
   "src/components/conversa/SeletorEmoji.tsx": [
     "<Botao> Fechar → fantasma/sm",

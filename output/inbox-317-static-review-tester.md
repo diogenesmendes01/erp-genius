@@ -1,0 +1,19 @@
+# QA independente #317 — a86c9ade33606350c1551c6a5759ebecc9366d6b
+
+Parecer estático favorável ao checkpoint produtivo, com browser/DB/global/composição #319 e C2/#402 ainda pendentes. Comparei o SHA exato com a base 29479848432d2b4fd37972f104b6b7e5cae62368 no meu worktree. `git diff --check` saiu 0; não editei código produtivo, CLI ou harness da DEV A.
+
+## Lógica e contratos
+
+- `ConversaAberta` cria `useChavesPorAlvo` antes de `CoordenadorAcoesConversa key={item.id}`. O chamador `InboxNovo` mantém a instância de `ConversaAberta` nas trocas A→B→A enquanto houver seleção; o coordenador termina os diálogos/ações de A, e o mapa retém a tentativa incerta de nota. A mesma montagem de render-prop entrega as ações ao cabeçalho e `abrirAgendar` ao rodapé, sem duplicar `useAcoesAtendimento`. `useBuscaConversa`/seu teste, `VirtualList`, `AcoesAtendimento` e helper de chaves têm objetos Git idênticos à base.
+- A chave de nota usa JSON da tupla `[atendimentoId, texto.trim()]`, compatível com o trim do `NotaSchema` do servidor e sem colisão por delimitadores. `executarAcaoCliente` transforma rejeição de transporte em incerto; `tentativa.depoisDo` renova somente `ok`, mesmo se a resposta chegar depois da mudança de contato. O callback `aoNota` captura o atendimento original e encaminha `chaveIdempotencia` ao servidor. O servidor continua exigindo atendimento visível para nova nota, idempotência anterior ao escopo para repetição do mesmo autor e transação de Evento; não há transporte WhatsApp nessa ação. Nota individual ignora `podeEnviar` do compositor e grupo não ganha aba de nota. Envio comercial continua governado por `podeEnviar`.
+- `Compositor` separa contexto de montagem/modo, trava duplicatas síncronas por contexto, e compara `contextoAtual` com `revisaoRascunho` antes de aplicar sucesso/erro. Edição, emoji/resposta rápida, arquivo escolhido/removido incrementam a revisão; upload antigo retorna sem `aoEnviarMidia` se a intenção mudou. Uma conclusão antiga libera ocupação, sem limpar conteúdo/arquivo/erro novos no mesmo contato nem rascunho de outra aba. Rascunho de texto usa as chaves existentes por atendimento+modo. Voz encerra tracks quando contexto antigo termina.
+- `RodapeConversa` tem um tablist/tabpanel com `aria-selected`, `aria-controls`, tabindex roving e setas/Home/End. Alvo das abas e controles de anexo/emoji/voz/envio é 44px, face visual 26px; agenda só aparece com callback real em Responder. Variante `travado` recebe callbacks reais mas não tem produtor E1; não atribuo cobertura funcional Aria/D3. Item nulo preserva fallback sem controlador.
+- O novo `Compositor` mantém upload, emoji, voz, CampoTexto e respostas rápidas. Mapas/guardas de botões foram ajustados para registros específicos, sem alteração de algoritmo ou whitelist genérica. Não há schema, rota de envio, package ou lockfile no delta.
+
+## Execução própria
+
+Node 22 local e Vitest local, sem filtro por nome/skip e `--maxWorkers=2`: 7 arquivos/91 testes exit0 (`ConversaAberta`/rodapé/busca, `RodapeConversa`, `Compositor`, chave de idempotência); 6 arquivos/148 testes exit0 (ações, Botao, campos e fundo). Total dirigido 13 arquivos/239 testes. O aviso do plugin `vite-tsconfig-paths` não alterou os exits. Não reatribuo os 72 arquivos/809 testes, TSC ou lint do DEV.
+
+## Limites
+
+O harness de interação usa testes SSR/DOM mínimo e não prova layout, foco físico nem limpeza de effects num navegador real. Falta verificar no SHA composto #317+#319+C2: mesma montagem DOM da thread e do scroller ao trocar abas, 320×500 e demais viewports/temas, teclado/alvos, nota autorizada sem envio, rascunhos, foco, agenda e resposta tardia em contexto real. Nenhuma nota/envio/agenda foi executado no banco tester; não há prova independente de serviço aqui. A #319 mantém seu parecer separado no SHA 472e17fd e ainda não foi conciliada nesta fonte #317.

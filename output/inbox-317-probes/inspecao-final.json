@@ -1,0 +1,22 @@
+{
+  "originaisInspecionados": 70,
+  "pranchasInspecionadas": 18,
+  "grupos": {
+    "formalR2": 24,
+    "normalR2": 24,
+    "permissoes": 12,
+    "C2": 10
+  },
+  "semNovoOverflowObservado": true,
+  "limitacoes": [
+    "70originais positivos,18pranchas; nenhumaPNG emGit.",
+    "Formal antiga16261 inteira e negativos/diagnósticos excluídos.",
+    "Null/503 são transporte controlado; LucasENCERRADO negado real GET200/podeEnviar=false.",
+    "C2 usa fixture isolada159mensagens/4notas/2dias, não ERPprodutivo; ROOT emitiu atendimento.atualizado sem alterarlinhas/resync.",
+    "Referências DOM/foco/âncoraC2 guardadas na baseline manual imediatamente antesSSE. Duranteprepend foram verificadas visibilidade149 e ajuste natural, não comparaçãoDOM pré/pós.",
+    "Navegação explícita pode mudar foco/scroll; a asserção de preservação é apenas no SSE após rolagemmanual.",
+    "EditorResponder80px em320; alvo44 e campo44alto, rolagem interna de texto longo.",
+    "Sem nota/envio/agenda/submit/SQL; idempotência e resultados tardios são cobertura unitária, não transação real no browser.",
+    "C6/transporte posterior não portado nem coberto por estas capturas."
+  ]
+}

@@ -1,0 +1,154 @@
+# #317 — checkpoint produtivo DEV A
+
+Branch codex/inbox-e1-317, base imutável 29479848432d2b4fd37972f104b6b7e5cae62368. Worktree inbox-dev-a; runtime Node 22.23.2. Fonte ainda sem aceite visual; commit deste relatório delimita o checkpoint produtivo, não uma entrega homologada. Branch316/27b preservada.
+
+## Escopo entregue no checkpoint
+
+- RodapeConversa: abas Responder/Nota interna por atendimento; semântica tablist/tab/tabpanel, roving tabindex, setas/Home/End, face26 e alvo44 por CSS. Dica somente / respostas rápidas. Variante travada com callbacks fornecidos, ainda sem produtor Aria na E1.
+- Compositor: CampoTexto existente, moldura integrada, agenda apenas com callback real e somente Responder, nota âmbar, envio circular com nome acessível/aria-busy. Upload, emoji, voz, respostas rápidas e capacidades atuais permanecem; sem novo transporte.
+- Nota individual usa a autorização de leitura já existente no servidor, independente da permissão comercial de envio. Grupo não oferece nota individual. Responder mantém null/carregando, false/negado e falha com Tentar de novo.
+- Um coordenador local por atendimento executa o único useAcoesAtendimento existente e chama render-prop como função; cabeçalho/rodapé compartilham ações/agenda/diálogos, sem effect espelhando callbacks. Mesma conversa conserva caminho React do scroller/VList; contato realmente diferente pode remontar por ruling aprovado. Item null usa fallback real.
+- Mapa useChavesPorAlvo existente vive acima da key; chave por tupla JSON atendimento+texto, renovada somente após ok. Compatibilidade com callback de um argumento e fallback local incondicional. A→B→A e texto incerto mantêm chave, resultado tardio não escreve no contexto novo.
+- Proteção adicional por revisão de conteúdo/arquivo preserva edição deliberada durante await. Sucesso antigo renova apenas sua tentativa; não limpa novo rascunho/anexo. Upload substituído não despacha mídia antiga nem publica erro no conteúdo novo. Sem bloquear emoji/anexo por conveniência.
+- Guardas somente nos registros específicos autorizados: dois Botões da variante travada, remoção do antigo Botao Enviar, controles Responder/Nota/Agendar/Enviar, duas ocorrências cruas reais Compositor e exceção aria-busy/modo de Enviar. Algoritmos/limites intactos; Rodape sem exceção de botão cru porque a contagem real é zero.
+
+## TDD e evidências observadas
+
+Todos os comandos abaixo foram observados até a saída terminal. Não houve suíte DB, full global, install, servidor ou browser DEV nesta etapa.
+
+| Evidência | Resultado exato |
+| --- | --- |
+| ca0cb7 / ee19e8 | RED dos resultados obsoletos/permissão/idempotência e novo componente ausente; esperado antes da implementação |
+| 11d703 | RED 4/4 de ligação real Rodape/Conversa antes do coordenador |
+| 4ced94 | RED da guarda completa: 1/90 por registro sobrecontado; detector preservado |
+| 3b0a6a | Diagnóstico com função original: Rodape zero botões crus; Compositor dois. Ruling ROOT aprovou registro medido |
+| 73cd51 | GREEN Botões/Fundo/Compositor: 3 arquivos,124 testes, saída0 |
+| 446735 → 0ca797 | RED orientação de resultado incerto → GREEN35; reutiliza executarAcaoCliente existente, sem helper novo |
+| 38827 / 33289 | Históricos anteriores à proteção por revisão: 72 arquivos/803 testes e TSC saída0; não são gates da revisão final |
+| a27db5 | RED dirigido final: 39 testes,2 falhas. Sucesso antigo apagava edição/anexo novo e falha antiga aparecia sobre a nova intenção |
+| 5c42f4 | GREEN39 após proteção local por revisão |
+| 173dbe | 41/43, duas falhas no helper de teste acionando botão por texto quando o nome é aria-label; corrigido só o acionamento do teste |
+| 972373 | GREEN43/43: upload substituído e nota editada por emoji, confirmação/resultado incerto e chave original cobertos |
+| 7989 | Recorte amplo final, saída0:72 arquivos/809 testes,34,75s, maxWorkers2; sem filtro de nome/ignorados. Inbox, componentes conversa, Menu, Botao e guardas de botões/campos/fundo/confirmação/responsivo/identificação |
+| 57095 | TSC --noEmit heap8192, saída0, fonte final após revisão |
+| fa7780 | ESLint11 fontes/testes afetados, --max-warnings0, saída0 |
+
+Comando do recorte final:
+
+    node node_modules/vitest/vitest.mjs run 'src/app/(app)/inbox' src/components/conversa src/components/Menu.test.ts src/components/Botao.test.ts src/app/botoes.test.ts src/app/campos.test.ts src/app/campos-texto.test.ts src/app/fundo-sobre-pagina.test.ts src/app/confirmacoes.test.ts src/app/responsivo.test.ts src/app/identificacao-registro.test.ts --maxWorkers=2
+
+O node acima é explicitamente C:/Users/Mendes/AppData/Local/hermes/node/node.exe (22.23.2). Configuração unitária exclui integração; o número não é full global.
+
+## Pendências e limites
+
+1. CLI/harness317 ainda não alterado neste checkpoint. Próxima etapa é TDD e delta formal preservando todos os estados anteriores, hidratação, anonDOM392 e guardReact.
+2. Browser real/coordenado: três tamanhos e dois temas app×protótipo para humano-compositor/nota; complemento320×500, permissões e agenda/abas/foco/scroll/identidade. Nenhuma PNG317 ou geometria comprovada ainda.
+3. Correção C2/#402 do hook de busca pertence a outra frente. useBuscaConversa.ts e seu teste permanecem byte-iguais à base294; integrador fornecerá porte antes do formal/QA/global317. Nenhum aceite desse fix presumido.
+4. Interações unitárias usam tela-sem-dom existente, hooks controlados e layout-effect sem cleanup real; não equivalem a hidratação/unmount/foco/medidas de navegador. Identidade comprovada é do caminho React, não observação DOM.
+5. TESTER independente, composição com319/C2, global integrado, publicação e CI são etapas pendentes do integrador. Sem autoatribuir gates de outras branches ao checkpoint.
+6. Banco dev-email permanece no snapshot original restaurado pelo ROOT282f2f; sem teste DB/server/browser DEV ativo e nenhuma escrita de negócio.
+
+SPEC: docs/specs/inbox-rodape-compositor.md. Quadro recebe apenas seção317; históricos preservados.
+
+
+## DeltaCLI posterior ao checkpoint a86
+
+O produto a86c9ade33606350c1551c6a5759ebecc9366d6b permanece byte-igual. Novo commit separado altera somente CLI/prontidão/tipos/testes/README e este ledger/SPEC/quadro. Estado nota acrescenta12PNG, humano-compositor mais nota são24 formais planejadas; total136 (72app/64protótipo). Não houve imagem/browser/DB.
+
+- RED8a9d75:6/6 por estado nota/prontidão ausentes e aviso de rodapé confundido com nota314. A correção de escopo exclui somente role=note dentro do footer; notas reais continuam exigindo data-nota-id e ausência de mídia/comandos/status.
+- 402067:5/6; restante era mock de getByRole sem options no caso note, corrigido só no teste.
+- 224da1:50/51; expectativa histórica124 da coluna atualizada para136, sem remover estado antigo.
+- GREENff1da1 EXIT0:8 arquivos/51 testes de harness, sem filtro/ignorados;3tamanhos/2temas combinados em plano. CLI --help é executada por teste sem abrir browser ou DB.
+- TSC38512 heap8192 EXIT0; lint8arquivos be4324 --max-warnings0 EXIT0; diffcheck c07e2e EXIT0. Node22.23.2 em todos.
+
+Prontidão317 valida duas abas/seleção/painel e campo atual, header68, controles44 e viewport; nota sem agenda/anexo/voz e sem promessa de menção no app. Abrir nota espera thread real/hidratação e aciona só tab; protótipo usa sua aba/placeholder originais, menção histórica documentada como divergência. Manifesto/fonteApp/hashes, guardReact/hidratação/rede e anonDOM392 após interações/antesfoto preservados.
+
+Formal aguarda C2/#402 congelado e preview fornecido pelo integrador. Testes DOM mínimos não medem CSS real; os tamanhos declarados são plano de captura, não aceite visual. TESTER estático do produto a86 em andamento. Nenhuma captura antiga é atribuída ao compositor317.
+
+
+## Fonte formal df9 e correção isolada de seletor do protótipo
+
+ROOT forneceu df9aa83cec1f3c96e9cb1794db58bb3b14021b3b (a86+bf4+C2/metadata316, sem estados319); FF próprio0e01fe saída0, tracked clean antes do preview. ROOT informou global15595 saída0 com897arquivos/7013testes e TSC/lint próprios; não são gates DEV reexecutados neste relatório.
+
+Preview ROOT99570, Node22/Next16.3.5, fixture normal307/314 (9mensagens4notas), providers externos vazios. DEV não executou DB/seed/submit/envio/nota/agenda de negócio. Saídas observadas:
+
+- Formal16261 EXIT1: humano-compositor12/12 OK com manifesto próprio. Nota app6/6 OK, mas primeiro protótipo falhou antes do manifesto do estado. Seis appnota preservados como parciais negativos em formal-r1-negativo-nota; não contam para formal completa e não usam manifesto anterior humano.
+- Diagnóstico789ffc EXIT0: botão real da referência tem textContent Nota interna, mas nome acessível contém glifo Lucide antes do texto. Footer e placeholder existem. Sem alterar HTML da referência.
+- NormalR1/15972 EXIT1 por seletor privado: overflowY=auto selecionava também HEADER; nenhum achado de produto. Mantido negativo. ProbeR2 usa filho com rows reais.
+- NormalR2/29367 EXIT0:8contextos320/390/1024/1440×500/dois temas,24PNG,0React/externos. Abas/clique/setas/Home/End/Tab, rascunhos separados, agenda única abrir/Escape/retorno de foco, busca316, A→B→A via lista. Mesmos nós reais do scroller/VList e desvio de âncora0px nas interações da mesma conversa. DocumentoY0/semoverflow; header68/controles44. Larguras medidas do editorResponder:80px em320,150px em390,260px em1024,256px em1440 com painel; altura44. Em320 o texto longo rola dentro do textarea estreito, sem ocultar controles; não alegar editor amplo nesse corte.
+- Permissões89958 EXIT0:6contextos390×500/dois temas,12PNG. Lucas-origem ENCERRADO real retornou GET200/podeEnviar=false; null retém GET real e503 responde apenas endpoint exato, rotulados transporte controlado. Nota permanece editável; liberação/retry recupera editorResponder. Sem simular domínio nem comprovar autorização servidor por esse transporte. Respostas HTTP reais e screenshots separados em permissoes-r1.
+
+Todos48PNG positivos desta etapa (12humano+24normal+12permissões) inspecionados em12pranchas locais, sem binários noGit. Nota parcial6 e demais negativos fora da futura allowlist positiva. Diretório privado output/inbox-317-probes. Todos os contextos/browsers DEV fechados antes do ROOT parar99570; NextAGENTS tinha somente10linhas geradas conferidas e foi restaurado isoladamente, regras originais preservadas.
+
+Handoff temporário ROOT autorizou somente o seletor nota-protótipo: getByText exato dentro do footer e verificação tagNameBUTTON antes do clique. App/seletor/esperas restantes e toda produção byte-iguais a df9; referência intacta. Regressão executa o preparador real extraído porAST da CLI em Chrome offline, com pseudoelemento no nome e caso de texto solto que deve ser recusado; sem abrir app/DB.
+
+RED ab9827:2/2 por timeout antigo; GREEN8895b9:Node--test2/2pass, lint2fontes e executor49357 terminal0. Recorte698ece:8arquivos/51testes0, TSC72328heap8192 terminal0, diffcheck12068f0; Node22.23.2. Não atribuir globaldf9 ao novo commit de harness; produção é invariante. Nova rodada formal24, fase longa150/C2, QA final e publicação seguem pendentes de ROOT Ready. CLI319 de B não alterada em paralelo.
+
+
+## Formal R2 e complemento C2 encerrados — freeze de evidências
+
+HEAD de execução:317bbb791e07a327766f9462156a89b40c6ddd43. FF e1d716 saída0/rastreados limpos antes do preview. Nenhuma fonte produtiva ou CLI alterada durante as provas. ROOT informou global final317bbb:897arquivos/7013testes saída0; global/typegen/TSC/lint do integrador permanecem evidência própria, não execução DEV.
+
+### Rodada formal positiva
+
+Preview ROOT64670, fixture normal9mensagens4notas, providers externos vazios. Sessão4941 terminalEXIT0,24/24PNG: humano-compositor e nota ×1440×900/1024×768/390×844 ×dois temas ×app/protótipo. Todas inspecionadas em6pranchas; hashes/bytes/fonte por arquivo e hashHTMLreferência em formal-r2/*/manifesto-com-hashes.json. GuardReact/hidratação/rede/anonDOM392 intactos,0falhas. Nota-protótipo usa botão real com texto exato; referênciaHTML não foi editada. A referência preserva menção futura/controles próprios, enquanto o app cumpre capacidades reais e nota semanexo/agenda/voz. TODAexecução16261, inclusive humano12 antes positivos, fica fora do pacote final; parciais6appnota/negativos preservados localmente, sem reaproveitar manifesto.
+
+Os24normaisR2 e12permissões anteriores mantêm fonte df9 explícita e equivalência de produção conferida contra317bbb. Não foram repetidos por mudança de seletor do protótipo/metadados. O recorte não representa transação real de nota/envio: houve somente rascunhos locais e abertura/cancelamento de agenda.
+
+### C2/#402 independente, fixture longa isolada
+
+Após parar64670, ROOT preparou helper316A b87915 saída0 e preview53617 da mesma317bbb:159mensagens(9originais+150privadas)/4notas/2dias/165decorados, semproviderexterno. Não atribuir essa fixture isolada a ERPprodutivo. ROOT, nãoDEV, emitiu atendimento.atualizado por Ready; semresync/alteração de linhas/envio/SQLDEV. Transporte deste registro é f8a690 conforme coordenação; C6 futuro não foi antecipado.
+
+Sessão88684 terminalEXIT0,2contextos(390×844claro/1440×900escuro),10PNG,0React/externos/falhas. Carregar anteriores viaUI preservou foco natural no campo e149 ativo/visível;124→165decorados, scrollTop ajustado naturalmente no prepend. Navegar000 pinou/revelou o achado, e000/149 permaneceram visíveis ao renavegar apósSSE. Apóswheelmanual de480px,baseline390 top631 e1440top575: notificação real causou exatamente1GETincremental?depois porcontexto (4→5 e5→6), corpo terminado; janela165/match000/termo e posição manual mantidos, desvioâncora0px/documentY0. Referências DOM/foco salvas imediatamente antesSSE confirmaram mesmo scroller/VList/foco. Essas referências não foram salvas antes dos primeiros prepends: duranteprepend a prova é de visibilidade/ajuste natural, não comparaçãoDOMpré/pós. Navegação explícita muda intencionalmente foco/scroll; preservação estrita se aplica aoSSE na leitura manual.
+
+Todas10PNG inspecionadas em3pranchas. Browsers/contextos fechados porfinally antes de ROOT parar53617. ROOT restaurou snapshot01c7be saída0,424tabelas/hashes e551originais. DEV nunca semeou/alterou banco. AGENTS tinha só blocoNext10linhas conferido e removido isoladamente, preservando instruções/CRLF.
+
+### Allowlist e limites finais
+
+output/inbox-317-probes/allowlist-positiva-final.json contém98arquivos,88PNG(70originais+18pranchas),12.801.910bytes totais incluindoJSON, hashes conferidos. Seleção positiva explícita: formalR224 +normalR224 +permissões12 +C210. Negativos/formalR1/diagnósticos/HTML/logs/credenciais/seeds/probes privados não entram. NenhumaPNG emGit. Resumo sanitizado em evidencias-final.json e índice inspecao-final.json na mesma pasta; imagens permanecem locais para o integrador empacotar pela allowlist.
+
+Este freeze muda somente metadados/SPEC/report/quadro. Gates produtivos a86 e patchaa57 são os já observados acima; não se repetem por documentos. QAfinal/global/publicação/CI e eventual porteC6 permanecem sobROOT, sem homologação presumida. Não iniciar nova implementação. Sem servidores ou browsers DEV ativos.
+
+
+### Revisão PR403 C3 — armazenamento da tentativa confirmada
+
+Correção sobre a fonte publicada32f9222d8240b77fab1d656043d7399be9226d76. Antes, o guard visual retornava em outro contexto sem remover o rascunho já enviado. Agora a confirmação ok limpa somente a chave do modo/contato original quando owner commitado, revisão e texto bruto persistido ainda coincidem. A limpeza visual atual não repete escrita incondicional no armazenamento. Texto/emoji/arquivo incrementam revisão; erro/incerto mantêm rascunho e a política de idempotência existente.
+
+O mapa é local à ConversaAberta acima da key, repassado opcionalmente ao Compositor; fallback local é chamado incondicionalmente. Registro só no layout effect, sem mutação no render. Remontar o mesmo rascunho cria novo owner e revoga conservadoramente a confirmação antiga, mesmo com texto igual. Desmontar o dono integral invalida o mapa antigo: confirmação daquela sessão já não pode limpar storage depois de novo Inbox. Sem sincronização global, novo formato de localStorage, backend ou alteração da Thread/R6.
+
+REDc65bb8:45testes/3falhas; RED React real/StrictModef0551d:1/1falha de persistência. RED ef5b85: comparação bruta protegida ainda era apagada pela escrita visual; GREEN final10arquivos/257testes sessão48686 saída0, incluindo10testes React reais/StrictMode,43 regressões anteriores e2novos testes controlados. TSC77347 heap8192 e lint8d25f7 cincofontes saída0, Node22.23.2. Lint21b158 inicial falhou por warning do mock, corrigido. Recorte não é full. Sem DB/preview/browser/envios. Visuais317bbb/df9 são históricos; QA independente/global integrado permanecem coordenados.
+
+
+### Revisão PR403 C2 — Nota por leitura também no menu encerrado
+
+Decisão técnica ROOT: preservar a regra20 vigente, inclusive ENCERRADO. Evidência: server/inbox/permissoes.ts mantém notaInterna=true como alçada, com escopo obrigatório na action; registrarNotaAtendimento em server/whatsapp/acoes-conversa.ts usa atendimentoVisivel(usuario,id,false,tx), sem exigir envio ou atendimento aberto. Projeção de interface não é autorização: nada mudou no servidor, escopo ou permissões globais.
+
+O único delta produtivo C2 é useAcoesAtendimento.pode: !grupo && (aberto || acao===notaInterna) && podeExecutar atual. Agenda, assumir, transferência e gestão mantêm o gate fechado. As ações pessoais já existentes continuam no menu; Nota abre o diálogo existente do contato correto. O rodapé não foi restringido: leitura individual mantém Nota, grupo não; participante sem envio continua com podeEnviar=false.
+
+RED212ccc:2arquivos/11testes, única falha Nota ausente no menu ENCERRADO. GREEN02e329:2/12. Gate combinado comC3:13arquivos/319testes sessão13331 saída0, lint4d0679 oitofontes saída0. TSC1949 inicial falhou só no literal string de fixture; corrigido para literal tipado, TSC85482 heap8192 saída0 e lint5c48e7 testealterado0, Node22.23.2. Recorte inclui permissões unitárias, menu/controlador, composição/rodapé/compositor/idempotência e guardas completas afetadas. Não é suíte global nem integraçãoDB. Nenhum envio/nota de negócio/servidor/browser nesta revisão.
+
+Visuais anteriores317bbb/df9 permanecem históricos, sem atribuir a eles o menu corrigido. Complemento de menu encerrado, QA independente exata e global integrado/publicação ficam pendentes de Ready/coordenação ROOT; não houve push/PR pelo DEV.
+
+
+### PR403 — complemento positivo do menu e contrato legado
+
+Fonte produtiva29f0e3ece79d59b4240c18430452a7b0c50ed388 congelada, preview ROOT13667, Node22.23.2. Executor028fd6 saída0:2contextos (390×844 claro e1440×900 escuro),8PNG inspecionadas em2pranchas. GET /api/inbox/atendimentos?status=ENCERRADO retornou o item real inbox-demo-lucas-origem-307, SECRETARIA/ENCERRADO/grupo=false; GET painel200 confirmou podeEnviar=false emambos. Nota no menu/rodapé, diálogo real aberto por teclado e fechado comEscape, foco devolvido ao gatilho visível. Agenda/assumir/transferência/gestão ausentes; alvos móveis medidos≥44;0React/externos/submits/overflow/documentY. SSE máximo1simultânea/1ativa,2construções sequenciais no dev (não1total). Nenhuma nota/envio/DBDEV/sucessoERP fabricado; grupo não capturado, cobertura negativa permanece unitária.
+
+Primeiro probe bcb5c2 falhou somente por consultar variável de respostaPainel antes do JSON no celular (null). Negativo preservado em review403-menu-r1 fora daallowlist. R2 usa waitForResponse+json explícitos, pasta distinta. Fontes/hashes porarquivo e anonDOM392/guardReact em review403-menu-r2/manifesto.json. Allowlist positiva distinta review403-menu-allowlist.json:11arquivos,8PNGoriginais+2pranchas+1manifesto,1.225.605bytes; hashes conferidos. Inspeção em review403-menu-inspecao.json. PNGs continuam locais, semGit, não reatribuir aos históricos317bbb/df9.
+
+ROOT identificou expectativa legada AcoesAtendimento.test62 proibindo Nota emENCERRADO. Nosso recorte anterior319 não incluía esse arquivo e não era suíte global; não antecipava aprovação desse contrato. RED local5be328:20testes/1falha, igual ao ROOT/TESTER. Atualização exclusiva de teste conforme ruling regra20: exige botãoNota e mantém negativos Transferir/Encerrar/Assumir; amplia negativos a Agenda/Pendentes/Atribuir/Devolver/Convidar/Bloquear. Busca por contratos encerrados não encontrou outro veto geral aNota; expectativas de copiar/apagar/envio e pendentes fechados foram preservadas.
+
+GREENe86102:9arquivos/126testes (AcoesAtendimento legado explicitamente, useAcoes, ConversaAberta, composiçãoRodape, Menu, Rodape, Compositor, owner realStrictMode, idempotência), saída0. TSC94141 heap8192, lint0b692d testealterado e diff198851 saída0. Produção byteidêntica29f: único delta src é o teste. Guardas combinadas319 do checkpoint29f são históricas, sem alegar novo full. ROOT encerrou13667 e restaurou snapshotA7e0eeb saída0/424hashes551originais; todos browsers fechados antes, AGENTS só blocoNext restaurado. QA exata curta, global integrado e publicação/push seguem comROOT.
+
+
+### PR403 C3 — retorno sem edição e reconciliação visual (vigente)
+
+Revisão adicional sobre a7ebf56b4fb3391d1013ff776086616c46bb13c1: o critério conservador anterior (novo owner sempre revoga limpeza) era insuficiente para A→B→A SEM editar. Os10testes React anteriores passavam, mas os2novos casos responder/nota reproduziram localStorage e campo com texto já confirmado. Esta decisão substitui a regra histórica de revogar por toda remontagem; desmontagem integral do Inbox continua revogando o mapa antigo.
+
+RED1ae16f:12testes reais/StrictMode,2falhas de persistência. Separar token de intenção do owner commitado corrigiu storage, mas REDvisual6808cf mostrou campo ainda preenchido nos2modos. A solução final mantém token por chave durante remount sem edição e troca token em cada intenção de texto/emoji/arquivo. A tentativa captura token; somente ok com token ainda atual e comparação bruta do armazenamento pode limpar a chave e notificar o owner atualmente montado daquela chave. A assinatura é local e registrada/removida em layout commit; sem registro global, polling, armazenamento de metadados ou backend novo.
+
+A→B→A sem editar: ok limpa armazenamento E campo atual de A, e nova ida B→A segue vazia. Qualquer edição posterior, inclusive editar→voltar ao mesmo texto ou novo arquivo, revoga limpeza; B/outro modo não são alterados. Callback desmontado não recebe notificação; cleanup integral invalida mapa e callbacks antigos não apagam a nova sessão. O armazenamento externo divergente permanece, inclusive no campo carregado dessa edição; armazenamento indisponível mantém reconciliação visual local de melhor esforço sem prometer persistência. Erro/incerto não limpam, política de idempotência permanece.
+
+GREEN388841:2arquivos/62testes (17React reais/StrictMode+45controlados, incluindo emoji/upload/idempotência). Gate dirigido final2293:14arquivos/325testes saída0, inclui legado AcoesAtendimento corrigido, menu/useAcoes, Conversa/rodapé, compositor/owner, idempotência e guardas completas afetadas. TSC57710 heap8192, lint9fc451 trêsfontes e diff537006 saída0, Node22.23.2. Não é full global, integraçãoDB ou QAvisual. Sem preview/browser/DB/envio/instalação/push nesta revisão.
+
+Imagens do complemento menu028fd6 permanecem fonte29f explícita: os controles do menu não mudaram, mas elas NÃO comprovam esta reconciliação C3 nova. Fontes317bbb/df9 seguem históricas. QA independente exata e global integrado/publicação permanecem comROOT, sem homologação presumida.

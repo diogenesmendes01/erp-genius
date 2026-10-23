@@ -1,0 +1,22 @@
+{
+  "issue": 317,
+  "releaseDraft": true,
+  "tag": "inbox-qa-2026-10-22",
+  "fonteIntegrada": "85fdfb849007488b87204b9d1ded70ac406cbc28",
+  "arquivo": "inbox-317-evidencias-85f.zip",
+  "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-317-evidencias-85f.zip",
+  "sha256": "74a17180135461a99a50e6e48e45b42280ef4b804321607ce3480645ca27f4aa",
+  "bytes": 15823526,
+  "arquivos": 137,
+  "pngs": 122,
+  "dev": { "originais": 70, "pranchas": 18 },
+  "tester": { "normal": 24, "c2": 10 },
+  "downloadConferido": true,
+  "uploadExit": 0,
+  "downloadExit": 0,
+  "fontesVisuais": {
+    "formalEC2Dev": "317bbb791e07a327766f9462156a89b40c6ddd43",
+    "normalPermissoesDevETester": "df9aa83cec1f3c96e9cb1794db58bb3b14021b3b"
+  },
+  "limites": "Visuais precedem transporte C6, cujos dois arquivos são idênticos ao isolado01a e têm QA separado. Somente imagens positivas inspecionadas/allowlisted e metadados sanitizados; sem negativos, HTML, RSC, logs, cookies, credenciais, fixtures ou scripts privados. Release permanece em rascunho; nenhum deploy."
+}

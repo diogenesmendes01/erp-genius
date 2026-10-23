@@ -1,0 +1,27 @@
+{
+  "issue": 317,
+  "pr": 403,
+  "releaseDraft": true,
+  "tag": "inbox-qa-2026-10-22",
+  "arquivo": "inbox-pr403-menu-a7.zip",
+  "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-pr403-menu-a7.zip",
+  "sha256": "4faa6c22ef72e4614d293c869d0986aca56047ee57a5ed5eeb4800490ebaa60c",
+  "bytes": 1677732,
+  "arquivos": 21,
+  "pngs": 16,
+  "fontesVisuais": {
+    "dev": "29f0e3ece79d59b4240c18430452a7b0c50ed388",
+    "tester": "a7ebf56b4fb3391d1013ff776086616c46bb13c1"
+  },
+  "executores": {
+    "empacotamento": "81c763",
+    "releaseDraft": "a0a3af",
+    "upload": "5c47bd",
+    "downloadSha": "a612cf"
+  },
+  "downloadConferido": true,
+  "uploadExit": 0,
+  "downloadExit": 0,
+  "escopo": "Complemento C2: Nota interna no menu e rodapé de atendimento individual ENCERRADO. Dez PNG DEV (oito originais e duas pranchas) e seis PNG TESTER finais, todas permitidas explicitamente e com hashes conferidos.",
+  "limites": "Não comprova envio ou registro de notas. Não homologa C3: o retorno A→B→A sem edição revelou defeito residual após A7, ainda em correção. Nenhum manifesto técnico bruto, script, log, HTML, RSC, cookie, seed, snapshot ou negativo foi incluído. ZIP85f anterior preservado. Release permanece rascunho; nenhum deploy."
+}

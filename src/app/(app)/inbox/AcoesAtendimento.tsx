@@ -80,7 +80,7 @@ export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fix
   const responsavel = useAcaoCliente({ idempotente: true });
   const aberto = atendimento.status !== "ENCERRADO";
   const ctx = { setor: atendimento.finalidade, responsavelId: atendimento.responsavelId, linhaComercial, donoLinhaId };
-  const pode = (a: Parameters<typeof podeExecutar>[1]) => !grupo && aberto && podeExecutar(usuario, a, ctx);
+  const pode = (a: Parameters<typeof podeExecutar>[1]) => !grupo && (aberto || a === "notaInterna") && podeExecutar(usuario, a, ctx);
 
   async function rodar(acao: () => Promise<Resultado>, sucesso: string, executor: typeof direta = direta, aposSucesso?: () => void) {
     setAviso(null);
