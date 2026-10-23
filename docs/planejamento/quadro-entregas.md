@@ -5695,4 +5695,19 @@ Recorte7/1430; global4467 EXIT0:867arquivos/6.819testes,242,16s,maxWorkers2,
 sem filtro/ignorados; lint44100 EXIT0/40. TSC60102 achou4fixtures3args;
 após fim do global, somente quatro false explícitos no teste, produçãoigual.
 Recorte final7/143,TSC84417/lintteste EXIT0; global não repetido parafixtures.
-Sem novo DB/browser. TESTERexato/CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
+Sem novo DB/browser. TESTERbc4 favorável7/148 próprios,d722b1 EXIT0;
+baseb23ff13b recebe404ca5 retirando64PNG298,sóPNG/docs,src/scripts/depsiguais.
+Quatro variantes diferentesmain/ZIP381 foram preservadasLOCAL/hash/OID antes
+de retirar, sem novo upload. CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
+
+
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
