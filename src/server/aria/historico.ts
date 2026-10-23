@@ -1,5 +1,6 @@
 import { EtapaLead, Prisma, type AcaoAgenteIA } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado, type UsuarioSessao } from "../_shared";
 import { transicaoManualPermitida } from "../_shared/regras";
 import { podeDecidirAcaoAria } from "./escopo-decisao";
@@ -141,6 +142,8 @@ async function reverter(tx: Tx, u: UsuarioSessao, acao: AcaoAgenteIA): Promise<v
     case "NOTA_INTERNA": {
       if (!acao.eventoId || !acao.atendimentoId) throw new ErroRegra("Nota não encontrada.");
       await registrarEvento(tx, { tipo: "NotaInternaArquivada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: acao.atendimentoId, autorId: u.id, payload: { ...base, eventoId: acao.eventoId } });
+      const atendimento = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: acao.atendimentoId }, select: { id: true, conversaId: true } });
+      await avisarAtendimentoAtualizado(tx, atendimento);
       return;
     }
     case "AGENDAR_MENSAGEM": {
