@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
-import { IconArrowLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
-import { Botao } from "@/components/Botao";
-import { Avatar } from "@/components/Avatar";
+import { IconChevronLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
+import { BotaoIcone } from "@/components/BotaoIcone";
 import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
 import { itensDaThread, decorarThread, autorDoItem, notaComoMensagem } from "@/components/conversa/itens-thread";
 import { useAgoraDaThread } from "@/components/conversa/agora-thread";
@@ -14,7 +13,7 @@ import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import type { ConversaHook } from "@/components/conversa/useConversa";
-import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
+import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
@@ -23,7 +22,8 @@ import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
 import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
-import { AcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
+import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
+import { CabecalhoConversa } from "./CabecalhoConversa";
 import { AcoesMensagem, type AcaoMensagem } from "./AcoesMensagem";
 
 export interface PropsConversaAberta {
@@ -90,7 +90,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, aoMudar, agoraInicial }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
   const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
@@ -116,39 +116,13 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
 
   return (
     <>
-      <header className="space-y-2 border-b p-3">
-        <div className="flex items-center gap-2">
-          <button type="button" aria-label="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconArrowLeft size={20} aria-hidden /></button>
-          {item && <Avatar nome={item.contatoNome} tamanho={32} />}
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{item?.contatoNome ?? "Conversa"}</p>
-            {item && (
-              <p className="flex flex-wrap gap-x-2 text-xs text-gray-600">
-                <span>{rotular(SETOR_ATENDIMENTO_LABEL, item.finalidade)}</span>
-                <span>{item.numeroRotulo}</span>
-                {!item.grupo && <span>{rotular(STATUS_ATENDIMENTO_LABEL, item.status)}</span>}
-                {!item.grupo && <span>{item.responsavelNome ? `Responsável: ${item.responsavelNome}` : "Sem responsável"}</span>}
-              </p>
-            )}
-          </div>
-          <Botao variante="fantasma" tamanho="sm" aria-label="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel} className="aria-pressed:bg-highlight"><IconLayoutSidebarRight size={20} aria-hidden /></Botao>
-        </div>
-        {item && !item.grupo && (
-          <AcoesAtendimento
-            key={item.id}
-            atendimento={{ id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp }}
-            usuario={usuario}
-            setoresDoNumero={item.setoresDoNumero}
-            fixada={item.fixada}
-            silenciada={item.silenciada}
-            linhaComercial={item.linhaComercial}
-            donoLinhaId={item.numeroDonoId}
-            destinos={destinos}
-            aoMudar={aoMudar}
-            fuso={fuso}
-          />
-        )}
-      </header>
+      {item ? <CabecalhoControlado key={item.id} item={item} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoVoltar={aoVoltar} aoAlternarPainel={aoAlternarPainel} painelAberto={painelAberto} painelAuto={painelAuto} /> : (
+        <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface px-3">
+          <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
+          <p className="min-w-0 flex-1 truncate">Conversa</p>
+          <BotaoIcone tamanho={36} rotulo="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel}><IconLayoutSidebarRight size={17} /></BotaoIcone>
+        </header>
+      )}
       <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
@@ -194,4 +168,16 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       )}
     </>
   );
+}
+
+/** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
+function CabecalhoControlado({ item, usuario, fuso, destinos, aoMudar, aoVoltar, aoAlternarPainel, painelAberto, painelAuto }: { item: ItemListaInbox } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoVoltar" | "aoAlternarPainel" | "painelAberto" | "painelAuto">) {
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const aoBuscar = () => setBuscaAberta(true);
+  const acoes = useAcoesAtendimento({
+    atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
+    usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
+    linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar,
+  });
+  return <><CabecalhoConversa atendimento={item} acoes={acoes} usuarioId={usuario.id} painelAberto={painelAberto === true} painelAuto={painelAuto === true} aoAlternarPainel={aoAlternarPainel} buscaAberta={buscaAberta} aoBuscar={aoBuscar} aoVoltar={aoVoltar} />{acoes.feedback}{acoes.dialogos}</>;
 }

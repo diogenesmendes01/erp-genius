@@ -10,3 +10,6 @@ export function abrirPopoverColunaApp(pagina: Page, estado: string, tamanho: str
 export function semanticaPopoverColunaPronta(titulo: string): boolean;
 
 export function semanticaPainelDetalhesPronto(): boolean;
+
+export function abrirMenuConversaApp(pagina: Page, tamanho: string): Promise<void>;
+export function semanticaMenuConversaPronto(): boolean;

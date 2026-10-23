@@ -1,0 +1,572 @@
+{
+  "fonteApp": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+  "fonteProduto": "8b3c46ac475b8e881691b49a0d8139707771236d",
+  "node": "22.23.2",
+  "sessoes": {
+    "formal": {
+      "id": 3772,
+      "exit": 0,
+      "app": 22,
+      "prototipo": 22
+    },
+    "longo": {
+      "id": 12809,
+      "exit": 0,
+      "contextos": 8,
+      "png": 24
+    }
+  },
+  "politica": "Helper DOM392 v1 em ambos alvos após interações e antes de cada foto; telefones fictícios; sem HTML original/credenciais/logs/negativos/refs antigas. PNGs preservados localmente, não no Git.",
+  "inspecao": "44 formais em22pranchas +24longas em8pranchas; desktop também inspecionado em tamanho original.",
+  "fixtureLonga": "dccdf8 aplicada pelo integrador após snapshot; 97 caracteres/15tags, sem envio/IA. Preview71311 parado e snapshot original restaurado0fcd3b:424tabelas hashes iguais.",
+  "limites": [
+    "Não equivale a execução de ações de negócio: somente abrir/fechar diálogos sem submit e medir controles.",
+    "Há diagnósticos recuperados de GET cancelado nos manifestos formais, sem falhas fatais/React/recursos externos.",
+    "Preferências/sucessos/erros/idempotência e permissões são cobertos pelos testes, sem mutações reais no banco.",
+    "Sidebar224/cortes9601400, statusERP automático, bloqueio indisponível, busca até316 e abas futuras do protótipo são diferenças documentadas.",
+    "Provas f7 pré-composição têm allowlist separada; não são QA da leitura automática/388.",
+    "Revisão independente e global integrador continuam pendentes."
+  ],
+  "resumo": {
+    "arquivos": 107,
+    "png": 98,
+    "bytes": 14040081
+  },
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/manifesto-conversa.json",
+      "tamanho": 7599,
+      "sha256": "5c6b1affb519f19595a9477ca571f1b3e3861371a64e577c3f7cc4daad07c31d"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-desktop-conversa.png",
+      "tamanho": 156917,
+      "sha256": "a5138114f7e669f2433bcb044fc567e1a54fa9af131674ad57b08a469fe4e116"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-tablet-conversa.png",
+      "tamanho": 100579,
+      "sha256": "37c9208fc67cf6074bcbf8e2707d54cede4aaf497e0f9a34099689909c8b45b9"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-celular-conversa.png",
+      "tamanho": 20595,
+      "sha256": "198e8fd3c076ff388e58ae5f6c3420890a84c85c060b308df646e247b3d9df0e"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-desktop-conversa.png",
+      "tamanho": 156415,
+      "sha256": "81977a617984b1ccf2544cfc750e44133741cc1c84da8d7deab2be379abc47f9"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-tablet-conversa.png",
+      "tamanho": 99510,
+      "sha256": "dcf8cb50a13ca7175089b891ed59ad96ea0119533c536237e9c2de358d110960"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-celular-conversa.png",
+      "tamanho": 20204,
+      "sha256": "3a9a5dbedfa9c5d9a631b3abce78629c15eb370f1b692a4f840bb3f6c7901541"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-desktop-conversa.png",
+      "tamanho": 196695,
+      "sha256": "91847b947ccf9fd4b57e735504614029435ec81cfba31841cd991a0c1d9ef959"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-tablet-conversa.png",
+      "tamanho": 128785,
+      "sha256": "55e0f3e3c0d85d3b5ca5e89a33a23b8a227d37f52ad98fd936f21f69a6d4c3f5"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-celular-conversa.png",
+      "tamanho": 54251,
+      "sha256": "69c8232fe0bc96c47c002da0d223a91585faa726ab6078a70713103a34982dde"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-desktop-conversa.png",
+      "tamanho": 197841,
+      "sha256": "53fc285d8fdb8611d8542c5ecf2c96b5d89cbe3f360485287c679dc3e2a6cd53"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-tablet-conversa.png",
+      "tamanho": 128889,
+      "sha256": "8ee76130c71d7f7b68eec8fab9bdb5565dd8e33d0fd5e0484e055e9f27258fb2"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-celular-conversa.png",
+      "tamanho": 54029,
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/manifesto-humano-compositor.json",
+      "tamanho": 7815,
+      "sha256": "2c7836944e367e10958f524f0f6b5f9e608be2f1c91634b9de42e8b9cf18995c"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-desktop-humano-compositor.png",
+      "tamanho": 197436,
+      "sha256": "b374d01839a9c4d302cfff958db334899c2a537e982c91732586ffa3abdb2159"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-tablet-humano-compositor.png",
+      "tamanho": 133872,
+      "sha256": "b691ea81fb498dca540ff51e8d1f80068bc769c3fc7488950d77d483570a940f"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-celular-humano-compositor.png",
+      "tamanho": 53034,
+      "sha256": "5909faed93658f49aafc1e60f73717cebaa844c10cf1bdadbe8a9ada2af924a0"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-desktop-humano-compositor.png",
+      "tamanho": 196080,
+      "sha256": "242ca162b7adf0a81d3303b8c5c32d6bac3bbf6dea462d3132d882efc2da134e"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-tablet-humano-compositor.png",
+      "tamanho": 132162,
+      "sha256": "40dabcb340e0bc620eea3af4ff7396245143634b5bfa742526b795734b2f82e5"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-celular-humano-compositor.png",
+      "tamanho": 51695,
+      "sha256": "1c6af803086caab52de4fa045bd91b306b159177d1cbfbb2f8f807400bf122e8"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-desktop-humano-compositor.png",
+      "tamanho": 188584,
+      "sha256": "6e64f2ee5ec485f9c34a167e233c147e98c0f93a6a8bd9640f6796b05c66e751"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-tablet-humano-compositor.png",
+      "tamanho": 124848,
+      "sha256": "e99420edcad620db8cbd7ce8daa6ab56932c706d5c9de0ac5bb9a61722bc34ef"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-celular-humano-compositor.png",
+      "tamanho": 54000,
+      "sha256": "871a6d8a1836e3c58099dc763a46a5a7c0e0ec8932212df1ade98c6854270f3a"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-desktop-humano-compositor.png",
+      "tamanho": 188573,
+      "sha256": "dc0e380b07b290f76906a96491ad3377e05e4f0915710cdc9434b8d492559ed4"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-tablet-humano-compositor.png",
+      "tamanho": 123773,
+      "sha256": "f077fe1f4790ccf9334daa1615b93eaf3bd195b88ca431b5ac6169025f9d0d8a"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-celular-humano-compositor.png",
+      "tamanho": 52874,
+      "sha256": "51b3062993f17565cff4170a11544a63a57c4909c9a9891a5f7766cff0617df3"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/manifesto-menu-mais.json",
+      "tamanho": 7623,
+      "sha256": "c7e2752571b72f6f0dca48cca62921ca210c0cf0e0d8777e3f2c9be01affc1da"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-desktop-menu-mais.png",
+      "tamanho": 176661,
+      "sha256": "9b38dc0d7e6af7d81e8a868983d63da8f45f2644d77f1b317dd378a7a52a8db6"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-tablet-menu-mais.png",
+      "tamanho": 131746,
+      "sha256": "009be76b3a074357df8217981d189688472a4373ef062b198493232aabc6eaa8"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-celular-menu-mais.png",
+      "tamanho": 44670,
+      "sha256": "3585bf6e7ac7f5f3a8edf246d22dde8f8cb5ac4da898ce4af4c20b5bcc817cc5"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-desktop-menu-mais.png",
+      "tamanho": 174929,
+      "sha256": "5eb9fe8d5df921e6c5db65b9c5b8528283845492b559b62cc77b5716d2acdd89"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-tablet-menu-mais.png",
+      "tamanho": 129183,
+      "sha256": "49d381372dc3997b7430f152004fdc8306ee6282da67a7f16dd3bdd5c82a6875"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-celular-menu-mais.png",
+      "tamanho": 42466,
+      "sha256": "b35da4af31cc170675719ee74cbfa7ee8098186947d5fa4fd154e3f3dac839f6"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-desktop-menu-mais.png",
+      "tamanho": 215101,
+      "sha256": "91c5b89cc42bd7a7f8966f9ab183e1fe575cbe994a28ad03e5702a0481babb68"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-tablet-menu-mais.png",
+      "tamanho": 145610,
+      "sha256": "cbe4c071fe15bfba3e9accca755a62ade939df3a3dfbd97e9199c0c1535039b3"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-celular-menu-mais.png",
+      "tamanho": 48960,
+      "sha256": "5f675768fe2a541a23cbbfcf645467faa66aeedb26a65bc3797de7a920269cfe"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-desktop-menu-mais.png",
+      "tamanho": 214689,
+      "sha256": "159edf1e6e85b4033715ea5b5f3bfaaae07ad1e550393add8d85404561854bcf"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-tablet-menu-mais.png",
+      "tamanho": 144938,
+      "sha256": "c8d1f46bf691141c301d154db8a51803b4cdcad731a34da2ae64f8405943a34b"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-celular-menu-mais.png",
+      "tamanho": 50327,
+      "sha256": "a06a4e3a2d3f17d176e13d86bed74223b2dc8d043eeb404519f64bf282dc9e1c"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/manifesto-celular-conversa.json",
+      "tamanho": 2979,
+      "sha256": "3ebe2fb6aef9ba10cd1d42d80ae713bcf8a34146dbc58f94b371793770d5076d"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-celular-celular-conversa.png",
+      "tamanho": 20595,
+      "sha256": "198e8fd3c076ff388e58ae5f6c3420890a84c85c060b308df646e247b3d9df0e"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-celular-celular-conversa.png",
+      "tamanho": 20204,
+      "sha256": "3a9a5dbedfa9c5d9a631b3abce78629c15eb370f1b692a4f840bb3f6c7901541"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-celular-celular-conversa.png",
+      "tamanho": 54251,
+      "sha256": "69c8232fe0bc96c47c002da0d223a91585faa726ab6078a70713103a34982dde"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-celular-celular-conversa.png",
+      "tamanho": 54029,
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/manifesto-tablet-painel.json",
+      "tamanho": 2951,
+      "sha256": "ff31eb0724493b60a8f950f464bc170fd276f9682b0cd99aa7c7df38c0f0b764"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-escuro-tablet-tablet-painel.png",
+      "tamanho": 120537,
+      "sha256": "b9ab20613cb0b785d9a8bd70b49aab833fef9ec08529b0cde4b32b57375043fa"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/app-claro-tablet-tablet-painel.png",
+      "tamanho": 121870,
+      "sha256": "2270a727fa177ae451dee076e8c969741eea85a48709fb8b00c35b29419625e8"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-escuro-tablet-tablet-painel.png",
+      "tamanho": 143271,
+      "sha256": "3cab096d526ccbf82b6181f6563ffb87d2fb3edcaccc15ed1a4c4caf820652af"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/prototipo-claro-tablet-tablet-painel.png",
+      "tamanho": 146028,
+      "sha256": "3f6aee918ecd52c951e13df4870b1296b97d63d3faefe38cb2b1887c53f4e926"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-320-nome.png",
+      "tamanho": 16575,
+      "sha256": "96cf2a4a42c529adaf85b0b16a354412eaa027c180a0e9be7942aa05a1d92557"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-320-menu.png",
+      "tamanho": 24153,
+      "sha256": "8795ebe639806fe33bba7b78750badfd2f71466a56a304169f13ea4971a307c2"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-320-painel-fim.png",
+      "tamanho": 21280,
+      "sha256": "75e114021be824c82b86069dd335f26ee5fcdddd04091ccce06c671443db8d7a"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-390-nome.png",
+      "tamanho": 19168,
+      "sha256": "c70e43b2898bf2c2b314acaacf7b7dfe556180ee18317a1d90ed315dcfdf66cc"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-390-menu.png",
+      "tamanho": 25564,
+      "sha256": "60f7015a0f624753a6ee455e88efb966663a5ff7829ba82d093574fbafa03688"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-390-painel-fim.png",
+      "tamanho": 21905,
+      "sha256": "f4d2ec41a2890ed7fdb7838d9a34db62ba31a444b9dd5397d89390dcc4ded84c"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-1400-nome.png",
+      "tamanho": 118640,
+      "sha256": "fa67d868267fd7625b377e8d2504e2353386132a5d3d868e6d9442c98618e0f5"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-1400-menu.png",
+      "tamanho": 120054,
+      "sha256": "fc598bc7e2fec704a4480ffc32de72fc6adbac685a9f04af9377c6fe31c616fe"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-1400-painel-fim.png",
+      "tamanho": 105236,
+      "sha256": "7d83241d6fc14985bfb3f1230ab6d5706377da7fe9418a8a1a76fe38ca264694"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-1440-nome.png",
+      "tamanho": 119454,
+      "sha256": "968c879e3bb755b1bcc381c065debfde6793877c633df308f86bf639e6d80602"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-1440-menu.png",
+      "tamanho": 120559,
+      "sha256": "c08a4f847add73150340443aa6676d7fdbc2c2d3bca89bc14b5f91af1930ba60"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/light-1440-painel-fim.png",
+      "tamanho": 105933,
+      "sha256": "2e48a5e34b7cd2918a078aab371894f848086eb066cc4d36877231bd747ecfa0"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-320-nome.png",
+      "tamanho": 16735,
+      "sha256": "0719b6ddfcc8b91d5502c34f7c818868dddc71aa401d714667afa5c18c166783"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-320-menu.png",
+      "tamanho": 25187,
+      "sha256": "48bec2dd47a68b1076e4c09112e9654248ae08c85277c719aee577e31a628819"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-320-painel-fim.png",
+      "tamanho": 21621,
+      "sha256": "9576e233905809e27ec82f80aa7568b9f349d7621a3347b26c4d8a6f52c23771"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-390-nome.png",
+      "tamanho": 19436,
+      "sha256": "7d1d7577931f1e8c49ab6c9d0416e4b9ed62c2d457630c168d1e1decf0276da0"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-390-menu.png",
+      "tamanho": 26450,
+      "sha256": "317607d8bdb0104b04c0e5da715f40d3f67f591deea3158c222425351d2606d0"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-390-painel-fim.png",
+      "tamanho": 22372,
+      "sha256": "0e5ca45711c3e3b4c1e4ca19e04939531fb5fb144f0d4b275d2559f56cbb1837"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-1400-nome.png",
+      "tamanho": 119165,
+      "sha256": "99126909ec000c57cb202bebf620490230e17d2afb43fe6afbabf5467978a7b5"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-1400-menu.png",
+      "tamanho": 121459,
+      "sha256": "b2f6e2d06dfe233be08aa875f7ecb707af88de5e025ae36175b28523779d3d1e"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-1400-painel-fim.png",
+      "tamanho": 106081,
+      "sha256": "bde45b8a706409d47471de8bd06c583a9c329617e939b429cbe040549aa65cd4"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-1440-nome.png",
+      "tamanho": 120077,
+      "sha256": "aaee3afa0a7bdcce47b0e9a573b2c2d20d7785c72aa09ea95162253d4cced1e0"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-1440-menu.png",
+      "tamanho": 122208,
+      "sha256": "61491a73a6db14148dd99c79a1350f2654848da82557990c41c0c49072629e98"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/dark-1440-painel-fim.png",
+      "tamanho": 107044,
+      "sha256": "ce0d2e669ee907f791b80004b31b73fa97c54ce91690849eb6c7e7f6631bd925"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/celular-conversa-claro-celular.png",
+      "tamanho": 98541,
+      "sha256": "a0113f291769d574c918e724d2df95ded02386fb011ef1f4f54141c8551d0039"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/celular-conversa-escuro-celular.png",
+      "tamanho": 100210,
+      "sha256": "3a8d4483d535647c22d510b35571e0060bdf70e25d364605727bc94e07ec98c8"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/conversa-claro-celular.png",
+      "tamanho": 98034,
+      "sha256": "4543c75e2aa235b20d2869947abbe3e7f1d1f00c0c7f46126031bf914670cb03"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/conversa-claro-desktop.png",
+      "tamanho": 342511,
+      "sha256": "ff505b65f6eb1c2409536b426ebf5eb010de2296aed11dc1c098f6d2fc16fa5c"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/conversa-claro-tablet.png",
+      "tamanho": 369311,
+      "sha256": "22c57e21da8b6d3697eb82e43d964280383ee19cf83e422af7d27c699c5b1913"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/conversa-escuro-celular.png",
+      "tamanho": 99756,
+      "sha256": "2f3b6664378e3b93fc5f160071a2b68e3954b7d8448e41c538bd9e69ecae2984"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/conversa-escuro-desktop.png",
+      "tamanho": 390970,
+      "sha256": "943dae3489a2f8ee649e5661d454dc515d1bdeba9ca7c04acf3671c234b51283"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/conversa-escuro-tablet.png",
+      "tamanho": 412949,
+      "sha256": "61542283d5f2a9e75f81606085e6940f86e28adcda19e64ac9d846a65edde97c"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/humano-compositor-claro-celular.png",
+      "tamanho": 124904,
+      "sha256": "582f7daeeca5812118ec81196ca26ded9ac40c029a8e55db20db6a13660de50a"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/humano-compositor-claro-desktop.png",
+      "tamanho": 375256,
+      "sha256": "35ffb459585b53c9229b97d42b14b3a0dd10b8c75107e0f93115562160e77243"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/humano-compositor-claro-tablet.png",
+      "tamanho": 426350,
+      "sha256": "f2630c4ea721d17215449390bf0a75af4f7094b64cc7e6e172642d38cf2ff432"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/humano-compositor-escuro-celular.png",
+      "tamanho": 126124,
+      "sha256": "9e765623ed0e4417df7560c64283d0509061cb01bd3414c0671ecad23e2ccb8a"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/humano-compositor-escuro-desktop.png",
+      "tamanho": 426148,
+      "sha256": "00b6c80614d62f65345291588dc052c4b134698493579d95588698639d3223b0"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/humano-compositor-escuro-tablet.png",
+      "tamanho": 474953,
+      "sha256": "d3a467cd5a4216bf8acc9a5cdd69e1652163452eceb64b454b72b1b39dbb932d"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/menu-mais-claro-celular.png",
+      "tamanho": 110139,
+      "sha256": "813c8a3d0d37a356174a1814cd981291deba534b9b65bb32088fea8511243302"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/menu-mais-claro-desktop.png",
+      "tamanho": 360904,
+      "sha256": "b1350dbc754f23427f847f4ddfe191ce14a4d919ddf2c63c183ce0b79c3967bf"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/menu-mais-claro-tablet.png",
+      "tamanho": 408198,
+      "sha256": "7e25e00eddde84462e29695f81f66aaaa6e87c24afda6cc63b7c30747dedb4d4"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/menu-mais-escuro-celular.png",
+      "tamanho": 112514,
+      "sha256": "7192b559b1f78fffac2074beb7781409ca8d5ad55108a9688d6f09daa9c62f35"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/menu-mais-escuro-desktop.png",
+      "tamanho": 412910,
+      "sha256": "7e5bbab1242c8adcf8c002378988f597733f88956c75d9bba3ab50cae3a56247"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/menu-mais-escuro-tablet.png",
+      "tamanho": 461817,
+      "sha256": "f893bbcd57d14874f3230cca185fccafeab355b29e8247a59a619761868c38c8"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/tablet-painel-claro-tablet.png",
+      "tamanho": 402854,
+      "sha256": "9204e3ac36982ab17fe2d13854e4f3c76422b303c1d4d961f8c9d2e4e79b8bba"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/pranchas/tablet-painel-escuro-tablet.png",
+      "tamanho": 435447,
+      "sha256": "0c200f6b3a03c74b1f8341fe2a3890402233c9f7a57fd0e1739edc5906bc7cf9"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/dark-1400.png",
+      "tamanho": 123699,
+      "sha256": "229feee3a2df1a0a55c11a9a05719afb36b2d34c61c4df45937180e041fbbe2c"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/dark-1440.png",
+      "tamanho": 119766,
+      "sha256": "18ddd21b17d310fd535b9bc1d190e4d97671a5c3f63fc47b550d6406fa60caef"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/dark-320.png",
+      "tamanho": 74420,
+      "sha256": "781a183734c96c0e44a5b92d67d5fd99702bb9651e033e1c4f8eb05844a9d85a"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/dark-390.png",
+      "tamanho": 76901,
+      "sha256": "f619894aca40ed432e017e961e5ea1f8cbd3b99137341e44a26d49e09cb2622e"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/light-1400.png",
+      "tamanho": 112553,
+      "sha256": "ecfdeb8b3b66ff67d9c8a892b44d0b6d5f2a48401c7fadab5d0f52eafebbd59f"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/light-1440.png",
+      "tamanho": 106053,
+      "sha256": "0f092d7db257f4ab2734fd281c5fc56cd8ea875da173f1b7d5ae9d57d627b470"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/light-320.png",
+      "tamanho": 70488,
+      "sha256": "64544b8a9af0c4d0671bbfcf8a20fb85564adf2db27bae8e4d4a3a4a4354d5e5"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/pranchas/light-390.png",
+      "tamanho": 71005,
+      "sha256": "58e340a93b822b1518dc312bdbd7d19b03ed48f200173899cbc5596a3d723919"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/formal-r1/indice-pares.json",
+      "tamanho": 707,
+      "sha256": "554572cea4a3ebdfe91c67fe8ce12fdba2b4d84760b395e8916858cb5412ea4b"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/longo-r2/medidas.json",
+      "tamanho": 20550,
+      "sha256": "016336070bd3ccace622fd62edf52581f9eb205d2795e255402c9e2121108624"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/copiar-formal-r1.mjs",
+      "tamanho": 905,
+      "sha256": "c02a555b1384ce34fb5c12ebb6e87a6dbb0b51ae0491cd0db1ba665bbfb63bdc"
+    },
+    {
+      "arquivo": "output/inbox-315-probes/medir-longo-r2.mjs",
+      "tamanho": 5205,
+      "sha256": "377dc21425b22f58b14c46501a7de302422000d9af5a6f3d5a85eb56bca2210d"
+    }
+  ]
+}

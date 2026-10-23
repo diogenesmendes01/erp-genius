@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { abrirMenuConversaApp, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -68,6 +68,7 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
   await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (popoverColuna) await abrirPopoverColunaApp(pagina, estado, tamanho);
+  if (estado === "menu-mais") await abrirMenuConversaApp(pagina, tamanho);
   if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -113,7 +114,7 @@ async function abrirPrototipo(pagina, estado) {
     await lista.getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
   }
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
-  if (estado === "humano-compositor" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel" || estado === "painel-detalhes") {
+  if (estado === "menu-mais" || estado === "humano-compositor" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel" || estado === "painel-detalhes") {
     const chat = root.locator('[data-m="chat"]');
     if (!(await chat.isVisible())) await root.getByText(estado === "humano-compositor" ? "Beatriz Lima" : "Mariana Costa", { exact: true }).first().click();
     await chat.waitFor({ state: "visible" });
@@ -129,6 +130,11 @@ async function abrirPrototipo(pagina, estado) {
   if (estado === "painel-fechado") {
     await root.getByTitle("Painel do contato").first().click();
     await root.locator('[data-m="panel"]').waitFor({ state: "hidden" });
+  }
+  if (estado === "menu-mais") {
+    const chat = root.locator('[data-m="chat"]');
+    await chat.getByTitle("Mais", { exact: true }).click();
+    await chat.locator('[data-m="sheet"]').filter({ hasText: "Status da conversa" }).waitFor({ state: "visible" });
   }
   await pagina.waitForTimeout(4000);
 }

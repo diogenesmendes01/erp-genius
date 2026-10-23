@@ -17,3 +17,12 @@ describe("Menu", () => {
     expect(CLASSE_ITEM_MENU).toContain("hover:bg-highlight");
   });
 });
+
+// #315: o comportamento novo só entra por props explícitas.
+it("compacto aberto oferece dica, separador e folha sem top inline", () => {
+  const h = renderToStaticMarkup(createElement(Menu, { rotulo: "Mais", gatilho: "…", densidade: "compacta", abertoInicial: true, folhaNoCelular: true,
+    itens: [{ rotulo: "Fixar", dica: "só você", divisorDepois: true, aoEscolher() {} }, { rotulo: "Bloquear", dica: "Motivo extenso que precisa caber", desabilitado: true, perigo: true, aoEscolher() {} }] }));
+  for (const c of ["w-[290px]", "rounded-dialog", "min-h-[38px]", "text-[13.5px]", 'role="separator"', "só você", "max-h-[85dvh]", "overflow-y-auto", "max-h-[calc(100dvh-16px)]", "Motivo extenso"]) expect(h).toContain(c);
+  expect(h).not.toMatch(/style="[^"]*(?:^|;)top:/);
+  expect(h).toMatch(/role="menuitem"[^>]*disabled=""/);
+});

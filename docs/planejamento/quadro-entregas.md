@@ -5099,6 +5099,12 @@ pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
 
 - **Checkpoint313 com baseR6/main/foco:** mergec207 sobre9c porcontrato, preservando syncURL/ACK150/foco/ref382/Virtual314 e incorporando entradasPendentes/contadorR6/OptOut/finally311. Guard381 RED integração1 e regressão2→GREEN apenas6tokens do contador passivo, negativas Salvar/onClick/spread/padding; semexceção porarquivo/analisadornovo/UIalterada. Final97149 EXIT0/99arquivos1015testes, TSC21762heap8192/lint10fontes0avisos EXIT0. Formal52+virtual18 históricas9c inspecionadas/fontes anotadas, semPNGcommit; nãoatribuídas ao mergeR6. TESTERestático9c236testes0; hardnav staleMPANext documentado emresumo causal sanitizado, repetiçãoatual/global/QAvisual/depósitoremoto pendentes. Semhomologação/publicação presumida.
 
+## #315 — checkpoint DEV A antes do visual — 23/10/2026
+
+Cabeçalho68/controlador com key por atendimento válido, hook incondicional e menu de capacidades reais; preservados diálogos, contexto, ocupado, idempotência, fuso e feedback. Preferência não lida usa action atual e invalida contador pessoal somente após sucesso, sem editar leitura/SSE/ACK/URL. Buscar desabilitado até316; bloqueio com motivo do motor. Voltar<960/painel1400 preservam shell308, Botao móvel44 e painel318. Menu compacto/folha opt-in e Botao neutro aditivo; padrões compartilhados intactos. Guardas só migração dos12botões da barra para2header eVoltar→BotaoIcone, autorizada pelo integrador.
+
+Node22.23.2: composição d31 52arquivos616testes/TSC/lint0;315 recorte100arquivos1000testes4398 exit0,TSC59023heap8192/lint16fontes0avisos exit0; ajuste posterior limitealtura opt-in comRED→GREEN4arquivos99testes. Sem DB/global próprio/pacotes/transporte. SPEC docs/specs/inbox-cabecalho-menu.md; relatório output/inbox-315-report.md. Visual real, CLI, TESTER e global integrado pendentes; entrega parcial sem aceite presumido.
+
 - **Experimento técnico313/cache de leitura:** a208 ainda reproduz hardnav em Linkpúblico (negativo49540 preservado). Apóscausa observada de duas tarefasB incompletas→retryMPAstale, wrappersautomáticos reutilizam helpersprivados semrevalidatePath; legadosmanuais invalidam1vez, flagsinternasfixas, auth/escritas/motor/NOTIFY/GET/seloR6 preservados, semNext/ordemhistoryalterados. RED7→GREEN11servidor; recorte43297 EXIT0/100arquivos1026, TSC20905/66410heap8192 e lint9fontes0avisosEXIT0. DBisolado/snapshotintegrador:87224negativo porpremissaparticipantesemlidaAte corrigida sónafixture,39942 EXIT0/2arquivos20testes, bancoliberadopararestauraçãoantespreview. CheckpointEXPERIMENTAL separado dea208, adoção dependeA/B rápido Router/Sidebar+açãoemvoo semesperaPOST; NÃOconcluída/homologada/publicada. RawRSC/PNGnovos foraGit/ZIP.
 
 - **Adoção técnica313/f51:** integrador+TESTERexato(4/81+39R6,0) adotaram wrappersautomáticos semrevalidate, legadosintactos. MESMOLinkpúblico antesfalhavaMPAB ema208, agora62981 exit0/4ctx; leituraAUTOrealretida atéapósURLMariana4e5471 exit0, CDPmismatch3alvos/0pausas. RouterERR_ABORTED deconversaabandonada preservado comcleanupobservado, semguardglobalrelaxado. Inspeção20complementospositivos/hash:15V2+5V3clarocurto, fotoDraweremtransição excluída/preservada; V3 sóesperafotoCSSfinal. NenhumPNG/raw/RSCnoGit/ZIP. Preview40527parado; falta merge391/formalAPP26/virtual/baseatual/QA/global/publicação, semhomologaçãofinal.
@@ -5287,6 +5293,14 @@ TESTER na revisão f901:3arquivos/52testes próprios e36hashes de PNG locais
 conferidos. Suíte global da composição313 anterior92faa:877/6848 saída0;
 não estender esse gate ao novo código388 antes da nova verificação.
 
+### #315 — freeze da composição313automática/388
+
+Fonte8b3c46ac, merge4fcdc6normal comúnico conflito documental preservado. Header/controller/menu315 byteiguaisf7; hooksROOTintactos, thread388 temMaisDepois real/stableMount314 preservados. Node22:106arquivos1058testes47282,TSC50243heap8192,lint24fontes0avisos,diffcheck todos exit0. Provasprivadasf7 34casos74PNG/27pranchas inspecionadas, não atribuídasà8b. Formal44PNG/nomelongo/TESTER/globalcoordenadospendentes; nenhuma homologação presumida.
+
+### #315 — provas atuais DEV, sem homologação presumida
+
+Runtime8b/fontevisualefeb: formal3772 EXIT0 44PNG app×protótipo(22/22), longo12809 EXIT0 8contextos24PNG nome97/15tags/altura500. Inspecionadas todas68 em30pranchas, hashes conferidos. Allowlist positiva final output/inbox-315-probes/allowlist-positiva-final.json; PNGs locais nãoGit; negativos separados. Recorte106/1058,TSC50243/lint24 de8b continuam registrados, sem ownfull. Preview71311 parado/snapshot424hashes restaurado0fcd3b; sóNextAGENTS removido. Guarda específica de identificaçãoROOT, TESTER e global integrado pendentes.
+
 ### #313 — regressão global após composição #388
 
 Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432/base9b78b1e9, Node22.23.2:
@@ -5348,3 +5362,7 @@ SHA256a5ddcdd7179558a5696fc7e0867dd839c84a63ae0f094ed527729ec99814aa20.
 TESTER313favorável4f18/285+39R6 e browserpróprio13PNG/desktopclaro/móvelescuro.
 PR313aguarda a correção HIGH394 de excesso de GETs/lotes SSE antes da composição
 final; DEV B trabalha fixisolado310 e portepara313, sem misturar os diffs.
+
+### #315 — freeze após guarda de navegação da aba
+
+Mergee594→f6f104d8, conflito sóquadro/amboshistóricos. Contra8b, src/scripts mudam somente registro identificação (nenhumaUI/harness):29testes/lint0 observados819428.68capturas atuais+30pranchas/allowlist107hashes conferidos. Produto/visual8b/efeb invariantes; gates106/1058/TSC50243/lint24 são históricos exatos8b, sem novaexecução global. TESTER/globalROOT pendentes; bancosnapshot424hashes restaurado e sem processosDEV.

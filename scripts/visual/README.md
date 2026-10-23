@@ -69,7 +69,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 106 PNGs: 54 do app e 52 do protótipo. O painel do
+`--estado todos` produz 118 PNGs: 60 do app e 58 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -152,3 +152,7 @@ painel-detalhes acrescenta12PNG (três tamanhos/dois temas/app×protótipo). Com
 A prontidão318 exige o setor visível e cabeçalho canônicoMariana/avatar132, tagsAdulto/Inglês/Noite com marca semautor naNoite, apenasDetalhes ativa e umfechar36, painel inteiro no viewport e transições terminadas. A fixture vem do integrador; a CLI não semeia nem executa ações. AprovaçãoAria/triagem e altura500/textos extensos são complementos privados coordenados, sem clicar ações de negócio. Divergências do protótipo: sóDetalhes, conteúdo ERP atual, sem editar/+tag e subtítulo setor/número; shell960/1400 substitui o hide1100 antigo.
 
 Informe INBOX_VISUAL_FONTE com o SHA exato do app para as evidências finais. O manifesto registra fonteApp e hashes SHA256 dos quatro módulos de captura/prontidão/anonimização. AnonimizaçãoDOM392 é reaplicada depois das interações e antes de cada foto em ambos os alvos, registrando política/versão/substituições; a demoApp já usa números fictícios. Não anexar captura com fonte nula como QA final. GuardasReact/rede/hidratação continuam reprovando falhas.
+
+## Cabeçalho/menu #315
+
+Após o freeze de código315, menu-mais acrescenta12PNGs (3tamanhos,2temas,app×protótipo). O app confirma thread, hidratação/SSE, abre Mais ações da conversa e exige header68/menu no viewport, Buscar disabled Em breve e Bloquear disabled com o motivo completo. Não executa comandos. O protótipo abre seu menu Mais original, preservando diferenças D7/D15/D16 e itensERP. Demais estados313/314/318 permanecem; helperDOM392 roda após interações e antes da foto, consoleReact/hidratação/404/rede continuam invalidando o manifesto. FonteApp e hashes4módulos ficam no manifesto; não há seed ou writes de negócio pela CLI.
