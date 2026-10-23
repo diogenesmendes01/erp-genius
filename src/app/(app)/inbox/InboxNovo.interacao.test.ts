@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
+  parametros313: null as string | null,
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
@@ -44,7 +45,7 @@ vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => 
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: () => ({ mensagens: [] }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLido: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
@@ -75,6 +76,7 @@ let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
   m.modo = null;
+  m.parametros313 = null;
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   m.aoVisibilidade = null;
@@ -510,6 +512,7 @@ describe("composição318: Detalhes do contato selecionado", () => {
   });
 });
 it("revalidação confirma seleção local e mescla50frescos sem descartar150/paginação nem vista após retorno/resize",async()=>{
+ habilitarRota313();
  const itens=Array.from({length:150},(_,i)=>({...item("v"+i),ultimaMensagemEm:new Date(Date.UTC(2026,9,1,12)-i*1000).toISOString()}));const p={...props,selecionado:null,inicial:{itens:itens.slice(0,50),proximo:"cursor50"}} as PropsInboxNovo;
  let cursor=50;respostaLista=async()=>{const inicio=cursor;cursor+=50;return new Response(JSON.stringify({itens:itens.slice(inicio,cursor),proximo:cursor<150?"cursor100":null}))};marcar.mockImplementation(()=>new Promise(()=>{}));
  tela(p);coluna313(tela(p)).aoCarregarMais();await esvaziar();coluna313(tela(p)).aoCarregarMais();await esvaziar();expect(coluna313(tela(p)).itens).toHaveLength(150);coluna313(tela(p)).aoSelecionar("v35");const aberta=tela(p);(cabecalho(aberta) as unknown as {aoVoltar():void}).aoVoltar();m.modo="uma";tela(p);
@@ -518,4 +521,20 @@ it("revalidação confirma seleção local e mescla50frescos sem descartar150/pa
 });
 it("ack da seleção local conserva Nova aberta; somente mudança externa real fecha",()=>{
  const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");coluna313(tela(p)).aoNovaConversa();const ack={...p,selecionado:"a2"};expect(coluna313(navegar313(ack)).novaConversaAberta).toBe(true);expect(coluna313(navegar313({...ack,selecionado:"a1"})).novaConversaAberta).toBe(false);
+});
+function habilitarRota313(consulta="") {
+ m.parametros313=consulta;const local={href:"http://localhost/inbox"+(consulta?"?"+consulta:"")};vi.stubGlobal("window",{innerWidth:390,location:local,history:{replaceState(_d:unknown,_t:string,url:URL|string){local.href=String(url);m.parametros313=new URL(local.href).search.slice(1);}}});
+}
+it.each(["","c="])("Link para Inbox(%s) fechaNova e limpa seleção mesmo com propnull igual ao SSR anterior",(consulta)=>{
+ habilitarRota313();const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);coluna313(tela(p)).aoNovaConversa();expect(coluna313(tela(p)).novaConversaAberta).toBe(true);expect(m.parametros313).toBe("c=a2");m.parametros313=consulta;const t=navegar313(p);expect(coluna313(t).selecionado).toBeNull();expect(coluna313(t).novaConversaAberta).toBe(false);expect(elementos(t)[0].props["data-vista"]).toBe("lista");
+});
+it("URL avança para idnovo e snapshotSSRantigo não reverte seleção/página nem repete leitura antiga",async()=>{
+ habilitarRota313("c=a1");let concluir!:(v:{ok:boolean})=>void;marcar.mockImplementationOnce(()=>new Promise(r=>{concluir=r;}));tela(props);m.parametros313="c=a2";const novo={...props,selecionado:"a2",inicial:{itens:[{...item("a2"),preview:"Novo snapshot"}],proximo:null}} as PropsInboxNovo;const t=navegar313(novo);expect(coluna313(t).selecionado).toBe("a2");const chamadas=marcar.mock.calls.length;
+ const antiga={...props,inicial:{itens:[{...item("a1"),preview:"Antigo"}],proximo:null}} as PropsInboxNovo;navegar313(antiga);concluir({ok:false});await esvaziar();const atual=tela(antiga);expect(coluna313(atual).selecionado).toBe("a2");expect(coluna313(atual).itens.some(i=>i.preview==="Antigo")).toBe(false);expect(marcar.mock.calls.length).toBe(chamadas);
+});
+it("URLlocal confirma própria seleção antes de SSR e conservaNova/vista até propcorrespondente chegar",()=>{
+ habilitarRota313();const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);coluna313(tela(p)).aoNovaConversa();const t=navegar313(p);expect(coluna313(t).selecionado).toBe("a2");expect(coluna313(t).novaConversaAberta).toBe(true);const ack=navegar313({...p,selecionado:"a2"});expect(coluna313(ack).novaConversaAberta).toBe(true);
+});
+it("Linkc→null compropnull igual invalida GET anterior da conversa selecionada",async()=>{
+ habilitarRota313();const p={...props,selecionado:null};marcar.mockImplementation(()=>new Promise(()=>{}));let concluir!:(r:Response)=>void;respostaLista=()=>new Promise(r=>{concluir=r;});tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});m.parametros313="";navegar313(p);concluir(new Response(JSON.stringify({itens:[{...item("a1"),preview:"Snapshot GET obsoleto"}],proximo:null})));await esvaziar();expect(coluna313(tela(p)).itens.some(i=>i.preview==="Snapshot GET obsoleto")).toBe(false);
 });
