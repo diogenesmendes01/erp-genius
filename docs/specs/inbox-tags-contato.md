@@ -42,3 +42,11 @@ O 404 conserva o snapshot previamente recebido do mesmo atendimento, como antes.
 | Mesma conexão | acoes-painel-tags-pool1.int.test.ts: pool1 real: resolução/escopo/núcleo/revalidação/aviso não pedem outra conexão |
 
 Os registros Task12 são exclusivos dos quatro Botões novos, controle × com nome acessível, uma sugestão de rótulo dinâmico, uma pílula dentro do bg-surface e um aria-controls ligado a useId, com âncora e cópia literal. Nenhum sensor/limite foi mudado. O domínio/projeção de capacidades321 e resolução323 permanecem intactos.
+
+## Harness visual — preparo congelado #324
+
+Produto 2396a6c7703d0717a523d93f51a210a75f588135 permanece byte idêntico; somente scripts/testes/documentação visuais mudam. Node22.23.2: recorte de harness b1e89d, 13 arquivos/93 testes, saída0, sem filtro/skips novos; lint1ce79e saída0/max0; TSC sessão19125, aa79df→3b3698, heap8192/--noEmit, saída0. RED5abebe demonstra estado/prontidão ausentes; falhas intermediárias de fixture e referência PNG inexistente estão preservadas, sem enfraquecer a app.
+
+A matriz anterior164 permanece; painel-sem-nome acrescenta12, total176 (106 app/70 protótipo). Recorte formal desta issue:24 imagens, dois estados×três tamanhos×dois temas×dois alvos. Preflight real c0d2c2 saída0 confirmou GET200/semNome=true/podeEditarNome=true do contato324 e Mariana com pessoa/três tags. Preview13519 controlado pelo integrador; restauro823a46 e fixturee11a8f0 são operações externas. Nenhuma imagem capturada neste checkpoint.
+
+Referência funcional sem nome: HTML original docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html, conversa c9/noName:true, SHA2567698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf. O PNG pré-exportado prototipo-estado-painel-sem-nome.png não existe; nenhuma referência foi fabricada. Manifestos devem distinguir produto app, harness e HTML original; a cópia antiga da referência sobre Aria não representa promessa da app. Captura/inspeção/QA/global/publicação continuam pendentes.

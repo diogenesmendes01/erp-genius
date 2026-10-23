@@ -19,3 +19,6 @@ export function semanticaBuscaConversaPronta(): boolean;
 
 export function abrirNotaConversaApp(pagina: Page, tamanho: string): Promise<void>;
 export function semanticaRodapePronto(modo: "responder" | "nota"): boolean;
+
+export function confirmarPainelSemNome(contexto: BrowserContext, base: string, id: string): Promise<{ status: 200; semNome: true; podeEditarNome: true }>;
+export function semanticaPainelSemNomePronto(): boolean;
