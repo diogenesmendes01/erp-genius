@@ -5302,3 +5302,10 @@ Base395f8 incorporada: aplicação/testes/backend/SSE iguaisaa42, apenas seis ca
 Fonte 83f5947d preservada. O TESTER aprovou nove arquivos / 79 testes próprios (5de06e, saída 0), syntax/help/resoluções/diff check (236822, saída 0) e OIDs (bdf174). Parecer original conferido pelo SHA256 6f8b05ce...; cópia versionada em output/pr396-qa/tester-b2-83.md, com apenas EOF normalizado. O parecer do predecessor395 também é preservado, sem substituir a QA desta fonte.
 
 A main395 363c0e83 tem árvore inteira igual ao ancestral f8 já incorporado. Dois conflitos documentais mantêm a versão83; toda a árvore foi conferida igual a83 antes destes registros (9d5e10, saída 0). O head final acrescenta apenas Markdown. QA concluída, CI global final contra main ainda pendente; nenhum merge antecipado, novo banco, navegador ou instalação.
+
+
+## Inbox — PR297: comentários e reservas coordenadas
+
+Revisão de todos os comentários C1–C5:3labelsmd/json alinhadas,7emailsestáticos paraexample.com, referênciaD1porsímbolo,22referênciasPNGjámain preservadas semnovoartefato/dependência. Registro output/pr297-qa/revisao-todos.md. Decisões de produto aprovadas em inbox-decisoes-produto.md prevalecem sobre levantamento histórico. CI final/QA/merge ainda pendentes.
+
+Reserva específica322:20261023100000_tarefa_atendimento e20261023110000_tarefa_atendimento_indice (PR408). Reserva337:20261023140000_notificacao_mencao_nota,20261023170000_notificacao_mencao_unicidade_legada e20261023180000_notificacao_mencao_retira_unicidade_global; aplicação somente pelo integrador e conferência de todas as branches/worktrees/bancos descartáveis. Não reutilizar ID aplicado; faixas dos planos não reservam IDs por si. Nenhuma migration nova nesta PR.
