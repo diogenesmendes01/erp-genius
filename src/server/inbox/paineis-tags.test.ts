@@ -23,3 +23,12 @@ it("lead oculto não consulta pessoa mesmo com acesso pela linha", async () => {
 it.each([null, { responsavel: { id: "legal" } }])("sem pessoa ou responsável legal não consulta tags (%j)", async pessoa => { m.oportunidade.mockResolvedValue(oportunidade(pessoa)); m.buscar.mockResolvedValue(registro({ lead: { id: "l1", nome: "Lead", etapa: "NOVO", valorPrevisto: null, pessoaId: pessoa ? "p1" : null, pessoa } })); expect(await carregarPainel(u, "a1")).toMatchObject({ tags: [] }); expect(m.tags).not.toHaveBeenCalled(); });
 it.each(["FINANCEIRO", "SECRETARIA", "PEDAGOGICO"])("%s nunca consulta tags comerciais", async finalidade => { m.buscar.mockResolvedValue(registro({ finalidade })); expect(await carregarPainel(u, "a1")).toMatchObject({ tags: [] }); expect(m.tags).not.toHaveBeenCalled(); });
 it("convite revogado/lead negado não herda tags da resposta anterior", async () => { expect((await carregarPainel(u,"a1"))?.tags).toHaveLength(2); m.ver.mockResolvedValue(false); expect((await carregarPainel(u,"a1"))?.tags).toEqual([]); expect(m.tags).toHaveBeenCalledTimes(1); });
+
+it.each([null, { responsavel: { id: "legal" } }])("catálogo ativo não é consultado sem identidade, apesar de editarTags (%j)", async pessoa => {
+  m.oportunidade.mockResolvedValue(oportunidade(pessoa));
+  m.disponiveis.mockResolvedValue([{ id: "tag-ativa", nome: "Ativa", cor: "NEUTRA" }]);
+  const r = await carregarPainel(u, "a1");
+  expect(r?.cabecalho).toMatchObject({ pessoaId: null, capacidades: { veLead: true, editarTags: true } });
+  expect(m.disponiveis).not.toHaveBeenCalled();
+  expect(r?.cabecalho?.tagsDisponiveis).toEqual([]);
+});
