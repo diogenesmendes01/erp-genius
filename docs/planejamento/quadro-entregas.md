@@ -5779,3 +5779,10 @@ Gates do contrato500: recorte64047 saída0/15files259testes19,11s/maxWorkers2/se
 ### #317 — PR403 complemento29f e expectativa legada alinhada
 
 8PNG/2contextos positivos028fd6 inspecionados: Lucas-origem real ENCERRADO/GET200/enviofalse, Nota menu+rodapé/dialogo semsubmit e foco,1SSE simultânea/ativa (2construçõessequenciais). Allowlist positiva11arquivos em output/inbox-317-probes/review403-menu-allowlist.json; negativosR1 fora. Contrato legado AcoesAtendimento.test foi RED5be328 e atualizado só para Nota porleitura, preservando/ampliando todos negativos de negócio. GREEN9/126e86102, TSC94141/lint0b692d/diff1988510 Node22.23.2. Produção29f invariante; semPNG emGit/full/DBDEV. SnapshotA restaurado7e0eeb peloROOT; semserver/browserA. QAexata/global integrado/publicação pendentesROOT.
+
+
+### #319 — ruling500 revisado por evidência real, nova formal pendente
+
+FF846→afd08 autorizado, owner317C3/menu/A7 e estados319 preservados; recorteunido33177 67files773testes/TSC88551/lint15fontesce85dd todos0. Preflightreal52089 no Ready57416 terminou1 antesformal: Request500com erro público não consumia body e finished não encerrava; bodyvazio18264 também1, CDPpassivo e97bda confirmou headers500/dataReceived semfim, nãoéaceiteUI. ROOT retirou exigência excessiva finished500: contrato vigente requer Requestcancelado efetivamenteinjetado/fulfill500concluído, GETURLsemquery/ERR_ABORTEDexatos, OUTRO RequestPOSTERIOR mesmaURL comheaders500observados/injeção/fulfillconcluído e alerta/retrypúblicosrevalidados. Semissofalha; semdreno/fetchwrapper/alegarbodyconsumido ou200recuperado. GLOBAL/barreira200 intactos. ROOTparou57416/restaurou47bb95, AGENTSNext isoladamente removido. REDfiel2fail12pass→GREEN4files36testes; gates finais nofreeze. Novaformal42+12 e preflight/longa/Triagem/QA/publicação pendentes.
+
+Gates do rulingheaders500: recorte40409 15files260testes20,15s/TSC21486heap8192/lint3fontes39df56/diffcheckcheckhelp7aa68d todos saída0; lint0avisos. Barreira200/global e produção iguaisafd08, trackedAGENTSoriginal. Freeze7files apenasharness/teste/docs, sem novo global e formalpendenteReady/preflight.

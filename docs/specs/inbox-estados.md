@@ -58,6 +58,11 @@ O preparador aguarda o evento real load da navegaçãoHome antes de ativarCDP e 
 Em painel-erro/painel-vazio, a foto mantém a prontidão própria do painel. Observador instalado antes da navegação registra somente GET sem query de mensagens da conversa exata; finalizar aguarda término do corpo (ou falha real) dos requests já iniciados, limite30s/cleanup, antes do veredito. Não exige200 nem conversa visível oculta pelo painel. O classificador de cancelamento continua exigindo recuperação concluída da mesma URL; falha não recuperada reprova. Nenhum outro estado/status/diagnóstico é afrouxado. Negativo96724 e prova causal CDP real dd988c estão preservados no report; formal42+12 ainda pendente, sem reatribuir global5e9.
 
 
-### Cancelamento da própria injeção500
+### Contrato anterior da injeção500 — histórico substituído pelo ruling abaixo
 
 O contrato de falha controlada distingue cancelamento da injeção de recuperação200. Só aceita ERR_ABORTED exato de RequestGET semquery realmente injetado500/fulfillconcluído, se outro Request posterior da mesmaURL terminou500controlado com body completo e o estado público correspondente foi revalidado. Sem substituto, Request alheio, status diferente, corpo falho ou estado ausente continuam falhas. Observador antes da navegação, limite30s e cleanup; Request sóem memória. Classificador global de recuperação200 e guardas não mudam. Formal88639 negativa inteira e causal ada905 permanecem no report; nova matriz completa/inspeção e fases de dados aguardam ReadyROOT.
+
+
+### Contrato vigente de erro500 controlado por headers e estado público
+
+Substitui a exigência anterior de finished()===null do500. O cliente rejeita !ok sem consumir esse corpo; portanto o aceite do estado de erro exige headers500 efetivamente observados de Request POSTERIOR da MESMAURL, também pertencente à injeção/fulfill500concluído, e alerta/retry públicos revalidados. O Request cancelado também deve ter injeção/fulfill500concluído, GET/origem/path/semquery exatos e net::ERR_ABORTED. Sem substituto observado ou estado público, o cancelamento continua falha. Nenhum corpo é drenado, fetch instrumentado ou HTTP200 recuperado alegado. Classificador global e barreira dos GETs200 reais continuam intactos; limite30s cobre somente prontidão pública, com cleanup. Fonte produtiva não mudou.

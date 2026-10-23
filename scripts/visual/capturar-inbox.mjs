@@ -217,7 +217,7 @@ async function main() {
         const diagnosticos = [...erroControlado.diagnosticos];
         for (const pedido of abortados) {
           const registro = `requestfailed: ${pedido.url} ${pedido.erro}`;
-          if (erroControlado.cancelamentoEsperado(pedido.pedidoReal, pedido.erro)) diagnosticos.push(`GET500 controlado cancelado e substituído por500 concluído: ${pedido.url}`);
+          if (erroControlado.cancelamentoEsperado(pedido.pedidoReal, pedido.erro)) diagnosticos.push(`GET500 controlado cancelado e substituído por headers500 observados/erro público pronto: ${pedido.url}`);
           else if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }

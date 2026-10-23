@@ -1,7 +1,7 @@
 /** Só a identidade efetivamente injetada500 pode compor um diagnóstico controlado. */
 export async function instalarErroEstado(contexto, base, id, estado) {
   const pedidos = new WeakSet(), injetados = new WeakSet(), ordens = new WeakMap();
-  const diagnosticos = [], conclusoes = [], concluidos = new Map();
+  const diagnosticos = [], headersObservados = new Map();
   let ordem = 0, pronto = false;
   const tipo = estado === 'painel-erro' ? 'painel' : estado === 'thread-erro' ? 'mensagens' : null;
   const caminho = tipo ? '/api/inbox/atendimentos/' + encodeURIComponent(id) + '/' + tipo : null;
@@ -10,9 +10,8 @@ export async function instalarErroEstado(contexto, base, id, estado) {
   const observar = resposta => {
     if (!respostaEsperada(resposta)) return;
     const pedido = resposta.request();
-    conclusoes.push(resposta.finished().then(erro => {
-      if (erro === null) concluidos.set(pedido.url(), Math.max(concluidos.get(pedido.url()) ?? 0, ordens.get(pedido)));
-    }).catch(() => undefined));
+    const ordem = ordens.get(pedido);
+    if ((headersObservados.get(pedido.url())?.ordem ?? 0) < ordem) headersObservados.set(pedido.url(), {pedido, ordem});
   };
   if (tipo) {
     await contexto.route(u => u.origin === base && u.pathname === caminho && !u.search, async rota => {
@@ -33,16 +32,17 @@ export async function instalarErroEstado(contexto, base, id, estado) {
       let timer;
       try {
         await Promise.race([
-          (async () => { await pagina.waitForFunction(semanticaEstado319Pronto, estado); await Promise.all(conclusoes); })(),
-          new Promise((_, rejeitar) => { timer = setTimeout(() => rejeitar(new Error('Conclusão do500 controlado excedeu30000ms.')), 30000); }),
+          pagina.waitForFunction(semanticaEstado319Pronto, estado),
+          new Promise((_, rejeitar) => { timer = setTimeout(() => rejeitar(new Error('Estado público do500 controlado excedeu30000ms.')), 30000); }),
         ]);
         pronto = true;
       } finally { clearTimeout(timer); contexto.off('response', observar); }
     },
     cancelamentoEsperado(pedido, erro) {
+      const substituto = headersObservados.get(urlExata);
       return !!tipo && pronto && erro === 'net::ERR_ABORTED' && pedido.method() === 'GET'
         && pedido.url() === urlExata && injetados.has(pedido)
-        && (concluidos.get(pedido.url()) ?? 0) > ordens.get(pedido);
+        && !!substituto && injetados.has(substituto.pedido) && substituto.ordem > ordens.get(pedido);
     },
   };
 }
