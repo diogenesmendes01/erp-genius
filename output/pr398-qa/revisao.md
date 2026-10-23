@@ -30,6 +30,18 @@ O global não foi repetido para essa adaptação de fixtures; não se atribui a
 execução4467 à versão posterior das quatro chamadas.
 
 Não há nova captura de navegador ou execução DB nesta composição. As provas
-visuais314 anteriores continuam nominais às suas fontes. TESTER do commit
-exato após a adaptação solicitado; CI/main/#392B2 permanecem gates antes
+visuais314 anteriores continuam nominais às suas fontes. TESTERbc4
+favorável:sete arquivos/148 testes próprios,execd722b1 EXIT0,maxWorkers2,
+sem filtros/ignorados,sem DB/browser/global/TSC próprios. O total difere
+do7/143 do autor pela seleção própria de arquivos. CI/main/#392B2 permanecem gates antes
 do merge. Nenhuma mensagem real, integração externa ou deploy.
+
+## Preservação da limpeza de evidências
+
+A base314-r3 avançou parab23ff13b recebendo a retirada técnica404ca5.
+Somente documentação/PNG mudam depois dobc4; src/scripts/prisma/package/lock
+continuam idênticos. Os64 caminhos298 saem da base. Quatro eram variantes
+antigas diferentes da main/ZIP381: cópias locais dedicadas, SHA256/GitOID/
+tamanho conferidos antes da retirada; nenhum upload dessas variantes nem
+atribuição indevida ao ZIP381. Backup/histórico preservados.
+PR404 integrou em maincce21e19 após cinco checks verdes e QA técnico.
