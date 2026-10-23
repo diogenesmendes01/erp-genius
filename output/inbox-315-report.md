@@ -47,3 +47,7 @@ Pendentes finais: incorporar registro NÃO-REGISTRO específico da aba do contat
 ## Freeze final após registro de identificação
 
 Merge normal e5941b8c em f6f104d8f00df8f4fc172a941e93c8074d35dcbe; único conflito documental no quadro, preservados ambos históricos. Delta de src/scripts contra runtime8b: somente src/app/identificacao-registro.test.ts (registro ancorado de chave enum de navegação, sem algoritmo/UI). Guarda observada em execução819428:1arquivo29testes EXIT0; lint do arquivo0avisos EXIT0, Node22.23.2. Os gates de produto106/1058,TSC50243/lint24 permanecem da fonte8b idêntica, não são reapresentados como nova execução. Allowlist positiva final107arquivos/98PNG/14.040.081bytes novamente conferida byte/hash. TESTER e global integrado peloROOT pendentes. Nenhuma suíte global própria, DB/browser/servidor ativo ou mudança de ambiente.
+
+## Registro de fundo herdado — durante recorte316
+
+O recorte106/1058 de315 não incluiu src/app/fundo-sobre-pagina.test.ts. Não existiu gate global DEV315 aprovado; QA visual permanece invariável. O recorte316 16334 EXIT1 (66files731tests/729passes) expôs statusERP315 bg-surface-muted dentroheaderbg-surface, além do novo input316. Integrador autorizou registro específico quantidade1Cabecalho; somente essa entrada e este ledger neste commit, sem produção/busca316/algoritmo/limites. Revalidação isolada na composição315 é do integrador; no checkout316 o novo input ainda exige seu registro próprio separado.
