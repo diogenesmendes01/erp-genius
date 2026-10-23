@@ -8,6 +8,7 @@ export const TAMANHOS = Object.freeze({ desktop: [1440, 900], tablet: [1024, 768
 export const TEMAS = Object.freeze(["escuro", "claro"]);
 export const ESTADOS = Object.freeze({
   conversa: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-escuro-admin-desktop.png") },
+  "painel-detalhes": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-painel-detalhes.png") },
   "painel-fechado": { tamanhos: ["desktop"], prototipo: true },
   "sem-selecao": { tamanhos: ["desktop"], prototipo: false },
   "humano-compositor": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-claro-admin-desktop-humano-compositor.png") },

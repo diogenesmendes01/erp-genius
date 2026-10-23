@@ -8,3 +8,5 @@ export function semanticaThreadHumanaPronta(): boolean;
 
 export function abrirPopoverColunaApp(pagina: Page, estado: string, tamanho: string): Promise<void>;
 export function semanticaPopoverColunaPronta(titulo: string): boolean;
+
+export function semanticaPainelDetalhesPronto(): boolean;

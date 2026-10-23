@@ -53,6 +53,11 @@ import { ConversaAberta } from "./ConversaAberta";
 import { ColunaConversas } from "./ColunaConversas";
 import { PainelAria } from "./PainelAria";
 import { AcoesContato } from "./AcoesContato";
+import { PainelContato } from "./PainelContato";
+import { PainelSetor } from "./PainelSetor";
+import { LinhaCampo } from "./LinhaCampo";
+import { OptOutContato } from "./OptOutContato";
+import { PainelTriagem } from "./PainelTriagem";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 
 const item = (id: string) => ({
@@ -649,6 +654,46 @@ it("navegar para null descarta repetição e falha tardia da leitura anterior",a
  tela(inicial);m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a1",mensagemId:"m313",conversaId:"cv1"});
  const navegada={...inicial,selecionado:null,inicial:{itens:[{...item("a1"),naoLidas:3},item("a2")],proximo:null}} as PropsInboxNovo;
  navegar313(navegada);concluir({ok:false});await esvaziar();const t=tela(navegada);expect(marcar).toHaveBeenCalledTimes(1);expect(coluna313(t).itens.find(i=>i.id==="a1")?.naoLidas).toBe(3);
+});
+
+
+describe("composição318: Detalhes do contato selecionado", () => {
+  const painel = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!;
+  it("liga identidade/tags autorizadas e mantém a ordem dos blocos e a aprovação Aria", async () => {
+    const tags = [{ rotulo: "Noite", ia: true }];
+    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
+    const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
+    tela(p); await esvaziar(); const t = tela(p), no = painel(t);
+    expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Comercial · Escola", tags, quadrado: false });
+    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }]); expect(no.props.abaAtiva).toBe("detalhes");
+    const blocos = elementos(no.props.children as ReactNode).filter(n => [LinhaCampo, PainelSetor, PainelAria, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
+    expect(blocos.map(n => n.type)).toEqual([LinhaCampo, PainelSetor, PainelAria, AcoesContato, OptOutContato, PainelTriagem]);
+    expect(blocos[0].props.rotulo).toBe("WhatsApp");
+    expect((blocos[0].props.valor as ReactElement<{ className: string; children: string }>).props).toMatchObject({ className: "font-mono", children: "+506" });
+    expect(elementos(t).filter(n => n.type === PainelContato)).toHaveLength(1);
+    expect(elementos(t).filter(n => n.type === PainelTriagem)).toHaveLength(1);
+    expect(elementos(t).find(n => n.type === ConversaAberta)!.props).not.toHaveProperty("triagem");
+    expect(elementos(t).find(n => n.type === ConversaAberta)!.props).not.toHaveProperty("revisoes");
+  });
+  it("não reaproveita tags de outra seleção durante a carga e reinicia a aba em Detalhes", async () => {
+    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags: [{ rotulo: "Privada A", ia: false }], podeEnviar: true }));
+    tela(); await esvaziar(); const antes = tela();
+    (painel(antes).props.aoTrocarAba as (id: string) => void)("atividade");
+    lista(antes).aoSelecionar("a2");
+    const depois = painel(tela());
+    expect(depois.props.contato).toMatchObject({ id: "c-a2", nome: "a2", tags: [] });
+    expect(depois.props.abaAtiva).toBe("detalhes");
+    lista(tela()).aoSelecionar("a1"); expect(painel(tela()).props.abaAtiva).toBe("detalhes");
+  });
+  it("telefone ausente e grupo preservam omissões; triagem sem seleção continua na ponte", () => {
+    const semTelefone = { ...props, inicial: { itens: [{ ...item("a1"), contatoTelefone: "", grupo: true }], proximo: null } } as PropsInboxNovo;
+    const no = painel(tela(semTelefone));
+    expect(elementos(no.props.children as ReactNode).some(n => n.type === LinhaCampo || n.type === OptOutContato)).toBe(false);
+    m.g = criarGanchos(); m.efeitos = [];
+    const semSelecao = tela({ ...props, selecionado: null, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] });
+    expect(elementos(semSelecao).filter(n => n.type === PainelTriagem)).toHaveLength(1);
+    expect(elementos(semSelecao).some(n => n.type === PainelContato)).toBe(false);
+  });
 });
 it("revalidação confirma seleção local e mescla50frescos sem descartar150/paginação nem vista após retorno/resize",async()=>{
  habilitarRota313();

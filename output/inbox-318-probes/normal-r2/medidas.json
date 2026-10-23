@@ -1,0 +1,2940 @@
+{
+  "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+  "etapa": "probes privados antes do próximo fix313; não QA final",
+  "resultados": [
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 390,
+      "height": 500,
+      "nomeAX": "Voltar para a conversa",
+      "esperado": "Voltar para a conversa",
+      "antes": {
+        "aside": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 443,
+          "right": 390,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 129,
+          "y": 93,
+          "w": 132,
+          "h": 132,
+          "right": 261,
+          "bottom": 225
+        },
+        "botao": {
+          "x": 10,
+          "y": 67,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": 103
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 443,
+          "total": 805
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 443,
+          "right": 390,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 129,
+          "y": -269,
+          "w": 132,
+          "h": 132,
+          "right": 261,
+          "bottom": -137
+        },
+        "botao": {
+          "x": 10,
+          "y": -295,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": -259
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 362,
+          "height": 443,
+          "total": 805
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 431.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-390-topo.png",
+          "sha256": "fca192d7d7489595e1be14d9f9f96d2f8f93478852d4ea0ec5d746ff75932baa",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-fim.png",
+          "sha256": "9606a00c8e5d63f01813d059ba56ee4b91b3591d5dc9dc5a9dcf9d99ca54b825",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 699,
+      "height": 500,
+      "nomeAX": "Voltar para a conversa",
+      "esperado": "Voltar para a conversa",
+      "antes": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 447,
+          "right": 699,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 283.5,
+          "y": 89,
+          "w": 132,
+          "h": 132,
+          "right": 415.5,
+          "bottom": 221
+        },
+        "botao": {
+          "x": 10,
+          "y": 63,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": 99
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 447,
+          "right": 699,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 283.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 415.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 10,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 322,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-699-topo.png",
+          "sha256": "74dbc640dd4e4d5e2406d248436c797f71d079eb556a38c06dc22e2030e7c50f",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-699-fim.png",
+          "sha256": "c37cecd401649e63d8e69a47dea6391ccfbdaeaf1d8fc79ba7b58f8b377d3eb1",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 700,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 447,
+          "right": 700,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 284,
+          "y": 89,
+          "w": 132,
+          "h": 132,
+          "right": 416,
+          "bottom": 221
+        },
+        "botao": {
+          "x": 10,
+          "y": 63,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": 99
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 447,
+          "right": 700,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 284,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 416,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 10,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 322,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-700-topo.png",
+          "sha256": "a778d7b542017f92425f8ada9df7cdeda16c5d63bab08d8336c2cdcfa4b6f5a7",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-700-fim.png",
+          "sha256": "aab3a0dd24f4e6242e1cfdb186c40adfc4cd7006af6f57f188a6d1815f905780",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 959,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 500,
+          "right": 959,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 525.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 657.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 234,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 270,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 500,
+          "right": 959,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 525.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 657.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 234,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 270,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-959-topo.png",
+          "sha256": "668ef373c4b7662b740647a209995da4960219d68114929ad4f9b3a3a00a32c4",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-959-fim.png",
+          "sha256": "b73f8410c30838ac29e231c74f8489e06c83d51471f32eb6edbba02a8da018ec",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 960,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 612,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 960,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 720.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 852.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 623,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 659,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 612,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 960,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 720.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 852.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 623,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 659,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-960-topo.png",
+          "sha256": "24ce07977e1f4aefe37f6a5f459519344128275fd3da599a16d2c57d22f55c7e",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-960-fim.png",
+          "sha256": "f22079cadaa73cb89e51f5c24099077eea78ed24cc62fe6bd3bc1da956d1e77a",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 1024,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 676,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1024,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 784.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 916.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 687,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 723,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 676,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1024,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 784.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 916.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 687,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 723,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-1024-topo.png",
+          "sha256": "a67d5d9e69fa36d579ed5e0678541af01fed35e331fbd033473abdd1e3228032",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1024-fim.png",
+          "sha256": "d490ff19a0b40411fe9f7af406e4da52c8abdd8bb38c83b4fefa0ad392a642a0",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 1399,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 1051,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1399,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1159.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 1291.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 1062,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 1098,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 1051,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1399,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1159.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 1291.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 1062,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 1098,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-1399-topo.png",
+          "sha256": "d3b26f492140b816a540267594c2ee913ea830fe85c07bd556e198d24be70134",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1399-fim.png",
+          "sha256": "b4f6420911b6bdeec4f5d6a47eefc2e7b2b9f0bcb7112fbb57f1e590963f20bb",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 1400,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1160.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 1292.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 1063,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 1099,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "depois": {
+        "aside": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1160.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 1292.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 1063,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 1099,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-1400-topo.png",
+          "sha256": "b242cd86f1975bc7a357ec7f40e97f921fd0a2f6e86abcc7e4ae9dccea6019b3",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1400-fim.png",
+          "sha256": "89e964e5b351e9d30cd6a5c202f9ebd1a17a1cbf48a1cf16a4c2c04cd5d5e759",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "light",
+      "width": 1440,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1200.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 1332.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 1103,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 1139,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "depois": {
+        "aside": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1200.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 1332.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 1103,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 1139,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "light-1440-topo.png",
+          "sha256": "b332db9cf127830992d3fe7b58503390b8b61a0893b93e88cb65613bf666fd81",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-fim.png",
+          "sha256": "d096e694d081365844b8c67bb876f6f47e7bf1cc811def0fa8a9baa3c18e5a67",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 390,
+      "height": 500,
+      "nomeAX": "Voltar para a conversa",
+      "esperado": "Voltar para a conversa",
+      "antes": {
+        "aside": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 443,
+          "right": 390,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 129,
+          "y": 93,
+          "w": 132,
+          "h": 132,
+          "right": 261,
+          "bottom": 225
+        },
+        "botao": {
+          "x": 10,
+          "y": 67,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": 103
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 443,
+          "total": 805
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 443,
+          "right": 390,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 129,
+          "y": -269,
+          "w": 132,
+          "h": 132,
+          "right": 261,
+          "bottom": -137
+        },
+        "botao": {
+          "x": 10,
+          "y": -295,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": -259
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 362,
+          "height": 443,
+          "total": 805
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 431.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-390-topo.png",
+          "sha256": "4f5c5c57b6f833d5b0d6cd3a26b67664782ce5c92ae5fcc4679e7735f8e69dfd",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-fim.png",
+          "sha256": "498a66d69ead1669fcb4e2d680fcb6cba6cfdb627fc0276b045f8965c7e02bab",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 699,
+      "height": 500,
+      "nomeAX": "Voltar para a conversa",
+      "esperado": "Voltar para a conversa",
+      "antes": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 447,
+          "right": 699,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 283.5,
+          "y": 89,
+          "w": 132,
+          "h": 132,
+          "right": 415.5,
+          "bottom": 221
+        },
+        "botao": {
+          "x": 10,
+          "y": 63,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": 99
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 447,
+          "right": 699,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 283.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 415.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 10,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 322,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-699-topo.png",
+          "sha256": "73e7600ef648c390d6da98bfbea8d6538749913678187a044eb47eaaa8f0fb50",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-699-fim.png",
+          "sha256": "fb2348300cda51d109d27acb3853fc4f73f37c5b8e95e6229eb0b2a799774d32",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 700,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 447,
+          "right": 700,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 284,
+          "y": 89,
+          "w": 132,
+          "h": 132,
+          "right": 416,
+          "bottom": 221
+        },
+        "botao": {
+          "x": 10,
+          "y": 63,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": 99
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 447,
+          "right": 700,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 284,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 416,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 10,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 46,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 322,
+          "height": 447,
+          "total": 769
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-700-topo.png",
+          "sha256": "ea05e625bd6c0609ce7ba0b393786392b1787fb97c61252d77f9f3e8b0133108",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-700-fim.png",
+          "sha256": "b992fb746cb33f6f9eb0a0f45b7fce3851fa0dcdf2a41ba7a3c0ae2139df4e37",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 959,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 500,
+          "right": 959,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 525.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 657.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 234,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 270,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 500,
+          "right": 959,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 525.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 657.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 234,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 270,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-959-topo.png",
+          "sha256": "2b7d7af534ba2e1183c002d50406a0f21e38e654c13c8743098da14b0159d93c",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-959-fim.png",
+          "sha256": "371b8c8472c64f0620889b8e15a9d31cbce28308044c69ec76147ba5992ea82e",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 960,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 612,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 960,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 720.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 852.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 623,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 659,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 612,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 960,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 720.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 852.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 623,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 659,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-960-topo.png",
+          "sha256": "09d0466cedf8034f5c9fe258a39e239b153bf6c781d8048dd2a38b54990d117c",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-960-fim.png",
+          "sha256": "e7d149d56edd581a13e051d4dc4616aa5621a6f32cffcbc206db83c4126c4c58",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 1024,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 676,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1024,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 784.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 916.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 687,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 723,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 676,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1024,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 784.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 916.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 687,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 723,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1024-topo.png",
+          "sha256": "138493bfd8d0df73c955b9de6d025cae26a572594966da4775b02a75668fe6a6",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1024-fim.png",
+          "sha256": "4d1ebd9f39f34c62ee7546072a8763bccd1cbbec7a365431a449788e94d86ce6",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 1399,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 1051,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1399,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1159.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 1291.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 1062,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 1098,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "depois": {
+        "aside": {
+          "x": 1051,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1399,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1159.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 1291.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 1062,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 1098,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        },
+        "modal": "true",
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": true
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1399-topo.png",
+          "sha256": "b043a44ba9743dd9370eee1925d22a71af376eb8169f1abb3ac0855b5b731812",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1399-fim.png",
+          "sha256": "80f702d7a2f796a48e49415611f2f8b086f427585b22a5da2e3625f53690804f",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 1400,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1160.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 1292.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 1063,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 1099,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "depois": {
+        "aside": {
+          "x": 1052,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1400,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1160.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 1292.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 1063,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 1099,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1400-topo.png",
+          "sha256": "d2e0b2602dc01e5d9325258f1123a150a021e857ac2e816c43a27c7ccfcf1cf9",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1400-fim.png",
+          "sha256": "9d1ee963de6ddfba7f437926ebc73af2209286bc226322149bfe887e4afc55b8",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "9dd098d226a80291711bc6f1e007194949489469",
+      "tema": "dark",
+      "width": 1440,
+      "height": 500,
+      "nomeAX": "Fechar painel",
+      "esperado": "Fechar painel",
+      "antes": {
+        "aside": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1200.5,
+          "y": 36,
+          "w": 132,
+          "h": 132,
+          "right": 1332.5,
+          "bottom": 168
+        },
+        "botao": {
+          "x": 1103,
+          "y": 10,
+          "w": 36,
+          "h": 36,
+          "right": 1139,
+          "bottom": 46
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 0,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "depois": {
+        "aside": {
+          "x": 1092,
+          "y": 0,
+          "w": 348,
+          "h": 500,
+          "right": 1440,
+          "bottom": 500
+        },
+        "avatar": {
+          "x": 1200.5,
+          "y": -233,
+          "w": 132,
+          "h": 132,
+          "right": 1332.5,
+          "bottom": -101
+        },
+        "botao": {
+          "x": 1103,
+          "y": -259,
+          "w": 36,
+          "h": 36,
+          "right": 1139,
+          "bottom": -223
+        },
+        "quantidadeFechar": 1,
+        "scroll": {
+          "top": 269,
+          "height": 500,
+          "total": 769
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        },
+        "modal": null,
+        "tabs": [
+          {
+            "nome": "Detalhes",
+            "selected": "true",
+            "tabindex": 0
+          }
+        ],
+        "tags": [
+          {
+            "texto": "Adulto",
+            "ia": false
+          },
+          {
+            "texto": "Inglês",
+            "ia": false
+          },
+          {
+            "texto": "Noite",
+            "ia": true
+          }
+        ],
+        "whatsApp": true,
+        "optOut": true,
+        "aria": false,
+        "focoNoPainel": false
+      },
+      "alcance": {
+        "top": 449.5,
+        "bottom": 475.5,
+        "dentro": true
+      },
+      "focoAba": true,
+      "retorno": true,
+      "identidade": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1440-topo.png",
+          "sha256": "12683253fba5b6d80c96aa4b0b88d79099b0744031f4cd6c9671182071d24de7",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-fim.png",
+          "sha256": "6cb1c1a88e6adb04298171f7790a31e59c3df446d8e078c25c46fd90ca87fcdb",
+          "anonim": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}
