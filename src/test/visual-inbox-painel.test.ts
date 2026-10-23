@@ -5,7 +5,7 @@ afterEach(() => vi.unstubAllGlobals());
 it("painel-detalhes cobre três tamanhos/dois temas sem reduzir estados313/314", () => {
   const novas = combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-detalhes"] });
   expect(novas).toHaveLength(12); expect(new Set(novas.map(c => c.tamanho))).toEqual(new Set(["desktop", "tablet", "celular"]));
-  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS) })).toHaveLength(164);
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS) })).toHaveLength(176);
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["tablet-painel", "celular-painel"] })).toHaveLength(8);
 });
 it.each(["painel-detalhes", "tablet-painel", "celular-painel"])("%s aguarda setor e semântica318 sem exigir thread oculta", async estado => {
@@ -17,8 +17,9 @@ it.each(["painel-detalhes", "tablet-painel", "celular-painel"])("%s aguarda seto
 it("semântica318 reprova casca antiga, conteúdo incompleto, tagIA incorreta e abas não entregues", () => {
   const rect = {left:0,right:348,top:0,bottom:700,width:348,height:700};
   let header = true, nome = "Mariana Costa", ia = "Noite", tabs = [{textContent:"Detalhes",getAttribute:(n:string)=>n==="aria-selected"?"true":null}], avatar = 132, animando = false;
+  const controles = [{textContent:"+ tag",disabled:false,getAttribute:()=>null}, ...["Adulto","Inglês","Noite"].map(t=>({textContent:"×",disabled:false,getAttribute:()=>"Remover tag "+t}))];
   const p = { inert:false, getAttribute:()=>null, getBoundingClientRect:()=>rect, getAnimations:()=>animando?[{playState:"running"}]:[],
-    querySelector:(q:string)=> q==="[data-cabecalho-contato]" ? header ? {textContent:"Mariana Costa Adulto Inglês Noite",querySelector:(s:string)=>s==="h2"?{textContent:nome}:s===':scope > span'?{getBoundingClientRect:()=>({width:avatar,height:avatar})}:s==='[aria-label="Criada pela Aria"]'?{parentElement:{textContent:ia}}:null}:null:null,
+    querySelector:(q:string)=> q==="[data-cabecalho-contato]" ? header ? {textContent:"Mariana Costa Adulto Inglês Noite",querySelectorAll:()=>controles,querySelector:(s:string)=>s==="h2"?{textContent:nome}:s===':scope > span'?{getBoundingClientRect:()=>({width:avatar,height:avatar})}:s==='[aria-label="Criada pela Aria"]'?{parentElement:{textContent:ia,querySelector:()=>({textContent:ia})}}:null}:null:null,
     querySelectorAll:(q:string)=>q==='[role="tab"]'?tabs:q==='button[aria-label="Fechar painel do contato"]'?[{getBoundingClientRect:()=>({width:36,height:36})}]:[] };
   vi.stubGlobal("window",{innerWidth:390,innerHeight:844});vi.stubGlobal("document",{querySelector:()=>p});
   expect(semanticaPainelDetalhesPronto()).toBe(true);header=false;expect(semanticaPainelDetalhesPronto()).toBe(false);header=true;nome="Outro contato";expect(semanticaPainelDetalhesPronto()).toBe(false);nome="Mariana Costa";ia="Adulto";expect(semanticaPainelDetalhesPronto()).toBe(false);ia="Noite";tabs=[...tabs,{...tabs[0],textContent:"Oportunidades"}];expect(semanticaPainelDetalhesPronto()).toBe(false);tabs=tabs.slice(0,1);avatar=32;expect(semanticaPainelDetalhesPronto()).toBe(false);avatar=132;animando=true;expect(semanticaPainelDetalhesPronto()).toBe(false);animando=false;p.inert=true;expect(semanticaPainelDetalhesPronto()).toBe(false);
