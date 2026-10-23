@@ -464,3 +464,13 @@ it("navegar para null descarta repetição e falha tardia da leitura anterior",a
  const navegada={...inicial,selecionado:null,inicial:{itens:[{...item("a1"),naoLidas:3},item("a2")],proximo:null}} as PropsInboxNovo;
  navegar313(navegada);concluir({ok:false});await esvaziar();const t=tela(navegada);expect(marcar).toHaveBeenCalledTimes(1);expect(coluna313(t).itens.find(i=>i.id==="a1")?.naoLidas).toBe(3);
 });
+it("revalidação confirma seleção local e mescla50frescos sem descartar150/paginação nem vista após retorno/resize",async()=>{
+ const itens=Array.from({length:150},(_,i)=>({...item("v"+i),ultimaMensagemEm:new Date(Date.UTC(2026,9,1,12)-i*1000).toISOString()}));const p={...props,selecionado:null,inicial:{itens:itens.slice(0,50),proximo:"cursor50"}} as PropsInboxNovo;
+ let cursor=50;respostaLista=async()=>{const inicio=cursor;cursor+=50;return new Response(JSON.stringify({itens:itens.slice(inicio,cursor),proximo:cursor<150?"cursor100":null}))};marcar.mockImplementation(()=>new Promise(()=>{}));
+ tela(p);coluna313(tela(p)).aoCarregarMais();await esvaziar();coluna313(tela(p)).aoCarregarMais();await esvaziar();expect(coluna313(tela(p)).itens).toHaveLength(150);coluna313(tela(p)).aoSelecionar("v35");const aberta=tela(p);(cabecalho(aberta) as unknown as {aoVoltar():void}).aoVoltar();m.modo="uma";tela(p);
+ const fresca={...p,selecionado:"v35",contagens:{todas:151,minhas:3,naoLidas:4,prazo:2,fila:1},inicial:{itens:itens.slice(0,50).map((v,i)=>i===0?{...v,preview:"Snapshot atualizado"}:v),proximo:"cursor50"}} as PropsInboxNovo;
+ let t=navegar313(fresca);expect(coluna313(t).itens).toHaveLength(150);expect(coluna313(t).proximo).toBeNull();expect(coluna313(t).itens[0].preview).toBe("Snapshot atualizado");expect(coluna313(t).contagens).toEqual(fresca.contagens);expect(coluna313(t).selecionado).toBe("v35");expect(elementos(t)[0].props["data-vista"]).toBe("lista");m.modo="duas";t=navegar313(fresca);m.modo="uma";t=navegar313(fresca);expect(coluna313(t).itens).toHaveLength(150);expect(coluna313(t).selecionado).toBe("v35");
+});
+it("ack da seleção local conserva Nova aberta; somente mudança externa real fecha",()=>{
+ const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");coluna313(tela(p)).aoNovaConversa();const ack={...p,selecionado:"a2"};expect(coluna313(navegar313(ack)).novaConversaAberta).toBe(true);expect(coluna313(navegar313({...ack,selecionado:"a1"})).novaConversaAberta).toBe(false);
+});

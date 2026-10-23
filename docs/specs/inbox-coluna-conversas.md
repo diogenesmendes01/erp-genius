@@ -49,3 +49,7 @@ Harness autorizado acrescenta filtros/seletor-numero/nova-conversa nos3tamanhos/
 ### Selecionar conversa com popover aberto — R1
 
 Ao clicar linha da lista, Coluna encerra qualquer popover e encaminha a seleção original uma vez, inclusive se o id já estava selecionado. Mudança real da seleção recebida também encerra seu popover. Inbox fechaNova e define retornoConversa antes de ocultar coluna/cleanup; nunca devolve foco ao gatilho oculto. Foco, ausência de listener residual, CtrlK e navegação recebida estão cobertos em ReactDOM real sobre DOMmínimo. Não modifica helper/default/painel ou action; submit mockado prova navegação/chave/trava sem invocar servidor. Gates97arquivos911testes/TSC/lintdirigido EXIT0; prova Chrome do fix ainda pendente neste registro.
+
+### Confirmação de seleção local por revalidação
+
+Propc que apenas confirma o id já selecionado localmente não muda contexto: primeira página fresca é mesclada pelo contrato existente, preservando páginas extras/cursor e vista/popover/foco. Filtros diferentes ou id/null recebido diferente da seleção atual continuam reiniciando a página e fechando Nova. O alvo de foco só acompanha navegação real, não a confirmação tardia de leitura. Regressões150→snapshotSSR50comdadosfrescos/retorno/resize, confirmação com Nova aberta/Escape e navegações externas. Não modifica VirtualList, backend ou Next; corrida URL antiga permanece uma investigação separada até prova real. Gates98arquivos973testes/TSC/lint3fontes EXIT0, browser pós-fix pendente.
