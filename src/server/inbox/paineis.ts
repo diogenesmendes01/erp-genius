@@ -5,7 +5,11 @@ import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
 import { carregarAcoesContatoInbox, carregarAriaDoAtendimento, type AriaDoAtendimento, cobrancaAtivaDoAtendimento, podeVerLeadNaThread, type AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
 
+export type TagPainel = { rotulo: string; ia: boolean };
+
 export type PainelSetor = DadosSetor & {
+  /** Só pessoa comercial já autorizada; ausente apenas em fixtures antigas. */
+  tags?: TagPainel[];
   /** Ações de cadastro e cobrança (as do Inbox antigo); null em grupo. Ausente nos testes de marcação antigos. */
   acoes?: AcoesContatoInbox | null;
   /** Estado da Aria no atendimento (Task 29). Ausente nos testes de marcação antigos. */
@@ -31,12 +35,22 @@ const CATEGORIAS_EXIGIDAS = ["CONTRATO", "COMPROVANTE"] as const;
 export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): Promise<PainelSetor | null> {
   const dados = await carregarDadosSetor(u, atendimentoId);
   if (!dados) return null;
-  const [acoes, envio, aria] = await Promise.all([
+  const [acoes, envio, aria, tags] = await Promise.all([
     carregarAcoesContatoInbox(u, atendimentoId),
     atendimentoVisivel(u, atendimentoId, true),
     carregarAriaDoAtendimento(u, atendimentoId),
+    dados.setor === "COMERCIAL" && dados.pessoaId ? tagsDaPessoa(dados.pessoaId) : Promise.resolve([]),
   ]);
-  return { ...dados, acoes, podeEnviar: !!envio, aria };
+  return { ...dados, acoes, podeEnviar: !!envio, aria, tags };
+}
+
+/** Somente depois de carregarDadosSetor autorizar a pessoa; não é action/endpoint. */
+async function tagsDaPessoa(pessoaId: string): Promise<TagPainel[]> {
+  const tags = await prisma.pessoaTag.findMany({
+    where: { pessoaId }, orderBy: { tag: { nome: "asc" } },
+    select: { criadoPorId: true, tag: { select: { nome: true } } },
+  });
+  return tags.map(t => ({ rotulo: t.tag.nome, ia: t.criadoPorId === null }));
 }
 
 async function carregarDadosSetor(u: UsuarioSessao, atendimentoId: string): Promise<DadosSetor | null> {
