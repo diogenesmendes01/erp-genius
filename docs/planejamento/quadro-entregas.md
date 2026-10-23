@@ -5853,3 +5853,13 @@ Conflitos sóquadro, históricos preservados. Recorte6/81 e global42416 EXIT0:
 887arquivos/6.950testes,242,41s,maxWorkers2,sem filtros/ignorados. Nexttypegen/
 TSC61138 e lint86951 EXIT0,0erros40avisos. Sem novo DB/browser. TESTERexato/
 CI/main/392B2 pendentes. output/pr401-qa/revisao.md; C2/#403 tratado àparte.
+## PR #402 — composição C1 e C2 real verificadas
+
+Fontefff0095c/base316-r31379a138,hook/testC2igual7a,UI/scriptsigualc2ec;
+delta só8produtorespuro/Avatar/SSE. Recorte8/52 e global23642 EXIT0:894/
+6.987testes,251,81s,maxWorkers2,sem filtros/ignorados. Nexttypegen/TSC14950
+e lint73243 EXIT0/40. TESTERfff favorável10/13303568d0,sem DB/browser/global.
+C2ERP nominaldf9/317:2ctx/10PNG,159msgs4notas/paginação/pin visível,manual
+12716/11859/foco mantidos após1SSE+1GET2xxreal/body porcontexto. Snapshot
+restaurado peloROOT,semnovaslinhas. Limites e fontes explícitosreport402;
+não reatribuir capturas ao fff/C6. CI/main/392B2 pendentes.
