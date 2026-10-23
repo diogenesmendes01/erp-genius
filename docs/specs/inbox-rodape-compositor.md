@@ -1,5 +1,14 @@
 # Rodapé e compositor — #317
 
+Estado integrado em23/10: gatesROOT85f encerrados0 (897arquivos/7.021testes,
+TSC38143,lint49666/42avisos herdados eprivados). Formal4941 refeita24/24PNG
+app×protótipo nos3tamanhos/2temas, normal/permissões e C2ERP reais encerrados0,
+QA independente e allowlists explícitas. Detalhes/fontes/limites atuais em
+output/inbox-317-global-final.md. Os checkpoints pendentes abaixo são históricos.
+Visuais317bbb/df9 precedem o porte de transporteC6 idêntico01a; componentes
+visuais não mudaram, sem atribuir retryC6 aos registros ERP antigos. CI/revisão/
+merge e dependências permanecem gates externos à implementação local.
+
 Base29479848432d2b4fd37972f104b6b7e5cae62368; implementação inline da Task12/brief aprovado. Branch31627b imutável. Só317+319 ativos.
 
 RodapeConversa mantém abas Responder/Nota por atendimento, alvo44 com face26 e teclado/setas/Home/End/aria. Reutiliza Compositor e o único controlador de ações por atendimento (coordenador local/renderprop, sem wrapperDOM). Header/busca/Thread/rodapé permanecem na mesma árvore durante abas/interações/cargas; troca real de contato encerra o coordenador e pode remontar scroller, rulingROOT explícito. Itemnull é fallback real.
