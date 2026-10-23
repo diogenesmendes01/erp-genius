@@ -2,6 +2,12 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox E2.4 — tags e contato sem nome (#324) — checkpoint 23/10/2026
+
+DEV A em codex/inbox-e2-324 sobre agregado local272a; código entregue para revisão, SEM aceite visual/QA/global/PR. Tags por ID e D20, catálogo8 somente visual, capacidades CRM atuais, actions com identidade/escopo na mesma transação, locks nome→vínculo, revalidação pós-lock, Evento/aviso somente em mutação/commit. UI slots aditivos, formulário CAS bruto sem promessa Aria, input indisponível durante salvar; controles324 retirados em snapshot404 sem apagar leitura. Nenhum hook leitura/SSE/R6/Compositor/Rodape/Sino alterado.
+
+Gates DEV Node22.23.2: 64arquivos/756unitários sessão30020 saída0; TSCheap8192 sessão48914 saída0; lintdirigido4124d3 zero; INT regressão5arquivos/53 sessão28822 e actions final15 sessão29145, ambos0 em execuções distintas. Relatório output/inbox-324-report.md separa REDs, falhas de fixture/mock concorrente NextAuth e limites. Banco dev-email487 liberado ao integrador após15casos, sem presumir restauro. Visual3tamanhos×2temas/fixtures/harness e QA/global/publicação pendentes. SPEC docs/specs/inbox-tags-contato.md. Sem install/schema/Prisma/envio/push.
+
 ## Pós-merge PR396 C5 — hook compartilhado — 23/10/2026
 
 Teste ReactDOM real de useEventosInbox com EventSource falso/semrede:3casos ligados ao módulo produtivo, conectado/callback atualizado semreassinar/2consumidores1fonte/cleanup/StrictMode/ausênciadeEventSource. Mutação callback obsoleto1fail/2pass, fonte restaurada byteexata; GREEN6/49 e amplo11/367 terminais0. TSC79557/lint6fontes0 após última mudançaexecutável. Helperantigo e runtimehook/SSE/loja preservados. Report output/inbox-posmerge-guardas-report.md separa todosgates/limites. Semnovo global/browser/PNG/deps/schema/migration/push; QAintegrador pendente.

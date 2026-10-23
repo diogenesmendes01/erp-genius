@@ -10,11 +10,11 @@ import { carregarPainel } from "./paineis";
 const u = { id: "u1", nome: "Vendedor", papeis: [Papel.VENDEDOR] } as UsuarioSessao;
 const registro = (extra = {}) => ({ id: "a1", finalidade: "COMERCIAL", leadId: "l1", aluno: null, lead: { id: "l1", nome: "Lead", etapa: "NOVO", valorPrevisto: null, pessoaId: "p1", pessoa: { responsavel: null } }, matricula: null, conversa: { contatoId: "c1", contato: { pessoaId: "p1", nomeExibicao: null, nomePerfil: null, telefoneE164: "+550000000001", responsavel: null } }, ...extra });
 const oportunidade = (pessoa: unknown = { id: "p1", responsavel: null }) => ({ id: "l1", nome: "Lead", b2b: false, planoPrevisto: null, pessoa, empresa: null, participantes: [] });
-beforeEach(() => { vi.resetAllMocks(); m.escopo.mockResolvedValue({ id: "a1" }); m.buscar.mockResolvedValue(registro()); m.ver.mockResolvedValue(true); m.oportunidade.mockResolvedValue(oportunidade()); m.disponiveis.mockResolvedValue([]); m.tags.mockResolvedValue([{ tag: { nome: "Inglês" }, criadoPorId: "autor" }, { tag: { nome: "Noite" }, criadoPorId: null }]); m.acoes.mockResolvedValue({ podeVincular: true }); m.envio.mockResolvedValue({ id: "a1" }); m.aria.mockResolvedValue({ pausada: true, sugestoes: [] }); });
+beforeEach(() => { vi.resetAllMocks(); m.escopo.mockResolvedValue({ id: "a1" }); m.buscar.mockResolvedValue(registro()); m.ver.mockResolvedValue(true); m.oportunidade.mockResolvedValue(oportunidade()); m.disponiveis.mockResolvedValue([]); m.tags.mockResolvedValue([{ tag: { id: "ingles", nome: "Inglês" }, criadoPorId: "autor" }, { tag: { id: "noite", nome: "Noite" }, criadoPorId: null }]); m.acoes.mockResolvedValue({ podeVincular: true }); m.envio.mockResolvedValue({ id: "a1" }); m.aria.mockResolvedValue({ pausada: true, sugestoes: [] }); });
 it("tags só depois do escopo e pessoa autorizada; retorno mínimo/marcaD20/ordem", async () => {
- const r = await carregarPainel(u, "a1"); expect(r?.tags).toEqual([{ rotulo: "Inglês", ia: false }, { rotulo: "Noite", ia: true }]);
+ const r = await carregarPainel(u, "a1"); expect(r?.tags).toEqual([{ id: "ingles", rotulo: "Inglês", ia: false }, { id: "noite", rotulo: "Noite", ia: true }]);
  expect(m.buscar).toHaveBeenCalledWith(expect.objectContaining({ where: { AND: [{ id: "a1" }, { id: "a1" }] } }));
- expect(m.tags).toHaveBeenCalledWith({ where: { pessoaId: "p1" }, orderBy: { tag: { nome: "asc" } }, select: { criadoPorId: true, tag: { select: { nome: true } } } });
+ expect(m.tags).toHaveBeenCalledWith({ where: { pessoaId: "p1" }, orderBy: { tag: { nome: "asc" } }, select: { criadoPorId: true, tag: { select: { id: true, nome: true } } } });
  expect(m.tags.mock.invocationCallOrder[0]).toBeGreaterThan(m.ver.mock.invocationCallOrder[0]);
  expect(r).toMatchObject({ podeEnviar: true, acoes: { podeVincular: true }, aria: { pausada: true } });
 });

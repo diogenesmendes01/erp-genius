@@ -1,0 +1,24 @@
+import { afterAll, beforeEach, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+vi.hoisted(() => { const url = new URL(process.env.DATABASE_URL!); url.searchParams.set("connection_limit", "1"); url.searchParams.set("pool_timeout", "3"); process.env.DATABASE_URL = url.toString(); (globalThis as { prisma?: unknown }).prisma = undefined; });
+const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: () => authMock() })); vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { criarEAtribuirTagNoInbox, atribuirTagNoInbox, removerTagNoInbox } from "./acoes-painel";
+beforeEach(truncarBanco); afterAll(() => prisma.$disconnect());
+it("pool1 real: resolução/escopo/núcleo/revalidação/aviso não pedem outra conexão", async () => {
+  const admin = await criarUsuario([Papel.ADMINISTRADOR]); authMock.mockResolvedValue({ user: { id: admin.id } });
+  const pessoa = await prisma.pessoa.create({ data: { nome: "Pessoa fictícia pool1 324" } });
+  const op = await prisma.oportunidade.create({ data: { nome: "Curso fictício pool1 324", pessoaId: pessoa.id } });
+  const ct = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5500000324001", pessoaId: pessoa.id } });
+  const nr = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5500000324002", rotulo: "Linha fictícia", driver: "MOTOR", finalidade: "VENDAS" } });
+  const cv = await prisma.conversaWhatsApp.create({ data: { numeroId: nr.id, contatoId: ct.id } });
+  const a = await prisma.atendimentoWhatsApp.create({ data: { conversaId: cv.id, contextoChave: "COMERCIAL::pool1324", finalidade: "COMERCIAL", leadId: op.id } });
+  const criar = await criarEAtribuirTagNoInbox(a.id, "Pool1 fictícia324"); expect(criar.ok).toBe(true);
+  if (!criar.ok || !criar.dado) throw Error("Criação falhou");
+  expect((await atribuirTagNoInbox(a.id, criar.dado.tagId)).ok).toBe(true);
+  expect((await removerTagNoInbox(a.id, criar.dado.tagId)).ok).toBe(true);
+  expect(await prisma.pessoaTag.count()).toBe(0);
+  expect((await prisma.evento.findMany({ orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { tipo: true } })).map(e => e.tipo)).toEqual(["TagCriada", "TagAtribuida", "TagRemovida"]);
+});

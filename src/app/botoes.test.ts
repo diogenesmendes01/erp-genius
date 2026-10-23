@@ -69,6 +69,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/inbox/abas/TagsContato.tsx": ["×"], // remoção na pílula; aria-label nomeia a tag
   "src/app/(app)/inbox/RodapeConversa.tsx": ["Responder", "Nota interna"], // abas com aria-selected
   "src/app/(app)/inbox/PainelContato.tsx": ["key a.id"], // aba do painel (role=tab)
   "src/components/BotaoIcone.tsx": ["rotulo"],
@@ -1778,6 +1779,7 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 // usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
+  { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", nome: "key t.id", vezes: 1, motivo: "sugestão de tag: o texto do botão é t.nome, nome legível do DTO autorizado, escapado pelo React; a key é somente a identidade do vínculo" },
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
   { arquivo: "src/app/(app)/aria/_componentes/Abas.tsx", nome: "(sem nome)", vezes: 1, motivo: "link de aba da Aria: o rótulo vem de ROTULO_ABA (Visão geral, Comportamento, Permissões…) a cada item do mapa" },
   { arquivo: "src/app/(app)/aria/_componentes/VisaoGeral.tsx", nome: "key p.dias", vezes: 1, motivo: "link de período da visão geral: o rótulo vem da lista PERIODOS (Hoje, 7 dias, 30 dias)" },
