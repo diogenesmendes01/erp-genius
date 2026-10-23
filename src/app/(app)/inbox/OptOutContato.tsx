@@ -49,7 +49,7 @@ export function OptOutContato({ contatoId, nome, optOut, podeReautorizar, aoMuda
           )}
         </>
       ) : (
-        <Botao tamanho="sm" variante="secundario" disabled={confirmar} onClick={() => { setAviso(null); setConfirmar(true); }}>Registrar opt-out</Botao>
+        <Botao tamanho="sm" variante="secundario" aria-haspopup="dialog" aria-expanded={confirmar} onClick={() => { setAviso(null); setConfirmar(true); }}>Registrar opt-out</Botao>
       )}
       <FeedbackAcao erro={remover.erro} sucesso={aviso} />
       {confirmar && (
