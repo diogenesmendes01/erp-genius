@@ -90,6 +90,38 @@ const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify
 const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
 
 describe("InboxNovo: leitura ao abrir", () => {
+  it("voltar à aba com zero não lidas e sem mensagem nova não repete a ação de leitura", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    for (let i = 0; i < 3; i++) {
+      mudarVisibilidade("hidden"); m.aoVisibilidade!();
+      mudarVisibilidade("visible"); m.aoVisibilidade!();
+      await esvaziar(); tela();
+    }
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("mensagem recebida oculta continua pendente mesmo se a leitura anterior terminar com zero", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela(); mudarVisibilidade("hidden");
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-pedido", conversaId: "cv1" });
+    concluir(); await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    await esvaziar(); tela(); marcar.mockClear();
+    mudarVisibilidade("hidden"); m.aoVisibilidade!();
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("retorno recupera repetição descartada por aba oculta antes da conclusão", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementationOnce(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-em-voo", conversaId: "cv1" });
+    mudarVisibilidade("hidden"); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    expect(marcar).toHaveBeenCalledTimes(2);
+  });
   it("voltar à aba visível lê a conversa exibida sem esperar outro aviso SSE", async () => {
     tela(); await esvaziar(); marcar.mockClear();
     mudarVisibilidade("hidden");
