@@ -1,0 +1,1030 @@
+{
+  "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+  "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "resultados": [
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 1440,
+      "height": 900,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 125,
+          "bottom": 843,
+          "h": 718,
+          "scrollTop": 0
+        },
+        "row": {
+          "top": 260.8125,
+          "bottom": 332.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 2,
+        "depois": 2
+      },
+      "imagens": [
+        {
+          "arquivo": "light-1440x900-primeiro.png",
+          "sha256": "ae749346eaaafe8d569eedf7ce841fa3e8d35d7492a9b6acc405331ea181cafd",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440x900-atalho.png",
+          "sha256": "8ec947bd37eef37b77b7c707c85e318fc71aaa8ecfd3e2001e89515b84c9e0c2",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 1024,
+      "height": 768,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 1024,
+          "h": 768,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 125,
+          "bottom": 711,
+          "h": 586,
+          "scrollTop": 0
+        },
+        "row": {
+          "top": 260.8125,
+          "bottom": 332.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-1024x768-primeiro.png",
+          "sha256": "ce4f13728e42ec0e0c5b69bb0cf3461577796791ec2a2e89666878f81220a53e",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1024x768-atalho.png",
+          "sha256": "71204cd84c08546dc07839c433aea7c9a7ed78e103925771cb56f765d65a4353",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 390,
+      "height": 844,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 390,
+          "h": 844,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 182,
+          "bottom": 787,
+          "h": 605,
+          "scrollTop": 0
+        },
+        "row": {
+          "top": 311.8125,
+          "bottom": 383.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-390x844-primeiro.png",
+          "sha256": "193559aedf591e6882c3c1f147d520b2b77b705f356423d6bf57134d9cb59945",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390x844-atalho.png",
+          "sha256": "3b1ca0549b5bf8bad9979e1d235b98feb941623826a7f3204a7abfd7b4e98033",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 320,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 232,
+          "bottom": 443,
+          "h": 211,
+          "scrollTop": 60
+        },
+        "row": {
+          "top": 301.8125,
+          "bottom": 373.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-320x500-primeiro.png",
+          "sha256": "9d80705009806db50d83338b3337b0cd16236b7c22df45abc3848d83e29908bd",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320x500-atalho.png",
+          "sha256": "697ed4b6dd433ff12e41c7238dff15a26b3117f4e10ce5df409d1f81aec8dee3",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 390,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 182,
+          "bottom": 443,
+          "h": 261,
+          "scrollTop": 35
+        },
+        "row": {
+          "top": 276.8125,
+          "bottom": 348.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-390x500-primeiro.png",
+          "sha256": "d2ccf241733a7cd3d6f927c7c4242ca9bd15a85c403bb533e5954c70c5ea24ba",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390x500-atalho.png",
+          "sha256": "bc35fb856aef81d263224b748d257581992e91c725856654fb4036a5376a0651",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 699,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 178,
+          "bottom": 443,
+          "h": 265,
+          "scrollTop": 33
+        },
+        "row": {
+          "top": 274.8125,
+          "bottom": 346.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-699x500-primeiro.png",
+          "sha256": "cddad99d905c1378fe8df0f7f29b1ef678f28cadd9211fdb760217c5f17cd0da",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-699x500-atalho.png",
+          "sha256": "6d6966999150b7c3024566233cd102ae52f74ce340ff292fd885ba4ac5f0555a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 700,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 178,
+          "bottom": 443,
+          "h": 265,
+          "scrollTop": 39
+        },
+        "row": {
+          "top": 274.8125,
+          "bottom": 346.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-700x500-primeiro.png",
+          "sha256": "7ae199af4df4cf15c325f2be5098af2705d3663cc73d297fb0904373e93a7967",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-700x500-atalho.png",
+          "sha256": "de74db27b19b83897dae654cb9b8957e1da085f32bc62ae71490883d596dd335",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 1400,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 1400,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 125,
+          "bottom": 443,
+          "h": 318,
+          "scrollTop": 13
+        },
+        "row": {
+          "top": 247.8125,
+          "bottom": 319.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "light-1400x500-primeiro.png",
+          "sha256": "991b241dc909f3ed3181772c89bb7821f30bbfd8c2f4c231bed999b3bfe73930",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1400x500-atalho.png",
+          "sha256": "560aaef6f5a413d1ad280039b0392bd3701acc1d41ef0dda1455e1caef3f5b60",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 1440,
+      "height": 900,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 1440,
+          "h": 900,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 125,
+          "bottom": 843,
+          "h": 718,
+          "scrollTop": 0
+        },
+        "row": {
+          "top": 260.8125,
+          "bottom": 332.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-1440x900-primeiro.png",
+          "sha256": "543055ae85d96f785b9d86735997c9ecaa5587ac11cc63c140309b03b2be52d6",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440x900-atalho.png",
+          "sha256": "7c53ca8933be92c2d884d7cdf4d61f56f8c2ce81ada77587feafafe795dd8256",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 1024,
+      "height": 768,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 1024,
+          "h": 768,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 125,
+          "bottom": 711,
+          "h": 586,
+          "scrollTop": 0
+        },
+        "row": {
+          "top": 260.8125,
+          "bottom": 332.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-1024x768-primeiro.png",
+          "sha256": "459f9af60494a1d8ba53c2f21d7194b4dbe7f3aa4371edfbfea7996b7b0d0531",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1024x768-atalho.png",
+          "sha256": "f3fa1f0bc6fddedf04803530419e710ac6382216079baf15cfb823eb6c7e1639",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 390,
+      "height": 844,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 390,
+          "h": 844,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 182,
+          "bottom": 787,
+          "h": 605,
+          "scrollTop": 0
+        },
+        "row": {
+          "top": 311.8125,
+          "bottom": 383.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-390x844-primeiro.png",
+          "sha256": "b00ea9ea6226db1f924ed7c9756cfd2c980313571c91d5edba2d86691374e933",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390x844-atalho.png",
+          "sha256": "dc6c8c0185dd4916005e5c79f0e72a70da711537a99c6fecaeafa9d4623116f4",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 320,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 320,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 232,
+          "bottom": 443,
+          "h": 211,
+          "scrollTop": 60
+        },
+        "row": {
+          "top": 301.8125,
+          "bottom": 373.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-320x500-primeiro.png",
+          "sha256": "cfb03bc3e1d4e2dc7d4f8e6a445c86d1d9ca83924b2d44df60ee29783c732e73",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320x500-atalho.png",
+          "sha256": "3772e5916177ebf76a9905200f6bd92b9cb7a590f35bfb19f0df54a598c58cf1",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 390,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 390,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 182,
+          "bottom": 443,
+          "h": 261,
+          "scrollTop": 35
+        },
+        "row": {
+          "top": 276.8125,
+          "bottom": 348.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-390x500-primeiro.png",
+          "sha256": "8c6e3f16c5c682c3468ac2ed160653aff0f5f366979f26a82042126234eb7702",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390x500-atalho.png",
+          "sha256": "057b77aa936f28dbb4b8eeff2232345d2cdab9c2d839c8d2703f7cc0b11cf430",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 699,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 699,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 178,
+          "bottom": 443,
+          "h": 265,
+          "scrollTop": 33
+        },
+        "row": {
+          "top": 274.8125,
+          "bottom": 346.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Mais ações da conversa",
+      "foco": "Mais ações da conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-699x500-primeiro.png",
+          "sha256": "ad29d582c166f9857068518c91277188dc133e24976807ac6f6c93e6ec09a87d",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-699x500-atalho.png",
+          "sha256": "249702f3b06df5e2b362e13be8c17cde4a1af4a927ef17da26d827a9916e95da",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 700,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 700,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 178,
+          "bottom": 443,
+          "h": 265,
+          "scrollTop": 39
+        },
+        "row": {
+          "top": 274.8125,
+          "bottom": 346.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-700x500-primeiro.png",
+          "sha256": "4c5e91515618598823bc9b13928c09105012fcdfd8b3af7c070b085595b4e168",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-700x500-atalho.png",
+          "sha256": "67e830bd8b856cb371d5aa7fde85273879811f7c14e7e69a4cb32da4c14072e1",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "cf7cfd6893e98a064e0d4d9395ae939b94bf15bb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 1400,
+      "height": 500,
+      "primeiro": "inbox-demo-msg-beatriz-ontem-307",
+      "segundo": "inbox-demo-msg-beatriz-307",
+      "metrica": {
+        "header": 68,
+        "documento": {
+          "w": 1400,
+          "h": 500,
+          "y": 0
+        },
+        "campoFocado": true,
+        "scroller": {
+          "top": 125,
+          "bottom": 443,
+          "h": 318,
+          "scrollTop": 13
+        },
+        "row": {
+          "top": 247.8125,
+          "bottom": 319.625,
+          "h": 71.8125
+        },
+        "contador": "1 de 2",
+        "unicaThread": true
+      },
+      "retorno": "Buscar na conversa",
+      "foco": "Buscar na conversa",
+      "fora": {
+        "cancelado": false,
+        "foco": true
+      },
+      "consultas": {
+        "antes": 3,
+        "depois": 3
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-1400x500-primeiro.png",
+          "sha256": "eba1f454e297657ccf77ebb4be6bbc89f80b82205f0151198ad0ae7fe946e2b5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1400x500-atalho.png",
+          "sha256": "5ca3b4e49152821bcbb2bcc815dcd89fc4cf085c4487e8f7f259b50a4801b915",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}

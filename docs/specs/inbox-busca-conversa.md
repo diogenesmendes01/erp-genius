@@ -30,3 +30,6 @@ SSEhistóricopreexistente: evento comum→maisNovas e cursor(criadoEm,id)>últim
 ## Foco durante Carregar anteriores
 
 A ativação legítima entrega foco ao campo da mesma barra ANTES de iniciar maisAntigas; carregandoAntigas ou ausência de página anterior bloqueia o handler. O campo permanece focado quando o controle fica ocupado, é recriado ou desaparece na última página. Não há restauração assíncrona: mover foco para fora, fechar, trocar ou reabrir a busca durante a espera não permite à carga antiga tomar foco. Red/GREEN e limites do DOM mínimo estão no report; comprovação Chrome dirigida no SHA novo e QA independente ainda pendentes.
+
+
+Comprovação DEV posterior do contrato de foco47b:19766 EXIT0 virtual8ctx24PNG+await8ctx8PNG e40332 EXIT0 resync6ctx30PNG,dois temas. Foco natural após cada carga/inclusive última; foco externo mantido durante GET UI pendente; SSE reconcilia149/000 e mantém foco sem refoco privado.108originais positivos inspecionados,allowlist comfontes porgrupo:46normaiscf7históricas+62complementos47b. Busca APP-only sem referência funcional protótipo. Detalhes/limites/fontes/consultas/hashes no report eallowlist-positiva-final.json. TESTER/global integrado ROOT ainda pendentes.

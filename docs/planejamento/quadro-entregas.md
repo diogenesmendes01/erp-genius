@@ -5345,3 +5345,8 @@ RED469f94/21a10e confirmou fallback149nãopersistido e cursor removidoressuscita
 ### #316 — handoff síncrono de foco ao paginar, QA pendente
 
 Achado TESTER cf7: foco body a cada Carregar anteriores (724d9e/eacb0e); probe SSE antigo refocava e não cobria. Ruling ROOT: focar campo antes da carga, sem restore após await. Patch restrito ao handler de ConversaAberta e testes: RED ac5f41 3/7 → GREEN92e416 3/19; recortes disjuntos17837 66/713 +b2b66c 8/74, TSC36307heap8192/lint2fontes0avisos/diffcheck0, Node22.23.2. Não altera VList/backend/leitura/harness. Imagens cf7 históricas; novo complemento natural de foco/paginação/SSE, inspeção/allowlist, TESTER e global ROOT pendentes. Banco A original restaurado c233ea/424 hashes e sem preview/browser. SPEC e report detalham fontes/negativos/limites.
+
+
+### #316 — complemento natural47b e freeze documental para QA
+
+19766 EXIT0:8ctx24PNG virtual (foco natural em cada carga/última,149preservado,pin000/149)+8ctx8PNG foco externo duranteGETUIpendente.40332 EXIT0:6ctx30PNG resync real,cincofases165/2→60/0→165/1→60/1→165/2,semrefoco/GETs5→6→8→9→11,0React/externos.108originais positivos inspecionados;allowlist162arquivos150PNG/42pranchas,fonte47b nos62complementos e46normaiscf7históricas explícitas;APP-onlysemprototipo. PNGforaGit/negativosseparados. ROOT parou81169/restaurou282f2f424hashes551linhas;semDEVprocessos. Sódocs/JSON/probes nestecommit;gates74/787/TSC36307/lint0 são47bexatos,nãofull. TESTER/global/publicação integrados pendentes,semhomologação presumida.
