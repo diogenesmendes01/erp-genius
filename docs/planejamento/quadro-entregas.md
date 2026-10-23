@@ -5585,3 +5585,10 @@ Achado TESTER cf7: foco body a cada Carregar anteriores (724d9e/eacb0e); probe S
 ### #316 — complemento natural47b e freeze documental para QA
 
 19766 EXIT0:8ctx24PNG virtual (foco natural em cada carga/última,149preservado,pin000/149)+8ctx8PNG foco externo duranteGETUIpendente.40332 EXIT0:6ctx30PNG resync real,cincofases165/2→60/0→165/1→60/1→165/2,semrefoco/GETs5→6→8→9→11,0React/externos.108originais positivos inspecionados;allowlist162arquivos150PNG/42pranchas,fonte47b nos62complementos e46normaiscf7históricas explícitas;APP-onlysemprototipo. PNGforaGit/negativosseparados. ROOT parou81169/restaurou282f2f424hashes551linhas;semDEVprocessos. Sódocs/JSON/probes nestecommit;gates74/787/TSC36307/lint0 são47bexatos,nãofull. TESTER/global/publicação integrados pendentes,semhomologação presumida.
+
+
+## #317 — checkpoint produtivo DEV A, aceite visual pendente
+
+Base29479848, branch própria preservando316/27b. Rodape com abas Responder/Nota, CampoTexto/agenda real/variante travada sem ativação Aria E1. Coordenador local mantém UMA instância de ações/diálogos; mesma conversa preserva caminho React scroller/VList, troca real pode remontar. Nota individual separada da permissão de envio; idempotência opcional por atendimento+texto e guarda de contexto/revisão contra resultados antigos, sem backend novo. Registros exatos de guardas aprovados; detector intacto.
+
+RED final a27db5 confirmou perda de edição/anexo durante await; GREEN97237343/43 inclui upload substituído e nota/emoji. Após patch: Node22.23.2, recorte7989 saída0 com72 arquivos/809 testes,34,75s/maxWorkers2/sem filtro de nome ou ignorados; TSC57095 heap8192 e lint11 fontes fa7780 --max-warnings0 saída0. Gates38827/72/803 e33289 são históricos anteriores ao patch final. Sem ownfull/DB/browser, sem imagens317. CLI, visual app×protótipo/320×500, QA independente e global integrado pendentes; C2/#402 reservado a outra frente, fonte de busca intacta na base294. SPEC docs/specs/inbox-rodape-compositor.md e relatório output/inbox-317-report.md; nenhuma homologação presumida.

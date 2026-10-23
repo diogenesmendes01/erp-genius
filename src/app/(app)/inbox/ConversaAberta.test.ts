@@ -183,7 +183,7 @@ describe("ConversaAberta: recursos do motor pelas capacidades do número (merge 
     const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
     expect(fonte).toMatch(/const capacidades = item\?\.capacidades \?\? \[\];/);
     expect(fonte).toMatch(/<BalaoMensagem[\s\S]*?recursos=\{\(r\) => capacidades\.includes\(r\)\}/);
-    expect(fonte).toMatch(/<Compositor[\s\S]*?capacidades=\{capacidades\}/);
+    expect(fonte).toMatch(/<RodapeConversa[\s\S]*?capacidades=\{capacidades\}/);
     expect(fonte).not.toMatch(/recursoDisponivel|item\.driver/);
   });
 });
