@@ -18,3 +18,7 @@ C2 HIGH: painel-detalhes.int.test.ts e paineis.int.test.ts completos rodaram nes
 QA independente do patchdc726 favorável com2INT/28próprios no TESTER, original SHA256 4dcbdb13b21bfe24a60871a16d9025d8f6e2a405ca99fa40b23a1b29ea006cfa. QA composta1dd favorável estática, sem testes/DB próprios novos:12src exatos, pais408/QA/schema e decisões corretos. Original SHA256 02876831ce118d1382a8699b4fec1b12dcafa22d3a87a4e70df652d04100c2dd, em tester-composicao-1dd.md com apenas EOF normalizado; patch em tester-patch-dc7.md.
 
 Global908/7.141 e smoke visual histórico pertencem à fonte0c61/6eb e não são nova execução deste head. Squash408main e CI final409 em dois fusos ainda pendentes. Sem browser/captura, instalação, mensagem real ou deploy de aplicação.
+
+## Sincronização final com a main
+
+408 integrada por squash4253b39b43bd9db0525930316b54a6c44d2c8607, CI40029843934success5/5,904arquivos/7.125unitários por fuso, issue322CLOSED. Árvore inteira igual2cc3be32. Ancestralidade incorporada à candidata7c4a5582: dois blocos no quadro continham somente registros próprios323 já preservados na candidata, sem conteúdo exclusivo recebido; índice inteiro conferido igual7c4a antes do commit. Fonte não Markdown exatamente1dd4af91, SQL487/contratos321 e pais E1 intactos, sem337490. Decisões mantêm autorização de merge e esclarecimento D13 contextual. C4/C5 resolvidos; CI final409 contra main nos dois fusos ainda obrigatório.

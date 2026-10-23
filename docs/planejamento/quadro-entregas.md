@@ -6497,6 +6497,10 @@ Fonte7a94fc12:e6c/45ddMD+4077ca, deltaEXATAMENTE7paths322/OIDsddfCEA;quadro6pres
 ## PR #409 — D13 contextual e 28INT exigidos aprovados
 
 Fonte1dd4af91:b0c/dc726+4087e5;deltaEXATAMENTE12src323/OIDsb0c,INTnovoD13igualdc,restantes11fonte0c61. Quadro1preservambos/decisõesmantêmmergeauth297+somenteapêndiceD13novo,sem337490. Próprios6/38615ea9,INT2/28sessão91833/c2888d105,53sperfilciint487exclusivo/configintegration/maxWorkers1semfiltro/skipsnovos, TSC80882/981e64 e lint73747/5a00b0terminals0/40. QApatchdc4dcb+QAcomposta1dd0287favoráveisversionadas. C1humanoD13+C2INTcomprovados,C3CI/C4pais408main/C5quadroaindagates finais;C6B2B/C7subtítulovazio/C8custoconsultas/C9mapatestesdocumentados. Ciintlivre487/cliente487,nenhumtestes/processoativo;semnovamigration/seed/envio/captura/deploy. output/pr409-qa/composicao-todos.md.
+
+## PR #408 integrada; PR409 sincronizada
+
+408squash4253b39b43bd9db0525930316b54a6c44d2c8607/expected2cc3be32,CI40029843934success5/5/watch38140terminal0;904arquivos7.125testesUTC178,71s/SP239,90s. R1APPROVE/C1–C5incluindoLOWrespondidos6375600922,QAaad2/INT4-62/SQL487favoráveis;322CLOSEDconfirmada,298–32225fechadas. Squashtreeigual2cc3;409incorporouancestralidadecomINDEXINTEIROigual7c4a,doisblocosquadroapenasregistrospróprios323semconteúdoincomingexclusivo. Fonte1dd/QA0287/INT2-28/unit6-38/TSC/lint40preservados,decisõesD13+mergeauthmantidas;C4/C5resolvidos,CI409mainaindapendente,sem337490.
 ## PR #407 integrada; PR408 sincronizada
 
 407squash23916ac1e911c7844f28b283d3e154abf0da7b4b/expectedde608281, CI40028951056success5/5/watch73766terminal0;904arquivos7.125testes emUTC177,05s/SP149,75s. R1B1+C1–C4incluindoLOWrespondidos6375463937,QA103b/INT2-8favoráveis;321CLOSEDconfirmada,298–32124fechadas. Squashtreeigualde608;408incorporouancestralidadecomINDEXINTEIROigual0674128e,quadro3blocosapenaslinhasembranco/registrosprópriossemconteúdoincomingexclusivo. Fonte7a94/QAaad2/INT4-62/unit3-72/TSC/lint40preservados;C3/C4resolvidos,CI408mainaindapendente,sem323337.
