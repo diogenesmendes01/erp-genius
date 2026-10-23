@@ -9,7 +9,7 @@ vi.mock("@/server/inbox/consultas-pagina", () => ({ contarChipsInbox: mocks.cont
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/inbox/opcoes-filtro", () => ({ opcoesFiltroInbox: mocks.filtro }));
-vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro, contagens, sino: sinoRenderizado, opcoesNovaConversa }: { sino?: import("react").ReactNode; opcoesNovaConversa?: unknown; contagens?: unknown; opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `nova:${opcoesNovaConversa ? "sim" : "nao"}|${renderToStaticMarkup(createElement("span", null, sinoRenderizado))}|inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}|contagens:${JSON.stringify(contagens)}` }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro, contagens, sino: sinoRenderizado, opcoesNovaConversa, agoraInicial }: { agoraInicial?: number; sino?: import("react").ReactNode; opcoesNovaConversa?: unknown; contagens?: unknown; opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `agora:${agoraInicial}|nova:${opcoesNovaConversa ? "sim" : "nao"}|${renderToStaticMarkup(createElement("span", null, sinoRenderizado))}|inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}|contagens:${JSON.stringify(contagens)}` }));
 vi.mock("./NovoAtendimento", () => ({ NovoAtendimento: () => "novo-atendimento" }));
 const sino = vi.hoisted(() => ({ listar: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/crm/notificacoes", () => ({ listarNotificacoes: sino.listar }));
@@ -41,6 +41,18 @@ describe("InboxPage", () => {
     mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
     mocks.filtro.mockResolvedValue({ setores: ["SECRETARIA"], numeros: [{ id: "n1", rotulo: "Secretaria" }] });
     sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo");
+  });
+
+  it("serializa um agoraInicial para SSR e hidratação, capturado na página", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    const T = Date.UTC(2026, 9, 22, 12);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(T);
+      const elemento = await Page({ searchParams: Promise.resolve({}) });
+      vi.setSystemTime(T + 60_000);
+      expect(renderToStaticMarkup(elemento)).toContain("agora:" + T);
+    } finally { vi.useRealTimers(); }
   });
 
   it("casca anula padding do main e passa sino/Novo sem removê-los", async () => {
