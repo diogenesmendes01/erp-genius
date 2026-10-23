@@ -41,6 +41,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
   "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 2, // aba ativa da barra de seções (marca = selecionada): o <Link> e o literal
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
+  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // círculo numérico/check do passo no assistente, sem superfície de ação própria
   "src/app/(app)/funil/PainelOportunidade.tsx": 1, // aba do painel da oportunidade (role=tab, selecionada = marca)
   "src/app/(app)/contatos/FichaContato.tsx": 1, // aba da ficha do contato (role=tab, selecionada = marca)
   "src/app/(app)/relatorios/page.tsx": 2, // aba ativa da tela de Relatórios (seleção, não ação; fundo bg-brand-solid, igual ao SubTabs): o literal e o <a>
@@ -217,8 +218,47 @@ export function botoesCrus(fonte: string): string[] {
       || !["span", "div"].includes(elemento.tagName.getText(sf))) return false;
     // Só selos/contêineres comprovadamente passivos: componentes podem encapsular botões,
     // e spread, papel, foco ou eventos impedem garantir que span/div não tenha ação.
-    return elemento.attributes.properties.every((p) => ts.isJsxAttribute(p)
+    const atributosPassivos = (el: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => el.attributes.properties.every((p) => ts.isJsxAttribute(p)
       && !/^(role|tabIndex|on[A-Z])/.test(p.name.getText(sf)));
+    if (!atributosPassivos(elemento)) return false;
+    const proprio = ts.isJsxOpeningElement(elemento) ? elemento.parent : elemento;
+    let dentroDeAcao = false;
+    for (let pai: ts.Node | undefined = proprio.parent; pai; pai = pai.parent) {
+      const abertura = ts.isJsxElement(pai) ? pai.openingElement : ts.isJsxSelfClosingElement(pai) ? pai : null;
+      if (abertura && (/^(button|a|Link|Botao)$|^[A-Z]/.test(abertura.tagName.getText(sf)) || !atributosPassivos(abertura))) {
+        dentroDeAcao = true;
+        break;
+      }
+    }
+    if (!dentroDeAcao) return true;
+    // A linha interativa pode conter seu contador, mas não uma superfície de ação
+    // disfarçada no filho. A exceção fica restrita à pílula compacta e numérica.
+    if (elemento.tagName.getText(sf) !== "span" || !ts.isJsxElement(proprio)) return false;
+    const classes = ancestral.initializer ? classesDe(ancestral.initializer).texto.split(/\s+/).filter(Boolean) : [];
+    const classeDeContador = /^(rounded-full|bg-brand-solid|text-on-brand|px-(1|1\.5|2)|py-0\.5|min-w-(4|5)|h-(4|5)|inline-flex|items-center|justify-center|text-(xs|\[10px\])|font-medium|leading-none|tabular-nums)$/;
+    if (!classes.includes("rounded-full") || !classes.some((c) => /^px-/.test(c)) || !classes.every((c) => classeDeContador.test(c))) return false;
+    let temNumero = false;
+    const numero = (valor: ts.Expression): boolean => {
+      if (ts.isConditionalExpression(valor)) return numero(valor.whenTrue) && numero(valor.whenFalse);
+      if (ts.isNumericLiteral(valor) || (ts.isStringLiteral(valor) && /^\d+\+?$/.test(valor.text))) return true;
+      const nome = ts.isPropertyAccessExpression(valor) ? valor.name.text : ts.isIdentifier(valor) ? valor.text : "";
+      return /^(naoLidas\w*|quantidade|total|count)$/.test(nome);
+    };
+    for (const filho of proprio.children) {
+      if (ts.isJsxText(filho)) {
+        if (!filho.text.trim()) continue;
+        if (!/^\d+$/.test(filho.text.trim())) return false;
+      } else if (ts.isJsxExpression(filho) && filho.expression) {
+        if (!numero(filho.expression)) return false;
+      } else if (ts.isJsxElement(filho) && filho.openingElement.tagName.getText(sf) === "span"
+        && filho.openingElement.attributes.properties.length === 1
+        && filho.openingElement.attributes.properties[0].getText(sf) === 'className="sr-only"'
+        && filho.children.every(ts.isJsxText)) {
+        continue; // descrição acessível do contador não desenha nem aciona botão
+      } else return false;
+      temNumero = true;
+    }
+    return temNumero;
   };
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
@@ -1285,6 +1325,25 @@ describe("botões nas áreas migradas", () => {
     '<a href="/x" className="bg-danger text-white">Excluir</a>',
   ])("o detector preserva primários artesanais em componentes e ações nativas: %s", (fonte) => {
     expect(botoesCrus(fonte)).toHaveLength(1);
+  });
+
+  it.each(["button", "Link", "a", "Botao", "Acao"].flatMap((tag) => ["span", "div"].map((filho) =>
+    `<${tag}><div><${filho} className="bg-brand-solid px-4 py-2 text-on-brand">Salvar</${filho}></div></${tag}>`)))
+  ("não isenta um primário artesanal desenhado no filho da ação: %s", (fonte) => {
+    expect(botoesCrus(fonte)).toHaveLength(1);
+  });
+
+  it.each(['role="button"', 'onClick={agir}', 'tabIndex={0}', '{...props}'])
+  ("não isenta primário dentro de contêiner possivelmente interativo: %s", (atributo) => {
+    expect(botoesCrus(`<div ${atributo}><span className="bg-brand-solid text-on-brand">Salvar</span></div>`)).toHaveLength(1);
+  });
+
+  it("preserva contador compacto numérico dentro da linha interativa, mas não texto de ação", () => {
+    expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{i.naoLidas}</span></button>')).toEqual([]);
+    expect(botoesCrus('<Link href="/x"><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">3</span></Link>')).toEqual([]);
+    expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">Salvar</span></button>')).toHaveLength(1);
+    expect(botoesCrus('<Link href="/inbox"><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{naoLidasInbox > 99 ? "99+" : naoLidasInbox}<span className="sr-only"> mensagens não lidas</span></span></Link>')).toEqual([]);
+    expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{count > 99 ? "Salvar" : count}</span></button>')).toHaveLength(1);
   });
 
   it.each(["span", "div"].flatMap((tag) => [
