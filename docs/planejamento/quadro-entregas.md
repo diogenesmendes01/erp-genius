@@ -5891,3 +5891,21 @@ backup próprio com limites/hashes validados; histórico preservado. Zero
 delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
 Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
 preservar ausência nas próximas integrações, sem reescrita de histórico.
+
+
+## PR #402 — revisão C3/C4 e avaliação C5 (DEV B)
+
+Base exata a8dba58c; branch codex/inbox-pr402-review-todos. C3 RED causal
+b62efa:2falhas/3passes, Ctrl/Meta+Shift+F consumidos. Condição shiftKey mínima,
+sem alterar Alt/IME/modal/foco; GREEN5/5. C4 SPEC explicita min-h-11/flex-wrap
+e temMaisDepois/carregandoAntigas/campoRef, rastreáveis aos testes atuais.
+C2 hook/test7a825062 e pin/RAF/intent intactos; regressões repetidas.
+C5 inventário25arquivos261.601B/6.245linhas,5.900 emJSON históricos;
+preservados sem PNG/sondas novas. Report output/pr402-qa/review-todos-dev-b.md.
+
+UTC95bf5c e SaoPaulo62c38d EXIT0:7arquivos40testes emcadafuso, semfiltros/
+ignorados; guardas9370 EXIT0:3/173; TSCfinal13749 e lintf3c6f1 EXIT0/0avisos.
+UTCc9dd5e negativo de fixture React18/ref corrigida apenas no teste; sem
+alterar libs/UI. Prisma402 gerado peloROOT antes dosgates, bancoB490 intacto.
+Sem DB/browser/preview/deps/lock/harness/PNG/global/push. C1/main/CI e C6/
+conflitos continuam comintegrador; revisão independente e merge pendentes.

@@ -80,3 +80,32 @@ pin/linha visível e manual/foco preservados após1SSE+1GET real porcontexto.
 Capturas/limites não são reatribuídos ao fff/C6; detalhespr402-qa/revisao.md.
 CI/main/#392B2 pendentes; não concluir a issue antes do merge. Base posterior
 037a2c3f recebe sóMDQA/404,source/deps iguaisfff e zeroPNG298.
+
+## PR #402 — C3/C4: atalho e contrato efetivo da barra
+
+Ctrl+F e Meta+F abrem a busca somente com foco na região Conversa visível,
+fora de modal/IME e de evento já tratado. Shift e Alt impedem a captura,
+inclusive combinados; o evento permanece disponível ao navegador/aplicação.
+Isso não altera Enter/Shift+Enter para navegar nos resultados da barra.
+
+O contrato acessível adotado ajusta o desenho inicial de altura fixa: a linha
+usa `min-h-11` e `flex-wrap`, permitindo outra linha quando o espaço é curto.
+Os controles móveis continuam com alvo mínimo de 44px; fixar `h-11` cortaria
+os controles. A prova histórica 320×500 já registra essa quebra, sem mudança
+de layout nesta revisão.
+
+Além dos dados/callbacks do plano, `PropsBuscaConversa` explicita:
+
+| Prop | Contrato e motivo | Rastreabilidade |
+| --- | --- | --- |
+| `temMaisDepois: boolean` | Avisa que existem mensagens mais novas fora da janela; a busca continua local. | BuscaConversa.test.ts: aviso em ambas bordas; ConversaAberta.busca.test.ts: encaminhamento real. |
+| `carregandoAntigas: boolean` | Desabilita e sinaliza o comando ocupado; impede carga duplicada. | BuscaConversa.test.ts: ocupado; ConversaAberta.busca.test.ts: paginação ocupada não inicia carga nem muda foco. |
+| `campoRef?: Ref<HTMLInputElement>` | Conecta o campo real ao dono da busca para foco síncrono antes da carga e retorno seguro. | BuscaConversa.test.ts: campo controlado/ref; useBuscaConversa.test.ts: foco real; ConversaAberta.busca.test.ts: carga/última página/foco externo. |
+
+C3 é coberto por Ctrl e Meta com Shift/Alt e pela limpeza do listener em
+busca-conversa-dom.test.ts. C2 permanece integral em useBuscaConversa.ts:
+rolagem manual após SSE/revisão, identidade do achado/área, RAF obsoleto,
+troca A→B e nova seleção explícita. Pin e VirtualList não mudam.
+A revisão completa dos comentários e os gates desta fonte estão em
+output/pr402-qa/review-todos-dev-b.md; CI/main e conflitos de integração
+continuam sob responsabilidade do integrador.
