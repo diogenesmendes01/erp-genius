@@ -4770,3 +4770,21 @@ hardnav ainda em investigação na frente313.
 
 Merges normais incorporaram382R6/main3d756 e386e7 para preservar ancestrais.
 Aguardar386 integrado e CI do novo head contra main antes de mergear387.
+
+## PR #385 — C1: capturas fora do estado atual do código
+
+128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
+local antes de retirar do index. Arquivos locais movidos para backup interno
+validado, originais preservados no commit3f7fa9a7 e ancestralidade sem force.
+Pacote legado: output/qa-archives/inbox-pr385-legado-3f7fa9a7.zip,
+5.328.073bytes/133arquivos/128PNG, SHA256
+57772124b6e858b7255677165313bf53debcd53ca61507c9ab72cde99adb1c81.
+Sem novo upload das capturas legadas; README e manifesto de128hashes continuam
+na pasta de evidências. Não é nova homologação visual.
+
+Fontes específicas BalaoMensagem e testes byteiguais a3f7fa9a7 já revisado;
+predecessores382R6/386/387/main7982 recebidos por merges normais, conflitos
+somente no quadro, preservados. Recorte Node22:3arquivos/26testes, saída0,
+sem filtro/ignorados; TypeScript99520 saída0. Sem nova suíte de banco/global
+ou alteração da UI. C5CI e revisão final depois de trazer a maincorrente
+continuam gates antes do merge.
