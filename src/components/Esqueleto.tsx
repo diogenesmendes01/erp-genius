@@ -114,32 +114,51 @@ export function EsqueletoSecao({ rotulo, linhas = 3 }: { rotulo: string; linhas?
   );
 }
 
-/** Título + painel de atendimentos + lista de conversas à esquerda e conversa aberta (inbox). */
+/** Thread inicial sem dados: desenhos decorativos não são mensagens nem recebem foco. */
+export function EsqueletoThread({ rotulo }: { rotulo: string }) {
+  return <Carregando rotulo={rotulo} className="min-w-0">
+    <div aria-hidden="true" className="flex flex-col gap-4">
+      {[false, true, false, true].map((saida, i) => <div key={i} className={`${bloco} h-12 max-w-full ${saida ? "ml-auto w-1/2" : "w-2/3"}`} />)}
+    </div>
+  </Carregando>;
+}
+
+/** Só o corpo: o cabeçalho/avatar já pertence à casca PainelContato. */
+export function EsqueletoPainel({ rotulo }: { rotulo: string }) {
+  return <Carregando rotulo={rotulo} className="min-w-0">
+    <div aria-hidden="true" className="space-y-3">
+      <div className={`${bloco} h-4 w-2/3`} /><div className={`${bloco} h-4 w-full`} /><div className={`${bloco} h-4 w-1/2`} />
+    </div>
+  </Carregando>;
+}
+
+/** Mesma casca do Inbox: duas colunas em960, lista372 em1100, painel348 em1400. */
 export function EsqueletoConversas({ rotulo }: { rotulo: string }) {
-  return (
-    <Carregando rotulo={rotulo}>
-      <BarraTitulo largura="w-24" />
-      <div className={`${bloco} mt-1 h-4 w-2/3`} />
-      <div className={`${bloco} mt-6 h-24`} />
-      <div className="mt-4 flex h-[calc(100vh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
-        <div className="w-80 shrink-0 space-y-3 border-r border-gray-200 p-3">
-          <div className={`${bloco} h-8`} />
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="space-y-2">
-              <div className={`${bloco} h-4 w-2/3`} />
-              <div className={`${bloco} h-3 w-full`} />
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-1 flex-col gap-3 p-4">
-          <div className={`${bloco} h-6 w-48`} />
-          <div className={`${bloco} h-10 w-2/3`} />
-          <div className={`${bloco} ml-auto h-10 w-1/2`} />
-          <div className={`${bloco} mt-auto h-10`} />
-        </div>
+  return <Carregando rotulo={rotulo} className="-m-4 md:-m-8 flex min-h-0 h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh overflow-hidden">
+    <div aria-hidden="true" className="flex w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:w-[300px] min-[960px]:shrink-0 min-[960px]:border-r min-[1100px]:w-[372px]">
+      <div className="shrink-0 space-y-3 px-[18px] pb-3 pt-[18px]">
+        <div data-esqueleto="titulo" className={`${bloco} h-5 w-32`} />
+        <div className={`${bloco} h-[38px] w-full rounded-item`} />
+        <div className="flex flex-wrap gap-1.5">{[0, 1, 2].map(i => <div key={i} className={`${bloco} h-7 w-20 rounded-[20px]`} />)}</div>
       </div>
-    </Carregando>
-  );
+      <div className="min-h-0 flex-1 space-y-5 overflow-hidden px-[18px] py-3">
+        {[0, 1, 2, 3, 4, 5].map(i => <div key={i} className="flex gap-3">
+          <div className={`${bloco} h-11 w-11 shrink-0 rounded-full`} />
+          <div className="min-w-0 flex-1 space-y-2"><div className={`${bloco} h-4 w-2/3`} /><div className={`${bloco} h-3 w-full`} /></div>
+        </div>)}
+      </div>
+    </div>
+    <div aria-hidden="true" className="hidden min-h-0 min-w-0 flex-1 flex-col fundo-conversa min-[960px]:flex">
+      <div className="flex h-[68px] shrink-0 items-center border-b border-gray-200 bg-surface px-3"><div className={`${bloco} h-5 w-40`} /></div>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-[7%] py-[18px]">
+        {[false, true, false, true].map((saida, i) => <div key={i} className={`${bloco} h-12 shrink-0 ${saida ? "ml-auto w-1/2" : "w-2/3"}`} />)}
+        <div className={`${bloco} mt-auto h-10 shrink-0`} />
+      </div>
+    </div>
+    <div aria-hidden="true" className="hidden min-h-0 w-[348px] shrink-0 flex-col items-center gap-3.5 overflow-hidden border-l border-gray-200 bg-surface px-6 pt-9 min-[1400px]:flex">
+      <div className={`${bloco} h-[132px] w-[132px] shrink-0 rounded-full`} /><div className={`${bloco} h-5 w-32`} /><div className={`${bloco} h-4 w-40`} />
+    </div>
+  </Carregando>;
 }
 
 /** Colunas do funil (pipeline). */

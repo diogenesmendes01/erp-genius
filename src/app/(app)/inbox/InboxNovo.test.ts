@@ -156,3 +156,8 @@ it("WhatsApp recebido usa o valor mono exigido no painel318", () => {
   const h = html({ selecionado: "a1" });
   expect(h).toMatch(/<span class="font-mono">\+506<\/span>/);
 });
+
+
+it("319: sem seleção tem área central livre, ícone e nenhum painel de contato",()=>{
+ const h=html();expect(h).toContain("Escolha uma conversa");expect(h).toContain("As mensagens aparecem aqui.");expect(h).toContain("text-[15px]");expect(h).toContain("text-[13px]");expect(h).toContain("items-center justify-center");expect(h).not.toContain('id="painel-contato"');
+});
