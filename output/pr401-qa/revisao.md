@@ -17,6 +17,12 @@ Recorte seis arquivos/81 testes EXIT0. Global42416 EXIT0:887 arquivos/
 6.950 testes unitários,242,41s,maxWorkers2,sem filtros/ignorados.
 Next typegen/TSC61138 e lint86951 EXIT0,0 erros/40 avisos anteriores.
 Não há novo DB/browser ou reatribuição das capturas315 anteriores.
-TESTER do SHA exato solicitado. C1 de código/ancestralidade resolvido
+TESTER5a favorável:nove arquivos/118 testes próprios,exec143668 EXIT0,
+sem DB/browser/global/TSC/lint próprios,objetos dos consumidores preservados.
+C1 de código/ancestralidade resolvido
 localmente; CI/main/#392B2 permanecem gates antes do merge.
 Sem instalação, schema, envio real, integração externa ou deploy.
+
+Base315-r3 posteriordca8c5d5 recebe apenas docs dos pareceres398/399 e
+limpeza404; src/scripts/prisma/package/lock iguais5a,zeroPNG298. Nenhuma
+repetição do global por essa atualização exclusivamente documental.
