@@ -1,0 +1,9 @@
+# QA independente — composição PR #400
+
+Fonte funcional exata `cb89727a0fd9d12f64b0e4e8ddedb5c21752ace3`; head documental subsequente `e704997b5a086b3d8aedb4beab034e62d5162898` (pai `cb89727a`). Parecer favorável à extensão estática, sem achado alto/médio. O patch isolado `616496ac` do alias de leitura já recebeu QA específica; este relatório verifica a composição com #398 e os MD finais.
+
+- No merge, `src/server/whatsapp/preferencias.ts`, os dois arquivos INT de leitura/presença, `filtros-url.ts/test`, `ColunaConversas.tsx`/teste de interação e `InboxNovo.interacao.test.ts` têm OIDs idênticos ao primeiro pai `17fcdac0` (`5a7219`). Assim, a cronologia de URL/ACK/leitura R6, seus testes e a política de revalidação do alias não foram editados pela composição. O único delta em `InboxNovo.tsx` contra esse pai é o comentário `agoraInicial`; seu JS emitido sem comentários é byte idêntico (`92481a`, exit 0).
+- `src/components/conversa` é byte idêntico ao segundo pai `794191c5`, fonte #398 com correções de memória de dia e autor já revisadas; QA #280/config/package/lock também são idênticos a esse pai (`5a7219`). O head `e704` acrescenta só três MD: quadro e dois relatórios QA. `git diff --check` de `cb897` a `e704` retornou 0 (`6972fa`); rastreados limpos.
+- O relatório de composição atribui 12 arquivos/208 testes, TypeScript e lint ao integrador. A integração C2 de 20 casos continua nominal à fonte antiga, com arquivos INT aqui idênticos; não a reclassifico como execução desta composição.
+
+Não executei novos testes, DB, browser, Prisma, instalação, typecheck ou lint. CI final contra main em dois fusos e publicação/merge depois dos pais #397/#398 ainda pertencem ao integrador. A diferença de ancestralidade `616496ac`→`cb897` decorre de composição, mas o objeto do alias e os contratos de leitura foram conferidos diretamente.

@@ -1,0 +1,10 @@
+# QA independente de composição — PR #402
+
+Fonte exata: `6aa08b37e673a23eca0104ab205d7e8252a53d2c`, merge de `7fdb52edc5bba5caa66978ed04642dfecc22fcdf` (patch de busca #402) e `4b9b1a5a26aacb6761635d21a4b893853d612ccf` (base #401 composta). Parecer estático favorável, sem bloqueio alto ou médio observado.
+
+- `git rev-parse HEAD` confirmou SHA e rastreados limpos. `busca-conversa-dom.ts`/teste e `useBuscaConversa.ts`/teste têm OIDs idênticos ao patch previamente revisado `f94d3b762f503f33f51bcbf6a5a1e4d83e9eaefc`. O atalho exige Ctrl/Meta+F sem Shift/Alt, região e foco visíveis, e respeita modal. O hook de intenção/scroll/RAF/pin não foi reescrito no merge.
+- `AcoesAtendimento`, `estado-visual`, Balão/decoração de thread, preferências, teste de dependências, schema/migrações e package/lock permanecem iguais ao pai `4b9b` (`git diff --quiet` exit 0). Planos #297, E2E e `.github` também iguais a esse pai (exit 0). `git diff --check -- src` terminou 0.
+- A resolução de `ConversaAberta` combina a busca na montagem real com o cabeçalho/ações #401, mantendo `itensDaThread` com quatro argumentos, `VirtualList stableMount` e `pinKeys` para o achado atual. Remove somente o import e as duas props órfãs de triagem/revisão de #399 e o teste SSR que injetava prop ignorada. `InboxNovo` continua renderizando `PainelTriagem` na ponte sem seleção e no painel. O cabeçalho agora habilita o botão de busca e o menu remove a dica/desabilitação “Em breve”; estes são os únicos deltas observados nesses dois módulos frente à base #401.
+- Não há componentes de estados futuros #319 nem DDL E2 introduzidos por este merge. Os comentários JSDoc de compatibilidade SSR/relógio da base #401 foram preservados.
+
+Não executei testes, banco, browser, Prisma, TSC, lint ou CI nesta extensão porque o patch `f94` e os produtores da base já tiveram QA dirigida; o publicador executa os gates no head composto. Identidade estática não equivale à homologação E2E ou ao CI final após publicação. O parecer do patch `f94` permanece a referência funcional; nenhum resultado nominal externo é reatribuído como minha execução.
