@@ -6244,3 +6244,13 @@ Basepublicada67e6cc60 incorporada localmente:src/scripts preservadosdabase,comex
 ## PR #393 — gates finais e main392 confirmada
 
 Fonte04d27fd8: global45766/7a6585 terminal0,852arquivos6704testes232,85s,maxWorkers2semfiltro/skipsnovos;typegen/TSC67991 terminal0;lint9959 terminal0/0erros40avisos. TESTERexato04d a4383f terminal0/6arquivos75testes,hashparecer304fc9...,não73dorecorteinicial. Main392b6b451a3/squashconfirmadaCI39937916911success5/5;issue307CLOSEDverificada. Árvoreinteiramainb6==ancestral67→incorporaçãoancestralidadepreservaárvore04dantesregistros,nãorepetirgatesporMD. Relatóriointegracao-b2+parecerTESTERversionados. CIremota393/mainmergependentes;nenhumaissue309marcadaconcluídaantecipadamente.
+
+## Inbox E2 — validação integrada de #321 e #322 — 23/10/2026
+
+**Estado: implementações e QA independentes favoráveis; gates integrados aprovados; publicação dos PRs individuais em preparação. Issues ainda abertas, sem homologação presumida.**
+
+- #321 fonte DEV9d0225b4, QA exata favorável9d, bundle real6contextos e fonte individual281ac3ad com B2/sem código322. Verificação final própria DEV A aprovada:3arquivos77nominais,13arquivos93dependências/harness, TypeScript e lint21fontes, todos saída0, sem banco. Head de publicação3258ff4e só atualiza o relatório. SPEC inbox-aviso-capacidades-painel; evidências output/inbox-321-integracao-final.md e output/inbox-321-review-tester.md.
+- #322 fonte DEVb29b5f4d, sete objetos schema/domínio/testes idênticos na composiçãocea66f08. DEV4arquivos62INT e QA própria TESTER4arquivos62INT/6arquivos43unit terminaram0; revisão independente favorável. SPEC inbox-tarefa-atendimento; evidências output/inbox-322-integracao-final.md e output/inbox-322-review-tester.md.
+- ROOTcea global904arquivos7118testes, TypeScript e lint0erros40avisos terminaram0. Integração8arquivos88testes em duas sessões sequenciais (5/66 e3/22) terminou0; três caminhos incorretos da primeira chamada foram identificados e executados no complemento, sem contá-los antes. Não é a suíte de integração completa do ERP.
+- Migrations322 reservadas/aplicadas B/ROOT/TESTER; banco A permanece anterior. Índice/FK/coluna e nulidade legada conferidos. Snapshots E2 próprios B1374 e TESTER1388; ambos restaurados integralmente após seus testes. Primeira geração TESTER timeout120s preservada como falha operacional; repetição com limite360s passou antes de liberar a QA.
+- B2 expressamente autorizada incorporada na main; composição mantém manifesto/lock/guardas aprovados e o harness moderno. Merge main393 d3110c07 só altera ancestralidade/documentação, src/scripts/prisma/package/lock inteiros iguaiscea. Publicar #321 sobre #406 e #322 sobre #321, sem misturar o delta de tarefas no PR321. CI/revisão remota e merge ainda pendentes.
