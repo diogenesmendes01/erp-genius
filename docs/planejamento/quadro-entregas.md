@@ -5736,3 +5736,8 @@ dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
 ### #319 — porte isolado C6 verificado, global coordenado pendente
 
 fad43+cherry-pick funcional01a254f5→88fb31d8, sóSSE/testes+SPEC/quadro, sem ancestralidadeampla. Fonte/testes byteiguaisorigem39437068/79a69e0a; único conflitoquadro preserva315/316/317/319 e acrescentaC6. DEVNode22 recorte15393saída0/63files577testes15,25s/maxWorkers2/semfiltrodenomeou skips; lint2fontes6d1807saída0/0avisos/diffcheck0. Semappbrowser/DB/preview/envio. TSC/gatesfad43 sãohistóricospré-C6; global/TSC/TESTER e formal42+12/complementos aguardamROOT nafontecongelada. Nenhuma tarefa320 ou outroporte iniciado.
+
+
+### #319 — prontidão Home do harness corrigida, recaptura pendente
+
+Formal84095 saída1 timeoutcarregando; execução inteira fora daallowlistfinal. A/B64168 helperreal: DCLantesmount/zero fallback/URLHome/manifestoexit1 versusload/fallbackreal/predicadoigual/exit0. ROOTparou94575 e autorizou1linhagotohomewaitUntil load antesCDP/routerPush; semalterarprodução/predicado/timeouts/JSON2xx/protótipo/guardas/sleep. AGENTSNext removido isoladamente, CRLF original. RED4b27341fail10pass→GREENbb4c6510files66testes0; TSC29431heap8192/lint2fontes5a2b82zeroavisos saída0. Global5e9899/7054 histórico préajuste, nãoatribuídoanovaCLI. Sem browser/DB/previewapósstop; formal42+12 e fases150/Triagem aguardamnovoReady.
