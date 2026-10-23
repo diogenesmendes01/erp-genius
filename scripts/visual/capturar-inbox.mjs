@@ -113,7 +113,7 @@ async function main() {
   const estados = o.estado === "todos" ? Object.keys(ESTADOS) : [o.estado];
   const tarefas = combinacoes({ alvos, estados });
   const ids = alvos.includes("app") ? await idsDaDemo() : null;
-  const executablePath = process.env.PW_CHROMIUM ?? (process.platform === "win32" ? null : "/opt/pw-browsers/chromium-1194/chrome-linux/chrome");
+  const executablePath = process.env.PW_CHROMIUM;
   if (!executablePath) throw new Error("Defina PW_CHROMIUM para o Chrome local; o harness não baixa navegador.");
   await mkdir(destino, { recursive: true });
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
