@@ -133,6 +133,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [selecionadoRecebido, setSelecionadoRecebido] = useState(selecionadoInicial);
+  const [versaoNavegacao, setVersaoNavegacao] = useState(0);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
   const modo = useModoInbox();
   const [modoVisto, setModoVisto] = useState(modo);
@@ -158,27 +159,35 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);
   if (filtrosVistos !== chaveFiltros || selecionadoRecebido !== selecionadoInicial) {
     setSelecionadoRecebido(selecionadoInicial);
-    setNovaConversaAberta(false);
-    setFiltrosVistos(chaveFiltros);
-    setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
-    setProximo(inicial.proximo);
-    setContagens(contagensIniciais);
-    setSelecionado(selecionadoInicial);
-    setVista(selecionadoInicial ? "conversa" : "lista");
+    if (filtrosVistos !== chaveFiltros || selecionado !== selecionadoInicial) {
+      setVersaoNavegacao((v) => v + 1);
+      setNovaConversaAberta(false);
+      setFiltrosVistos(chaveFiltros);
+      setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
+      setProximo(inicial.proximo);
+      setContagens(contagensIniciais);
+      setSelecionado(selecionadoInicial);
+      setVista(selecionadoInicial ? "conversa" : "lista");
+    } else {
+      // Revalidação confirma a seleção local: atualiza a primeira página sem perder as já carregadas.
+      setItens((atualLista) => mesclarPrimeiraPagina(atualLista, inicial.itens, inicial.proximo, selecionado));
+      if (itens.length <= inicial.itens.length || !inicial.proximo) setProximo(inicial.proximo);
+      setContagens(contagensIniciais);
+    }
   }
   const selecionadoRef = useRef(selecionado);
   const regiaoConversa = useRef<HTMLElement>(null);
   const regiaoLista = useRef<HTMLElement>(null);
   const focoAoFecharPopover = useRef<HTMLElement | null>(null);
-  const navegacaoVista = useRef(selecionadoInicial);
+  const navegacaoVista = useRef(versaoNavegacao);
   // O layout ocorre antes do cleanup passivo do diálogo: não retorna ao gatilho na lista oculta.
   useEfeitoDeLayout(() => {
-    if (navegacaoVista.current === selecionadoInicial) return;
-    navegacaoVista.current = selecionadoInicial;
+    if (navegacaoVista.current === versaoNavegacao) return;
+    navegacaoVista.current = versaoNavegacao;
     focoAoFecharPopover.current = selecionadoInicial && regiaoConversa.current?.getClientRects().length
       ? regiaoConversa.current
       : regiaoLista.current?.querySelector<HTMLInputElement>('input[type="search"]') ?? null;
-  }, [selecionadoInicial]);
+  }, [versaoNavegacao, selecionadoInicial]);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
