@@ -1,0 +1,52 @@
+{
+  "source": "7ff341db2e11a92d2b42747749ddab469e862603",
+  "files": [
+    {
+      "path": "images/1440x900-light-vazio-tags.png",
+      "bytes": 106572,
+      "sha256": "2dd3f0f140000f6db73466e6c6ad52780e50f2f33aeaecafaa5e703ebeea07eb",
+      "variant": "1440x900-light",
+      "source": "7ff341db2e11a92d2b42747749ddab469e862603"
+    },
+    {
+      "path": "images/1024x768-light-vazio-tags.png",
+      "bytes": 92268,
+      "sha256": "11e23b92a09f5175a1fa7c167a69225828649f857e5d43b3264a6b725ca73f9f",
+      "variant": "1024x768-light",
+      "source": "7ff341db2e11a92d2b42747749ddab469e862603"
+    },
+    {
+      "path": "images/320x500-light-vazio-tags.png",
+      "bytes": 18323,
+      "sha256": "d8f890f2e106117117ce20401b099b454932d7e065564c1259f3724374be059b",
+      "variant": "320x500-light",
+      "source": "7ff341db2e11a92d2b42747749ddab469e862603"
+    },
+    {
+      "path": "images/1440x900-dark-vazio-tags.png",
+      "bytes": 106886,
+      "sha256": "cf7429346c951cfdab2b6c2691f14eb1c5a88cf610c76b7e387a6a277b69d97b",
+      "variant": "1440x900-dark",
+      "source": "7ff341db2e11a92d2b42747749ddab469e862603"
+    },
+    {
+      "path": "images/1024x768-dark-vazio-tags.png",
+      "bytes": 90505,
+      "sha256": "d4515bc517c7ddea80b31d8ffa7815875f3c98485f2079ece4de8e19c5d71b0e",
+      "variant": "1024x768-dark",
+      "source": "7ff341db2e11a92d2b42747749ddab469e862603"
+    },
+    {
+      "path": "images/320x500-dark-vazio-tags.png",
+      "bytes": 18638,
+      "sha256": "16a2d3a0637178dc1fe7b704b65d5f063a824b2bfe8e249713bf374f1dfc7253",
+      "variant": "320x500-dark",
+      "source": "7ff341db2e11a92d2b42747749ddab469e862603"
+    }
+  ],
+  "limits": [
+    "Capturas somente do vazio de busca de tags; não prova criação nem outra ação de negócio.",
+    "As 97 imagens #324 anteriores permanecem históricas da fonte 2396/harness ce658.",
+    "Rodadas diagnósticas de seletor estão fora da allowlist."
+  ]
+}

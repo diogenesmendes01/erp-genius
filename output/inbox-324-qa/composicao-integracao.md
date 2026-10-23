@@ -1,0 +1,7 @@
+# QA de integração #324 — composição local e identidade da fonte final
+
+Executei no worktree TESTER a fonte nominal `f9c14500976f5a685ad9648e4b8bb7423d7da7c4`, perfil descartável `integracao`/schema487, Node22, provedores externos vazios. `vitest.integration.config.ts --maxWorkers=1` executou os cinco arquivos completos `acoes-painel-tags.int`, `acoes-painel-tags-pool1.int`, `paineis.int`, `painel-detalhes.int` e `crm/tags.int`, sem `-t` nem skips. Sessão de execução `94331`; saída terminal `19cc40`, exit 0: **5 arquivos, 54 testes, 193,60 s**. O banco foi liberado ao integrador para restauro pelo helper exclusivo do perfil; não o restaurei.
+
+Após o terminal, comparei em leitura o commit final baseado diretamente em main `567ed5e1c2590490c2faaabbbad5bbca4531d063` com F9. Ambos têm exatamente o mesmo tree OID `06f41e5bd619631656df30307a91b89d98ca102f`; `git diff --quiet F9 567` exit 0 (`35e9ab`). A execução própria permanece atribuída a **F9**, e a equivalência integral de árvore permite estender a conclusão estática à fonte final sem alegar nova execução nela. Meu checkout continuou detached em F9 e sem alterações rastreadas.
+
+O recorte unitário anterior da composição F9 foi 7 arquivos/123 testes, sessão `f4341d` exit 0, registrado separadamente. Global, TSC, lint, CI e publicação do commit final são gates externos e não foram reexecutados por mim nesta rodada. A primeira tentativa unitária com opção Vitest não suportada `--minWorkers` terminou antes de rodar testes; sua correção e execução verde estão preservadas no parecer anterior.
