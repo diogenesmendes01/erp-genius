@@ -12,3 +12,6 @@ Não aplicar antes de liberação. Fontes exclusivas e SPEC/report em318; shell 
 
 
 Atualização: composição acima LIBERADA e implementada após4f1c2049, exceto harness/visual/quadro. Abrir()/NovaConversa/helperdialogo não editados; receber fix313359a23fd por merge normal após checkpoint. BotaoIcone36 real já consumido; validar nome acessível responsivo e geometria no preview quando autorizado. Report registra RED/GREEN e pendência do renome de fixture313 para guarda confirmacoes, sem exceção nova.
+
+
+Fixes313 recebidos:359a23fd→merge1ecddf96; b10ecc98→mergeed1b6593. Composição/controleNovo preservados, renome de fixture continua varrido e confirmacoes verde. Gates combinados47files534tests/TSC/lint18 EXIT0 na fonteed1b6593. HandoffCLI/preview ainda pendentes; ver roteirovisual e relatório, sem aceite presumido.
