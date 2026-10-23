@@ -47,3 +47,22 @@ Base dd141 integrada com312/hidratação/anonDOM392/382; conflito de quadro pres
 ## Evidências finais DEV
 
 Fonte/harness944e1736: recorte51arquivos613testes/TSCheap8192/lintdirigido0 comNode22. Formal28PNG app×protótipo concluído e individualmente inspecionado; complemento24PNG/API/DOM/menu nos6contextos inspecionado por pranchas; virtual12PNG/6contextos delta0/mesmo nó e foco no029, runtime idêntico ao944 porobjetoGit. Hashes/política392 efontes exatas em output/inbox-314-visual/formal/manifesto-final.json, normais-final/manifesto.json evirtual-green99-101/manifesto.json. PNGs somente locais por ruling; negativos separados. Detalhes/limites históricos no relatório. TESTER/globalcoordenado pendentes, sem aceite presumido.
+## Revisão C1 da PR398 — composição dos pais
+
+Base314-r3@cada334f incorpora3975f8/main por merge normal, sem moverc207.
+Composição67192a57 preserva balões/VirtualList/relógio/scripts314, recebe
+produtor394/R6, prazo puro/Avatar/SSE revisados e mantém agoraInicial314.
+Conversa passa temMaisDepois ao itensDaThread de quatro argumentos388,
+conservando decorarThread/stableMount e foco por mensagem. SSR314 e testes
+C1/R6 são mantidos em blocos independentes.
+
+Global671:867 arquivos/6.819 unitários,4467 EXIT0,sem filtros/ignorados;
+lint global44100 EXIT0/40 avisos anteriores. TSC60102 identificou quatro
+fixtures314 com três argumentos; adaptação posterior somente no teste passa
+false explícito. Recorte final7/143,TSC84417 e lint do teste EXIT0. Nenhum
+runtime posterior ao global, sem repetir o global pela adaptação de fixtures.
+TESTERbc4 favorável7/148 próprios,d722b1 EXIT0,sem DB/browser/global/TSC;
+CI/main/#392B2 pendentes. Baseb23ff13b recebe limpeza404(sóPNG/docs),
+runtime/scripts/deps iguaisbc4. Quatro variantes legadas preservadas só
+em backup local antes da retirada, sem reatribuição aoZIP381.
+output/pr398-qa/revisao.md.

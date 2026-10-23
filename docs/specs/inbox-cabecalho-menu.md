@@ -45,3 +45,15 @@ Pendentes finais: incorporar registro NÃO-REGISTRO específico da aba do contat
 ## Freeze final após registro de identificação
 
 Merge normal e5941b8c em f6f104d8f00df8f4fc172a941e93c8074d35dcbe; único conflito documental no quadro, preservados ambos históricos. Delta de src/scripts contra runtime8b: somente src/app/identificacao-registro.test.ts (registro ancorado de chave enum de navegação, sem algoritmo/UI). Guarda observada em execução819428:1arquivo29testes EXIT0; lint do arquivo0avisos EXIT0, Node22.23.2. Os gates de produto106/1058,TSC50243/lint24 permanecem da fonte8b idêntica, não são reapresentados como nova execução. Allowlist positiva final107arquivos/98PNG/14.040.081bytes novamente conferida byte/hash. TESTER e global integrado peloROOT pendentes. Nenhuma suíte global própria, DB/browser/servidor ativo ou mudança de ambiente.
+## Revisão C1 da PR401 — composição dos pais
+
+Base315-r3@ab14161d incorpora3995b776f por merge normal, sem mover4ddd;
+fonte5a308c62 preserva cabeçalho/menu/ações/Conversa/scripts315, recebendo
+somente oito arquivos de prazo puro/Avatar/SSE e testes dos produtores.
+Não muda permissões/servidor ou a regra de nota interna. C2 da revisão403
+permanece separado na funcionalidade317.
+Recorte6/81 e global42416 EXIT0:887arquivos/6.950testes,sem filtros/ignorados;
+Nexttypegen/TSC61138 e lint86951 EXIT0,0erros40avisos anteriores. Sem novo
+DB/browser. TESTER5a favorável9/118 próprios,143668 EXIT0,sem DB/browser/
+global/TSC/lint. Basedca8c5d5 recebe sódocsQA/404,source/deps iguais5a,
+zeroPNG298. CI/main/#392B2 pendentes. output/pr401-qa/revisao.md.

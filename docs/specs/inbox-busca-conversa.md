@@ -68,3 +68,15 @@ selecionada no ERP com paginação/SSE real na futura composição317/319, pois
 scrollTop mede deslocamento sem distinguir ajuste de âncora da VirtualList.
 Não houve falha reproduzida nessa fronteira; o prepend40 real do componente
 passou. Detalhes e limites: output/pr402-qa/revisao.md.
+## Composição C1 da PR402 e complemento C2 real
+
+Fontefff0095c/base316-r3@1379a138 recebe401moderno por merge normal; hookC2
+e testes iguais7a,UI/scripts iguaisc2ec,delta só8produtorespuro/Avatar/SSE.
+Recorte8/52 e global23642 EXIT0:894arquivos/6.987testes,sem filtros/ignorados;
+Nexttypegen/TSC14950 e lint73243 EXIT0,0erros40avisos. TESTERfff favorável
+10/133 próprios03568d0,sem DB/browser/global/TSC/lint próprios.
+ComplementoTESTERERP nominal317df9 em390claro/1440escuro verificou paginação/
+pin/linha visível e manual/foco preservados após1SSE+1GET real porcontexto.
+Capturas/limites não são reatribuídos ao fff/C6; detalhespr402-qa/revisao.md.
+CI/main/#392B2 pendentes; não concluir a issue antes do merge. Base posterior
+037a2c3f recebe sóMDQA/404,source/deps iguaisfff e zeroPNG298.
