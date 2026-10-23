@@ -18,5 +18,3 @@ it("resultado incerto conserva chave na repetição e não navega antes do suces
  m.g=criarGanchos();const tela=()=>m.g!.renderizar(NovoAtendimento,{opcoes,compacto:true});const submeter=async()=>{const form=elementos(tela()).find(n=>n.type==="form")!;await (form.props.onSubmit as (e:unknown)=>Promise<void>)({preventDefault(){}});};
  m.abrir.mockRejectedValueOnce(new Error("transporte fictício")).mockResolvedValueOnce({ok:true,dado:{id:"a2"}});await submeter();expect(m.push).not.toHaveBeenCalled();await submeter();expect(m.abrir).toHaveBeenCalledTimes(2);expect(m.abrir.mock.calls[1][0].chaveIdempotencia).toBe(m.abrir.mock.calls[0][0].chaveIdempotencia);expect(m.push).toHaveBeenCalledExactlyOnceWith("/inbox?c=a2");
 });
-
-
