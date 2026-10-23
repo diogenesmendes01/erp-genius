@@ -1,6 +1,6 @@
-# Painel do contato com abas — Inbox #318 (recorte exclusivo)
+# Painel do contato com abas — Inbox #318
 
-Base243c9348454b6cca5795a6afa747efa25ed3eef1, branch codex/inbox-e1-318. Brief aprovado em output/inbox-318-investigacao.md; issue318/Task13 são o contrato. Esta etapa ainda não monta o cabeçalho novo no Inbox. Composição, BotaoIcone313, visual, TESTER e global ficam pendentes do handoff.
+Base243c9348454b6cca5795a6afa747efa25ed3eef1, branch codex/inbox-e1-318. Brief aprovado em output/inbox-318-investigacao.md; issue318/Task13 são o contrato. O checkpoint exclusivo foi integrado ao contrato313 e a composição foi liberada separadamente. Visual, TESTER e global seguem pendentes.
 
 ## Casca e leitura
 
@@ -31,3 +31,13 @@ InboxNovo, ConversaAberta, dialogo.ts, BotaoIcone, scripts/visual e quadro globa
 Resultados, REDs, sessões e filtros em output/inbox-318-report.md. Integração permitida foi somente paineis.int.test.ts no dev-email, após snapshot completo do integrador. Ele restaurou424 tabelas/551 registros e confirmou a fixture307/314 normal. Nenhum servidor/preview, seed307/reset extra, outra suíte DB ou full próprio. Sem aceite visual presumido.
 
 Checkpoint exclusivo64e67072 integrado aos contratos313 no9292dcbc, com registros de guardas preservados. Gates combinados45arquivos448testes/TSC/lint0 observados; não incluem composição ou visual318. Detalhes no relatório. A espera pelo handoff de composição/harness continua explícita, sem presumir conclusão da funcionalidade.
+
+## Composição autorizada após4f1c2049
+
+InboxNovo monta o cabeçalho a partir do contato da seleção atual; tags só do painel cujo id corresponde à seleção. ABAS_ENTREGUES continua a única fonte de abas; estado associa id do atendimento/aba, ajustado condicionalmente quando a seleção muda, sem efeito pós-paint ou remontagem da casca. Callback recusa aba não entregue. A função abrir e todo controle de NovaConversa ficaram intactos nesta composição para receber o fix313 separado.
+
+Detalhes contém WhatsApp apenas se já recebido não vazio, setor, aprovação Aria, ações, opt-out fora de grupo e triagem/revisões. A triagem da thread selecionada foi retirada de ConversaAberta; a ponte sem seleção continua no Inbox. Não há novo telefone, permissão ou chamada. Wrappers locais normalizam padding/bordas dos blocos antigos e ocultam wrappers vazios; componentes de negócio preservados. A geometria dessas divisórias ainda exige navegador.
+
+O cabeçalho enriquecido consome BotaoIcone36 real313 com a mesma ref/handler de fechar. Um wrapper posiciona o controle, sem disputar a classe relative do compartilhado. aria-labelledby referencia textos responsivos Voltar para a conversa abaixo700/Fechar painel acima; a comprovação do nome computado fica para preview. Fallback308 continua com Botao e seu nome anterior. Nenhuma mudança no helper de diálogo ou limiares960/1400.
+
+O conteúdo acima substitui apenas as pendências de composição/BotaoIcone das anotações históricas. CLI/harness continuam exclusivos doB até handoff; quadro não editado. Provas de altura500, nome/tags extensos, foco/resize/nomes acessíveis, app×protótipo e aceite independente ainda pendentes.

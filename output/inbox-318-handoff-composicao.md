@@ -9,3 +9,6 @@ Não aplicar antes de liberação. Fontes exclusivas e SPEC/report em318; shell 
 - Harness: novo painel-detalhes; manter tablet-painel/celular-painel, hidrataçãoSSE, diagnósticoReact, helperDOM392 após interação/antesfoto e manifestos/fontes. Não executar transportes/ações externas.
 - Guardas: quatro registros exclusivos de PainelContato foram autorizados e aplicados (aba1/key a.id/aria-selected/tag1), sem algoritmos alterados. Merge posterior deve preservar os registros doB313 e guardaAST381/mono312 do integrador.
 - Visual quando liberar: três tamanhos/dois temas app×protótipo; bordas699/700,959/960,1399/1400, altura500 e nomes/tags extensos. Scroller local inclui topo/abas/corpo, avatar não encolhe. Medir alcance de todos os controles, foco/resize, coluna/overlay/uma vista, telefone omitido e grupo semopt-out. Não presumir geometria por classes.
+
+
+Atualização: composição acima LIBERADA e implementada após4f1c2049, exceto harness/visual/quadro. Abrir()/NovaConversa/helperdialogo não editados; receber fix313359a23fd por merge normal após checkpoint. BotaoIcone36 real já consumido; validar nome acessível responsivo e geometria no preview quando autorizado. Report registra RED/GREEN e pendência do renome de fixture313 para guarda confirmacoes, sem exceção nova.

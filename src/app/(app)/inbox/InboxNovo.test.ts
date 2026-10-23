@@ -130,3 +130,12 @@ it("encaminha agoraInicial da página à lista sem recalcular durante SSR", () =
     expect(h).toContain("Prazo estourado · 29 min"); expect(h).not.toContain("30 min");
   } finally { vi.useRealTimers(); }
 });
+
+
+it("SSR318 monta cabeçalho/Detalhes na casca com WhatsApp apenas quando recebido", () => {
+  const h = html({ selecionado: "a1" });
+  for (const trecho of ["data-cabecalho-contato", "h-[132px]", "Comercial · Escola", 'role="tabpanel"', ">Detalhes<", ">WhatsApp<"]) expect(h).toContain(trecho);
+  const sem = html({ selecionado: "a1", extra: { inicial: { itens: [{ ...item("a1", "Ana"), contatoTelefone: "" }], proximo: null } } });
+  expect(sem).not.toContain(">WhatsApp<");
+  expect(h.match(/id="painel-contato"/g)).toHaveLength(1);
+});
