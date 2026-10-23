@@ -1,5 +1,13 @@
 # Quadro único de entregas
 
+## Inbox E0.3 — notas na rota e aviso transacional (#300, 22/10/2026)
+
+**Estado: contrato de servidor/SSE implementado e validado; PR em publicação.** Branch `codex/inbox-e0-300`, base PR #382 (#299). SPEC em `docs/specs/inbox-notas-thread.md`, investigação em `output/inbox-300-report.md`, parecer independente em `output/inbox-300-review.md`. Sem merge/deploy; renderização na tela é escopo da #301.
+
+- **Entrega:** rota inicial/depois combina notas do atendimento e, sob permissão comercial específica, da oportunidade; origem identificada e ordem crescente por tempo/id. Cursor antes devolve notas:null. Seleciona50 recentes e retira arquivadas. Consulta sem escopo está em módulo interno não-action; chamadores validam acesso antes de delegar. Nota e NOTIFY apenas com IDs gravados na mesma transação; repetição idempotente não avisa novamente.
+- **TDD/integração DEV:** quatro falhas RED esperadas antes do código; GREEN45 testes. Após extrair o módulo interno:2 arquivos/26 testes sessão10696 e1 arquivo/19 testes sessão27335, todos saída0 noNode22/perfildev-gravacoes. Regressão dirigida anterior10arquivos/115testes sessão46885 saída0 em562s, nenhum ignorado; não é suíte completa nem execução pós-extração.
+- **Gates globais Node22.23.2:** na fonte288c62e1, TSC heap8192 saída0 após tipar mock novo; unitário completo840arquivos/6478testes sessão47978 saída0, maxWorkers2 e sem ignorados; lint global sessão61365 saída0,0 erros/40 avisos herdados. Commit9853be83 somente documental; nenhum gate atribuído como nova execução por isso.
+- **TESTER:** fonte288c62e1 revisada sem achados bloqueantes em fronteira, escopo, paginação, limite/arquivo ou transação/idempotência. Delta9853be83 sem alteração emsrc. Integração independente nos3 arquivos exigidos:45 testes, sessão37125 saída0,187,69s, sem ignorados/filtro por nome, Node22.23.2/perfiltester. Sem visual ou transporte externo nesta issue de servidor. CI aguarda retarget para main após integrar382.
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
 ## Inbox E0.2 — leitura automática (#299, 22/10/2026)
@@ -4623,6 +4631,15 @@ Correção parcial: região real da thread condiciona leitura/zero otimista e re
 
 PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao desmontar; ação composta invalida rota uma vez, preservando falha parcial e ação pessoal isolada. TDD RED observado. Fonte final: fullunit23477exit0/840arquivos6485testes sem filtro/ignorados; TSC1446exit0; lintglobal2057exit0/0erros40avisos; integração dirigida ci-integracao73209exit0/2arquivos15testes. Relatório output/pr382-qa/revisao-final.md. C5retarget/CI e re-review externo pendentes; não mergeado.
 
+### PR #386 — revisão C1/C2: notas da Aria em tempo real — 2026-10-22
+
+**Estado: correção e gates locais concluídos; revisão independente, integração da base e CI/retarget pendentes.**
+
+- C2 reproduzido em PostgreSQL real: criação da nota pelo executor e arquivamento por desfazer não notificavam. RED77015 exit1:2falhas/1pass,49ignorados pelo filtro; o handoff já passava pelo trigger de atendimento. Emissão explícita transacional apenas nos dois caminhos faltantes, com tipo/ids e sem conteúdo; handoff não recebe aviso duplicado. Sugestão/SHADOW/rollback não notificam nem persistem nota. Sem papel/permissão/schema/transportes novos.
+- Helper de integração usa LISTEN real e canal privado de barreira para provar entrega/ausência após commit, sem sleeps nem aviso falso no canal do Inbox. URL local validada na lista fechada. Import inicial fora de src fez a guarda confirmacoes falhar; global70197 foi interrompido exit1. Corrigido sem abrir exceção:confirmacoes5415 GREEN59/59 e novo global completo abaixo.
+- C1 evidências locais no perfil exclusivo ci-integracao:92375 exit0,4arquivos/75testes (consultas-pagina,executor-crm,handoff,historico), e93492 exit0,2arquivos/25testes (nota-interna,inbox), sem filtro/ignorados nesses6arquivos. Não é suíte de integração completa. O pedido de rodar no head final após retarget para main permanece pendente; não atribuir este recorte a um futuro head integrado.
+- Gates finais Node22.23.2:unitários12136 exit0,840arquivos/6485testes sem filtro/ignorados;TSC70245 exit0;lintglobal78342 exit0,0erros/40avisos herdados. Base382correções183c incorporada pelo merge localbb543667. Ainda sem merge/deploy destaPR; nenhum envio externo.
+- Registro da dependência:PR381 já merged por squash emea60a8a7,comCI39878884253success eTESTER9e5favorável;64PNGarquivados com roundtrip/hash confirmado no draft autorizado. Incorporar correção381/main antes de retarget das filhas para não reintroduzir imagens.
 ### Inbox E0.5 — #302: prazo estourado vivo — 2026-10-22
 
 **Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-302-report.md`, parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Branch `codex/inbox-e0-302`, base `1ce8e582` (PR #381). Sem merge/deploy.
@@ -4702,3 +4719,24 @@ exclusivamente ci-integracao. Não é suíte completa de integração.
 
 Relatório: output/pr382-qa/revisao-r6.md. Parecer independente no commit exato
 e CI contra main continuam pendentes; não marcar #299 concluída antes deles.
+
+## PR #386 — integração final após #382
+
+Base main 3d756a4e e fonte R6 37a78dfe incorporadas por merges normais,
+547c5d9c/e4f8d099. Conflitos exclusivamente nos acréscimos do quadro, todos
+preservados. Arquivos funcionais específicos de notas comparados sem diferença
+com e4d7119c, que recebeu parecer favorável do TESTER. Sem reintrodução dos
+PNGs arquivados da #381. Diff final sobre main restrito à funcionalidade #300.
+
+C1: aceite repetido no estado integrado, Node22.23.2, ci-integracao exclusivo,
+6 arquivos / 100 testes reais de integração, sem filtro/ignorados, saída0
+(s43509, 369,13s): consultas-pagina, executor-crm, handoff, historico,
+nota-interna e inbox. Não é suíte completa de integração. Recorte unitário
+8 arquivos / 128 testes, saída0; TypeScript13908, saída0. Fonte das notas
+idêntica ao global anterior840/6485 e lint0/40 registrado em e4d7119c;
+não atribuir nova execução global a esta integração.
+
+C2 preserva NOTIFY transacional somente nos dois caminhos faltantes; handoff
+já notifica pelo trigger e não recebe duplicação. Sem permissão/schema/envio
+externo. Retarget para main efetuado; CI do novo head e conferência final
+permanecem pendentes antes do merge.
