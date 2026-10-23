@@ -140,6 +140,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const carregarLista = useCallback((filtro: FiltrosInbox) => {
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
+    const pagina = typeof document === "undefined" ? null : document;
     const pedido = ++consultasRef.current.iniciada;
     void buscarPagina(filtro, null).then((p) => {
       if (!p || pedido < consultasRef.current.aplicada) return;
@@ -151,12 +152,16 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
       const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
       if (linha && !(leitura.fase === "sucesso" && antiga)) {
-        leitura.ultimaContagem = leitura.fase === "pendente" ? Math.max(leitura.ultimaContagem, linha.naoLidas) : linha.naoLidas;
+        const ocultas = mensagensOcultasRef.current?.id === leitura.id ? mensagensOcultasRef.current.mensagens.size : 0;
+        leitura.ultimaContagem = leitura.fase === "pendente" || ocultas > 0 ? Math.max(leitura.ultimaContagem, linha.naoLidas, ocultas) : linha.naoLidas;
       }
       setItens((atual) => {
         const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
         const vigente = leituraRef.current;
         const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
+        if (mensagensOcultasRef.current?.id === vigente.id && (pagina?.visibilityState !== "visible" || !regiaoConversa.current?.getClientRects().length)) {
+          return lista.map((i) => i.id === vigente.id ? { ...i, naoLidas: Math.max(i.naoLidas, vigente.ultimaContagem) } : i);
+        }
         return regiaoConversa.current?.getClientRects().length && vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
           ? zerarNaoLidas(lista, vigente.id!) : lista;
       });
@@ -178,7 +183,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (leitura.id !== id || leitura.versao !== versao) return;
       leitura.fase = sucesso ? "sucesso" : "falha";
       if (sucesso) {
-        leitura.ultimaContagem = 0;
+        const restantes = mensagensOcultasRef.current?.id === id ? mensagensOcultasRef.current.mensagens.size : 0;
+        leitura.ultimaContagem = restantes;
+        setItens((atual) => restantes === 0 ? zerarNaoLidas(atual, id) : atual.map((i) => i.id === id ? { ...i, naoLidas: restantes } : i));
       } else {
         // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
@@ -246,8 +253,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current)) {
       if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, true);
-      else if (mensagensOcultasRef.current?.id === a.atendimentoId) mensagensOcultasRef.current.mensagens.add(a.mensagemId);
-      else mensagensOcultasRef.current = { id: a.atendimentoId!, mensagens: new Set([a.mensagemId]) };
+      else {
+        const repetida = mensagensOcultasRef.current?.id === a.atendimentoId && mensagensOcultasRef.current.mensagens.has(a.mensagemId);
+        if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
+        if (mensagensOcultasRef.current?.id === a.atendimentoId) mensagensOcultasRef.current.mensagens.add(a.mensagemId);
+        else mensagensOcultasRef.current = { id: a.atendimentoId!, mensagens: new Set([a.mensagemId]) };
+      }
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     carregarLista(filtros);
