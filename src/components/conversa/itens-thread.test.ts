@@ -59,7 +59,7 @@ describe("itensDaThread", () => {
 });
 
 const saida = (id: string, p: Partial<MensagemThread> = {}): MensagemThread => ({ ...mensagem(id, "2026-10-22T12:00:00.000Z"), direcao: "SAIDA", origem: "HUMANO", autorNome: "Camila", ...p });
-const decoracao = (mensagens: MensagemThread[], notas: NotaInternaThread[] = []) => decorarThread(itensDaThread(mensagens, notas, false), { fuso: "UTC", agora: new Date("2026-10-22T13:00:00Z") });
+const decoracao = (mensagens: MensagemThread[], notas: NotaInternaThread[] = []) => decorarThread(itensDaThread(mensagens, notas, false, false), { fuso: "UTC", agora: new Date("2026-10-22T13:00:00Z") });
 const sequencias = (mensagens: MensagemThread[], notas: NotaInternaThread[] = []) => decoracao(mensagens, notas).filter(i=>i.tipo === "mensagem" || i.tipo === "nota").map(i=>i.emSequencia);
 describe("decoração da thread", () => {
   it("clasifica entrada, humano, IA e nota sem mudar itens persistidos", () => {
@@ -84,7 +84,7 @@ describe("decoração da thread", () => {
     expect(sequencias([ {...mensagem("a","2026-10-22T12:00:00Z"),participanteNome:"Pai"}, {...mensagem("b","2026-10-22T12:01:00Z"),participanteNome:"Mãe"} ])).toEqual([false,false]);
   });
   it("evento no topo e separadores usam keys civis estáveis, sem colisão com nota", () => {
-    const itens=itensDaThread([mensagem("a","2026-10-21T12:00:00Z"),mensagem("b","2026-10-22T12:00:00Z")],[nota("a","2026-10-22T12:00:00Z")],false);
+    const itens=itensDaThread([mensagem("a","2026-10-21T12:00:00Z"),mensagem("b","2026-10-22T12:00:00Z")],[nota("a","2026-10-22T12:00:00Z")],false,false);
     const visual=decorarThread(itens,{fuso:"UTC",agora:new Date("2026-10-22T13:00:00Z"),transferidoDe:"Secretaria"});
     expect(visual.map(i=>i.tipo)).toEqual(["evento","dia","mensagem","dia","mensagem","nota"]);
     expect(visual.filter(i=>i.tipo==="dia").map(i=>i.id)).toEqual(["dia:2026-10-21","dia:2026-10-22"]);
@@ -119,9 +119,9 @@ describe("rótulo por dia civil no fuso pessoal", () => {
 
 it("decorar paginação preserva âncora de mensagem e chaves mesmo ao trocar rótulo de Hoje",()=>{
  const depois=[mensagem("a","2026-10-22T12:00:00Z"),mensagem("b","2026-10-22T12:01:00Z")];
- const antes=decorarThread(itensDaThread(depois,[],true),{fuso:"UTC",agora:new Date("2026-10-22T13:00:00Z")});
+ const antes=decorarThread(itensDaThread(depois,[],true,false),{fuso:"UTC",agora:new Date("2026-10-22T13:00:00Z")});
  const layout=buildVirtualLayout(antes.map(i=>i.id),new Map(),50),ancora=captureVirtualAnchor(layout,65);
- const mais=decorarThread(itensDaThread([mensagem("antiga","2026-10-21T12:00:00Z"),...depois],[],false),{fuso:"UTC",agora:new Date("2026-10-23T13:00:00Z")});
+ const mais=decorarThread(itensDaThread([mensagem("antiga","2026-10-21T12:00:00Z"),...depois],[],false,false),{fuso:"UTC",agora:new Date("2026-10-23T13:00:00Z")});
  expect(ancora?.key).toBe("a");expect(restoreVirtualAnchor(buildVirtualLayout(mais.map(i=>i.id),new Map(),50),ancora)).toBe(165);
  expect(antes.find(i=>i.id==="dia:2026-10-22")).toMatchObject({rotulo:"Hoje"});expect(mais.find(i=>i.id==="dia:2026-10-22")).toMatchObject({rotulo:"Ontem"});
 });
