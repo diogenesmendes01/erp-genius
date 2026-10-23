@@ -9,10 +9,11 @@ describe("inbox sem polling", () => {
   it("nenhum arquivo do inbox faz polling", () => {
     const arquivos = (readdirSync(RAIZ, { recursive: true }) as string[]).map((f) => `${RAIZ}/${f}`)
       .filter((f) => /\.tsx?$/.test(f) && !f.endsWith(".test.ts") && !LEGADO.includes(f));
+    arquivos.push("src/lib/eventos-inbox.ts", "src/components/SeloNaoLidasInbox.tsx");
     expect(arquivos.length).toBeGreaterThan(0);
     for (const f of arquivos) expect(readFileSync(f, "utf8"), f).not.toMatch(/setInterval\(|router\.refresh\(\)/);
   });
   it("a tela nova usa o SSE", () => {
-    expect(readFileSync("src/app/(app)/inbox/useEventosInbox.ts", "utf8")).toContain('new EventSource("/api/inbox/eventos")');
+    expect(readFileSync("src/lib/eventos-inbox.ts", "utf8")).toContain('new EventSource("/api/inbox/eventos")');
   });
 });
