@@ -3,11 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 
-type ItemComPrazo = Pick<ItemListaInbox, "grupo" | "status" | "prazoRespostaEm">;
-
-export function prazoEstourado(i: ItemComPrazo, agora: number): boolean {
-  return !i.grupo && i.status !== "ENCERRADO" && !!i.prazoRespostaEm && new Date(i.prazoRespostaEm).getTime() < agora;
-}
+export { prazoEstourado } from "./prazo-atendimento";
 
 export function proximoEstouroEm(itens: ItemListaInbox[], agora: number): number | null {
   let proximo: number | null = null;

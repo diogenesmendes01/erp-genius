@@ -9,11 +9,12 @@ const roboto = localFont({
   display: "swap",
 });
 
-// Inbox (docs/18): mono local para números e horas; consumidores escolhem 400 ou 500.
+// Inbox (docs/18): mono local para números e horas; inclui 600 nativo para dt/contadores.
 const mono = localFont({
-  src: [{ path: "./fonts/jetbrains-mono-latin-wght.woff2", weight: "400 500", style: "normal" }],
+  src: [{ path: "./fonts/jetbrains-mono-latin-wght.woff2", weight: "400 600", style: "normal" }],
   variable: "--font-mono",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
