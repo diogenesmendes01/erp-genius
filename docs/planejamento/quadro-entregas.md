@@ -5302,3 +5302,22 @@ continuam pendentes. Nenhum aceite visual ou integração presumidos.
 Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432 inclui fontes391/leitura automática adotada/388temMaisDepois real. DEV recorte16/369/TSC11375heap8192/lint6fontes a60e94 saída0. ROOT informou global EXATO4f37524:877/6854, typegen/TSC95820/lint47827 saída0(40avisosSrc herdados+2stagingprivado). Nenhum ownfull/DB novo.
 
 FormalAPP43844 saída0/26PNG; virtual10555 saída0/18PNG/6contextos150comalturasvariáveis/foco/seleção/resize; Link público rápido15517 saída0/20PNG/4contextos390×500 e1440×900. Todas64APP atuais inspecionadas favoravelmente.26protos2e882 imutáveis previamenteinspecionados/hashrevalidado, separados das capturasAPP4f. Allowlist90PNG/8.847.776bytes com arquivo/bytes/SHA256/tipo/fonte em output/inbox-313-visual/allowlist-final-4fcdc6ca.json e resumo-final-4fcdc6ca.json. Complemento histórico20f51 fora do pacote atual. Nenhum submit/criação/envio real; actionNova coberta por submitmockado, sem E2E externo. Não se esperaramPOSTsassentarem antes da navegação. Negativos e corpos/traces privados permanecem foraGit/ZIP; zero novosbinários noGit. Preview68948 encerrado e bancoB restaurado peloROOT. Depósito remoto/URL, revisão final agregada e publicação permanecem com integrador; nenhuma homologação presumida.
+
+### Publicação #318 e contagem atual — 23/10/2026
+
+PR399 aberto/anexado: https://github.com/diogenesmendes01/erp-genius/pull/399.
+Headab8a2d0599dd5ee89d967e4f4befdf4352d3a1be, base318f5349eed,
+ambasbranches enviadas. Produto e594, head só documentos; gates e parecer
+final declarados no corpo. Revisão/CI/retarget/merge com a frente integradora.
+Não marcar318 concluída antes da main/fechamento.
+
+GitHub confirmou301closed03:37:37UTC, squash388main821e0f08574664a47530f24c5964e35c59dfdbe7.
+Total7/81issuesintegradas:298,299,300,301,302,303,305. Dezesseteissues
+comPR(298–312,314,318), vintePRstotais incluindo três técnicos.
+
+Pacote313 positivo publicado só na releaseDRAFT421321214, upload/download/hash
+confirmados:9.587.080bytes/110arquivos103PNG,asset667877120,sidecar667877119,
+SHA256a5ddcdd7179558a5696fc7e0867dd839c84a63ae0f094ed527729ec99814aa20.
+TESTER313favorável4f18/285+39R6 e browserpróprio13PNG/desktopclaro/móvelescuro.
+PR313aguarda a correção HIGH394 de excesso de GETs/lotes SSE antes da composição
+final; DEV B trabalha fixisolado310 e portepara313, sem misturar os diffs.
