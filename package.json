@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@babel/standalone": "7.29.0",
+    "@playwright/test": "^1.64.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/fontkit": "2.0.9",
     "@types/node": "^20.16.11",
@@ -59,7 +60,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.3.5",
     "lucide-static": "0.460.0",
-    "playwright-core": "1.56.1",
+    "playwright-core": "1.64.1",
     "postcss": "^8.5.10",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.13",
