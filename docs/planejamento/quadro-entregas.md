@@ -4927,3 +4927,13 @@ Conflito C3 do quadro resolvido por merge normal preservando ambos os textos.
 C4 permanece pendente: aguardar #389 na main e CI do head final. Relatório
 output/pr390-qa/revisao.md. Ao integrar na casca #308, trocar a quantidade
 legada de quatro elementos por dois, mantendo os contratos de identidade.
+
+## PR #391 — pais integrados e gate contra main
+
+Main8d00124 incorporada por merge normal 8c6930c2. Os arquivos Inbox/conversa
+ficam idênticos à main já aprovada; as fontes/tokens da #391 são idênticos ao
+04e6f2c6 aprovado. Preservados os fixes #388, guardas #389 e identidade #390.
+Recorte pós-merge 11 arquivos / 174 testes, TSC71047 e lint de 14 arquivos
+terminaram 0, sem ignorados/avisos no recorte. Não houve novo global local ou
+browser. Retarget/main e push serão seguidos por CI global e parecer final;
+aguardar esses gates antes do merge. Relatório output/pr391-qa/revisao.md.
