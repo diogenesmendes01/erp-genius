@@ -74,12 +74,6 @@ protótipo exige o botão de detalhes e a região aberta; não é ignorado quand
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
 
-## Atualização da casca #308
-
-O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
-
-A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
-
 ## Selo pessoal do menu (#311)
 
 A demo aceita `--entrada thiago` (ou outra chave fictícia fechada) para inserir uma ENTRADA local, sem transporte. Exige fixture existente no BAILEYS desconectado e banco local descartável; não recria a demo nem emite NOTIFY manual. O trigger existente publica o evento após commit.
@@ -93,6 +87,12 @@ A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; v
 ## Estado de lista vazia (#312)
 
 #312 acrescenta `--estado lista-vazia`: app em `?busca=zzzz` sem seleção, protótipo com busca real `zzzz`, três tamanhos e dois temas (12PNGs). A espera exige EstadoVazio visível e nenhum item da lista; os passos dos demais estados permanecem iguais.
+
+## Atualização da casca #308
+
+O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
+
+A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
 
 # Telefones em evidências
 

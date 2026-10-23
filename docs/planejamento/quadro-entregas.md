@@ -4879,6 +4879,20 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - Gates da fixture83043f51: global80400 exit0,846arquivos/6541testes sem filtro/ignorados. Após helper: unitários dirigidos2arquivos/18testes exit0, TSC30797 exit0, lint dos3arquivos de código exit0. Global terminou durante a adição do helper; seus testes de DOM/captura são as verificações específicas posteriores, sem atribuir o teste de navegador ao Vitest.
 - Permanecem B1/B2 (dependências), C2 (remoção/arquivo de evidências anteriores), C5/C6 e revalidação externa. C1 ainda exige retirar as imagens antigas com telefones do código; fonte e caminho de recaptura estão corrigidos. Nenhuma integração externa/WhatsApp acionada.
 
+### Publicação separada #311 — selo pessoal e contador HTTP
+
+Branch codex/inbox-e1-311 incorpora a nova base codex/inbox-e1-base-revisoes e os reparos83c6ec36/7d27c031 (singular e drenagem do corpo HTTP antes da repetição pendente). Candidato e67d26ca: sessão7949, Node22.23.2,29arquivos/347testes unitários exit0; Next typegen, TSCheap8192 e lint dirigido exit0, sem avisos. Sem ignorados; integração já evidenciada no DEV, não repetida nesta consolidação sem mudança de banco.
+
+Evidências sanitizadas: asset667561601,5.058.283bytes,SHA2569ef7b6d1ab42aada9c6e4ebac142501430372a32ed189e8673857e9d3022bf83, link em output/inbox-311-visual/README.md. Upload/download e hash conferidos;33PNGs positivos,0HTML. Recaptura89381 exit0/0falhas/0diagnósticos prova2→1→2→1, duas abas, uma SSE e um GET HTTP máximo por aba.46PNGs históricos saem apenas do índice; cópias locais e histórico preservados. Global combinado2f19074:857arquivos6680unit/TSC0;lint66935exit0/40herdados. TESTER favorável no combinado86093f4d. PR/retarget e CI final ainda pendentes; merge/deploy não presumidos.
+
+### PR396/#311 B1 e C1 — revisão isolada em andamento
+
+Branch OWN codex/inbox-311-b1 sobre head remoto confirmado5ff849d1. B1: CLOSED libera ciclo físico e próxima assinatura recupera Sidebar ainda montada; token antes da instalação protege callbacks síncronos/velhos, resync coletivo e CONNECTING nativo. Sem timers/retry/polling/Inbox/store/servidor/SQL. RED3falhas/1pass/3skip→GREEN2arquivos10, recorte5741/31arquivos365testes e lint3fontes saída0. Typegen e TSC19799 heap8192 concluídos com saída0. C1 somente nota de capacidade e HTTP/2 não verificado. TESTER/porte/browser/global/publicação pendentes; LOWs diferidos. Relatório output/inbox-396-report.md; sem homologação presumida.
+
+### PR396 B1/C1 — isolado revisado e prova nativa realizada
+
+Fonte babd: DEV31arquivos365testes/TSC19799heap8192/lint3fontes saída0; TESTER independente7/41 e784b60 saída0 informado peloROOT. Probe d56ad6 saída0,503SSEexato→CLOSEDnativo antes do helper→Link público com Sidebar preservada→SSEreal200,1ativa/1documento, resync da assinatura antiga comprovado. Zero falhas;2diagnósticos privados esperados503, guardglobal intacto.2PNG inspecionados/177.044bytes, allowlist/resumo sanitizados em output/inbox-396-allowlist.json/evidencias.json; negativos/raw/probes locais foraGit, sem binário novo. SemPG/SQL/submit/envio. Porte mínimo no agregado, browser agregado/global/publicação pendentes do integrador; nenhuma homologação presumida.
+
 ### Publicação separada #308 com dependências revisadas
 
 Branch codex/inbox-e1-308 incorpora base codex/inbox-e1-base-revisoes (130+3819e5+382d5/183+392830/3f), preservando a referência de visibilidade382 e as classes/foco da casca308. Harness inclui espera de hidratação abcaaabe; teste do painel oculto adaptado ao contrato aoAlternarPainel em390px. Nenhum código do selo311 foi incluído.
@@ -5195,3 +5209,19 @@ Global2766 terminou0:855 arquivos /6.723 testes unitários sem filtro/ignorados,
 maxWorkers2; TSC57449 e lint97075 terminaram0, zero erros /40 avisos herdados.
 Sem novo DB/browser nesta conciliação. Parecer final e CI pendentes;392/B2
 continua decisão humana e impede merge antecipado. output/pr395-qa/pais.md.
+
+## PR #396 — CLOSED e composição sobre a casca
+
+Fonte9cfbbad6 recebe ad47/babd isolado, base-r3/main e3953fc por merges normais.
+CLOSED libera ciclo; nova assinatura abre uma SSE e recupera assinantes antigos
+com resync, CONNECTING segue nativo, sem timer/retry. C1 capacidade por aba e
+HTTP/2 documentado, sem alterar proxy. C2 README/quadro conciliados preservando
+ambas as seções; diff311 fica sobre308, sem313/315. SSE/hooktest idênticosad47;
+OptOut/PainelContato/ConversaAberta idênticos395. Fonte9cf contra base3127c só
+difere nos três arquivos SSE. Checkpoint4ef anterior passou857/6727, não final.
+
+Gates9cf encerrados0: global82670,860 arquivos /6.748 testes unitários sem
+filtro/ignorados,maxWorkers2; TSC83357 e lint95898 zero erros /40 avisos.
+Quatro PNGs positivos do probeB babd/3b em ZIPdraft344.425bytes, SHA c7c4fb49...
+com fontes explícitas; sem recaptura9cf/DB/browser próprio. Parecer final,
+395/#392B2 e CI/main continuam gates. output/pr396-qa/revisao.md.
