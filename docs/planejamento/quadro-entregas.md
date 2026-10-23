@@ -5096,3 +5096,7 @@ Fontec7bae481 congelada: global65804/c1315c saída0,849arquivos6651testes236,80s
 ## PR #393 — composição com a base392/B2
 
 Basepublicada67e6cc60 incorporada localmente:src/scripts preservadosdabase,comexatamente9arquivospróprios309byteiguaisa1a79196. Manifest/lock/eslint67preservados;contratos310/E0/harnessB2nãoregredidos. Quadro4conflitos preservaliteralmenteamboslados,dc6821 saída0;recorte6arquivos73testes0semfiltro/skips/banco/browser. ParecerindependenteB2c7preservadocomoantecedente,semalegarQAcomposta. Global/TSC/lint/TESTERcompostos/CI finalaguardados;392CI/mergeobrigatóriosantesintegração393. Relatóriooutput/pr393-qa/integracao-b2.md;B2humanojáintegralmenteautorizado,nãopendentecomoemcheckpointsantigos.
+
+## PR #393 — gates finais e main392 confirmada
+
+Fonte04d27fd8: global45766/7a6585 terminal0,852arquivos6704testes232,85s,maxWorkers2semfiltro/skipsnovos;typegen/TSC67991 terminal0;lint9959 terminal0/0erros40avisos. TESTERexato04d a4383f terminal0/6arquivos75testes,hashparecer304fc9...,não73dorecorteinicial. Main392b6b451a3/squashconfirmadaCI39937916911success5/5;issue307CLOSEDverificada. Árvoreinteiramainb6==ancestral67→incorporaçãoancestralidadepreservaárvore04dantesregistros,nãorepetirgatesporMD. Relatóriointegracao-b2+parecerTESTERversionados. CIremota393/mainmergependentes;nenhumaissue309marcadaconcluídaantecipadamente.
