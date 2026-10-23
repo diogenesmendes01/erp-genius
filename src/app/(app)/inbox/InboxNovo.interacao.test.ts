@@ -65,9 +65,11 @@ const props = {
 
 let respostaPainel: () => Response;
 let respostaLista: () => Promise<Response>;
+let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
   m.modo = null;
+  regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   vi.stubGlobal("document", { visibilityState: "visible" });
   m.g = criarGanchos(); m.efeitos = []; m.aoAviso = null; chamadasPainel.length = 0;
@@ -81,7 +83,14 @@ beforeEach(() => {
 afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
 
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
-function tela(): ReactNode { m.posEfeito = 0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props); }
+function tela(): ReactNode {
+  m.posEfeito = 0;
+  const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props);
+  const secao = elementos(t).find((n) => n.type === "section" && n.props["aria-label"] === "Conversa");
+  const ref = (secao as { ref?: { current: unknown } } | undefined)?.ref;
+  if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [] };
+  return t;
+}
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
@@ -98,6 +107,49 @@ it("painéis simultâneos do atendimento têm identidades React distintas", asyn
 const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
 
 describe("InboxNovo: leitura ao abrir", () => {
+  it("Voltar no celular mantém a nova mensagem não lida enquanto a região da conversa está oculta", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
+    regiaoConversaVisivel = false; tela();
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-lista", conversaId: "cv1" });
+    await esvaziar();
+    expect(marcar).not.toHaveBeenCalled();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    lista(tela()).aoSelecionar("a1");
+    regiaoConversaVisivel = true; tela();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("não lê entrada quando o painel ocupa a vista da conversa no celular", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoAbrirPainel(): void }).aoAbrirPainel();
+    regiaoConversaVisivel = false; tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-painel", conversaId: "cv1" });
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("a região ainda visível em duas colunas continua lendo após voltar à lista", async () => {
+    const t = tela(); await esvaziar(); marcar.mockClear();
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar(); tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-desktop", conversaId: "cv1" });
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("descarta repetição pendente ao ocultar a conversa antes da leitura em voo terminar", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    const t = tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-pendente", conversaId: "cv1" });
+    (conversa(t) as unknown as { aoVoltar(): void }).aoVoltar();
+    regiaoConversaVisivel = false; tela(); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+  });
+  it("descarta repetição pendente quando a aba fica oculta antes da conclusão", async () => {
+    let concluir!: () => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluir = () => ok({ ok: true }); }));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-aba", conversaId: "cv1" });
+    vi.stubGlobal("document", { visibilityState: "hidden" }); concluir(); await esvaziar();
+    expect(marcar).toHaveBeenCalledTimes(1);
+  });
   it("marca o atendimento selecionado pelo deep link inicial", () => {
     tela();
     expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
