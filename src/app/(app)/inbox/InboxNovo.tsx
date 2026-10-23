@@ -131,7 +131,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   }
   const selecionadoRef = useRef(selecionado);
   const regiaoConversa = useRef<HTMLElement>(null);
-  const mensagemOcultaRef = useRef<string | null>(null);
+  const mensagensOcultasRef = useRef<{ id: string; mensagens: Set<string | null> } | null>(null);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
@@ -166,8 +166,14 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   useEffect(() => {
     marcarLeituraRef.current = criarMarcadorDeLeitura(async (id) => {
       const versao = leituraRef.current.versao;
+      const ocultasNoPedido = mensagensOcultasRef.current?.id === id ? new Set(mensagensOcultasRef.current.mensagens) : null;
       let sucesso = false;
       try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ }
+      const ocultasAtuais = mensagensOcultasRef.current;
+      if (sucesso && ocultasNoPedido && ocultasAtuais?.id === id) {
+        for (const mensagemId of ocultasNoPedido) ocultasAtuais.mensagens.delete(mensagemId);
+        if (ocultasAtuais.mensagens.size === 0) mensagensOcultasRef.current = null;
+      }
       const leitura = leituraRef.current;
       if (leitura.id !== id || leitura.versao !== versao) return;
       leitura.fase = sucesso ? "sucesso" : "falha";
@@ -182,9 +188,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => { marcarLeituraRef.current = null; };
   }, [carregarLista]);
   const pedirLeitura = useCallback((id: string, mensagemNova = false) => {
-    mensagemOcultaRef.current = null;
     const anterior = leituraRef.current;
-    const conhecida = anterior.id === id ? anterior.ultimaContagem : (itens.find((i) => i.id === id)?.naoLidas ?? inicial.itens.find((i) => i.id === id)?.naoLidas ?? 0);
+    const contagem = anterior.id === id ? anterior.ultimaContagem : (itens.find((i) => i.id === id)?.naoLidas ?? inicial.itens.find((i) => i.id === id)?.naoLidas ?? 0);
+    const ocultas = mensagensOcultasRef.current?.id === id ? mensagensOcultasRef.current.mensagens.size : 0;
+    const conhecida = Math.max(contagem, ocultas);
     leituraRef.current = { id, versao: anterior.versao + 1, fase: "pendente", ultimaContagem: mensagemNova ? conhecida + 1 : conhecida };
     setItens((lista) => zerarNaoLidas(lista, id));
     marcarLeituraRef.current?.(id);
@@ -197,7 +204,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     const aoRetornar = () => {
       const id = selecionadoRef.current;
       const leitura = leituraRef.current;
-      const precisaLer = id && (mensagemOcultaRef.current === id || (leitura.id === id && leitura.ultimaContagem > 0));
+      const precisaLer = id && (mensagensOcultasRef.current?.id === id || (leitura.id === id && leitura.ultimaContagem > 0));
       if (pagina.visibilityState === "visible" && precisaLer && regiaoConversa.current?.getClientRects().length) pedirLeitura(id);
     };
     pagina.addEventListener("visibilitychange", aoRetornar);
@@ -239,7 +246,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current)) {
       if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, true);
-      else mensagemOcultaRef.current = a.atendimentoId;
+      else if (mensagensOcultasRef.current?.id === a.atendimentoId) mensagensOcultasRef.current.mensagens.add(a.mensagemId);
+      else mensagensOcultasRef.current = { id: a.atendimentoId!, mensagens: new Set([a.mensagemId]) };
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     carregarLista(filtros);
