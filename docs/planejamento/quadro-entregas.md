@@ -5860,3 +5860,7 @@ QA independente643 favorável: identidade43/43QA280 e JS emitido das3anotações
 ## PR #398 — composição local de todos os comentários
 
 Fonte d441c631: patch isolado d5/e11 preservado, candidata3970473/main3401/QA280/B2 incorporados; dois blocos do quadro preservam ambos os lados. C3/C4 corrigidos; C5 limite de snapshot ocioso documentado; C6 mapa nominal da SPEC. Gates próprios: 13 arquivos/183 testes por fuso UTC495885/SP556266, TypeScript37331/b7b921 e lint99368/7d248f terminais0, zero erros/40avisos. Não é suíte global/DB. QA exata d5 favorável, hash3d235d2a... em tester-patch-d5.md. QA composta, squash397main e CI398 permanecem pendentes. Sem publicação antecipada, captura nova, banco, instalação ou deploy; output/pr398-qa/composicao-todos.md.
+
+## PR #400 — composição local de todos os comentários
+
+Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar publicação/merge. Quadro6blocos preserva ambos; testeInbox400 integralmente preservado, thread398 idêntica794 e B2/QA280 mantidos. C3 alias legado documentado, C4 artefatos avaliados, C5 SPEC alinhada. Recorte12/208b514c0, TSC94403/8be42f e lint21031/3bba19 terminais0/40avisos. IntegraçãoC2 nominal260a20testes, arquivosINTiguais, preferencias sóJSDoc; nenhuma nova DB. QA616 favorável hashde3107... versionada tester-patch-616.md. QA composta e pais397/398main/CI final2TZ ainda gates; output/pr400-qa/composicao-todos.md.
