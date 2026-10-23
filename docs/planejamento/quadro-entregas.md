@@ -5584,3 +5584,7 @@ Reserva específica322:20261023100000_tarefa_atendimento e20261023110000_tarefa_
 ## PR #397 — QA643 e planejamento297 incorporado
 
 QA independente643 favorável: identidade43/43QA280 e JS emitido das3anotaçõesLOW igual194; nenhuma nova suíte/DB/browser no parecer. Original SHA256c76c95c69a481260d82908eeb3e11507c65ab558eef1e06db3ba82332666f30c, cópia output/pr397-qa/tester-main-low-643.md. Main3401/#297 incorporada: delta somente documental, decisão canônica com autorização humana de merge e um conflito do quadro com ambos os lados preservados. Executáveis iguais643; CI final2TZ e merge ainda pendentes. Evidências antigas permanecem nominais às fontes declaradas.
+
+## PR #398 — composição local de todos os comentários
+
+Fonte d441c631: patch isolado d5/e11 preservado, candidata3970473/main3401/QA280/B2 incorporados; dois blocos do quadro preservam ambos os lados. C3/C4 corrigidos; C5 limite de snapshot ocioso documentado; C6 mapa nominal da SPEC. Gates próprios: 13 arquivos/183 testes por fuso UTC495885/SP556266, TypeScript37331/b7b921 e lint99368/7d248f terminais0, zero erros/40avisos. Não é suíte global/DB. QA exata d5 favorável, hash3d235d2a... em tester-patch-d5.md. QA composta, squash397main e CI398 permanecem pendentes. Sem publicação antecipada, captura nova, banco, instalação ou deploy; output/pr398-qa/composicao-todos.md.
