@@ -30,7 +30,7 @@ Ruling técnico autorizado: useDialogo acrescenta focoAoFechar?:RefObject<HTMLEl
 
 ## Integração de navegação do App Router
 
-Ruling313: somente mudança real de selecionadoInicial recebido sincroniza a seleção; seleção local permanece se a prop não mudou. Mudança de filtro concorrente usa a nova página junto do novo c, fecha Nova e escolhe vista correspondente. Navegar c→null invalida leitura pendente da conversa anterior; consultas iniciadas antes da navegação são invalidadas pela geração existente. Não muda action/permissão/idempotência.
+Ruling313 atualizado após prova real: c público de useSearchParams identifica intenção de navegação; substitui a premissa anterior de observar apenas mudança do valor de selecionadoInicial. URLlocal confirmando seleção conserva páginas/vista/Nova; navegação externa para null/id muda contexto mesmo se propnull antiga for igual. SnapshotSSR cujo c não corresponde à URL atual não reverte seleção/página. Hooknullable usa selecionadoInicial como fallback determinístico e mantém agoraInicialSSR único. Filtros concorrentes continuam trazendo a nova página junto do novo c, fechando Nova e escolhendo a vista correspondente. Navegar c→null invalida leitura pendente da conversa anterior; consultas iniciadas antes da navegação são invalidadas pela geração existente. Não muda action/permissão/idempotência.
 
 No layout anterior ao cleanup passivo, Inbox escolhe a regiãoConversa realmente visível como destino de foco quando c muda; para lista escolhe a busca. RegiãoConversa recebe tabIndex=-1 sem entrar na ordemTab. Assim fechar Nova e ocultar a coluna no celular não tenta devolver foco ao gatilho escondido. Ref382/visibilidade/document.visibilityState e proteções de leitura/SSE permanecem.
 
