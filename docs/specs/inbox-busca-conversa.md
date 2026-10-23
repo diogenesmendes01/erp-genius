@@ -33,3 +33,38 @@ A ativação legítima entrega foco ao campo da mesma barra ANTES de iniciar mai
 
 
 Comprovação DEV posterior do contrato de foco47b:19766 EXIT0 virtual8ctx24PNG+await8ctx8PNG e40332 EXIT0 resync6ctx30PNG,dois temas. Foco natural após cada carga/inclusive última; foco externo mantido durante GET UI pendente; SSE reconcilia149/000 e mantém foco sem refoco privado.108originais positivos inspecionados,allowlist comfontes porgrupo:46normaiscf7históricas+62complementos47b. Busca APP-only sem referência funcional protótipo. Detalhes/limites/fontes/consultas/hashes no report eallowlist-positiva-final.json. TESTER/global integrado ROOT ainda pendentes.
+
+## PR #402 — C2: respeitar a posição de leitura
+
+A busca guarda a área, o ID e o scrollTop da última centralização. Atualizações
+com o mesmo achado só recompõem a geometria enquanto a posição continua sob
+controle da busca; deslocamento maior que 1 px suspende essa centralização.
+Outro achado escolhido explicitamente volta a centralizar. O RAF pendente
+confere identidade e posição antes de agir e não toma a rolagem feita depois.
+Fechar/trocar atendimento limpa a referência, sem novos efeitos de foco.
+
+As dependências de mensagens/revisão visual são preservadas para paginação e
+remeasure, sem alterar VirtualList, seus pins ou a interface posicional do hook.
+O parâmetro interno rolagemRef usa a convenção de ref reconhecida pelo React
+Compiler instalado; as regras e os callbacks/dependências foram preservados.
+
+RED causal de três falhas (700 virava420 após entrada/revisão/RAF) e dez passes.
+GREEN final do hook14testes, ampliado sete arquivos/37testes, TSC e lint dos
+dois arquivos terminaram0. Prova Chrome de componente com hook/BuscaConversa/
+VirtualList/CSS reais, 150 mensagens fictícias e prepend40, seis contextos,
+ResizeObserver nativo: manual/foco externo, pin000, Enter/Shift e prepend
+preservados. Fonte anterior reproduziu600→0. Não é E2E do Next/SSE/API/DB.
+Global final do código 7a825062: 893 arquivos/6.977 testes unitários, sessão
+30869 EXIT0, sem filtros/ignorados; TSC39739 EXIT0 e lint global3582 EXIT0,
+0 erros/40 avisos anteriores. TESTER independente no SHA exato: sete arquivos/
+37 testes, exec220bac EXIT0, parecer favorável à correção delimitada.
+
+Seis capturas positivas de componente foram inspecionadas em 390/1024/1440px,
+claro/escuro. ZIP inbox-pr402-c2-7a825062.zip: 113.219 bytes, seis PNG/nove
+arquivos, SHA256 6a30496c67a9ee472bbf4c58f34e802c8d385a35b10e460a77442094fa07753e,
+asset668148410 da release DRAFT421321214; download/hash conferidos.
+Não inclui negativos, probes ou logs. O TESTER ressalva conferir a linha
+selecionada no ERP com paginação/SSE real na futura composição317/319, pois
+scrollTop mede deslocamento sem distinguir ajuste de âncora da VirtualList.
+Não houve falha reproduzida nessa fronteira; o prepend40 real do componente
+passou. Detalhes e limites: output/pr402-qa/revisao.md.

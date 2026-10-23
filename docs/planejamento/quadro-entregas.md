@@ -5624,6 +5624,15 @@ de nome ou skips. TSC63460heap8192 após ajuste e lint9fontes748069 zeroavisos, 
 Não é global nem aceite; C2#402, CLI, imagens formais e QA da composição pendem.
 Evidências em output/inbox-317-319-composicao-checkpoint.md.
 
+### #317 — revisão estática independente e harness congelado
+
+TESTER inspecionou produto exato a86c9ade:13arquivos/239 testes próprios exit0,
+parecer favorável condicionado a C2/composição/browser/global. ROOT preservou
+produto a86 sobre d8 em c2b7d920, sem estados319 no PR317. Harness bf4ad547
+foi integrado em branch própria; DEV8/51, TSC38512 e lint8 be4324 exit0,
+produção a86 invariante. CLI passou por handoff explícito para B319; A aguarda
+fonte C2/Ready para capturas317. Parecer em output/inbox-317-static-review-tester.md.
+
 
 ### #317 — CLI preparada separadamente, formal pendente
 
@@ -5633,3 +5642,59 @@ Produto a86c9ade imutável enviado ao TESTER. RED8a9d756/6→GREENff1da18arquivo
 ### #319 — harness após handoff317, formal aguardaC2
 
 OWN93a5+bf4ad→dbb64b23, conflito somentequadro preservando históricos. DeltaCLI/helper/ESTADOS/testes/README, nenhum srcprodutivo; nota317/esperas/anonDOM intactos. REDs337787/35ae08/e7933f e CLI9321ef preservados; ligaçãoCRLF corrigida após lint36bf69. Recorte41761 saída0/15files307semfiltros; TSC82627 tuplemock falhou2 e após tipo sófixture TSCae2ba3heap8192 saída0; a1c7082files14+lint11zeroavisos saída0.42PNG+12mobile planejados, N/Aexplícito; nenhuma nova captura formal ouhomologação. C2#402/Ready/fixtureTriagem/complementos/TESTER/globalROOT/publicação pendentes. Sem ownfull/DB/preview/install/envio.
+## PR #402 — C2: rolagem manual preservada, gates locais aprovados
+
+Correção isolada sobre d8dde4a1, só hook/teste: registra área/ID/scrollTop da
+centralização e não reassume a posição movida pelo usuário (>1px). Novo ID
+centraliza; RAF valida identidade/posição, sem roubo após A→B. Foco, VirtualList,
+Conversa e contratos públicos intactos. RED causal3/10; hook14 e recorte7/37
+passaram0. Primeira fixture faltava getClientRects no botão; corrigida antes
+do RED causal. O primeiro global893/6977 passou, mas lint apontou dois erros
+de inferência de ref do Compiler. Nome interno rolagemRef reconhecido pelo
+compilador, sem mudar regra/dependências/contrato; TSC39739 e lint2fontes0.
+
+Chromefixture real de hook/barra/VirtualList/CSS com150mensagens+prepend40,
+seis contextos/dois temas: manual600/focoexterno/pin000/Enter/Shift/prepend
+preservados, antes600→0 reproduzido; sem Next/SSE/API/DB/externos. Não é
+homologação de app completo. Global final7a: 893arquivos/6.977testes, sessão
+30869 EXIT0, sem filtros/ignorados. TSC39739 EXIT0; lint global3582 EXIT0,
+0erros/40avisos anteriores. TESTER independente7a favorável,7/37 exec220bac0,
+sem DB/browser/global próprio. Portar o funcional7a para317/319 e conferir
+linha selecionada com SSE/paginação real na composição, conforme ressalva.
+ZIP positivo seisPNG/nove arquivos,113.219B, SHA256
+6a30496c67a9ee472bbf4c58f34e802c8d385a35b10e460a77442094fa07753e,
+asset668148410/DRAFT421321214, upload/download/hash confirmados. Report
+output/pr402-qa/revisao.md. C2 resolvido localmente; C1 continua aguardando
+ancestralidade dos pais/CI/main. Não concluir a issue antes do merge.
+
+### #317 — fix C2 da busca incorporado após gates
+
+Outro chat confirmou fix7a825062: global893/6977 sessão30869 exit0,
+TSC39739/lintglobal3582 exit0/40avisos; TESTER exato7/37 favorável. ROOT
+incorporou somente esse fix na branch317 (sem319), conflito sóquadro; recorte
+próprio efetivo11files177tests exit0 (10/173 a18105 +1/4 c62554), diff0.
+Não atribuir global do autor à composição317. Prova ERP com SSE/paginação,
+formal317, QA/browser e globalROOT ainda pendentes. Report
+output/inbox-317-c2-integracao.md registra fontes e caminho inexistente não contado.
+
+### #317 — global df9 e QA normal, formal ainda pendente
+
+ROOT global15595 exit0:897files7013tests238,47s, sem filtros/skips adicionais,
+maxWorkers2; typegen/TSC61131heap8192 e lintglobal77102 exit0/42avisos
+(40src+2staging318), sem relaxar regras. TESTER extensão df9 própria5/66 zero,
+browser normal2d486d zero:8ctx24PNG, rascunhos/abas/foco/DOM/44px/agendaEscape;
+Lucas fechado real comprovou Responder negado/Nota disponível. DEV29367 normal
+8ctx24PNG e89958 permissões6ctx12PNG exit0. CLIformal16261 exit1 no seletor
+nota-protótipo com glifo acessível; humano12positivo e6appnota parciais preservados
+separados, sem aceite final. A corrigirá seletor isolado; C2 ERP longo/SSE em QA.
+Report output/inbox-317-global-final.md registra fontes e pendências, não concluída.
+
+### #319 — C2+harness e compatibilidade de import no Windows
+
+ROOT compôs2f7b5a0d com3178aed/C2, conflito sóquadro. Primeiro72124 exit1:
+57arquivos624testes aprovados, suíte fluxo semexec por SyntaxError. Mesmos
+blobs/versões; Node--check/--help0, experimento f5deab confirmou causalmente
+CRLF no shebang e restaurou bytes. Atributo eol=lf apenas para CLI resolve sem
+alterar lógica/package/lock. Mesmo recorte21327 exit0:58files628tests15,98s,
+TSC44335 exit0. Ainda pendem patchnota317, global/QA/formal/Triagem; report
+output/inbox-319-c2-harness-integracao.md não declara issue concluída.
