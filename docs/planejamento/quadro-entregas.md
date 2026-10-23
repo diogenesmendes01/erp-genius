@@ -5599,3 +5599,19 @@ download/hashconferidosDRAFT421321214. Evidência/limites emoutput/inbox-316-glo
 PR401/#315 aberto/anexado headd32e7411/base4ddd, review/CI/pais/merge separados.
 Não considerar316concluída antesmerge/fechamento. A317/B319 liberados emparalelo
 sobrebasecomum294, seçõescompartilhadascoordenadas; nenhuma terceira função.
+
+## PR #402 — C2: rolagem manual preservada, gates finais pendentes
+
+Correção isolada sobre d8dde4a1, só hook/teste: registra área/ID/scrollTop da
+centralização e não reassume a posição movida pelo usuário (>1px). Novo ID
+centraliza; RAF valida identidade/posição, sem roubo após A→B. Foco, VirtualList,
+Conversa e contratos públicos intactos. RED causal3/10; hook14 e recorte7/37
+passaram0. Primeira fixture faltava getClientRects no botão; corrigida antes
+do RED causal. O primeiro global893/6977 passou, mas lint apontou dois erros
+de inferência de ref do Compiler. Nome interno rolagemRef reconhecido pelo
+compilador, sem mudar regra/dependências/contrato; TSC39739 e lint2fontes0.
+
+Chromefixture real de hook/barra/VirtualList/CSS com150mensagens+prepend40,
+seis contextos/dois temas: manual600/focoexterno/pin000/Enter/Shift/prepend
+preservados, antes600→0 reproduzido; sem Next/SSE/API/DB/externos. Não é
+homologação de app completo. Global final/lintglobal e TESTER pendentes.
