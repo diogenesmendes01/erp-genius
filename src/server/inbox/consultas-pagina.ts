@@ -11,6 +11,7 @@ import {
   type ConversaResumo, type MensagemThread, type NotaInternaThread,
 } from "@/server/whatsapp/consultas-inbox";
 import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
+import { notasInternasDoAtendimento } from "@/server/whatsapp/notas-consulta";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
 import type { FiltrosInbox } from "./filtros";
@@ -146,7 +147,7 @@ const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: 
  */
 export async function listarMensagensPagina(
   u: UsuarioSessao, atendimentoId: string, o: { antes?: string; depois?: string; limite?: number } = {},
-): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[]; antes: string | null; depois: string | null; temMais: boolean } | null> {
+): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[] | null; antes: string | null; depois: string | null; temMais: boolean } | null> {
   const atendimento = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] },
     select: { id: true, finalidade: true, leadId: true },
@@ -177,10 +178,14 @@ export async function listarMensagensPagina(
     participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
     propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
-  // Notas internas só na primeira carga (sem cursor), e só para quem pode ver o lead (LC-L02).
-  const verNotas = !pos && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId
+  // `antes` só acrescenta mensagens antigas: null informa ao cliente que as notas não mudaram.
+  // A rota já conferiu escopo do atendimento; notas do lead exigem escopo comercial separado (LC-L02).
+  const verNotasLead = !cAntes && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId
     && await podeVerLeadNaThread(u, atendimento.id, atendimento.leadId, Date.now());
-  const notas = verNotas ? await notasDoLead(atendimento.leadId!) : [];
+  const notas = cAntes ? null : [
+    ...await notasInternasDoAtendimento(atendimento.id),
+    ...(verNotasLead ? await notasDoLead(atendimento.leadId!) : []),
+  ].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm) || a.id.localeCompare(b.id));
   return {
     mensagens, notas,
     // Sempre os dois cursores da página (null só se vazia): `antes` pede as anteriores à primeira mensagem e
