@@ -5007,3 +5007,19 @@ Recorte próprio Node22: 28 arquivos / 303 testes, saída 0, incluindo a pasta
 Inbox, os dois testes do selo e eventos-inbox; sem banco ou filtro de nome.
 Log: output/inbox-r6-base-314-recorte.log. Não equivale ao gate global nem
 à aprovação independente da R6; ambos continuam pendentes no agregado final.
+
+### #314 — gate global após R6 aprovado, publicação em preparação
+
+Fonte7e71df45377d86bd91798a125659bf600140db59, base8cf56d0b. Executor2194
+observado até saída0: 864 arquivos/6.771 testes unitários, next typegen,
+TypeScript e lint global com0 erros/40 avisos herdados, Node22.23.2.
+Não inclui integração DB. VirtualList/ConversaAberta/BalaoMensagem idênticos
+à fonte243 do QA independente; não se presume nova captura em7e71.
+Relatório: output/inbox-314-global-final.md. ZIP remoto106PNGs/hash verificado
+mantido no README da evidência. Falta parecer incremental do head documental,
+push e PR individual; #314 ainda não está concluída/integrada.
+
+Status confirmado no GitHub em23/10: #299 fechada às02:31:28UTC após merge
+do PR382 na main3d756a4e (R6 exata37a78dfe, TESTER54+39 e5checksCI verdes).
+Total4/81issues integradas: #298,#299,#302,#303. As demais com PR aberto
+não são contadas como concluídas.
