@@ -43,6 +43,18 @@ describe("InboxPage", () => {
     sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo");
   });
 
+  it("serializa um agoraInicial para SSR e hidratação, capturado na página", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    const T = Date.UTC(2026, 9, 22, 12);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(T);
+      const elemento = await Page({ searchParams: Promise.resolve({}) });
+      vi.setSystemTime(T + 60_000);
+      expect(renderToStaticMarkup(elemento)).toContain("agora:" + T);
+    } finally { vi.useRealTimers(); }
+  });
+
   it("casca anula padding do main e passa sino/Novo sem removê-los", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
     const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
