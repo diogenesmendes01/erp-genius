@@ -1,0 +1,86 @@
+[
+  {
+    "fase": "painel-antes",
+    "width": 1440,
+    "height": 900,
+    "tema": "light",
+    "superficie": "coluna",
+    "estilo": {
+      "texto": "Etapa",
+      "classe": "text-muted-foreground",
+      "cor": "rgb(10, 10, 10)",
+      "fundo": "rgba(0, 0, 0, 0)"
+    },
+    "erros": []
+  },
+  {
+    "fase": "painel-antes",
+    "width": 1440,
+    "height": 900,
+    "tema": "dark",
+    "superficie": "coluna",
+    "estilo": {
+      "texto": "Etapa",
+      "classe": "text-muted-foreground",
+      "cor": "rgb(250, 250, 250)",
+      "fundo": "rgba(0, 0, 0, 0)"
+    },
+    "erros": []
+  },
+  {
+    "fase": "painel-antes",
+    "width": 1024,
+    "height": 768,
+    "tema": "light",
+    "superficie": "gaveta",
+    "estilo": {
+      "texto": "Etapa",
+      "classe": "text-muted-foreground",
+      "cor": "rgb(10, 10, 10)",
+      "fundo": "rgba(0, 0, 0, 0)"
+    },
+    "erros": []
+  },
+  {
+    "fase": "painel-antes",
+    "width": 1024,
+    "height": 768,
+    "tema": "dark",
+    "superficie": "gaveta",
+    "estilo": {
+      "texto": "Etapa",
+      "classe": "text-muted-foreground",
+      "cor": "rgb(250, 250, 250)",
+      "fundo": "rgba(0, 0, 0, 0)"
+    },
+    "erros": []
+  },
+  {
+    "fase": "painel-antes",
+    "width": 390,
+    "height": 844,
+    "tema": "light",
+    "superficie": "gaveta",
+    "estilo": {
+      "texto": "Etapa",
+      "classe": "text-muted-foreground",
+      "cor": "rgb(10, 10, 10)",
+      "fundo": "rgba(0, 0, 0, 0)"
+    },
+    "erros": []
+  },
+  {
+    "fase": "painel-antes",
+    "width": 390,
+    "height": 844,
+    "tema": "dark",
+    "superficie": "gaveta",
+    "estilo": {
+      "texto": "Etapa",
+      "classe": "text-muted-foreground",
+      "cor": "rgb(250, 250, 250)",
+      "fundo": "rgba(0, 0, 0, 0)"
+    },
+    "erros": []
+  }
+]

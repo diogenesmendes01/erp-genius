@@ -39,7 +39,7 @@ export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, a
         inicio={i.grupo
           ? <span data-testid="icone-grupo" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-bg text-brand-800"><IconUsersGroup size={20} aria-label="Grupo" /></span>
           : <Avatar nome={i.contatoNome} />}
-        meta={<span className="flex flex-col items-end gap-1"><span>{horaCurta(i.ultimaMensagemEm, fuso)}</span>{i.naoLidas > 0 && <span className="rounded-full bg-brand px-1.5 text-on-brand">{i.naoLidas}</span>}</span>}
+        meta={<span className="flex flex-col items-end gap-1"><span>{horaCurta(i.ultimaMensagemEm, fuso)}</span>{i.naoLidas > 0 && <span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{i.naoLidas}</span>}</span>}
         selecionado={i.id === selecionado}
         onClick={() => aoSelecionar(i.id)}
       />

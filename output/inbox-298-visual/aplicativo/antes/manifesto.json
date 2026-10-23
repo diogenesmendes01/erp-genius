@@ -1,0 +1,50 @@
+[
+  {
+    "fase": "antes",
+    "width": 1440,
+    "height": 900,
+    "tema": "light",
+    "erros": [],
+    "url": "http://localhost:3108/inbox?c=cmvjzckjw0008f368m1c96qrb"
+  },
+  {
+    "fase": "antes",
+    "width": 1440,
+    "height": 900,
+    "tema": "dark",
+    "erros": [],
+    "url": "http://localhost:3108/inbox?c=cmvjzckjw0008f368m1c96qrb"
+  },
+  {
+    "fase": "antes",
+    "width": 1024,
+    "height": 768,
+    "tema": "light",
+    "erros": [],
+    "url": "http://localhost:3108/inbox?c=cmvjzckjw0008f368m1c96qrb"
+  },
+  {
+    "fase": "antes",
+    "width": 1024,
+    "height": 768,
+    "tema": "dark",
+    "erros": [],
+    "url": "http://localhost:3108/inbox?c=cmvjzckjw0008f368m1c96qrb"
+  },
+  {
+    "fase": "antes",
+    "width": 390,
+    "height": 844,
+    "tema": "light",
+    "erros": [],
+    "url": "http://localhost:3108/inbox?c=cmvjzckjw0008f368m1c96qrb"
+  },
+  {
+    "fase": "antes",
+    "width": 390,
+    "height": 844,
+    "tema": "dark",
+    "erros": [],
+    "url": "http://localhost:3108/inbox?c=cmvjzckjw0008f368m1c96qrb"
+  }
+]

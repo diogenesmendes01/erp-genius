@@ -27,6 +27,9 @@ describe("BalaoMensagem", () => {
     expect(html({ direcao: "ENTRADA", origem: null, participanteNome: "Pai do João" })).toContain("Pai do João");
   });
   it("status FALHOU aparece como erro, não como ✓✓", () => { expect(html({ status: "FALHOU", direcao: "SAIDA" })).toContain("Não enviada"); });
+  it("✓✓ de lida usa a cor de marca definida para texto", () => {
+    expect(html({ status: "LIDA" })).toMatch(/<svg[^>]*class="[^"]*text-brand-700/);
+  });
   it("editar/apagar/reagir desabilitados com o aviso do motor", () => {
     const h = html({ direcao: "SAIDA" }, { menuAberto: true });
     expect(h).toContain(AVISO_RECURSO_MOTOR);

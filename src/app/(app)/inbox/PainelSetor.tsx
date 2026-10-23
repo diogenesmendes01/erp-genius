@@ -7,18 +7,18 @@ import type { PainelSetor as Painel } from "@/server/inbox/paineis";
 const brl = (v: string) => `R$ ${v.replace(".", ",")}`;
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return <div className="flex justify-between gap-3 py-1 text-sm"><dt className="text-muted-foreground">{rotulo}</dt><dd className="text-right">{children}</dd></div>;
+  return <div className="flex justify-between gap-3 py-1 text-sm"><dt className="text-gray-600">{rotulo}</dt><dd className="text-right">{children}</dd></div>;
 }
 
 /** Painel lateral por setor. Só apresenta o que o servidor já filtrou; nenhum telefone passa por aqui. */
 export function PainelSetor({ painel }: { painel: Painel | null }) {
-  if (!painel) return <p className="p-4 text-sm text-muted-foreground">Sem detalhes para este atendimento.</p>;
+  if (!painel) return <p className="p-4 text-sm text-gray-600">Sem detalhes para este atendimento.</p>;
   return (
     <section aria-label={`Painel ${rotular(SETOR_ATENDIMENTO_LABEL, painel.setor)}`} className="p-4">
       {painel.setor === "COMERCIAL" && (painel.oportunidade
         ? <dl><Linha rotulo="Oportunidade"><Link href={`/funil?o=${encodeURIComponent(painel.oportunidade.id)}`} className="text-brand-800 underline">{painel.oportunidade.titulo}</Link></Linha><Linha rotulo="Etapa">{rotular(ETAPA_LABEL, painel.oportunidade.etapa)}</Linha>
             <Linha rotulo="Valor">{painel.oportunidade.valor ? brl(painel.oportunidade.valor) : "Sem valor"}</Linha></dl>
-        : <p className="text-sm text-muted-foreground">Sem oportunidade visível para você.</p>)}
+        : <p className="text-sm text-gray-600">Sem oportunidade visível para você.</p>)}
       {painel.setor === "FINANCEIRO" && (<>
         <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha></dl>
         {painel.cobrancas.length

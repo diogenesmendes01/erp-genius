@@ -25,7 +25,7 @@ const STATUS: Record<string, { rotulo: string; icone: ReactNode; erro?: boolean 
   NA_FILA: { rotulo: "Enviando", icone: <IconClock size={16} aria-hidden /> },
   ENVIADA: { rotulo: "Enviada", icone: <IconCheck size={16} aria-hidden /> },
   ENTREGUE: { rotulo: "Entregue", icone: <IconChecks size={16} aria-hidden /> },
-  LIDA: { rotulo: "Lida", icone: <IconChecks size={16} className="text-brand" aria-hidden /> },
+  LIDA: { rotulo: "Lida", icone: <IconChecks size={16} className="text-brand-700" aria-hidden /> },
   FALHOU: { rotulo: "Não enviada", icone: <IconAlertCircle size={16} aria-hidden />, erro: true },
 };
 
