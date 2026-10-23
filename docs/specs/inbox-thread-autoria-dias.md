@@ -20,7 +20,11 @@ EventoSistema e SeparadorDia trazem caixa própria flex/justify-center: self-cen
 
 Chave por Intl.formatToParts com fuso resolvido pelo helper existente (preferência válida, senão UTC neste contexto). Hoje compara chaves; Ontem é véspera da chave local por calendário, nunca agora menos24h. DST London: em2026-03-29T23:30Z a chave é30/03, mas menos24h cai28/03; véspera correta29/03. Testes cobrem também retorno DST, ano, bissexto, fuso inválido e mudança de dia. Datas fora de Hoje/Ontem usam formatarInstanteExibicao(data), com fallback existente.
 
-A página captura ISO agoraThread no servidor e passa por InboxNovo até ConversaAberta. SSR e hidratação recebem o mesmo instante explícito. SSE e seleção local não criam outro relógio, intervalo ou polling; teste verifica a prop preservada. Uma nova renderização da página no servidor atualiza a referência. Limite aprovado: página que atravessa meia-noite sem essa renderização conserva os rótulos relativos anteriores; não há timer novo nesta issue. Consumidor isolado sem agoraThread mostra datas absolutas, sem ler relógio do navegador durante render.
+Contrato comum com312: a página captura uma única vez const agoraInicial = Date.now() depois de resolver o fuso, com exceção de purity limitada à linha do Server Component. PropsInboxNovo e ConversaAberta recebem agoraInicial?:number (epochms). O mesmo contrato alimentará Lista/hook no patch do B312; esta branch não implementa o produtor312. Nenhum ISO redundante ou relógio independente no SSR.
+
+useAgoraDaThread usa getServerSnapshot serializado no SSR e na primeira hidratação; número ausente/inválido usa0 determinístico e não consulta Date.now no servidor. O getter cliente devolve valor cacheado, não Date.now a cada leitura. Após a assinatura adota o relógio real; nova revisão de mensagens/notas, seleção ou novo epoch do servidor cria snapshot cliente atual. Assim23:59SSR→00:01hidratação preserva o HTML/nó sem mismatch; após assinatura e nova mensagem00:02 os dias usam o calendário atual. Sem timer, intervalo, listener ou polling. Limite: enquanto totalmente ociosa, a tela pode conservar rótulos anteriores à meia-noite; chegada de conteúdo/seleção não mantém o relógio antigo.
+
+SSR isolado sem epoch válido usa referência neutra0 e datas absolutas usuais, sem ler relógio do navegador durante render. A prop serializada permanece estável durante SSE/seleção, enquanto o snapshot usado na decoração se renova no cliente; são funções distintas, não relógio congelado de sessão.
 
 ## Verificação e pendências
 

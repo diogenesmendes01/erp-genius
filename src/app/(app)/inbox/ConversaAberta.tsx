@@ -7,6 +7,7 @@ import { Botao } from "@/components/Botao";
 import { Avatar } from "@/components/Avatar";
 import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
 import { itensDaThread, decorarThread, autorDoItem, notaComoMensagem } from "@/components/conversa/itens-thread";
+import { useAgoraDaThread } from "@/components/conversa/agora-thread";
 import { EventoSistema } from "@/components/conversa/EventoSistema";
 import { SeparadorDia } from "@/components/conversa/SeparadorDia";
 import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
@@ -30,8 +31,8 @@ export interface PropsConversaAberta {
   item: ItemListaInbox | null;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
-  /** ISO capturado na renderização da página: mesmo instante no SSR/hidratação, sem polling. */
-  agoraThread?: string;
+  /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
+  agoraInicial?: number;
   conversa: ConversaHook;
   /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); null enquanto carrega. */
   podeEnviar: boolean | null;
@@ -90,8 +91,9 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAlternarPainel, painelAberto, aoMudar, agoraThread }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAlternarPainel, painelAberto, aoMudar, agoraInicial }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
+  const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
   useEffect(() => {
@@ -153,7 +155,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList
-          items={decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes), { fuso, agora: new Date(agoraThread ?? ""), transferidoDe })}
+          items={decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes), { fuso, agora: new Date(agora), transferidoDe })}
           getKey={(i) => i.id}
           isItemFocusable={(i) => i.tipo === "mensagem"}
           estimatedHeight={72}

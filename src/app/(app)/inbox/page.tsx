@@ -59,12 +59,15 @@ export default async function InboxPage({
   // em UTC). Regras (SLA, prazos) seguem no fuso da escola, no servidor.
   const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
+  // Server Component: captura uma vez e serializa o mesmo instante para SSR/hidratação.
+  // eslint-disable-next-line react-hooks/purity -- snapshot servidor autorizado; o cliente recebe o número, não recalcula no getter SSR.
+  const agoraInicial = Date.now();
   return (
     <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
-      <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
+      <InboxNovo agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
         destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
         triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens}
-        agoraThread={new Date().toISOString()} opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />
+        opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />
     </div>
   );
 }
