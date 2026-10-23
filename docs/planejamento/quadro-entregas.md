@@ -5292,3 +5292,7 @@ arquivos integrados terminaram com saída0. Sem banco/browser próprios.
 TESTER na revisão f901:3arquivos/52testes próprios e36hashes de PNG locais
 conferidos. Suíte global da composição313 anterior92faa:877/6848 saída0;
 não estender esse gate ao novo código388 antes da nova verificação.
+
+### #315 — freeze da composição313automática/388
+
+Fonte8b3c46ac, merge4fcdc6normal comúnico conflito documental preservado. Header/controller/menu315 byteiguaisf7; hooksROOTintactos, thread388 temMaisDepois real/stableMount314 preservados. Node22:106arquivos1058testes47282,TSC50243heap8192,lint24fontes0avisos,diffcheck todos exit0. Provasprivadasf7 34casos74PNG/27pranchas inspecionadas, não atribuídasà8b. Formal44PNG/nomelongo/TESTER/globalcoordenadospendentes; nenhuma homologação presumida.
