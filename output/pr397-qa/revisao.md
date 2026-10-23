@@ -52,3 +52,8 @@ EXIT0,0 erros/40 avisos anteriores. TESTER332 favorável:dez arquivos/91
 testes próprios,exec78633d EXIT0,sem DB/Next/browser/global próprios;
 confirmou os objetos SSE iguais01a e demais consumidores preservados. CI/main/#392B2
 continuam gates antes do merge.
+
+Base312-r3 posterior5adbfbb8 recebe396aa42/39517ab e main404cce21e19,
+retirando64PNG298 herdados. Sódocs/artefatos mudam depois de5f8f0f10;
+src/scripts/prisma/package/lock idênticos. Gates332 e seus limites continuam
+nominais,sem nova suíte/captura/DB ou upload. Preservar ausência antes doCI.
