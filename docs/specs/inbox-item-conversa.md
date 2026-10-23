@@ -1,5 +1,13 @@
 # Item visual de conversa — #312
 
+## Contratos esclarecidos na revisão C2–C4
+
+O relógio visual mantém um único timer local pendente por assinatura. Enquanto existir item individual com prazo vencido e não encerrado, continua acordando na próxima fronteira que atualiza algum texto de atraso. As fronteiras são relativas ao prazo de cada item: prazos desalinhados podem causar mais de um despertar por minuto, sempre com um só timer pendente. Esse custo de renderização é intencional; não consulta a rede, e o cleanup cancela a espera ao desmontar ou substituir a assinatura. Não interromper o relógio após o último vencimento, pois isso congelaria o número de minutos exibido.
+
+Todo consumidor SSR de InboxNovo ou ListaAtendimentos deve passar agoraInicial em milissegundos, capturado uma vez no servidor e serializado ao cliente. Sem valor válido, o snapshot determinístico é 0 e a reconciliação dos prazos ocorre após a hidratação. As props documentam esse requisito; sua opcionalidade é preservada para os usos diretos existentes.
+
+proximoEstouroEm e esperaAteProximo são exports legados, sem consumidor produtivo encontrado por rg em src/scripts. Foram marcados como deprecated, preservando a API e os testes históricos. O relógio produtivo usa proximaMudancaVisualEm e calcula a espera a partir do instante visual já estrito. A depreciação esclarece o escopo sem introduzir troca de algoritmo ou adicionar 1ms indevido ao relógio atual.
+
 Implementação da E1 Task7 sobre #309/#298/#299/#302. Escopo parcial liberado em22/10/2026: ItemConversa, ListaAtendimentos, passagem de usuarioId em InboxNovo, extensão visual do relógio, testes e registros exatos dos guards. Fonte da casca/harness #308 ainda deve ser integrada pelo coordenador antes da prova visual; esta SPEC não declara homologação.
 
 ## Contrato de apresentação

@@ -28,7 +28,6 @@ versionados de output/inbox-307-* (104 PNGs) sem modificar os originais;
 contém imagens anteriores à anonimização e tentativas históricas, não foi
 enviado ao GitHub e não serve
 como aceite sanitizado atual. Referências imutáveis da #297 não são alteradas.
-
 ## Preservação da limpeza404 no head307
 
 Sobre06248af0, retirados64PNG298 herdados da base antiga. Todos os64

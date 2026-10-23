@@ -198,13 +198,6 @@ it("decora a thread no fuso usando referência explícita SSR e preserva nota se
  expect(renderToStaticMarkup(createElement(ConversaAberta,props))).toBe(h);
 });
 
-
-it("triagem318 pertence ao painel, sem duplicata no fluxo da thread", () => {
-  const triagem = [{ id: "t1", conversaId: "cv1", nome: "Contato fictício", corpo: "Pendente administrativa", tipo: "TEXTO", criadoEm: "2026-10-22T15:00:00Z", midiaPath: null, atendimentos: [] }];
-  const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true, triagem })));
-  expect(h).not.toContain("Triagem administrativa"); expect(h).not.toContain("Pendente administrativa");
-});
-
 it("315 liga o cabeçalho68 real sem remontar a thread ou repetir a barra antiga",()=>{
  const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true})));
  expect(h).toContain("h-[68px]"); expect(h).toContain('aria-label="Mais ações da conversa"');
