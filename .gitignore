@@ -41,3 +41,16 @@ next-env.d.ts
 
 # Identidade local do banco descartável de cada worktree.
 /.erp-test-profile
+
+# testes E2E (Playwright) — ver e2e/README.md
+# .env.e2e tem senhas do UAT; e2e/.auth/ tem cookies de sessão. Nunca versionar.
+.env.e2e
+/e2e/.auth/
+# relatórios e evidências gerados a cada execução (podem conter dados de tela)
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# capturas de conferência dos PDFs do kit de QA (docs/qa/pdf/preview.mjs e paginas.mjs)
+/docs/qa/pdf/*.png
