@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { ErroPermissaoFalso } = vi.hoisted(() => ({ ErroPermissaoFalso: class extends Error {} }));
@@ -62,6 +63,17 @@ describe("InboxPage", () => {
     expect(raiz).toEqual(expect.arrayContaining(["-m-4", "md:-m-8", "flex", "flex-col", "min-h-0", "md:h-dvh", "h-[calc(100dvh-3.5625rem)]", "sm:h-[calc(100dvh-3.3125rem)]"]));
     expect(h).not.toContain("<h1"); expect(h).not.toContain("novo-atendimento");
     expect(h).toContain("nova:sim"); expect(h).toContain("Notificações:");
+  });
+
+  it("a conta de altura acompanha padding do main e as duas alturas reais da barra mobile", () => {
+    const layout = readFileSync("src/app/(app)/layout.tsx", "utf8");
+    const main = layout.match(/<main\b[^>]*className="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(main).toEqual(expect.arrayContaining(["p-4", "md:p-8"]));
+    const barra = readFileSync("src/components/BarraMobile.tsx", "utf8");
+    const header = barra.match(/<header\b[^>]*className="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(header).toEqual(expect.arrayContaining(["py-1.5", "border-b", "md:hidden"]));
+    const botao = barra.match(/const botao = "([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(botao).toEqual(expect.arrayContaining(["min-h-10", "max-sm:min-h-11"]));
   });
 
   it("inbox_mostra_o_sino", async () => {

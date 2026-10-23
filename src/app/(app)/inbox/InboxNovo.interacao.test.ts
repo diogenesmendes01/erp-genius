@@ -12,6 +12,7 @@ const m = vi.hoisted(() => ({
   parametros313: null as string | null,
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
+  avisoThread: null as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
   aoVisibilidade: null as null | (() => void),
 }));
@@ -29,7 +30,12 @@ vi.mock("react", async (original) => {
       return estado;
     }) as unknown as typeof real.useState,
     useRef: ((i: unknown) => (m.g ? m.g.useRef(i) : real.useRef(i as never))) as unknown as typeof real.useRef,
-    useCallback: ((f: unknown, d: unknown[]) => (m.g ? f : real.useCallback(f as never, d))) as unknown as typeof real.useCallback,
+    useCallback: ((f: unknown, d: unknown[]) => {
+      if (!m.g) return real.useCallback(f as never, d);
+      const memo = m.g.useRef<{ deps: unknown[]; valor: unknown } | null>(null);
+      if (!memo.current || d.some((v, i) => !Object.is(v, memo.current!.deps[i]))) memo.current = { deps: d, valor: f };
+      return memo.current.valor;
+    }) as unknown as typeof real.useCallback,
     useMemo: ((f: () => unknown, d: unknown[]) => (m.g ? f() : real.useMemo(f, d))) as unknown as typeof real.useMemo,
     useEffect: ((f: () => void | (() => void), d?: unknown[]) => {
       if (!m.g) return real.useEffect(f, d);
@@ -42,7 +48,7 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => { m.aoAviso = f; return { conectado: true }; } }));
-vi.mock("@/components/conversa/useConversa", () => ({ useConversa: () => ({ mensagens: [] }) }));
+vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
@@ -75,6 +81,7 @@ let respostaLista: () => Promise<Response>;
 let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
+  vi.useFakeTimers();
   m.modo = null;
   m.parametros313 = null;
   regiaoConversaVisivel = true;
@@ -92,9 +99,9 @@ beforeEach(() => {
     return respostaLista();
   }));
 });
-afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
+afterEach(() => { for (const e of m.efeitos) if (typeof e.limpar === "function") e.limpar(); m.g = null; vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
-const esvaziar = () => new Promise((r) => setTimeout(r, 0));
+const esvaziar = () => vi.advanceTimersByTimeAsync(50);
 function tela(p: PropsInboxNovo = props): ReactNode {
   m.posEfeito = 0;
   const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
@@ -106,15 +113,32 @@ function tela(p: PropsInboxNovo = props): ReactNode {
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
-it("painéis simultâneos do atendimento têm identidades React distintas", async () => {
-  respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
-  tela(); await esvaziar();
-  const paineis = elementos(tela()).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement[];
-  expect(paineis).toHaveLength(2); // uma única montagem do painel
-  for (let i = 0; i < paineis.length; i += 2) {
-    expect(paineis[i].key).not.toBeNull();
-    expect(paineis[i + 1].key).not.toBe(paineis[i].key);
-  }
+describe("InboxNovo: identidades React dos painéis", () => {
+  it("distingue irmãos, conserva a mesma conversa e troca identidades ao selecionar outra", async () => {
+    respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
+    const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
+    tela(); await esvaziar();
+    const anteriores = paineis(tela());
+    expect(anteriores).toHaveLength(2); // uma única montagem do painel
+    expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
+    for (let i = 0; i < anteriores.length; i += 2) {
+      expect(anteriores[i].key).not.toBeNull();
+      expect(anteriores[i + 1].key).not.toBe(anteriores[i].key);
+    }
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", conversaId: "cv1", mensagemId: null });
+    tela(); await esvaziar();
+    expect(paineis(tela()).map((p) => p.key)).toEqual(anteriores.map((p) => p.key));
+
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    const atuais = paineis(tela());
+    expect(atuais).toHaveLength(2);
+    for (const [i, atual] of atuais.entries()) {
+      expect(atual.props.atendimentoId).toBe("a2");
+      expect(atual.type).toBe(anteriores[i].type);
+      expect(atual.key).not.toBe(anteriores[i].key);
+    }
+  });
 });
 const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
 const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
@@ -156,6 +180,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirAntigo!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-antigo", conversaId: "cv1" });
+    await esvaziar(); // o corpo deste GET precisa existir antes do próximo evento/resultado
     respostaLista = async () => new Response("", { status: 503 });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-get", conversaId: "cv1" });
     concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
@@ -168,6 +193,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirAntigo!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pre-entrada", conversaId: "cv1" });
+    await esvaziar(); // o corpo deste GET precisa existir antes do próximo evento/resultado
     respostaLista = async () => new Response("", { status: 503 });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-falha", conversaId: "cv1" });
     concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
@@ -205,6 +231,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirFresco!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirFresco = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pos-pedido", conversaId: "cv1" });
+    await esvaziar(); // o corpo deste GET precisa existir antes do próximo evento/resultado
     respostaLista = async () => new Response("", { status: 503 });
     concluirLeitura({ ok: false }); await esvaziar();
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
@@ -407,6 +434,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirLista!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirLista = ok; });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar(); // GET começa enquanto a leitura segue pendente
     concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
     await esvaziar();
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
@@ -418,6 +446,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirLista!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirLista = ok; });
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
+    await esvaziar(); // snapshot iniciado antes da troca de seleção
     let concluirLeitura!: (r: { ok: boolean }) => void;
     marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
     lista(tela()).aoSelecionar("a2");
@@ -435,6 +464,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirLeitura!: (r: { ok: boolean }) => void;
     marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar(); // snapshot iniciado antes da conclusão da leitura
     concluirLeitura({ ok: true });
     await esvaziar();
     concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
@@ -469,13 +499,15 @@ describe("InboxNovo: leitura ao abrir", () => {
       return consultas === 1 ? new Promise((ok) => { concluirAntigo = ok; }) : Promise.resolve(new Response("", { status: 503 }));
     };
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m0", conversaId: "cv1" });
+    await esvaziar(); // voo v1 permanece aberto
     marcar.mockResolvedValue({ ok: false });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
     await esvaziar(); // a leitura v2 falha; a consulta de reconciliação também falha
-    expect(consultas).toBe(3);
+    expect(consultas).toBe(1); // eventos/leitura compartilham uma pendência, sem GET concorrente
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
     concluirAntigo(pagina([item("a1"), item("a2")]));
     await esvaziar();
+    expect(consultas).toBe(2); // recuperação fresca após consumir o corpo antigo
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
     respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
@@ -582,19 +614,21 @@ describe("contagens no estado produtor para os chips", () => {
     return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
   };
   const resposta = (naoLidas: number) => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null, contagens: { ...inicial, naoLidas } }));
-  it("inicializa do servidor e aceita só a resposta mais recente de SSE; não calcula pelo tamanho da página", async () => {
+  it("inicializa do servidor e consolida SSE com atualização final fresca; não calcula pelo tamanho da página", async () => {
     const resolver: ((r: Response) => void)[] = [];
     respostaLista = () => new Promise((ok) => resolver.push(ok));
     render(); expect(m.contagens).toEqual(inicial);
     const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
-    m.aoAviso!(aviso); m.aoAviso!(aviso);
-    resolver[1](resposta(3)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 3 });
-    resolver[0](resposta(20)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 3 });
+    m.aoAviso!(aviso); await esvaziar(); m.aoAviso!(aviso);
+    expect(resolver).toHaveLength(1);
+    resolver[0](resposta(20)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 20 });
+    expect(resolver).toHaveLength(2); resolver[1](resposta(3)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 3 });
     expect(vi.mocked(fetch).mock.calls.every(([url]) => String(url).includes("contagens=1"))).toBe(true);
   });
   it("troca de filtros preserva os agregados novos mesmo se o GET antigo terminar depois", async () => {
     let concluir!: (r: Response) => void; respostaLista = () => new Promise((ok) => { concluir = ok; });
     render(); m.aoAviso!({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    await esvaziar();
     const p = { ...props, selecionado: null, filtros: { busca: "novo" }, contagens: { ...inicial, todas: 2 } };
     render(p); render(p); concluir(resposta(30)); await esvaziar(); render(p);
     expect(m.contagens).toEqual(p.contagens);
@@ -604,6 +638,7 @@ describe("contagens no estado produtor para os chips", () => {
     const resolver: ((r: Response) => void)[] = []; respostaLista = () => new Promise((resolve) => resolver.push(resolve));
     const p = { ...props, contagens: inicial };
     render(p); m.aoAviso!({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    await esvaziar();
     resolver[0](resposta(60)); await esvaziar(); render(p); expect(m.contagens).toEqual(inicial);
     ler({ ok }); await esvaziar(); expect(resolver).toHaveLength(2);
     resolver[1](resposta(ok ? 0 : 8)); await esvaziar(); render(p);
@@ -720,5 +755,170 @@ it("URLlocal confirma própria seleção antes de SSR e conservaNova/vista até 
  habilitarRota313();const p={...props,selecionado:null};tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);coluna313(tela(p)).aoNovaConversa();const t=navegar313(p);expect(coluna313(t).selecionado).toBe("a2");expect(coluna313(t).novaConversaAberta).toBe(true);const ack=navegar313({...p,selecionado:"a2"});expect(coluna313(ack).novaConversaAberta).toBe(true);
 });
 it("Linkc→null compropnull igual invalida GET anterior da conversa selecionada",async()=>{
- habilitarRota313();const p={...props,selecionado:null};marcar.mockImplementation(()=>new Promise(()=>{}));let concluir!:(r:Response)=>void;respostaLista=()=>new Promise(r=>{concluir=r;});tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});m.parametros313="";navegar313(p);concluir(new Response(JSON.stringify({itens:[{...item("a1"),preview:"Snapshot GET obsoleto"}],proximo:null})));await esvaziar();expect(coluna313(tela(p)).itens.some(i=>i.preview==="Snapshot GET obsoleto")).toBe(false);
+ habilitarRota313();const p={...props,selecionado:null};marcar.mockImplementation(()=>new Promise(()=>{}));let concluir!:(r:Response)=>void;respostaLista=()=>new Promise(r=>{concluir=r;});tela(p);coluna313(tela(p)).aoSelecionar("a2");navegar313(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});await esvaziar();m.parametros313="";navegar313(p);concluir(new Response(JSON.stringify({itens:[{...item("a1"),preview:"Snapshot GET obsoleto"}],proximo:null})));await esvaziar();expect(coluna313(tela(p)).itens.some(i=>i.preview==="Snapshot GET obsoleto")).toBe(false);
+});
+
+describe("C1: recarga de lista e contagens em lote", () => {
+  const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
+  const render = (p: PropsInboxNovo = { ...props, selecionado: null }) => {
+    m.posEfeito=0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode,p);
+  };
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+  it("C1 agrupa20avisos sem atrasar o aviso consumido pela thread", async () => {
+    render();
+    for(let n=0;n<20;n++)m.aoAviso!(aviso);
+    render(); expect(m.avisoThread).toEqual(aviso);
+    expect(fetch).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(49); expect(fetch).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1); expect(fetch).toHaveBeenCalledTimes(1);
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("contagens=1");
+  });
+  it.each([200,503])("C1 não inicia GET2 enquanto body1HTTP%s segue aberto",async status => {
+    let controle!: ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo,{status}))
+      .mockResolvedValue(new Response(JSON.stringify({itens:[],proximo:null})));
+    render();m.aoAviso!(aviso);await vi.advanceTimersByTimeAsync(50);
+    m.aoAviso!(aviso);await vi.advanceTimersByTimeAsync(500);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:[],proximo:null})));controle.close();
+    await vi.advanceTimersByTimeAsync(50);expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+
+describe("C1: fronteiras de leitura e contexto", () => {
+  const inicial={todas:90,minhas:4,naoLidas:8,prazo:2,fila:9};
+  const aviso={tipo:"resync" as const,atendimentoId:null,mensagemId:null,conversaId:""};
+  const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+  const resposta=(n:number)=>new Response(JSON.stringify({itens:props.inicial.itens,proximo:null,contagens:{...inicial,naoLidas:n}}));
+  it.each([true,false])("conclusão leitura=%s exige GET fresco após body anterior mesmo quando snapshot é descartado",async ok=>{
+    let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    let controle!:ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    let resolverFresco!:(r:Response)=>void;
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo))
+      .mockImplementation(()=>new Promise(r=>{resolverFresco=r;}));
+    const p={...props,contagens:inicial};render(p);m.aoAviso!(aviso);await esvaziar();
+    ler({ok});await esvaziar();
+    const ack={...p,filtros:{...p.filtros}};render(ack); // ACK com identidade nova, mesmo contexto público
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(1);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:props.inicial.itens,proximo:null,contagens:{...inicial,naoLidas:60}})));controle.close();
+    await esvaziar();render(ack);expect(m.contagens).toEqual(inicial);
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(2);
+    resolverFresco(resposta(ok?0:8));await esvaziar();render(ack);
+    expect(m.contagens).toEqual({...inicial,naoLidas:ok?0:8});
+  });
+  it("captura fase da leitura no início real do GET e une conclusão ao lote ainda não iniciado",async()=>{
+    let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    respostaLista=async()=>resposta(0);
+    const p={...props,contagens:inicial};render(p);m.aoAviso!(aviso);
+    await vi.advanceTimersByTimeAsync(10);ler({ok:true});
+    await vi.advanceTimersByTimeAsync(40);render(p);
+    expect(m.contagens).toEqual({...inicial,naoLidas:0});
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(1);
+  });
+  it("A→B→A descarta voo antigo, cancela timerB e usa somente filtroA vigente no trailing",async()=>{
+    const a={...props,selecionado:null,filtros:{busca:"A"},contagens:inicial};
+    const b={...a,filtros:{busca:"B"},contagens:{...inicial,todas:2}};
+    let antigo!:(r:Response)=>void;
+    respostaLista=vi.fn().mockImplementationOnce(()=>new Promise(r=>{antigo=r;})).mockResolvedValue(resposta(3));
+    render(a);m.aoAviso!(aviso);await esvaziar();
+    render(b);m.aoAviso!(aviso);render(a);m.aoAviso!(aviso);await esvaziar();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    antigo(resposta(60));await esvaziar();render(a);
+    expect(m.contagens).toEqual({...inicial,naoLidas:3});
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fetch).mock.calls.map(([u])=>String(u))).toEqual([
+      "/api/inbox/atendimentos?busca=A&contagens=1","/api/inbox/atendimentos?busca=A&contagens=1"]);
+  });
+  it("desmontar cancela timer e invalida snapshot que termina após cleanup",async()=>{
+    const p={...props,selecionado:null,contagens:inicial};
+    let concluir!:(r:Response)=>void;respostaLista=()=>new Promise(r=>{concluir=r;});
+    render(p);m.aoAviso!(aviso);await esvaziar();m.aoAviso!(aviso);
+    for(const e of m.efeitos)if(typeof e.limpar==="function")e.limpar();
+    concluir(resposta(70));await vi.advanceTimersByTimeAsync(1000);render(p);
+    expect(m.contagens).toEqual(inicial);expect(fetch).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+
+it("C1 objeto de filtros equivalente não cancela reconciliação pendente", async()=>{
+  const p={...props,selecionado:null,filtros:{busca:"A"}};
+  m.posEfeito=0;m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);
+  m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});
+  m.posEfeito=0;m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,{...p,filtros:{busca:"A"}});
+  await esvaziar();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("busca=A");
+});
+
+it("C1 ACKlocal150 conserva páginas/cursor/vista/Nova e reconciliação após leitura com body antigo e filtro equivalente",async()=>{
+  habilitarRota313();
+  const itens=Array.from({length:150},(_,i)=>({...item("v"+i),ultimaMensagemEm:new Date(Date.UTC(2026,9,1,12)-i*1000).toISOString()}));
+  const contagens={todas:150,minhas:100,naoLidas:75,prazo:100,fila:50};
+  const p={...props,selecionado:null,contagens,inicial:{itens:itens.slice(0,50),proximo:"cursor50"}} as PropsInboxNovo;
+  let cursor=50;
+  respostaLista=async()=>{const inicio=cursor;cursor+=50;return new Response(JSON.stringify({itens:itens.slice(inicio,cursor),proximo:cursor<150?"cursor100":null}));};
+  tela(p);coluna313(tela(p)).aoCarregarMais();await esvaziar();coluna313(tela(p)).aoCarregarMais();await esvaziar();
+  expect(coluna313(tela(p)).itens).toHaveLength(150);
+  let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+  coluna313(tela(p)).aoSelecionar("v35");const aberta=tela(p);
+  (cabecalho(aberta) as unknown as {aoVoltar():void}).aoVoltar();tela(p);coluna313(tela(p)).aoNovaConversa();
+  let controle!:ReadableStreamDefaultController<Uint8Array>;
+  const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+  let fresco!:(r:Response)=>void;
+  respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo)).mockImplementation(()=>new Promise(r=>{fresco=r;}));
+  m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});await esvaziar();
+  ler({ok:true});await esvaziar();
+  const ack={...p,selecionado:"v35",filtros:{...p.filtros},inicial:{...p.inicial,itens:p.inicial.itens.map((x,i)=>i===0?{...x,preview:"SSR fresco"}:x)}};
+  navegar313(ack);
+  controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:p.inicial.itens,proximo:"cursor50",contagens:{...contagens,naoLidas:99}})));controle.close();
+  await esvaziar();
+  fresco(new Response(JSON.stringify({itens:p.inicial.itens,proximo:"cursor50",contagens:{...contagens,naoLidas:0}})));
+  await esvaziar();
+  const t=tela(ack),c=coluna313(t);
+  expect(c.itens).toHaveLength(150);expect(c.proximo).toBeNull();expect(c.selecionado).toBe("v35");
+  expect(c.novaConversaAberta).toBe(true);expect(elementos(t)[0].props["data-vista"]).toBe("lista");
+  expect(c.contagens).toEqual({...contagens,naoLidas:0});
+  expect(vi.mocked(respostaLista)).toHaveBeenCalledTimes(2);
+});
+it("C1 navegação URLreal para null cancela lote ainda não iniciado sem alterar sincronização313",async()=>{
+  habilitarRota313("c=a1");marcar.mockImplementation(()=>new Promise(()=>{}));
+  const p={...props,contagens:{todas:2,minhas:1,naoLidas:1,prazo:0,fila:0}};
+  tela(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});
+  m.parametros313="";const vazia={...p,selecionado:null};navegar313(vazia);await esvaziar();
+  expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(0);
+  expect(coluna313(tela(vazia)).selecionado).toBeNull();expect(vi.getTimerCount()).toBe(0);
+});
+
+describe("C1 P2: snapshot invalidado por props equivalentes durante voo",()=>{
+  const contagens={todas:2,minhas:1,naoLidas:2,prazo:0,fila:0};
+  const aviso={tipo:"resync" as const,atendimentoId:null,mensagemId:null,conversaId:""};
+  const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+  const dados=(n:number)=>({itens:props.inicial.itens,proximo:null,contagens:{...contagens,naoLidas:n}});
+  it.each([false,true])("P2 props equivalentes durantebody exigem snapshot fresco, leituraPendente=%s",async leituraPendente=>{
+    let ler!:(r:{ok:boolean})=>void;
+    if(leituraPendente)marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    let controle!:ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo))
+      .mockResolvedValueOnce(new Response(JSON.stringify(dados(3))))
+      .mockResolvedValue(new Response(JSON.stringify(dados(0))));
+    const p={...props,selecionado:leituraPendente?"a1":null,filtros:{busca:"A"},contagens};
+    render(p);m.aoAviso!(aviso);await esvaziar();
+    const ack={...p,filtros:{busca:"A"}};render(ack);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify(dados(3))));controle.close();
+    await esvaziar();render(ack);
+    if(!leituraPendente)expect(m.contagens).toEqual({...contagens,naoLidas:3});
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(2);
+    if(leituraPendente){
+      expect(m.contagens).toEqual(contagens);
+      ler({ok:true});await esvaziar();render(ack);
+      expect(m.contagens).toEqual({...contagens,naoLidas:0});
+      expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(3);
+    }
+  });
 });
