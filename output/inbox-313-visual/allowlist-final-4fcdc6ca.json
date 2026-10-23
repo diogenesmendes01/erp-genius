@@ -1,0 +1,2513 @@
+{
+  "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+  "fontePrototipo": "2e88216481bd5889070d572e1a867baeec21b668",
+  "politica": "Somente PNGs fictícias positivas inspecionadas. Proibido incluir HTML, RSC, raw, logs, traces, cookies, snapshots, seeds, negativos, arquivos não listados ou diretórios inteiros. ZERO novos binários no Git. Empacotamento e depósito remoto pelo integrador.",
+  "pendencias": [
+    "Depósito remoto confirmado e URL pelo integrador",
+    "Revisão final/publicação pelo integrador"
+  ],
+  "arquivos": [
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-conversa.png",
+      "arquivoPacote": "formal-app/app-escuro-desktop-conversa.png",
+      "bytes": 164454,
+      "width": 1440,
+      "height": 900,
+      "sha256": "d32bd8b6c0d1387e3fb426d692b57124d8aac587d8dd87a006105a2f132d82ce",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-conversa.png",
+      "arquivoPacote": "formal-app/app-escuro-tablet-conversa.png",
+      "bytes": 113983,
+      "width": 1024,
+      "height": 768,
+      "sha256": "b748cbf2ebb1442fd484be9b055f38bfbdb4f2d951e58374e81402c17e3dea1c",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-conversa.png",
+      "arquivoPacote": "formal-app/app-escuro-celular-conversa.png",
+      "bytes": 40548,
+      "width": 390,
+      "height": 844,
+      "sha256": "b0760d3a81f941ec8b9262a002bf473c65d1089cbdd9bf78820ee58bc7216817",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-conversa.png",
+      "arquivoPacote": "formal-app/app-claro-desktop-conversa.png",
+      "bytes": 164460,
+      "width": 1440,
+      "height": 900,
+      "sha256": "ba1d09a957f45ff8340a54b160782e7aef0c9b86a28b558fde9ed746a38b0336",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-conversa.png",
+      "arquivoPacote": "formal-app/app-claro-tablet-conversa.png",
+      "bytes": 113360,
+      "width": 1024,
+      "height": 768,
+      "sha256": "1ac807c69332c8b891b58db04a8f7f1ad7e0c8032bf96ac241c06a4168295afa",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-conversa.png",
+      "arquivoPacote": "formal-app/app-claro-celular-conversa.png",
+      "bytes": 40938,
+      "width": 390,
+      "height": 844,
+      "sha256": "babf0e1706be3cf0040919629b0cdeca6e6ea4080f5c25b441a4f99c51b8613e",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-filtros.png",
+      "arquivoPacote": "formal-app/app-escuro-desktop-filtros.png",
+      "bytes": 104376,
+      "width": 1440,
+      "height": 900,
+      "sha256": "9c8ec63ed83458b10f361e14c06380fee4c55da1da2fbe1c9be454222abd5404",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-filtros.png",
+      "arquivoPacote": "formal-app/app-escuro-tablet-filtros.png",
+      "bytes": 82771,
+      "width": 1024,
+      "height": 768,
+      "sha256": "b0b6c68350fda5524af5daea038ab1392a53c63499567433e684490156e3cbdf",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-filtros.png",
+      "arquivoPacote": "formal-app/app-escuro-celular-filtros.png",
+      "bytes": 63751,
+      "width": 390,
+      "height": 844,
+      "sha256": "b59c8fe29cffa29d932b1e3ca57dbc1cc798d25c7713ea84fcb98ca67425f099",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-filtros.png",
+      "arquivoPacote": "formal-app/app-claro-desktop-filtros.png",
+      "bytes": 103828,
+      "width": 1440,
+      "height": 900,
+      "sha256": "5daad592de469cd4295e34e867a9ab6e3f1b63dea4f1e3d5f9edca231e0cf8ac",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-filtros.png",
+      "arquivoPacote": "formal-app/app-claro-tablet-filtros.png",
+      "bytes": 82167,
+      "width": 1024,
+      "height": 768,
+      "sha256": "3d7d1e3f0672b5473c9bbe74349a510d79b195d6baf3fe8eb721e0643112044e",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-filtros.png",
+      "arquivoPacote": "formal-app/app-claro-celular-filtros.png",
+      "bytes": 61910,
+      "width": 390,
+      "height": 844,
+      "sha256": "8b424d2de5433747fef0d4ea0b4c6676fb810041841234978b56cf65a8e4ccc0",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-seletor-numero.png",
+      "arquivoPacote": "formal-app/app-escuro-desktop-seletor-numero.png",
+      "bytes": 105156,
+      "width": 1440,
+      "height": 900,
+      "sha256": "36e29fefea5b7268160dea91879022c6e72d5fe524d44078d7a8abc5a1d69b87",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-seletor-numero.png",
+      "arquivoPacote": "formal-app/app-escuro-tablet-seletor-numero.png",
+      "bytes": 79787,
+      "width": 1024,
+      "height": 768,
+      "sha256": "7504fbd654416035a35de34012a833b33ddec2c60102bd58d62fb9669bfe3c95",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-seletor-numero.png",
+      "arquivoPacote": "formal-app/app-escuro-celular-seletor-numero.png",
+      "bytes": 62817,
+      "width": 390,
+      "height": 844,
+      "sha256": "1ce592e0c457a6c5fd9e44edc2aacae3cb1b8c2b26f6b813ba5aea4c66194681",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-seletor-numero.png",
+      "arquivoPacote": "formal-app/app-claro-desktop-seletor-numero.png",
+      "bytes": 104189,
+      "width": 1440,
+      "height": 900,
+      "sha256": "612d705bd6a5c0f49de607cc30e137fbcf6d228bae7d11fde68925ae44f96832",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-seletor-numero.png",
+      "arquivoPacote": "formal-app/app-claro-tablet-seletor-numero.png",
+      "bytes": 79313,
+      "width": 1024,
+      "height": 768,
+      "sha256": "fb30534114498159dd37e2855d1cdfa58fb6967225ed7375f4c28201c6aceab6",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-seletor-numero.png",
+      "arquivoPacote": "formal-app/app-claro-celular-seletor-numero.png",
+      "bytes": 60914,
+      "width": 390,
+      "height": 844,
+      "sha256": "e42b19ed6a90fdfc053513f3d32429c9ba434f2dc3b8516e50c85696963fb3b7",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-desktop-nova-conversa.png",
+      "arquivoPacote": "formal-app/app-escuro-desktop-nova-conversa.png",
+      "bytes": 108931,
+      "width": 1440,
+      "height": 900,
+      "sha256": "bbee956e5319dee1d89d3803519ea7324bf97c1b12c0cd305271c8f531db2fe0",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-tablet-nova-conversa.png",
+      "arquivoPacote": "formal-app/app-escuro-tablet-nova-conversa.png",
+      "bytes": 83236,
+      "width": 1024,
+      "height": 768,
+      "sha256": "7ee9b150127373ce4f670e4c22df49aa30eb524209292e37749edd67ffca7069",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-nova-conversa.png",
+      "arquivoPacote": "formal-app/app-escuro-celular-nova-conversa.png",
+      "bytes": 65611,
+      "width": 390,
+      "height": 844,
+      "sha256": "c6164cb1ab631a639149f710c651014b78e428ee6fc6ddf0c3c212442f8f1945",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-desktop-nova-conversa.png",
+      "arquivoPacote": "formal-app/app-claro-desktop-nova-conversa.png",
+      "bytes": 107860,
+      "width": 1440,
+      "height": 900,
+      "sha256": "6fce7ede2a1c51a5164ae382fbc4a49b70f5384ae1a678f09f13a39f18297c0f",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-tablet-nova-conversa.png",
+      "arquivoPacote": "formal-app/app-claro-tablet-nova-conversa.png",
+      "bytes": 82952,
+      "width": 1024,
+      "height": 768,
+      "sha256": "31934b33636370e31ec791fe0d501e79f6ca134d8e8ecdb13f38e98cb6c6eb12",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-nova-conversa.png",
+      "arquivoPacote": "formal-app/app-claro-celular-nova-conversa.png",
+      "bytes": 63525,
+      "width": 390,
+      "height": 844,
+      "sha256": "36923fb01940d65bf640b5fcb67bfce7eca869d22315014fcdbb09c59b6ae901",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-celular-lista.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-escuro-celular-celular-lista.png",
+      "arquivoPacote": "formal-app/app-escuro-celular-celular-lista.png",
+      "bytes": 73733,
+      "width": 390,
+      "height": 844,
+      "sha256": "95608516f4c0e1251f794a440ec780025a50dafd8722d2495bd26777126abeff",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "objetosHarness": {
+        "capturar-inbox.mjs": "5307f6f289aff82d75d1b60fad50213960e20d5b",
+        "espera-app.mjs": "c48e6b9430f21e6c36dd8f218f61c573057947c1",
+        "nucleo-captura.mjs": "073af9a0b5ad34144a56bae338b8c704df408ab8",
+        "anonimizar-telefones.mjs": "1946440b7f47fb8851c4e04705eb8ee1cc658146"
+      },
+      "anonimizacaoDOM": null,
+      "tipo": "formal-app",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-celular-lista.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/app-claro-celular-celular-lista.png",
+      "arquivoPacote": "formal-app/app-claro-celular-celular-lista.png",
+      "bytes": 72763,
+      "width": 390,
+      "height": 844,
+      "sha256": "9ba9b18332eeae0704ea833bc3087f9a19fe785ad3d3d3b73d4434540470cffe",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/capturar-app-atual.mjs",
+        "sha256": "399f502dcda710bd30b72e62fee3a3ba3a24e9cde52b53800b3ab04ae76f8e7d",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-desktop-conversa.png",
+      "bytes": 196695,
+      "width": 1440,
+      "height": 900,
+      "sha256": "91847b947ccf9fd4b57e735504614029435ec81cfba31841cd991a0c1d9ef959",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-tablet-conversa.png",
+      "bytes": 128785,
+      "width": 1024,
+      "height": 768,
+      "sha256": "55e0f3e3c0d85d3b5ca5e89a33a23b8a227d37f52ad98fd936f21f69a6d4c3f5",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-celular-conversa.png",
+      "bytes": 54251,
+      "width": 390,
+      "height": 844,
+      "sha256": "69c8232fe0bc96c47c002da0d223a91585faa726ab6078a70713103a34982dde",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-desktop-conversa.png",
+      "bytes": 197841,
+      "width": 1440,
+      "height": 900,
+      "sha256": "53fc285d8fdb8611d8542c5ecf2c96b5d89cbe3f360485287c679dc3e2a6cd53",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-tablet-conversa.png",
+      "bytes": 128889,
+      "width": 1024,
+      "height": 768,
+      "sha256": "8ee76130c71d7f7b68eec8fab9bdb5565dd8e33d0fd5e0484e055e9f27258fb2",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-celular-conversa.png",
+      "bytes": 54029,
+      "width": 390,
+      "height": 844,
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-filtros.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-filtros.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-desktop-filtros.png",
+      "bytes": 177641,
+      "width": 1440,
+      "height": 900,
+      "sha256": "0d96a79c50644b54acde6ea3a0894e1ad440182648f798837f26399e22a646ee",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-filtros.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-filtros.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-tablet-filtros.png",
+      "bytes": 117346,
+      "width": 1024,
+      "height": 768,
+      "sha256": "40a973d1552d1fbc45dbbe8cfb8a563457a21a711fd7d2d54d0a454a9cdf60e0",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-filtros.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-filtros.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-celular-filtros.png",
+      "bytes": 50139,
+      "width": 390,
+      "height": 844,
+      "sha256": "a5694788a1b8e30f19ef3393d552479230f282966156923d4eca668065c9a20b",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-filtros.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-filtros.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-desktop-filtros.png",
+      "bytes": 176692,
+      "width": 1440,
+      "height": 900,
+      "sha256": "ae5dc26f7c6f958fdc08466b0577c4c88175539843a2e413489f3884858305f0",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-filtros.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-filtros.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-tablet-filtros.png",
+      "bytes": 117095,
+      "width": 1024,
+      "height": 768,
+      "sha256": "02ba110368f739d6cd709cdfff9d433e98828cb755c3ddb9a365b1004974e548",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-filtros.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-filtros.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-celular-filtros.png",
+      "bytes": 49038,
+      "width": 390,
+      "height": 844,
+      "sha256": "e5c5f91f564a919381751a299e9510dbd1b7eec8f6c96e081d766e440cdd40b5",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 6
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-seletor-numero.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-seletor-numero.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-desktop-seletor-numero.png",
+      "bytes": 194945,
+      "width": 1440,
+      "height": 900,
+      "sha256": "153289cace59207f47e5e727c2dc7510cd5c19dfc491310d74faad1b2e66c7b5",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 5
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-seletor-numero.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-seletor-numero.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-tablet-seletor-numero.png",
+      "bytes": 131189,
+      "width": 1024,
+      "height": 768,
+      "sha256": "d2f48d1eae829a3c7e451734ab0dd5fa12bfe42f80b7d558609feff674184f51",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 5
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-seletor-numero.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-seletor-numero.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-celular-seletor-numero.png",
+      "bytes": 68692,
+      "width": 390,
+      "height": 844,
+      "sha256": "e7fcab8c558932bbe9f44733b870ada15a0c6de4f8255224eb712cb5a6862127",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 6
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-seletor-numero.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-seletor-numero.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-desktop-seletor-numero.png",
+      "bytes": 199065,
+      "width": 1440,
+      "height": 900,
+      "sha256": "5ac5f4ad6273a2d6a4b1e7671fe132b5bd3c69a901e463fc0021eab44062bca4",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 5
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-seletor-numero.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-seletor-numero.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-tablet-seletor-numero.png",
+      "bytes": 135387,
+      "width": 1024,
+      "height": 768,
+      "sha256": "e7152e0928b8007848fc6e76f3e64d29224bb3e8cbeac8b6fb8f2ad1838d389d",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 5
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-seletor-numero.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-seletor-numero.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-celular-seletor-numero.png",
+      "bytes": 69606,
+      "width": 390,
+      "height": 844,
+      "sha256": "4fa4f33b7749f738ca3aaae2e99b88763b34ead9dc828e330c47bdf0c33f6d84",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 15
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-nova-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-desktop-nova-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-desktop-nova-conversa.png",
+      "bytes": 191959,
+      "width": 1440,
+      "height": 900,
+      "sha256": "388f6fdbb6b190de31ac3fe65675575f8188742e1b249b30e2230f31ac3d4bc1",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 14
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-nova-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-tablet-nova-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-tablet-nova-conversa.png",
+      "bytes": 128590,
+      "width": 1024,
+      "height": 768,
+      "sha256": "6e47ee6e544521bebea0c475556af44a62d8a292f0f79ae5b0b9e1fa8d88c3a4",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 14
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-nova-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-nova-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-celular-nova-conversa.png",
+      "bytes": 61454,
+      "width": 390,
+      "height": 844,
+      "sha256": "8d393eb85cb1d2942166eb088363388d7d9eab91ee54e5320fca01bd0adfc087",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 15
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-nova-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-desktop-nova-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-desktop-nova-conversa.png",
+      "bytes": 190422,
+      "width": 1440,
+      "height": 900,
+      "sha256": "0f7db43b4c184f13a977c571ed0e5b07b48fb84c42fd1241cbcee4b4ccceff23",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 14
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-nova-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-tablet-nova-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-tablet-nova-conversa.png",
+      "bytes": 127400,
+      "width": 1024,
+      "height": 768,
+      "sha256": "5e459404dbd72bdde81fef2d085993b6b828df9fd8070872a38c5ffc63673604",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 14
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-nova-conversa.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-nova-conversa.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-celular-nova-conversa.png",
+      "bytes": 60577,
+      "width": 390,
+      "height": 844,
+      "sha256": "5452406e89620156a263145074bf52d9f9c235d3ee69cd1a0b06d1f763c32501",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-celular-lista.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-escuro-celular-celular-lista.png",
+      "arquivoPacote": "formal-prototipo/prototipo-escuro-celular-celular-lista.png",
+      "bytes": 71407,
+      "width": 390,
+      "height": 844,
+      "sha256": "420036e655827ede78a8c8a43fffb03221f80d47bde9d3a175ee0bd5ea9a550f",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "formal-prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "fonteAplicacao": null,
+      "fonteHarness": "2e88216481bd5889070d572e1a867baeec21b668",
+      "anonimizacaoDOM": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "tipo": "formal-prototipo",
+      "arquivo": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-celular-lista.png",
+      "fonte": {
+        "aplicacao": null,
+        "harness": "2e88216481bd5889070d572e1a867baeec21b668"
+      },
+      "caminho": "output/inbox-313-visual/formal-final-4fcdc6ca/prototipo-claro-celular-celular-lista.png",
+      "arquivoPacote": "formal-prototipo/prototipo-claro-celular-celular-lista.png",
+      "bytes": 70770,
+      "width": 390,
+      "height": 844,
+      "sha256": "8fdb9656e54a6288b71dc6643e19246514eba2cb621e136eb90d69f44ac1a1e0",
+      "inspecao": "favoravel"
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-desktop-150-inicio.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-desktop-150-inicio.png",
+      "arquivoPacote": "virtual/escuro-desktop-150-inicio.png",
+      "bytes": 124477,
+      "width": 1440,
+      "height": 900,
+      "sha256": "c017673a88097a505f2d875d05098bba044c64f1733c37561ac5926b6970dbaa",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-desktop-foco35.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-desktop-foco35.png",
+      "arquivoPacote": "virtual/escuro-desktop-foco35.png",
+      "bytes": 129091,
+      "width": 1440,
+      "height": 900,
+      "sha256": "346683edb358e9d95dfe409567c06617214b534e4fcc0599e41b1a828e9a47ce",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-desktop-resize-retorno.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-desktop-resize-retorno.png",
+      "arquivoPacote": "virtual/escuro-desktop-resize-retorno.png",
+      "bytes": 176989,
+      "width": 1440,
+      "height": 900,
+      "sha256": "fef364fc6d7e90b3e2eae93783cdbea3613c9f9b3eb7716da7868fb5c9d4b0fe",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-tablet-150-inicio.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-tablet-150-inicio.png",
+      "arquivoPacote": "virtual/escuro-tablet-150-inicio.png",
+      "bytes": 94729,
+      "width": 1024,
+      "height": 768,
+      "sha256": "d0a4423728da700720b3bfc7d4626581cb08d4187718a03aa940950f45e73f93",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-tablet-foco35.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-tablet-foco35.png",
+      "arquivoPacote": "virtual/escuro-tablet-foco35.png",
+      "bytes": 97785,
+      "width": 1024,
+      "height": 768,
+      "sha256": "50488c8b64e19b0c3baca2863130169f779c918ae1c30c5c22d97521097d9c5a",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-tablet-resize-retorno.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-tablet-resize-retorno.png",
+      "arquivoPacote": "virtual/escuro-tablet-resize-retorno.png",
+      "bytes": 127745,
+      "width": 1024,
+      "height": 768,
+      "sha256": "2ce2b2c3839ef90c01e7c4eff3bab4092e23965fb27c785e84390bb17ad3b60a",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-celular-150-inicio.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-celular-150-inicio.png",
+      "arquivoPacote": "virtual/escuro-celular-150-inicio.png",
+      "bytes": 72380,
+      "width": 390,
+      "height": 844,
+      "sha256": "906305d0e8b40dfaafb29f83feb58bc5bd54f5d7e7956c5ab0aebd2b8ffb9018",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-celular-foco35.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-celular-foco35.png",
+      "arquivoPacote": "virtual/escuro-celular-foco35.png",
+      "bytes": 74877,
+      "width": 390,
+      "height": 844,
+      "sha256": "b125ffe7f250eb8505b1ce60f4203d1dddf873a9766b1dba9fb20769615029fa",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-celular-resize-retorno.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/escuro-celular-resize-retorno.png",
+      "arquivoPacote": "virtual/escuro-celular-resize-retorno.png",
+      "bytes": 75815,
+      "width": 390,
+      "height": 844,
+      "sha256": "8d05db56bf69b4bea8b1e5f746c14637625bed94de359891d7b0102cdd9c8e40",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-desktop-150-inicio.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-desktop-150-inicio.png",
+      "arquivoPacote": "virtual/claro-desktop-150-inicio.png",
+      "bytes": 123449,
+      "width": 1440,
+      "height": 900,
+      "sha256": "d28aaafcbc89e22cab96d6ba667d775ee3c58f413d10292a04715cd4f8e7e413",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-desktop-foco35.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-desktop-foco35.png",
+      "arquivoPacote": "virtual/claro-desktop-foco35.png",
+      "bytes": 127604,
+      "width": 1440,
+      "height": 900,
+      "sha256": "418a3d6126a268a1b37510e7144adbea8a4526c2fe28bb052045beec2f479118",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-desktop-resize-retorno.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-desktop-resize-retorno.png",
+      "arquivoPacote": "virtual/claro-desktop-resize-retorno.png",
+      "bytes": 176975,
+      "width": 1440,
+      "height": 900,
+      "sha256": "26c3782664bf96aa4701b715038222779d99dfdf59b1374a70fd45f43e7fe67b",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-tablet-150-inicio.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-tablet-150-inicio.png",
+      "arquivoPacote": "virtual/claro-tablet-150-inicio.png",
+      "bytes": 93682,
+      "width": 1024,
+      "height": 768,
+      "sha256": "cf5ef6939638ee01fd3887a99ff15670adc13857221ce0321ffb9c92fff8f7cc",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-tablet-foco35.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-tablet-foco35.png",
+      "arquivoPacote": "virtual/claro-tablet-foco35.png",
+      "bytes": 96867,
+      "width": 1024,
+      "height": 768,
+      "sha256": "f08fe2f5addc4923b15d21e223fbc9a1852ef42353b53509145932253306c86f",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-tablet-resize-retorno.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-tablet-resize-retorno.png",
+      "arquivoPacote": "virtual/claro-tablet-resize-retorno.png",
+      "bytes": 126880,
+      "width": 1024,
+      "height": 768,
+      "sha256": "7a19f7e8fae0e09ddd2036956144d25e130e38420607ea4a35e46620f78450bc",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "celular",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-celular-150-inicio.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-celular-150-inicio.png",
+      "arquivoPacote": "virtual/claro-celular-150-inicio.png",
+      "bytes": 71605,
+      "width": 390,
+      "height": 844,
+      "sha256": "8546e12086e295746ca817f2ae81ac196e6627bb661fb07663f840435285db1b",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "celular",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-celular-foco35.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-celular-foco35.png",
+      "arquivoPacote": "virtual/claro-celular-foco35.png",
+      "bytes": 73952,
+      "width": 390,
+      "height": 844,
+      "sha256": "65cc970c76b5b14fa5c5e51b4d09289991d817b364d833c9cbe3c5c6fc211411",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "virtual",
+      "tema": "claro",
+      "tamanho": "celular",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "virtual",
+      "arquivo": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-celular-resize-retorno.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/virtual-atual-4fcdc6ca-2026-10-23T03-31-56.270Z/claro-celular-resize-retorno.png",
+      "arquivoPacote": "virtual/claro-celular-resize-retorno.png",
+      "bytes": 74600,
+      "width": 390,
+      "height": 844,
+      "sha256": "42c8622d9d99e4cccd6282fa6c9b8cf9ff51d78397eb2ca26a9eacf7e2b37b54",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-virtual-atual.mjs",
+        "sha256": "7198a1fd698055b7384878c8d11c13fd285e943f36a54625d5775f66c73d7e15",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-filtros.png",
+      "arquivoPacote": "complemento/escuro-curto-filtros.png",
+      "bytes": 29104,
+      "width": 390,
+      "height": 500,
+      "sha256": "7c760ac419ec27d5a6c43dcd4ee69b687683762b16c46ab64d739ba2f832f63a",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-seletor-numero.png",
+      "arquivoPacote": "complemento/escuro-curto-seletor-numero.png",
+      "bytes": 29283,
+      "width": 390,
+      "height": 500,
+      "sha256": "ee55f9ba52887f9b127afb93618233d98698e06f20f9ea006ebc53f8de198919",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-nova-conversa.png",
+      "arquivoPacote": "complemento/escuro-curto-nova-conversa.png",
+      "bytes": 32899,
+      "width": 390,
+      "height": 500,
+      "sha256": "ad39eaac2695a0f80cc28b37616299e53df2853c288c8ab9f00aebd7d2e5f7a4",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-filtros-aplicados.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-filtros-aplicados.png",
+      "arquivoPacote": "complemento/escuro-curto-filtros-aplicados.png",
+      "bytes": 42709,
+      "width": 390,
+      "height": 500,
+      "sha256": "08e3e617bb777c7057612c36738b68c0aad62b7b027e9ca96cf0d975a397a3c8",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-navegacao-final.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-curto-navegacao-final.png",
+      "arquivoPacote": "complemento/escuro-curto-navegacao-final.png",
+      "bytes": 41762,
+      "width": 390,
+      "height": 500,
+      "sha256": "9f7140cb2ddcd3908cb5f7c4e3ea9f3456188b81389029f318fd333d42572bc3",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-filtros.png",
+      "arquivoPacote": "complemento/escuro-desktop-filtros.png",
+      "bytes": 104835,
+      "width": 1440,
+      "height": 900,
+      "sha256": "6abe92a83f7737ce72b06bce317e7ce7746e6a7006dd35b4735da861e1fea8e4",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-seletor-numero.png",
+      "arquivoPacote": "complemento/escuro-desktop-seletor-numero.png",
+      "bytes": 106093,
+      "width": 1440,
+      "height": 900,
+      "sha256": "5cbed3ee492b58e0b4ce6ce425306c8d92328cc31177b359b98a8eb24c05dfe2",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-nova-conversa.png",
+      "arquivoPacote": "complemento/escuro-desktop-nova-conversa.png",
+      "bytes": 109280,
+      "width": 1440,
+      "height": 900,
+      "sha256": "c4d4c699e296c3b72afd004ff6679a11424194ff575e7bddd7932555942b08f4",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-filtros-aplicados.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-filtros-aplicados.png",
+      "arquivoPacote": "complemento/escuro-desktop-filtros-aplicados.png",
+      "bytes": 125117,
+      "width": 1440,
+      "height": 900,
+      "sha256": "d8e900cac7cb9a7cd18b02b05143fc816ee6bccc0123b757172fe2246a050190",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-navegacao-final.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/escuro-desktop-navegacao-final.png",
+      "arquivoPacote": "complemento/escuro-desktop-navegacao-final.png",
+      "bytes": 120075,
+      "width": 1440,
+      "height": 900,
+      "sha256": "3fea4f77fd6d83e5685783cadb620cbff48018492f0f5bca5caaf2be490225f1",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-filtros.png",
+      "arquivoPacote": "complemento/claro-curto-filtros.png",
+      "bytes": 27992,
+      "width": 390,
+      "height": 500,
+      "sha256": "a7a9d8dfedaf77fd07d90aebb166dc4ff3ffb1c19fde25b4d4f90755eeb50323",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-seletor-numero.png",
+      "arquivoPacote": "complemento/claro-curto-seletor-numero.png",
+      "bytes": 27863,
+      "width": 390,
+      "height": 500,
+      "sha256": "bbae5e344978c6d3a3504699cff98807f84be0697cfe870360914611b3014723",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-nova-conversa.png",
+      "arquivoPacote": "complemento/claro-curto-nova-conversa.png",
+      "bytes": 31527,
+      "width": 390,
+      "height": 500,
+      "sha256": "5854935aefcbafefb83b04441f248f8e69c0bc380b9c22398936314fa6ebe013",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-filtros-aplicados.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-filtros-aplicados.png",
+      "arquivoPacote": "complemento/claro-curto-filtros-aplicados.png",
+      "bytes": 42277,
+      "width": 390,
+      "height": 500,
+      "sha256": "c115fda77b38652ed32131f415ba5d1785397afc24d315f6208b26e1857777a7",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "curto",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-navegacao-final.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-curto-navegacao-final.png",
+      "arquivoPacote": "complemento/claro-curto-navegacao-final.png",
+      "bytes": 40341,
+      "width": 390,
+      "height": 500,
+      "sha256": "853b78fb2f6ca19cb1e9b0a97b7cd0e3ac6033f82764aa54a1537904c2e0c9fa",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-filtros.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-filtros.png",
+      "arquivoPacote": "complemento/claro-desktop-filtros.png",
+      "bytes": 104418,
+      "width": 1440,
+      "height": 900,
+      "sha256": "b28f4bcfa2ca55846c0b2c9e55f75c43e4c9b025664c321fff9035804249620f",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-seletor-numero.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-seletor-numero.png",
+      "arquivoPacote": "complemento/claro-desktop-seletor-numero.png",
+      "bytes": 105123,
+      "width": 1440,
+      "height": 900,
+      "sha256": "477fa4e37648ed27f5c6697f311dbed700ecb61177762f956293619e6f21472f",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-nova-conversa.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-nova-conversa.png",
+      "arquivoPacote": "complemento/claro-desktop-nova-conversa.png",
+      "bytes": 108331,
+      "width": 1440,
+      "height": 900,
+      "sha256": "0460ef87ad807428f3ce3243783f24984723c6d1c2a3aa91282b55a909cad6e6",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-filtros-aplicados.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-filtros-aplicados.png",
+      "arquivoPacote": "complemento/claro-desktop-filtros-aplicados.png",
+      "bytes": 124145,
+      "width": 1440,
+      "height": 900,
+      "sha256": "376aab665cd44694539f4c6d7b6e025fae41846d49e18eb6e8860e39cbf18487",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    },
+    {
+      "grupo": "complemento",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "fonteHarness": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+      "tipo": "complemento",
+      "arquivo": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-navegacao-final.png",
+      "fonte": {
+        "aplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+        "harness": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+      },
+      "caminho": "output/inbox-313-visual/complemento-publico-atual-2026-10-23T03-33-08.092Z/claro-desktop-navegacao-final.png",
+      "arquivoPacote": "complemento/claro-desktop-navegacao-final.png",
+      "bytes": 117863,
+      "width": 1440,
+      "height": 900,
+      "sha256": "254e6b21a6a6cba721910b203a0f1afa023c5bee131173c181b2667aded97943",
+      "inspecao": "favoravel",
+      "probePrivado": {
+        "arquivo": "output/inbox-313-visual/probe-complemento-publico-atual.mjs",
+        "sha256": "9ce8a83b96049de19f8f6d5804fbef5136c7cef9ba36957c13ee989de2b3b90c",
+        "natureza": "Probe privado local não contido no commit da aplicação; usa helpers compartilhados da fonte4f. Não incluir automaticamente no ZIP."
+      }
+    }
+  ],
+  "totais": {
+    "formalApp": 26,
+    "formalPrototipo": 26,
+    "virtual": 18,
+    "complemento": 20,
+    "total": 90,
+    "bytes": 8847776
+  },
+  "metadados": [
+    {
+      "arquivo": "output/inbox-313-visual/resumo-final-4fcdc6ca.json",
+      "arquivoPacote": "resumo-final.json",
+      "bytes": 60128,
+      "sha256": "bd42989fd9be90c6ff6f53b9cf8cbcc921ec5a293657603fc0cca56084967b32",
+      "tipo": "resumo-sanitizado",
+      "fonte": "4fcdc6cad73c3ad8782405c29db8770122fa8432"
+    }
+  ]
+}
