@@ -24,6 +24,14 @@ function html(p: { selecionado?: string | null; extra?: Record<string, unknown> 
 }
 
 describe("InboxNovo", () => {
+  it("o teto do cabeçalho alcança o header direto da conversa real, sem wrapper intermediário", () => {
+    const h = html({ selecionado: "a1" });
+    const encaixe = h.match(/<section aria-label="Conversa" class="([^"]*)"><header(?:\s|>)/);
+    expect(encaixe).not.toBeNull();
+    const classes = encaixe![1].replaceAll("&amp;", "&").replaceAll("&gt;", ">").split(" ");
+    expect(classes).toEqual(expect.arrayContaining(["[&>header]:relative", "[&>header]:min-h-0",
+      "[&>header]:max-h-[40%]", "[&>header]:shrink-0", "[&>header]:overflow-y-auto"]));
+  });
   it("a caixa cresce no pai, pode encolher e não fixa altura pela viewport", () => {
     const h = html();
     const raiz = h.match(/<div data-vista="lista" data-conectado="[01]" class="([^"]*)"/)?.[1].split(" ") ?? [];
