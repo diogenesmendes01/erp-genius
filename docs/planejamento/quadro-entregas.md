@@ -4724,6 +4724,10 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 
 **Estado: implementação, aceite visual independente e gates combinados concluídos; [PR392 aberto](https://github.com/diogenesmendes01/erp-genius/pull/392), sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
 
+### Inbox E1.2 — #307: harness de comparação visual — 2026-10-22
+
+**Estado: implementação, aceite visual independente e gates combinados concluídos; pronta para PR, sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
+
 - **Entrega:** núcleo de nomes/combinações/recursos locais, CLI Playwright com `--alvo`, `--estado`, `--base` HTTP local, protótipo `file://` sem acesso externo e demo de sete atendimentos fictícios num BAILEYS desconectado. Guarda exige host/porta locais e um dos cinco nomes de banco exatos de `scripts/test-profile.mjs`; rejeita query/fragmento. Demo reexecutável usa IDs fixos e repara caso parcial, sem alterar o número de outro cenário.
 - **TDD/recortes Node22.23.2:** RED módulo ausente exit1; GREEN núcleo4/4 exit0; RED Lucide `woff2?t` exit1 e GREEN após mapeamento local; RED da integração de reparo parcial exit1 (`Demo parcial`), GREEN integração `vitest.integration.config.ts src/test/visual-inbox.int.test.ts` 1 arquivo/1 teste exit0, nenhum ignorado, exclusivamente no banco `dev-gravacoes`; RED da CLI ausente exit1 e GREEN unitários+dependências2arquivos/9testes exit0, nenhum ignorado. Esses recortes não são suíte completa.
 - **Protótipo offline:** `--alvo prototipo --estado conversa` no Chrome local155/core1.56.1 gerou seis PNGs em `tmp/visual/` (3 tamanhos × 2 temas), saída0 e falhas vazias; desktop escuro e celular claro inspecionados. Recursos npm servidos fisicamente de `node_modules`, Google Fonts vazio. Fonte de reserva offline é limite visual da referência.
@@ -4745,6 +4749,44 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - **Gate309 R2:** global combinado285/sessão15860 exit1(849/850arquivos;6633passaram/1falha), única falha da guarda AST em iniciais. RED dirigido1falha/49passaram exit1; expressão simplificada no flatMap original preservando todos casosUnicode, sem alterar guarda/profundidade/exceções. GREEN12arquivos147testes exit0 sem ignorados; lint dirigido exit0; TSC heap8192 sessão75216 exit0. Não rodou full novoDEV; global combinado e re-review pendentes.
 - **Fechamento:** TESTER aprovou bcda5a04 no recorte4arquivos83testes0/diffcheck0; expressão Unicode e guarda preservadas. Global final combinado309+310 fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67 sessão15987 acompanhada atéexit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2, TSCNode22heap8192 e lintglobal0erros40avisos. Parecer e logs em `output/inbox-309-qa/`; negativo15860 identificadoàparte. Merge da base3a no branch309 resolveu sóquadro e preservou código309exato. Sem merge/deploy.
 
+
+### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
+
+**Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
+
+- Linha307 `+5500000000300`, sete contatos/oportunidades `0301`–`0307`, mesmos IDs e vínculos. Reexecução repara apenas telefones legados reconhecidos, em transação; exige BAILEYS desconectado, relações da fixture e ausência de colisão com outro cenário. Recusa telefone modificado, sem sobrescrevê-lo; falha desfaz inclusive o reparo da linha. Não reseta contadores ou outros campos de QA.
+- TDD integração RED sessão39417 exit1:4 falhas/1pass; GREEN87004 exit0:1arquivo/5testes sem filtros/ignorados, exclusivamente `ci-integracao` (`erp_genius_test_ciint`), sem tocar cluster ou outros bancos. Unitários dirigidos visual+dependências:2arquivos/18testes exit0; TSC41721 exit0; ESLint das duas fontes exit0.
+- Ainda não declara C1 inteiro resolvido: PNGs anteriores precisam sair do código e o aceite visual deve ser recapturado com dados fictícios/DOM do protótipo explicitamente anonimizado. Não houve envio WhatsApp ou ativação externa. B1/B2/C2/C5/C6 continuam na fila.
+
+### PR #392 — anonimização explícita do protótipo antes da captura — 2026-10-22
+
+- Helper autocontido `anonimizarTelefonesNoDom`, reutilizável por `page.evaluate` após interações e antes da foto. Substitui formatos +55 no texto/atributos/campos por valores fictícios determinísticos +5500..., sem tocar scripts, estilos, HTML original ou PNG pronto. Preserva telefones já fictícios. Manifesto contém política, versão e contagem, sem valores originais; não é um observador de renderizações futuras.
+- TDD do DOM real: módulo ausente RED exit1; teste Node/Chrome local GREEN exit0,1teste sem ignorados, verifica formatos, identidades equivalentes, campos editados, links tel, repetição sem novas alterações, scripts/estilos intactos e relatório sem originais. Comando em scripts/visual/README.md, separado do Vitest comum.
+- Captura dirigida5962 exit0:6PNGs do protótipo (conversa,3tamanhos,2temas), nenhuma falha; manifesto em `output/pr392-qa/prototipo-anonimizado.json`. Desktop escuro e celular claro inspecionados. PNGs ficam somente no tmp local até arquivamento autorizado. Não representa captura do app nem aceite integral307.
+- Gates da fixture83043f51: global80400 exit0,846arquivos/6541testes sem filtro/ignorados. Após helper: unitários dirigidos2arquivos/18testes exit0, TSC30797 exit0, lint dos3arquivos de código exit0. Global terminou durante a adição do helper; seus testes de DOM/captura são as verificações específicas posteriores, sem atribuir o teste de navegador ao Vitest.
+- Permanecem B1/B2 (dependências), C2 (remoção/arquivo de evidências anteriores), C5/C6 e revalidação externa. C1 ainda exige retirar as imagens antigas com telefones do código; fonte e caminho de recaptura estão corrigidos. Nenhuma integração externa/WhatsApp acionada.
+
+### PR #392 — C1/C2: aceite sanitizado fora do código e retirada das imagens históricas
+
+**Estado: fonte/fixture e evidências sanitizadas verificadas; B2, integração das bases e CI ainda pendentes.** A fixture usa somente linha0300 e contatos0301–0307 no prefixo fictício+5500000000; o protótipo é anonimizado no DOM antes da foto, preservando seu arquivo original.
+
+Recaptura na fonte52a8b315: CLI59879 exit0,34PNGs (18app/16protótipo),0falhas e14diagnósticos de GET abortado recuperado. Oito imagens inspecionadas por amostragem, inclusive os quatro painéis app celular/tablet claro/escuro. Perfil exclusivo ci-integracao; BAILEYS desconectado, sem transporte externo. Primeira tentativa falhou por segredo de autenticação ausente no ambiente; servidor reiniciado com segredo efêmero e a rodada completa passou. Preview parado e bloco AGENTS gerado restaurado, sem outro delta.
+
+ZIP sanitizado `inbox-pr392-aceite-sanitizado-52a8b315.zip`: asset667665737,3.273.148bytes,SHA256893f939070072eeac6c505cfb01a369f9d44b05119b388074d273964167c0a03. Upload autorizado e download/hash confirmados na release DRAFT421321214, não publicada. Só depois foram retirados104PNGs históricos de output/inbox-307-* do estado atual; cópias locais e histórico Git preservados. O ZIP legado de124arquivos/104PNGs fica somente local: a revisão automática rejeitou o envio por conter imagens anteriores à anonimização; nenhuma tentativa de contorno ou envio desse ZIP ocorreu. Referências imutáveis da #297 não mudaram.
+
+Após a retirada, unitários dirigidos visual+dependências2arquivos/18testes e integração real visual-inbox1arquivo/5testes (95623,ci-integracao), ambos exit0 sem filtro/ignorados. Não são suítes completas. A única mudança de configuração B1 foi alinhar comentário ao da #297, com merge-tree RED1→GREEN0; o bloco ignorado permaneceu igual. Sem package/lock/install nesta etapa. B2 permanece aguardando resposta humana à autorização específica do lockfile; C5/C6 serão conciliados na integração/retarget. Índice e limites em output/inbox-307-evidencias.md e output/pr392-qa/recaptura-sanitizada.md.
+## PR #392 — preservar limpeza404 sem alterar B2
+
+Sobre06248af0,64PNG298/3.595.413B herdados coincidem com manifesto404/
+ZIP381 autorizado por tamanho/SHA256/GitOID; backup local conferido, sem
+variantes/upload novos. Retirada sóartefatos e docs,src/scripts/prisma/
+package/lock idênticos06248,stashB2 intacto. QA técnico do porte e decisão
+humana B2 pendentes,sem novo global/DB/browser presumido. Evidência em
+output/pr392-qa/recaptura-sanitizada.md e manifesto privadoqa404-307.
+
+## PR #392 — B2 autorizado e alinhado
+
+Usuário autorizou o integrador a regenerar somente o lockfile offline com scripts ignorados. Comando47463c saída0: trio Playwright1.64.1 alinhado à #280; CLI exige PW_CHROMIUM e guard confere resolução real do core pelo runner. RED1falha/5passes→GREEN6, global846arquivos/6543testes92630, TSCfinal92901, lintfinal71193/40avisos, integração1arquivo/5testes99228 e ChromeDOM1teste12b89d: todos terminais0. Cópia física do core alinhada somente no worktree integrador, backup e115hashes preservados; demais ambientes intactos. Fonte isolada sobrec57, ainda exige composição com main, verificação de conflitos280, TESTER e CI final. Negativos e limites em output/pr392-qa/b2-playwright.md. Não marcar issue concluída antes desses gates.
 ### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
 
 **Estado: implementação, revisão independente e global combinado concluídos; [PR394 aberto](https://github.com/diogenesmendes01/erp-genius/pull/394).** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
@@ -6119,9 +6161,33 @@ Pacote imutável inbox-320-evidencias-442d.zip:23.677.284bytes/272entradas, SHA 
 
 Previews/browsers encerrados, bancos A551/TESTER1386 restaurados com424hashes originais (defae5/fa0de1); somente blocoNext gerado removido deAGENTS. Nenhum envio real, integração externa ou deploy. Fecho técnico autoriza preparar as próximas duas frentes E2 após o PR concreto; CI/revisão GitHub/dependências/merge emmain continuam pendentes. A issue320 não está fechada nem homologada em produção.
 
+### E2 — #321/#322 em paralelo após abertura da PR #406
+
+PR #406 da issue320 aberta e anexada: head1bb721b7/base4054af, confirmação GitHub7dcdbf saída0. Revisão/CI/dependências/merge sob coordenação do outro integrador; sem nova alteração na branch publicada. Contagem neste instante:10issues fechadas e13outras comPRaberto, sem contar a limpeza técnica404.
+
+DEV A assume321 e DEV B322, cada um em seu worktree/banco, a partir de1bb. Reserva ROOT15573/2ca1b4 saída0:452refs distintos e quatro bancos descartáveis com485migrations; IDs20261023100000/20261023110000 ausentes, colunaTarefa.atendimentoId ausente. Os dois IDs foram reservados exclusivamente para322 em docs/planejamento/inbox-e2-reservas-migracoes.md; nenhumaDDLaplicada neste checkpoint. SnapshotE1B será restaurado antes daDDL, e snapshotE2novo será criado antes de testesGREENtruncantes. A única janelaDB por banco será preservada.
+
+O usuário autorizou explicitamente a correçãoB2 da PR392, incluindo o comando npm install --package-lock-only --ignore-scripts --offline paraPlaywright1.64.1 e testes. O outro integrador executa no próprio worktree; ROOT/DEVs/TESTER não duplicam o comando. SHA/gates finais e QA independente ainda pendentes antes de propagação coordenada para os ambientes. A autorização elimina a pendência humana anterior, sem presumir CI ou merge aprovados.
 
 ### #321 — E2.1 aviso transacional e projeção de capacidades (DEV)
 
 Base PR4061bb721b7, branch codex/inbox-e2-321. Novo avisarAtendimento reutiliza UPDATEid=id/trigger sóIDs no commit; rollback não publica. Helper de escopo delega na mesma tx, locks/convites/revogação/destinatário privado inalterados. CapacidadesPainel10campos projeta contexto já autorizado das matrizesCRM/Aria: sem acesso novo porveLead, sem edição comercial foraCOMERCIAL, empresaAdmin/Financeiro. D1vendedorRESPONSÁVEL é dependência contextual/autorização#354, não abrir matriz/config global; D13/dadospedagógico/abas atuais preservados. capacidadesAria sóPick<papeis>/import direto da mesma classeErroPermissao, ajuste coordenado sem mudança emvalidarAlteracaoPorPapel.
 
 RED17c1e9 50anteriorespass/13novosfalham; REDint7cb60b importausente/0testes. GREEN7421d3 3/77; recorteSSR61501 7/138 corrigido para hookreal em87466/512e65 14arquivos193testes0, unitsemINT/sem-t/skipsnovos. IntegraçãoAexclusiva sequencial32292/48e2f2 2/8 e22922/b84d78 2/18 (commit/autocommit/rollback/payloadPGreal/IDausente+participantes/poolcompletos), terminal0; semSQLmanual/seed/transportes. TSC14927/9d4395heap8192 e lint47771/0e7f79max0/6fontes ambos0, Node22.23.2. BancoA declarado livre após suites; snapshot551/restore/bundler/inbox peloROOT. UI N/Ainfra; SSR não é prova de bundle. SPECdocs/specs/inbox-aviso-capacidades-painel.md e reportoutput/inbox-321-report.md. QAexata/global integrado/publicação/CI pendentes; não encerrarE2nem presumirhomologação.
+
+### #322 — vínculo da tarefa ao atendimento, gates DEV aprovados
+
+Base B `1bb721b7`, branch `codex/inbox-e2-322`. Campo opcional somente na criação, validação de leitura na mesma tx, idempotência incluindo atendimento e preservando hash legado; Aria usa o ID confiável do turno. Edição e extensões D10 permanecem no escopo existente. UI N/A: produtor backend.
+
+RED91946:25pass/17fail (três Aria causais e14 de fixture, não contadas como feature). Fixture corrigida sem relaxar guardas; RED73553:14casos/nove falhas causais/cinco pass. Após revisão e reserva ROOT, schema/duas SQL aplicados pelo integrador: Prisma5.22/28331 saída0, validação FK/índice/legadaNULL2db2d4 saída0; snapshot novoE267fd6e,424tabelas/1.374registros/487migrations, originais preservados. Nenhum helper E1 após DDL.
+
+GREEN78268: quatro arquivos completos/62testes/173,05s/maxWorkers1/sem filtro ou skips, saída0. Unitário dirigido6/43, TSC65848 heap8192 e lint4/zero avisos também0. Banco liberado após GREEN; ROOT restaurou E2 em23337c saída0:424 hashes/1.374registros/487migrations e fixture3mensagens/1nota preservada. Report/evidências/SPEC registram contratos, hashes, negativos e limites. Nenhum global próprio ou preview; QA exata, global integrado e publicação pendentes, sem homologação presumida.
+
+
+## PR #392 — composição B2 com main
+
+Maincce incorporada: contratos E0 preservados literalmente da main; delta src/scripts restrito aos14caminhos próprios307/B2, manifest/lock/eslint iguais68974544. Quadro com2conflitos preserva amboslados, c412b6 saída0; specs/relatórios anteriores conservammain. Recortecompostob21319 saída0/2arquivos20testes+syntaxCLI/preflightreal/diffcheck. Global/TSC/lint/integração compostos e TESTER ainda pendentes. Merge-tree280 tem só conflito textual de linhaBabel necessária ao protótipo, não divergência Playwright; preservar Babel na resolução futura, ver relatórioB2. Não declarar merge-treeclean nem reatribuir globalisolado à composição.
+
+## PR #392 — gates finais da composição c7
+
+Fontec7bae481 congelada: global65804/c1315c saída0,849arquivos6651testes236,80s,maxWorkers2,semfiltro/skipsnovos;typegen/TSC26045 saída0;lint60950 saída0/0erros40avisos;integração47303 saída0/1arquivo5testes33,36s,ci-integracaoexclusivo. d8674c saída0 confirmafonteimutável;20dirigidosanteriorescompostos0. Chrome12b89d pertenceaoisolado689,helpers/CLIiguaisc7,semrecapturaERP. RegistroapósfonteapenasMD;TESTERindependente/CIremota/mainmergeaindapendentes. RelatórioB2distinguegatesisolados/compostos/resíduoBabel280;nenhumaguardahumanaB2restanteapósautorizaçãoexplícita.
