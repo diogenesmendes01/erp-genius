@@ -5871,3 +5871,7 @@ Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar pu
 ## PR #400 — QA composta e integração complementar
 
 QA cb897/e704 favorável estática, hashd54649b2..., preservada tester-composicao-cb.md; QA predecessora39870ec/hashf669 também versionada. Fontecb preservada após332f3cb1, apenasMD/ancestralidade397. Integração complementar NOMINALa5ece399:preferencias+motor/presenca20casos, junto10crm/tags,3/30sessão81795/9f1ea7terminal0,perfilciint exclusivo; arquivosINT epreferencias400 byteiguais àfonteexecutada. SemtesteDBconcorrente,envio,migraçãoouclusterchange. CI400final/398main ainda gates, não fechar313antecipadamente.
+
+## PR #398 integrada; PR400 pronta para CI final
+
+#398 squash34c63fb456ffdd786e54635b14cc507decc9e812, CI40014397587success5/5 eQAfinal70ecfavorável, issue314CLOSEDconfirmada. Squashtreeigual70ec; incorporação à400mantém INDEXINTEIROigual317be3b2 apósseisconflitos deancestralidade. Fontecb897eQA400d546preservadas; somenteMDapósúltimosgates. CI400main2TZaindapendente, semanteciparfechamento313.
