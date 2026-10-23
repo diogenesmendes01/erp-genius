@@ -102,8 +102,59 @@ describe("executor: ações no CRM", () => {
   it("tarefa_com_origem_aria", async () => {
     await exec({ acao: "CRIAR_TAREFA", titulo: "Ligar", venceEmISO: amanha(), justificativa: "x" });
     expect(await prisma.tarefa.findFirstOrThrow({ orderBy: { criadoEm: "desc" } })).toMatchObject({
-      origem: "IA", responsavelId: c.op.vendedorDonoId, leadId: c.op.id, titulo: "Ligar", criadorId: null,
+      origem: "IA", responsavelId: c.op.vendedorDonoId, leadId: c.op.id, titulo: "Ligar", criadorId: null, atendimentoId: c.at.id,
     });
+  });
+
+  it("tarefa da Aria usa o atendimento do turno também no evento, sem confiar em campo da proposta", async () => {
+    const proposta = { acao: "CRIAR_TAREFA" as const, titulo: "Vínculo confiável322", venceEmISO: amanha(), justificativa: "x", atendimentoId: "322-id-alheio-na-proposta" };
+    const acao = await exec(proposta);
+    expect(acao.status).toBe("EXECUTADA");
+    const tarefa = await prisma.tarefa.findFirstOrThrow({ where: { titulo: proposta.titulo } });
+    expect(tarefa).toMatchObject({ atendimentoId: c.at.id, origem: "IA", criadorId: null });
+    const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "TarefaCriada", agregadoTipo: "Tarefa", agregadoId: tarefa.id } });
+    expect(evento.payload).toMatchObject({ atendimentoId: c.at.id, ator: "ARIA", acaoAgenteIAId: acao.id });
+  });
+
+  it("tarefa sem oportunidade conserva o atendimento e responsável nulo", async () => {
+    const conversa = await prisma.conversaWhatsApp.findUniqueOrThrow({ where: { id: c.at.conversaId } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5500000000399" } });
+    const at = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: conversa.numeroId, contatoId: contato.id, finalidade: "COMERCIAL" }));
+    const ancora = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: at.id, conversaId: at.conversaId,
+      numeroId: conversa.numeroId, direcao: "ENTRADA", corpo: "Entrada fictícia322", driver: "MOTOR", status: "ENTREGUE", providerMessageId: "322-ancora-sem-lead" } });
+    const turno = await prisma.turnoAgenteIA.create({ data: { ancoraMensagemId: ancora.id, atendimentoId: at.id, tipo: "ATENDIMENTO", resultado: "EM_ANDAMENTO" } });
+    const acao = await prisma.$transaction(async (tx) => {
+      const ctx = await montarContextoTurno(at.id, tx);
+      expect(ctx.oportunidade).toBeNull();
+      return executarAcaoCrm(tx, { turnoId: turno.id, ctx,
+        proposta: { acao: "CRIAR_TAREFA", titulo: "Sem oportunidade322", venceEmISO: amanha(), justificativa: "x" },
+        destino: "EXECUTAR", modo: "EXECUTA", simulado: false, confianca: 90 });
+    });
+    expect(acao.status).toBe("EXECUTADA");
+    expect(await prisma.tarefa.findFirstOrThrow({ where: { titulo: "Sem oportunidade322" } }))
+      .toMatchObject({ atendimentoId: at.id, leadId: null, pessoaId: null, responsavelId: null, origem: "IA" });
+  });
+
+  it.each(["SUGERIR", "SHADOW", "NEGAR"] as const)("tarefa %s não persiste tarefa nem evento efetivo", async (modo) => {
+    const proposta = { acao: "CRIAR_TAREFA" as const, titulo: "Não aplicar322", venceEmISO: amanha(), justificativa: "x" };
+    const resultado = await exec(proposta, modo === "SHADOW" ? "EXECUTAR" : modo, { simulado: modo === "SHADOW" });
+    expect(resultado.status).toBe(modo === "SUGERIR" ? "SUGERIDA" : modo === "SHADOW" ? "SIMULADA" : "BLOQUEADA");
+    expect(await prisma.tarefa.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: "TarefaCriada" } })).toBe(0);
+  });
+
+  it("rollback da tarefa da Aria não deixa tarefa, evento nem ação", async () => {
+    const antes = await prisma.acaoAgenteIA.count();
+    await expect(prisma.$transaction(async (tx) => {
+      const ctx = await montarContextoTurno(c.at.id, tx);
+      await executarAcaoCrm(tx, { turnoId: c.turno.id, ctx,
+        proposta: { acao: "CRIAR_TAREFA", titulo: "Reverter322", venceEmISO: amanha(), justificativa: "x" },
+        destino: "EXECUTAR", modo: "EXECUTA", simulado: false, confianca: 90 });
+      throw new Error("322-rollback-controlado");
+    })).rejects.toThrow("322-rollback-controlado");
+    expect(await prisma.tarefa.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: "TarefaCriada" } })).toBe(0);
+    expect(await prisma.acaoAgenteIA.count()).toBe(antes);
   });
 
   it("nota_interna_vira_evento_sem_mensagem", async () => {
