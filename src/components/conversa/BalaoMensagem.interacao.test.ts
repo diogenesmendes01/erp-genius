@@ -9,7 +9,7 @@ import type { BalaoMensagem as Balao } from "./BalaoMensagem";
 vi.mock("@tabler/icons-react", async (original) => {
   const real = await original<typeof import("@tabler/icons-react")>();
   const icone = () => createElement("span", { "aria-hidden": true });
-  return { ...real, IconAlertCircle: icone, IconCheck: icone, IconChecks: icone, IconChevronDown: icone, IconClock: icone, IconStar: icone };
+  return { ...real, IconAlertCircle: icone, IconCheck: icone, IconChecks: icone, IconChevronDown: icone, IconClock: icone, IconStar: icone, IconUser: icone, IconSparkles: icone, IconLock: icone };
 });
 
 type Ouvinte = { tipo: string; f: (e: Event) => void; captura: boolean };
