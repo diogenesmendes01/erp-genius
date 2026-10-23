@@ -136,3 +136,12 @@ describe("balões por autoria e sequência", () => {
   });
   it("mensagem sem comandos também não oferece gatilho sem ação",()=>{expect(visual({},{comandos:[]})).not.toContain("Opções da mensagem");});
 });
+
+
+it.each(["", " \t\n "])("C4 PR398: nota com autor vazio/branco %j informa autoria ausente", autorNome => {
+  const n = { id: "sem-autor", nota: "Nota de equipe", autorNome, criadoEm: "2026-10-17T15:30:00Z", origem: "atendimento" as const };
+  const h = visual(notaComoMensagem(n), { autor: "nota", nota: n });
+  expect(h).toContain(">Autor não informado</span>");
+  expect(h).toContain("Nota interna · só equipe");
+  expect(h).not.toContain("Opções da mensagem");
+});
