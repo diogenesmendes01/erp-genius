@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
-import { IconArrowLeft, IconLayoutSidebarRight } from "@tabler/icons-react";
+import { IconArrowLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
 import { Avatar } from "@/components/Avatar";
 import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
-import { itensDaThread } from "@/components/conversa/itens-thread";
-import { NotaNaThread } from "@/components/conversa/NotaNaThread";
+import { itensDaThread, decorarThread, autorDoItem, notaComoMensagem } from "@/components/conversa/itens-thread";
+import { useAgoraDaThread } from "@/components/conversa/agora-thread";
+import { EventoSistema } from "@/components/conversa/EventoSistema";
+import { SeparadorDia } from "@/components/conversa/SeparadorDia";
 import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
@@ -29,6 +31,8 @@ export interface PropsConversaAberta {
   item: ItemListaInbox | null;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
+  /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
+  agoraInicial?: number;
   conversa: ConversaHook;
   /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); null enquanto carrega. */
   podeEnviar: boolean | null;
@@ -87,8 +91,9 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAlternarPainel, painelAberto, aoMudar }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAlternarPainel, painelAberto, aoMudar, agoraInicial }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
+  const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
   useEffect(() => {
@@ -97,7 +102,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     void origemVisivelDaTransferencia(origemId).then((o) => { if (ativo) setOrigem({ de: origemId, setor: o?.setor ?? null }); }).catch(() => undefined);
     return () => { ativo = false; };
   }, [origemId]);
-  const transferido = origemId && origem.de === origemId ? textoOrigem(origem.setor) : null;
+  const transferidoDe = origemId && origem.de === origemId && origem.setor ? rotular(SETOR_ATENDIMENTO_LABEL, origem.setor) : null;
   // A origem (atendimento e número) fica guardada no clique: o encaminhar não muda de conversa se a seleção mudar.
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread; atendimentoId: string; numeroId: string } | null>(null);
   const [respostas, setRespostas] = useState<{ id: string; atalho: string; titulo: string; corpo: string }[]>([]);
@@ -124,7 +129,6 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
                 <span>{item.numeroRotulo}</span>
                 {!item.grupo && <span>{rotular(STATUS_ATENDIMENTO_LABEL, item.status)}</span>}
                 {!item.grupo && <span>{item.responsavelNome ? `Responsável: ${item.responsavelNome}` : "Sem responsável"}</span>}
-                {transferido && <span>{transferido}</span>}
               </p>
             )}
           </div>
@@ -146,20 +150,23 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           />
         )}
       </header>
-      <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
         {(triagem || revisoes) && <div className="mb-3"><PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} /></div>}
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList
-          items={itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes)}
+          items={decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes), { fuso, agora: new Date(agora), transferidoDe })}
           getKey={(i) => i.id}
+          isItemFocusable={(i) => i.tipo === "mensagem"}
           estimatedHeight={72}
           scrollRef={rolagem}
           renderItem={(i) => {
-            if (i.tipo === "nota") return <NotaNaThread n={i.n} fuso={fuso} />;
+            if (i.tipo === "dia") return <SeparadorDia rotulo={i.rotulo} />;
+            if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
+            if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
             const m = i.m;
             return (
-              <BalaoMensagem m={m} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
+              <BalaoMensagem m={m} autor={autorDoItem(i)} emSequencia={i.emSequencia} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
                 aoComando={(c) => {
                   if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo);
                   else if ((c === "reagir" || c === "encaminhar" || c === "editar" || c === "apagar") && item) setAcaoMensagem({ acao: c, m, atendimentoId: item.id, numeroId: item.numeroId });

@@ -154,3 +154,10 @@ describe("InboxPage", () => {
     expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ c: "y" }) }))).toContain("itens:p1|");
   });
 });
+
+it("encaminha instante epoch único da renderização de servidor para hidratação estável",async()=>{
+ vi.useFakeTimers();vi.setSystemTime(new Date("2026-03-29T23:30:00.000Z"));
+ try { mocks.sessao.mockResolvedValue({id:"u",papeis:["FINANCEIRO"]});mocks.admin.mockReturnValue(false);mocks.preferencia.mockResolvedValue({ok:false});mocks.triagem.mockResolvedValue([]);mocks.pagina.mockResolvedValue({itens:[],proximo:null});mocks.opcoes.mockResolvedValue({destinos:[],numeros:[]});mocks.filtro.mockResolvedValue({setores:[],numeros:[]});sino.listar.mockResolvedValue([]);sino.fuso.mockResolvedValue("UTC");
+  const h=renderToStaticMarkup(await Page({searchParams:Promise.resolve({})}));expect(h).toContain(`agora:${Date.parse("2026-03-29T23:30:00.000Z")}`);
+ } finally {vi.useRealTimers();}
+});
