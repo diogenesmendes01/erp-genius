@@ -66,9 +66,9 @@ describe("painel lateral por setor", () => {
     const vendedorParticipante = await criarUsuario([Papel.VENDEDOR]);
     await participar(aFin.id, vendedorParticipante, fin);
     const painel = await carregarPainel(sess(fin), aFin.id);
-    expect(painel).toMatchObject({ setor: "FINANCEIRO", matriculaCodigo: base.matricula.codigo });
+    expect(painel).toMatchObject({ setor: "FINANCEIRO", matriculaCodigo: base.matricula.codigo, matriculaId: base.matricula.id });
     expect((painel as { cobrancas: { id: string }[] }).cobrancas.map((c) => c.id)).toEqual([base.cobranca.id]);
-    expect(await carregarPainel(sess(vendedorParticipante), aFin.id)).toMatchObject({ setor: "FINANCEIRO", matriculaCodigo: null, cobrancas: [] });
+    expect(await carregarPainel(sess(vendedorParticipante), aFin.id)).toMatchObject({ setor: "FINANCEIRO", matriculaCodigo: null, matriculaId: null, cobrancas: [] });
     expect(await carregarPainel(sess(await criarUsuario([Papel.VENDEDOR])), aFin.id)).toBeNull();
   });
 
@@ -79,13 +79,13 @@ describe("painel lateral por setor", () => {
     const m = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-S" } });
     const n = await numero("COBRANCA");
     const a = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: m.id, responsavelId: sec.id });
-    expect(await carregarPainel(sess(sec), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] }, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
+    expect(await carregarPainel(sess(sec), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "SECRETARIA", matriculaCodigo: "MAT-S", matriculaId: m.id, documentosPendentes: 2, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] }, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "c", url: "u" } });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "COMPROVANTE", nome: "x", url: "u", arquivado: true } });
     expect(await carregarPainel(sess(sec), a.id)).toMatchObject({ documentosPendentes: 1 });
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, sec);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] }, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null, documentosPendentes: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] }, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
   });
 
   it("professor no pedagógico vê turma e frequência; sem telefone", async () => {
@@ -223,4 +223,28 @@ describe("tags do painel318", () => {
     await prisma.participanteAtendimentoWhatsApp.updateMany({ where: { atendimentoId: a.id, usuarioId: convidado.id }, data: { revogadoEm: new Date() } });
     expect(await carregarPainel(sess(convidado), a.id)).toBeNull();
   });
+});
+
+
+it("335: id de matrícula segue os gates atuais do código, nunca a mera participação no atendimento", async () => {
+  const cat = await seedCatalogoMinimo();
+  const admin = await criarUsuario([Papel.ADMINISTRADOR]), sec = await criarUsuario([Papel.SECRETARIA_ACADEMICA]), fin = await criarUsuario([Papel.FINANCEIRO]);
+  const vendedor = await criarUsuario([Papel.VENDEDOR]), professor = await criarUsuario([Papel.PROFESSOR]), fora = await criarUsuario([Papel.VENDEDOR]);
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno fictício335", paisId: cat.pais.id } });
+  const m = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-335" } });
+  const n = await numero("COBRANCA");
+  const aFin = await atendimento(n.id, (await contato({ alunoId: aluno.id })).id, { finalidade: "FINANCEIRO", alunoId: aluno.id, matriculaId: m.id, responsavelId: fin.id });
+  const aSec = await atendimento(n.id, (await contato({ alunoId: aluno.id })).id, { finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: m.id, responsavelId: sec.id });
+  await participar(aFin.id, sec, admin); await participar(aSec.id, fin, admin);
+  for (const a of [aFin, aSec]) for (const u of [vendedor, professor]) await participar(a.id, u, admin);
+  for (const u of [admin, sec, fin]) expect(await carregarPainel(sess(u), aFin.id)).toMatchObject({ setor: "FINANCEIRO", matriculaCodigo: "MAT-335", matriculaId: m.id });
+  for (const u of [admin, sec]) expect(await carregarPainel(sess(u), aSec.id)).toMatchObject({ setor: "SECRETARIA", matriculaCodigo: "MAT-335", matriculaId: m.id });
+  for (const u of [vendedor, professor]) {
+    expect(await carregarPainel(sess(u), aFin.id)).toMatchObject({ setor: "FINANCEIRO", matriculaCodigo: null, matriculaId: null, cobrancas: [] });
+    expect(await carregarPainel(sess(u), aSec.id)).toMatchObject({ setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null, documentosPendentes: null });
+  }
+  expect(await carregarPainel(sess(fin), aSec.id)).toMatchObject({ setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null, documentosPendentes: null });
+  for (const a of [aFin, aSec]) expect(await carregarPainel(sess(fora), a.id)).toBeNull();
+  const sem = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", responsavelId: sec.id });
+  expect(await carregarPainel(sess(sec), sem.id)).toMatchObject({ setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null });
 });

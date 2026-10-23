@@ -278,7 +278,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             </dl>
             {op.pessoaId && (
               <p className="text-sm">
-                <Link className="text-brand-700 underline" href={`/contatos/${op.pessoaId}`}>Abrir contato</Link>
+                <Link className="text-brand-700 underline" href={`/contatos?c=${encodeURIComponent(op.pessoaId)}`}>Abrir contato</Link>
               </p>
             )}
             <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />

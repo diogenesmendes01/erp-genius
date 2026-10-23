@@ -2,6 +2,12 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox E2.15 — atalhos de saída (#335) — checkpoint de código 23/10/2026
+
+DEV A em codex/inbox-e2-335 sobre8e local (não publicar agregado). hrefConversa encoder relativo puro; matriculaId nosDTOsFIN/SEC sob mesmos gates do código, semconsulta/ACLnova; código vira link com rótulo real e AbrircontatoFunil usa /contatos?c=. Preserva324/323/leitura/SSE/Compositor/Sino337; CLI exclusivoB337.
+
+RED0d2a8e3links/rota +INT73676/bb5d73 campoausente não-vazio; GREENNode22:65arquivos/653unit sessão45159/9a719c0, INT3arquivos/32 sessão1473/fa02660, TSC16563/57e776heap81920, lint9fontes818ebcmax0. BancoA liberado paraROOTrestaurar, sem presumir resultado. SPECdocs/specs/inbox-atalhos-saida.md/reportoutput/inbox-335-report.md; fixture/visual app-only painel-secretaria, handoffCLI, QA/global integrado/publicação/CI pendentes. Ordem335→336→325; não concluir325 sem Falarcom autorizado. Seminstall/schema/Prisma/preview/push.
+
 ## Inbox E2.4 — tags e contato sem nome (#324) — checkpoint 23/10/2026
 
 DEV A em codex/inbox-e2-324 sobre agregado local272a; código e prova visual DEV entregues para revisão, SEM homologação final/QA global/PR. Tags por ID e D20, catálogo8 somente visual, capacidades CRM atuais, actions com identidade/escopo na mesma transação, locks nome→vínculo, revalidação pós-lock, Evento/aviso somente em mutação/commit. UI slots aditivos, formulário CAS bruto sem promessa Aria, input indisponível durante salvar; controles324 retirados em snapshot404 sem apagar leitura. Nenhum hook leitura/SSE/R6/Compositor/Rodape/Sino alterado.
