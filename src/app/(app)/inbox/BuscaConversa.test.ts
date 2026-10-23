@@ -9,3 +9,13 @@ it("Enter/ShiftEnter/Escape e composição não conflitam",()=>{const props=p(),
 it("zero resultados desabilita navegação e informa Nenhuma",()=>{const html=renderToStaticMarkup(createElement(BuscaConversa,{...p(),total:0,posicao:0}));expect(html).toContain("Nenhuma");expect(html.match(/disabled=""/g)?.length).toBeGreaterThanOrEqual(2);});
 
 it("Escape também fecha a barra quando foco está em um controle de navegação",()=>{const props=p(),tree=BuscaConversa(props);const outer=elementos(tree)[0];const e={key:'Escape',defaultPrevented:false,nativeEvent:{isComposing:false},preventDefault:vi.fn(),stopPropagation:vi.fn()};(outer.props.onKeyDown as (e:unknown)=>void)(e);expect(props.aoFechar).toHaveBeenCalledOnce();expect(e.stopPropagation).toHaveBeenCalledOnce();});
+
+it("C4: campo controlado mantém ref de foco e comunica a edição ao dono da busca", () => {
+  const campoRef = { current: null };
+  const props = { ...p(), campoRef };
+  const input = elementos(BuscaConversa(props)).find(e => e.type === "input")!;
+  expect("ref" in input ? input.ref : undefined).toBe(campoRef);
+  expect(input.props.value).toBe("matri");
+  (input.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: "matrícula" } });
+  expect(props.aoMudar).toHaveBeenCalledExactlyOnceWith("matrícula");
+});
