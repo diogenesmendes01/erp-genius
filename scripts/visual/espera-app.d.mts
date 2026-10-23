@@ -13,3 +13,6 @@ export function semanticaPainelDetalhesPronto(): boolean;
 
 export function abrirMenuConversaApp(pagina: Page, tamanho: string): Promise<void>;
 export function semanticaMenuConversaPronto(): boolean;
+
+export function abrirBuscaConversaApp(pagina: Page, tamanho: string): Promise<void>;
+export function semanticaBuscaConversaPronta(): boolean;

@@ -1,0 +1,175 @@
+{
+  "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+  "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "politica": "GET UI antes= retida somente no browser para controlar await; foco externo deliberado, sem refoco pelo probe após resposta.",
+  "resultados": [
+    {
+      "tema": "light",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "light-1440.png",
+        "sha256": "bade92d2564e8484577c98dc6d340284a17d8bfaef22742da7afe2debf9d1fc5"
+      }
+    },
+    {
+      "tema": "light",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "light-1024.png",
+        "sha256": "5a97aad8038950dc918df4bdb2b2bf1d2a1c454cc5dd3b488fdf2f9de959b0a5"
+      }
+    },
+    {
+      "tema": "light",
+      "width": 390,
+      "height": 500,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "light-390.png",
+        "sha256": "fb8037dce25acdd866d913a31bb7ebb11e8e7a71231797de718dd7b153dda57b"
+      }
+    },
+    {
+      "tema": "light",
+      "width": 320,
+      "height": 500,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "light-320.png",
+        "sha256": "a1f0941f9a6a6ac6c3144e6e6d6b2bc57a819aa78c979c513dc6608ae8713907"
+      }
+    },
+    {
+      "tema": "dark",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "dark-1440.png",
+        "sha256": "6f38ce0f3841cc4aa5d1dc9187df11ce09410825aaed70e952e5b612946698e8"
+      }
+    },
+    {
+      "tema": "dark",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "dark-1024.png",
+        "sha256": "ee8fc473fe34c8e4e7792e709ed40d42f8161333741db896dec66ea3c681bc7d"
+      }
+    },
+    {
+      "tema": "dark",
+      "width": 390,
+      "height": 500,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "dark-390.png",
+        "sha256": "a6ec5075861e64d5912305fa609d9b000c9cb2b9d1f365bc8390f318f7b4c140"
+      }
+    },
+    {
+      "tema": "dark",
+      "width": 320,
+      "height": 500,
+      "falhas": [],
+      "erros": [],
+      "externos": [],
+      "focoAntesDaResposta": true,
+      "focoForaDuranteAwait": true,
+      "focoForaAposResposta": true,
+      "documentY": 0,
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "imagem": {
+        "arquivo": "dark-320.png",
+        "sha256": "0417781946388b53c19120d05dde6b06fd7807bfc52ef7a29e25d40861f469d7"
+      }
+    }
+  ]
+}

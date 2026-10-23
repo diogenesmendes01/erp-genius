@@ -19,6 +19,11 @@ export async function esperarHidratacaoApp(pagina) {
 
 /** Espera o conteúdo identificável da fixture, não somente o contêiner inicial da tela. */
 export async function esperarConteudoApp(pagina, estado, tamanho) {
+  if (estado === "busca-conversa") {
+    await pagina.locator('input[aria-label="Buscar na conversa"]').waitFor({ state: "visible" });
+    await pagina.waitForFunction(semanticaBuscaConversaPronta);
+    return;
+  }
   if (estado === "menu-mais") {
     await pagina.getByRole("menu", { name: "Mais ações da conversa", exact: true }).waitFor({ state: "visible" });
     await pagina.waitForFunction(semanticaMenuConversaPronto);
@@ -147,6 +152,27 @@ export function semanticaMenuConversaPronto() {
   const itens = [...menu.querySelectorAll('[role="menuitem"]')];
   const busca = itens.find(i => i.textContent.includes('Buscar na conversa'));
   const bloqueio = itens.find(i => i.textContent.includes('Bloquear contato'));
-  return itens.length >= 4 && !!busca?.disabled && busca.textContent.includes('Em breve') && !!bloqueio?.disabled
+  return itens.length >= 4 && !!busca && !busca.disabled && !busca.textContent.includes('Em breve') && !!bloqueio?.disabled
     && bloqueio.textContent.includes('Disponível quando o motor próprio da escola entrar em uso.');
+}
+
+/** #316: somente UI local, sem consulta extra ou ação de negócio. */
+export async function abrirBuscaConversaApp(pagina, tamanho) {
+ await esperarConteudoApp(pagina, "humano-compositor", tamanho);
+ await esperarHidratacaoApp(pagina);
+ const botao = pagina.getByRole("button", {name:"Buscar na conversa",exact:true});
+ if (await botao.isVisible()) await botao.click();
+ else { await pagina.getByRole("button", {name:"Mais ações da conversa",exact:true}).click(); await pagina.getByRole("menuitem", {name:"Buscar na conversa",exact:true}).click(); }
+ await pagina.locator('input[aria-label="Buscar na conversa"]').fill("matricular");
+}
+/** Callback DOM autocontido: exige destaque/foco reais e header preservado, não só a barra montada. */
+export function semanticaBuscaConversaPronta() {
+ const regiao = document.querySelector('section[aria-label="Conversa"]');
+ if (!regiao) return false;
+ const header = regiao.querySelector("header"), campo = regiao.querySelector('input[aria-label="Buscar na conversa"]');
+ if (!header || !campo || Math.abs(header.getBoundingClientRect().height - 68) > .5 || campo.value !== "matricular" || document.activeElement !== campo) return false;
+ const r = campo.getBoundingClientRect(), area = regiao.getBoundingClientRect();
+ return r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= window.innerWidth + 1 && r.top >= -1 && r.bottom <= window.innerHeight + 1
+  && area.left >= -1 && area.right <= window.innerWidth + 1 && /[1-9]\d* de [1-9]\d*/.test(regiao.querySelector('[role="status"]')?.textContent ?? "")
+  && !!regiao.querySelector('[data-mensagem-id] .ring-amber-600');
 }

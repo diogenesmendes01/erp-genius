@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { abrirMenuConversaApp, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { abrirBuscaConversaApp, abrirMenuConversaApp, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -62,13 +62,14 @@ async function prepararRede(contexto, alvo, base, falhas) {
 
 async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com", process.env.INBOX_VISUAL_SENHA ?? "genius123");
-  const id = estado === "humano-compositor" ? ids.beatriz : ids.mariana;
+  const id = ["humano-compositor", "busca-conversa"].includes(estado) ? ids.beatriz : ids.mariana;
   const popoverColuna = ["filtros", "seletor-numero", "nova-conversa"].includes(estado);
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista" || popoverColuna;
   const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
   await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (popoverColuna) await abrirPopoverColunaApp(pagina, estado, tamanho);
   if (estado === "menu-mais") await abrirMenuConversaApp(pagina, tamanho);
+  if (estado === "busca-conversa") await abrirBuscaConversaApp(pagina, tamanho);
   if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -190,7 +191,7 @@ async function main() {
           if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }
-        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
+        capturas.push({ ...tarefa, ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
         process.stdout.write(`${nome}: ${falhas.length ? `FALHAS ${falhas.length}` : "OK"}\n`);
       } finally { await contexto.close(); }
     }

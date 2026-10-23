@@ -1,0 +1,855 @@
+{
+  "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+  "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "fixture": {
+    "ids": [
+      "inbox-316-busca-msg-000",
+      "inbox-316-busca-msg-149"
+    ],
+    "termo": "busca 316",
+    "totalVisual": 165,
+    "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+  },
+  "resultados": [
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "light",
+      "width": 1440,
+      "height": 900,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 14,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 63,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 843,
+          "height": 718
+        },
+        "row": {
+          "top": 486.25,
+          "bottom": 558.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 11362,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 843,
+          "height": 718
+        },
+        "row": {
+          "top": 447.890625,
+          "bottom": 519.703125,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 4,
+        "depois": 4
+      },
+      "imagens": [
+        {
+          "arquivo": "light-1440-janela-parcial.png",
+          "sha256": "50971d3a00c6f3c9ed505f916005b7d196d3ed1ab7296be23cb93a8c21ffac14",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-primeiro-pin.png",
+          "sha256": "1b0ee5d8d076f0a57aa53bad816f7d4613433da4fc19e30e7cc517da9d19dcb9",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-segundo-pin.png",
+          "sha256": "a3d30060475a350dc935216706ffd02436732b1c20a402001d009e39141ed741",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "light",
+      "width": 1024,
+      "height": 768,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 12,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 129,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 711,
+          "height": 586
+        },
+        "row": {
+          "top": 420.25,
+          "bottom": 492.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 11408,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 711,
+          "height": 586
+        },
+        "row": {
+          "top": 381.96875,
+          "bottom": 453.78125,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "light-1024-janela-parcial.png",
+          "sha256": "ca00f7df7db1e1aa6b7a84247479b882c1d3a0d27ca06a973bd44294e89b9a5c",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1024-primeiro-pin.png",
+          "sha256": "31e7cbae1b3b127b4bdcc3044e5b188b1eb2a008878d47c5fa1fc9f32ac8b701",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1024-segundo-pin.png",
+          "sha256": "e7b1c3fc1f732355d2e3281fe1963cce5492f1188f6868edea593e974a78a783",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "light",
+      "width": 390,
+      "height": 500,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 8,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 317,
+        "documentY": 0,
+        "scroll": {
+          "top": 182,
+          "bottom": 443,
+          "height": 261
+        },
+        "row": {
+          "top": 283.25,
+          "bottom": 355.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 11972,
+        "documentY": 0,
+        "scroll": {
+          "top": 182,
+          "bottom": 443,
+          "height": 261
+        },
+        "row": {
+          "top": 276.59375,
+          "bottom": 348.40625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "light-390-janela-parcial.png",
+          "sha256": "83322fbe692a89619a91ee6477980b5ec6ec0634c3b4d11088c3f32fd76d6742",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-primeiro-pin.png",
+          "sha256": "775c0a6fd4e418435f6de465600bfbb6ea32c41ec69f7b1071c33d193055a9f9",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-segundo-pin.png",
+          "sha256": "0e39097c9a32daeb334cced04b9a7d32d3143b3b576af99a6e26020fd8b5fcee",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "light",
+      "width": 320,
+      "height": 500,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 6,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 342,
+        "documentY": 0,
+        "scroll": {
+          "top": 232,
+          "bottom": 443,
+          "height": 211
+        },
+        "row": {
+          "top": 308.25,
+          "bottom": 380.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 12353,
+        "documentY": 0,
+        "scroll": {
+          "top": 232,
+          "bottom": 443,
+          "height": 211
+        },
+        "row": {
+          "top": 291.765625,
+          "bottom": 383.875,
+          "height": 92.109375
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "light-320-janela-parcial.png",
+          "sha256": "0b82401292892b3f2083c99a992f212b2eabc9bcb0af3e7b32624587aefae977",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320-primeiro-pin.png",
+          "sha256": "a1fd99178fb9b3f1f2ef9b7164b9ef13f2cb74781d7627640df9973a6df8aca1",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320-segundo-pin.png",
+          "sha256": "0d5e6a9c652eeac3f7aa0be9cc036f0c5205432b10316715011cee1a4afeb918",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "dark",
+      "width": 1440,
+      "height": 900,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 14,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 63,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 843,
+          "height": 718
+        },
+        "row": {
+          "top": 486.25,
+          "bottom": 558.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 11362,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 843,
+          "height": 718
+        },
+        "row": {
+          "top": 447.890625,
+          "bottom": 519.703125,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-1440-janela-parcial.png",
+          "sha256": "12a038bc5550904772127fcca1f0a7316e84e954a84cd62ac4bd51cde3161834",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-primeiro-pin.png",
+          "sha256": "3f72b57b3bad8205d1d768ea5b65810f9bb80bae0bf7c3d72c69b53a8da0ccad",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-segundo-pin.png",
+          "sha256": "05edcb46305911ced64e02793711246b162c1ed186ff7cc13dd5defe50ef3569",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "dark",
+      "width": 1024,
+      "height": 768,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 12,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 129,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 711,
+          "height": 586
+        },
+        "row": {
+          "top": 420.25,
+          "bottom": 492.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 11408,
+        "documentY": 0,
+        "scroll": {
+          "top": 125,
+          "bottom": 711,
+          "height": 586
+        },
+        "row": {
+          "top": 381.96875,
+          "bottom": 453.78125,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-1024-janela-parcial.png",
+          "sha256": "4352fdeed49fbe2214a2d19036bd164cfca7356d57400f13271df892245bc455",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1024-primeiro-pin.png",
+          "sha256": "568d0f283bdcf5c2b9234ece08f79d5ef5dd55c80ee7ab69b6bb5ff001e395ed",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1024-segundo-pin.png",
+          "sha256": "5cc39deb71826fbb5dc679cd194421c4bfde78e09f090e322fe5b33ff1122272",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "dark",
+      "width": 390,
+      "height": 500,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 8,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 317,
+        "documentY": 0,
+        "scroll": {
+          "top": 182,
+          "bottom": 443,
+          "height": 261
+        },
+        "row": {
+          "top": 283.25,
+          "bottom": 355.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 11972,
+        "documentY": 0,
+        "scroll": {
+          "top": 182,
+          "bottom": 443,
+          "height": 261
+        },
+        "row": {
+          "top": 276.59375,
+          "bottom": 348.40625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-390-janela-parcial.png",
+          "sha256": "b4c69898fd7c3a808b3d4a5e047362c01d20c265c5ae26c7d688b62ff6e328cb",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-primeiro-pin.png",
+          "sha256": "27c5b57c1cda50d7e0ef7d6b7f4873c891213845ce08e8968e126352773d99c5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-segundo-pin.png",
+          "sha256": "a12a0150c56a1ca8716436c2e510e5f7f76d3043fc66725f5d1c5cda679a1aa0",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "47b8ac0d85c29e30a55137d59c53affd7e916ecc",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "fixture": {
+        "ids": [
+          "inbox-316-busca-msg-000",
+          "inbox-316-busca-msg-149"
+        ],
+        "termo": "busca 316",
+        "totalVisual": 165,
+        "execucaoRoot": "seedA2de864 EXIT0; preview81169 Ready47b; 159msg4notas2dias"
+      },
+      "tema": "dark",
+      "width": 320,
+      "height": 500,
+      "cliques": 2,
+      "focoAposCadaCarga": [
+        {
+          "clique": 1,
+          "focoNatural": true
+        },
+        {
+          "clique": 2,
+          "focoNatural": true
+        }
+      ],
+      "primeiroParcial": "inbox-316-busca-msg-149",
+      "aposPaginar": "inbox-316-busca-msg-149",
+      "baselineMontados": 6,
+      "alvoForaDOM": true,
+      "primeiro": {
+        "atual": "inbox-316-busca-msg-000",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 342,
+        "documentY": 0,
+        "scroll": {
+          "top": 232,
+          "bottom": 443,
+          "height": 211
+        },
+        "row": {
+          "top": 308.25,
+          "bottom": 380.0625,
+          "height": 71.8125
+        },
+        "header": 68,
+        "contador": "1 de 2"
+      },
+      "segundo": {
+        "atual": "inbox-316-busca-msg-149",
+        "virtualCount": 165,
+        "foco": true,
+        "scrollTop": 12353,
+        "documentY": 0,
+        "scroll": {
+          "top": 232,
+          "bottom": 443,
+          "height": 211
+        },
+        "row": {
+          "top": 291.765625,
+          "bottom": 383.875,
+          "height": 92.109375
+        },
+        "header": 68,
+        "contador": "2 de 2"
+      },
+      "consultas": {
+        "antes": 5,
+        "depois": 5
+      },
+      "imagens": [
+        {
+          "arquivo": "dark-320-janela-parcial.png",
+          "sha256": "b64aa64774a5ec4ab24417b1d431016d14cdb53699058cd8b4855fb3cce85157",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320-primeiro-pin.png",
+          "sha256": "d7facf9f232f5c4bf4840486b0dbf7c3284b95a717f3d67c5966eae5fc0ad35b",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320-segundo-pin.png",
+          "sha256": "cd944d28f3f0ebee073d3fc9bcfdc928576e236d27d4510595e2e321ca0889be",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}
