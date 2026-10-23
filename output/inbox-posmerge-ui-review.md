@@ -14,3 +14,10 @@ Review5620875398, reclassificação6353905866LOW. live/temcapacidade era só nom
 Próximos385/395 não entram neste primeiro commit. Sem novas capturas; imagens antigas não são QA deste semântico. Integrador fará composição/QA final.
 
 C2LOW384 incorporado como tabela Task6→nomes reais na SPEC, por autorização ROOT: capacidade completa, handler de cada item habilitado, semmotor, capacidades parciais e ausência na Nota. Não renomeou/reduziu testes. Diffcheck e allowlist conferidos antes do commit; QAexata/integrador posteriores.
+
+
+## Segundo commit — PR385 C3 (referências históricas)
+
+Review5621078861/C3, reclassificação6353905551LOW. Foram corrigidos somente os quatro caminhos nas linhas7/11 do parecer output/inbox-305-visual/qa/inbox-305-review.md: menu-mensagem-antes/depois e menu-mensagem-motor-antes/depois saem de inbox-capturas e apontam para inbox-305-visual. Test-Path e git ls-files confirmaram que todos os destinos são reais/rastreados antes da edição(d4dce3); validação repetida no próprio patch. OIDs dos manifestos, inalterados: antes1e054adba3162a9e1798fa3b2e61e57d966cf05b; depoisba9619eb93e4e9ac61d007d3a832b3fa9000014a; motorantesdc12ce86f5f7d841e6c2bb5203470ac11e096d60; motordepois30a70728bbabed9f57ea91d985684303e3b13565.
+
+Não edita a autoria, fontes/SHAs, números, limites ou conclusões históricas do TESTER e não reinspeciona fotos/ZIP. Apenas este parecer, relatório e quadro mudam; nenhum PNG/manifesto/harness/src/schema/deps. Diffcheck/identidade contra50a4 antesdo commit; não repetir TSC/unit/lint de produção por MD. Outros mapas/whitespace do lote seguem ROOT, não foram absorvidos nesta mudança.

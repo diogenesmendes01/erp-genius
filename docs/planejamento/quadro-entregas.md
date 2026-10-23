@@ -6531,3 +6531,8 @@ Fonte1dd4af91:b0c/dc726+4087e5;deltaEXATAMENTE12src323/OIDsb0c,INTnovoD13igualdc
 ## Follow-up pós-merge384 C2/C3 — descrições dos anexos
 
 SobreROOT4829, temCapacidade substitui variável ambígua;3botõesdisabled referenciam avisos reais por aria-describedby/useId incondicional, IDsúnicos entreinstâncias e estáveis na montagem. Sem mudar texto/label/disabled/capacidades/Aria/Assumir. RED19dbfc2falhas17anteriorespassaram→GREEN8cb0092/64; guardas/rodapé98408/6420b18/145;TSC22022/93e8f3,lint3fontesb2079f todos0Node22.23.2, sem-t/skipsnovos. Mocklocal usa g.useId jáexistente, helperscompartilhados intactos. SPEC317mapeiaTask6 aos nomes reais(C2), preservando testes. SemDB/browser/PNG/deps/push; fotos históricas não são QA desta semântica; QAexata/integrador pendentes. Relatório output/inbox-posmerge-ui-review.md. Próximos395/links385 emcommitsseparados.
+
+
+## Follow-up pós-merge385 C3 — referências verificadas dos manifestos
+
+Somente quatro paths no parecer histórico305 foram corrigidos de inbox-capturas para inbox-305-visual/menu-mensagem-{antes,depois,motor-antes,motor-depois}/manifesto.json. Destinos rastreados/reais conferidos d4dce3 e repetidos antespatch; hashes/SHAs/pareceres/imagens mantidos. Nenhuma novaQAvisual/upload/PNG/src/harness/deps. Relatório output/inbox-posmerge-ui-review.md contém os quatroOIDs. Identidade produtiva contra50a4 e diffcheck0; não atribuir novaexecução dos gates384 a estasMD. Demais documentos do inventário seguem ROOT.
