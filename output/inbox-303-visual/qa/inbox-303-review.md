@@ -1,0 +1,17 @@
+# #303 — revisão TESTER da trava de anexos
+
+SHA exato `79a905a2ffe4e34a905f174b416ed2982601d9a1`, base #302 `133b935ed71e20af4f9f517762131dc4ce98d8fd`. Código em `fe051d41d937c3f7a85b09479c034cb7f87b18a2`; o commit final `79a905a2` altera só quadro/relatório. `git diff --check` exit 0. Teste dirigido TESTER com Node **22.23.2**: `node.exe node_modules/vitest/vitest.mjs run src/components/conversa/Compositor.test.ts src/app/botoes.test.ts`, **2 arquivos/86 testes, exit 0**, sem filtro de nome/ignorados. Não rodei suíte global. O DEV reportou 8 arquivos/131 testes dirigidos e gates globais TSC, 841 arquivos/6.488 testes e lint global todos exit 0 no Node22, sem mudança de fonte após esses gates.
+
+**Parecer de código: favorável.** O diff de produção toca somente `Compositor.tsx`: Contato, Enquete e Localização recebem `disabled` incondicional, evitando botões habilitados sem `onClick`. Cada motivo depende individualmente da capacidade: `AVISO_RECURSO_MOTOR` se ausente, `AVISO_ANEXO_EM_BREVE` se o MOTOR a oferece mas o Inbox ainda não tem formulário. Documento, Fotos e vídeos e Áudio continuam habilitados e com `onClick` de `abrirSeletor`, que mantém seleção de arquivo; `escolherArquivo`, limites, legenda, gravação e envio não foram alterados. O menu não é renderizado no modo Nota. Os testes verificam capacidades vazias/completas/parciais, motivo por item, handler em cada `menuitem` habilitado, ausência do menu em Nota e a suíte existente de upload/Nota.
+
+## Aceite visual no aplicativo
+
+O integrador preparou número fictício MOTOR ativo/CONECTADO em banco descartável isolado, sem endpoint MOTOR ou transporte externo. No servidor local `localhost:3109` e runtime Node **22.23.2**, executei `node output/capturar-inbox-303.mjs depois http://localhost:3109`: sessão **56440**, **exit 0**. Artefatos em `output/inbox-capturas/anexos-depois/`: 12 PNGs (tela e recorte do menu em cada 1440×900, 1024×768 e 390×844, claro/escuro) e `manifesto.json` com SHA exato, driver, sessão, capacidade observável do menu, estado `disabled` e motivo de cada item; `pageerror=[]` nos seis contextos.
+
+Nos seis contextos, Contato/Enquete/Localização estão desabilitados com o novo aviso visível; Documento/Fotos e vídeos/Áudio continuam habilitados. Inspecionei os seis recortes do menu e as telas móveis: o aviso permanece legível e sem corte nos dois temas; os rótulos disabled são pálidos, mas identificáveis. Não cliquei nos anexos nem executei upload/envio. O integrador capturou separadamente a base `0c9a1519` no banco `integracao` para comparação antes/depois; não reivindico essa execução no TESTER. A presença de capacidade parcial/ausente e o motivo legado estão cobertos pelos testes dirigidos, não por esta fixture visual de MOTOR conectado.
+
+**Parecer final #303:** favorável para a trava, motivos por capacidade e apresentação do estado com MOTOR conectado. Esta revisão não mediu associação do motivo ao item por leitor de tela nem homologa transportes externos.
+
+## Rebase documental final
+
+O integrador rebaseou #303 sobre o fechamento publicado de #302; HEAD exato `cf5b077ba3b8b20a5e8e57e49cfafd1e2aeb5212`. Conferi o delta `79a905a2..cf5b077b`: somente quadro/relatório e 48 PNGs + manifestos de #302/parecer TESTER foram incorporados. `git diff --name-only ... -- src` vazio e `git diff --check` exit 0. A UI, o código e os testes de #303 são byte a byte os aprovados acima, de modo que os gates no SHA de código `fe051d41` permanecem aplicáveis. Nenhum servidor ou integração foi reexecutado por causa desse delta documental.
