@@ -18,9 +18,13 @@ Abrir uma conversa no Inbox não registra a leitura. O indicador pessoal usa `Pr
 - PR382/C1: o evento `visibilitychange` marca a conversa selecionada ao retornar à aba visível, somente se a região da thread estiver exibida e houver contagem positiva ou entrada recebida enquanto ela estava oculta. Uma conversa já lida não dispara outra ação por alternar abas. As entradas ocultas ficam identificadas por mensagem; somente o sucesso consome as observadas no início daquele pedido. Entradas posteriores permanecem pendentes. Em falha de leitura/GET, sua quantidade única preserva a contagem conhecida e permite nova tentativa no próximo retorno. O listener é removido ao desmontar.
 - PR382/C2: a ação composta invalida `/inbox` uma única vez. O sucesso compartilhado já invalida a rota; se a parte compartilhada falhar depois de gravar a preferência pessoal, a invalidação pessoal é mantida. A ação pessoal isolada continua invalidando uma vez. Falha de escopo não grava nem invalida.
 - Cada entrada oculta única acrescenta uma unidade à contagem já conhecida.
-  Enquanto existem entradas sem confirmação de leitura, um GET atrasado não
-  reduz esse mínimo. Na conclusão bem-sucedida, o contador passa a representar
-  somente as entradas posteriores ao início daquele pedido que ainda restam.
+  O início de cada GET captura a época dessas entradas. Uma resposta iniciada
+  antes de nova entrada não reduz o mínimo posterior; um GET iniciado depois
+  dos avisos, sem entrada posterior e sem leitura em voo, corrige a contagem
+  pelo snapshot fresco, respeitando o mínimo dos IDs sem confirmação. Isso
+  permite corrigir SSE atrasado de mensagem já incluída no snapshot. Na
+  conclusão bem-sucedida, o contador representa somente as entradas posteriores
+  ao início daquele pedido que ainda restam.
 - Pedidos simultâneos da mesma conversa são consolidados; se outro pedido chegar durante um envio em voo, uma única repetição ocorre ao terminar. Conversas distintas podem seguir em paralelo.
 - Fora do escopo, a ação devolve erro e não grava preferências nem altera contador. A confirmação ao WhatsApp exige recurso `confirmacaoLeitura`, disponível apenas com número ativo, driver compatível e sessão `CONECTADO`. Falha do motor não desfaz a leitura local.
 - A leitura pessoal é uma preferência operacional; esta correção não adiciona evento, migration, polling nem envio de mensagem ao contato.
