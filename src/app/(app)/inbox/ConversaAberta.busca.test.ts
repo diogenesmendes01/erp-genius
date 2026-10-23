@@ -72,3 +72,28 @@ it.each(['fechar','trocar','reabrir'])('resolver carga antiga após %s não toma
  }
  t.fora.focus();resolver();await pendente;expect(t.dom.documento.activeElement===t.fora).toBe(true);
 });
+
+
+it.each(["retry","anteriores"])("319:%s entrega foco à região real antes de carregar e não restaura após await",async(modo)=>{
+ const {texto}=await import("@/test/tela-sem-dom");const dom=criarDomMinimo();
+ const regiao=dom.documento.createElement("section"),scroll=dom.documento.createElement("div"),botao=dom.documento.createElement("button"),fora=dom.documento.createElement("button");regiao.setAttribute("aria-label","Conversa");regiao.setAttribute("tabindex","-1");regiao.appendChild(scroll);scroll.appendChild(botao);dom.documento.body.appendChild(regiao);dom.documento.body.appendChild(fora);
+ let resolver!:()=>void;const pendente=new Promise<void>(r=>{resolver=r;});let chamadas=0;
+ const carregar=()=>{chamadas++;expect(dom.documento.activeElement===regiao).toBe(true);return pendente;};
+ const p={...props,conversa:{...props.conversa,erro:modo==="retry"?"falha interna":"",carregando:false,carregandoAntigas:false,carregandoNovas:false,recarregar:carregar,maisAntigas:carregar}};
+ const arvore=tela(p),caixa=elementos(arvore).find(e=>e.type==="div"&&String(e.props.className).includes("overflow-y-auto"))!;
+ (caixa as unknown as {ref:{current:unknown}}).ref.current=scroll;
+ const controle=elementos(arvore).find(e=>typeof e.props.onClick==="function"&&texto(e.props.children)===(modo==="retry"?"Tentar de novo":"Mensagens anteriores"))!;
+ expect(controle).toBeDefined();botao.focus();(controle.props.onClick as ()=>void)();expect(chamadas).toBe(1);expect(dom.documento.activeElement===regiao).toBe(true);
+ scroll.removeChild(botao);fora.focus();resolver();await pendente;expect(dom.documento.activeElement===fora).toBe(true);
+});
+it("319:paginação/reload com busca mantém identidade virtual e mensagem pinada",()=>{
+ let t=tela();(elementos(t).find(e=>typeof e.type==="function"&&e.type.name==="CabecalhoControlado")!.props.aoBuscar as ()=>void)();t=tela();(elementos(t).find(e=>e.type===BuscaConversa)!.props.aoMudar as (s:string)=>void)("matricula");t=tela();const identidade=identidadeNoReact(t,VirtualList);
+ for(const espera of [{carregando:true},{carregandoAntigas:true},{erro:"ErroFonte500"}]){t=tela({...props,conversa:{...props.conversa,...espera}});expect(identidadeNoReact(t,VirtualList)).toEqual(identidade);expect(elementos(t).find(e=>e.type===VirtualList)!.props.pinKeys).toEqual(["id[149]"]);expect(elementos(t).find(e=>e.type===BuscaConversa)!.props.termo).toBe("matricula");}
+});
+
+it.each(["carregando","carregandoAntigas","carregandoNovas"])("319:%s não dispara retry nem anteriores repetidos",async(estado)=>{
+ const {texto}=await import("@/test/tela-sem-dom");let chamadas=0;const carregar=async()=>{chamadas++;};
+ const t=tela({...props,conversa:{...props.conversa,erro:"Falha anterior",[estado]:true,recarregar:carregar,maisAntigas:carregar}});
+ for(const rotulo of ["Mensagens anteriores","Tentar de novo"]){const b=elementos(t).find(e=>typeof e.props.onClick==="function"&&texto(e.props.children)===rotulo)!;expect(b.props.ocupado).toBe(true);(b.props.onClick as ()=>void)();}
+ expect(chamadas).toBe(0);
+});

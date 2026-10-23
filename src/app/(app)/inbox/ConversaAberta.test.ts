@@ -210,3 +210,22 @@ it("315 liga o cabeçalho68 real sem remontar a thread ou repetir a barra antiga
  expect(h).toContain("h-[68px]"); expect(h).toContain('aria-label="Mais ações da conversa"');
  expect(h).not.toContain('aria-label="Ações do atendimento"');
 });
+
+
+describe("319: estados públicos da thread",()=>{
+ it("carga inicial vazia anuncia mensagens; dados existentes não são substituídos",()=>{
+  const h=(conversa:ConversaHook)=>renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,conversa})));
+  expect(h({...conversaVazia,carregando:true})).toContain("Carregando mensagens");
+  const existente=h({...conversaVazia,carregando:true,mensagens:[msg]});expect(existente).toContain("Olá");expect(existente).not.toContain("Carregando mensagens");
+  const nota:NotaInternaThread={id:"n319",nota:"Nota preservada388",autorNome:"Ana",criadoEm:"2026-10-17T16:00:00.000Z",origem:"atendimento"};
+  const soNota=h({...conversaVazia,carregando:true,notas:[nota]});expect(soNota).toContain(nota.nota);expect(soNota).not.toContain("Carregando mensagens");
+ });
+ it("erro mostra aviso público e retry sem status técnico, URL ou corpo da falha",()=>{
+  const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,erro:"ErroFonte500 /api/segredo corpo interno",recarregar:async()=>{}}})));
+  expect(h).toContain('role="alert"');expect(h).toContain("Não foi possível carregar as mensagens.");expect(h).toContain("Tentar de novo");expect(h).not.toContain("ErroFonte");expect(h).not.toContain("/api/segredo");expect(h).not.toContain("corpo interno");
+ });
+ it("paginação ocupada mantém conteúdo e anuncia espera sem remontar como carga inicial",()=>{
+  const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens:[msg],carregandoAntigas:true,temMaisAntes:true}})));
+  expect(h).toContain("Olá");expect(h).not.toContain("Carregando mensagens");expect(h).toContain('aria-busy="true"');expect(h).toContain("Mensagens anteriores");
+ });
+});

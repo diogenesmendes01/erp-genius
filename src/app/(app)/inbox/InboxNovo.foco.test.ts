@@ -13,7 +13,7 @@ vi.mock("@/server/whatsapp/operacoes-atendimento",()=>({abrirAtendimentoInstituc
 vi.mock("@/server/whatsapp/acoes",()=>({registrarOptOutContato:vi.fn(),removerOptOutContato:vi.fn(),enviarTextoInbox:vi.fn(),enviarMidiaInbox:vi.fn()}));
 // Backend/thread não são objeto deste teste. Região real/Coluna/Popover/form/hook continuam reais.
 vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:({aoVoltar}:{aoVoltar():void})=>createElement("header",null,createElement("button",{"aria-label":"Voltar para a lista",onClick:aoVoltar},"Voltar"))};});
-vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react");const I=()=>createElement("span");return{IconPhone:I,IconChevronLeft:I,IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
+vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react");const I=()=>createElement("span");return{IconMessages:I,IconPhone:I,IconChevronLeft:I,IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
 let doc:Documento,container:Elemento,root:Root,InboxNovo:typeof Inbox;
 const ouvintes:{alvo:object;tipo:string;f:(e:Event)=>void;captura:boolean}[]=[];
 function eventos(alvo:object){return{addEventListener(tipo:string,f:(e:Event)=>void,captura=false){ouvintes.push({alvo,tipo,f,captura});},removeEventListener(tipo:string,f:(e:Event)=>void){const i=ouvintes.findIndex(o=>o.alvo===alvo&&o.tipo===tipo&&o.f===f);if(i>=0)ouvintes.splice(i,1);}};}

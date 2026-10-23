@@ -71,3 +71,16 @@ describe("Esqueleto", () => {
     expect(h).toContain('data-esqueleto="titulo"');
   });
 });
+
+
+describe("319: estados de carregamento do Inbox", () => {
+ it("a página ocupa a mesma casca responsiva sem altura mínima que excede tela baixa", () => {
+  const h=renderToStaticMarkup(createElement(EsqueletoConversas,{rotulo:"conversas"}));
+  for(const c of ["-m-4","md:-m-8","md:h-dvh","min-[960px]:w-[300px]","min-[1100px]:w-[372px]","min-[1400px]:flex","w-[348px]","h-[68px]","fundo-conversa","h-[132px]"])expect(h).toContain(c);
+  expect(h).not.toContain("min-[1200px]:");expect(h).not.toContain("min-h-[420px]");expect(titulos(h)).toBe(1);
+ });
+ it.each([["EsqueletoThread","mensagens"],["EsqueletoPainel","detalhes"]])("%s anuncia sem título duplicado ou contato fictício", (nome,rotulo) => {
+  const C=(Esqueletos as unknown as Record<string,(p:{rotulo:string})=>ReactNode>)[nome];expect(typeof C).toBe("function");
+  const h=renderToStaticMarkup(createElement(C,{rotulo}));expect(h).toContain('aria-busy="true"');expect(h).toContain('role="status"');expect(h).toContain("Carregando "+rotulo);expect(h).toContain('aria-hidden="true"');expect(titulos(h)).toBe(0);expect(h).not.toContain("h-[132px]");
+ });
+});

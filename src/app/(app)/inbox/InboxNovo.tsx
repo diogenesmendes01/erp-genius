@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { NovoAtendimento } from "./NovoAtendimento";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
-import { IconPhone } from "@tabler/icons-react";
+import { IconPhone, IconMessages } from "@tabler/icons-react";
 import { classesDoPainel, painelEfetivo, proximoEstadoPainel, useModoInbox } from "./painel-inbox";
 import { useConversa } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
@@ -24,6 +24,8 @@ import { ColunaConversas } from "./ColunaConversas";
 import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
 import { PainelAria } from "./PainelAria";
+import { Botao } from "@/components/Botao";
+import { EsqueletoPainel } from "@/components/Esqueleto";
 import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
@@ -408,8 +410,14 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">
       {atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
       <div className={secaoDetalhes}>{painelSetor?.id === atual.id
-        ? <PainelSetor painel={painelSetor.dado} />
-        : <p className="text-sm text-gray-600">Carregando detalhes…</p>}</div>
+        ? painelSetor.dado ? <PainelSetor painel={painelSetor.dado} /> : <div role="alert" className="space-y-2 text-sm text-red-700">
+          <p>Não foi possível carregar os detalhes.</p>
+          <Botao variante="secundario" tamanho="sm" onClick={(e) => {
+            e.currentTarget.closest<HTMLElement>('[id="painel-contato"]')?.focus({ preventScroll: true });
+            tentarPainelDeNovo();
+          }}>Tentar de novo</Botao>
+        </div>
+        : <EsqueletoPainel rotulo="detalhes" />}</div>
       {painelSetor?.id === atual.id && painelSetor.dado?.aria && <div className={secaoDetalhes}>
         <PainelAria key={`aria:${atual.id}`} atendimentoId={atual.id} aria={painelSetor.dado.aria} fuso={fuso} aoMudar={recarregarLista} />
       </div>}
@@ -436,11 +444,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
       <section ref={regiaoConversa} tabIndex={-1} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
         {!selecionado ? (
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
-            <div className="p-6 text-center text-gray-600">
-              <p className="font-medium">Escolha uma conversa</p>
-              <p className="text-sm">As mensagens aparecem aqui.</p>
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
+              <IconMessages size={40} className="shrink-0 text-gray-400" aria-hidden />
+              <p className="text-[15px] font-semibold text-gray-800">Escolha uma conversa</p>
+              <p className="text-[13px] text-gray-600">As mensagens aparecem aqui.</p>
             </div>
           </div>
         ) : (
