@@ -53,3 +53,13 @@ Guards OWN/cwdB e perfildev-gravacoes/bancohostlocalhost54329 exatos; IDsfixos p
 ## Probe de navegador previsto
 
 Abrir lista canônica e consumir prontidão do harness corrigido pelo integrador; escolher o número privado pelo select Número, sem requestmock de dados. Carregar páginas por Carregar mais50→100→150. Medir pelo menos duas alturas reais, wrapper virtual e janelaDOM limitada; rolar a lista, verificar contiguidade/ausência de sobreposição/âncora apósResizeObserver. Tab/Shift+Tab atravessam fronteira da janela com linha anterior focada preservada, Enter seleciona atendimento real, voltar para lista preserva seleção. Redimensionar300/372 e390 para forçar quebra/recalcularaltura, repetir foco e coletar screenshots/manifesto com falhas, alturas, offsets e fonte mono computada. Nenhuma extensão do motor antes de diagnóstico caso essa prova falhe.
+
+## Bug produtivo SSR encontrado na captura e correção
+
+Formal iniciado na fontec5c70bd184342e8aa56bcd5ddef55c9fcc23c946/preview3111S90638. Conversa4183exit0 produziu12PNGs, manifesto/hashes em output/inbox-312-visual/formal-conversa (inspeção inicial desktopescuro/tabletclaro). Celular-lista85883exit1 produziu4PNGs: uma falha pageerrorhydration servidor33min/cliente34min; negativo completo/hashes em negativo-celular-lista-85883. Nenhum PNG novo foi commitado conforme coordenação de externalização de binários.
+
+Esse negativo é BUG PRODUTIVO312 de snapshot do relógio, diferente da corrida caret308. Fonte produtiva não foi mudada durante a captura. Após preservar o negativo, ruling aprovou agoraInicial?:number compartilhado: captura únicaDate.now na page, forwardInboxNovo→Lista→hook, getServerSnapshot serializado; fallbackSSR0 determinístico. Cliente/subscribeDate.now atual e timer vivo mantidos.
+
+RED5ca4a1exit1: markup29→30,1falha/12filtrados. REDhidratação inicialaa71be expôs limitação de NamedNodeMap do DOMmínimo, suprida só na folhaSSR sem atributos; REDreal7aacbb exit1 demonstra texto divergente e troca da árvore pelo hydrateRoot. RED733229exit1:2falhas/30filtrados no page/forward. GREEN778cdc:5arquivos57testes0; ampliado61944/53a73d exit0:38arquivos472testes, semignorados. TSC64256/af3533heap8192 exit0. Lintiniciala0ea53 exit0/1warning exclusivamente react-hooks/purity da capturaautorizada na page ServerComponent; justificativa pontual adicionada nessa linha, sem mexer em warningsReact/AST/guards. Fix de produto exige recaptura formal completa na fonte nova antes de seed150.
+
+Capturas/hashes/manifestos/pranchas novos permanecerão locais, sem commitPNG. RelatórioJSON/links remotos serão incorporados após depósito confirmado pelo coordenador; não apagar originais/negativos.

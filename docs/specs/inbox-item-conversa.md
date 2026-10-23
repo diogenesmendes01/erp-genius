@@ -39,3 +39,11 @@ A prova app×protótipo aguardará base #308/preview do integrador: conversa, ce
 Diferenças previstas: setor em vez de etapa; Aria/seloIA e autoria de prévia naE3; avatarB2B quadrado naE2; Prazo estourado segue regra ERP; vazio segue moldura DS. Nenhuma funcionalidade será criada só para aproximar referência.
 
 Recortes, códigos e pendências em output/inbox-312-report.md e quadro-entregas. Sem full próprio nesta etapa; global integrado coordenado pelo integrador antes da publicação. Sem schema, DBsuite, servidor, transporte externo, instalação, push ou PR nesta implementação parcial.
+
+## Correção do snapshot SSR na prova real
+
+A captura85883 encontrou bug produtivo: servidor33min/cliente34min atravessando uma fronteira antes de hidratar. Tentativa integral preservada com hashes em output/inbox-312-visual/negativo-celular-lista-85883. Não foi classificada como caret ou aviso descartável.
+
+Ruling coordenado: contrato comum agoraInicial?:number em epochms, capturado uma vez na página servidor e encaminhado InboxNovo→Lista→useAgoraDosPrazos. #314 e consumidores futuros usarão esse mesmo contrato. getServerSnapshot retorna o valor serializado válido, ou0 determinístico em usos diretos sem valor/válido; não chama Date.now no servidor para inventar outro snapshot. O cliente inicia/assina com Date.now real e mantém as fronteiras de timer existentes. A captura de Date.now na página ServerComponent tem exceção de lint somente na linha, justificada por serialização do snapshot; não altera guards/diagnósticos React.
+
+Prova por hydrateRoot real com relógio falso: DOMSSR29min é preservado ao hidratar no minuto30, sem erro recuperável, e atualiza30 após a assinatura. Markup SSR da Lista permanece igual com o mesmo agoraInicial apesar de Date.now mudar; page e Inbox encaminham valor. Fallback ausente/NaN/Infinity/epoch inválido retorna0 e não lê Date.now durante SSR. Descarte/lista/cleanup/SSE continuam nos recortes ampliados.

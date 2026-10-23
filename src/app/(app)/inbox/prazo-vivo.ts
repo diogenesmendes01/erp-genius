@@ -26,8 +26,8 @@ export function esperaAteProximo(proximo: number | null, agora: number): number 
 }
 
 /** Snapshot estável entre mudanças visuais; uma assinatura mantém um único timer local. */
-function criarRelogioDosPrazos(itens: ItemListaInbox[]) {
-  let agora = Date.now();
+function criarRelogioDosPrazos(itens: ItemListaInbox[], inicial: number) {
+  let agora = typeof window === "undefined" ? inicial : Date.now();
   return {
     ler: () => agora,
     assinar(notificar: () => void) {
@@ -50,10 +50,11 @@ function criarRelogioDosPrazos(itens: ItemListaInbox[]) {
   };
 }
 
-export function useAgoraDosPrazos(itens: ItemListaInbox[]): number {
+export function useAgoraDosPrazos(itens: ItemListaInbox[], agoraInicial?: number): number {
   // Uma lista SSE nova usa o relógio atual já no primeiro render e substitui a assinatura anterior.
-  const relogio = useMemo(() => criarRelogioDosPrazos(itens), [itens]);
-  return useSyncExternalStore(relogio.assinar, relogio.ler, relogio.ler);
+  const ssr = typeof agoraInicial === "number" && Number.isFinite(new Date(agoraInicial).getTime()) ? agoraInicial : 0;
+  const relogio = useMemo(() => criarRelogioDosPrazos(itens, ssr), [itens, ssr]);
+  return useSyncExternalStore(relogio.assinar, relogio.ler, () => ssr);
 }
 
 /** Próximo instante que muda o badge: vencimento estrito ou minuto visível seguinte. */

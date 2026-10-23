@@ -15,11 +15,12 @@ export interface PropsListaAtendimentos {
   aoCarregarMais(): void;
   fuso?: string | null;
   usuarioId?: string;
+  agoraInicial?: number;
 }
 
-export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, aoCarregarMais, fuso = null, usuarioId }: PropsListaAtendimentos) {
+export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, aoCarregarMais, fuso = null, usuarioId, agoraInicial }: PropsListaAtendimentos) {
   const rolagem = useRef<HTMLDivElement>(null);
-  const agora = new Date(useAgoraDosPrazos(itens));
+  const agora = new Date(useAgoraDosPrazos(itens, agoraInicial));
 
   return (
     <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-2 pb-3 pt-1">

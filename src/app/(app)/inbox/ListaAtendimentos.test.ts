@@ -20,7 +20,7 @@ const base: ItemListaInbox = {
 };
 const html = (p: Partial<ItemListaInbox> = {}, extra: Record<string, unknown> = {}) =>
   renderToStaticMarkup(createElement(ListaAtendimentos, {
-    itens: [{ ...base, ...p }], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn(), ...extra,
+    itens: [{ ...base, ...p }], agoraInicial: Date.now(), proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn(), ...extra,
   } as never));
 const htmlFiltros = (o: { setores: Setor[]; filtros?: object }) =>
   renderToStaticMarkup(createElement(PainelFiltros, { filtros: o.filtros ?? {}, setores: o.setores, numeros: [{ id: "n1", rotulo: "Cobrança" }] } as never));
@@ -97,4 +97,18 @@ it("preserva lista curta, entrada na virtualização acima de100 e carregar mais
   expect(longa).toContain('data-virtual-count="101"'); expect(longa).toContain("Carregar mais");
   expect((longa.match(/data-virtual-key=/g) ?? []).length).toBeLessThan(30);
   expect(html()).toContain("px-2 pb-3 pt-1");
+});
+
+it("snapshot SSR do relógio fica estável ao atravessar minuto antes da hidratação", () => {
+  const instanteSSR = Date.UTC(2026, 9, 22, 12);
+  const prazo = new Date(instanteSSR - 29 * 60_000).toISOString();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(instanteSSR);
+    const servidor = html({ prazoRespostaEm: prazo }, { agoraInicial: instanteSSR });
+    vi.setSystemTime(instanteSSR + 60_000);
+    const hidratacao = html({ prazoRespostaEm: prazo }, { agoraInicial: instanteSSR });
+    expect(servidor).toContain("Prazo estourado · 29 min");
+    expect(hidratacao).toBe(servidor);
+  } finally { vi.useRealTimers(); }
 });
