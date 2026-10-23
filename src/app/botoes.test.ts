@@ -36,6 +36,7 @@ const FONTE_DO_BOTAO = "src/components/Botao.tsx";
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
+  "src/app/(app)/inbox/ItemConversa.tsx": 1, // item de lista: seleção anuncia aria-current, não ação de negócio
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
@@ -64,6 +65,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/inbox/ItemConversa.tsx": ["(sem nome)"], // só a linha de conversa: nome dinâmico, seleção em aria-current
   "src/app/(app)/aria/_componentes/Campos.tsx": ["Ligado · Desligado"], // interruptor (role=switch): liga/desliga, é estado e não ação
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx": ["Remover documento"], // ícone de lixeira
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": ["key d.n"], // chip de dia da semana
@@ -235,7 +237,7 @@ export function botoesCrus(fonte: string): string[] {
     // disfarçada no filho. A exceção fica restrita à pílula compacta e numérica.
     if (elemento.tagName.getText(sf) !== "span" || !ts.isJsxElement(proprio)) return false;
     const classes = ancestral.initializer ? classesDe(ancestral.initializer).texto.split(/\s+/).filter(Boolean) : [];
-    const classeDeContador = /^(rounded-full|bg-brand-solid|text-on-brand|px-(1|1\.5|2)|py-0\.5|min-w-(4|5)|h-(4|5)|inline-flex|items-center|justify-center|text-(xs|\[10px\])|font-medium|leading-none|tabular-nums)$/;
+    const classeDeContador = /^(rounded-full|bg-brand-solid|text-on-brand|px-(1|1\.5|2)|py-0\.5|min-w-(4|5)|h-(4|5)|inline-flex|grid|place-items-center|items-center|justify-center|text-(xs|\[10px\]|\[11px\])|font-(medium|semibold|mono)|leading-none|tabular-nums)$/;
     if (!classes.includes("rounded-full") || !classes.some((c) => /^px-/.test(c)) || !classes.every((c) => classeDeContador.test(c))) return false;
     let temNumero = false;
     const numero = (valor: ts.Expression): boolean => {
@@ -1344,6 +1346,14 @@ describe("botões nas áreas migradas", () => {
     expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">Salvar</span></button>')).toHaveLength(1);
     expect(botoesCrus('<Link href="/inbox"><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{naoLidasInbox > 99 ? "99+" : naoLidasInbox}<span className="sr-only"> mensagens não lidas</span></span></Link>')).toEqual([]);
     expect(botoesCrus('<button><span className="rounded-full bg-brand-solid px-1.5 text-on-brand">{count > 99 ? "Salvar" : count}</span></button>')).toHaveLength(1);
+  });
+
+  it("preserva o contador mono de 11px da conversa sem isentar rótulos ou superfícies de ação", () => {
+    const classe = "grid h-5 min-w-5 place-items-center rounded-full bg-brand-solid px-1.5 text-[11px] font-semibold font-mono tabular-nums text-on-brand";
+    expect(botoesCrus(`<button><span className="${classe}">{item.naoLidas}</span></button>`)).toEqual([]);
+    expect(botoesCrus(`<button><span className="${classe}">Salvar</span></button>`)).toHaveLength(1);
+    expect(botoesCrus(`<button><span onClick={agir} className="${classe}">{item.naoLidas}</span></button>`)).toHaveLength(1);
+    expect(botoesCrus(`<button><span className="${classe} px-6 py-3">{item.naoLidas}</span></button>`)).toHaveLength(1);
   });
 
   it.each(["span", "div"].flatMap((tag) => [

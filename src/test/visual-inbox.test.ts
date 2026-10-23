@@ -209,3 +209,26 @@ it("warnings React de chave e hidratação invalidam captura do app; HMR normal 
   expect(problemaReactNaCaptura('Hydration failed because the server rendered HTML did not match')).toBe(true);
   expect(problemaReactNaCaptura('[Fast Refresh] done in 500ms')).toBe(false);
 });
+
+it("lista-vazia acrescenta doze pares app/protótipo nos três tamanhos", () => {
+  const tarefas = combinacoes({ alvos: ["app", "prototipo"], estados: ["lista-vazia"] });
+  expect(tarefas).toHaveLength(12);
+  expect(new Set(tarefas.map(t => t.tamanho))).toEqual(new Set(["desktop", "tablet", "celular"]));
+});
+it("lista-vazia espera o vazio real e ausência de itens, sem pedir thread oculta", async () => {
+  let liberarVazio!: () => void, liberarZero!: () => void;
+  const vazio = new Promise<void>(ok => { liberarVazio = ok; });
+  const zero = new Promise<void>(ok => { liberarZero = ok; });
+  const pagina = {
+    getByRole: (_r: string, o: { name: string }) => {
+      if (o.name !== "Conversas") throw Error("Não deve exigir thread/painel: " + o.name);
+      return { getByText: (texto: string) => { expect(texto).toBe("Nenhuma conversa neste filtro."); return { waitFor: () => vazio }; } };
+    },
+    waitForFunction: () => zero,
+  };
+  let terminou = false;
+  const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "lista-vazia", "celular").then(() => { terminou = true; });
+  await Promise.resolve(); expect(terminou).toBe(false);
+  liberarVazio(); await Promise.resolve(); expect(terminou).toBe(false);
+  liberarZero(); await espera; expect(terminou).toBe(true);
+});
