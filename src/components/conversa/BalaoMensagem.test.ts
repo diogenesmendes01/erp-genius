@@ -19,6 +19,26 @@ function html(p: Partial<MensagemThread>, o: { menuAberto?: boolean; recursos?: 
 }
 
 describe("BalaoMensagem", () => {
+  it("chevron vem antes de autor/texto, flutua à direita e não é absoluto", () => {
+    const h = html({ corpo: "Perfeito. Quanto fica?", autorNome: "Camila" });
+    const gatilho = h.indexOf('aria-label="Opções da mensagem"');
+    expect(gatilho).toBeLessThan(h.indexOf("Camila"));
+    expect(gatilho).toBeLessThan(h.indexOf("Perfeito. Quanto fica?"));
+    expect(h).toMatch(/aria-label="Opções da mensagem"[^>]*class="[^"]*\bfloat-right\b/);
+    expect(h).not.toContain("absolute right-1 top-1");
+  });
+  it("chevron aparece em hover/foco/toque e fica visível com menu aberto", () => {
+    const h = html({});
+    for (const c of ["group relative", "opacity-0", "group-hover:opacity-100", "group-focus-within:opacity-100", "[@media(hover:none)]:opacity-100"]) expect(h).toContain(c);
+    expect(html({}, { menuAberto: true })).toMatch(/aria-label="Opções da mensagem"[^>]*aria-expanded="true"[^>]*class="[^"]*\bopacity-100\b/);
+  });
+  it("painel aberto tem posição fixa e altura limitada com rolagem interna", () => {
+    const h = html({}, { menuAberto: true });
+    expect(h).toMatch(/role="menu"[^>]*style="position:fixed/);
+    expect(h).toContain("max-height:calc(100dvh - 16px)");
+    expect(h).toContain("overflow-y:auto");
+    expect(h).not.toContain("absolute right-0 top-7");
+  });
   it("autor de cada mensagem", () => {
     expect(html({ origem: "CELULAR", direcao: "SAIDA" })).toContain("Enviada pelo celular");
     expect(html({ origem: "IA", direcao: "SAIDA" })).toContain("Aria");
