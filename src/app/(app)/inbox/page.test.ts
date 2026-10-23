@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { ErroPermissaoFalso } = vi.hoisted(() => ({ ErroPermissaoFalso: class extends Error {} }));
@@ -28,6 +29,27 @@ describe("InboxPage", () => {
     mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
     mocks.filtro.mockResolvedValue({ setores: ["SECRETARIA"], numeros: [{ id: "n1", rotulo: "Secretaria" }] });
     sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo");
+  });
+
+  it("a página é uma coluna limitada e entrega o restante ao InboxNovo", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    const raiz = h.match(/^<div class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(raiz).toEqual(expect.arrayContaining(["flex", "flex-col", "min-h-0",
+      "h-[calc(100dvh-2rem-3.5625rem)]", "sm:h-[calc(100dvh-2rem-3.3125rem)]", "md:h-[calc(100dvh-4rem)]"]));
+    const caixa = h.match(/<div class="([^"]*)">inbox:/)?.[1].split(" ") ?? [];
+    expect(caixa).toEqual(expect.arrayContaining(["flex", "flex-col", "min-h-0", "flex-1"]));
+  });
+
+  it("a conta de altura acompanha padding do main e as duas alturas reais da barra mobile", () => {
+    const layout = readFileSync("src/app/(app)/layout.tsx", "utf8");
+    const main = layout.match(/<main\b[^>]*className="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(main).toEqual(expect.arrayContaining(["p-4", "md:p-8"]));
+    const barra = readFileSync("src/components/BarraMobile.tsx", "utf8");
+    const header = barra.match(/<header\b[^>]*className="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(header).toEqual(expect.arrayContaining(["py-1.5", "border-b", "md:hidden"]));
+    const botao = barra.match(/const botao = "([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(botao).toEqual(expect.arrayContaining(["min-h-10", "max-sm:min-h-11"]));
   });
 
   it("inbox_mostra_o_sino", async () => {
