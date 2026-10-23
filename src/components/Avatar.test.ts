@@ -31,6 +31,18 @@ describe("Avatar", () => {
 
 
 describe("Avatar do Inbox", () => {
+  it("selo IA tem nome acessível e avatares comuns continuam decorativos", () => {
+    const ia = renderToStaticMarkup(createElement(Avatar, { nome: "Ana", tom: 1, selo: "ia" }));
+    const raizIa = ia.match(/^<span\b[^>]*>/)![0];
+    expect(raizIa).toContain('role="img"');
+    expect(raizIa).toContain('aria-label="Aria atendendo"');
+    expect(raizIa).not.toContain('aria-hidden="true"');
+    const comum = renderToStaticMarkup(createElement(Avatar, { nome: "Ana", tom: 1 }));
+    const raizComum = comum.match(/^<span\b[^>]*>/)![0];
+    expect(raizComum).toContain('aria-hidden="true"');
+    expect(raizComum).not.toContain("aria-label=");
+    expect(raizComum).not.toContain("role=");
+  });
   it.each([["+55 11 98765-4321", ""], ["😀", ""], ["😀 Ana", "A"], ["Ana 😀 Costa", "AC"], ["12 Ana 7 Costa", "AC"], ["𐐀 Silva", "𐐀S"]])("iniciais com letras Unicode: %s", (nome, esperado) => {
     expect(iniciais(nome)).toBe(esperado);
   });
