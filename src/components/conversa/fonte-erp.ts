@@ -15,6 +15,6 @@ export const fonteErp: FonteHistorico = {
       { signal, cache: "no-store", credentials: "same-origin" });
     if (!r.ok) throw new ErroFonte(r.status, `Falha ao carregar mensagens (${r.status}).`);
     const j = await r.json() as PaginaHistorico;
-    return { mensagens: j.mensagens, antes: j.antes, depois: j.depois, temMais: j.temMais };
+    return { mensagens: j.mensagens, notas: j.notas ?? null, antes: j.antes, depois: j.depois, temMais: j.temMais };
   },
 };

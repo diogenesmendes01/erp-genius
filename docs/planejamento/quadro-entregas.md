@@ -1,5 +1,18 @@
 # Quadro único de entregas
 
+## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
+
+Fechamento: TESTER aprovou fonte e visual em duas sessões/seis contextos; nota inicial e nova sem reload, zero nova mensagem no banco,24 PNGs depois. Evidências e limites em output/inbox-301-visual/. Combinação E0 fonte7657c528:845 arquivos/6526 testes sessão99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Estados abaixo preservam as etapas anteriores; merge/deploy não executados.
+
+**Estado: implementação e validação concluídas; PR em publicação.** Branch `codex/inbox-e0-301`, dependente da #300. A fonte ERP preserva `notas: array | null`; histórico mantém em `antes`, substitui em inicial/`depois`/reconexão, limpa na troca e ignora respostas antigas. O aviso atualiza mesmo sem mensagem nova. A thread intercala notas e mensagens por tempo, distingue chave `nota:<id>` e oculta nota anterior à janela enquanto houver mensagens antigas. Cartão interno mostra origem, autor e hora no fuso, sem ações externas. Contrato em `docs/specs/inbox-notas-visiveis.md`; sem schema, permissão ou transporte novo.
+
+- TDD RED no Node 22.23.2: quatro arquivos tiveram cinco falhas funcionais e 35 testes verdes, saída 1 — fonte descartava notas, histórico não guardava, UI não mostrava e módulos novos inexistiam. Depois, cenário de janela fora de ordem falhou com nota ausente (1 falha, 4 verdes); corrigida a seleção do instante mais antigo. Recorte de design system encontrou `text-amber-900` não mapeado (1 falha, 318 verdes); substituído por `text-amber-700`, token válido nos dois temas.
+- GREEN dirigido: `src/components/conversa`, `src/app/(app)/inbox`, paleta, botões e contraste: **29 arquivos / 319 testes**, saída **0**, nenhum ignorado. Cenário adicional de duas sessões com conversa só de notas: `historico-conversa.test.ts` **1 arquivo / 16 testes**, saída **0**, nenhum ignorado. Não equivale à suíte completa.
+- Recorte dirigido final após adicionar o cenário de duas sessões: mesmos filtros, **29 arquivos / 320 testes**, saída **0**, nenhum ignorado, Node 22.23.2. ESLint dos 9 arquivos TypeScript tocados com `--max-warnings 0`, saída **0**.
+- Rebase de #301 de `9853be83` para #300 publicada `30706754`, com conflito exclusivamente no quadro resolvido preservando as seções #300 FINAL e #301. Base sem mudança em `src`; o delta empilhado contém só #301. No SHA pós-rebase `4803b061`, o mesmo recorte dirigido **29 arquivos / 320 testes** saiu **0**, nenhum ignorado, Node 22.23.2. O integrador/TESTER prepararão fixture e servidores em bancos descartáveis; este DEV não iniciou servidor nem envio externo.
+- Gates globais no SHA documental `09222757` (fonte idêntica a `4803b061`), Node 22.23.2: TypeScript `--noEmit` heap 8192, sessão `23074` até saída **0**; Vitest completo sem filtro, `--maxWorkers=2`, **842 arquivos / 6.490 testes**, sessão `54811` até saída **0**, nenhum ignorado; `eslint . --max-warnings 40`, sessão `96249` até saída **0**, **0 erros / 40 avisos** herdados.
+- Rebase dos três commits da #301 sobre E0 integrada `797994aa`, sem conflito; diff contra base contém só 12 arquivos #301 e preserva quadro das demais issues. No SHA `33d0a991`, Node 22.23.2: recorte dirigido com os mesmos filtros **32 arquivos / 354 testes**, saída **0**, nenhum ignorado; TSC heap 8192 sessão `26262` até saída **0**; `eslint . --max-warnings 40` sessão `26917` até saída **0**, **0 erros / 40 avisos** herdados. Vitest completo da combinação #301 + #304 será executado pelo integrador; revisão TESTER, visual e homologação ainda pendentes.
+
 ## Inbox E0.3 — notas na rota e aviso transacional (#300, 22/10/2026)
 
 **Estado: contrato de servidor/SSE implementado e validado; PR em publicação.** Branch `codex/inbox-e0-300`, base PR #382 (#299). SPEC em `docs/specs/inbox-notas-thread.md`, investigação em `output/inbox-300-report.md`, parecer independente em `output/inbox-300-review.md`. Sem merge/deploy; renderização na tela é escopo da #301.
@@ -4788,3 +4801,28 @@ somente no quadro, preservados. Recorte Node22:3arquivos/26testes, saída0,
 sem filtro/ignorados; TypeScript99520 saída0. Sem nova suíte de banco/global
 ou alteração da UI. C5CI e revisão final depois de trazer a maincorrente
 continuam gates antes do merge.
+
+## PR #388 — revisão C2/C3/C4 e gates finais
+
+C2: aviso SSE sem cursor usa recarregar, conservando notas durante consulta e
+falha comum. Limpeza em troca/perda de acesso preservada. C3: quarto argumento
+obrigatório temMaisDepois em itensDaThread, coordenado com a outra frente;
+ConversaAberta repassa ambas as bordas. Notas fora da janela cortada no fim
+ficam ocultas até avançar; limites inclusivos e entrada fora de ordem cobertos.
+
+TDD:6falhas/46passes antes →3arquivos/52testes passando após. Inclui SSE de
+outro atendimento, consulta em voo/falha, consumidor SSR e corte da classe
+HistoricoConversa com fonte em memória1260mensagens, janela600 e recuperação
+da nota ao avançar. Não é teste de banco. Gates Node22.23.2 com saída0:
+full73171,845arquivos/6.566unitários completos (maxWorkers=2, sem filtro/skip),
+TypeScript84277 e lintglobal92738,0erros/40avisos herdados.
+
+C4:40arquivos eram36PNG+4metadados. Os36PNG foram conferidos por tamanho/hash
+contra ZIPlegadoLOCAL antes de retirar do index; originais em9a201c28 ebackup
+local, semforce/novo upload. ZIP4162790bytes, SHA256
+cb4b02a5a1aeffed2efa4d99f257dc6aa77068ae110f54f3922e268cd92651cc.
+README/manifesto e relatório output/pr388-qa/revisao.md preservados. Nenhuma
+nova homologação visual/integração DB é atribuída a esta revisão.
+
+Fonte recebe385corrigida/387/386/R6/main1a56031 por merges normais. Aguardar
+385na main, parecer independente do head exato e CI antes do merge388.
