@@ -5140,3 +5140,20 @@ Global2766 terminou0:855 arquivos /6.723 testes unitários sem filtro/ignorados,
 maxWorkers2; TSC57449 e lint97075 terminaram0, zero erros /40 avisos herdados.
 Sem novo DB/browser nesta conciliação. Parecer final e CI pendentes;392/B2
 continua decisão humana e impede merge antecipado. output/pr395-qa/pais.md.
+
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
+## PR #395 — preservar retirada404 sem delta produtivo
+
+Base-r3450318f9 recebe maincce21e19,retira64PNG298 já arquivados e mantém
+src/scripts/prisma/package/lock idênticos3fc403de após composição. Sódocs/
+artefatos,sem repetir ou reatribuir suítes. Gate/parecer3fc nominal,CI/main/
+392B2 pendentes. output/pr395-qa/pais.md,nenhum upload/captura novo.
