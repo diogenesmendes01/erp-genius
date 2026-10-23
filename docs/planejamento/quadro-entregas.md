@@ -6020,3 +6020,10 @@ Fontea5ecee15:patch461/c962+332compostos semantecipar319/E2;QAcompostafavorável
 ## PR #401 — composição do cabeçalho e todos os comentários
 
 Fonte266b180e:7e988310patch474+399978compostos;1blocoquadroconservaambos,Conversa mantém315/Cabecalho/useAcoes comremoçãopropsórfãos399;teste315preservado,estadoPickee565intacto. JSConversaemitigual7e. Próprio10/201837b4b+2/5ceba6d,TSC40454/5b1118,lint85407/521e25 terminais0/40avisos,semglobalDB. QA474favorávelhash17259...versionada;QAcomposta/399main/CI401aindagates. C2buscafutura316/C3cortes9601400/C4recontaapenasok/C5inventário documentados; output/pr401-qa/composicao-todos.md. Semenvio/captura/migração/install.
+## PR #400 integrada; PR399 pronta para CI final
+
+#400 squash0cfff251a4475137b421b3926e1048a4998ad5a3, CI40015569278 success5/5, QAcompostad546favorável, issue313CLOSEDconfirmada. Squashtreeigualdb6; incorporação à399INDEXINTEIROigual978 após12conflitos deancestralidade. Fontea5,QA5d5,recorte9/187 eINTpaineis1/12(+30complementares) preservados. C1main/paisresolvidos,CI399final2TZaindapendente;semfechar318antecipadamente.
+
+## PR #401 — QA composta e fonte preservada após399efa
+
+QA266favorávelestática, original47f69e99...versionado tester-composicao-266.md; atribuiçãodosgatesexternoscorrigida para10/201+2/5próprios401 (não9/187399), nenhumtesterepetido/hashantigo5d6nãofinal. Merge399efa(main4000c) sódocs/ancestralidade,quadro1blocopreservambos e fonte266preservada. QAconcluída,399main/CI401aindagates.
