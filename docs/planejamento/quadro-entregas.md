@@ -6380,3 +6380,7 @@ QA337favorávelestática/hash695b09...versionada tester-composicao-337.md;compos
 ## PR #405 — estados319 compostos e QA favorável
 
 Fonte101c6618:patch73c7/c3+4033e40;1blocoquadroconservaambos, estados/harness319 ecompositor403preservados, sóJSDocalias400backend. Próprio15/237c5f75a,TSC26774/a8d1a3,lint79756/0ea74b terminais0/40avisos. QApatch73favorávelhash0b45...eQAcomposta101favorávelhashcb91772b...versionadas;pareceressemnovotestesDB/browser. C2LOWinventário/custódiaevidênciasexplicitados, C1main/pais403/CI405aindagates. Fonte101preservadaapósMD,nenhumE2antecipado/DB/envio/install/migração. output/pr405-qa/composicao-todos.md.
+
+## PR #406 — composição e integração SSE final
+
+Fonte95fb5e23:cherrySOMENTEd36→8a67sobre1bb+4053bd;quadrocherryapenasentry40613linhassemcontexto323;merge1blocopreservaambos. Unitário5/11715042f,TSC67467/e912cc,lint73890/0539f3terminals0/40. INTeventosssecompleto1/10sessão21775/5d3e46033,05s,perfilciintexclusivo,maxWorkers1/configfechada,semfiltro/skips/clusterchange/migration/provider. C3INTpuraduplicadafoiretirada,unit8preservados. QApatchd36favorávelhash90c442...versionada;C2tabela20estados100APP64refs36NApreservada/C4inventárioavaliado. QAcomposta/405main/CI406aindagates;nenhumE2antecipado,output/pr406-qa/composicao-todos.md.
