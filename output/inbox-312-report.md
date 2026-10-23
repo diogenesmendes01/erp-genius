@@ -98,3 +98,29 @@ Todos os browsers foram fechados em finally, sem DBsuite DEV ou transporte. Scri
 ### Pendências deste checkpoint
 
 HelperDOM e referências sanitizadas; depósito remoto autorizado de binários e links confirmados; QA independente do SHA exato e global integrado antes de publicação. Nenhum PNG novo commitado. Originais/negativos/pranchas locais preservados; referências antigas não serão enviadas. Este checkpoint não declara homologação ou conclusão integral.
+
+## Incorporação coordenada da sanitização392
+
+OWNB recebeu83043f51 como37f39fb8 (seed/reparo telefones, NÃO executado DEV) e3f381489 como b6374596 (helperDOM/CLI). Conflitos somente quadro/README/importCLI; preservados ambos históricos, problemaReactNaCaptura, esperarHidratacaoApp e lista-vazia312, acrescentado anonimizarTelefonesNoDom. AGENTS conferido: blocoNext ausente, nada para remover. Sem PNGnovo, DBsuite/seed/install ou sourceprodutiva312 alterada.
+
+Gates dirigidos: dd6995 EXIT0/3arquivos51testes (visual-inbox,visual-inbox-entrada,identificacao-registro); argumento antigo src/lib/inbox-sem-polling.test.ts não encontrou arquivo, portanto guard executado separadamente no caminho real src/app/(app)/inbox/sem-polling.test.ts, b6ff1b EXIT0/2testes. sem-provedores-legados6fff41 EXIT0/1teste. Total observado5arquivos54testes, sem testes ignorados nesses arquivos; não é global. HelperDOM Node/Chrome62941f EXIT0/1teste, sem download. TSC38678/de4bb4 heap8192 EXIT0, lint5fontesafetadas ea5610 EXIT0/0avisos. Integração392 foi verificada pelo autor em outro perfil; não atribuir essa suíte ao DEV B.
+
+Próxima captura somente --alvo prototipo nos3 estados312 (14referências), sem reiniciar preview e sem tocar banco150. Fonte produtiva app permanece a3da8; fonte do harness passa a incluir b6374596 e será anotada separadamente no consolidado. Aplicação14PNG formal anterior mantida íntegra. Ainda pendentes recaptura dasrefs/inspeção/depósito remoto/QA/global.
+
+## Referências sanitizadas e conjunto final local
+
+Recaptura SOMENTE --alvo prototipo, fonteHarness5e915b42292c7750c698be7a05d02478500fdcf6: sessão38570 EXIT0/14PNG (6conversa+2celular-lista+6lista-vazia),0falhas/0diagnósticos. HelperDOMv1 declarado em todos os14 registros,12 substituições totais. Quatro frames de lista-vazia tablet/celular retornam0 porque não há telefone no DOM visível nesses estados. HTMLoriginal não alterado; nenhuma manipulação posterior de pixels. App14PNG da execução11405/fonteprodutivaa3da8 mantida; não recapturada depois do seed150.
+
+As14 referências e7 novas pranchas app×protótipo foram inspecionadas, incluindo telefones +5500..., ambos temas e estados corretos. Originais/manifestos/hashes em output/inbox-312-visual/refs-sanitizadas-5e915. Refs anteriores continuam preservadas localmente como históricas NÃO publicáveis; não apagar nem reclassificar.
+
+Inventário LOCAL output/inbox-312-visual/inventario-publicavel.json confere hashes da allowlist de49 PNGs positivas sanitizadas:14app+14refs+3SSR+18virtual, mais13pranchasJPG. NÃO copiar formal-sanitizado-a3 inteiro: a pasta também conserva14refs antigas. Fonteapp a3da8 e fonteharness5e915 diferenciadas por arquivo. RelatórioJSON/links só entram emGit após depósito remoto confirmado. Negativos/rawHTML/probes privados continuam locais; o inventário não declara upload.
+
+Fonte produtiva312 inalterada e gates54unit/helperDOM1/TSC/lint0 registrados no checkpoint anterior. Sem repetição de gates por mudança só documental. PreviewB permanece parado; Chrome fechado e nenhum DB/seed/instalação DEV realizado. Prontidão para revisão independente/integração, ainda SEM homologação: faltam depósito remoto, QA exata e global integrado antes de publicação.
+
+### Publicação #312 — evidências remotas e consolidação com guarda381
+
+Aplicação/harness/QA independente congelados em4b6f1554463617ee74a816a598e59b96eca26f64; fontes separadasa3da8(produto)/5e915(refs) no inventário. Depósito remoto confirmado: asset667543637,8.739.714bytes,SHA2562abcf2d47b56e5aec4bfe1e71594ac3c94941056e9734b94380d30eda3ca0cc3,87arquivos67PNG13JPG0HTML. Link e limites em output/inbox-312-visual/README.md. TESTER exato4b6 favorável:11files173testes estáticos e prova150itens/seiscontextos/18PNG com foco, âncora e resize, sem erros. Nenhum novo PNG versionado.
+
+Root codex/inbox-e1-312-publicacao sobre nova base308699+3115ff (base6e0f6361), preserva guard381/revisões382d5+183/392. Primeiro global84537 exit1 com859arquivos verdes e uma falha de guarda: o contador numérico legítimo de ItemConversa usa grid/place-items-center/11px/mono/semibold, tokens ainda ausentes da exceção compacta381. Extensão restrita de tokens com conteúdo numérico/passividade/ancestrais e limites contados intactos: RED2falhas78passes→GREEN80/80. Testes negativos continuam rejeitando Salvar, onClick e padding de ação. Sem alteração produtiva para acomodar a guarda.
+
+Global FINAL24299, fonte3da7bf6e mais a correção de teste acima:860arquivos/6.727unitários exit0 sem filtros/ignorados; Next typegen, TSCheap8192 e lintglobal exit0,0erros40avisos herdados. Logs output/inbox-312-publicacao-final-{unitarios,tsc,lint}.log. ItemConversa/ListaAtendimentos/VirtualList idênticos ao4b6. Revisão incremental do commit final e CI/retarget pendentes; não declarar merge ou deploy.

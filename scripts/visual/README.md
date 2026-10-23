@@ -74,6 +74,12 @@ protótipo exige o botão de detalhes e a região aberta; não é ignorado quand
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
 
+## Atualização da casca #308
+
+O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
+
+A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
+
 ## Selo pessoal do menu (#311)
 
 A demo aceita `--entrada thiago` (ou outra chave fictícia fechada) para inserir uma ENTRADA local, sem transporte. Exige fixture existente no BAILEYS desconectado e banco local descartável; não recria a demo nem emite NOTIFY manual. O trigger existente publica o evento após commit.
@@ -83,13 +89,27 @@ A demo aceita `--entrada thiago` (ou outra chave fictícia fechada) para inserir
 O preparo muda somente preferências pessoais do Admin: Thiago/Ventura explicitamente não lidas, outras cinco lidas; compartilhados/fixada/silenciada são preservados. Gera 24 PNGs em output/inbox-311-visual, nas quatro fases2→1→2→1, três tamanhos e dois temas. Antes de provocar a subida, navega Home por Link para desmontar a seleção: chat selecionado lê entrada automaticamente. Outra entrada com chat aberto prova reconciliação para1 sem loop. A segunda aba também confirma2, cada aba com uma SSE simultânea e no máximo um GET da contagem em voo.
 
 A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; valida gaveta no viewport e Sidebar224. Mantém diagnóstico de rede e só oculta toast Next sem issues durante a foto. Em erro escreve manifesto-incompleto; não sobrescreva uma tentativa negativa antes de preservá-la. A CLI principal permanece responsável pelas referências offline app×protótipo.
-## Atualização da casca #308
 
-O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
-
-A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
+## Estado de lista vazia (#312)
 
 #312 acrescenta `--estado lista-vazia`: app em `?busca=zzzz` sem seleção, protótipo com busca real `zzzz`, três tamanhos e dois temas (12PNGs). A espera exige EstadoVazio visível e nenhum item da lista; os passos dos demais estados permanecem iguais.
+
+# Telefones em evidências
+
+A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
+os valores antigos reconhecidos no próprio cenário. O harness anonimiza os
+telefones do DOM do protótipo imediatamente antes da foto e declara essa
+transformação no manifesto, preservando o arquivo HTML original.
+
+Harnesses de outras issues podem importar `anonimizarTelefonesNoDom` de
+`./anonimizar-telefones.mjs` e executar
+`const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom)` depois
+das interações e antes de `screenshot`. Salvar o retorno no manifesto; não salvar
+um mapa dos valores originais. Reaplicar depois de nova renderização.
+
+O teste do DOM real usa Chrome já instalado, sem baixar navegador:
+`PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
+Esse teste dirigido de navegador é separado da suíte unitária Vitest.
 
 Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.
 
