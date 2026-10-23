@@ -1,0 +1,316 @@
+{
+  "perfil": "dev-gravacoes",
+  "base": "http://localhost:3111",
+  "capturas": [
+    {
+      "fase": "antes",
+      "total": 2,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-desktop-antes.png"
+    },
+    {
+      "fase": "antes",
+      "total": 2,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-tablet-antes.png"
+    },
+    {
+      "fase": "antes",
+      "total": 2,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-escuro-celular-antes.png"
+    },
+    {
+      "fase": "antes",
+      "total": 2,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-desktop-antes.png"
+    },
+    {
+      "fase": "antes",
+      "total": 2,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-tablet-antes.png"
+    },
+    {
+      "fase": "antes",
+      "total": 2,
+      "tema": "claro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-claro-celular-antes.png"
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-desktop-lida.png"
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-tablet-lida.png"
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-escuro-celular-lida.png"
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-desktop-lida.png"
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-tablet-lida.png"
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "tema": "claro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-claro-celular-lida.png"
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-desktop-entrada-sem-selecao.png"
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-tablet-entrada-sem-selecao.png"
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-escuro-celular-entrada-sem-selecao.png"
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-desktop-entrada-sem-selecao.png"
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-tablet-entrada-sem-selecao.png"
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "tema": "claro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-claro-celular-entrada-sem-selecao.png"
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-desktop-entrada-chat-aberto.png"
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-escuro-tablet-entrada-chat-aberto.png"
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-escuro-celular-entrada-chat-aberto.png"
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-desktop-entrada-chat-aberto.png"
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "width": 1024,
+      "height": 768,
+      "sidebarLargura": 224,
+      "arquivo": "app-claro-tablet-entrada-chat-aberto.png"
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "tema": "claro",
+      "tamanho": "celular",
+      "width": 390,
+      "height": 844,
+      "sidebarLargura": 0,
+      "arquivo": "app-claro-celular-entrada-chat-aberto.png"
+    }
+  ],
+  "fases": [
+    {
+      "fase": "antes",
+      "total": 2,
+      "stats": {
+        "sseAtivas": 1,
+        "sseMaximas": 1,
+        "sseCriadas": 2,
+        "buscasAtivas": 0,
+        "buscasMaximas": 1,
+        "buscas": 2,
+        "leituras": 0
+      }
+    },
+    {
+      "fase": "lida",
+      "total": 1,
+      "stats": {
+        "sseAtivas": 1,
+        "sseMaximas": 1,
+        "sseCriadas": 2,
+        "buscasAtivas": 0,
+        "buscasMaximas": 1,
+        "buscas": 5,
+        "leituras": 3
+      }
+    },
+    {
+      "fase": "entrada-sem-selecao",
+      "total": 2,
+      "stats": {
+        "sseAtivas": 1,
+        "sseMaximas": 1,
+        "sseCriadas": 2,
+        "buscasAtivas": 0,
+        "buscasMaximas": 1,
+        "buscas": 7,
+        "leituras": 3
+      }
+    },
+    {
+      "fase": "segunda-aba",
+      "total": 2,
+      "stats": {
+        "sseAtivas": 1,
+        "sseMaximas": 1,
+        "sseCriadas": 2,
+        "buscasAtivas": 0,
+        "buscasMaximas": 1,
+        "buscas": 4,
+        "leituras": 0
+      }
+    },
+    {
+      "fase": "entrada-chat-aberto",
+      "total": 1,
+      "stats": {
+        "sseAtivas": 1,
+        "sseMaximas": 1,
+        "sseCriadas": 2,
+        "buscasAtivas": 0,
+        "buscasMaximas": 1,
+        "buscas": 13,
+        "leituras": 7
+      }
+    }
+  ],
+  "falhas": [],
+  "diagnosticos": [],
+  "ruling": "Após2→1, navegarHome desmonta conversa selecionada; entrada CLI em duasabas sobe2. Chataberto reconcilia1 sem loops."
+}
