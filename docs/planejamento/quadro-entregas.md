@@ -5166,3 +5166,19 @@ Global2766 terminou0:855 arquivos /6.723 testes unitários sem filtro/ignorados,
 maxWorkers2; TSC57449 e lint97075 terminaram0, zero erros /40 avisos herdados.
 Sem novo DB/browser nesta conciliação. Parecer final e CI pendentes;392/B2
 continua decisão humana e impede merge antecipado. output/pr395-qa/pais.md.
+
+## PR #396 — CLOSED e composição sobre a casca
+
+Fonte9cfbbad6 recebe ad47/babd isolado, base-r3/main e3953fc por merges normais.
+CLOSED libera ciclo; nova assinatura abre uma SSE e recupera assinantes antigos
+com resync, CONNECTING segue nativo, sem timer/retry. C1 capacidade por aba e
+HTTP/2 documentado, sem alterar proxy. C2 README/quadro conciliados preservando
+ambas as seções; diff311 fica sobre308, sem313/315. SSE/hooktest idênticosad47;
+OptOut/PainelContato/ConversaAberta idênticos395. Fonte9cf contra base3127c só
+difere nos três arquivos SSE. Checkpoint4ef anterior passou857/6727, não final.
+
+Gates9cf encerrados0: global82670,860 arquivos /6.748 testes unitários sem
+filtro/ignorados,maxWorkers2; TSC83357 e lint95898 zero erros /40 avisos.
+Quatro PNGs positivos do probeB babd/3b em ZIPdraft344.425bytes, SHA c7c4fb49...
+com fontes explícitas; sem recaptura9cf/DB/browser próprio. Parecer final,
+395/#392B2 e CI/main continuam gates. output/pr396-qa/revisao.md.
