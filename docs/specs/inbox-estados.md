@@ -56,3 +56,8 @@ O preparador aguarda o evento real load da navegaçãoHome antes de ativarCDP e 
 ### Conclusão finita antes de classificar cancelamentos dos estados de painel
 
 Em painel-erro/painel-vazio, a foto mantém a prontidão própria do painel. Observador instalado antes da navegação registra somente GET sem query de mensagens da conversa exata; finalizar aguarda término do corpo (ou falha real) dos requests já iniciados, limite30s/cleanup, antes do veredito. Não exige200 nem conversa visível oculta pelo painel. O classificador de cancelamento continua exigindo recuperação concluída da mesma URL; falha não recuperada reprova. Nenhum outro estado/status/diagnóstico é afrouxado. Negativo96724 e prova causal CDP real dd988c estão preservados no report; formal42+12 ainda pendente, sem reatribuir global5e9.
+
+
+### Cancelamento da própria injeção500
+
+O contrato de falha controlada distingue cancelamento da injeção de recuperação200. Só aceita ERR_ABORTED exato de RequestGET semquery realmente injetado500/fulfillconcluído, se outro Request posterior da mesmaURL terminou500controlado com body completo e o estado público correspondente foi revalidado. Sem substituto, Request alheio, status diferente, corpo falho ou estado ausente continuam falhas. Observador antes da navegação, limite30s e cleanup; Request sóem memória. Classificador global de recuperação200 e guardas não mudam. Formal88639 negativa inteira e causal ada905 permanecem no report; nova matriz completa/inspeção e fases de dados aguardam ReadyROOT.

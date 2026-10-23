@@ -196,7 +196,7 @@ async function main() {
         const pagina = await contexto.newPage();
         pagina.on("pageerror", (erro) => falhas.push(`pageerror: ${erro.message}`));
         pagina.on("console", (mensagem) => { if (tarefa.alvo === "app" && problemaReactNaCaptura(mensagem.text())) falhas.push(`React: ${mensagem.text()}`); });
-        pagina.on("requestfailed", (pedido) => abortados.push({ url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
+        pagina.on("requestfailed", (pedido) => abortados.push({ pedidoReal: pedido, url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
         pagina.on("requestfinished", (pedido) => {
           if (pedido.method() !== "GET") return;
           conclusoes.push(pedido.response().then((resposta) => { if (resposta?.ok()) concluidos.add(`GET ${pedido.url()}`); }));
@@ -212,11 +212,13 @@ async function main() {
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
         await estadoApp?.finalizar?.();
+        await erroControlado.finalizar(pagina);
         await Promise.all(conclusoes);
         const diagnosticos = [...erroControlado.diagnosticos];
         for (const pedido of abortados) {
           const registro = `requestfailed: ${pedido.url} ${pedido.erro}`;
-          if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
+          if (erroControlado.cancelamentoEsperado(pedido.pedidoReal, pedido.erro)) diagnosticos.push(`GET500 controlado cancelado e substituído por500 concluído: ${pedido.url}`);
+          else if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }
         capturas.push({ ...tarefa, ...estadoApp?.metadados, ...(ESTADOS[tarefa.estado].motivoSemReferencia ? {referenciaFuncionalPrototipo:null,motivoSemReferencia:ESTADOS[tarefa.estado].motivoSemReferencia} : {}), ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });

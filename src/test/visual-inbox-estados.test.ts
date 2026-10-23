@@ -1,3 +1,4 @@
+import{EventEmitter}from'node:events';
 import {afterEach,expect,it,vi} from 'vitest';
 import {combinacoes,ESTADOS} from '../../scripts/visual/nucleo-captura.mjs';
 import * as estados from '../../scripts/visual/estados-inbox.mjs';
@@ -13,7 +14,7 @@ it('recorte319 possui36APP+6refs sem substituir nota317 ou estados anteriores',(
 });
 it('500 só classifica RequestGET efetivamente injetado no endpoint/origem exatos',async()=>{
  expect(api.instalarErroEstado).toBeTypeOf('function');let pred!:(u:URL)=>boolean,handler!:(r:unknown)=>Promise<void>;
- const c={route:async(p:typeof pred,h:typeof handler)=>{pred=p;handler=h;}};const controle=await api.instalarErroEstado(c,'http://localhost:3111','beatriz','painel-erro');
+ const c=Object.assign(new EventEmitter(),{route:async(p:typeof pred,h:typeof handler)=>{pred=p;handler=h;}});const controle=await api.instalarErroEstado(c,'http://localhost:3111','beatriz','painel-erro');
  expect(pred(new URL('http://localhost:3111/api/inbox/atendimentos/beatriz/painel'))).toBe(true);
  for(const u of ['http://evil/api/inbox/atendimentos/beatriz/painel','http://localhost:3111/api/inbox/atendimentos/outra/painel','http://localhost:3111/api/inbox/atendimentos/beatriz/mensagens','http://localhost:3111/api/inbox/atendimentos/beatriz/painel?x=1'])expect(pred(new URL(u))).toBe(false);
  const pedido={method:()=> 'GET'},fulfill=vi.fn(),fallback=vi.fn();await handler({request:()=>pedido,fulfill,fallback});expect(fulfill).toHaveBeenCalledWith(expect.objectContaining({status:500}));
@@ -23,8 +24,8 @@ it('500 só classifica RequestGET efetivamente injetado no endpoint/origem exato
  await handler({request:()=>({method:()=> 'POST'}),fulfill,fallback});expect(fallback).toHaveBeenCalledOnce();expect(fulfill).toHaveBeenCalledOnce();
 });
 it('estado normal não registra interceptor nem aceita500; thread usa somente mensagens',async()=>{
- expect(api.instalarErroEstado).toBeTypeOf('function');const route=vi.fn();const neutro=await api.instalarErroEstado({route},'http://localhost:3111','id','lista-vazia');expect(route).not.toHaveBeenCalled();expect(neutro.respostaEsperada({status:()=>500,request:()=>({})})).toBe(false);
- await api.instalarErroEstado({route},'http://localhost:3111','id','thread-erro');const pred=route.mock.calls[0][0];expect(pred(new URL('http://localhost:3111/api/inbox/atendimentos/id/mensagens'))).toBe(true);expect(pred(new URL('http://localhost:3111/api/inbox/atendimentos/id/painel'))).toBe(false);
+ expect(api.instalarErroEstado).toBeTypeOf('function');const route=vi.fn();const neutro=await api.instalarErroEstado(Object.assign(new EventEmitter(),{route}),'http://localhost:3111','id','lista-vazia');expect(route).not.toHaveBeenCalled();expect(neutro.respostaEsperada({status:()=>500,request:()=>({})})).toBe(false);
+ await api.instalarErroEstado(Object.assign(new EventEmitter(),{route}),'http://localhost:3111','id','thread-erro');const pred=route.mock.calls[0][0];expect(pred(new URL('http://localhost:3111/api/inbox/atendimentos/id/mensagens'))).toBe(true);expect(pred(new URL('http://localhost:3111/api/inbox/atendimentos/id/painel'))).toBe(false);
 });
 function dom(estado:string){const {documento}=criarDomMinimo();vi.stubGlobal('document',{querySelector:(s:string)=>documento.documentElement.querySelector(s.replace('#painel-contato','[id="painel-contato"]')),querySelectorAll:(s:string)=>documento.documentElement.querySelectorAll(s)});vi.stubGlobal('window',{innerWidth:390,innerHeight:844});const criar=(tag:string,attrs:Record<string,string>={},texto='',pai:Elemento=documento.body)=>{const e=documento.createElement(tag);for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);e.textContent=texto;pai.appendChild(e);return Object.assign(e,{disabled:false,getBoundingClientRect:()=>({left:0,right:390,top:60,bottom:700,width:390,height:640})});};const regiao=criar('section',{'aria-label':'Conversa'});const painel=criar('aside',{id:'painel-contato','aria-label':'Painel do contato'});if(estado==='carregando'){const root=criar('div',{'aria-busy':'true'});criar('p',{role:'status'},'Carregando conversas',root);criar('div',{'data-esqueleto':'titulo'},'',root);return{criar,root,regiao,painel};}if(estado==='painel-vazio'){criar('p',{},'Sem oportunidade visível para você.',painel);return{criar,root:painel,regiao,painel};}const root=estado==='painel-erro'?painel:regiao,alerta=criar('div',{role:'alert'},'',root);criar('p',{},estado==='painel-erro'?'Não foi possível carregar os detalhes.':'Não foi possível carregar as mensagens.',alerta);const retry=criar('button',{},'Tentar de novo',alerta);return{criar,root,alerta,retry,regiao,painel};}
 it.each(['painel-erro','thread-erro'])('prontidão%s exige alerta público/retry visível e rejeita dado técnico ou botão inativo',estado=>{
