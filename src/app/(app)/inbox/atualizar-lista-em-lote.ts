@@ -3,6 +3,7 @@ export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Pro
   let ativo = true;
   let contexto = 0;
   let emVoo = false;
+  let contextoDoVoo: number | null = null;
   let pendente = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -17,10 +18,12 @@ export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Pro
     pendente = false;
     emVoo = true;
     const inicio = contexto;
+    contextoDoVoo = inicio;
     try { await executar(() => ativo && contexto === inicio); } catch { /* só uma nova invalidação tenta outra vez */ }
     finally {
       // O executor só termina depois de consumir o corpo HTTP, mesmo ao descartar o snapshot.
       emVoo = false;
+      contextoDoVoo = null;
       agendar();
     }
   };
@@ -32,6 +35,9 @@ export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Pro
   };
   return {
     solicitar() { if (ativo) { pendente = true; agendar(); } },
+    // Os guards do consumidor invalidam também snapshots no mesmo contexto (propsSSR novas).
+    // Só esse voo precisa de reconciliação; uma época cancelada nunca é reabilitada por A→B→A.
+    invalidarSnapshotEmVoo() { if (ativo && emVoo && contextoDoVoo === contexto) pendente = true; },
     cancelarPendentes,
     descartar() { ativo = false; cancelarPendentes(); },
   };
