@@ -1,0 +1,66 @@
+{
+  "antes": "d04100cdaf3d16b7d68c7e131c7c5cbd0e9003a8",
+  "depois": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+  "limite": "Equivalência de módulos visuais/servidor/harness e JSX do painel; não comprova navegação, leitura ou SSE do novo sync313.",
+  "arquivos": [
+    {
+      "arquivo": "src/app/(app)/inbox/PainelContato.tsx",
+      "antes": "509bd61146372c22fe3bc1ca4daa9786c9e9cfa25e4ac1c9c1c0d0ccbd7e3fbf",
+      "depois": "509bd61146372c22fe3bc1ca4daa9786c9e9cfa25e4ac1c9c1c0d0ccbd7e3fbf",
+      "igual": true
+    },
+    {
+      "arquivo": "src/app/(app)/inbox/LinhaCampo.tsx",
+      "antes": "dbd50034b71e7fd6114a2b4d3b9c57e8fa01c7821f8842c6b94bba94b8455856",
+      "depois": "dbd50034b71e7fd6114a2b4d3b9c57e8fa01c7821f8842c6b94bba94b8455856",
+      "igual": true
+    },
+    {
+      "arquivo": "src/app/(app)/inbox/PainelSetor.tsx",
+      "antes": "45a6ab7101ee473289d4a3bf40d584c2c90066f6b9a9696719b2074065bcd9b3",
+      "depois": "45a6ab7101ee473289d4a3bf40d584c2c90066f6b9a9696719b2074065bcd9b3",
+      "igual": true
+    },
+    {
+      "arquivo": "src/app/(app)/inbox/ConversaAberta.tsx",
+      "antes": "4b3b8eace99cba99919791acef4c5faf64bb1a4242ef95f56ead1dac75f37dac",
+      "depois": "4b3b8eace99cba99919791acef4c5faf64bb1a4242ef95f56ead1dac75f37dac",
+      "igual": true
+    },
+    {
+      "arquivo": "src/server/inbox/paineis.ts",
+      "antes": "3468854f31011823ff5b8e82c0b95c12915182bb16cf2675dd80554f9b13f16d",
+      "depois": "3468854f31011823ff5b8e82c0b95c12915182bb16cf2675dd80554f9b13f16d",
+      "igual": true
+    },
+    {
+      "arquivo": "scripts/visual/capturar-inbox.mjs",
+      "antes": "d1caec53be4cc4f7f1da2db288821be16f1e3db263ea0d025036161838d57005",
+      "depois": "d1caec53be4cc4f7f1da2db288821be16f1e3db263ea0d025036161838d57005",
+      "igual": true
+    },
+    {
+      "arquivo": "scripts/visual/nucleo-captura.mjs",
+      "antes": "b621c6ff2331ee282144208945a960e634026a32f77b7e1f682a2ea2ea5d7494",
+      "depois": "b621c6ff2331ee282144208945a960e634026a32f77b7e1f682a2ea2ea5d7494",
+      "igual": true
+    },
+    {
+      "arquivo": "scripts/visual/espera-app.mjs",
+      "antes": "4252a12d76618fc5d4fdc6829fd840dba7e94069f7a89a833f9dd5214061d45e",
+      "depois": "4252a12d76618fc5d4fdc6829fd840dba7e94069f7a89a833f9dd5214061d45e",
+      "igual": true
+    },
+    {
+      "arquivo": "scripts/visual/anonimizar-telefones.mjs",
+      "antes": "ebf333f7226aad44f94d21be1977570b44852ef4d751c6b2dc8d3a0cdab64cef",
+      "depois": "ebf333f7226aad44f94d21be1977570b44852ef4d751c6b2dc8d3a0cdab64cef",
+      "igual": true
+    }
+  ],
+  "jsx": {
+    "antes": "445819909e01f19b3e7625a29655d90549fc160849430d9591464e416eba92f5",
+    "depois": "445819909e01f19b3e7625a29655d90549fc160849430d9591464e416eba92f5",
+    "igual": true
+  }
+}

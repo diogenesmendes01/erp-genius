@@ -1,0 +1,584 @@
+[
+  {
+    "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+    "fixture": "integrador9f646e:97caracteres+12tagsprivadas+3canonicas",
+    "tema": "light",
+    "width": 1440,
+    "height": 500,
+    "metricas": {
+      "nomeLength": 97,
+      "cabecalhoHeight": 905,
+      "aside": {
+        "left": 1092,
+        "right": 1440,
+        "height": 500
+      },
+      "avatar": {
+        "width": 132,
+        "height": 132
+      },
+      "tags": 15,
+      "tagOverflow": false,
+      "scroll": {
+        "height": 500,
+        "total": 1407
+      },
+      "documento": {
+        "w": 1440,
+        "h": 500
+      },
+      "fechar": 1
+    },
+    "tab": [
+      {
+        "nome": "Detalhes",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Mariana Costa de Almeida e Silva — atendimento familiar com nome extenso para demonstração visual",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Abrir oportunidade",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Editar nome",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Vincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Desvincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Registrar opt-out",
+        "dentro": true,
+        "inert": false
+      }
+    ],
+    "scroller": {
+      "top": 907,
+      "height": 500,
+      "total": 1407
+    },
+    "retorno": true,
+    "imagens": [
+      {
+        "arquivo": "light-1440-topo.png",
+        "sha256": "87297bd68cdfd4a7950b212c78f0b2d592aef12d16d51db10d0e6766b4b12531",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      },
+      {
+        "arquivo": "light-1440-fim.png",
+        "sha256": "e536c03c4f4ef7afbf5c8c551fbe10feb07833cf6741940cb07aba1e4c9b24d6",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      }
+    ],
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+    "fixture": "integrador9f646e:97caracteres+12tagsprivadas+3canonicas",
+    "tema": "light",
+    "width": 1024,
+    "height": 500,
+    "metricas": {
+      "nomeLength": 97,
+      "cabecalhoHeight": 905,
+      "aside": {
+        "left": 676,
+        "right": 1024,
+        "height": 500
+      },
+      "avatar": {
+        "width": 132,
+        "height": 132
+      },
+      "tags": 15,
+      "tagOverflow": false,
+      "scroll": {
+        "height": 500,
+        "total": 1407
+      },
+      "documento": {
+        "w": 1024,
+        "h": 500
+      },
+      "fechar": 1
+    },
+    "tab": [
+      {
+        "nome": "Detalhes",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Mariana Costa de Almeida e Silva — atendimento familiar com nome extenso para demonstração visual",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Abrir oportunidade",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Editar nome",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Vincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Desvincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Registrar opt-out",
+        "dentro": true,
+        "inert": false
+      }
+    ],
+    "scroller": {
+      "top": 907,
+      "height": 500,
+      "total": 1407
+    },
+    "retorno": true,
+    "imagens": [
+      {
+        "arquivo": "light-1024-topo.png",
+        "sha256": "34e90d4c57d754c1ac539e0a38c3a781c81fd9c3d52270cbac81806bca1d2493",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      },
+      {
+        "arquivo": "light-1024-fim.png",
+        "sha256": "f0f178b1f329ea49c5f0e319dddc2fe495257250a902a945a28dd7caa54a73f7",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      }
+    ],
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+    "fixture": "integrador9f646e:97caracteres+12tagsprivadas+3canonicas",
+    "tema": "light",
+    "width": 390,
+    "height": 500,
+    "metricas": {
+      "nomeLength": 97,
+      "cabecalhoHeight": 880,
+      "aside": {
+        "left": 0,
+        "right": 390,
+        "height": 443
+      },
+      "avatar": {
+        "width": 132,
+        "height": 132
+      },
+      "tags": 15,
+      "tagOverflow": false,
+      "scroll": {
+        "height": 443,
+        "total": 1418
+      },
+      "documento": {
+        "w": 390,
+        "h": 500
+      },
+      "fechar": 1
+    },
+    "tab": [
+      {
+        "nome": "Detalhes",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Mariana Costa de Almeida e Silva — atendimento familiar com nome extenso para demonstração visual",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Abrir oportunidade",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Editar nome",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Vincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Desvincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Registrar opt-out",
+        "dentro": true,
+        "inert": false
+      }
+    ],
+    "scroller": {
+      "top": 975,
+      "height": 443,
+      "total": 1418
+    },
+    "retorno": true,
+    "imagens": [
+      {
+        "arquivo": "light-390-topo.png",
+        "sha256": "a8cb9d0af18f2cc0b629bcc1589e0286d436469d082c653fbbc548656bb89c49",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      },
+      {
+        "arquivo": "light-390-fim.png",
+        "sha256": "b4fd7b7e92b5b056d573b4c68f0ae23955ef5d3c78e13dfa19ebbb64d0a6c76f",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      }
+    ],
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+    "fixture": "integrador9f646e:97caracteres+12tagsprivadas+3canonicas",
+    "tema": "dark",
+    "width": 1440,
+    "height": 500,
+    "metricas": {
+      "nomeLength": 97,
+      "cabecalhoHeight": 905,
+      "aside": {
+        "left": 1092,
+        "right": 1440,
+        "height": 500
+      },
+      "avatar": {
+        "width": 132,
+        "height": 132
+      },
+      "tags": 15,
+      "tagOverflow": false,
+      "scroll": {
+        "height": 500,
+        "total": 1407
+      },
+      "documento": {
+        "w": 1440,
+        "h": 500
+      },
+      "fechar": 1
+    },
+    "tab": [
+      {
+        "nome": "Detalhes",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Mariana Costa de Almeida e Silva — atendimento familiar com nome extenso para demonstração visual",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Abrir oportunidade",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Editar nome",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Vincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Desvincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Registrar opt-out",
+        "dentro": true,
+        "inert": false
+      }
+    ],
+    "scroller": {
+      "top": 907,
+      "height": 500,
+      "total": 1407
+    },
+    "retorno": true,
+    "imagens": [
+      {
+        "arquivo": "dark-1440-topo.png",
+        "sha256": "f622f41315af9d56446f8e4ce627d7f4684074d390d35f390ad3be5099ace93a",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      },
+      {
+        "arquivo": "dark-1440-fim.png",
+        "sha256": "6bb79214841a580e1972f31706f4570023135347c665c8661a4a29a222525f31",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      }
+    ],
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+    "fixture": "integrador9f646e:97caracteres+12tagsprivadas+3canonicas",
+    "tema": "dark",
+    "width": 1024,
+    "height": 500,
+    "metricas": {
+      "nomeLength": 97,
+      "cabecalhoHeight": 905,
+      "aside": {
+        "left": 676,
+        "right": 1024,
+        "height": 500
+      },
+      "avatar": {
+        "width": 132,
+        "height": 132
+      },
+      "tags": 15,
+      "tagOverflow": false,
+      "scroll": {
+        "height": 500,
+        "total": 1407
+      },
+      "documento": {
+        "w": 1024,
+        "h": 500
+      },
+      "fechar": 1
+    },
+    "tab": [
+      {
+        "nome": "Detalhes",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Mariana Costa de Almeida e Silva — atendimento familiar com nome extenso para demonstração visual",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Abrir oportunidade",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Editar nome",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Vincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Desvincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Registrar opt-out",
+        "dentro": true,
+        "inert": false
+      }
+    ],
+    "scroller": {
+      "top": 907,
+      "height": 500,
+      "total": 1407
+    },
+    "retorno": true,
+    "imagens": [
+      {
+        "arquivo": "dark-1024-topo.png",
+        "sha256": "bfc8c78d64f0f794f487df02e47befcf8efa3907db371878cab50793266e07fb",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      },
+      {
+        "arquivo": "dark-1024-fim.png",
+        "sha256": "fbbebf0319c769019377337c8752d0af31212b14d513edac18dc94c8e0bcc4e2",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      }
+    ],
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  },
+  {
+    "fonte": "f5b7f5d018b2cbd61c793daf8827e3a4ffa5a4ff",
+    "fixture": "integrador9f646e:97caracteres+12tagsprivadas+3canonicas",
+    "tema": "dark",
+    "width": 390,
+    "height": 500,
+    "metricas": {
+      "nomeLength": 97,
+      "cabecalhoHeight": 880,
+      "aside": {
+        "left": 0,
+        "right": 390,
+        "height": 443
+      },
+      "avatar": {
+        "width": 132,
+        "height": 132
+      },
+      "tags": 15,
+      "tagOverflow": false,
+      "scroll": {
+        "height": 443,
+        "total": 1418
+      },
+      "documento": {
+        "w": 390,
+        "h": 500
+      },
+      "fechar": 1
+    },
+    "tab": [
+      {
+        "nome": "Detalhes",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Mariana Costa de Almeida e Silva — atendimento familiar com nome extenso para demonstração visual",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Abrir oportunidade",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Editar nome",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Vincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Desvincular",
+        "dentro": true,
+        "inert": false
+      },
+      {
+        "nome": "Registrar opt-out",
+        "dentro": true,
+        "inert": false
+      }
+    ],
+    "scroller": {
+      "top": 975,
+      "height": 443,
+      "total": 1418
+    },
+    "retorno": true,
+    "imagens": [
+      {
+        "arquivo": "dark-390-topo.png",
+        "sha256": "426e37c1fb0e01acb90e0a8d9afd7c38ccb42ca2b455d8540819c5e2cb557fc0",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      },
+      {
+        "arquivo": "dark-390-fim.png",
+        "sha256": "f8169d5b5632ca9b3c399612d9cd654efb0dbe1456d04d98b52af755e6a577d6",
+        "politica": {
+          "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+          "versao": 1,
+          "substituicoes": 0
+        }
+      }
+    ],
+    "falhas": [],
+    "erros": [],
+    "externos": []
+  }
+]

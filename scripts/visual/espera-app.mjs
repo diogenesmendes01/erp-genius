@@ -43,21 +43,13 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
     });
     return;
   }
-  if (estado === "celular-painel" || estado === "tablet-painel") {
-    // Após abrir o painel único, InboxNovo oculta a região Conversa; a mensagem já foi aguardada antes do clique.
+  if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
+    // A thread foi confirmada antes de abrir; na vista própria fica oculta.
     await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
-    // `visible` inclui uma superfície ainda deslocada; a superfície final precisa caber no viewport e terminar a transição.
-    await pagina.waitForFunction(() => {
-      const drawer = document.querySelector('aside[aria-label="Painel do contato"]');
-      if (!drawer || drawer.inert || drawer.getAttribute?.("aria-hidden") === "true") return false;
-      const area = drawer.getBoundingClientRect();
-      return area.width > 0 && area.height > 0
-        && area.left >= -1 && area.right <= window.innerWidth + 1
-        && area.top >= -1 && area.bottom <= window.innerHeight + 1
-        && drawer.getAnimations().every((animacao) => animacao.playState !== "running");
-    });
+    await pagina.waitForFunction(semanticaPainelDetalhesPronto);
     return;
   }
+
   if (estado === "sem-selecao" || estado === "celular-lista") {
     await pagina.getByRole("region", { name: "Conversas", exact: true }).getByText("Mariana Costa", { exact: true }).waitFor({ state: "visible" });
     return;
@@ -114,4 +106,22 @@ export function semanticaPopoverColunaPronta(titulo) {
   if (!final) return true;
   const fim = final.getBoundingClientRect();
   return dentro(fim) && fim.top >= area.top - 1 && fim.bottom <= area.bottom + 1;
+}
+
+/** Callback DOM da fixture canônica318: setor sozinho não prova cabeçalho/tags/abas carregados. */
+export function semanticaPainelDetalhesPronto() {
+  const painel = document.querySelector('aside[aria-label="Painel do contato"]');
+  if (!painel || painel.inert || painel.getAttribute?.("aria-hidden") === "true") return false;
+  const r = painel.getBoundingClientRect();
+  if (r.width <= 0 || r.height <= 0 || r.left < -1 || r.right > window.innerWidth + 1 || r.top < -1 || r.bottom > window.innerHeight + 1 || painel.getAnimations().some(a => a.playState === "running")) return false;
+  const header = painel.querySelector?.('[data-cabecalho-contato]');
+  if (!header || header.querySelector('h2')?.textContent?.trim() !== "Mariana Costa") return false;
+  if (!["Adulto", "Inglês", "Noite"].every(t => header.textContent.includes(t)) || header.querySelector('[aria-label="Criada pela Aria"]')?.parentElement?.textContent?.trim() !== "Noite") return false;
+  const avatar = header.querySelector(':scope > span')?.getBoundingClientRect();
+  if (!avatar || Math.abs(avatar.width - 132) > .5 || Math.abs(avatar.height - 132) > .5) return false;
+  const abas = [...painel.querySelectorAll('[role="tab"]')];
+  if (abas.length !== 1 || abas[0].textContent.trim() !== "Detalhes" || abas[0].getAttribute('aria-selected') !== "true") return false;
+  const fechar = [...painel.querySelectorAll('button[aria-label="Fechar painel do contato"]')];
+  const botao = fechar[0]?.getBoundingClientRect();
+  return fechar.length === 1 && !!botao && Math.abs(botao.width - 36) <= .5 && Math.abs(botao.height - 36) <= .5;
 }

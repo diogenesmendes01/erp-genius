@@ -4,7 +4,7 @@ import { abrirPopoverColunaApp, esperarConteudoApp, semanticaPopoverColunaPronta
 afterEach(()=>vi.unstubAllGlobals());
 it("três popovers acrescentam36PNG sem reduzir autoria314 e lista-vazia312",()=>{
  for(const estado of ["filtros","seletor-numero","nova-conversa"]){const c=combinacoes({alvos:["app","prototipo"],estados:[estado]});expect(c).toHaveLength(12);expect(new Set(c.map(p=>p.tamanho))).toEqual(new Set(["desktop","tablet","celular"]));}
- expect(combinacoes({alvos:["app","prototipo"],estados:Object.keys(ESTADOS)})).toHaveLength(94);
+ expect(combinacoes({alvos:["app","prototipo"],estados:Object.keys(ESTADOS)})).toHaveLength(106);
  expect(combinacoes({alvos:["app","prototipo"],estados:["humano-compositor"]})).toHaveLength(12);
  expect(combinacoes({alvos:["app","prototipo"],estados:["lista-vazia"]})).toHaveLength(12);
 });
