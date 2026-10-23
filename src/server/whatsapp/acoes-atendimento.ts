@@ -8,6 +8,7 @@ import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registr
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { CANAL_INBOX, type AvisoInbox } from "@/server/inbox/barramento";
 import { podeExecutar } from "@/server/inbox/permissoes";
+import { avisarAtendimento } from "@/server/inbox/aviso";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
 import { escopoAtendimentos } from "./escopo";
 import { SETORES, ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
@@ -321,7 +322,7 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
  * FOR EACH ROW sem WHEN; o NOTIFY só sai no commit): o convidado vê o compositor liberar (ou travar) sem reabrir.
  */
 async function avisarMudancaDeEscopo(tx: Prisma.TransactionClient, atendimentoId: string): Promise<void> {
-  await tx.$executeRaw`UPDATE "AtendimentoWhatsApp" SET "id" = "id" WHERE "id" = ${atendimentoId}`;
+  await avisarAtendimento(tx, atendimentoId);
 }
 
 /**
