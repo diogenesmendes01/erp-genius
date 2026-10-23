@@ -43,9 +43,9 @@ export function AbasPainel({ abas, abaAtiva, aoTrocarAba, idBase }: { abas: read
 }
 
 /** Uma montagem para coluna, sobreposição e vista própria: não perde campos ao redimensionar. */
-export function PainelContato({ visivel, sobreposto, className, aoFechar, children, focarAoAbrir = false, contato, abas = abasDoPainel(""), abaAtiva = "detalhes", aoTrocarAba }: {
+export function PainelContato({ visivel, sobreposto, className, aoFechar, children, focarAoAbrir = false, contato, slotTags, slotAviso, abas = abasDoPainel(""), abaAtiva = "detalhes", aoTrocarAba }: {
   visivel: boolean | null; sobreposto: boolean; className: string; aoFechar(): void; children?: ReactNode; focarAoAbrir?: boolean;
-  contato?: ContatoPainel; abas?: readonly AbaPainel[]; abaAtiva?: IdAbaPainel; aoTrocarAba?(id: IdAbaPainel): void;
+  contato?: ContatoPainel; slotTags?: ReactNode; slotAviso?: ReactNode; abas?: readonly AbaPainel[]; abaAtiva?: IdAbaPainel; aoTrocarAba?(id: IdAbaPainel): void;
 }) {
   const idBase = useId();
   const painel = useRef<HTMLElement>(null);
@@ -100,10 +100,11 @@ export function PainelContato({ visivel, sobreposto, className, aoFechar, childr
           <Avatar nome={contato.nome} tamanho={132} tom={tomDoAvatar(contato.id)} quadrado={contato.quadrado} />
           <h2 className="max-w-full text-balance text-center text-xl font-medium leading-[1.25] [overflow-wrap:anywhere]">{contato.nome}</h2>
           <p className="max-w-full text-center text-sm text-gray-600 [overflow-wrap:anywhere]">{contato.subtitulo}</p>
-          {contato.tags.length > 0 && <div className="flex max-w-full flex-wrap justify-center gap-1.5">{contato.tags.map(tag => <span key={tag.rotulo} className="inline-flex min-h-[26px] items-center gap-[5px] rounded-[13px] bg-surface-muted px-2.5 text-[12.5px] [overflow-wrap:anywhere]">
+          {slotTags !== undefined ? slotTags : contato.tags.length > 0 && <div className="flex max-w-full flex-wrap justify-center gap-1.5">{contato.tags.map(tag => <span key={tag.id} className="inline-flex min-h-[26px] items-center gap-[5px] rounded-[13px] bg-surface-muted px-2.5 text-[12.5px] [overflow-wrap:anywhere]">
             {tag.ia && <IconSparkles size={11} className="shrink-0 text-ai-700" aria-label="Criada pela Aria" />}{tag.rotulo}
           </span>)}</div>}
         </header>}
+        {slotAviso}
         {contato && <AbasPainel abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => aoTrocarAba?.(id)} idBase={idBase} />}
         <div role={contato ? "tabpanel" : undefined} id={contato ? idBase + "-conteudo" : undefined} aria-labelledby={contato ? idBase + "-tab-" + ativaValida(abas, abaAtiva) : undefined}
           className={contato ? "flex min-h-0 flex-col gap-5 px-[18px] pb-6 pt-4" : undefined}>{children}</div>

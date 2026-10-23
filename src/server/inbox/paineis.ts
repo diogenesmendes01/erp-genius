@@ -7,7 +7,7 @@ import { carregarAcoesContatoInbox, carregarAriaDoAtendimento, type AriaDoAtendi
 
 import { carregarCabecalhoPainel, type CabecalhoPainel } from "./painel-detalhes";
 
-export type TagPainel = { rotulo: string; ia: boolean };
+export type TagPainel = { id: string; rotulo: string; ia: boolean };
 
 export type PainelSetor = DadosSetor & {
   cabecalho?: CabecalhoPainel | null;
@@ -54,9 +54,9 @@ export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): P
 async function tagsDaPessoa(pessoaId: string): Promise<TagPainel[]> {
   const tags = await prisma.pessoaTag.findMany({
     where: { pessoaId }, orderBy: { tag: { nome: "asc" } },
-    select: { criadoPorId: true, tag: { select: { nome: true } } },
+    select: { criadoPorId: true, tag: { select: { id: true, nome: true } } },
   });
-  return tags.map(t => ({ rotulo: t.tag.nome, ia: t.criadoPorId === null }));
+  return tags.map(t => ({ id: t.tag.id, rotulo: t.tag.nome, ia: t.criadoPorId === null }));
 }
 
 async function carregarDadosSetor(u: UsuarioSessao, atendimentoId: string): Promise<DadosSetor | null> {
