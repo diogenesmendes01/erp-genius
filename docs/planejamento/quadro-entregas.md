@@ -6107,3 +6107,7 @@ Fontea5ecee15:patch461/c962+332compostos semantecipar319/E2;QAcompostafavorável
 ## PR #401 — composição do cabeçalho e todos os comentários
 
 Fonte266b180e:7e988310patch474+399978compostos;1blocoquadroconservaambos,Conversa mantém315/Cabecalho/useAcoes comremoçãopropsórfãos399;teste315preservado,estadoPickee565intacto. JSConversaemitigual7e. Próprio10/201837b4b+2/5ceba6d,TSC40454/5b1118,lint85407/521e25 terminais0/40avisos,semglobalDB. QA474favorávelhash17259...versionada;QAcomposta/399main/CI401aindagates. C2buscafutura316/C3cortes9601400/C4recontaapenasok/C5inventário documentados; output/pr401-qa/composicao-todos.md. Semenvio/captura/migração/install.
+
+## PR #402 — composição e comentários da busca
+
+Fonte6aa08b37:patchf94/7fdb52ed+4014b9;1blocoquadroconservaambos. C2hookscroll/RAF/pin/intenção9e9ad0+test8c129preservados, C3Shiftatalhorejeitado, C4contratosdocumentados e C5inventáriopreservado. Próprio12/176d55b9b,TSC30533/f27cd4 e lint79500/513ce0 terminais0/40avisos. QApatchf94favorável7/40porfusopróprios/hash2b6b61...versionada;QAcomposta/401main/CI402gatespendentes. B2/QA280/Pick315/patches398399400preservados; sem317/E2antecipados, DB/captura/migração/install/envio. output/pr402-qa/composicao-todos.md.
