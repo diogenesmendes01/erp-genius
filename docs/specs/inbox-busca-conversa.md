@@ -54,4 +54,17 @@ dois arquivos terminaram0. Prova Chrome de componente com hook/BuscaConversa/
 VirtualList/CSS reais, 150 mensagens fictícias e prepend40, seis contextos,
 ResizeObserver nativo: manual/foco externo, pin000, Enter/Shift e prepend
 preservados. Fonte anterior reproduziu600→0. Não é E2E do Next/SSE/API/DB.
-Global final e revisão independente permanecem pendentes neste congelamento.
+Global final do código 7a825062: 893 arquivos/6.977 testes unitários, sessão
+30869 EXIT0, sem filtros/ignorados; TSC39739 EXIT0 e lint global3582 EXIT0,
+0 erros/40 avisos anteriores. TESTER independente no SHA exato: sete arquivos/
+37 testes, exec220bac EXIT0, parecer favorável à correção delimitada.
+
+Seis capturas positivas de componente foram inspecionadas em 390/1024/1440px,
+claro/escuro. ZIP inbox-pr402-c2-7a825062.zip: 113.219 bytes, seis PNG/nove
+arquivos, SHA256 6a30496c67a9ee472bbf4c58f34e802c8d385a35b10e460a77442094fa07753e,
+asset668148410 da release DRAFT421321214; download/hash conferidos.
+Não inclui negativos, probes ou logs. O TESTER ressalva conferir a linha
+selecionada no ERP com paginação/SSE real na futura composição317/319, pois
+scrollTop mede deslocamento sem distinguir ajuste de âncora da VirtualList.
+Não houve falha reproduzida nessa fronteira; o prepend40 real do componente
+passou. Detalhes e limites: output/pr402-qa/revisao.md.
