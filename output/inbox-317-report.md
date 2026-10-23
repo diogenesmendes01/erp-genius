@@ -49,3 +49,18 @@ O node acima é explicitamente C:/Users/Mendes/AppData/Local/hermes/node/node.ex
 6. Banco dev-email permanece no snapshot original restaurado pelo ROOT282f2f; sem teste DB/server/browser DEV ativo e nenhuma escrita de negócio.
 
 SPEC: docs/specs/inbox-rodape-compositor.md. Quadro recebe apenas seção317; históricos preservados.
+
+
+## DeltaCLI posterior ao checkpoint a86
+
+O produto a86c9ade33606350c1551c6a5759ebecc9366d6b permanece byte-igual. Novo commit separado altera somente CLI/prontidão/tipos/testes/README e este ledger/SPEC/quadro. Estado nota acrescenta12PNG, humano-compositor mais nota são24 formais planejadas; total136 (72app/64protótipo). Não houve imagem/browser/DB.
+
+- RED8a9d75:6/6 por estado nota/prontidão ausentes e aviso de rodapé confundido com nota314. A correção de escopo exclui somente role=note dentro do footer; notas reais continuam exigindo data-nota-id e ausência de mídia/comandos/status.
+- 402067:5/6; restante era mock de getByRole sem options no caso note, corrigido só no teste.
+- 224da1:50/51; expectativa histórica124 da coluna atualizada para136, sem remover estado antigo.
+- GREENff1da1 EXIT0:8 arquivos/51 testes de harness, sem filtro/ignorados;3tamanhos/2temas combinados em plano. CLI --help é executada por teste sem abrir browser ou DB.
+- TSC38512 heap8192 EXIT0; lint8arquivos be4324 --max-warnings0 EXIT0; diffcheck c07e2e EXIT0. Node22.23.2 em todos.
+
+Prontidão317 valida duas abas/seleção/painel e campo atual, header68, controles44 e viewport; nota sem agenda/anexo/voz e sem promessa de menção no app. Abrir nota espera thread real/hidratação e aciona só tab; protótipo usa sua aba/placeholder originais, menção histórica documentada como divergência. Manifesto/fonteApp/hashes, guardReact/hidratação/rede e anonDOM392 após interações/antesfoto preservados.
+
+Formal aguarda C2/#402 congelado e preview fornecido pelo integrador. Testes DOM mínimos não medem CSS real; os tamanhos declarados são plano de captura, não aceite visual. TESTER estático do produto a86 em andamento. Nenhuma captura antiga é atribuída ao compositor317.

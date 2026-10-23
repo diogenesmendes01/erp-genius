@@ -7,6 +7,7 @@ const referencia = (nome) => path.join(raiz, "docs", "planejamento", "inbox-prot
 export const TAMANHOS = Object.freeze({ desktop: [1440, 900], tablet: [1024, 768], celular: [390, 844] });
 export const TEMAS = Object.freeze(["escuro", "claro"]);
 export const ESTADOS = Object.freeze({
+  nota: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-nota-interna.png") },
   "busca-conversa": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false },
   conversa: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-escuro-admin-desktop.png") },
   "menu-mais": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-menu-mais.png") },

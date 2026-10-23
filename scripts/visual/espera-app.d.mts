@@ -16,3 +16,6 @@ export function semanticaMenuConversaPronto(): boolean;
 
 export function abrirBuscaConversaApp(pagina: Page, tamanho: string): Promise<void>;
 export function semanticaBuscaConversaPronta(): boolean;
+
+export function abrirNotaConversaApp(pagina: Page, tamanho: string): Promise<void>;
+export function semanticaRodapePronto(modo: "responder" | "nota"): boolean;
