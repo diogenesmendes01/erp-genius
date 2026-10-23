@@ -5092,3 +5092,14 @@ Chrome offline: 40 pares × dois temas, 80 comparações de geometria/estilo,
 tela Next/RSC completa. Duas imagens inspecionadas e locais. Sem DB/envio.
 Relatório output/pr393-qa/revisao.md. Parecer do head final e CI pendentes;
 #392/B2 ainda bloqueia a integração da pilha em main por decisão humana.
+
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
