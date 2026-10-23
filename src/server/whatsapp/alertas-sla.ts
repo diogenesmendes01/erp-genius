@@ -50,11 +50,11 @@ export async function rodarAlertasSla(agora: Date): Promise<{ alertados: number;
   const desde = new Date(agora.getTime() - JANELA_ALERTA_SLA_MS);
   return prisma.$transaction(async (tx) => {
     const reclamados = await tx.$queryRaw<Reclamado[]>`
-      UPDATE "AtendimentoWhatsApp" a SET "slaAlertadoEm" = ${agora}
+      UPDATE "AtendimentoWhatsApp" a SET "slaAlertadoEm" = (${agora}::timestamptz AT TIME ZONE 'UTC')
       FROM "ConversaWhatsApp" c
       WHERE c.id = a."conversaId" AND c."grupoId" IS NULL
         AND a.status <> 'ENCERRADO' AND a."primeiraRespostaEm" IS NULL AND a."slaAlertadoEm" IS NULL
-        AND a."prazoRespostaEm" <= ${agora} AND a."prazoRespostaEm" > ${desde}
+        AND a."prazoRespostaEm" <= (${agora}::timestamptz AT TIME ZONE 'UTC') AND a."prazoRespostaEm" > (${desde}::timestamptz AT TIME ZONE 'UTC')
         AND NOT EXISTS (
           SELECT 1 FROM "MensagemWhatsApp" m
           WHERE m."atendimentoId" = a.id AND m.direcao = 'SAIDA' AND m.origem = 'IA'

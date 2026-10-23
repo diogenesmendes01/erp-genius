@@ -1,0 +1,22 @@
+{
+  "fonte": "32d34493bc6839696a630ead449e7adf666caa1e",
+  "parecer": "final-tester.md",
+  "sha256OriginalFisico": "6c90ca92a0203afe8856f0eedc841210f5cf4a4a0104c17fb49f87807748f0a4",
+  "sha256PublicadoLF": "798ffbd0ce3d3bc10cfff6ba2ae7d69811037a4e8b49eb91181f8beed61c6961",
+  "normalizacao": "Somente CRLF para LF; texto e limites mantidos.",
+  "integracao": {
+    "arquivos": 2,
+    "testes": 18,
+    "sessao": 81165,
+    "terminal": "909a8e",
+    "exit": 0,
+    "perfil": "ci-integracao",
+    "schema": 487
+  },
+  "restauroRoot": {
+    "terminal": "2dd656",
+    "exit": 0,
+    "tabelas": 424,
+    "hashesConferidos": true
+  }
+}
