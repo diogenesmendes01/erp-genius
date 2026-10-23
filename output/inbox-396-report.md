@@ -17,4 +17,20 @@ Comandos Node22 locais: vitest run src/lib/eventos-inbox.test.ts src/app/(app)/i
 
 C1 foi atendida somente com nota de capacidade na SPEC: uma SSE por aba, custo por múltiplas abas, limites HTTP/1.1 e recomendação de verificar HTTP/2 no proxy. Não afirma configuração existente nem altera infraestrutura/contagem. C2 segue integrador, LOWC3–C5 diferidos. Fontes3943a/e657 e artefatos313/676 continuam imutáveis.
 
-Pendente: TESTER exato, porte mínimo no agregado autorizado, browser local coordenado e global/publicação pelo integrador. Queda controlada no browser será identificada como transporte privado, sem alegar deploy real. Sem suiteDB/seed/preview iniciado pelo DEV, instalação/package/lock/schema/servidorSSE/permissão/transportes reais. Nenhuma homologação presumida.
+Pendente: porte mínimo no agregado autorizado, global e publicação pelo integrador. TESTER e prova browser do isolado constam abaixo. Sem suiteDB/seed/preview iniciado pelo DEV, instalação/package/lock/schema/servidorSSE/permissão/transportes reais. Nenhuma homologação presumida.
+
+## Prova do isolado no navegador e revisão independente
+
+Fonte produtiva babd1fe60c99483923b7c78411f639081acff486, Node22/Next16.3.5/Chrome155/Playwright1.56.1top, perfil dev-gravacoes. O integrador informou TESTER independente favorável no SHA exato: 7 arquivos/41 testes, sessão e784b60, saída0. Sem alteração produtiva após os gates DEV já observados.
+
+Probe privado output/inbox-396-browser/probe-closed.mjs, SHA256 d46c98de5e77f20ded6c10947e19f7b0381b5703862a5dcc7464648f6c0fcecd. Sintaxe/check/help terminaram com saída0 antes de abrir o navegador. O primeiro preflight falhou por importar um predicado React ausente no harness histórico311, antes de iniciar browser. O negativo e hash403afc foram preservados. A correção foi exclusivamente privada: mesmo predicado da composição atual declarado no probe, sem mudar script compartilhado ou guard global.
+
+Execução d56ad6 terminou saída0. Abertura autenticada em /home preservou a Sidebar; a interceptação respondeu503 em exatamente uma conexão /api/inbox/eventos e depois deixou o transporte passar ao servidor real. Um listener nativo de error, registrado antes do onerror produtivo, observou readyState=2 antes de a aplicação fechar a fonte. StrictMode havia criado/fechado a fonte1; fonte2 recebeu o503. Após CLOSED não havia fonte ativa nem nova fonte antes da próxima assinatura. O intervalo de observação250ms não é prova de carga prolongada; o código não cria timer/retry.
+
+O clique real no Link Inbox navegou /home→/inbox e criou somente a fonte3. A SSE respondeu200 real, data-conectado ficou1, máximo de fontes ativas foi1 e houve um único documento/timeOrigin. A identidade DOM da navegação Sidebar permaneceu conectada e igual. A assinatura antiga recebeu o resync da primeira abertura da substituta: stack privado comprovou fonte.onopen→avisar→aoAviso→recontar→executar→fetch /api/inbox/nao-lidas. Não se fabricou evento, prop ou JSON de negócio para esse resultado. Nenhum PG, SQL, seleção de conversa, submit ou envio foi necessário.
+
+Zero falhas; dois diagnósticos privados esperados (response503 e console503 do request exato). O classificador só reconhece essa injeção local; os guards globais permanecem intactos. Não é simulação de deploy real. As duas imagens home-closed/inbox-recuperada foram inspecionadas favoravelmente e ilustram a UI histórica311 do SHA babd, sem atribuição estética à composição313/315.
+
+Allowlist explícita output/inbox-396-allowlist.json: 2 PNGs,177.044bytes, cada item com arquivo/bytes/SHA256/tipo/fonte/inspeção. SHA256 da allowlist:58f178e39520f280cdc10e6f328e47fda9306d82eedb60532e0df9c881b1bb57. Resumo sanitizado output/inbox-396-evidencias.json sem rawstack/corpos/traces. Scripts, manifestos brutos, logs e negativos ficam locais e privados, foraGit/ZIP. Nenhum binário novo no Git.
+
+Browsers/contexto foram fechados no finally antes de o integrador encerrar o preview29353. Depois da confirmação do stop, removeu-se exclusivamente o bloco Next gerado emAGENTS. Fonte isolada permanece pronta para o porte mínimo coordenado; global, depósito remoto e publicação ficam com o integrador. Sem homologação presumida.
