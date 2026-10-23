@@ -5747,5 +5747,24 @@ contraee498 difere em15arquivos produtores394/R6/puro/Avatar/SSE; painel,
 Conversa/LinhaCampo/backendpaineis/testDB/scripts/package/lock idênticos.
 Recorte8/1330; global20394 EXIT0:883arquivos/6.926testes,266,18s,maxWorkers2,
 sem filtros/ignorados. Nexttypegen/TSC95347 e lint60640 EXIT0,0erros40avisos.
-DB12 anteriorab8 nominal, sem novo DB/browser. TESTERexato/CI/main/392B2
-pendentes. output/pr399-qa/ancestralidade.md, sem homologação presumida.
+DB12 anteriorab8 nominal, sem novo DB/browser. TESTER332 favorável11/196
+e3/23 próprios,saídas0,sem DB/browser/global/TSC/lint. Base278615a9 recebe
+sódocsQA398/404,source/deps iguais332,zeroPNG298. CI/main/392B2 pendentes.
+output/pr399-qa/ancestralidade.md, sem homologação presumida.
+
+Sem novo DB/browser. TESTERbc4 favorável7/148 próprios,d722b1 EXIT0;
+baseb23ff13b recebe404ca5 retirando64PNG298,sóPNG/docs,src/scripts/depsiguais.
+Quatro variantes diferentesmain/ZIP381 foram preservadasLOCAL/hash/OID antes
+de retirar, sem novo upload. CI/main/392B2 pendentes,reportpr398-qa/revisao.md.
+
+
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
