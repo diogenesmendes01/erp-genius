@@ -1,0 +1,151 @@
+{
+  "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+  "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+  "total": 12,
+  "linhas": [
+    {
+      "fluxo": "matricula",
+      "tamanho": "desktop",
+      "tema": "escuro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-formal-r2/secretaria-origem/app-escuro-desktop-painel-secretaria.png",
+      "destino": "output/inbox-335-alcance-r2/admin-escuro-desktop-destino-matricula-r2.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "contato",
+      "tamanho": "desktop",
+      "tema": "escuro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-navegacao-r1/admin-escuro-desktop-origem-funil.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-escuro-desktop-destino-contato.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "matricula",
+      "tamanho": "desktop",
+      "tema": "claro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-formal-r2/secretaria-origem/app-claro-desktop-painel-secretaria.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-claro-desktop-destino-matricula.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "contato",
+      "tamanho": "desktop",
+      "tema": "claro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-navegacao-r1/admin-claro-desktop-origem-funil.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-claro-desktop-destino-contato.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "matricula",
+      "tamanho": "tablet",
+      "tema": "escuro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-formal-r2/secretaria-origem/app-escuro-tablet-painel-secretaria.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-escuro-tablet-destino-matricula.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "contato",
+      "tamanho": "tablet",
+      "tema": "escuro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-navegacao-r1/admin-escuro-tablet-origem-funil.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-escuro-tablet-destino-contato.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "matricula",
+      "tamanho": "tablet",
+      "tema": "claro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-formal-r2/secretaria-origem/app-claro-tablet-painel-secretaria.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-claro-tablet-destino-matricula.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "contato",
+      "tamanho": "tablet",
+      "tema": "claro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-navegacao-r1/admin-claro-tablet-origem-funil.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-claro-tablet-destino-contato.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "matricula",
+      "tamanho": "celular",
+      "tema": "escuro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-formal-r2/secretaria-origem/app-escuro-celular-painel-secretaria.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-escuro-celular-destino-matricula.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "contato",
+      "tamanho": "celular",
+      "tema": "escuro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-navegacao-r1/admin-escuro-celular-origem-funil.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-escuro-celular-destino-contato.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "matricula",
+      "tamanho": "celular",
+      "tema": "claro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-formal-r2/secretaria-origem/app-claro-celular-painel-secretaria.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-claro-celular-destino-matricula.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    },
+    {
+      "fluxo": "contato",
+      "tamanho": "celular",
+      "tema": "claro",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "origem": "output/inbox-335-navegacao-r1/admin-claro-celular-origem-funil.png",
+      "destino": "output/inbox-335-navegacao-r1/admin-claro-celular-destino-contato.png",
+      "prototipo": null,
+      "parecer": "Trajeto real APP autorizado e alvo correspondente inspecionados; funcional protótipo N/A.",
+      "justificativa": "Protótipo não representa navegação real para cadastro de matrícula/contato nem sua autorização."
+    }
+  ]
+}

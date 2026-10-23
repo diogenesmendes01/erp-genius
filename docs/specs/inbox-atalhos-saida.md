@@ -21,3 +21,13 @@ RED unitário0d2a8e (3falhas de links/rota; encoder módulo ausente separado) e 
 Encoder5casos inclui espaços/Unicode e caracteres que não podem injetar origem/parâmetro. PainelSetor3casos novos preservam código legível/ausência de link; Funil mantém Pessoa e rota real. Integração com6atores e dados não vazios prova gates e convidados sem dados setoriais, além dos arquivos completos deenvio/Detalhes. CampoAPI aditivo usa seleção existente; nenhuma nova consulta ou ACL.
 
 BancoA liberado ao integrador após1473 terminal0; restauro ainda não presumido. Visual/fixture/CLI/handoff B337, QA independente/global integrado/PR/CI permanecem pendentes. Nenhuma foto histórica atribuída a esta alteração.
+
+## Visual e harness — freeze documental DEV (23/10/2026)
+
+APP4c76 e harness6e498 têm fontes distintas. O harness adiciona seis combinações APP Secretaria, preservando176 anteriores (182 total), com preflightGET autorizado e conclusão finita das mensagens antes da foto. RED/GREEN e TSC/lint dirigidos constam do relatório, sem mudança de produção/ACL e sem novo global.
+
+Prova real: 24 formais APP +40 complementares =64 PNGs positivos, 4.273.828 bytes, originais/hashes em allowlists curadas. Admin/Secretaria chegaram à matrícula real com código público; Admin saiu do Funil para a mesma Pessoa em /contatos?c=; Professor convidado recebe campos setoriais nulos/enviofalse e redireciona no navegador para acesso-negado no cadastro. Não inferir autorização de uma URL nem de HTTP200 do stream. Protótipo funcional N/A, tabela12 linhas; nenhuma referência fabricada.
+
+Altura500: oito contextos +12 medidas de borda, Tab/Escape/foco/mesmoDOM/scroll local. Link móvel íntegro em482,5–499,5, sem margem ampla; posição inicial e após rolagem são provas diferentes. Último controle apenas focado, nenhuma mutação. Duas construções SSE sequenciais/máximo uma simultânea nas origens. R1formal, R1alcance e uma fotoNext estão preservadas/excluídas e têm substitutos/fontes próprios.
+
+ROOT preparou11linhas suplementares e restaurou A487 em c538fc/0 após stop79643:424hashes/9msgs4notas originais. BlocoNextAGENTS conferido/removido sozinho. Parecer output/inbox-335-visual-parecer.md e allowlists formais/complementares documentam evidências e limites. QA independente/global integrado/publicação/CI continuam pendentes; não é homologação presumida.

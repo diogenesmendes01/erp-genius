@@ -6620,3 +6620,12 @@ C1: integração independente54da preparação e seus limites continuam indexado
 ## PR #413 — QA R1 fechada, CI final pendente
 
 Fonte0e4ec6edcb430568ed339f8bf6630265d356a02a revisadaTESTER:4/37unit165dda0+2completos25INT46676/ba3aed0/96,11s,semfiltro/skips,perfilintegracao487,JScomentárioC3idênticod8103b0. Parecer88AD7FE2FEE0EF298D8DBBAADEE3E95DBAB7A0369A2DE44C8551D423632EA1C4 versionadoemoutput/inbox-324-qa/revisao-c5.md/índice. ROOTrestauroeb22130/424hashessnapshotmantido. Seisimagensinline originais2396:627933B/hash6/6/roundtripdc21db0/releasedraftmantido. Fonteexecutávelmantida;commitfinalapenasMDJSON. Push/CI/releiturafinal/mergependentes,nãomarcar324concluídaantesGitHubCLOSEDconfirmado.
+
+
+## Inbox #335 — código e evidência DEV congelados, QA/publicação pendentes
+
+23/10/2026 — Produto4c76: encoder relativo seguro, matriculaId sob o mesmo gate de código FIN/SEC, links reais de matrícula e /contatos?c= preservando ACL/identidade. Unit dirigido65/653 sessão45159, INT3/32 sessão1473, TSC16563 e lint818ebc terminais0 Node22; não são global. Harness6e498: estado app-onlySecretaria, matriz176+6=182; RED832b7f/ffa43c → GREEN14/101 a4b419, TSC2ac1bd/lint2f1842 terminais0. APP permaneceu byteigual4c76.
+
+Visual64PNG positivas inspecionadas:24formais +40complementares (4.273.828bytes), fontes/hashes por arquivo. Dois destinos reais autorizados, Professor convidado com camposnull/enviofalse e /acesso-negado real; protótipo funcional N/A explícito/tabela12linhas. Alcance500/Tab/Escape/resize/mesmoDOM/scrollY0 comprovados; link móvel íntegro perto da borda499,5 e duasSSE sequenciais/máximo1simultânea são limites registrados. NegativasR1 e fotoNext preservadas fora da positiva. Sessões70259/6278/59355 terminais0; semenvio/negócio.
+
+ROOTrestauro c538fc/0 confirmou424hashes/9mensagens4notas após stop79643; onze linhas privadas removidas. AGENTSNext restaurado sozinho; nenhum PNG/credencial/probe bruto no commit. SPEC inbox-atalhos-saida e report/parecer/allowlists output/inbox-335-* delimitam prova. QA independente exata, composição/main/base futura, global integrado, PR/CI e publicação continuam pendentes; não marcar issue concluída antecipadamente.
