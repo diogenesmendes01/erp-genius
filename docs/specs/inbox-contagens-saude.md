@@ -26,3 +26,9 @@ O schema atual permite somente `DriverWhatsApp.META_CLOUD`, `DriverWhatsApp.BAIL
 Evidência detalhada em `output/inbox-310-report.md`. Recortes TDD incluem API/SSR, tabela de saúde, banco real dev-email e Promises diferidas para SSE/leitura/filtros. Não há nova tela própria; captura app × protótipo fica vinculada à #313. Não é alegada homologação visual de chips inexistentes nesta etapa.
 
 Sem schema, migration, dependências, package/lock, mudança de permissões, transporte externo ou ação de negócio. Banco descartável usado sequencialmente; nenhum servidor iniciado pelo DEV. Revisão independente favorável noSHA67014764:86unitários e26integração perfiltester comsaída0. Global combinado309+310 fonte103a507d, sessão15987exit0:850arquivos/6634testes,TSCheap8192 e lint0erros40avisos, Node22.23.2. Parecer e logs em `output/inbox-310-qa/`; fonte310 não mudou após revisão. Pronta para PR; visual dos consumidores segue313, sem merge/deploy.
+
+## Revisão C1 da PR394 — agrupamento no consumidor
+
+Revisão isolada sobre head eb68e314, sem importar funcionalidades posteriores313. Primeira página+agregados passam por janela fixa50ms, no máximo1GET até terminar corpo HTTP e1pendência trailing consolidada. Avisos da thread/painel/ação de leitura permanecem imediatos. Captura filtro/versões apenas no início real do GET, preservando guards e reconciliação pessoal fresca após conclusão da leitura sucesso/falha. Não-ok também drena o corpo, sem abort/retry autônomo/polling.
+
+Mudança pública real de filtros cancela lote antigo/invalida voo; objetos equivalentes não eliminam pendência pessoal. Cleanup/StrictMode/A→B→A cobertos. Sem backend/SQL/permissão/schema/SSEstore novo. Recorte24/329, TSC5951heap8192 e lint4fontes saída0; detalhe TDD/tipos/cache/pendências em output/inbox-310-c1-report.md. Porte agregado atual, QA independente e medição browser coordenada ainda pendentes; visual3134f anterior não é atribuído ao novo scheduler.
