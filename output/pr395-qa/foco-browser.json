@@ -1,0 +1,122 @@
+[
+  {
+    "width": 1440,
+    "colorScheme": "light",
+    "modo": "Voltar",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1440,
+    "colorScheme": "light",
+    "modo": "Escape",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1024,
+    "colorScheme": "light",
+    "modo": "Voltar",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1024,
+    "colorScheme": "light",
+    "modo": "Escape",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 390,
+    "colorScheme": "light",
+    "modo": "Voltar",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 390,
+    "colorScheme": "light",
+    "modo": "Escape",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1440,
+    "colorScheme": "dark",
+    "modo": "Voltar",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1440,
+    "colorScheme": "dark",
+    "modo": "Escape",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1024,
+    "colorScheme": "dark",
+    "modo": "Voltar",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1024,
+    "colorScheme": "dark",
+    "modo": "Escape",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 390,
+    "colorScheme": "dark",
+    "modo": "Voltar",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  },
+  {
+    "width": 390,
+    "colorScheme": "dark",
+    "modo": "Escape",
+    "focoInicial": true,
+    "origemInert": true,
+    "focoRetorna": true,
+    "painelPermanece": true,
+    "acaoConfirmada": false
+  }
+]

@@ -1,0 +1,1012 @@
+[
+  {
+    "tema": "light",
+    "width": 1440,
+    "height": 900,
+    "aberto": {
+      "width": 348,
+      "height": 900,
+      "x": 1092,
+      "y": 0,
+      "right": 1440,
+      "bottom": 900,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 900,
+      "documento": 900,
+      "viewport": 900
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 1024,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 676,
+      "y": 0,
+      "right": 1024,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 390,
+    "height": 844,
+    "aberto": {
+      "width": 390,
+      "height": 787,
+      "x": 0,
+      "y": 57,
+      "right": 390,
+      "bottom": 844,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 208,
+        "y": 290,
+        "width": 157,
+        "height": 44,
+        "right": 365,
+        "bottom": 334
+      },
+      "listaAltura": 787,
+      "documento": 844,
+      "viewport": 844
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 700,
+    "height": 768,
+    "aberto": {
+      "width": 700,
+      "height": 715,
+      "x": 0,
+      "y": 53,
+      "right": 700,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 442,
+        "y": 188,
+        "width": 157,
+        "height": 40,
+        "right": 599,
+        "bottom": 228
+      },
+      "listaAltura": 715,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 768,
+    "height": 768,
+    "aberto": {
+      "width": 544,
+      "height": 768,
+      "x": 224,
+      "y": 0,
+      "right": 768,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 180,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 220
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 959,
+    "height": 768,
+    "aberto": {
+      "width": 735,
+      "height": 768,
+      "x": 224,
+      "y": 0,
+      "right": 959,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 629,
+        "y": 128,
+        "width": 157,
+        "height": 40,
+        "right": 786,
+        "bottom": 168
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 960,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 612,
+      "y": 0,
+      "right": 960,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 1280,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 932,
+      "y": 0,
+      "right": 1280,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 1400,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 1052,
+      "y": 0,
+      "right": 1400,
+      "bottom": 768,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 1440,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 1092,
+      "y": 0,
+      "right": 1440,
+      "bottom": 500,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 1024,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 676,
+      "y": 0,
+      "right": 1024,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 390,
+    "height": 500,
+    "aberto": {
+      "width": 390,
+      "height": 443,
+      "x": 0,
+      "y": 57,
+      "right": 390,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 208,
+        "y": 146,
+        "width": 157,
+        "height": 44,
+        "right": 365,
+        "bottom": 190
+      },
+      "listaAltura": 443,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 700,
+    "height": 500,
+    "aberto": {
+      "width": 700,
+      "height": 447,
+      "x": 0,
+      "y": 53,
+      "right": 700,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 442,
+        "y": 188,
+        "width": 157,
+        "height": 40,
+        "right": 599,
+        "bottom": 228
+      },
+      "listaAltura": 447,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 768,
+    "height": 500,
+    "aberto": {
+      "width": 544,
+      "height": 500,
+      "x": 224,
+      "y": 0,
+      "right": 768,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 180,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 220
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 960,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 612,
+      "y": 0,
+      "right": 960,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "width": 1400,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 1052,
+      "y": 0,
+      "right": 1400,
+      "bottom": 500,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "light",
+    "tipo": "resize",
+    "mesmaMontagem": true,
+    "ativo": "painel-contato",
+    "focoVisivel": true,
+    "pressionado": "false",
+    "falhas": []
+  },
+  {
+    "tema": "dark",
+    "width": 1440,
+    "height": 900,
+    "aberto": {
+      "width": 348,
+      "height": 900,
+      "x": 1092,
+      "y": 0,
+      "right": 1440,
+      "bottom": 900,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 900,
+      "documento": 900,
+      "viewport": 900
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 1024,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 676,
+      "y": 0,
+      "right": 1024,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 390,
+    "height": 844,
+    "aberto": {
+      "width": 390,
+      "height": 787,
+      "x": 0,
+      "y": 57,
+      "right": 390,
+      "bottom": 844,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 208,
+        "y": 290,
+        "width": 157,
+        "height": 44,
+        "right": 365,
+        "bottom": 334
+      },
+      "listaAltura": 787,
+      "documento": 844,
+      "viewport": 844
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 700,
+    "height": 768,
+    "aberto": {
+      "width": 700,
+      "height": 715,
+      "x": 0,
+      "y": 53,
+      "right": 700,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 442,
+        "y": 188,
+        "width": 157,
+        "height": 40,
+        "right": 599,
+        "bottom": 228
+      },
+      "listaAltura": 715,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 768,
+    "height": 768,
+    "aberto": {
+      "width": 544,
+      "height": 768,
+      "x": 224,
+      "y": 0,
+      "right": 768,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 180,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 220
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 959,
+    "height": 768,
+    "aberto": {
+      "width": 735,
+      "height": 768,
+      "x": 224,
+      "y": 0,
+      "right": 959,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 629,
+        "y": 128,
+        "width": 157,
+        "height": 40,
+        "right": 786,
+        "bottom": 168
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 960,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 612,
+      "y": 0,
+      "right": 960,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 1280,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 932,
+      "y": 0,
+      "right": 1280,
+      "bottom": 768,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 1400,
+    "height": 768,
+    "aberto": {
+      "width": 348,
+      "height": 768,
+      "x": 1052,
+      "y": 0,
+      "right": 1400,
+      "bottom": 768,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 253,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 293
+      },
+      "listaAltura": 768,
+      "documento": 768,
+      "viewport": 768
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 1440,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 1092,
+      "y": 0,
+      "right": 1440,
+      "bottom": 500,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 1024,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 676,
+      "y": 0,
+      "right": 1024,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 390,
+    "height": 500,
+    "aberto": {
+      "width": 390,
+      "height": 443,
+      "x": 0,
+      "y": 57,
+      "right": 390,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 208,
+        "y": 146,
+        "width": 157,
+        "height": 44,
+        "right": 365,
+        "bottom": 190
+      },
+      "listaAltura": 443,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 700,
+    "height": 500,
+    "aberto": {
+      "width": 700,
+      "height": 447,
+      "x": 0,
+      "y": 53,
+      "right": 700,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 442,
+        "y": 188,
+        "width": 157,
+        "height": 40,
+        "right": 599,
+        "bottom": 228
+      },
+      "listaAltura": 447,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 768,
+    "height": 500,
+    "aberto": {
+      "width": 544,
+      "height": 500,
+      "x": 224,
+      "y": 0,
+      "right": 768,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 180,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 220
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 960,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 612,
+      "y": 0,
+      "right": 960,
+      "bottom": 500,
+      "inert": false,
+      "role": "dialog"
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "width": 1400,
+    "height": 500,
+    "aberto": {
+      "width": 348,
+      "height": 500,
+      "x": 1052,
+      "y": 0,
+      "right": 1400,
+      "bottom": 500,
+      "inert": false,
+      "role": null
+    },
+    "retorno": true,
+    "formulario": {
+      "botao": {
+        "x": 249,
+        "y": 105,
+        "width": 157,
+        "height": 40,
+        "right": 406,
+        "bottom": 145
+      },
+      "listaAltura": 500,
+      "documento": 500,
+      "viewport": 500
+    },
+    "falhas": [],
+    "pageerrors": []
+  },
+  {
+    "tema": "dark",
+    "tipo": "resize",
+    "mesmaMontagem": true,
+    "ativo": "painel-contato",
+    "focoVisivel": true,
+    "pressionado": "false",
+    "falhas": []
+  }
+]
