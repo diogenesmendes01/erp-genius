@@ -6244,3 +6244,7 @@ QA266favorávelestática, original47f69e99...versionado tester-composicao-266.md
 ## PR #402 — QA composta e fonte preservada
 
 QA6aafavorávelestática/hash1ee9e13c... versionada tester-composicao-6aa.md; DOM/hook/testesf94 eprodutores401preservados, semnovotestesDB/browser doparecer. Merge4012252sódocs/ancestralidade,1blocoquadroconservaambos,fonte6aaexecutáveligual. QAconcluída,401main/CI402aindagates.
+
+## PR #403 — composição e comentários do compositor
+
+Fonte337832c0:ea1/a5b8MD+4027b1,1blocoquadroconservaambos. C2NotasENCERRADO/gruposemNota eC3rascunho17StrictModepreservados;JSConversamoduleigualea1apósremoverpropsórfãos399,prova47efc5. Próprio11/241f7aa42,TSC89337/b086ec e lint61306/bb66aa terminais0/40avisos;semglobal/DB/browser. C4limitesanexo/voz/upload/envio,C5mapatestes,C7inventário naSPEC. QApatcha5b8favorávelhashf543...versionada;QAcomposta/402main/CI403aindagates. Nenhum319/E2antecipado;output/pr403-qa/composicao-todos.md.
