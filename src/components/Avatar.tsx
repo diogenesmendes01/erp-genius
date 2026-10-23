@@ -31,7 +31,9 @@ export function Avatar({ nome, tamanho = 40, quadrado = false, tom, selo }: {
   const raio = !quadrado ? "rounded-full" : tamanho === 132 ? "rounded-[34px]" : tamanho === 44 ? "rounded-lg" : "rounded-md";
   return (
     <span
-      aria-hidden="true"
+      aria-hidden={selo === "ia" ? undefined : true}
+      role={selo === "ia" ? "img" : undefined}
+      aria-label={selo === "ia" ? "Aria atendendo" : undefined}
       className={"inline-flex shrink-0 items-center justify-center " + (fundo ? fundo + " text-white" : "bg-brand-bg text-brand-800") + " " + raio + " " + TAMANHOS[tamanho] + (selo ? " relative" : "")}
     >
       {iniciais(nome) || "#"}
