@@ -5,6 +5,10 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 
 export { prazoEstourado } from "./prazo-atendimento";
 
+/**
+ * @deprecated Legado do relógio que atualizava apenas no vencimento; mantido para compatibilidade e testes históricos.
+ * Não tem consumidor de produção. O relógio atual usa proximaMudancaVisualEm.
+ */
 export function proximoEstouroEm(itens: ItemListaInbox[], agora: number): number | null {
   let proximo: number | null = null;
   for (const i of itens) {
@@ -17,11 +21,18 @@ export function proximoEstouroEm(itens: ItemListaInbox[], agora: number): number
 
 export const TETO_TIMER_MS = 2_147_483_647;
 
+/**
+ * @deprecated Legado do vencimento +1ms; mantido para compatibilidade e testes históricos.
+ * O loop atual calcula a espera a partir do instante visual já estrito, sem acrescentar outro 1ms.
+ */
 export function esperaAteProximo(proximo: number | null, agora: number): number | null {
   return proximo === null ? null : Math.min(Math.max(proximo - agora + 1, 0), TETO_TIMER_MS);
 }
 
-/** Snapshot estável entre mudanças visuais; uma assinatura mantém um único timer local. */
+/**
+ * Uma assinatura mantém um único timer local, sem rede. Enquanto houver prazo vencido,
+ * ele atualiza o texto em cada próxima fronteira de minuto; desmontar cancela a espera.
+ */
 function criarRelogioDosPrazos(itens: ItemListaInbox[], inicial: number) {
   let agora = typeof window === "undefined" ? inicial : Date.now();
   return {
