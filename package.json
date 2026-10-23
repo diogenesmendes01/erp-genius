@@ -13,6 +13,8 @@
     "seed": "tsx prisma/seed.ts",
     "seed:whatsapp": "tsx prisma/seed-whatsapp.ts",
     "seed:qa": "tsx prisma/seed-qa.ts",
+    "seed:qa-dados": "tsx prisma/seed-qa-dados.ts",
+    "cleanup:qa": "tsx prisma/cleanup-qa.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "node scripts/test-db.mjs start",
