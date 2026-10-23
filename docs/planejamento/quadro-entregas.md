@@ -5606,6 +5606,15 @@ Base29479848, branch própria preservando316/27b. Rodape com abas Responder/Nota
 
 RED final a27db5 confirmou perda de edição/anexo durante await; GREEN97237343/43 inclui upload substituído e nota/emoji. Após patch: Node22.23.2, recorte7989 saída0 com72 arquivos/809 testes,34,75s/maxWorkers2/sem filtro de nome ou ignorados; TSC57095 heap8192 e lint11 fontes fa7780 --max-warnings0 saída0. Gates38827/72/803 e33289 são históricos anteriores ao patch final. Sem ownfull/DB/browser, sem imagens317. CLI, visual app×protótipo/320×500, QA independente e global integrado pendentes; C2/#402 reservado a outra frente, fonte de busca intacta na base294. SPEC docs/specs/inbox-rodape-compositor.md e relatório output/inbox-317-report.md; nenhuma homologação presumida.
 
+### #317 — revisão estática independente e harness congelado
+
+TESTER inspecionou produto exato a86c9ade:13arquivos/239 testes próprios exit0,
+parecer favorável condicionado a C2/composição/browser/global. ROOT preservou
+produto a86 sobre d8 em c2b7d920, sem estados319 no PR317. Harness bf4ad547
+foi integrado em branch própria; DEV8/51, TSC38512 e lint8 be4324 exit0,
+produção a86 invariante. CLI passou por handoff explícito para B319; A aguarda
+fonte C2/Ready para capturas317. Parecer em output/inbox-317-static-review-tester.md.
+
 
 ### #317 — CLI preparada separadamente, formal pendente
 
