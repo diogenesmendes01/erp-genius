@@ -1,6 +1,8 @@
 # Inbox #336 — composição sobre o produtor #335
 
-Composição inicial `e9162d83466314b764414d4e048d4c8385236e65`, baseada no head documental da PR #414. Produto selecionado de `a96d86455efedb960b60dac198a99eb82238cbdd`, harness de `953fb6342642d40d6ebdb80443adcc42761c3637` e ajuste responsivo de `65839a85ebf87b4dcb443fef5acebe86538d00f0`. Os documentos curados foram extraídos como conteúdo final; a história intermediária que incluía PNGs não foi incorporada. Publicação somente após #335 em main.
+Base direta main `86e91f2f791a6faf59a0be5d10a657d2f64e1425`, squash da PR #414; issue #335 confirmada closed/completed. Composição rebaseada `89f3c9101189d57fe32d5add5ab1eb5d5da4c0f2`, código idêntico à preparação testada `26fd0c6e`/correção `8d843`: prova `1d28cc`, saída 0, zero diferença em SRC/SCRIPTS/Prisma/package/lock. A árvore completa mudou somente pelos quatro MD de revisão R1 da #335, incorporados de main. O conflito do quadro foi resolvido preservando integralmente os 1.096.348 bytes de main e acrescentando apenas o bloco #336 (`44b984`, saída 0). Não se alega igualdade integral de árvores.
+
+Produto selecionado de `a96d86455efedb960b60dac198a99eb82238cbdd`, harness de `953fb6342642d40d6ebdb80443adcc42761c3637` e ajuste responsivo de `65839a85ebf87b4dcb443fef5acebe86538d00f0`. Os documentos curados foram extraídos como conteúdo final; a história intermediária que incluía PNGs não foi incorporada. A publicação documental posterior mantém o mesmo código.
 
 ## Correções encontradas na regressão global
 
@@ -25,4 +27,4 @@ As 22 imagens formais continuam nominais ao produto `65839` e harness `953fb`. O
 
 Caracterização nativa suplementar no produto real `8d843`, `d85b70`, saída 0: Contatos em 320×844 nos dois temas e 1440×900 claro, usando apenas navegação GET após autenticação fictícia. Mobile: documento 320 px, tracks 48/228 px, botão x16–304 com 44 px de altura e grid-column 1/-1; desktop em flex, documento 1440 px. Zero escrita de negócio, todos os browsers fechados. Foram preparados somente dois registros novos (Admin e Pessoa fictícios), retirados no restauro `3cf217`, 424 hashes. A tentativa anterior `39a158` parou na tela de login porque a credencial de A não existe no banco ROOT; não foi uma falha de produto ou prova visual. As três PNGs suplementares têm badge Next, são privadas e ficam fora da allowlist/ZIP formal. O TESTER conferiu manifesto, hashes e os três originais em adendo separado, sem executar novo browser ou reatribuir as 22 PNGs anteriores.
 
-Base main após #414, CI e comentários ainda pendentes. Não representa homologação ou issue concluída.
+Quatro pareceres independentes completos e seus hashes estão indexados em `output/inbox-336-qa`. CI e revisão de comentários do novo head ainda pendentes antes do merge. Não representa homologação ou issue concluída.
