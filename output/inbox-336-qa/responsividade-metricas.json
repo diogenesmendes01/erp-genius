@@ -1,0 +1,70 @@
+{
+  "fonte": "8d843c06e52eaf78d2232a3033be10d0e9b59650",
+  "executor": "d85b70",
+  "natureza": "caracterização nativa suplementar do cabeçalho, sem nova captura formal dos atalhos",
+  "resultados": [
+    {
+      "width": 320,
+      "height": 844,
+      "colorScheme": "light",
+      "metrics": {
+        "display": "grid",
+        "columns": "48px 228px",
+        "span": "1 / -1",
+        "viewport": 320,
+        "documentWidth": 320,
+        "articleWidth": 288,
+        "button": {
+          "left": 16,
+          "right": 304,
+          "top": 241,
+          "bottom": 285
+        },
+        "inert": false
+      },
+      "writes": []
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "colorScheme": "dark",
+      "metrics": {
+        "display": "grid",
+        "columns": "48px 228px",
+        "span": "1 / -1",
+        "viewport": 320,
+        "documentWidth": 320,
+        "articleWidth": 288,
+        "button": {
+          "left": 16,
+          "right": 304,
+          "top": 241,
+          "bottom": 285
+        },
+        "inert": false
+      },
+      "writes": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "colorScheme": "light",
+      "metrics": {
+        "display": "flex",
+        "columns": "48px minmax(0px, 1fr)",
+        "span": "1 / -1",
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "articleWidth": 676.8125,
+        "button": {
+          "left": 1256.671875,
+          "right": 1408,
+          "top": 96,
+          "bottom": 128
+        },
+        "inert": false
+      },
+      "writes": []
+    }
+  ]
+}

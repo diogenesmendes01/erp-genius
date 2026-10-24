@@ -1,0 +1,13 @@
+# QA independente — correções #336 em 8d843
+
+Fonte exata `8d843c06e52eaf78d2232a3033be10d0e9b59650`, base `e9162d83466314b764414d4e048d4c8385236e65`. Parecer favorável ao delta restrito e ao recorte executado. Não é nova captura de produto nem integração independente desta composição.
+
+Preflight/checkout `f9532c`, exit0, preservou tracked limpo e pareceres anteriores. Verificação estrita `325cf1`, exit0: quatro paths no delta, sendo quadro/relatório e somente dois paths de código. FichaContato.tsx difere exclusivamente em className col-span-2→col-span-full; atalhos.int.test.ts difere exclusivamente no driver da fixture BAILEYS→MOTOR. Nenhum backend produtivo, contrato, ACL, harness, schema ou dependência mudou; diff-check0 e tracked limpo. Não acrescentei PNG/ZIP ao Git.
+
+UNIT próprio `ab53fe`, saída terminal0: `node node_modules/vitest/vitest.mjs run src/app/responsivo.test.ts src/server/whatsapp/sem-provedores-legados.test.ts "src/app/(app)/contatos/FichaContato.test.ts" --maxWorkers=2`. **Três arquivos completos/22 testes, 1,43s**, sem -t/skips. Node22.23.2/Vitest local4.1.11, dependências existentes. Executor já retornou concluído, sem sessão pendente. Não é global ou integração.
+
+Equivalência CSS analisada somente na fonte: Tailwind local define span-2 como grid-column:span2/span2 e span-full como grid-column:1/-1; não há override gridColumn na configuração do projeto. O header móvel tem exatamente duas tracks explícitas, 48px e minmax(0,1fr). Avatar/texto ocupam a primeira linha; o botão full cobre as duas tracks existentes na linha seguinte, como o span2 nesse contexto. Em min-width700px o header vira display:flex e grid-column não governa a disposição. Portanto a troca preserva a disposição pretendida neste componente e elimina o padrão proibido pela guarda geral sem criar coluna implícita. É análise estática, sem caracterização browser ou medição/captura nova.
+
+MOTOR corrige somente a fixture para o driver atual; a guarda de provedores não foi relaxada e passou completa. Não executei o arquivo de integração nem acionei provedor. Gates ROOT global921/7230, INT quatro distintos/51, TSC e lint40 são evidências comunicadas pelo integrador e registradas no relatório da composição; não são novas execuções minhas.
+
+As22 imagens históricas continuam nominais APP65839/harness953, com curadoria/inspeção anterior preservadas, sem reatribuição ao8d843. Nenhum banco, Prisma/DDL, instalação, perfil/cliente novo, browser/HTTP, UI/nota, chamada externa, push, PR ou merge nesta QA. Publicação/CI e validação da composição final permanecem separados. Aguardo novo freeze326.
