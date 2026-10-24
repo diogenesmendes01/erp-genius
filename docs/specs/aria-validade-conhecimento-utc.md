@@ -11,3 +11,6 @@ O teste causal novo usa um cliente real com pool1 e uma única transação. As f
 A precisão dos controles é de um segundo em coluna timestamp(3); não se alega igualdade exata de microssegundos ou relógio simulado. O teste não modifica fuso de banco, usuário ou cluster. A API de produção permanece a mesma.
 
 Esta correção é separada da #349 e não resolve nem reclassifica o cenário de orçamento. Não altera uso.ts, orquestrador ou seus testes. Visual N/A, sem nova interface. Evidências e pendências de QA/CI/publicação estão no [relatório](../../output/inbox-423-report.md).
+
+
+Composição d7e55b06 mantém os dois SRC nominais6ba2 e a API. QA independente4INT/38,3UNIT/16,lint2 aprovada; TypeScript original e lint global ROOT aprovados. [Evidências e limites](../../output/inbox-423-qa/indice.json). CI/revisão final/merge pendentes.

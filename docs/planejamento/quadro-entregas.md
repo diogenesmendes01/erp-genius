@@ -6792,3 +6792,7 @@ Gates finais: integração de conhecimento completo + contexto consumidor 70967/
 
 
 Adendo atual #423: restauro ROOT 9de0f0 EXIT0 confirmou ciint491, 424 hashes, 502 registros, sequências preservadas e zero outra atividade. Sem nova operação DB nesta frente. Fonte congelada para QA; próxima implementação depende de coordenação ROOT.
+
+
+## #423 — QA e composição —24/10/2026
+ComposiçãoROOTd7e55b06 na main79310013,2SRCbyteiguais6ba2,semconflito/schema/deps/API/orçamento. TESTER4INTcompletos/38 sessão32391/225ccf/150.76s/w1,3UNIT/16 5c04fe e lint2 e23a2d, todosEXIT0. ROOT TSC ORIGINAL79120/3e69a6 semexclusões e lintGLOBAL64067/b6d9c7 zeroerros40herdados, todosEXIT0. RestaurosDEV9de0f0 e TESTER22ca79/0/424hashes/502e1392/sequências;9msg4notasT. Parecerintegraloutput/inbox-423-qa. SemUNITglobalDEVouINTlocalROOT;CIglobalpublicaçãopendente. SQLestritoUTC,casos±1s/null/3fusos;semprovaigualdademicrossegundo. Issueadicionalfora81originais,semalterar32/49originais;CI/revisão/mergependentes.

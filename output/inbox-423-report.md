@@ -1,5 +1,7 @@
 # #423 — relatório DEV, validade UTC do conhecimento
 
+Publicação: composição d7e55b06 diretamente na main79310013. Dois SRC byteiguais ao DEV/QA6ba2, uma expressão SQL alterada e os seis testes legados preservados. TESTER aprovou4INTcompletos/38,3UNIT/16 e lint2; ROOT TSC ORIGINAL79120/3e69a6 e lintGLOBAL64067/b6d9c7 passaram0,sem exclusões/zeroerros40avisosherdados. Bancos491 restaurados DEV9de0f0 e TESTER22ca79,424hashes e sequências conferidos. [Parecer integral e limites](inbox-423-qa/indice.json). CI e revisão final ainda pendentes; issue423 aberta.
+
 Base main 7931001311476d4381576b8fdf8bba3d0f8e7bb3, branch codex/inbox-ci-423-validade-utc. Ambiente preparado pelo ROOT em 12d01e: cliente próprio 490, perfil ci-integracao e banco ciint491 restaurado (424 hashes/502 registros). A #349 permanece congelada na branch anterior; seus negativos não são reclassificados por esta correção.
 
 ## Causa e mudança
