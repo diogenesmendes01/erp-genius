@@ -108,3 +108,47 @@ it("espera comercial legada aguarda cartão325 e mantém o callback estrito318/3
   expect(seletor).toHaveBeenCalledWith('#painel-contato a[href^="/funil?o="]');
   expect(pagina.waitForFunction).toHaveBeenCalledWith(semanticaPainelDetalhesPronto);
 });
+it("hash do corpo325 é canônico, determinístico e distingue conteúdo diferente", async () => {
+  const x = await modulo(); expect(x.hashCorpoDetalhes325).toBeTypeOf("function");
+  const a = x.hashCorpoDetalhes325({ pessoa: { nome: "Ana" }, campos: [] });
+  expect(a).toBe("d3c6ec04c958e8823e0c3c4cb33f7fd7bd9cc48bf9ca58b448bdc290ff5b2e14"); expect(x.hashCorpoDetalhes325({ campos: [], pessoa: { nome: "Ana" } })).toBe(a);
+  expect(x.hashCorpoDetalhes325({ campos: [], pessoa: { nome: "Bia" } })).not.toBe(a);
+});
+const base325 = "http://localhost:3111", id325 = "a?x";
+const url325 = base325 + "/api/inbox/atendimentos/a%3Fx/painel/detalhes";
+const pedido325 = { ordem: 35, method: "GET", url: url325, erro: "net::ERR_ABORTED", contextoId: "contexto1", paginaId: "pagina1", atendimentoId: id325 };
+const substituto325 = { ordem: 38, method: "GET", url: url325, status: 200, headersObservados: true, corpoConcluido: true, corpoSha256: "a".repeat(64), contextoId: "contexto1", paginaId: "pagina1", atendimentoId: id325 };
+const prova325 = { base: base325, atendimentoId: id325, atendimentoAtualId: id325, contextoId: "contexto1", paginaId: "pagina1", corpoEsperadoSha256: "a".repeat(64), paginaAtiva: true, semanticaFinal: true };
+it("abortoDetalhes só vira diagnóstico com GET posterior íntegro da mesma página/contexto/ID e DOM final", async () => {
+  const x = await modulo(); expect(x.cancelamentoDetalhes325Recuperado).toBeTypeOf("function");
+  expect(x.cancelamentoDetalhes325Recuperado(pedido325, [substituto325], prova325)).toBe(true);
+  expect(x.cancelamentoDetalhes325Recuperado(pedido325, [], prova325)).toBe(false);
+  // A ordem é a do START: o evento abortado pode chegar depois dos headers/fim do substituto.
+  expect(x.cancelamentoDetalhes325Recuperado({ ...pedido325, eventoFalha: 99 }, [{ ...substituto325, eventoHeaders: 40, eventoFim: 41 }], prova325)).toBe(true);
+});
+it.each([
+  ["200 sem fim", {}, { corpoConcluido: false }, {}],
+  ["sem headers", {}, { headersObservados: false }, {}],
+  ["body diferente", {}, { corpoSha256: "b".repeat(64) }, {}],
+  ["body inválido", {}, { corpoSha256: null }, {}],
+  ["erro HTTP", {}, { status: 500 }, {}],
+  ["mesma ordem", {}, { ordem: 35 }, {}],
+  ["ordem anterior", {}, { ordem: 34 }, {}],
+  ["sem START", { ordem: undefined }, {}, {}],
+  ["ID diferente", {}, { atendimentoId: "outra" }, {}],
+  ["URL diferente", {}, { url: base325 + "/api/inbox/atendimentos/outra/painel/detalhes" }, {}],
+  ["query", { url: url325 + "?x=1" }, { url: url325 + "?x=1" }, {}],
+  ["outra origem", {}, { url: url325.replace("localhost", "127.0.0.1") }, {}],
+  ["POST", { method: "POST" }, { method: "POST" }, {}],
+  ["SSE", { url: base325 + "/api/inbox/eventos" }, { url: base325 + "/api/inbox/eventos" }, {}],
+  ["outro contexto", {}, { contextoId: "contexto2" }, {}],
+  ["outra página", {}, { paginaId: "pagina2" }, {}],
+  ["desmontada", {}, {}, { paginaAtiva: false }],
+  ["troca intencional", {}, {}, { atendimentoAtualId: "outra" }],
+  ["DOM incorreto", {}, {}, { semanticaFinal: false }],
+  ["falha sem recuperação", { erro: "net::ERR_CONNECTION_RESET" }, {}, {}],
+  ["sem hash esperado", {}, {}, { corpoEsperadoSha256: null }],
+])("recuperação325 rejeita %s", async (_nome, pedido, substituto, prova) => {
+  const x = await modulo(); expect(x.cancelamentoDetalhes325Recuperado).toBeTypeOf("function");
+  expect(x.cancelamentoDetalhes325Recuperado({ ...pedido325, ...pedido }, [{ ...substituto325, ...substituto }], { ...prova325, ...prova })).toBe(false);
+});
