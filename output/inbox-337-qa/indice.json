@@ -9,7 +9,9 @@
     "fixtureCalendario": "b2df832187fea15d2c970888b03e6c9fbf12ea9f",
     "composicaoIntegrada": "923f06bfbeb7ab015d38a6034513445af6dff4d8",
     "baseMainComposicao": "ae56c00f053e864a3efea35d2f640afe48716cc4",
-    "dependencia419": "2f3db8b0e1cbf0bf2c36f3f0ec64591a85bbc5b5"
+    "dependencia419": "2f3db8b0e1cbf0bf2c36f3f0ec64591a85bbc5b5",
+    "mainAposDependencia419": "60a74096f684da5ac602dc03930278a00f4781cc",
+    "mergeMain419": "41a7e4d95d2496b4859c6263bfc9acd7a70923b2"
   },
   "pareceres": [
     {
@@ -115,5 +117,29 @@
     "zip": "https://github.com/user-attachments/files/33909097/inbox-337-aceite-d68-ab76-20261023.zip",
     "png": "https://github.com/user-attachments/assets/d0a6b829-c61b-4ff7-863d-78c41a0a4baf",
     "verificadoPor": "ROOT/conector+DOM;sem nova verificação TESTER nesta QA"
+  },
+  "integracaoRemota": {
+    "arquivo": "integracao-remota-faa8.json",
+    "sha256PublicadoLF": "f5a44cd8288843bc2299194779f3b50a87f8c5cc6972cf6164d9fd86771633c8",
+    "fonte": "faa8b2c8e65a3db9e3ac855ed0c6d408b1024532",
+    "run": 40119667033,
+    "conclusao": "success",
+    "arquivosPass": 349,
+    "testesPass": 3086,
+    "arquivosSkip": 3,
+    "testesSkip": 4
+  },
+  "composicaoAposMain419": {
+    "merge": "41a7e4d95d2496b4859c6263bfc9acd7a70923b2",
+    "main": "60a74096f684da5ac602dc03930278a00f4781cc",
+    "deltaExecutavel": 0,
+    "resolucao": "Três MD; quadro preservado com normalização de uma linha vazia no EOF. SPEC e report418 iguais à main.",
+    "ciRapidaFinal": "Pendente no SHA de publicação; não reatribuir runs anteriores.",
+    "provaIndependente": {
+      "arquivo": "merge-main-41a.json",
+      "sha256PublicadoLF": "e0969907901554d2afcc65581e6fb3f5908e08f47614f8993c7bd18aacc3ea7a",
+      "fonte": "41a7e4d95d2496b4859c6263bfc9acd7a70923b2",
+      "runtimeExecutado": false
+    }
   }
 }

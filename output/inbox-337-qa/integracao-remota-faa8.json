@@ -1,0 +1,80 @@
+{
+  "pr": 416,
+  "head": "faa8b2c8e65a3db9e3ac855ed0c6d408b1024532",
+  "workflowRun": 40119667033,
+  "conclusao": "success",
+  "shards": [
+    {
+      "shard": 1,
+      "job": 120948238649,
+      "arquivosPass": 88,
+      "testesPass": 715,
+      "testesSkip": 0,
+      "duracaoSegundos": 1849.41
+    },
+    {
+      "shard": 2,
+      "job": 120948238783,
+      "arquivosPass": 86,
+      "arquivosSkip": 2,
+      "testesPass": 788,
+      "testesSkip": 3,
+      "duracaoSegundos": 1923.6
+    },
+    {
+      "shard": 3,
+      "job": 120948238514,
+      "arquivosPass": 87,
+      "arquivosSkip": 1,
+      "testesPass": 866,
+      "testesSkip": 1,
+      "duracaoSegundos": 1825.13
+    },
+    {
+      "shard": 4,
+      "job": 120948238725,
+      "arquivosPass": 88,
+      "testesPass": 717,
+      "testesSkip": 0,
+      "duracaoSegundos": 1795.36
+    }
+  ],
+  "total": {
+    "arquivosPass": 349,
+    "arquivosSkip": 3,
+    "testesPass": 3086,
+    "testesSkip": 4,
+    "falhas": 0
+  },
+  "ignorados": [
+    {
+      "arquivo": "src/server/matricula/desistencia-acerto-ui-homologacao.int.test.ts",
+      "casos": 1,
+      "optIn": "HOMOLOGACAO_UI_Q165"
+    },
+    {
+      "arquivo": "src/server/contratos/aditivo-taxas-ui-homologacao.int.test.ts",
+      "casos": 1,
+      "optIn": "HOMOLOGACAO_UI_Q170"
+    },
+    {
+      "arquivo": "src/server/matricula/desistencia-reconferencia-delta-ui-homologacao.int.test.ts",
+      "casos": 2,
+      "optIn": [
+        "HOMOLOGACAO_UI_Q249",
+        "HOMOLOGACAO_UI_Q249_FATO_NOVO"
+      ]
+    }
+  ],
+  "ciRapida": {
+    "workflowRun": 40119645181,
+    "checksPass": 5
+  },
+  "limite": "Resultado nominal a faa8. O merge41a incorporou a main60a sem alterar qualquer arquivo executável, schema, SQL, dependência ou workflow; só três documentos. A nova publicação documental ainda exige CI rápida final.",
+  "composicaoPosterior": {
+    "merge": "41a7e4d95d2496b4859c6263bfc9acd7a70923b2",
+    "main": "60a74096f684da5ac602dc03930278a00f4781cc",
+    "deltaExecutavel": 0,
+    "semNovaExecucaoINT": true
+  }
+}

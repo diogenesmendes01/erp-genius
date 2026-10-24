@@ -15,3 +15,9 @@ Global ROOT930/7.317, TSC e lint final (40 avisos herdados) passaram na fonte ec
 
 
 Estado atual: composição923 verificada pelo ROOT (global935/7400, INT10/116, TSC/lint global) e pelo TESTER (UNIT15/245, INT2/40, TSC/lint19), todos saída 0. A dependência #419 corrigiu também a corrida de webhook encontrada na revisão. Anexos já acessíveis no comentário6386780823. C1 aguarda a integração remota completa da composição publicada; dois runs anteriores negativos permanecem registrados, sem reatribuição. Ver cronologia atual na composição e no décimo parecer de QA.
+
+## Atualização após o merge da dependência #419 — 24/10/2026
+
+C1: Integração completa da #416 em faa8 concluída 4/4, com 349 arquivos/3.086 testes aprovados e quatro preparadores visuais opt-in ignorados. A dependência #419 foi mergeada em 60a74096 após CI rápida e Integração próprias aprovadas. A composição local 41a7e4d9 preserva integralmente o código de faa8; somente três documentos mudaram. [Registro](inbox-337-qa/integracao-remota-faa8.json).
+
+C2–C5 permanecem atendidos pelas fontes e pareceres já registrados. C6: ZIP/PNG autorizados já estão diretamente na PR, comentário 6386780823; a release continua em rascunho. Dez pareceres históricos reconferidos por SHA-LF. Restam a CI rápida do SHA final, a inspeção dessa publicação e a releitura final dos comentários antes do merge; a issue #337 permanece aberta.

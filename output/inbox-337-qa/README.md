@@ -21,3 +21,11 @@ O pacote sanitizado histórico permanece em release privada de QA em rascunho, c
 O oitavo [parecer completo R1](revisao-r1.md) é nominal ao executável integrado ecc92d47:30 arquivos/431 UNIT, seis completos/53 INT, TSC e lint11 próprios do TESTER, todos saída0. Inclui teoria da união/ACL em fases, comandos,11 hashes e limitações; não é uma nova prova visual. Os sete pareceres históricos permaneceram com seus hashes originais. GlobalROOT930/7317, restauros dos bancos, workflow/CI e estado da publicação estão na composição e na conversa da PR.
 
 A nona [revisão C1](calendario-c1.md) examina o ajuste de data do teste legado no commit b2df8321, com cinco caracterizações puras do helper existente. Não é nova INT própria do TESTER. Reprodução e três arquivos/27 INT pertencem ao ROOT; a primeira execução remota falha permanece negativa e o novo head requer nova CI/Integração.
+
+## Atualização após o merge da dependência #419 — 24/10/2026
+
+A #419 foi mergeada em 60a74096. A composição local 41a7e4d9 incorpora essa main e muda somente três documentos em relação a faa8, preservando todo o executável, schema, SQL, dependências e workflows. Os dez pareceres acima mantêm seus bytes normalizados em LF e suas fontes.
+
+[Integração remota de faa8](integracao-remota-faa8.json): quatro shards SUCCESS, 349 arquivos/3.086 testes aprovados; três arquivos/quatro preparadores visuais opt-in ignorados, sem filtro adicional. CI rápida anterior 5/5. Esses resultados não são uma execução no SHA posterior: a identidade do código é a justificativa para reutilizá-los, com nova CI rápida e inspeção final ainda exigidas. [Composição detalhada](../inbox-337-composicao-final.md).
+
+Os anexos já autorizados estão diretamente na PR, comentário 6386780823. O corpus de 40 imagens continua nominal a d68/ab76; a release permanece em rascunho. Não houve nova nota manual, captura, envio externo ou execução de produto nesta atualização documental.

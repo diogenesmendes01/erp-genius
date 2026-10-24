@@ -161,3 +161,9 @@ Clientes próprios 490 e bancos distintos: ROOT dev-gravacoes, TESTER tester. Re
 Anexos já autorizados e publicados diretamente na PR416: [comentário6386780823](https://github.com/diogenesmendes01/erp-genius/pull/416#issuecomment-6386780823), [ZIP](https://github.com/user-attachments/files/33909097/inbox-337-aceite-d68-ab76-20261023.zip) e [PNG](https://github.com/user-attachments/assets/d0a6b829-c61b-4ff7-863d-78c41a0a4baf). O índice registra esse destino e preserva o histórico da release em rascunho. Não há autorização humana pendente para esses dois arquivos.
 
 C1 permanece condicionado à integração remota: a primeira execução teve a fixture de domingo, corrigida; a segunda falhou pela auditoria de desconexão herdada. A correção #419 passou em sua CI rápida atual (40118067977, cinco jobs) e sua Integração 40118084095 ainda está em curso. Será executada uma vez a Integração completa da composição publicada. Nenhuma dessas execuções pendentes é declarada aprovada; resultados permanecem nominais aos seus SHAs.
+
+## Atualização após o merge da dependência #419 — 24/10/2026
+
+A main com a correção #419 (60a74096) foi incorporada na composição 41a7e4d9. Apenas três documentos mudam em relação a faa8b2c8; SRC, schema 490, três SQLs, dependências e workflows permanecem idênticos. O contrato funcional e a manutenção do índice parcial não mudam.
+
+A Integração completa nominal a faa8 terminou 4/4, com 349 arquivos/3.086 testes aprovados e quatro casos de preparação visual opt-in ignorados. [Registro e limites](../../output/inbox-337-qa/integracao-remota-faa8.json). A publicação final ainda exige CI rápida, inspeção e comentários finais. Pareceres e imagens mantêm suas fontes históricas; sem nova nota manual, captura ou envio externo.
