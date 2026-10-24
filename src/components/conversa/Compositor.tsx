@@ -2,11 +2,13 @@
 
 import { Suspense, lazy, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
+import { comandoDaNota, consultaMencaoNoCursor, tokensAposEdicao, type CandidatoMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import type { Resultado } from "@/server/_shared/resultado";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
 import { useChavesPorAlvo, type ChavesPorAlvo } from "@/lib/chave-idempotencia";
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor } from "./respostas-rapidas";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
@@ -33,7 +35,9 @@ export interface PropsCompositor {
   capacidades: readonly RecursoMotor[];
   aoEnviarTexto(t: string): Promise<Resultado<unknown>>;
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
-  aoNota(t: string, chaveIdempotencia?: string): Promise<Resultado>;
+  aoNota(t: string, chaveIdempotencia?: string, mencoes?: readonly TokenMencao[]): Promise<Resultado>;
+  /** Opcional: só o Inbox oferece candidatos já autorizados, sem alterar outros consumidores. */
+  buscarMencoes?: (busca: string, signal?: AbortSignal) => Promise<CandidatoMencao[]>;
   /** Compartilhado pelo dono da conversa para conservar tentativa incerta mesmo ao alternar contatos. */
   tentativasNota?: ChavesPorAlvo;
   /** Dono acima da key do contato: evita apagar uma nova intenção após remontagem. */
@@ -69,7 +73,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -83,6 +87,11 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   const gravador = useRef<MediaRecorder | null>(null);
   const descartar = useRef(false);
   const nota = modo === "nota";
+  const listaMencoesId = useId();
+  const [tokensMencao, setTokensMencao] = useState<TokenMencao[]>([]);
+  const [consultaMencao, setConsultaMencao] = useState<ReturnType<typeof consultaMencaoNoCursor>>(null);
+  const [respostaMencao, setRespostaMencao] = useState<{ consulta: NonNullable<typeof consultaMencao>; pessoas: CandidatoMencao[]; erro?: string } | null>(null);
+  const [opcaoMencao, setOpcaoMencao] = useState(0);
   const tentativasLocais = useChavesPorAlvo();
   const tentativas = tentativasNota ?? tentativasLocais;
   const revisoesLocais = useRevisoesRascunhos();
@@ -96,9 +105,12 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   const contextoAtual = useRef<typeof contexto | null>(contexto);
   const emCurso = useRef(new Set<object>());
   const revisaoRascunho = useRef(0);
+  const selecaoMencao = useRef<{ contexto: typeof contexto; revisao: number; texto: string; indice: number } | null>(null);
   if (contexto.chave !== chave) {
     setContexto({ chave });
     setTexto(lerRascunho(atendimentoId, modo));
+    setTokensMencao([]);
+    setConsultaMencao(null);
     setArquivo(null);
     setErro("");
     setEnviando(false);
@@ -113,15 +125,55 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
       revisaoRascunho.current += 1;
       revisoes.alterar(chave, contexto);
       setTexto("");
+      setTokensMencao([]);
+      setConsultaMencao(null);
       setArquivo(null);
     });
     return () => { cancelar(); if (contextoAtual.current === contexto) contextoAtual.current = null; };
   }, [contexto, chave, revisoes]);
+  // O value controlado precisa estar no DOM antes de aplicar indices UTF16.
+  useLayoutEffect(() => {
+    const selecao = selecaoMencao.current;
+    if (!selecao) return;
+    selecaoMencao.current = null;
+    const campo = entrada.current;
+    if (selecao.contexto !== contextoAtual.current || selecao.revisao !== revisaoRascunho.current
+      || !campo || campo.value !== selecao.texto) return;
+    campo.focus();
+    campo.setSelectionRange?.(selecao.indice, selecao.indice);
+  });
+  // O placeholder pode ocupar mais linhas que o campo vazio apos um ACK.
+  // Reconciliar somente a rolagem do value ja commitado, sem mover foco/cursor.
+  useLayoutEffect(() => {
+    const campo = entrada.current;
+    if (texto === "" && campo?.value === "") campo.scrollTop = 0;
+  }, [texto, contexto]);
   const contextoVigente = () => contextoAtual.current === contexto;
   useEffect(() => () => {
     descartar.current = true;
     if (gravador.current?.state === "recording") gravador.current.stop();
   }, [contexto]);
+
+  useEffect(() => {
+    if (!nota || !buscarMencoes || enviando || !consultaMencao) return;
+    let vigente = true;
+    const consulta = consultaMencao;
+    const controlador = new AbortController();
+    const timer = setTimeout(() => {
+      void Promise.resolve().then(() => buscarMencoes(consulta.busca, controlador.signal)).then(
+        pessoas => { if (vigente) setRespostaMencao({ consulta, pessoas }); },
+        () => { if (vigente) setRespostaMencao({ consulta, pessoas: [], erro: "Não foi possível buscar pessoas." }); },
+      );
+    }, 200);
+    return () => { vigente = false; clearTimeout(timer); controlador.abort(); };
+  }, [nota, buscarMencoes, enviando, consultaMencao, contexto]);
+  const consultandoMencao = nota && !!buscarMencoes && !enviando && consultaMencao !== null;
+  const resultadoMencao = respostaMencao?.consulta === consultaMencao ? respostaMencao : null;
+  const opcoesMencao = consultandoMencao ? resultadoMencao?.pessoas ?? [] : [];
+  const indiceMencao = Math.min(opcaoMencao, Math.max(0, opcoesMencao.length - 1));
+  useLayoutEffect(() => {
+    if (consultandoMencao && opcoesMencao.length) document.getElementById?.(listaMencoesId + "-" + indiceMencao)?.scrollIntoView?.({ block: "nearest" });
+  }, [consultandoMencao, opcoesMencao.length, indiceMencao, listaMencoesId]);
 
   if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
@@ -151,9 +203,13 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     revisoes.alterar(chave, contexto);
   }
 
-  function mudar(v: string) {
+  function mudar(v: string, cursor = v.length) {
     if (!contextoVigente()) return;
     registrarIntencao();
+    setTokensMencao(anteriores => tokensAposEdicao(texto, v, anteriores));
+    const consulta = nota && buscarMencoes ? consultaMencaoNoCursor(v, cursor) : null;
+    setConsultaMencao(consulta && consulta.busca.length >= 2 && !/\s$/.test(consulta.busca) ? consulta : null);
+    setOpcaoMencao(0);
     setTexto(v);
     gravarRascunho(atendimentoId, modo, v);
   }
@@ -190,8 +246,10 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     try {
       let r: Resultado<unknown>;
       if (nota) {
-        const tentativa = tentativas.para(JSON.stringify([atendimentoId, corpo]));
-        const desfecho = await executarAcaoCliente(() => aoNota(corpo, tentativa.atual), { idempotente: true });
+        const comando = comandoDaNota(texto, tokensMencao);
+        const tokens = comando.mencoes === undefined ? undefined : Object.freeze(comando.mencoes.map(t => Object.freeze({ ...t })));
+        const tentativa = tentativas.para(JSON.stringify(tokens === undefined ? [atendimentoId, comando.nota] : [atendimentoId, comando.nota, tokens]));
+        const desfecho = await executarAcaoCliente(() => tokens === undefined ? aoNota(comando.nota, tentativa.atual) : aoNota(comando.nota, tentativa.atual, tokens), { idempotente: true });
         // Confirma a tentativa de A mesmo se a pessoa já estiver em B; só o estado visual exige contexto vigente.
         tentativa.depoisDo(desfecho);
         r = desfecho.tipo === "ok" ? { ok: true } : { ok: false, erro: desfecho.mensagem };
@@ -224,7 +282,26 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     }
   }
 
+  function escolherMencao(p: CandidatoMencao) {
+    if (!contextoVigente() || !consultaMencao || enviando) return;
+    const { inicio, fim } = consultaMencao;
+    const trecho = "@" + p.nome;
+    const sufixo = texto.slice(fim);
+    const separador = sufixo.startsWith(" ") ? "" : " ";
+    const novo = texto.slice(0, inicio) + trecho + separador + sufixo;
+    mudar(novo);
+    setTokensMencao([...tokensAposEdicao(texto, novo, tokensMencao).filter(t => t.fim <= inicio || t.inicio >= inicio + trecho.length), { usuarioId: p.id, inicio, fim: inicio + trecho.length }]);
+    setConsultaMencao(null);
+    // Pular um espaco do sufixo existente ou o separador que acabamos de inserir.
+    selecaoMencao.current = { contexto, revisao: revisaoRascunho.current, texto: novo, indice: inicio + trecho.length + 1 };
+  }
   function aoTeclar(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.nativeEvent.isComposing) return;
+    if (consultandoMencao) {
+      if (e.key === "Escape" || e.key === "Tab") { if (e.key === "Escape") e.preventDefault(); setConsultaMencao(null); return; }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (opcoesMencao.length) setOpcaoMencao((indiceMencao + (e.key === "ArrowDown" ? 1 : opcoesMencao.length - 1)) % opcoesMencao.length); return; }
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (opcoesMencao.length) escolherMencao(opcoesMencao[indiceMencao]); return; }
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void enviar(); }
   }
 
@@ -308,6 +385,22 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
         </ul>
       )}
       <div className="relative flex items-end gap-2">
+        {consultandoMencao && (
+          <div className="absolute inset-x-0 bottom-full z-20 mb-2 rounded-lg border border-gray-200 bg-surface shadow-popover">
+            <p className="px-3 py-2 text-xs text-gray-600">Selecione alguém na lista para avisar.</p>
+            {!resultadoMencao ? <p role="status" className="px-3 pb-3 text-sm text-gray-600">Buscando pessoas…</p>
+              : resultadoMencao.erro ? <p role="alert" className="px-3 pb-3 text-sm text-red-700">{resultadoMencao.erro}</p>
+              : opcoesMencao.length ? <ul id={listaMencoesId} role="listbox" aria-label="Pessoas que podem ver a conversa" className="max-h-40 overflow-y-auto">
+              {opcoesMencao.map((p, i) => <li key={p.id} role="presentation">
+                <button id={listaMencoesId + "-" + i} type="button" role="option" aria-label={`Mencionar ${p.nome} · ${p.descricao}`} aria-selected={i === indiceMencao} tabIndex={-1}
+                  className={CLASSE_ITEM_MENU + " w-full text-left " + (i === indiceMencao ? "bg-highlight" : "")}
+                  onMouseDown={e => e.preventDefault()} onClick={() => escolherMencao(p)}>
+                  <span className="block text-sm font-medium">{p.nome}</span><span className="block text-xs text-gray-600">{p.descricao}</span>
+                </button>
+              </li>)}
+            </ul> : <EstadoVazio role="status" className="mx-3 mb-3">Nenhuma pessoa corresponde à busca.</EstadoVazio>}
+          </div>
+        )}
         {!nota && (
           <>
             <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => setAnexos(!anexos)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
@@ -341,8 +434,14 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
           placeholder={nota ? "Escreva uma nota interna" : "Escreva uma mensagem"}
           rows={1}
           value={texto}
+          role={nota && buscarMencoes ? "combobox" : undefined}
+          aria-autocomplete={nota && buscarMencoes ? "list" : undefined}
+          aria-expanded={nota && buscarMencoes ? consultandoMencao : undefined}
+          aria-controls={opcoesMencao.length ? listaMencoesId : undefined}
+          aria-activedescendant={opcoesMencao.length ? listaMencoesId + "-" + indiceMencao : undefined}
+          onBlur={() => setConsultaMencao(null)}
           disabled={enviando || gravando}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => mudar(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => mudar(e.target.value, e.target.selectionStart ?? e.target.value.length)}
           onKeyDown={aoTeclar}
           onPaste={(e) => { const f = e.clipboardData?.files?.[0]; if (f && !nota) { e.preventDefault(); escolherArquivo(f); } }}
           className={"min-h-[44px] max-h-[140px] min-w-0 flex-1 resize-none rounded-lg border px-3.5 py-[11px] text-sm leading-5 " + (nota ? "border-amber-600 bg-amber-50" : "border-gray-200 bg-surface-muted")}

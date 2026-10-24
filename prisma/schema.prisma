@@ -9594,6 +9594,7 @@ enum OrigemTarefa {
 enum TipoNotificacao {
   LEMBRETE_TAREFA
   SLA_ESTOURADO
+  MENCAO_NOTA
 }
 
 model Tarefa {
@@ -9666,7 +9667,8 @@ model NotificacaoUsuario {
   criadaEm  DateTime        @default(now())
   lidaEm    DateTime?
 
-  @@unique([tipo, refId, usuarioId, criadaEm])
+  // SQL 20261023170000: unique parcial nas mesmas quatro colunas para tipo <> MENCAO_NOTA.
+  // Menção usa PK determinística Evento+usuário, sem colisão por TIMESTAMP(3).
   @@index([usuarioId, lidaEm])
 }
 

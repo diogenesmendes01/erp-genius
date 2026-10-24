@@ -1,0 +1,244 @@
+{
+  "issue": 337,
+  "schemaIndice": 1,
+  "estado": "Índice histórico documental; gates preservados são nominais às fontes originais.",
+  "arquivoHistorico": {
+    "fonte": "9fa1b30ecbb0c3d214d57f3a9544c05e249b919d",
+    "path": "output/inbox-337-evidencias.json",
+    "bytes": 30012,
+    "sha256": "ddd7733d0d9618c982124e8ec8f1e447bcf5b719041633dc5f1683c11f47f2aa",
+    "gitBlob": "cc10ba9900a1c56c2e94e305aeae34e9f97a4997",
+    "url": "https://github.com/diogenesmendes01/erp-genius/blob/9fa1b30ecbb0c3d214d57f3a9544c05e249b919d/output/inbox-337-evidencias.json",
+    "encoding": "UTF-8/LF do blob Git; não HTML ou working copy CRLF"
+  },
+  "relatorioHistorico": {
+    "fonte": "9fa1b30ecbb0c3d214d57f3a9544c05e249b919d",
+    "path": "output/inbox-337-report.md",
+    "bytes": 43210,
+    "sha256": "9a908b0355bec414c784c12172e1f4109ed3a00abbaf79d02adecab023bc1e3a",
+    "gitBlob": "4f77eb8a5de7c340575a9cc71f609972059e86fb",
+    "url": "https://github.com/diogenesmendes01/erp-genius/blob/9fa1b30ecbb0c3d214d57f3a9544c05e249b919d/output/inbox-337-report.md"
+  },
+  "fontesAtuais": {
+    "composicao": "output/inbox-337-composicao-final.md",
+    "spec": "docs/specs/inbox-mencoes-nota.md",
+    "qa": "output/inbox-337-qa/README.md",
+    "indiceHashes": "output/inbox-337-qa/indice.json"
+  },
+  "negativosResumo": [
+    "RED inicial: quatro falhas causais e um erro de fixture/import; não confundir com aprovação.",
+    "Recorte6/58 teve12falhas e não é verde; inclui fixture temporal e diagnósticoSLA/timezone preservados integralmente no original.",
+    "Filtro que executou zero testes não é prova; REDcaret/scroll e TSCheap134 conservam classificação no arquivo histórico."
+  ],
+  "visualHistorico": {
+    "imagens": 40,
+    "fontes": [
+      {
+        "fonte": "d68f678c",
+        "imagens": 38
+      },
+      {
+        "fonte": "ab76f3f6",
+        "imagens": 2,
+        "recorte": "ACK"
+      }
+    ],
+    "novasCapturas": false,
+    "novasNotasUI": false,
+    "autorizacaoEsgotada": "8 positivas/2 negativas",
+    "limites": [
+      "Placeholder segunda linha parcialmente visível.",
+      "IME limitado aos eventos observados.",
+      "Sem reatribuição à integração9fa ou aos ajustesR1."
+    ],
+    "zip": {
+      "bytes": 3743253,
+      "sha256": "db1203ff694febc3afb627b65d32f5eeac39b1ec8537f2411481bb7250546dfb",
+      "estado": "Release privada em rascunho; upload/anexoPR bloqueado pela revisão automática, pergunta específica ao usuário pendente sobROOT; nenhuma via alternativa."
+    }
+  },
+  "limites": [
+    "Índice não executa nem reclassifica gates históricos.",
+    "Sem testes337/banco/Prisma/UI/nota/upload na redução documental.",
+    "Sem alteração de fontes, allowlists, pareceres originais ou hashes históricos; arquivos privados preservados.",
+    "Recortes dirigidos não equivalem a suíte global ou homologação; sino mantém SSR/navegação sem realtime novo."
+  ],
+  "gatesPreparacaoLimpa20261024": {
+    "fonte": "f971a9c84d1bf90981417f8c91f8ca1cffc773ea",
+    "data": "2026-10-24",
+    "ambienteRoot": {
+      "perfil": "dev-gravacoes",
+      "banco": "erp_genius_test_dev_gravacoes",
+      "host": "localhost",
+      "porta": 54329,
+      "cliente": "Prisma5.22 próprio no node_modulesB, schema490",
+      "auditoriaAntes": {
+        "execucao": "4cafa5",
+        "exitCode": 0,
+        "hashes": 424,
+        "ddlNova": false
+      },
+      "generateRoot": {
+        "sessao": 3286,
+        "chunk": "f147fb",
+        "exitCode": 0,
+        "segundos": 64.86
+      },
+      "validacaoClienteRoot": {
+        "execucao": "76cdae",
+        "exitCode": 0
+      },
+      "nextTypegenRoot": 0
+    },
+    "unit": {
+      "sessao": 54035,
+      "terminal": "1bd4f9",
+      "exitCode": 0,
+      "arquivos": 46,
+      "testes": 783,
+      "segundos": 40.37,
+      "maxWorkers": 2,
+      "filtroNome": false,
+      "skips": 0,
+      "recorte": [
+        "src/lib/mencoes-nota.test.ts",
+        "src/server/inbox/consultas-mencoes.test.ts",
+        "src/server/crm/notificacoes-mencoes.test.ts",
+        "src/app/api/inbox/atendimentos/[id]/mencoes/route.test.ts",
+        "src/app/(app)/tarefas/SinoNotificacoes.test.ts",
+        "src/components/conversa/Compositor.mencoes.interacao.test.ts",
+        "src/components/conversa/Compositor.test.ts",
+        "src/components/conversa/Compositor.rascunho.interacao.test.ts",
+        "src/test/schema-mencoes.test.ts",
+        "src/test/schema-sla.test.ts",
+        "src/app/botoes.test.ts",
+        "src/app/identificacao-registro.test.ts",
+        "src/app/confirmacoes.test.ts",
+        "src/test/dependencias.test.ts",
+        "src/lib/labels.test.ts",
+        "src/app/paleta.test.ts",
+        "src/app/enums-rotulos.test.ts",
+        "src/app/(app)/inbox/ConversaAberta.rodape.test.ts",
+        "src/app/(app)/inbox/RodapeConversa.test.ts",
+        "src/app/(app)/inbox/RodapeConversa.interacao.test.ts",
+        "src/app/(app)/inbox/ConversaAberta.test.ts",
+        "src/app/(app)/inbox/ConversaAberta.busca.test.ts",
+        "src/app/(app)/inbox/useAcoesAtendimento.test.ts",
+        "src/app/(app)/inbox/AcoesAtendimento.test.ts",
+        "src/app/(app)/inbox/InboxNovo.test.ts",
+        "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+        "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+        "src/app/(app)/inbox/PainelContato.interacao.test.ts",
+        "src/lib/eventos-inbox.test.ts",
+        "src/app/(app)/inbox/useEventosInbox.interacao.test.ts",
+        "src/app/caminhos-rastreados.test.ts",
+        "src/test/ci-workflow.test.ts",
+        "src/test/visual-inbox-busca.test.ts",
+        "src/test/visual-inbox-cabecalho.test.ts",
+        "src/test/visual-inbox-coluna.test.ts",
+        "src/test/visual-inbox-conclusao-thread.test.ts",
+        "src/test/visual-inbox-entrada.test.ts",
+        "src/test/visual-inbox-estados-fluxo.test.ts",
+        "src/test/visual-inbox-estados.test.ts",
+        "src/test/visual-inbox-falha-controlada.test.ts",
+        "src/test/visual-inbox-painel.test.ts",
+        "src/test/visual-inbox-rodape.test.ts",
+        "src/test/visual-inbox-tags.test.ts",
+        "src/test/visual-inbox-thread.test.ts",
+        "src/test/visual-inbox.test.ts",
+        "src/components/conversa/Compositor.scroll.interacao.test.ts"
+      ],
+      "logPrivado": {
+        "bytes": 487,
+        "sha256": "c47a7e54e7bcd70509ddb44fd1d5ee68b070a6390953105bb0bdb659c0351864"
+      }
+    },
+    "integracao": {
+      "sessao": 87016,
+      "terminal": "3c2e61",
+      "exitCode": 0,
+      "arquivos": 5,
+      "testes": 46,
+      "segundos": 165.26,
+      "maxWorkers": 1,
+      "filtroNome": false,
+      "skips": 0,
+      "recorte": [
+        "src/server/whatsapp/nota-mencao.int.test.ts",
+        "src/server/whatsapp/nota-interna.int.test.ts",
+        "src/server/whatsapp/inbox-idempotencia.int.test.ts",
+        "src/server/crm/notificacoes.int.test.ts",
+        "src/server/crm/lembretes.int.test.ts"
+      ],
+      "config": "vitest.integration.config.ts",
+      "lease": "Exclusiva B490; uma suíte por vez; liberada ao ROOT após terminal3c2e61.",
+      "logPrivado": {
+        "bytes": 811,
+        "sha256": "783dd7d4542a8c024798b808da6209938c0718ff08d120c2dc64bc1d624b7665"
+      }
+    },
+    "typescript": {
+      "sessao": 78543,
+      "terminal": "86130e",
+      "exitCode": 0,
+      "heapMb": 8192,
+      "diagnosticos": 0,
+      "logPrivado": {
+        "arquivoCriado": false,
+        "prova": "Código terminal observado na sessão original, sem inferir sucesso de log vazio."
+      }
+    },
+    "lint": {
+      "terminal": "413ab7",
+      "exitCode": 0,
+      "arquivos": 24,
+      "maxWarnings": 0,
+      "recorte": [
+        "src/app/(app)/inbox/ConversaAberta.tsx",
+        "src/app/(app)/tarefas/SinoNotificacoes.test.ts",
+        "src/app/(app)/tarefas/SinoNotificacoes.tsx",
+        "src/app/api/inbox/atendimentos/[id]/mencoes/route.test.ts",
+        "src/app/api/inbox/atendimentos/[id]/mencoes/route.ts",
+        "src/app/botoes.test.ts",
+        "src/app/identificacao-registro.test.ts",
+        "src/components/conversa/Compositor.mencoes.interacao.test.ts",
+        "src/components/conversa/Compositor.scroll.interacao.test.ts",
+        "src/components/conversa/Compositor.test.ts",
+        "src/components/conversa/Compositor.tsx",
+        "src/lib/labels.ts",
+        "src/lib/mencoes-nota.test.ts",
+        "src/lib/mencoes-nota.ts",
+        "src/server/crm/notificacoes-mencoes.test.ts",
+        "src/server/crm/notificacoes.ts",
+        "src/server/inbox/consultas-mencoes.test.ts",
+        "src/server/inbox/consultas-mencoes.ts",
+        "src/server/inbox/mencoes.ts",
+        "src/server/inbox/usuarios-mencoes.ts",
+        "src/server/whatsapp/acoes-conversa.ts",
+        "src/server/whatsapp/nota-mencao.int.test.ts",
+        "src/test/schema-mencoes.test.ts",
+        "src/test/schema-sla.test.ts"
+      ],
+      "logPrivado": {
+        "arquivoCriado": false,
+        "prova": "Código terminal observado na sessão original, sem inferir sucesso de log vazio."
+      }
+    },
+    "fonteCongeladaDuranteExecutores": true,
+    "confirmacaoFinalFonte": {
+      "execucao": "7a9c8e",
+      "trackedClean": true
+    },
+    "warningsHerdados": [
+      "vite-tsconfig-paths recomenda opção nativaVite; nenhuma alteração de tooling.",
+      "MIXED_EXPORTS de vitest.integration.config.ts; nenhuma alteração de config."
+    ],
+    "restauro": "Banco liberado para ROOT/helper337B; aguarda confirmação terminal externa.",
+    "limites": [
+      "Recortes dirigidos completos nos arquivos listados, não suíte global.",
+      "Nenhuma captura ou submissão manual/UI nova; orçamento8positivas/2negativas esgotado.",
+      "40PNG continuam nominais:38d68+2ab76, sem reatribuição à fontenova.",
+      "Revisão independente exata, ancestralidade final335→336→337, regressão integrada, CI/merge e publicação seguem ROOT."
+    ]
+  }
+}

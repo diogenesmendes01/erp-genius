@@ -1,0 +1,181 @@
+{
+  "fonteExecutavel": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+  "matrizHistorica": {
+    "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+    "app": 32,
+    "prototipo": 6,
+    "sessoes": [
+      46979,
+      63719
+    ],
+    "exit": 0,
+    "allowlist": "output/inbox-337-visual-allowlist.json",
+    "sha256": "4dd23f8d0a99ca448abbfdb6e7b5ff3a70dabd71e3821a5dbc4af4d5938f683e"
+  },
+  "complementoAtual": {
+    "fonte": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+    "sessao": 56204,
+    "exit": 0,
+    "allowlist": "output/inbox-337-ack-green-allowlist.json",
+    "sha256": "94c16eb57dfa9271be89348a16f568dc3424353dd8367357ceeabb129268efe0",
+    "tamanho": "320x500",
+    "tema": "claro",
+    "imagens": 2,
+    "rascunhoRemontado": true,
+    "baseline": {
+      "nome": "baseline-vazio",
+      "instante": 1792794729337,
+      "value": "",
+      "scrollTop": 0,
+      "scrollHeight": 62,
+      "clientHeight": 42,
+      "focus": false,
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "rect": {
+        "top": 442,
+        "bottom": 486,
+        "left": 68,
+        "right": 252
+      },
+      "lineHeight": "20px",
+      "paddingTop": "11px",
+      "paddingBottom": "11px",
+      "primeiraLinhaTopEstimada": 453,
+      "documento": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "ACK": {
+      "nome": "ACK-vazio-imediato",
+      "instante": 1792794730952,
+      "value": "",
+      "scrollTop": 0,
+      "scrollHeight": 62,
+      "clientHeight": 42,
+      "focus": false,
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "rect": {
+        "top": 442,
+        "bottom": 486,
+        "left": 68,
+        "right": 252
+      },
+      "lineHeight": "20px",
+      "paddingTop": "11px",
+      "paddingBottom": "11px",
+      "primeiraLinhaTopEstimada": 453,
+      "documento": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "notas": [
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlioorl000853qvaz07um3x",
+      "papelEscolhido": "vendedor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvliovyn000i53qv2ly5tz30",
+      "papelEscolhido": "professor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlip317000s53qv2dhiy246",
+      "papelEscolhido": "vendedor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlipabm001253qvfgd3hi1v",
+      "papelEscolhido": "professor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlipi2y001c53qvuadxcx0p",
+      "papelEscolhido": "vendedor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlippah001m53qvzedlgijd",
+      "papelEscolhido": "professor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlipwg8001w53qvywkafx1o",
+      "papelEscolhido": "vendedor"
+    },
+    {
+      "tipo": "positiva",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvliq44u002653qvqrqgbhzw",
+      "papelEscolhido": "professor"
+    },
+    {
+      "tipo": "negativa-edicao-antes-token",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "id": "cmvlj00yo002i53qv8e5z8xkb"
+    },
+    {
+      "tipo": "negativa-rascunho-remontado",
+      "fonte": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+      "id": "cmvljozml0008146gxp2kt40m"
+    }
+  ],
+  "notificacoes": {
+    "vendedor": 4,
+    "professor": 4,
+    "fora": 0,
+    "autor": 0,
+    "todasLidas": true,
+    "via": "SSR/navegacao; sem realtime novo"
+  },
+  "auditoriaFinalRoot": {
+    "execucao": "c61217",
+    "exit": 0,
+    "notas": 10,
+    "avisos": 8,
+    "mensagensNovas": 0,
+    "intencaoMensagemHashIgualSnapshot": true
+  },
+  "stopRoot": {
+    "preview": 10399,
+    "execucao": "c96325",
+    "exit": 1,
+    "esperadoPorCtrlC": true,
+    "portaLivre": true
+  },
+  "restauroRoot": {
+    "execucao": "df221b",
+    "exit": 0,
+    "tabelasHashes": 424,
+    "mensagensFixture": 3,
+    "notasFixture": 1,
+    "snapshot": "inbox_snapshot_337_b_20261023"
+  },
+  "autorizacao": {
+    "confirmadaHumanamente": true,
+    "positivasExecutadas": 8,
+    "negativasExecutadas": 2,
+    "restantes": 0
+  },
+  "limites": [
+    "38PNG historicos d68;2PNG atuais ab76, nao uma unica matriz40.",
+    "IME CDP/isComposing limitado; repeticao rejeitada nao executada.",
+    "Prototype somente baseline de nota, autocomplete/ACL/sino/IME N/A.",
+    "Placeholder de duas linhas/42px: primeira linha restaurada; cabimento integral nao alegado.",
+    "Nenhum PNG/probe/raw/APIJSON/credencial incluido neste JSON curado.",
+    "QA final/composicao410/regressao integrada/publicacao continuam pendentes."
+  ]
+}

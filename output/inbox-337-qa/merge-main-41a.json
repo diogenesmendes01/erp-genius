@@ -1,0 +1,42 @@
+{
+  "head": "41a7e4d95d2496b4859c6263bfc9acd7a70923b2",
+  "parents": [
+    "faa8b2c8e65a3db9e3ac855ed0c6d408b1024532",
+    "60a74096f684da5ac602dc03930278a00f4781cc"
+  ],
+  "comparacao": "faa8b2c8e65a3db9e3ac855ed0c6d408b1024532",
+  "identidades": [
+    {
+      "path": "src",
+      "oid": "7da24a47f8991eb7e47526f1a2a2110c097501a2"
+    },
+    {
+      "path": "scripts",
+      "oid": "d48e861cf366a89d3fe97c5f59efc1d7ce2cce8c"
+    },
+    {
+      "path": "prisma",
+      "oid": "d0dd9b35cdb947f30e56ef5dc2aa9a00a1e4bca6"
+    },
+    {
+      "path": ".github/workflows",
+      "oid": "4e15eb4944dde923904c26f0a4983caf7d0c56b4"
+    },
+    {
+      "path": "package.json",
+      "oid": "2425f3858ec49a777b87791de637be3a40ba32df"
+    },
+    {
+      "path": "package-lock.json",
+      "oid": "e6ad5a802d446eb47f79901d1854a11902738ba9"
+    }
+  ],
+  "schema490Oid": "7365328d336ff6ae5892e46f1e595f25923e3f1e",
+  "quadroSha256LF": "ad92fa6d57115aa9f3f856a9e058d7a3ea7d91eb22c20f18ac3547f4cb14e05a",
+  "planoIgualExcetoUmaNovaLinhaEOF": true,
+  "specEReportIguais4c20": true,
+  "deltaExecutavel": 0,
+  "checkoutAlterado": false,
+  "runtimeExecutado": false,
+  "limite": "Preliminar nominal a41a; commit documental final eCIhead final ainda requerem conferência."
+}
