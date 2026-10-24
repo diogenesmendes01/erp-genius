@@ -1787,6 +1787,14 @@ export function mapasDeRotulo(fonte: string, enums: Map<string, string[]>, arqui
       const override = folhasNos.some((f) => rotulaSujeito(f, sujeito)) && folhasTexto.some((v) => v !== null && /[A-Za-zÀ-ú]/.test(v));
       if (override) { mapas.push({ nome: `override ${sujeito}`, enums: donosDe(codigos).length ? donosDe(codigos) : ["(mapa central)"], linha: linhaDe(sf, n) }); return; }
       if (codigos.length < 2 || folhasTexto.some((v) => v === null) || !ehRotulo(folhasTexto as string[])) return;
+      // Enum → tipo técnico do input nativo não é rótulo. Só a expressão direta e folhas literais fechadas;
+      // texto/props de componentes e mapas indiretos continuam sujeitos à mesma detecção.
+      const atributo = ts.isJsxExpression(acima) && ts.isJsxAttribute(acima.parent) ? acima.parent : null;
+      const abertura = atributo?.parent.parent;
+      if (atributo?.name.getText(sf) === "type" && abertura
+        && (ts.isJsxOpeningElement(abertura) || ts.isJsxSelfClosingElement(abertura))
+        && ts.isIdentifier(abertura.tagName) && abertura.tagName.text === "input"
+        && folhasNos.every(f => ts.isStringLiteralLike(f) && ["number", "date", "text"].includes(f.text))) return;
       const donos = donosDe(codigos);
       if (donos.length) mapas.push({ nome: `ternário ${sujeito}`, enums: donos, linha: linhaDe(sf, n) });
       return;
@@ -1955,6 +1963,27 @@ describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
     // Dentro de new Map/fromEntries conta uma vez só (no achado da chamada). Não acusa: pares sem texto, chave fora de enum.
     expect(nomes('const m = new Map([["ATIVA", "Ativa"]] as const);')).toEqual(["m"]);
     expect(nomes('const a = [["ATIVA", campo.valor], ["PAUSADA", outro]] as const; const b = [["OUTRA", "Outra"]];')).toEqual([]);
+  });
+
+  it("autoteste326: input.type técnico direto não é mapa de rótulo", () => {
+    const enums = new Map([["TipoCampoPersonalizado", ["NUMERO", "DATA", "TEXTO"]]]);
+    const expr = 'campo.tipo === "NUMERO" ? "number" : campo.tipo === "DATA" ? "date" : "text"';
+    expect(mapasDeRotulo('const t = <input type={' + expr + '} />;', enums)).toEqual([]);
+    expect(mapasDeRotulo('const t = <input type={((' + expr + '))} />;', enums)).toEqual([]);
+  });
+
+  it.each([
+    ["texto visível", 'const t = <p>{EXPR}</p>;'],
+    ["title nativo", 'const t = <input title={EXPR} />;'],
+    ["type de componente", 'const t = <CampoCustom type={EXPR} />;'],
+    ["type de componente composto", 'const t = <Campo.Input type={EXPR} />;'],
+    ["folha fora do conjunto técnico", 'const t = <input type={campo.tipo === "NUMERO" ? "number" : campo.tipo === "DATA" ? "date" : "email"} />;'],
+    ["mapa indireto por variável", 'const tipo = EXPR; const t = <input type={tipo} />;'],
+    ["mapa indireto por função", 'const t = <input type={(() => EXPR)()} />;'],
+  ])("autoteste326: continua acusando %s", (_caso, fonte) => {
+    const enums = new Map([["TipoCampoPersonalizado", ["NUMERO", "DATA", "TEXTO"]]]);
+    const expr = 'campo.tipo === "NUMERO" ? "number" : campo.tipo === "DATA" ? "date" : "text"';
+    expect(mapasDeRotulo(fonte.replace("EXPR", expr), enums).map(m => m.nome)).toEqual(["ternário campo.tipo"]);
   });
 
   it("os mapas que as telas tinham soltos continuam fora delas (movidos para labels.ts)", () => {
