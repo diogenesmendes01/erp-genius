@@ -20,6 +20,7 @@ const BORDA = /^border(?:-[a-z]+-\d+|-border-soft)?$/;
 
 /** Conferidos dentro de superfície branca (ou que são o próprio fundo da página). Arquivo → quantidade permitida. */
 const DENTRO_DE_SUPERFICIE: Record<string, { quantidade: number; motivo: string }> = {
+  "src/app/(app)/inbox/abas/TagsContato.tsx": { quantidade: 1, motivo: "pílula da tag dentro do cabeçalho do PainelContato bg-surface, sem fundo da página por trás" },
   "src/app/(app)/inbox/BuscaConversa.tsx": { quantidade: 1, motivo: "input de busca dentro da barra bg-surface, sem fundo da página por trás" },
   "src/app/(app)/inbox/CabecalhoConversa.tsx": { quantidade: 1, motivo: "status ERP dentro do header bg-surface, sem fundo da página por trás" },
   "src/app/(app)/inbox/PainelContato.tsx": { quantidade: 1, motivo: "tag dentro do painel bg-surface, sem fundo da página por trás" },

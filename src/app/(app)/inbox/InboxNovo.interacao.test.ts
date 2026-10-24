@@ -65,6 +65,8 @@ import { LinhaCampo } from "./LinhaCampo";
 import { OptOutContato } from "./OptOutContato";
 import { PainelTriagem } from "./PainelTriagem";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
+import { TagsContato } from "./abas/TagsContato";
+import { ContatoSemNome } from "./abas/ContatoSemNome";
 
 const item = (id: string) => ({
   id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: id,
@@ -698,7 +700,7 @@ it("navegar para null descarta repetição e falha tardia da leitura anterior",a
 describe("composição318: Detalhes do contato selecionado", () => {
   const painel = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!;
   it("liga identidade/tags autorizadas e mantém a ordem dos blocos e a aprovação Aria", async () => {
-    const tags = [{ rotulo: "Noite", ia: true }];
+    const tags = [{ id: "noite", rotulo: "Noite", ia: true }];
     respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
     const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
     tela(p); await esvaziar(); const t = tela(p), no = painel(t);
@@ -714,7 +716,7 @@ describe("composição318: Detalhes do contato selecionado", () => {
     expect(elementos(t).find(n => n.type === ConversaAberta)!.props).not.toHaveProperty("revisoes");
   });
   it("não reaproveita tags de outra seleção durante a carga e reinicia a aba em Detalhes", async () => {
-    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags: [{ rotulo: "Privada A", ia: false }], podeEnviar: true }));
+    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags: [{ id: "privadaA", rotulo: "Privada A", ia: false }], podeEnviar: true }));
     tela(); await esvaziar(); const antes = tela();
     (painel(antes).props.aoTrocarAba as (id: string) => void)("atividade");
     lista(antes).aoSelecionar("a2");
@@ -954,4 +956,36 @@ it("319:retry do painel entrega foco antes de remover gatilho e não rouba foco 
  let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise<Response>(r=>{resolver=r;});botao.focus();
  (retry.props.onClick as (e:unknown)=>void)({currentTarget:botao});expect(dom.documento.activeElement===painel).toBe(true);tela();
  painel.removeChild(botao);fora.focus();resolver(new Response(JSON.stringify({podeEnviar:true}),{status:200}));await esvaziar();tela();expect(dom.documento.activeElement===fora).toBe(true);
+});
+
+it("composição324: slots recebem somente pessoa/capacidades autorizadas e CAS bruto do contato atual", async () => {
+  const tags = [{ id: "t324", rotulo: "Noite", ia: true }];
+  respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: false,
+    cabecalho: { pessoaId: "p324", tagsDisponiveis: [{ id: "t325", nome: "Nova" }], semNome: true, capacidades: { editarTags: false, criarTag: false } },
+    acoes: { nomeSalvo: "  ", podeEditarNome: true } }));
+  tela(); await esvaziar(); const t = tela(), painel = elementos(t).find(n => n.type === PainelContato)!;
+  const tag = painel.props.slotTags as ReactElement, aviso = painel.props.slotAviso as ReactElement;
+  expect(tag.type).toBe(TagsContato); expect(tag.props).toMatchObject({ atendimentoId: "a1", tags, podeEditar: false, podeCriar: false });
+  expect(aviso.type).toBe(ContatoSemNome); expect(aviso.props).toMatchObject({ atendimentoId: "a1", nomeAnterior: "  ", podeEditar: true });
+  lista(t).aoSelecionar("a2"); const novo = elementos(tela()).find(n => n.type === PainelContato)!;
+  expect(novo.props.slotTags).toBeUndefined(); expect(novo.props.slotAviso).toBeUndefined();
+});
+it("composição324: sem pessoa não monta editor de tags e sem capacidade não permite preencher nome", async () => {
+  respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags: [], cabecalho: { pessoaId: null, tagsDisponiveis: [], semNome: true, capacidades: { editarTags: true, criarTag: true } }, acoes: null }));
+  tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!;
+  expect(painel.props.slotTags).toBeUndefined(); expect((painel.props.slotAviso as ReactElement).props).toMatchObject({ podeEditar: false, nomeAnterior: null });
+});
+
+it("composição324: 404 preserva leitura do snapshot no mesmoID e retira escrita das tags", async () => {
+  const tags = [{ id: "historica324", rotulo: "Histórico recebido", ia: true }];
+  respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, acoes: { podeEditarNome: true },
+    cabecalho: { pessoaId: "p324", tagsDisponiveis: [{ id: "opcao324", nome: "Nova" }], semNome: false, capacidades: { editarTags: true, criarTag: true } } }));
+  tela(); await esvaziar(); const antes = elementos(tela()).find(n => n.type === PainelContato)!;
+  expect((antes.props.slotTags as ReactElement).props).toMatchObject({ podeEditar: true, podeCriar: true });
+  respostaPainel = () => new Response("", { status: 404 });
+  m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", conversaId: "cv1", mensagemId: null }); tela(); await esvaziar();
+  const depois = elementos(tela()).find(n => n.type === PainelContato)!;
+  expect(conversa(tela()).podeEnviar).toBe(false);
+  expect(depois.props.contato).toMatchObject({ tags });
+  expect((depois.props.slotTags as ReactElement).props).toMatchObject({ tags, podeEditar: false, podeCriar: false });
 });
