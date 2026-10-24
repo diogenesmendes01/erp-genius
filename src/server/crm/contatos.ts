@@ -379,7 +379,7 @@ export async function obterContato(id: string, usuario: UsuarioSessao): Promise<
 const opcional = (max: number, msg: string) =>
   z.string().trim().max(max, msg).nullable().optional().transform((v) => (v === undefined ? undefined : v || null));
 
-const EditarPessoaSchema = z.object({
+export const EditarPessoaSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome.").max(200, "O nome deve ter até 200 caracteres.").optional(),
   email: z
     .string()
@@ -427,62 +427,69 @@ async function pessoaNoEscopo(tx: Prisma.TransactionClient, id: string, autor: U
 }
 
 /** Edita a pessoa. Grava `PessoaEditada` só com os campos que mudaram (e-mail sem o valor cru). */
+/** Núcleo transacional compartilhado: sessão fica na action; capacidade/escopo e Evento permanecem aqui. */
+export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, autor: UsuarioSessao, id: string, input: EditarPessoaInput, antesDeGravar?: () => Promise<void>): Promise<boolean> {
+  exigirCapacidadeCrm(autor, "contatos.editar");
+  const dados = EditarPessoaSchema.parse(input);
+  await tx.$queryRaw`SELECT id FROM "Pessoa" WHERE id = ${id} FOR UPDATE`;
+  await antesDeGravar?.();
+  exigirCapacidadeCrm(autor, "contatos.editar");
+  const atual = await pessoaNoEscopo(tx, id, autor);
+  const mudancas: Partial<CamposPessoa> = {};
+  for (const k of ["nome", "email", "cidade", "cargo", "linkedin", "origemCanal", "empresaId"] as const) {
+    if (dados[k] !== undefined) (mudancas as Record<string, unknown>)[k] = dados[k];
+  }
+  const antesCampos: CamposPessoa = {
+    nome: atual.nome,
+    email: atual.email,
+    cidade: atual.cidade,
+    cargo: atual.cargo,
+    linkedin: atual.linkedin,
+    origemCanal: atual.origemCanal,
+    empresaId: atual.empresaId,
+  };
+  const novo: CamposPessoa = { ...antesCampos, ...mudancas };
+  const { antes, depois } = diffCampos(antesCampos, novo);
+  const campos = Object.keys(depois) as (keyof CamposPessoa)[];
+  if (!campos.length) return false; // nada mudou: sem escrita e sem Evento
+
+  if (atual.aluno && (campos.includes("nome") || campos.includes("email")) && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
+    throw new ErroRegra("Nome e e-mail de aluno são alterados pela Secretaria.");
+  }
+  if (depois.empresaId) {
+    // Só empresa visível ao autor (como em `definirValorCampo`): ligar a pessoa a uma empresa de outra
+    // carteira faria essa empresa aparecer na lista dele (R1 do PR #211, C2).
+    const empresa = await tx.empresa.findFirst({
+      where: { AND: [{ id: depois.empresaId }, await escopoEmpresas(autor, tx)] },
+      select: { id: true },
+    });
+    if (!empresa) throw new ErroRegra("Empresa não encontrada.");
+  }
+
+  await tx.pessoa.update({ where: { id }, data: depois });
+  const payload: Record<string, Prisma.InputJsonValue> = {};
+  for (const c of campos) {
+    // E-mail é dado de contato: o Evento guarda só se estava e passou a estar preenchido.
+    payload[c] =
+      c === "email"
+        ? { de: antes.email ? "definido" : null, para: depois.email ? "definido" : null }
+        : { de: (antes[c] as string | null | undefined) ?? null, para: (depois[c] as string | null | undefined) ?? null };
+  }
+  await registrarEvento(tx, {
+    tipo: "PessoaEditada",
+    agregadoTipo: "Pessoa",
+    agregadoId: id,
+    autorId: autor.id,
+    payload,
+  });
+  return true;
+}
+
+/** Edita a pessoa, mantendo a assinatura/Resultado do CRM e sua própria transação. */
 export async function editarPessoa(id: string, input: EditarPessoaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    exigirCapacidadeCrm(autor, "contatos.editar");
-    const dados = EditarPessoaSchema.parse(input);
-
-    await prisma.$transaction(async (tx) => {
-      const atual = await pessoaNoEscopo(tx, id, autor);
-      const mudancas: Partial<CamposPessoa> = {};
-      for (const k of ["nome", "email", "cidade", "cargo", "linkedin", "origemCanal", "empresaId"] as const) {
-        if (dados[k] !== undefined) (mudancas as Record<string, unknown>)[k] = dados[k];
-      }
-      const antesCampos: CamposPessoa = {
-        nome: atual.nome,
-        email: atual.email,
-        cidade: atual.cidade,
-        cargo: atual.cargo,
-        linkedin: atual.linkedin,
-        origemCanal: atual.origemCanal,
-        empresaId: atual.empresaId,
-      };
-      const novo: CamposPessoa = { ...antesCampos, ...mudancas };
-      const { antes, depois } = diffCampos(antesCampos, novo);
-      const campos = Object.keys(depois) as (keyof CamposPessoa)[];
-      if (!campos.length) return; // nada mudou: sem escrita e sem Evento
-
-      if (atual.aluno && (campos.includes("nome") || campos.includes("email")) && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
-        throw new ErroRegra("Nome e e-mail de aluno são alterados pela Secretaria.");
-      }
-      if (depois.empresaId) {
-        // Só empresa visível ao autor (como em `definirValorCampo`): ligar a pessoa a uma empresa de outra
-        // carteira faria essa empresa aparecer na lista dele (R1 do PR #211, C2).
-        const empresa = await tx.empresa.findFirst({
-          where: { AND: [{ id: depois.empresaId }, await escopoEmpresas(autor, tx)] },
-          select: { id: true },
-        });
-        if (!empresa) throw new ErroRegra("Empresa não encontrada.");
-      }
-
-      await tx.pessoa.update({ where: { id }, data: depois });
-      const payload: Record<string, Prisma.InputJsonValue> = {};
-      for (const c of campos) {
-        // E-mail é dado de contato: o Evento guarda só se estava e passou a estar preenchido.
-        payload[c] =
-          c === "email"
-            ? { de: antes.email ? "definido" : null, para: depois.email ? "definido" : null }
-            : { de: (antes[c] as string | null | undefined) ?? null, para: (depois[c] as string | null | undefined) ?? null };
-      }
-      await registrarEvento(tx, {
-        tipo: "PessoaEditada",
-        agregadoTipo: "Pessoa",
-        agregadoId: id,
-        autorId: autor.id,
-        payload,
-      });
-    });
+    await prisma.$transaction(tx => editarPessoaNaTransacao(tx, autor, id, input));
   });
 }
 

@@ -47,3 +47,7 @@ it("slots324 substituem somente tags/aviso e undefined conserva fallback de leit
   expect(p({ slotTags: null })).not.toContain("Inglês"); expect(p()).toContain("Inglês");
   expect(custom.match(/aria-label="Fechar painel do contato"/g)).toHaveLength(1);
 });
+
+it("lápis de edição é opcional e não duplica o fechar nem oferece ação sem contrato", () => {
+ const h=p({aoEditar(){}});expect(h.match(/aria-label="Editar contato"/g)).toHaveLength(1);expect(h.match(/aria-label="Fechar painel do contato"/g)).toHaveLength(1);expect(h).toContain("max-sm:min-h-11");expect(h).toContain("max-sm:min-w-11");expect(p()).not.toContain("Editar contato");
+});
