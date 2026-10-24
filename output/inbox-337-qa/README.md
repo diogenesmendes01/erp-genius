@@ -1,5 +1,11 @@
 # QA independente da issue #337
 
+Estado atual: [QA da composição923](composicao-923.md) favorável, 15 arquivos/245 UNIT, dois arquivos/40 INT, TSC e lint19 com saída 0. O índice conserva nove pareceres anteriores e acrescenta esse décimo, sem alterar suas fontes ou hashes. ROOT passou global935/7400 e dez arquivos/116 INT; recortes sobrepostos não são somados. CI remota e merge seguem pendentes.
+
+Os dois anexos históricos já foram autorizados e publicados diretamente na [PR416](https://github.com/diogenesmendes01/erp-genius/pull/416#issuecomment-6386780823). O bloqueio de acesso citado nos registros abaixo foi resolvido. A release continua em rascunho; o corpus visual não é reatribuído ao923.
+
+Os parágrafos seguintes preservam os checkpoints anteriores.
+
 O [índice de QA](indice.json) contém sete pareceres históricos completos, um parecer final R1 e uma revisão estática da fixture de calendário C1, cada qual nominal ao seu SHA, recorte e limites. A publicação verificou os hashes físicos originais e normalizou CRLF para LF; o índice preserva ambos os hashes. A preparação documental inicial R1 alterou somente prosa; os ajustes posteriores de código têm a QA própria descrita abaixo, mantendo os sete pareceres e hashes históricos intactos.
 
 O runtime independente refere-se à preparação7d9: 46/783 UNIT, cinco arquivos completos/46 INT, TSC/lint. A revisão final refere-se ao código integrado9fa: seis arquivos completos/185 UNIT próprios, com backend337/schema/três SQLs preservados. São recortes dirigidos; execuções repetidas não são testes distintos. Fontes, sessões, gates ROOT e limites da composição estão no [relatório de composição final](../inbox-337-composicao-final.md).

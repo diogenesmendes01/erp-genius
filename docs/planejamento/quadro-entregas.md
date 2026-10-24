@@ -6732,3 +6732,17 @@ R1, gates locais finais: global 60813/5e25c4, 926 arquivos/7.313 testes, 308,93 
 
 
 24/10/2026 — Composição local da PR #416 com a main ae56 e a dependência revisada #419 (2f3db8b0). Apenas o quadro conflitou; ambos os blocos foram preservados integralmente. A dependência ainda aguarda CI/Integração remota e merge. Esta composição antecipa validação e não libera o merge de #416. Preparação do cliente/perfil 490 e novos gates em andamento; nenhuma nova nota pela interface, envio real ou deploy.
+
+## Composição com main e dependência #419 — 24/10/2026
+
+Fonte integrada 923f06bfbeb7ab015d38a6034513445af6dff4d8, merge de FCEA com 2f3db8b0 (#419 R1, incluindo a main ae56 e #325). Apenas o quadro conflitou; ambos os blocos foram preservados integralmente. A PR continua tendo main como destino. O merge desta entrega aguarda o merge da dependência #419 e os checks da composição.
+
+Gates ROOT, todos com saída terminal 0: global 46358/7ba9a7, 935 arquivos/7.400 testes, 327,02 s, dois workers; INT 7455/eabe78, dez arquivos completos/116 testes, 497,40 s, um worker; TypeScript 76751/74f9df e lint global 72409/191e89, zero erros e 40 avisos herdados. Sem filtro de nome ou skips impostos; configuração unitária exclui INT. As dez integrações cobrem seis arquivos de notas/notificações, administração e processamento de sessão, atendimento-idempotencia e agendamento.
+
+QA independente no commit exato: 15 arquivos/245 UNIT, dois arquivos/40 INT, TypeScript e lint dos 19 arquivos selecionados, todos com saída 0. O décimo parecer integral em output/inbox-337-qa/composicao-923.md tem 9.335 bytes LF e SHA256 1EC7BFBB114976D90801D958951C871F6130AD1E49BB27BAD3FCB6607C0EB601. Seus recortes se sobrepõem aos do ROOT e não são somados. Conferência literal: 11 SRC #337 iguais a ECC/FCEA, quatro SRC #418 iguais a 2f3 e quatro SRC #325 R1 iguais a fd1; schema490, três SQLs e dependências preservados. Nenhum SRC foi alterado durante a curadoria documental.
+
+Clientes próprios 490 e bancos distintos: ROOT dev-gravacoes, TESTER tester. Restauros posteriores 3dd5f2 e ed1a8c terminaram 0, preservando os 424 hashes e as fixtures originais (ROOT três mensagens/uma nota; TESTER nove mensagens/quatro notas). Não houve nova nota manual, UI, imagem, motor real ou deploy. O corpus de 40 imagens continua nominal a d68/ab76, sem reatribuição à composição.
+
+Anexos já autorizados e publicados diretamente na PR416: [comentário6386780823](https://github.com/diogenesmendes01/erp-genius/pull/416#issuecomment-6386780823), [ZIP](https://github.com/user-attachments/files/33909097/inbox-337-aceite-d68-ab76-20261023.zip) e [PNG](https://github.com/user-attachments/assets/d0a6b829-c61b-4ff7-863d-78c41a0a4baf). O índice registra esse destino e preserva o histórico da release em rascunho. Não há autorização humana pendente para esses dois arquivos.
+
+C1 permanece condicionado à integração remota: a primeira execução teve a fixture de domingo, corrigida; a segunda falhou pela auditoria de desconexão herdada. A correção #419 passou em sua CI rápida atual (40118067977, cinco jobs) e sua Integração 40118084095 ainda está em curso. Será executada uma vez a Integração completa da composição publicada. Nenhuma dessas execuções pendentes é declarada aprovada; resultados permanecem nominais aos seus SHAs.
