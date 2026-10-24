@@ -1,0 +1,62 @@
+{
+  "fontes": {
+    "backend": "a96d86455efedb960b60dac198a99eb82238cbdd",
+    "appVisual": "65839a85ebf87b4dcb443fef5acebe86538d00f0",
+    "harness": "953fb6342642d40d6ebdb80443adcc42761c3637",
+    "curadoria": "6ac0ae06f819e2fd7371a99e6947a16727b6d1bc",
+    "correcaoIntegrada": "8d843c06e52eaf78d2232a3033be10d0e9b59650"
+  },
+  "pareceres": [
+    {
+      "origem": "inbox-336-review-estatica-tester.md",
+      "arquivo": "codigo-original.md",
+      "sha256OriginalFisico": "550e84988094c74e070d8092b12eece10f9fc479bfee3845be8b9462b7d412c4",
+      "sha256PublicadoLF": "d6d8f64868aebfacc239135354bc0c2726c2dfb04dd62b119c820bb52a524ee1"
+    },
+    {
+      "origem": "inbox-336-curadoria-6ac-review-tester.md",
+      "arquivo": "curadoria-visual.md",
+      "sha256OriginalFisico": "715c647118f43679e076a046974769a589328fee7e6cf036b56eb646bd5cb2f7",
+      "sha256PublicadoLF": "715c647118f43679e076a046974769a589328fee7e6cf036b56eb646bd5cb2f7"
+    },
+    {
+      "origem": "inbox-336-fix-8d843-review-tester.md",
+      "arquivo": "correcao-global.md",
+      "sha256OriginalFisico": "4b25d24c6a810f2dde4167efda086a93e5fb145710a9fffee95b35730affb4ee",
+      "sha256PublicadoLF": "4b25d24c6a810f2dde4167efda086a93e5fb145710a9fffee95b35730affb4ee"
+    },
+    {
+      "origem": "inbox-336-span-8d843-adendo-tester.md",
+      "arquivo": "responsividade-nativa.md",
+      "sha256OriginalFisico": "a21d48c3b8362a12031d5f6c3d8288c63c8876e4d2e8fcb56400a00083e50165",
+      "sha256PublicadoLF": "a21d48c3b8362a12031d5f6c3d8288c63c8876e4d2e8fcb56400a00083e50165"
+    }
+  ],
+  "pacote": {
+    "nome": "inbox-336-aceite-65839-953fb-20261024.zip",
+    "bytes": 1730536,
+    "sha256": "5fbd1fb9df576f0fbcce250155048ae6bc9b949b19c8fc79f32cc107ceaa5285",
+    "png": 22,
+    "asset": 672346747,
+    "release": 421321214,
+    "releaseDraft": true,
+    "uploadExecutor": "83743/f50b9c",
+    "roundtripExecutor": "9c7a37",
+    "roundtripHashIdentico": true,
+    "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-336-aceite-65839-953fb-20261024.zip"
+  },
+  "caracterizacaoNativa": {
+    "fonte": "8d843c06e52eaf78d2232a3033be10d0e9b59650",
+    "executor": "d85b70",
+    "casos": 3,
+    "viewports": [
+      "320x844/light",
+      "320x844/dark",
+      "1440x900/light"
+    ],
+    "escritaNegocio": 0,
+    "fixtureNovaLinhas": 2,
+    "snapshotRestaurado": "3cf217",
+    "imagensPrivadasForaDaAllowlist": true
+  }
+}

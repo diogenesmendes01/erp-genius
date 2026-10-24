@@ -7,6 +7,7 @@ import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { confirmarPainelSecretaria, semanticaPainelSecretariaPronto, confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { configurarEntrada, abrirEntradaApp } from "./entradas-inbox.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
@@ -64,6 +65,7 @@ async function prepararRede(contexto, alvo, base, falhas) {
 
 export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? (estado === "painel-vazio" ? "joao@genius.com" : "admin@genius.com"), process.env.INBOX_VISUAL_SENHA ?? "genius123");
+  if (estado.startsWith("entrada-")) return abrirEntradaApp(pagina, base, configurarEntrada(estado));
   if (estado === "carregando") return { finalizar: await abrirCarregandoApp(pagina, contexto, base), metadados: { fallbackReal: true, latenciaLocalMs: 3000, medicaoStreaming: false } };
   const id = estado === "painel-secretaria" ? process.env.INBOX_VISUAL_SECRETARIA : estado === "painel-sem-nome" ? process.env.INBOX_VISUAL_SEM_NOME ?? ids.semNome : ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
   if (estado === "painel-secretaria") {
@@ -189,13 +191,13 @@ async function main() {
   const alvos = o.alvo === "ambos" ? ["app", "prototipo"] : [o.alvo];
   const estados = o.estado === "todos" ? Object.keys(ESTADOS) : [o.estado];
   const tarefas = combinacoes({ alvos, estados });
-  const ids = alvos.includes("app") ? await idsDaDemo() : null;
+  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-")) ? {} : await idsDaDemo() : null;
   const executablePath = process.env.PW_CHROMIUM;
   if (!executablePath) throw new Error("Defina PW_CHROMIUM para o Chrome local; o harness não baixa navegador.");
   await mkdir(destino, { recursive: true });
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
   const capturas = [];
-  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
+  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
   try {
     for (const tarefa of tarefas) {
       const [width, height] = TAMANHOS[tarefa.tamanho];

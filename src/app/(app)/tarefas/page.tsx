@@ -1,6 +1,7 @@
 import { Papel } from "@prisma/client";
 import Link from "next/link";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { atendimentoParaAbrir } from "@/server/inbox/atalhos";
 import { prisma } from "@/lib/prisma";
 import { Aviso } from "@/components/Aviso";
 import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
@@ -50,6 +51,7 @@ export default async function TarefasPage({ searchParams }: { searchParams: Prom
     idAberto ? listarResponsaveisPossiveis(usuario) : Promise.resolve([]),
   ]);
 
+  const conversa = tarefaAberta ? await atendimentoParaAbrir(usuario, { atendimentoId: tarefaAberta.atendimentoId, leadId: tarefaAberta.leadId, pessoaId: tarefaAberta.pessoaId }) : null;
   const url = { visao, data: visao === "lista" ? undefined : data, escopo: equipe ? "equipe" : undefined };
   return (
     <>
@@ -81,7 +83,7 @@ export default async function TarefasPage({ searchParams }: { searchParams: Prom
 
       {idAberto && !novo && !tarefaAberta && <Aviso tom="atencao" className="mt-3">Tarefa não encontrada ou fora do seu escopo.</Aviso>}
       {(novo || tarefaAberta) && (
-        <PainelTarefa tarefa={tarefaAberta} responsaveis={responsaveis} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} dataInicial={hoje} params={url} />
+        <PainelTarefa conversa={conversa} tarefa={tarefaAberta} responsaveis={responsaveis} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} dataInicial={hoje} params={url} />
       )}
     </>
   );

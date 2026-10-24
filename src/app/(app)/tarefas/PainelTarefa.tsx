@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { hrefConversa } from "@/lib/href-conversa";
+import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
+
 import { useRouter } from "next/navigation";
 import type { PrioridadeTarefa, TipoTarefa } from "@prisma/client";
 import { Botao } from "@/components/Botao";
@@ -29,6 +33,7 @@ const LEMBRETES: { valor: string; rotulo: string }[] = [
 ];
 
 type Props = {
+  conversa?: ConversaParaAbrir | null;
   /** Null = nova tarefa. */
   tarefa: TarefaLista | null;
   /** Vazio quando o usuário não gerencia equipe: a tarefa fica sempre com ele. */
@@ -45,7 +50,7 @@ export function PainelTarefa(props: Props) {
   return <FormularioTarefa key={props.tarefa?.id ?? "nova"} {...props} />;
 }
 
-function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, dataInicial, params }: Props) {
+function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, dataInicial, params, conversa }: Props) {
   const router = useRouter();
   // Nova tarefa: criarTarefa recebe chave de idempotência (#166), e o reenvio depois de um resultado incerto
   // devolve a tarefa já criada (sem segundo lembrete). Tarefa existente: as ações usam a `versao` e ficam
@@ -114,6 +119,11 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
             {tarefa.status === "CANCELADA" && tarefa.motivoCancelamento ? ` · ${tarefa.motivoCancelamento}` : ""}
           </p>
         )}
+
+          {conversa && <div className="flex flex-wrap gap-x-3">
+            <Link href={hrefConversa(conversa.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>
+            {conversa.aberta && <Link href={hrefConversa(conversa.atendimentoId, { agendar: true })} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Agendar mensagem</Link>}
+          </div>}
         <div className="space-y-3">
           <Campo rotulo="Título" obrigatorio>{(c) => <input {...c} type="text" maxLength={200} value={titulo} onChange={(e) => setTitulo(e.target.value)} disabled={!aberta} className={CONTROLE} />}</Campo>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

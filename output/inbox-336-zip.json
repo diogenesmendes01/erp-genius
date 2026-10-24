@@ -1,0 +1,17 @@
+{
+  "arquivo": "output/inbox-336-aceite-65839-953fb-20261024.zip",
+  "sha256": "5FBD1FB9DF576F0FBCCE250155048AE6BC9B949B19C8FC79F32CC107CEAA5285",
+  "bytes": 1730536,
+  "entradas": 24,
+  "pngs": 22,
+  "outros": [
+    "manifesto.json",
+    "README.md"
+  ],
+  "publicado": false,
+  "curadoria": "Manifesto/README curados; imagens e ZIP mantidos apenas como assets locais privados, fora do índice Git.",
+  "zipAntigoPreservado": {
+    "sha256": "EE0BA81A8BC661A0E144B92CA437F8B5512420912D5C47536E1DCF967DFE4555",
+    "arquivo": "output/inbox-336-positivos.zip"
+  }
+}

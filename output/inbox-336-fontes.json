@@ -1,0 +1,31 @@
+{
+  "fonteApp": "65839a85ebf87b4dcb443fef5acebe86538d00f0",
+  "fonteHarness": "953fb6342642d40d6ebdb80443adcc42761c3637",
+  "fonteFixture": "a96d86455efedb960b60dac198a99eb82238cbdd",
+  "fontesHarness": {
+    "capturar-inbox.mjs": "dcd55c0573a2e952d7a5f8e952013b6f1bb239e730b631b4e1e1675a37d676ad",
+    "entradas-inbox.mjs": "caa37f5da8caf2018761ef388b987d25dcd44b09808467e22920e40d0910487a",
+    "nucleo-captura.mjs": "3f1786cf3e7f6f1ba7788359915c1cd014dcf952872fb992ab5b2934bcb46884",
+    "espera-app.mjs": "9aba36a46139342f85ca940cd52b813e76db8f3ce4822445f6325e9c0ad38c82",
+    "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711",
+    "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce"
+  },
+  "runnerPrivadoSha256": "5ae5467116672a1415dd53f6dd63c5cec14c6ef0070f2f985a4a667c83ada288",
+  "terminal": {
+    "sessionId": 78032,
+    "chunk": "49aa31",
+    "exitCode": 0
+  },
+  "matriz": 22,
+  "navegacoes": 28,
+  "diagnosticosMensagensRecuperadas": 58,
+  "negativosExcluidos": [
+    "inbox-336-visual-2026-10-24T12-33-48-058Z",
+    "inbox-336-visual-2026-10-24T12-37-37-104Z"
+  ],
+  "curadoria": {
+    "tipo": "Somente documentação; fontes e gates nominais da execução original inalterados.",
+    "rawPrivadoSha256": "50708bc659bfa3e2d311a431b37fbe988f41abd34c70416cc1500c206611379d",
+    "manifestoCuradoSha256": "0e580b456416df27d41be900c4d665f8d771bf7c70634c5fd4e636c4b9d2fba4"
+  }
+}

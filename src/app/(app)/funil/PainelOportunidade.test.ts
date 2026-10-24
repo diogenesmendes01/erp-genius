@@ -130,3 +130,18 @@ it("335: Abrir contato usa a ficha existente /contatos?c= e codifica a pessoa se
   expect(t).not.toContain("/contatos/p");
   expect(render({ ...base, pessoaId: null }, GERENTE, { abaInicial: "detalhes" })).not.toContain("Abrir contato");
 });
+
+describe("entradas autorizadas da conversa (#336)", () => {
+  it("aberta mostra Abrir e Agendar com ID codificado", () => {
+    const html = render(base, GERENTE, { conversa: { atendimentoId: "ação/1?x&y", aberta: true } });
+    expect(html).toContain('href="/inbox?c=a%C3%A7%C3%A3o%2F1%3Fx%26y"');
+    expect(html).toContain('href="/inbox?c=a%C3%A7%C3%A3o%2F1%3Fx%26y&amp;agendar=1"');
+    expect(html).toContain("Abrir conversa"); expect(html).toContain("Agendar mensagem");
+  });
+  it("encerrada permite somente Abrir, e prop ausente/null não inventa conversa", () => {
+    const html = render(base, GERENTE, { conversa: { atendimentoId: "a1", aberta: false } });
+    expect(html).toContain('href="/inbox?c=a1"'); expect(html).not.toContain("Agendar mensagem");
+    expect(render(base)).not.toContain("Abrir conversa");
+    expect(render(base, GERENTE, { conversa: null })).not.toContain("Abrir conversa");
+  });
+});
