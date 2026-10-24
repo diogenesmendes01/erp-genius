@@ -8,7 +8,7 @@ vi.mock("./prazo-vivo", () => { throw new Error("O relógio cliente não está d
 describe("estado visual compartilhado", () => {
   it("calcula prazo e cabeçalho sem carregar o módulo cliente do relógio", async () => {
     const { estadoVisualItem, estadoVisualCabecalho } = await import("./estado-visual");
-    const item: ItemListaInbox = {
+    const item: ItemListaInbox = { estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null,
       id: "a1", numeroId: "n1", numeroRotulo: "Central", finalidade: "COMERCIAL", driver: "SIMULADO",
       contatoId: "c1", contatoNome: "Contato fictício", contatoTelefone: "+5500000000301", optOut: false, vinculo: null,
       naoLidas: 0, ultimaMensagemEm: null, preview: "Oi", linhaComercial: false,

@@ -1,0 +1,122 @@
+{
+  "fonte": "f1f2098f727eab2376ad9f7559b61f48d60fa118",
+  "rapida": {
+    "fonte": "f1f2098f727eab2376ad9f7559b61f48d60fa118",
+    "run": 40139956869,
+    "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139956869",
+    "status": "completed",
+    "conclusao": "success",
+    "confirmacaoTerminal": "64268/0d7de7/EXIT0",
+    "jobs": [
+      {
+        "id": 121009408846,
+        "nome": "build",
+        "conclusao": "success",
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139956869/job/121009408846"
+      },
+      {
+        "id": 121009409006,
+        "nome": "test (UTC)",
+        "conclusao": "success",
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139956869/job/121009409006",
+        "arquivos": 938,
+        "testes": 7434
+      },
+      {
+        "id": 121009409021,
+        "nome": "test (America/Sao_Paulo)",
+        "conclusao": "success",
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139956869/job/121009409021",
+        "arquivos": 938,
+        "testes": 7434
+      },
+      {
+        "id": 121009409032,
+        "nome": "lint",
+        "conclusao": "success",
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139956869/job/121009409032"
+      },
+      {
+        "id": 121009409147,
+        "nome": "typecheck",
+        "conclusao": "success",
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139956869/job/121009409147"
+      }
+    ],
+    "limite": "Os mesmos testes em dois fusos não são somados. Integração completa40139991809 é execução separada, ainda pendente."
+  },
+  "integracaoCompleta": {
+    "fonte": "f1f2098f727eab2376ad9f7559b61f48d60fa118",
+    "run": 40139991809,
+    "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139991809",
+    "status": "completed",
+    "conclusao": "success",
+    "shards": [
+      {
+        "shard": 1,
+        "job": 121009521756,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139991809/job/121009521756",
+        "conclusao": "success",
+        "arquivos": 89,
+        "testes": 718,
+        "arquivosIgnorados": 0,
+        "testesIgnorados": 0,
+        "duracaoSegundos": 1842.83,
+        "arquivosOptIn": [],
+        "logSha256": "8c66c1599eb0bfdb33a8bc7e428597185c2db6e09d280e787f61346dd98cfd95"
+      },
+      {
+        "shard": 2,
+        "job": 121009521888,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139991809/job/121009521888",
+        "conclusao": "success",
+        "arquivos": 86,
+        "testes": 789,
+        "arquivosIgnorados": 2,
+        "testesIgnorados": 3,
+        "duracaoSegundos": 1944.53,
+        "arquivosOptIn": [
+          "src/server/contratos/aditivo-taxas-ui-homologacao.int.test.ts",
+          "src/server/matricula/desistencia-reconferencia-delta-ui-homologacao.int.test.ts"
+        ],
+        "logSha256": "f1c760f2d8e91bf6343ffe6d2e6765ae95827d1c645679149cdd0ac84c81fdf9"
+      },
+      {
+        "shard": 3,
+        "job": 121009521640,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139991809/job/121009521640",
+        "conclusao": "success",
+        "arquivos": 87,
+        "testes": 876,
+        "arquivosIgnorados": 1,
+        "testesIgnorados": 1,
+        "duracaoSegundos": 2336.02,
+        "arquivosOptIn": [
+          "src/server/matricula/desistencia-acerto-ui-homologacao.int.test.ts"
+        ],
+        "logSha256": "9dc37db21dbe9daea2858cc7b6bf9e6295dcd3e6c8e87165f7cf1fb922627445"
+      },
+      {
+        "shard": 4,
+        "job": 121009521828,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40139991809/job/121009521828",
+        "conclusao": "success",
+        "arquivos": 88,
+        "testes": 729,
+        "arquivosIgnorados": 0,
+        "testesIgnorados": 0,
+        "duracaoSegundos": 2145.57,
+        "arquivosOptIn": [],
+        "logSha256": "a22c430184c919d4750c56466579256000617007d8651ecfe682b239897d54bd"
+      }
+    ],
+    "arquivosAprovados": 350,
+    "testesAprovados": 3112,
+    "arquivosIgnorados": 3,
+    "testesIgnorados": 4,
+    "limite": "Quatro partições do mesmo comando, sem filtro extra de nomes. Skips são declarados separadamente e não contam como aprovados. Gates locais/UNIT e fusos não se somam à integração.",
+    "confirmacaoTerminal": "25375/b8935a/EXIT0",
+    "verificacaoTotais": "44543/662895/EXIT0"
+  },
+  "limite": "Integração nominalf1f anterior àmain425. Não é suíte integral combinada após423. Dois SRC423 incorporados são os homologados na PR425/INT38; doze SRC343 permanecem os testados. CI global final da composição segue obrigatória."
+}

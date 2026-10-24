@@ -6,7 +6,7 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { ListaAtendimentos } from "./ListaAtendimentos";
 
 const passado = new Date(Date.now() - 3_600_000).toISOString();
-const base: ItemListaInbox = {
+const base: ItemListaInbox = { estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null,
   id: "a1", numeroId: "n1", numeroRotulo: "Cobrança", finalidade: "FINANCEIRO", driver: "SIMULADO",
   contatoId: "c1", contatoNome: "Maria Souza", contatoTelefone: "+5511999990000", optOut: false, vinculo: null,
   naoLidas: 0, ultimaMensagemEm: "2026-10-01T12:00:00.000Z", preview: "Oi", linhaComercial: false,
