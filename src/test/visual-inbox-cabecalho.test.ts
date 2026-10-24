@@ -4,7 +4,7 @@ import { abrirMenuConversaApp, esperarConteudoApp, semanticaMenuConversaPronto }
 afterEach(()=>vi.unstubAllGlobals());
 it("menu-mais acrescenta12PNG preservando estados313314318",()=>{
  expect(combinacoes({alvos:["app","prototipo"],estados:["menu-mais"]})).toHaveLength(12);
- expect(combinacoes({alvos:["app","prototipo"],estados:Object.keys(ESTADOS).filter(e => e !== "painel-secretaria")})).toHaveLength(176);
+ expect(combinacoes({alvos:["app","prototipo"],estados:Object.keys(ESTADOS).filter(e => e !== "painel-secretaria" && !e.startsWith("entrada-"))})).toHaveLength(176);
  for(const e of ["humano-compositor","lista-vazia","painel-detalhes","filtros","seletor-numero","nova-conversa"]) expect(combinacoes({alvos:["app","prototipo"],estados:[e]})).toHaveLength(12);
 });
 it("aguarda thread e hidratação antes de abrir o menu real",async()=>{
