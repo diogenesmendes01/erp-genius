@@ -1,0 +1,37 @@
+{
+  "commitDocumentosDEV": "0962750a0336e9d9041523aaa4ac9d9227220f20",
+  "fonteAPPRuntime": "6f92673dfb526e11ad1e349bea484d135819e849",
+  "arquivos": [
+    {
+      "path": "output/inbox-326-save-r9-allowlist.json",
+      "bytesGitLF": 6063,
+      "sha256GitLF": "244168bb4f2bc588ea3691ffa8760dd9bf627e2c27e46e28a1336c2828f9b632"
+    },
+    {
+      "path": "output/inbox-326-save-r9-evidencias.md",
+      "bytesGitLF": 6421,
+      "sha256GitLF": "904bb6d9d4fd31f3f673ab5798e7938101ed0987bd29284c56e19a223c4fc9eb"
+    },
+    {
+      "path": "output/inbox-326-save-r9-zip.json",
+      "bytesGitLF": 1406,
+      "sha256GitLF": "b6193e42af3740c4cf303082af9677708657bff6bfbc18acf995fc0bed07c586"
+    },
+    {
+      "path": "output/inbox-326-visual-r10-allowlist.json",
+      "bytesGitLF": 5889,
+      "sha256GitLF": "ca48172867978ed2c8a1923873547d948c6b4d16611786b76d57eedb59f84bad"
+    },
+    {
+      "path": "output/inbox-326-visual-r10-evidencias.md",
+      "bytesGitLF": 4130,
+      "sha256GitLF": "b6e94d1f5212fc3319b474de4c3c4ac5982a04e4ac5dfb914dcf1e90dc3afc9d"
+    },
+    {
+      "path": "output/inbox-326-visual-r10-zip.json",
+      "bytesGitLF": 1302,
+      "sha256GitLF": "f6839d1b9abba45b2ca1f740c5d85e5f8b666c5aa0ccb9724366a3b3ec32956c"
+    }
+  ],
+  "limite": "Somente documentos sanitizados. Binários ZIP/PNG e executores privados fora do Git; hashes iniciais e atuais são distintos, sem regravar ZIP histórico."
+}

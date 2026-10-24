@@ -1,5 +1,13 @@
 # Inbox #326 — retomada sobre Detalhes/B2B325
 
+## Atualização da integração — 24/10/2026
+
+O código foi composto com a main cf29 em798f e aprovado nos gates locais e remotos:937arquivos/7437testes globais locais, quatroarquivos/44INT locais; CI rápida5/5 e integração completa4/4,351arquivos/3108testes aprovados, trêsarquivos/quatrotestes visuais opt-in ignorados. Fontes, executores, limites e provas literais estão na [composição atual](inbox-326-composicao-final.md) e no [índice de oito pareceres](inbox-326-qa/indice.json). Recortes sobrepostos não são somados.
+
+R9 terminou0 com uma Save nova e cumulativo2, ACK original200 retido/liberado, rascunhos/foco/editabilidade e encerramento real SSE. R10v2 terminou0 com seis APP novas e seis referências históricas em três tamanhos/dois temas, zeroSave; todas12imagens inspecionadas DEV/TESTER. Os dois processos de browser e a fixtureB foram encerrados/restaurados;424hashes/498originais preservados. Nenhum resultado negativo histórico foi reclassificado.
+
+Consolidação documental e CI final ainda em andamento. O ZIP visual sanitizado tem autorização de publicação pendente; a PR420 permanece em rascunho/Refs326. O texto abaixo é histórico nominal da retomada, preservado para rastreabilidade.
+
 Composição DEV local revisável, sem homologação. Branch `codex/inbox-e2-326-retomada`, base `d775a140b824e56307d50d95d7bb0ad5284a5f6e`. Fontes originais: implementação09498f4d09fadcbd9d07241b10f87d22fdedb864, foco2de9d10b82b52a5d6b1492d3553eec4d3551c22c e Retrybec9d18e85539398875ca45b58a448d367f5a8b5. Não foram portadas histórias agregadas335/336, harness antigo202,326 visual,327/328 ou o Retry duplicado6e552.
 
 ## Composição e contratos

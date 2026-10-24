@@ -1,0 +1,169 @@
+{
+  "funcionalidade": 326,
+  "tipo": "R10 v2 visual readonly curado",
+  "fonteAPP": "6f92673dfb526e11ad1e349bea484d135819e849",
+  "executorSha256": "e2a22a019a77ab2538a6606d28964c0f0d986680636ad6d4c35651b260d4a53e",
+  "pacoteExecutorSha256": "32d808d740fa757e19fb3d8db5c5eaeb723432f1165310f9195062f6e6d8d128",
+  "imagens": [
+    {
+      "arquivo": "app-claro-celular-painel-editar-contato.png",
+      "bytes": 33224,
+      "sha256": "ef5b64a77225b5b48108a97241e43f6975902da16f2e10cb9780a0531fb8a616",
+      "width": 390,
+      "height": 844,
+      "tipo": "APP nova readonly"
+    },
+    {
+      "arquivo": "app-claro-desktop-painel-editar-contato.png",
+      "bytes": 116252,
+      "sha256": "64ee400e344fb8e36305a468833121c23267e474db5c1db5094e617f44980568",
+      "width": 1440,
+      "height": 900,
+      "tipo": "APP nova readonly"
+    },
+    {
+      "arquivo": "app-claro-tablet-painel-editar-contato.png",
+      "bytes": 94028,
+      "sha256": "72203277b9163729694844229c6f4ae5e3536a809b246313fe24b1db73fa7bae",
+      "width": 1024,
+      "height": 768,
+      "tipo": "APP nova readonly"
+    },
+    {
+      "arquivo": "app-escuro-celular-painel-editar-contato.png",
+      "bytes": 34466,
+      "sha256": "3bf64dbc1d8edf6f00ac992862f2c632cfa85029819afa41d8871f6b6da7c37a",
+      "width": 390,
+      "height": 844,
+      "tipo": "APP nova readonly"
+    },
+    {
+      "arquivo": "app-escuro-desktop-painel-editar-contato.png",
+      "bytes": 113608,
+      "sha256": "d7cf65e287f8522373667329f211972b482fccb5e6a215cd8621c82ee2123264",
+      "width": 1440,
+      "height": 900,
+      "tipo": "APP nova readonly"
+    },
+    {
+      "arquivo": "app-escuro-tablet-painel-editar-contato.png",
+      "bytes": 90983,
+      "sha256": "ae456c008df4c7451ebd8fa941a1e73f3ef6a14db1b439adaece92e820bad991",
+      "width": 1024,
+      "height": 768,
+      "tipo": "APP nova readonly"
+    },
+    {
+      "arquivo": "prototipo-claro-celular-painel-editar-contato.png",
+      "bytes": 38545,
+      "sha256": "ddca16ac25cd1c875ff5e9d35089d18755878b42f09d83312b987b1330e79336",
+      "width": 390,
+      "height": 844,
+      "tipo": "PROTO histórica reutilizada"
+    },
+    {
+      "arquivo": "prototipo-claro-desktop-painel-editar-contato.png",
+      "bytes": 197283,
+      "sha256": "282abd1a04f18f6da6162c15beab78e2a6a3148492dd90518111b6fbe71d4448",
+      "width": 1440,
+      "height": 900,
+      "tipo": "PROTO histórica reutilizada"
+    },
+    {
+      "arquivo": "prototipo-claro-tablet-painel-editar-contato.png",
+      "bytes": 148574,
+      "sha256": "ec2b2331c66c13cd04af0046d565b0cff62415a26c89b8f8c8a212bcd5a4db33",
+      "width": 1024,
+      "height": 768,
+      "tipo": "PROTO histórica reutilizada"
+    },
+    {
+      "arquivo": "prototipo-escuro-celular-painel-editar-contato.png",
+      "bytes": 39109,
+      "sha256": "5f4f2a4ca891430d117a5d4513b7c7b93dd13480dc25ec7bfd6cba69e3efff4a",
+      "width": 390,
+      "height": 844,
+      "tipo": "PROTO histórica reutilizada"
+    },
+    {
+      "arquivo": "prototipo-escuro-desktop-painel-editar-contato.png",
+      "bytes": 195684,
+      "sha256": "352f5e7d03c55cfa695e287c75e9c08626aaa6ea5a47d508695cf0ea79676a3d",
+      "width": 1440,
+      "height": 900,
+      "tipo": "PROTO histórica reutilizada"
+    },
+    {
+      "arquivo": "prototipo-escuro-tablet-painel-editar-contato.png",
+      "bytes": 145820,
+      "sha256": "e6cd4a11872d307d7cfc3c7a1b7f2d8f87b72bfc2bd55dadf0d5274fe5c4daf2",
+      "width": 1024,
+      "height": 768,
+      "tipo": "PROTO histórica reutilizada"
+    }
+  ],
+  "pares": [
+    {
+      "tema": "claro",
+      "tamanho": "desktop",
+      "app": "app-claro-desktop-painel-editar-contato.png",
+      "prototipo": "prototipo-claro-desktop-painel-editar-contato.png"
+    },
+    {
+      "tema": "claro",
+      "tamanho": "tablet",
+      "app": "app-claro-tablet-painel-editar-contato.png",
+      "prototipo": "prototipo-claro-tablet-painel-editar-contato.png"
+    },
+    {
+      "tema": "claro",
+      "tamanho": "celular",
+      "app": "app-claro-celular-painel-editar-contato.png",
+      "prototipo": "prototipo-claro-celular-painel-editar-contato.png"
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "app": "app-escuro-desktop-painel-editar-contato.png",
+      "prototipo": "prototipo-escuro-desktop-painel-editar-contato.png"
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "app": "app-escuro-tablet-painel-editar-contato.png",
+      "prototipo": "prototipo-escuro-tablet-painel-editar-contato.png"
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "celular",
+      "app": "app-escuro-celular-painel-editar-contato.png",
+      "prototipo": "prototipo-escuro-celular-painel-editar-contato.png"
+    }
+  ],
+  "resultado": {
+    "APP": 6,
+    "PROTOHistoricas": 6,
+    "pares": 6,
+    "saveForward": 0,
+    "submit": 0,
+    "contextosFechados": 6,
+    "browsersFechados": 6,
+    "coleta953": "semfalhas/pendênciasfinais",
+    "SSE": "1START1terminalPageviva antescontext.close porcaso"
+  },
+  "qaIndependenteSha256": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5",
+  "zip": {
+    "arquivo": "inbox-326-visual-6f92673-e2a22a01-r10-20261024.zip",
+    "bytes": 1219564,
+    "sha256": "d5f4dd2a35bcdbd30895f5cfe825dcc1d4e81e285d9d462a3428dbab9b1c41ab",
+    "entradas": 15
+  },
+  "limites": [
+    "APP gaveta e PROTO inline são estruturas diferentes aprovadas por D14.",
+    "PROTO históricas não são recapturas nem provam comportamento/foco/autoscroll.",
+    "Datas e número localizados:24/10/2026 e2,75; controles abaixo da dobra alcançados por scroll nativo e validados em DOM, não todos simultâneos nas PNG.",
+    "R9 preservado como prova funcional Save/ACK; R10 exclusivamente visual readonly e não substitui aquela execução."
+  ],
+  "publicacao": "autorizaçãoanexos/revisãofinal/mergependentesROOT",
+  "binariosNoGit": false
+}

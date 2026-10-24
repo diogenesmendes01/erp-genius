@@ -1,6 +1,6 @@
 # Inbox #326 — edição do contato na composição325 (D14)
 
-Estado atual: composição para PR em rascunho, diretamente sobre a main `ae56c00f053e864a3efea35d2f640afe48716cc4`. Código e QA independente verificados; nova prova de Salvar pela interface e aceite visual ainda pendentes. Não há alteração de schema, dependência ou fonte das issues #327/#328 nesta entrega. As seções abaixo preservam a cronologia e a fonte de cada evidência.
+Estado atual: PR #420 em rascunho, código `798f26fa` sobre a main `cf29add9`. R9 comprova Salvar/ACK/rascunhos/SSE; R10 completa seis pares visuais e passou na inspeção independente. CI rápida 5/5 e integração completa 4/4 aprovadas; fixture de interface restaurada com 424 hashes/498 originais preservados. Restam anexação autorizada e consolidação documental/CI do último head. Não há alteração de schema, dependências ou fonte das issues #327/#328 no diff. As seções abaixo preservam a cronologia e a fonte de cada evidência.
 
 O lápis de PainelContato abre uma única gaveta Editar contato somente com Pessoa resolvida, capacidade editarContato e ações disponíveis no contexto comercial. Detalhes/B2B325 e links autorizados336 permanecem. A mesma instância `useAbaPainel` fica ativa para Detalhes OU editor, sem segunda aquisição, SSE ou polling. O snapshot inicial e a Pessoa esperada pertencem à abertura; revalidação não troca o alvo nem apaga rascunho.
 

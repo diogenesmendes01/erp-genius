@@ -1,5 +1,17 @@
 # #326 — composição para publicação direta em main
 
+## Estado atual — 24/10/2026
+
+A composição atual é `798f26faf13ff39f2c31352950d93f6f5bc9bff1`, incorporando a main `cf29add93cd63fe14f95bf8a53fb079d3efe9a27` com #416 e #419 já mergeadas. Os registros abaixo preservam as composições anteriores. A união atual conserva as duas entregas no quadro e no teste de identificação. [Prova de identidade](inbox-326-qa/composicao-798f.json): vinte das 21 fontes selecionadas são iguais ao freeze DEV6f; a exceção é o teste aditivo de identificação. O delta direto contra main contém18SRC, sem schema, dependências, scripts ou workflows.
+
+Gates ROOT em798f, todos com saída terminal0:937arquivos/7437testes globais (44584/158f41,311,72s,doisworkers), quatroarquivos/44INT (57239/06cda2,186,63s,umworker,dev-gravacoes490), TSC27773/df7607 e lint45960/c57bc6 (zeroerros/40avisosherdados). Sem filtro de nome ou skips impostos; configuração unitária exclui integração. BancoROOT restaurado5bd290 com424hashes. [CI remota](inbox-326-qa/ci-798f.json): rápida40128296594 5/5; integração40128292519 4/4,351arquivos/3108testes aprovados, trêsarquivos/quatrotestes visuais opt-in ignorados. Não somar recortes sobrepostos.
+
+R9 comprova uma Save nova, ACK original e rascunhos preservados; R10v2 acrescenta seis APP e seis referências históricas legítimas, em seis pares, zeroSave. DEV e TESTER inspecionaram todas12imagens; ROOT inspecionou três pares. [Oito pareceres independentes](inbox-326-qa/indice.json), [persistência R9](inbox-326-qa/r9-persistencia.json), [persistência R10](inbox-326-qa/r10-persistencia.json) e [restauro final](inbox-326-qa/restauro-final.json). As capturas continuam nominais às fontesDEV6f e aos executores identificados, sem reatribuição ao merge798f. Os negativos anteriores permanecem negativos.
+
+FixtureB restaurada após fechamento de todos os contextos e da porta3111:498registros/424hashes/sequências preservados. A PR420 continua em rascunho/Refs326 enquanto aguardamos autorização/publicação do ZIP visual sanitizado, revisão desta consolidação documental e CI rápida no SHA documental final. Não há nova Save, mensagem externa ou deploy nesta consolidação.
+
+## Histórico preservado
+
 Composição8b91bab362416ba3dd42a99831d5898356e99479 sobre mainae56c00f053e864a3efea35d2f640afe48716cc4 (#325 já mergeada). Portes652c133f(feature2b43),d60380d2(guarda08852),8b91bab3(metadataR1; os quatro SRC já coincidem com main). O único conflito foi o quadro: preservado todo o conteúdo main e acrescentado somente o adendo de duas linhas da feature. Nenhum código325 pendurado em branch-base de outra issue.
 
 ROOT42004/48d232 e TESTER74031/dade9b:21 blobs SRC exatos do freeze6f92673dfb526e11ad1e349bea484d135819e849; diff direto main18 SRC+3MD, sem schema, dependências, workflows ou harness. Backend da edição continua2b43; cache/telefone R1 e aquisição única Detalhes/editor foram compostos preservando foco/Retry. Guardas distinguem HTMLinput.type técnico sem mudar rótulos ou ampliar permissões.

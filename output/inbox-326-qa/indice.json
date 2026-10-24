@@ -1,7 +1,7 @@
 {
   "issue": 326,
-  "base": "ae56c00f053e864a3efea35d2f640afe48716cc4",
-  "composicao": "8b91bab362416ba3dd42a99831d5898356e99479",
+  "base": "cf29add93cd63fe14f95bf8a53fb079d3efe9a27",
+  "composicao": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
   "devFreeze": "6f92673dfb526e11ad1e349bea484d135819e849",
   "pareceres": [
     {
@@ -33,12 +33,64 @@
       "bytesPublicados": 8652,
       "sha256FisicoOriginal": "3698611682eac180c1e339ba94a41f5f24e1e903d73b3213bdc8029bede9c94c",
       "sha256GitLF": "3698611682eac180c1e339ba94a41f5f24e1e903d73b3213bdc8029bede9c94c"
+    },
+    {
+      "origem": "inbox-326-r9-final-review-tester.md",
+      "destino": "r9-executor.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "110 testes offline do executor R9; sem nova operação.",
+      "bytesOriginais": 3821,
+      "bytesPublicados": 3821,
+      "sha256FisicoOriginal": "bd6f45467535243b324733d12e52fa3cc64b526bc107eb36d72af7816ff193fc",
+      "sha256GitLF": "bd6f45467535243b324733d12e52fa3cc64b526bc107eb36d72af7816ff193fc"
+    },
+    {
+      "origem": "inbox-326-r9-operacional-final-review-tester.md",
+      "destino": "r9-operacional.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "Inspeção de manifesto, duas imagens e prova de persistência ROOT; execução433145 EXIT0.",
+      "bytesOriginais": 5395,
+      "bytesPublicados": 5395,
+      "sha256FisicoOriginal": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49",
+      "sha256GitLF": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49"
+    },
+    {
+      "origem": "inbox-420-798f-composicao-final-review-tester.md",
+      "destino": "composicao-798f.md",
+      "fonte": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+      "escopo": "Revisão estática/adversarial da composição e teste do único automerge:1arquivo29casos;semDB.",
+      "bytesOriginais": 5193,
+      "bytesPublicados": 5193,
+      "sha256FisicoOriginal": "f858e386e2496a4ce706af5396782b73f777d44149bae56da3f025ff98bbed65",
+      "sha256GitLF": "f858e386e2496a4ce706af5396782b73f777d44149bae56da3f025ff98bbed65"
+    },
+    {
+      "origem": "inbox-326-r10-v2-final-review-tester.md",
+      "destino": "r10-executor.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "24 testes offline e5 replay independentes do executor readonly; sem nova operação.",
+      "bytesOriginais": 4990,
+      "bytesPublicados": 4990,
+      "sha256FisicoOriginal": "38b8dc56b7fe9ff52d29522df88f7ce3457eda5f80f2e6389b8d62f616ac0415",
+      "sha256GitLF": "38b8dc56b7fe9ff52d29522df88f7ce3457eda5f80f2e6389b8d62f616ac0415"
+    },
+    {
+      "origem": "inbox-326-r10-operacional-final-review-tester.md",
+      "destino": "r10-visual.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "Inspeção dos12 PNG/seis pares/ZIP e manifesto; operação R10 c49c9a EXIT0, sem Save.",
+      "bytesOriginais": 8239,
+      "bytesPublicados": 8239,
+      "sha256FisicoOriginal": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5",
+      "sha256GitLF": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5"
     }
   ],
   "limites": [
     "Os recortes são sobrepostos e não devem ser somados.",
     "4/44 INT é nominal ao backend2b43, comprovadamente idêntico; não reexecutado no6f.",
-    "Save pela interface e visual final continuam pendentes;24 testes offline do observador não são24 arquivos de QA.",
-    "39 imagens e2588EXIT1 históricos não são reatribuídos à fonte atual."
-  ]
+    "39 imagens e2588EXIT1 históricos não são reatribuídos à fonte atual.",
+    "R9 comprova Save/ACK/rascunhos/SSE; R10 completa os seis pares visuais em fonteDEV6f. Oito pareceres não reatribuem capturas ao SHA798f. A identidade executável da composição está em composicao-798f.json.",
+    "CI rápida e integração completa798f aprovadas; fixtureB restaurada. Upload autorizado do ZIP visual e consolidação documental/CI final ainda pendentes."
+  ],
+  "composicaoHistorica": "8b91bab362416ba3dd42a99831d5898356e99479"
 }

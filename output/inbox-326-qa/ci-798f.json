@@ -1,0 +1,43 @@
+{
+  "fonte": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+  "rapida": {
+    "run": 40128296594,
+    "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40128296594",
+    "conclusao": "success",
+    "confirmacaoTerminal": "4ab53d/EXIT0",
+    "jobs": [
+      {"id": 120974340617, "nome": "build", "conclusao": "success"},
+      {"id": 120974340857, "nome": "typecheck", "conclusao": "success"},
+      {"id": 120974340895, "nome": "lint", "conclusao": "success"},
+      {"id": 120974340803, "nome": "test (UTC)", "conclusao": "success", "arquivos": 937, "testes": 7437, "duracaoSegundos": 242.99},
+      {"id": 120974340914, "nome": "test (America/Sao_Paulo)", "conclusao": "success", "arquivos": 937, "testes": 7437, "duracaoSegundos": 248.08}
+    ]
+  },
+  "integracao": {
+    "run": 40128292519,
+    "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40128292519",
+    "status": "completed",
+    "conclusao": "success",
+    "confirmacaoTerminal": "24407/d9cf2f/EXIT0",
+    "arquivosAprovados": 351,
+    "testesAprovados": 3108,
+    "arquivosIgnorados": 3,
+    "testesIgnorados": 4,
+    "jobs": [
+      {"id":120974331781,"shard":1,"conclusao":"success","arquivosAprovados":89,"testesAprovados":718,"duracaoSegundos":1996.05},
+      {"id":120974331890,"shard":2,"conclusao":"success","arquivosAprovados":87,"arquivosIgnorados":2,"testesAprovados":810,"testesIgnorados":3,"duracaoSegundos":2023.48},
+      {"id":120974331949,"shard":3,"conclusao":"success","arquivosAprovados":87,"arquivosIgnorados":1,"testesAprovados":868,"testesIgnorados":1,"duracaoSegundos":1739.61},
+      {"id":120974332041,"shard":4,"conclusao":"success","arquivosAprovados":88,"testesAprovados":712,"duracaoSegundos":1802.24}
+    ],
+    "ignoradoPorOptIn": [
+      "src/server/contratos/aditivo-taxas-ui-homologacao.int.test.ts",
+      "src/server/matricula/desistencia-reconferencia-delta-ui-homologacao.int.test.ts",
+      "src/server/matricula/desistencia-acerto-ui-homologacao.int.test.ts"
+    ]
+  },
+  "limites": [
+    "Os mesmos 7.437 casos rodam nos dois fusos; não somar como casos distintos.",
+    "A configuração unitária exclui integração. A integração foi executada em quatro shards completos, sem filtro de nomes extra; os quatro casos ignorados são preparadores visuais opt-in.",
+    "Evidência nominal ao SHA798f. Commits documentais posteriores devem preservar a identidade executável e ter sua CI rápida própria."
+  ]
+}

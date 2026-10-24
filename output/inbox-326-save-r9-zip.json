@@ -1,0 +1,30 @@
+{
+  "arquivo": "inbox-326-aceite-save-6f92673-bbb502fa-r9-20261024.zip",
+  "bytes": 224472,
+  "sha256": "a3606fe159fea66c4447eccd9162cd572eea9f95c79d4c0cc0010704b89bdfc0",
+  "entradas": 4,
+  "pngs": 2,
+  "bytesPng": 231775,
+  "manifestoSha256": "6c0d03575f8ec8dca85e6b12561dc9aefe8bfd0dfca7e5fb78c806b2966ebeff",
+  "readmeSha256": "d8bf945693dfbc29826d85ad8712a17bffbaa3cfe0d1a603ae83b6c7f05940c5",
+  "roundTrip4HashesIguais": true,
+  "publicado": false,
+  "uploadPeloIntegrador": true,
+  "consolidacaoPosterior": {
+    "qaR9Sha256": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49",
+    "qaR10Sha256": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5",
+    "QA": "Favorável FS;semnovaUI/DBTESTER",
+    "CI": "Composição798f26fa:4shardsINT+rápida favoráveis",
+    "restauro": "ROOTc1375e EXIT0,snapshot498/424hashes preservados",
+    "anexosPublicacaoMerge": "pendentesROOT",
+    "binarioRegravado": false
+  },
+  "reportInicialSha256": "919184c2318372d8cc9e63c7969d422eba5fe8cb0d6ea3730ae5452997863b1f",
+  "reportAtual": {
+    "arquivo": "inbox-326-save-r9-evidencias.md",
+    "bytesFisicos": 6421,
+    "sha256Fisico": "904bb6d9d4fd31f3f673ab5798e7938101ed0987bd29284c56e19a223c4fc9eb",
+    "sha256GitLF": "904bb6d9d4fd31f3f673ab5798e7938101ed0987bd29284c56e19a223c4fc9eb"
+  },
+  "hashesManifestoReadmeInternos": "Históricos do ZIP original, binário preservado"
+}

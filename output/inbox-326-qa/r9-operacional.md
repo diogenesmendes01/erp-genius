@@ -1,0 +1,26 @@
+# QA independente da execução R9 — #326
+
+Favorável à evidência operacional R9 no escopo descrito abaixo. Fonte nominal 6f92673dfb526e11ad1e349bea484d135819e849; executor privado R9 SHA256 bbb502fa355e83150b857bdc2097cdaff78995f8eae07a1aababd883e794b0ae. A execução única DEV B 433145 terminou EXIT0, run 1d36ea7f-04a2-4734-b8c2-e7297739cec3. O TESTER conferiu os arquivos e inspecionou as duas imagens reais, sem repetir browser, HTTP, DB ou Save.
+
+Manifesto de 102.178 bytes, SHA256 739dc9d419d86d2c16f5c62c86e1f18d5a2eb3e06314e9c027efad0557fa92d7: finalizado=true, falhas=[], dois contextos fechados, browser fechado, uma Save encaminhada/ACK entregue e encerrado, cumulativo2. Os hashes foram conferidos e os artefatos copiados para output/inbox-326-r9-operacional-review-tester. Verificação própria 507fae EXIT0 por FS; prova output/inbox-326-r9-operacional-verificacao-tester.json SHA2561f1b56a4c193ea23ddbd88d7355cf3c56a0f44eee88646cac4aab7f48ae1fce4.
+
+O observador completo registra15 STARTs/15 settled, 0 pendentes, 0 falhas, aceitavel=true e browsersFechados=true. V0 canônica 52e52b892030ac87ca3f13efaa1e3865844e8bf9bc286340e6d6bc9cd48fdf94 e V1 canônica 4741dc555950d70fe4b836d24fecf4f28f0c22b4654c20ff3d929712129e37a6 aparecem em GET 200/corpo concluído de ambos os atores. São hashes canônicos do DTO; não se confundem com hashes dos bytes HTTP brutos.
+
+Os dois abortos iniciais de Detalhes foram conferidos por identidade e ordem: A 37→40 e B 103→106. Cada substituto começa depois, na mesma URL/contexto/página/sessão,200/corpo concluído/sem erro e hash V0 esperado. A rede geral também registra cancelamento de Mensagens 125→128 por página com substituto posterior200/corpo/hash e thread pronta. Não se usou resposta anterior para esconder aborto novo. O fullobserver R9 cobre Detalhes; a ressalva do controle R8 não foi transferida ao formal.
+
+A fronteira anterior ao forward registra somente um request e handler pendentes, ambos correspondentes ao Save A1, sem outra aquisição pendente. A Save tem inputValido=true, endpoint/ação autorizados, status200, corpo concluído, settled e nenhum erro. SHA256 do ACK 83f9bf54e0c5fc4f4988d3c516669edec65acc16e7d725fab3bb9b83d0d6e11a coincide entre backend retido e request entregue. A ordem antes/depois de A2 é sustentada pelo executor exato previamente auditado e seus asserts/flags; não há wallclock independente de cada callback e não invento esse registro.
+
+Os cinco oráculos dirty são positivos: B antes, A2 antesACK, A2 apósACK, B apósACK e reediçãoA2. Todos exigem mesmo nó/form, foco, Salvar habilitado e duas frames; as leituras finais após dreno e captura também confirmam semântica e rascunhos preservados em A2/B1. O finalizador concluiu na primeira tentativa, com domRevalidadoAposDreno=true. Não houve segundo submit para comprovar reedição.
+
+Em cada página SSE houve exatamente 1 START/1 terminal requestfailed após close nativo, resposta 200/MIMEtext/event-stream, pageVivaNoTerminal=true e terminalAntesDeContextClose=true. Os coletores mantêm essas condições e falhas=[] na auditoria posterior ao fechamento. A/B terminaram com 0 handlers/0 pendentes/0 falhas WS, respectivamente 53/52 finitos encerrados. O fonte do coletor usa a identidade real do request; CLOSED sozinho não satisfaz a prova nem fabrica settled. A ordem é demonstrada pelos awaits/flags e código pinado, sem timestamp de evento adicional.
+
+Inspeção das duas PNG 1440×900, 231.775 bytes ao todo:
+
+- app-A-final-estavel-1.png: 117.109 bytes, SHA25661948b4105b5bd9e10283d71825d2b4566f3edb736c9b7ad3477d2daf9d9a44a. Cidade “Rascunho A2 confirmado326R”, foco no campo, Horas 2,75 e Salvar verde visíveis.
+- app-B-final-estavel-1.png: 114.666 bytes, SHA256707ab3126add4aad48eee74c38740ada4cceba3567e7cafd89262a6db762bc13. Cidade “Rascunho B326R”, foco no campo, Horas 0 e Salvar verde visíveis.
+
+A disposição do editor, labels e ações persistentes estão legíveis; os rascunhos distintos são compatíveis com o manifesto. O campo booleano está abaixo da dobra, portanto não afirmo seu estado por foto. As imagens contêm badges de desenvolvimento Next/Rendering; permanecem evidência privada suplementar deste cenário, sem promoção a corpus visual formal limpo.
+
+A prova ROOT e9c4f6 de leitura posterior foi conferida por SHA256385015078fc7c20f9e50ae99d1d313e05206c79b1decefff490a60f4fc2dbcea e vincula o mesmo manifesto. Registra498 originais/424 hashes e sequências preservados, total 520 = 498 + 18 fixture + 1 preferência + 3 eventos fictícios. Cidade persistida “Cidade confirmada326R”, número 2.75 e booleano false; os três eventos pertencem à pessoa/autor fictícios esperados. Isso é evidência ROOT de persistência/preservação, não consulta DB feita pelo TESTER.
+
+Limites: parecer nominal da fonte/executor/run acima; não atesta composição futura em main sem prova de identidade. Não homologa novamente as 39 imagens antigas, mobile/temas/permissões/outros fluxos ou todos os tipos de campo por estas duas fotos. Os gates de código anteriores continuam nominais e não foram repetidos/somados. R7 permanece EXIT1/Save 1 e R8 permanece controle delimitado 0; R9 é nova operação positiva com 1 nova Save/cumulativo 2. Histórico, reset e markers permanecem preservados. Nenhuma nova Save ou operação é autorizada por este parecer.
