@@ -61,7 +61,7 @@ import {
 import {
   conectarNumeroMotor,
   consultarSessaoMotor,
-  desconectarNumeroMotor,
+  solicitarLogoutMotor,
   garantirNumeroNoMotor,
   parearNumeroMotor,
 } from "./sessao";
@@ -904,7 +904,7 @@ export async function desconectarNumero(numeroId: string): Promise<Resultado> {
 /** Logout no motor; motor fora do ar recusa a ação (nada muda no ERP antes de a sessão cair lá). */
 async function desligarNoMotor(numeroId: string): Promise<void> {
   try {
-    await desconectarNumeroMotor({ id: numeroId, providerRef: numeroId });
+    await solicitarLogoutMotor({ providerRef: numeroId });
   } catch (e) {
     if (e instanceof ErroMotor && e.codigo === "NUMERO_INEXISTENTE") {
       // O motor nunca conheceu este número: nada a desligar lá.
