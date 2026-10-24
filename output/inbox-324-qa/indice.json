@@ -126,5 +126,84 @@
     "portaLivre": "b241d4",
     "previewEncerrado": "573396",
     "exitPreviewCtrlCEsperado": 1
+  },
+  "revisaoR1": {
+    "fonte": "0e4ec6edcb430568ed339f8bf6630265d356a02a",
+    "review": 5635519413,
+    "parecer": "revisao-c5.md",
+    "sha256OriginalFisico": "88ad7fe2fee0ef298d8dbbaadee3e95dbab7a0369a2de44c8551d423632ea1c4",
+    "sha256PublicadoLF": "88ad7fe2fee0ef298d8dbbaadee3e95dbab7a0369a2de44c8551d423632ea1c4",
+    "root": {
+      "red": {
+        "terminal": "1641fb",
+        "exit": 1,
+        "executados": 1,
+        "ignoradosFiltro": 14
+      },
+      "integracao": {
+        "sessao": 13774,
+        "terminal": "7534a1",
+        "exit": 0,
+        "arquivos": 5,
+        "testes": 54,
+        "segundos": 206.97
+      },
+      "global": {
+        "sessao": 65123,
+        "terminal": "e8df9a",
+        "exit": 0,
+        "arquivos": 914,
+        "testes": 7188,
+        "segundos": 221.23,
+        "maxWorkers": 2
+      },
+      "typescript": {
+        "sessao": 73934,
+        "terminal": "9abbde",
+        "exit": 0
+      },
+      "lint": {
+        "terminal": "0fb4d9",
+        "exit": 0,
+        "arquivos": 3,
+        "avisos": 0
+      }
+    },
+    "tester": {
+      "unit": {
+        "terminal": "165dda",
+        "exit": 0,
+        "arquivos": 4,
+        "testes": 37
+      },
+      "integracao": {
+        "sessao": 46676,
+        "terminal": "ba3aed",
+        "exit": 0,
+        "arquivos": 2,
+        "testes": 25,
+        "segundos": 96.11
+      },
+      "jsComentarioC3": {
+        "terminal": "d8103b",
+        "exit": 0
+      }
+    },
+    "restauroFinal": {
+      "terminal": "eb2213",
+      "exit": 0,
+      "tabelas": 424,
+      "hashesConferidos": true
+    },
+    "imagensInline": {
+      "png": 6,
+      "bytes": 627933,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "upload": "8dec5e",
+      "metadados": "5e741b",
+      "roundtrip": "dc21db",
+      "hashes6Conferidos": true,
+      "releaseRascunho": true
+    }
   }
 }
