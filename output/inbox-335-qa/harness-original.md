@@ -1,0 +1,9 @@
+# QA independente — harness visual #335
+
+Fonte exata `6e498f867378b0489983eb11c57b664366ca408c`, produto base `4c76d200257ea4c3df3707e95100d9180a9efdbc`. Parecer favorável ao harness e ao recorte Node, sem homologação visual/browser ou integração nova.
+
+O delta final tem 11 paths (scripts/visual, `src/test/visual-inbox-*`, README e relatório), não altera app, componentes, servidor, lib, schema ou dependências (`c103ce`, terminal 0). `git diff --check` `30954f`, terminal 0. A matriz anterior de 176 combinações permanece; o novo estado `painel-secretaria` acrescenta seis capturas APP (3 tamanhos × 2 temas), total 182, com protótipo explicitamente N/A. Não há referência funcional de matrícula/CRM fabricada no HTML.
+
+O preflight exige ID configurado, GET real de painel HTTP200, setor SECRETARIA e `matriculaId`/código não vazios. Depois navega `/inbox?c=` com ID codificado, aguarda hidratação, abre o painel se necessário e só aceita um link `/matriculas/{id}` cujo texto é o código público dentro do painel visível/interno ao viewport. O observador de mensagens é registrado ANTES do goto, acompanha apenas GETs da mesma URL/ID iniciados até o veredito, aguarda seu `response.finished()` e remove o listener; ausência legítima de GET numa thread vazia não é transformada em falha nem cria rede nova/polling. Uma foto do link de origem não prova autorização do destino; o README reserva esse probe separado.
+
+Recorte próprio Node22: `vitest run src/test/visual-inbox --maxWorkers=2` em configuração unitária, 14 arquivos/101 testes, executor `6ebe3c`, terminal 0, sem filtro por nome ou testes ignorados. Os dois `*.int.test.ts` sob o mesmo prefixo foram excluídos pela configuração unitária, não contabilizados. Nenhum banco, browser, Prisma, TSC, lint global ou servidor foi executado por mim. Gates e capturas DEV permanecem de sua própria fonte; a futura allowlist de 64 PNG ainda requer inspeção/QA específica.
