@@ -1,6 +1,7 @@
 import { Papel } from "@prisma/client";
 import Link from "next/link";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { atendimentoParaAbrir } from "@/server/inbox/atalhos";
 import { prisma } from "@/lib/prisma";
 import { hrefLista } from "@/lib/pagina-url";
 import { listarVendedores } from "@/server/comercial/consultas";
@@ -43,6 +44,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
     podeMesclar ? paresDuplicados(usuario) : Promise.resolve([]),
     consultarPreferenciaFusoEquipe(),
   ]);
+  const conversa = detalhe ? await atendimentoParaAbrir(usuario, { pessoaId: detalhe.id }) : null;
   const [historico, campos] = detalhe
     ? await Promise.all([historicoPessoa(detalhe.id, usuario, filtroHistorico).then((h) => h ?? []), camposDaPessoa(detalhe.id, usuario)])
     : [[], []];
@@ -64,7 +66,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
           Contato não encontrado na sua carteira. <Link href={hrefLista("/contatos", base)} className="text-brand-700 hover:underline">Ver a lista</Link>
         </p>
       )}
-      <div className="grid gap-6 min-[700px]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid grid-cols-1 gap-6 min-[700px]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className={aberto ? "max-[699px]:hidden" : ""}>
           <ListaContatos
             itens={lista.itens}
@@ -87,6 +89,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
           <div>
             <FichaContato
               detalhe={detalhe}
+              conversa={conversa}
               historico={historico}
               campos={campos}
               tagsDisponiveis={tags}

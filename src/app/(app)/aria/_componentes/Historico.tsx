@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { hrefConversa } from "@/lib/href-conversa";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
@@ -48,6 +49,7 @@ export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props)
     const nome = `${ACAO_AGENTE_IA_LABEL[i.acao]} de ${i.contato}`;
     return (
       <div className="flex flex-wrap gap-2">
+        {i.atendimentoId && <Link href={hrefConversa(i.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>}
         {podeDecidir && i.status === "SUGERIDA" && (
           <>
             <Botao tamanho="sm" aria-label={`Aprovar ${nome}`} disabled={acao.ocupado} onClick={() => decidir(() => aprovarAcaoAria(i.id), "Ação aprovada.")}>Aprovar</Botao>
