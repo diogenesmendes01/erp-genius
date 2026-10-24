@@ -189,7 +189,10 @@ export async function solicitarLogoutMotor(n: { providerRef: string }): Promise<
   await chamarMotor(`${rotaNumero(n.providerRef)}/desconectar`, { metodo: "POST" });
 }
 
-/** Logout no motor (exige novo pareamento) e sessão local DESCONECTADO. */
+/**
+ * Contrato legado de logout com sincronização local, mantido para compatibilidade.
+ * Ações administrativas usam solicitarLogoutMotor e confirmam estado/eventos na própria transação.
+ */
 export async function desconectarNumeroMotor(n: { id: string; providerRef: string }): Promise<void> {
   await solicitarLogoutMotor(n);
   await aplicarEstadoSessao(n.id, "DESCONECTADO", "conectar");
