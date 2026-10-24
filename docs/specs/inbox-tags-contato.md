@@ -68,3 +68,7 @@ Fonte final7ff: unitário completo ROOT77906/5a1b72, saída0,914arquivos/7.188te
 As97fotos originais permanecem nominais ao produto2396 e harnessce658. O estado vazio alterado precisa de seis fotos complementares de7ff e não herda o aceite de pixels das fotos antigas. Capturas e publicação final serão registradas no relatório de composição, com fontes separadas.
 
 Complemento visual do estado vazio concluído: TESTER4a5eec,saída0,seisPNG/433192bytes,1440×900/1024×768/320×500×claro/escuro,fonte7ff,semcliquedenegócio. Parecer visual independente e pacote417963bytes/SHAfeee5cab13a78a055c430eddbd6f5f921175ff7795092fe9d76b9829e5a2cc33 indexados no relatório final;asset670692813/roundtripa4b8660. ROOTencerroupreview/restaurou914af4,saída0,424hashes/snapshotmantido. Essa prova complementa as97imagens históricas,semreatribuição. PR/CI/mergeaindapendentes.
+
+## Revisão R1 #413
+
+Atribuir uma tag inativa orienta reativação no CRM, preservando recusa, identidade e ausência de efeitos. O caso de integração existente confirma erro e zero vínculo/Evento; RED1641fb→GREEN5completos54/7534a1. O nome usa idempotente:false de propósito: seu CAS não garante devolver o mesmo resultado com versão anterior; após falha de transporte, conferir antes de repetir. A cópia sem promessa da Aria preserva o comportamento efetivamente implementado. As respostas C1–C6, fontes e limites estão emoutput/inbox-324-revisao-r1.md; seis fotos originais2396 foram acrescentadas inline àPRsemreatribuirfonte.

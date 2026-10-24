@@ -10,6 +10,7 @@ import { editarNomeContatoWhatsApp } from "@/server/whatsapp/acoes";
 export type PropsContatoSemNome = { atendimentoId: string; nomeAnterior: string | null; podeEditar: boolean; aoMudar(): void };
 export function ContatoSemNome(props: PropsContatoSemNome) { return <NomeDoAtendimento key={props.atendimentoId} {...props} />; }
 function NomeDoAtendimento({ atendimentoId, nomeAnterior, podeEditar, aoMudar }: PropsContatoSemNome) {
+  // CAS recusa a versão anterior após salvar; falha de transporte pede conferir, sem prometer reenvio seguro.
   const [nome, setNome] = useState(nomeAnterior ?? ""); const acao = useAcaoCliente({ idempotente: false });
   const vivo = useRef(false), revisao = useRef(0), baseAnterior = useRef(nomeAnterior);
   useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);

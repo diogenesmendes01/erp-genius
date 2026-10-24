@@ -82,7 +82,7 @@ it("vendedor edita da carteira mas não cria, vazio/excesso/inativa não criam v
   authMock.mockResolvedValue({ user: { id: c.gerente.id } });
   for (const nome of [" ", "x".repeat(41)]) expect((await criarEAtribuirTagNoInbox(c.a.id, nome)).ok).toBe(false);
   await prisma.tag.update({ where: { id: c.tag.id }, data: { ativo: false } });
-  expect((await criarEAtribuirTagNoInbox(c.a.id, c.tag.nome)).ok).toBe(false);
+  expect(await criarEAtribuirTagNoInbox(c.a.id, c.tag.nome)).toEqual({ ok: false, erro: "Esta tag está inativa. Reative-a no CRM antes de atribuí-la." });
   expect(await prisma.pessoaTag.count()).toBe(0); expect(await prisma.evento.count()).toBe(0);
 });
 it.each(["sem pessoa", "legal", "linha alheia", "sem lead", "outro setor"] as const)("não altera tags no contexto %s nem usa pessoa do contato como atalho", async caso => {
