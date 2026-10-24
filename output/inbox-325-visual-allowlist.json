@@ -1,0 +1,874 @@
+{
+  "funcionalidade": 325,
+  "data": "2026-10-24",
+  "estado": "Parecer visual DEV favorável por arquivo; QA independente/CI/publicação pendentes",
+  "fonteApp": "ddf872e13078fb48c7648da9c2fc48b1d3f29438",
+  "fonteHarness": "96c9e60752b3c1951922a745cee89045b4597ace",
+  "matrizGlobal": {
+    "herdadas": 190,
+    "novas": 30,
+    "total": 220
+  },
+  "corpus": {
+    "imagens": 36,
+    "formais": 30,
+    "complementares320x500": 6,
+    "app": 24,
+    "referenciasEstaticas": 12,
+    "bytesPng": 3434158
+  },
+  "lotes": [
+    {
+      "id": "L1",
+      "sessao": 74891,
+      "terminal": "eb2985",
+      "exitCode": 1,
+      "estado": "Execução interrompida na primeira referência; somente as 18 PNGs APP aprovadas por arquivo foram selecionadas.",
+      "manifestoPrivadoSha256": "01980fdfaf4ea6e943d67ea8b04ea2541102fe9faad8b2b02fec6e34c0a4a726",
+      "executorSha256": "4a5323e1190d01eaa4744586dae58d2679cf734a5ea834ba6c191287249852bc",
+      "contextosFechados": 19,
+      "browserFechado": true
+    },
+    {
+      "id": "L2",
+      "sessao": 18441,
+      "terminal": "ba4c36",
+      "exitCode": 0,
+      "estado": "12 referências estáticas e seis APP320 concluídas.",
+      "manifestoPrivadoSha256": "bc2083d5f5af12ed3feb3bf7a9381d3115849c117dcc9d486521a1f60984fbed",
+      "executorSha256": "0b510f0d634ff43f3a0d167b0645e37943f7226178bffef78a12340681fa2f51",
+      "contextosFechados": 18,
+      "browserFechado": true
+    }
+  ],
+  "fontesRuntime": {
+    "capturar-inbox.mjs": {
+      "gitLfBytes": 22648,
+      "gitLfSha256": "fa471850a764759d9af30a739a473a8ca6d74ef4bb576cc00e934fb5dc2d0141",
+      "fisicoBytes": 22648,
+      "fisicoSha256": "fa471850a764759d9af30a739a473a8ca6d74ef4bb576cc00e934fb5dc2d0141",
+      "normalizadoLfIgualGit": true
+    },
+    "nucleo-captura.mjs": {
+      "gitLfBytes": 6689,
+      "gitLfSha256": "5165575a8cf7a57c03bc2580c086fb2af47a2ddd2c89bdea7221649805119627",
+      "fisicoBytes": 6777,
+      "fisicoSha256": "fc178269af3fd64cbc4df3865ebed49c9ebaefecdbab77c0270438279194e986",
+      "normalizadoLfIgualGit": true
+    },
+    "espera-app.mjs": {
+      "gitLfBytes": 19793,
+      "gitLfSha256": "b4ced77d2aaec786ec49ff9645a0fe89bce1f1ddf1cda26ff075f75c015811d1",
+      "fisicoBytes": 20060,
+      "fisicoSha256": "332b9cee78883255d3495f10310932598b31d08b1a7417c8c2c24b169d5534f3",
+      "normalizadoLfIgualGit": true
+    },
+    "estados-inbox.mjs": {
+      "gitLfBytes": 7594,
+      "gitLfSha256": "f6be3da044e6ba1b8d7bda75e81243301d753bd1a9cb6b4b690756b78b9e631a",
+      "fisicoBytes": 7723,
+      "fisicoSha256": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711",
+      "normalizadoLfIgualGit": true
+    },
+    "anonimizar-telefones.mjs": {
+      "gitLfBytes": 1884,
+      "gitLfSha256": "ebf333f7226aad44f94d21be1977570b44852ef4d751c6b2dc8d3a0cdab64cef",
+      "fisicoBytes": 1923,
+      "fisicoSha256": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+      "normalizadoLfIgualGit": true
+    },
+    "entradas-inbox.mjs": {
+      "gitLfBytes": 2438,
+      "gitLfSha256": "4e0b0bfbbab2df7743d66dbae92a98fe14955b72a807330ac457e87e318767f8",
+      "fisicoBytes": 2472,
+      "fisicoSha256": "c994f1930654d4ebe4e90beeda7617bdb4885ae82c879764b62c8c8f30224690",
+      "normalizadoLfIgualGit": true
+    },
+    "detalhes-inbox.mjs": {
+      "gitLfBytes": 11862,
+      "gitLfSha256": "bb2d397d9b95282ced7095711299e4934bda6b6fb66ddb9ee80888850f9be8b6",
+      "fisicoBytes": 11863,
+      "fisicoSha256": "4baa0b69e5d67048e0fd303557f6a0121e9c29bcdaf9db9478d10d04a6eb25d1",
+      "normalizadoLfIgualGit": true
+    },
+    "coletor-detalhes.mjs": {
+      "gitLfBytes": 8558,
+      "gitLfSha256": "52a2400bd31e802a00d8574f1296dda2bed3fb27d911ec9b25661130d8e85269",
+      "fisicoBytes": 8559,
+      "fisicoSha256": "fa3abdc7679a6ba78cb31ae8ef4085bbbbd239fc87f88ce421bc3e784fd46dab",
+      "normalizadoLfIgualGit": true
+    }
+  },
+  "limites": [
+    "L1 terminou EXIT1 e permanece negativo como execução. Somente suas 18 PNGs APP sem falhas foram selecionadas individualmente após auditoria final; o primeiro PROTO foi rejeitado sem PNG.",
+    "L2 contém 12 referências PROTO e seis APP320. A exceção se aplica somente à mensagem e aos callsites originais de componentDidUpdate sem prevState, com hashes verificados. Foram 36 ocorrências nessa referência; os erros brutos permanecem privados.",
+    "Na referência, support.js:1013 passa apenas prevProps e Inbox.dc.html:883 acessa ps.sel. A interrupção ocorre antes de toBottom. Não há prova de autoscroll, posição da thread, foco, comportamento após seleção ou aceite funcional da referência.",
+    "As referências são somente painéis visuais estáticos c1/c2, originais não editados. Convidado tem N/A funcional de autorização por convite.",
+    "APP não usa exceção de console/pageerror/HTTP. Foram duas aberturas SSE sequenciais em StrictMode, máximo uma simultânea por página. Probes usam duas páginas distintas, sem alegar uma única conexão global.",
+    "320×500 registra rolagem interna real. Documento e rótulo ficam contidos; a linha seguinte pode aparecer parcialmente junto à borda inferior. O painel inteiro exige rolagem.",
+    "Alvos A/B de Falar com não têm lead. Probes comprovam thread, URL, header, painel e ACL reais e ausência legítima de oportunidade; não comprovam um DTO comercial com oportunidade.",
+    "Dados fictícios LATAM, total em CLP e Documento da empresa diferem dos exemplos BR/mensais e CPF/idade do protótipo. Editor326 e abas completas327+ não integram o aceite325."
+  ],
+  "referenciasOriginais": {
+    "htmlSha256": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf",
+    "supportSha256": "d6bb6dd3aadb9ff722d5d6db2193572ece476b915899575a571de7a0717f001f"
+  },
+  "negativosPreservados": [
+    {
+      "execucao": "26ab1b",
+      "exitCode": 1,
+      "pngRejeitadas": 1,
+      "motivo": "GETDetalhes cancelado sem classificação restrita na primeira coleta"
+    },
+    {
+      "execucao": "c588cb",
+      "exitCode": 1,
+      "motivo": "Diagnóstico focado negativo, sem PNG"
+    },
+    {
+      "fonte": "d1f51",
+      "execucao": "7f1915",
+      "exitCode": 1,
+      "motivo": "Reprodução em memória do falso verde do coletor anterior"
+    },
+    {
+      "execucao": "74891/eb2985",
+      "exitCode": 1,
+      "motivo": "Primeira referência com erro herdado, sem PNG;18 APP selecionadas por arquivo"
+    },
+    {
+      "execucao": "56898/2df241",
+      "exitCode": 1,
+      "motivo": "Probe privado com título de produto indevido e acesso a localStorage em about:blank; falha administrativa, semdeltaAPP"
+    }
+  ],
+  "probes": {
+    "sessao": 53179,
+    "terminal": "a656b7",
+    "exitCode": 0,
+    "quantidade": 6,
+    "contextosFechados": 6,
+    "browserFechado": true,
+    "manifestoPrivadoSha256": "7c7d1b6339c075c75a2f26ae34b7062b7e93de2b863ea7c90c082757c2800be8",
+    "executorSha256": "fd95c2dd9a825b006bd57e6bcad71f01768b37fcd4bc5243cc8ab5faf4068245",
+    "resultados": [
+      {
+        "probe": "Admin PF → cartão Funil",
+        "href": "/funil?o=inbox-325-op-pf",
+        "chegadaComprovada": true,
+        "teclado": "Tab + Control+Enter",
+        "tabs": 47,
+        "alvoMinimo44": true,
+        "sseMaxPorPagina": {
+          "origem": 1,
+          "destino": 1
+        },
+        "contextoComDuasPaginas": true,
+        "tituloOportunidadeComprovado": "Mariana Costa325",
+        "tituloProdutoDistinto": "Espanhol Intensivo325"
+      },
+      {
+        "probe": "Admin PF → ficha do contato",
+        "href": "/contatos?c=inbox-325-pessoa-pf",
+        "chegadaComprovada": true,
+        "teclado": "Tab + Control+Enter",
+        "tabs": 48,
+        "alvoMinimo44": true,
+        "sseMaxPorPagina": {
+          "origem": 1,
+          "destino": 1
+        },
+        "contextoComDuasPaginas": true
+      },
+      {
+        "probe": "Admin PJ → empresa",
+        "href": "/empresas/inbox-325-empresa",
+        "chegadaComprovada": true,
+        "teclado": "Tab + Control+Enter",
+        "tabs": 48,
+        "alvoMinimo44": true,
+        "sseMaxPorPagina": {
+          "origem": 1,
+          "destino": 1
+        },
+        "contextoComDuasPaginas": true
+      },
+      {
+        "probe": "Admin PJ → Falar com A",
+        "href": "/inbox?c=inbox-325-atendimento-alvo-a",
+        "chegadaComprovada": true,
+        "teclado": "Tab + Control+Enter",
+        "tabs": 49,
+        "alvoMinimo44": true,
+        "aclDestino": {
+          "id": "inbox-325-atendimento-alvo-a",
+          "status": 200,
+          "podeEnviar": true
+        },
+        "sseMaxPorPagina": {
+          "origem": 1,
+          "destino": 1
+        },
+        "contextoComDuasPaginas": true,
+        "semLead": true,
+        "headerComprovado": "Bianca Silva325",
+        "ausenciaOportunidadeLegitima": true
+      },
+      {
+        "probe": "Admin PJ → Falar com B",
+        "href": "/inbox?c=inbox-325-atendimento-alvo-b",
+        "chegadaComprovada": true,
+        "teclado": "Tab + Control+Enter",
+        "tabs": 50,
+        "alvoMinimo44": true,
+        "aclDestino": {
+          "id": "inbox-325-atendimento-alvo-b",
+          "status": 200,
+          "podeEnviar": true
+        },
+        "sseMaxPorPagina": {
+          "origem": 1,
+          "destino": 1
+        },
+        "contextoComDuasPaginas": true,
+        "semLead": true,
+        "headerComprovado": "Caio Lima325",
+        "ausenciaOportunidadeLegitima": true
+      },
+      {
+        "probe": "Leitor PJ → Falar com A e B negado",
+        "href": "/inbox?c=inbox-325-atendimento-alvo-a",
+        "chegadaComprovada": true,
+        "teclado": "Tab + Control+Enter",
+        "tabs": 30,
+        "alvoMinimo44": true,
+        "aclDestino": {
+          "id": "inbox-325-atendimento-alvo-a",
+          "status": 200,
+          "podeEnviar": false
+        },
+        "aclB": {
+          "href": null,
+          "status": 404
+        },
+        "sseMaxPorPagina": {
+          "origem": 1,
+          "destino": 1
+        },
+        "contextoComDuasPaginas": true,
+        "semLead": true,
+        "headerComprovado": "Bianca Silva325",
+        "ausenciaOportunidadeLegitima": true
+      }
+    ],
+    "limiteExecutor": "O executor nominal fd95c2dd usa skip explícito de about:blank e router por origem exata http://localhost:3111. Todos os destinos executados foram dessa origem. A versão futura com guard de init por origem exata tem outro arquivo/hash e não foi executada nem atribuída a esta prova."
+  },
+  "seguranca": {
+    "somenteLeitura": true,
+    "submitNegocio": 0,
+    "envios": 0,
+    "apisExternas": 0,
+    "novasNotas": 0,
+    "unicosPostIncidentaisPermitidos": [
+      "marcarAtendimentoLidoAutomatico",
+      "respostasRapidasDoCompositor"
+    ],
+    "credenciaisHeadersCookiesBrutosPublicados": false,
+    "chamadasIncidentaisPositivasEProbes": 99
+  },
+  "gatesHarness": {
+    "fonte": "96c9e60752b3c1951922a745cee89045b4597ace",
+    "unit": {
+      "terminal": "40d4ce",
+      "arquivos": 17,
+      "testes": 150,
+      "segundos": 3.19,
+      "exitCode": 0,
+      "workers": 2,
+      "filtroPorNome": false,
+      "skipsImpostos": false,
+      "escopo": "Harness completo no recorte src/test/visual-inbox; não é global do produto nem integração"
+    },
+    "tsc": {
+      "terminal": "fc8bb6",
+      "heapMiB": 8192,
+      "exitCode": 0
+    },
+    "lintSintaxeDiff": {
+      "terminal": "4a7fc3",
+      "arquivosLint": 4,
+      "warnings": 0,
+      "modulosSintaxe": 2,
+      "exitCode": 0
+    },
+    "identidades": {
+      "terminal": "676afb",
+      "appServidorSchemaDepsSemDelta": true,
+      "cincoModulosGuardasIguaisD1": true
+    }
+  },
+  "fotos": [
+    {
+      "arquivo": "app-escuro-desktop-painel-detalhes-pessoa.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 143959,
+      "sha256": "34cebbd989d907bc62e7f42755ac12ca49afdd5f7aaf13d005d6d4d5e9c78a37",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-tablet-painel-detalhes-pessoa.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 116713,
+      "sha256": "3419dceaa8b8df59546e91ed9849d698b50ae48d3a3acf4478fe27cfc4f12419",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-celular-painel-detalhes-pessoa.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 35101,
+      "sha256": "cb1a5079e7f7ae57124054777f67133fd2b15f4966c5fb491a70872bb3443e7b",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-desktop-painel-detalhes-pessoa.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 142228,
+      "sha256": "a487d70bd875bfabcd22d847557122f0072df32337fa31d3a62e6a97ea9ac5d4",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-tablet-painel-detalhes-pessoa.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 117143,
+      "sha256": "a8c668df9c042af071d59ce1f4a86ca97ef8cafbe804b7f12d7b863e5386ee4e",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-celular-painel-detalhes-pessoa.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 34163,
+      "sha256": "7ddad544bd5ed7ff4abddafa1e67c7eecd046f7a19463bd00089f50f2a825f0a",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-desktop-painel-detalhes-b2b.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 151683,
+      "sha256": "690b4b656d554614ae404900f361a29ff2af58d98b21ffca636f4828ee540c2f",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-tablet-painel-detalhes-b2b.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 123713,
+      "sha256": "4f7d4953a0acd14bc36d3272cd2b0317eaa9d016f7387e3f5344999591eb1e67",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-celular-painel-detalhes-b2b.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 42415,
+      "sha256": "b2dc95e6fb0cc3e37ab2704c7af2416e4ba9c7a7f67611fd6f280c5514c8e0e2",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-desktop-painel-detalhes-b2b.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 150710,
+      "sha256": "ff250ef15c2394b0314c6413b2a270c9e7a31d1bb7ac8663ff43bf950ad7ba46",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-tablet-painel-detalhes-b2b.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 124555,
+      "sha256": "0c80c06efc9b8d4a4a3c1998fa6e5f90326d41c77a422c29d5cc6529402d4f95",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-celular-painel-detalhes-b2b.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 41872,
+      "sha256": "4f150dd08fecde894edb6203e7c58f0195ab5c6e4a1f0e1f5752a88a712dd78c",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-desktop-painel-detalhes-convidado.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 119102,
+      "sha256": "4c1f088d7ea94db9f692f016ea9107d39e2c51c181de3b263a997a777965eda4",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-tablet-painel-detalhes-convidado.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 99849,
+      "sha256": "275b0523775f76ce140cadb24178552023e545ffbac530470f68e370c80394d1",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-celular-painel-detalhes-convidado.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 44838,
+      "sha256": "e1e59c62ba305a1e2c75ca74a2806be128ace49e020ae42cfba6c0bcf18035c9",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-desktop-painel-detalhes-convidado.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 118126,
+      "sha256": "d07e27bb2b51f0ce8058eb87311b67732ab6566cb743eae1f9f197a4f80961f3",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-tablet-painel-detalhes-convidado.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 100655,
+      "sha256": "88146f37f07fd58ca29c8d2505df6aa87b2b8d76f4637370986c330ec2bd808e",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-celular-painel-detalhes-convidado.png",
+      "lote": "L1",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "claro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 44105,
+      "sha256": "6cb8e94a60dd25f802b67ceb28e5fa81360a80778b705998f288f72939ba6349",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-escuro-desktop-painel-detalhes-pessoa.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 197010,
+      "sha256": "f9f678a608189d8c6d32a244fe206b885edce20a0c3f5e0ced2a970fe0c70a1e",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-escuro-tablet-painel-detalhes-pessoa.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 143578,
+      "sha256": "d4a201aa7b0164587ea8d9c6357644fcd4dc7955f4c827ad95004d923134407d",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-escuro-celular-painel-detalhes-pessoa.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 37684,
+      "sha256": "271d5285dcc1985a47a96d5def1cbd52d9b2c01b4e6054118a7bf30f1c9ae681",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-claro-desktop-painel-detalhes-pessoa.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 198168,
+      "sha256": "9f7b209410601ec29629158481408a59dd7449566d4f177024c67b8e4dab58ed",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-claro-tablet-painel-detalhes-pessoa.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 146349,
+      "sha256": "16f3893154203d52c2f90067161350b5b4327e35d4e6afd2ef779bfc3a336791",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-claro-celular-painel-detalhes-pessoa.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 37098,
+      "sha256": "b0e3ddc2fed0a5db13fa194b45ca584c5cc416da713d67267d89df1ed0f8e29f",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-escuro-desktop-painel-detalhes-b2b.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 194462,
+      "sha256": "4d9456de328b895c08e76a459c52d86b00eb8f2254b0010271bceaeabf3daaa3",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-escuro-tablet-painel-detalhes-b2b.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 154067,
+      "sha256": "46e6c69977714fa0b68d0884114ee77ab5ac68608b37fc7e7a6d9089ea0cc755",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-escuro-celular-painel-detalhes-b2b.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 48454,
+      "sha256": "2012b3ceacea4bc6628bdd0d9d9479e7036419689e88bbf9ab70696d364d5bd2",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-claro-desktop-painel-detalhes-b2b.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "tipo": "formal",
+      "largura": 1440,
+      "altura": 900,
+      "bytes": 195212,
+      "sha256": "cc214da0ab0e85207fd05691b1f4e79f73d1d2831a0b7eb028b84c5d79cfdf55",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-claro-tablet-painel-detalhes-b2b.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "tipo": "formal",
+      "largura": 1024,
+      "altura": 768,
+      "bytes": 155954,
+      "sha256": "e197845e5698a8b5a353c0db9e027a6a6936045f14c92f96377e483ee465a2c5",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "prototipo-claro-celular-painel-detalhes-b2b.png",
+      "lote": "L2",
+      "alvo": "prototipo",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "celular",
+      "tipo": "formal",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 47961,
+      "sha256": "d11227481161ca07781d07f331053319c7ce585f44de78bcfd409b8d61efe020",
+      "referencia": "Painel visual estático original; comportamento/foco/autoscroll não comprovados",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-mobile320-painel-detalhes-pessoa-perfil.png",
+      "lote": "L2",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "escuro",
+      "tamanho": "mobile320",
+      "tipo": "complementar",
+      "largura": 320,
+      "altura": 500,
+      "bytes": 20161,
+      "sha256": "45c94e72699291f62b9d89f532dfcf9ec25b651d7c623af592cf550c6f6e28c7",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-mobile320-painel-detalhes-b2b-perfil.png",
+      "lote": "L2",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "escuro",
+      "tamanho": "mobile320",
+      "tipo": "complementar",
+      "largura": 320,
+      "altura": 500,
+      "bytes": 22170,
+      "sha256": "786d6b6e46186fabbf086adf27ee2d3012539b8de1ce970b6269d6100123d829",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-escuro-mobile320-painel-detalhes-convidado-perfil.png",
+      "lote": "L2",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "escuro",
+      "tamanho": "mobile320",
+      "tipo": "complementar",
+      "largura": 320,
+      "altura": 500,
+      "bytes": 22114,
+      "sha256": "a5432cdcf31187afb81d5440bb4fa9e3cd0cd6815a565715b3329e780f5e1539",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-mobile320-painel-detalhes-pessoa-perfil.png",
+      "lote": "L2",
+      "alvo": "app",
+      "estado": "painel-detalhes-pessoa",
+      "tema": "claro",
+      "tamanho": "mobile320",
+      "tipo": "complementar",
+      "largura": 320,
+      "altura": 500,
+      "bytes": 19754,
+      "sha256": "f290e7fe2e7694db764c432485aaaa19dfe94074905b5a3c97f3df57a499e286",
+      "referencia": "Comparação visual com painel original c1",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-mobile320-painel-detalhes-b2b-perfil.png",
+      "lote": "L2",
+      "alvo": "app",
+      "estado": "painel-detalhes-b2b",
+      "tema": "claro",
+      "tamanho": "mobile320",
+      "tipo": "complementar",
+      "largura": 320,
+      "altura": 500,
+      "bytes": 21490,
+      "sha256": "fb20374b5a9a41860247c9216ff98b9cd07f22bc07d06a9d2a409f901844f5f4",
+      "referencia": "Comparação visual com painel original c2",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    },
+    {
+      "arquivo": "app-claro-mobile320-painel-detalhes-convidado-perfil.png",
+      "lote": "L2",
+      "alvo": "app",
+      "estado": "painel-detalhes-convidado",
+      "tema": "claro",
+      "tamanho": "mobile320",
+      "tipo": "complementar",
+      "largura": 320,
+      "altura": 500,
+      "bytes": 21542,
+      "sha256": "b268b79e07beb04d616c626033b48d93bdc47974515d58f63300f0d3b224108f",
+      "referencia": "N/A autorização por convite no protótipo",
+      "inspecaoDev": "Aprovada por arquivo em 24/10/2026"
+    }
+  ],
+  "ambienteLiberado": {
+    "previewStop": "97596/9d0c00",
+    "exitCodeStop": 1,
+    "motivo": "Ctrl-C esperado",
+    "portaLivreConfirmadaRoot": true,
+    "restauroRoot": "ae152c",
+    "exitCodeRestauro": 0,
+    "hashesOriginaisConferidos": 424,
+    "linhasSnapshot": 498,
+    "agentesNextRestauradoSemDelta": true
+  },
+  "metricasApp": {
+    "capturas": 24,
+    "getDetalhesIniciados": 71,
+    "getDetalhesSettled": 71,
+    "pendentesFinais": 0,
+    "linksAlcancadosPorTab": 72,
+    "tabMinimo": 2,
+    "tabMaximo": 51,
+    "alvosNovosMinimo44px": true,
+    "sseMaxSimultaneoPorPagina": 1
+  }
+}

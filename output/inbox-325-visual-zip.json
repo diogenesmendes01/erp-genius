@@ -1,0 +1,13 @@
+{
+  "arquivo": "inbox-325-aceite-ddf872e-96c9e607-20261024.zip",
+  "bytes": 3361508,
+  "sha256": "37f09534f89890984efb6316fe9ccf999593097306b711f301248d28f3b28d69",
+  "entradas": 38,
+  "pngs": 36,
+  "bytesPng": 3434158,
+  "manifestoSha256": "5ad12b67d93825c1c6e53d8c9d819caee5234e7cc0da5043cf2978fcc411b543",
+  "readmeSha256": "57e4cdfe01605ac0fada4e6a49a1e50322bd716c5631ff6a31165478c812cbc4",
+  "roundTrip38HashesIguais": true,
+  "publicado": false,
+  "uploadPeloIntegrador": true
+}
