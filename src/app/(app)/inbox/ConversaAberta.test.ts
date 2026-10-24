@@ -28,7 +28,7 @@ import type { ConversaHook } from "@/components/conversa/useConversa";
 import { COMANDOS_MENSAGEM_LIGADOS, ConversaAberta, comandosDaMensagem, podeEnviarNaConversa, type PropsConversaAberta } from "./ConversaAberta";
 
 const usuario = { id: "u1", papeis: [Papel.VENDEDOR] };
-const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
+const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({ estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null,
   id: "a1", numeroId: "n1", numeroRotulo: "Comercial", finalidade: "COMERCIAL", driver: "MOTOR", contatoId: "c1", contatoNome: "Ana",
   contatoTelefone: "+5511999990000", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null, linhaComercial: false,
   status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,

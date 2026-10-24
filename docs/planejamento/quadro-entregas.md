@@ -6780,3 +6780,11 @@ Impressão digital reconciliada: físico DEV6.784bytes/b193fb0a tem uma CRLF iso
 Restauros DEV87b529, ROOTb9b0d3 e TESTER4c16c9 terminaram0, conferindo424hashes e sequências; históricos491 e clientes490 próprios. Fixtures originais502/1378/1392registros, sem mensagem externa ou reinício do cluster. Evidências sanitizadas em output/inbox-342-qa/restauros.json; snapshots/credenciais/raw continuam privados.
 
 CI rápida40135514587 concluiu5/5;937arquivos/7425testes em cada fuso, totais confirmados ef9587 EXIT0. Integração completa40135542522 concluiu4/4:350arquivos/3104testes aprovados;3arquivos/4preparadores visuais opt-in ignorados, detalhados no registro CI nominal54c. Consolidação documental/CI do head final e merge permanecem pendentes. Aceite visual N/A, produtor interno sem UI nova. Não marcar342 concluída antes dos gates finais. Sem decisão humana pendente nesta entrega.
+
+## Inbox #343 — item da lista com estado e autoria, DEV 24/10/2026
+
+Sobre produtor342/54c44b2 congelado: DTO de página/deep link recebe estadoAria, atendidoPorVoce, previaAutor e previaRotulo. Ordem literal aprovada; sugestão só mostra label, sem payload/texto; contexto único e sugestões em lote autorizado, vazio sem inicialização. Empate de mensagem usa idDESC; ACL/keyset/fixadas/contagens/thread intactos porAST. Oito literais de teste mudam somente quatro defaults, sem produção cliente/schema/migração/deps/harness ou alteração342.
+
+RED8514c2 e484947 preservados. INT completo14765/5308b7:32/32,133,27s,sem filtros/skips,EXIT0. UNIT global85689/59dd3e:938/7434,277,88s,EXIT0;recorte60/533 anterior nominal, não somado. TSCaux89471/f0c373 e lint12/ca1886 EXIT0; duas exclusões históricas326 explícitas, todosSRC/testes atuais incluídos. TSC inicialcc3c5f revelou apenas oitavo literal, corrigido sem relaxar cast. ROOTac8071 restaurouciint491/424 tabelas/502 registros,424 hashes/seq do snapshot preservados; nenhuma nova operaçãoDEV.
+
+SPEC docs/specs/inbox-estado-previa-lista.md e relatório output/inbox-343-report.md. Visual N/A, produtorDTO; consumidor vem346/348. Entrega transferida àQA/integraçãoROOT. Publicação depende de revisão/merge342; QA343, composição/CI/merge pendentes. Não concluir a issue ou antecipar alçadas354–357. Próxima349 somente plano até novo GO.
