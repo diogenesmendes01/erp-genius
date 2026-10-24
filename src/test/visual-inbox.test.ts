@@ -89,7 +89,8 @@ describe("harness visual do Inbox", () => {
       getByText: (texto: string) => locator(texto, mensagem),
     });
     const pagina = {
-      getByRole: (_role: string, opcoes: { name: string }) => locator(opcoes.name, opcoes.name === "Painel Comercial" ? painel : Promise.resolve()),
+      getByRole: (_role: string, opcoes: { name: string }) => locator(opcoes.name),
+      locator: (seletor: string) => locator(seletor, painel),
     };
     let terminou = false;
     const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "conversa", "desktop").then(() => { terminou = true; });
@@ -101,7 +102,7 @@ describe("harness visual do Inbox", () => {
     liberarPainel();
     await espera;
     expect(esperas).toContain("Quero saber o valor do Inglês Intensivo B1.");
-    expect(esperas).toContain("Painel Comercial");
+    expect(esperas).toContain('#painel-contato a[href^="/funil?o="]');
   });
 
   it("aguarda a nota interna específica no estado do compositor humano", async () => {
@@ -112,7 +113,7 @@ describe("harness visual do Inbox", () => {
       getByText: () => ({ waitFor: async () => undefined }),
       getByRole: () => ({ getByText: () => ({ waitFor: () => nota }) }),
     };
-    const pagina = { waitForFunction: async () => undefined, getByRole: (_role: string, opcoes: { name: string }) => opcoes.name === "Conversa" ? conversa : { waitFor: async () => undefined } };
+    const pagina = { locator: () => ({ waitFor: async () => undefined }), waitForFunction: async () => undefined, getByRole: (_role: string, opcoes: { name: string }) => opcoes.name === "Conversa" ? conversa : { waitFor: async () => undefined } };
     let terminou = false;
     const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "humano-compositor", "desktop").then(() => { terminou = true; });
     await Promise.resolve();
@@ -127,7 +128,7 @@ describe("harness visual do Inbox", () => {
     let drawerPronto!: () => void;
     const painel = new Promise<void>((resolve) => { painelPronto = resolve; });
     const drawer = new Promise<void>((resolve) => { drawerPronto = resolve; });
-    const pagina = { waitForFunction: () => drawer, getByRole: (_role: string, opcoes: { name: string }) => {
+    const pagina = { locator: (seletor: string) => { expect(seletor).toBe('#painel-contato a[href^="/funil?o="]'); return { waitFor: () => painel }; }, waitForFunction: () => drawer, getByRole: (_role: string, opcoes: { name: string }) => {
       if (opcoes.name === "Conversa") return { waitFor: async () => { throw new Error("Conversa oculta pelo Drawer"); } };
       if (opcoes.name === "Painel Comercial") return { waitFor: () => painel };
       throw new Error(`Região inesperada: ${opcoes.name}`);
@@ -151,7 +152,7 @@ describe("harness visual do Inbox", () => {
     vi.stubGlobal("window", { innerWidth: 390, innerHeight: 844 });
     try {
       const pagina = {
-        getByRole: () => ({ waitFor: async () => undefined }),
+        locator: () => ({ waitFor: async () => undefined }),
         waitForFunction: async (condicao: () => boolean) => { expect(condicao()).toBe(false); },
       };
       await esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "celular-painel", "celular");

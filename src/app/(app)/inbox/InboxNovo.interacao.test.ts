@@ -61,6 +61,7 @@ import { PainelAria } from "./PainelAria";
 import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
 import { PainelSetor } from "./PainelSetor";
+import { AbaDetalhes } from "./abas/AbaDetalhes";
 import { LinhaCampo } from "./LinhaCampo";
 import { OptOutContato } from "./OptOutContato";
 import { PainelTriagem } from "./PainelTriagem";
@@ -97,6 +98,7 @@ beforeEach(() => {
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true }), { status: 200 });
   respostaLista = async () => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null }), { status: 200 });
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url.endsWith("/painel/detalhes")) return new Response(JSON.stringify({ pessoa: null, oportunidade: null, b2b: null, campos: [] }));
     if (url.endsWith("/painel")) { chamadasPainel.push(url); return respostaPainel(); }
     return respostaLista();
   }));
@@ -701,15 +703,14 @@ describe("composição318: Detalhes do contato selecionado", () => {
   const painel = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!;
   it("liga identidade/tags autorizadas e mantém a ordem dos blocos e a aprovação Aria", async () => {
     const tags = [{ id: "noite", rotulo: "Noite", ia: true }];
-    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
+    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, cabecalho: { subtitulo: "Pessoa física · Inglês", quadrado: false }, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
     const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
     tela(p); await esvaziar(); const t = tela(p), no = painel(t);
-    expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Comercial · Escola", tags, quadrado: false });
+    expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Pessoa física · Inglês", tags, quadrado: false });
     expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }]); expect(no.props.abaAtiva).toBe("detalhes");
-    const blocos = elementos(no.props.children as ReactNode).filter(n => [LinhaCampo, PainelSetor, PainelAria, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
-    expect(blocos.map(n => n.type)).toEqual([LinhaCampo, PainelSetor, PainelAria, AcoesContato, OptOutContato, PainelTriagem]);
-    expect(blocos[0].props.rotulo).toBe("WhatsApp");
-    expect((blocos[0].props.valor as ReactElement<{ className: string; children: string }>).props).toMatchObject({ className: "font-mono", children: "+506" });
+    const blocos = elementos(no.props.children as ReactNode).filter(n => [AbaDetalhes, PainelAria, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
+    expect(blocos.map(n => n.type)).toEqual([AbaDetalhes, PainelAria, AcoesContato, OptOutContato, PainelTriagem]);
+    expect(blocos[0].props.dados).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
     expect(elementos(t).filter(n => n.type === PainelContato)).toHaveLength(1);
     expect(elementos(t).filter(n => n.type === PainelTriagem)).toHaveLength(1);
     expect(elementos(t).find(n => n.type === ConversaAberta)!.props).not.toHaveProperty("triagem");
@@ -938,7 +939,7 @@ describe("319: painel falha versus vazio e recuperação",()=>{
   const retry=elementos(alerta!.props.children as ReactNode).find(n=>texto(n.props.children)==="Tentar de novo")!;
   respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true}),{status:200});
   (retry.props.onClick as (e:unknown)=>void)({currentTarget:{closest:()=>null}});tela();await esvaziar();
-  const pronto=tela();expect(elementos(pronto).some(n=>n.props.role==="alert")).toBe(false);expect(elementos(pronto).some(n=>n.type===PainelSetor&&n.props.painel!==null)).toBe(true);expect(chamadasPainel).toHaveLength(2);
+  const pronto=tela();expect(elementos(pronto).some(n=>n.props.role==="alert")).toBe(false);expect(elementos(pronto).some(n=>n.type===AbaDetalhes&&n.props.dados!==null)).toBe(true);expect(chamadasPainel).toHaveLength(2);
  });
  it("resposta antiga de outro atendimento não substitui o painel selecionado",async()=>{
   let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise<Response>(r=>{resolver=r;});tela();
