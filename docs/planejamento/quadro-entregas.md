@@ -6788,3 +6788,10 @@ Sobre produtor342/54c44b2 congelado: DTO de página/deep link recebe estadoAria,
 RED8514c2 e484947 preservados. INT completo14765/5308b7:32/32,133,27s,sem filtros/skips,EXIT0. UNIT global85689/59dd3e:938/7434,277,88s,EXIT0;recorte60/533 anterior nominal, não somado. TSCaux89471/f0c373 e lint12/ca1886 EXIT0; duas exclusões históricas326 explícitas, todosSRC/testes atuais incluídos. TSC inicialcc3c5f revelou apenas oitavo literal, corrigido sem relaxar cast. ROOTac8071 restaurouciint491/424 tabelas/502 registros,424 hashes/seq do snapshot preservados; nenhuma nova operaçãoDEV.
 
 SPEC docs/specs/inbox-estado-previa-lista.md e relatório output/inbox-343-report.md. Visual N/A, produtorDTO; consumidor vem346/348. Entrega transferida àQA/integraçãoROOT. Publicação depende de revisão/merge342; QA343, composição/CI/merge pendentes. Não concluir a issue ou antecipar alçadas354–357. Próxima349 somente plano até novo GO.
+
+
+## Integração #342 e composição #343 —24/10/2026
+PR421 mergeada em7931001311476d4381576b8fdf8bba3d0f8e7bb3 após CI finaldbbd5/5 (40139020145;937/7425 emcadafuso) e integração nominal54c4/4 (350/3104+3arquivos4optinskips). Issue342 fechada confirmada; campanha32fechadas/49abertas e40PRscampanhamergeadasincluindo297,418extra. Nenhumdeploy/UATpresumido.
+343composta0f20eae0 diretamentemain79310013;12SRCbyteiguais3de,produtor342/schema/deps/harnesspreservados. Únicoconflitoquadroresolvidocommainintegral+bloco343. QA11/112UNIT,32INTcompleto/lint12,restauroTester6e2d58/0/424hashes1392/seq; evidênciasoutput/inbox-343-qa. GatesoriginaisROOT/CI/publicação/merge343pendentes; nãofecharissue.
+
+343 — Gates originais ROOT após composição:TypeScript29745/2bd6a1 EXIT0,heap8192/incrementalfalse/semexclusões; lintGLOBAL95627/da032e EXIT0,zeroerros40avisosherdados.12SRCcontinuamnominais3de; nãofoirepetidoUNITglobal/INTlocalROOT. CIoriginal e integraçãoremotadapublicaçãopendentes; issue343aberta.

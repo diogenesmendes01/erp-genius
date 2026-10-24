@@ -1,6 +1,8 @@
 # Inbox #343 — estado e autoria da prévia no item da lista
 
-Entrega DEV no ramo codex/inbox-e3-343-previa, pai54c44b2ad2f5414f346e07dea76001a13c799051, produtor342 congelado. ItemListaInbox ganha estadoAria, atendidoPorVoce, previaAutor e previaRotulo, com o mesmo contrato em página e deep link. [SPEC](../docs/specs/inbox-estado-previa-lista.md). A publicação depende de revisão/merge342; QA independente, composição, CI e merge343 seguem com ROOT. A issue não está concluída.
+Estado de publicação: composição0f20eae0 diretamente na main79310013 após merge da PR421/issue342. Doze SRC são byteiguais à fonte DEV/QA3de; somente o quadro conflitou e preservou os dois registros. QA independente favorável:11arquivos/112UNIT,arquivo completo/32INT e lint12; não somar recortes. Banco TESTER restaurado ROOT6e2d58/EXIT0,424hashes/1392registros/9mensagens/4notas/sequências. [Parecer integral e limites](inbox-343-qa/indice.json). ROOT aprovou TypeScript original29745/2bd6a1 sem exclusões e lint global95627/da032e,zero erros/40avisosherdados. CI e integração remota desta publicação ainda pendentes; issue343 aberta.
+
+Entrega DEV no ramo codex/inbox-e3-343-previa, pai54c44b2ad2f5414f346e07dea76001a13c799051, produtor342 congelado. ItemListaInbox ganha estadoAria, atendidoPorVoce, previaAutor e previaRotulo, com o mesmo contrato em página e deep link. [SPEC](../docs/specs/inbox-estado-previa-lista.md). A dependência342 está integrada; QA independente/composição e gates originais ROOT aprovados, CI e merge343 seguem com ROOT. A issue não está concluída.
 
 ## Comportamento e preservação
 
