@@ -5,7 +5,8 @@
     "executavelIntegrado": "9fa1b30ecbb0c3d214d57f3a9544c05e249b919d",
     "visualHistorico": "d68f678c8af2f17cb815647b68fa514e389c85f7",
     "complementoACK": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
-    "executavelR1": "ecc92d4781c5fe0f94f06920442769e8ad37b999"
+    "executavelR1": "ecc92d4781c5fe0f94f06920442769e8ad37b999",
+    "fixtureCalendario": "b2df832187fea15d2c970888b03e6c9fbf12ea9f"
   },
   "pareceres": [
     {
@@ -63,6 +64,14 @@
       "fonte": "ecc92d4781c5fe0f94f06920442769e8ad37b999",
       "sha256OriginalFisico": "79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b",
       "sha256PublicadoLF": "79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b"
+    },
+    {
+      "origem": "inbox-337-c1-b2df-calendario-estatica-tester.md",
+      "arquivo": "calendario-c1.md",
+      "fonte": "b2df832187fea15d2c970888b03e6c9fbf12ea9f",
+      "escopo": "Somente estática do delta de fixture e caracterização pura de cinco datas; sem nova INT própria.",
+      "sha256OriginalFisico": "9f14c93e1ef51dcc582768ddcd2a62684149ce7622cefe6741946a07358889e2",
+      "sha256PublicadoLF": "9f14c93e1ef51dcc582768ddcd2a62684149ce7622cefe6741946a07358889e2"
     }
   ],
   "pacote": {
