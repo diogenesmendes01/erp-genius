@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { extrairMencoes, type TokenMencao } from "@/lib/mencoes-nota";
+import { extrairMencoes, gruposLexicaisMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import { normalizarParaOrdenacao } from "@/lib/nome-ordenacao";
 import { ErroRegra, type UsuarioSessao } from "@/server/_shared/sessao";
 import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
@@ -24,14 +24,31 @@ export async function notificarMencoesNaNota(tx: Prisma.TransactionClient, entra
   }) : [];
   const completos = relevantes.length <= 200;
   const unicos = new Map<string, UsuarioMencao>();
+  // O sentinel precede os grupos; tokens por ID nunca dependem do alias lexical.
   for (const p of [...(completos ? relevantes : []), ...selecionados]) unicos.set(p.id, p);
-  const autorizados: UsuarioMencao[] = [];
-  for (const p of unicos.values()) {
-    if (p.id === autor.id || !p.ativo || !p.papeis.some(r => PAPEIS_INBOX.includes(r))) continue;
-    if (await atendimentoVisivel(p, atendimentoId, false, tx)) autorizados.push(p);
+  const autorizados = new Map<string, UsuarioMencao>();
+  const verificados = new Map<string, boolean>();
+  const autorizar = async (p: UsuarioMencao): Promise<boolean> => {
+    const anterior = verificados.get(p.id);
+    if (anterior !== undefined) return anterior;
+    const permitido = p.id !== autor.id && p.ativo && p.papeis.some(r => PAPEIS_INBOX.includes(r))
+      && Boolean(await atendimentoVisivel(p, atendimentoId, false, tx));
+    verificados.set(p.id, permitido);
+    if (permitido) autorizados.set(p.id, p);
+    return permitido;
+  };
+  for (const p of selecionados) await autorizar(p);
+  if (completos) for (const grupos of gruposLexicaisMencao(livre, [...unicos.values()])) {
+    for (const grupo of grupos) {
+      let temAutorizado = false;
+      // Nunca parar no primeiro membro: dois homonimos visiveis continuam ambiguos.
+      for (const p of grupo) if (await autorizar(p)) temAutorizado = true;
+      // Ambiguidade tambem impede fallback curto; so nenhum visivel tenta o proximo alias.
+      if (temAutorizado) break;
+    }
   }
   let ids: string[];
-  try { ids = extrairMencoes(nota, autorizados, tokens, completos); }
+  try { ids = extrairMencoes(nota, [...autorizados.values()], tokens, completos); }
   catch { throw new ErroRegra("Confira as pessoas selecionadas na nota e tente novamente."); }
   for (const usuarioId of ids) await tx.notificacaoUsuario.create({ data: {
     id: idDaNotificacaoMencao(eventoId, usuarioId), usuarioId, tipo: "MENCAO_NOTA", refTipo: "AtendimentoWhatsApp", refId: atendimentoId,

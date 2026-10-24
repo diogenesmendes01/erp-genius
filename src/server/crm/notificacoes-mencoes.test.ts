@@ -106,3 +106,28 @@ it("cursor de empate usa a ultima linha SQL examinada mesmo quando toda pagina f
     { criadaEm: { lt: new Date(0) } }, { criadaEm: new Date(0), id: { lt: banco[99].id } },
   ]);
 });
+it.each(["vazio", "legados", "referencia-invalida"])("escopo lazy nao consulta ACL para %s", async caso => {
+  banco = caso === "vazio" ? [] : caso === "legados" ? [linha("sla", "SLA_ESTOURADO"), linha("tarefa", "LEMBRETE_TAREFA")]
+    : [{ ...linha("invalida", "MENCAO_NOTA"), refTipo: "Tarefa" }];
+  const resultado = await listarNotificacoes(usuario);
+  expect(resultado.map(n => n.id)).toEqual(caso === "legados" ? ["sla", "tarefa"] : []);
+  expect(m.escopo).not.toHaveBeenCalled();
+  expect(m.atendimentos).not.toHaveBeenCalled();
+});
+it("adia escopo ate o primeiro lote com referencia de mencao valida", async () => {
+  banco = [...Array.from({ length: 100 }, (_, i) => ({ ...linha("errada-" + i, "MENCAO_NOTA", new Date(1000 - i)), refTipo: "Tarefa" })), linha("visivel", "MENCAO_NOTA", new Date(1))];
+  m.escopo.mockImplementation(async () => {
+    expect(m.linhas).toHaveBeenCalledTimes(2);
+    return { finalidade: "COMERCIAL" };
+  });
+  expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(["visivel"]);
+  expect(m.escopo).toHaveBeenCalledTimes(1);
+});
+it("memo de escopo nao atravessa chamadas e revogacao retira titulo/link", async () => {
+  banco = [linha("visivel", "MENCAO_NOTA")];
+  expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(["visivel"]);
+  permitidos.clear();
+  expect(await listarNotificacoes(usuario)).toEqual([]);
+  expect(m.escopo).toHaveBeenCalledTimes(2);
+  expect(m.atendimentos).toHaveBeenCalledTimes(2);
+});

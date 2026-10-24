@@ -17,6 +17,8 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
+import * as acl from "./atendimentos";
+import { usuariosRelevantesParaMencao } from "@/server/inbox/usuarios-mencoes";
 import { notificarMencoesNaNota, idDaNotificacaoMencao } from "@/server/inbox/mencoes";
 import { listarCandidatosMencao } from "@/server/inbox/consultas-mencoes";
 import { listarNotificacoes } from "@/server/crm/notificacoes";
@@ -219,4 +221,50 @@ it("sino atravessa dois lotes revogados e respeita ordem PostgreSQL de mencoes v
   const lista = await listarNotificacoes(usuario);
   expect(lista.map(n => n.id)).toEqual(ordemDoBanco.map(n => n.id));
   expect(lista.every(n => n.refId === visivel.id)).toBe(true);
+});
+it("ACL fresca conserva fallback do nome longo oculto para o curto visivel", async () => {
+  const { a, destino } = await cenario();
+  await prisma.usuario.update({ where: { id: destino.id }, data: { nome: "Ana Souza" } });
+  await criarUsuario([Papel.VENDEDOR], "Ana Silva");
+  expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "@Ana Silva" })).ok).toBe(true);
+  expect(await avisos(destino.id, a.id)).toHaveLength(1);
+});
+it("alias completo visivel ambiguo bloqueia fallback curto mesmo quando unico", async () => {
+  const { a, destino } = await cenario();
+  await prisma.usuario.update({ where: { id: destino.id }, data: { nome: "Ana Souza" } });
+  const a1 = await criarUsuario([Papel.ADMINISTRADOR], "Ana Silva");
+  const a2 = await criarUsuario([Papel.ADMINISTRADOR], "Ana Silva");
+  expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "@Ana Silva" })).ok).toBe(true);
+  expect(await prisma.notificacaoUsuario.count({ where: { usuarioId: { in: [destino.id, a1.id, a2.id] } } })).toBe(0);
+});
+it("homonimo global oculto nao impede nome curto unico entre autorizados", async () => {
+  const { a, destino } = await cenario();
+  await prisma.usuario.update({ where: { id: destino.id }, data: { nome: "Ana Souza" } });
+  await criarUsuario([Papel.VENDEDOR], "Ana Lima");
+  expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "@Ana" })).ok).toBe(true);
+  expect(await avisos(destino.id, a.id)).toHaveLength(1);
+});
+it("sino refaz escopo entre chamadas apos revogar o convite", async () => {
+  const { a, autor, destino } = await cenario();
+  const leitor = await prisma.usuario.update({ where: { id: destino.id }, data: { papeis: [Papel.VENDEDOR] } });
+  const convite = await prisma.participanteAtendimentoWhatsApp.create({ data: { atendimentoId: a.id, usuarioId: destino.id, concedenteId: autor.id, inicio: new Date(Date.now() - 60000), fim: new Date(Date.now() + 60000), podeEnviar: false, motivo: "Leitura ficticia C4" } });
+  expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "@João Silva" })).ok).toBe(true);
+  expect((await listarNotificacoes(leitor)).map(n => n.refId)).toEqual([a.id]);
+  await prisma.participanteAtendimentoWhatsApp.update({ where: { id: convite.id }, data: { revogadoEm: new Date() } });
+  expect(await listarNotificacoes(leitor)).toEqual([]);
+});
+
+it("nome completo entre duzentos candidatos reais consulta ACL de um destinatario", async () => {
+  const { a, autor, destino } = await cenario();
+  await prisma.usuario.update({ where: { id: destino.id }, data: { nome: "Ana Silva" } });
+  await prisma.usuario.createMany({ data: Array.from({ length: 199 }, (_, i) => ({ nome: "Ana Exemplo " + i, email: "c3-ana-" + i + "@genius.test", senhaHash: "x", papeis: [Papel.ADMINISTRADOR] })) });
+  expect(await usuariosRelevantesParaMencao(prisma, autor.id, { primeiros: ["ana"] })).toHaveLength(200);
+  const observar = vi.spyOn(acl, "atendimentoVisivel");
+  try {
+    expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "@Ana Silva" })).ok).toBe(true);
+    const destinatarios = observar.mock.calls.filter(([p]) => p.id !== autor.id);
+    expect(destinatarios.map(([p]) => p.id)).toEqual([destino.id]);
+    expect(destinatarios[0][3]).toBeDefined();
+    expect(await avisos(destino.id, a.id)).toHaveLength(1);
+  } finally { observar.mockRestore(); }
 });
