@@ -1,0 +1,69 @@
+{
+  "issue": 349,
+  "fonteDevQa": "cb285c3284b382f6e7f9348ad8747df8f53959b2",
+  "composicao": "598aae2c1fded83fa3f837cad4f258a5be278dd7",
+  "baseMain": "7931001311476d4381576b8fdf8bba3d0f8e7bb3",
+  "parecer": {
+    "path": "codigo-cb285.md",
+    "bytes": 8869,
+    "sha256": "781bc07e7f79750b335b1a1248d3dcfd2658cff36cf33e61049f4a5ddc311d35"
+  },
+  "unitIndependente": {
+    "arquivos": 2,
+    "testes": 30,
+    "executor": "adac5a/EXIT0"
+  },
+  "integracaoIndependente": {
+    "arquivos": 2,
+    "testes": 44,
+    "sessao": 36387,
+    "terminal": "fb4a50",
+    "exit": 0,
+    "segundos": 185.95,
+    "workers": 1,
+    "filtros": 0,
+    "skips": 0
+  },
+  "lintIndependente": {
+    "arquivos": 7,
+    "executor": "839fad/EXIT0"
+  },
+  "gatesIntegrador": {
+    "typeScriptOriginal": {
+      "sessao": 3356,
+      "exit": 0,
+      "exclusoesAuxiliares": false,
+      "heapMB": 8192,
+      "incremental": false
+    },
+    "lintGlobal": {
+      "sessao": 18377,
+      "exit": 0,
+      "erros": 0,
+      "avisos": 40
+    }
+  },
+  "restauros": {
+    "dev": {
+      "executor": "ab76e0/EXIT0",
+      "tabelas": 424,
+      "registros": 502,
+      "snapshotSha256": "8d5eaa17a42aa8c2579943a4650c2d56dea33e09d73d29b858a0007041d03f94"
+    },
+    "tester": {
+      "executor": "927c1d/EXIT0",
+      "tabelas": 424,
+      "registros": 1392,
+      "mensagens": 9,
+      "notas": 4,
+      "snapshotSha256": "f1d15dff3df9ddfab63b8c2e238c0e3d89122c47471d27c8724e20ffd7c291c5"
+    }
+  },
+  "limites": [
+    "Recortes sobrepostos não são somados. Não houve novo UNIT global ou INT local ROOT.",
+    "DEV global938/7448 aprovado; DEV integração ampla280/282 permanece EXIT1 e lint global privado permanece negativo.",
+    "Busca temporal herdada foi isolada na issue423; orçamento permanece inconclusivo e fora349.",
+    "Visual N/A para produtorDTO/decisões; cartão visual é350.",
+    "CI original e revisão final da publicação pendentes; issue349 aberta."
+  ]
+}

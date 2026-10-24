@@ -1,0 +1,43 @@
+{
+  "fonteDev": "cb285c3284b382f6e7f9348ad8747df8f53959b2",
+  "composicao": "598aae2c1fded83fa3f837cad4f258a5be278dd7",
+  "base": "7931001311476d4381576b8fdf8bba3d0f8e7bb3",
+  "srcByteiguais": [
+    {
+      "path": "src/app/(app)/inbox/PainelAtendimento.aria.test.ts",
+      "bytes": 3481,
+      "sha256GitLF": "ffdb6d3883d56ee38fd46b49255cb1de6a5762bbef9a8bea016fb1b3f1cd44de"
+    },
+    {
+      "path": "src/server/aria/historico.int.test.ts",
+      "bytes": 24078,
+      "sha256GitLF": "6b4a260ac6d9fab60f7b85eab854c75a06d0a1a1d79bc8f99868dfd858fafd55"
+    },
+    {
+      "path": "src/server/aria/historico.ts",
+      "bytes": 12087,
+      "sha256GitLF": "0bbd1784bbbd733c3d5019e716a613407024dc499da2e42a65fb6b92e3b4cca8"
+    },
+    {
+      "path": "src/server/aria/sugestoes-thread.test.ts",
+      "bytes": 2486,
+      "sha256GitLF": "084633f5f24ef8f5bd9c19c2e983cfed560766dab30f916c2f2b2b0ac8ebcaea"
+    },
+    {
+      "path": "src/server/aria/sugestoes-thread.ts",
+      "bytes": 6162,
+      "sha256GitLF": "b6affb2e4a8d960c6e53cd395b41549432142beb11fed1b28501182d25d86a41"
+    },
+    {
+      "path": "src/server/whatsapp/consultas-inbox.aria.int.test.ts",
+      "bytes": 13110,
+      "sha256GitLF": "ba3c047b5ee73fb06a76a6e4b7aa2b1a67412cacd74b3baf3cd253aabec7e63d"
+    },
+    {
+      "path": "src/server/whatsapp/consultas-inbox.ts",
+      "bytes": 19666,
+      "sha256GitLF": "7571d8b3b90d297eebb95fcf16671ff4b129f398be37b4a087fa64bcef95b8cf"
+    }
+  ],
+  "limite": "Sete SRC byteiguais ao commit DEV/QA cb285. Gates nominais e limites estão no índice; CI final pendente."
+}

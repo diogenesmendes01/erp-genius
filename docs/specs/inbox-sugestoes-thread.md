@@ -19,3 +19,6 @@ O executor existente continua revalidando pausa, encerramento, documento e valor
 D1, D2 e D3 aprovadas permanecem nas issues #354–#358: responsável da CONVERSA, edição/envio humano e Assumir/cancelamento de pendentes. A #349 mantém as alçadas atuais e não antecipa essas extensões. Não depende da #343.
 
 Aceite visual: N/A, produtor de dados sem apresentação nova. Gates, negativos nominais e pendências de QA, composição e CI constam no [relatório](../../output/inbox-349-report.md). A publicação é coordenada pelo ROOT depois da revisão e integração da #342.
+
+
+Publicação: composição598aae2c diretamente na main79310013, com os sete SRC nominais cb285 e QA independente favorável. ROOT aprovou TypeScript original e lint global; restauros491 conferidos. [Evidências e limites](../../output/inbox-349-qa/indice.json). CI/revisão final/merge pendentes; não concluir349.

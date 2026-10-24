@@ -1,5 +1,7 @@
 # #349 — relatório DEV, cartões e decisões
 
+Estado de publicação: composição598aae2c diretamente em main79310013. Sete SRC são byteiguais ao commit DEV/QA cb285; único conflito no quadro preservou main integral e o bloco349. TESTER aprovou2UNIT/30,2INTcompletos/44 e lint7; ROOT aprovou TSC ORIGINAL3356/EXIT0 sem exclusões e lint GLOBAL18377/EXIT0,zero erros/40avisos herdados. Restauros DEVab76e0 e TESTER927c1d terminaram0,424hashes e sequências preservados. [Parecer integral e limites](inbox-349-qa/indice.json). Negativos amplos DEV preservados; busca herdada é423 separada. CI e publicação finais ainda pendentes, issue349 aberta.
+
 Base exclusiva: 54c44b2ad2f5414f346e07dea76001a13c799051 (#342), branch codex/inbox-e3-349-sugestoes. A entrega não importa #343. O produtor #342, uso.ts, executor, guards globais, schema, SQL e dependências permanecem iguais à base. Conferência estática ccb419/119ed8 verificou 12 paths protegidos e seis funções do histórico (incluindo desfazer/reverter) idênticas. Sem migração nova.
 
 A implementação e seus limites estão na [SPEC](../docs/specs/inbox-sugestoes-thread.md). Paths de produção: sugestoes-thread.ts, historico.ts e consultas-inbox.ts. Quatro paths de teste incluem os dois arquivos INT, o decoder puro e somente cinco literais do fixture PainelAtendimento.aria.test.ts. Esse complemento foi autorizado pelo ROOT; os asserts e o consumidor de produção não mudam.

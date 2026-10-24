@@ -6794,3 +6794,7 @@ Ressalvas preservadas: integração ampla 45910/3f0f03, 23 arquivos/282 casos, E
 ### Adendo #349 — restauro e diagnóstico pendente
 
 ROOT confirmou restauro ab76e0 EXIT0 do ciint491: 424 hashes, 502 registros e sequências preservados; lease livre. Nenhuma nova DB pelo DEV. Fonte funcional c0e7edca preservada. Hipótese de orçamento: conferir criadoEm retornado pelo mesmo create versus Node imediatamente pós-await, antes do turno; ainda sem prova. No controle privado já feito, agora foi fixado antes da leitura extra e reaproveitado no turno, portanto essa leitura não avançou o cutoff. Correção temporal permanece em escopo separado, sem mudança da349 ou autorização de nova execução.
+
+
+## #349 — QA e composição na main —24/10/2026
+ROOT compôs82f2cd86+598aae2c sobre main79310013;7SRC byteiguaiscb285,produtor342/executor/schema/deps preservados. Conflito único quadro:mainintegral+append349. TESTER2UNIT/30 adac5a,2INTcompletos/44 sessão36387/fb4a50/185.95s/w1,lint7 839fad, todosEXIT0. ROOT TSC ORIGINAL3356/EXIT0 semexclusões e lintGLOBAL18377/EXIT0 zeroerros40herdados. Restauros DEVab76e0 e TESTER927c1d/0,424hashes/502e1392/sequências,9msg4notasT. Evidências sanitizadasoutput/inbox-349-qa. Negativos amplosDEV280/282 e lintprivado preservados; bugbuscaUTC423separado/orçamentoinconclusivo. SemnovoUNITglobal/INTlocalROOT;CI/revisãofinal/publicação/mergependentes. VisualN/A,produtorDTO;cartão350futuro.
