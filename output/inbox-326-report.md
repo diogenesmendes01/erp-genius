@@ -4,7 +4,7 @@
 
 O código foi composto com a main cf29 em798f e aprovado nos gates locais e remotos:937arquivos/7437testes globais locais, quatroarquivos/44INT locais; CI rápida5/5 e integração completa4/4,351arquivos/3108testes aprovados, trêsarquivos/quatrotestes visuais opt-in ignorados. Fontes, executores, limites e provas literais estão na [composição atual](inbox-326-composicao-final.md) e no [índice de oito pareceres](inbox-326-qa/indice.json). Recortes sobrepostos não são somados.
 
-R9 terminou0 com uma Save nova e cumulativo2, ACK original200 retido/liberado, rascunhos/foco/editabilidade e encerramento real SSE. R10v2 terminou0 com seis APP novas e seis referências históricas em três tamanhos/dois temas, zeroSave; todas12imagens inspecionadas DEV/TESTER. Os dois processos de browser e a fixtureB foram encerrados/restaurados;424hashes/498originais preservados. Nenhum resultado negativo histórico foi reclassificado.
+R9 terminou0 com uma Save nova e cumulativo2, ACK original200 retido/liberado, rascunhos/foco/editabilidade e encerramento real SSE. R10v2 terminou0 com seis APP novas e seis referências históricas em três tamanhos/dois temas, zeroSave; todas12imagens inspecionadas DEV/TESTER. Todos os contextos e processos de navegador foram encerrados, e a fixtureB foi restaurada;424hashes/498originais preservados. Nenhum resultado negativo histórico foi reclassificado.
 
 Consolidação documental e CI final ainda em andamento. O ZIP visual sanitizado tem autorização de publicação pendente; a PR420 permanece em rascunho/Refs326. O texto abaixo é histórico nominal da retomada, preservado para rastreabilidade.
 
