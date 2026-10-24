@@ -38,7 +38,7 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
 
   it("pausa e motivo vêm do atendimento; sem pausa o motivo é nulo", async () => {
     const c = await cenario();
-    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: true, cartoes: [] });
+    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: true, cartoes: [], handoff: null });
     await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "CELULAR" } });
     expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toMatchObject({ pausada: true, motivo: "CELULAR" });
   });
@@ -55,7 +55,7 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
   it("vendedor vê a pausa mas não recebe sugestões; fora do escopo devolve null", async () => {
     const c = await cenario();
     await c.sugerir({ expiraEm: new Date(Date.now() + 3_600_000) });
-    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: false, cartoes: [] });
+    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: false, cartoes: [], handoff: null });
     const estranho = await criarUsuario([Papel.FINANCEIRO]);
     expect(await carregarAriaDoAtendimento(estranho, c.a.id)).toBeNull();
   });
@@ -77,7 +77,7 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
   it("atendimento sem lead: gerente vê o atendimento sem sugestões; Admin as vê", async () => {
     const c = await cenario({ semLead: true });
     const s = await c.sugerir({ expiraEm: new Date(Date.now() + 3_600_000) });
-    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: false, cartoes: [] });
+    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: false, cartoes: [], handoff: null });
     const admin = await criarUsuario([Papel.ADMINISTRADOR]);
     expect((await carregarAriaDoAtendimento(admin, c.a.id))?.sugestoes.map((x) => x.id)).toEqual([s.id]);
   });

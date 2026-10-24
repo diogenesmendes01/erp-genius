@@ -6857,3 +6857,16 @@ BaseMain170edbad. Merge5b50cb4b+correção d9b1b08e (origem14337900),oito pathsS
 
 
 Atualização dos gates da composição: TypeScript original terminou com código0 (sessão28227,terminala6beb3), sem exclusões auxiliares e sem incremental. Lint global terminou0 (sessão42789,terminal5d9ca8), zero erros e40avisos herdados. Nenhuma fonte foi alterada durante essas execuções. CI e integração completa da nova composição permanecem pendentes.
+
+
+
+
+## Inbox #351 — resumo de handoff no servidor DEV — 24/10/2026
+
+Base b292bf79, contrato compartilhado da #349 e produtor #342 preservados. O DTO acrescenta handoff com última HANDOFF EXECUTADA, parser canônico, motivo seguro e dez ações autorizadas por keyset antes do limite, em ordem cronológica. A autorização E0 mantém resumo positivo ao convidado vigente. Campos e tarefas restritos usam descrições genéricas; tarefa exige payload.tarefaId e escopo atual em lote no mesmo Db. Sem consumidor #352, mutação, alçadas D1–D3, migração, schema ou dependência. Extração literal de podeVerLeadNaThread, com reexport compatível.
+
+Gates DEV com saída 0: UNIT 45914/cbccdf, 29 arquivos/420 casos; INT 50642/4afe5a, cinco arquivos completos/68 casos, 275,93 s. Depois, somente a fixture ganhou tarefa não commitada/rollback em pool1 e convite expirado: arquivo completo final 59826/ec297e, 16/16, 73,91 s; produção e UNIT inalterados. TSC auxiliar final 13026/0d4887 e lint final c73316 aprovados; lint dos 12 paths 18b2c5 também aprovado. Não somar recortes sobrepostos nem chamar UNIT global. CI global fica para publicação, conforme coordenação.
+
+TSC auxiliar conserva exatamente as duas exclusões privadas históricas autorizadas; todos os SRC/testes atuais estão incluídos. Negativos de parser, loader ausente, guarda contextual (153/154) e coluna resultado inexistente estão preservados e explicados. Prova AST 77429/edbd4f confirma formatter/executor, 11 funções de consultas e 13 paths protegidos iguais à base; os 13 textos antigos do Playground permanecem. A guarda recebeu somente a exceção exata aprovada para descrição histórica contextual. APROVADA/EXECUTADA não prova entrega externa; a resposta de transição real integra feito.
+
+Banco ciint491 liberado ao ROOT após os terminais; nenhuma nova operação DEV. Visual novo N/A, produtor interno e rótulos/layout existentes preservados. SPEC docs/specs/inbox-handoff-resumo.md e relatório output/inbox-351-report.md. Restauro ROOT, QA independente, revisão, CI e publicação pendentes; não concluir a issue. Publicar somente após integração da #349.
