@@ -8,7 +8,7 @@ afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
 it("324 acrescenta doze capturas sem retirar nenhuma das164 anteriores", () => {
   const todos = Object.keys(ESTADOS);
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-sem-nome"] })).toHaveLength(12);
-  expect(combinacoes({ alvos: ["app", "prototipo"], estados: todos.filter(e => e !== "painel-sem-nome" && e !== "painel-secretaria") })).toHaveLength(164);
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: todos.filter(e => e !== "painel-sem-nome" && e !== "painel-secretaria" && !e.startsWith("entrada-")) })).toHaveLength(164);
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-detalhes", "painel-sem-nome"] })).toHaveLength(24);
 });
 it("CLI semnome faz preflight do GETreal/ID correto e hidrata sem exigir mensagem inexistente", async () => {
