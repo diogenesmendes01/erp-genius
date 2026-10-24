@@ -5,12 +5,12 @@ afterEach(() => vi.unstubAllGlobals());
 it("painel-detalhes cobre três tamanhos/dois temas sem reduzir estados313/314", () => {
   const novas = combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-detalhes"] });
   expect(novas).toHaveLength(12); expect(new Set(novas.map(c => c.tamanho))).toEqual(new Set(["desktop", "tablet", "celular"]));
-  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS).filter(e => e !== "painel-secretaria" && !e.startsWith("entrada-")) })).toHaveLength(176);
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS).filter(e => !["painel-detalhes-pessoa", "painel-detalhes-b2b", "painel-detalhes-convidado"].includes(e) && e !== "painel-secretaria" && !e.startsWith("entrada-")) })).toHaveLength(176);
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["tablet-painel", "celular-painel"] })).toHaveLength(8);
 });
 it.each(["painel-detalhes", "tablet-painel", "celular-painel"])("%s aguarda setor e semântica318 sem exigir thread oculta", async estado => {
   let liberar!: () => void; const pronto = new Promise<void>(r => { liberar = r; }); const callbacks: unknown[] = [];
-  const pagina = { getByRole: (_r: string, o: {name: string}) => { if(o.name !== "Painel Comercial") throw Error("Região oculta/inesperada:" + o.name); return { waitFor: async () => undefined }; }, waitForFunction: (f: unknown) => { callbacks.push(f); return pronto; } };
+  const pagina = { locator: (seletor: string) => { expect(seletor).toBe('#painel-contato a[href^="/funil?o="]'); return { waitFor: async () => undefined }; }, waitForFunction: (f: unknown) => { callbacks.push(f); return pronto; } };
   let fim = false; const espera = esperarConteudoApp(pagina as never, estado, "celular").then(() => { fim = true; }, () => undefined);
   await Promise.resolve(); expect(fim).toBe(false); expect(callbacks).toEqual([semanticaPainelDetalhesPronto]); liberar(); await espera; expect(fim).toBe(true);
 });
