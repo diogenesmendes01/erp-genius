@@ -6657,3 +6657,7 @@ QA independente do delta8d: três completos/22 testes ab53fe com saída 0; backe
 ## Inbox #336 — base direta main após #414 — 24/10/2026
 
 #414 mergeada em86e91f2f791a6faf59a0be5d10a657d2f64e1425, CI40098378144 cinco success, issue335 closed/completed. Rebase336 concluído44b984, preservando todo quadro main1096348B e somente blocos336. Fonte89f3c9101189d57fe32d5add5ab1eb5d5da4c0f2 tem SRC/SCRIPTS/Prisma/package/lock idênticos26fd/8d (1d28cc saída0); apenas quatro MD335 mudaram pela revisãoR1, sem afirmar árvore integral idêntica. Publicação seguinte só documentos/QA; evidências e limites nominais preservados. PR/CI/comentários/merge ainda pendentes.
+
+## Inbox #325 — preparação integrada ROOT — 24/10/2026
+
+Fonte9pathsddf/harness15paths364 selecionados sobre419(PR416emR1,nãoMain). Global932/7323/214,56s46990/1044e6 saída0; TSC14294/5a46e0 e lint92429/b3917a0/40herdados. INTROOT2419/dbba760=3completos41/144,92s emdev-gravacoes490, restauro17f5d4/424hashes. TindependenteAPPddf69/726,3/41,TSC/lint9todos0; perfilintegracao487restaurado87a547/424hashes,snapshot494. Harness220=190preservados+30novos,DE16/1150. Source/commitsgatesnominais/limites emoutput/inbox-325-composicao-final.md. Visualaindapendente; paísCLnãoexistenoDBtestes,emendaRootfixture36/16validadaPaisSchema eapenasplanejada,semnotas/saída/Saves/countryoriginalupdate. NÃOpublicarsobrefonte337nãointegradaantesderebase/basefinal; QAvisual/CI/comentários/mergependentes.

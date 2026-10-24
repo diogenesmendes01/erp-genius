@@ -8,6 +8,7 @@ import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { confirmarPainelSecretaria, semanticaPainelSecretariaPronto, confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { configurarEntrada, abrirEntradaApp } from "./entradas-inbox.mjs";
+import { ESTADOS_DETALHES_325, configurarDetalhes325, abrirDetalhes325, abrirPrototipoDetalhes325 } from "./detalhes-inbox.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
@@ -64,6 +65,12 @@ async function prepararRede(contexto, alvo, base, falhas) {
 }
 
 export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
+  if (ESTADOS_DETALHES_325.includes(estado)) {
+    const configuracao = configurarDetalhes325(estado);
+    if (!process.env.INBOX_VISUAL_EMAIL || !process.env.INBOX_VISUAL_SENHA) throw new Error("Cenários325 exigem credenciais fictícias explícitas, sem login padrão.");
+    await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL, process.env.INBOX_VISUAL_SENHA);
+    return abrirDetalhes325(pagina, contexto, base, configuracao);
+  }
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? (estado === "painel-vazio" ? "joao@genius.com" : "admin@genius.com"), process.env.INBOX_VISUAL_SENHA ?? "genius123");
   if (estado.startsWith("entrada-")) return abrirEntradaApp(pagina, base, configurarEntrada(estado));
   if (estado === "carregando") return { finalizar: await abrirCarregandoApp(pagina, contexto, base), metadados: { fallbackReal: true, latenciaLocalMs: 3000, medicaoStreaming: false } };
@@ -121,7 +128,8 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   return { finalizar, metadados: painelSemNomeReal ? { painelSemNomeReal } : ausenciaLegitima ? { ausenciaLegitima } : undefined };
 }
 
-async function abrirPrototipo(pagina, estado) {
+export async function abrirPrototipo(pagina, estado) {
+  if (ESTADOS_DETALHES_325.includes(estado)) return abrirPrototipoDetalhes325(pagina, pathToFileURL(prototipo).href, estado);
   const c = estado === "painel-sem-nome" ? "c9" : ["humano-compositor", "nota"].includes(estado) ? "c4" : "c1";
   await pagina.goto(`${pathToFileURL(prototipo).href}?c=${c}`, { waitUntil: "load" });
   const root = pagina.locator('[data-m="root"]');
@@ -191,13 +199,13 @@ async function main() {
   const alvos = o.alvo === "ambos" ? ["app", "prototipo"] : [o.alvo];
   const estados = o.estado === "todos" ? Object.keys(ESTADOS) : [o.estado];
   const tarefas = combinacoes({ alvos, estados });
-  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-")) ? {} : await idsDaDemo() : null;
+  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-") || ESTADOS_DETALHES_325.includes(e)) ? {} : await idsDaDemo() : null;
   const executablePath = process.env.PW_CHROMIUM;
   if (!executablePath) throw new Error("Defina PW_CHROMIUM para o Chrome local; o harness não baixa navegador.");
   await mkdir(destino, { recursive: true });
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
   const capturas = [];
-  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
+  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs", "detalhes-inbox.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
   try {
     for (const tarefa of tarefas) {
       const [width, height] = TAMANHOS[tarefa.tamanho];
