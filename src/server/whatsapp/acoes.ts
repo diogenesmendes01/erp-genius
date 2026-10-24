@@ -61,7 +61,7 @@ import {
 import {
   conectarNumeroMotor,
   consultarSessaoMotor,
-  desconectarNumeroMotor,
+  solicitarLogoutMotor,
   garantirNumeroNoMotor,
   parearNumeroMotor,
 } from "./sessao";
@@ -904,7 +904,7 @@ export async function desconectarNumero(numeroId: string): Promise<Resultado> {
 /** Logout no motor; motor fora do ar recusa a ação (nada muda no ERP antes de a sessão cair lá). */
 async function desligarNoMotor(numeroId: string): Promise<void> {
   try {
-    await desconectarNumeroMotor({ id: numeroId, providerRef: numeroId });
+    await solicitarLogoutMotor({ providerRef: numeroId });
   } catch (e) {
     if (e instanceof ErroMotor && e.codigo === "NUMERO_INEXISTENTE") {
       // O motor nunca conheceu este número: nada a desligar lá.
@@ -918,23 +918,26 @@ async function desligarNoMotor(numeroId: string): Promise<void> {
  * Tira o número de operação: sessão do motor desligada (logout) antes de gravar, para não ficar um número
  * inativo ainda recebendo e enviando. Número de outro driver só é marcado inativo. A sessão do Evento é
  * relida aqui, na transação: entre o logout e a gravação, uma conexão concorrente pode tê-la mudado.
+ * Se o webhook já confirmou o logout solicitado por esta ação, conserva sua sessão anterior para a auditoria.
  */
 async function tirarDeOperacao(
   tx: Prisma.TransactionClient,
   numeroId: string,
   autorId: string,
   data: Prisma.NumeroWhatsAppUpdateInput,
+  sessaoAntesDoLogout: SessaoNumero | null,
 ): Promise<void> {
   const atual = await tx.numeroWhatsApp.findUniqueOrThrow({ where: { id: numeroId }, select: { driver: true, sessao: true } });
   const motor = atual.driver === "MOTOR";
   await tx.numeroWhatsApp.update({ where: { id: numeroId }, data: { ...data, ativo: false, ...(motor ? { sessao: "DESCONECTADO" } : {}) } });
-  if (motor && atual.sessao !== "DESCONECTADO") {
+  const sessaoAuditada = atual.sessao !== "DESCONECTADO" ? atual.sessao : sessaoAntesDoLogout;
+  if (motor && sessaoAuditada !== null) {
     await registrarEvento(tx, {
       tipo: "NumeroWhatsAppDesconectado",
       agregadoTipo: "NumeroWhatsApp",
       agregadoId: numeroId,
       autorId,
-      payload: { de: atual.sessao },
+      payload: { de: sessaoAuditada },
     });
   }
 }
@@ -947,9 +950,10 @@ export async function desativarNumeroWhatsApp(numeroId: string): Promise<Resulta
     if (!numero || numero.excluidoEm) throw new ErroRegra("Número não encontrado.");
     // Repetir é inofensivo: já inativo e sem sessão, não há o que fazer.
     if (!numero.ativo && (numero.driver !== "MOTOR" || numero.sessao === "DESCONECTADO")) return undefined;
-    if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") await desligarNoMotor(numero.id);
+    const sessaoAntesDoLogout = numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO" ? numero.sessao : null;
+    if (sessaoAntesDoLogout !== null) await desligarNoMotor(numero.id);
     await prisma.$transaction(async (tx) => {
-      await tirarDeOperacao(tx, numero.id, autor.id, {});
+      await tirarDeOperacao(tx, numero.id, autor.id, {}, sessaoAntesDoLogout);
       if (numero.ativo) {
         await registrarEvento(tx, {
           tipo: "NumeroWhatsAppDesativado",
@@ -1018,9 +1022,10 @@ export async function excluirNumeroWhatsApp(numeroId: string): Promise<Resultado
     ]);
     if (politica) throw new ErroRegra("Este número é o remetente da política da régua. Troque o remetente antes de excluir.");
     if (avisos) throw new ErroRegra("Este número envia os avisos da agenda. Escolha outro em \"Avisos da agenda\" antes de excluir.");
-    if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") await desligarNoMotor(numero.id);
+    const sessaoAntesDoLogout = numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO" ? numero.sessao : null;
+    if (sessaoAntesDoLogout !== null) await desligarNoMotor(numero.id);
     await prisma.$transaction(async (tx) => {
-      await tirarDeOperacao(tx, numero.id, autor.id, { excluidoEm: new Date() });
+      await tirarDeOperacao(tx, numero.id, autor.id, { excluidoEm: new Date() }, sessaoAntesDoLogout);
       await registrarEvento(tx, {
         tipo: "NumeroWhatsAppExcluido",
         agregadoTipo: "NumeroWhatsApp",

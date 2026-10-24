@@ -6,7 +6,7 @@ async function modulo() { const p = "../../scripts/visual/" + "entradas-inbox.mj
 it("336 captura quatro entradas reais só no app e preserva todas as182 combinações anteriores", () => {
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: nomes })).toHaveLength(8);
   for (const n of nomes) { expect(ESTADOS[n].prototipo).toBe(false); expect(ESTADOS[n].motivoSemReferencia).toMatch(/referência funcional/i); }
-  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS).filter(e => !nomes.includes(e)) })).toHaveLength(182);
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS).filter(e => !["painel-detalhes-pessoa", "painel-detalhes-b2b", "painel-detalhes-convidado"].includes(e) && !nomes.includes(e)) })).toHaveLength(182);
 });
 it("configuração336 exige rota da superfície e codifica o alvo sem inventar parâmetros", async () => {
   const m = await modulo();

@@ -1,0 +1,13 @@
+# QA estática — composição ROOT325 bf42
+
+Favorável à fidelidade da composição `bf42c956d92269cb8c2791fe32521cc980b8b6c2`, árvore `e526c615c149c300c74d37658613e24905f14484`, diretamente sobre main `239ed17fde1593f2e96fde53a01851f48ed13f86`. Apenas leitura de objetos Git a partir do worktree TESTER; checkout permaneceu `d775a140b824e56307d50d95d7bb0ad5284a5f6e`, tracked limpo. Nenhum runtime, DB, browser, HTTP, Prisma ou instalação.
+
+Comparação por Git blob OID, não por aproximação textual: os nove arquivos APP/testes de apresentação são exatamente os de `ddf872e13078fb48c7648da9c2fc48b1d3f29438`; os18 arquivos do harness são exatamente os de d775 (oito JS/tipos, nove testes e README). Portanto os pareceres independentes nominais de APP, coletor96c e visuald775 mantêm sua atribuição aos mesmos blobs; não é uma nova execução dos gates nem igualdade de árvore integral.
+
+O diff total contra main239 tem39 paths:9 APP+18 harness+12 MD/JSON de SPEC/quadro/relatórios/QA/allowlist. Cadeia linear de cinco commits, sem merge:6cf10369→3efad5ea→92153b53→2d012193→bf42c956. As três últimas etapas são os portes nominais d1f51/96c/d775. O quadro preserva todo o conteúdo main e somente acrescenta blocos325. Não há PNG/ZIP/raw privado no delta.
+
+Sem qualquer delta contra main em `src/server`, `src/lib`, `src/components`, Prisma/SQL, package/lockfiles ou `.github`; sem arquivo337/menção nova de código. Schema487 conserva OID `1f575691cde242124c1493b8406121e8830a6f7e`. A #337 não foi transportada como base ou implementação. O hook de leitura selecionado é parte da APP325 já revisada; a presença dele não implementa o editor326 ou a aba327.
+
+Prova reproduzível: executor23621/terminal `cdc305` EXIT0 comparou todos27 blobs selecionados, auditou39 paths/ancestralidade/ausência de merges e escreveu `inbox-325-bf42-composicao-fontes-tester.json`, SHA256 `fb79d78ad256ccd639a63f08753bb1617feb1fead56f6b280f91c56da308c12e`. `git diff --check 239ed17f bf42c956` terminou0 na mesma sessão. Leituras179241/2bbf48 também terminal0.
+
+A documentação de composição/índice ainda descreve o checkpoint6cf e pendências históricas anteriores ao aceite visual; isso está nominalmente preservado e não invalida a identidade. ROOT acrescentará pareceres integrais e índice atual antes da publicação, distinguindo histórico do freeze final. Não atribuo os gates ROOT6cf ao harness posteriorbf42, nem meu parecer visual como CI/regressão nova. Negativos do coletor d1f51, L1/74891 EXIT1 e limites estáticos do protótipo seguem os pareceres originais. CI, publicação e merge permanecem separados desta revisão estática.
