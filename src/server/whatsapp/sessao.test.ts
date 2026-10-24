@@ -17,6 +17,7 @@ import {
   desconectarNumeroMotor,
   garantirNumeroNoMotor,
   parearNumeroMotor,
+  solicitarLogoutMotor,
   sessaoDeStatusMotor,
 } from "./sessao";
 
@@ -85,5 +86,20 @@ describe("sessão pelo motor", () => {
     chamar.mockResolvedValue({});
     await desconectarNumeroMotor(N);
     expect(chamar).toHaveBeenCalledWith("/v1/numeros/num1/desconectar", { metodo: "POST" });
+  });
+  it("API de desconexão existente continua sincronizando a sessão local", async () => {
+    chamar.mockResolvedValue({}); findUnique.mockResolvedValue({ id: "num1", sessao: "CONECTADO" });
+    await desconectarNumeroMotor(N);
+    expect(aplicar).toHaveBeenCalledExactlyOnceWith({ where: { id: "num1" }, data: { sessao: "DESCONECTADO" } });
+  });
+  it("comando de logout não lê nem grava no banco local", async () => {
+    chamar.mockResolvedValue({}); await solicitarLogoutMotor({ providerRef: N.providerRef });
+    expect(chamar).toHaveBeenCalledExactlyOnceWith("/v1/numeros/num1/desconectar", { metodo: "POST" });
+    expect(findUnique).not.toHaveBeenCalled(); expect(aplicar).not.toHaveBeenCalled();
+  });
+  it.each(["NUMERO_INEXISTENTE", "INDISPONIVEL"] as const)("logout propaga %s sem persistir estado", async codigo => {
+    const erro = new ErroMotor(codigo, codigo === "NUMERO_INEXISTENTE" ? 404 : 0); chamar.mockRejectedValue(erro);
+    await expect(solicitarLogoutMotor({ providerRef: N.providerRef })).rejects.toBe(erro);
+    expect(findUnique).not.toHaveBeenCalled(); expect(aplicar).not.toHaveBeenCalled();
   });
 });
