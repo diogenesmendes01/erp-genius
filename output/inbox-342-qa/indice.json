@@ -1,0 +1,49 @@
+{
+  "issue": 342,
+  "pr": 421,
+  "fonte": "54c44b2ad2f5414f346e07dea76001a13c799051",
+  "base": "cf29add93cd63fe14f95bf8a53fb079d3efe9a27",
+  "pareceres": [
+    {
+      "origem": "inbox-342-final-review-tester.md",
+      "destino": "codigo-54c-inicial.md",
+      "bytes": 9848,
+      "sha256": "5aa81685667bcb6022c677c5eec2af0008aa7af4e3121178238fb3e05970001c"
+    },
+    {
+      "origem": "inbox-342-final-review-tester-r2.md",
+      "destino": "codigo-54c-r2.md",
+      "bytes": 10628,
+      "sha256": "3db1dd9847587ec44f678f073320559cd84eaff17e8622b2403da30c2862fa2e"
+    }
+  ],
+  "execucoesIndependentes": {
+    "unit": {
+      "arquivos": 4,
+      "testes": 42,
+      "executor": "c0fbd2/EXIT0"
+    },
+    "integracao": {
+      "arquivos": 2,
+      "testes": 28,
+      "duracaoSegundos": 112.46,
+      "sessao": 75901,
+      "executor": "468d13/EXIT0"
+    },
+    "lint": {
+      "arquivos": 5,
+      "executor": "cc1162/EXIT0"
+    }
+  },
+  "gatesIntegrador": {
+    "typeScriptOriginal": "82014/b78b4b/EXIT0;sem exclusões auxiliares",
+    "lintGlobal": "6956/e2f4d8/EXIT0;zero erros/40 avisos herdados",
+    "integracao": "67008/3dcbca/EXIT0;dois arquivos completos/28testes/107,37s/maxWorkers1/dev-gravacoes491"
+  },
+  "limites": [
+    "Os dois pareceres preservam as mesmas execuções; R2 reconcilia somente os finais de linha. Não somar contagens.",
+    "O TSC original DEV permaneceu negativo por dois privados históricos; seu auxiliar excluiu exatamente esses dois. TSC original ROOT é prova separada.",
+    "Aceite visual não aplicável: produtor interno, sem interface nova.",
+    "Integração remota completa54c aprovada4/4,350arquivos/3104testes;3arquivos/4preparadores visuais opt-in ignorados. CI do SHA documental final e merge permanecem pendentes."
+  ]
+}

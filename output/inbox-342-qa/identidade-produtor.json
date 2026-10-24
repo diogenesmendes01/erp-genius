@@ -1,0 +1,19 @@
+{
+  "fonte": "54c44b2ad2f5414f346e07dea76001a13c799051",
+  "path": "src/server/inbox/estado-aria.ts",
+  "devFisico": {
+    "bytes": 6784,
+    "sha256": "b193fb0a5aef0c9b282ef0dd1947863d4b4b1514eae41c4eeb2c70f9555e2bd1",
+    "CR": 1,
+    "LF": 122
+  },
+  "gitLF": {
+    "bytes": 6783,
+    "sha256": "6bdc1150772e4589c790a79c099a0a24a090b11ce47cc3c93ede121963355129"
+  },
+  "normalizarCRLFIgual": true,
+  "provaRoot": "8e830b/EXIT0",
+  "provaIndependente": "bcc0ca/EXIT0",
+  "provaIndependenteSha256": "373e1ea5fd5bf5f0ffe8e18129fcd7024bc660f2e03f1c12835791fc082405eb",
+  "limite": "Uma CRLF isolada entre as linhas LF, não conversão integral CRLF. O hash físico DEV é correto para aqueles bytes, mas não é o fingerprint do blob Git ou dos checkouts ROOT/TESTER. Nenhum delta de código."
+}

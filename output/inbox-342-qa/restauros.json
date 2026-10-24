@@ -1,0 +1,29 @@
+{
+  "fonte": "54c44b2ad2f5414f346e07dea76001a13c799051",
+  "dev": {
+    "executor": "87b529/EXIT0",
+    "perfil": "ci-integracao",
+    "tabelas": 424,
+    "registros": 502,
+    "snapshotSha256": "8d5eaa17a42aa8c2579943a4650c2d56dea33e09d73d29b858a0007041d03f94"
+  },
+  "integrador": {
+    "executor": "b9b0d3/EXIT0",
+    "perfil": "dev-gravacoes",
+    "tabelas": 424,
+    "registros": 1378,
+    "mensagens": 3,
+    "notas": 1,
+    "snapshotSha256": "4834798be3a238bbd06d8a0ddc505cb49f3a9e482f4b4326003e7b05e82154bc"
+  },
+  "tester": {
+    "executor": "4c16c9/EXIT0",
+    "perfil": "tester",
+    "tabelas": 424,
+    "registros": 1392,
+    "mensagens": 9,
+    "notas": 4,
+    "snapshotSha256": "f1d15dff3df9ddfab63b8c2e238c0e3d89122c47471d27c8724e20ffd7c291c5"
+  },
+  "limite": "Bancos descartáveis distintos, históricos491/cliente490. Cada restauro conferiu424hashes e preservou as sequências após a liberação do executor. Fixtures fictícias, sem envio externo ou alteração do cluster."
+}

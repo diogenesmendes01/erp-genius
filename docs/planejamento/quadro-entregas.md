@@ -6762,3 +6762,21 @@ Nova CI rápida e Integração completa devem rodar no novo SHA publicado. O run
 A dependência #419 foi mergeada em 60a74096 após CI rápida 5/5 e Integração completa 4/4 (347 arquivos/3.059 testes aprovados; quatro preparadores visuais opt-in ignorados). A composição local da #416 é 41a7e4d9: três conflitos documentais resolvidos, registros preservados e código executável integralmente igual a faa8b2c8, inclusive schema 490, SQL, dependências e workflows.
 
 A Integração completa da #416 em faa8 concluiu 4/4: 349 arquivos/3.086 testes aprovados, três arquivos/quatro preparadores visuais opt-in ignorados. CI rápida anterior 5/5. [Registro e limites](../../output/inbox-337-qa/integracao-remota-faa8.json) e [composição detalhada](../../output/inbox-337-composicao-final.md). Nova CI rápida no SHA final, inspeção independente e comentários finais continuam obrigatórios. Sem nova nota manual ou imagem. A #337 continua aberta; originais: 30 fechadas/51 abertas. A #418 adicional não incrementa essa contagem.
+
+## Inbox #342 — produtor EstadoAria DEV, 24/10/2026
+
+Base origin/main cf29; regra pura e filtros equivalentes, handoff/sugestões em lote, mesmo Db/tx e adaptação opcional de estadoOrcamento. Sem consumidores, ACL/envio, schema/deps ou harness. Migração reservada20261024213000/SQLdc3a00d7 aplicada somente ROOT9131f5; índice válido, histórico491/client490.
+
+Global52501/3ffd9f:937/7425 UNIT,271,84s,EXIT0. INT34211879/a17723 completo18/18/70,48s EXIT0; uso.int completo10/10 nominal nas execuções anteriores, sem alegar um comando final28. TSCaux62768/43cf58 e lint5/353527 EXIT0. TSC original continua negativo por dois privados históricos; auxiliar aprovada exclui exatamente esses dois, todosSRC/testes atuais incluídos. RED temporalDate/timestamptz demonstrado e corrigido com ISO UTC parametrizado/cast timestamp(3), T−1/T/T+1 emUTC/SãoPaulo/Tokyo. Negativos de grupo e fixture financeira separados do produto.
+
+Banco liberado para restauro ROOT491; sem nova operação DEV. SPEC docs/specs/inbox-estado-aria.md e relatório output/inbox-342-report.md. Visual N/A, produtor interno. QA independente, composição, CI, revisão/publicação pendentes; não concluir a issue. Próxima343 apenas plano, respeitando dependência342, decisões D1–D3 e limite de duas implementações.
+
+## #342 — QA independente e gates do integrador — 24/10/2026
+
+Código54c44b2a, PR421 em rascunho/Refs342, diretamente em maincf29. TESTER: quatro arquivos/42 UNIT c0fbd2, dois arquivos completos/28 INT na mesma sessão75901/468d13 (112,46s,umworker), lint5 cc1162; todos saída0, sem filtro/skips. Parecer R2 integral e fontes no índice output/inbox-342-qa/indice.json. ROOT: TSC ORIGINAL82014/b78b4b sem exclusões auxiliares; lint GLOBAL6956/e2f4d8 zeroerros/40avisosherdados; INT67008/3dcbca dois arquivos completos/28testes,107,37s,umworker; todos saída0. As mesmas execuções em relatórios ou recortes sobrepostos não são somadas.
+
+Impressão digital reconciliada: físico DEV6.784bytes/b193fb0a tem uma CRLF isolada e121 finaisLF; normalização produz byteigual o blobGit54/ROOT/TESTER6.783bytes/6bdc1150. Provas independentes ROOT8e830b e TESTERbcc0ca, sem mudança de código; o parecer inicial foi preservado junto da revisão documental R2. SQLGitLF262bytes/dc3a00d7 e físico checkout266bytes/1f132773 são equivalentes após normalização.
+
+Restauros DEV87b529, ROOTb9b0d3 e TESTER4c16c9 terminaram0, conferindo424hashes e sequências; históricos491 e clientes490 próprios. Fixtures originais502/1378/1392registros, sem mensagem externa ou reinício do cluster. Evidências sanitizadas em output/inbox-342-qa/restauros.json; snapshots/credenciais/raw continuam privados.
+
+CI rápida40135514587 concluiu5/5;937arquivos/7425testes em cada fuso, totais confirmados ef9587 EXIT0. Integração completa40135542522 concluiu4/4:350arquivos/3104testes aprovados;3arquivos/4preparadores visuais opt-in ignorados, detalhados no registro CI nominal54c. Consolidação documental/CI do head final e merge permanecem pendentes. Aceite visual N/A, produtor interno sem UI nova. Não marcar342 concluída antes dos gates finais. Sem decisão humana pendente nesta entrega.
