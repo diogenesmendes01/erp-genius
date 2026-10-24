@@ -1,6 +1,20 @@
 # Inbox #325 — composição de Detalhes e participantes B2B
 
-## Publicação independente sobre main
+## Composição e QA atuais
+
+Produto final mantido em nove blobs idênticos a `ddf872e13078fb48c7648da9c2fc48b1d3f29438`; composição direta main `bf42c956d92269cb8c2791fe32521cc980b8b6c2`, sem depender da #337. O harness evoluiu de364 para96c: coletores observam START, corpo completo/hash, recuperação estrita, selo e eventos até o fechamento do browser. O TESTER confirmou nove blobs APP e18 do harness d775 exatos,39 paths no total e nenhum delta em backend, schema487, dependências ou workflows (`23621/cdc305`, saída0). [Parecer da composição](inbox-325-qa/composicao-final.md).
+
+O [índice com sete pareceres integrais](inbox-325-qa/indice.json) preserva a reprovação do primeiro coletor, a correção R2, os gates nominais de APP/harness e a revisão visual final. TESTER inspecionou36 originais em resolução original e verificou ZIP38/hashes/proveniência/probes:24 APP e12 referências estritamente estáticas. L1/74891 continua saída1; suas18 APP foram aceitas individualmente antes da falha PROTO. L2/18441 saída0 produziu as12 referências e seis APP320 restantes. O erro herdado do lifecycle do protótipo mantém limite explícito de comparação estática, sem afirmar autoscroll/foco/seleção funcional da referência.
+
+Seis probes `53179/a656b7`, saída0, verificaram destinos locais reais e ACL; o executor executado tem SHA `fd95c2dd9a825b006bd57e6bcad71f01768b37fcd4bc5243cc8ab5faf4068245`, sem atribuir a versão futura de init. SSE máximo1 por página; marcação automática de leitura e busca de respostas rápidas foram ações incidentais registradas. Nenhum Save, Assumir, Aria, nota, etapa, envio ou API externa. Preview B encerrado e banco ciint restaurado (`ae152c`, saída0,424 hashes/498 linhas originais).
+
+ZIP privado de36 PNG+manifesto+README,38 entradas,3.361.508 bytes, SHA `37f09534f89890984efb6316fe9ccf999593097306b711f301248d28f3b28d69`, inspecionado pelo TESTER e preservado fora do Git. Não foi publicado nem anexado. Sem presumir acesso remoto do revisor às imagens.
+
+ROOT preparou novamente o client487 próprio (`29289/719129`, saída0,67,69s) e Next/typegen/prova `774268`, saída0, hash físico E24658B28818CF2BD124071F3EA41C7682B03581DE9BB27A1EA122388E297200, perfil integracao. Gates finais sobre bf42, todos com terminal saída0: global `86371/3a5714`, **926 arquivos/7.298 testes**,240,28s,maxWorkers2,sem filtro por nome ou skips e configuração unitária excluindo INT; TypeScript `56393/54a572`,heap8192; lint global `61942/79eb4d`,zero erros/40 avisos herdados,teto40. O único delta executável desde6cf é o harness; a integração3/41 anterior continua nominal ao mesmo produto/servidor, sem nova reexecução ou reatribuição. Os gates abaixo mantêm suas fontes históricas.
+
+Publicação, CI remota, comentários e merge ainda pendentes. A issue permanece aberta; o parecer técnico não presume homologação humana.
+
+## Checkpoint anterior sobre main
 
 Composição `6cf10369c3a230338a9fec2dc858a39efd4da759` diretamente da main confirmada `239ed17fde1593f2e96fde53a01851f48ed13f86`. A #325 não depende da #337 e não transporta seu código, schema ou SQL. O único conflito era no quadro: preservada toda a base main e acrescentado somente o bloco325. Prova `321d3f`, saída0: nove blobs do produto iguais a ddf e quinze do harness iguais a364, schema487 OID `1f575691cde242124c1493b8406121e8830a6f7e`. Diff-check contra essa base exata passou; a referência main local antiga não é usada para aferir o diff.
 
@@ -32,7 +46,7 @@ O TESTER validou independentemente o produto exato ddf: UNIT69/726 (`74322/691eb
 
 DEV/harness364: 16 arquivos/115 testes, TSC/lint/sintaxe/CLIhelp com saída0. A matriz220 preserva as190 combinações anteriores e acrescenta30: Pessoa/PJ APP+protótipo original e convidado somenteAPP. PJ tem referência real c2; autorização por convite não tem equivalente funcional no protótipo. Esses gates são do DEV, não reexecutados por este registro.
 
-## Visual e pendências
+## Histórico da preparação visual e pendências daquele checkpoint
 
 O plano original35/15 exigia PaisCL/CLP existente; inspeção READ ONLY confirmou Pais vazio no banco e snapshot. A emenda ROOT explícita, validada pelo PaisSchema real, acrescentou somente um país fictício novo além dos35 registros, 36/16 e total534 mantendo os498 originais. BlueprintRootV2 SHA `b18a21538396e618cc089f11df455a3b260d2313e61acf0e8d77b2ffed20277b`. Aplicador foi lido integralmente: inspect `442fae`, saída0,59 chaves naturais/zero colisões; apply `199807`, saída0, commit confirmado e424 hashes dos originais/sequências intactos. Nenhum país original foi editado. Perfil B ci-integracao487, diferente dos bancos ROOT/TESTER/A, e preview local3111 com transportes externos desativados. Preflight `745b3e`, saída0, confirmou PF/PJ200, convidadoPJ200 com PII contextual autorizada/sem campos restritos ou fichas globais e destinos A200/B404; somente leituras e autenticação fictícia.
 

@@ -1,6 +1,6 @@
 {
   "issue": 325,
-  "composicao": "6cf10369c3a230338a9fec2dc858a39efd4da759",
+  "composicao": "bf42c956d92269cb8c2791fe32521cc980b8b6c2",
   "base": "239ed17fde1593f2e96fde53a01851f48ed13f86",
   "pareceres": [
     {
@@ -22,11 +22,62 @@
       "bytesPublicados": 4753,
       "sha256FisicoOriginal": "a9d9519708f93855de4c53cc3b0de7add5b285b2ab8170b10c71435b9149ba52",
       "sha256GitLF": "a9d9519708f93855de4c53cc3b0de7add5b285b2ab8170b10c71435b9149ba52"
+    },
+    {
+      "origem": "output/inbox-325-d1f51-coletor-estatica-negativa-tester.md",
+      "destino": "coletor-r1-negativo.md",
+      "fonte": "d1f51e74fc96d6f36b195dcbc340089b36b07bf9",
+      "escopo": "Negativo estático: coleta perdia START ainda pendente.",
+      "bytesOriginais": 5663,
+      "bytesPublicados": 5663,
+      "sha256FisicoOriginal": "45de2e8726b0770e1f8c452b5fe3c7a1bdff7cbea65b685b2ef665a8a45288dd",
+      "sha256GitLF": "45de2e8726b0770e1f8c452b5fe3c7a1bdff7cbea65b685b2ef665a8a45288dd"
+    },
+    {
+      "origem": "output/inbox-325-96c-coletor-final-review-tester.md",
+      "destino": "coletor-r2.md",
+      "fonte": "96c9e60752b3c1951922a745cee89045b4597ace",
+      "escopo": "Coletores: UNIT17/150, TSC e lint4; não reexecutados nesta curadoria.",
+      "bytesOriginais": 8220,
+      "bytesPublicados": 8220,
+      "sha256FisicoOriginal": "46368a516b18e4c065485e66ee8ea10d5ca5d4fdf28c5ae72a60e8235ba8d1cb",
+      "sha256GitLF": "46368a516b18e4c065485e66ee8ea10d5ca5d4fdf28c5ae72a60e8235ba8d1cb"
+    },
+    {
+      "origem": "output/inbox-325-proto-74891-limite-estatico-tester.md",
+      "destino": "referencia-limite-estatico.md",
+      "fonte": "96c9e60752b3c1951922a745cee89045b4597ace",
+      "escopo": "Limite herdado do protótipo; referência somente estática.",
+      "bytesOriginais": 4330,
+      "bytesPublicados": 4330,
+      "sha256FisicoOriginal": "dc4d403b3e93a0882834513856fb5b6b0ceab26ded1129512e7f8431ce9f1491",
+      "sha256GitLF": "dc4d403b3e93a0882834513856fb5b6b0ceab26ded1129512e7f8431ce9f1491"
+    },
+    {
+      "origem": "C:/Users/Mendes/.codex/worktrees/inbox-tester/erp-genius/output/inbox-325-d775-final-visual-review-tester.md",
+      "destino": "visual-final.md",
+      "fonte": "d775a140b824e56307d50d95d7bb0ad5284a5f6e",
+      "escopo": "36 imagens originais, ZIP38 e provas brutas inspecionados, sem nova captura ou runtime.",
+      "bytesOriginais": 11158,
+      "bytesPublicados": 11158,
+      "sha256FisicoOriginal": "437ef02a89978aaa33906cf5e260680bcb967c6d110c9ef8c97260d3c847e1c0",
+      "sha256GitLF": "437ef02a89978aaa33906cf5e260680bcb967c6d110c9ef8c97260d3c847e1c0"
+    },
+    {
+      "origem": "C:/Users/Mendes/.codex/worktrees/inbox-tester/erp-genius/output/inbox-325-bf42-composicao-review-tester.md",
+      "destino": "composicao-final.md",
+      "fonte": "bf42c956d92269cb8c2791fe32521cc980b8b6c2",
+      "escopo": "Somente estática:27 blobs exatos e39 paths, sem backend/schema/dependências.",
+      "bytesOriginais": 2684,
+      "bytesPublicados": 2684,
+      "sha256FisicoOriginal": "fe35e023bf10dd13adc9f81bfd39f04dc5d400f39170125ec093490dc161e80e",
+      "sha256GitLF": "fe35e023bf10dd13adc9f81bfd39f04dc5d400f39170125ec093490dc161e80e"
     }
   ],
   "limites": [
-    "Nove paths APP da composição iguais a ddf; isso não presume igualdade da árvore inteira.",
-    "Harness364 e aceite visual ainda aguardam QA própria.",
-    "Os resultados repetidos não são testes distintos; fontes e negativos preservados nos pareceres integrais."
+    "Produto APP idêntico a ddf; harness final idêntico a96c. Identidade de blobs não é nova execução.",
+    "L1/74891 mantém EXIT1; corpus composto de arquivos individualmente aprovados L1 e L2.",
+    "As12 referências PROTO comprovam painel estático; não comprovam seu lifecycle funcional.",
+    "Resultados nominais e negativos preservados nos pareceres; publicação/CI/merge ainda pendentes."
   ]
 }
