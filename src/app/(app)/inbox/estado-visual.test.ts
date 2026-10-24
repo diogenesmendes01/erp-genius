@@ -3,7 +3,7 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { estadoVisualItem, estadoVisualCabecalho, tempoDeEspera, PONTO_TOM, TEXTO_TOM } from "./estado-visual";
 const agora = new Date("2026-10-22T13:00:00.000Z");
 const menos = (min: number) => new Date(agora.getTime() - min * 60_000).toISOString();
-const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
+const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({ estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null,
   id: "a1", numeroId: "n1", numeroRotulo: "Central", finalidade: "COMERCIAL", driver: "SIMULADO",
   contatoId: "c1", contatoNome: "Maria Souza", contatoTelefone: "+5511999990000", optOut: false, vinculo: null,
   naoLidas: 0, ultimaMensagemEm: null, preview: "Oi", linhaComercial: false,

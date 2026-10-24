@@ -1,0 +1,83 @@
+{
+  "issue": 423,
+  "fonteDevQa": "6ba2c192cd265d199e1775d31ba054ef36c866cd",
+  "composicao": "d7e55b065a1ae0c2f04f6ec18602fcabb3ea273d",
+  "base": "7931001311476d4381576b8fdf8bba3d0f8e7bb3",
+  "srcByteiguais": [
+    {
+      "path": "src/server/aria/conhecimento/busca.ts",
+      "bytes": 1221,
+      "sha256GitLF": "a7d2fdc3a354b4fed292915ceedef63ab2f2f8c914f3f273aeb4a8c9f4494029"
+    },
+    {
+      "path": "src/server/aria/conhecimento/busca.int.test.ts",
+      "bytes": 8361,
+      "sha256GitLF": "f7e8d4d55fa7354268ab403334a62c238d0fb29d69d1fceeab9345a57ff6524a"
+    }
+  ],
+  "parecer": {
+    "path": "codigo-6ba2.md",
+    "bytes": 5608,
+    "sha256": "0a24a3db7ec3fd105c8522f60e718aa69cd49bbd5cb9a9b12051a39a53cb3894"
+  },
+  "unitIndependente": {
+    "arquivos": 3,
+    "testes": 16,
+    "executor": "5c04fe/EXIT0"
+  },
+  "integracaoIndependente": {
+    "arquivos": 4,
+    "testes": 38,
+    "sessao": 32391,
+    "terminal": "225ccf",
+    "exit": 0,
+    "segundos": 150.76,
+    "workers": 1,
+    "filtros": 0,
+    "skips": 0
+  },
+  "lintIndependente": {
+    "arquivos": 2,
+    "executor": "e23a2d/EXIT0"
+  },
+  "gatesIntegrador": {
+    "typeScriptOriginal": {
+      "sessao": 79120,
+      "terminal": "3e69a6",
+      "exit": 0,
+      "exclusoesAuxiliares": false,
+      "heapMB": 8192,
+      "incremental": false
+    },
+    "lintGlobal": {
+      "sessao": 64067,
+      "terminal": "b6d9c7",
+      "exit": 0,
+      "erros": 0,
+      "avisos": 40
+    }
+  },
+  "restauros": {
+    "dev": {
+      "executor": "9de0f0/EXIT0",
+      "tabelas": 424,
+      "registros": 502,
+      "snapshotSha256": "8d5eaa17a42aa8c2579943a4650c2d56dea33e09d73d29b858a0007041d03f94"
+    },
+    "tester": {
+      "executor": "22ca79/EXIT0",
+      "tabelas": 424,
+      "registros": 1392,
+      "mensagens": 9,
+      "notas": 4,
+      "snapshotSha256": "f1d15dff3df9ddfab63b8c2e238c0e3d89122c47471d27c8724e20ffd7c291c5"
+    }
+  },
+  "limites": [
+    "Recortes não são regressão global e não são somados entre DEV/TESTER.",
+    "UNIT global DEV dispensado; CI original da publicação ainda pendente. Não houve novo global ou INT local ROOT.",
+    "Operador estrito > preservado; exemplos reais são ±1segundo/null em trêsTZ, não igualdade exata de microssegundos.",
+    "Orçamento fora do escopo. Visual N/A à expressão SQL.",
+    "Issue423 adicional às81originais. Não encerrar antes da CI e revisão final."
+  ]
+}
