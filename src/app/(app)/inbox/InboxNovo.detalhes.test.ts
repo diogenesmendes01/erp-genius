@@ -4,8 +4,10 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Elemento } from "@/test/dom-minimo";
 import type { PropsInboxNovo } from "./InboxNovo";
+import type { AvisoInbox } from "@/server/inbox/barramento";
+const avisos = vi.hoisted(() => ({ atual: null as ((a: AvisoInbox) => void) | null }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => null, useRouter: () => ({ push() {}, replace() {} }), usePathname: () => "/inbox" }));
-vi.mock("./useEventosInbox", () => ({ useEventosInbox: () => ({ conectado: true }) }));
+vi.mock("./useEventosInbox", () => ({ useEventosInbox: (aoAviso: (a: AvisoInbox) => void) => { avisos.atual = aoAviso; return { conectado: true }; } }));
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: () => ({ mensagens: [] }) }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: async () => ({ ok: true }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn(), enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn() }));
@@ -24,6 +26,7 @@ const ouvintes: { alvo: object; tipo: string; f: (e: Event) => void; captura: bo
 function eventos(alvo: object) { return { addEventListener(tipo: string, f: (e: Event) => void, captura = false) { ouvintes.push({ alvo, tipo, f, captura }); }, removeEventListener(tipo: string, f: (e: Event) => void) { const i = ouvintes.findIndex(o => o.alvo === alvo && o.tipo === tipo && o.f === f); if (i >= 0) ouvintes.splice(i, 1); } }; }
 const render = (p = props) => act(async () => { root.render(createElement(InboxNovo, p)); });
 beforeEach(async () => {
+  avisos.atual = null;
   const dom = criarDomMinimo(); ouvintes.length = 0; Object.assign(dom.janela, eventos(dom.janela), { innerWidth: 1440, matchMedia: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }) });
   Object.assign(dom.documento, eventos(dom.documento), { visibilityState: "visible", querySelector: (s: string) => dom.documento.body.querySelector(s) });
   vi.stubGlobal("window", dom.janela); vi.stubGlobal("document", dom.documento); vi.stubGlobal("MutationObserver", dom.MutationObserver); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -45,6 +48,25 @@ it("comercial consome DTO uma vez, apresenta cabeçalho B2B e somente o destino 
 it("fora do comercial não adquire DTO comercial nem revela dados B2B", async () => {
   const outro = { ...props, inicial: { itens: [{ ...item, finalidade: "PEDAGOGICO", contatoTelefone: null }], proximo: null } } as unknown as PropsInboxNovo;
   await render(outro); expect(pedidos.filter(u => u.endsWith("/painel/detalhes"))).toHaveLength(0); expect(host.textContent).not.toContain("ana@teste.local"); expect(host.textContent).not.toContain("Falando com Ana");
+});
+it("comercial sem Pessoa preserva telefone já autorizado sem inventar perfil", async () => {
+  responderDetalhes = async () => new Response(JSON.stringify({ pessoa: null, oportunidade: null, b2b: null, campos: [] }));
+  await render(); expect(host.textContent).toContain(item.contatoTelefone); expect(host.textContent).toContain("WhatsApp"); expect(host.textContent).not.toContain("ana@teste.local");
+});
+it("sem Pessoa não fabrica telefone quando o item autorizado não contém um", async () => {
+  responderDetalhes = async () => new Response(JSON.stringify({ pessoa: null, oportunidade: null, b2b: null, campos: [] }));
+  const semTelefone = { ...props, inicial: { itens: [{ ...item, contatoTelefone: null }], proximo: null } } as unknown as PropsInboxNovo;
+  await render(semTelefone); expect(host.textContent).not.toContain(item.contatoTelefone); expect(host.textContent).not.toContain("WhatsApp");
+});
+it("aviso SSE mantém o link focado durante recarga pendente e após500", async () => {
+  await render(); const link = host.querySelectorAll("a").find(e => e.getAttribute("href") === "/inbox?c=autorizada")!; link.focus();
+  let concluir!: (r: Response) => void;
+  responderDetalhes = () => new Promise(resolve => { concluir = resolve; });
+  await act(async () => avisos.atual?.({ tipo: "atendimento.atualizado", atendimentoId: "a1", mensagemId: null, conversaId: "c1" }));
+  expect(pedidos.filter(u => u.endsWith("/painel/detalhes"))).toHaveLength(2);
+  expect(host.textContent).toContain("ana@teste.local"); expect(host.querySelectorAll("a")).toContain(link); expect(document.activeElement).toBe(link);
+  await act(async () => concluir(new Response("indisponível", { status: 500 })));
+  expect(host.textContent).toContain("ana@teste.local"); expect(host.textContent).not.toContain("Não foi possível carregar os detalhes."); expect(host.querySelectorAll("a")).toContain(link); expect(document.activeElement).toBe(link);
 });
 it("falha de Detalhes oferece retry real e não aparece como ausência legítima", async () => {
   responderDetalhes = async () => new Response("privado", { status: 500 }); await render();

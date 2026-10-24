@@ -426,7 +426,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const secaoDetalhes = "-mx-[18px] px-[18px] empty:hidden [&>section]:border-t-0 [&>section]:p-0";
   const painel = atual ? (
     <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">
-      {!detalhesComerciais && atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
+      {(!detalhesComerciais || detalhesDoContato.dado?.pessoa === null) && atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
       <div className={secaoDetalhes}>{painelSetor?.id === atual.id && painelSetor.dado
         ? detalhesComerciais
           ? detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
