@@ -11,6 +11,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { listarNotificacoes } from "@/server/crm/notificacoes";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { capacidadesCrm } from "@/server/crm/permissoes";
 import { SinoNotificacoes } from "../tarefas/SinoNotificacoes";
 
 // Inbox novo (Fase 3): lista paginada por cursor + conversa + painel; tempo real por SSE (sem polling).
@@ -64,7 +65,7 @@ export default async function InboxPage({
   const agoraInicial = Date.now();
   return (
     <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
-      <InboxNovo agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
+      <InboxNovo podeAbrirFunil={capacidadesCrm(usuario.papeis).has("funil.ver")} agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
         destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
         triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens}
         opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />

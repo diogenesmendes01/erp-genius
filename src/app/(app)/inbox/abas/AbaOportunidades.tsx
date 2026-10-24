@@ -1,0 +1,54 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import type { EtapaLead } from "@prisma/client";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { formatarMoedaOuIndefinida } from "@/lib/dinheiro";
+import { TEMPERATURA_LABEL } from "@/lib/labels";
+import type { DestinoArraste } from "@/server/crm/etapas";
+import { moverEtapaNoInbox } from "@/server/inbox/acoes-painel";
+import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
+import type { CapacidadesPainel } from "@/server/inbox/permissoes";
+import { BarraEtapas } from "./BarraEtapas";
+
+type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; aoMudar(): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean };
+/** Mudança de thread/oportunidade encerra a sessão de ação, sem ACK antigo reconciliar outra. */
+export function AbaOportunidades(props: Props) {
+  return <OportunidadeDoAtendimento key={JSON.stringify([props.atendimentoId, props.dados.atual?.id ?? null])} {...props} />;
+}
+function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, aoMudar, aoAbrirPerda, podeAbrirFunil = false }: Props) {
+  const acao = useAcaoCliente({ idempotente: true }), vivo = useRef(false);
+  const [erroLocal, setErroLocal] = useState<string | null>(null), [fluxo, setFluxo] = useState<string | null>(null);
+  useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);
+  const o = dados.atual;
+  if (!o) return <p className="text-sm text-gray-600">Sem oportunidade visível para você.</p>;
+  async function mover(etapa: EtapaLead) {
+    const r = await acao.executar(() => moverEtapaNoInbox(atendimentoId, etapa, o!.id));
+    if (r?.tipo === "ok" && vivo.current) aoMudar();
+  }
+  function escolher(etapa: EtapaLead, destino: DestinoArraste) {
+    if (!capacidades.moverEtapa || acao.ocupado) return;
+    acao.limpar(); setErroLocal(null); setFluxo(null);
+    if (destino.tipo === "nenhum") return;
+    if (destino.tipo === "recusar") { setErroLocal(destino.motivo); return; }
+    if (destino.tipo === "acao") {
+      if (destino.acao === "marcarPerdido") { aoAbrirPerda(); return; }
+      const rotulos = { agendarExperimental: "agendar a experimental", enviarProposta: "enviar a proposta", prepararContratacao: "preparar a contratação" };
+      setFluxo("Para " + rotulos[destino.acao] + ", abra a oportunidade no funil."); return;
+    }
+    void mover(etapa);
+  }
+  return <div className="min-w-0 space-y-4">
+    <header className="min-w-0 space-y-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs"><h3 className="font-medium text-brand-700">Oportunidade atual</h3><span className="text-gray-500">Funil Matrículas</span></div>
+      <p className="text-[15px] font-semibold [overflow-wrap:anywhere]">{o.produto ?? o.titulo}</p>
+      <p className="text-[17px] font-semibold">{o.valor === null ? "Sem valor" : formatarMoedaOuIndefinida(o.valor, o.moeda)}</p>
+    </header>
+    <BarraEtapas etapa={o.etapa} podeMover={capacidades.moverEtapa} ocupado={acao.ocupado} aoEscolher={escolher} />
+    <FeedbackAcao erro={erroLocal ?? acao.erro} />
+    {fluxo && <div role="status" className="space-y-1 text-sm text-gray-600"><p>{fluxo}</p>{podeAbrirFunil && <a href={"/funil?o=" + encodeURIComponent(o.id)} className="inline-flex min-h-11 items-center text-brand-700 underline">Abrir no funil</a>}</div>}
+    <dl className="space-y-2 text-[13px]">
+      {([['Responsável', o.responsavel?.nome ?? 'Sem responsável'], ['Temperatura', TEMPERATURA_LABEL[o.temperatura]], ['Produto', o.produto ?? '—']] as const).map(([rotulo, valor]) => <div key={rotulo} className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] gap-2"><dt className="text-gray-600">{rotulo}</dt><dd className="min-w-0 [overflow-wrap:anywhere]">{valor}</dd></div>)}
+    </dl>
+  </div>;
+}

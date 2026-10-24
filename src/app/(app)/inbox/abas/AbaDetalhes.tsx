@@ -3,6 +3,7 @@ import { formatarMoedaOuIndefinida } from "@/lib/dinheiro";
 import { ETAPA_LABEL, ORIGEM_CANAL_LABEL } from "@/lib/labels";
 import type { CampoPainel, DetalhesPainel } from "@/server/inbox/painel-detalhes";
 import type { CapacidadesPainel } from "@/server/inbox/permissoes";
+import { Botao } from "@/components/Botao";
 import { LinhaCampo } from "../LinhaCampo";
 import { BlocoB2B } from "./BlocoB2B";
 
@@ -15,7 +16,7 @@ function valorDoCampo(campo: CampoPainel): string {
 }
 
 /** Apresentação do DTO contextual autorizado; nenhuma leitura ou autorização no navegador. */
-export function AbaDetalhes({ dados, capacidades }: { dados: DetalhesPainel; capacidades: Pick<CapacidadesPainel, "verContato" | "verEmpresa"> }) {
+export function AbaDetalhes({ dados, capacidades, aoAbrirOportunidades }: { dados: DetalhesPainel; capacidades: Pick<CapacidadesPainel, "verContato" | "verEmpresa">; aoAbrirOportunidades?(): void }) {
   const { pessoa, oportunidade, b2b, campos } = dados;
   const empresa = pessoa?.empresa;
   const resumo = oportunidade && <>
@@ -28,7 +29,7 @@ export function AbaDetalhes({ dados, capacidades }: { dados: DetalhesPainel; cap
   </>;
   const classeCartao = "flex min-h-11 w-full min-w-0 items-center gap-2.5 rounded-[10px] border border-gray-200 bg-surface-muted p-3 text-left hover:border-brand-solid";
   return <div className="flex min-w-0 flex-col gap-5">
-    {oportunidade ? <a href={`/funil?o=${encodeURIComponent(oportunidade.id)}`} className={classeCartao}>{resumo}</a> : <p className="text-sm text-gray-600">Sem oportunidade visível para você.</p>}
+    {oportunidade ? aoAbrirOportunidades ? <Botao variante="neutro" tamanho="md" aria-label="Abrir oportunidade atual" onClick={aoAbrirOportunidades} className={classeCartao}>{resumo}</Botao> : <a href={`/funil?o=${encodeURIComponent(oportunidade.id)}`} className={classeCartao}>{resumo}</a> : <p className="text-sm text-gray-600">Sem oportunidade visível para você.</p>}
     {!pessoa ? oportunidade && <p className="text-sm text-gray-600">Sem dados de contato para esta oportunidade.</p> : <>
       {b2b && <BlocoB2B bloco={b2b} verEmpresa={capacidades.verEmpresa} />}
       <section aria-label="Contato">

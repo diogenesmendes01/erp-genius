@@ -43,7 +43,7 @@ it("comercial consome DTO uma vez, apresenta cabeçalho B2B e somente o destino 
   expect(host.querySelectorAll('a').map(e => e.getAttribute("href"))).not.toContain("/contatos?c=p1");
   expect(pedidos.filter(u => u.endsWith("/painel/detalhes"))).toHaveLength(1);
   expect(host.querySelector('[data-cabecalho-contato]')?.textContent).toContain("Grupo Ventura");
-  expect(host.querySelectorAll('[role="tab"]').map(e => e.textContent)).toEqual(["Detalhes"]);
+  expect(host.querySelectorAll('[role="tab"]').map(e => e.textContent)).toEqual(["Detalhes", "Oportunidades"]);
 });
 it("fora do comercial não adquire DTO comercial nem revela dados B2B", async () => {
   const outro = { ...props, inicial: { itens: [{ ...item, finalidade: "PEDAGOGICO", contatoTelefone: null }], proximo: null } } as unknown as PropsInboxNovo;

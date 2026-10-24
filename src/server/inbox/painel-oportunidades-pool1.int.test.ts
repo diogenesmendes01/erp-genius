@@ -1,0 +1,10 @@
+import {afterAll,beforeEach,expect,it,vi} from "vitest";
+vi.hoisted(()=>{const url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");url.searchParams.set("pool_timeout","3");process.env.DATABASE_URL=url.toString();(globalThis as{prisma?:unknown}).prisma=undefined;});
+const {authMock}=vi.hoisted(()=>({authMock:vi.fn()}));vi.mock("@/lib/auth",()=>({auth:()=>authMock()}));vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+import {prisma} from "@/lib/prisma";
+import {truncarBanco} from "@/test/integracao";
+import {cenarioPerda328} from "@/test/inbox-perda";
+import {carregarOportunidadesPainel} from "./painel-oportunidades";
+import {moverEtapaNoInbox} from "./acoes-painel";
+beforeEach(truncarBanco);afterAll(()=>prisma.$disconnect());
+it("pool1: leitura fornecida e movimento/CAS/ator/escopo/aviso usam só a conexão atual",async()=>{const c=await cenarioPerda328();authMock.mockResolvedValue({user:{id:c.dono.id}});const lido=await prisma.$transaction(tx=>carregarOportunidadesPainel(c.dono,c.a.id,tx));expect(lido?.atual?.id).toBe(c.op.id);expect(await moverEtapaNoInbox(c.a.id,"EM_ATENDIMENTO",c.op.id)).toEqual({ok:true});expect(await moverEtapaNoInbox(c.a.id,"EM_ATENDIMENTO",c.op.id)).toEqual({ok:true});expect(await prisma.evento.count()).toBe(1);expect((await carregarOportunidadesPainel(c.dono,c.a.id))?.atual?.etapa).toBe("EM_ATENDIMENTO");});
