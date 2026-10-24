@@ -208,7 +208,7 @@ function FichaCorpo({
           {d.optOut && <p className="mt-1 text-sm text-red-700">Opt-out registrado: não recebe mensagens.</p>}
         </div>
         {podeCriarOportunidade && (
-          <Botao tamanho="md" className="col-span-2" onClick={() => setNovaOportunidade(true)}>Nova oportunidade</Botao>
+          <Botao tamanho="md" className="col-span-full" onClick={() => setNovaOportunidade(true)}>Nova oportunidade</Botao>
         )}
       </header>
 

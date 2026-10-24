@@ -17,7 +17,7 @@ async function contexto(dono: U) {
   const pessoa = await prisma.pessoa.create({ data: { nome: "Pessoa fictícia 336" } });
   const lead = await prisma.oportunidade.create({ data: { nome: "Oportunidade fictícia 336", vendedorDonoId: dono.id, pessoaId: pessoa.id } });
   const n = ++seq;
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+55000336" + n, rotulo: "Linha fictícia", driver: "BAILEYS", sessao: "DESCONECTADO", finalidade: "COBRANCA" } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+55000336" + n, rotulo: "Linha fictícia", driver: "MOTOR", sessao: "DESCONECTADO", finalidade: "COBRANCA" } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+55001336" + n, pessoaId: pessoa.id } });
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
   return { pessoa, lead, numero, contato, conversa };
