@@ -6846,3 +6846,7 @@ PR420 continua em rascunho/Refs326. Pendente a autorização/publicação do ZIP
 ## Inbox327/328 — fundacao minima portada R2, gates pendentes — 24/10/2026
 
 Base74d4=PR420179b+Main170edbad;DEV A portou somente nucleoPerdaTx/propModal/wrapperCAS/helpercontexto e testes existentes da fundacao minima328. APIsFunil,corpos326 e contratosMain preservados. Sem328UI/CartaoExperimental/Assumir e sem homologacao. Gates487 anteriores nominais;fonteR2 aguarda freeze+UNIT/TSC e GOINT especifico ROOT A491. Nenhum DB/teste/preview iniciado neste checkpoint;AGENTSgerado fora do commit.
+
+## Inbox327 — produto composto R2, antes dos gates — 24/10/2026
+
+Consulta/movimento/UI327 portados por hunks sobre74d4,OR420(abaDetalhesOUeditor) e4defaultsMain343 preservados. Somente paths autorizados,acoes326 preservadas e caminhosMain337/342/343/423 nao selecionados intactos;fundacao328checkpoint ca208d9c parcial. SPEC327historica mantem corpus18/qualificacoes;nao reatribui captura/gates487 ao novoMain. GatesR2 UNIT/TSC aguardamfreeze,INTaguardaGOespecificoROOTA491. SemnovaUI/DB.

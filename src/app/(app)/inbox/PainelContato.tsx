@@ -14,7 +14,7 @@ const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutE
 export type IdAbaPainel = "detalhes" | "oportunidades" | "insights" | "atividade";
 export type ContatoPainel = { id: string; nome: string; subtitulo: string; tags: readonly TagPainel[]; quadrado?: boolean };
 export type AbaPainel = { id: IdAbaPainel; rotulo: string; contagem?: number };
-export const ABAS_ENTREGUES: readonly IdAbaPainel[] = Object.freeze(["detalhes"]);
+export const ABAS_ENTREGUES: readonly IdAbaPainel[] = Object.freeze(["detalhes", "oportunidades"]);
 const ROTULOS: Record<IdAbaPainel, string> = { detalhes: "Detalhes", oportunidades: "Oportunidades", insights: "Insights", atividade: "Atividade" };
 const COMERCIAIS: readonly IdAbaPainel[] = ["oportunidades", "insights"];
 export function abasDoPainel(finalidade: string): AbaPainel[] {

@@ -1,6 +1,7 @@
+import { elementos } from "@/test/tela-sem-dom";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import type { DetalhesPainel } from "@/server/inbox/painel-detalhes";
 import type { CapacidadesPainel } from "@/server/inbox/permissoes";
 import { AbaDetalhes } from "./AbaDetalhes";
@@ -64,3 +65,5 @@ it("empresa e perfil B2B preservam o nome PJ e dados distintos da Pessoa", () =>
 it("dados são escapados e links de conversa vêm somente do contrato autorizado", () => {
   expect(html({ pessoa: { ...dados.pessoa!, email: '<img src=x onerror="x">' } })).not.toContain("<img");
 });
+
+it("com destino interno o cartão abre Oportunidades sem link global Funil",()=>{const abrir=vi.fn();const props={dados,capacidades,aoAbrirOportunidades:abrir};const arvore=AbaDetalhes(props);const card=elementos(arvore).find(n=>n.props['aria-label']==='Abrir oportunidade atual');expect(card).toBeDefined();(card!.props.onClick as()=>void)();expect(abrir).toHaveBeenCalledOnce();expect(renderToStaticMarkup(createElement(AbaDetalhes,props))).not.toContain('href="/funil?');});

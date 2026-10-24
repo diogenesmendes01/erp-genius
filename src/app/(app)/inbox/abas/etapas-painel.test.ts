@@ -1,0 +1,14 @@
+import {expect,it} from "vitest";
+import {opcoesEtapa,segmentosEtapa} from "./etapas-painel";
+it("QUALIFICADO conserva ações reais, mesma etapa e recusas do Funil",()=>{const op=Object.fromEntries(opcoesEtapa("QUALIFICADO").map(x=>[x.etapa,x.destino]));expect(op).toEqual({NOVO:{tipo:"recusar",motivo:"Avance uma etapa por vez."},EM_ATENDIMENTO:{tipo:"mover"},QUALIFICADO:{tipo:"nenhum"},EXPERIMENTAL_AGENDADA:{tipo:"acao",acao:"agendarExperimental"},EXPERIMENTAL_REALIZADA:{tipo:"recusar",motivo:"Esta etapa é registrada pelo check-in do professor."},NO_SHOW:{tipo:"recusar",motivo:"Esta etapa é registrada pelo check-in do professor."},PROPOSTA:{tipo:"acao",acao:"enviarProposta"},AGUARDANDO_MATRICULA:{tipo:"acao",acao:"prepararContratacao"},MATRICULADO:{tipo:"acao",acao:"prepararContratacao"},PERDIDO:{tipo:"acao",acao:"marcarPerdido"}});});
+it.each(["MATRICULADO","PERDIDO"] as const)("%s encerrada só aceita nenhum na própria etapa",atual=>{for(const o of opcoesEtapa(atual))expect(o.destino).toEqual(o.etapa===atual?{tipo:"nenhum"}:{tipo:"recusar",motivo:"Oportunidade encerrada não volta ao funil."});});
+it("barra PROPOSTA pinta passos até a atual e conserva a ordem comercial de8segmentos",()=>{expect(segmentosEtapa("PROPOSTA")).toEqual([{etapa:"NOVO",estado:"feita",tom:"marca"},{etapa:"EM_ATENDIMENTO",estado:"feita",tom:"marca"},{etapa:"QUALIFICADO",estado:"feita",tom:"marca"},{etapa:"EXPERIMENTAL_AGENDADA",estado:"feita",tom:"marca"},{etapa:"EXPERIMENTAL_REALIZADA",estado:"feita",tom:"marca"},{etapa:"PROPOSTA",estado:"atual",tom:"marca"},{etapa:"AGUARDANDO_MATRICULA",estado:"futura",tom:"marca"},{etapa:"MATRICULADO",estado:"futura",tom:"marca"}]);});
+it("NO_SHOW destaca realizada em perigo sem criar segmento extra",()=>{const s=segmentosEtapa("NO_SHOW");expect(s).toHaveLength(8);expect(s[4]).toEqual({etapa:"EXPERIMENTAL_REALIZADA",estado:"atual",tom:"perigo"});expect(s.slice(0,4).every(x=>x.estado==="feita")).toBe(true);expect(s.slice(5).every(x=>x.estado==="futura")).toBe(true);});
+it("PERDIDO limpa progresso e tom em todos os passos",()=>{expect(segmentosEtapa("PERDIDO").map(x=>[x.estado,x.tom])).toEqual(Array(8).fill(["futura","neutro"]));});
+it("opções apresentam10rótulos humanos sem substituir por IDs",()=>{const op=opcoesEtapa("NOVO");expect(op).toHaveLength(10);expect(op.find(x=>x.etapa==="EM_ATENDIMENTO")?.rotulo).toBe("1º Contato");expect(op.find(x=>x.etapa==="PERDIDO")?.rotulo).toBe("Perdido");});
+it('todos os estados comerciais usam somente os tres tokens tecnicos de tom',()=>{
+  const etapas=['NOVO','EM_ATENDIMENTO','QUALIFICADO','EXPERIMENTAL_AGENDADA','EXPERIMENTAL_REALIZADA','NO_SHOW','PROPOSTA','AGUARDANDO_MATRICULA','MATRICULADO','PERDIDO'] as const;
+  const tons=etapas.flatMap(etapa=>segmentosEtapa(etapa).map(s=>s.tom));
+  expect(new Set(tons)).toEqual(new Set(['marca','perigo','neutro']));
+  expect(tons).toHaveLength(80);
+});

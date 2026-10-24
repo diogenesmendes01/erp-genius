@@ -1822,6 +1822,7 @@ const semPai = (n: ts.Node): ts.Node => { let p = n.parent; while (p && ts.isPar
 
 /** Mapas que ficam na tela: frases do fluxo (próximo passo, confirmação, dica), não o nome do valor. */
 const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
+  { arquivo: "src/app/(app)/inbox/abas/etapas-painel.ts", nome: "ternário atual", motivo: "token CSS tipado marca/perigo/neutro no span aria-hidden; rótulos humanos permanecem ETAPA_LABEL" },
   { arquivo: "src/app/(app)/academico/MudancasAcademicasPainel.tsx", nome: "nomesStatus", motivo: "fila pedagógica: o texto diz o próximo passo (\"Aprovada · aguardando execução\")" },
   { arquivo: "src/app/(app)/academico/equivalencias/page.tsx", nome: "nomesEstado", motivo: "frases do fluxo de equivalência (\"Autorizada para execução\", \"Transferência efetivada\")" },
   { arquivo: "src/app/(app)/alunos/[id]/movimentacoes/MovimentacoesPainel.tsx", nome: "status", motivo: "fila de pausa/retomada: o texto diz o próximo passo (\"Aprovada; aplicação pendente\")" },

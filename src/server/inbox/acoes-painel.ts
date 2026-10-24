@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { EtapaLead } from "@prisma/client";
+import { moverEtapaTx } from "@/server/crm/mover-etapa";
 import { revalidatePath } from "next/cache";
 import { PerdaSchema, type PerdaInput } from "@/server/comercial/schema";
 import { marcarPerdidoTx } from "@/server/crm/marcar-perdido";
@@ -110,6 +112,20 @@ export async function marcarPerdidoNoInbox(atendimentoId:string,input:PerdaInput
       const mudou=await marcarPerdidoTx(tx,autor,leadId,dados);
       if(atual.etapa==="PERDIDO"&&mudou)throw new ErroRegra("Oportunidade encerrada não volta ao funil.");
       if(mudou)await avisarAtendimento(tx,id);
+    }));
+    revalidatePath("/funil");
+  });
+}
+
+/** Movimento manual pelo contexto autorizado; oportunidadeIdEsperada nunca escolhe o alvo. */
+export async function moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead, oportunidadeIdEsperada: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const sessao = await exigirSessao(), id = Id.parse(atendimentoId), esperada = Id.parse(oportunidadeIdEsperada);
+    const destino = z.nativeEnum(EtapaLead).parse(etapa);
+    await prisma.$transaction(tx => comOportunidadeDoInboxTx(tx, sessao, id, esperada, async (autor, leadId) => {
+      const antes = await tx.oportunidade.findUniqueOrThrow({ where: { id: leadId }, select: { etapa: true } });
+      await moverEtapaTx(tx, autor, leadId, destino);
+      if (antes.etapa !== destino) await avisarAtendimento(tx, id);
     }));
     revalidatePath("/funil");
   });

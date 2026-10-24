@@ -704,11 +704,11 @@ describe("composição318: Detalhes do contato selecionado", () => {
   const painel = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!;
   it("liga identidade/tags autorizadas e mantém a ordem dos blocos e a aprovação Aria", async () => {
     const tags = [{ id: "noite", rotulo: "Noite", ia: true }];
-    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, cabecalho: { subtitulo: "Pessoa física · Inglês", quadrado: false }, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
+    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, cabecalho: { pessoaId: null, tagsDisponiveis: [], semNome: false, subtitulo: "Pessoa física · Inglês", quadrado: false, capacidades: { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false } }, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
     const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
     tela(p); await esvaziar(); const t = tela(p), no = painel(t);
     expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Pessoa física · Inglês", tags, quadrado: false });
-    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }]); expect(no.props.abaAtiva).toBe("detalhes");
+    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }, { id: "oportunidades", rotulo: "Oportunidades" }]); expect(no.props.abaAtiva).toBe("detalhes");
     const blocos = elementos(no.props.children as ReactNode).filter(n => [AbaDetalhes, PainelAria, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
     expect(blocos.map(n => n.type)).toEqual([AbaDetalhes, PainelAria, AcoesContato, OptOutContato, PainelTriagem]);
     expect(blocos[0].props.dados).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
@@ -995,10 +995,9 @@ it("composição324: 404 preserva leitura do snapshot no mesmoID e retira escrit
 const cabecalho326 = (extra: object = {}) => ({ pessoaId: "p326", tagsDisponiveis: [], semNome: false, capacidades: { editarContato: true, editarTags: false, criarTag: false, verContato: true }, ...extra });
 const editor326 = (t: ReactNode) => elementos(t).find(n => n.type === GavetaContato);
 const painel326 = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!.props as { aoEditar?: () => void };
-it("325+326: lápis reutiliza aquisição/DTO de Detalhes, fecha na troca e não reabre ao voltar", async()=>{
+it("326: lápis autorizado ativa uma aquisição de Detalhes, fecha na troca e não reabre ao voltar", async()=>{
  respostaPainel=()=>new Response(JSON.stringify({podeEnviar:true,acoes:{},cabecalho:cabecalho326()}),{status:200});tela();await esvaziar();expect(editor326(tela())).toBeUndefined();expect(painel326(tela()).aoEditar).toEqual(expect.any(Function));
- expect(vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith("/painel/detalhes"))).toHaveLength(1);const detalheAnterior=elementos(tela()).find(n=>n.type===AbaDetalhes)!.props.dados;
- painel326(tela()).aoEditar!();tela();await esvaziar();expect(editor326(tela())?.props.atendimentoId).toBe("a1");expect(editor326(tela())?.props.dados).toBe(detalheAnterior);expect(elementos(tela()).find(n=>n.type===AbaDetalhes)!.props.dados).toBe(detalheAnterior);const gets=vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith("/painel/detalhes"));expect(gets).toHaveLength(1);
+ painel326(tela()).aoEditar!();tela();await esvaziar();expect(editor326(tela())?.props.atendimentoId).toBe("a1");const gets=vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith("/painel/detalhes"));expect(gets).toHaveLength(1);
  lista(tela()).aoSelecionar("a2");tela();await esvaziar();expect(editor326(tela())).toBeUndefined();lista(tela()).aoSelecionar("a1");tela();await esvaziar();expect(editor326(tela())).toBeUndefined();
 });
 it.each(["sem pessoa","sem capacidade","sem ações"])("326: contexto %s não oferece nem mantém editor",async caso=>{
