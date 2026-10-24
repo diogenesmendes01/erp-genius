@@ -48,15 +48,16 @@ export async function registrarChamadaIA(
   });
 }
 
-export async function estadoOrcamento(agora: Date = new Date()): Promise<{
+export async function estadoOrcamento(agora: Date = new Date(), tx?: Prisma.TransactionClient): Promise<{
   situacao: "OK" | "ALERTA" | "ESTOURADO";
   gastoUsd: number;
   limiteUsd: number;
   acao: AcaoOrcamentoIA;
 }> {
-  const config = await prisma.configIA.upsert({ where: { id: "ia" }, create: { id: "ia" }, update: {} });
+  const db = tx ?? prisma;
+  const config = await db.configIA.upsert({ where: { id: "ia" }, create: { id: "ia" }, update: {} });
   const inicioMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1));
-  const soma = await prisma.chamadaIA.aggregate({
+  const soma = await db.chamadaIA.aggregate({
     _sum: { custoMicroUsd: true },
     where: { criadoEm: { gte: inicioMes, lte: agora } },
   });

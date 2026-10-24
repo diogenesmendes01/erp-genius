@@ -6762,3 +6762,11 @@ Nova CI rápida e Integração completa devem rodar no novo SHA publicado. O run
 A dependência #419 foi mergeada em 60a74096 após CI rápida 5/5 e Integração completa 4/4 (347 arquivos/3.059 testes aprovados; quatro preparadores visuais opt-in ignorados). A composição local da #416 é 41a7e4d9: três conflitos documentais resolvidos, registros preservados e código executável integralmente igual a faa8b2c8, inclusive schema 490, SQL, dependências e workflows.
 
 A Integração completa da #416 em faa8 concluiu 4/4: 349 arquivos/3.086 testes aprovados, três arquivos/quatro preparadores visuais opt-in ignorados. CI rápida anterior 5/5. [Registro e limites](../../output/inbox-337-qa/integracao-remota-faa8.json) e [composição detalhada](../../output/inbox-337-composicao-final.md). Nova CI rápida no SHA final, inspeção independente e comentários finais continuam obrigatórios. Sem nova nota manual ou imagem. A #337 continua aberta; originais: 30 fechadas/51 abertas. A #418 adicional não incrementa essa contagem.
+
+## Inbox #342 — produtor EstadoAria DEV, 24/10/2026
+
+Base origin/main cf29; regra pura e filtros equivalentes, handoff/sugestões em lote, mesmo Db/tx e adaptação opcional de estadoOrcamento. Sem consumidores, ACL/envio, schema/deps ou harness. Migração reservada20261024213000/SQLdc3a00d7 aplicada somente ROOT9131f5; índice válido, histórico491/client490.
+
+Global52501/3ffd9f:937/7425 UNIT,271,84s,EXIT0. INT34211879/a17723 completo18/18/70,48s EXIT0; uso.int completo10/10 nominal nas execuções anteriores, sem alegar um comando final28. TSCaux62768/43cf58 e lint5/353527 EXIT0. TSC original continua negativo por dois privados históricos; auxiliar aprovada exclui exatamente esses dois, todosSRC/testes atuais incluídos. RED temporalDate/timestamptz demonstrado e corrigido com ISO UTC parametrizado/cast timestamp(3), T−1/T/T+1 emUTC/SãoPaulo/Tokyo. Negativos de grupo e fixture financeira separados do produto.
+
+Banco liberado para restauro ROOT491; sem nova operação DEV. SPEC docs/specs/inbox-estado-aria.md e relatório output/inbox-342-report.md. Visual N/A, produtor interno. QA independente, composição, CI, revisão/publicação pendentes; não concluir a issue. Próxima343 apenas plano, respeitando dependência342, decisões D1–D3 e limite de duas implementações.
