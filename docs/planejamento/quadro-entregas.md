@@ -6670,3 +6670,9 @@ Branch documental codex/pr416-r1-docs desde419b694f, sem mudanças de código/sc
 
 ### Inbox #337 — revisão R1 C2, 24/10/2026
 Callback estável por atendimento, debounce200 e cancelamento AbortSignal da busca de menções. RED cf09e8 (cinco falhas causais/15 passes), GREEN b36c41 (2 completos/20); recorte63674/f8ea4a (26/376), TSC77234/07b3ba e lint4 f52547, todos saída0. Sem nova nota UI. C3/C4, regressão global final, TESTER e CI do head final ainda pendentes; issue e PR416 não concluídas. Evidências em output/inbox-337-composicao-final.md.
+
+## PR416 R1 — C3/C4 servidor de menções/sino — 24/10/2026
+
+DEV A desde 419b694f, branch codex/pr416-r1-server. ACL em fases por ocorrência, todos os homônimos por grupo e cache local por ID na mesma tx, com extrator original intacto. Sentinel201 anterior aos grupos, tokens por ID sem filtro de texto, feedback/rollback preservados. Ganho real dirigido SQL200→ACL1 para nome completo visível; @Ana/fallback pode exigir 200 e união com tokens 250, sem lote/constância prometidos. Sino calcula escopo apenas se lote tiver menção com referência correta, memo por chamada; keyset/SLA/lembretes intactos.
+
+RED e307ec/cinco esperadas e d95366/200 versus 1 preservados; falha intermediária de ancoragem 37d069 documentada. INT48589/d80d91 EXIT0: seis arquivos completos/53 testes, 224,58 s/maxWorkers1/config integration/dev-gravacoes490, sem filtros/skips. Depois somente UNIT reforçado:317970/quatro arquivos55 testes EXIT0, 4.608 combinações diferenciais e oráculos de chamada; TSC00f37a e lint sete TS ee360c EXIT0/maxWarnings0. Produto/INT congelados preservados por manifesto pré/pós. Nenhuma instalação/generate/DDL/cluster/provider/nota UI/envio/push/PR/merge. #327 permanece pausada b6074f69. SPEC inbox-mencoes-nota.md e output/pr416-r1-server-c3-c4.md/fontes.json registram escopo, fontes, negativos e limites. QA exata, composição com C2 frontend ROOT e regressão global/CI/merge pendentes; sem homologação presumida.

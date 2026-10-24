@@ -32,6 +32,26 @@ export function comandoDaNota(texto: string, tokens: readonly TokenMencao[]): { 
   return normalizarNotaComMencoes(texto, tokens.map(t => ({ usuarioId: t.usuarioId, inicio: posicao(t.inicio), fim: posicao(t.fim) })));
 }
 
+/** Grupos lexicais por ocorrencia, do alias mais longo ao mais curto.
+ * Conserva TODOS os membros, sem decidir identidade ou permissao. O produtor
+ * verifica ACL do grupo inteiro antes de decidir se precisa do proximo alias.
+ * Recebe texto livre com os tokens por ID ja mascarados pelo produtor.
+ */
+export function gruposLexicaisMencao<T extends PessoaMencao>(textoLivre: string, pessoas: readonly T[]): T[][][] {
+  const mapa = new Map<string, T[]>();
+  for (const p of pessoas) for (const nome of new Set([alias(p.nome), alias(p.nome.split(/\s+/)[0])])) {
+    if (!nome) continue;
+    const grupo = mapa.get(nome) ?? []; grupo.push(p); mapa.set(nome, grupo);
+  }
+  const nomes = [...mapa.keys()].sort((a, b) => b.length - a.length);
+  const normal = alias(textoLivre);
+  return [...normal.matchAll(/(?<![\p{L}\p{N}_@.])@/gu)].map(inicio => {
+    const resto = normal.slice(inicio.index + 1);
+    return nomes.filter(nome => resto.startsWith(nome) && !letra(resto.slice(nome.length, nome.length + 2)))
+      .map(nome => mapa.get(nome)!);
+  });
+}
+
 /** Autor/ACL são filtrados pelo servidor; aqui só identidades explicitamente fornecidas. */
 export function extrairMencoes(texto: string, pessoas: readonly PessoaMencao[], tokens: readonly TokenMencao[] = [], textoLivre = true): string[] {
   const validos = normalizarNotaComMencoes(texto, tokens).mencoes!;

@@ -16,7 +16,8 @@ const agregadoDaNotificacao = (refTipo: string): AgregadoTipo => (refTipo === "A
  */
 export async function listarNotificacoes(usuario: UsuarioSessao): Promise<NotificacaoItem[]> {
   if (!usuario?.id) return [];
-  const escopo = await escopoAtendimentos(usuario);
+  // Memo local: nenhuma consulta de escopo sem referencia de mencao valida.
+  let escopo: ReturnType<typeof escopoAtendimentos> | undefined;
   const visiveis: NotificacaoItem[] = [];
   let cursor: { criadaEm: Date; id: string } | undefined;
   const tamanhoLote = 100;
@@ -40,7 +41,7 @@ export async function listarNotificacoes(usuario: UsuarioSessao): Promise<Notifi
     const permitidos = new Set(ids.length ? (await prisma.atendimentoWhatsApp.findMany({
       where: { AND: [
         { id: { in: ids } },
-        escopo,
+        await (escopo ??= escopoAtendimentos(usuario)),
         { conversa: { contatoId: { not: null }, grupoId: null } },
       ] },
       select: { id: true },
