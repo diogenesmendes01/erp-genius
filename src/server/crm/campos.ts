@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
-import { ErroRegra, exigirPapel, exigirSessao } from "@/server/_shared/sessao";
+import { ErroRegra, exigirPapel, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { exigirCapacidadeCrm } from "./permissoes";
 import { escopoPessoas } from "./pessoas";
 import { escopoEmpresas } from "./tags";
@@ -144,65 +144,69 @@ const ValorSchema = z.object({
   empresaId: z.string().min(1).optional(),
 });
 
-export async function definirValorCampo(input: {
-  campoId: string;
-  pessoaId?: string;
-  empresaId?: string;
-  valor: unknown;
-}): Promise<Resultado> {
+export type DefinirValorCampoInput = { campoId: string; pessoaId?: string; empresaId?: string; valor: unknown };
+
+/** Núcleo sem sessão/tx aninhada; também mantém o caminho Empresa do CRM. */
+export async function definirValorCampoNaTransacao(tx: Prisma.TransactionClient, autor: UsuarioSessao, input: DefinirValorCampoInput, antesDeGravar?: () => Promise<void>): Promise<boolean> {
+  exigirCapacidadeCrm(autor, "contatos.editar");
+  const dados = ValorSchema.parse(input);
+  if (!!dados.pessoaId === !!dados.empresaId) throw new ErroRegra("Informe a pessoa ou a empresa, e não as duas.");
+  if (dados.pessoaId) await tx.$queryRaw`SELECT id FROM "Pessoa" WHERE id = ${dados.pessoaId} FOR UPDATE`;
+  else await tx.$queryRaw`SELECT id FROM "Empresa" WHERE id = ${dados.empresaId} FOR UPDATE`;
+  await antesDeGravar?.();
+  exigirCapacidadeCrm(autor, "contatos.editar");
+  const campo = await tx.campoPersonalizado.findUnique({ where: { id: dados.campoId } });
+  if (!campo) throw new ErroRegra("Campo não encontrado.");
+  if (campo.arquivadoEm) throw new ErroRegra("Este campo está arquivado.");
+  const alvo: AlvoCampoPersonalizado = dados.pessoaId ? "PESSOA" : "EMPRESA";
+  if (campo.alvo !== alvo) {
+    throw new ErroRegra(campo.alvo === "PESSOA" ? "Este campo é de pessoa." : "Este campo é de empresa.");
+  }
+
+  const validado = validarValorCampo(campo, input.valor);
+  if (!validado.ok) throw new ErroRegra(validado.erro);
+
+  const dono = dados.pessoaId
+    ? { pessoaId: dados.pessoaId }
+    : { empresaId: dados.empresaId! };
+  if (dados.pessoaId) {
+    const visivel = await tx.pessoa.findFirst({
+      where: { AND: [{ id: dados.pessoaId }, await escopoPessoas(autor, tx)] },
+      select: { id: true },
+    });
+    if (!visivel) throw new ErroRegra("Pessoa não encontrada.");
+  } else {
+    const visivel = await tx.empresa.findFirst({
+      where: { AND: [{ id: dados.empresaId! }, await escopoEmpresas(autor, tx)] },
+      select: { id: true },
+    });
+    if (!visivel) throw new ErroRegra("Empresa não encontrada.");
+  }
+
+  const existente = await tx.valorCampoPersonalizado.findFirst({ where: { campoId: campo.id, ...dono } });
+  const de = (existente?.valor ?? null) as ValorCampo;
+  const para = validado.valor;
+  if (de === para) return false; // idempotente: sem Evento
+
+  const json: Prisma.InputJsonValue | typeof Prisma.JsonNull = para === null ? Prisma.JsonNull : para;
+  if (existente) {
+    await tx.valorCampoPersonalizado.update({ where: { id: existente.id }, data: { valor: json } });
+  } else {
+    await tx.valorCampoPersonalizado.create({ data: { campoId: campo.id, ...dono, valor: json } });
+  }
+  await registrarEvento(tx, {
+    tipo: "CampoPersonalizadoAlterado",
+    agregadoTipo: dados.pessoaId ? "Pessoa" : "Empresa",
+    agregadoId: dados.pessoaId ?? dados.empresaId!,
+    autorId: autor.id,
+    payload: { campoId: campo.id, nome: campo.nome, de, para },
+  });
+  return true;
+}
+
+export async function definirValorCampo(input: DefinirValorCampoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    exigirCapacidadeCrm(autor, "contatos.editar");
-    const dados = ValorSchema.parse(input);
-    if (!!dados.pessoaId === !!dados.empresaId) throw new ErroRegra("Informe a pessoa ou a empresa, e não as duas.");
-
-    await prisma.$transaction(async (tx) => {
-      const campo = await tx.campoPersonalizado.findUnique({ where: { id: dados.campoId } });
-      if (!campo) throw new ErroRegra("Campo não encontrado.");
-      if (campo.arquivadoEm) throw new ErroRegra("Este campo está arquivado.");
-      const alvo: AlvoCampoPersonalizado = dados.pessoaId ? "PESSOA" : "EMPRESA";
-      if (campo.alvo !== alvo) {
-        throw new ErroRegra(campo.alvo === "PESSOA" ? "Este campo é de pessoa." : "Este campo é de empresa.");
-      }
-
-      const validado = validarValorCampo(campo, input.valor);
-      if (!validado.ok) throw new ErroRegra(validado.erro);
-
-      const dono = dados.pessoaId
-        ? { pessoaId: dados.pessoaId }
-        : { empresaId: dados.empresaId! };
-      if (dados.pessoaId) {
-        const visivel = await tx.pessoa.findFirst({
-          where: { AND: [{ id: dados.pessoaId }, await escopoPessoas(autor, tx)] },
-          select: { id: true },
-        });
-        if (!visivel) throw new ErroRegra("Pessoa não encontrada.");
-      } else {
-        const visivel = await tx.empresa.findFirst({
-          where: { AND: [{ id: dados.empresaId! }, await escopoEmpresas(autor, tx)] },
-          select: { id: true },
-        });
-        if (!visivel) throw new ErroRegra("Empresa não encontrada.");
-      }
-
-      const existente = await tx.valorCampoPersonalizado.findFirst({ where: { campoId: campo.id, ...dono } });
-      const de = (existente?.valor ?? null) as ValorCampo;
-      const para = validado.valor;
-      if (de === para) return; // idempotente: sem Evento
-
-      const json: Prisma.InputJsonValue | typeof Prisma.JsonNull = para === null ? Prisma.JsonNull : para;
-      if (existente) {
-        await tx.valorCampoPersonalizado.update({ where: { id: existente.id }, data: { valor: json } });
-      } else {
-        await tx.valorCampoPersonalizado.create({ data: { campoId: campo.id, ...dono, valor: json } });
-      }
-      await registrarEvento(tx, {
-        tipo: "CampoPersonalizadoAlterado",
-        agregadoTipo: dados.pessoaId ? "Pessoa" : "Empresa",
-        agregadoId: dados.pessoaId ?? dados.empresaId!,
-        autorId: autor.id,
-        payload: { campoId: campo.id, nome: campo.nome, de, para },
-      });
-    });
+    await prisma.$transaction(tx => definirValorCampoNaTransacao(tx, autor, input));
   });
 }

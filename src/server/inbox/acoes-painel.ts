@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroRegra, exigirSessao } from "@/server/_shared/sessao";
 import { alterarTagNaTransacao, criarOuObterTagNaTransacao } from "@/server/crm/tags";
+import { EditarPessoaSchema, editarPessoaNaTransacao, type EditarPessoaInput } from "@/server/crm/contatos";
+import { definirValorCampoNaTransacao, validarValorCampo } from "@/server/crm/campos";
 import { capacidadesPainel } from "./permissoes";
 import { pessoaDoAtendimento } from "./painel-detalhes";
 import { avisarAtendimento } from "./aviso";
@@ -40,4 +42,54 @@ export async function removerTagNoInbox(atendimentoId: string, tagId: string): P
 }
 export async function criarEAtribuirTagNoInbox(atendimentoId: string, nome: string): Promise<Resultado<{ tagId: string }>> {
   return executarTag(atendimentoId, { tipo: "criar", nome });
+}
+
+const EdicaoContatoSchema = z.object({
+  pessoaIdEsperada: z.string().min(1, "Reabra a ficha para confirmar o contato."),
+  pessoa: EditarPessoaSchema.omit({ empresaId: true }).strict().optional(),
+  campos: z.array(z.object({ campoId: z.string().min(1), valor: z.unknown() }).strict()).optional(),
+}).strict();
+export type EditarContatoInbox = { pessoaIdEsperada: string; pessoa?: Omit<EditarPessoaInput, "empresaId">; campos?: { campoId: string; valor: unknown }[] };
+
+/** Pessoa + campos + Eventos + aviso no mesmo commit; o cliente nunca escolhe a identidade alvo. */
+export async function editarContatoNoInbox(atendimentoId: string, input: EditarContatoInbox): Promise<Resultado> {
+  return executarAcao(async () => {
+    const sessao = await exigirSessao();
+    const dados = EdicaoContatoSchema.parse(input), id = Id.parse(atendimentoId);
+    const ids = (dados.campos ?? []).map(c => c.campoId);
+    if (new Set(ids).size !== ids.length) throw new ErroRegra("Não repita o mesmo campo.");
+    await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
+      // Cópia local: a sessão memoizada/congelada não é alterada. Frescura usa somente esta tx.
+      const autor = { ...sessao, papeis: [...sessao.papeis] };
+      const pessoa = await pessoaDoAtendimento(autor, id, tx);
+      if (!pessoa) throw new ErroRegra("Contato não encontrado.");
+      // Precondição da ficha, nunca alvo da escrita: a identidade veio do contexto autorizado.
+      if (pessoa.pessoaId !== dados.pessoaIdEsperada) throw new ErroRegra("O contato mudou. Reabra ou atualize a ficha antes de salvar.");
+      const revalidar = async () => {
+        const fresco = await tx.usuario.findUnique({ where: { id: autor.id }, select: { nome: true, papeis: true, permissoes: true, ativo: true } });
+        if (!fresco?.ativo) throw new ErroRegra("Sua sessão não está mais ativa.");
+        Object.assign(autor, { nome: fresco.nome, papeis: fresco.papeis, permissoes: fresco.permissoes });
+        const atual = await pessoaDoAtendimento(autor, id, tx);
+        if (!atual || atual.pessoaId !== pessoa.pessoaId || atual.leadId !== pessoa.leadId) throw new ErroRegra("O contato mudou enquanto você editava. Recarregue o painel e tente de novo.");
+        if (!capacidadesPainel(autor, { finalidade: "COMERCIAL", veLead: atual.leadId !== null }).editarContato) throw new ErroRegra("Você não tem acesso a esta função do CRM.");
+      };
+      await revalidar();
+      // Valida todos os valores antes de qualquer escrita; o núcleo também revalida o domínio vigente.
+      const campos = await tx.campoPersonalizado.findMany({ where: { id: { in: ids } } });
+      for (const valor of dados.campos ?? []) {
+        const campo = campos.find(c => c.id === valor.campoId);
+        if (!campo || campo.arquivadoEm || campo.alvo !== "PESSOA") throw new ErroRegra("Campo de pessoa indisponível.");
+        const validado = validarValorCampo(campo, valor.valor);
+        if (!validado.ok) throw new ErroRegra(validado.erro);
+      }
+      // Mesmo input apenas de campos participa da serialização/identidade da Pessoa.
+      let mudou = await editarPessoaNaTransacao(tx, autor, pessoa.pessoaId, dados.pessoa ?? {}, revalidar);
+      for (const valor of [...(dados.campos ?? [])].sort((a,b) => a.campoId.localeCompare(b.campoId))) {
+        const alterado = await definirValorCampoNaTransacao(tx, autor, { campoId: valor.campoId, valor: valor.valor, pessoaId: pessoa.pessoaId }, revalidar);
+        mudou = alterado || mudou;
+      }
+      if (mudou) await avisarAtendimento(tx, id);
+    });
+  });
 }

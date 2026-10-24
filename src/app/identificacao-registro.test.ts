@@ -69,6 +69,7 @@ const PENDENTE_RECEBIMENTOS = "pendente: o histórico de recebimentos não traz 
 const PENDENTE_REMARCACAO = "pendente: a conferência da remarcação lista a reserva pelo id; aluno e matrícula já estão na identificação logo acima";
 
 export const EXCECOES_ID: ExcecaoId[] = [
+  { arquivo: "src/app/(app)/inbox/abas/GavetaContato.tsx", tipo: "prop", trecho: "form={id}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId liga o botão submit do rodapé Drawer ao formulário da gaveta; não vem do DTO nem identifica registro ERP" },
   { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", tipo: "prop", trecho: "aria-controls={aberto ? id : undefined}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId para ligar o gatilho ao popover de tags; não é ID de registro do ERP nem vem do DTO" },
   { arquivo: "src/app/(app)/inbox/ColunaConversas.tsx", tipo: "prop", trecho: "selecionado={filtros.numeroId ?? null}", alvo: "filtros.numeroId", categoria: "nao-registro", motivo: MOTIVO_VALOR_DE_CONTROLE },
   { arquivo: "src/app/(app)/inbox/InboxNovo.tsx", tipo: "prop", trecho: "abaAtiva={abaAtiva}", alvo: "abaDoContato.id", categoria: "nao-registro", motivo: MOTIVO_ABA_DO_PAINEL },
@@ -270,6 +271,7 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES_ID.map((e) => `${e.arquivo} :: ${e.tipo} :: ${e.alvo} :: ${e.categoria}${e.vezes ? ` ×${e.vezes}` : ""}`)).toEqual([
+      "src/app/(app)/inbox/abas/GavetaContato.tsx :: prop :: id :: nao-registro",
       "src/app/(app)/inbox/abas/TagsContato.tsx :: prop :: id :: nao-registro",
       "src/app/(app)/inbox/ColunaConversas.tsx :: prop :: filtros.numeroId :: nao-registro",
       "src/app/(app)/inbox/InboxNovo.tsx :: prop :: abaDoContato.id :: nao-registro",
