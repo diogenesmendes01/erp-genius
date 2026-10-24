@@ -1,3 +1,4 @@
+import { cartoesDaThread, type SugestaoAriaThread } from "../aria/sugestoes-thread";
 import { Papel, type AcaoAgenteIATipo, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
@@ -251,6 +252,8 @@ export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: stri
 
 /** Estado da Aria no detalhe do atendimento (Task 29): pausa e sugestões pendentes de `AcaoAgenteIA` (fonte única). */
 export interface AriaDoAtendimento {
+  podeDecidir: boolean;
+  cartoes: SugestaoAriaThread[];
   pausada: boolean;
   motivo: MotivoPausaAtendimentoIA | null;
   /** Mostra "Devolver para Aria": Aria pausada e o usuário com escopo de envio (a regra de `devolverParaAria`). */
@@ -286,6 +289,8 @@ export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendime
   const sugestoes = candidatas.filter((s) => decidiveis.has(leadDe(s)));
   const pausada = a.iaPausadaEm !== null;
   return {
+    podeDecidir: capacidadesAria(usuario).has("decidirHistorico") && (await leadsDecidiveis(prisma, usuario, [a.leadId])).has(a.leadId),
+    cartoes: await cartoesDaThread(prisma, usuario, a, agora),
     pausada,
     motivo: pausada ? a.iaPausaMotivo : null,
     podeDevolver: pausada && (await podeDevolverParaAria(prisma, usuario, a.id)),
