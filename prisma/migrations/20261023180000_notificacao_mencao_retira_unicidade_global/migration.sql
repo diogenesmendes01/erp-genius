@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY "NotificacaoUsuario_tipo_refId_usuarioId_criadaEm_key";

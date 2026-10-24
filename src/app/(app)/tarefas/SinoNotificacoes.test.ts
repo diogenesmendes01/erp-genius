@@ -15,3 +15,8 @@ describe("hrefNotificacao", () => {
   });
   it("id_vai_codificado", () => expect(hrefNotificacao({ ...n, tipo: "SLA_ESTOURADO", refId: "a b&c" })).toBe("/inbox?c=a+b%26c"));
 });
+
+it("menção abre o atendimento com ID codificado, preservando SLA/lembrete", () => {
+  const mencao = { ...n, tipo: "MENCAO_NOTA", refTipo: "AtendimentoWhatsApp", refId: "at &1" };
+  expect(hrefNotificacao(mencao as Parameters<typeof hrefNotificacao>[0])).toBe("/inbox?c=at+%261");
+});
