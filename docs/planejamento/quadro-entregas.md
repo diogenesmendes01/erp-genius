@@ -6781,6 +6781,22 @@ Restauros DEV87b529, ROOTb9b0d3 e TESTER4c16c9 terminaram0, conferindo424hashes 
 
 CI rápida40135514587 concluiu5/5;937arquivos/7425testes em cada fuso, totais confirmados ef9587 EXIT0. Integração completa40135542522 concluiu4/4:350arquivos/3104testes aprovados;3arquivos/4preparadores visuais opt-in ignorados, detalhados no registro CI nominal54c. Consolidação documental/CI do head final e merge permanecem pendentes. Aceite visual N/A, produtor interno sem UI nova. Não marcar342 concluída antes dos gates finais. Sem decisão humana pendente nesta entrega.
 
+
+## Correção #423 — validade UTC do conhecimento, DEV em 24/10/2026
+
+Item adicional às 81 issues originais do Inbox, base main 79310013. FonteConhecimento.validoAte UTC sem fuso passa a ser comparada com now() AT TIME ZONE 'UTC', preservando relógio, regra estritamente maior, API, ranking, limite, IDs informados, status e arquivamento. Só uma expressão SQL muda; sem Db opcional, schema, migração ou dependência. Orçamento e #349 não mudam.
+
+RED completo 83578/674d0e EXIT1: cinco de sete passam; legado de validade e matriz falham. Mesma conexão comprovada nos três fusos e restaurada antes das asserções; UTC positivo, São Paulo inclui vencida e Tokyo exclui vigente. GREEN completo 65918/c07540, sete de sete EXIT0. A matriz usa relógio real do banco, pool1/tx, SQL e resultados originais encaminhados e SET LOCAL com restauração; os seis testes anteriores permanecem intactos.
+
+Gates finais: integração de conhecimento completo + contexto consumidor 70967/aee3e2, quatro arquivos/38 casos, 144,15 s, sem filtros/skips; UNIT dirigido 72db5f, três arquivos/16 casos; TSC auxiliar 32592/25cf96 e lint dos dois paths f07ef3, todos EXIT0. A auxiliar mantém apenas as duas exclusões privadas históricas autorizadas. UNIT global DEV dispensado pelo integrador para esta expressão; CI global da publicação pendente, sem atribuir recorte como global. Banco ciint491 liberado para restauro ROOT; sem nova operação DB. SPEC docs/specs/aria-validade-conhecimento-utc.md e relatório output/inbox-423-report.md. Visual N/A; QA independente, revisão, CI e publicação pendentes. Nenhuma correção ou reclassificação do negativo de orçamento da #349.
+
+
+Adendo atual #423: restauro ROOT 9de0f0 EXIT0 confirmou ciint491, 424 hashes, 502 registros, sequências preservadas e zero outra atividade. Sem nova operação DB nesta frente. Fonte congelada para QA; próxima implementação depende de coordenação ROOT.
+
+
+## #423 — QA e composição —24/10/2026
+ComposiçãoROOTd7e55b06 na main79310013,2SRCbyteiguais6ba2,semconflito/schema/deps/API/orçamento. TESTER4INTcompletos/38 sessão32391/225ccf/150.76s/w1,3UNIT/16 5c04fe e lint2 e23a2d, todosEXIT0. ROOT TSC ORIGINAL79120/3e69a6 semexclusões e lintGLOBAL64067/b6d9c7 zeroerros40herdados, todosEXIT0. RestaurosDEV9de0f0 e TESTER22ca79/0/424hashes/502e1392/sequências;9msg4notasT. Parecerintegraloutput/inbox-423-qa. SemUNITglobalDEVouINTlocalROOT;CIglobalpublicaçãopendente. SQLestritoUTC,casos±1s/null/3fusos;semprovaigualdademicrossegundo. Issueadicionalfora81originais,semalterar32/49originais;CI/revisão/mergependentes.
+
 ## Inbox #343 — item da lista com estado e autoria, DEV 24/10/2026
 
 Sobre produtor342/54c44b2 congelado: DTO de página/deep link recebe estadoAria, atendidoPorVoce, previaAutor e previaRotulo. Ordem literal aprovada; sugestão só mostra label, sem payload/texto; contexto único e sugestões em lote autorizado, vazio sem inicialização. Empate de mensagem usa idDESC; ACL/keyset/fixadas/contagens/thread intactos porAST. Oito literais de teste mudam somente quatro defaults, sem produção cliente/schema/migração/deps/harness ou alteração342.
@@ -6795,3 +6811,9 @@ PR421 mergeada em7931001311476d4381576b8fdf8bba3d0f8e7bb3 após CI finaldbbd5/5 
 343composta0f20eae0 diretamentemain79310013;12SRCbyteiguais3de,produtor342/schema/deps/harnesspreservados. Únicoconflitoquadroresolvidocommainintegral+bloco343. QA11/112UNIT,32INTcompleto/lint12,restauroTester6e2d58/0/424hashes1392/seq; evidênciasoutput/inbox-343-qa. GatesoriginaisROOT/CI/publicação/merge343pendentes; nãofecharissue.
 
 343 — Gates originais ROOT após composição:TypeScript29745/2bd6a1 EXIT0,heap8192/incrementalfalse/semexclusões; lintGLOBAL95627/da032e EXIT0,zeroerros40avisosherdados.12SRCcontinuamnominais3de; nãofoirepetidoUNITglobal/INTlocalROOT. CIoriginal e integraçãoremotadapublicaçãopendentes; issue343aberta.
+
+
+## Main425 incorporada na candidata343 —24/10/2026
+PR425 mergeada a0b8f82c9ed0f30c5908cb4bc8ca4a68afdd74af,issue423extra fechada;81originais permanecem32fechadas/49abertas. Mainintegral+blocos343preservados. Os12SRC343 continuamnominais3de/f1f;os2SRC423incorporadossãobyteiguaisaosdaPR425/QA38. TSCoriginalcombinado26136/db8c4fEXIT0semexclusões. Integração343full40139991809nominalf1f anterior423,semalegarexecuçãointegralcombinada;CIglobalfinaldacomposiçãopendente. Fontes/limitesemoutput/inbox-343-qa/composicao-main-423.json.
+
+343 — integração remota40139991809/f1f concluiu4/4:350arquivos/3112testes aprovados,3arquivos/4preparadores visuais opt-in ignorados. Watch25375/b8935a e verificador44543/662895 terminais0;4logs/SHA/totais emoutput/inbox-343-qa/ci-f1f.json. Composição com425 mantém12SRC343+2SRC423homologados; fullf1f é anterior423, não suíte integral combinada. TSC combinado26136/db8c4f0. CI global final e merge343pendentes,semnovaexecuçãoINTlocalROOT.

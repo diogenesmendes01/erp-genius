@@ -20,3 +20,6 @@ A quantidade de operações adicionais da Aria é constante por página, sem N+1
 TDD cobre a prioridade de autoria, origens cruzadas, sugestão anterior/igual/posterior, nomes vazios e nenhum payload. Integração cobre página/deep link, responsabilidade, ACL/vazio, handoff/pausa, expiração, empate de mensagem, lote300 e cursor do item301. Apenas literais completos de teste receberam os quatro defaults; não houve mudança de produção cliente, asserts ou drivers. O produtor342 e orçamento permanecem idênticos ao commit54c44b2.
 
 Visual N/A: produtor de DTO sem novo layout/controle; badges, prévia renderizada e cabeçalho chegam em346/348. [Relatório](../../output/inbox-343-report.md). A dependência342 foi mergeada na PR421. QA independente favorável e composição preservam os12SRC nominais3de; [evidências](../../output/inbox-343-qa/indice.json). TypeScript original e lint global ROOT aprovados; CI e merge343 permanecem pendentes.
+
+
+Atualização: integração remota nominalf1f aprovou350arquivos/3.112testes, mais3arquivos/4preparadores visuais opt-in ignorados. A candidata incorpora main425, mantendo os12SRC343 e os2SRC423 homologados separadamente (INT38). Não se declara suíte integral combinada após423; TypeScript original combinado passou, CI global final segue pendente. [Fontes e limites](../../output/inbox-343-qa/composicao-main-423.json).

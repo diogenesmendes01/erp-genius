@@ -35,7 +35,7 @@
   "limites": [
     "Recortes sobrepostos não são somados a DEV ou CI.",
     "Produtor DTO sem UI nova; visual N/A.",
-    "CI original, integração remota e merge desta publicação pendentes; não fechar issue."
+    "Integração remota nominalf1f aprovada4/4,350arquivos/3112testes +3arquivos/4preparadores visuais opt-in ignorados. Composição inclui423 homologada separadamente; CI global final e merge pendentes."
   ],
   "gatesIntegrador": {
     "typeScriptOriginal": {
@@ -54,5 +54,7 @@
       "avisos": 40
     },
     "limite": "Sem novo UNIT global ou INT local ROOT: fontes executáveis idênticas à DEV/QA, CI e integração remota desta publicação serão separadas."
-  }
+  },
+  "ciNominal": "ci-f1f.json",
+  "composicaoAtual": "composicao-main-423.json"
 }
