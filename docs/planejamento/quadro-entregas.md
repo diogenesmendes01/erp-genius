@@ -6850,3 +6850,7 @@ Base74d4=PR420179b+Main170edbad;DEV A portou somente nucleoPerdaTx/propModal/wra
 ## Inbox327 — produto composto R2, antes dos gates — 24/10/2026
 
 Consulta/movimento/UI327 portados por hunks sobre74d4,OR420(abaDetalhesOUeditor) e4defaultsMain343 preservados. Somente paths autorizados,acoes326 preservadas e caminhosMain337/342/343/423 nao selecionados intactos;fundacao328checkpoint ca208d9c parcial. SPEC327historica mantem corpus18/qualificacoes;nao reatribui captura/gates487 ao novoMain. GatesR2 UNIT/TSC aguardamfreeze,INTaguardaGOespecificoROOTA491. SemnovaUI/DB.
+
+## Inbox327 — harness e curadoria portados R2, gates pendentes — 24/10/2026
+
+11paths harness327(compostos porpatchcheck) preservam base325/953/coletorDetalhes e adicionam18casos;nao tornamCLIequivalente ao wrapperA11 nem autorizamUI/escritas. Relatorio/manifesto dehandofffd6preservam corpus18misto,qualificacoes e negativos;ZIP/PNGs/raw privados intocados. Antesgates novo manifesto comparaOIDs45paths comcfa e protecao integral3530OIDsBase74d4,com excecoes justificadasOR420/defaultsMain/imports/docs. Nenhum DB/UI/UNIT/TSC iniciado;ROOTrevermanifestoantesGOINTA491.
