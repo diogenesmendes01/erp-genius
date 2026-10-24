@@ -1,0 +1,189 @@
+{
+  "fonteProduto": "2396a6c7703d0717a523d93f51a210a75f588135",
+  "fonteHarness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+  "limite": "Derivadas separadas das97PNGoriginais; nenhum negativo de alcanceR1móvel/R2partial/bordasR1 incluído.",
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-324-formal-r1/pranchas/painel-detalhes-claro.jpg",
+      "sha256": "bf2462590f1f3f8316b17a07f1b76c1666f832c76a3b4e9083d0f1af0492b0f1",
+      "bytes": 230309,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-formal-r1/pranchas/painel-detalhes-escuro.jpg",
+      "sha256": "d951d71eb80ceb424de6abd8f38ce60844ad764afcce41f7ea8a54b433e69d1d",
+      "bytes": 235821,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-formal-r1/pranchas/painel-sem-nome-claro.jpg",
+      "sha256": "53c3bf58eeb87c3554b79767f0fa4990d196aa30b0ca11656757d29c479d2d24",
+      "bytes": 223895,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-formal-r1/pranchas/painel-sem-nome-escuro.jpg",
+      "sha256": "811f3b7b0188379b1ff1f2d00af74830bf142366910682998a2e6a644f12a22c",
+      "bytes": 225376,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1024-500-claro.jpg",
+      "sha256": "edeafc53b8a802f6f8058519f14484e297c952a79fe19a9ce3c1f4da3b60fab0",
+      "bytes": 105516,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1024-500-escuro.jpg",
+      "sha256": "6f4ad59e04287cfd1e127a733a10d605510c5d82376203f99e0ee2764356b575",
+      "bytes": 106061,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1024-claro-painel-crop.jpg",
+      "sha256": "da5f397c15623291f6533785e2d96e56b72c1440ec5633028dacb156f4a44244",
+      "bytes": 139316,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1024-escuro-painel-crop.jpg",
+      "sha256": "23cb243fc50aa2c71def5bd7a72be49c42bf04ad8a3236d3071efc44b9c99b0b",
+      "bytes": 138767,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1440-500-claro.jpg",
+      "sha256": "32414f4d4554feba112eca7f84be5006e0c5d72562babb44ac289bc9eeb5149e",
+      "bytes": 81503,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1440-500-escuro.jpg",
+      "sha256": "2f107cd123d93d9c4a4885de227e05d77d483edc6a634c85f983fb21fb798e87",
+      "bytes": 82296,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1440-claro-painel-crop.jpg",
+      "sha256": "88ab68e8688523c441b3d1b0a2e2b5eaf2a4ddfadb2e7c91b5f14487ac576caa",
+      "bytes": 139115,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/1440-escuro-painel-crop.jpg",
+      "sha256": "7bee297f8170b21c44803195decfda37e45459e52b922584374fb5ce5440cab1",
+      "bytes": 138252,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/320-500-claro.jpg",
+      "sha256": "b841002d431b212c64344d57252e0e3462cd8d498bb59cf1f3ca446e25416558",
+      "bytes": 126138,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/320-500-escuro.jpg",
+      "sha256": "39c586fa9f1bdc66d59d432e693d8d84f8d12d4e65115ba3e309a99678d524ef",
+      "bytes": 123287,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/390-500-claro.jpg",
+      "sha256": "695fa5e31202421ea2b807f851231936a75b7f2f4ca7bb8d6c7edd620ebafa0e",
+      "bytes": 134722,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-complemento-r1/pranchas/390-500-escuro.jpg",
+      "sha256": "758e5e95ca8d4c9e42d00f31dceebcf61cc4bab4d5b2e6d861946f7b526d8f1e",
+      "bytes": 134134,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-bordas-r2/pranchas/claro.jpg",
+      "sha256": "0239a5ce368059aee6aeb9ea6820e873023fae90c451dee49f5916d5a203bc88",
+      "bytes": 150180,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-bordas-r2/pranchas/escuro.jpg",
+      "sha256": "b2d70fb9011867e784ecbeffa838b21ef1d8af116dc72fac241776416aa2d876",
+      "bytes": 153317,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-alcance-r1/pranchas/desktop-positivo-claro.jpg",
+      "sha256": "e200ed292b18289a5e4dbc2de76dc09c94aee8f36151d18a5a538d83da9f9fed",
+      "bytes": 162552,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-alcance-r1/pranchas/desktop-positivo-escuro.jpg",
+      "sha256": "0c873701d3b3fcaf4ec174e3a0c7d9bad8210064f3c5e30c2a50faa9c9094426",
+      "bytes": 158751,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-alcance-r3/pranchas/claro.jpg",
+      "sha256": "5062847d56d04ea107ce9abfccc0d5ddcdb5e0ee6e18550b3ff2f42f2f0b4ac8",
+      "bytes": 151179,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-alcance-r3/pranchas/escuro.jpg",
+      "sha256": "cd55445f6afc7ef477d6fa2ab456de4aa9c6e5d84179e10939fb091fe38e7d46",
+      "bytes": 147991,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-mutacoes-r1/pranchas/claro.jpg",
+      "sha256": "0e70ac8092e76e19808a5f595a2a379d8cd1adb432d87680cf210c1cbe54ea2e",
+      "bytes": 186692,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-mutacoes-r1/pranchas/escuro.jpg",
+      "sha256": "1d349f32a34721a8154b3602f880933d9462cb1a4f9d76914206a9901fdd509d",
+      "bytes": 170016,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-nome-r1/pranchas/claro.jpg",
+      "sha256": "e58d15e4fc7cace4fb9cb819bb9fe75cae6ec97808e04b126c20146cf8192a1c",
+      "bytes": 235167,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    },
+    {
+      "arquivo": "output/inbox-324-longo-falha-r1/pranchas/claro.jpg",
+      "sha256": "44d88d10df006fdbfd8b65c6ddb3184bba83a1ea7a79f90a3393e3b131817464",
+      "bytes": 121383,
+      "derivada": true,
+      "inspecao": "Inspecionada, crop de painel identificado quando aplicável"
+    }
+  ]
+}

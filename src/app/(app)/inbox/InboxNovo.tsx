@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { NovoAtendimento } from "./NovoAtendimento";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
+import { TagsContato } from "./abas/TagsContato";
+import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { IconPhone, IconMessages } from "@tabler/icons-react";
 import { classesDoPainel, painelEfetivo, proximoEstadoPainel, useModoInbox } from "./painel-inbox";
 import { useConversa } from "@/components/conversa/useConversa";
@@ -474,6 +476,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       {selecionado && <PainelContato contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
         subtitulo: rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade) + " · " + atual.numeroRotulo,
         tags: painelDoAberto?.dado?.tags ?? [], quadrado: false } : undefined}
+        slotTags={painelDoAberto?.dado?.cabecalho?.pessoaId ? <TagsContato atendimentoId={selecionado} tags={painelDoAberto.dado.tags ?? []} disponiveis={painelDoAberto.dado.cabecalho.tagsDisponiveis}
+          podeEditar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.editarTags} podeCriar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.criarTag} aoMudar={recarregarLista} /> : undefined}
+        slotAviso={painelDoAberto?.dado?.cabecalho?.semNome ? <ContatoSemNome atendimentoId={selecionado} nomeAnterior={painelDoAberto.dado.acoes?.nomeSalvo ?? null}
+          podeEditar={painelDoAberto.dado.acoes?.podeEditarNome === true} aoMudar={recarregarLista} /> : undefined}
         abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => { if (abas.some(a => a.id === id)) setAbaDoContato({ atendimentoId: selecionado, id }); }} visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres"}
         aoFechar={fecharPainel} focarAoAbrir={painelAberto === true} className={classesDoPainel(painelAberto, vista)}>{painel}</PainelContato>}
     </div>

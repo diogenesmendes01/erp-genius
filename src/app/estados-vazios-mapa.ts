@@ -650,6 +650,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/AcoesContato.tsx": [
     "compacto · Nenhum encontrado.",
   ],
+  "src/app/(app)/inbox/abas/TagsContato.tsx": [
+    "compacto · Nenhuma tag encontrada.",
+  ],
   "src/app/(app)/inbox/NovoAtendimento.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",

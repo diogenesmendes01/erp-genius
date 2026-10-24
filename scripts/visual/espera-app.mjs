@@ -53,6 +53,11 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
     });
     return;
   }
+  if (estado === "painel-sem-nome") {
+    await pagina.getByRole("textbox", { name: "Nome do contato", exact: true }).waitFor({ state: "visible" });
+    await pagina.waitForFunction(semanticaPainelSemNomePronto);
+    return;
+  }
   if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     // A thread foi confirmada antes de abrir; na vista própria fica oculta.
     await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
@@ -126,7 +131,10 @@ export function semanticaPainelDetalhesPronto() {
   if (r.width <= 0 || r.height <= 0 || r.left < -1 || r.right > window.innerWidth + 1 || r.top < -1 || r.bottom > window.innerHeight + 1 || painel.getAnimations().some(a => a.playState === "running")) return false;
   const header = painel.querySelector?.('[data-cabecalho-contato]');
   if (!header || header.querySelector('h2')?.textContent?.trim() !== "Mariana Costa") return false;
-  if (!["Adulto", "Inglês", "Noite"].every(t => header.textContent.includes(t)) || header.querySelector('[aria-label="Criada pela Aria"]')?.parentElement?.textContent?.trim() !== "Noite") return false;
+  const pill = header.querySelector('[aria-label="Criada pela Aria"]')?.parentElement;
+  if (!["Adulto", "Inglês", "Noite"].every(t => header.textContent.includes(t)) || (pill?.querySelector("span")?.textContent ?? pill?.textContent)?.trim() !== "Noite") return false;
+  const controles = [...header.querySelectorAll("button")];
+  if (!controles.some(b => b.textContent.trim() === "+ tag" && !b.disabled) || !["Adulto", "Inglês", "Noite"].every(t => controles.some(b => b.getAttribute("aria-label") === "Remover tag " + t && !b.disabled))) return false;
   const avatar = header.querySelector(':scope > span')?.getBoundingClientRect();
   if (!avatar || Math.abs(avatar.width - 132) > .5 || Math.abs(avatar.height - 132) > .5) return false;
   const abas = [...painel.querySelectorAll('[role="tab"]')];
@@ -213,4 +221,26 @@ export function semanticaRodapePronto(modo) {
   if (modo === 'responder' && (!anexar || (!voz && !enviar))) return false;
   if (!emoji || ![emoji, anexar, agenda, voz, enviar].filter(Boolean).every(b => dentro(b) && b.getBoundingClientRect().width >= 44 && b.getBoundingClientRect().height >= 44)) return false;
   return rodape.textContent.includes('/ respostas rápidas') && !rodape.textContent.includes('@ mencionar');
+}
+
+/** O estado324 deve existir na API autorizada, não ser montado por dados fabricados. */
+export async function confirmarPainelSemNome(contexto, base, id) {
+  if (typeof id !== "string" || !id.trim()) throw new Error("ID real do painel sem nome não foi configurado.");
+  const r = await contexto.request.get(base + "/api/inbox/atendimentos/" + encodeURIComponent(id) + "/painel");
+  if (r.status() !== 200) throw new Error("Painel sem nome real indisponível: HTTP " + r.status());
+  const dado = await r.json();
+  if (dado?.cabecalho?.semNome !== true || dado?.acoes?.podeEditarNome !== true) throw new Error("O painel sem nome não é um contexto real editável.");
+  return { status: 200, semNome: true, podeEditarNome: true };
+}
+/** Autocontido para waitForFunction: formulário real, editável e visível no painel único. */
+export function semanticaPainelSemNomePronto() {
+  const painel = document.querySelector('aside[aria-label="Painel do contato"]');
+  if (!painel || painel.inert || painel.getAttribute("aria-hidden") === "true") return false;
+  const dentro = r => r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= window.innerWidth + 1 && r.top >= -1 && r.bottom <= window.innerHeight + 1;
+  if (!dentro(painel.getBoundingClientRect()) || painel.getAnimations().some(a => a.playState === "running")) return false;
+  const campo = painel.querySelector('input[aria-label="Nome do contato"]'), salvar = campo?.closest("form")?.querySelector('button[type="submit"]');
+  if (!campo || campo.disabled || campo.value.trim() || !salvar || salvar.disabled || salvar.textContent.trim() !== "Salvar") return false;
+  const texto = painel.textContent;
+  return texto.includes("Contato sem nome, criado pelo telefone.") && texto.includes("Você pode preencher agora.") && !texto.includes("Aria vai perguntar")
+    && dentro(campo.getBoundingClientRect()) && dentro(salvar.getBoundingClientRect()) && painel.querySelectorAll('button[aria-label="Fechar painel do contato"]').length === 1;
 }

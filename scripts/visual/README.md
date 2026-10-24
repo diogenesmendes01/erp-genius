@@ -72,7 +72,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 164 PNGs: 100 do app e 64 do protótipo. O painel do
+`--estado todos` produz 176 PNGs: 106 do app e 70 do protótipo. A matriz anterior de 164 permanece e #324 acrescenta 12 do painel sem nome. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -182,3 +182,13 @@ Nos estados painel-erro/painel-vazio, o preparador instala antes da navegação 
 
 
 Nos estados de erro, o contrato500controlado diagnostica somente net::ERR_ABORTED de Request efetivamente injetado/fulfill500concluído, GETorigem/path/semquery exatos, após headers500 observados de OUTRO Request POSTERIOR da mesmaURL também injetado/fulfillconcluído e alerta/retry públicos reais revalidados. Não espera nem consome body500: o cliente rejeita !ok antes de lê-lo. Não afirma HTTP200recuperado ou corpo consumido. Sem substituto observado/estado público, continua falha; o classificador global e a barreira de200 permanecem iguais. Observadorresponse pré-navegação, limite30s de estado público e cleanup; Request sóem memória. Negativos e ruling substituído documentados no report. Toda formal88639 e o preflight52089 permanecem negativos, sem reutilização de parciais.
+
+## Tags e contato sem nome — #324
+
+Produto2396 permanece congelado. O estado adicional painel-sem-nome usa IDs reais do perfil: INBOX_VISUAL_SEM_NOME pode indicar o atendimento privado preparado pelo integrador; sem override usa ids.semNome da demo, mas REPROVA se esse dado não é efetivamente sem nome. Nunca alterar o resolver ou JSON para produzir esse estado. Antes da navegação/foto, GET200 do painel deve confirmar cabecalho.semNome=true e acoes.podeEditarNome=true. No browser exige formulário real habilitado, aviso factual, campo e Salvar no viewport, painel único e hidratação/SSE. Como a fixture sem nome pode não ter mensagem alguma, não usa a mensagem canônica de Mariana como prontidão.
+
+Painel-detalhes continua usando Mariana e agora exige os controles + tag/remover habilitados; a identificação da tag ✦ considera seu texto real sem confundir o ×. Nenhuma foto do CLI cria/remove/atribui tag ou salva nome. Mutações locais de validação ficam em probes separados e janela explicitamente coordenada.
+
+O protótipo usa seu c9 original/noName e suas interações de painel, sem injetar HTML/props ou alterar arquivos de referência. O PNG pré-exportado painel-sem-nome mencionado no plano não está disponível nesta árvore: a referência funcional usada é docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html?c=c9. Não é um N/A funcional, nem se inventa um arquivo para satisfazer a guarda. A cópia do protótipo promete pergunta da Aria; o app mantém a decisão técnica aprovada de não prometer automação ausente.
+
+Formal324: painel-detalhes e painel-sem-nome × três tamanhos × dois temas × APP/protótipo =24PNGs. Total todos176 (106APP/70PROTO), preservando as164 combinações anteriores; tamanhos globais intactos. GuardReact, hidratação, classificação de requests, anonimizaçãoDOM e seus hashes permanecem obrigatórios. Fonte do produto e SHA do harness devem ser atribuídos separadamente. Complementos500px/ações locais/foco/permissões não se confundem com essas24 fotos estáticas.

@@ -162,7 +162,7 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     const inativa = await prisma.tag.create({ data: { nome: "Histórica", cor: "NEUTRA", ativo: false } });
     await prisma.pessoaTag.create({ data: { pessoaId: c.pessoa.id, tagId: inativa.id } });
     expect((await carregarCabecalhoPainel(c.dono, c.a.id))?.tagsDisponiveis).toEqual([{ id: tag.id, nome: tag.nome }]);
-    expect((await carregarPainel(c.dono, c.a.id))?.tags).toEqual([{ rotulo: "Histórica", ia: true }]);
+    expect((await carregarPainel(c.dono, c.a.id))?.tags).toEqual([{ id: inativa.id, rotulo: "Histórica", ia: true }]);
   });
   it.each([Papel.FINANCEIRO, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO])("D13 aprovado: %s convidado comercial recebe Pessoa/empresa/B2B sem contatos.ver; ausência, revogação, expiração e outro setor não ampliam acesso", async papel => {
     const c = await cenario(), convidado = await criarUsuario([papel]);

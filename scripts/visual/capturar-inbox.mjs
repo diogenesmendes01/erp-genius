@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
@@ -65,7 +65,8 @@ async function prepararRede(contexto, alvo, base, falhas) {
 export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? (estado === "painel-vazio" ? "joao@genius.com" : "admin@genius.com"), process.env.INBOX_VISUAL_SENHA ?? "genius123");
   if (estado === "carregando") return { finalizar: await abrirCarregandoApp(pagina, contexto, base), metadados: { fallbackReal: true, latenciaLocalMs: 3000, medicaoStreaming: false } };
-  const id = ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
+  const id = estado === "painel-sem-nome" ? process.env.INBOX_VISUAL_SEM_NOME ?? ids.semNome : ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
+  const painelSemNomeReal = estado === "painel-sem-nome" ? await confirmarPainelSemNome(contexto, base, id) : undefined;
   const ausenciaLegitima = estado === "painel-vazio" ? await confirmarPainelVazio(contexto, base, id) : undefined;
   const estado319 = ["painel-erro", "thread-erro", "painel-vazio"].includes(estado);
   const popoverColuna = ["filtros", "seletor-numero", "nova-conversa"].includes(estado);
@@ -77,6 +78,10 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   if (estado === "menu-mais") await abrirMenuConversaApp(pagina, tamanho);
   if (estado === "busca-conversa") await abrirBuscaConversaApp(pagina, tamanho);
   if (estado === "nota") await abrirNotaConversaApp(pagina, tamanho);
+  if (estado === "painel-sem-nome") {
+    await esperarHidratacaoApp(pagina);
+    if (!(await pagina.locator('aside[aria-label="Painel do contato"]').isVisible())) await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
+  }
   if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -101,11 +106,11 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
     // Mostra a nota real seguida da autoria/status; rolagem interna explícita, sem sintetizar conteúdo.
     await pagina.getByRole("region", { name: "Conversa", exact: true }).getByRole("note").filter({ hasText: "Família pediu atendimento no período da tarde." }).evaluate(nota => nota.scrollIntoView({ block: "start" }));
   }
-  return { finalizar, metadados: ausenciaLegitima ? { ausenciaLegitima } : undefined };
+  return { finalizar, metadados: painelSemNomeReal ? { painelSemNomeReal } : ausenciaLegitima ? { ausenciaLegitima } : undefined };
 }
 
 async function abrirPrototipo(pagina, estado) {
-  const c = ["humano-compositor", "nota"].includes(estado) ? "c4" : "c1";
+  const c = estado === "painel-sem-nome" ? "c9" : ["humano-compositor", "nota"].includes(estado) ? "c4" : "c1";
   await pagina.goto(`${pathToFileURL(prototipo).href}?c=${c}`, { waitUntil: "load" });
   const root = pagina.locator('[data-m="root"]');
   await root.waitFor({ state: "visible" });
@@ -131,17 +136,20 @@ async function abrirPrototipo(pagina, estado) {
     await lista.getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
   }
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
-  if (estado === "menu-mais" || estado === "humano-compositor" || estado === "nota" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel" || estado === "painel-detalhes") {
+  if (estado === "menu-mais" || estado === "humano-compositor" || estado === "nota" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel" || estado === "painel-detalhes" || estado === "painel-sem-nome") {
     const chat = root.locator('[data-m="chat"]');
-    if (!(await chat.isVisible())) await root.getByText(["humano-compositor", "nota"].includes(estado) ? "Beatriz Lima" : "Mariana Costa", { exact: true }).first().click();
+    if (!(await chat.isVisible())) await root.getByText(estado === "painel-sem-nome" ? "Sem nome" : ["humano-compositor", "nota"].includes(estado) ? "Beatriz Lima" : "Mariana Costa", { exact: true }).first().click();
     await chat.waitFor({ state: "visible" });
   }
-  if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
+  if (["painel-detalhes", "celular-painel", "tablet-painel", "painel-sem-nome"].includes(estado)) {
     const detalhes = root.getByTitle("Painel do contato");
     if (!(await root.locator('[data-m="panel"]').isVisible())) await detalhes.first().click();
     const painel = root.locator('[data-m="panel"]');
     await painel.waitFor({ state: "visible" });
-    await painel.getByText("Mariana Costa", { exact: true }).first().waitFor({ state: "visible" });
+    if (estado === "painel-sem-nome") {
+      await painel.getByPlaceholder("Nome do contato", { exact: true }).waitFor({ state: "visible" });
+      await painel.getByRole("button", { name: "Salvar", exact: true }).waitFor({ state: "visible" });
+    } else await painel.getByText("Mariana Costa", { exact: true }).first().waitFor({ state: "visible" });
     await painel.getByText("Detalhes", { exact: true }).waitFor({ state: "visible" });
   }
   if (estado === "painel-fechado") {

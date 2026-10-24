@@ -1,0 +1,209 @@
+{
+  "fonteFinal": "7ff341db2e11a92d2b42747749ddab469e862603",
+  "baseMain": "2712f4d28722c0c971f5464d82553a1ccfa92560",
+  "normalizacao": "Somente CRLF para LF nos pareceres; texto e limites mantidos.",
+  "pareceres": [
+    {
+      "parecer": "codigo-original.md",
+      "original": "inbox-324-review-codigo-tester.md",
+      "sha256OriginalFisico": "36631d6af272042627c96785b7fe6ef5982bef005ef5244a45ecffff360e4b2e",
+      "sha256PublicadoLF": "23d7253f227cf0b684328e91dcb81f647a8bb83d98d925f3692653cbf26af3d1"
+    },
+    {
+      "parecer": "harness.md",
+      "original": "inbox-324-review-harness-tester.md",
+      "sha256OriginalFisico": "b0dff335c2584db353d385319040dabcfc2d5a27413e622ac3c82256172a872b",
+      "sha256PublicadoLF": "54080d3adf124601f86aa1c764f89598be2ed4a9de5c013f2f74d3f3cb9b8c9b"
+    },
+    {
+      "parecer": "visual-original.md",
+      "original": "inbox-324-final-visual-review-tester.md",
+      "sha256OriginalFisico": "717a10ceab1d8754c6c961c3aaf07e55723ccb7d9f7b409d8dc39e305af9371d",
+      "sha256PublicadoLF": "52ad08b56c7a14db4f2964f1b7b978773a041304f32ad4fd7052b67cb1017493"
+    },
+    {
+      "parecer": "composicao-unit.md",
+      "original": "inbox-324-composicao-local-review-tester.md",
+      "sha256OriginalFisico": "0b85f4273090869c7ce88858b2363016d334e38412f0ff9f7dc7777ff6f8e44b",
+      "sha256PublicadoLF": "1dd8fbaab3c36c83c3f28c9c11948a9034f080ac4c0eb47d36a1dcd72aff0d8d"
+    },
+    {
+      "parecer": "composicao-integracao.md",
+      "original": "inbox-324-integracao-composicao-review-tester.md",
+      "sha256OriginalFisico": "edc525af00327ff7958da6e9746c3a839cf766b2b5b27aec38fde275a5751f1e",
+      "sha256PublicadoLF": "9671cc2308bd595b8444f538b47a77e9031eb283b0a4ed7b4fbe79f13bc2afc4"
+    },
+    {
+      "parecer": "estado-vazio.md",
+      "original": "inbox-324-estado-vazio-review-tester.md",
+      "sha256OriginalFisico": "eeb392bd699f4229be9c4ebdbf56d773c736c65ae49dac9bdc91aef9ae433ae0",
+      "sha256PublicadoLF": "c00e587c7d3d1226b2d502e1e9d07fac0fa7ab5379b62e57ea9bc1ba9f7cd796"
+    },
+    {
+      "parecer": "visual-estado-vazio.md",
+      "original": "output/inbox-324-estado-vazio-visual-review-tester.md",
+      "sha256OriginalFisico": "777b7d8bc9b0abe19e38a35b60a16354ba91bf45c5ca00d8658efe4dfd11d9e1",
+      "sha256PublicadoLF": "74a9eb32f35dcff14c3be62fdb5fe9ab87e55c968fc1fdd2a22245072b346ab6"
+    }
+  ],
+  "global": {
+    "sessao": 77906,
+    "terminal": "5a1b72",
+    "exit": 0,
+    "arquivos": 914,
+    "testes": 7188,
+    "segundos": 46.3,
+    "comando": "node node_modules/vitest/vitest.mjs run",
+    "escopo": "Configuração unitária padrão; integração excluída; sem filtros por nome/skips."
+  },
+  "typescript": {
+    "terminal": "97cf38",
+    "exit": 0
+  },
+  "lintFinal": {
+    "terminal": "077d9d",
+    "exit": 0,
+    "arquivos": 3,
+    "avisos": 0
+  },
+  "integracao": {
+    "fonteExecutada": "f9c14500976f5a685ad9648e4b8bb7423d7da7c4",
+    "arvoreIgualA": "567ed5e1c2590490c2faaabbbad5bbca4531d063",
+    "tree": "06f41e5bd619631656df30307a91b89d98ca102f",
+    "sessao": 94331,
+    "terminal": "19cc40",
+    "exit": 0,
+    "arquivos": 5,
+    "testes": 54,
+    "segundos": 193.6,
+    "perfil": "integracao",
+    "schema": 487,
+    "naoReexecutadaAposDeltaSomenteUI": true
+  },
+  "visualHistorico": {
+    "produto": "2396a6c7703d0717a523d93f51a210a75f588135",
+    "harness": "ce658d8db49bca9a3f050072de2ef3e17c9cbe06",
+    "png": 97,
+    "bytes": 7105217,
+    "asset": 670630290,
+    "sha256Zip": "080a876faa1518ac3ddc59e58510aeea46e7255a190f57ca640505311d193e8e",
+    "roundtrip": "824fbc"
+  },
+  "visualAtual": {
+    "fonte": "7ff341db2e11a92d2b42747749ddab469e862603",
+    "parecer": "visual-estado-vazio.md",
+    "terminal": "4a5eec",
+    "exit": 0,
+    "png": 6,
+    "bytesPng": 433192,
+    "viewports": [
+      "1440x900",
+      "1024x768",
+      "320x500"
+    ],
+    "temas": [
+      "claro",
+      "escuro"
+    ],
+    "allowlist": "../inbox-324-estado-vazio-allowlist.json",
+    "sha256AllowlistFisico": "fe8fbc229ff8704ede9ceb7aece9567abc3b1aafdc32fcf85d2cb267f049e661",
+    "asset": 670692813,
+    "bytesZip": 417963,
+    "sha256Zip": "feee5cab13a78a055c430eddbd6f5f921175ff7795092fe9d76b9829e5a2cc33",
+    "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-324-estado-vazio-7ff341d-20261023.zip",
+    "upload": "957786",
+    "metadadosRelease": "63f225",
+    "releaseRascunho": true,
+    "roundtrip": "a4b866",
+    "roundtripSha256Identico": true,
+    "semAcionarAcaoNegocio": true
+  },
+  "restauroFinalVisual": {
+    "terminal": "914af4",
+    "exit": 0,
+    "tabelas": 424,
+    "hashesConferidos": true,
+    "portaLivre": "b241d4",
+    "previewEncerrado": "573396",
+    "exitPreviewCtrlCEsperado": 1
+  },
+  "revisaoR1": {
+    "fonte": "0e4ec6edcb430568ed339f8bf6630265d356a02a",
+    "review": 5635519413,
+    "parecer": "revisao-c5.md",
+    "sha256OriginalFisico": "88ad7fe2fee0ef298d8dbbaadee3e95dbab7a0369a2de44c8551d423632ea1c4",
+    "sha256PublicadoLF": "88ad7fe2fee0ef298d8dbbaadee3e95dbab7a0369a2de44c8551d423632ea1c4",
+    "root": {
+      "red": {
+        "terminal": "1641fb",
+        "exit": 1,
+        "executados": 1,
+        "ignoradosFiltro": 14
+      },
+      "integracao": {
+        "sessao": 13774,
+        "terminal": "7534a1",
+        "exit": 0,
+        "arquivos": 5,
+        "testes": 54,
+        "segundos": 206.97
+      },
+      "global": {
+        "sessao": 65123,
+        "terminal": "e8df9a",
+        "exit": 0,
+        "arquivos": 914,
+        "testes": 7188,
+        "segundos": 221.23,
+        "maxWorkers": 2
+      },
+      "typescript": {
+        "sessao": 73934,
+        "terminal": "9abbde",
+        "exit": 0
+      },
+      "lint": {
+        "terminal": "0fb4d9",
+        "exit": 0,
+        "arquivos": 3,
+        "avisos": 0
+      }
+    },
+    "tester": {
+      "unit": {
+        "terminal": "165dda",
+        "exit": 0,
+        "arquivos": 4,
+        "testes": 37
+      },
+      "integracao": {
+        "sessao": 46676,
+        "terminal": "ba3aed",
+        "exit": 0,
+        "arquivos": 2,
+        "testes": 25,
+        "segundos": 96.11
+      },
+      "jsComentarioC3": {
+        "terminal": "d8103b",
+        "exit": 0
+      }
+    },
+    "restauroFinal": {
+      "terminal": "eb2213",
+      "exit": 0,
+      "tabelas": 424,
+      "hashesConferidos": true
+    },
+    "imagensInline": {
+      "png": 6,
+      "bytes": 627933,
+      "fonte": "2396a6c7703d0717a523d93f51a210a75f588135",
+      "upload": "8dec5e",
+      "metadados": "5e741b",
+      "roundtrip": "dc21db",
+      "hashes6Conferidos": true,
+      "releaseRascunho": true
+    }
+  }
+}

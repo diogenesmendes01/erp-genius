@@ -193,7 +193,7 @@ describe("tags do painel318", () => {
     const op = await prisma.oportunidade.create({ data: { nome: "Oportunidade318", vendedorDonoId: dono.id, pessoaId: pessoa.id } });
     const donoDaLinha = await criarUsuario([Papel.VENDEDOR]);
     const linha = await numero("VENDAS", donoDaLinha.id), a = await atendimento(linha.id, (await contato()).id, { finalidade: "COMERCIAL", leadId: op.id });
-    expect((await carregarPainel(sess(dono), a.id))?.tags).toEqual([{ rotulo: "Inglês", ia: false }, { rotulo: "Noite", ia: true }]);
+    expect((await carregarPainel(sess(dono), a.id))?.tags).toEqual([{ id: ingles.id, rotulo: "Inglês", ia: false }, { id: noite.id, rotulo: "Noite", ia: true }]);
     expect((await carregarPainel(sess(donoDaLinha), a.id))?.tags).toEqual([]);
     const fin = await criarUsuario([Papel.FINANCEIRO]);
     const base = await seedCobranca({ vencimento: new Date("2026-10-10T12:00:00Z") });
@@ -219,7 +219,7 @@ describe("tags do painel318", () => {
     const op = await prisma.oportunidade.create({ data: { nome: "Lead318", vendedorDonoId: dono.id, pessoaId: pessoa.id } });
     const a = await atendimento((await numero("VENDAS", dono.id)).id, (await contato()).id, { finalidade: "COMERCIAL", leadId: op.id });
     await participar(a.id, convidado, dono);
-    expect((await carregarPainel(sess(convidado), a.id))?.tags).toEqual([{ rotulo: "Convidado", ia: true }]);
+    expect((await carregarPainel(sess(convidado), a.id))?.tags).toEqual([{ id: tag.id, rotulo: "Convidado", ia: true }]);
     await prisma.participanteAtendimentoWhatsApp.updateMany({ where: { atendimentoId: a.id, usuarioId: convidado.id }, data: { revogadoEm: new Date() } });
     expect(await carregarPainel(sess(convidado), a.id)).toBeNull();
   });
