@@ -1,5 +1,22 @@
 # Inbox #325 — composição de Detalhes e participantes B2B
 
+## Publicação independente sobre main
+
+Composição `6cf10369c3a230338a9fec2dc858a39efd4da759` diretamente da main confirmada `239ed17fde1593f2e96fde53a01851f48ed13f86`. A #325 não depende da #337 e não transporta seu código, schema ou SQL. O único conflito era no quadro: preservada toda a base main e acrescentado somente o bloco325. Prova `321d3f`, saída0: nove blobs do produto iguais a ddf e quinze do harness iguais a364, schema487 OID `1f575691cde242124c1493b8406121e8830a6f7e`. Diff-check contra essa base exata passou; a referência main local antiga não é usada para aferir o diff.
+
+ROOT preparou client487 próprio (`52313/608dbb`, saída0, 66,13 s), Next typegen e comparação física com schema oficialmente formatado (`7b4467`, saída0). Perfil integracao exclusivo ROOT; banco descartável restaurado ao snapshot494 com424 hashes antes dos testes.
+
+Gates desta composição direta main, todos com saída0:
+
+- Global `44608/1c11ad`: **925 arquivos/7.263 testes**, 253,13 s, maxWorkers2, sem filtro de casos ou skips; configuração unitária exclui integração.
+- TypeScript `45028/0c3842`: heap8192, sem diagnóstico.
+- Lint global `2885/82e0cf`: zero erros/40 avisos herdados, teto40.
+- Integração `19236/262081`: três arquivos completos/41 testes, 179,18 s, maxWorkers1, sem filtro de casos ou skips; painel-detalhes, paineis e atalhos. ROOT restaurou o banco após o terminal (`dae674`, saída0),424 hashes/snapshot494 preservados e nenhuma outra atividade.
+
+Os dois pareceres integrais do TESTER, nominais às preparações abaixo, estão no [índice de QA](inbox-325-qa/indice.json), com hashes físicos e GitLF. A identidade dos nove blobs APP sustenta a aplicação desses pareceres ao produto; não substitui QA do harness posterior ou da visualização.
+
+## Preparação histórica com a base337
+
 Preparação sobre `419b694f`, fonte da PR #416 ainda em revisão R1; esta base não representa merge em main. Produto selecionado de `ddf872e13078fb48c7648da9c2fc48b1d3f29438` (nove paths), harness de `364fd5112b99767bff001c3f635df02828685e34` (15 paths). Os blobs de produto foram conferidos em `c6b5a8`; o porte do harness e dos dois documentos finais foi `bf2191`. Nenhum schema, SQL ou dependência foi alterado pela #325; a preparação usa client/banco490 da base #337 e preserva os consumidores dessa frente.
 
 A aba comercial mostra Pessoa/empresa e participantes autorizados, com links produzidos pela #336. Convite contextual D13 permite dados da ficha, preservando capacidades de escrita e de acesso global ao CRM. O cartão de oportunidade leva ao Funil; a aba completa é #327. O hook de leitura é único e será reaproveitado pela edição #326. O rótulo genérico Documento da empresa e o teste de RUT chileno pertencem ao ajuste LATAM separado `ddf872e`; dados/documento/nascimento da Pessoa permanecem na #340.
@@ -17,6 +34,8 @@ DEV/harness364: 16 arquivos/115 testes, TSC/lint/sintaxe/CLIhelp com saída0. A 
 
 ## Visual e pendências
 
-Nenhuma captura325 ou preview novo foi executado. O plano original35/15 exigia PaisCL/CLP existente; inspeção READ ONLY confirmou Pais vazio no banco e snapshot. A emenda ROOT explícita, validada pelo PaisSchema real, planeja somente um país fictício novo além dos35 registros, 36/16 e total534 mantendo os498 originais. BlueprintRootV2 SHA `b18a21538396e618cc089f11df455a3b260d2313e61acf0e8d77b2ffed20277b`; não aplicado. Nenhum país original será editado, nem haverá notas, mensagens de saída, Save ou integração externa. O helper e a aplicação aguardam inspeção ROOT.
+O plano original35/15 exigia PaisCL/CLP existente; inspeção READ ONLY confirmou Pais vazio no banco e snapshot. A emenda ROOT explícita, validada pelo PaisSchema real, acrescentou somente um país fictício novo além dos35 registros, 36/16 e total534 mantendo os498 originais. BlueprintRootV2 SHA `b18a21538396e618cc089f11df455a3b260d2313e61acf0e8d77b2ffed20277b`. Aplicador foi lido integralmente: inspect `442fae`, saída0,59 chaves naturais/zero colisões; apply `199807`, saída0, commit confirmado e424 hashes dos originais/sequências intactos. Nenhum país original foi editado. Perfil B ci-integracao487, diferente dos bancos ROOT/TESTER/A, e preview local3111 com transportes externos desativados. Preflight `745b3e`, saída0, confirmou PF/PJ200, convidadoPJ200 com PII contextual autorizada/sem campos restritos ou fichas globais e destinos A200/B404; somente leituras e autenticação fictícia.
 
-Fonte e gates estão congelados. Aceite visual, QA do harness/imagens, base final após a revisão da #416, publicação/CI/comentários/merge continuam pendentes. Não encerrar a issue ou presumir homologação.
+A primeira tentativa visual `26ab1b` terminou saída1 e foi preservada: uma PNG candidata, nenhuma aceita, GET Detalhes cancelado. Diagnóstico somente leitura está em curso para provar ou rejeitar recuperação por resposta substituta completa; nenhum erro foi ignorado nem a tentativa chamada de aceite. Contextos/browser dessa tentativa fecharam em finally. Não houve Save, Assumir, notas, mensagens de saída ou integração externa.
+
+Fonte de produto está congelada. Aceite visual, eventual correção dirigida do diagnóstico/harness, QA independente do harness/imagens, gates da base direta main, publicação/CI/comentários/merge continuam pendentes. A #416 não bloqueia essa publicação independente. Não encerrar a issue ou presumir homologação.

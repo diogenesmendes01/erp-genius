@@ -1,0 +1,32 @@
+{
+  "issue": 325,
+  "composicao": "6cf10369c3a230338a9fec2dc858a39efd4da759",
+  "base": "239ed17fde1593f2e96fde53a01851f48ed13f86",
+  "pareceres": [
+    {
+      "origem": "output/inbox-325-05588-estatica-tester.md",
+      "destino": "preparacao-estatica.md",
+      "fonte": "05588ca5ddb15774fce21ca1a1fb8cb740d23a96",
+      "escopo": "Somente estática da preparação APP, sem execução/visual.",
+      "bytesOriginais": 3386,
+      "bytesPublicados": 3386,
+      "sha256FisicoOriginal": "1a7e9c57686f31644ab73fe8f43aa0e1b3a32fa2d75929a28b79b1d5abf67ee6",
+      "sha256GitLF": "1a7e9c57686f31644ab73fe8f43aa0e1b3a32fa2d75929a28b79b1d5abf67ee6"
+    },
+    {
+      "origem": "output/inbox-325-runtime-ddf-review-tester.md",
+      "destino": "preparacao-runtime.md",
+      "fonte": "ddf872e13078fb48c7648da9c2fc48b1d3f29438",
+      "escopo": "APP exata: UNIT69/726, INT3 completos/41, TSC/lint9; não é QA do harness ou visual.",
+      "bytesOriginais": 4753,
+      "bytesPublicados": 4753,
+      "sha256FisicoOriginal": "a9d9519708f93855de4c53cc3b0de7add5b285b2ab8170b10c71435b9149ba52",
+      "sha256GitLF": "a9d9519708f93855de4c53cc3b0de7add5b285b2ab8170b10c71435b9149ba52"
+    }
+  ],
+  "limites": [
+    "Nove paths APP da composição iguais a ddf; isso não presume igualdade da árvore inteira.",
+    "Harness364 e aceite visual ainda aguardam QA própria.",
+    "Os resultados repetidos não são testes distintos; fontes e negativos preservados nos pareceres integrais."
+  ]
+}
