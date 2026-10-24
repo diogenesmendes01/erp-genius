@@ -6837,3 +6837,13 @@ ROOT confirmou restauro ab76e0 EXIT0 do ciint491: 424 hashes, 502 registros e se
 
 ## #349 — QA e composição na main —24/10/2026
 ROOT compôs82f2cd86+598aae2c sobre main79310013;7SRC byteiguaiscb285,produtor342/executor/schema/deps preservados. Conflito único quadro:mainintegral+append349. TESTER2UNIT/30 adac5a,2INTcompletos/44 sessão36387/fb4a50/185.95s/w1,lint7 839fad, todosEXIT0. ROOT TSC ORIGINAL3356/EXIT0 semexclusões e lintGLOBAL18377/EXIT0 zeroerros40herdados. Restauros DEVab76e0 e TESTER927c1d/0,424hashes/502e1392/sequências,9msg4notasT. Evidências sanitizadasoutput/inbox-349-qa. Negativos amplosDEV280/282 e lintprivado preservados; bugbuscaUTC423separado/orçamentoinconclusivo. SemnovoUNITglobal/INTlocalROOT;CI/revisãofinal/publicação/mergependentes. VisualN/A,produtorDTO;cartão350futuro.
+
+
+## #349 — compatibilidade dos defaults Aria nos painéis — 24/10/2026
+
+Correção isolada sobre b292bf79: somente quatro expectativas completas de paineis.int.test.ts acrescentam podeDecidir: false e cartoes: []. Mantidos os nove toEqual, demais valores e restrições dos convidados; produção, permissões, schema/deps e #351 intactos. O shard 4 remoto 40140932662/job121012339272 permanece negativo, 733 passes/duas falhas em 735 casos; as falhas de Secretaria e Pedagógico eram os defaults aditivos ausentes, sem relação com orçamento.
+
+RED local 86203/c0d741: arquivo completo, 11 passes/duas falhas em 13, 55,79 s, EXIT1. GREEN 87482/a575d7: mesmo arquivo completo, 13/13, 58,07 s, EXIT0, worker1, sem filtros/skips. Lint do único path 4caa73 EXIT0; TypeScript final delegado ao ROOT conforme coordenação para delta exclusivo de literais, sem novo TSC DEV alegado. Banco ciint491 liberado ao ROOT após o terminal; nenhuma nova DB pelo DEV. Full remoto e demais gates/QA/publicação continuam pendentes. SPEC/relatório recebem apenas adendos, preservando o histórico integral.
+
+
+Restauro posterior confirmado pelo ROOT em cf2a26, EXIT0: ciint491, 424 hashes, snapshot e fixture preservados, zero atividades. Nenhuma nova operação DB pelo DEV. A fonte funcional permanece igual à base b292bf79; este complemento contém somente expectativas e documentação.

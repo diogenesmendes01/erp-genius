@@ -60,3 +60,19 @@ Resumo de gates próprios: UNIT 23 arquivos/185 casos e global 938/7.448, INT 2/
 Após o commit funcional c0e7edca, o ROOT confirmou restauro ab76e0 com saída 0: ciint491, 424 hashes, 502 registros e sequências do snapshot preservados. A lease está livre. Não houve nova operação DB do DEV depois da liberação.
 
 O integrador propôs investigar se criadoEm, retornado pelo MESMO create, fica à frente do instante Node capturado imediatamente depois do await e antes de processarTurnoAria. Nesse caso o filtro criadoEm <= agora excluiria a chamada intencionalmente; uma fixture com criadoEm explícito no passado seria candidata de correção separada, sem relaxar orçamento. Ainda não há essa prova nem autorização para executar o próximo diagnóstico. Precisão do controle já feito: agoraObservado foi capturado antes da leitura adicional e passado como deps.agora, portanto a leitura não avançou o cutoff daquele controle. O skew de 14 ms permanece hipótese, sem causalidade afirmada.
+
+
+## Correção isolada das expectativas dos painéis — 24/10/2026
+
+Branch codex/inbox-ci-349-defaults, base b292bf791e2a4762f892a68bba87a9de5f407b5f. A branch da #351 permanece preservada. O [shard 4 da Integração 40140932662](https://github.com/diogenesmendes01/erp-genius/actions/runs/40140932662/job/121012339272) terminou com 733 passes e duas falhas em 735 casos, 88 arquivos. Os erros em paineis.int.test.ts, linhas 82 e 107, mostram apenas cartoes: [] e podeDecidir: false adicionais ao objeto aria esperado. Esse run continua negativo; não é falha de orçamento nem é reclassificado pelo teste local. Outros shards e gates da publicação continuam sob ROOT.
+
+Raiz: carregarPainel incorpora o DTO de carregarAriaDoAtendimento, ampliado pela #349. capacidadesAria reserva decidirHistorico a Administrador/Gerente Comercial; Secretaria, Professor e vendedor convidado recebem naturalmente false e []. Há quatro expectativas antigas (82, 88, 107 e 112): as primeiras falhas interrompiam os dois testes antes das expectativas dos convidados. O fix acrescenta exclusivamente esses dois defaults aos quatro literais. Todos os nove toEqual do arquivo permanecem; substituir os quatro novos literais pelos antigos reproduz byte a byte o blob base em LF. Nenhum produtor, permissão, schema, dependência ou handoff da #351 mudou.
+
+TDD local no ciint491 exclusivo, cliente próprio 490, perfil ci-integracao, snapshot de 502 registros/424 hashes restaurado pelo ROOT em 362469: RED sessão 86203/c0d741, EXIT1, arquivo completo de 13 casos, 11 passes/duas falhas, 55,79 s; reproduziu os dois erros remotos. Depois do terminal, o patch foi aplicado. GREEN sessão 87482/a575d7, EXIT0, mesmo arquivo completo, 13/13, 58,07 s. Comando em ambas: Node22 node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts src/server/inbox/paineis.int.test.ts --maxWorkers=1. Sem filtro por nome ou teste ignorado. Não foram repetidos os 23 arquivos amplos nem UNIT global.
+
+Lint dirigido do único path, 4caa73, EXIT0 sem aviso. TypeScript não foi repetido pelo DEV para o delta exclusivo de literais, conforme autorização ROOT; verificação final fica com o integrador, sem declarar novo TSC aprovado. SHA256 GitLF final do teste: 01858be4581e73b0cd670bb7be59b94214d3e0f9fe855a0cbfa659a3b595a04e, 22.121 bytes. Logs completos RED/GREEN e prova de identidade permanecem privados, fora do commit.
+
+Banco explicitamente liberado ao ROOT após o terminal GREEN, sem nova operação DEV; restauro é responsabilidade do integrador. Entrega separada em um arquivo de teste e adendos de SPEC/relatório/quadro. Não altera os negativos temporais anteriores ou presume aceite da integração completa remota.
+
+
+Restauro posterior confirmado pelo ROOT em cf2a26, EXIT0: ciint491, 424 hashes, snapshot e fixture preservados, zero atividades. Nenhuma nova operação DB pelo DEV. A fonte funcional permanece igual à base b292bf79; este complemento contém somente expectativas e documentação.

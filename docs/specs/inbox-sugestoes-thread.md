@@ -22,3 +22,8 @@ Aceite visual: N/A, produtor de dados sem apresentação nova. Gates, negativos 
 
 
 Publicação: composição598aae2c diretamente na main79310013, com os sete SRC nominais cb285 e QA independente favorável. ROOT aprovou TypeScript original e lint global; restauros491 conferidos. [Evidências e limites](../../output/inbox-349-qa/indice.json). CI/revisão final/merge pendentes; não concluir349.
+
+
+## Compatibilidade dos painéis por setor — 24/10/2026
+
+Os campos aditivos podeDecidir e cartoes são obrigatórios no DTO retornado aos painéis. Secretaria, professor e vendedor convidado sem decidirHistorico recebem false e [], preservando as demais regras do setor. As quatro expectativas completas de paineis.int.test.ts passam a declarar esses defaults; continuam usando toEqual, inclusive nos casos de dados restritos do convidado. Nenhuma produção, alçada ou campo handoff da #351 entra nesta correção de teste. O relatório registra o RED local, o GREEN completo e o negativo remoto nominal.
