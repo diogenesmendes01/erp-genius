@@ -122,3 +122,11 @@ describe("PainelOportunidade: fuso pessoal de exibição", () => {
     expect(html).toContain("21/10/2026, 02:30");
   });
 });
+
+
+it("335: Abrir contato usa a ficha existente /contatos?c= e codifica a pessoa sem trocar identidade", () => {
+  const t = render({ ...base, pessoaId: "p ?/335" }, GERENTE, { abaInicial: "detalhes" });
+  expect(t).toMatch(/href="\/contatos\?c=p%20%3F%2F335"[^>]*>Abrir contato<\/a>/);
+  expect(t).not.toContain("/contatos/p");
+  expect(render({ ...base, pessoaId: null }, GERENTE, { abaInicial: "detalhes" })).not.toContain("Abrir contato");
+});
