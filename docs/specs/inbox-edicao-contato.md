@@ -17,3 +17,9 @@ Porte de16 pathsSRC de09498, excluindo hook/teste já idênticos; foco2de9 acres
 Gates atuais: recorte integral74 arquivos/700 testes em36669/655668 (20,87s, dois workers, sem filtro de nome/skips impostos); TSC30703/c2b8d7 (--noEmit --incremental false, heap8192); lint17 a85cb1/zeroavisos, todos saída0. O primeiro recorte698/700 falhou apenas por mock antigo de ícones incompleto, corrigido sem remover asserções. Detalhes em output/inbox-326-report.md.
 
 Integração só após confirmar lease/cliente com ROOT. A execução Save2588/2bca76 continua EXIT1; seus dois POSTs pontualmente bem-sucedidos não provam os dois aborts sem cronologia. As39 imagens/13pranchas históricas são nominais bec9/a540, não desta composição. Plano privado propõe uma Save nova, ACK original retido e observador por fase/versão, sem afrouxar coletor325. Nenhuma nova UI, HTTP local, fixture ou Save foi executada. Visual, QA independente, composição/CI/publicação permanecem pendentes; não concluir a issue.
+
+## Verificação posterior do freeze2b43
+
+INT27437/37989e: quatro arquivos completos/44 testes,191,96 s,perfilci-integracao487/um worker,EXIT0,nominal ao produto2b43. Global inicial63868/10d9c0 ficou negativo por um falso positivo: enum mapeado ao atributo nativo input.type foi tratado como rótulo. Correção separada somente na trava, por contexto direto e folhas literais técnicas number/date/text, sem exceção por arquivo/nome; sete contextos negativos permanecem detectados.
+
+RED138 com duas falhas causais → GREEN138 completo22e1db; guardas5/166b15d9a,TSCebb842 e lint0d33d0 terminaram0. Global final31619/1192b5:928 arquivos/7.335 testes,254,29 s,dois workers,sem filtro de nome ou skips impostos,EXIT0. APP/servidor e os17 paths da composição continuam idênticos2b43; INT não foi repetida por mudança exclusiva na trava. B1/C1 da revisão325, nova prova Save/visual, QA de composição, CI e publicação continuam pendentes.
