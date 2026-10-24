@@ -24,6 +24,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
+import { diaUtilAs } from "@/test/janela-envio";
 import { garantirAtendimento } from "./atendimentos";
 import { assumirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "./acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "./operacoes-atendimento";
@@ -153,7 +154,7 @@ describe("revogar convite e cancelar agendamento por natureza (#166)", () => {
 
   it("cancelar de novo, por quem cancelou, devolve ok sem outro Evento", async () => {
     const { v1, a } = await cenario();
-    const quando = new Date(Date.now() + 86_400_000).toISOString();
+    const quando = diaUtilAs(10).toISOString();
     const ag = await como(v1, () => agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "Lembrete da aula", quando }));
     if (!ag.ok) throw new Error(ag.erro);
     const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { atendimentoId: a.id } });
