@@ -1,6 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
+import { PerdaSchema, type PerdaInput } from "@/server/comercial/schema";
+import { marcarPerdidoTx } from "@/server/crm/marcar-perdido";
+import { destinoDoArraste } from "@/server/crm/etapas";
+import { comOportunidadeDoInboxTx } from "./contexto-oportunidade";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroRegra, exigirSessao } from "@/server/_shared/sessao";
@@ -91,5 +96,21 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
       }
       if (mudou) await avisarAtendimento(tx, id);
     });
+  });
+}
+
+/** CAS compara a oportunidade resolvida na thread; nunca é usado como alvo de escrita. */
+export async function marcarPerdidoNoInbox(atendimentoId:string,input:PerdaInput,oportunidadeIdEsperada:string):Promise<Resultado>{
+  return executarAcao(async()=>{
+    const sessao=await exigirSessao(),id=Id.parse(atendimentoId),esperada=Id.parse(oportunidadeIdEsperada),dados=PerdaSchema.parse(input);
+    await prisma.$transaction(tx=>comOportunidadeDoInboxTx(tx,sessao,id,esperada,async(autor,leadId)=>{
+      const atual=await tx.oportunidade.findUniqueOrThrow({where:{id:leadId},select:{etapa:true}});
+      const destino=destinoDoArraste(atual.etapa,"PERDIDO");
+      if(destino.tipo==="recusar")throw new ErroRegra(destino.motivo);
+      const mudou=await marcarPerdidoTx(tx,autor,leadId,dados);
+      if(atual.etapa==="PERDIDO"&&mudou)throw new ErroRegra("Oportunidade encerrada não volta ao funil.");
+      if(mudou)await avisarAtendimento(tx,id);
+    }));
+    revalidatePath("/funil");
   });
 }

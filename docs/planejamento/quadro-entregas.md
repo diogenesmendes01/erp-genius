@@ -6842,3 +6842,7 @@ CI rápida40128296594 em798f concluiu5/5; integração40128292519 concluiu4/4,35
 R10v2 terminou0 (39632/c49c9a), seis APP novas e seis referências históricas legítimas, seispares/trêstamanhos/doistemas, zeroSave. DEV e TESTER inspecionaram todas12imagens; ROOT trêspares. Manifesto2067ad02, executor e2a22a01, parecer independente4f158b2e; oito pareceres integrais agora no índice. Auditóriabde161 EXIT0 confirmou424hashes/498originais, mesmosvaloresR9,520registrosantesrestauro e nenhumaSavevisual. PreviewB61851 encerrado; porta3111fechada sem alterar3110/cluster. Restauroc1375e EXIT0:424hashes/498originais/sequências preservados, sem outra atividade. As capturas permanecem nominaisDEV6f, não ao merge798f.
 
 PR420 continua em rascunho/Refs326. Pendente a autorização/publicação do ZIP visual sanitizado e a revisão/CI rápida do SHA documental final. Não marcar326 concluída antes da publicação e dos gates finais. Contagem original permanece31fechadas/50abertas; #418 adicional não altera o total81. Sem novaSave, mensagem real ou deploy.
+
+## Inbox327/328 — fundacao minima portada R2, gates pendentes — 24/10/2026
+
+Base74d4=PR420179b+Main170edbad;DEV A portou somente nucleoPerdaTx/propModal/wrapperCAS/helpercontexto e testes existentes da fundacao minima328. APIsFunil,corpos326 e contratosMain preservados. Sem328UI/CartaoExperimental/Assumir e sem homologacao. Gates487 anteriores nominais;fonteR2 aguarda freeze+UNIT/TSC e GOINT especifico ROOT A491. Nenhum DB/teste/preview iniciado neste checkpoint;AGENTSgerado fora do commit.

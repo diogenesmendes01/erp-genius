@@ -10,7 +10,8 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { MOTIVO_PERDA_LABEL } from "@/lib/labels";
 import { marcarPerdido } from "@/server/comercial/acoes";
-import { PerdaSchema } from "@/server/comercial/schema";
+import { PerdaSchema, type PerdaInput } from "@/server/comercial/schema";
+import type { Resultado } from "@/server/_shared/resultado";
 
 // Q8: motivos de perda fixos (MotivoPerda); alternativa configurável em Configurações (Fase 5).
 
@@ -24,11 +25,12 @@ export function validarPerda(v: ValoresPerda): { erro: string | null; input: { m
   return { erro: null, input: { motivoPerda: r.data.motivoPerda, observacao: r.data.observacao?.trim() || undefined } };
 }
 
-export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir }: {
+export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir, acao: acaoRecebida }: {
   oportunidadeId: string;
   nome: string;
   aoFechar: () => void;
   aoConcluir?: () => void;
+  acao?: (input: PerdaInput) => Promise<Resultado>;
 }) {
   const router = useRouter();
   // Idempotente por natureza (#166, 5º lote): a mesma perda, do mesmo autor e com o mesmo motivo e observação,
@@ -46,9 +48,9 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir }: {
     }
     setErroLocal(null);
     const input = v.input;
-    const desfecho = await acao.executar(() => marcarPerdido(oportunidadeId, input));
+    const desfecho = await acao.executar(() => acaoRecebida ? acaoRecebida(input) : marcarPerdido(oportunidadeId, input));
     if (desfecho?.tipo === "ok") {
-      router.refresh();
+      if (!acaoRecebida) router.refresh();
       aoConcluir?.();
       aoFechar();
     }
