@@ -26,4 +26,16 @@ As props de conversa são opcionais para preservar consumidores existentes. Aber
 
 `/inbox?c=…&agendar=1` é somente o link contratado. O consumidor de agendamento E4 ainda está pendente: esta issue não abre um formulário fictício, agenda, assume atendimento nem envia mensagem.
 
-O relatório `output/inbox-336-report.md` registra os REDs, fixtures corrigidas, gates e comandos. Checkpoint estático não equivale a homologação: visual real, QA independente, regressão global integrada, PR e CI continuam pendentes. O harness compartilhado está reservado à A335; não foi alterado nesta fase.
+O relatório `output/inbox-336-report.md` registra os REDs, fixtures corrigidas, gates e comandos. Checkpoint estático não equivale a homologação: visual real, QA independente, regressão global integrada, PR e CI continuam pendentes. Esse parágrafo descreve o checkpoint inicial a96; o complemento visual e a fonte final estão registrados abaixo.
+
+## Complemento visual DEV e limite do aceite
+
+Fonte final APP 65839a85/harness 953fb634: 22 capturas locais reais nos dois temas (oito desktop 1440×900, oito mobile 320×500, quatro encerrada/ausente e dois Inbox leitor/B2B HTTP), terminal 78032/49aa31, EXIT 0. As 28 navegações por Tab/Enter preservam o documento e o máximo de uma SSE simultânea. A curadoria positiva está em output/inbox-336-allowlist.json, e fontes/hashes em output/inbox-336-fontes.json. A inspeção DEV das imagens não substitui QA independente ou regressão global integrada.
+
+O visual encontrou overflow em Contatos: coluna grid móvel implícita e cabeçalho sem acomodar Nova oportunidade. A correção mínima explicita grid-cols-1 (minmax 0), usa duas colunas no cabeçalho abaixo de 700 px e coloca a ação na própria linha. O documento passa de 442 para 320 px, preservando textos, ações, atalhos e ACL. A regressão browser confirma o controle inteiro e alcançável por Tab. Servidor CRM contatos.ts intacto. UNIT 48/467, TSC/lint e browser 1/1 terminaram com código 0 na fonte final; nenhuma INT durante a fixture visual.
+
+B2B 336 produz href por participante no DTO de /painel/detalhes: leitura de A 200/envio false, B 404, href A real/href B null. O consumidor JSX pertence à 325; as duas fotos mostram o Inbox somente leitura, sem alegar botão inexistente. Os quatro estados completos de entrada são APP-only sem referência funcional equivalente; nenhuma referência ou resposta de negócio foi fabricada.
+
+Negativos, credenciais e probes permanecem fora da allowlist e do ZIP positivo. ROOT encerrou o preview e restaurou o snapshot descartável após o fechamento dos contextos. Gates, negativos e fontes estão no relatório. A issue segue pendente de QA exata/visual independente, global integrada, CI/merge e publicação coordenada após 335 em main. Agendar=1 é somente a ponte E4.
+
+Curadoria final: as PNGs e ZIPs são assets locais privados fora do índice Git. O repositório mantém apenas catálogo, manifesto/parecer curado e documentação. O raw original e ZIP anterior foram preservados; o aceite vigente é output/inbox-336-aceite-65839-953fb-20261024.zip, com hash/bytes em output/inbox-336-zip.json. Nenhuma fonte ou gate mudou nesta curadoria; aguarda QA/GO do ROOT.

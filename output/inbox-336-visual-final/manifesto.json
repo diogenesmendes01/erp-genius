@@ -1,0 +1,322 @@
+{
+  "schema": "inbox-evidencias-curadas-v1",
+  "curadoria": {
+    "data": "2026-10-24",
+    "tipo": "Curadoria documental da execução original; não é nova captura ou novo teste.",
+    "politica": "docs/specs/inbox-curadoria-evidencias.md",
+    "imagensNoIndiceGit": false,
+    "artefatosLocaisPreservados": true,
+    "rawPreservadoSha256": "50708bc659bfa3e2d311a431b37fbe988f41abd34c70416cc1500c206611379d",
+    "status": "Entrega DEV; aguardando QA independente e integração ROOT."
+  },
+  "fontes": {
+    "app": "65839a85ebf87b4dcb443fef5acebe86538d00f0",
+    "harness": "953fb6342642d40d6ebdb80443adcc42761c3637",
+    "fixture": "a96d86455efedb960b60dac198a99eb82238cbdd",
+    "modulosHarnessSha256": {
+      "capturar-inbox.mjs": "dcd55c0573a2e952d7a5f8e952013b6f1bb239e730b631b4e1e1675a37d676ad",
+      "entradas-inbox.mjs": "caa37f5da8caf2018761ef388b987d25dcd44b09808467e22920e40d0910487a",
+      "nucleo-captura.mjs": "3f1786cf3e7f6f1ba7788359915c1cd014dcf952872fb992ab5b2934bcb46884",
+      "espera-app.mjs": "9aba36a46139342f85ca940cd52b813e76db8f3ce4822445f6325e9c0ad38c82",
+      "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711",
+      "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce"
+    }
+  },
+  "gates": {
+    "visual": {
+      "sessao": 78032,
+      "chunk": "49aa31",
+      "exitCode": 0,
+      "estados": 22
+    },
+    "unit": {
+      "sessao": 27125,
+      "chunk": "58a5a3",
+      "exitCode": 0,
+      "arquivos": 48,
+      "testes": 467,
+      "escopo": "Recorte completo das quatro telas, atalhos, ACL, encoder, guardas e harness; maxWorkers 2; sem filtro de nome ou novos skips. Não é suíte global."
+    },
+    "typescript": {
+      "sessao": 66457,
+      "chunk": "d6c537",
+      "exitCode": 0
+    },
+    "lint": {
+      "chunk": "fa837c",
+      "exitCode": 0,
+      "maxWarnings": 0
+    },
+    "browserRegressao": {
+      "chunk": "c774bb",
+      "exitCode": 0,
+      "testes": 1,
+      "skips": 0
+    },
+    "integracao": "Não reexecutada durante fixture visual. INT 3/38 anterior refere-se ao produtor a96; QA exata da fonte final pendente."
+  },
+  "resultado": {
+    "capturas": 22,
+    "inspecaoDev": "22 imagens inspecionadas, favorável com limites explícitos.",
+    "navegacoesTeclado": 28,
+    "abrir": 16,
+    "agendar": 12,
+    "documentosAdicionais": 0,
+    "sseSimultaneasMax": 1,
+    "errosReactConsoleHttpRede": 0,
+    "alertasInesperados": 0,
+    "documentoContido": true,
+    "diagnosticosRecuperados": 58,
+    "classeDiagnostico": "Somente GET de mensagens cancelado e recuperado por GET 2xx íntegro, segundo classificador existente.",
+    "acoesIncidentais": [
+      "marcarAtendimentoLidoAutomatico",
+      "respostasRapidasDoCompositor"
+    ],
+    "negocioExecutado": false,
+    "browserFechado": true
+  },
+  "limites": [
+    "Agendar=1 é somente ponte E4; nenhum formulário, agendamento ou envio foi executado.",
+    "B2B: fotos do Inbox leitor com envio bloqueado; HTTP comprovou A 200/envio false, B 404 e DTO com href A real/href B null.",
+    "A lista JSX de participantes pertence à 325; sua presença visual não foi alegada.",
+    "Estados completos APP-only sem referência funcional equivalente; ui2 limita-se à presença/texto do atalho.",
+    "QA exata e visual independente, global integrada, CI/merge e publicação ROOT permanecem pendentes.",
+    "PNG/ZIP/raw são artefatos locais privados; repositório contém apenas catálogo e registros curados."
+  ],
+  "negativosResumidos": [
+    {
+      "sessao": 61698,
+      "chunk": "c3b34d",
+      "exitCode": 1,
+      "motivo": "Contatos 320×500 com overflow real de 442 px; corrigido em 65839; parciais excluídos."
+    },
+    {
+      "sessao": 17689,
+      "chunk": "aa24ad",
+      "exitCode": 1,
+      "motivo": "Premissa nominal incorreta do runner B2B (Pessoa versus nome canônico do Lead); corrigida somente a expectativa privada; parciais excluídos."
+    }
+  ],
+  "fotos": [
+    {
+      "arquivo": "app-escuro-desktop-funil.png",
+      "sha256": "b99c0571e61a470af2a3e54555d74af0c113c1c1888cf5bb8ca0e909460e7fa4",
+      "bytes": 109572,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "funil",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-escuro-desktop-tarefas.png",
+      "sha256": "ea0b045987fe637db6c4a54352aee0dd3f11a92687b77526edb6248a45066ad8",
+      "bytes": 91471,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "tarefas",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-escuro-desktop-contatos.png",
+      "sha256": "ebc5489bca4a17debce48c6d3deb5689d22eba3597885223ed133f9f8a7df354",
+      "bytes": 136002,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "contatos",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-escuro-desktop-agente.png",
+      "sha256": "62504f77d34b93a64b79e14b6f6714e9ecd47c78b4a9561d81779a3efb4ea94d",
+      "bytes": 98276,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "agente",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-escuro-mobile-funil.png",
+      "sha256": "c71156cc6c96f516b7216ee0bca90a467b8f13af26c6b876dbaacf97764b8776",
+      "bytes": 29343,
+      "width": 320,
+      "height": 500,
+      "tema": "escuro",
+      "superficie": "funil",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-escuro-mobile-tarefas.png",
+      "sha256": "55c7b49dfe66ef334a0c56ddfdf5ab773f9e598080fc83d70a63fd7608c9d155",
+      "bytes": 20543,
+      "width": 320,
+      "height": 500,
+      "tema": "escuro",
+      "superficie": "tarefas",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-escuro-mobile-contatos.png",
+      "sha256": "e4b94fe12e5783964a868353f6b410c5d7ced1fc2e14e9397f9297c8ccc04a45",
+      "bytes": 27680,
+      "width": 320,
+      "height": 500,
+      "tema": "escuro",
+      "superficie": "contatos",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-escuro-mobile-agente.png",
+      "sha256": "9b736de6a1d7a57e2882642647683f01a9e81c5c29a22463b3ba5edcc8d710ae",
+      "bytes": 18941,
+      "width": 320,
+      "height": 500,
+      "tema": "escuro",
+      "superficie": "agente",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-escuro-desktop-encerrada.png",
+      "sha256": "b143a85cef00063c949120cc970d1d90a2c8d3b4646e89cbd5bc5639fd6c60b5",
+      "bytes": 134543,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "encerrada",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-escuro-desktop-ausente.png",
+      "sha256": "5d90dd6aa23ec630a125cf43a2f19f36051dd019a5c6f739fdc6a08557deb7d5",
+      "bytes": 135536,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "ausente",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-escuro-desktop-b2bLeitor.png",
+      "sha256": "47d9fd533f38b6c007c65d407b775105314c8fa04571d23e7681d58bd2a9204c",
+      "bytes": 95851,
+      "width": 1440,
+      "height": 900,
+      "tema": "escuro",
+      "superficie": "b2bLeitor",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-desktop-funil.png",
+      "sha256": "076d6efaf68f167d866bc57b93ab3d9548a855b724c6ff97a11817680ee99ef1",
+      "bytes": 113045,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "funil",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-desktop-tarefas.png",
+      "sha256": "682fc696c64b72e33e955b6f256588aa6385950bf794dc4bf3927dbf4df02040",
+      "bytes": 93388,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "tarefas",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-desktop-contatos.png",
+      "sha256": "22ca970f1e30d902ec21c2a2a7e3a4ec5ff55e693ae8fbfe465012e31ac87714",
+      "bytes": 136721,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "contatos",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-desktop-agente.png",
+      "sha256": "3f4bc6e9d8e41ddd0211f0edc25a2e30d46c5e4e820300bdb5a3f1d5ab7abfe3",
+      "bytes": 98412,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "agente",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-mobile-funil.png",
+      "sha256": "e0866496f3a1ca7a6c7883076962d9d3640958113ca67e8a820c763241b14aa2",
+      "bytes": 28436,
+      "width": 320,
+      "height": 500,
+      "tema": "claro",
+      "superficie": "funil",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-claro-mobile-tarefas.png",
+      "sha256": "04a1b562b15fe1cc1e496f03c94fae1813ed320a5f7194911db1440c79834213",
+      "bytes": 20220,
+      "width": 320,
+      "height": 500,
+      "tema": "claro",
+      "superficie": "tarefas",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-claro-mobile-contatos.png",
+      "sha256": "5a0d75acd6752444705346f75c57efdcbca55d395a00414342af578792f615bc",
+      "bytes": 27751,
+      "width": 320,
+      "height": 500,
+      "tema": "claro",
+      "superficie": "contatos",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-claro-mobile-agente.png",
+      "sha256": "b60d5b5bcb022e34a6a695c9206a81c87db07279ea3a78f52f860c1621645998",
+      "bytes": 19195,
+      "width": 320,
+      "height": 500,
+      "tema": "claro",
+      "superficie": "agente",
+      "tamanho": "mobile"
+    },
+    {
+      "arquivo": "app-claro-desktop-encerrada.png",
+      "sha256": "f9d2721cb8985480cf1e31827e4d4224067d23f74cb121e19374aee791818d17",
+      "bytes": 135246,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "encerrada",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-desktop-ausente.png",
+      "sha256": "8d30ac41dc3b26b841a58c863fd9f3119589bc668abad5518097b854fbd01f93",
+      "bytes": 136779,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "ausente",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "app-claro-desktop-b2bLeitor.png",
+      "sha256": "90bb9417b84fd0c4c9021135b3b161db89f6b0b2622dfc653eaed474c4f34f7d",
+      "bytes": 95021,
+      "width": 1440,
+      "height": 900,
+      "tema": "claro",
+      "superficie": "b2bLeitor",
+      "tamanho": "desktop"
+    }
+  ]
+}
