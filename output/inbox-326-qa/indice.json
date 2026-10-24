@@ -1,0 +1,44 @@
+{
+  "issue": 326,
+  "base": "ae56c00f053e864a3efea35d2f640afe48716cc4",
+  "composicao": "8b91bab362416ba3dd42a99831d5898356e99479",
+  "devFreeze": "6f92673dfb526e11ad1e349bea484d135819e849",
+  "pareceres": [
+    {
+      "origem": "inbox-326-2b43-codigo-final-review-tester.md",
+      "destino": "codigo-inicial.md",
+      "fonte": "2b43b38fc7928bb11555949ea769080459570635",
+      "escopo": "22/504 UNIT,4/44 INT,TSC/lint17; fonte anterior ao cacheR1.",
+      "bytesOriginais": 9763,
+      "bytesPublicados": 9763,
+      "sha256FisicoOriginal": "665a13d2a220820747bc40a71a0700080c52d4bcbd918a99c06e12666ef00fff",
+      "sha256GitLF": "665a13d2a220820747bc40a71a0700080c52d4bcbd918a99c06e12666ef00fff"
+    },
+    {
+      "origem": "inbox-326-08852-guard-final-review-tester.md",
+      "destino": "guarda-enums.md",
+      "fonte": "08852f53cfc29566c0656aff9a0ecf13bd4645f5",
+      "escopo": "Guarda138 e5/166 relacionados,TSC/lint; semDB.",
+      "bytesOriginais": 5199,
+      "bytesPublicados": 5199,
+      "sha256FisicoOriginal": "1e38e2ba579f177f29184c7d8336fa6e300fcf721ebc43d998b74660b4304437",
+      "sha256GitLF": "1e38e2ba579f177f29184c7d8336fa6e300fcf721ebc43d998b74660b4304437"
+    },
+    {
+      "origem": "inbox-326-6f92-conjunto-final-review-tester.md",
+      "destino": "conjunto-r1.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "24 arquivos/656 UNIT,TSC/lint21,21blobs da publicação8b91 exatos; semDB/HTTP/UI.",
+      "bytesOriginais": 8652,
+      "bytesPublicados": 8652,
+      "sha256FisicoOriginal": "3698611682eac180c1e339ba94a41f5f24e1e903d73b3213bdc8029bede9c94c",
+      "sha256GitLF": "3698611682eac180c1e339ba94a41f5f24e1e903d73b3213bdc8029bede9c94c"
+    }
+  ],
+  "limites": [
+    "Os recortes são sobrepostos e não devem ser somados.",
+    "4/44 INT é nominal ao backend2b43, comprovadamente idêntico; não reexecutado no6f.",
+    "Save pela interface e visual final continuam pendentes;24 testes offline do observador não são24 arquivos de QA.",
+    "39 imagens e2588EXIT1 históricos não são reatribuídos à fonte atual."
+  ]
+}
