@@ -6687,3 +6687,5 @@ Defeito herdado confirmado: logoutpersistiaDESCforaTXadministrativa, releiturafr
 Registrodeintegração:#417foimergeadaae56c00f053e864a3efea35d2f640afe48716cc4eissue325fechadaapós5checksatuais/QAindependente/anexosvisuaisautorizados. Campanhaoriginais30fechadas/51abertas,37PRmergeadasincl297; #416aguarda418. SemhomologaçãoUAToudeploypresumido.
 
 418 — global final91717/006c1a saída0,926arquivos/7313testes,242,24s,maxWorkers2,semfiltrocasosouskips/configunitexcluiINT. Demaisgates40INT/11UNIT/TSC/lint4/globalnominaisnaSPEC; QAindependente/publicação/CI/mergependentes.
+
+418/PR419 QA independente finald9c:2UNIT/37 205109,2INTcompletos/40 7633/f9caa5138,00s/maxWorkers1,TSC43274/0933a8,lint4/346be5 todos0. Parecerintegraloutput/ci-418-qa.md/SHA A29DD0396BCC52D8417FCA79ABD3D0FEB3AFEA08AFB513F350BD118108264C9F. Rootrestauro3e3048saída0/424hashes/snapshot494. Bodiesadmin4iguaispai/freshreadTXpreservada,apenashelperusacomandopuro;25novasprovasnãosomadascomglobals. Semmotorreal/UI,CIheadfinal/mergependentes.
