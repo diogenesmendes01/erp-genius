@@ -56,3 +56,8 @@ Notas do atendimento seguem E0: convidado autorizado recebe resumo, sem nova al�
 Sem preview, UI nova, corpus visual, mensagem externa ou mudança de fuso. Intenções de teste são fixtures descartáveis, sem despacho. Visual novo é N/A. Os negativos da #349 e as provas da #423 permanecem nominais às respectivas fontes, sem reclassificação.
 
 O banco foi liberado ao ROOT após o último terminal; nenhuma nova operação DB está autorizada ao DEV. Restauro ROOT 491, QA independente, revisão, CI e publicação ainda serão registrados pelo integrador. A issue não está concluída nesta entrega.
+
+
+### Constância final do banco — #351
+
+ROOT confirmou restauro do ciint491 na sessão 362469, EXIT0: 424 hashes conferidos, fixture e snapshot preservados, zero outras atividades. Nenhuma nova operação DB pelo DEV. Fonte funcional 55d9c5eb159649f73a35686183fa81d5400304b5 preservada; este adendo é exclusivamente documental. QA independente, revisão, CI e publicação seguem pendentes.

@@ -6870,3 +6870,8 @@ Gates DEV com saída 0: UNIT 45914/cbccdf, 29 arquivos/420 casos; INT 50642/4afe
 TSC auxiliar conserva exatamente as duas exclusões privadas históricas autorizadas; todos os SRC/testes atuais estão incluídos. Negativos de parser, loader ausente, guarda contextual (153/154) e coluna resultado inexistente estão preservados e explicados. Prova AST 77429/edbd4f confirma formatter/executor, 11 funções de consultas e 13 paths protegidos iguais à base; os 13 textos antigos do Playground permanecem. A guarda recebeu somente a exceção exata aprovada para descrição histórica contextual. APROVADA/EXECUTADA não prova entrega externa; a resposta de transição real integra feito.
 
 Banco ciint491 liberado ao ROOT após os terminais; nenhuma nova operação DEV. Visual novo N/A, produtor interno e rótulos/layout existentes preservados. SPEC docs/specs/inbox-handoff-resumo.md e relatório output/inbox-351-report.md. Restauro ROOT, QA independente, revisão, CI e publicação pendentes; não concluir a issue. Publicar somente após integração da #349.
+
+
+### Constância final do banco — #351
+
+ROOT confirmou restauro do ciint491 na sessão 362469, EXIT0: 424 hashes conferidos, fixture e snapshot preservados, zero outras atividades. Nenhuma nova operação DB pelo DEV. Fonte funcional 55d9c5eb159649f73a35686183fa81d5400304b5 preservada; este adendo é exclusivamente documental. QA independente, revisão, CI e publicação seguem pendentes.
