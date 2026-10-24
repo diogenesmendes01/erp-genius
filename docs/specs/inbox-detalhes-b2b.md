@@ -45,3 +45,11 @@ Gates do harness: 16 arquivos/115 testes `7a72c9` (2,80 s), TSC `226547`, lint14
 A prova causal325 permite diagnosticar somente aborto GET exato do mesmo atendimento/página/contexto quando outro GET iniciou depois, observou headers200, concluiu corpo JSON com hash igual ao preflight e a página/semântica atual é revalidada no fim. Não muda guardas953/SSE nem APP;200 sem corpo, body diferente, outra identidade/ID/query/POST ou troca/desmonte seguem negativos.
 
 Primeiro lote26ab1b (uma PNG) e diagnóstico c588cb continuam negativos privados. Validação focada c578af terminou0 sem PNG, após corpos/Tab; não é aceite visual. TDD RED23→GREEN138, unitário final16/138 b6c655,TSC60126/f7c101,lint4a1e86d e syntax2d86b3f terminaram0. A rodada formal30+6 e QA visual continuam pendentes de avalROOT; APP permanece ddf872e.
+
+## Revisão R2 do coletor visual325
+
+O coletor de d1f51 aguardava apenas Promises inseridas em requestfinished e podia ignorar um GETDetalhes já iniciado. A revisão bloqueou a rodada formal. A prova focada c578af continua nominal, sem PNG, e não comprova a conclusão de todos os STARTs; os negativos anteriores permanecem preservados.
+
+A barreira nova rastreia cada START do GET exato por página/contexto/atendimento até falha ou headers/corpo/hash concluídos. Inclui pedidos iniciados enquanto aguarda, impõe prazo comum e sela apenas revisão estável, zero pendências e DOM atual válido. Eventos posteriores ao selo reprovam. Listeners permanecem até browser.close, com auditoria após o contexto e veredito final após o browser. SSE/guardas953 permanecem intactos. Falha tardia de 48 não é recuperada pelo GET38 anterior.
+
+Reprodução em memória dos callbacks originais: 7f1915/EXIT1, falso verde confirmado sem HTTP/browser/DB. Testes finais de eventos e harness: 40d4ce/EXIT0, 17 arquivos/150 testes, sem filtro por nome ou skip imposto; TSC heap8192 fc8bb6 e lint4/syntax2/diff4a7fc3 terminaram0. APPddf, servidor, schema e dependências sem delta. Os detalhes e negativos estão no report325. A rodada30+6 permanece suspensa até revisão e aval ROOT; esta correção não atribui aceite visual.
