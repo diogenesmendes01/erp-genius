@@ -6780,3 +6780,15 @@ Impressão digital reconciliada: físico DEV6.784bytes/b193fb0a tem uma CRLF iso
 Restauros DEV87b529, ROOTb9b0d3 e TESTER4c16c9 terminaram0, conferindo424hashes e sequências; históricos491 e clientes490 próprios. Fixtures originais502/1378/1392registros, sem mensagem externa ou reinício do cluster. Evidências sanitizadas em output/inbox-342-qa/restauros.json; snapshots/credenciais/raw continuam privados.
 
 CI rápida40135514587 concluiu5/5;937arquivos/7425testes em cada fuso, totais confirmados ef9587 EXIT0. Integração completa40135542522 concluiu4/4:350arquivos/3104testes aprovados;3arquivos/4preparadores visuais opt-in ignorados, detalhados no registro CI nominal54c. Consolidação documental/CI do head final e merge permanecem pendentes. Aceite visual N/A, produtor interno sem UI nova. Não marcar342 concluída antes dos gates finais. Sem decisão humana pendente nesta entrega.
+
+
+## Correção #423 — validade UTC do conhecimento, DEV em 24/10/2026
+
+Item adicional às 81 issues originais do Inbox, base main 79310013. FonteConhecimento.validoAte UTC sem fuso passa a ser comparada com now() AT TIME ZONE 'UTC', preservando relógio, regra estritamente maior, API, ranking, limite, IDs informados, status e arquivamento. Só uma expressão SQL muda; sem Db opcional, schema, migração ou dependência. Orçamento e #349 não mudam.
+
+RED completo 83578/674d0e EXIT1: cinco de sete passam; legado de validade e matriz falham. Mesma conexão comprovada nos três fusos e restaurada antes das asserções; UTC positivo, São Paulo inclui vencida e Tokyo exclui vigente. GREEN completo 65918/c07540, sete de sete EXIT0. A matriz usa relógio real do banco, pool1/tx, SQL e resultados originais encaminhados e SET LOCAL com restauração; os seis testes anteriores permanecem intactos.
+
+Gates finais: integração de conhecimento completo + contexto consumidor 70967/aee3e2, quatro arquivos/38 casos, 144,15 s, sem filtros/skips; UNIT dirigido 72db5f, três arquivos/16 casos; TSC auxiliar 32592/25cf96 e lint dos dois paths f07ef3, todos EXIT0. A auxiliar mantém apenas as duas exclusões privadas históricas autorizadas. UNIT global DEV dispensado pelo integrador para esta expressão; CI global da publicação pendente, sem atribuir recorte como global. Banco ciint491 liberado para restauro ROOT; sem nova operação DB. SPEC docs/specs/aria-validade-conhecimento-utc.md e relatório output/inbox-423-report.md. Visual N/A; QA independente, revisão, CI e publicação pendentes. Nenhuma correção ou reclassificação do negativo de orçamento da #349.
+
+
+Adendo atual #423: restauro ROOT 9de0f0 EXIT0 confirmou ciint491, 424 hashes, 502 registros, sequências preservadas e zero outra atividade. Sem nova operação DB nesta frente. Fonte congelada para QA; próxima implementação depende de coordenação ROOT.
