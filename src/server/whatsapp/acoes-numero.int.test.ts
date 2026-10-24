@@ -7,6 +7,14 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 const { chamar } = vi.hoisted(() => ({ chamar: vi.fn() }));
 vi.mock("./motor/cliente", async (orig) => ({ ...(await orig<typeof import("./motor/cliente")>()), chamarMotor: chamar }));
+const falhaEvento = vi.hoisted(() => ({ tipo: null as string | null }));
+vi.mock("@/server/_shared/evento", async orig => {
+  const real = await orig<typeof import("@/server/_shared/evento")>();
+  return { ...real, registrarEvento: async (...args: Parameters<typeof real.registrarEvento>) => {
+    if (args[1].tipo === falhaEvento.tipo) throw Error("sentinela de rollback administrativo418");
+    return real.registrarEvento(...args);
+  } };
+});
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
@@ -24,6 +32,7 @@ import {
   salvarNumeroWhatsApp,
 } from "./acoes";
 import { ErroMotor } from "./motor/cliente";
+import { aplicarEstadoSessao } from "./sessao";
 import { listarNumerosConfig, listarResponsaveisTriagem } from "./consultas";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
@@ -32,6 +41,7 @@ let sec: Awaited<ReturnType<typeof criarUsuario>>;
 let n: Awaited<ReturnType<typeof criarNumeroSetor>>;
 
 beforeEach(async () => {
+  falhaEvento.tipo = null;
   await truncarBanco();
   admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
   gerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
@@ -196,6 +206,8 @@ describe("ciclo do número no motor", () => {
     expect(chamar).toHaveBeenCalledWith(`/v1/numeros/${num.id}/desconectar`, expect.objectContaining({ metodo: "POST" }));
     expect((await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).sessao).toBe("DESCONECTADO");
     expect((await eventosDo("NumeroWhatsApp", num.id)).map((e) => e.tipo)).toContain("NumeroWhatsAppDesconectado");
+    const desconexoes = (await eventosDo("NumeroWhatsApp", num.id)).filter(e => e.tipo === "NumeroWhatsAppDesconectado");
+    expect(desconexoes).toHaveLength(1); expect(desconexoes[0]).toMatchObject({ autorId: admin.id, payload: { de: "CONECTADO" } });
   });
 
   it("não-ADMINISTRADOR é recusado", async () => {
@@ -232,10 +244,13 @@ describe("desativar, reativar e excluir número", () => {
     expect(await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).toMatchObject({ ativo: false, sessao: "DESCONECTADO", excluidoEm: null });
     const tipos = (await eventosDo("NumeroWhatsApp", num.id)).map((e) => e.tipo);
     expect(tipos).toEqual(expect.arrayContaining(["NumeroWhatsAppDesconectado", "NumeroWhatsAppDesativado"]));
+    const desconexoes = (await eventosDo("NumeroWhatsApp", num.id)).filter(e => e.tipo === "NumeroWhatsAppDesconectado");
+    expect(desconexoes).toHaveLength(1); expect(desconexoes[0]).toMatchObject({ autorId: admin.id, payload: { de: "CONECTADO" } });
     chamar.mockClear();
     expect((await desativarNumeroWhatsApp(num.id)).ok).toBe(true);
     expect(chamar).not.toHaveBeenCalled();
     expect((await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppDesativado")).toHaveLength(1);
+    expect((await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppDesconectado")).toHaveLength(1);
     // Continua na configuração, como inativo.
     expect((await listarNumerosConfig()).find((n) => n.id === num.id)).toMatchObject({ ativo: false });
   });
@@ -305,13 +320,18 @@ describe("desativar, reativar e excluir número", () => {
     const ev = (await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppExcluido");
     expect(ev).toHaveLength(1);
     expect(ev[0].payload).toMatchObject({ telefoneE164: "+5511999990108", ativoAntes: true, sessaoAntes: "CONECTADO" });
+    const desconexoes = (await eventosDo("NumeroWhatsApp", num.id)).filter(e => e.tipo === "NumeroWhatsAppDesconectado");
+    expect(desconexoes).toHaveLength(1); expect(desconexoes[0]).toMatchObject({ autorId: admin.id, payload: { de: "CONECTADO" } });
   });
 
   it("excluir de novo pela mesma pessoa é ok sem outro Evento; outra pessoa não acha o número", async () => {
     const num = await motorNum({ telefoneE164: "+5511999990109" });
     expect((await excluirNumeroWhatsApp(num.id)).ok).toBe(true);
+    chamar.mockClear();
     expect((await excluirNumeroWhatsApp(num.id)).ok).toBe(true);
+    expect(chamar).not.toHaveBeenCalled();
     expect((await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppExcluido")).toHaveLength(1);
+    expect((await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppDesconectado")).toHaveLength(1);
     const outro = await criarUsuario([Papel.ADMINISTRADOR], "Outro admin");
     authMock.mockResolvedValue({ user: { id: outro.id } });
     expect(await excluirNumeroWhatsApp(num.id)).toEqual({ ok: false, erro: "Número não encontrado." });
@@ -319,6 +339,68 @@ describe("desativar, reativar e excluir número", () => {
     expect((await reativarNumeroWhatsApp(num.id)).ok).toBe(false);
     expect((await desativarNumeroWhatsApp(num.id)).ok).toBe(false);
     expect((await salvarNumeroWhatsApp({ id: num.id, telefoneE164: num.telefoneE164, rotulo: "X1", finalidade: "COBRANCA" })).ok).toBe(false);
+  });
+
+  const operacoesAuditadas = [
+    { nome: "desativar", executar: desativarNumeroWhatsApp, tipo: "NumeroWhatsAppDesativado", telefone: "+5511999990120" },
+    { nome: "excluir", executar: excluirNumeroWhatsApp, tipo: "NumeroWhatsAppExcluido", telefone: "+5511999990121" },
+  ];
+  it.each(operacoesAuditadas)("$nome relê sessão alterada enquanto o motor responde", async ({ executar, tipo, telefone }) => {
+    const num = await motorNum({ telefoneE164: telefone });
+    chamar.mockImplementationOnce(async () => { await prisma.numeroWhatsApp.update({ where: { id: num.id }, data: { sessao: "CAIU" } }); return {}; });
+    expect((await executar(num.id)).ok).toBe(true);
+    const eventos = await eventosDo("NumeroWhatsApp", num.id), desconexoes = eventos.filter(e => e.tipo === "NumeroWhatsAppDesconectado");
+    expect(desconexoes).toHaveLength(1); expect(desconexoes[0]).toMatchObject({ autorId: admin.id, payload: { de: "CAIU" } });
+    expect(eventos.filter(e => e.tipo === tipo)).toHaveLength(1);
+  });
+  it.each(operacoesAuditadas)("$nome reverte sessão e ambos os eventos quando a transação falha", async ({ executar, tipo, telefone }) => {
+    const num = await motorNum({ telefoneE164: telefone }); falhaEvento.tipo = tipo;
+    expect((await executar(num.id)).ok).toBe(false); expect(chamar).toHaveBeenCalledWith(...logout(num.id));
+    expect(await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).toMatchObject({ ativo: true, sessao: "CONECTADO", excluidoEm: null });
+    expect(await eventosDo("NumeroWhatsApp", num.id)).toHaveLength(0);
+  });
+
+  it.each(operacoesAuditadas)("$nome mantém a auditoria quando o webhook confirma DESCONECTADO antes da transação", async ({ executar, tipo, telefone }) => {
+    const num = await motorNum({ telefoneE164: telefone });
+    chamar.mockImplementationOnce(async () => {
+      await aplicarEstadoSessao(num.id, "DESCONECTADO", "webhook");
+      expect((await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).sessao).toBe("DESCONECTADO");
+      expect(await eventosDo("NumeroWhatsApp", num.id)).toHaveLength(0);
+      return {};
+    });
+    expect((await executar(num.id)).ok).toBe(true);
+    expect(chamar).toHaveBeenCalledTimes(1);
+    expect(chamar).toHaveBeenCalledWith(...logout(num.id));
+    const eventos = await eventosDo("NumeroWhatsApp", num.id);
+    const desconexoes = eventos.filter(e => e.tipo === "NumeroWhatsAppDesconectado");
+    expect(desconexoes).toHaveLength(1);
+    expect(desconexoes[0]).toMatchObject({ autorId: admin.id, payload: { de: "CONECTADO" } });
+    expect(eventos.filter(e => e.tipo === tipo)).toHaveLength(1);
+    expect(await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).toMatchObject({ ativo: false, sessao: "DESCONECTADO" });
+    chamar.mockClear();
+    expect((await executar(num.id)).ok).toBe(true);
+    expect(chamar).not.toHaveBeenCalled();
+    expect((await eventosDo("NumeroWhatsApp", num.id)).map(e => e.id).sort()).toEqual(eventos.map(e => e.id).sort());
+  });
+
+  it.each(operacoesAuditadas)("$nome reverte apenas a transação administrativa após webhook já confirmado", async ({ executar, tipo, telefone }) => {
+    const num = await motorNum({ telefoneE164: telefone });
+    chamar.mockImplementationOnce(async () => {
+      await aplicarEstadoSessao(num.id, "DESCONECTADO", "webhook");
+      return {};
+    });
+    falhaEvento.tipo = tipo;
+    expect((await executar(num.id)).ok).toBe(false);
+    expect(chamar).toHaveBeenCalledTimes(1);
+    expect(await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).toMatchObject({ ativo: true, sessao: "DESCONECTADO", excluidoEm: null });
+    expect(await eventosDo("NumeroWhatsApp", num.id)).toHaveLength(0);
+  });
+
+  it.each(operacoesAuditadas)("$nome não inventa desconexão para número já desconectado antes da ação", async ({ executar, tipo, telefone }) => {
+    const num = await motorNum({ telefoneE164: telefone, sessao: "DESCONECTADO" });
+    expect((await executar(num.id)).ok).toBe(true);
+    expect(chamar).not.toHaveBeenCalled();
+    expect((await eventosDo("NumeroWhatsApp", num.id)).map(e => e.tipo)).toEqual([tipo]);
   });
 
   it("excluir recusa o remetente da política da régua e o número dos avisos da agenda", async () => {
