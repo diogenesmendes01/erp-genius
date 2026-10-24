@@ -184,8 +184,16 @@ export async function consultarSessaoMotor(
   };
 }
 
-/** Logout no motor (exige novo pareamento) e sessão local DESCONECTADO. */
-export async function desconectarNumeroMotor(n: { id: string; providerRef: string }): Promise<void> {
+/** Comando externo; a operação administrativa confirma estado e auditoria na sua própria transação. */
+export async function solicitarLogoutMotor(n: { providerRef: string }): Promise<void> {
   await chamarMotor(`${rotaNumero(n.providerRef)}/desconectar`, { metodo: "POST" });
+}
+
+/**
+ * Contrato legado de logout com sincronização local, mantido para compatibilidade.
+ * Ações administrativas usam solicitarLogoutMotor e confirmam estado/eventos na própria transação.
+ */
+export async function desconectarNumeroMotor(n: { id: string; providerRef: string }): Promise<void> {
+  await solicitarLogoutMotor(n);
   await aplicarEstadoSessao(n.id, "DESCONECTADO", "conectar");
 }
