@@ -6731,6 +6731,7 @@ R1, gates locais finais: global 60813/5e25c4, 926 arquivos/7.313 testes, 308,93 
 
 
 
+
 24/10/2026 — Composição local da PR #416 com a main ae56 e a dependência revisada #419 (2f3db8b0). Apenas o quadro conflitou; ambos os blocos foram preservados integralmente. A dependência ainda aguarda CI/Integração remota e merge. Esta composição antecipa validação e não libera o merge de #416. Preparação do cliente/perfil 490 e novos gates em andamento; nenhuma nova nota pela interface, envio real ou deploy.
 
 ## Composição com main e dependência #419 — 24/10/2026
@@ -6746,3 +6747,12 @@ Clientes próprios 490 e bancos distintos: ROOT dev-gravacoes, TESTER tester. Re
 Anexos já autorizados e publicados diretamente na PR416: [comentário6386780823](https://github.com/diogenesmendes01/erp-genius/pull/416#issuecomment-6386780823), [ZIP](https://github.com/user-attachments/files/33909097/inbox-337-aceite-d68-ab76-20261023.zip) e [PNG](https://github.com/user-attachments/assets/d0a6b829-c61b-4ff7-863d-78c41a0a4baf). O índice registra esse destino e preserva o histórico da release em rascunho. Não há autorização humana pendente para esses dois arquivos.
 
 C1 permanece condicionado à integração remota: a primeira execução teve a fixture de domingo, corrigida; a segunda falhou pela auditoria de desconexão herdada. A correção #419 passou em sua CI rápida atual (40118067977, cinco jobs) e sua Integração 40118084095 ainda está em curso. Será executada uma vez a Integração completa da composição publicada. Nenhuma dessas execuções pendentes é declarada aprovada; resultados permanecem nominais aos seus SHAs.
+
+
+## Integração completa — porte da fixture de calendário já validada
+
+A revisão da composição constatou que o head 2f3db8b0 da #419 ainda usava Date.now()+1dia no caso de cancelamento de agendamento. Em 24/10/2026, amanhã é domingo. A #416 já corrigia essa fixture no commit b2df8321; esse ajuste agora é portado literalmente para a dependência, com o helper existente diaUtilAs(10). O teste não verifica a política de domingo: precisa criar um agendamento válido antes de verificar idempotência do cancelamento.
+
+Delta exclusivo de teste: um import e a data da fixture. Nenhum produtor de janela, autorização, transporte, schema, dependência ou workflow muda. O blob final é exatamente d1c3775a1315bf4eceaa954a7c4636d74b10b7e1, igual ao já publicado na #416. Evidência anterior nominal: reprodução 2076/2cdece com uma falha em 11 casos e GREEN 37237/85094b, três arquivos completos/27 INT; a composição923 também aprovou o mesmo arquivo no recorte ROOT 7455/eabe78, dez arquivos/116 INT no schema490. Isso não é uma nova INT local desta publicação, cujo schema é487. QA e gates anteriores da correção de produção permanecem atribuídos às suas fontes; os quatro SRC #418 não mudam.
+
+Nova CI rápida e Integração completa devem rodar no novo SHA publicado. O run 40118084095 permanece nominal a 2f3, sem esse ajuste; não é reatribuído. A composição #416 faa8 já contém o mesmo teste corrigido e sua Integração40119667033 continua pertinente. Merge da #419 e depois da #416 continuam condicionados às verificações finais. Não há mudança da regra de envio ou nova nota manual.
