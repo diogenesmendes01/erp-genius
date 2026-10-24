@@ -23,3 +23,9 @@ Integração só após confirmar lease/cliente com ROOT. A execução Save2588/2
 INT27437/37989e: quatro arquivos completos/44 testes,191,96 s,perfilci-integracao487/um worker,EXIT0,nominal ao produto2b43. Global inicial63868/10d9c0 ficou negativo por um falso positivo: enum mapeado ao atributo nativo input.type foi tratado como rótulo. Correção separada somente na trava, por contexto direto e folhas literais técnicas number/date/text, sem exceção por arquivo/nome; sete contextos negativos permanecem detectados.
 
 RED138 com duas falhas causais → GREEN138 completo22e1db; guardas5/166b15d9a,TSCebb842 e lint0d33d0 terminaram0. Global final31619/1192b5:928 arquivos/7.335 testes,254,29 s,dois workers,sem filtro de nome ou skips impostos,EXIT0. APP/servidor e os17 paths da composição continuam idênticos2b43; INT não foi repetida por mudança exclusiva na trava. B1/C1 da revisão325, nova prova Save/visual, QA de composição, CI e publicação continuam pendentes.
+
+## Produtor R1 de325 composto
+
+Delta mínimo29b23763→fd1ea: hook/teste e teste de Detalhes, mais uma condição de fallback WhatsApp. Cache por atendimento/aba conserva o DTO bom em revalidação/retry/falha transitória; troca/desativação limpa imediatamente e403/404 revogam. Editor326 mantém sua sessão/snapshot e a mesma instância Detalhes OU editor. Fallback de telefone depende de ausência de Pessoa confirmada, sem ampliar permissões/setor. Só uma aba Detalhes nesta fonte; sem327/328 ou harness portado.
+
+Recorte12906/8d9440:74 arquivos/711 testes,24,37 s; TSC31135/9afe00 e lint4 73db59, todosEXIT0. Harness96c+enums73287/86353d:18/288,32,16 s,EXIT0; sem filtro de nome/skips impostos. Backend idêntico2b43, mantendo4/44INT nominal, sem repetição. QA da composição, nova prova Save/visual, fixture/observador privados e publicação continuam pendentes.
