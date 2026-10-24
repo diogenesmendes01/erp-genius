@@ -4,7 +4,8 @@
     "preparacao": "7d9f565c3b840b64ec6b88dc4d2c4446a95803f5",
     "executavelIntegrado": "9fa1b30ecbb0c3d214d57f3a9544c05e249b919d",
     "visualHistorico": "d68f678c8af2f17cb815647b68fa514e389c85f7",
-    "complementoACK": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49"
+    "complementoACK": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+    "executavelR1": "ecc92d4781c5fe0f94f06920442769e8ad37b999"
   },
   "pareceres": [
     {
@@ -55,6 +56,13 @@
       "fonte": "9fa1b30e",
       "sha256OriginalFisico": "84f6c3af7cdb2788658fe3dd2ce9e2a7608af22c6bd113093e53980504b54f1f",
       "sha256PublicadoLF": "84f6c3af7cdb2788658fe3dd2ce9e2a7608af22c6bd113093e53980504b54f1f"
+    },
+    {
+      "origem": "inbox-337-r1-final-review-tester.md",
+      "arquivo": "revisao-r1.md",
+      "fonte": "ecc92d4781c5fe0f94f06920442769e8ad37b999",
+      "sha256OriginalFisico": "79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b",
+      "sha256PublicadoLF": "79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b"
     }
   ],
   "pacote": {

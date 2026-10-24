@@ -1,5 +1,7 @@
 # Inbox #337 — composição final de menções e avisos
 
+Fonte executável atual da revisão R1: `ecc92d4781c5fe0f94f06920442769e8ad37b999`, combinando C2/C3/C4 e os ajustes documentais C5/C6. Global ROOT930/7.317 e QA independente30/431 UNIT +seis completos/53 INT aprovadas, com detalhes abaixo. Os checkpoints iniciais permanecem históricos. CI do head publicado, workflow Integração C1 e autorização específica para anexar os dois arquivos à PR ainda são etapas externas pendentes.
+
 Base direta main `239ed17fde1593f2e96fde53a01851f48ed13f86`, squash da #415; issue #336 confirmada closed/completed (`0b75e5`). A árvore desse squash é igual à publicação `89445880`, prova `9622b2` e ajuste do ponteiro local `b3bf02`, sem mudar índice ou arquivos. Foram selecionados apenas os 28 paths SRC/Prisma e seis documentos finais da preparação `7d9f565c3b840b64ec6b88dc4d2c4446a95803f5`; a identidade dos 28 blobs foi conferida em `660b06`, saída 0. O quadro atual foi preservado. Nenhuma história agregada, PNG, ZIP, log bruto ou credencial entrou no porte.
 
 O produto selecionado preserva tokens explícitos/UTF16, homônimos, busca autorizada, nota/avisos/NOTIFY/idempotência na mesma transação, paginação do sino com ACL por lote, caret após commit e reconciliação de rolagem após ACK. Os três IDs de migração são os originais reservados `20261023140000`, `20261023170000` e `20261023180000`, já aplicados somente nos bancos descartáveis490. Não foi criado ID novo nem aplicado o índice planejado da #342.
@@ -38,3 +40,19 @@ O callback de busca em ConversaAberta agora permanece estável para o mesmo aten
 RED causal `cf09e8`, saída1: dois arquivos/20 casos, cinco falhas novas e 15 aprovados, antes da implementação. GREEN `b36c41`, saída0: os mesmos dois arquivos completos/20 testes, 743 ms. Inclui debounce/consulta mais recente, fechamento antes do GET, AbortSignal e resposta antiga após troca de conversa, estabilidade no pai e URL codificada.
 
 Recorte ampliado `63674/f8ea4a`, saída0: 26 arquivos completos/376 testes, 17,50 s, maxWorkers2, sem filtro de caso ou skip. TypeScript `77234/07b3ba`, saída0, heap8192. Lint dos quatro paths de fonte/teste `f52547`, saída0, zero avisos. Esses gates não são uma regressão global nem validam os ajustes de servidor C3/C4 ainda em desenvolvimento. A CI anterior `40101081717` passou cinco jobs no head419b; não é atribuída a este código novo.
+
+## Revisão R1 integrada — C2/C3/C4/C5/C6
+
+O commit DEVd38 foi integrado como ecc, preservando os sete blobs servidor/testes; os quatro blobs frontend continuam iguais a540fa. Prova `3a0e3c`, saída0. Dois conflitos eram exclusivamente documentais no quadro e na SPEC: ambos os blocos foram preservados (`3987b1`, saída0). Nenhuma alteração de schema/três SQLs, permissões compartilhadas ou dependências. O extrator original permanece intacto. C3 processa aliases do mais longo para o mais curto, consulta todo o grupo e só desce se nenhum membro é visível; cache porID somente nesta tx/invocação. Ganho dirigido200→1 e limites residuais200/250 documentados no [relatório DEV](pr416-r1-server-c3-c4.md). C4 calcula escopo do sino somente no primeiro lote de menção válida.
+
+Gates ROOT em ecc, fonte congelada, todos positivos abaixo têm terminal0:
+
+- Global `39412/16ad36`: **930 arquivos/7.317 testes**, 276,05 s, maxWorkers2, sem filtro de casos ou skips; integração é excluída pela configuração unitária.
+- TypeScript `10637/568474`: heap8192, sem diagnóstico.
+- Lint global final `26067/370329`: zero erros/40 avisos herdados, teto40. A primeira tentativa `3705/cca706` terminou1 por dois nomes não usados em um helper privado de curadoria325, fora do Git; foram removidos sem alterar produto/configuração/limite. O negativo permanece no log privado.
+
+TESTER no SHA exato ecc: **30 arquivos/431 UNIT** (`8605/f4840a`, 20,46 s), **seis arquivos completos/53 INT** (`43384/7d1293`, 221,10 s, tester490 exclusivo), TSC (`34056/678604`) e lint11 (`485fed`), todos saída0. O [parecer completo R1](inbox-337-qa/revisao-r1.md),10996bytes/SHA256 `79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b`, contém comandos,11 hashes, oráculo de4.608 comparações em um caso, negativos e limites. Essas comparações não são4.608 testes independentes. As execuções C2 anteriores são subconjuntos, sem soma duplicada.
+
+ROOT restaurou dev-gravacoes490 após a INT DEV (`56dd59`, saída0,424hashes/3mensagens1nota) e tester490 após a INT independente (`11a3d1`, saída0,424hashes/9mensagens4notas). As duas cópias snapshot permaneceram intactas. Nenhuma nova nota manual/UI ou imagem foi produzida. Sete pareceres históricos foram novamente conferidos antes de acrescentar o oitavo R1 (`f32bff`, saída0); não foram editados ou reatribuídos.
+
+C5 mapeia os três nomes do checklist aos casos reais. C6 alinha D20 e a manutenção do índice parcial; os dois legados caíram de73.322 para12.840bytes, preservando o objeto inteiro gatesPreparacaoLimpa20261024 e links/hashes/blobs imutáveis9fa. A liberação do ZIP/PNG no formulário da PR segue pendente da resposta humana específica ao bloqueio da revisão automática. A release continua DRAFT; este registro não concede autorização de upload por outra via. Disposições em [revisão R1](inbox-337-revisao-r1.md).
