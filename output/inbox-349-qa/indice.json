@@ -64,6 +64,41 @@
     "DEV global938/7448 aprovado; DEV integração ampla280/282 permanece EXIT1 e lint global privado permanece negativo.",
     "Busca temporal herdada foi isolada na issue423; orçamento permanece inconclusivo e fora349.",
     "Visual N/A para produtorDTO/decisões; cartão visual é350.",
-    "CI original e revisão final da publicação pendentes; issue349 aberta."
-  ]
+    "CI original e revisão final da publicação pendentes; issue349 aberta.",
+    "Atualização:343/423 integradas em main170edbad. Fullb292 resultou349arquivos/3117passes,1arquivo/2casos falhos e3arquivos/4skips optin. Quatro literais completos corrigidos,13/13local;novo full combinado pendente. Nenhuma falha antiga reclassificada."
+  ],
+  "estadoAtual": {
+    "fonteComposta": "d9b1b08e2d97bdf89371673a2d2330ac0ac45d28",
+    "baseMain": "170edbadfdf35a93f5366ba504bb7870a1ebf0c1",
+    "correcaoLiterais": "1433790090ca35a784ed7c19c6843ccf8a876504",
+    "composicao": "composicao-main343.json",
+    "integracaoAnteriorNegativa": "ci-full-b292-negativo.json",
+    "ciOriginalB292": {
+      "run": 40140900342,
+      "jobs": 5,
+      "arquivosPorFuso": 938,
+      "testesPorFuso": 7448,
+      "status": "success"
+    },
+    "redLocal": "86203/c0d741/EXIT1/11-13",
+    "greenLocal": "87482/a575d7/EXIT0/13-13",
+    "restauroRoot": "cf2a26/EXIT0/424hashes"
+  },
+  "gatesOriginaisRootComposicao": {
+    "typeScriptOriginal": {
+      "sessao": 28227,
+      "terminal": "a6beb3",
+      "exit": 0,
+      "incremental": false,
+      "heapMB": 8192,
+      "exclusoesAuxiliares": false
+    },
+    "lintGlobal": {
+      "sessao": 42789,
+      "terminal": "5d9ca8",
+      "exit": 0,
+      "erros": 0,
+      "avisosHerdados": 40
+    }
+  }
 }

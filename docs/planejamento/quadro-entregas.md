@@ -6847,3 +6847,13 @@ RED local 86203/c0d741: arquivo completo, 11 passes/duas falhas em 13, 55,79 s, 
 
 
 Restauro posterior confirmado pelo ROOT em cf2a26, EXIT0: ciint491, 424 hashes, snapshot e fixture preservados, zero atividades. Nenhuma nova operação DB pelo DEV. A fonte funcional permanece igual à base b292bf79; este complemento contém somente expectativas e documentação.
+
+
+## #349 — composiçãoMain343/423 e negativo remoto preservado
+
+
+### Composição com main343/423 e correção de expectativas349
+BaseMain170edbad. Merge5b50cb4b+correção d9b1b08e (origem14337900),oito pathsSRC contraMain:sete originais349 byteiguaiscb285/b292 e umteste comquatro literais aditivos. Produção não mudou;toEqualcompleto preservado. Fullb29240140932662 terminou EXIT1:349arquivos/3.117passes,1arquivo/2falhas,3arquivos/4casos optin ignorados. Falhas emSECRETARIA/PEDAGOGICO de paineis.int porausência de cartoes[]/podeDecidir:false;as outras duas expectativas ainda não eram alcançadas. REDlocal11/13EXIT1 eGREENcompleto13/13EXIT0(58,07s),lint1EXIT0,restauroROOTcf2a26EXIT0. Main343/423preservada,quadroMainintegral. Provas públicas no QA:composicao-main343.json eci-full-b292-negativo.json. TSC/lintoriginaiscombinados e novaCI/full ainda pendentes neste checkpoint. Não concluir349 nem apresentar full anterior como verde.
+
+
+Atualização dos gates da composição: TypeScript original terminou com código0 (sessão28227,terminala6beb3), sem exclusões auxiliares e sem incremental. Lint global terminou0 (sessão42789,terminal5d9ca8), zero erros e40avisos herdados. Nenhuma fonte foi alterada durante essas execuções. CI e integração completa da nova composição permanecem pendentes.
