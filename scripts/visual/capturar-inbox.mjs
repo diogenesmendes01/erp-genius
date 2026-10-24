@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { confirmarPainelSecretaria, semanticaPainelSecretariaPronto, confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { configurarEntrada, abrirEntradaApp } from "./entradas-inbox.mjs";
-import { ESTADOS_DETALHES_325, configurarDetalhes325, abrirDetalhes325, abrirPrototipoDetalhes325 } from "./detalhes-inbox.mjs";
+import { ESTADOS_DETALHES_325, configurarDetalhes325, abrirDetalhes325, abrirPrototipoDetalhes325, hashCorpoDetalhes325, semanticaDetalhes325Pronto, cancelamentoDetalhes325Recuperado } from "./detalhes-inbox.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
@@ -214,6 +214,10 @@ async function main() {
       const abortados = [];
       const concluidos = new Set();
       const conclusoes = [];
+      const contextoId = randomUUID(), paginaId = randomUUID(), ordens = new WeakMap(), headersDetalhes = new WeakMap(), respostasDetalhes = [];
+      let inicioRequest = 0;
+      const idDetalhes = tarefa.alvo === "app" && ESTADOS_DETALHES_325.includes(tarefa.estado) ? configurarDetalhes325(tarefa.estado).id : null;
+      const urlDetalhes = idDetalhes ? o.base + "/api/inbox/atendimentos/" + encodeURIComponent(idDetalhes) + "/painel/detalhes" : null;
       try {
         await contexto.addInitScript(({ alvo, tema }) => {
           localStorage.setItem(alvo === "app" ? "tema" : "crm-theme", alvo === "app" ? (tema === "escuro" ? "dark" : "light") : tema);
@@ -222,14 +226,32 @@ async function main() {
         await prepararRede(contexto, tarefa.alvo, o.base, falhas);
         const erroControlado = await instalarErroEstado(contexto, o.base, ids?.beatriz, tarefa.alvo === "app" ? tarefa.estado : "");
         const pagina = await contexto.newPage();
+        pagina.on("request", pedido => ordens.set(pedido, ++inicioRequest));
         pagina.on("pageerror", (erro) => falhas.push(`pageerror: ${erro.message}`));
         pagina.on("console", (mensagem) => { if (tarefa.alvo === "app" && problemaReactNaCaptura(mensagem.text())) falhas.push(`React: ${mensagem.text()}`); });
-        pagina.on("requestfailed", (pedido) => abortados.push({ pedidoReal: pedido, url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
+        pagina.on("requestfailed", (pedido) => abortados.push({ pedidoReal: pedido, contextoId, paginaId, atendimentoId: idDetalhes, ordem: ordens.get(pedido), url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
         pagina.on("requestfinished", (pedido) => {
           if (pedido.method() !== "GET") return;
-          conclusoes.push(pedido.response().then((resposta) => { if (resposta?.ok()) concluidos.add(`GET ${pedido.url()}`); }));
+          conclusoes.push((async () => {
+            const resposta = await pedido.response();
+            if (resposta?.ok()) concluidos.add(`GET ${pedido.url()}`);
+            if (idDetalhes && pedido.url() === urlDetalhes) {
+              const registro = headersDetalhes.get(pedido);
+              if (registro) {
+                registro.corpoConcluido = (await resposta?.finished()) === null;
+                try { registro.corpoSha256 = hashCorpoDetalhes325(await resposta.json()); } catch { registro.corpoConcluido = false; }
+              }
+            }
+          })());
         });
-        pagina.on("response", (resposta) => { if (resposta.status() >= 400 && !erroControlado.respostaEsperada(resposta)) falhas.push(`HTTP ${resposta.status()}: ${resposta.url()}`); });
+        pagina.on("response", (resposta) => {
+          const pedido = resposta.request();
+          if (idDetalhes && pedido.method() === "GET" && pedido.url() === urlDetalhes && pedido.frame().page() === pagina) {
+            const registro = { contextoId, paginaId, atendimentoId: idDetalhes, ordem: ordens.get(pedido), method: "GET", url: pedido.url(), headersObservados: true, status: resposta.status(), corpoConcluido: false };
+            headersDetalhes.set(pedido, registro); respostasDetalhes.push(registro);
+          }
+          if (resposta.status() >= 400 && !erroControlado.respostaEsperada(resposta)) falhas.push(`HTTP ${resposta.status()}: ${resposta.url()}`);
+        });
         pagina.setDefaultTimeout(30_000);
         let estadoApp;
         if (tarefa.alvo === "app") estadoApp = await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho);
@@ -243,10 +265,12 @@ async function main() {
         await erroControlado.finalizar(pagina);
         await Promise.all(conclusoes);
         const diagnosticos = [...erroControlado.diagnosticos];
+        const provaDetalhes = idDetalhes && estadoApp?.metadados?.detalhes325 ? { base: o.base, contextoId, paginaId, atendimentoId: idDetalhes, atendimentoAtualId: new URL(pagina.url()).searchParams.get("c"), corpoEsperadoSha256: estadoApp.metadados.detalhes325.corpoEsperadoSha256, paginaAtiva: !pagina.isClosed(), semanticaFinal: await pagina.evaluate(semanticaDetalhes325Pronto, estadoApp.metadados.detalhes325) } : null;
         for (const pedido of abortados) {
           const registro = `requestfailed: ${pedido.url} ${pedido.erro}`;
           if (erroControlado.cancelamentoEsperado(pedido.pedidoReal, pedido.erro)) diagnosticos.push(`GET500 controlado cancelado e substituído por headers500 observados/erro público pronto: ${pedido.url}`);
           else if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
+          else if (cancelamentoDetalhes325Recuperado(pedido, respostasDetalhes, provaDetalhes)) diagnosticos.push({ tipo: "GETDetalhes325 recuperado com corpo idêntico e DOM atual", contextoId, paginaId, atendimentoId: idDetalhes, inicioAbortado: pedido.ordem, iniciosSubstitutos: respostasDetalhes.filter(r => cancelamentoDetalhes325Recuperado(pedido, [r], provaDetalhes)).map(r => r.ordem), corpoSha256: provaDetalhes.corpoEsperadoSha256 });
           else falhas.push(registro);
         }
         capturas.push({ ...tarefa, ...estadoApp?.metadados, ...(ESTADOS[tarefa.estado].motivoSemReferencia ? {referenciaFuncionalPrototipo:null,motivoSemReferencia:ESTADOS[tarefa.estado].motivoSemReferencia} : {}), ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { esperarHidratacaoApp } from './espera-app.mjs';
 import { instalarConclusaoMensagens } from './estados-inbox.mjs';
 
@@ -37,7 +38,7 @@ export async function confirmarDetalhes325(contexto, base, configuracao) {
   }) : [];
   const formatarCampo = c => c.valor === null || c.valor === '' ? '—' : typeof c.valor === 'boolean' ? c.valor ? 'Sim' : 'Não' : c.tipo === 'DATA' && /^\d{4}-\d{2}-\d{2}$/.test(c.valor) ? c.valor.split('-').reverse().join('/') : String(c.valor);
   const textos = [d.pessoa.email, d.oportunidade.produto ?? d.oportunidade.titulo, ...(b2b ? [d.b2b.empresa.nome, d.pessoa.cargo, d.pessoa.empresa.documento, d.pessoa.empresa.segmentoMercado, d.pessoa.empresa.porte, d.pessoa.empresa.site ?? d.pessoa.linkedin, 'Documento da empresa'] : [d.pessoa.cidade]), ...d.campos.flatMap(c => [c.nome, formatarCampo(c)])].filter(preenchido);
-  return { modo, nomeCabecalho: b2b ? d.b2b.empresa.nome : d.pessoa.nome, subtitulo: p.cabecalho.subtitulo, quadrado: b2b, textos,
+  return { corpoEsperadoSha256: hashCorpoDetalhes325(d), modo, nomeCabecalho: b2b ? d.b2b.empresa.nome : d.pessoa.nome, subtitulo: p.cabecalho.subtitulo, quadrado: b2b, textos,
     fichaHref: cap.verContato ? '/contatos?c=' + encodeURIComponent(d.pessoa.id) : null,
     empresaHref: b2b && cap.verEmpresa ? '/empresas/' + encodeURIComponent(d.b2b.empresa.id) : null,
     oportunidadeHref: "/funil?o=" + encodeURIComponent(d.oportunidade.id), participantes, campoRestrito: modo === 'convidado' ? campoRestrito : null, marcaCampoAria: d.campos.some(c => c.ia === true) };
@@ -101,4 +102,27 @@ export async function abrirPrototipoDetalhes325(pagina, url, estado) {
   await painel.getByText('Oportunidade atual', { exact: true }).waitFor({ state: 'visible' });
   if (b2b) await painel.getByText('Contatos nesta oportunidade', { exact: true }).waitFor({ state: 'visible' });
   await painel.getByText('Detalhes', { exact: true }).waitFor({ state: 'visible' });
+}
+
+/** Identifica o conteúdo JSON sem depender da ordem de propriedades; nunca guarda o corpo bruto. */
+export function hashCorpoDetalhes325(corpo) {
+  if (!corpo || typeof corpo !== 'object' || Array.isArray(corpo)) throw new Error('Corpo Detalhes325 inválido.');
+  const ordenar = v => Array.isArray(v) ? v.map(ordenar) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, ordenar(v[k])])) : v;
+  return createHash('sha256').update(JSON.stringify(ordenar(corpo))).digest('hex');
+}
+
+/** Só recupera aborto natural com substituto posterior íntegro e conteúdo atual da mesma identidade. */
+export function cancelamentoDetalhes325Recuperado(pedido, respostas, prova) {
+  if (!prova || prova.paginaAtiva !== true || prova.semanticaFinal !== true || prova.atendimentoAtualId !== prova.atendimentoId
+    || ![prova.contextoId, prova.paginaId, prova.atendimentoId].every(v => typeof v === 'string' && !!v.trim())
+    || !/^[a-f0-9]{64}$/.test(prova.corpoEsperadoSha256 ?? '') || !Array.isArray(respostas)) return false;
+  try {
+    const base = new URL(prova.base);
+    if (base.protocol !== 'http:' || !['localhost', '127.0.0.1'].includes(base.hostname) || base.origin !== prova.base || base.search || base.hash) return false;
+    const exata = prova.base + '/api/inbox/atendimentos/' + encodeURIComponent(prova.atendimentoId) + '/painel/detalhes';
+    const mesmaIdentidade = r => r.contextoId === prova.contextoId && r.paginaId === prova.paginaId && r.atendimentoId === prova.atendimentoId;
+    if (pedido?.method !== 'GET' || pedido.erro !== 'net::ERR_ABORTED' || pedido.url !== exata || !Number.isInteger(pedido.ordem) || pedido.ordem <= 0 || !mesmaIdentidade(pedido)) return false;
+    return respostas.some(r => mesmaIdentidade(r) && r.method === 'GET' && r.url === exata && Number.isInteger(r.ordem) && r.ordem > pedido.ordem
+      && r.headersObservados === true && r.status === 200 && r.corpoConcluido === true && r.corpoSha256 === prova.corpoEsperadoSha256);
+  } catch { return false; }
 }

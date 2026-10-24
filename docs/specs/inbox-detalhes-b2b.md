@@ -39,3 +39,9 @@ Após o checkpoint `05588ca5`, o rótulo passou a “Documento da empresa” por
 A extensão separada preserva190 combinações953 e acrescenta30 (total220): Pessoa e B2B com referências reais c1/c2; convidado APP-only/N/A de autorização por convite. O preflight exige dois GETs reais, IDs/credenciais explícitos e contrato D13; prontidão valida corpo, destinos, capacidades, forma132 e documento contido. Guardas críticas de hidratação, semântica318/324, rodapé, cancelamento recuperado e React permaneceram idênticas953.
 
 Gates do harness: 16 arquivos/115 testes `7a72c9` (2,80 s), TSC `226547`, lint14 `fbda5b` e syntax4 `74e4b9`, todos EXIT0. Nenhuma nova integração, aplicação de fixture, navegação HTTP/browser ou captura. Fixture/plano privados foram entregues para inspeção ROOT e novo READY; dados originais/canônica não foram alterados. O preparo do harness não encerra o aceite visual/QA da #325.
+
+## Recuperação restrita do GETDetalhes no harness
+
+A prova causal325 permite diagnosticar somente aborto GET exato do mesmo atendimento/página/contexto quando outro GET iniciou depois, observou headers200, concluiu corpo JSON com hash igual ao preflight e a página/semântica atual é revalidada no fim. Não muda guardas953/SSE nem APP;200 sem corpo, body diferente, outra identidade/ID/query/POST ou troca/desmonte seguem negativos.
+
+Primeiro lote26ab1b (uma PNG) e diagnóstico c588cb continuam negativos privados. Validação focada c578af terminou0 sem PNG, após corpos/Tab; não é aceite visual. TDD RED23→GREEN138, unitário final16/138 b6c655,TSC60126/f7c101,lint4a1e86d e syntax2d86b3f terminaram0. A rodada formal30+6 e QA visual continuam pendentes de avalROOT; APP permanece ddf872e.
