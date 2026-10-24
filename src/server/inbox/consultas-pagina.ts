@@ -16,8 +16,11 @@ import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
 import type { ContagensChipsInbox, FiltrosInbox } from "./filtros";
 import { condicaoNaoLidaPessoal } from "./nao-lidas";
+import { carregarContextoAria, sugestoesPendentesPorAtendimento, derivarEstadoAria, linhaEstadoDe, type EstadoAria } from "./estado-aria";
+import { autorDaPrevia, type AutorPrevia } from "./previa";
 
 export interface ItemListaInbox extends ConversaResumo {
+  estadoAria: EstadoAria | null; atendidoPorVoce: boolean; previaAutor: AutorPrevia | null; previaRotulo: string | null;
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
   fixada: boolean; silenciada: boolean; naoLidas: number; grupo: boolean;
   /** Para decidir as ações do cabeçalho (podeExecutar): responsável, dono da linha, setores do número e origem da transferência. */
@@ -106,13 +109,21 @@ export async function listarAtendimentosPagina(
 
 type LinhaLista = Awaited<ReturnType<typeof prisma.atendimentoWhatsApp.findMany<{ include: typeof includeLista }>>>[number];
 const includeLista = { ...contextoInclude, responsavel: { select: { nome: true } },
-  mensagens: { orderBy: { criadoEm: "desc" as const }, take: 1, select: { corpo: true, tipo: true } } };
+  mensagens: { orderBy: [{ criadoEm: "desc" as const }, { id: "desc" as const }], take: 1,
+    select: { corpo: true, tipo: true, direcao: true, origem: true, autorId: true, criadoEm: true, autor: { select: { nome: true } } } } };
 
 async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<ItemListaInbox[]> {
-  const prefs = await preferenciasDoUsuario(usuarioId, todas.map((a) => a.id));
+  if (!todas.length) return [];
+  const ids = [...new Set(todas.map(a => a.id))];
+  const ctx = await carregarContextoAria(prisma, { atendimentoIds: ids });
+  const pendentes = await sugestoesPendentesPorAtendimento(prisma, ids, ctx.agora);
+  const prefs = await preferenciasDoUsuario(usuarioId, ids);
   return todas.map((a): ItemListaInbox => {
-    const pref = prefs.get(a.id);
+    const pref = prefs.get(a.id), mensagem = a.mensagens[0];
+    const previa = autorDaPrevia(mensagem ? { ...mensagem, autorNome: mensagem.autor?.nome ?? null } : null, pendentes.get(a.id) ?? null, usuarioId);
     return { ...resumirConversa(a), status: a.status, responsavelNome: a.responsavel?.nome ?? null,
+      estadoAria: derivarEstadoAria(linhaEstadoDe(a), ctx, pendentes.has(a.id)), atendidoPorVoce: a.responsavelId === usuarioId,
+      previaAutor: previa.autor, previaRotulo: previa.rotulo,
       prazoRespostaEm: a.prazoRespostaEm?.toISOString() ?? null,
       fixada: pref?.fixada ?? false, silenciada: pref?.silenciada ?? false,
       naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId,
