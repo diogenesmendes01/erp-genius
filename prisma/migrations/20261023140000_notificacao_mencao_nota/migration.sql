@@ -1,0 +1,1 @@
+ALTER TYPE "TipoNotificacao" ADD VALUE 'MENCAO_NOTA';

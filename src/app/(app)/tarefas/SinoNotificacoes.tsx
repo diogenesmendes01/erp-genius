@@ -14,7 +14,7 @@ import { hrefTarefas } from "./visao";
 
 /** Destino da notificação: o atendimento no Inbox (prazo estourado) ou a tarefa (lembrete). */
 export function hrefNotificacao(n: NotificacaoItem): string {
-  if (n.tipo === "SLA_ESTOURADO") return `/inbox?${new URLSearchParams({ c: n.refId })}`;
+  if ((n.tipo === "SLA_ESTOURADO" || n.tipo === "MENCAO_NOTA")) return `/inbox?${new URLSearchParams({ c: n.refId })}`;
   return hrefTarefas({ t: n.refId });
 }
 

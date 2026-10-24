@@ -10,7 +10,7 @@ vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
     ...real,
-    useId: () => m.g ? m.g.useId() : real.useId(),
+    useId: (() => m.g ? m.g.useId() : real.useId()) as typeof real.useId,
     useState: ((i: unknown) => (m.g ? m.g.useState(i) : real.useState(i as never))) as unknown as typeof real.useState,
     useRef: ((i: unknown) => (m.g ? m.g.useRef(i) : real.useRef(i as never))) as unknown as typeof real.useRef,
     useLayoutEffect: ((f: () => void, d?: unknown[]) => (m.g ? f() : real.useLayoutEffect(f, d))) as unknown as typeof real.useLayoutEffect,

@@ -100,7 +100,7 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/components/conversa/VisualizadorMidia.tsx": ["Abrir imagem", "Reproduzir vídeo", "Abrir"],
   // Compositor: ícones (remover anexo, anexar, emojis, parar e gravar voz) e itens do menu de anexo (role=menuitem,
   // CLASSE_ITEM_MENU; "(sem nome)" são o item do motor, cujo rótulo vem de ITENS_MOTOR, e a sugestão de resposta rápida do atalho /). Agendar e Enviar são controles circulares rotulados.
-  "src/components/conversa/Compositor.tsx": ["Remover anexo", "(sem nome)", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Agendar mensagem", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz", "Enviar"],
+  "src/components/conversa/Compositor.tsx": ["Remover anexo", "(sem nome)", "`Mencionar ${p.nome} · ${p.descricao}`", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Agendar mensagem", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz", "Enviar"],
   // Seletor de emoji: abas (role=tab), fichas de categoria (recentes e grupos, no grupo rotulado) e a célula do emoji.
   // Fechar e "Mostrar mais emojis" passam pelo <Botao>.
   "src/components/conversa/SeletorEmoji.tsx": ["Emojis", "GIFs", "Figurinhas", "🕘", "rotulo", "`${e.label} ${e.emoji}`"],
@@ -1216,6 +1216,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
+  { arquivo: "src/components/conversa/Compositor.tsx", rotulo: "`Mencionar ${p.nome} · ${p.descricao}`", motivo: "opção do autocomplete (role=option): aria-selected anuncia a opção ativa; aria-pressed não representa seleção de listbox" },
   { arquivo: "src/components/conversa/Compositor.tsx", rotulo: "Enviar", motivo: "comando de envio, não interruptor: cor indica modo Responder/Nota; ocupado é anunciado em aria-busy" },
   { arquivo: "src/app/(app)/inbox/PainelContato.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected; aria-pressed não vale para tab" },
   { arquivo: "src/components/BotaoIcone.tsx", rotulo: "rotulo", motivo: "primitivo de ícone: ativo é apresentação do estado anunciado pelo chamador em aria-expanded; Fechar não alterna estado" },

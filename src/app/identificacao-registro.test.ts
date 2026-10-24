@@ -70,6 +70,8 @@ const PENDENTE_REMARCACAO = "pendente: a conferência da remarcação lista a re
 
 export const EXCECOES_ID: ExcecaoId[] = [
   { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", tipo: "prop", trecho: "aria-controls={aberto ? id : undefined}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId para ligar o gatilho ao popover de tags; não é ID de registro do ERP nem vem do DTO" },
+  {"arquivo":"src/components/conversa/Compositor.tsx","tipo":"prop","trecho":"aria-controls={opcoesMencao.length ? listaMencoesId : undefined}","alvo":"listaMencoesId","categoria":"nao-registro","motivo":"useId gera referência DOM local entre combobox e lista; não contém ID de registro nem é apresentado como texto à pessoa"},
+  {"arquivo":"src/components/conversa/Compositor.tsx","tipo":"prop","trecho":"aria-activedescendant={opcoesMencao.length ? listaMencoesId + \"-\" + indiceMencao : undefined}","alvo":"listaMencoesId","categoria":"nao-registro","motivo":"useId gera referência DOM local para anunciar a opção ativa; não contém ID de registro nem é apresentado como texto à pessoa"},
   { arquivo: "src/app/(app)/inbox/ColunaConversas.tsx", tipo: "prop", trecho: "selecionado={filtros.numeroId ?? null}", alvo: "filtros.numeroId", categoria: "nao-registro", motivo: MOTIVO_VALOR_DE_CONTROLE },
   { arquivo: "src/app/(app)/inbox/InboxNovo.tsx", tipo: "prop", trecho: "abaAtiva={abaAtiva}", alvo: "abaDoContato.id", categoria: "nao-registro", motivo: MOTIVO_ABA_DO_PAINEL },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", tipo: "texto", trecho: "{r.multa.clausulaId}", alvo: "r.multa.clausulaId", categoria: "codigo", motivo: MOTIVO_CLAUSULA },
@@ -271,6 +273,8 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES_ID.map((e) => `${e.arquivo} :: ${e.tipo} :: ${e.alvo} :: ${e.categoria}${e.vezes ? ` ×${e.vezes}` : ""}`)).toEqual([
       "src/app/(app)/inbox/abas/TagsContato.tsx :: prop :: id :: nao-registro",
+      "src/components/conversa/Compositor.tsx :: prop :: listaMencoesId :: nao-registro",
+      "src/components/conversa/Compositor.tsx :: prop :: listaMencoesId :: nao-registro",
       "src/app/(app)/inbox/ColunaConversas.tsx :: prop :: filtros.numeroId :: nao-registro",
       "src/app/(app)/inbox/InboxNovo.tsx :: prop :: abaDoContato.id :: nao-registro",
       "src/app/(app)/secretaria/CondicoesEncerramento.tsx :: texto :: r.multa.clausulaId :: codigo",

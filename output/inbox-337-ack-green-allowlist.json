@@ -1,0 +1,44 @@
+{
+  "fonte": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+  "execucoes": [
+    {
+      "sessao": 56204,
+      "exit": 0,
+      "estado": "ACK real de nota ambigua apos remontagem",
+      "manifesto": "output/inbox-337-probes/negativa-ack-green-2026-10-23T22-32-04.487Z/execucao.json"
+    }
+  ],
+  "inspecao": {
+    "responsavel": "DEV B",
+    "quantidade": 2,
+    "resultado": "Duas imagens inspecionadas; primeira linha do placeholder restaurada apos ACK.",
+    "limites": [
+      "Somente complemento320x500/claro; matriz38 continua nominal a d68.",
+      "Placeholder tem duas linhas em area42px e mantem o mesmo cabimento inicial; correção elimina deslocamento superior, sem alegar que as duas linhas cabem integralmente.",
+      "Nenhuma nova nota depois desta execucao; limite8positivas2negativas esgotado."
+    ]
+  },
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-337-probes/negativa-ack-green-2026-10-23T22-32-04.487Z/app-claro-320x500-antes-negativa.png",
+      "bytes": 30556,
+      "sha256": "e4c53b1e6beda56eb9f2f5562b0816571df5987d75c2d43e7ae608f00151b0d6",
+      "tipo": "app-complemento-ACK",
+      "fonte": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+      "estado": "antes-negativa",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-probes/negativa-ack-green-2026-10-23T22-32-04.487Z/app-claro-320x500-ACK-vazio.png",
+      "bytes": 29108,
+      "sha256": "fc7a9d16bed66830fb882f458ba8d0f2692505b8896cbab7d642ee60b9989c6c",
+      "tipo": "app-complemento-ACK",
+      "fonte": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+      "estado": "ACK-vazio",
+      "tema": "claro",
+      "tamanho": "320x500"
+    }
+  ],
+  "totalBytes": 59664
+}

@@ -1,0 +1,98 @@
+{
+  "fontes": {
+    "baseMain": "239ed17fde1593f2e96fde53a01851f48ed13f86",
+    "preparacao": "7d9f565c3b840b64ec6b88dc4d2c4446a95803f5",
+    "executavelIntegrado": "9fa1b30ecbb0c3d214d57f3a9544c05e249b919d",
+    "visualHistorico": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+    "complementoACK": "ab76f3f6cc921a8057dfac2b2d84454d6a689a49",
+    "executavelR1": "ecc92d4781c5fe0f94f06920442769e8ad37b999",
+    "fixtureCalendario": "b2df832187fea15d2c970888b03e6c9fbf12ea9f"
+  },
+  "pareceres": [
+    {
+      "origem": "inbox-337-preparacao-f971-estatica-tester.md",
+      "arquivo": "preparacao-estatica.md",
+      "fonte": "f971a9c8",
+      "sha256OriginalFisico": "0a4ea772cf9aea67a63426efe3b83095286e63e440c62b3fc6ccba67d3f3b2f2",
+      "sha256PublicadoLF": "0a4ea772cf9aea67a63426efe3b83095286e63e440c62b3fc6ccba67d3f3b2f2"
+    },
+    {
+      "origem": "inbox-337-runtime-7d9-review-tester.md",
+      "arquivo": "preparacao-runtime.md",
+      "fonte": "7d9f565c",
+      "sha256OriginalFisico": "9e251a2c11845a5ee1373d4bccc0c4f4013eec83ce0f6d16bac46dec611f96db",
+      "sha256PublicadoLF": "9e251a2c11845a5ee1373d4bccc0c4f4013eec83ce0f6d16bac46dec611f96db"
+    },
+    {
+      "origem": "inbox-337-review-p2-tester.md",
+      "arquivo": "paginacao-sino.md",
+      "fonte": "a3bc5cb5",
+      "sha256OriginalFisico": "0759103d14dae9ff38aa872a76b6f607b8fcf86fee8746c7dbc4d6a450c925aa",
+      "sha256PublicadoLF": "057670a95b8410a992153cac4d7eea40ef340cf3716a178ceefcec25256451d1"
+    },
+    {
+      "origem": "inbox-337-caret-review-tester.md",
+      "arquivo": "caret.md",
+      "fonte": "d68f678c",
+      "sha256OriginalFisico": "8ad7a40790f7958e28cbbd2315ee8a2c96d4052d018bdd6d0df4671c70aef0a8",
+      "sha256PublicadoLF": "e1030f4ec45138d58daa3315829d49f5a9f14dff4193fda3802d45fdf710f554"
+    },
+    {
+      "origem": "inbox-337-scroll-review-tester.md",
+      "arquivo": "scroll-ack.md",
+      "fonte": "ab76f3f6",
+      "sha256OriginalFisico": "e39b8ee18053346615613338791236abc1811cd829f97fec11d082f4807bc756",
+      "sha256PublicadoLF": "a36581d0166216100b13edc6cf2038abd5b87a107555550478e63c8009177a0f"
+    },
+    {
+      "origem": "inbox-337-final-visual-review-tester.md",
+      "arquivo": "visual-historico.md",
+      "fonte": "cae002d7",
+      "sha256OriginalFisico": "341a1430be07afc47768f55c0389e41be3b4b8ea596e58ca4206feacbdb33f7c",
+      "sha256PublicadoLF": "22bcf3dfbd6893cc8458cbc6a61d0bf2b93bba81314d31295e3477bb2dc63121"
+    },
+    {
+      "origem": "inbox-337-final-9fa-review-tester.md",
+      "arquivo": "feedback-final.md",
+      "fonte": "9fa1b30e",
+      "sha256OriginalFisico": "84f6c3af7cdb2788658fe3dd2ce9e2a7608af22c6bd113093e53980504b54f1f",
+      "sha256PublicadoLF": "84f6c3af7cdb2788658fe3dd2ce9e2a7608af22c6bd113093e53980504b54f1f"
+    },
+    {
+      "origem": "inbox-337-r1-final-review-tester.md",
+      "arquivo": "revisao-r1.md",
+      "fonte": "ecc92d4781c5fe0f94f06920442769e8ad37b999",
+      "sha256OriginalFisico": "79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b",
+      "sha256PublicadoLF": "79870a6c2ebf77e2411319db7da7dbe03e2a6c0367f7a95604ae0fe08ba7f35b"
+    },
+    {
+      "origem": "inbox-337-c1-b2df-calendario-estatica-tester.md",
+      "arquivo": "calendario-c1.md",
+      "fonte": "b2df832187fea15d2c970888b03e6c9fbf12ea9f",
+      "escopo": "Somente estática do delta de fixture e caracterização pura de cinco datas; sem nova INT própria.",
+      "sha256OriginalFisico": "9f14c93e1ef51dcc582768ddcd2a62684149ce7622cefe6741946a07358889e2",
+      "sha256PublicadoLF": "9f14c93e1ef51dcc582768ddcd2a62684149ce7622cefe6741946a07358889e2"
+    }
+  ],
+  "pacote": {
+    "nome": "inbox-337-aceite-d68-ab76-20261023.zip",
+    "bytes": 3743253,
+    "sha256": "db1203ff694febc3afb627b65d32f5eeac39b1ec8537f2411481bb7250546dfb",
+    "asset": 670630281,
+    "pngHistoricos": 38,
+    "pngACK": 2,
+    "releaseDraft": true,
+    "roundtripAtual": "ef67bf",
+    "hashRoundtripIdentico": true
+  },
+  "inline": {
+    "nome": "inbox-337-homonimos-d68-desktop-claro.png",
+    "fonte": "d68f678c",
+    "bytes": 180379,
+    "sha256": "daea864d48438e1516f38aae746e72ed0190fb2bda89fdda9072c19913efcc96",
+    "asset": 672414695,
+    "upload": "8482ca",
+    "roundtrip": "6f06c5",
+    "inspecaoVisualRoot": true
+  }
+}
