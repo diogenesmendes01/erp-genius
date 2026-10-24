@@ -1,8 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, Prisma, PrismaClient } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
+// Mesmo limite do Vitest documentado em comercial/criar-lead-idempotencia.int.test.ts:
+// imports concorrentes de auth escapam do mock. Só a fronteira da sessão é adaptada;
+// usuário fresco, autorização pós-lock, decisões e executor continuam reais.
+vi.mock("@/server/_shared/sessao", async original => {
+  const real = await original<typeof import("@/server/_shared/sessao")>();
+  return { ...real, exigirSessao: async () => {
+    const id = (await authMock())?.user?.id;
+    const u = typeof id === "string" ? await real.carregarUsuarioFresco(id) : null;
+    if (!u) throw new real.ErroAutenticacao();
+    if (real.apenasPortal(u)) throw new real.ErroPermissao("Acesso restrito ao portal do aluno.");
+    return u;
+  } };
+});
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
@@ -73,10 +86,12 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
     expect(await prisma.evento.findFirstOrThrow({ where: { tipo: "AcaoAriaAprovada", agregadoTipo: "AcaoAgenteIA", agregadoId: s.id } })).toMatchObject({ autorId: c.gerente.id });
   });
 
-  it("aprovar_duas_vezes_falha", async () => {
+  it("349 aprovar repetido pelo mesmo decisor nao duplica efeito", async () => {
     const s = await sugTag();
-    await aprovarAcaoAria(s.id);
-    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta sugestão já foi decidida." });
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: true });
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: true });
+    expect(await tags()).toHaveLength(1);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaAprovada", agregadoId: s.id } })).toBe(1);
   });
 
   it("gerente_so_na_propria_equipe", async () => {
@@ -261,4 +276,86 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
     expect(await prisma.evento.count({ where: { tipo: "NotaInternaArquivada" } })).toBe(1);
     expect(avisos).toContainEqual({ tipo: "atendimento.atualizado", atendimentoId: c.at.id, conversaId: c.at.conversaId, mensagemId: null });
   });
+  it("349 rejeicao repetida normaliza motivo sem evento/aviso ou efeito novo", async () => {
+    const s = await sugTag(); expect(await rejeitarAcaoAria(s.id, "  nao  ")).toEqual({ ok: true });
+    const repetido = await comAvisosInbox(() => rejeitarAcaoAria(s.id, "nao"));
+    expect(repetido.resultado).toEqual({ ok: true }); expect(repetido.avisos).toEqual([]);
+    expect((await rejeitarAcaoAria(s.id, "outro")).ok).toBe(false);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaRejeitada", agregadoId: s.id } })).toBe(1); expect(await tags()).toHaveLength(0);
+  });
+  it("349 ultimo evento/autor e status oposto nao concedem retry", async () => {
+    const s = await sugTag(); await aprovarAcaoAria(s.id);
+    const outro = await criarUsuario([Papel.ADMINISTRADOR]); logado(outro);
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta sugestão já foi decidida." });
+    logado(c.gerente); expect((await rejeitarAcaoAria(s.id)).ok).toBe(false);
+    const semEvento = await sugTag(); await prisma.acaoAgenteIA.update({ where: { id: semEvento.id }, data: { status: "APROVADA", decididaPorId: c.gerente.id } });
+    expect((await aprovarAcaoAria(semEvento.id)).ok).toBe(false);
+    await prisma.evento.create({ data: { tipo: "AcaoAriaAprovada", agregadoTipo: "AcaoAgenteIA", agregadoId: s.id, autorId: outro.id, payload: {}, criadoEm: new Date(Date.now() + 1000) } });
+    expect((await aprovarAcaoAria(s.id)).ok).toBe(false);
+  });
+  it("349 retry aprovado continua sem efeito depois do prazo original", async () => {
+    const s = await sugTag(); await aprovarAcaoAria(s.id); await prisma.acaoAgenteIA.update({ where: { id: s.id }, data: { expiraEm: new Date(Date.now() - 1000) } });
+    const repetido = await comAvisosInbox(() => aprovarAcaoAria(s.id)); expect(repetido.resultado).toEqual({ ok: true }); expect(repetido.avisos).toEqual([]);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaAprovada", agregadoId: s.id } })).toBe(1); expect(await tags()).toHaveLength(1);
+  });
+  it("349 concorrencia do mesmo decisor nao duplica intencao nem evento", async () => {
+    const s = await prisma.$transaction(async tx => {
+      const r = await executarResposta(tx, { turnoId: c.turno.id, ctx: await montarContextoTurno(c.at.id, tx), texto: "Ola ficticio", documentoId: null, destino: "SUGERIR", simulado: false, confianca: 70, fontes: [], nomeAria: "Aria" });
+      if (!("acao" in r)) throw Error("Sugestao esperada"); return r.acao;
+    });
+    expect(await Promise.all([aprovarAcaoAria(s.id), aprovarAcaoAria(s.id)])).toEqual([{ ok: true }, { ok: true }]);
+    expect(await prisma.intencaoMensagem.count({ where: { acaoAgenteIAId: s.id } })).toBe(1); expect(await prisma.evento.count({ where: { tipo: "AcaoAriaAprovada", agregadoId: s.id } })).toBe(1);
+  });
+  it("349 escopo atual e conferido antes do no-op", async () => {
+    const s = await sugTag(); await aprovarAcaoAria(s.id);
+    await prisma.usuario.update({ where: { id: c.dono.id }, data: { gerenteComercialId: c.gerenteOutra.id } });
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta ação está fora do seu escopo." });
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaAprovada", agregadoId: s.id } })).toBe(1);
+  });
+  async function decidirDuranteLock(id: string, operacao: "aprovar" | "rejeitar", mudar: { ativo?: boolean; papeis?: Papel[] }) {
+    const url = new URL(process.env.DATABASE_URL!); url.searchParams.set("connection_limit", "1");
+    const holder = new PrismaClient({ datasources: { db: { url: url.toString() } } }), observer = new PrismaClient({ datasources: { db: { url: url.toString() } } });
+    let liberar!: () => void, entrou!: () => void;
+    const retido = new Promise<void>(r => { liberar = r; }), travado = new Promise<void>(r => { entrou = r; });
+    const lock = holder.$transaction(async tx => { await tx.$queryRaw(Prisma.sql`SELECT id FROM "AcaoAgenteIA" WHERE id=${id} FOR UPDATE`); entrou(); await retido; }, { timeout: 20000 });
+    let acaoPendente: ReturnType<typeof aprovarAcaoAria> | undefined, resultado: Awaited<ReturnType<typeof aprovarAcaoAria>> | undefined;
+    try {
+      await Promise.race([travado, new Promise((_, reject) => setTimeout(() => reject(Error("holder nao travou")), 5000))]);
+      acaoPendente = operacao === "aprovar" ? aprovarAcaoAria(id) : rejeitarAcaoAria(id, "nao");
+      let bloqueado = false;
+      for (const fim = Date.now() + 8000; Date.now() < fim;) {
+        const rows = await observer.$queryRaw<{ bloqueado: boolean }[]>(Prisma.sql`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%AcaoAgenteIA%' AND pid<>pg_backend_pid()) AS bloqueado`);
+        if (rows[0]?.bloqueado) { bloqueado = true; break; } await new Promise(r => setTimeout(r, 10));
+      }
+      expect(bloqueado).toBe(true);
+      await observer.usuario.update({ where: { id: c.gerente.id }, data: mudar });
+      expect(await observer.usuario.findUniqueOrThrow({ where: { id: c.gerente.id } })).toMatchObject(mudar);
+    } finally {
+      liberar();
+      try { await lock; if (acaoPendente) resultado = await acaoPendente; }
+      finally { await holder.$disconnect(); await observer.$disconnect(); }
+    }
+    return resultado;
+  }
+  it.each(["aprovar", "rejeitar"] as const)("349 %s relê papel revogado durante espera real do lock", async operacao => {
+    const s = await sugTag(); const r = await decidirDuranteLock(s.id, operacao, { papeis: [] });
+    expect(r).toEqual({ ok: false, erro: "Sem permissão para decidir ações da Aria." }); expect((await acao(s)).status).toBe("SUGERIDA"); expect(await tags()).toHaveLength(0);
+  });
+  it("349 ator inativado durante lock nao ganha sucesso idempotente", async () => {
+    const s = await sugTag(); await aprovarAcaoAria(s.id);
+    expect(await decidirDuranteLock(s.id, "aprovar", { ativo: false })).toEqual({ ok: false, erro: "Sem permissão para decidir ações da Aria." });
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaAprovada", agregadoId: s.id } })).toBe(1);
+  });
+
+  it("349 rejeicao null e limite500 preservam motivo exato, evento incompleto nao autoriza", async () => {
+    const s = await sugTag(); expect((await rejeitarAcaoAria(s.id)).ok).toBe(true);
+    expect((await rejeitarAcaoAria(s.id, "  ")).ok).toBe(true);
+    const longo = "x".repeat(501), outro = await sugTag();
+    expect((await rejeitarAcaoAria(outro.id, longo)).ok).toBe(true);
+    expect((await rejeitarAcaoAria(outro.id, "x".repeat(500))).ok).toBe(true);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaRejeitada", agregadoId: outro.id } })).toBe(1);
+    await prisma.evento.create({ data: { tipo: "AcaoAriaRejeitada", agregadoTipo: "AcaoAgenteIA", agregadoId: s.id, autorId: c.gerente.id, payload: {}, criadoEm: new Date(Date.now() + 1000) } });
+    expect((await rejeitarAcaoAria(s.id)).ok).toBe(false);
+  });
+
 });

@@ -2,6 +2,7 @@ import { EtapaLead, Prisma, type AcaoAgenteIA } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado, type UsuarioSessao } from "../_shared";
+import { ultimoEventoDoAutor } from "../_shared/idempotencia";
 import { transicaoManualPermitida } from "../_shared/regras";
 import { podeDecidirAcaoAria } from "./escopo-decisao";
 import { capacidadesAria } from "./permissoes-tela";
@@ -21,6 +22,13 @@ const MSG_CAMPO_HUMANO = "O campo foi alterado por uma pessoa depois da Aria. Na
 async function exigirDecisor(): Promise<UsuarioSessao> {
   const u = await exigirSessao();
   if (!capacidadesAria(u).has("decidirHistorico")) throw new ErroPermissao("Sem permissão para decidir ações da Aria.");
+  return u;
+}
+
+// Checkpoint após a espera do lock, sem memo da sessão anterior à transação.
+async function decisorAtual(tx: Tx, id: string): Promise<UsuarioSessao> {
+  const u = await tx.usuario.findUnique({ where: { id }, select: { id: true, nome: true, ativo: true, papeis: true, permissoes: true } });
+  if (!u?.ativo || !capacidadesAria(u).has("decidirHistorico")) throw new ErroPermissao("Sem permissão para decidir ações da Aria.");
   return u;
 }
 
@@ -44,10 +52,12 @@ const eventoAcao = (tx: Tx, tipo: string, acao: AcaoAgenteIA, autorId: string, e
 
 export async function aprovarAcaoAria(id: string): Promise<Resultado> {
   return executarAcao(async () => {
-    const u = await exigirDecisor();
+    const autor = await exigirDecisor();
     await prisma.$transaction(async (tx) => {
       const acao = await travarAcao(tx, id);
+      const u = await decisorAtual(tx, autor.id);
       await exigirEscopo(tx, u, acao);
+      if (acao.status === "APROVADA" && acao.decididaPorId === u.id && await ultimoEventoDoAutor(tx, { tipo: "AcaoAriaAprovada", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id })) return;
       if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
       if (acao.expiraEm && acao.expiraEm.getTime() <= Date.now()) throw new ErroRegra("Esta sugestão expirou.");
       const r = acao.acao === "RESPONDER" || acao.acao === "ENVIAR_DOCUMENTO" ? await efetivarRespostaSugerida(tx, acao) : await aplicarAcao(tx, acao);
@@ -59,11 +69,16 @@ export async function aprovarAcaoAria(id: string): Promise<Resultado> {
 
 export async function rejeitarAcaoAria(id: string, motivo?: string): Promise<Resultado> {
   return executarAcao(async () => {
-    const u = await exigirDecisor();
+    const autor = await exigirDecisor();
     const m = motivo?.trim() ? motivo.trim().slice(0, 500) : null;
     await prisma.$transaction(async (tx) => {
       const acao = await travarAcao(tx, id);
+      const u = await decisorAtual(tx, autor.id);
       await exigirEscopo(tx, u, acao);
+      if (acao.status === "REJEITADA" && acao.decididaPorId === u.id) {
+        const ultimo = await ultimoEventoDoAutor(tx, { tipo: "AcaoAriaRejeitada", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id });
+        if (ultimo && ultimo.motivo === m) return;
+      }
       if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
       const payload = { ...((acao.payload ?? {}) as Dados), ...(m ? { motivoRejeicao: m } : {}) } as Prisma.InputJsonObject;
       await tx.acaoAgenteIA.update({ where: { id }, data: { status: "REJEITADA", decididaPorId: u.id, decididaEm: new Date(), payload } });
