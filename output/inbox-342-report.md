@@ -1,6 +1,14 @@
 # Inbox #342 — EstadoAria no servidor
 
-Entrega DEV sobre origin/main cf29add93cd63fe14f95bf8a53fb079d3efe9a27, ramo codex/inbox-e3-342-produtor. Novo produtor puro e condições Prisma equivalentes; contexto e consultas em lote usam o Db recebido. A única alteração compartilhada é o argumento opcional de transação em estadoOrcamento. Consumidores, permissões, envio, schema Prisma, dependências e harness permanecem intactos. [SPEC](../docs/specs/inbox-estado-aria.md). QA independente, composição, CI e publicação estão pendentes com ROOT; a issue não está concluída.
+## Consolidação ROOT — 24/10/2026
+
+PR421 em rascunho/Refs342, código54c44b2a diretamente sobre maincf29. QA independente favorável: quatro arquivos/42UNIT, dois arquivos/28INT e lint5. ROOT aprovou TSC ORIGINAL sem exclusões (b78b4b), lint global (zero erros/40 avisos herdados) e os dois arquivos completos/28INT em3dcbca,107,37s,umworker,semfiltros/skips. Bancos descartáveis de DEV/ROOT/TESTER restaurados,424hashes e sequências conferidos. CI rápida54c aprovada5/5; integração completa40135542522 aprovada4/4:350arquivos/3104testes,3arquivos/4preparadores visuais opt-in ignorados. CI documental final ainda pendente. [Pareceres/fontes/limites](inbox-342-qa/indice.json).
+
+Identidade qualificada: o físico DEV tem6.784bytes/SHA b193fb0a5aef0c9b282ef0dd1947863d4b4b1514eae41c4eeb2c70f9555e2bd1, com uma CRLF e121 finaisLF (122 caracteresLF no total). Normalizar CRLF→LF produz byteigual o blobGit54/ROOT/TESTER:6.783bytes/SHA6bdc1150772e4589c790a79c099a0a24a090b11ce47cc3c93ede121963355129. O hash físico anterior era correto para o worktreeDEV; não representa os bytes GitLF. [Reconciliação independente](inbox-342-qa/identidade-produtor.json). Não houve mudança de código ou reexecução atribuída ao ajuste documental.
+
+## Relato DEV preservado
+
+Entrega DEV sobre origin/main cf29add93cd63fe14f95bf8a53fb079d3efe9a27, ramo codex/inbox-e3-342-produtor. Novo produtor puro e condições Prisma equivalentes; contexto e consultas em lote usam o Db recebido. A única alteração compartilhada é o argumento opcional de transação em estadoOrcamento. Consumidores, permissões, envio, schema Prisma, dependências e harness permanecem intactos. [SPEC](../docs/specs/inbox-estado-aria.md). QA independente, composição e CI nominal54c aprovadas; CI documental final e publicação permanecem com ROOT; a issue não está concluída.
 
 ## Contratos
 

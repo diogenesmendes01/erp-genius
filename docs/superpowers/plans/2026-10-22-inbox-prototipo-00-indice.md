@@ -111,6 +111,8 @@ Reservas específicas desta execução: #322 usa20261023100000_tarefa_atendiment
 | E3 | `20261023200000`–`20261023290000` |
 | E4 | `20261023300000`–`20261023390000` |
 
+Reserva coordenada posterior da #342 (PR #421): `20261024213000_inbox_aria_indice_handoff`, fora da faixa inicial acima para preservar a ordem das migrações já integradas. Substitui o ID planejado `20261023200000`; não criar outro diretório para esse mesmo índice. Aplicada pelo integrador nos bancos descartáveis próprios, histórico491; nenhuma migração aplicada foi renomeada ou reutilizada.
+
 Função SQL redefinida exige `diff -w` contra a definição vigente no main, no corpo do PR. Índice em tabela grande: `CREATE INDEX CONCURRENTLY`, sozinho na migration.
 
 ## Global Constraints (valem para todas as tasks de todos os planos)

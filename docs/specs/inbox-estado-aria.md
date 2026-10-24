@@ -1,5 +1,7 @@
 # Inbox #342 — estado da Aria derivado no servidor
 
+Estado atual: PR421 em rascunho, código54c44b2a. QA independente e gates locais ROOT aprovados; três bancos descartáveis restaurados. CI rápida5/5 e integração completa4/4 aprovadas no código54c;CI do último SHA documental pendente. [Evidências e limites](../../output/inbox-342-qa/indice.json). Não concluir a issue antes dos gates finais.
+
 O produtor `src/server/inbox/estado-aria.ts` define `EstadoAria = ia | aprovacao | handoff | humano`, a classificação pura de um atendimento e filtros Prisma equivalentes. O contexto e os loaders recebem o mesmo `Db`/transação. Não há consumidor visual, rota ou nova alçada nesta issue; lista, filtros, cartões e cabeçalho pertencem às dependências seguintes.
 
 A primeira regra aplicável vence:
@@ -22,8 +24,12 @@ Sugestões vêm em uma consulta DISTINCT ON por atendimento, apenas status vigen
 
 `carregarContextoAria` fixa agora uma vez e usa o mesmo Db em situação, orçamento e handoffs. `estadoOrcamento(agora?, tx?)` acrescenta somente o segundo argumento opcional; consumidores atuais mantêm comportamento. O upsert legado inicializa ConfigIA ausente, portanto o contexto não promete ausência absoluta de escrita. Nenhum client ou transação interna é criado. Pool1 deve enxergar valores ainda não commitados e preservar rollback.
 
+Consumidores de página devem passar `atendimentoIds` com os IDs autorizados dessa página: o modo sem IDs carrega o universo de handoffs, cujo conjunto vira parâmetros `IN` no filtro. Não há limite de volume prometido para esse modo; consumidores de contagem global devem avaliar subquery antes de usá-lo em bases grandes. A #343 passa explicitamente os IDs da página.
+
+Rastreio de aceite: `resposta_pelo_celular_encerra_handoff_pendente` corresponde ao caso CELULAR do teste parametrizado `resposta %s encerra handoff somente posterior`; o mesmo teste cobre HUMANO e a fronteira temporal estrita.
+
 A única migração é o índice parcial `20261024213000_inbox_aria_indice_handoff`, reservado e aplicado pelo ROOT: CREATE INDEX CONCURRENTLY, um comando fora de transação, em iaPausadaEm para HANDOFF aberto. Schema e cliente permanecem compatíveis com a base490; o histórico passa a491. Não há modelo, enum ou alteração de dados do domínio nesta migração.
 
 D1–D3 aprovadas orientam os consumidores futuros: responsável da CONVERSA decide dentro do escopo; mensagem editada sai como humana e pausa; Assumir pausa MANUAL, atribui responsável e cancela pendentes; nota interna continua permitida. Esta entrega não implementa essas ações. Os textos históricos divergentes de #354/#357 não prevalecem sobre a decisão aprovada.
 
-Aceite visual: N/A para este produtor interno sem interface nova. Testes de prioridade, matriz filtro/derivação, expiração, limites temporais, lotes205, SQL parametrizado, índice e Db/pool1 estão documentados no relatório. Evidência e pendências: [relatório #342](../../output/inbox-342-report.md). QA independente, composição, CI e publicação continuam com o ROOT.
+Aceite visual: N/A para este produtor interno sem interface nova. Testes de prioridade, matriz filtro/derivação, expiração, limites temporais, lotes205, SQL parametrizado, índice e Db/pool1 estão documentados no relatório. Evidência e pendências: [relatório #342](../../output/inbox-342-report.md). QA independente e gates locais estão registrados no índice; integração remota completa4/4 aprovada; CI documental e publicação continuam com o ROOT.
