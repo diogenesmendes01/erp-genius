@@ -10,7 +10,7 @@ type Props = { id: string | null; aba?: "detalhes" | "oportunidades"; versao?: n
 function Tela({ id, aba = "detalhes", versao = 0, ativo = true }: Props) {
   const lido = useAbaPainel<{ nome: string }>(id, aba, versao, ativo);
   useEffect(() => { atual = lido; }, [lido]);
-  return createElement("p", null, lido.erro ? "erro" : lido.dado?.nome ?? "sem dado");
+  return lido.dado ? createElement("a", { href: "/ficha" }, lido.dado.nome) : createElement("p", null, lido.erro ? "erro" : "sem dado");
 }
 const pedidos: { url: string; signal: AbortSignal; resolver(r: unknown): void; rejeitar(e: Error): void }[] = [];
 const resposta = (nome: string, status = 200) => ({ ok: status === 200, status, json: async () => ({ nome }) });
@@ -60,4 +60,33 @@ it("reabrir a mesma chave depois de inativar exige leitura nova antes de reapres
   await render({ id: "A" }); await act(async () => pedidos[0].resolver(resposta("snapshot antigo"))); expect(atual.dado?.nome).toBe("snapshot antigo");
   await render({ id: "A", ativo: false }); await render({ id: "A" }); expect(pedidos).toHaveLength(2); expect(atual.dado).toBeNull();
   await act(async () => pedidos[1].resolver(resposta("snapshot fresco"))); expect(atual.dado?.nome).toBe("snapshot fresco");
+});
+it("atualização mantém DTO, nó e foco até substituir pela resposta vigente", async () => {
+  await render({ id: "A" }); await act(async () => pedidos[0].resolver(resposta("PessoaA")));
+  const dto = atual.dado, link = host.querySelector("a")!; link.focus();
+  await render({ id: "A", versao: 1 });
+  expect(atual.dado).toBe(dto); expect(atual.erro).toBe(false); expect(host.querySelector("a")).toBe(link); expect(document.activeElement).toBe(link);
+  await act(async () => pedidos[1].resolver(resposta("PessoaA atualizada")));
+  expect(host.textContent).toBe("PessoaA atualizada"); expect(host.querySelector("a")).toBe(link); expect(document.activeElement).toBe(link);
+});
+it.each(["500", "json", "rede"])("recarga com %s preserva o último DTO bom sem alertar ausência", async tipo => {
+  await render({ id: "A" }); await act(async () => pedidos[0].resolver(resposta("PessoaA"))); const dto = atual.dado;
+  await render({ id: "A", versao: 1 });
+  await act(async () => { if (tipo === "rede") pedidos[1].rejeitar(Error("offline")); else pedidos[1].resolver(tipo === "json" ? { ok: true, json: async () => { throw Error("inválido"); } } : resposta("erro", 500)); });
+  expect(atual.dado).toBe(dto); expect(atual.erro).toBe(false); expect(host.textContent).toBe("PessoaA");
+});
+it("retry preserva sucesso e ignora resposta de versão anterior que chega depois", async () => {
+  await render({ id: "A" }); await act(async () => pedidos[0].resolver(resposta("original"))); const dto = atual.dado;
+  await render({ id: "A", versao: 1 }); await act(async () => atual.recarregar()); expect(atual.dado).toBe(dto);
+  await act(async () => pedidos[2].resolver(resposta("nova"))); await act(async () => pedidos[1].resolver(resposta("antiga")));
+  expect(host.textContent).toBe("nova"); expect(atual.erro).toBe(false);
+});
+it.each([403, 404])("negativa explícita %s invalida também o DTO anterior", async status => {
+  await render({ id: "A" }); await act(async () => pedidos[0].resolver(resposta("restrita"))); await render({ id: "A", versao: 1 });
+  await act(async () => pedidos[1].resolver(resposta("negada", status))); expect(atual.dado).toBeNull(); expect(atual.erro).toBe(true);
+});
+it("sucesso anterior não atravessa troca de aba nem retorno depois de contexto intermediário pendente", async () => {
+  await render({ id: "A" }); await act(async () => pedidos[0].resolver(resposta("PessoaA")));
+  await render({ id: "A", aba: "oportunidades" }); expect(atual.dado).toBeNull();
+  await render({ id: "B" }); await render({ id: "A" }); expect(atual.dado).toBeNull();
 });
