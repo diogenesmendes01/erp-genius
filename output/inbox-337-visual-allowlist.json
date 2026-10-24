@@ -1,0 +1,449 @@
+{
+  "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+  "execucoes": [
+    {
+      "sessao": 46979,
+      "exit": 0,
+      "alvo": "app",
+      "quantidade": 32,
+      "manifesto": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/execucao.json"
+    },
+    {
+      "sessao": 63719,
+      "exit": 0,
+      "alvo": "prototipo",
+      "quantidade": 6,
+      "manifesto": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/execucao.json"
+    }
+  ],
+  "inspecao": {
+    "responsavel": "DEV B",
+    "quantidade": 38,
+    "resultado": "Estados de nota, popup e sino corretos; referencias comparaveis somente ao baseline de nota.",
+    "limites": [
+      "Prototipo sem autocomplete/ACL/sino/IME; N/A funcional.",
+      "Em 320x500 o placeholder vazio apos ACK tem deslocamento interno observado; complemento causal separado, sem atribuir cabimento perfeito.",
+      "Sino atualizado apenas em navegacao SSR; titulos truncados visualmente em telas estreitas, texto acessivel integral.",
+      "Documento sem scroll e SSE fisica maxima1 por aba observados."
+    ]
+  },
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1440x900-nota-baseline.png",
+      "bytes": 176249,
+      "sha256": "1f760b71db0b9216ee58abe2f87202cc2a9e463b9ce95f2895fc37a68c2ffe1e",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1440x900-popup-homonimos.png",
+      "bytes": 180379,
+      "sha256": "daea864d48438e1516f38aae746e72ed0190fb2bda89fdda9072c19913efcc96",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1440x900-nota-persistida.png",
+      "bytes": 191540,
+      "sha256": "a44922b664dc8b5c3c65ae5b0042a62ed2566460ad00826cb81cf310c2e756ff",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1440x900-sino-ssr.png",
+      "bytes": 59903,
+      "sha256": "2765be9c4de180a6de414c40dfac9e0a31835e83eac95005263c2131120415e8",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1440x900-nota-baseline.png",
+      "bytes": 192387,
+      "sha256": "5dd94e03b10c408a5ea6e6c366cc37ebb45f188bc31d3c6bb5ebfe1b6b7cfbab",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1440x900-popup-homonimos.png",
+      "bytes": 196396,
+      "sha256": "068ceb3644cacb6122bc3a0a28a6d6c307b9730ef86e21e45b13ee80dcaa8aae",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1440x900-nota-persistida.png",
+      "bytes": 205310,
+      "sha256": "22cc6a0d05e5e8162b562a85b95fe58691709c0a4a05fc4ac3ac8c3d18f3edf9",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1440x900-sino-ssr.png",
+      "bytes": 53267,
+      "sha256": "80e40b31300fc47d07f5ac888635f5cf777252916c004008c68f24d7fc661840",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1024x768-nota-baseline.png",
+      "bytes": 134612,
+      "sha256": "afedda7298605e2a47c8795f926ad5bcc0fed0c0d52c19df9a9106a918c8f12c",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1024x768-popup-homonimos.png",
+      "bytes": 131594,
+      "sha256": "0f9d97f47d0324ff3960430c29aa55300d99e2153e93a69ed1b41720260bd6ce",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1024x768-nota-persistida.png",
+      "bytes": 149751,
+      "sha256": "ae4a21cdca84d2778be1d3fa159846ccb279326fbca425830cc0576d404945b5",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-1024x768-sino-ssr.png",
+      "bytes": 61387,
+      "sha256": "dea498fa3bbf51c720cd4b9c8b837d779151f5673452738d3c74c311bf6b7c9d",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1024x768-nota-baseline.png",
+      "bytes": 136126,
+      "sha256": "a9b98f34674813eee78c64019f517bdb45516ab1c998144d43fef0621d0d0e54",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1024x768-popup-homonimos.png",
+      "bytes": 132826,
+      "sha256": "b2a1b07f3621e31cf0339d307f95c5c65b87c2a4fdd46ffd3b31ae8fa882c264",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1024x768-nota-persistida.png",
+      "bytes": 160707,
+      "sha256": "37a2fdcaa1f9c74f37ed48ff62a69cc2184c8c7443550262faaa55fa34a8bd7b",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-1024x768-sino-ssr.png",
+      "bytes": 55985,
+      "sha256": "db493f928598222ac671ab6daf74d856b999c7321d3cfae2d4d2d0211c1e75a0",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-390x844-nota-baseline.png",
+      "bytes": 55926,
+      "sha256": "df7beb1b496579c825082be48bb70578c6490a9938cb20f40979a62ea17c0d0c",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "claro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-390x844-popup-homonimos.png",
+      "bytes": 56087,
+      "sha256": "687fb63c7f18b314572d73bde539116d9e78c08b9ff25ad0390999058b952dbc",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "claro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-390x844-nota-persistida.png",
+      "bytes": 78934,
+      "sha256": "c995015e16281c0b96389ffa9cc839486d37ee0757f1d94b9e15109dfde5fa0d",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "claro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-390x844-sino-ssr.png",
+      "bytes": 24170,
+      "sha256": "d91f35bc0e9f9634d4e831b646753bc03cdbd04e6c8a10e5cb87b7f23dcf7a40",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "claro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-390x844-nota-baseline.png",
+      "bytes": 56874,
+      "sha256": "8f2c2b11a464519008f19befeada4cf912c833b39f256c1a7f909838e0e86dc0",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "escuro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-390x844-popup-homonimos.png",
+      "bytes": 57230,
+      "sha256": "9d225acd36c7dd72fd80189e9ce6f26e099b23ff08dcf901724d8d884cd2ad21",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "escuro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-390x844-nota-persistida.png",
+      "bytes": 88697,
+      "sha256": "53f27e37755b35892b46a1b84dc9218c46621573a21360753e36e1d42465056d",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "escuro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-390x844-sino-ssr.png",
+      "bytes": 25531,
+      "sha256": "c381b692d3cf7905cc0aaee29535259738ce3bdadff6fee9d0917ea1c6e9ca9b",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "escuro",
+      "tamanho": "390x844"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-320x500-nota-baseline.png",
+      "bytes": 29108,
+      "sha256": "fc7a9d16bed66830fb882f458ba8d0f2692505b8896cbab7d642ee60b9989c6c",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-320x500-popup-homonimos.png",
+      "bytes": 32104,
+      "sha256": "a35f1ff70351e0ee7602e5ef87d8ae64b4e01e42bbfc14ac6be71a291ac93b77",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-320x500-nota-persistida.png",
+      "bytes": 37098,
+      "sha256": "ca1e6dd134ec261a449af7f5094d1aeec96f82c602e8ac4777bb35d041d33090",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-claro-320x500-sino-ssr.png",
+      "bytes": 24879,
+      "sha256": "df82204c8df0d1febb6f54fe393908cc6587f21b42ac83bab2fbca1d7b9bfb26",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-320x500-nota-baseline.png",
+      "bytes": 29506,
+      "sha256": "4fd4eaaed6d3d95bcc956f828ecadbe7077e820e436cc791d0383a8d5ad0f876",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-baseline",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-320x500-popup-homonimos.png",
+      "bytes": 32786,
+      "sha256": "6202ca2c8f400cb91db7b46ffc751340accd6689685a8e46bd494143c5fcdf33",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "popup-homonimos",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-320x500-nota-persistida.png",
+      "bytes": 37818,
+      "sha256": "ce6989c4ef0ec32d2d874e13a981cc39a7092c444675cafd64b85141724a5c80",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "nota-persistida",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/app/app-escuro-320x500-sino-ssr.png",
+      "bytes": 26697,
+      "sha256": "3ff09eee3eaaa8ba0c7870aaf6ee526d158ac2ec64fd09d9d8bdd7ca267b372b",
+      "tipo": "app",
+      "fonte": "d68f678c8af2f17cb815647b68fa514e389c85f7",
+      "estado": "sino-ssr",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/prototipo-escuro-desktop-nota.png",
+      "bytes": 189379,
+      "sha256": "f9257bbbd469519a3844d08e5ac3e8531948c727828dcb4b2ba9466f573e412f",
+      "tipo": "prototipo-nota",
+      "fonte": {
+        "capturar-inbox.mjs": "22a52379fb58161c90823f3cd86f497172ea507d8aba880054dbf490f0dc0f74",
+        "nucleo-captura.mjs": "a0c1f74a41975200de372543df0d3ac51dd9431d7e49d7f2d0280395541add64",
+        "espera-app.mjs": "e8307b8f2b212271b03fb7ab82c21684bad90fe84633b11b59f719d4e94569ff",
+        "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+        "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711"
+      },
+      "estado": "nota",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/prototipo-escuro-tablet-nota.png",
+      "bytes": 125423,
+      "sha256": "3eda8d880f3f6ebd55618bc7e93be95daf8b268072bbefc5238f61e71f9a348a",
+      "tipo": "prototipo-nota",
+      "fonte": {
+        "capturar-inbox.mjs": "22a52379fb58161c90823f3cd86f497172ea507d8aba880054dbf490f0dc0f74",
+        "nucleo-captura.mjs": "a0c1f74a41975200de372543df0d3ac51dd9431d7e49d7f2d0280395541add64",
+        "espera-app.mjs": "e8307b8f2b212271b03fb7ab82c21684bad90fe84633b11b59f719d4e94569ff",
+        "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+        "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711"
+      },
+      "estado": "nota",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/prototipo-escuro-celular-nota.png",
+      "bytes": 54433,
+      "sha256": "761ff058f6ec495604fc5ea53f8e957b3ff94da8f9fa2cd1b26168f22906b69e",
+      "tipo": "prototipo-nota",
+      "fonte": {
+        "capturar-inbox.mjs": "22a52379fb58161c90823f3cd86f497172ea507d8aba880054dbf490f0dc0f74",
+        "nucleo-captura.mjs": "a0c1f74a41975200de372543df0d3ac51dd9431d7e49d7f2d0280395541add64",
+        "espera-app.mjs": "e8307b8f2b212271b03fb7ab82c21684bad90fe84633b11b59f719d4e94569ff",
+        "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+        "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711"
+      },
+      "estado": "nota",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/prototipo-claro-desktop-nota.png",
+      "bytes": 189141,
+      "sha256": "0ae649c18fc76095e2550a14baef0c90b1235b0cec5aa62ebb7dea0779ed1b90",
+      "tipo": "prototipo-nota",
+      "fonte": {
+        "capturar-inbox.mjs": "22a52379fb58161c90823f3cd86f497172ea507d8aba880054dbf490f0dc0f74",
+        "nucleo-captura.mjs": "a0c1f74a41975200de372543df0d3ac51dd9431d7e49d7f2d0280395541add64",
+        "espera-app.mjs": "e8307b8f2b212271b03fb7ab82c21684bad90fe84633b11b59f719d4e94569ff",
+        "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+        "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711"
+      },
+      "estado": "nota",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/prototipo-claro-tablet-nota.png",
+      "bytes": 124202,
+      "sha256": "5a00c9eb843891e0c72b5625246a13ead925602e537c44c0047cc095951d87cf",
+      "tipo": "prototipo-nota",
+      "fonte": {
+        "capturar-inbox.mjs": "22a52379fb58161c90823f3cd86f497172ea507d8aba880054dbf490f0dc0f74",
+        "nucleo-captura.mjs": "a0c1f74a41975200de372543df0d3ac51dd9431d7e49d7f2d0280395541add64",
+        "espera-app.mjs": "e8307b8f2b212271b03fb7ab82c21684bad90fe84633b11b59f719d4e94569ff",
+        "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+        "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711"
+      },
+      "estado": "nota",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-337-visual-d68-2026-10-23T22-00-46.133Z/prototipo/prototipo-claro-celular-nota.png",
+      "bytes": 53144,
+      "sha256": "db92e590b724d717cf2d2ea95467a8fc4ebb3f2b7aabea44de43ad1bd34baa8e",
+      "tipo": "prototipo-nota",
+      "fonte": {
+        "capturar-inbox.mjs": "22a52379fb58161c90823f3cd86f497172ea507d8aba880054dbf490f0dc0f74",
+        "nucleo-captura.mjs": "a0c1f74a41975200de372543df0d3ac51dd9431d7e49d7f2d0280395541add64",
+        "espera-app.mjs": "e8307b8f2b212271b03fb7ab82c21684bad90fe84633b11b59f719d4e94569ff",
+        "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+        "estados-inbox.mjs": "817fa09c737b07f6b1d90ec09fc0119fc3e8799555ff17bc5a9d6fa9347e8711"
+      },
+      "estado": "nota",
+      "tema": "claro",
+      "tamanho": "celular"
+    }
+  ],
+  "totalBytes": 3647586
+}

@@ -197,7 +197,12 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           capacidades={capacidades}
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
-          aoNota={(nota, chaveIdempotencia) => registrarNotaAtendimento({ atendimentoId: item.id, nota, chaveIdempotencia })}
+          aoNota={(nota, chaveIdempotencia, mencoes) => registrarNotaAtendimento({ atendimentoId: item.id, nota, chaveIdempotencia, ...(mencoes === undefined ? {} : { mencoes }) })}
+          buscarMencoes={async busca => {
+            const r = await fetch("/api/inbox/atendimentos/" + encodeURIComponent(item.id) + "/mencoes?" + new URLSearchParams({ q: busca }), { credentials: "same-origin", cache: "no-store" });
+            if (!r.ok) throw new Error("Não foi possível buscar pessoas.");
+            return r.json();
+          }}
           respostas={respostas}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />

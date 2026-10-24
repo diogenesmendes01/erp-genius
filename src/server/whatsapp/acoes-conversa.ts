@@ -1,5 +1,7 @@
 "use server";
 
+import { normalizarNotaComMencoes, type TokenMencao } from "@/lib/mencoes-nota";
+import { notificarMencoesNaNota } from "@/server/inbox/mencoes";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -14,9 +16,11 @@ import { notasInternasDoAtendimento } from "./notas-consulta";
 import { despacharFila } from "./despachante";
 import { copiarMidiaParaSaida } from "./midia";
 
+const TokenMencaoSchema = z.object({ usuarioId: z.string().min(1).max(200), inicio: z.number().int().nonnegative(), fim: z.number().int().positive() });
 const NotaSchema = z.object({
   atendimentoId: z.string().min(1),
   nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres."),
+  mencoes: z.array(TokenMencaoSchema).max(50).optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
@@ -24,11 +28,14 @@ const NotaSchema = z.object({
  * Nota interna do atendimento (regra 20): só Evento, nunca MensagemWhatsApp nem IntencaoMensagem. Ver basta; participante sem envio pode anotar.
  * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra nota: a chave vai no payload do próprio Evento.
  */
-export async function registrarNotaAtendimento(input: { atendimentoId: string; nota: string; chaveIdempotencia?: string }): Promise<Resultado> {
+export async function registrarNotaAtendimento(input: { atendimentoId: string; nota: string; chaveIdempotencia?: string; mencoes?: readonly TokenMencao[] }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
-    const { atendimentoId, nota, chaveIdempotencia } = NotaSchema.parse(input);
-    const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, nota });
+    const { atendimentoId, nota, chaveIdempotencia, mencoes } = NotaSchema.parse(input);
+    let comando: ReturnType<typeof normalizarNotaComMencoes>;
+    try { comando = normalizarNotaComMencoes(nota, mencoes); }
+    catch { throw new ErroRegra("Confira as menções da nota."); }
+    const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, ...comando });
     await prisma.$transaction(async (tx) => {
       // C3 da R2 do #267: a repetição vem antes do escopo. A nota já gravada por este autor, neste atendimento
       // e com este texto, é devolvida mesmo que o atendimento tenha mudado de mãos depois; nada novo é gravado.
@@ -41,7 +48,8 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
       }
       const a = await atendimentoVisivel(u, atendimentoId, false, tx);
       if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
-      await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota, ...marca } });
+      const evento = await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota: comando.nota, ...(comando.mencoes === undefined ? {} : { mencoes: comando.mencoes.map(t => ({ usuarioId: t.usuarioId, inicio: t.inicio, fim: t.fim })) }), ...marca } });
+      await notificarMencoesNaNota(tx, { atendimentoId, eventoId: evento.id, autor: u, ...comando });
       await avisarAtendimentoAtualizado(tx, a);
     });
     revalidatePath("/inbox");
