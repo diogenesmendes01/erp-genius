@@ -1,0 +1,606 @@
+{
+  "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+  "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+  "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+  "previewRoot": 79643,
+  "totalBytes": 2037107,
+  "quantidade": 24,
+  "arquivos": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-secretaria",
+      "painelSecretariaReal": {
+        "status": 200,
+        "matriculaId": "inbox-335-matricula-lucas",
+        "codigo": "MAT-INBOX-335"
+      },
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Navegação real da Secretaria para matrícula não existe no protótipo.",
+      "arquivo": "output/inbox-335-formal-r2/secretaria-origem/app-escuro-desktop-painel-secretaria.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-335-lucas-secretaria/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "556e6051be9efaa581c548c8a0a43b5743096e2188593c33cd69c5ccd9b10512",
+      "bytes": 154471,
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-secretaria",
+      "painelSecretariaReal": {
+        "status": 200,
+        "matriculaId": "inbox-335-matricula-lucas",
+        "codigo": "MAT-INBOX-335"
+      },
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Navegação real da Secretaria para matrícula não existe no protótipo.",
+      "arquivo": "output/inbox-335-formal-r2/secretaria-origem/app-escuro-tablet-painel-secretaria.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-335-lucas-secretaria/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "072fec75628c38c2a463da942f17a6b386be576caa3751e8781b4112c8d805fb",
+      "bytes": 116738,
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-secretaria",
+      "painelSecretariaReal": {
+        "status": 200,
+        "matriculaId": "inbox-335-matricula-lucas",
+        "codigo": "MAT-INBOX-335"
+      },
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Navegação real da Secretaria para matrícula não existe no protótipo.",
+      "arquivo": "output/inbox-335-formal-r2/secretaria-origem/app-escuro-celular-painel-secretaria.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-335-lucas-secretaria/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "5457c6a3e1278a32f2bc72860eb60b95650ad7d6cc4c6c0aa4b19cd046252e27",
+      "bytes": 29670,
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-secretaria",
+      "painelSecretariaReal": {
+        "status": 200,
+        "matriculaId": "inbox-335-matricula-lucas",
+        "codigo": "MAT-INBOX-335"
+      },
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Navegação real da Secretaria para matrícula não existe no protótipo.",
+      "arquivo": "output/inbox-335-formal-r2/secretaria-origem/app-claro-desktop-painel-secretaria.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-335-lucas-secretaria/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "0ed927e167ddbb358032cdc1c6ed6c4a6f4db364be2159900cde62bed7b7d7a3",
+      "bytes": 154294,
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-secretaria",
+      "painelSecretariaReal": {
+        "status": 200,
+        "matriculaId": "inbox-335-matricula-lucas",
+        "codigo": "MAT-INBOX-335"
+      },
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Navegação real da Secretaria para matrícula não existe no protótipo.",
+      "arquivo": "output/inbox-335-formal-r2/secretaria-origem/app-claro-tablet-painel-secretaria.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-335-lucas-secretaria/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "78a8ceef2bac9d312ca05360285fd6e77f709ca4c42a8ce9209cd9cb82190409",
+      "bytes": 118228,
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-secretaria",
+      "painelSecretariaReal": {
+        "status": 200,
+        "matriculaId": "inbox-335-matricula-lucas",
+        "codigo": "MAT-INBOX-335"
+      },
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Navegação real da Secretaria para matrícula não existe no protótipo.",
+      "arquivo": "output/inbox-335-formal-r2/secretaria-origem/app-claro-celular-painel-secretaria.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-335-lucas-secretaria/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "3a12d940aa0f103964ca9b012150574cda61d8ee007eae78993b5fb461617213",
+      "bytes": 29744,
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-desktop-origem-funil.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "929d4392d75d9841bf58c27f61dabaa3e561be2e0fad50d25c85389e60e9b03d",
+      "bytes": 131684,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "origem-funil",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1440,
+      "height": 900,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-desktop-destino-contato.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "9ece28860f7079f5b4e2c57ddbb3dfe696b7006c2448b270ea8ddda0d4dafc5f",
+      "bytes": 101387,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "destino-contato",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1440,
+      "height": 900,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-desktop-destino-matricula.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "d1d21b35b939d4cc8d5177c5ef112c7465e49ffa10b82747479aefe5f9294a49",
+      "bytes": 83794,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "destino-matricula",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1440,
+      "height": 900,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-desktop-origem-funil.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "9622e298521994328f0601b3a1b1542e2e79a6f9f698751e45003746c7363e9a",
+      "bytes": 133040,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "origem-funil",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1440,
+      "height": 900,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-desktop-destino-contato.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "29f878d58e7cc91b816657f3178380e1d4cffb57ec124a7440382f6d104e50a6",
+      "bytes": 102107,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "destino-contato",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1440,
+      "height": 900,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-tablet-destino-matricula.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "7baf7725f0a826f06a4957b7763f59c8d91bc9225846478d37ca36509caeebdf",
+      "bytes": 77080,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "destino-matricula",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1024,
+      "height": 768,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-tablet-origem-funil.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "373f82d929df2c245a565d11c092149ae411e852d6c26f67bd2d2358ced9573b",
+      "bytes": 105084,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "origem-funil",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1024,
+      "height": 768,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-tablet-destino-contato.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "2e59cba6f13cbdbafc1ab6e27a9f238d37e1c3a0e3020acc3160baefea09874a",
+      "bytes": 89423,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "destino-contato",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1024,
+      "height": 768,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-tablet-destino-matricula.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "b018b6f7647fe0b9f959113efd4c432224948f3d9736ca57e2b2fde3f9a351bb",
+      "bytes": 76383,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "destino-matricula",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1024,
+      "height": 768,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-tablet-origem-funil.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "04bd2fac7fa9fc706f77d734673b568ee1ed7234417d875ca1a7a89f9b94f8c0",
+      "bytes": 105745,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "origem-funil",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1024,
+      "height": 768,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-tablet-destino-contato.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "cc48ed0ed1000ee49bfe659435e7e586ff41783307d08a1da25d489a1e974941",
+      "bytes": 89521,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "destino-contato",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 1024,
+      "height": 768,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-celular-destino-matricula.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "55317668face3820525aa10f489303339ef931aaedfc4bdb859253d70eb5c216",
+      "bytes": 38173,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "destino-matricula",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 390,
+      "height": 844,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-celular-origem-funil.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "200f8dfa2e41a09a853148c0b3ecd8917a94dc74f745593933b1edb2d688deb5",
+      "bytes": 45993,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "origem-funil",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 390,
+      "height": 844,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-escuro-celular-destino-contato.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "2df586e8a31ca6d230b764674185a81823adf38ba12322c2335a118f4f6ff61c",
+      "bytes": 44600,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "destino-contato",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 390,
+      "height": 844,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-celular-destino-matricula.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "f169342e3639741211cc3de91fdc7050bd0f2a648fad6ae4c6e9fe370cf8821e",
+      "bytes": 38168,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "destino-matricula",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 390,
+      "height": 844,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-celular-origem-funil.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "3cc265e2beaec5c528c6ff11a00dc852bb2368455fc76082644c72b2596fe026",
+      "bytes": 43216,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "origem-funil",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 390,
+      "height": 844,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-navegacao-r1/admin-claro-celular-destino-contato.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "2a9bfb2a4c346b972ee597fec0bf9e3cde5e4218296538ba4c9160df1dbdc920",
+      "bytes": 44269,
+      "alvo": "app",
+      "ator": "admin",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "destino-contato",
+      "next": "Indicador já oculto/ausente",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "width": 390,
+      "height": 844,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    },
+    {
+      "arquivo": "output/inbox-335-alcance-r2/admin-escuro-desktop-destino-matricula-r2.png",
+      "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+      "sha256": "097fe9a47b6f94e1f94efcd3f70acde68c82aca0df0e1b75368a60e815810fd2",
+      "bytes": 84295,
+      "estado": "destino-matricula",
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "ator": "admin",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "substitui": "output/inbox-335-navegacao-r1/admin-escuro-desktop-destino-matricula.png",
+      "fonte": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+      "alvo": "app",
+      "width": 1440,
+      "height": 900,
+      "inspecao": "Original inspecionado nas pranchas offline335; link/código ou estado negado legível, sem referência funcional protótipo."
+    }
+  ],
+  "limites": [
+    "APP4c76/harness6e498; préflightHTTP ROOT4c não é execução do harness novo.",
+    "Somente leitura/navegação/teclado; nenhuma ação Enviar/Assumir/Aria/nota/ativação/financeiro foi acionada.",
+    "Protótipo funcional N/A para matrícula e CRM; nenhum HTML/estado fictício fabricado.",
+    "Fixture ROOT11linhas privadas inclui5catálogo novo pois catálogo estava vazio; nenhum307/314 alterado segundo preflight ROOT.",
+    "APP formal24:6origensSecretariaCLI+6destinosmatrícula+6origensFunil+6destinosContato. Complemento40:16Secretaria/convidado+24alcance500.",
+    "Link móvel de17px fica y482.5–499.5 apósTab, íntegro próximo à borda500 sem margem ampla; foto inicial pode mostrar parte inferior fora da janela antes da rolagem local.",
+    "Último controle Registrar opt-out apenas focado/medido, nunca acionado; cabeçalho pode sair da janela após rolagem local intencional.",
+    "SSE nas18origens:2construídas sequenciais, máximo1simultânea/1ativa. Não alegar1construção total nem todos os destinos comSSE.",
+    "R1formal inteira6PNG negativa; alcanceR1 parcial1PNG negativo por ACCNAME de probe; fotoNextPreferences original negativa substituída por recaptura independente positiva. Nenhuma negativa nesta allowlist.",
+    "AcessoNegado doProfessor comprovado por URLbrowser /acesso-negado e ausência da ficha, não por HTTPredirect na request API. Outros controles herdados (ex.Abrir cadastro do aluno) não foram alterados/auditados como nova regra335.",
+    "DestinosCRM/matrícula usam página ERP real e possuem rolagem normal própria; não aplicar contrato de documentY0 do shellInbox a todas as páginasERP.",
+    "QA independente/global integrado/publicação335 pendentes; evidênciaDEV não substitui esses gates."
+  ]
+}

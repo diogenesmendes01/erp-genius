@@ -2,6 +2,12 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox E2.15 — atalhos de saída (#335) — checkpoint de código 23/10/2026
+
+DEV A em codex/inbox-e2-335 sobre a base local 8e, agregado não publicável. hrefConversa é encoder relativo puro. O campo matriculaId nos DTOs FIN/SEC segue os mesmos gates do código, sem consulta ou ACL nova; o código vira link com rótulo real. “Abrir contato” no Funil usa /contatos?c=. Preservados #324/#323, leitura, SSE, Compositor e Sino 337; a CLI era exclusiva B337.
+
+RED 0d2a8e: três falhas de links/rota. RED INT 73676/bb5d73: campo ausente com dados não vazios. GREEN Node 22: 65 arquivos/653 testes unitários, sessão 45159/9a719c; INT com três arquivos/32 testes, sessão 1473/fa0266; TSC 16563/57e776, heap 8192; lint de nove fontes 818ebc, maxWarnings 0. Todos com código 0. Banco A liberado ao ROOT para restauro, sem presumir execução naquele checkpoint. SPEC em docs/specs/inbox-atalhos-saida.md e relatório em output/inbox-335-report.md. Fixture/visual APP-only painel-secretaria, handoff da CLI, QA, global integrado, publicação e CI ainda estavam pendentes. Ordem 335→336→325; não concluir a #325 sem “Falar com” autorizado. Sem install, schema, Prisma, preview ou push.
+
 ## Inbox E2.4 — tags e contato sem nome (#324) — checkpoint 23/10/2026
 
 DEV A em codex/inbox-e2-324 sobre agregado local272a; código e prova visual DEV entregues para revisão, SEM homologação final/QA global/PR. Tags por ID e D20, catálogo8 somente visual, capacidades CRM atuais, actions com identidade/escopo na mesma transação, locks nome→vínculo, revalidação pós-lock, Evento/aviso somente em mutação/commit. UI slots aditivos, formulário CAS bruto sem promessa Aria, input indisponível durante salvar; controles324 retirados em snapshot404 sem apagar leitura. Nenhum hook leitura/SSE/R6/Compositor/Rodape/Sino alterado.
@@ -6614,3 +6620,20 @@ C1: integração independente54da preparação e seus limites continuam indexado
 ## PR #413 — QA R1 fechada, CI final pendente
 
 Fonte0e4ec6edcb430568ed339f8bf6630265d356a02a revisadaTESTER:4/37unit165dda0+2completos25INT46676/ba3aed0/96,11s,semfiltro/skips,perfilintegracao487,JScomentárioC3idênticod8103b0. Parecer88AD7FE2FEE0EF298D8DBBAADEE3E95DBAB7A0369A2DE44C8551D423632EA1C4 versionadoemoutput/inbox-324-qa/revisao-c5.md/índice. ROOTrestauroeb22130/424hashessnapshotmantido. Seisimagensinline originais2396:627933B/hash6/6/roundtripdc21db0/releasedraftmantido. Fonteexecutávelmantida;commitfinalapenasMDJSON. Push/CI/releiturafinal/mergependentes,nãomarcar324concluídaantesGitHubCLOSEDconfirmado.
+
+
+## Inbox #335 — código e evidência DEV congelados, QA/publicação pendentes
+
+23/10/2026 — Produto 4c76: encoder relativo seguro, matriculaId sob o mesmo gate de código FIN/SEC e links reais de matrícula e /contatos?c=, preservando ACL/identidade. Unitário dirigido 65/653, sessão 45159; INT 3/32, sessão 1473; TSC 16563 e lint 818ebc, todos com código 0, Node 22. São recortes, não global. Harness 6e498: estado APP-only Secretaria, matriz 176+6=182; RED 832b7f/ffa43c e GREEN 14/101 em a4b419; TSC 2ac1bd e lint 2f1842 com código 0. APP permaneceu byte a byte igual a 4c76.
+
+Foram inspecionadas 64 PNGs positivas: 24 formais e 40 complementares, 4.273.828 bytes, com fontes/hashes por arquivo. Dois destinos reais autorizados; Professor convidado com campos null, envio false e acesso negado real. Protótipo funcional N/A explícito em tabela de 12 linhas. Comprovados alcance em altura 500, Tab/Escape, resize, mesmo DOM e scrollY 0. Permanecem os limites: link móvel inteiro perto da borda 499,5 e duas SSE sequenciais, com máximo de uma simultânea. Negativas R1 e foto Next preservadas fora da positiva. Sessões 70259/6278/59355 com código 0; sem envio ou ação de negócio.
+
+O restauro ROOT c538fc, código 0, confirmou 424 hashes e nove mensagens/quatro notas após o stop 79643; as 11 linhas privadas foram removidas. Somente o bloco Next gerado de AGENTS foi restaurado. Nenhuma PNG, credencial ou probe bruto no commit. SPEC e relatório/parecer/allowlists em output/inbox-335-* delimitam a prova. Nesse checkpoint, QA independente exata, composição sobre main/base futura, global integrado, PR, CI e publicação ainda estavam pendentes; não marcar a issue como concluída antecipadamente.
+
+## Composição final sobre main — 24/10/2026
+
+O TESTER executou integração independente da preparação a4f6: três arquivos completos/32 testes, sessão 56263/6a6c55, código 0, 121,66 s. Em E0 houve outra execução própria, de 19 arquivos/139 testes, f1dbe4, código 0; a prova aba719 confirmou os nove paths do produto iguais a 4c76. A integração de 32 testes não foi repetida em E0.
+
+A #413 foi mergeada em 6fe0e49a, CI 40095158121 com success em 5/5, e a #324 foi confirmada CLOSED. A branch 335 passou a ter base direta main 6fe após rebase: fonte E0 e0b35f2c54d90ad79cfc70ef69d20b688290de29, árvore 24187200c15d98ba45c420143effeb0cd256710a igual à preparação bf344, prova ac15e7 com código 0. Global ROOT 1276/d02cc7: 916 arquivos/7.205 testes, 201,27 s, maxWorkers 2, sem filtros; TSC 1218/621415 com código 0. Lint final 38745/80d965 com código 0 e 40 avisos herdados, após retirar três avisos apenas dos helpers privados. A QA exata E0 foi favorável nos 19/139 testes e na identidade dos paths. O delta SRC posterior à preparação a4f6 contém somente C5, já revisado na #413, sem reatribuir a integração.
+
+As 64 imagens de 4c76/6e498 e seus 4.273.828 bytes foram preservados. ZIP de 4.321.966 bytes, asset 670649541, SHA-256 ed71e143255c6f540ce6e5223c1ccc7b4f416db48a66c572f9b2b7d6eea38a6c, roundtrip f689c7 com código 0. Os seis pareceres estão indexados em output/inbox-335-qa; relatório em output/inbox-335-composicao-final.md. Sem DDL, dependências, envio ou deploy. CI rápido sem integração; política noturna/dispatch mantida. PR, CI do novo head documental, releitura dos comentários e merge seguem com ROOT; não se presume homologação.

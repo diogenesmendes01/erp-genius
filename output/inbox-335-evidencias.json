@@ -1,0 +1,703 @@
+{
+  "fonteProduto": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+  "fonteHarness": "6e498f867378b0489983eb11c57b664366ca408c",
+  "previewRoot": 79643,
+  "totais": {
+    "formal": 24,
+    "complemento": 40,
+    "originaisPositivos": 64,
+    "bytes": 4273828
+  },
+  "execucoes": [
+    {
+      "executor": "34480/0f4b39",
+      "tipo": "CLI R1 negativa",
+      "exit": 1,
+      "fonteHarness": "86f1f0edafcb232893c58b8ee50068b45a042d75"
+    },
+    {
+      "executor": "70259/2428c9",
+      "tipo": "CLI R2",
+      "exit": 0,
+      "capturas": 6
+    },
+    {
+      "executor": "6278/5da4d1",
+      "tipo": "Navegação",
+      "exit": 0,
+      "contextos": 18,
+      "capturas": 34,
+      "negativasVisuais": 1
+    },
+    {
+      "executor": "34730/1e5cb3",
+      "tipo": "Alcance R1 negativo do seletor privado",
+      "exit": 1,
+      "capturas": 1
+    },
+    {
+      "executor": "59355/320fe6",
+      "tipo": "Alcance R2 e recapturaNext",
+      "exit": 0,
+      "contextosAlcance": 8,
+      "capturas": 25
+    }
+  ],
+  "negativasForaPacote": [
+    "output/inbox-335-formal-r1",
+    "output/inbox-335-alcance-r1",
+    "output/inbox-335-navegacao-r1/admin-escuro-desktop-destino-matricula.png"
+  ],
+  "metricas": {
+    "altura500": [
+      {
+        "width": 320,
+        "tema": "claro",
+        "link": {
+          "top": 482.5,
+          "bottom": 499.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 431.5,
+          "bottom": 475.5,
+          "height": 44,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true
+      },
+      {
+        "width": 320,
+        "tema": "escuro",
+        "link": {
+          "top": 482.5,
+          "bottom": 499.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 431.5,
+          "bottom": 475.5,
+          "height": 44,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true
+      },
+      {
+        "width": 390,
+        "tema": "claro",
+        "link": {
+          "top": 482.5,
+          "bottom": 499.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 431.5,
+          "bottom": 475.5,
+          "height": 44,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true
+      },
+      {
+        "width": 390,
+        "tema": "escuro",
+        "link": {
+          "top": 482.5,
+          "bottom": 499.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 431.5,
+          "bottom": 475.5,
+          "height": 44,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true
+      },
+      {
+        "width": 1024,
+        "tema": "claro",
+        "link": {
+          "top": 439.5,
+          "bottom": 456.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 449.5,
+          "bottom": 475.5,
+          "height": 26,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true
+      },
+      {
+        "width": 1024,
+        "tema": "escuro",
+        "link": {
+          "top": 439.5,
+          "bottom": 456.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 449.5,
+          "bottom": 475.5,
+          "height": 26,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true
+      },
+      {
+        "width": 1440,
+        "tema": "claro",
+        "link": {
+          "top": 439.5,
+          "bottom": 456.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 449.5,
+          "bottom": 475.5,
+          "height": 26,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true,
+        "bordas": [
+          {
+            "width": 699,
+            "top": 482.5,
+            "bottom": 499.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 700,
+            "top": 482.5,
+            "bottom": 499.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 959,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 960,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 1399,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 1400,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          }
+        ]
+      },
+      {
+        "width": 1440,
+        "tema": "escuro",
+        "link": {
+          "top": 439.5,
+          "bottom": 456.5,
+          "height": 17,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "ultimo": {
+          "top": 449.5,
+          "bottom": 475.5,
+          "height": 26,
+          "visivel": true,
+          "docY": 0,
+          "foco": true
+        },
+        "tabs": 2,
+        "escapeFoco": true,
+        "mesmoLink": true,
+        "bordas": [
+          {
+            "width": 699,
+            "top": 482.5,
+            "bottom": 499.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 700,
+            "top": 482.5,
+            "bottom": 499.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 959,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 960,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 1399,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          },
+          {
+            "width": 1400,
+            "top": 429.5,
+            "bottom": 446.5,
+            "visivel": true,
+            "docY": 0
+          }
+        ]
+      }
+    ],
+    "navegacao": [
+      {
+        "ator": "admin",
+        "tamanho": "desktop",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        },
+        "destinoContato": {
+          "url": "http://localhost:3110/contatos?c=inbox-demo-pessoa-mariana-307",
+          "nomeConfirmado": true
+        }
+      },
+      {
+        "ator": "admin",
+        "tamanho": "desktop",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        },
+        "destinoContato": {
+          "url": "http://localhost:3110/contatos?c=inbox-demo-pessoa-mariana-307",
+          "nomeConfirmado": true
+        }
+      },
+      {
+        "ator": "admin",
+        "tamanho": "tablet",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        },
+        "destinoContato": {
+          "url": "http://localhost:3110/contatos?c=inbox-demo-pessoa-mariana-307",
+          "nomeConfirmado": true
+        }
+      },
+      {
+        "ator": "admin",
+        "tamanho": "tablet",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        },
+        "destinoContato": {
+          "url": "http://localhost:3110/contatos?c=inbox-demo-pessoa-mariana-307",
+          "nomeConfirmado": true
+        }
+      },
+      {
+        "ator": "admin",
+        "tamanho": "celular",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        },
+        "destinoContato": {
+          "url": "http://localhost:3110/contatos?c=inbox-demo-pessoa-mariana-307",
+          "nomeConfirmado": true
+        }
+      },
+      {
+        "ator": "admin",
+        "tamanho": "celular",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        },
+        "destinoContato": {
+          "url": "http://localhost:3110/contatos?c=inbox-demo-pessoa-mariana-307",
+          "nomeConfirmado": true
+        }
+      },
+      {
+        "ator": "secretaria",
+        "tamanho": "desktop",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        }
+      },
+      {
+        "ator": "secretaria",
+        "tamanho": "desktop",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "secretaria",
+        "tamanho": "tablet",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "secretaria",
+        "tamanho": "tablet",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "secretaria",
+        "tamanho": "celular",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "secretaria",
+        "tamanho": "celular",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "matriculaId": "inbox-335-matricula-lucas",
+          "codigo": "MAT-INBOX-335"
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoMatricula": {
+          "url": "http://localhost:3110/matriculas/inbox-335-matricula-lucas",
+          "codigo": true,
+          "produto": true
+        }
+      },
+      {
+        "ator": "convidado",
+        "tamanho": "desktop",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "setor": "SECRETARIA",
+          "matriculaId": null,
+          "matriculaCodigo": null,
+          "documentosPendentes": null,
+          "podeEnviar": false
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoNegado": {
+          "url": "http://localhost:3110/acesso-negado",
+          "semFicha": true
+        }
+      },
+      {
+        "ator": "convidado",
+        "tamanho": "desktop",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "setor": "SECRETARIA",
+          "matriculaId": null,
+          "matriculaCodigo": null,
+          "documentosPendentes": null,
+          "podeEnviar": false
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "convidado",
+        "tamanho": "tablet",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "setor": "SECRETARIA",
+          "matriculaId": null,
+          "matriculaCodigo": null,
+          "documentosPendentes": null,
+          "podeEnviar": false
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "convidado",
+        "tamanho": "tablet",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "setor": "SECRETARIA",
+          "matriculaId": null,
+          "matriculaCodigo": null,
+          "documentosPendentes": null,
+          "podeEnviar": false
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "convidado",
+        "tamanho": "celular",
+        "tema": "escuro",
+        "painel": {
+          "status": 200,
+          "setor": "SECRETARIA",
+          "matriculaId": null,
+          "matriculaCodigo": null,
+          "documentosPendentes": null,
+          "podeEnviar": false
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        }
+      },
+      {
+        "ator": "convidado",
+        "tamanho": "celular",
+        "tema": "claro",
+        "painel": {
+          "status": 200,
+          "setor": "SECRETARIA",
+          "matriculaId": null,
+          "matriculaCodigo": null,
+          "documentosPendentes": null,
+          "podeEnviar": false
+        },
+        "sseOrigem": {
+          "construidas": 2,
+          "ativas": 1,
+          "max": 1
+        },
+        "destinoNegado": {
+          "url": "http://localhost:3110/acesso-negado",
+          "semFicha": true
+        }
+      }
+    ]
+  },
+  "limites": [
+    "APP4c76/harness6e498; préflightHTTP ROOT4c não é execução do harness novo.",
+    "Somente leitura/navegação/teclado; nenhuma ação Enviar/Assumir/Aria/nota/ativação/financeiro foi acionada.",
+    "Protótipo funcional N/A para matrícula e CRM; nenhum HTML/estado fictício fabricado.",
+    "Fixture ROOT11linhas privadas inclui5catálogo novo pois catálogo estava vazio; nenhum307/314 alterado segundo preflight ROOT.",
+    "APP formal24:6origensSecretariaCLI+6destinosmatrícula+6origensFunil+6destinosContato. Complemento40:16Secretaria/convidado+24alcance500.",
+    "Link móvel de17px fica y482.5–499.5 apósTab, íntegro próximo à borda500 sem margem ampla; foto inicial pode mostrar parte inferior fora da janela antes da rolagem local.",
+    "Último controle Registrar opt-out apenas focado/medido, nunca acionado; cabeçalho pode sair da janela após rolagem local intencional.",
+    "SSE nas18origens:2construídas sequenciais, máximo1simultânea/1ativa. Não alegar1construção total nem todos os destinos comSSE.",
+    "R1formal inteira6PNG negativa; alcanceR1 parcial1PNG negativo por ACCNAME de probe; fotoNextPreferences original negativa substituída por recaptura independente positiva. Nenhuma negativa nesta allowlist.",
+    "AcessoNegado doProfessor comprovado por URLbrowser /acesso-negado e ausência da ficha, não por HTTPredirect na request API. Outros controles herdados (ex.Abrir cadastro do aluno) não foram alterados/auditados como nova regra335.",
+    "DestinosCRM/matrícula usam página ERP real e possuem rolagem normal própria; não aplicar contrato de documentY0 do shellInbox a todas as páginasERP.",
+    "QA independente/global integrado/publicação335 pendentes; evidênciaDEV não substitui esses gates."
+  ]
+}

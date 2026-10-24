@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
+import { confirmarPainelSecretaria, semanticaPainelSecretariaPronto, confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
@@ -65,7 +65,17 @@ async function prepararRede(contexto, alvo, base, falhas) {
 export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? (estado === "painel-vazio" ? "joao@genius.com" : "admin@genius.com"), process.env.INBOX_VISUAL_SENHA ?? "genius123");
   if (estado === "carregando") return { finalizar: await abrirCarregandoApp(pagina, contexto, base), metadados: { fallbackReal: true, latenciaLocalMs: 3000, medicaoStreaming: false } };
-  const id = estado === "painel-sem-nome" ? process.env.INBOX_VISUAL_SEM_NOME ?? ids.semNome : ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
+  const id = estado === "painel-secretaria" ? process.env.INBOX_VISUAL_SECRETARIA : estado === "painel-sem-nome" ? process.env.INBOX_VISUAL_SEM_NOME ?? ids.semNome : ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
+  if (estado === "painel-secretaria") {
+    const painelSecretariaReal = await confirmarPainelSecretaria(contexto, base, id);
+    const concluirMensagens = instalarConclusaoMensagens(pagina, base, id);
+    await pagina.goto(`${base}/inbox?c=${encodeURIComponent(id)}`, { waitUntil: "domcontentloaded" });
+    await esperarHidratacaoApp(pagina);
+    if (!(await pagina.locator('aside[aria-label="Painel do contato"]').isVisible())) await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
+    await pagina.waitForFunction(semanticaPainelSecretariaPronto, painelSecretariaReal);
+    await concluirMensagens();
+    return { metadados: { painelSecretariaReal } };
+  }
   const painelSemNomeReal = estado === "painel-sem-nome" ? await confirmarPainelSemNome(contexto, base, id) : undefined;
   const ausenciaLegitima = estado === "painel-vazio" ? await confirmarPainelVazio(contexto, base, id) : undefined;
   const estado319 = ["painel-erro", "thread-erro", "painel-vazio"].includes(estado);

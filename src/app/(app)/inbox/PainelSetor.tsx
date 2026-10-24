@@ -20,13 +20,13 @@ export function PainelSetor({ painel }: { painel: Painel | null }) {
             <Linha rotulo="Valor">{painel.oportunidade.valor ? brl(painel.oportunidade.valor) : "Sem valor"}</Linha></dl>
         : <p className="text-[12.5px] text-gray-400">Sem oportunidade visível para você.</p>)}
       {painel.setor === "FINANCEIRO" && (<>
-        <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha></dl>
+        <dl><Linha rotulo="Matrícula">{painel.matriculaId && painel.matriculaCodigo ? <Link href={`/matriculas/${encodeURIComponent(painel.matriculaId)}`} className="text-brand-800 underline">{painel.matriculaCodigo}</Link> : painel.matriculaCodigo ?? "—"}</Linha></dl>
         {painel.cobrancas.length
           ? <ul className="mt-2 space-y-1 text-sm">{painel.cobrancas.map((c) => <li key={c.id} className="flex justify-between"><span>{formatarDataCivil(c.vencimento)}</span><span>{brl(c.valor)} · {rotular(STATUS_COBRANCA_LABEL, c.status)}</span></li>)}</ul>
           : <EstadoVazio className="mt-2">Nenhuma cobrança em aberto.</EstadoVazio>}
       </>)}
       {painel.setor === "SECRETARIA" && (
-        <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha><Linha rotulo="Documentos pendentes">{painel.documentosPendentes ?? "—"}</Linha></dl>)}
+        <dl><Linha rotulo="Matrícula">{painel.matriculaId && painel.matriculaCodigo ? <Link href={`/matriculas/${encodeURIComponent(painel.matriculaId)}`} className="text-brand-800 underline">{painel.matriculaCodigo}</Link> : painel.matriculaCodigo ?? "—"}</Linha><Linha rotulo="Documentos pendentes">{painel.documentosPendentes ?? "—"}</Linha></dl>)}
       {painel.setor === "PEDAGOGICO" && (
         <dl><Linha rotulo="Turma">{painel.turma ?? "—"}</Linha><Linha rotulo="Frequência">{painel.frequenciaPct === null ? "Sem registros" : `${painel.frequenciaPct}%`}</Linha></dl>)}
     </section>

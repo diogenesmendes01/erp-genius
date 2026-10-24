@@ -16,6 +16,7 @@ export const ESTADOS = Object.freeze({
   conversa: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-escuro-admin-desktop.png") },
   "menu-mais": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-menu-mais.png") },
   "painel-sem-nome": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true },
+  "painel-secretaria": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Navegação real da Secretaria para matrícula não existe no protótipo." },
   "painel-detalhes": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-painel-detalhes.png") },
   "painel-fechado": { tamanhos: ["desktop"], prototipo: true },
   "sem-selecao": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Sem seleção E1 não tem referência funcional equivalente no protótipo." },

@@ -1,0 +1,152 @@
+{
+  "fontes": {
+    "produtoOriginal": "4c76d200257ea4c3df3707e95100d9180a9efdbc",
+    "harnessOriginal": "6e498f867378b0489983eb11c57b664366ca408c",
+    "documentacaoOriginal": "88b84f889e1421ceca0f575971dd684113215c04",
+    "composicaoTestada": "a4f6e7da34f1d04b62e5dcdf60b5027ad308684f",
+    "fonteFinal": "e0b35f2c54d90ad79cfc70ef69d20b688290de29",
+    "preRebase": "bf3443f4a922d2290ec18d372a4d2edf3ae69fb1",
+    "baseMain": "6fe0e49ad5cd6c6dc5e929494d62b33a7770cc26"
+  },
+  "pareceres": [
+    {
+      "parecer": "codigo-original.md",
+      "original": "inbox-335-review-tester.md",
+      "sha256OriginalFisico": "4db8280d0e1eb11b9c28c119866ee13d09c793af86a5b5a359b0ce1b96ab3919",
+      "sha256PublicadoLF": "878083a42bb428453a2fae209e6e09bf1a69c94d3e811a69a6f4effa4a1ba0cf"
+    },
+    {
+      "parecer": "harness-original.md",
+      "original": "inbox-335-harness-review-tester.md",
+      "sha256OriginalFisico": "759148d1cf08a450d107b43c645d4d09d127bf290af5a4b91efa3d6efc1e70a9",
+      "sha256PublicadoLF": "e7dcf583bf1e04cd9b62e49172136994e31bafb72d0d449b785ff44d9034c2cd"
+    },
+    {
+      "parecer": "visual-original.md",
+      "original": "inbox-335-final-visual-review-tester.md",
+      "sha256OriginalFisico": "ae0e6031918e97c2d1aa6181bef7b72d54008b31c5503c0a9b92ee0ec6091a9b",
+      "sha256PublicadoLF": "3e44ab4fd7c589810699df7dc980ebd1205b97f664930455e668f7544fbaeed1"
+    },
+    {
+      "parecer": "pacote.md",
+      "original": "inbox-335-pacote-review-tester.md",
+      "sha256OriginalFisico": "0c3198f9fdb749d05277c78e347584022f0a9f534b00246a24ab5a9742f75112",
+      "sha256PublicadoLF": "eac444e3f7f4af84a7b59ab425d21998e40d21fd599a6fa55e39408789bf871a"
+    },
+    {
+      "parecer": "composicao-a4f6.md",
+      "original": "inbox-335-preparacao-a4f6-review-tester.md",
+      "sha256OriginalFisico": "a9d36dffadfd23da66e1b54e4a45dd22da6e45a0805acad9563de04083c8fe66",
+      "sha256PublicadoLF": "a9d36dffadfd23da66e1b54e4a45dd22da6e45a0805acad9563de04083c8fe66"
+    },
+    {
+      "parecer": "composicao-final.md",
+      "original": "output/inbox-335-composicao-e0-review-tester.md",
+      "sha256OriginalFisico": "45a9ceeaf6659f21582992137fbc80d0542f507e3035675ae2c0b412d6ba90d0",
+      "sha256PublicadoLF": "45a9ceeaf6659f21582992137fbc80d0542f507e3035675ae2c0b412d6ba90d0"
+    }
+  ],
+  "normalizacao": "Somente CRLF para LF; conteúdo e limites mantidos.",
+  "globalNominalA4f6": {
+    "sessao": 38640,
+    "terminal": "7688b0",
+    "exit": 0,
+    "arquivos": 916,
+    "testes": 7205,
+    "segundos": 51.32
+  },
+  "typescriptNominalA4f6": {
+    "sessao": 92153,
+    "terminal": "b8ccb7",
+    "exit": 0
+  },
+  "lintNominalA4f6": {
+    "sessao": 53885,
+    "terminal": "30545c",
+    "exit": 0,
+    "erros": 0,
+    "avisosHerdados": 40
+  },
+  "integracaoIndependenteA4f6": {
+    "sessao": 56263,
+    "terminal": "6a6c55",
+    "exit": 0,
+    "arquivos": 3,
+    "testes": 32,
+    "segundos": 121.66,
+    "perfil": "integracao",
+    "schema": 487,
+    "semFiltroSkips": true
+  },
+  "unitIndependenteA4f6": {
+    "terminal": "9421b7",
+    "exit": 0,
+    "arquivos": 19,
+    "testes": 139
+  },
+  "visual": {
+    "png": 64,
+    "bytesPng": 4273828,
+    "bytesZip": 4321966,
+    "sha256Zip": "ed71e143255c6f540ce6e5223c1ccc7b4f416db48a66c572f9b2b7d6eea38a6c",
+    "asset": 670649541,
+    "releaseRascunho": true,
+    "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-335-aceite-4c76-6e498-20261023.zip",
+    "roundtrip": "f689c7",
+    "fontesNominaisSeparadas": true
+  },
+  "estado": "Publicação sobre main pronta; CI e comentários antes do merge ainda pendentes.",
+  "provaArvore": {
+    "terminal": "ac15e7",
+    "exit": 0,
+    "antes": "24187200c15d98ba45c420143effeb0cd256710a",
+    "depois": "24187200c15d98ba45c420143effeb0cd256710a",
+    "igual": true
+  },
+  "globalFinal": {
+    "fonteExecutada": "bf3443f4a922d2290ec18d372a4d2edf3ae69fb1",
+    "arvoreIgualA": "e0b35f2c54d90ad79cfc70ef69d20b688290de29",
+    "sessao": 1276,
+    "terminal": "d02cc7",
+    "exit": 0,
+    "arquivos": 916,
+    "testes": 7205,
+    "segundos": 201.27,
+    "maxWorkers": 2,
+    "configUnitExcluiIntegracao": true,
+    "semFiltroSkips": true
+  },
+  "typescriptFinal": {
+    "sessao": 1218,
+    "terminal": "621415",
+    "exit": 0
+  },
+  "lintFinal": {
+    "sessao": 38745,
+    "terminal": "80d965",
+    "exit": 0,
+    "erros": 0,
+    "avisosHerdados": 40,
+    "maxWarnings": 40,
+    "anterior43Incluia3AvisosHelpersPrivadosCorrigidos": true
+  },
+  "qaFinal": {
+    "fonte": "e0b35f2c54d90ad79cfc70ef69d20b688290de29",
+    "unit": {
+      "terminal": "f1dbe4",
+      "exit": 0,
+      "arquivos": 19,
+      "testes": 139,
+      "segundos": 3.22
+    },
+    "identidades": {
+      "terminal": "aba719",
+      "exit": 0,
+      "produto9Igual4c76": true,
+      "harness9Igual6e498": true,
+      "fixTags3Igual7ff": true,
+      "deltaC5TresIgual0e4": true
+    },
+    "integracaoNovaNaoRepetida": true
+  }
+}

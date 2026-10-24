@@ -22,3 +22,6 @@ export function semanticaRodapePronto(modo: "responder" | "nota"): boolean;
 
 export function confirmarPainelSemNome(contexto: BrowserContext, base: string, id: string): Promise<{ status: 200; semNome: true; podeEditarNome: true }>;
 export function semanticaPainelSemNomePronto(): boolean;
+
+export function confirmarPainelSecretaria(contexto: BrowserContext, base: string, id: string): Promise<{ status: 200; matriculaId: string; codigo: string }>;
+export function semanticaPainelSecretariaPronto(alvo: { matriculaId: string; codigo: string }): boolean;
