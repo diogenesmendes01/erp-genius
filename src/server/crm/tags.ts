@@ -106,7 +106,7 @@ export async function alterarTagNaTransacao(tx: Prisma.TransactionClient, autor:
   await revalidarAlvo?.();
   const tag = await tx.tag.findUnique({ where: { id: dados.tagId } });
   if (!tag) throw new ErroRegra("Tag não encontrada.");
-  if (modo === "atribuir" && !tag.ativo) throw new ErroRegra("Esta tag está inativa.");
+  if (modo === "atribuir" && !tag.ativo) throw new ErroRegra("Esta tag está inativa. Reative-a no CRM antes de atribuí-la.");
   const tipo = modo === "atribuir" ? "TagAtribuida" : "TagRemovida";
   const payload = { tagId: tag.id, nome: tag.nome };
   if (dados.pessoaId) {
