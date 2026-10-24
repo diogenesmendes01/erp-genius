@@ -1,0 +1,60 @@
+{
+  "issue": 343,
+  "fonteDevQa": "3de12d11e9c604bafc20af0ccab24341be6f807b",
+  "baseProdutor": "54c44b2ad2f5414f346e07dea76001a13c799051",
+  "parecer": {
+    "path": "codigo-3de.md",
+    "bytes": 6421,
+    "sha256": "b37be7d44094891a245435dc376e8279a32774726759ad9ee02c4b1ecfdf93ff"
+  },
+  "unitIndependente": {
+    "arquivos": 11,
+    "testes": 112,
+    "executor": "80a7f7/EXIT0"
+  },
+  "integracaoIndependente": {
+    "arquivos": 1,
+    "testes": 32,
+    "sessao": 46846,
+    "executor": "8ff3c3/EXIT0",
+    "segundos": 122.49,
+    "workers": 1
+  },
+  "lintIndependente": {
+    "arquivos": 12,
+    "executor": "201524/EXIT0"
+  },
+  "restauroTester": {
+    "executor": "6e2d58/EXIT0",
+    "tabelas": 424,
+    "registros": 1392,
+    "mensagens": 9,
+    "notas": 4,
+    "snapshotSha256": "f1d15dff3df9ddfab63b8c2e238c0e3d89122c47471d27c8724e20ffd7c291c5"
+  },
+  "limites": [
+    "Recortes sobrepostos não são somados a DEV ou CI.",
+    "Produtor DTO sem UI nova; visual N/A.",
+    "Integração remota nominalf1f aprovada4/4,350arquivos/3112testes +3arquivos/4preparadores visuais opt-in ignorados. Composição inclui423 homologada separadamente; CI global final e merge pendentes."
+  ],
+  "gatesIntegrador": {
+    "typeScriptOriginal": {
+      "sessao": 29745,
+      "terminal": "2bd6a1",
+      "exit": 0,
+      "exclusoesAuxiliares": false,
+      "heapMB": 8192,
+      "incremental": false
+    },
+    "lintGlobal": {
+      "sessao": 95627,
+      "terminal": "da032e",
+      "exit": 0,
+      "erros": 0,
+      "avisos": 40
+    },
+    "limite": "Sem novo UNIT global ou INT local ROOT: fontes executáveis idênticas à DEV/QA, CI e integração remota desta publicação serão separadas."
+  },
+  "ciNominal": "ci-f1f.json",
+  "composicaoAtual": "composicao-main-423.json"
+}

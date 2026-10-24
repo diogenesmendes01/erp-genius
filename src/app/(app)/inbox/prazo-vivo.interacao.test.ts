@@ -16,7 +16,7 @@ vi.mock("@tabler/icons-react", async () => {
 });
 const T = Date.UTC(2026, 9, 22, 12);
 const MINUTO = 60_000;
-const item = (prazo: number | null, id = "a1"): ItemListaInbox => ({
+const item = (prazo: number | null, id = "a1"): ItemListaInbox => ({ estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null,
   id, numeroId: "n1", numeroRotulo: "Cobrança", finalidade: "FINANCEIRO", driver: "SIMULADO",
   contatoId: `c-${id}`, contatoNome: `Contato ${id}`, contatoTelefone: "", optOut: false, vinculo: null,
   naoLidas: 0, ultimaMensagemEm: null, preview: "Mensagem fictícia", linhaComercial: false,

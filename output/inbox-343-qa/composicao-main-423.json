@@ -1,0 +1,79 @@
+{
+  "fonteNominal343": "f1f2098f727eab2376ad9f7559b61f48d60fa118",
+  "mainIncorporada": "a0b8f82c9ed0f30c5908cb4bc8ca4a68afdd74af",
+  "srcProprios343Preservados": [
+    {
+      "path": "src/app/(app)/inbox/ColunaConversas.test.ts",
+      "sha256GitLF": "a02db79770a8ee842c1dbe8bcb20790590c92715483607bc98cf775acc38a36e"
+    },
+    {
+      "path": "src/app/(app)/inbox/ConversaAberta.test.ts",
+      "sha256GitLF": "272791a10c713dfc1f4f392b63c18058a81424f16240ecce40d7ff0f1570167b"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "sha256GitLF": "7c8c0075b462e6ba79100d22d98d65cd8cf6e9442c3c26b46e114672d7f2dd6b"
+    },
+    {
+      "path": "src/app/(app)/inbox/ItemConversa.test.ts",
+      "sha256GitLF": "23eea90d51d13d5ddd0d6bc88b304200cce375124ea5ae66c732255a4fbb52ed"
+    },
+    {
+      "path": "src/app/(app)/inbox/ListaAtendimentos.test.ts",
+      "sha256GitLF": "b3dc7b838df6cdee7e50354db5ac7bf4ecd92ff8547ef7721552c8c51ef2dd25"
+    },
+    {
+      "path": "src/app/(app)/inbox/estado-visual.servidor.test.ts",
+      "sha256GitLF": "650f413e4d51f3a608f05604601e46fd5fa2de979a286135cb8578b55ac81bb2"
+    },
+    {
+      "path": "src/app/(app)/inbox/estado-visual.test.ts",
+      "sha256GitLF": "9c725ac9ed40061707be9f75dee831552bc55a05e92091433f411ddc12821b9c"
+    },
+    {
+      "path": "src/app/(app)/inbox/prazo-vivo.interacao.test.ts",
+      "sha256GitLF": "a14a2fda7a37653238035f35640231a61e01e88c451afcb2a2e879f90de5f988"
+    },
+    {
+      "path": "src/server/inbox/consultas-pagina.int.test.ts",
+      "sha256GitLF": "a69c95c65f95b599a0d1991f7e34cb27f27c47bc20d6f62984d7702f3e5bdbb8"
+    },
+    {
+      "path": "src/server/inbox/consultas-pagina.ts",
+      "sha256GitLF": "f9cb73fc38fbdb223e0697da2e7b771c796b1a701acf03d20b6478e8804cb209"
+    },
+    {
+      "path": "src/server/inbox/previa.test.ts",
+      "sha256GitLF": "25956c4e7582a5e0e972283b1902405f25df4f748c824865d8194ebb7286f1b2"
+    },
+    {
+      "path": "src/server/inbox/previa.ts",
+      "sha256GitLF": "964c1522d9629132cf96f502b1c0b5210ebdfa114730a64576c3f98cba241a90"
+    }
+  ],
+  "srcIncorporados423": [
+    {
+      "path": "src/server/aria/conhecimento/busca.int.test.ts",
+      "sha256GitLF": "f7e8d4d55fa7354268ab403334a62c238d0fb29d69d1fceeab9345a57ff6524a"
+    },
+    {
+      "path": "src/server/aria/conhecimento/busca.ts",
+      "sha256GitLF": "a7d2fdc3a354b4fed292915ceedef63ab2f2f8c914f3f273aeb4a8c9f4494029"
+    }
+  ],
+  "cobertura423": {
+    "pr": 425,
+    "fonteDevQa": "6ba2c192cd265d199e1775d31ba054ef36c866cd",
+    "intDev": 38,
+    "intTester": 38,
+    "arquivosCompletos": 4,
+    "ci": "40141725341/5jobs/success"
+  },
+  "typeScriptComposto": {
+    "sessao": 26136,
+    "terminal": "db8c4f",
+    "exit": 0,
+    "exclusoesAuxiliares": false
+  },
+  "limite": "A integração completa343 permanece nominal a f1f, anterior à423. Não é execução integral combinada posterior. Dois SRC423 são os homologados na PR425/INT38; os12SRC343 continuam idênticos. CI global final da composição ainda obrigatória."
+}

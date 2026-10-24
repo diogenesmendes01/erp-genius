@@ -6,7 +6,7 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { ItemConversa } from "./ItemConversa";
 
 const agora = new Date("2026-10-22T13:00:00.000Z");
-const base: ItemListaInbox = {
+const base: ItemListaInbox = { estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null,
   id: "a1", numeroId: "n1", numeroRotulo: "Cobrança", finalidade: "FINANCEIRO", driver: DriverWhatsApp.META_CLOUD,
   contatoId: "c3", contatoNome: "Mariana Costa", contatoTelefone: "+5511999990000", optOut: false, vinculo: null,
   naoLidas: 0, ultimaMensagemEm: "2026-10-22T12:42:00.000Z", preview: "Perfeito. Quanto fica?", linhaComercial: false,
