@@ -9,6 +9,9 @@ import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
+import { AbaDetalhes } from "./abas/AbaDetalhes";
+import { useAbaPainel } from "./abas/useAbaPainel";
+import type { DetalhesPainel } from "@/server/inbox/painel-detalhes";
 import { IconPhone, IconMessages } from "@tabler/icons-react";
 import { classesDoPainel, painelEfetivo, proximoEstadoPainel, useModoInbox } from "./painel-inbox";
 import { useConversa } from "@/components/conversa/useConversa";
@@ -380,6 +383,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   if (abaDoContato.atendimentoId !== selecionado) setAbaDoContato({ atendimentoId: selecionado, id: "detalhes" });
   const abas = abasDoPainel(atual?.finalidade ?? "");
   const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
+  const detalhesComerciais = atual?.finalidade === "COMERCIAL" && !atual.grupo;
+  // A futura326 reutilizará esta instância para Detalhes ativo OU editor aberto.
+  const detalhesDoContato = useAbaPainel<DetalhesPainel>(selecionado, "detalhes", versaoPainel, detalhesComerciais && abaAtiva === "detalhes");
 
   function abrir(id: string) {
     focoAoFecharPopover.current = regiaoConversa.current;
@@ -406,20 +412,29 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setCarregandoMais(false);
   }
 
+  function falhaDosDetalhes(recarregar: () => void) {
+    return <div role="alert" className="space-y-2 text-sm text-red-700">
+      <p>Não foi possível carregar os detalhes.</p>
+      <Botao variante="secundario" tamanho="sm" onClick={(e) => {
+        e.currentTarget.closest<HTMLElement>('[id="painel-contato"]')?.focus({ preventScroll: true });
+        recarregar();
+      }}>Tentar de novo</Botao>
+    </div>;
+  }
+
   // Os blocos antigos preservam suas ações; só a composição local retira padding/borda duplicados.
   const secaoDetalhes = "-mx-[18px] px-[18px] empty:hidden [&>section]:border-t-0 [&>section]:p-0";
   const painel = atual ? (
     <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">
-      {atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
-      <div className={secaoDetalhes}>{painelSetor?.id === atual.id
-        ? painelSetor.dado ? <PainelSetor painel={painelSetor.dado} /> : <div role="alert" className="space-y-2 text-sm text-red-700">
-          <p>Não foi possível carregar os detalhes.</p>
-          <Botao variante="secundario" tamanho="sm" onClick={(e) => {
-            e.currentTarget.closest<HTMLElement>('[id="painel-contato"]')?.focus({ preventScroll: true });
-            tentarPainelDeNovo();
-          }}>Tentar de novo</Botao>
-        </div>
-        : <EsqueletoPainel rotulo="detalhes" />}</div>
+      {(!detalhesComerciais || detalhesDoContato.dado?.pessoa === null) && atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
+      <div className={secaoDetalhes}>{painelSetor?.id === atual.id && painelSetor.dado
+        ? detalhesComerciais
+          ? detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
+            : detalhesDoContato.dado ? <AbaDetalhes dados={detalhesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { verContato: false, verEmpresa: false }} />
+              : <EsqueletoPainel rotulo="detalhes" />
+          : <PainelSetor painel={painelSetor.dado} />
+        : painelSetor?.id === atual.id ? falhaDosDetalhes(tentarPainelDeNovo)
+          : <EsqueletoPainel rotulo="detalhes" />}</div>
       {painelSetor?.id === atual.id && painelSetor.dado?.aria && <div className={secaoDetalhes}>
         <PainelAria key={`aria:${atual.id}`} atendimentoId={atual.id} aria={painelSetor.dado.aria} fuso={fuso} aoMudar={recarregarLista} />
       </div>}
@@ -474,8 +489,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       </section>
 
       {selecionado && <PainelContato contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
-        subtitulo: rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade) + " · " + atual.numeroRotulo,
-        tags: painelDoAberto?.dado?.tags ?? [], quadrado: false } : undefined}
+        subtitulo: detalhesComerciais ? painelDoAberto?.dado?.cabecalho?.subtitulo ?? "" : rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade) + " · " + atual.numeroRotulo,
+        tags: painelDoAberto?.dado?.tags ?? [], quadrado: detalhesComerciais && painelDoAberto?.dado?.cabecalho?.quadrado === true } : undefined}
         slotTags={painelDoAberto?.dado?.cabecalho?.pessoaId ? <TagsContato atendimentoId={selecionado} tags={painelDoAberto.dado.tags ?? []} disponiveis={painelDoAberto.dado.cabecalho.tagsDisponiveis}
           podeEditar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.editarTags} podeCriar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.criarTag} aoMudar={recarregarLista} /> : undefined}
         slotAviso={painelDoAberto?.dado?.cabecalho?.semNome ? <ContatoSemNome atendimentoId={selecionado} nomeAnterior={painelDoAberto.dado.acoes?.nomeSalvo ?? null}

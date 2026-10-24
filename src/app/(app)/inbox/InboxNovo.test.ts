@@ -144,19 +144,19 @@ it("encaminha agoraInicial da página à lista sem recalcular durante SSR", () =
 });
 
 
-it("SSR318 monta cabeçalho/Detalhes na casca com WhatsApp apenas quando recebido", () => {
+it("SSR325 aguarda DTO comercial sem repetir telefone da lista ou subtítulo não autorizado", () => {
   const h = html({ selecionado: "a1" });
-  for (const trecho of ["data-cabecalho-contato", "h-[132px]", "Comercial · Escola", 'role="tabpanel"', ">Detalhes<", ">WhatsApp<"]) expect(h).toContain(trecho);
-  const sem = html({ selecionado: "a1", extra: { inicial: { itens: [{ ...item("a1", "Ana"), contatoTelefone: "" }], proximo: null } } });
-  expect(sem).not.toContain(">WhatsApp<");
+  for (const trecho of ["data-cabecalho-contato", "h-[132px]", 'role="tabpanel"', ">Detalhes<", "Carregando detalhes"]) expect(h).toContain(trecho);
+  expect(h).not.toContain(">WhatsApp<");
+  const inicio = h.indexOf("<header data-cabecalho-contato");
+  expect(h.slice(inicio, h.indexOf("</header>", inicio))).not.toContain("Comercial · Escola");
   expect(h.match(/id="painel-contato"/g)).toHaveLength(1);
 });
 
-it("WhatsApp recebido usa o valor mono exigido no painel318", () => {
-  const h = html({ selecionado: "a1" });
-  expect(h).toMatch(/<span class="font-mono">\+506<\/span>/);
+it("E1 fora do comercial mantém WhatsApp recebido em mono", () => {
+  const h = html({ selecionado: "a1", extra: { inicial: { itens: [{ ...item("a1", "Ana"), finalidade: "FINANCEIRO" }], proximo: null } } });
+  expect(h).toContain(">WhatsApp<"); expect(h).toContain('<span class="font-mono">+506</span>');
 });
-
 
 it("319: sem seleção tem área central livre, ícone e nenhum painel de contato",()=>{
  const h=html();expect(h).toContain("Escolha uma conversa");expect(h).toContain("As mensagens aparecem aqui.");expect(h).toContain("text-[15px]");expect(h).toContain("text-[13px]");expect(h).toContain("items-center justify-center");expect(h).not.toContain('id="painel-contato"');
