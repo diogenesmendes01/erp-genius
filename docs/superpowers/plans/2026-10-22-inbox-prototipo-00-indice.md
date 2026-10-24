@@ -53,7 +53,7 @@ Enquanto uma decisão estiver aberta, vale a **regra atual do ERP** (coluna "Pad
 | D17 | Filtro de número só para Admin e gerente com permissão? | Todos os papéis do Inbox (regra atual) | E1 |
 | D18 | Cliente que volta: perguntar "novo interesse?" ou reaproveitar a oportunidade? | Reaproveitar | E2 |
 | D19 | Seguir conversa, mesclar contato, exportar PDF e recorrência continuam fora? "Buscar na conversa" entra quando? | Fora; busca na conversa entra na E1 (doc 03 linha 17) | E1 |
-| D20 | "+ tag" e marca de tag criada pela Aria; @menção em nota avisa no sino? | Tag criada sem autor = marca ✦; @menção sem aviso | E2 |
+| D20 | "+ tag" e marca de tag criada pela Aria; @menção em nota avisa no sino? | Decisão humana aprovada: tag sem autor = marca ✦; @menção avisa no sino somente usuários com leitura atual do atendimento ([registro aprovado](../../planejamento/inbox-decisoes-produto.md)) | E2 |
 | D21 | Funil, Tarefas, Contatos e Agente ganham "Abrir conversa" e "Agendar mensagem"? | Sim, só como link (`/inbox?c=`, `?agendar=1`) | E2 |
 | D22 | O anexo "Catálogo" entra? De onde vêm os arquivos? | Fora | E4 |
 
