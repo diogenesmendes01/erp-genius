@@ -37,7 +37,7 @@ export interface PropsCompositor {
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
   aoNota(t: string, chaveIdempotencia?: string, mencoes?: readonly TokenMencao[]): Promise<Resultado>;
   /** Opcional: só o Inbox oferece candidatos já autorizados, sem alterar outros consumidores. */
-  buscarMencoes?: (busca: string) => Promise<CandidatoMencao[]>;
+  buscarMencoes?: (busca: string, signal?: AbortSignal) => Promise<CandidatoMencao[]>;
   /** Compartilhado pelo dono da conversa para conservar tentativa incerta mesmo ao alternar contatos. */
   tentativasNota?: ChavesPorAlvo;
   /** Dono acima da key do contato: evita apagar uma nova intenção após remontagem. */
@@ -157,11 +157,15 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   useEffect(() => {
     if (!nota || !buscarMencoes || enviando || !consultaMencao) return;
     let vigente = true;
-    Promise.resolve().then(() => buscarMencoes(consultaMencao.busca)).then(
-      pessoas => { if (vigente) setRespostaMencao({ consulta: consultaMencao, pessoas }); },
-      () => { if (vigente) setRespostaMencao({ consulta: consultaMencao, pessoas: [], erro: "Não foi possível buscar pessoas." }); },
-    );
-    return () => { vigente = false; };
+    const consulta = consultaMencao;
+    const controlador = new AbortController();
+    const timer = setTimeout(() => {
+      void Promise.resolve().then(() => buscarMencoes(consulta.busca, controlador.signal)).then(
+        pessoas => { if (vigente) setRespostaMencao({ consulta, pessoas }); },
+        () => { if (vigente) setRespostaMencao({ consulta, pessoas: [], erro: "Não foi possível buscar pessoas." }); },
+      );
+    }, 200);
+    return () => { vigente = false; clearTimeout(timer); controlador.abort(); };
   }, [nota, buscarMencoes, enviando, consultaMencao, contexto]);
   const consultandoMencao = nota && !!buscarMencoes && !enviando && consultaMencao !== null;
   const resultadoMencao = respostaMencao?.consulta === consultaMencao ? respostaMencao : null;

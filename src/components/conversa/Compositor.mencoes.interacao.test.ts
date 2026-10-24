@@ -12,7 +12,7 @@ let Compositor: typeof import("./Compositor").Compositor;
 const storage = new Map<string, string>();
 const pessoas: CandidatoMencao[] = [{ id: "p1", nome: "João Silva", descricao: "Vendedor" }, { id: "p2", nome: "João Silva", descricao: "Professor" }];
 const notas: { texto: string; chave?: string; tokens?: readonly TokenMencao[] }[] = [];
-const buscar = vi.fn(async () => pessoas);
+const buscar = vi.fn<NonNullable<PropsCompositor["buscarMencoes"]>>(async () => pessoas);
 function props(p: Partial<PropsCompositor> = {}): PropsCompositor {
   return { atendimentoId: "A", modo: "nota", podeEnviar: false, capacidades: [], aoEnviarTexto: async () => ({ ok: true }), aoEnviarMidia: async () => ({ ok: true }), aoNota: async (texto, chave, tokens) => { notas.push({ texto, chave, tokens }); return { ok: true }; }, buscarMencoes: buscar, ...p };
 }
@@ -20,18 +20,51 @@ function Tela(p: PropsCompositor) { const revisoesRascunhos = useRevisoesRascunh
 function eventos(el: Elemento) { const k = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, Record<string, (e?: unknown) => void>>)[k]; }
 const entrada = () => host.querySelector("textarea")!;
 async function montar(p = props()) { await act(async () => root.render(createElement(StrictMode, null, createElement(Tela, p)))); }
-async function digitar(v: string, cursor = v.length) { await act(async () => eventos(entrada()).onChange({ target: { value: v, selectionStart: cursor } })); }
+async function digitar(v: string, cursor = v.length, aguardar = true) {
+  await act(async () => eventos(entrada()).onChange({ target: { value: v, selectionStart: cursor } }));
+  if (aguardar) await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+}
 async function tecla(key: string, compondo = false) { await act(async () => eventos(entrada()).onKeyDown({ key, shiftKey: false, nativeEvent: { isComposing: compondo }, preventDefault() {} })); }
 async function enviar() { const botao = [...host.querySelectorAll("button")].find(b => b.textContent === "Enviar")!; await act(async () => eventos(botao).onClick()); }
 async function escolherSegundo() { await digitar("@Jo"); await tecla("ArrowDown"); await tecla("Enter"); }
 beforeEach(async () => {
+  vi.useFakeTimers();
   const dom = criarDomMinimo(); vi.stubGlobal("document", dom.documento); vi.stubGlobal("window", dom.janela); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("localStorage", { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => storage.set(k, v), removeItem: (k: string) => storage.delete(k) });
   storage.clear(); notas.length = 0; buscar.mockReset(); buscar.mockResolvedValue(pessoas);
   host = dom.documento.createElement("div"); dom.documento.body.appendChild(host);
   const { createRoot } = await import("react-dom/client"); root = createRoot(host as unknown as HTMLElement); ({ Compositor } = await import("./Compositor"));
 });
-afterEach(async () => { await act(async () => root.unmount()); desligarObservadores(); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); desligarObservadores(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+it("consulta só após 200 ms sem digitar e usa somente a busca mais recente", async () => {
+  await montar(); await digitar("@Jo", 3, false);
+  expect(buscar).not.toHaveBeenCalled();
+  await act(async () => { await vi.advanceTimersByTimeAsync(199); });
+  await digitar("@Joa", 4, false);
+  await act(async () => { await vi.advanceTimersByTimeAsync(199); });
+  expect(buscar).not.toHaveBeenCalled();
+  await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+  expect(buscar).toHaveBeenCalledTimes(1);
+  expect(buscar.mock.calls[0][0]).toBe("Joa");
+});
+it("fechar a lista cancela a consulta pendente antes do GET", async () => {
+  await montar(); await digitar("@Jo", 3, false); await tecla("Escape");
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(buscar).not.toHaveBeenCalled(); expect(notas).toHaveLength(0);
+});
+it("trocar de conversa aborta o GET em voo e descarta sua resposta antiga", async () => {
+  let concluir!: (v: CandidatoMencao[]) => void;
+  buscar.mockImplementationOnce(() => new Promise(r => { concluir = r; }));
+  await montar(); await digitar("@Jo");
+  const sinal = (buscar.mock.calls[0] as unknown as [string, AbortSignal | undefined])[1];
+  expect(sinal).toBeDefined(); expect(sinal?.aborted).toBe(false);
+  await montar(props({ atendimentoId: "B" }));
+  expect(sinal?.aborted).toBe(true);
+  await act(async () => concluir(pessoas));
+  expect(host.querySelector('[role="listbox"]')).toBeNull();
+  expect(eventos(entrada()).value).toBe(""); expect(notas).toHaveLength(0);
+});
 
 it("autocomplete separa homônimos por papel, não expõe IDs, e Enter seleciona sem enviar", async () => {
   await montar(); await digitar("@Jo");

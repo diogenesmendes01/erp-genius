@@ -30,3 +30,11 @@ O TESTER revisou a fonte integrada exata `9fa1b30e`: seis arquivos completos/185
 O pacote remoto foi novamente baixado e conferido em `ef67bf`, saída0, hash idêntico. A captura histórica positiva de homônimos foi extraída sem edição, inspecionada (somente dados fictícios), enviada em `8482ca` e validada por roundtrip `6f06c5`; asset672414695, 180.379 bytes, SHA-256 `daea864d48438e1516f38aae746e72ed0190fb2bda89fdda9072c19913efcc96`. Permanece nominal a d68, sem nova nota/captura.
 
 `inbox-337-evidencias.json`, allowlists, validação e relatório original são registros históricos com fonte própria, não metadados do head atual. A SPEC conserva esses checkpoints. O relatório presente concentra a composição atual e não reatribui seus resultados. CI e releitura de comentários ainda pendentes antes do merge; não representa homologação presumida.
+
+## Revisão R1 — busca de menções (C2)
+
+O callback de busca em ConversaAberta agora permanece estável para o mesmo atendimento, incluindo atualizações do pai e respostas rápidas. O compositor espera 200 ms após a última digitação, cancela o temporizador ao fechar a lista e aborta a requisição ao trocar consulta/conversa ou desmontar. A proteção de resposta obsoleta permanece. Nenhuma nota foi enviada nesta revisão.
+
+RED causal `cf09e8`, saída1: dois arquivos/20 casos, cinco falhas novas e 15 aprovados, antes da implementação. GREEN `b36c41`, saída0: os mesmos dois arquivos completos/20 testes, 743 ms. Inclui debounce/consulta mais recente, fechamento antes do GET, AbortSignal e resposta antiga após troca de conversa, estabilidade no pai e URL codificada.
+
+Recorte ampliado `63674/f8ea4a`, saída0: 26 arquivos completos/376 testes, 17,50 s, maxWorkers2, sem filtro de caso ou skip. TypeScript `77234/07b3ba`, saída0, heap8192. Lint dos quatro paths de fonte/teste `f52547`, saída0, zero avisos. Esses gates não são uma regressão global nem validam os ajustes de servidor C3/C4 ainda em desenvolvimento. A CI anterior `40101081717` passou cinco jobs no head419b; não é atribuída a este código novo.
