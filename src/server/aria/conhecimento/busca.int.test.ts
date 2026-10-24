@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { buscarTrechos } from "./busca";
@@ -80,4 +81,62 @@ describe("busca nos trechos", () => {
     expect(r).toHaveLength(2);
     expect(r[0].rank).toBeGreaterThanOrEqual(r[1].rank);
   });
+  it("423 validade UTC independe do fuso na mesma conexao e restaura a sessao", async () => {
+    const vencida = await fonte("V423", "A turma começa cedo.");
+    const vigente = await fonte("F423", "A turma começa cedo.");
+    const semValidade = await fonte("S423", "A turma começa cedo.");
+    const arquivada = await fonte("A423", "A turma começa cedo.");
+    const processando = await fonte("P423", "A turma começa cedo.", "PROCESSANDO");
+    const erro = await fonte("E423", "A turma começa cedo.", "ERRO");
+    await fonte("Fora423", "A turma começa cedo.");
+    await prisma.fonteConhecimento.update({ where: { id: arquivada }, data: { arquivadaEm: new Date() } });
+    const ids = [vencida, vigente, semValidade, arquivada, processando, erro];
+    const url = new URL(process.env.DATABASE_URL!); url.searchParams.set("connection_limit", "1");
+    const db = new PrismaClient({ datasources: { db: { url: url.toString() } } });
+    type Sessao = { pid: number; tz: string };
+    const matriz: { zona: string; mesmaConexao: boolean; ids: string[] }[] = [];
+    let chamadas = 0, restauradaNoTx = false, falhaTx: unknown;
+    try {
+      const [original] = await db.$queryRaw<Sessao[]>`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`;
+      try {
+        await db.$transaction(async tx => {
+          // NOW é estável na transação; fixtures UTC não dependem do relógio Node.
+          await tx.$executeRaw(Prisma.sql`UPDATE "FonteConhecimento" SET "validoAte" =
+            (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + CASE WHEN id = ${vencida} THEN INTERVAL '-1 second' ELSE INTERVAL '1 second' END
+            WHERE id IN (${vencida}, ${vigente})`);
+          // Apenas transporte de teste: SQL, parâmetros e resultado são os da função real.
+          // Captura ANTES do spy para não depender do proxy do cliente transacional.
+          const consultarTx = tx.$queryRaw.bind(tx);
+          const encaminhamento = vi.spyOn(prisma, "$queryRaw").mockImplementation(consultarTx);
+          let saudavel = true;
+          try {
+            for (const zona of ["UTC", "America/Sao_Paulo", "Asia/Tokyo"]) {
+              await consultarTx(Prisma.sql`SELECT set_config('TimeZone', ${zona}, true)`);
+              const [antes] = await consultarTx<Sessao[]>(Prisma.sql`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`);
+              const resultado = await buscarTrechos("turma", ids, 10);
+              const [depois] = await consultarTx<Sessao[]>(Prisma.sql`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`);
+              matriz.push({ zona: antes.tz, mesmaConexao: antes.pid === original.pid && depois.pid === original.pid && depois.tz === zona, ids: resultado.map(t => t.fonteId).sort() });
+            }
+            chamadas = encaminhamento.mock.calls.length;
+          } catch (e) { saudavel = false; throw e; }
+          finally {
+            encaminhamento.mockRestore();
+            if (saudavel) {
+              await consultarTx(Prisma.sql`SELECT set_config('TimeZone', ${original.tz}, true)`);
+              const [restaurada] = await consultarTx<Sessao[]>(Prisma.sql`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`);
+              restauradaNoTx = restaurada.pid === original.pid && restaurada.tz === original.tz;
+            }
+          }
+        }, { timeout: 15000 });
+      } catch (e) { falhaTx = e; }
+      // Mesmo pool1, inclusive após rollback se alguma consulta lançou erro.
+      const [final] = await db.$queryRaw<Sessao[]>`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`;
+      expect(final).toEqual(original);
+      if (falhaTx) throw falhaTx;
+      expect(restauradaNoTx).toBe(true);
+      expect(chamadas).toBe(3);
+      expect(matriz).toEqual(["UTC", "America/Sao_Paulo", "Asia/Tokyo"].map(zona => ({ zona, mesmaConexao: true, ids: [vigente, semValidade].sort() })));
+    } finally { await db.$disconnect(); }
+  });
+
 });
