@@ -13,4 +13,6 @@ Provas ROOT: RED58d5bd, dois arquivos completos/24 casos, seis falhas causais/18
 
 A primeira forma intermediária acionou a regra set-state-in-effect; o código final representa o erro pela chave da aquisição e não atualiza estado sincronamente no efeito. Global63523/e7e192 e TSC5623/ec8ae1 foram interrompidos antes de editar essa forma e não contam como gates. Regressão global final21939/026749: saída0,926 arquivos/7.309 testes,236,42s,maxWorkers2,sem filtro de casos/skips; configuração unitária exclui INT.
 
-Sete pareceres anteriores continuam nominais às suas fontes; nova QA independente da R1 e CI no novo head ainda pendentes. Sem nova captura, HTTP, banco, nota, Save, mensagem externa ou deploy nesta correção.
+QA independente R1 no commit exato fd1ea7e7: causal3/47 `b00436`, ampliado8/163 `5af1a6` (contém o causal; não somar), lint4 `73090b` e TSC87087/0f7f34, todos saída0. [Parecer integral](inbox-325-qa/revisao-r1.md), SHA3148C600DB05A3A5E65847E2A76E3A7AD3A0471885A19A124956ABC75BA06477. A sequência403/404→500 foi analisada estaticamente, sem atribuir um assert encadeado inexistente. O índice contém oito pareceres; os sete anteriores mantêm suas fontes.
+
+CI no novo head ainda pendente. Sem nova captura, HTTP, banco, nota, Save, mensagem externa ou deploy nesta correção. A dependência técnica #418 da PR416 será integrada separadamente; o conflito de quadro entre416/417 deve preservar os dois históricos.

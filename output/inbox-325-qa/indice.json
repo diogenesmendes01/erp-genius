@@ -1,6 +1,6 @@
 {
   "issue": 325,
-  "composicao": "bf42c956d92269cb8c2791fe32521cc980b8b6c2",
+  "composicao": "fd1ea7e70e74af2e495c9f31582df2816b4b8ab2",
   "base": "239ed17fde1593f2e96fde53a01851f48ed13f86",
   "pareceres": [
     {
@@ -72,12 +72,23 @@
       "bytesPublicados": 2684,
       "sha256FisicoOriginal": "fe35e023bf10dd13adc9f81bfd39f04dc5d400f39170125ec093490dc161e80e",
       "sha256GitLF": "fe35e023bf10dd13adc9f81bfd39f04dc5d400f39170125ec093490dc161e80e"
+    },
+    {
+      "origem": "output/inbox-325-pr417-r1-final-review-tester.md",
+      "destino": "revisao-r1.md",
+      "fonte": "fd1ea7e70e74af2e495c9f31582df2816b4b8ab2",
+      "escopo": "R1 independente: causal3/47 e ampliado8/163 (contém causal), lint4 eTSC, semDB/HTTP/recaptura.",
+      "bytesOriginais": 8042,
+      "bytesPublicados": 8042,
+      "sha256FisicoOriginal": "3148c600db05a3a5e65847e2a76e3a7ad3a0471885a19a124956abc75ba06477",
+      "sha256GitLF": "3148c600db05a3a5e65847e2a76e3a7ad3a0471885a19a124956abc75ba06477"
     }
   ],
   "limites": [
     "Produto APP idêntico a ddf; harness final idêntico a96c. Identidade de blobs não é nova execução.",
     "L1/74891 mantém EXIT1; corpus composto de arquivos individualmente aprovados L1 e L2.",
     "As12 referências PROTO comprovam painel estático; não comprovam seu lifecycle funcional.",
-    "Resultados nominais e negativos preservados nos pareceres; publicação/CI/merge ainda pendentes."
+    "Resultados nominais e negativos preservados nos pareceres; publicação/CI/merge ainda pendentes.",
+    "QA R1 cobre4SRC; corpus visual e sete pareceres anteriores mantêm fontes nominais, sem nova captura."
   ]
 }

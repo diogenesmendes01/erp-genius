@@ -1,5 +1,11 @@
 # Inbox #325 — composição de Detalhes e participantes B2B
 
+## Revisão R1 atual
+
+Fonte corrigida fd1ea7e70e74af2e495c9f31582df2816b4b8ab2: hook conserva DTO/DOM/foco durante SSE/recarga e falha transitória, isolando troca de contexto e negativa403/404. Telefone já autorizado reaparece no comercial sem Pessoa. ROOT:33 dirigidos,926 arquivos/7.309 testes globais, TSC/lint4 saída0. TESTER independente:3/47 e8/163 (recortes sobrepostos), TSC/lint4 saída0. [Disposições B1/C1–C5](inbox-325-revisao-r1.md) e [parecer novo](inbox-325-qa/revisao-r1.md). O [índice atual](inbox-325-qa/indice.json) contém oito pareceres, preservando hashes e fontes anteriores.
+
+ZIP/PNG publicados diretamente na [PR417](https://github.com/diogenesmendes01/erp-genius/pull/417#issuecomment-6386805037), após autorização humana. Corpus nominal APPddf/harness96c, sem recaptura R1. A CI anterior40111461842 passou no29b; resultado não atribuído ao novo código até novo workflow. PR e issue abertas. Backend/schema/dependências/harness intactos nesta revisão; não houve nova INT ou UI.
+
 ## Composição e QA atuais
 
 Produto final mantido em nove blobs idênticos a `ddf872e13078fb48c7648da9c2fc48b1d3f29438`; composição direta main `bf42c956d92269cb8c2791fe32521cc980b8b6c2`, sem depender da #337. O harness evoluiu de364 para96c: coletores observam START, corpo completo/hash, recuperação estrita, selo e eventos até o fechamento do browser. O TESTER confirmou nove blobs APP e18 do harness d775 exatos,39 paths no total e nenhum delta em backend, schema487, dependências ou workflows (`23621/cdc305`, saída0). [Parecer da composição](inbox-325-qa/composicao-final.md).

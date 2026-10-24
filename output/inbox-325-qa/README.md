@@ -1,5 +1,7 @@
 # QA independente da issue #325
 
+A [revisão R1](revisao-r1.md), oitavo parecer, valida fd1ea7e7: recortes3/47 e8/163, TSC/lint4, todos saída0. Preserva o último DTO/foco em recargas e o isolamento por contexto; não produz captura nova nem reatribui o corpus anterior. Fontes e hashes continuam no índice.
+
 Pareceres completos, com fonte, escopo e hashes físicos/GitLF no [índice](indice.json). A [estática](preparacao-estatica.md) é nominal a05588; o [runtime](preparacao-runtime.md) valida a APPddf com69 arquivos/726 UNIT, três arquivos completos/41 INT, TypeScript e lint9. O [coletor R1 reprovado](coletor-r1-negativo.md) e a [correção R2](coletor-r2.md) preservam a investigação e os gates próprios17/150, TSC e lint4.
 
 A [revisão visual final](visual-final.md) inspecionou36 originais, ZIP38 e evidências de coleta/probes. As12 referências do protótipo têm [limite estático explícito](referencia-limite-estatico.md). Não são novas capturas ou reexecuções de gates. A composição direta main bf42 preserva nove blobs APPddf e18 do harness d775; evolução, gates e limites estão no [relatório de composição](../inbox-325-composicao-final.md). Originais privados mantidos; só CRLF normalizado aLF nas cópias publicadas. Nenhuma captura, credencial ou log bruto integra esta pasta. CI/publicação/merge permanecem separados do parecer visual.
