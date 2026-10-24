@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconChevronLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
@@ -32,6 +32,7 @@ import { CabecalhoConversa } from "./CabecalhoConversa";
 import { BuscaConversa } from "./BuscaConversa";
 import { useBuscaConversa } from "./useBuscaConversa";
 import { AcoesMensagem, type AcaoMensagem } from "./AcoesMensagem";
+import type { CandidatoMencao } from "@/lib/mencoes-nota";
 
 export interface PropsConversaAberta {
   item: ItemListaInbox | null;
@@ -98,6 +99,13 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
   const tentativasNota = useChavesPorAlvo();
   const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
+  const atendimentoId = item?.id ?? null;
+  const buscarMencoes = useCallback(async (busca: string, signal?: AbortSignal): Promise<CandidatoMencao[]> => {
+    if (!atendimentoId) return [];
+    const r = await fetch("/api/inbox/atendimentos/" + encodeURIComponent(atendimentoId) + "/mencoes?" + new URLSearchParams({ q: busca }), { credentials: "same-origin", cache: "no-store", signal });
+    if (!r.ok) throw new Error("Não foi possível buscar pessoas.");
+    return r.json();
+  }, [atendimentoId]);
   const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
@@ -197,7 +205,8 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           capacidades={capacidades}
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
-          aoNota={(nota, chaveIdempotencia) => registrarNotaAtendimento({ atendimentoId: item.id, nota, chaveIdempotencia })}
+          aoNota={(nota, chaveIdempotencia, mencoes) => registrarNotaAtendimento({ atendimentoId: item.id, nota, chaveIdempotencia, ...(mencoes === undefined ? {} : { mencoes }) })}
+          buscarMencoes={buscarMencoes}
           respostas={respostas}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />
