@@ -1,3 +1,4 @@
+import type { MotivoHandoff } from "@/server/aria/turno/tipos";
 import {
   MetricaMeta,
   TipoTarefa,
@@ -856,4 +857,21 @@ export const TIPO_NOTIFICACAO_LABEL: Readonly<Record<TipoNotificacao, string>> =
   MENCAO_NOTA: "Menção em nota",
   LEMBRETE_TAREFA: "Lembrete de tarefa",
   SLA_ESTOURADO: "Prazo estourado",
+});
+
+export const MOTIVO_HANDOFF_LABEL: Readonly<Record<MotivoHandoff, string>> = Object.freeze({
+  PEDIDO_HUMANO: "Pediu para falar com uma pessoa",
+  CONFIANCA: "Confiança baixa",
+  PALAVRA_CHAVE: "Palavra-chave",
+  HUMOR: "Contato irritado",
+  ETAPA: "Etapa de transferência",
+  VALOR: "Valor alto",
+  FORA_POLITICA: "Fora da política",
+  SEM_AVANCO: "Conversa sem avanço",
+  RECUSA: "O modelo recusou responder",
+  VALOR_NAO_AUTORIZADO: "Valor não autorizado",
+  SEM_PRECO: "Sem preço disponível",
+  SEM_PERMISSAO: "Sem permissão na matriz",
+  ERRO_PROVEDOR: "Falha do provedor",
+  TURNO_INTERROMPIDO: "Turno interrompido",
 });
