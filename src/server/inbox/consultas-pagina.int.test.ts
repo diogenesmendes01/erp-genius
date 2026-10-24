@@ -6,6 +6,8 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { registrarEvento } from "@/server/_shared";
 import { contarChipsInbox, listarAtendimentosPagina, listarMensagensPagina, obterItemListaInbox } from "./consultas-pagina";
 import { codificarCursor, cursorThreadValido } from "./cursor";
+import { configPadrao } from "@/server/aria/config-schema";
+import type { OrigemEnvio } from "@prisma/client";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 let admin: U, outro: U, numeroId: string;
@@ -414,5 +416,94 @@ describe("contagens dos chips (universo autorizado, além da página)", () => {
     await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
     expect((await contarChipsInbox(sess(admin), {}, { enviar: true })).todas).toBe(0);
     expect((await contarChipsInbox(sess(admin), {})).todas).toBe(2);
+  });
+});
+
+
+describe("estado Aria e autoria343", () => {
+  const em = new Date("2026-10-24T12:00:00Z");
+  async function publicar343() {
+    await prisma.agenteIA.create({ data: { id: "aria", estado: "ATIVA" } });
+    await prisma.versaoAgenteIA.create({ data: { numero: 1, status: "PUBLICADA", config: configPadrao(), criadaPorId: admin.id, publicadaPorId: admin.id, publicadaEm: em } });
+  }
+  async function comercial343(responsavelId: string | null = null) {
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { driver: "MOTOR", finalidade: "VENDAS" } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5068" + String(++seq).padStart(7, "0"), nomeExibicao: "Ficticio343" } });
+    const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId, contatoId: contato.id } });
+    return prisma.atendimentoWhatsApp.create({ data: { conversaId: conversa.id, contextoChave: "343", finalidade: "COMERCIAL", responsavelId, ultimaMensagemEm: em } });
+  }
+  type A343 = Awaited<ReturnType<typeof comercial343>>;
+  async function mensagem343(a: A343, origem: OrigemEnvio, autorId: string | null, corpo: string, criadoEm = em, id?: string) {
+    return prisma.mensagemWhatsApp.create({ data: { id, atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "SAIDA", tipo: "TEXTO", origem, autorId, corpo, criadoEm, driver: "MOTOR", status: "ENVIADA", providerMessageId: "343-msg-" + ++seq } });
+  }
+  async function sugestao343(a: A343, criadoEm: Date, expiraEm: Date | null = null) {
+    const ancora = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA", corpo: "Ancora ficticia", criadoEm: new Date(em.getTime() - 1000), driver: "MOTOR", status: "ENTREGUE", providerMessageId: "343-ancora-" + ++seq } });
+    const turno = await prisma.turnoAgenteIA.create({ data: { atendimentoId: a.id, ancoraMensagemId: ancora.id, tipo: "ATENDIMENTO", resultado: "SUGERIU" } });
+    return prisma.acaoAgenteIA.create({ data: { atendimentoId: a.id, turnoId: turno.id, acao: "RESPONDER", status: "SUGERIDA", modoConfigurado: "SUGERIR", confianca: 70, payload: { texto: "SEGREDO_SUGESTAO_343_NAO_SERIALIZAR" }, criadoEm, expiraEm, reversivel: false } });
+  }
+  it("pagina e deep link trazem estado e autoria da IA sem mudar preview", async () => {
+    await publicar343(); const a = await comercial343();
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: "ia", atendidoPorVoce: false, previaAutor: null, previaRotulo: null });
+    await mensagem343(a, "IA", admin.id, "Texto Aria ficticio");
+    const campos = { id: a.id, estadoAria: "ia", atendidoPorVoce: false, previaAutor: "aria", previaRotulo: null, preview: "Texto Aria ficticio" };
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject(campos);
+    expect((await listarAtendimentosPagina(sess(admin), {}, null)).itens[0]).toMatchObject(campos);
+  });
+  it("responsavel da conversa e autoria sao campos independentes", async () => {
+    const a = await comercial343(admin.id); await mensagem343(a, "HUMANO", outro.id, "Outra pessoa");
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: "humano", atendidoPorVoce: true, previaAutor: "pessoa", previaRotulo: outro.nome.split(" ")[0] });
+    await mensagem343(a, "GESTAO", admin.id, "Proprio automatico", new Date(em.getTime() + 1));
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ previaAutor: "voce", previaRotulo: null });
+  });
+  it("sugestao posterior so envia rotulo; mensagem posterior vence a previa, nao o estado", async () => {
+    await publicar343(); const a = await comercial343(); await mensagem343(a, "IA", null, "Ultima mensagem");
+    await sugestao343(a, new Date(em.getTime() + 1));
+    const item = await obterItemListaInbox(sess(admin), a.id);
+    expect(item).toMatchObject({ estadoAria: "aprovacao", previaAutor: "sugestao", previaRotulo: "Responder", preview: "Ultima mensagem" });
+    expect(JSON.stringify(item)).not.toContain("SEGREDO_SUGESTAO_343_NAO_SERIALIZAR");
+    await mensagem343(a, "HUMANO", admin.id, "Posterior", new Date(em.getTime() + 2));
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: "aprovacao", previaAutor: "voce", previaRotulo: null, preview: "Posterior" });
+  });
+  it("sugestao vencida nao altera estado nem previa; handoff e pausa respeitam342", async () => {
+    await publicar343(); const a = await comercial343(); await mensagem343(a, "HUMANO", admin.id, "Atual"); await sugestao343(a, new Date(em.getTime() + 1), new Date(Date.now() - 1000));
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: "ia", previaAutor: "voce" });
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { iaPausadaEm: new Date(em.getTime() + 3), iaPausaMotivo: "HANDOFF" } });
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: "handoff" });
+    await mensagem343(a, "CELULAR", null, "Resposta celular", new Date(em.getTime() + 4));
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: "humano", previaAutor: null });
+  });
+  it("empate de mensagem usa idDESC sem alterar cursor de atendimento", async () => {
+    const a = await comercial343(); await mensagem343(a, "HUMANO", outro.id, "Menor", em, "343-a"); await mensagem343(a, "IA", null, "Maior", em, "343-z");
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ previaAutor: "aria", preview: "Maior" });
+  });
+  it("pagina vazia e deep link fora da ACL nao inicializam contexto", async () => {
+    const upsert = vi.spyOn(prisma.configIA, "upsert"), agente = vi.spyOn(prisma.agenteIA, "findUnique");
+    try {
+      expect((await listarAtendimentosPagina(sess(admin), {}, null)).itens).toEqual([]);
+      const a = await comercial343(admin.id); expect(await obterItemListaInbox(sess(outro), a.id)).toBeNull();
+      expect(upsert).not.toHaveBeenCalled(); expect(agente).not.toHaveBeenCalled();
+    } finally { upsert.mockRestore(); agente.mockRestore(); }
+  });
+  it("secretaria sem outras prioridades continua sem estado Aria", async () => {
+    await publicar343(); const a = await criarAtendimento(em);
+    expect(await obterItemListaInbox(sess(admin), a.id)).toMatchObject({ estadoAria: null, atendidoPorVoce: false, previaAutor: null, previaRotulo: null });
+  });
+  it("fixadas100+pagina200 usam contexto e sugestoes uma vez por lote autorizado", async () => {
+    await publicar343(); const ids = Array.from({ length: 301 }, (_, n) => "343-lote-" + String(n).padStart(4, "0"));
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { driver: "MOTOR", finalidade: "VENDAS" } });
+    await prisma.contatoWhatsApp.createMany({ data: ids.map((id, n) => ({ id: "c-" + id, telefoneE164: "+5067" + String(n).padStart(7, "0") })) });
+    await prisma.conversaWhatsApp.createMany({ data: ids.map(id => ({ id: "v-" + id, contatoId: "c-" + id, numeroId })) });
+    await prisma.atendimentoWhatsApp.createMany({ data: ids.map(id => ({ id, conversaId: "v-" + id, contextoChave: "343", finalidade: "COMERCIAL", ultimaMensagemEm: em })) });
+    await prisma.preferenciaConversaUsuario.createMany({ data: ids.slice(0, 100).map(id => ({ usuarioId: admin.id, conversaId: "v-" + id, fixadaEm: em })) });
+    const query = vi.spyOn(prisma, "$queryRaw"), agente = vi.spyOn(prisma.agenteIA, "findUnique"), config = vi.spyOn(prisma.configIA, "upsert");
+    try {
+      const r = await listarAtendimentosPagina(sess(admin), {}, null, 200); expect(r.itens).toHaveLength(300); expect(r.itens.every(i => i.estadoAria === "ia")).toBe(true); expect(r.proximo).not.toBeNull();
+      expect(agente).toHaveBeenCalledTimes(1); expect(config).toHaveBeenCalledTimes(1);
+      const arias = query.mock.calls.map(c => c[0]).filter(q => typeof q === "object" && q !== null && "text" in q && String(q.text).includes('FROM "AcaoAgenteIA"'));
+      expect(arias).toHaveLength(1); const sql = arias[0]!; if (typeof sql !== "object" || !("values" in sql)) throw Error("SQL esperado");
+      expect(sql.values).toContainEqual(r.itens.map(i => i.id));
+      const final = await listarAtendimentosPagina(sess(admin), {}, r.proximo, 200); expect(final.itens).toHaveLength(1); expect(final.itens[0]!.estadoAria).toBe("ia");
+      expect(new Set([...r.itens, ...final.itens].map(i => i.id)).size).toBe(301);
+    } finally { query.mockRestore(); agente.mockRestore(); config.mockRestore(); }
   });
 });
