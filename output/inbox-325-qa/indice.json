@@ -1,0 +1,94 @@
+{
+  "issue": 325,
+  "composicao": "fd1ea7e70e74af2e495c9f31582df2816b4b8ab2",
+  "base": "239ed17fde1593f2e96fde53a01851f48ed13f86",
+  "pareceres": [
+    {
+      "origem": "output/inbox-325-05588-estatica-tester.md",
+      "destino": "preparacao-estatica.md",
+      "fonte": "05588ca5ddb15774fce21ca1a1fb8cb740d23a96",
+      "escopo": "Somente estática da preparação APP, sem execução/visual.",
+      "bytesOriginais": 3386,
+      "bytesPublicados": 3386,
+      "sha256FisicoOriginal": "1a7e9c57686f31644ab73fe8f43aa0e1b3a32fa2d75929a28b79b1d5abf67ee6",
+      "sha256GitLF": "1a7e9c57686f31644ab73fe8f43aa0e1b3a32fa2d75929a28b79b1d5abf67ee6"
+    },
+    {
+      "origem": "output/inbox-325-runtime-ddf-review-tester.md",
+      "destino": "preparacao-runtime.md",
+      "fonte": "ddf872e13078fb48c7648da9c2fc48b1d3f29438",
+      "escopo": "APP exata: UNIT69/726, INT3 completos/41, TSC/lint9; não é QA do harness ou visual.",
+      "bytesOriginais": 4753,
+      "bytesPublicados": 4753,
+      "sha256FisicoOriginal": "a9d9519708f93855de4c53cc3b0de7add5b285b2ab8170b10c71435b9149ba52",
+      "sha256GitLF": "a9d9519708f93855de4c53cc3b0de7add5b285b2ab8170b10c71435b9149ba52"
+    },
+    {
+      "origem": "output/inbox-325-d1f51-coletor-estatica-negativa-tester.md",
+      "destino": "coletor-r1-negativo.md",
+      "fonte": "d1f51e74fc96d6f36b195dcbc340089b36b07bf9",
+      "escopo": "Negativo estático: coleta perdia START ainda pendente.",
+      "bytesOriginais": 5663,
+      "bytesPublicados": 5663,
+      "sha256FisicoOriginal": "45de2e8726b0770e1f8c452b5fe3c7a1bdff7cbea65b685b2ef665a8a45288dd",
+      "sha256GitLF": "45de2e8726b0770e1f8c452b5fe3c7a1bdff7cbea65b685b2ef665a8a45288dd"
+    },
+    {
+      "origem": "output/inbox-325-96c-coletor-final-review-tester.md",
+      "destino": "coletor-r2.md",
+      "fonte": "96c9e60752b3c1951922a745cee89045b4597ace",
+      "escopo": "Coletores: UNIT17/150, TSC e lint4; não reexecutados nesta curadoria.",
+      "bytesOriginais": 8220,
+      "bytesPublicados": 8220,
+      "sha256FisicoOriginal": "46368a516b18e4c065485e66ee8ea10d5ca5d4fdf28c5ae72a60e8235ba8d1cb",
+      "sha256GitLF": "46368a516b18e4c065485e66ee8ea10d5ca5d4fdf28c5ae72a60e8235ba8d1cb"
+    },
+    {
+      "origem": "output/inbox-325-proto-74891-limite-estatico-tester.md",
+      "destino": "referencia-limite-estatico.md",
+      "fonte": "96c9e60752b3c1951922a745cee89045b4597ace",
+      "escopo": "Limite herdado do protótipo; referência somente estática.",
+      "bytesOriginais": 4330,
+      "bytesPublicados": 4330,
+      "sha256FisicoOriginal": "dc4d403b3e93a0882834513856fb5b6b0ceab26ded1129512e7f8431ce9f1491",
+      "sha256GitLF": "dc4d403b3e93a0882834513856fb5b6b0ceab26ded1129512e7f8431ce9f1491"
+    },
+    {
+      "origem": "C:/Users/Mendes/.codex/worktrees/inbox-tester/erp-genius/output/inbox-325-d775-final-visual-review-tester.md",
+      "destino": "visual-final.md",
+      "fonte": "d775a140b824e56307d50d95d7bb0ad5284a5f6e",
+      "escopo": "36 imagens originais, ZIP38 e provas brutas inspecionados, sem nova captura ou runtime.",
+      "bytesOriginais": 11158,
+      "bytesPublicados": 11158,
+      "sha256FisicoOriginal": "437ef02a89978aaa33906cf5e260680bcb967c6d110c9ef8c97260d3c847e1c0",
+      "sha256GitLF": "437ef02a89978aaa33906cf5e260680bcb967c6d110c9ef8c97260d3c847e1c0"
+    },
+    {
+      "origem": "C:/Users/Mendes/.codex/worktrees/inbox-tester/erp-genius/output/inbox-325-bf42-composicao-review-tester.md",
+      "destino": "composicao-final.md",
+      "fonte": "bf42c956d92269cb8c2791fe32521cc980b8b6c2",
+      "escopo": "Somente estática:27 blobs exatos e39 paths, sem backend/schema/dependências.",
+      "bytesOriginais": 2684,
+      "bytesPublicados": 2684,
+      "sha256FisicoOriginal": "fe35e023bf10dd13adc9f81bfd39f04dc5d400f39170125ec093490dc161e80e",
+      "sha256GitLF": "fe35e023bf10dd13adc9f81bfd39f04dc5d400f39170125ec093490dc161e80e"
+    },
+    {
+      "origem": "output/inbox-325-pr417-r1-final-review-tester.md",
+      "destino": "revisao-r1.md",
+      "fonte": "fd1ea7e70e74af2e495c9f31582df2816b4b8ab2",
+      "escopo": "R1 independente: causal3/47 e ampliado8/163 (contém causal), lint4 eTSC, semDB/HTTP/recaptura.",
+      "bytesOriginais": 8042,
+      "bytesPublicados": 8042,
+      "sha256FisicoOriginal": "3148c600db05a3a5e65847e2a76e3a7ad3a0471885a19a124956abc75ba06477",
+      "sha256GitLF": "3148c600db05a3a5e65847e2a76e3a7ad3a0471885a19a124956abc75ba06477"
+    }
+  ],
+  "limites": [
+    "Produto APP idêntico a ddf; harness final idêntico a96c. Identidade de blobs não é nova execução.",
+    "L1/74891 mantém EXIT1; corpus composto de arquivos individualmente aprovados L1 e L2.",
+    "As12 referências PROTO comprovam painel estático; não comprovam seu lifecycle funcional.",
+    "Resultados nominais e negativos preservados nos pareceres; publicação/CI/merge ainda pendentes.",
+    "QA R1 cobre4SRC; corpus visual e sete pareceres anteriores mantêm fontes nominais, sem nova captura."
+  ]
+}

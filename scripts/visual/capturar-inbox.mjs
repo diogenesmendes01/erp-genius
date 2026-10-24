@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { confirmarPainelSecretaria, semanticaPainelSecretariaPronto, confirmarPainelSemNome, abrirBuscaConversaApp, abrirMenuConversaApp, abrirNotaConversaApp, semanticaRodapePronto, abrirPopoverColunaApp, autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 import { configurarEntrada, abrirEntradaApp } from "./entradas-inbox.mjs";
+import { ESTADOS_DETALHES_325, configurarDetalhes325, abrirDetalhes325, abrirPrototipoDetalhes325, semanticaDetalhes325Pronto } from "./detalhes-inbox.mjs";
+import { instalarColetorDetalhes325, finalizarCapturasDetalhes325 } from "./coletor-detalhes.mjs";
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 import { instalarConclusaoMensagens, instalarErroEstado, abrirCarregandoApp, confirmarPainelVazio, semanticaEstado319Pronto } from "./estados-inbox.mjs";
@@ -64,6 +66,12 @@ async function prepararRede(contexto, alvo, base, falhas) {
 }
 
 export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
+  if (ESTADOS_DETALHES_325.includes(estado)) {
+    const configuracao = configurarDetalhes325(estado);
+    if (!process.env.INBOX_VISUAL_EMAIL || !process.env.INBOX_VISUAL_SENHA) throw new Error("Cenários325 exigem credenciais fictícias explícitas, sem login padrão.");
+    await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL, process.env.INBOX_VISUAL_SENHA);
+    return abrirDetalhes325(pagina, contexto, base, configuracao);
+  }
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? (estado === "painel-vazio" ? "joao@genius.com" : "admin@genius.com"), process.env.INBOX_VISUAL_SENHA ?? "genius123");
   if (estado.startsWith("entrada-")) return abrirEntradaApp(pagina, base, configurarEntrada(estado));
   if (estado === "carregando") return { finalizar: await abrirCarregandoApp(pagina, contexto, base), metadados: { fallbackReal: true, latenciaLocalMs: 3000, medicaoStreaming: false } };
@@ -121,7 +129,8 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   return { finalizar, metadados: painelSemNomeReal ? { painelSemNomeReal } : ausenciaLegitima ? { ausenciaLegitima } : undefined };
 }
 
-async function abrirPrototipo(pagina, estado) {
+export async function abrirPrototipo(pagina, estado) {
+  if (ESTADOS_DETALHES_325.includes(estado)) return abrirPrototipoDetalhes325(pagina, pathToFileURL(prototipo).href, estado);
   const c = estado === "painel-sem-nome" ? "c9" : ["humano-compositor", "nota"].includes(estado) ? "c4" : "c1";
   await pagina.goto(`${pathToFileURL(prototipo).href}?c=${c}`, { waitUntil: "load" });
   const root = pagina.locator('[data-m="root"]');
@@ -191,13 +200,14 @@ async function main() {
   const alvos = o.alvo === "ambos" ? ["app", "prototipo"] : [o.alvo];
   const estados = o.estado === "todos" ? Object.keys(ESTADOS) : [o.estado];
   const tarefas = combinacoes({ alvos, estados });
-  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-")) ? {} : await idsDaDemo() : null;
+  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-") || ESTADOS_DETALHES_325.includes(e)) ? {} : await idsDaDemo() : null;
   const executablePath = process.env.PW_CHROMIUM;
   if (!executablePath) throw new Error("Defina PW_CHROMIUM para o Chrome local; o harness não baixa navegador.");
   await mkdir(destino, { recursive: true });
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
-  const capturas = [];
-  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
+  const capturas = [], coletoresDetalhes = [];
+  let erroExecucao = null, browsersClosed = false;
+  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs", "detalhes-inbox.mjs", "coletor-detalhes.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
   try {
     for (const tarefa of tarefas) {
       const [width, height] = TAMANHOS[tarefa.tamanho];
@@ -206,6 +216,11 @@ async function main() {
       const abortados = [];
       const concluidos = new Set();
       const conclusoes = [];
+      const contextoId = randomUUID(), paginaId = randomUUID(), ordens = new WeakMap();
+      let inicioRequest = 0, coletorDetalhes = null, vinculoDetalhes = null, fotoCapturada = false;
+      const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
+      const idDetalhes = tarefa.alvo === "app" && ESTADOS_DETALHES_325.includes(tarefa.estado) ? configurarDetalhes325(tarefa.estado).id : null;
+      const urlDetalhes = idDetalhes ? o.base + "/api/inbox/atendimentos/" + encodeURIComponent(idDetalhes) + "/painel/detalhes" : null;
       try {
         await contexto.addInitScript(({ alvo, tema }) => {
           localStorage.setItem(alvo === "app" ? "tema" : "crm-theme", alvo === "app" ? (tema === "escuro" ? "dark" : "light") : tema);
@@ -214,9 +229,14 @@ async function main() {
         await prepararRede(contexto, tarefa.alvo, o.base, falhas);
         const erroControlado = await instalarErroEstado(contexto, o.base, ids?.beatriz, tarefa.alvo === "app" ? tarefa.estado : "");
         const pagina = await contexto.newPage();
+        if (idDetalhes) {
+          coletorDetalhes = instalarColetorDetalhes325(pagina, { base: o.base, contextoId, paginaId, atendimentoId: idDetalhes });
+          vinculoDetalhes = { coletor: coletorDetalhes, captura: null }; coletoresDetalhes.push(vinculoDetalhes);
+        }
+        pagina.on("request", pedido => ordens.set(pedido, ++inicioRequest));
         pagina.on("pageerror", (erro) => falhas.push(`pageerror: ${erro.message}`));
         pagina.on("console", (mensagem) => { if (tarefa.alvo === "app" && problemaReactNaCaptura(mensagem.text())) falhas.push(`React: ${mensagem.text()}`); });
-        pagina.on("requestfailed", (pedido) => abortados.push({ pedidoReal: pedido, url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
+        pagina.on("requestfailed", (pedido) => abortados.push({ pedidoReal: pedido, contextoId, paginaId, atendimentoId: idDetalhes, ordem: ordens.get(pedido), url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
         pagina.on("requestfinished", (pedido) => {
           if (pedido.method() !== "GET") return;
           conclusoes.push(pedido.response().then((resposta) => { if (resposta?.ok()) concluidos.add(`GET ${pedido.url()}`); }));
@@ -227,26 +247,51 @@ async function main() {
         if (tarefa.alvo === "app") estadoApp = await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho);
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
-        const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
         const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom);
+        if (coletorDetalhes) {
+          const token = await coletorDetalhes.aguardar();
+          const esperado = estadoApp.metadados.detalhes325;
+          const prova = { base: o.base, contextoId, paginaId, atendimentoId: idDetalhes, atendimentoAtualId: new URL(pagina.url()).searchParams.get("c"), corpoEsperadoSha256: esperado.corpoEsperadoSha256, paginaAtiva: !pagina.isClosed(), semanticaFinal: await pagina.evaluate(semanticaDetalhes325Pronto, esperado) };
+          coletorDetalhes.selar(token, prova);
+        }
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
+        fotoCapturada = true;
         await estadoApp?.finalizar?.();
         await erroControlado.finalizar(pagina);
         await Promise.all(conclusoes);
         const diagnosticos = [...erroControlado.diagnosticos];
         for (const pedido of abortados) {
+          if (coletorDetalhes && pedido.method === "GET" && pedido.url === urlDetalhes) continue; // auditado desde START e também após close
           const registro = `requestfailed: ${pedido.url} ${pedido.erro}`;
           if (erroControlado.cancelamentoEsperado(pedido.pedidoReal, pedido.erro)) diagnosticos.push(`GET500 controlado cancelado e substituído por headers500 observados/erro público pronto: ${pedido.url}`);
           else if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }
-        capturas.push({ ...tarefa, ...estadoApp?.metadados, ...(ESTADOS[tarefa.estado].motivoSemReferencia ? {referenciaFuncionalPrototipo:null,motivoSemReferencia:ESTADOS[tarefa.estado].motivoSemReferencia} : {}), ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
-        process.stdout.write(`${nome}: ${falhas.length ? `FALHAS ${falhas.length}` : "OK"}\n`);
-      } finally { await contexto.close(); }
+        const captura = { ...tarefa, ...estadoApp?.metadados, ...(ESTADOS[tarefa.estado].motivoSemReferencia ? {referenciaFuncionalPrototipo:null,motivoSemReferencia:ESTADOS[tarefa.estado].motivoSemReferencia} : {}), ...(tarefa.estado === "busca-conversa" ? { referenciaFuncionalPrototipo: null, motivoSemReferencia: "Busca local E1 não tem comportamento equivalente no protótipo aprovado." } : {}), arquivo: nome, width, height, falhas, diagnosticos, anonimizacao };
+        capturas.push(captura); if (vinculoDetalhes) vinculoDetalhes.captura = captura;
+      } catch (erro) {
+        if (!coletorDetalhes) throw erro;
+        falhas.push("Coleta325 interrompida: " + erro.message);
+        const captura = { ...tarefa, arquivo: fotoCapturada ? nome : null, width, height, falhas, diagnosticos: [] };
+        capturas.push(captura); vinculoDetalhes.captura = captura;
+      } finally {
+        await contexto.close();
+        if (coletorDetalhes) {
+          const parcial = await coletorDetalhes.auditarFechamento();
+          if (vinculoDetalhes.captura) vinculoDetalhes.captura.falhas.push(...parcial.falhas);
+        }
+      }
+      if (vinculoDetalhes?.captura?.falhas.length) break; // interrompe no primeiro negativo325 conhecido
     }
-  } finally { await browser.close(); }
-  await writeFile(path.join(destino, "manifesto.json"), JSON.stringify({ fonteApp: process.env.INBOX_VISUAL_FONTE ?? null, fontesHarness, capturas }, null, 2) + "\n");
+  } catch (erro) { erroExecucao = erro; }
+  finally {
+    try { await browser.close(); browsersClosed = true; } catch (erro) { erroExecucao = erroExecucao ?? erro; }
+    await finalizarCapturasDetalhes325(coletoresDetalhes);
+  }
+  await writeFile(path.join(destino, "manifesto.json"), JSON.stringify({ fonteApp: process.env.INBOX_VISUAL_FONTE ?? null, fontesHarness, browsersClosed, erroExecucao: erroExecucao?.message ?? null, capturas }, null, 2) + "\n");
+  for (const c of capturas) process.stdout.write(`${c.arquivo ?? c.estado}: ${c.falhas.length ? `FALHAS ${c.falhas.length}` : "OK"}\n`);
+  if (erroExecucao) throw erroExecucao;
   if (capturas.some((c) => c.falhas.length)) throw new Error("Captura visual registrou falhas; veja tmp/visual/manifesto.json.");
   process.stdout.write(`Capturas concluídas: ${capturas.length} em ${destino}\n`);
 }

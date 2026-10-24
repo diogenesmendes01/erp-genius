@@ -7,6 +7,9 @@ const referencia = (nome) => path.join(raiz, "docs", "planejamento", "inbox-prot
 export const TAMANHOS = Object.freeze({ desktop: [1440, 900], tablet: [1024, 768], celular: [390, 844] });
 export const TEMAS = Object.freeze(["escuro", "claro"]);
 export const ESTADOS = Object.freeze({
+  "painel-detalhes-pessoa": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-painel-detalhes.png") },
+  "painel-detalhes-b2b": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true },
+  "painel-detalhes-convidado": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Autorização contextual por convite D13 não tem equivalente funcional no protótipo." },
   ...Object.fromEntries(['entrada-funil', 'entrada-tarefas', 'entrada-contatos', 'entrada-agente'].map(estado => [estado, { tamanhos: ['desktop'], prototipo: false, motivoSemReferencia: 'Entrada real do ERP sem referência funcional equivalente no protótipo.' }])),
   carregando: { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Fallback real da página não é desenhado no protótipo." },
   "painel-erro": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Falha de transporte do painel não é desenhada no protótipo." },

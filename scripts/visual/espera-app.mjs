@@ -60,7 +60,7 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
   }
   if (["painel-detalhes", "celular-painel", "tablet-painel"].includes(estado)) {
     // A thread foi confirmada antes de abrir; na vista própria fica oculta.
-    await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
+    await pagina.locator('#painel-contato a[href^="/funil?o="]').waitFor({ state: "visible" });
     await pagina.waitForFunction(semanticaPainelDetalhesPronto);
     return;
   }
@@ -83,7 +83,7 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
       return !!painel && painel.getBoundingClientRect().width === 0;
     });
   } else if (tamanho === "desktop") {
-    await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
+    await pagina.locator('#painel-contato a[href^="/funil?o="]').waitFor({ state: "visible" });
   }
 }
 

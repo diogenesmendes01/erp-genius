@@ -11,7 +11,7 @@ it("335 acrescenta só seis APP sem retirar as176 combinações anteriores ou in
   expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-secretaria"] })).toHaveLength(6);
   expect(ESTADOS["painel-secretaria"].prototipo).toBe(false);
   expect(ESTADOS["painel-secretaria"].motivoSemReferencia).toMatch(/matrícula|Secretaria/);
-  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS).filter(e => e !== "painel-secretaria" && !e.startsWith("entrada-")) })).toHaveLength(176);
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: Object.keys(ESTADOS).filter(e => !["painel-detalhes-pessoa", "painel-detalhes-b2b", "painel-detalhes-convidado"].includes(e) && e !== "painel-secretaria" && !e.startsWith("entrada-")) })).toHaveLength(176);
 });
 it("CLI335 confirma o GET autorizado e abre o painel sem exigir mensagem inexistente", async () => {
   vi.stubEnv("INBOX_VISUAL_SECRETARIA", "secretaria335");
