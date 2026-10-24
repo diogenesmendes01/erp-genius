@@ -66,7 +66,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
           Contato não encontrado na sua carteira. <Link href={hrefLista("/contatos", base)} className="text-brand-700 hover:underline">Ver a lista</Link>
         </p>
       )}
-      <div className="grid gap-6 min-[700px]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid grid-cols-1 gap-6 min-[700px]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className={aberto ? "max-[699px]:hidden" : ""}>
           <ListaContatos
             itens={lista.itens}

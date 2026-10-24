@@ -193,7 +193,7 @@ function FichaCorpo({
       <Link href={hrefVoltar} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline min-[700px]:hidden">
         ‹ Contatos
       </Link>
-      <header className="flex items-start gap-3">
+      <header className="grid grid-cols-[48px_minmax(0,1fr)] items-start gap-3 min-[700px]:flex">
         <Avatar nome={d.nome} tamanho={48} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-xl font-medium">{d.nome}</h2>
@@ -208,7 +208,7 @@ function FichaCorpo({
           {d.optOut && <p className="mt-1 text-sm text-red-700">Opt-out registrado: não recebe mensagens.</p>}
         </div>
         {podeCriarOportunidade && (
-          <Botao tamanho="md" onClick={() => setNovaOportunidade(true)}>Nova oportunidade</Botao>
+          <Botao tamanho="md" className="col-span-2" onClick={() => setNovaOportunidade(true)}>Nova oportunidade</Botao>
         )}
       </header>
 
