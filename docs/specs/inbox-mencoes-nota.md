@@ -1,6 +1,6 @@
 # @menções em nota interna — #337
 
-Estado: implementação em TDD, sem aceite visual/global. Base6c50f901, perfil B dev-gravacoes. D20 e brief ROOT aprovados.
+Estado: registro evolutivo da entrega337. Código integrado nominal9fa e publicação documental419b; gates/fontes atuais em [composição final](../../output/inbox-337-composicao-final.md). Os checkpoints abaixo preservam seus estados históricos. D20 e brief ROOT aprovados; isso não presume homologação.
 
 Ao digitar @ numa nota, a lista só oferece usuários internos ativos com leitura atual do atendimento. O solicitante precisa de sessão e leitura antes de qualquer consulta de usuários; busca limitada e ordenação estável. Candidatos exibem nome e papel/setor permitido; não exibem ID técnico/e-mail/documento. Texto livre resolve somente nome completo/primeiro nome inequívoco, sem caixa/acento; homônimos exigem seleção explícita.
 
@@ -123,3 +123,17 @@ Entrega DEV com gates atuais verdes na fonte f971. QA independente exata, ancest
 # Integração sobre main após #336 — 24/10/2026
 
 Na composição atual, carregamento da busca de menções é anunciado como status; falha é alerta; resultado vazio usa EstadoVazio. Digitar/buscar conserva o foco e não registra nota. Dois testes de interação cobrem esses estados; as guardas globais de feedback e vazio permanecem estritas, com inventário do novo uso atualizado. Os 40 PNGs históricos continuam nominais a d68/ab76; a composição não cria nova evidência UI de notas ou de todos os IMEs. Gates, fontes e limites atuais em `output/inbox-337-composicao-final.md`; não reinterpretar os registros históricos desta SPEC como execução no novo head.
+
+## R1 C5 — rastreabilidade do checklist e manutenção do índice
+
+A decisão humana D20 está aprovada no [registro de produto](../planejamento/inbox-decisoes-produto.md): @menção gera aviso no sino somente para quem tem leitura atual do atendimento; a marca ✦ da tag sem autor permanece. O estado bloqueado e os nomes de testes da [Task 17 original](../superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-17) descrevem o planejamento anterior à resposta, não uma autorização ainda pendente. A tabela abaixo liga aqueles três nomes aos casos existentes, sem criar testes duplicados ou novas execuções.
+
+| Nome no checklist original | Arquivo e caso existente | Regra observada |
+| --- | --- | --- |
+| `extrai_primeiro_nome_e_nome_completo` | [mencoes-nota.test.ts](../../src/lib/mencoes-nota.test.ts), describe “menções: aliases autorizados e inequívocos”, tabela com `@joao, falar com @ANA MARIA.` e `@Joa\u0303o Silva e @João` | Primeiro nome/nome completo sem caixa/acento, limites de palavra e homônimos; o servidor fornece apenas identidades autorizadas. |
+| `ignora_o_autor_e_quem_nao_ve_o_atendimento` | [nota-mencao.int.test.ts](../../src/server/whatsapp/nota-mencao.int.test.ts), “menções repetidas da mesma pessoa deduplicam; autor/fora do escopo não recebem” e “participante somenteleitura recebe; revogação entre lista e submit exclui sem exigir envio” | Autor/sem leitura não recebem; leitura sem envio basta; revogação é revalidada no submit. |
+| `repetir_a_nota_com_a_mesma_chave_nao_duplica_notificacao` | [nota-mencao.int.test.ts](../../src/server/whatsapp/nota-mencao.int.test.ts), “mesma chave sequencial e concorrente não duplica nota nem notificação” | Replay mantém uma nota/aviso; não usa skipDuplicates para esconder falha. |
+
+O índice único parcial é mantido manualmente no SQL: `NotificacaoUsuario_legado_temporal_key` sobre `(tipo, refId, usuarioId, criadaEm)`, predicado `tipo <> 'MENCAO_NOTA'`, criado na [migration20261023170000](../../prisma/migrations/20261023170000_notificacao_mencao_unicidade_legada/migration.sql) antes da retirada do índice global na [20261023180000](../../prisma/migrations/20261023180000_notificacao_mencao_retira_unicidade_global/migration.sql). O schema documenta essa regra e conserva o índice de leitura `[usuarioId, lidaEm]`; não declara `@@unique` global equivalente, pois ele também impediria duas menções distintas no mesmo TIMESTAMP(3).
+
+Ao revisar SQL de uma migração futura gerada, comparar com essas duas migrations e com [schema-mencoes.test.ts](../../src/test/schema-mencoes.test.ts): não aceitar remoção acidental do parcial, perda/troca do predicado ou restauração da unicidade global. Preservar nome, quatro colunas, unicidade e predicado, além da PK determinística Evento+usuário para menções. Não editar migrações já aplicadas nem executar seu SQL CONCURRENTLY dentro de uma transação; qualquer alteração futura exige nova reserva/revisão pelo integrador. Esta nota não gera SQL, DDL ou nova prova de banco.
