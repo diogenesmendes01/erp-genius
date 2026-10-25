@@ -55,7 +55,7 @@ it("callback captura somente o atendimento e repassa o AbortSignal ao fetch", as
 
 it("consumidor abre Transferir com destinos opcionais ausentes sem falhar no formulário", async () => {
   const p = props();
-  p.usuario = { id: "u", papeis: [Papel.ADMIN] };
+  p.usuario = { id: "u", papeis: [Papel.ADMINISTRADOR] };
   p.item = { ...p.item!, numeroId: "n", contatoId: "c", finalidade: "COMERCIAL", setoresDoNumero: ["COMERCIAL", "SECRETARIA"], responsavelId: "u", numeroDonoId: null, linhaComercial: false, estadoAria: null };
   expect(p.destinos).toBeUndefined();
   await renderizar(p);
