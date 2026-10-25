@@ -122,8 +122,8 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
   },
   {
     arquivo: "src/app/(app)/inbox/abas/ClienteVoltou.tsx",
-    modulo: "@/server/whatsapp/acoes",
-    acao: "vincularContatoWhatsApp",
+    modulo: "@/server/inbox/acoes-cliente-voltou",
+    acao: "vincularLeadRetornoNoInbox",
     achado: "L2298",
     efeito: "vincula o contato e o atendimento selecionado à oportunidade anterior; desfazer exige administração ou gerente, com motivo",
   },

@@ -353,7 +353,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => pagina.removeEventListener("visibilitychange", aoRetornar);
   }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
-  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null; leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } } | null>(null);
+  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null; acessoRevogado: boolean; leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
   useEffect(() => {
     if (!selecionado) return;
@@ -368,8 +368,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
         const leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } = { versao: versaoPainel, resultado: r === "sem-acesso" ? "sem-acesso" : r ? "ok" : "falha" };
-        if (r === "sem-acesso") return { id: selecionado, leitura, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
-        return !r && conhecido ? { ...ant!, leitura } : { id: selecionado, dado: r, leitura };
+        if (r === "sem-acesso") return { id: selecionado, leitura, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
+        return !r && conhecido ? { ...ant!, leitura } : { id: selecionado, dado: r, leitura, acessoRevogado: !r && ant?.id === selecionado && ant.acessoRevogado === true };
       });
     });
     return () => { ativo = false; };
@@ -408,7 +408,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // (buscarPainel devolve null) vira erro com "Tentar de novo", que volta a carregar. Só true envia.
   const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
   const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
-  const tentarPainelDeNovo = useCallback(() => { setPainelSetor(null); setVersaoPainel((v) => v + 1); }, []);
+  const tentarPainelDeNovo = useCallback(() => { setPainelSetor((ant) => ant?.acessoRevogado ? ant : null); setVersaoPainel((v) => v + 1); }, []);
   const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
@@ -551,6 +551,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           <ConversaAberta
             item={atual}
             aria={painelDoAberto?.dado?.aria}
+            bloquearDecisoesAria={painelDoAberto?.acessoRevogado === true}
             leituraPainel={{ solicitada: versaoPainel, finalizada: painelDoAberto?.leitura.versao ?? -1, resultado: painelDoAberto?.leitura.resultado ?? "pendente" }}
             usuario={usuario}
             fuso={fuso}

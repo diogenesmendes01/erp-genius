@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Botao } from "@/components/Botao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { rotular, SITUACAO_CLIENTE_VOLTOU_LABEL } from "@/lib/labels";
-import { vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
+import { vincularLeadRetornoNoInbox } from "@/server/inbox/acoes-cliente-voltou";
 import type { ClienteVoltouPainel } from "@/server/inbox/painel-detalhes";
 import { hrefNovaOportunidade } from "./OutrasOportunidades";
 
@@ -36,7 +36,7 @@ function SessaoClienteVoltou({ atendimentoId, nome, pessoaId, dado, podeCriar, a
       titulo={`Vincular esta conversa a ${dado.titulo}?`}
       confirmacao="vínculo"
       idempotente={false}
-      acao={() => vincularContatoWhatsApp({ contatoId: dado.contatoId, atendimentoId, alvo: { tipo: "lead", id: dado.oportunidadeId } })}
+      acao={() => vincularLeadRetornoNoInbox({ contatoId: dado.contatoId, atendimentoId, alvo: { tipo: "lead", id: dado.oportunidadeId } })}
       aoConcluir={() => { if (!viva.current) return; setConfirmando(false); aoMudar(); }}
       aoCancelar={() => { if (viva.current) setConfirmando(false); }}
     >
