@@ -8,3 +8,8 @@ it("oferece só setores do escopo e quatro status atuais; rodapé conserva açõ
  for(const t of ['Filtrar conversas','Financeiro','Em atendimento','Encerrado','Limpar','Mostrar conversas','role="dialog"','max-[699px]:max-h-[85dvh]'])expect(h).toContain(t);
  for(const t of ['aria-modal','Comercial','Etapa','Tags','Tipo'])expect(h).not.toContain(t);
 });
+it("R2 selo pessoal exclui filtros já representados pelos sete chips",()=>{
+ expect(contarFiltrosAplicados({responsavel:"fila",prazoEstourado:true,aria:"handoff"},true)).toBe(0);
+ expect(contarFiltrosAplicados({responsavel:"eu",naoLidas:true,prazoEstourado:true},true)).toBe(2);
+ expect(contarFiltrosAplicados({responsavel:"u9",setor:"COMERCIAL"},true)).toBe(2);
+});

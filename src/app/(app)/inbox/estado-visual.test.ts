@@ -80,5 +80,8 @@ it("prévia só projeta autor/rótulo autorizado, sugestão nunca mostra preview
 });
 it("346 ausência de rótulo conserva prévia útil sem expor texto bruto de sugestão",()=>{
  for(const previaRotulo of [null,"","   "])expect(estadoVisualItem(item({previaAutor:"sugestao",previaRotulo,preview:"segredo"}),agora).previa).toBe("Sugestão da Aria");
- expect(estadoVisualItem(item({previaAutor:"pessoa",previaRotulo:null,contatoNome:"Ana",preview:"Oi"}),agora).previa).toBe("Ana: Oi");
+ expect(estadoVisualItem(item({previaAutor:"pessoa",previaRotulo:null,contatoNome:"Ana",preview:"Oi"}),agora).previa).toBe("Equipe: Oi");
+});
+it.each([null,"", "   "])("R2 saída de outra pessoa sem rótulo não é atribuída ao contato: %s",previaRotulo=>{
+ expect(estadoVisualItem(item({previaAutor:"pessoa",previaRotulo,contatoNome:"Ana",preview:"Oi"}),agora).previa).toBe("Equipe: Oi");
 });
