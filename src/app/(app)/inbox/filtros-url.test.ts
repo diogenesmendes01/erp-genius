@@ -24,3 +24,11 @@ it("chip ativo só representa sua dimensão exclusiva, inclusive filtros externo
  expect(chipAtivo({responsavel:"u9"})).toBeNull();expect(chipAtivo({responsavel:"eu",naoLidas:true})).toBeNull();
  expect(chipAtivo({naoLidas:true,prazoEstourado:true})).toBeNull();
 });
+
+
+it("URL pública preserva aria ao usar os cinco chips legados", () => {
+  const f: FiltrosInbox = { setor: "COMERCIAL", aria: "humano" };
+  expect(paramsDaUrl(f).toString()).toBe("setor=COMERCIAL&aria=humano");
+  expect(filtrosDoChip("minhas", f)).toEqual({ ...f, responsavel: "eu" });
+  expect(chipAtivo(f)).toBe("todas");
+});

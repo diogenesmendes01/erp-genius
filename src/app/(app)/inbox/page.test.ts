@@ -4,13 +4,15 @@ import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { ErroPermissaoFalso } = vi.hoisted(() => ({ ErroPermissaoFalso: class extends Error {} }));
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), item: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn(), contar: vi.fn(), filtro: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), item: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn(), contar: vi.fn(), filtro: vi.fn(), resumo:vi.fn(), operacao:vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.admin, ErroPermissao: ErroPermissaoFalso }));
 vi.mock("@/server/inbox/consultas-pagina", () => ({ contarChipsInbox: mocks.contar, listarAtendimentosPagina: mocks.pagina, obterItemListaInbox: mocks.item }));
+vi.mock("@/server/inbox/contexto-lista",()=>({criarOperacaoListaInbox:mocks.operacao}));
+vi.mock("@/server/inbox/contagens",()=>({resumoDaListaInbox:mocks.resumo}));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/inbox/opcoes-filtro", () => ({ opcoesFiltroInbox: mocks.filtro }));
-vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro, contagens, sino: sinoRenderizado, opcoesNovaConversa, agoraInicial }: { agoraInicial?: number; sino?: import("react").ReactNode; opcoesNovaConversa?: unknown; contagens?: unknown; opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `agora:${agoraInicial}|nova:${opcoesNovaConversa ? "sim" : "nao"}|${renderToStaticMarkup(createElement("span", null, sinoRenderizado))}|inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}|contagens:${JSON.stringify(contagens)}` }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro, contagens, resumo, sino: sinoRenderizado, opcoesNovaConversa, agoraInicial }: { agoraInicial?: number; sino?: import("react").ReactNode; opcoesNovaConversa?: unknown; contagens?: unknown; resumo?:unknown; opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `agora:${agoraInicial}|nova:${opcoesNovaConversa ? "sim" : "nao"}|${renderToStaticMarkup(createElement("span", null, sinoRenderizado))}|inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}|contagens:${JSON.stringify(contagens)}|resumo:${JSON.stringify(resumo)}` }));
 vi.mock("./NovoAtendimento", () => ({ NovoAtendimento: () => "novo-atendimento" }));
 const sino = vi.hoisted(() => ({ listar: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/crm/notificacoes", () => ({ listarNotificacoes: sino.listar }));
@@ -18,6 +20,9 @@ vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: sino.fuso }));
 vi.mock("../tarefas/SinoNotificacoes", () => ({ SinoNotificacoes: ({ notificacoes, fusoExibicao, fusoEscola }: { notificacoes: { titulo: string }[]; fusoExibicao: string; fusoEscola: string }) => `Notificações:${notificacoes.map((n) => n.titulo)}|${fusoExibicao}|${fusoEscola}` }));
 
 import Page from "./page";
+const operacao={id:"op-ssr"};
+const resumo={contagens:{todas:100,ia:9,aprovacao:8,handoff:7,humano:6,semResposta:5,naoAtribuidas:4},aria:{estado:"ATIVA",pausada:false,podeGerenciar:false}};
+beforeEach(()=>{vi.clearAllMocks();mocks.operacao.mockReturnValue(operacao);mocks.resumo.mockResolvedValue(resumo);});
 
 it("entrega agregados autorizados pelo usuário/filtros sem depender de paginação ou deep link", async () => {
   sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo"); mocks.sessao.mockResolvedValue({ id: "u", papeis: ["FINANCEIRO"] });
@@ -26,7 +31,7 @@ it("entrega agregados autorizados pelo usuário/filtros sem depender de paginaç
   mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.filtro.mockResolvedValue({ setores: [], numeros: [] });
   const contagens = { todas: 99, minhas: 8, naoLidas: 7, prazo: 6, fila: 5 }; mocks.contar.mockResolvedValue(contagens);
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "Ana", responsavel: "eu" }) }));
-  expect(mocks.contar).toHaveBeenCalledWith({ id: "u", papeis: ["FINANCEIRO"] }, { busca: "Ana", responsavel: "eu" });
+  expect(mocks.contar).toHaveBeenCalledWith({ id: "u", papeis: ["FINANCEIRO"] }, { busca: "Ana", responsavel: "eu" },{operacao});
   expect(html).toContain(`contagens:${JSON.stringify(contagens).replaceAll('"', '&quot;')}`);
   expect(mocks.sessao.mock.invocationCallOrder[0]).toBeLessThan(mocks.contar.mock.invocationCallOrder.at(-1)!);
 });
@@ -37,7 +42,7 @@ describe("InboxPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.sessao.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
-    mocks.admin.mockReturnValue(false); mocks.contar.mockResolvedValue({ todas: 8, minhas: 2, naoLidas: 1, prazo: 3, fila: 4 });
+    mocks.operacao.mockReturnValue(operacao);mocks.resumo.mockResolvedValue(resumo);mocks.admin.mockReturnValue(false); mocks.contar.mockResolvedValue({ todas: 8, minhas: 2, naoLidas: 1, prazo: 3, fila: 4 });
     mocks.triagem.mockResolvedValue([]); mocks.revisoes.mockResolvedValue([]);
     mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
     mocks.filtro.mockResolvedValue({ setores: ["SECRETARIA"], numeros: [{ id: "n1", rotulo: "Secretaria" }] });
@@ -128,13 +133,13 @@ describe("InboxPage", () => {
     mocks.sessao.mockRejectedValue(new Error("negado"));
     await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow("negado");
     expect(mocks.preferencia).not.toHaveBeenCalled();
-    expect(mocks.pagina).not.toHaveBeenCalled(); expect(mocks.contar).not.toHaveBeenCalled();
+    expect(mocks.pagina).not.toHaveBeenCalled(); expect(mocks.contar).not.toHaveBeenCalled();expect(mocks.operacao).not.toHaveBeenCalled();expect(mocks.resumo).not.toHaveBeenCalled();
   });
 
   it("filtros e conversa da URL vão à consulta paginada e à tela; sem ?c= nada é selecionado", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "  ana  ", setor: "FINANCEIRO", c: "x" }) }));
-    expect(mocks.pagina).toHaveBeenCalledWith(expect.anything(), { busca: "ana", setor: "FINANCEIRO" }, null);
+    expect(mocks.pagina).toHaveBeenCalledWith(expect.anything(), { busca: "ana", setor: "FINANCEIRO" }, null,undefined,{operacao});
     expect(html).toContain("sel:x");
     expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("sel:null");
   });
@@ -142,9 +147,9 @@ describe("InboxPage", () => {
   it("cursor válido da URL é repassado; inválido é ignorado", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
     await Page({ searchParams: Promise.resolve({ cursor: cursorValido }) });
-    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, cursorValido);
+    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, cursorValido,undefined,{operacao});
     await Page({ searchParams: Promise.resolve({ cursor: "lixo!" }) });
-    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, null);
+    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, null,undefined,{operacao});
   });
 
   it("deep link fora da primeira página: o item é buscado por id e entra na lista", async () => {
@@ -152,7 +157,7 @@ describe("InboxPage", () => {
     mocks.pagina.mockResolvedValue({ itens: [{ id: "p1" }], proximo: null });
     mocks.item.mockResolvedValue({ id: "x" });
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ c: "x" }) }));
-    expect(mocks.item).toHaveBeenCalledWith(expect.anything(), "x");
+    expect(mocks.item).toHaveBeenCalledWith(expect.anything(), "x",{operacao});
     expect(html).toContain("itens:x,p1");
   });
 
@@ -173,3 +178,5 @@ it("encaminha instante epoch único da renderização de servidor para hidrataç
   const h=renderToStaticMarkup(await Page({searchParams:Promise.resolve({})}));expect(h).toContain(`agora:${Date.parse("2026-03-29T23:30:00.000Z")}`);
  } finally {vi.useRealTimers();}
 });
+
+it("SSR pede resumo mesmo vazio e sem flag, usando uma operação em todas as consultas",async()=>{mocks.sessao.mockResolvedValue({id:"u",papeis:["FINANCEIRO"]});mocks.preferencia.mockResolvedValue({ok:false});mocks.admin.mockReturnValue(false);mocks.triagem.mockResolvedValue([]);mocks.pagina.mockResolvedValue({itens:[],proximo:null});mocks.opcoes.mockResolvedValue({destinos:[],numeros:[]});mocks.filtro.mockResolvedValue({setores:[],numeros:[]});sino.listar.mockResolvedValue([]);sino.fuso.mockResolvedValue("UTC");const h=renderToStaticMarkup(await Page({searchParams:Promise.resolve({aria:"ia",c:"fora"})}));expect(mocks.operacao).toHaveBeenCalledTimes(1);expect(mocks.resumo).toHaveBeenCalledWith({id:"u",papeis:["FINANCEIRO"]},{aria:"ia"},undefined,{operacao});expect(mocks.item).toHaveBeenCalledWith({id:"u",papeis:["FINANCEIRO"]},"fora",{operacao});expect(h).toContain('resumo:'+JSON.stringify(resumo).replaceAll('"','&quot;'));expect(mocks.sessao.mock.invocationCallOrder.at(-1)!).toBeLessThan(mocks.operacao.mock.invocationCallOrder.at(-1)!);});

@@ -6,7 +6,7 @@ import { truncarBanco } from "@/test/integracao";
 import type { Db } from "@/server/whatsapp/escopo";
 import { carregarContextoAria, condicaoEstadoAria, derivarEstadoAria, ESTADOS_ARIA, linhaEstadoDe, sugestaoVigente } from "./estado-aria";
 import { estadoAriaEmSql, RELACOES_ESTADO_ARIA } from "./estado-aria-sql";
-import { AGORA344, cenarioContagens344, sugestao344, type Cenario344 } from "./contagens-fixture.int";
+import { AGORA344, cenarioContagens344, sugestao344, type Cenario344 } from "@/test/inbox-contagens-fixture";
 let c:Cenario344;
 beforeEach(async()=>{await truncarBanco();c=await cenarioContagens344();});
 async function paridade(db:Db=prisma,ativa=true) {

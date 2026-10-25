@@ -9,6 +9,7 @@ export function paramsDaUrl(f: FiltrosInbox): URLSearchParams {
  if (f.naoLidas) q.set("naoLidas", "1");
  if (f.prazoEstourado) q.set("prazo", "estourado");
  if (f.busca) q.set("busca", f.busca);
+ if (f.aria) q.set("aria", f.aria);
  return q;
 }
 export function hrefDosFiltros(caminho: string, f: FiltrosInbox): string {
