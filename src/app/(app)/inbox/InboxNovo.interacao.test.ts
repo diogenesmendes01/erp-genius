@@ -990,3 +990,13 @@ it("composição324: 404 preserva leitura do snapshot no mesmoID e retira escrit
   expect(depois.props.contato).toMatchObject({ tags });
   expect((depois.props.slotTags as ReactElement).props).toMatchObject({ tags, podeEditar: false, podeCriar: false });
 });
+
+// #350: uma fonte de painel, sem prop antiga enquanto a seleção nova carrega.
+it("sugestões da thread pertencem só ao painel atual, inclusive podeDecidir=false",async()=>{
+ const a={podeDecidir:false,cartoes:[{id:"cartao-a"}]};respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:a}));
+ tela();await esvaziar();expect(cabecalho(tela()).aria).toEqual(a);
+ let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise(r=>{resolver=r;});
+ lista(tela()).aoSelecionar("a2");expect(cabecalho(tela()).aria).toBeUndefined();
+ resolver(new Response(JSON.stringify({podeEnviar:false,aria:{podeDecidir:true,cartoes:[{id:"cartao-b"}]}})));await esvaziar();
+ expect(cabecalho(tela()).aria?.cartoes.map(s=>s.id)).toEqual(["cartao-b"]);
+});

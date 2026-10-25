@@ -17,6 +17,9 @@ import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import type { ConversaHook } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { intercalarSugestoes } from "./aria/intercalar";
+import { CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
+import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-respostas";
@@ -41,6 +44,8 @@ export interface PropsConversaAberta {
   /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
   agoraInicial?: number;
   conversa: ConversaHook;
+  /** Cartões já autorizados pelo painel do atendimento atual; sem nova consulta. */
+  aria?: AriaDoAtendimento | null;
   /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); null enquanto carrega. */
   podeEnviar: boolean | null;
   /** O painel não carregou: "Tentar de novo" do compositor (C2 da revisão do #218). */
@@ -95,7 +100,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria }: PropsConversaAberta) {
   const tentativasNota = useChavesPorAlvo();
   const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
@@ -116,7 +121,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     return () => { ativo = false; };
   }, [origemId]);
   const transferidoDe = origemId && origem.de === origemId && origem.setor ? rotular(SETOR_ATENDIMENTO_LABEL, origem.setor) : null;
-  const itens = useMemo(() => decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes, conversa.temMaisDepois), { fuso, agora: new Date(agora), transferidoDe }), [conversa.mensagens, conversa.notas, conversa.temMaisAntes, conversa.temMaisDepois, fuso, agora, transferidoDe]);
+  const itens = useMemo(() => decorarThread(intercalarSugestoes(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes, conversa.temMaisDepois), i => i.tipo === "mensagem" ? i.m.criadoEm : i.n.criadoEm, aria?.cartoes ?? [], { inicioJanela: conversa.temMaisAntes ? conversa.mensagens[0]?.criadoEm ?? null : null }), { fuso, agora: new Date(agora), transferidoDe }), [conversa.mensagens, conversa.notas, conversa.temMaisAntes, conversa.temMaisDepois, fuso, agora, transferidoDe, aria?.cartoes]);
   const { aberta: buscaAberta, termo, atual: achadoAtual, achados, posicao, campoRef, abrir: abrirBusca, fechar: fecharBusca, aoMudar: mudarBusca, navegar: navegarBusca } = useBuscaConversa(item?.id ?? null, conversa.mensagens, rolagem, itens);
   // A origem (atendimento e número) fica guardada no clique: o encaminhar não muda de conversa se a seleção mudar.
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread; atendimentoId: string; numeroId: string } | null>(null);
@@ -174,13 +179,14 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           items={itens}
           pinKeys={achadoAtual ? [achadoAtual] : []}
           getKey={(i) => i.id}
-          isItemFocusable={(i) => i.tipo === "mensagem"}
+          isItemFocusable={(i) => i.tipo === "mensagem" || i.tipo === "sugestao-aria"}
           estimatedHeight={72}
           scrollRef={rolagem}
           renderItem={(i) => {
             if (i.tipo === "dia") return <SeparadorDia rotulo={i.rotulo} />;
             if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
+            if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             const m = i.m;
             return (
               <BalaoMensagem m={m} destacada={achadoAtual === m.id} autor={autorDoItem(i)} emSequencia={i.emSequencia} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}

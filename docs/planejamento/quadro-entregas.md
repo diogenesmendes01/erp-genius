@@ -6911,3 +6911,10 @@ A PR424 foi mergeada em7c880a81eedea7d6c9fc4167b8d7bad310c63586. A composição3
 
 ### Integração completa351 aprovada
 A execução40145615424 terminou com quatro shards aprovados:351arquivos/3.144testes;trêsarquivos/quatrotestes opt-in ignorados, declarados à parte. Fontef99fa9a7;watch40858/6d61da e conferência92067/5de763,ambosEXIT0. [Prova dos jobs](../../output/inbox-351-qa/ci-full-f99.json). A composição comMain7c88 preserva toda a árvore executável dessa fonte;este registro não muda código. A PR será retarget paraMain e a CI final/revisão serão conferidas antes do merge.
+
+
+### Inbox #350 — cartão Aria sugere (DEV, gates em preparação)
+
+Base MAIN fabf7add, branch codex/inbox-e3-350-cartao-sugestao. Projeção/intercalação/cartão usam DTO/actions349 autorizados, sem payload bruto ou alçadas novas. D1/D2 aprovadas ficam nas354–356; PainelAria legado preservado para353. Hunk aditivo do painel atual, decoração temporal antes dos dias/sequências e foco do novo item, sem mudar cursores/compositor/núcleo virtual. perigoContorno/classificador fechado e registro exato de dois rótulos com âncora AST aprovados ROOT.
+
+TDD: três completos43 GREEN40d526; Botao/guardas4/124 GREENf5c8d7 após RED5; interação real6/6 GREEN7eec99 (glifosSVGfakes, não layout); consumidor4/127 GREEN019fed; guarda/estático98 GREEN6f2d83; lint17 final GREENdd095a (5a2b9b anterior). Negativo2038/9d59cb12/424=422passes+2falhasREAISdeguarda preservado, sem chamar recorte verde. UNIT25 terminou75190/298d77 EXIT0:25completos/544casos,61,61s/w1,semfiltro/skip; TSC aguardando janela ROOT. Nenhum DB/INT/fixture/preview/captura/provider/install/schema ou branch extra. SPEC docs/specs/inbox-cartao-sugestao-aria.md; report output/inbox-350-report.md. Visual6pares, nativo, QA/união/CI/publicação pendentes; não concluir350.

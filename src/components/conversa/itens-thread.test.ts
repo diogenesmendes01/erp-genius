@@ -151,3 +151,12 @@ describe("C3 PR398: data inválida não duplica separador", () => {
     expect(visual.filter(i => i.tipo === "dia")).toEqual([{ tipo: "dia", id: "dia:2026-10-21", rotulo: "Ontem" }, { tipo: "dia", id: "dia:2026-10-22", rotulo: "Hoje" }]);
   });
 });
+
+// #350: sugestão é item temporal, nunca mensagem ou nota do transporte.
+it("cartão entre balões rompe sequência e conserva separadores/transferência",()=>{
+ const a=saida("a",{criadoEm:"2026-10-22T12:00:00Z"}),b=saida("b",{criadoEm:"2026-10-22T12:02:00Z"});
+ const extra={tipo:"sugestao-aria",id:"sugestao-aria:s",s:{id:"s",criadoEm:"2026-10-22T12:01:00Z"}};
+ const r=decorarThread([{tipo:"mensagem",id:a.id,m:a},extra,{tipo:"mensagem",id:b.id,m:b}] as Parameters<typeof decorarThread>[0],{fuso:"UTC",agora:new Date("2026-10-22T13:00Z"),transferidoDe:"Comercial"});
+ expect(r.map(i=>i.id)).toEqual(["evento:transferencia","dia:2026-10-22","a","sugestao-aria:s","b"]);
+ expect(r.filter(i=>i.tipo==="mensagem").map(i=>i.emSequencia)).toEqual([false,false]);
+});
