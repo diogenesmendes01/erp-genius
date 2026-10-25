@@ -253,3 +253,8 @@ describe("ConfirmarAcao \u2014 interação", () => {
     expect(campoDe(tela()).props.disabled).toBe(false);
   });
 });
+
+it("podeConfirmar falso também bloqueia handler chamado diretamente",async()=>{
+ props.podeConfirmar=false;await clicar(tela(),CONFIRMAR);expect(acao).not.toHaveBeenCalled();
+ props.podeConfirmar=true;await clicar(tela(),CONFIRMAR);expect(acao).toHaveBeenCalledOnce();
+});

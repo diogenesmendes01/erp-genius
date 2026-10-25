@@ -1,0 +1,24 @@
+import {afterAll,beforeEach,expect,it,vi} from "vitest";
+vi.hoisted(()=>{const u=new URL(process.env.DATABASE_URL!);u.searchParams.set("connection_limit","1");u.searchParams.set("pool_timeout","3");process.env.DATABASE_URL=u.toString();(globalThis as {prisma?:unknown}).prisma=undefined;});
+const {authMock}=vi.hoisted(()=>({authMock:vi.fn()}));
+vi.mock("@/server/_shared/sessao",async original=>{const real=await original<typeof import("@/server/_shared/sessao")>();return{...real,exigirSessao:async()=>{const s=await authMock(),u=await real.carregarUsuarioFresco(s.user.id);if(!u)throw new real.ErroAutenticacao();return u;}};});
+vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+import {prisma} from "@/lib/prisma";
+import {truncarBanco} from "@/test/integracao";
+import {cenarioPerda328} from "@/test/inbox-perda";
+import {carregarOportunidadesPainel} from "./painel-oportunidades";
+import {concluirTarefaNoInbox,reabrirTarefaNoInbox,reagendarTarefaNoInbox,cancelarTarefaNoInbox} from "./acoes-painel";
+beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
+it("ações reais e painel usam mesma conexão transacional pool1",async()=>{
+ expect(process.env.DATABASE_URL).toContain("connection_limit=1");const c=await cenarioPerda328();authMock.mockResolvedValue({user:{id:c.dono.id}});
+ await prisma.configuracaoOperacional.upsert({where:{id:"escola"},create:{id:"escola",fusoInstitucional:"America/Sao_Paulo"},update:{fusoInstitucional:"America/Sao_Paulo"}});
+ const t=await prisma.tarefa.create({data:{titulo:"Pool1 real330",tipo:"OUTRO",setor:"COMERCIAL",responsavelId:c.dono.id,leadId:c.op.id,atendimentoId:c.a.id,fusoOrigem:"America/Sao_Paulo"}});
+ expect((await carregarOportunidadesPainel(c.dono,c.a.id))?.tarefas.map(t=>t.id)).toEqual([t.id]);
+ expect(await concluirTarefaNoInbox(c.a.id,t.id,1)).toEqual({ok:true});
+ expect(await reabrirTarefaNoInbox(c.a.id,t.id,2)).toEqual({ok:true});
+ expect(await reagendarTarefaNoInbox(c.a.id,t.id,3,{dataCivil:"2026-10-24",hora:"09:00",fusoEscolaEsperado:"America/Sao_Paulo"})).toEqual({ok:true});
+ expect(await cancelarTarefaNoInbox(c.a.id,t.id,4,"Pedido pool1")).toEqual({ok:true});
+ expect(await cancelarTarefaNoInbox(c.a.id,t.id,4,"Pedido pool1")).toEqual({ok:true});
+ expect(await prisma.tarefa.findUniqueOrThrow({where:{id:t.id}})).toMatchObject({status:"CANCELADA",versao:5});
+ expect(await prisma.evento.count({where:{agregadoTipo:"Tarefa",agregadoId:t.id}})).toBe(4);
+});
