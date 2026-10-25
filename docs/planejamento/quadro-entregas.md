@@ -7538,3 +7538,7 @@ Global32c048c01 EXIT1preservado(18falhas/3arquivos);guardaresponsivaflagroucol-s
 ### Inbox #439 C3 — mock de ícones R7 (25/10/2026)
 
 RootcorrigesomentemockfechadoInboxNovo.aria-eventoscom4íconesgenéricosnovosdoModal;16falhasdeimportglobal32cnegativas preservadas. Asserções/runtimeintactos,semproxy/parseramplo. Recorteconjunto1fd562 EXIT0:5/66completos;globalfinal/visualpendentes. QAinbox-439-c3-modal-tarefa.md.
+
+### Inbox #334 — leitura do contador não concede vínculo (25/10/2026)
+
+Falhaglobal32ccliente-voltouera spydequalquercall versusleituralegítima2argsdocontador,conferidoT671223negativo15/16→privado17/17fcc528; parecerddb759... . Testeagorapreservaescopos/podeVincularfalse,exigecontador0/leituraexata,proíbeenvio=true/candidatos/leadatual. Nenhumruntimealterado. RecorteRoot1fd562 EXIT0:5/66completos;globalfinalpendente,SQLnãorepetida.
