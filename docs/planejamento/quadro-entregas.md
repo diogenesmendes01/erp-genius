@@ -7530,3 +7530,7 @@ DoisSRCModal literais0b5a:5íconesgenéricosdecorativos,Responsávelinteirosóca
 ### Inbox composição R6 — fixture e TSC (25/10/2026)
 
 Originalc2b48093/2743cc EXIT2: únicoTS2304test-only nohelperabrirAba331 referiap.inicialsemparamp. Usaagoraprops.inicialjádefinido,semruntime/asserçõesalterados;arquivocompleto119casoscb8485 EXIT0. ReplayoriginalWIP83354/7b68cf EXIT0,fontehash79ae7bff8413c00382589df600be456eb1f1dd023b6f80d038cc5c7467a46370econfigspreservados,nãoexecutadonoHEADanterior. QA358finalb23e43...favorável:23native/48reg/568UNIT26/3oráculos0,recortesnãosomados;SQLnão repetidapelafix. Globalhabitual2048w2/lint/build/visual/CIaindapendentes. Reservas futuras493Insights377e494grant370registradasapenasnooutput,nãomigradas/geradas.
+
+### #377 — Insights D12: fase pura (em implementação)
+
+Audiência COMERCIAL+veLead e D12 completos sob demanda aprovados. Tipos/normalização, contexto limitado, prompt estruturado e DTO puro implementados com REDs causais; final DEV4 arquivos/35 testes UTC,w1/1024 terminal ab6019 EXIT0. A aba não foi habilitada. Schema493/claim/custos/provider/UI/bridge/SQL/QA independente/gates globais/visual permanecem pendentes, sem homologação presumida. [SPEC](../specs/inbox-insights-d12.md) e [QA](../qa/inbox-377-insights-d12.md).
