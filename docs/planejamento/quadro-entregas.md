@@ -7028,3 +7028,9 @@ Guarda integral identificou ação com classes próprias na Faixa. RED11casos/1f
 ### Inbox #347 — gates finais e preparação da PR
 
 ROOT globalUTC950/7597 sessão92937/655010 EXIT0, TSCoriginal8192 sessão47511/c27643 EXIT0, lintglobal0+lint5correção0. TESTERexato287 nove arquivos248 testes19598/495e17 EXIT0, guardacanônica85preservada. Curadoria pública com originaishashseparados em output/inbox-347-qa; onze paths featurevsbase252 protegidos fora whitelist. PR deverábasear431, visual/CI/build permanecem pendentes; nada fechado/homologado por suposição.
+
+### #347 — R1 PR433: título vivo, NextLink e rastreabilidade (25/10/2026)
+
+DEV B na branch codex/inbox-e3-347-review-r1/base32c48333. C4 move role=status somente ao título; contagens fora da região viva. C6 Gerenciar usa NextLink/prefetch=false mantendo href/capacidade/iaFantasma; mapa sótroca tag. C5 renomeia cobertura existente pelos nomes nominais da Task6 e documenta vínculos naSPEC, semduplicarcasos. Nenhuma348/ACL/backend alterada.
+
+RED b6e00b EXIT1:13casos/2falhas11controles. Primeiro recorte97402/e20c43 EXIT1:172casos1falha171pass por selfdoDOMmínimoausente; setup local completado paraNextLinkREAL,semrelaxartestes/harness. GREEN sessão11275/ab1127 EXIT0:7arquivos172/172, incluindo guarda85/paleta/contraste/SSR/SSE/foco, w1/heap1024/semfiltro/skipnovo. Lint4/148a1b EXIT0 --max-warnings0. Relatório/SPEC atualizados; QA/composição/visual/TSC/CI pendentesROOT. SemDB/Next/provider/browser/HTTP/install/env/migração/push.

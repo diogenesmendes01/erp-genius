@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { IconSparkles } from "@tabler/icons-react";
 import { botaoClasses } from "@/components/Botao";
 import type { SituacaoAriaInbox } from "@/server/inbox/contagens";
@@ -19,13 +20,13 @@ export function FaixaAriaAtiva({ situacao, contagens }: PropsFaixaAriaAtiva) {
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ai-solid text-white" aria-hidden="true">
         <IconSparkles size={16} />
       </span>
-      <div role="status" className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-ai-700">{titulo}</p>
+      <div className="min-w-0 flex-1">
+        <p role="status" className="text-[13px] font-semibold text-ai-700">{titulo}</p>
         <p className="text-xs text-gray-600">
           {ensaio ? "Simula respostas sem falar com os contatos" : pausada ? "Pausada · novas conversas vão para a equipe" : <><span className="font-mono tabular-nums">{contagens.ia}</span> em atendimento · <span className="font-mono tabular-nums">{contagens.aprovacao + contagens.handoff}</span> aguardando você</>}
         </p>
       </div>
-      {situacao.podeGerenciar && <a href="/aria" className={botaoClasses({ variante: "iaFantasma", tamanho: "sm" }) + " shrink-0"}>Gerenciar</a>}
+      {situacao.podeGerenciar && <Link href="/aria" prefetch={false} className={botaoClasses({ variante: "iaFantasma", tamanho: "sm" }) + " shrink-0"}>Gerenciar</Link>}
     </div>
   );
 }

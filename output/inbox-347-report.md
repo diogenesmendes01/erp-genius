@@ -29,3 +29,11 @@ TypeScript original final, sem exclusões ou mudança de configuração, heap819
 
 
 Fechamento posterior ROOT: a mesma suíte global final92937 terminou655010 EXIT0,950 arquivos/7597 testes UTC,227,32s,w2heap1536,sem filtros/skips. TESTER repetiu no287 nove arquivos248 testes incluindo guarda85, sessão19598/495e17 EXIT0. Parecer público e hashes em output/inbox-347-qa. Runtime287 preservado nesta curadoria documental; visual/CI/build ainda pendentes.
+
+## R1 PR433 — C4/C5/C6 (base32c48333)
+
+Branch codex/inbox-e3-347-review-r1, base32c4833307c4f373cec894bccb395ad96c2e53d9, separada da348. C4: role=status fica somente no título; contagens e linha de apoio continuam visuais fora da região viva, sem reanúncio contínuo. C6: Gerenciar passa a NextLink real/prefetch=false com href/capacidade/botaoClassesiaFantasma preservados; entrada declarativa muda só <a>→<Link>. C5: nomes nominais da Task6 rastreados nos casos existentes e SPEC, sem duplicação de cobertura.
+
+TDD b6e00b EXIT1: Faixa13 casos completos,2 falhas novas(C4/C6)/11controles. Primeiro recorte sessão97402/e20c43 EXIT1:7arquivos172 casos,1falha/171pass por selfausente no DOM mínimo do consumidor SSE, ao montar NextLink real. Setup local expõe self/domjanela e setTimeoutdinâmico; não mockouLink, não alterou harness compartilhado nem asserções de foco. Replay sessão11275/chunkab1127 EXIT0:7arquivos172/172(Faixa,InboxNovoSSR,eventosSSE,Botao,botoes85,paleta,contraste), w1/heap1024/configuraçãooriginal/semfiltro/skipnovo. Lint4arquivos148a1b EXIT0 --max-warnings0. Warningpreexistentevite-tsconfig-paths mantido. Não é suíte global ou validação nativa/visual/TSC/CI desta fonte.
+
+Nenhum arquivo348, backend/schema/ACL, fixture/env/DB/HTTP/browser/Next/provider/install/generate/push foi alterado/executado nesta revisão. Fonte348c504 permanece na branch original, sem cherry-pick deR1 peloDEV. QAexata/composição/sourcepins/visual/CI são coordenadosROOT. As bibliotecas privadas de captura v1 e seus negativos permanecem separadas emoutput; R2pendente após contraprovasTESTER e semGO nativo.
