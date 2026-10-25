@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { ErroPermissao, ErroRegra, registrarEvento, type UsuarioSessao } from "@/server/_shared";
+import { apenasPortal, ErroPermissao, ErroRegra, registrarEvento, type UsuarioSessao } from "@/server/_shared";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { rejeitarAcaoAriaTx } from "@/server/aria/historico";
 import { pausarAriaNoAtendimento } from "@/server/aria/pausa";
@@ -15,6 +15,7 @@ type Tx = Prisma.TransactionClient;
 
 /** Autorização contextual única, também usada pelo DTO; não concede alçada global CRM. */
 export async function contextoAssumirAria(db: Db, u: UsuarioSessao, id: string) {
+  if (apenasPortal(u)) return null;
   const individual = await db.atendimentoWhatsApp.findFirst({ where: { id, conversa: { grupoId: null } }, select: { id: true } });
   if (!individual) return null;
   const a = await atendimentoVisivel(u, id, true, db);
