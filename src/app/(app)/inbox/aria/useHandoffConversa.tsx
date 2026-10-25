@@ -16,6 +16,7 @@ export type PropsHandoffConversa = {
     usuarioId: string;
     handoff: HandoffDoAtendimento | null | undefined;
     podeEnviar: boolean | null;
+    podeAssumirAria?: boolean;
     leitura?: LeituraPainelHandoff;
     fuso: string | null;
     agora: Date;
@@ -46,7 +47,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         sessao.current.ativa = false; querResposta.current = false; retorno.current = gatilho.current; setModal(null); setConfirmando(false); setErro(null); }, []);
     const concluir = useCallback((s: Sessao) => {
         const p = atual.current, l = p.leitura;
-        if (!s.ativa || sessao.current !== s || p.podeEnviar !== true || !l || l.resultado !== "ok" || l.finalizada !== l.solicitada || l.finalizada < s.minimo)
+        if (!s.ativa || !s.ack || sessao.current !== s || p.podeEnviar !== true || p.podeAssumirAria !== true || !l || l.resultado !== "ok" || l.finalizada !== l.solicitada || l.finalizada < s.minimo)
             return;
         if (s.ack && p.item.responsavelId !== p.usuarioId)
             return;
@@ -84,7 +85,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         }
         if (l.resultado !== "ok")
             return;
-        if (p.podeEnviar !== true) {
+        if (p.podeEnviar !== true || p.podeAssumirAria !== true) {
             // Voltar a ter permissão não retoma uma intenção antes recusada.
             s.responder = false;
             setConfirmando(false);
@@ -102,7 +103,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         const envioRevogado = s.ack && l?.resultado === "ok" && l.finalizada === l.solicitada && l.finalizada >= s.minimo && props.podeEnviar === false;
         // Assumir pode remover o handoff do DTO; o ACK só libera foco após nova leitura e envio vigente.
         const mudou = props.handoff?.acaoId !== s.acaoId && (!s.ack || props.handoff != null);
-        const perdeu = !s.ack && props.handoff?.acaoId === s.acaoId && !props.handoff.podeAssumir && !props.handoff.ehResponsavel;
+        const perdeu = !s.ack && props.handoff?.acaoId === s.acaoId && (props.podeAssumirAria !== true || (!props.handoff.podeAssumir && !props.handoff.ehResponsavel));
         const perdeuResponsabilidade = !s.ack && s.responder && (!props.handoff?.ehResponsavel || props.item.responsavelId !== props.usuarioId);
         if (proibido || mudou || perdeu || envioRevogado || perdeuResponsabilidade) {
             s.ativa = false;
@@ -134,7 +135,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
     }
     function assumirConfirmado(n: number) {
         const s = sessao.current, p = atual.current;
-        if (!s?.ativa || s.numero !== n || p.handoff?.acaoId !== s.acaoId || !p.handoff.podeAssumir)
+        if (!s?.ativa || s.numero !== n || p.handoff?.acaoId !== s.acaoId || p.podeAssumirAria !== true || (!p.handoff.podeAssumir && !p.handoff.ehResponsavel))
             return;
         s.ack = true;
         setModal(m => m?.numero === s.numero ? { ...m, aguardandoConfirmacao: true } : m);
@@ -156,6 +157,10 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         const s = sessao.current, p = atual.current;
         if (!s?.ativa || s.numero !== n || (!s.ack && (!p.handoff?.ehResponsavel || p.handoff.acaoId !== s.acaoId || p.item.responsavelId !== p.usuarioId)))
             return;
+        if (!s.ack) {
+            // Atualizar o painel não substitui a transição MANUAL confirmada.
+            setConfirmando(false); setErro(null); p.aoMudar(); return;
+        }
         s.responder = true;
         s.minimo = (p.leitura?.solicitada ?? 0) + 1;
         setConfirmando(true);
@@ -165,10 +170,12 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
     const valido = !props.item.grupo && props.item.status !== "ENCERRADO", h = props.handoff;
     const atualModal = modal && (h?.acaoId === modal.handoff.acaoId || modal.aguardandoConfirmacao || modal.invalidada) ? (h?.acaoId === modal.handoff.acaoId ? h : modal.handoff) : null;
     // A autorização vem somente do DTO atual; o fallback acima é exclusivamente de leitura.
-    const contextoAtivo = !modal?.invalidada && valido && props.leitura?.resultado !== "sem-acesso" && !!atualModal && h?.acaoId === modal?.handoff.acaoId && !!h && (h.podeAssumir || h.ehResponsavel);
+    const leituraResponsavelPronta = !h?.ehResponsavel || (props.podeEnviar === true && props.leitura?.resultado === "ok" && props.leitura.finalizada === props.leitura.solicitada);
+    const erroLeituraResponsavel = h?.ehResponsavel && !modal?.aguardandoConfirmacao && props.leitura?.resultado === "falha" ? "Não foi possível atualizar a conversa. Tente de novo para confirmar sua permissão." : null;
+    const contextoAtivo = leituraResponsavelPronta && props.podeAssumirAria === true && !modal?.invalidada && valido && props.leitura?.resultado !== "sem-acesso" && !!atualModal && h?.acaoId === modal?.handoff.acaoId && !!h && (h.podeAssumir || h.ehResponsavel);
     return {
         faixa: valido && h ? <FaixaHandoff handoff={h} agora={props.agora} aoVerResumo={abrir} gatilhoRef={gatilho}/> : null,
-        modal: modal && atualModal ? <ModalResumoHandoff key={modal.numero} atendimentoId={props.item.id} contatoNome={props.item.contatoNome} handoff={atualModal} fuso={props.fuso} contextoAtivo={contextoAtivo} sessaoInvalidada={modal.invalidada} confirmacaoPendente={modal.aguardandoConfirmacao} confirmando={confirmando} erroConfirmacao={erro} aoTentarConfirmar={() => tentar(modal.numero)} focoAoFechar={retorno} aoFechar={fechar} aoAssumido={() => assumirConfirmado(modal.numero)} aoResponder={() => responder(modal.numero)}/> : null,
+        modal: modal && atualModal ? <ModalResumoHandoff key={modal.numero} atendimentoId={props.item.id} contatoNome={props.item.contatoNome} handoff={atualModal} fuso={props.fuso} podeAssumirAria={props.podeAssumirAria === true} contextoAtivo={contextoAtivo} sessaoInvalidada={modal.invalidada} confirmacaoPendente={modal.aguardandoConfirmacao} confirmando={confirmando} erroConfirmacao={erro ?? erroLeituraResponsavel} aoTentarConfirmar={() => tentar(modal.numero)} focoAoFechar={retorno} aoFechar={fechar} aoAssumido={() => assumirConfirmado(modal.numero)} aoResponder={() => responder(modal.numero)}/> : null,
         controleResposta, aoCampoResponder
     };
 }

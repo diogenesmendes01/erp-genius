@@ -16,7 +16,7 @@ import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
-import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { assumirAtendimento, assumirConversaDaAria, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
 import { agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { fusoDoCampoLocal, instanteDoCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
@@ -31,6 +31,9 @@ import { itensDoMenuConversa, type AcoesCabecalho } from "./MenuConversa";
 export interface DestinoTransferencia { chave: string; nome: string; finalidade: Setor; disponivel?: boolean }
 
 export interface PropsAcoesAtendimento {
+  /** D3: somente o contexto Aria usa a nova action; a capacidade vem do painel autorizado. */
+  contextoAria?: boolean;
+  podeAssumirAria?: boolean;
   grupo?: boolean;
   atendimento: { id: string; finalidade: Setor; responsavelId: string | null; status: StatusAtendimentoWhatsApp };
   usuario: { id: string; papeis: Papel[] };
@@ -71,7 +74,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
+export function useAcoesAtendimento({ contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   // Fixar alterna o estado: o reenvio desfaria o primeiro clique, então fica sem garantia de repetição.
@@ -94,7 +97,27 @@ export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fix
 
   const ocupado = direta.ocupado || responsavel.ocupado;
   const abrirAgendar = pode("agendar") ? () => setDialogo("agendar") : null;
-  const assumir = pode("assumir") ? { rotulo: "Assumir conversa", ocupado, aoEscolher: () => void rodar(() => assumirAtendimento(atendimento.id), "Atendimento assumido.", responsavel) } : null;
+  const chaveAssumir = JSON.stringify([atendimento.id, atendimento.responsavelId, usuario.id, usuario.papeis, contextoAria, podeAssumirAria, grupo, aberto, linhaComercial, donoLinhaId]);
+  const [ofertaAssumir, setOfertaAssumir] = useState(() => ({ chave: chaveAssumir, token: Symbol("assumir") }));
+  if (ofertaAssumir.chave !== chaveAssumir) setOfertaAssumir({ chave: chaveAssumir, token: Symbol("assumir") });
+  const cicloAssumir = useRef({ ativo: false, token: ofertaAssumir.token });
+  useEffect(() => {
+    const atual = { ativo: contextoAria && podeAssumirAria && !grupo && aberto, token: ofertaAssumir.token };
+    cicloAssumir.current = atual;
+    return () => { atual.ativo = false; };
+  }, [ofertaAssumir.token, contextoAria, podeAssumirAria, grupo, aberto]);
+  async function assumirAria(token: symbol) {
+    const atual = cicloAssumir.current;
+    if (!atual.ativo || atual.token !== token) return;
+    const d = await responsavel.executar(async () => {
+      try { const r = await assumirConversaDaAria(atendimento.id); return atual.ativo ? r : { ok: true as const }; }
+      catch (e) { if (!atual.ativo) return { ok: true as const }; throw e; }
+    });
+    if (d?.tipo === "ok" && atual.ativo && cicloAssumir.current === atual) { setAviso("Atendimento assumido."); aoMudar?.(); }
+  }
+  const assumir = contextoAria
+    ? !grupo && aberto && podeAssumirAria ? { rotulo: "Assumir conversa", ocupado, aoEscolher: () => void assumirAria(ofertaAssumir.token) } : null
+    : pode("assumir") ? { rotulo: "Assumir conversa", ocupado, aoEscolher: () => void rodar(() => assumirAtendimento(atendimento.id), "Atendimento assumido.", responsavel) } : null;
   const transferir = pode("transferir") ? { rotulo: "Transferir", ocupado, aoEscolher: () => setDialogo("transferir") } : null;
   const menu = itensDoMenuConversa({ pode, fixada, silenciada, acoes: {
     naoLida: () => void rodar(() => marcarNaoLida(atendimento.id), "Conversa marcada como não lida só para você.", responsavel, recontarNaoLidasInbox),

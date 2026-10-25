@@ -64,3 +64,10 @@ it("330: tarefas diretamente ligadas continuam visíveis sem oportunidade atual"
  const html=renderToStaticMarkup(createElement(AbaOportunidades,{...props(),capacidades:{...cap,tarefas:true},dados:{...dados,atual:null,tarefas:[{id:"t330",versao:1,titulo:"Tarefa direta330",descricao:null,tipo:"LIGACAO",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"America/Sao_Paulo",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a327",criadoEm:"2026-10-22T12:00:00Z",criadorNome:null,podeAgir:true}],fusoEscola:"America/Sao_Paulo"}}));
  expect(html).toContain("Tarefa direta330");expect(html).toContain("Tarefas · 1 aberta(s)");
 });
+it("357 Aba não reconcilia ACK depois de perder e recuperar a capacidade no mesmo atendimento",async()=>{
+ let concluir!:(r:{ok:true})=>void;assumir328.mockImplementation(()=>new Promise(r=>concluir=r));
+ const p={podeAssumir:true,aoAssumir:assumir328,contextoAria:true};await render(p);await clicar328("Assumir conversa");await render({...p,podeAssumir:false});await render(p);await act(async()=>concluir({ok:true}));expect(mudar).not.toHaveBeenCalled();
+});
+it("357 handler antigo da Aba não executa após revogação e retorno de capacidade",async()=>{
+ const p={podeAssumir:true,aoAssumir:assumir328,contextoAria:true};await render(p);const onClick=handler(acao328("Assumir conversa")!,"onClick");await render({...p,podeAssumir:false});await render(p);await act(async()=>onClick());expect(assumir328).not.toHaveBeenCalled();
+});

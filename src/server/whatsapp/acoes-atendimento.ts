@@ -18,6 +18,7 @@ import { comoErroRegra } from "./erro-regra-atendimento";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { ehLinhaComercial } from "./linha-comercial";
 import { proximoStatus } from "./status-atendimento";
+import { assumirAriaNoBanco } from "./assumir-aria";
 
 const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
 const MSG_FORA_DO_ESCOPO = "Atendimento fora do seu escopo.";
@@ -87,6 +88,14 @@ async function jaAssumidoPor(tx: Tx, id: string, u: { id: string }): Promise<boo
  * Idempotente por natureza (#166): o reenvio de quem já o assumiu devolve ok sem outro Evento. Se o atendimento
  * chegou a quem repete por atribuição de outra pessoa, ou está com outro, segue "já assumiu".
  */
+export async function assumirConversaDaAria(atendimentoId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const id = IdSchema.parse(atendimentoId);
+    if (await assumirAriaNoBanco(prisma, u.id, id)) revalidatePath("/inbox");
+  });
+}
+
 export async function assumirAtendimento(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
