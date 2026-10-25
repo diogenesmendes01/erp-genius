@@ -51,7 +51,7 @@
     "RecortesDEV/TESTER/ROOT sobrepostos não são somados.",
     "Visual N/A, produtorDTO/refatoração de rótulos; consumidor352 ainda pendente.",
     "Função podeVerLeadNaThread completa tem633bytes;bodyASTisolado478bytes.",
-    "Gates originaisROOT nominaise899 aprovados;349 integradaMain7c88. CI do novoheadMain/fullF99/revisãofinal e merge351 permanecem pendentes."
+    "Gates originaisROOT e fullF99 aprovados;349integradaMain7c88 e todaárvore executável preservada. CI finalMain/revisãofinal e merge351 permanecem pendentes."
   ],
   "gatesRoot": {
     "UNITglobal": {
@@ -86,5 +86,15 @@
     "manifesto": "composicao-main349.json",
     "runtimeNominal": "f99fa9a71bf79c7a0771b7811866d02f7d407424",
     "semDeltaExecutavel": true
+  },
+  "integracaoCompleta": {
+    "manifesto": "ci-full-f99.json",
+    "fonte": "f99fa9a71bf79c7a0771b7811866d02f7d407424",
+    "run": 40145615424,
+    "aprovada": true,
+    "arquivos": 351,
+    "testes": 3144,
+    "arquivosOptInIgnorados": 3,
+    "testesOptInIgnorados": 4
   }
 }
