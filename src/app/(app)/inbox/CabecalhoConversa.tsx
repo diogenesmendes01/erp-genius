@@ -15,9 +15,9 @@ export function CabecalhoConversa({ atendimento, acoes, linhaAria, acoesAria, pa
  const visual = estadoVisualCabecalho(atendimento, usuarioId);
  const estado = linhaAria ?? visual.estado;
  return <header className="grid min-h-[68px] shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] items-center gap-x-1.5 border-b border-gray-200 bg-surface py-2 pl-2.5 pr-3">
-  {/* A largura da coluna decide a quebra, inclusive com o painel aberto no desktop. O Menu fica fora do containment. */}
-  <div className="row-span-2 min-w-0 [container-type:inline-size]"><div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 [@container(max-width:640px)]:grid-cols-1 [@container(max-width:640px)]:gap-y-2">
-  <div className="flex min-w-0 items-center gap-2.5">
+  {/* Identidade e ações quebram pela largura necessária ao conteúdo. O Menu fica fora do containment. */}
+  <div className="row-span-2 min-w-0 [container-type:inline-size]"><div className="flex w-full flex-wrap items-center gap-x-2.5 gap-y-2">
+  <div className="flex min-w-0 flex-[1_1_20rem] items-center gap-2.5">
   <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
   <span className="shrink-0 max-[699px]:hidden"><Avatar nome={atendimento.contatoNome} tamanho={40} tom={tomDoAvatar(atendimento.contatoId)} /></span>
   <div className="min-w-0 flex-1 leading-[1.3]">
@@ -25,7 +25,7 @@ export function CabecalhoConversa({ atendimento, acoes, linhaAria, acoesAria, pa
    <p title={linhaAria?.dica ?? (estado.texto + " · " + visual.subtitulo)} className="truncate text-[12.5px] text-gray-600"><span aria-hidden className={"mr-1.5 inline-block h-[7px] w-[7px] rounded-full " + PONTO_TOM[estado.tom]} /><span className={"font-semibold " + TEXTO_TOM[estado.tom]}>{estado.texto}</span> · {visual.subtitulo}</p>
   </div>
   </div>
-  <div role="group" aria-label="Ações principais da conversa" className="flex shrink-0 items-center justify-end gap-1.5">
+  <div role="group" aria-label="Ações principais da conversa" className="ml-auto flex shrink-0 self-end items-center justify-end gap-1.5">
    <BotaoIcone tamanho={36} rotulo="Buscar na conversa" title="Buscar na conversa" ativo={buscaAberta} onClick={aoBuscar} className="max-[699px]:hidden"><IconSearch size={17} /></BotaoIcone>
    {acoes.transferir && <Botao variante="neutro" ocupado={acoes.transferir.ocupado} onClick={acoes.transferir.aoEscolher} aria-label="Transferir" title={acoes.transferir.rotulo} className="h-9 min-w-9 shrink-0 max-[1199px]:px-2.5 [@container(max-width:575.98px)]:px-2.5 max-sm:min-w-11"><IconArrowsExchange size={15} aria-hidden /><span className="hidden min-[1200px]:[@container(min-width:576px)]:inline">Transferir</span></Botao>}
    {acoesAria}
