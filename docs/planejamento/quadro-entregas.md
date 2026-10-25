@@ -7026,3 +7026,8 @@ Fonte85e/src4b integrada àMainc045/344, sem antecipar345pendente. TESTER26compl
 ### Inbox #350 — composição com main #345 (25/10/2026)
 
 A candidata preserva os 17 objetos exclusivos da publicação897e1003 e os 3.590 objetos restantes da main abb9616; InboxNovo mantém somente a prop aria aditiva. O quadro conserva o prefixo main e o sufixo #350 integrais. Recorte local: 10 arquivos/205 testes, um worker, sem filtros ou skips, sessão88594/090488 EXIT0; lint do consumidor sessão62548/28a363 EXIT0. A nova CI remota e a homologação visual continuam pendentes. O smoke anterior negativo permanece preservado e não é aceite. Prova textual em output/inbox-350-qa/composicao-main345.json.
+
+
+### Inbox #350 — visual composto e CI concluídos; anexos pendentes (25/10/2026)
+
+CI e05440170735019 cincoSUCCESS:953arquivos/7616testes por fuso UTC/SP,lint/build/TSC0. Tcheckoutexato3/104 EXIT0; Root10/205 e lint0. Visual18pares36RAW inspecionados: T12desktop/celular e Root6tablet,quatro lotes18APP+10PROTOpending+6approved+2tabletfinal. Agregados negativos iniciais preservados; sem execução36única/sem açõesnegócio. Índice e pareceres em output/inbox-350-qa;ZIP692aedb59f79e1cde5eac4f14310684e9fa60f04751a88ace2f9058dbdbea8ef aguarda consentimento para anexo na430. BancoB restaurado424hashes/DDL492/0outroator EXIT0. Sem encerramento da issue/merge/deploy presumidos.

@@ -9,3 +9,7 @@ Aceite visual18pares/36RAW e navegação nativa continuam pendentes de fixture/a
 Sem D1/D2 antecipadas: responsável vendedor/edição/pacotes seguem354–356. Sem alteração de ACL/schema/backend. Este pacote textual não contém imagens, credenciais, logs brutos ou executores privados.
 
 A nova [composição com main #345](composicao-main345.json) preserva os objetos exclusivos da #350 e acrescenta a mudança do barramento já integrada em main abb9616. O recorte de 10 arquivos/205 testes e o lint do consumidor passaram; CI remota e aceite visual da composição continuam pendentes.
+
+## Atualização final de 25/10/2026
+
+O [fechamento visual e CI](fechamento-visual-ci.md) substitui as pendências de visual/CI descritas historicamente acima. [Índice atual](indice.json), [manifesto36](visual-manifesto.json), [QA visual TESTER](visual-12pares-tester.md), [composição exata](composicao-e054-tester.md) e [testes do consumidor](consumidores-e054-tester.md). Anexos ainda aguardam autorização do dono; PR permanece em rascunho.

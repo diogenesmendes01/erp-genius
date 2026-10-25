@@ -2,7 +2,7 @@
   "issue": 350,
   "source": "85e5cc7c9a7112d12a8bb464ac12d673740c2a1f",
   "runtime": "4b682c913e02960cb6a3ee7b5400476d14114379",
-  "main": "c045fa0e79e6c419ffafd386eb2e955dc8cb9ae4",
+  "main": "abb961625f57bf20d9eb4734df98e59dda362957",
   "pareceres": [
     {
       "path": "geral-85e.md",
@@ -18,6 +18,21 @@
       "path": "foco-4b.md",
       "bytes": 8588,
       "sha256": "c8ecd91b823ea7e7440b6443e5420b82e9133833c7c7cd8a9115ded56822d88a"
+    },
+    {
+      "path": "visual-12pares-tester.md",
+      "bytes": 4421,
+      "sha256": "4c4b84ccdef1b68bbdcf0c0cc3071abb75160b0ccaee6b28651cba000a153fca"
+    },
+    {
+      "path": "composicao-e054-tester.md",
+      "bytes": 3449,
+      "sha256": "0ac12f438b339c2232d5d42a2d1d8da04ce076251cecd6d264796ab94bb48a87"
+    },
+    {
+      "path": "consumidores-e054-tester.md",
+      "bytes": 2522,
+      "sha256": "a197389cbc4c46fd7a502727b8bad78056c7375af70fabf599cc157620dbab73"
     }
   ],
   "unit": {
@@ -35,7 +50,41 @@
     "terminal": "02df44",
     "exit": 0
   },
-  "ci": "PENDENTE",
-  "visual": "PENDENTE_18PARES_36RAW",
-  "limites": "Resultados nominais; nenhuma homologação ou merge presumidos."
+  "ci": {
+    "run": 40170735019,
+    "head": "e0546ae59da59c5d805b0a4900654ba44294256c",
+    "jobs": 5,
+    "status": "SUCCESS",
+    "unit": {
+      "files": 953,
+      "tests": 7616,
+      "timezones": [
+        "UTC",
+        "America/Sao_Paulo"
+      ],
+      "eachTimezone": true
+    },
+    "typescript": "PASS",
+    "lint": "PASS",
+    "build": "PASS"
+  },
+  "visual": {
+    "status": "18PARES_36RAW_INSPECIONADOS",
+    "appSource": "85e5cc7c9a7112d12a8bb464ac12d673740c2a1f",
+    "appRuntime": "4b682c913e02960cb6a3ee7b5400476d14114379",
+    "appImages": 18,
+    "prototypeImages": 18,
+    "lots": 4,
+    "desktopMobilePairsTester": 12,
+    "tabletPairsRoot": 6,
+    "aggregatesNegativePreserved": true,
+    "zip": {
+      "name": "inbox-350-visual-36-curado-v1.zip",
+      "bytes": 4261535,
+      "sha256": "692aedb59f79e1cde5eac4f14310684e9fa60f04751a88ace2f9058dbdbea8ef"
+    },
+    "attachments": "AGUARDANDO_AUTORIZACAO_DO_DONO"
+  },
+  "limites": "Visual nativo nominal à fonte85e/runtime4b, composição e054 preservada e testada separadamente; quatro lotes, sem reclassificar agregados negativos. Sem prova de envio real ou anúncio audível.",
+  "publicationCode": "e0546ae59da59c5d805b0a4900654ba44294256c"
 }
