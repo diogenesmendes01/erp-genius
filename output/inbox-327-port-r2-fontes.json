@@ -672,5 +672,26 @@
   "ZIPRawHistoricosIntactos": true,
   "publicado": false,
   "homologacaoFinalPresumida": false,
-  "restante328UIPendente": true
+  "restante328UIPendente": true,
+  "restauroRoot491": {
+    "executor": "5369da",
+    "exit": 0,
+    "hashes": 424,
+    "registros": 557,
+    "sequenciasPreservadas": true,
+    "snapshot": "fc12cc64f42cb4dbb48c8e4ac49f58be2e930d8d70c1c9d8b0b6a4a0ddba6660",
+    "DBRetomadoPeloDEV": false
+  },
+  "restauroConfirmadoPeloROOT": true,
+  "QAcfaHistorica": {
+    "bytes": 8731,
+    "sha256": "f5bdcacb75bdb51808cfdd39ee57c92bfb0ebb60432cba578bacd7a268f0bec7",
+    "casos": 176,
+    "limite": "Nominalcfa/487;nao reatribuir aMainR2."
+  },
+  "QACuradoriaHistorica": {
+    "bytes": 11380,
+    "sha256": "fedea5c671a5d57000e4bf6feff9844704cf197b07285cc4b9ff6c8ca2bc3165",
+    "limite": "Inventario/corpus individual;nao patchglobal nemrun18novo."
+  }
 }

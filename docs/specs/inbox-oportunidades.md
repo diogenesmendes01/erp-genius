@@ -119,3 +119,5 @@ Produto327 composto sobre74d4(PR420179b+Main170edbad) por hunks;OR420 do hook De
 Fonte9a8ebc81 sobreBase74d4 preservaOR420/4defaultsMain343 e3509OIDsBase não selecionados. UNITglobal44258/56df77EXIT0:947/7742,438,64s,maxWorkers2;lint43/1bebe70;TSC5350/2c07e30,heap8192/configoriginal semaux/exclusões extras. INT84101/84d73dEXIT0:7completos/67casos,243,42s,maxWorkers1,semfiltros/skips,perfilA491 eGOspecROOT. Banco explicitamente liberado aoROOT;restauro somentehelperA491,sem presumir conclusão.
 
 Report output/inbox-327-port-r2-report.md e manifesto output/inbox-327-port-r2-fontes.json registram45OIDs,40literais/5exceções,proteções,gates e listaINT. Nenhumruntime mudou apósfreeze,nenhumUI/browser/captura/manual/envio/DDL/install executado. Corpus18nominalEBF eZIP preservados,semupload;CLI≠wrapperA11. QAexata/CI/composição/publicação ROOT e restante328UI continuam separados.
+
+ROOT confirmou restauroA491 posterior aos67INT (5369daEXIT0):424hashes/557registros/sequencias/snapshotfc12preservados. NenhumDB/UI retomado peloDEV. QA cfa f5bd historica eQAporte ec29 mantemfontes distintas;novoDOCnao altera runtime9a8 oucorpusEBF.
