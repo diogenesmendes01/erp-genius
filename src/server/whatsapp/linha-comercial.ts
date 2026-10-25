@@ -7,6 +7,11 @@ import { congelar, memoPorRequisicao } from "@/server/_shared/memo-requisicao";
 // Cada conversa (número + contato) tem UM atendimento COMERCIAL aberto, com ou sem lead; o lead,
 // quando surge, é gravado nele (não abre outro). O canal institucional (COBRANCA/AGENDA) não passa
 // por aqui — LC-I01.
+// Acoplamento de manutenção: vincular-lead-legado.ts reproduz a seleção e o contexto
+// deste fluxo para travar os candidatos antes de Contato/Lead, sem locks tardios.
+// Mudanças na preferência lead → linha → mais recente, nas chaves ou na criação
+// precisam manter os dois caminhos equivalentes. Confira também o fallback de
+// garantirAtendimento (aluno/turma) e os controles históricos do vínculo legado.
 
 /** Chave de contexto do atendimento da linha. Reaberturas após encerramento: `COMERCIAL:LINHA:<n>`. */
 export const CHAVE_LINHA = "COMERCIAL:LINHA";
