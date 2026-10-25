@@ -1,0 +1,26 @@
+"use client";
+import {useEffect,useLayoutEffect,useRef,useState} from "react";
+import {CartaoTarefaFio} from "@/components/conversa/CartaoTarefaFio";
+import {FeedbackAcao} from "@/components/FeedbackAcao";
+import {useAcaoCliente} from "@/lib/acao-cliente";
+import {concluirTarefaNoInbox} from "@/server/inbox/acoes-painel";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
+export function CartaoTarefaDoInbox({atendimentoId,t,bloqueado=false,fuso,usuarioNome,aoEditar,aoMudar}:{atendimentoId:string;t:TarefaPainel;bloqueado?:boolean;fuso:string|null;usuarioNome:string|null;aoEditar?(t:TarefaPainel):void;aoMudar():void}){
+ const exec=useAcaoCliente({idempotente:false}),vivo=useRef(false),emCurso=useRef(false),alvoAtual=useRef(t);
+ const [contexto,setContexto]=useState(()=>({atendimentoId,bloqueado}));
+ if(contexto.atendimentoId!==atendimentoId||contexto.bloqueado!==bloqueado)setContexto({atendimentoId,bloqueado});
+ const atual=useRef<typeof contexto|null>(contexto),[tentativa,setTentativa]=useState<typeof contexto|null>(null);
+ useEffect(()=>{vivo.current=true;return()=>{vivo.current=false;};},[]);
+ useLayoutEffect(()=>{atual.current=contexto;return()=>{atual.current=null;};},[contexto]);
+ useLayoutEffect(()=>{alvoAtual.current=t;},[t]);
+ function alvoValido(){const novo=alvoAtual.current;return !bloqueado&&atual.current===contexto&&novo.id===t.id&&novo.versao===t.versao&&novo.status==="ABERTA"&&novo.podeAgir;}
+ async function concluir(){
+  if(emCurso.current||!alvoValido())return;
+  emCurso.current=true;const origem=contexto;setTentativa(origem);
+  const r=await exec.executar(()=>concluirTarefaNoInbox(atendimentoId,t.id,t.versao),"Tarefa concluída.");
+  emCurso.current=false;
+  // O ACK próprio é autoridade nesta sessão, inclusive se o SSE já trouxe o estado concluído.
+  if(vivo.current&&atual.current===origem&&r?.tipo==="ok")aoMudar();
+ }
+ return <div className="min-w-0"><CartaoTarefaFio t={bloqueado?{...t,podeAgir:false}:t} fuso={fuso} usuarioNome={usuarioNome} ocupado={exec.ocupado} aoEditar={aoEditar?()=>{if(!emCurso.current&&alvoValido())aoEditar(t);}:undefined} aoConcluir={()=>void concluir()}/><FeedbackAcao erro={tentativa===contexto?exec.erro:null} sucesso={tentativa===contexto?exec.sucesso:null} className="mx-auto mb-2 w-[86%] max-w-[440px]"/></div>;
+}

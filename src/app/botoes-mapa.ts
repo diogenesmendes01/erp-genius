@@ -14,6 +14,7 @@
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
+  "src/components/conversa/CartaoTarefaFio.tsx": ["<Botao> Editar → fantasma/sm", "<Botao> Concluir → secundario/sm"],
   "inbox/aria/CartaoSugestaoAria.tsx": ["<Botao> → primario/md", "<Botao> → perigoContorno/md", "<Botao> Desfazer → neutro/md"],
 
   "inbox/aria/FaixaAriaAtiva.tsx": [
@@ -1138,7 +1139,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/InboxNovo.tsx": ["<Botao> Tentar de novo → secundario/sm"],
   "inbox/PainelContato.tsx": ["<Botao> Fechar → fantasma/sm"],
   "inbox/abas/AbaDetalhes.tsx": ["<Botao> Abrir oportunidade atual → neutro/md"],
-  "inbox/abas/AbaOportunidades.tsx": ["<Botao> Assumir conversa → fantasma/md", "<Botao> Marcar como perdido → fantasma/md"],
+  "inbox/abas/AbaOportunidades.tsx": ["<Botao> Criar tarefa → fantasma/md", "<Botao> Adicionar nota → fantasma/md", "<Botao> Assumir conversa → fantasma/md", "<Botao> Marcar como perdido → fantasma/md"],
   "inbox/abas/BarraEtapas.tsx": ["<Botao> \"Etapa \" + ETAPA_LABEL[s.etapa] → fantasma/md"],
   "inbox/abas/GavetaContato.tsx": ["<Botao> Cancelar → fantasma/md", "<Botao> Salvar → primario/md", "<Botao> Tentar de novo → secundario/sm"],
   "inbox/abas/TarefasOportunidade.tsx": [
