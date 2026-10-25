@@ -5,7 +5,7 @@ import {beforeEach,afterEach,expect,it,vi} from "vitest";
 import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
 const {concluir}=vi.hoisted(()=>({concluir:vi.fn()}));
 vi.mock("@/server/inbox/acoes-painel",()=>({concluirTarefaNoInbox:concluir}));
-vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconBrandWhatsapp","IconPhone","IconMail","IconCalendarEvent","IconListCheck","IconPencil","IconCheck"].map(k=>[k,()=>null])));
+vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconMessageCircle","IconPhone","IconMail","IconCalendarEvent","IconListCheck","IconPencil","IconCheck"].map(k=>[k,()=>null])));
 import {CartaoTarefaDoInbox} from "./CartaoTarefaDoInbox";
 import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
 const tarefa:TarefaPainel={id:"t332",versao:1,titulo:"Retorno",descricao:null,tipo:"WHATSAPP",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"UTC",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a332",criadoEm:"2026-10-25T10:00Z",criadorNome:"Ana",podeAgir:true};
