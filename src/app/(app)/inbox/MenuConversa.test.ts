@@ -30,3 +30,5 @@ describe("menu da conversa315", () => {
   expect(menu(a=>a==="notaInterna").map(i=>i.id)).toEqual(["naoLida","fixar","silenciar","nota","buscar"]);
  });
 });
+
+it("332 criar tarefa tem callback próprio e precede agendar, sem depender da alçada de envio",()=>{const criar=vi.fn(),m=itensDoMenuConversa({pode:()=>true,fixada:false,silenciada:false,acoes:{...acoes,criarTarefa:criar}});expect(m.map(x=>x.id)).toEqual(["naoLida","fixar","silenciar","nota","criar-tarefa","agendar","pendentes","buscar","atribuir","devolver","convidar","encerrar","bloquear"]);m.find(x=>x.id==="criar-tarefa")!.aoEscolher();expect(criar).toHaveBeenCalledOnce();expect(itensDoMenuConversa({pode:()=>false,fixada:false,silenciada:false,acoes:{...acoes,criarTarefa:criar}}).map(x=>x.id)).toContain("criar-tarefa");});

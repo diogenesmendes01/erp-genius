@@ -1,0 +1,22 @@
+import {MSG_RESULTADO_INCERTO_SEM_CHAVE} from "@/lib/mensagens";
+import {act,createElement} from "react";
+import type {Root} from "react-dom/client";
+import {beforeEach,afterEach,expect,it,vi} from "vitest";
+import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
+const {concluir}=vi.hoisted(()=>({concluir:vi.fn()}));
+vi.mock("@/server/inbox/acoes-painel",()=>({concluirTarefaNoInbox:concluir}));
+vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconMessageCircle","IconPhone","IconMail","IconCalendarEvent","IconListCheck","IconPencil","IconCheck"].map(k=>[k,()=>null])));
+import {CartaoTarefaDoInbox} from "./CartaoTarefaDoInbox";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
+const tarefa:TarefaPainel={id:"t332",versao:1,titulo:"Retorno",descricao:null,tipo:"WHATSAPP",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"UTC",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a332",criadoEm:"2026-10-25T10:00Z",criadorNome:"Ana",podeAgir:true};
+let root:Root,host:Elemento;const mudar=vi.fn(),editar=vi.fn();
+function props(e:Elemento){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"))!;return (e as unknown as Record<string,Record<string,()=>unknown>>)[k];}
+const botao=()=>host.querySelectorAll("button").find(e=>e.textContent.includes("Concluir"))!;
+const render=(atendimentoId="a332",t=tarefa,bloqueado=false)=>act(async()=>root.render(createElement(CartaoTarefaDoInbox,{atendimentoId,t,bloqueado,fuso:"UTC",usuarioNome:"Ana",aoMudar:mudar,aoEditar:editar})));
+beforeEach(async()=>{vi.clearAllMocks();concluir.mockResolvedValue({ok:true});const d=criarDomMinimo();vi.stubGlobal("document",d.documento);vi.stubGlobal("window",d.janela);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);host=d.documento.createElement("div");d.documento.body.appendChild(host);const {createRoot}=await import("react-dom/client");root=createRoot(host as unknown as HTMLElement);});
+afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
+it("concluir trava duplo clique e reconcilia SSE próprio antes do ACK sem remontar região",async()=>{let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();const status=host.querySelector('[role="status"]');expect(status).toBeTruthy();await act(async()=>{props(botao()).onClick();props(botao()).onClick();});expect(concluir).toHaveBeenCalledExactlyOnceWith("a332","t332",1);await render("a332",{...tarefa,status:"CONCLUIDA",versao:2,podeAgir:false});await act(async()=>fim({ok:true}));expect(mudar).toHaveBeenCalledOnce();expect(host.querySelector('[role="status"]')).toBe(status);});
+it("ACK A→B→A não anuncia nem atualiza nova sessão",async()=>{let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();await act(async()=>props(botao()).onClick());await render("b332");await render();await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Tarefa concluída.");});
+it.each(["ok","erro","incerto"])("404 e200 fresco invalidam resultado antigo %s",async caso=>{let fim!:(r:unknown)=>void,rejeitar!:(e:Error)=>void;concluir.mockImplementation(()=>new Promise((r,j)=>{fim=r;rejeitar=j;}));await render();await act(async()=>props(botao()).onClick());await render("a332",tarefa,true);await render();await act(async()=>{if(caso==="incerto")rejeitar(Error("rede"));else fim(caso==="ok"?{ok:true}:{ok:false,erro:"Erro antigo"});});expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Erro antigo");expect(host.textContent).not.toContain("Tarefa concluída.");});
+it("handler de versão antiga não chama action e editar recebe snapshot atual",async()=>{await render();const antigo=props(botao()).onClick;await render("a332",{...tarefa,versao:2});await act(async()=>antigo());expect(concluir).not.toHaveBeenCalled();const e=host.querySelectorAll("button").find(b=>b.getAttribute("aria-label")==="Editar")!;await act(async()=>props(e).onClick());expect(editar).toHaveBeenCalledExactlyOnceWith({...tarefa,versao:2});});
+it("falha de transporte não faz retry nem anuncia sucesso",async()=>{concluir.mockRejectedValue(Error("rede"));await render();await act(async()=>props(botao()).onClick());expect(concluir).toHaveBeenCalledOnce();expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Tarefa concluída.");expect(host.textContent).toContain(MSG_RESULTADO_INCERTO_SEM_CHAVE);});

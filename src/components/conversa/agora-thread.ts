@@ -17,9 +17,9 @@ function criarRelogioDaThread(ssr: number) {
 }
 
 /** Snapshot cliente estável até trocar a revisão da thread, seleção ou referência do servidor. */
-export function useAgoraDaThread(mensagens: MensagemThread[], notas: NotaInternaThread[] | undefined, selecionado: string | null, agoraInicial?: number): number {
+export function useAgoraDaThread(mensagens: MensagemThread[], notas: NotaInternaThread[] | undefined, selecionado: string | null, agoraInicial?: number, revisaoExtra?: unknown): number {
   const ssr = typeof agoraInicial === "number" && Number.isFinite(new Date(agoraInicial).getTime()) ? agoraInicial : 0;
-  const revisao = useMemo(() => ({ mensagens, notas, selecionado, ssr }), [mensagens, notas, selecionado, ssr]);
+  const revisao = useMemo(() => ({ mensagens, notas, selecionado, ssr, revisaoExtra }), [mensagens, notas, selecionado, ssr, revisaoExtra]);
   const relogio = useMemo(() => criarRelogioDaThread(revisao.ssr), [revisao]);
   return useSyncExternalStore(relogio.assinar, relogio.ler, () => ssr);
 }

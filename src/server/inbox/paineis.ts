@@ -1,3 +1,4 @@
+import { carregarTarefasDoAtendimento, type TarefaPainel } from "./painel-tarefas";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { temPapel, type UsuarioSessao } from "@/server/_shared";
@@ -11,6 +12,8 @@ export type TagPainel = { id: string; rotulo: string; ia: boolean };
 
 export type PainelSetor = DadosSetor & {
   cabecalho?: CabecalhoPainel | null;
+  /** Só vínculo direto e ACL da tarefa; inclui todos os estados. Ausente apenas em fixtures antigas. */
+  tarefasNoFio?: TarefaPainel[];
   /** Só pessoa comercial já autorizada; ausente apenas em fixtures antigas. */
   tags?: TagPainel[];
   /** Ações de cadastro e cobrança (as do Inbox antigo); null em grupo. Ausente nos testes de marcação antigos. */
@@ -40,14 +43,16 @@ export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): P
   if (!dados) return null;
   const cabecalho = await carregarCabecalhoPainel(u, atendimentoId);
   if (!cabecalho) return null;
-  const [acoes, envio, aria, tags] = await Promise.all([
+  const [acoes, envio, aria, tags, tarefasNoFio] = await Promise.all([
     carregarAcoesContatoInbox(u, atendimentoId),
     atendimentoVisivel(u, atendimentoId, true),
     carregarAriaDoAtendimento(u, atendimentoId),
     dados.setor === "COMERCIAL" && cabecalho.pessoaId ? tagsDaPessoa(cabecalho.pessoaId) : Promise.resolve([]),
+    // O atendimento já passou pelo escopo acima; lead não participa do filtro direto do fio.
+    carregarTarefasDoAtendimento(u, { id: atendimentoId, leadId: null }, { soDaConversa: true }),
   ]);
   const identidade = dados.setor === "COMERCIAL" ? { ...dados, pessoaId: cabecalho.pessoaId, oportunidade: cabecalho.capacidades.veLead ? dados.oportunidade : null } : dados;
-  return { ...identidade, acoes, podeEnviar: !!envio, aria, tags, cabecalho };
+  return { ...identidade, acoes, podeEnviar: !!envio, aria, tags, cabecalho, tarefasNoFio };
 }
 
 /** Somente depois do cabeçalho resolver a pessoa autorizada; não é action/endpoint. */
