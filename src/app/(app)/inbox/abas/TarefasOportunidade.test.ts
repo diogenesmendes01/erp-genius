@@ -1,0 +1,11 @@
+import {createElement} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import {expect,it,vi} from "vitest";
+vi.mock("@/server/inbox/acoes-painel",()=>({concluirTarefaNoInbox:vi.fn(),reabrirTarefaNoInbox:vi.fn(),reagendarTarefaNoInbox:vi.fn(),cancelarTarefaNoInbox:vi.fn()}));
+import {TarefasOportunidade} from "./TarefasOportunidade";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
+const aberta:TarefaPainel={id:"t330",versao:1,titulo:"Ligar ao cliente fictício",descricao:null,tipo:"LIGACAO",status:"ABERTA",prioridade:"NORMAL",dataCivil:"2026-10-22",hora:"09:00",fusoOrigem:"America/Sao_Paulo",lembreteAntecedenciaMin:30,responsavel:{id:"u330",nome:"Ana fictícia"},atrasada:true,ia:true,leadId:"l330",atendimentoId:null,criadoEm:"2026-10-20T12:00:00Z",criadorNome:null,podeAgir:true};
+const h=(tarefas=[aberta,{...aberta,id:"t330c",status:"CONCLUIDA" as const,podeAgir:false}],extras={})=>renderToStaticMarkup(createElement(TarefasOportunidade,{atendimentoId:"a330",tarefas,fusoEscola:"America/Sao_Paulo",fuso:"America/Costa_Rica",podeCriar:false,aoMudar:vi.fn(),...extras}));
+it("contagem, atraso, IA, concluir/reabrir e ações só na aberta",()=>{const t=h();expect(t).toContain("Tarefas · 1 aberta(s)");expect(t).toContain("text-red-700");expect(t).toContain('aria-label="Criada pela IA"');expect(t).toContain("Ligação");expect(t).toContain('title="Concluir"');expect(t).toContain('title="Reabrir"');expect(t.match(/title="Reagendar para amanhã 09:00"/g)).toHaveLength(1);expect(t).not.toContain("Excluir");expect(t).not.toContain("Nova tarefa");});
+it("vazio usa componente canônico",()=>{const t=h([]);expect(t).toContain("Nenhuma tarefa para esta oportunidade.");expect(t).toContain("data-estado-vazio");});
+it("nova e editar só recebem callbacks reais do consumidor",()=>{const t=h(undefined,{podeCriar:true,aoNova:vi.fn(),aoEditar:vi.fn()});expect(t).toContain("Nova tarefa");expect(t).toContain('title="Editar"');expect(h()).not.toContain('title="Editar"');});
