@@ -14,16 +14,18 @@ export type PropsCabecalhoConversa = { atendimento: AtendimentoAberto; acoes: Ac
 export function CabecalhoConversa({ atendimento, acoes, linhaAria, acoesAria, painelAberto, aoAlternarPainel, aoBuscar, usuarioId, painelAuto, buscaAberta, aoVoltar }: PropsCabecalhoConversa) {
  const visual = estadoVisualCabecalho(atendimento, usuarioId);
  const estado = linhaAria ?? visual.estado;
- return <header className="flex h-[68px] shrink-0 items-center gap-1.5 border-b border-gray-200 bg-surface pl-2.5 pr-3">
-  {/* A consulta envolve somente identidade/ações: o Menu fica fora para manter position:fixed no viewport. */}
-  <div className="min-w-0 flex-1 [container-type:inline-size]"><div className="flex w-full items-center gap-2.5">
+ return <header className="grid h-[68px] shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-b border-gray-200 bg-surface pl-2.5 pr-3 max-[699px]:h-auto max-[699px]:gap-y-2 max-[699px]:py-2">
+  {/* No celular, identidade e ações ocupam linhas próprias. O Menu permanece fora do containment. */}
+  <div className="min-w-0 flex-1 [container-type:inline-size] max-[699px]:contents"><div className="flex w-full items-center gap-2.5 max-[699px]:contents">
+  <div className="flex min-w-0 flex-1 items-center gap-2.5 max-[699px]:col-span-2">
   <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
   <span className="shrink-0 max-[699px]:hidden"><Avatar nome={atendimento.contatoNome} tamanho={40} tom={tomDoAvatar(atendimento.contatoId)} /></span>
   <div className="min-w-0 flex-1 leading-[1.3]">
    <div className="flex min-w-0 items-center gap-2 max-[699px]:flex-col max-[699px]:items-start max-[699px]:gap-0.5"><p title={atendimento.contatoNome} className="max-w-full truncate text-[15px] font-semibold">{atendimento.contatoNome}</p><span title={visual.status} className="inline-flex h-[18px] max-w-full shrink-0 items-center rounded-[5px] bg-surface-muted px-1.5 text-[10.5px] font-semibold text-gray-600"><span className="truncate">{visual.status}</span></span></div>
    <p title={linhaAria?.dica ?? (estado.texto + " · " + visual.subtitulo)} className="truncate text-[12.5px] text-gray-600"><span aria-hidden className={"mr-1.5 inline-block h-[7px] w-[7px] rounded-full " + PONTO_TOM[estado.tom]} /><span className={"font-semibold " + TEXTO_TOM[estado.tom]}>{estado.texto}</span> · {visual.subtitulo}</p>
   </div>
-  <div className="flex shrink-0 items-center gap-1.5">
+  </div>
+  <div role="group" aria-label="Ações principais da conversa" className="flex shrink-0 items-center gap-1.5 max-[699px]:col-start-1 max-[699px]:row-start-2 max-[699px]:justify-end">
    <BotaoIcone tamanho={36} rotulo="Buscar na conversa" title="Buscar na conversa" ativo={buscaAberta} onClick={aoBuscar} className="max-[699px]:hidden"><IconSearch size={17} /></BotaoIcone>
    {acoes.transferir && <Botao variante="neutro" ocupado={acoes.transferir.ocupado} onClick={acoes.transferir.aoEscolher} aria-label="Transferir" title={acoes.transferir.rotulo} className="h-9 min-w-9 shrink-0 max-[1199px]:px-2.5 [@container(max-width:575.98px)]:px-2.5 max-sm:min-w-11"><IconArrowsExchange size={15} aria-hidden /><span className="hidden min-[1200px]:[@container(min-width:576px)]:inline">Transferir</span></Botao>}
    {acoesAria}
