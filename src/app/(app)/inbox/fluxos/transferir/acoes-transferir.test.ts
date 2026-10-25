@@ -1,0 +1,15 @@
+import { beforeEach, expect, it, vi } from "vitest";
+const a=vi.hoisted(()=>({pessoa:vi.fn(),setor:vi.fn(),fila:vi.fn(),aria:vi.fn(),pessoas:vi.fn()}));
+vi.mock("@/server/whatsapp/transferencia-inbox",()=>({transferirPessoaInbox:a.pessoa}));
+vi.mock("@/server/whatsapp/acoes-atendimento",()=>({transferirAtendimento:a.setor,devolverParaFila:a.fila}));
+vi.mock("@/server/aria/acoes",()=>({devolverParaAria:a.aria}));
+vi.mock("@/server/whatsapp/consultas-acoes-atendimento",()=>({listarPessoasParaAtendimento:a.pessoas}));
+import { carregarPessoasTransferir, executarTransferenciaInbox } from "./acoes-transferir";
+const base={atendimentoId:"a",contexto:"Contexto fictício",chaveIdempotencia:"chave360"};
+beforeEach(()=>{vi.resetAllMocks();for(const fn of [a.pessoa,a.setor,a.fila,a.aria])fn.mockResolvedValue({ok:true});});
+it("pessoa usa apenas fronteira atômica Inbox, sem uma action posterior de nota",async()=>{await executarTransferenciaInbox({...base,alvo:{tipo:"pessoa",usuarioId:"b"}});expect(a.pessoa).toHaveBeenCalledExactlyOnceWith({...base,usuarioId:"b"});expect(a.setor).not.toHaveBeenCalled();expect(a.fila).not.toHaveBeenCalled();expect(a.aria).not.toHaveBeenCalled();});
+it("setor preserva assinatura histórica e não expõe flags internas",async()=>{await executarTransferenciaInbox({...base,alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null}});expect(a.setor).toHaveBeenCalledExactlyOnceWith({...base,destino:"SECRETARIA",destinoChave:null});expect(a.pessoa).not.toHaveBeenCalled();});
+it("fila preserva apenas atendimentoId e não cria contexto ou resumo",async()=>{await executarTransferenciaInbox({...base,alvo:{tipo:"fila"}});expect(a.fila).toHaveBeenCalledExactlyOnceWith("a");expect(a.pessoa).not.toHaveBeenCalled();expect(a.aria).not.toHaveBeenCalled();});
+it("Aria mantém a action histórica e não altera responsável em outra action",async()=>{await executarTransferenciaInbox({...base,alvo:{tipo:"aria"}});expect(a.aria).toHaveBeenCalledExactlyOnceWith("a");expect(a.pessoa).not.toHaveBeenCalled();expect(a.fila).not.toHaveBeenCalled();});
+it("erro do servidor é preservado como erro, sem sucesso otimista",async()=>{a.setor.mockResolvedValue({ok:false,erro:"Acesso revogado"});expect(await executarTransferenciaInbox({...base,alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null}})).toEqual({ok:false,erro:"Acesso revogado"});});
+it("leitura de pessoas continua usando alçada atribuir atual até370",async()=>{a.pessoas.mockResolvedValue([{id:"b",nome:"Pessoa"}]);expect(await carregarPessoasTransferir("a")).toEqual([{id:"b",nome:"Pessoa"}]);expect(a.pessoas).toHaveBeenCalledExactlyOnceWith("a","atribuir");});

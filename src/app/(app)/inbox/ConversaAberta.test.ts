@@ -17,6 +17,7 @@ vi.mock("@/server/inbox/permissoes", async (orig) => {
 vi.mock("@/server/aria/acoes",()=>({aprovarAcaoAria:vi.fn(),rejeitarAcaoAria:vi.fn()}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn() }));
+vi.mock("@/server/whatsapp/transferencia-inbox",()=>({transferirPessoaInbox:vi.fn()}));
 vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), assumirConversaDaAria: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), revogarParticipante: vi.fn(), transferirAtendimento: vi.fn() }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ agendarMensagemNoAtendimentoLocal: vi.fn(), agendarMensagemNoAtendimento: vi.fn(), cancelarAgendamentoDoAtendimento: vi.fn(), registrarNotaAtendimento: vi.fn() }));
 vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ listarConvitesEAgendamentos: vi.fn(() => new Promise(() => {})), listarPessoasParaAtendimento: vi.fn(), origemVisivelDaTransferencia: vi.fn() }));
@@ -275,4 +276,7 @@ it.each([false,true])("434 consumidor transporta bloqueio cliente=%s sem usar po
  const cartao={id:"434",turnoId:"t",acao:"RESPONDER" as const,status:"SUGERIDA" as const,criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:null,texto:"Autorizado pelo lead da ação",detalhe:{tipo:"enviar" as const,documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
  renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,bloquearDecisoesAria,aria:{pausada:false,motivo:null,podeAssumirAria:false,podeDevolver:false,podeDecidir:false,cartoes:[cartao],handoff:null}})));
  const v=virtual350.props!,row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;const no=v.renderItem(row,0);if(!isValidElement<{bloqueado?:boolean}>(no))throw Error("Cartão ausente");expect(no.props.bloqueado).toBe(bloquearDecisoesAria);
+});it("360 Transferir também reúne a opção Aria quando não há alçada de pessoa/setor/fila",()=>{
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({responsavelId:"outra-pessoa",estadoAria:"humano"}),aria:{handoff:null,podeDecidir:false,cartoes:[],pausada:true,motivo:null,podeAssumirAria:false,podeDevolver:true}})));
+ expect(h).toContain('aria-label="Transferir"');
 });
