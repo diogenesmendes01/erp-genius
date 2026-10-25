@@ -14,3 +14,11 @@ it.each([null,{...atendimento(),finalidade:"FINANCEIRO"},{...atendimento(),leadI
 it("lead oculto não é consultado para completar resumo",async()=>{m.veLead.mockResolvedValue(false);expect(await contexto()).toBeNull();expect(db.oportunidade.findUnique).not.toHaveBeenCalled();});
 it("somente pessoas explícitas diferentes recusam; null não é preenchido",async()=>{m.atendimento.mockResolvedValue({...atendimento(),contato:{leadId:"l",pessoaId:"p"}});expect(await contexto()).toMatchObject({vinculo:{pessoaContatoId:"p",pessoaLeadId:null}});db.oportunidade.findUnique.mockResolvedValue({...op(),pessoaId:"outra"});expect(await contexto()).toBeNull();});
 it("operação de status usa audiência atual mesmo com Pessoa incompatível, sem liberar geração",async()=>{m.atendimento.mockResolvedValue({...atendimento(),contato:{leadId:"l",pessoaId:"p"}});db.oportunidade.findUnique.mockResolvedValue({...op(),pessoaId:"outra"});const p=await import("./contexto-autorizado");expect(p).toHaveProperty("contextoOperacionalInsight");const c=await(p as unknown as {contextoOperacionalInsight:(db:unknown,u:string,a:string)=>Promise<unknown>}).contextoOperacionalInsight(db,"u","a");expect(c).toMatchObject({pessoasCompativeis:false,vinculo:{pessoaContatoId:"p",pessoaLeadId:"outra"}});expect(await contexto()).toBeNull();});
+
+it("rowfresh exclusivamenteALUNO não atravessa convite/veLead e não lê dados",async()=>{
+  db.usuario.findUnique.mockResolvedValue({...autor(),papeis:["ALUNO"]});
+  expect(await contexto()).toBeNull();const p=await import("./contexto-autorizado");expect(await(p as unknown as {contextoOperacionalInsight:(db:unknown,u:string,a:string)=>Promise<unknown>}).contextoOperacionalInsight(db,"u","a")).toBeNull();expect(m.atendimento).not.toHaveBeenCalled();expect(m.veLead).not.toHaveBeenCalled();expect(db.oportunidade.findUnique).not.toHaveBeenCalled();
+});
+it.each([{papeis:[]},{papeis:["ALUNO","VENDEDOR"]}])("apenasPortal não inventa rejeição genérica de papéis%j",async({papeis})=>{
+  db.usuario.findUnique.mockResolvedValue({...autor(),papeis});expect(await contexto()).toMatchObject({autor:{papeis}});expect(m.veLead).toHaveBeenCalled();
+});

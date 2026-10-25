@@ -1,3 +1,4 @@
+import { AbaInsights } from "./insights/AbaInsights";
 import { DriverWhatsApp } from "@prisma/client";
 import type { ReactElement, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1184,4 +1185,16 @@ it("357 callback Aria retido não atravessa A-B-A",async()=>{
 });
 it("357 404 limpa capacidade copiada e bloqueia callback antigo sem cair no legado",async()=>{
  const p=props357(),aba=await abrirAba357(p,true);respostaPainel=()=>new Response("",{status:404});(elementos(tela(p)).find(n=>n.type===ConversaAberta)!.props.aoMudar as()=>void)();tela(p);await esvaziar();const conversa=elementos(tela(p)).find(n=>n.type===ConversaAberta)!;expect((conversa.props.aria as{podeAssumirAria:boolean}).podeAssumirAria).toBe(false);await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).not.toHaveBeenCalled();expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+
+it("377 abaInsights exigeveLead e recebe porta física somente da seleção atual",async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:true}})}));tela();await esvaziar();
+ const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as {id:string}[]).some(a=>a.id==="insights")).toBe(true);
+ (painel.props.aoTrocarAba as(id:string)=>void)("insights");let t=tela();expect(elementos(t).some(n=>n.type===AbaInsights)).toBe(true);
+ const porta={atendimentoId:"a1",textoAtual:"Rascunho377",revisao:"r377",podeUsar:true,usar:async()=>({ok:true as const})};
+ (cabecalho(t).aoPortaRascunhoInsight as(p:unknown)=>void)(porta);t=tela();expect(elementos(t).find(n=>n.type===AbaInsights)!.props.rascunhoPorta).toBe(porta);
+ lista(t).aoSelecionar("a2");t=tela();expect(elementos(t).some(n=>n.type===AbaInsights)).toBe(false);
+});
+it("377 semveLead nãoofereceabaInsights mesmoCOMERCIAL",async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:false}})}));tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as {id:string}[]).some(a=>a.id==="insights")).toBe(false);
 });

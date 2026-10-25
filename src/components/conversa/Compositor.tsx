@@ -1,4 +1,5 @@
 "use client";
+import type { PublicarPortaRascunhoInsight } from "./rascunho-insight";
 
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
@@ -49,6 +50,8 @@ export interface PropsCompositor {
   /** Dono acima da key do contato: evita apagar uma nova intenção após remontagem. */
   revisoesRascunhos?: RevisoesRascunhos;
   aoAgendar?: () => void;
+  /** Porta opt-in para o rascunho físico Responder; não executa envio. */
+  aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   /** O rodapé hospeda a moldura; controles e estados continuam sendo deste componente. */
   contido?: boolean;
   /** Respostas rápidas do atendente (atalho "/"); sem elas o atalho não abre. */
@@ -79,7 +82,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -119,6 +122,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const contextoAtual = useRef<typeof contexto | null>(contexto);
   const emCurso = useRef(new Set<object>());
   const revisaoRascunho = useRef(0);
+  const [revisaoPonteInsight,setRevisaoPonteInsight]=useState(0);
   const selecaoMencao = useRef<{ contexto: typeof contexto; revisao: number; texto: string; indice: number } | null>(null);
   if (contexto.chave !== chave) {
     setContexto({ chave });
@@ -194,6 +198,40 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     if (consultandoMencao && opcoesMencao.length) document.getElementById?.(listaMencoesId + "-" + indiceMencao)?.scrollIntoView?.({ block: "nearest" });
   }, [consultandoMencao, opcoesMencao.length, indiceMencao, listaMencoesId]);
 
+  function registrarIntencao() {
+    revisaoRascunho.current += 1;
+    if(aoPortaRascunhoInsight)setRevisaoPonteInsight(r=>r+1);
+    revisoes.alterar(chave, contexto);
+  }
+
+  function mudar(v: string, cursor = v.length) {
+    if (!contextoVigente()) return;
+    registrarIntencao();
+    setTokensMencao(anteriores => tokensAposEdicao(texto, v, anteriores));
+    const consulta = nota && buscarMencoes ? consultaMencaoNoCursor(v, cursor) : null;
+    setConsultaMencao(consulta && consulta.busca.length >= 2 && !/\s$/.test(consulta.busca) ? consulta : null);
+    setOpcaoMencao(0);
+    setTexto(v);
+    gravarRascunho(atendimentoId, modo, v);
+  }
+
+  const editarTextoInsight=useRef<(v:string)=>void>(()=>{});
+  useLayoutEffect(()=>{editarTextoInsight.current=mudar;});
+
+  useLayoutEffect(()=>{
+    if(!aoPortaRascunhoInsight)return;
+    if(nota||bloqueioExterno||podeEnviar!==true||enviando||!entrada.current){aoPortaRascunhoInsight(null);return;}
+    let viva=true;
+    const revisao=revisaoRascunho.current,revisaoInsight=`${idAvisosAnexos}:${revisaoRascunho.current}`;
+    aoPortaRascunhoInsight({atendimentoId,textoAtual:texto,revisao:revisaoInsight,podeUsar:true,
+      async usar(pedido){
+        if(!viva||contextoAtual.current!==contexto||revisaoRascunho.current!==revisao||emCurso.current.has(contexto)
+          ||pedido.revisaoEsperada!==revisaoInsight||typeof pedido.texto!=="string"||pedido.texto.length>4000)
+          return {ok:false,erro:"O rascunho mudou. Revise a sugestão novamente."};
+        editarTextoInsight.current(pedido.texto);return {ok:true};
+      }});
+    return()=>{viva=false;aoPortaRascunhoInsight(null);};
+  },[aoPortaRascunhoInsight,atendimentoId,contexto,nota,bloqueioExterno,podeEnviar,enviando,texto,arquivo,revisaoPonteInsight,idAvisosAnexos]);
   if (!nota && bloqueioExterno) return null;
   if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
@@ -216,22 +254,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         {MOTIVO_SEM_ENVIO}
       </div>
     );
-  }
-
-  function registrarIntencao() {
-    revisaoRascunho.current += 1;
-    revisoes.alterar(chave, contexto);
-  }
-
-  function mudar(v: string, cursor = v.length) {
-    if (!contextoVigente()) return;
-    registrarIntencao();
-    setTokensMencao(anteriores => tokensAposEdicao(texto, v, anteriores));
-    const consulta = nota && buscarMencoes ? consultaMencaoNoCursor(v, cursor) : null;
-    setConsultaMencao(consulta && consulta.busca.length >= 2 && !/\s$/.test(consulta.busca) ? consulta : null);
-    setOpcaoMencao(0);
-    setTexto(v);
-    gravarRascunho(atendimentoId, modo, v);
   }
 
   function escolherArquivo(f: File | undefined) {
