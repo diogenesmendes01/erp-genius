@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { desvincularContatoWhatsApp } from "@/server/whatsapp/desvincular-contato";
 import { vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
+import { vincularLeadRetornoNoInbox } from "@/server/inbox/acoes-cliente-voltou";
 
 beforeEach(async () => { await truncarBanco(); sessao.usuarioId = ""; });
 afterEach(() => vi.restoreAllMocks());
@@ -56,7 +57,7 @@ async function tentarAposEspera(mudar: (tx: Prisma.TransactionClient, c: Awaited
   else await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.selecionado.id} FOR UPDATE`;
   entrou(p.pid);await liberar;await mudar(tx,c);
  },{timeout:20000});
- const pid=await pronta, acao=vincularContatoWhatsApp(c.input);
+ const pid=await pronta, acao=vincularLeadRetornoNoInbox(c.input);
  try{await aguardarBloqueadoPor(pid);}finally{soltar();await bloqueadora;}
  expect((await acao).ok).toBe(false);
  expect((await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}})).leadId).toBeNull();
@@ -82,8 +83,9 @@ async function duasEsperando(c: Awaited<ReturnType<typeof cenario>>, executar:()
  let entrou!:()=>void,soltar!:()=>void;
  const pronta=new Promise<void>(r=>{entrou=r;}),liberar=new Promise<void>(r=>{soltar=r;});
  const bloqueadora=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.selecionado.id} FOR UPDATE`;entrou();await liberar;},{timeout:20000});
- await pronta;const resultado=executar();
+ let resultado:Promise<unknown>|undefined;
  try {
+  await Promise.race([pronta,bloqueadora]);resultado=executar();
   await vi.waitFor(async()=>{const [r]=await prisma.$queryRaw<{n:bigint}[]>`SELECT count(*) AS n FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%"AtendimentoWhatsApp"%'`;expect(Number(r.n)).toBeGreaterThanOrEqual(2);},{timeout:5000,interval:20});
  }finally{soltar();await bloqueadora;await resultado;}
  return resultado;
@@ -91,7 +93,7 @@ async function duasEsperando(c: Awaited<ReturnType<typeof cenario>>, executar:()
 it("dois vínculos concorrentes observados na barreira SQL não sobrescrevem o vencedor",async()=>{
  const c=await cenario("VENDAS");
  const outro=await prisma.oportunidade.create({data:{nome:"Outro curso fictício329",telefoneE164:c.contato.telefoneE164,pessoaId:c.pessoa.id,vendedorDonoId:c.admin.id}});
- const rs=await duasEsperando(c,()=>Promise.all([vincularContatoWhatsApp(c.input),vincularContatoWhatsApp({...c.input,alvo:{tipo:"lead",id:outro.id}})])) as {ok:boolean}[];
+ const rs=await duasEsperando(c,()=>Promise.all([vincularLeadRetornoNoInbox(c.input),vincularLeadRetornoNoInbox({...c.input,alvo:{tipo:"lead",id:outro.id}})])) as {ok:boolean}[];
  expect(rs.filter(r=>r.ok)).toHaveLength(1);
  const contato=await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}}),a=await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}});
  expect([c.lead.id,outro.id]).toContain(contato.leadId);expect(a.leadId).toBe(contato.leadId);expect(await eventos(c.contato.id)).toHaveLength(1);
@@ -102,7 +104,7 @@ it("vincular e desvincular concorrentes preservam Contato e selected sem ciclo d
  await prisma.atendimentoWhatsApp.update({where:{id:c.selecionado.id},data:{leadId:c.lead.id}});
 
  const log=vi.spyOn(console,"error").mockImplementation(()=>{});
- const rs=await duasEsperando(c,()=>Promise.all([vincularContatoWhatsApp(c.input),desvincularContatoWhatsApp({atendimentoId:c.selecionado.id,alvo:{tipo:"lead",id:c.lead.id},motivo:"Correção fictícia coordenada329"})])) as {ok:boolean}[];
+ const rs=await duasEsperando(c,()=>Promise.all([vincularLeadRetornoNoInbox(c.input),desvincularContatoWhatsApp({atendimentoId:c.selecionado.id,alvo:{tipo:"lead",id:c.lead.id},motivo:"Correção fictícia coordenada329"})])) as {ok:boolean}[];
  expect(log).not.toHaveBeenCalled();log.mockRestore();
  expect(rs[1].ok).toBe(true);
  const contato=await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}}),a=await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}});
@@ -133,4 +135,11 @@ it.each(["AtendimentoWhatsApp","ContatoWhatsApp"])("desvincular revalida papel a
  expect((await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}})).leadId).toBe(c.lead.id);
  expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}})).leadId).toBe(c.lead.id);
  expect(await prisma.evento.count({where:{tipo:"ContatoDesvinculado",agregadoId:c.contato.id}})).toBe(0);
+});
+it("endpoint estrito e legado em selecteds distintos serializam sem sobrescrever o vencedor",async()=>{
+ const c=await cenario("VENDAS"),outro=await prisma.oportunidade.create({data:{nome:"Legado concorrente435",telefoneE164:c.contato.telefoneE164,pessoaId:c.pessoa.id,vendedorDonoId:c.admin.id}});
+ const historico=await prisma.atendimentoWhatsApp.create({data:{conversaId:c.conversa.id,contextoChave:"COMERCIAL:LEGADO435",finalidade:"COMERCIAL"}});
+ const rs=await duasEsperando(c,()=>Promise.all([vincularLeadRetornoNoInbox(c.input),vincularContatoWhatsApp({...c.input,atendimentoId:historico.id,alvo:{tipo:"lead",id:outro.id}})])) as {ok:boolean}[];
+ expect(rs.filter(r=>r.ok)).toHaveLength(1);const contato=await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}}),selected=await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}});
+ expect([c.lead.id,outro.id]).toContain(contato.leadId);expect(selected.leadId).toBe(contato.leadId);expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:historico.id}})).leadId).toBeNull();expect(await prisma.evento.count({where:{tipo:"ContatoVinculado"}})).toBe(1);
 });
