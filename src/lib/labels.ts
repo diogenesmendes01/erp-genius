@@ -118,6 +118,25 @@ export const ETAPA_LABEL: Record<EtapaLead, string> = {
   PERDIDO: "Perdido",
 };
 
+/** Situação encerrada na frase de retorno do cliente, sem depender de DTO do servidor. */
+export const SITUACAO_CLIENTE_VOLTOU_LABEL: Readonly<Record<"ganha" | "perdida", string>> = Object.freeze({
+  ganha: "Ganha",
+  perdida: "Perdida",
+});
+
+/** Situação das outras oportunidades, separada da etapa da oportunidade atual. */
+export const SITUACAO_OUTRA_OPORTUNIDADE_LABEL: Readonly<Record<EtapaLead, string>> = Object.freeze({
+  NOVO: "Novo · em aberto",
+  EM_ATENDIMENTO: "Primeiro contato · em aberto",
+  QUALIFICADO: "Qualificado · em aberto",
+  EXPERIMENTAL_AGENDADA: "Experimental agendada · em aberto",
+  EXPERIMENTAL_REALIZADA: "Experimental realizada · em aberto",
+  PROPOSTA: "Proposta · em aberto",
+  AGUARDANDO_MATRICULA: "Aguardando matrícula · em aberto",
+  MATRICULADO: "Ganha",
+  NO_SHOW: "No-show · em aberto",
+  PERDIDO: "Perdida",
+});
 // Rótulos legíveis dos papéis (ver docs/07; ALUNO = portal — Fase 3). Vieram de lib/roles.ts, que os reexporta.
 export const METRICA_META_LABEL: Readonly<Record<MetricaMeta, string>> = Object.freeze({
   MATRICULAS: "Matrículas",

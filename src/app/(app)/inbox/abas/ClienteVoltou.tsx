@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { rotular, SITUACAO_CLIENTE_VOLTOU_LABEL } from "@/lib/labels";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
 import type { ClienteVoltouPainel } from "@/server/inbox/painel-detalhes";
@@ -32,7 +33,7 @@ function SessaoClienteVoltou({ atendimentoId, nome, pessoaId, dado, podeCriar, a
   const primeiroNome = nome.trim().split(/\s+/)[0] || "Este contato";
   const tituloCurto = dado.titulo.split(" · ")[0];
   return <section aria-label="Cliente voltou" className="space-y-2 rounded-md border border-brand-200 bg-brand-50 p-3 text-sm">
-    <p>{primeiroNome} já é cliente e voltou a escrever. A oportunidade {dado.titulo} foi {dado.situacao}.</p>
+    <p>{primeiroNome} já é cliente e voltou a escrever. A oportunidade {dado.titulo} foi {rotular(SITUACAO_CLIENTE_VOLTOU_LABEL, dado.situacao).toLocaleLowerCase("pt-BR")}.</p>
     <div className="flex flex-wrap items-center gap-2">
       {dado.podeVincular && <Botao variante="secundario" tamanho="md" disabled={acao.ocupado} onClick={vincular}>{acao.ocupado ? "Vinculando…" : `Vincular a ${tituloCurto}`}</Botao>}
       {podeCriar && pessoaId && <a href={hrefNovaOportunidade(pessoaId)} className="text-brand-700 underline">Nova oportunidade</a>}
