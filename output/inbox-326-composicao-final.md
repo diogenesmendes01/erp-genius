@@ -1,8 +1,15 @@
 # #326 — composição para publicação direta em main
 
-## Estado atual — 24/10/2026
+## Estado atual — main com #349 e #351
 
-A composição atual é `798f26faf13ff39f2c31352950d93f6f5bc9bff1`, incorporando a main `cf29add93cd63fe14f95bf8a53fb079d3efe9a27` com #416 e #419 já mergeadas. Os registros abaixo preservam as composições anteriores. A união atual conserva as duas entregas no quadro e no teste de identificação. [Prova de identidade](inbox-326-qa/composicao-798f.json): vinte das 21 fontes selecionadas são iguais ao freeze DEV6f; a exceção é o teste aditivo de identificação. O delta direto contra main contém18SRC, sem schema, dependências, scripts ou workflows.
+Fonte executável atual: 0342e776eff91ccfa41ab06450aba2e9671d59bb, merge da main fabf7addf291de6e4b821927cfc1c88ce93bd9fb na publicação326. [Prova atual](inbox-326-qa/composicao-main351.json):17das18fontes326 permanecem byteiguais ecac; a guarda só acrescenta as três linhas já testadas na main351. Os3567objetos de escopo da main fora dessas18fontes e o prefixo integral do quadro foram preservados. O sufixo326 foi unido sem descartar linhas.
+
+Recorte local16409/c6fa62 EXIT0:quatro arquivos completos/182testes,27,60s,maxWorkers2,semfiltro/skips,configUNITexcluiINT. CI rápida, integração completa e QA final desta composição ainda pendentes. As provas798f e74d/ecac abaixo são históricas, com suas fontes e limites; não são novas execuções sobre0342. Anexos R9/R10 aguardam autorização/publicação e PR420continuaRefs326/rascunho. Nenhuma captura ou escrita de produto nova.
+
+
+## Checkpoint histórico798f — 24/10/2026
+
+Naquele checkpoint a composição era `798f26faf13ff39f2c31352950d93f6f5bc9bff1`, incorporando a main `cf29add93cd63fe14f95bf8a53fb079d3efe9a27` com #416 e #419 já mergeadas. Os registros abaixo preservam as composições anteriores. A união daquele checkpoint conserva as duas entregas no quadro e no teste de identificação. [Prova de identidade](inbox-326-qa/composicao-798f.json): vinte das 21 fontes selecionadas são iguais ao freeze DEV6f; a exceção é o teste aditivo de identificação. O delta direto contra main contém18SRC, sem schema, dependências, scripts ou workflows.
 
 Gates ROOT em798f, todos com saída terminal0:937arquivos/7437testes globais (44584/158f41,311,72s,doisworkers), quatroarquivos/44INT (57239/06cda2,186,63s,umworker,dev-gravacoes490), TSC27773/df7607 e lint45960/c57bc6 (zeroerros/40avisosherdados). Sem filtro de nome ou skips impostos; configuração unitária exclui integração. BancoROOT restaurado5bd290 com424hashes. [CI remota](inbox-326-qa/ci-798f.json): rápida40128296594 5/5; integração40128292519 4/4,351arquivos/3108testes aprovados, trêsarquivos/quatrotestes visuais opt-in ignorados. Não somar recortes sobrepostos.
 

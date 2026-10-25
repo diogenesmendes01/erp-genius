@@ -7,7 +7,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { CampoTexto } from "@/components/CampoTexto";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL } from "@/lib/labels";
+import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL, MOTIVO_HANDOFF_LABEL } from "@/lib/labels";
 import { ETAPAS_ARIA } from "@/server/aria/matriz";
 import { testarAria } from "@/server/aria/acoes";
 import type { ResultadoPlayground } from "@/server/aria/playground";
@@ -16,21 +16,7 @@ import { CONTROLE } from "./Campos";
 type Props = { paises: { id: string; nome: string }[]; temRascunho: boolean; nome: string };
 type Fala = { papel: "usuario" | "assistente"; texto: string };
 
-const MOTIVO_HANDOFF: Record<string, string> = {
-  PEDIDO_HUMANO: "Pediu para falar com uma pessoa",
-  CONFIANCA: "Confiança baixa",
-  PALAVRA_CHAVE: "Palavra-chave",
-  HUMOR: "Contato irritado",
-  ETAPA: "Etapa de transferência",
-  VALOR: "Valor alto",
-  FORA_POLITICA: "Fora da política",
-  SEM_AVANCO: "Conversa sem avanço",
-  RECUSA: "O modelo recusou responder",
-  VALOR_NAO_AUTORIZADO: "Valor não autorizado",
-  SEM_PRECO: "Sem preço disponível",
-  SEM_PERMISSAO: "Sem permissão na matriz",
-  ERRO_PROVEDOR: "Falha do provedor",
-};
+
 
 const DESTINO_ROTULO: Record<ResultadoPlayground["acoes"][number]["destino"], string> = {
   Executaria: "executaria",
@@ -122,7 +108,7 @@ export function Playground({ paises, temRascunho, nome }: Props) {
       {resultado && (
         <div aria-label="Resultado do teste" className="space-y-2 rounded-md border border-gray-200 p-3 text-sm">
           <p><strong>Confiança:</strong> {resultado.confianca}</p>
-          <p><strong>Transferiria para humano:</strong> {resultado.handoff ? `Sim, ${MOTIVO_HANDOFF[resultado.handoff] ?? resultado.handoff}` : "Não"}</p>
+          <p><strong>Transferiria para humano:</strong> {resultado.handoff ? `Sim, ${Object.hasOwn(MOTIVO_HANDOFF_LABEL, resultado.handoff) ? MOTIVO_HANDOFF_LABEL[resultado.handoff] : "Motivo não informado"}` : "Não"}</p>
           {resultado.bloqueio && <p className="text-red-700"><strong>Bloqueio:</strong> {resultado.bloqueio}</p>}
           <div>
             <strong>Ações propostas</strong>

@@ -43,3 +43,11 @@ A PR permanece em rascunho até concluir uma persistência real controlada, prov
 
 ### Composição com main343/423
 A composição74d4dbc6 incorpora main170edbad preservando os17SRC de326 e todos os registros do quadro. O18ºSRC,teste InboxNovo.foco, recebe somente os quatro defaultsDTO343; removê-los recompõe o teste179b byte a byte. TypeScript original98161/c46003 terminou0, sem exclusões e sem incremental. Recorte de foco/editor/cache:3arquivos/43testes,terminal33f166,saída0,sem filtros/skips. A integração completa798f continua nominal à fonte anterior342/343/423 e não é apresentada como full combinado. NovaCI da publicação e autorização dos anexos326 continuam pendentes. Nenhum novoSave,testeUI ouDB nesta composição.
+
+
+## Composição atual sobre main351
+
+
+Fonte executável atual: 0342e776eff91ccfa41ab06450aba2e9671d59bb, merge da main fabf7addf291de6e4b821927cfc1c88ce93bd9fb na publicação326. [Prova atual](../../output/inbox-326-qa/composicao-main351.json):17das18fontes326 permanecem byteiguais ecac; a guarda só acrescenta as três linhas já testadas na main351. Os3567objetos de escopo da main fora dessas18fontes e o prefixo integral do quadro foram preservados. O sufixo326 foi unido sem descartar linhas.
+
+Recorte local16409/c6fa62 EXIT0:quatro arquivos completos/182testes,27,60s,maxWorkers2,semfiltro/skips,configUNITexcluiINT. CI rápida, integração completa e QA final desta composição ainda pendentes. As provas798f e74d/ecac abaixo são históricas, com suas fontes e limites; não são novas execuções sobre0342. Anexos R9/R10 aguardam autorização/publicação e PR420continuaRefs326/rascunho. Nenhuma captura ou escrita de produto nova.

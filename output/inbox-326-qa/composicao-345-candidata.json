@@ -1,0 +1,141 @@
+{
+  "feature": "d01f5ad653bccf22b0c066e306ee3179ac7258d9",
+  "candidateMain": "61f6795b2bd06995827dc9a5ec6ac00d78bbb108",
+  "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "branch": "codex/inbox-e2-326-main345-preparacao",
+  "exclusiveSourceLiteral": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "mode": "100644",
+      "oid": "432b3aea23307e61e30254ee545c92c4cb56d450"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "mode": "100644",
+      "oid": "6b994c437d4157848eea1181d4ddfffb4d6de85c"
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.test.ts",
+      "mode": "100644",
+      "oid": "c785ef289aa164faa0cfe8b81f337febe83d2e63"
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.tsx",
+      "mode": "100644",
+      "oid": "13ce8b442dd671fd5470cb9a911acaf28e9d618e"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.test.ts",
+      "mode": "100644",
+      "oid": "e2e3e87e1c93bede995930db2c2e45ad7772dffd"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.tsx",
+      "mode": "100644",
+      "oid": "dcbf91ab45987af71063ab5c87830b243d052b40"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/form-contato.test.ts",
+      "mode": "100644",
+      "oid": "d6e43350c29543ede222500a7951738b15dfe0e4"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/form-contato.ts",
+      "mode": "100644",
+      "oid": "35c958ad4e98b207919949816b1def6e47657913"
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "mode": "100644",
+      "oid": "dbbbf1752a4b01c5fa717ee138d9dcb47a628cfd"
+    },
+    {
+      "path": "src/app/campos-mapa.ts",
+      "mode": "100644",
+      "oid": "f2bcc1ccc7b0ccbb63a45a012b4988882dce0537"
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "mode": "100644",
+      "oid": "051344414bf5c605daa1ffd6973c215e6f1b7bca"
+    },
+    {
+      "path": "src/app/identificacao-registro.test.ts",
+      "mode": "100644",
+      "oid": "23b8cdefea7991b8cee0d1fff843c4bb0383ecad"
+    },
+    {
+      "path": "src/server/crm/campos.ts",
+      "mode": "100644",
+      "oid": "b5408fa74ec9db2cb04dc5ad0e2479abfde226ca"
+    },
+    {
+      "path": "src/server/crm/contatos.ts",
+      "mode": "100644",
+      "oid": "91fe76875cc4ff7e50a33d465ca84c34edfc1ae4"
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-contato-pool1.int.test.ts",
+      "mode": "100644",
+      "oid": "5357333efc976d4f4e80870e242689cfbf1f7c5b"
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-contato.int.test.ts",
+      "mode": "100644",
+      "oid": "98a058b0d27335cc900a18e16cd022f42372f976"
+    },
+    {
+      "path": "src/server/inbox/acoes-painel.ts",
+      "mode": "100644",
+      "oid": "a02e300e611fbb17743cde77599908c5170d37d7"
+    }
+  ],
+  "shared": {
+    "path": "src/app/(app)/inbox/InboxNovo.tsx",
+    "mode": "100644",
+    "oid": "6edbd51a2573d017ea928498c4a3cb71e3f4bf95",
+    "deltaDeEdicao326IdenticoAoOriginalSemContexto": true
+  },
+  "protectedMainObjects": 3588,
+  "quadro": {
+    "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+    "feature": "d01f5ad653bccf22b0c066e306ee3179ac7258d9",
+    "candidate": "61f6795b2bd06995827dc9a5ec6ac00d78bbb108",
+    "baseBytes": 1147341,
+    "prefixMain345Bytes": 1162778,
+    "suffix326Bytes": 7612,
+    "main345PrefixLiteral": true,
+    "suffix326Literal": true,
+    "publicacao": false,
+    "limite": "Composição local aguarda merge345 e autorização anexos326; não publica/fechaPR."
+  },
+  "validation": {
+    "unit": {
+      "files": 9,
+      "tests": 178,
+      "session": 15792,
+      "terminal": "928771",
+      "exit": 0,
+      "workers": 1,
+      "heapMB": 512,
+      "filters": 0,
+      "skips": 0,
+      "logSha256": "8726a8fe1ca04c91b3ac0d7f3b03ceda82629eb87680fc0f3299712f3091e6d5"
+    },
+    "typescript": "Não repetido nesta composição; CI limpa futura obrigatória.",
+    "integration": "Não executada localmente. FULLd01f nominal à fonte anterior e FULL61f em execução; não atribuir FULL à composição.",
+    "lint": {
+      "files": 1,
+      "session": 70221,
+      "terminal": "f321d3",
+      "exit": 0,
+      "maxWarnings": 0
+    }
+  },
+  "pending": [
+    "Aguardar #345 entrar em main; candidato local contém61f ainda não mergeado.",
+    "Autorização dos anexos326R9/R10 permanece pendente.",
+    "CI e revisão da composição exata antes de merge."
+  ],
+  "publicacao": false
+}
