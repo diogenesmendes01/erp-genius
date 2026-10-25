@@ -21,3 +21,5 @@ O trigger345 publica aria.global após mudança real de estado/pausadoEm no comm
 TDD e recibos em `output/inbox-359-report.md`. Cobertura real Modal/hook/cliente, mapa exato três botões com mutantes e permissões/estado/avisos nativos. Integração autorizada só no perfil ci-integracao492, sete provedores vazios no executor. Lease liberada após terminal; fixtures finais permanecem e não se presume restore503.
 
 Entrega DEV não encerra a issue: QA independente, TypeScript/gates globais originais e build/aceite visual do integrador continuam pendentes. Aceite visual:1440×900,1024×768,390×844, claro/escuro, switch ligado/desligado e diálogo de motivo comparados com o protótipo. Nenhum servidor/captura/provedor/envio real executado pelo DEV.
+
+Revisão R1: o Campo canônico do motivo integra o manifesto nominal em campos-mapa.ts, com arquivo/rótulo/obrigatoriedade/controle exatos. Guardas completas e mutantes de registro ausente, rótulo e obrigatoriedade protegem o contrato; nenhuma exceção/parser genérico foi ampliado. Runtime e integração permanecem literais da entrega original. Gates originais distinguem fonte b7a e filha no relatório e recibos.
