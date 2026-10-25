@@ -77,7 +77,7 @@ function SessaoCartao({atendimentoId,s,usuarioId,fuso,aoDecidir,bloqueado=false}
     <Botao disabled={bloqueado||!podeDecidir} ocupado={acao.ocupado} className="flex-1" onClick={()=>void decidir(true)}>{v.rotuloAprovar}</Botao>
     <Botao variante="perigoContorno" disabled={bloqueado||!podeDecidir} ocupado={acao.ocupado} onClick={()=>void decidir(false)}>{v.rotuloRejeitar}</Botao>
    </div>}
-   {podeDesfazer&&<Botao ref={gatilhoDesfazer} variante="contorno" disabled={bloqueado} ocupado={acao.ocupado} onClick={()=>{if(!bloqueado&&ciclo.current.ativa){origem.current=gatilhoDesfazer.current;setConfirmacao(ciclo.current);}}}>Desfazer</Botao>}
+   {podeDesfazer&&<Botao ref={gatilhoDesfazer} variante="neutro" disabled={bloqueado} ocupado={acao.ocupado} onClick={()=>{if(!bloqueado&&ciclo.current.ativa){origem.current=gatilhoDesfazer.current;setConfirmacao(ciclo.current);}}}>Desfazer</Botao>}
    {confirmacao?.ativa&&confirmacao.chave===chave&&!bloqueado&&podeDesfazer&&<ConfirmarAcao titulo="Desfazer esta sugestão da Aria?" confirmacao="desfazer sugestão" idempotente={false}
     acao={async()=>{
      const atual=confirmacao;
