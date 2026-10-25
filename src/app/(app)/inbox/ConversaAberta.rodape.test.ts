@@ -1,3 +1,5 @@
+import {CartaoTarefaDoInbox} from "./CartaoTarefaDoInbox";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
 import { type ReactNode } from 'react';
 import { beforeEach,expect,it,vi } from 'vitest';
 import { criarGanchos,elementos,identidadeNoReact } from '@/test/tela-sem-dom';
@@ -54,3 +56,7 @@ it.each(['ENCERRADO','EM_ATENDIMENTO'] as const)('C2 participante com leitura em
  const r=elementos(tela({...base,item:{...base.item!,status,responsavelId:'outro'},usuario:{...base.usuario,id:'participante'},podeEnviar:false})).find(n=>n.type===RodapeConversa)!;
  expect(r.props.podeAnotar).toBe(true);expect(r.props.podeEnviar).toBe(false);expect(r.props.aoAgendar).toBeUndefined();
 });
+
+const tarefa332:TarefaPainel={id:"t332",versao:1,titulo:"Tarefa não buscável",descricao:null,tipo:"WHATSAPP",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"UTC",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a",criadoEm:"2026-10-22T12:00:00Z",criadorNome:"Ana",podeAgir:true};
+it("332 mesmo callback autorizado liga menu e rodapé; pedido de nota e pin são aditivos",()=>{const criar=vi.fn(),editar=vi.fn(),p={...base,tarefasNoFio:[tarefa332],aoCriarTarefa:criar,aoEditarTarefa:editar,pedidoNota:7,tarefaEmEdicaoId:"t332"};const t=tela(p),r=elementos(t).find(n=>n.type===RodapeConversa)!,v=elementos(t).find(n=>n.type===VirtualList)!;expect(r.props.aoCriarTarefa).toBe(criar);expect(r.props.pedidoNota).toBe(7);expect(m.usar.mock.calls.at(-1)![0]).toMatchObject({aoCriarTarefa:criar});expect(v.props.pinKeys).toContain("tarefa:t332");const item=(v.props.items as {tipo:string;id:string}[]).find(i=>i.tipo==="tarefa")!;expect(item.id).toBe("tarefa:t332");const card=elementos((v.props.renderItem as (i:unknown)=>ReactNode)(item)).find(n=>n.type===CartaoTarefaDoInbox)!;(card.props.aoEditar as (t:TarefaPainel)=>void)(tarefa332);expect(editar).toHaveBeenCalledExactlyOnceWith(tarefa332);});
+it("332 carga inicial sem janela não mostra tarefas prematuras; erro/refresh preserva identidade da lista",()=>{const p={...base,tarefasNoFio:[tarefa332],conversa:{...base.conversa,carregando:true}};const t=tela(p),v=elementos(t).find(n=>n.type===VirtualList)!;expect((v.props.items as {tipo:string}[]).some(i=>i.tipo==="tarefa")).toBe(false);const pronto=tela({...p,conversa:{...p.conversa,carregando:false}});expect(identidadeNoReact(pronto,VirtualList)).toEqual(identidadeNoReact(t,VirtualList));expect((elementos(pronto).find(n=>n.type===VirtualList)!.props.items as {tipo:string}[]).some(i=>i.tipo==="tarefa")).toBe(true);});
