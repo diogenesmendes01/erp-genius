@@ -61,7 +61,12 @@ export async function estadoOrcamento(agora: Date = new Date(), tx?: Prisma.Tran
     _sum: { custoMicroUsd: true },
     where: { criadoEm: { gte: inicioMes, lte: agora } },
   });
-  const gastoUsd = (soma._sum.custoMicroUsd ?? 0) / 1_000_000;
+  return calcularEstadoOrcamento(config, soma._sum.custoMicroUsd ?? 0);
+}
+
+/** Cálculo canônico compartilhado com a leitura sem escrita do enfileiramento Inbox. */
+export function calcularEstadoOrcamento(config: { orcamentoMensalUsd: unknown; acaoAoEstourar: AcaoOrcamentoIA }, custoMicroUsd: number): { situacao: "OK" | "ALERTA" | "ESTOURADO"; gastoUsd: number; limiteUsd: number; acao: AcaoOrcamentoIA } {
+  const gastoUsd = custoMicroUsd / 1_000_000;
   const limiteUsd = Number(config.orcamentoMensalUsd);
   const situacao = gastoUsd >= limiteUsd ? "ESTOURADO" : gastoUsd >= limiteUsd * 0.8 ? "ALERTA" : "OK";
   return { situacao, gastoUsd, limiteUsd, acao: config.acaoAoEstourar };
