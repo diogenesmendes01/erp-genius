@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, isValidElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
@@ -263,4 +263,10 @@ it("352 faixa usa handoff autorizado e relógio SSR existente, sem inferir apena
  const props=propsConversa({podeEnviar:true,item:item({estadoAria:"handoff"}),agoraInicial:Date.parse("2026-10-25T12:00:00Z"),aria:{handoff,podeDecidir:false,cartoes:[],pausada:true,motivo:"HANDOFF",podeDevolver:false,sugestoes:[]}});
  const h=renderToStaticMarkup(createElement(ConversaAberta,props));expect(h).toContain("Aria pediu ajuda há 4 min");expect(h).toContain("Ver resumo e assumir");
  const sem=renderToStaticMarkup(createElement(ConversaAberta,{...props,aria:{...props.aria!,handoff:null}}));expect(sem).not.toContain("Ver resumo e assumir");
+});
+
+it.each([false,true])("434 consumidor transporta bloqueio cliente=%s sem usar podeDecidir geral",bloquearDecisoesAria=>{
+ const cartao={id:"434",turnoId:"t",acao:"RESPONDER" as const,status:"SUGERIDA" as const,criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:null,texto:"Autorizado pelo lead da ação",detalhe:{tipo:"enviar" as const,documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,bloquearDecisoesAria,aria:{pausada:false,motivo:null,podeDevolver:false,podeDecidir:false,cartoes:[cartao],handoff:null,sugestoes:[]}})));
+ const v=virtual350.props!,row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;const no=v.renderItem(row,0);if(!isValidElement<{bloqueado?:boolean}>(no))throw Error("Cartão ausente");expect(no.props.bloqueado).toBe(bloquearDecisoesAria);
 });
