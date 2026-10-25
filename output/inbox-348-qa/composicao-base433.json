@@ -1,0 +1,46 @@
+{
+  "issue": 348,
+  "basePR": 433,
+  "base": "32c4833307c4f373cec894bccb395ad96c2e53d9",
+  "fonteDEV": "c5042cd8863e0f7cf101d3f221b0c4f56450243d",
+  "baseRuntime347": "287b4c2c88303cd1a2208129b6f0268851d74ae1",
+  "featurePaths": [
+    "docs/planejamento/quadro-entregas.md",
+    "docs/specs/inbox-cabecalho-aria.md",
+    "output/inbox-348-report.md",
+    "src/app/(app)/inbox/CabecalhoConversa.test.ts",
+    "src/app/(app)/inbox/CabecalhoConversa.tsx",
+    "src/app/(app)/inbox/ConversaAberta.busca.test.ts",
+    "src/app/(app)/inbox/ConversaAberta.rodape.test.ts",
+    "src/app/(app)/inbox/ConversaAberta.test.ts",
+    "src/app/(app)/inbox/ConversaAberta.tsx",
+    "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts",
+    "src/app/(app)/inbox/InboxNovo.tsx",
+    "src/app/(app)/inbox/PainelAria.tsx",
+    "src/app/(app)/inbox/aria/BotaoDevolverAria.test.ts",
+    "src/app/(app)/inbox/aria/BotaoDevolverAria.tsx",
+    "src/app/(app)/inbox/aria/textos-aria.test.ts",
+    "src/app/(app)/inbox/aria/textos-aria.ts",
+    "src/app/botoes-mapa.ts",
+    "src/components/Botao.test.ts",
+    "src/components/Botao.tsx"
+  ],
+  "objetosFonteLiterais": 18,
+  "objetosBaseProtegidos": 5830,
+  "quadro": {
+    "basePrefixSha256": "bc7f8e6fbcc0b54180934294ac887f621eb7728ad7104e7e380393a3af2b1303",
+    "sourceSuffixSha256": "6dcb0bded3512cda608cdcdc78417cb09efd5c61cbdae7d26360582ef7d32df6",
+    "sourceSuffixBytes": 3482,
+    "removedDuplicated347SuffixSha256": "4f463868e43c8719316c909d41f2ec70d576ee780d14038a95b59f0607cdf549",
+    "composedSha256": "7f0a4976325ca30efa2547dd54686410215cb8ce5db42fe5b883f63841f3aeb9"
+  },
+  "conflitosInvestigados": [
+    "docs/planejamento/quadro-entregas.md",
+    "output/inbox-347-report.md",
+    "src/components/Botao.tsx"
+  ],
+  "resolucao": "Quadro mantém publicação433 integral+registros348 sem duplicar347; report347 vem integral da base433; Botao vem literal da fonte c504 com ambas variantes.",
+  "qa": "PENDENTE_COMPOSICAO",
+  "visual": "PENDENTE",
+  "ci": "APOS_BASE_MAIN"
+}

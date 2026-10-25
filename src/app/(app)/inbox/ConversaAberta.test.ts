@@ -222,3 +222,12 @@ describe("319: estados públicos da thread",()=>{
   expect(h).toContain("Olá");expect(h).not.toContain("Carregando mensagens");expect(h).toContain('aria-busy="true"');expect(h).toContain("Mensagens anteriores");
  });
 });
+
+it("348 usa estado e capacidades Aria recebidos sem inferir papel",()=>{
+ const aria={handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:"MANUAL" as const,podeDevolver:true,sugestoes:[]};
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"aprovacao"}),aria})));
+ expect(h).toContain("Aria aguarda sua aprovação");expect(h).toContain('aria-label="Devolver para Aria"');expect(h).toContain('title="Aria pausada · Pausa manual"');
+ const negado=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"aprovacao"}),aria:{...aria,podeDecidir:false,podeDevolver:false}})));
+ expect(negado).toContain("Aria aguarda aprovação");expect(negado).not.toContain('aria-label="Devolver para Aria"');
+});
+it("348 grupo e encerrada preservam estados legados sem devolução",()=>{for(const alteracao of [{grupo:true},{status:"ENCERRADO" as const}]){const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"ia",...alteracao}),aria:{handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:null,podeDevolver:true,sugestoes:[]}})));expect(h).not.toContain("Aria está atendendo");expect(h).not.toContain('aria-label="Devolver para Aria"');}});
