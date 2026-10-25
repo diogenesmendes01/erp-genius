@@ -1,0 +1,18 @@
+{
+  "issue": 345,
+  "fonte": "2cd984b773e576886e878642650e17a25e04c3a5",
+  "pareceres": [
+    {
+      "path": "codigo-2cd.md",
+      "bytes": 9909,
+      "sha256": "72fa9a5d858034b6c650c4ba2a72a06c2cf33b402e78d643963cddcd8dd71e39"
+    },
+    {
+      "path": "resultados-2cd.json",
+      "bytes": 1993,
+      "sha256": "99723155c43aa736dfbaa7aa8c7a0c763bea545a8b35f5b14fc12db6a49066a5"
+    }
+  ],
+  "composicao": "composicao.json",
+  "limite": "Parecer e resultados nominais à fonte2cd; recortes separados, não somados como global."
+}
