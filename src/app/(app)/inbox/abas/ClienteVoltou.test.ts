@@ -4,7 +4,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Elemento } from "@/test/dom-minimo";
 const vincular = vi.hoisted(() => vi.fn());
-vi.mock("@/server/whatsapp/acoes", () => ({ vincularContatoWhatsApp: vincular }));
+vi.mock("@/server/inbox/acoes-cliente-voltou", () => ({ vincularLeadRetornoNoInbox: vincular }));
 import { ClienteVoltou } from "./ClienteVoltou";
 type Props = Parameters<typeof ClienteVoltou>[0];
 const mudar = vi.fn();
