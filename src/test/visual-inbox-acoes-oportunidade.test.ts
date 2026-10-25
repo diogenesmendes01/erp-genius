@@ -155,3 +155,27 @@ it.each(['cabecalho','subtitulo'] as const)('R4 detalhes preserva visibilidade i
  const d={...f.desc,fase:'detalhes' as const};expect(api.semanticaAcoes328(d)).toBe(true);
  f.rects.set(alvoCabecalho328(f,alvo),f.rect(-50,-6));expect(api.semanticaAcoes328(d)).toBe(false);
 });
+// R5: DIAG1tablet mediu tabs top=-9..29 após os dois scrolls inferiores; o predicado segue rígido.
+it.each(['admin','leitor'] as const)('R5 driver real %s revela a aba depois dos alvos inferiores e antes do selo cartao',async ator=>{
+ const p=pagina(),fases:string[]=[];
+ p.waitForFunction.mockImplementation(async(...args:unknown[])=>{
+  const d=args[1] as {fase:string};fases.push(d.fase);
+  if(d.fase==='cartao')expect(p.ordem.at(-1)).toBe('scroll:Oportunidades');
+  p.ordem.push('semantica:'+d.fase);
+ });
+ const estado=ator==='admin'?'painel-acoes-experimental':'painel-acoes-experimental-leitor';
+ const r=await api.abrirAcoesApp328(p as never,contexto(ator) as never,base,config(ator),estado,instrumento(p) as never);
+ expect(fases).toEqual(['detalhes','topo','cartao']);
+ expect(p.ordem.filter(x=>x.startsWith('scroll:'))).toEqual(ator==='admin'?['scroll:Aula experimental','scroll:Marcar como perdido','scroll:Oportunidades']:['scroll:Aula experimental','scroll:Oportunidades']);
+ expect(p.ordem.filter(x=>x.startsWith('click:'))).toEqual(['click:Painel do contato','click:Oportunidades']);
+ expect(r.metadados.descricaoEsperada.fase).toBe('cartao');
+});
+it('R5 callback real continua recusando tab recortada(-9..29), sem afrouxar cartao',()=>{
+ const f=dom();Object.assign(window,{innerWidth:1024,innerHeight:768});Object.assign(f.d.documentElement,{scrollWidth:1024});
+ f.rects.set(f.p,{...f.rect(0,768),left:0,right:1024,width:1024});f.styles.set(f.p,{overflowY:'hidden'});
+ expect(api.semanticaAcoes328(f.desc)).toBe(true);
+ f.rects.set(f.tab,f.rect(-9,29));expect(api.semanticaAcoes328(f.desc)).toBe(false);
+ f.rects.set(f.tab,f.rect(0,38));expect(api.semanticaAcoes328(f.desc)).toBe(true);
+ const callback=runInNewContext('('+api.semanticaAcoes328.toString()+')',{document,window});expect(callback(f.desc)).toBe(true);
+ f.tab.setAttribute('inert','');expect(callback(f.desc)).toBe(false);
+});

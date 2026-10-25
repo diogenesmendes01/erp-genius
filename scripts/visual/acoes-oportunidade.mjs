@@ -235,6 +235,7 @@ export async function abrirAcoesApp328(pagina, contexto, base, config, estado, i
         if (estado !== 'painel-acoes-perda') {
             await painel.getByRole('region', { name: 'Aula experimental', exact: true }).scrollIntoViewIfNeeded();
             if (descricao.podeMover) await painel.getByRole('button', { name: 'Marcar como perdido', exact: true }).scrollIntoViewIfNeeded();
+            await painel.getByRole('tab', { name: 'Oportunidades', exact: true }).scrollIntoViewIfNeeded();
             descricao = { ...descricao, fase: 'cartao' }; await pagina.waitForFunction(semanticaAcoes328, descricao);
         } else { await painel.getByRole('button', { name: 'Marcar como perdido', exact: true }).click(); descricao = { ...descricao, fase: 'perda' }; }
     } else { await pagina.waitForFunction(semanticaAcoes328, descricao); await pagina.getByRole('button', { name: 'Marcar como perdida', exact: true }).click(); descricao = { ...descricao, fase: 'perda' }; }
