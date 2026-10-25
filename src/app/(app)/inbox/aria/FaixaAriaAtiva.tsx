@@ -1,4 +1,5 @@
 import { IconSparkles } from "@tabler/icons-react";
+import { botaoClasses } from "@/components/Botao";
 import type { SituacaoAriaInbox } from "@/server/inbox/contagens";
 
 type PropsFaixaAriaAtiva = {
@@ -24,7 +25,7 @@ export function FaixaAriaAtiva({ situacao, contagens }: PropsFaixaAriaAtiva) {
           {ensaio ? "Simula respostas sem falar com os contatos" : pausada ? "Pausada · novas conversas vão para a equipe" : <><span className="font-mono tabular-nums">{contagens.ia}</span> em atendimento · <span className="font-mono tabular-nums">{contagens.aprovacao + contagens.handoff}</span> aguardando você</>}
         </p>
       </div>
-      {situacao.podeGerenciar && <a href="/aria" className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-ai-700 transition hover:bg-highlight max-sm:min-h-11 inline-flex items-center">Gerenciar</a>}
+      {situacao.podeGerenciar && <a href="/aria" className={botaoClasses({ variante: "iaFantasma", tamanho: "sm" }) + " shrink-0"}>Gerenciar</a>}
     </div>
   );
 }
