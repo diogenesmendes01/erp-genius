@@ -7542,3 +7542,8 @@ RootcorrigesomentemockfechadoInboxNovo.aria-eventoscom4íconesgenéricosnovosdoM
 ### Inbox #334 — leitura do contador não concede vínculo (25/10/2026)
 
 Falhaglobal32ccliente-voltouera spydequalquercall versusleituralegítima2argsdocontador,conferidoT671223negativo15/16→privado17/17fcc528; parecerddb759... . Testeagorapreservaescopos/podeVincularfalse,exigecontador0/leituraexata,proíbeenvio=true/candidatos/leadatual. Nenhumruntimealterado. RecorteRoot1fd562 EXIT0:5/66completos;globalfinalpendente,SQLnãorepetida.
+# Integração Inbox R8 — cabeçalho, aceite ainda pendente
+
+ROOT57822fc2: global1009/8753, TypeScript, lint0erros/63avisos e buildyNy todos EXIT0. Pilha R7 publicada sem force: seis PRs atualizadas e novas #444(#334), #445(#357), #446(#358), todas em rascunho. TESTER conferiu nove deltas e fontefinal446literal578 (5aa410d0484d374b9656a2ffd22b9e897330fad3f51a1129860bbfabd5ee0b9c). Nenhum merge nesta rodada; campanha permanece37fechadas/44abertas, conferida no GitHub.
+
+Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
