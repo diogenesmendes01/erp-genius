@@ -6868,3 +6868,10 @@ Fonte executável9a8ebc81/Base74d4(PR420+Main):UNITglobal947/7742(44258/56df77)E
 45paths40OIDs literaiscfa/5exceções justificadas;3509OIDsBasenão-selecionados exatos/0divergência. OR420/editor326,4defaultsMain343,337/Compositor/Sino/whatsapp/labels/schema/deps/953 preservados. Report output/inbox-327-port-r2-report.md e manifesto output/inbox-327-port-r2-fontes.json documentam checkpoints separados328mínima/327produto/harness. Corpus18ZIP/raw permanecemnominaisEBF/privados/qualificados,nãorecapturados/semupload;nenhumruntime pósfreeze. QAfinal/CI/composição/publicaçãoROOT e328UI ainda pendentes;semhomologaçãofinalpresumida.
 
 RestauroROOTA4915369daEXIT0 posterior aos67INT confirmado:424hashes/557registros/sequencias/snapshotfc12preservados. DEVsemnovoDB/UI;fonte9a8congelada,947/7742UNITexatos,67INT e43lint/TSC0. Anexosexistentes aguardamusuario,semSVG/recaptura,328UIparcialaberta.
+
+
+## #327 — QA independente e composição de publicação
+
+
+### Publicação e QA independente da composição327
+Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](../../output/inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.

@@ -121,3 +121,7 @@ Fonte9a8ebc81 sobreBase74d4 preservaOR420/4defaultsMain343 e3509OIDsBase não se
 Report output/inbox-327-port-r2-report.md e manifesto output/inbox-327-port-r2-fontes.json registram45OIDs,40literais/5exceções,proteções,gates e listaINT. Nenhumruntime mudou apósfreeze,nenhumUI/browser/captura/manual/envio/DDL/install executado. Corpus18nominalEBF eZIP preservados,semupload;CLI≠wrapperA11. QAexata/CI/composição/publicação ROOT e restante328UI continuam separados.
 
 ROOT confirmou restauroA491 posterior aos67INT (5369daEXIT0):424hashes/557registros/sequencias/snapshotfc12preservados. NenhumDB/UI retomado peloDEV. QA cfa f5bd historica eQAporte ec29 mantemfontes distintas;novoDOCnao altera runtime9a8 oucorpusEBF.
+
+
+### Publicação e QA independente da composição327
+Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](../../output/inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.

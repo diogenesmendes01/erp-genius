@@ -34,3 +34,7 @@ Aguardam QAexata do fechamento/documentação,pósINTauditoria/restauroROOT,comp
 ## Confirmacao ROOT posterior ao fechamento
 
 ROOT5369daEXIT0 confirmou restauroA491:424hashes/557registros/sequencias/snapshotfc12cc64f42cb4dbb48c8e4ac49f58be2e930d8d70c1c9d8b0b6a4a0ddba6660 preservados. DEVnao retomouDB/UI. QA codigo cfa historica8731B/SHAf5bdcacb75bdb51808cfdd39ee57c92bfb0ebb60432cba578bacd7a268f0bec7 ecuradoria11380B/SHAfedea5c671a5d57000e4bf6feff9844704cf197b07285cc4b9ff6c8ca2bc3165 mantemnamespacehistorico;QAporteec29 distingue congruenciaatual. Nenhuma nova imagem/SVG/ZIP foi criada;anexos existentes imutaveis aguardamautorizacao do usuario. Fonte executavel9a8permanececongelada,comUNIT947/7742exatos eINT7/67;restante328UI continuaaberto.
+
+
+### Publicação e QA independente da composição327
+Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.
