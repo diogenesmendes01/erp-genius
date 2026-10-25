@@ -432,6 +432,7 @@ model PrazoRespostaSetor {
 }
 
 model AtendimentoWhatsApp {
+  geracoesInsight GeracaoInsightInbox[]
   id String @id @default(cuid())
   iaPausadaEm DateTime?
   iaPausaMotivo MotivoPausaAtendimentoIA?
@@ -519,6 +520,8 @@ enum Papel {
 }
 
 model Usuario {
+  geracoesInsightCriadas GeracaoInsightInbox[] @relation("AutorGeracaoInsightInbox")
+  geracoesInsightDescartadas GeracaoInsightInbox[] @relation("DescarteGeracaoInsightInbox")
   metasComerciais MetaComercial[] @relation("MetaDoUsuario")
   tarefasResponsavel Tarefa[] @relation("ResponsavelTarefa")
   tarefasCriadas Tarefa[] @relation("CriadorTarefa")
@@ -9051,6 +9054,7 @@ enum MotivoPausaAtendimentoIA {
 }
 
 enum OrigemChamadaIA {
+  INSIGHT
   ATENDIMENTO
   TRIAGEM
   RESUMO
@@ -9077,6 +9081,7 @@ model AgenteIA {
 
 /// No máximo 1 RASCUNHO e 1 PUBLICADA (índices parciais na migration).
 model VersaoAgenteIA {
+  geracoesInsight GeracaoInsightInbox[]
   id              String                @id @default(cuid())
   numero          Int                   @unique
   status          StatusVersaoAgenteIA
@@ -9146,6 +9151,7 @@ model AcaoAgenteIA {
 }
 
 model ChamadaIA {
+  geracaoInsight GeracaoInsightInbox?
   id                 String          @id @default(cuid())
   origem             OrigemChamadaIA
   modelo             String
@@ -9741,4 +9747,51 @@ model TrechoConhecimento {
 
   @@unique([fonteId, ordem])
   @@index([busca], type: Gin)
+}
+
+// Insights D12: retenção histórica deliberada; nenhuma FK de uso é removida em cascata.
+enum EstadoGeracaoInsightInbox {
+  PROCESSANDO
+  PRONTA
+  FALHOU
+  INCERTO
+  RECUSADA
+  DESCARTADA
+}
+
+model GeracaoInsightInbox {
+  id                    String @id @default(cuid())
+  versao                Int @default(0)
+  atendimentoId         String
+  atendimento           AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  autorId               String
+  autor                 Usuario @relation("AutorGeracaoInsightInbox", fields: [autorId], references: [id], onDelete: Restrict)
+  descartadaPorId       String?
+  descartadaPor         Usuario? @relation("DescarteGeracaoInsightInbox", fields: [descartadaPorId], references: [id], onDelete: Restrict)
+  descartadaEm          DateTime?
+  chaveTentativa        String @unique
+  estado                EstadoGeracaoInsightInbox @default(PROCESSANDO)
+  contextoHash          String
+  baseHash              String
+  // Referência da base, sem FK: não é um caminho de autorização nem impede exclusão física da mensagem.
+  baseUltimaMensagemId  String?
+  baseQuantidade        Int
+  configPublicadaId     String?
+  configPublicada       VersaoAgenteIA? @relation(fields: [configPublicadaId], references: [id], onDelete: Restrict)
+  configSnapshotJson    Json
+  precosSnapshotJson    Json
+  modelo                String
+  provedor              String
+  simulada              Boolean @default(false)
+  resultadoJson         Json?
+  chamadaIAId           String? @unique
+  chamadaIA             ChamadaIA? @relation(fields: [chamadaIAId], references: [id], onDelete: Restrict)
+  solicitadoEm          DateTime @default(now())
+  iniciadaEm            DateTime?
+  geradoEm              DateTime?
+  finalizadoEm          DateTime?
+  erroCodigo            String?
+
+  @@index([atendimentoId, solicitadoEm, id])
+  // UNIQUE parcial por atendimento nos estados PROCESSANDO/INCERTO em SQL na493.
 }

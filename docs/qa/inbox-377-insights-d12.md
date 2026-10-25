@@ -32,3 +32,21 @@ Sem integração de aba ou consumidores compartilhados. Gerador e inserção de 
 - Lint dos 10 arquivos alterados na fase UI: acba52 EXIT0, zero avisos, heap 1024. Aviso Vitest preexistente sobre vite-tsconfig-paths permanece separado.
 
 Registro compartilhado restrito: mapa SENTIMENTO_INSIGHT_LABEL, dois botões e três estados vazios exatos, mais registro/semântica/negativos desse mapa em enums-rotulos. Compositor, scheduler, provider, schema, configuração e dependências permanecem intactos. A proteção do campo físico e o mesmo texto no scheduler ainda dependem da bridge real; não são cobertos por afirmação do harness local.
+
+## Checkpoint schema e transporte opt-in
+
+Infraestrutura executada pelo ROOT, não pelo DEV: validate 7fa01e EXIT0; generate sessão 60407/36d375 EXIT0, client72b4825a61e5e3ad098e11155fc19624f37eb3106e52a2d9177323b96050f70c; DDL493 a9216d EXIT0 somente dev-email; backup e98b31 EXIT0 com 425 tabelas/hashes e 559 linhas. Bancos e clients ROOT/B/TESTER continuam na versão492/647. Restaurador A é exclusivamente o493 do integrador; nunca reutilizar492 no A.
+
+Schema fonte SHA257b91c3772970ad6d2c16b50172c4ccc205a40a4d055533f2de374f737010a2; SQL SHA241ee9fb0740a80ae902cf70aec2a2bf9674e44aa29cbeca5bf31049420e5b1c. O integrador confirmou aplicação e preservação da baseline, não testes funcionais do kernel. Nenhuma suite SQL do DEV foi autorizada ou executada nesta fase.
+
+- Envelope inicial RED cf8c0c EXIT1: 13 falhas; GREEN e885aa EXIT0: 5 arquivos/48 testes. Usage ausente/parcial/inválido permanece desconhecido, sem custo0 fictício.
+- Provider opt-in RED c0c2c4 EXIT1: 18 falhas e 2 controles, 20 testes. GREEN 580fd9 EXIT0: 20.
+- Contraprovas de corpo/modelo 75d404 EXIT1: 4 falhas/21 controles, 25 testes. Corpo inválido perdia uso conhecido, modelo divergente não era identificado, modelo inválido anterior ao envio não tinha fase e erro de JSON era classificado como transporte. Corrigidos somente no caminho opt-in.
+- Pasta completa de providers: sessão50551/253ff3 EXIT0, 6 arquivos/78 testes. Casos legados e novos foram executados, incluindo retries e bytes do payload, sem rede real.
+- Origem INSIGHT: RED 3c000e EXIT1, 1 falha/2 controles; GREEN 561f2d EXIT0 em recorte sobreposto de 7 arquivos/77 testes, incluindo teste semântico exato das seis origens.
+- Envelope do modelo observado: RED 7b79a7 EXIT1, 5 falhas; GREEN c74b87 EXIT0, 6 arquivos/53 testes. Ausência de diagnóstico, modelo ausente/divergente e usage parcial não são reparados com campos legados.
+- Preços snapshot RED ab5f1b EXIT1, 7 falhas; GREEN 495bd6 EXIT0, 7 arquivos/60 testes. Dois controles adicionais comprovam tabela histórica independente e custo fora do Int persistível sem registro0.
+- Final sessão8168/c0764f EXIT0: 14 arquivos/144 testes completos (providers, contratos puros e autoria). UTC, um worker, heap1024, sem filtros por nome ou skips. Não somar os recortes sobrepostos acima.
+- Lint final dos 10 arquivos alterados: 6a96ef EXIT0, zero avisos. Sourceproof confirma chamarComRetry legado literal ao checkpoint85c, normalizando somente EOL. O formato do retorno e a chamada de um argumento dos consumidores sem controle foram testados.
+
+Técnicas e pendências: versão/modelo/preços e metadata da base são contratos internos propostos/aprovados; nenhum endpoint recebe envelope/custo do browser. O custo tardio com ACL revogada, replay transacional, concorrência e rollback ainda exigem kernel e SQL nativos. A aba real, reconciliação/descarte UI e bridge/scheduler permanecem pendentes. Testes HTTP são fake; não houve chamada externa, leitura de chave real, instalação, build ou TSC global do DEV.

@@ -622,6 +622,7 @@ export const STATUS_FONTE_CONHECIMENTO_LABEL: Readonly<Record<StatusFonteConheci
 });
 
 export const ORIGEM_CHAMADA_IA_LABEL: Readonly<Record<OrigemChamadaIA, string>> = Object.freeze({
+  INSIGHT: "Insights",
   ATENDIMENTO: "Atendimento",
   TRIAGEM: "Triagem de setor",
   RESUMO: "Resumo",

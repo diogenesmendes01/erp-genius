@@ -18,9 +18,9 @@ DTO projeta apenas última análise validada/data ISO/simulação/base desatuali
 
 ## Próximas fases e limites
 
-Modelo GeracaoInsightInbox e migração futura493 reservados pelo ROOT, ainda não escritos/aplicados. Claim durável, finalização, custo conhecido mesmo com publicação recusada, estado INCERTO/DESCARTADA e índice ativo dependem da revisão técnica do contrato antes de Prisma. Provider fora TX; nenhuma repetição automática de geração. Fechar UI não promete cancelar gasto. Simulado só demo identificada, produção sem provider indisponível.
+Modelo GeracaoInsightInbox e migração493 foram escritos pelo DEV e validados/aplicados pelo integrador somente no banco A. O kernel e sua integração funcional ainda estão pendentes. Claim durável, finalização, custo conhecido mesmo com publicação recusada, estado INCERTO/DESCARTADA e índice ativo dependem da revisão técnica do contrato antes de Prisma. Provider fora TX; nenhuma repetição automática de geração. Fechar UI não promete cancelar gasto. Simulado só demo identificada, produção sem provider indisponível.
 
-Bridge Compositor/scheduler depende da composição358 e coordenação ROOT/B. Texto existente exige confirmação canônica antes de substituir, mantendo componente físico/rascunho e ACK/GET fresco do Assumir. Aba Insights só será habilitada com conteúdo e produtor completos. Sem schema/SQL/API real/credenciais/build nesta fase.
+Bridge Compositor/scheduler depende da composição358 e coordenação ROOT/B. Texto existente exige confirmação canônica antes de substituir, mantendo componente físico/rascunho e ACK/GET fresco do Assumir. Aba Insights só será habilitada com conteúdo e produtor completos. Nenhuma API real, credencial, build ou SQL funcional do kernel foi executado pelo DEV nesta fase.
 
 ## Apresentação e portas locais
 
@@ -31,3 +31,15 @@ O hook de geração recebe uma porta injetada. Não há geração na montagem, S
 Uso de sugestão recebe outra porta local, sem acesso ao campo físico. Se já há texto, ConfirmarAcao real exige confirmação antes de substituir; cancelar não chama a porta. O pedido carrega texto exato, geração e revisão esperada do rascunho. Token específico da confirmação impede reaproveitar handler antigo após cancelar/reabrir. Mudança de revisão, análise ou contexto invalida a confirmação. A bridge futura deverá conferir essa revisão antes de escrever, preservando anexos/menções e as regras de Assumir; os testes fake não substituem essa prova no consumidor real.
 
 Continuam pendentes a ação/diálogo de descarte INCERTO com versão e chave persistidas, reconciliação após leitura fresca, produtor e aba reais, bridge e scheduler. Não existe botão CancelarPROCESSANDO. Esses elementos não foram simulados como entrega pronta.
+
+## Infraestrutura e transporte opt-in
+
+A migração 20261025200000_inbox_insights_d12 cria GeracaoInsightInbox, seis estados, versão CAS, referências históricas restritas e claim único ativo em PROCESSANDO/INCERTO. Autor, atendimento, configuração histórica e chamada não são apagados em cascata. Essa retenção é uma escolha deliberada; não se afirma a mesma política de purga anterior. baseUltimaMensagemId é referência opaca sem FK. OrigemChamadaIA ganha INSIGHT, rotulada como Insights.
+
+O transporte aceita controle opcional com deadline total de até 30 segundos e nenhum retry. Esse caminho inclui o body, limpa timer/listener e classifica abort anterior ao POST separadamente de resultado possivelmente enviado. Nenhum controle entra no JSON. Chamadores sem controle mantêm argumentos, retorno, retries e implementação legada de chamarComRetry.
+
+Somente o diagnóstico opt-in comprova as quatro contagens explícitas e o modelo observado. Ausência, valor parcial/inválido ou modelo fora dos nomes canônicos não são completados com zeros ou com o modelo pedido. Modelo canônico divergente também é incerto. Corpo inválido e recusa preservam uso conhecido. O envelope local não usa campos legados que receberam defaults.
+
+Preços são capturados da tabela canônica no claim, incluindo faixa longa e fator de escrita de cache. A finalização calcula sobre esse snapshot, sem consultar configuração ou preços atuais. Uso/modelo não calculáveis retornam ausência de registro, não uma chamada de custo zero. Só a demonstração explicitamente simulada aceita custo conhecido zero com modelo/provedor simulados e contagens zero.
+
+Esses contratos estão testados com HTTP fake e funções puras. Claim, início, finalização transacional, reconciliação, descarte, avisos e integração real do provider ainda dependem do kernel e de provas SQL nativas; não estão homologados por estes testes.
