@@ -7542,3 +7542,11 @@ Lint focal final e0ec93 EXIT0, zero avisos. Pendências: revisão técnica do de
 ### #360 R2 — porta renderizar explícita (DEV B, 2026-10-25)
 
 Filha corretiva de 78fb, em validação. Somente3 linhas de produção no coordenador da ConversaAberta; mantém forms irmãos e portais. Guarda/parser/exceções intocados. RED23(1 falha) → GREEN23/23 EXIT0 (29bf78); UI13 arquivos/222 casos EXIT0 (46301/cb2299); oráculo T 8 byteigual EXIT0 (3176f6), qualificado como Controller/Popover reais com compositor-fixture. Backend literal, sem repetir SQL14+41. Lint final no recibo R2. Relatório output/inbox-360-r2-report.md; QA exact do filho e visual pendentes.369WIP recuperável por stash/hashes, D5 ainda depende369/370.
+
+### #369 — contexto opcional e resumo setorial Inbox (DEV B, 2026-10-25)
+
+Em validação, sem homologação visual/publicação DEV. Sobre360R2/3b4: novo entrypoint Inbox min0/max1000 e resumo de HANDOFF EXECUTADA com fonte interna, duas notas atômicas e replay/freshator após espera. APIs/defaults globais min12/hash/retorno preservados. Checkbox e metadado booleano por abertura, sem IA/SSE/polling novo. Não implementa grant370; D5 continua incompleto.
+
+Gates: nativo20/20 EXIT0 (11716/a46280), regressão histórica2arquivos20 EXIT0 (68963/c77fcd), focal117 arquivos/1410 casos EXIT0 (42334/bcb61a), Formulários/Campos51/51 EXIT0 (5804/f90502). Lint final/whitelist/pins no recibo; recortes não globais. Negativos canônicos12/8 e primeira falha de fixture separados. Banco liberado para ROOT, fixtures declaradas; restauração só integrador. SPEC docs/specs/inbox-transferencia-contexto-resumo.md; relatório output/inbox-369-report.md. Pendências: revisão/commit, QA exact, TSC/global/build e visual; D5 requer #370.
+
+Normalização coordenada ROOT360 (88aa57d7): somente destinos = [] no parâmetro de CoordenadorAcoesConversa, preservando Props.destinos opcional. Focal169547 EXIT0:2 arquivos/10 testes; lint afetado47b343 EXIT0/zero avisos. Oráculo ROOT undefined.filter/TS2322 preservado pelo integrador; não copiado nem atribuído como teste local.

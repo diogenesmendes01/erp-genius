@@ -10,15 +10,15 @@ const teclas: { tipo: string; fn: (e: unknown) => void }[] = [];
 let gatilho: Elemento;
 function props(el: Elemento) { const key = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, { onClick(): void; onChange(e: unknown): void; onSubmit(e: unknown): void }>)[key]; }
 const executar = vi.fn();
-const carregar = vi.fn(); const concluir = vi.fn();
-async function montar(permitido = true, id = "a", responsavelAtualId = "atual") {
- await act(async () => root.render(createElement(ControladorTransferir, { atendimentoId: id, identidade: "u:"+id, responsavelAtualId, opcoes: { visivel: permitido, pessoas: permitido, setores: [], filaDoSetor: null, aria: false }, destinos: [], executar, carregarPessoas: carregar, aoConcluir: concluir, renderizar: ({transferir,dialogo}) => createElement("div",null, transferir && createElement(Botao,{ref:transferir.gatilhoRef,onClick:transferir.aoEscolher},"Abrir"),dialogo) })));
+const carregar = vi.fn(); const concluir = vi.fn(); const resumo = vi.fn();
+async function montar(permitido = true, id = "a", responsavelAtualId = "atual", setor = false, pessoas = permitido) {
+ await act(async () => root.render(createElement(ControladorTransferir, { atendimentoId: id, identidade: "u:"+id, responsavelAtualId, opcoes: { visivel: permitido, pessoas, setores: setor ? ["SECRETARIA"] : [], filaDoSetor: null, aria: false }, destinos: [], executar, carregarPessoas: carregar, carregarResumo: resumo, aoConcluir: concluir, renderizar: ({transferir,dialogo}) => createElement("div",null, transferir && createElement(Botao,{ref:transferir.gatilhoRef,onClick:transferir.aoEscolher},"Abrir"),dialogo) })));
 }const botao = (texto: string) => doc.body.querySelectorAll("button").find(b => b.textContent === texto)!;
 async function clicar(texto: string) { await act(async () => props(botao(texto)).onClick()); }
 async function mudar(tag: string, valor: string) { await act(async () => props(doc.body.querySelector(tag)!).onChange({target:{value:valor}})); }
 async function confirmar() { await act(async () => props(doc.body.querySelector("form")!).onSubmit({preventDefault(){}})); }
 beforeEach(async () => {
-  fechar.mockReset(); executar.mockReset(); carregar.mockReset(); concluir.mockReset(); carregar.mockResolvedValue([{id:"atual",nome:"Atual"},{id:"b",nome:"Beatriz"}]); executar.mockResolvedValue({ok:true}); teclas.length = 0;
+  fechar.mockReset(); executar.mockReset(); carregar.mockReset(); concluir.mockReset(); resumo.mockReset(); resumo.mockResolvedValue(false); carregar.mockResolvedValue([{id:"atual",nome:"Atual"},{id:"b",nome:"Beatriz"}]); executar.mockResolvedValue({ok:true}); teclas.length = 0;
   const dom = criarDomMinimo(); doc = dom.documento;
   Object.assign(doc, { addEventListener: (tipo: string, fn: (e: unknown) => void) => teclas.push({ tipo, fn }), removeEventListener: (tipo: string, fn: (e: unknown) => void) => { const i = teclas.findIndex(k => k.tipo === tipo && k.fn === fn); if (i >= 0) teclas.splice(i, 1); } });
   Object.assign(dom.janela, { innerWidth: 1280, innerHeight: 800, addEventListener() {}, removeEventListener() {} });
@@ -59,4 +59,14 @@ it("troca de responsável invalida ACK mesmo que gerente conserve as mesmas capa
  await montar(); await clicar("Abrir"); await clicar("Pessoas"); await mudar("select","b");
  await confirmar(); await montar(true,"a","c"); await act(async()=>resolver({ok:true}));
  expect(concluir).not.toHaveBeenCalled(); expect(doc.body.textContent).toContain("Feche e abra novamente");
+});
+it("369 carrega somente booleano do resumo na abertura e o leva ao passo setorial",async()=>{
+ resumo.mockResolvedValue(true);await montar(true,"a","atual",true);expect(resumo).not.toHaveBeenCalled();await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");
+ expect(resumo).toHaveBeenCalledExactlyOnceWith("a");expect(doc.body.querySelector('input[type="checkbox"]')!==null).toBe(true);expect(executar).not.toHaveBeenCalled();
+});
+it("369 transferir setor sem alçada de pessoas ainda consulta resumo, sem listar colegas",async()=>{
+ resumo.mockResolvedValue(true);await montar(true,"a","atual",true,false);await clicar("Abrir");expect(carregar).not.toHaveBeenCalled();expect(resumo).toHaveBeenCalledExactlyOnceWith("a");await clicar("Equipes e filas");await mudar("select","SECRETARIA");expect(doc.body.querySelector('input[type="checkbox"]')!==null).toBe(true);
+});
+it("369 resposta tardia de resumo não revive checkbox de uma abertura anterior",async()=>{
+ let resolver!:(v:boolean)=>void;resumo.mockReturnValueOnce(new Promise(r=>resolver=r)).mockResolvedValueOnce(false);await montar(true,"a","atual",true);await clicar("Abrir");await clicar("Cancelar");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");expect(doc.body.querySelector('input[type="checkbox"]')).toBeNull();await act(async()=>resolver(true));expect(doc.body.querySelector('input[type="checkbox"]')).toBeNull();
 });

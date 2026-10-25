@@ -9,8 +9,8 @@ const teclas: { tipo: string; fn: (e: unknown) => void }[] = [];
 let gatilho: Elemento;
 function props(el: Elemento) { const key = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, { onClick(): void; onChange(e: unknown): void; onSubmit(e: unknown): void }>)[key]; }
 const executar = vi.fn();
-async function montar(ocupado = false) {
- await act(async () => root.render(createElement(PopoverTransferir, { atendimentoId: "a", ancora: { current: gatilho as unknown as HTMLButtonElement }, opcoes: { visivel: true, pessoas: true, setores: ["SECRETARIA"], filaDoSetor: "COMERCIAL", aria: true }, pessoas: [{id:"b",nome:"Beatriz"}], destinos: [], ocupado, aoFechar: fechar, aoExecutar: executar })));
+async function montar(ocupado = false, temResumoAria = false) {
+ await act(async () => root.render(createElement(PopoverTransferir, { atendimentoId: "a", ancora: { current: gatilho as unknown as HTMLButtonElement }, opcoes: { visivel: true, pessoas: true, setores: ["SECRETARIA"], filaDoSetor: "COMERCIAL", aria: true }, pessoas: [{id:"b",nome:"Beatriz"}], destinos: [], ocupado, temResumoAria, aoFechar: fechar, aoExecutar: executar })));
 }
 const botao = (texto: string) => doc.body.querySelectorAll("button").find(b => b.textContent === texto)!;
 async function clicar(texto: string) { await act(async () => props(botao(texto)).onClick()); }
@@ -39,11 +39,11 @@ it("pessoa exige seleção, conserva contexto ao voltar e só confirma por submi
  expect(executar).not.toHaveBeenCalled(); await confirmar();
  expect(executar).toHaveBeenCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"Contexto preservado"});
 });
-it("setor mantém mínimo histórico; fila não exige contexto de outro destino", async () => {
+it("369 setor aceita contexto curto; fila preserva action sem contexto adicional", async () => {
  executar.mockReset(); await montar(); await clicar("Equipes e filas"); await mudar("select", "SECRETARIA");
- await mudar("textarea", "curto"); await confirmar(); expect(executar).not.toHaveBeenCalled();
+ await mudar("textarea", "curto"); await confirmar(); expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"curto",anexarResumoAria:false});
  await mudar("textarea", "Contexto suficiente"); await confirmar();
- expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"Contexto suficiente"});
+ expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"Contexto suficiente",anexarResumoAria:false});
  await mudar("select", "fila"); await confirmar(); expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"fila"},contexto:"Contexto suficiente"});
 });
 it("Aria exige confirmação deliberada e ocupado impede handler de submit", async () => {
@@ -56,4 +56,14 @@ it("Aria exige confirmação deliberada e ocupado impede handler de submit", asy
 it("a mudança de passo mantém foco num campo da mesma abertura", async () => {
  await montar(); await clicar("Pessoas"); expect(doc.activeElement === doc.body.querySelector("select")).toBe(true);
  await clicar("Voltar"); expect(doc.body.contains(doc.activeElement)).toBe(true);
+});
+it("369 resumo disponível começa marcado, permite desmarcar e só envia booleano de conteúdo",async()=>{
+ executar.mockReset();await montar(false,true);await clicar("Equipes e filas");await mudar("select","SECRETARIA");
+ const checkbox=doc.body.querySelector('input[type="checkbox"]');expect(checkbox!==null).toBe(true);expect((checkbox as unknown as {checked:boolean}).checked).toBe(true);
+ await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:true});
+ await act(async()=>props(checkbox!).onChange({target:{checked:false}}));await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:false});
+});
+it("369 sem resumo o setor confirma vazio sem checkbox, e dado tardio não desfaz escolha humana",async()=>{
+ executar.mockReset();await montar(false,false);await clicar("Equipes e filas");await mudar("select","SECRETARIA");expect(doc.body.querySelector('input[type="checkbox"]')).toBeNull();await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:false});
+ await montar(false,true);const checkbox=doc.body.querySelector('input[type="checkbox"]')!;expect((checkbox as unknown as {checked:boolean}).checked).toBe(true);await act(async()=>props(checkbox).onChange({target:{checked:false}}));await montar(false,true);expect((doc.body.querySelector('input[type="checkbox"]') as unknown as {checked:boolean}).checked).toBe(false);
 });
