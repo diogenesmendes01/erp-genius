@@ -45,3 +45,11 @@ Evidências e negativos em `docs/qa/inbox-331-candidata-dev-a.md`. Schema/lock/d
 ### Correção independente da agenda efetiva
 
 Na edição com agenda já resolvida, a exigência data/horário do lembrete considera dataCivil/inicioEm dessa agenda, inclusive quando a tarefa anterior não tinha prazo ou possuía somente data. Sem opção interna, a validação pública CRM anterior permanece. O instante resolvido e a comparação do lembrete continuam autoridades; horário DST não é reinterpretado e lembrete idêntico não rearma. A contraprova P2 do TESTER foi reproduzida em unidade e pelo wrapper SQL antes da correção; QA da candidata deve ser refeita na filha.
+
+### Revisão #439 C3 — apresentação do modal
+
+Os chips Tipo apresentam os ícones genéricos MessageCircle, Phone, Mail, Calendar e CircleDot, decorativos e acompanhados pelos rótulos centrais existentes. WhatsApp não usa ícone de marca. O mapa é fechado e exaustivo por TipoTarefa; seleção, aria-pressed e valores enviados permanecem iguais.
+
+O bloco Responsável inteiro, incluindo rótulo e seletor, aparece somente quando dados.podeAtribuirResponsavel é verdadeiro. Lista vazia não esconde uma capacidade concedida, e lista preenchida não cria capacidade. Não há fallback readonly Você/Sem responsável. Ocultar o bloco preserva o estado carregado e não acrescenta alteração de atribuição ao payload da edição.
+
+Os rótulos locais de Lembrete seguem a issue: Sem lembrete, Na hora, 10 min antes, 30 min antes e 1 h antes; valores null/0/10/30/60 inalterados. Título continua limitado a 200, D10 não recebe campos novos e CRM/backend/CAS não são modificados. Evidências desta revisão em docs/qa/inbox-439-c3-modal-tarefa.md; gates originais e aceite visual permanecem coordenados pelo ROOT.
