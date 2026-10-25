@@ -1,0 +1,91 @@
+{
+  "issue": 347,
+  "base": "252b177a05ce718e87584bd0992ff3f21153b72b",
+  "feature": "716a6261f1bb920bbd4d5c9013535c2acf2ed058",
+  "runtime": "287b4c2c88303cd1a2208129b6f0268851d74ae1",
+  "alterados": [
+    "docs/planejamento/quadro-entregas.md",
+    "docs/specs/inbox-faixa-aria-ativa.md",
+    "output/inbox-347-report.md",
+    "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts",
+    "src/app/(app)/inbox/InboxNovo.test.ts",
+    "src/app/(app)/inbox/InboxNovo.tsx",
+    "src/app/(app)/inbox/aria/FaixaAriaAtiva.test.ts",
+    "src/app/(app)/inbox/aria/FaixaAriaAtiva.tsx",
+    "src/app/botoes-mapa.ts",
+    "src/components/Botao.test.ts",
+    "src/components/Botao.tsx"
+  ],
+  "objetosBaseProtegidos": 5828,
+  "pareceres": [
+    {
+      "path": "tester-716-historico.md",
+      "bytes": 3362,
+      "sha256": "200610761dacbed54867358873ebc9356f6562c975fd932955365b1f91a3eebd",
+      "originalPrivado": {
+        "path": "inbox-347-716-functional-review-tester.md",
+        "bytes": 3355,
+        "sha256": "77969ac1afae1ac11dbf3377aa544a8d9ae2cccd43209dea0f4723a89ce9cb91"
+      },
+      "curadoria": "Caminhos locais substituídos por rótulos genéricos, evitando duplicação editorial do rótulo worktree; resultados históricos preservados."
+    },
+    {
+      "path": "tester-287-final.md",
+      "bytes": 3512,
+      "sha256": "1d6e862bb318e9fc6a8bc6949e68d4834bf4ac53f742570221d003d96c3eb788",
+      "originalPrivado": {
+        "path": "inbox-347-287b-final-review-tester.md",
+        "bytes": 3458,
+        "sha256": "c5f93f1a1ad4e87de09082a5d051fb0a015e037a0af5859bb03f68876cadf803"
+      }
+    }
+  ],
+  "root": {
+    "globalUTC": {
+      "files": 950,
+      "tests": 7597,
+      "exit": 0,
+      "session": 92937,
+      "terminal": "655010",
+      "workers": 2,
+      "heapMiB": 1536,
+      "filtros": 0,
+      "skips": 0
+    },
+    "typescriptOriginal": {
+      "exit": 0,
+      "session": 47511,
+      "terminal": "c27643",
+      "heapMiB": 8192,
+      "exclusoesNovas": 0
+    },
+    "lintGlobal": {
+      "exit": 0,
+      "terminal": "0efcbe",
+      "warningsRastreados": 40,
+      "warningsPrivados": 7
+    },
+    "lintCorrecao": {
+      "files": 5,
+      "exit": 0,
+      "terminal": "dc8c34"
+    }
+  },
+  "testerFinal": {
+    "files": 9,
+    "tests": 248,
+    "exit": 0,
+    "session": 19598,
+    "terminal": "495e17"
+  },
+  "negativosPreservados": [
+    "TSC4096OOM1f61b0",
+    "UNITinicialinterrompida168b60apósfalhaconhecida",
+    "REDlinkdf9b56"
+  ],
+  "visual": "PENDENTE",
+  "ci": "AGUARDA_BASE_MAIN_APOS_431",
+  "deploy": false,
+  "representacaoHashes": "Hashes públicos sobre bytes dos blobs Git/LF, incluindo a normalização da quebra final CRLF do arquivo privado. Hashes originalPrivado continuam sobre bytes originais, sem alteração.",
+  "verificacaoCuradoriaAnterior": "TESTER2bf032 detectou diferença de um byte em cada cópia antes deste ajuste; nenhuma diferença de runtime ou resultado."
+}

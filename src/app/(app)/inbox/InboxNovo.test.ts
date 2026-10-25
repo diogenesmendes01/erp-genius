@@ -182,3 +182,10 @@ it("paramsDosFiltros escreve aria antes de cursor/contagens", () => {
   expect(paramsDosFiltros({ aria: "handoff" }, "cur", { contagens: true })).toBe("aria=handoff&cursor=cur");
   expect(paramsDosFiltros({ aria: "ia" }, null, { contagens: true })).toBe("aria=ia&contagens=1");
 });
+
+it.each([["ATIVA",false,"Aria ativa"],["ATIVA",true,"Aria pausada"],["SHADOW",false,"Aria em ensaio"],["DESLIGADA",false,null]] as const)("347 compõe faixa do resumo SSR %s/pausa=%s",(estado,pausada,titulo)=>{
+ const resumo={aria:{estado,pausada,podeGerenciar:false},contagens:{todas:10,ia:3,aprovacao:2,handoff:1,humano:4,semResposta:0,naoAtribuidas:2}};
+ const h=html({extra:{resumo}});if(titulo){expect(h).toContain(titulo);expect(h.indexOf(titulo)).toBeLessThan(h.indexOf('aria-label="Filtros rápidos"'));}else expect(h).not.toContain('aria-label="Situação da Aria"');
+ expect(h).not.toContain('href="/aria"');
+});
+it("347 sem resumo continua compatível, sem faixa ou consulta adicional",()=>{expect(html()).not.toContain('aria-label="Situação da Aria"');});

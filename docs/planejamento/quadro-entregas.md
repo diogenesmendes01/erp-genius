@@ -7182,3 +7182,29 @@ O TSC ORIGINAL 59652, heap8192/noEmit/incrementalfalse, foi interrompido via Ctr
 ### Inbox #346 — correção R1 da PR #431 (ROOT, 25/10)
 
 Filtros pessoais ativos ficam visíveis/removíveis e acessíveis pelo popover com os sete chips; Limpar preserva número/busca/estado Aria. Prévia de sugestão sem rótulo não expõe texto bruto; pessoa sem rótulo conserva autor. SPEC documenta replace, nomes e controles fechados. RED d8e18f e negativo guardas ca4a3b preservados; GREEN 57597/4d17ae EXIT0 (8 arquivos/148 testes completos, UTC), lint6ec062 EXIT0. Sem DB/schema/ACL/envio/HTTP. Não concluída: composição dos conflitos, QA independente/CI final e aceite visual pendentes.
+
+### Inbox #347 — faixa Aria implementada; QA e CI pendentes (25/10/2026)
+
+DEV B na base252b177a05ce718e87584bd0992ff3f21153b72b (#346), branch codex/inbox-e3-347-faixa-aria. FaixaAriaAtiva usa o mesmo resumo vigente da coluna: ATIVA mostra contagens ia e aprovacao+handoff, pausada informa encaminhamento à equipe, SHADOW informa ensaio e DESLIGADA não renderiza. Link Gerenciar em /aria depende exclusivamente de podeGerenciar; fora do role=status e preservado durante atualizações SSE. Sem interruptor D4/#359, backend, novo efeito, query, SSE ou polling. InboxNovo recebe somente import/slot.
+
+RED consumidores histórico: sessão81813/chunk0689f9 EXIT1, dois arquivos39 casos (5 falhas/34 controles). RED isolado desta retomada: CLI minWorkers incompatível (administrativo), módulo ausente (0 casos), scaffold null f085d8 EXIT1 (7 falhas/3 controles em10 casos); não alegar12 casos. Primeiro GREEN47/49 revelou rótulo acessível ausente; corrigido. GREEN três arquivos49/49 chunk2df9c5 EXIT0; recorte seis arquivos69/69 ea851c EXIT0; lint cinco arquivos69d8d8 EXIT0, executores separados, w1/heap512, sem filtros de caso/skips. Aviso preexistente vite-tsconfig-paths permanece; não é suíte global. Sem session_id: executores terminaram sincronamente e devolveram exit_code.
+
+SPEC docs/specs/inbox-faixa-aria-ativa.md; report output/inbox-347-report.md. Visual três larguras/dois temas, QA independente, TSC/global/CI e homologação permanecem pendentes. Nenhum DB/INT, migração, instalação/generate/package/env, servidor, preview, provider, mensagem real, push ou deploy. Publicação/integração exclusivas do ROOT; issue permanece aberta.
+
+Verificação final DEV347 c80b0f EXIT0: seis arquivos69/69 completos e lint cinco arquivos --max-warnings0, mais diff-check. Visual/QA/TSC/global/CI continuam pendentes.
+
+
+### Inbox #347 — integração do link Gerenciar canônico
+
+Guarda integral identificou ação com classes próprias na Faixa. RED11casos/1fail10controles df9b56EXIT1; correção opt-in iaFantasma conserva tokens AI e mantém Gerenciar como link. Mapa declarativo atualizado, guardas sem alteração. GREEN3files105testes5bef7cEXIT0/lint5dc8c34EXIT0. TESTER153 anterior é recorte716, diagnóstico estático independente 1e455a... confirma causa. TSCoriginalfinal8192c27643EXIT0;4096OOMpreservado1f61b0. Primeira globalinterrompida168b60apósfalha conhecida, nova global92937emcurso semresultadoalegado. Report/SPEC atualizados, visual/CI pendentes; issue continua aberta.
+
+
+### Inbox #347 — gates finais e preparação da PR
+
+ROOT globalUTC950/7597 sessão92937/655010 EXIT0, TSCoriginal8192 sessão47511/c27643 EXIT0, lintglobal0+lint5correção0. TESTERexato287 nove arquivos248 testes19598/495e17 EXIT0, guardacanônica85preservada. Curadoria pública com originaishashseparados em output/inbox-347-qa; onze paths featurevsbase252 protegidos fora whitelist. PR deverábasear431, visual/CI/build permanecem pendentes; nada fechado/homologado por suposição.
+
+### #347 — R1 PR433: título vivo, NextLink e rastreabilidade (25/10/2026)
+
+DEV B na branch codex/inbox-e3-347-review-r1/base32c48333. C4 move role=status somente ao título; contagens fora da região viva. C6 Gerenciar usa NextLink/prefetch=false mantendo href/capacidade/iaFantasma; mapa sótroca tag. C5 renomeia cobertura existente pelos nomes nominais da Task6 e documenta vínculos naSPEC, semduplicarcasos. Nenhuma348/ACL/backend alterada.
+
+RED b6e00b EXIT1:13casos/2falhas11controles. Primeiro recorte97402/e20c43 EXIT1:172casos1falha171pass por selfdoDOMmínimoausente; setup local completado paraNextLinkREAL,semrelaxartestes/harness. GREEN sessão11275/ab1127 EXIT0:7arquivos172/172, incluindo guarda85/paleta/contraste/SSR/SSE/foco, w1/heap1024/semfiltro/skipnovo. Lint4/148a1b EXIT0 --max-warnings0. Relatório/SPEC atualizados; QA/composição/visual/TSC/CI pendentesROOT. SemDB/Next/provider/browser/HTTP/install/env/migração/push.
