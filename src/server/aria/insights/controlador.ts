@@ -25,7 +25,11 @@ export async function executarAtualizacaoInsight(autorId:string,entrada:unknown,
   }
   const inicio=await iniciarInsight(autorId,inicioInput,opcoes.db);
   if(inicio.negado)throw negado();
-  if(!inicio.iniciada)return confirmado(inicio);
+  if(!inicio.iniciada){
+    // A falha conhecida já foi commitada; conserva ID/estado/versão para leitura/replay.
+    const mensagem="erroCodigo"in inicio?inicio.erroCodigo==="ORCAMENTO_ESGOTADO"?"Orçamento de IA esgotado.":inicio.erroCodigo==="CONFIG_IA_INDISPONIVEL"?"Geração de Insights indisponível.":undefined:undefined;
+    return {...confirmado(inicio),...(mensagem?{mensagem}:{})};
+  }
   let envelope:EnvelopeInsight;
   const inicioRede=performance.now();
   try {

@@ -29,6 +29,8 @@ import { ACOES_CONFIRMADAS, EXCECOES_CONFIRMACAO, IMPORTS_FORA_DO_SRC } from "./
 
 /** Cópia literal da lista fechada (arquivo, módulo, ação, achado). */
 const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: string }[] = [
+  { arquivo: "src/app/(app)/inbox/insights/OperacoesInsights.tsx", modulo: "@/server/inbox/acoes-insights", acao: "reconciliarInsightNoInbox", achado: "Inbox-377-D12" },
+  { arquivo: "src/app/(app)/inbox/insights/OperacoesInsights.tsx", modulo: "@/server/inbox/acoes-insights", acao: "descartarInsightNoInbox", achado: "Inbox-377-D12" },
   { arquivo: "src/app/(app)/inbox/abas/AgendadasAtividade.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarAgendadaNoInbox", achado: "Inbox-E2.13-D11" },
   { arquivo: "src/app/(app)/inbox/ModalTarefa.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarTarefaNoInbox", achado: "Inbox-E2.11-D10" },
   { arquivo: "src/app/(app)/inbox/abas/TarefasOportunidade.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarTarefaNoInbox", achado: "Inbox-E2.10-D10" },

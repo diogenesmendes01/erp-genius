@@ -4,7 +4,7 @@ import { join, posix } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import {
-  AlcanceImpactoQuantidadeAulas, CanalAvisoAlteracaoAgenda, CategoriaDocumento, ClassificacaoImpactoCoberturaAditivo,
+  EstadoGeracaoInsightInbox, AlcanceImpactoQuantidadeAulas, CanalAvisoAlteracaoAgenda, CategoriaDocumento, ClassificacaoImpactoCoberturaAditivo,
   DecisaoImpactoTaxaAditivo, EstadoDiaCompensacao, EstadoEnvioAssinatura, EstadoLinhaPreparacaoMigracao,
   EstadoReconferenciaDeltaDesistencia, EstadoReservaDevolucaoCredito, FinalidadeTokenPortalAluno,
   ModalidadeConciliacaoFinanceiraMigracao, MotivoPendenciaAvisoAgenda, ParticipacaoAula, ResultadoEnsaioVinculoMigracao,
@@ -2113,6 +2113,7 @@ const ANTIGOS = ["ETAPA_LABEL", "TEMPERATURA_LABEL", "SEGMENTO_LABEL", "MOTIVO_P
   "STATUS_COMISSAO_LABEL", "STATUS_ALUNO_LABEL", "TIPO_COBRANCA_LABEL", "FORMA_PAGAMENTO_LABEL", "GENERO_LABEL", "ESCOLARIDADE_LABEL",
   "SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL", "STATUS_ENCONTRO_LABEL"];
 const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valores: readonly string[]][] = [
+  ["ESTADO_GERACAO_INSIGHT_LABEL",L.ESTADO_GERACAO_INSIGHT_LABEL,Object.values(EstadoGeracaoInsightInbox)],
   ["SENTIMENTO_INSIGHT_LABEL", L.SENTIMENTO_INSIGHT_LABEL, ["POSITIVO", "NEUTRO", "NEGATIVO"]],
   ["ALTERACAO_ARIA_LABEL", L.ALTERACAO_ARIA_LABEL, Object.values(AcaoAgenteIATipo)],
   ["SITUACAO_CLIENTE_VOLTOU_LABEL", L.SITUACAO_CLIENTE_VOLTOU_LABEL, ["ganha", "perdida"]],
@@ -2320,4 +2321,13 @@ describe("(iii) labels.ts: exports e mapas novos", () => {
     expect([...enums]).toEqual([["StatusX", ["ATIVA", "PAUSADA"]], ["Outro", ["A_B"]]]);
     expect(ENUMS.get("StatusEncontroAgenda")).toEqual(Object.values(StatusEncontroAgenda));
   });
+});
+
+it("377 estado de geração tem rótulos fechados e não expõe códigos técnicos",()=>{
+  expect(L.ESTADO_GERACAO_INSIGHT_LABEL).toEqual({PROCESSANDO:"Gerando análise",PRONTA:"Análise pronta",FALHOU:"Não foi possível gerar a análise",INCERTO:"Resultado inconclusivo",RECUSADA:"Análise não publicada",DESCARTADA:"Análise descartada"});
+  const valores=Object.values(EstadoGeracaoInsightInbox);
+  expect(problemasDoMapa(Object.freeze({...L.ESTADO_GERACAO_INSIGHT_LABEL,RECUSADA:"RECUSADA"}),valores)).toContain("RECUSADA: repete o código");
+  const incompleto={...L.ESTADO_GERACAO_INSIGHT_LABEL};delete(incompleto as Partial<typeof incompleto>).INCERTO;
+  expect(problemasDoMapa(Object.freeze(incompleto),valores)).not.toEqual([]);
+  expect(problemasDoMapa(Object.freeze({...L.ESTADO_GERACAO_INSIGHT_LABEL,OUTRO:"Outro"}),valores)).not.toEqual([]);
 });

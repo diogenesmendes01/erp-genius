@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+import type { RetomadaInsight } from "./useGeracaoInsight";
 import { IconRefresh, IconSparkles } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -24,9 +26,10 @@ export interface PropsPainelInsights extends Omit<PortaGeracaoInsight, "podeAtua
   fuso: string | null;
   fusoEscola: string;
   rascunho: PortaRascunhoInsight;
+  renderControles?:(controle:{bloqueado:boolean;retomar(i:RetomadaInsight):Promise<void>})=>ReactNode;
 }
 
-/** Componente isolado: a integração real da aba e a bridge do compositor permanecem reservadas. */
+/** Apresentação compartilhada pela aba real e portas locais testáveis. */
 export function PainelInsights(props: PropsPainelInsights) {
   const { dados, fuso, fusoEscola, autorizado, ativo } = props;
   const geracao = useGeracaoInsight({ ...props, podeAtualizar: dados.podeAtualizar });
@@ -38,12 +41,13 @@ export function PainelInsights(props: PropsPainelInsights) {
   return <section aria-label="Insights" className="space-y-4 [overflow-wrap:anywhere]">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="flex items-center gap-2 text-sm font-medium"><IconSparkles size={16} aria-hidden/>Insights</h3>
-      <Botao variante="iaFantasma" tamanho="sm" ocupado={geracao.ocupado} disabled={!dados.podeAtualizar || geracao.incerto} onClick={geracao.atualizar}><IconRefresh size={15} aria-hidden/>Atualizar</Botao>
+      <Botao variante="iaFantasma" tamanho="sm" ocupado={geracao.ocupado} disabled={!dados.podeAtualizar || geracao.incerto || geracao.aguardandoLeitura} onClick={geracao.atualizar}><IconRefresh size={15} aria-hidden/>Atualizar</Botao>
     </div>
     <MensagemStatus texto={null} progresso={progresso}/>
     <FeedbackAcao erro={geracao.erro || rascunho.erro}/>
     <MensagemStatus texto={rascunho.sucesso}/>
     {rascunho.confirmacao}
+    {props.renderControles?.({bloqueado:geracao.ocupado||geracao.aguardandoLeitura,retomar:geracao.retomar})}
     {dados.estado === "incerto" && <p className="text-sm text-gray-700">A análise inconclusiva pode ter gerado custo. Descartá-la e tentar novamente pode gerar novo custo.</p>}
     {dados.estado === "indisponivel" && <p className="text-sm text-gray-700">Geração indisponível no momento.</p>}
     {!ultima && <EstadoVazio>Nenhum Insight gerado ainda.</EstadoVazio>}

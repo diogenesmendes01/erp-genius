@@ -1,3 +1,4 @@
+import { apenasPortal } from "@/server/_shared/sessao";
 import { createHash } from "node:crypto";
 import type { Db } from "@/server/whatsapp/escopo";
 import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
@@ -7,7 +8,7 @@ import { hashVinculoInsight,pessoasCompativeisInsight,type VinculoInsight } from
 /** Sempre recebe a conexão em uso. Chamadores de escrita invocam após TODOS os locks/esperas. */
 export async function contextoOperacionalInsight(db:Db,autorId:string,atendimentoId:string) {
   const autor=await db.usuario.findUnique({where:{id:autorId},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
-  if(!autor?.ativo)return null;
+  if(!autor?.ativo||apenasPortal(autor))return null;
   const a=await atendimentoVisivel(autor,atendimentoId,false,db);
   if(!a||a.finalidade!=="COMERCIAL"||!a.leadId)return null;
   if(!await podeVerLeadNaThread(autor,a.id,a.leadId,Date.now(),db))return null;

@@ -9,7 +9,7 @@ import type { PropsPainelInsights } from "./PainelInsights";
 type PedidoUso = { token: object; texto: string; geracaoId: string; revisaoEsperada: string };
 
 /** A bridge futura deve conferir a revisão antes de alterar o rascunho físico; este hook não o acessa. */
-export function useRascunhoInsight({ atendimentoId, contexto, ativo, autorizado, dados, rascunho }: PropsPainelInsights) {
+export function useRascunhoInsight({ atendimentoId, contexto, ativo, autorizado, dados, rascunho }: Pick<PropsPainelInsights,"atendimentoId"|"contexto"|"ativo"|"autorizado"|"dados"|"rascunho">) {
   const ultima = dados.ultima;
   const texto = ultima?.analise.textoSugerido;
   const identidade = ativo && autorizado && rascunho.podeUsar && texto && ultima

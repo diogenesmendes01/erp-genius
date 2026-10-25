@@ -14,6 +14,8 @@
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
+  "inbox/insights/AbaInsights.tsx": ["<Botao> Tentar de novo → secundario/sm"],
+  "inbox/insights/OperacoesInsights.tsx": ["<Botao> Retomar análise → iaFantasma/sm", "<Botao> Verificar análise inconclusiva → secundario/sm", "<Botao> Descartar análise inconclusiva → perigoContorno/sm"],
   "inbox/insights/PainelInsights.tsx": ["<Botao> Atualizar → iaFantasma/sm", "<Botao> Usar como rascunho → ia/sm"],
 
   "inbox/fluxos/transferir/ControladorTransferir.tsx": ["<Botao> Fechar → secundario/md"],
@@ -1103,6 +1105,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Transferir → primario/md",
     "<Botao> atribuir · Atribuir · Convidar → primario/md",
     "<Botao> Registrar nota → primario/md",
+    "<Botao> Escrever com Aria → iaFantasma/sm",
     "<Botao> Agendar → primario/md",
     "<Botao> Revogar convite → perigo/sm",
     "<Botao> Cancelar agendamento → perigo/sm",

@@ -1,5 +1,6 @@
 import type { MotivoHandoff } from "@/server/aria/turno/tipos";
 import {
+  EstadoGeracaoInsightInbox,
   MetricaMeta,
   TipoTarefa,
   StatusTarefa,
@@ -916,4 +917,9 @@ export const SENTIMENTO_INSIGHT_LABEL: Readonly<Record<"POSITIVO" | "NEUTRO" | "
   POSITIVO: "Positivo",
   NEUTRO: "Neutro",
   NEGATIVO: "Negativo",
+});
+
+/** Estado público da tentativa; não contém motivo técnico nem contexto histórico. */
+export const ESTADO_GERACAO_INSIGHT_LABEL:Readonly<Record<EstadoGeracaoInsightInbox,string>>=Object.freeze({
+  PROCESSANDO:"Gerando análise",PRONTA:"Análise pronta",FALHOU:"Não foi possível gerar a análise",INCERTO:"Resultado inconclusivo",RECUSADA:"Análise não publicada",DESCARTADA:"Análise descartada",
 });
