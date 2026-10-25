@@ -41,3 +41,8 @@ describe("autoria da Aria", () => {
       for (const v of Object.values(enumeracao)) expect(mapa[v]).toBeTruthy();
   });
 });
+
+it("377 origem Insights é explícita sem renomear origens legadas", () => {
+  expect(ORIGEM_CHAMADA_IA_LABEL).toEqual({ATENDIMENTO:"Atendimento",TRIAGEM:"Triagem de setor",RESUMO:"Resumo",INDEXACAO:"Indexação da base",PLAYGROUND:"Playground",INSIGHT:"Insights"});
+  expect(Object.isFrozen(ORIGEM_CHAMADA_IA_LABEL)).toBe(true);
+});
