@@ -25,7 +25,7 @@ import { CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
 
 import { ControladorTransferir } from "./fluxos/transferir/ControladorTransferir";
 import { opcoesTransferir } from "./fluxos/transferir/opcoes-transferir";
-import { carregarPessoasTransferir, executarTransferenciaInbox } from "./fluxos/transferir/acoes-transferir";
+import { carregarPessoasTransferir, carregarResumoTransferir, executarTransferenciaInbox } from "./fluxos/transferir/acoes-transferir";
 import { ControladorDevolverAria, type ControlesDevolverAria } from "./aria/BotaoDevolverAria";
 import { linhaEstadoAria, type LinhaEstadoAria } from "./aria/textos-aria";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
@@ -277,5 +277,5 @@ function CoordenadorAcoesConversa({ item, aoCriarTarefa, aria, leituraPainel, po
   });
   const opcoes = opcoesTransferir({ usuario, grupo: item.grupo, atendimento: { finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, encerrado: item.status === "ENCERRADO", linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId }, setoresDoNumero: item.setoresDoNumero, ariaPodeDevolver: aria?.podeDevolver === true });
   const identidadeTransferir = JSON.stringify([usuario.id, usuario.papeis, item.finalidade, item.numeroId, item.contatoId, item.numeroDonoId, item.linhaComercial, item.status]);
-  return <ControladorTransferir atendimentoId={item.id} identidade={identidadeTransferir} responsavelAtualId={item.responsavelId} opcoes={opcoes} destinos={destinos} executar={executarTransferenciaInbox} carregarPessoas={carregarPessoasTransferir} aoConcluir={aoMudar} renderizar={({ transferir, dialogo }) => <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => renderizar({ ...acoes, transferir, menu: acoes.menu.filter(i => i.id !== "atribuir" && i.id !== "devolver"), dialogos: <>{acoes.dialogos}{dialogo}</> }, devolver, handoff, tomada)}</ControladorDevolverAria>} />;
+  return <ControladorTransferir atendimentoId={item.id} identidade={identidadeTransferir} responsavelAtualId={item.responsavelId} opcoes={opcoes} destinos={destinos} executar={executarTransferenciaInbox} carregarPessoas={carregarPessoasTransferir} carregarResumo={carregarResumoTransferir} aoConcluir={aoMudar} renderizar={({ transferir, dialogo }) => <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => renderizar({ ...acoes, transferir, menu: acoes.menu.filter(i => i.id !== "atribuir" && i.id !== "devolver"), dialogos: <>{acoes.dialogos}{dialogo}</> }, devolver, handoff, tomada)}</ControladorDevolverAria>} />;
 }
