@@ -48,3 +48,18 @@ it("substituir popover preserva sóum e desmontar limpa atalho sem capturar even
  await montar();await disparar("click",rotulo("Filtros"));await disparar("click",rotulo("Central"));expect(container.querySelectorAll('[role="dialog"]')).toHaveLength(1);expect(dialogo()?.getAttribute("aria-label")).toBe("Ver conversas de");
  await act(async()=>root.unmount());expect(ouvintes.filter(o=>o.alvo===doc&&o.tipo==="keydown")).toHaveLength(0);const {createRoot}=await import("react-dom/client");root=createRoot(container as unknown as HTMLElement);
 });
+const resumoAria={contagens:{todas:5,ia:1,aprovacao:1,handoff:1,humano:2,semResposta:1,naoAtribuidas:2},aria:{estado:"ATIVA" as const,pausada:false,podeGerenciar:false}};
+it("346 filtros pessoais de URL ficam visíveis e removíveis sem perder contexto",async()=>{
+ await montar({resumo:resumoAria});
+ expect(rotulo("Remover filtro Minhas")).not.toBeNull();expect(rotulo("Remover filtro Não lidas")).not.toBeNull();
+ await disparar("click",rotulo("Remover filtro Minhas"));expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&naoLidas=1&busca=ana");
+ await disparar("click",rotulo("Remover filtro Não lidas"));expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&resp=eu&busca=ana");
+ await disparar("click",botao("Limpar"));expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&busca=ana");
+ await montar({resumo:resumoAria,filtros:{responsavel:"u9"}});expect(rotulo("Remover filtro Responsável selecionado")).not.toBeNull();
+});
+it("346 popover oferece Minhas e Não lidas com os sete chips, e Limpar remove os pessoais",async()=>{
+ await montar({resumo:resumoAria,filtros:{setor:"COMERCIAL",numeroId:"n1",busca:"ana"}});
+ await disparar("click",rotulo("Filtros"));await disparar("click",botao("Minhas conversas"));await disparar("click",botao("Somente não lidas"));await disparar("click",botao("Mostrar conversas"));
+ expect(replace).toHaveBeenLastCalledWith("/inbox?setor=COMERCIAL&numero=n1&resp=eu&naoLidas=1&busca=ana");
+ await montar({resumo:resumoAria,filtros:{...props.filtros,setor:"COMERCIAL"}});await disparar("click",rotulo("Filtros"));const limparPopover=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparPopover);expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&busca=ana");
+});
