@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, lazy, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import { comandoDaNota, consultaMencaoNoCursor, tokensAposEdicao, type CandidatoMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import type { Resultado } from "@/server/_shared/resultado";
@@ -26,6 +26,8 @@ const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
   atendimentoId: string;
+  /** Ref local do campo Responder; null na aba Nota ou quando o campo não está disponível. */
+  aoCampoResponder?: (campo: HTMLTextAreaElement | null) => void;
   modo: "responder" | "nota";
   /** null: a permissão ainda não chegou (carregando). Só false é falta de permissão. Falha fechada: só true envia. */
   podeEnviar: boolean | null;
@@ -73,7 +75,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -83,6 +85,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   const [anexos, setAnexos] = useState(false);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
+  const ligarEntrada = useCallback((campo: HTMLTextAreaElement | null) => { entrada.current = campo; aoCampoResponder?.(modo === "responder" ? campo : null); }, [aoCampoResponder, modo]);
   const seletor = useRef<HTMLInputElement | null>(null);
   const gravador = useRef<MediaRecorder | null>(null);
   const descartar = useRef(false);
@@ -429,7 +432,8 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
           <IconMoodSmile size={20} aria-hidden />
         </button>
         <CampoTexto
-          ref={entrada}
+          ref={ligarEntrada}
+          data-compositor-campo=""
           aria-label={nota ? "Escreva uma nota interna" : "Escreva uma mensagem"}
           placeholder={nota ? "Escreva uma nota interna" : "Escreva uma mensagem"}
           rows={1}

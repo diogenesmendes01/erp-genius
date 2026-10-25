@@ -19,7 +19,7 @@ const noServidor = () => false;
 // qualquer `overflow`/`transform` de quem o abriu, e o resto da página fica `inert` enquanto ele está aberto
 // (isolarFundo, pelo useDialogo). No HTML do servidor e na hidratação não há `document`: o modal sai no
 // lugar, como antes, e assim fica até fechar — trocar de lugar no meio remontaria o conteúdo e perderia o foco.
-export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = false, folha = false, telaCheiaNoCelular = false, papel = "dialog", descricaoId, focoInicial, children }: {
+export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = false, folha = false, telaCheiaNoCelular = false, papel = "dialog", descricaoId, focoInicial, focoAoFechar, children }: {
   titulo: React.ReactNode;
   aoFechar: () => void;
   bloquearFechamento?: boolean;
@@ -35,6 +35,8 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
   descricaoId?: string;
   /** Quem recebe o foco ao abrir; sem ele, o primeiro campo/botão. */
   focoInicial?: RefObject<HTMLElement | null>;
+  /** Opcional: encaminha o destino/supressão já suportado por useDialogo; ausente retorna ao gatilho. */
+  focoAoFechar?: RefObject<HTMLElement | null>;
   children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -43,7 +45,7 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
   // Decidido no primeiro render e congelado: aberto depois da hidratação, vai para o portal desde o início.
   const clienteAgora = useSyncExternalStore(semAssinatura, noNavegador, noServidor);
   const [emPortal] = useState(clienteAgora);
-  useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento, focoInicial, isolar: emPortal ? camada : undefined });
+  useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento, focoInicial, focoAoFechar, isolar: emPortal ? camada : undefined });
   const conteudo = (
     <div ref={camada} className={`fixed inset-0 z-50 flex justify-center bg-black/60 ${telaCheiaNoCelular ? "items-center p-0 sm:p-4" : folha ? "items-end p-0 sm:items-center sm:p-4" : "items-center p-4"}`} onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
       <div

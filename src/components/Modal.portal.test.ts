@@ -58,3 +58,9 @@ describe("Modal no navegador — portal e fundo inert (C14, #170)", () => {
     expect(m.useDialogo.mock.calls[0][1].isolar).toBeUndefined();
   });
 });
+
+it("encaminha focoAoFechar opcional sem substituir o retorno padrão do diálogo",()=>{
+ const retorno={current:null};renderToStaticMarkup(createElement(Modal,{titulo:"Resumo de handoff",aoFechar(){},focoAoFechar:retorno}));
+ expect(m.useDialogo.mock.calls[0][1].focoAoFechar).toBe(retorno);
+ m.useDialogo.mockClear();desenhar();expect(m.useDialogo.mock.calls[0][1].focoAoFechar).toBeUndefined();
+});
