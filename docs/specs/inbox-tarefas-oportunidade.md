@@ -1,6 +1,6 @@
 # Tarefas da oportunidade no Inbox — #330 (D10)
 
-Status: implementação candidata em progresso na branch `codex/inbox-e2-330-tarefas`, base329 `26c4da69f4785ea57d4393a4069a871fa2597915`. Não homologada; sem aceite visual, TypeScript do integrador, regressão global ou revisão independente desta fonte330.
+Status: candidata técnica aprovada nos gates originais e revisão independente da fonte5e0f117b, PR436 draft. Aceite visual e gates de publicação continuam pendentes; não homologada nem concluída. Branch DEV `codex/inbox-e2-330-tarefas`, base329 `26c4da69f4785ea57d4393a4069a871fa2597915`.
 
 ## Escopo aprovado
 
@@ -48,3 +48,13 @@ Root executou TSC original54920/2754c9 EXIT2: único TS2739, fixture de ausênci
 Correção limitada: fixture com DTO completo; CampoTexto real, minLength1/maxLength500/required e ChangeEvent<HTMLTextAreaElement>; identidade da sessão só atendimentoId. Atualização de outra tarefa mantém o mesmo campo físico e valor. Atualização/remoção do próprio alvo mantém o rascunho mas invalida a confirmação, mostra erro e ignora ACK antigo. Não renomeia versao nem altera qualquer guarda. Concluir/reabrir/reagendar reconciliam somente se identidade/versão/status do próprio alvo continuam atuais. Nenhuma mudança em src/server ou SQL697.
 
 RED49350/5944c6 EXIT1:3arquivos42,5falhas/37pass (2guardas +3DOM). GREEN97005/713e5c EXIT0:42/42. Lint57fefb detectou leitura de ref em render; correção de estado explícito→lint4213dd EXIT0,3arquivos,0warnings. UNIT18 intermediária58803/a03e90 EXIT0,509/509; final60159/5058f8 EXIT0,18arquivos510,80.13s, inclui negativo de remoção/reapresentação do alvo. Regressão global e TSC precisam de nova execução pelo integrador sobre a filha; sem repetir SQL já verde, backend literal697 e banco sem lease.
+## Gates originais e revisão independente — fonte5e0f117b
+
+PR [#436](https://github.com/diogenesmendes01/erp-genius/pull/436), draft aberta pelo integrador, branch `codex/inbox-e2-330-publicacao`, head `5e0f117beabc6fa59c3419564c8d7b063850424a`, base real #435. Este filho altera só documentação; fontes de produção/teste permanecem literais5e0.
+
+- ROOT TypeScript ORIGINAL `tsc --noEmit --incremental false`: sessão53463/terminal03fd29, EXIT0, config inalterada e sem exclusões novas; prova privada `output/inbox-330-final-tsc-terminal-root-private.json`.
+- ROOT UNIT completa ORIGINAL UTC: sessão19816/terminal1287ab, EXIT0,969arquivos8254testes,234.20s, sem filtros/skips solicitados; provas `output/inbox-330-final-global-terminal-root-private.json` e raw/log correspondentes. Não somar à rodada DEV18/510.
+- ROOT lint ORIGINAL `eslint .`: sessão97309/terminalf24d9c, EXIT0,0erros/50warnings, configuração inalterada; provas `output/inbox-330-final-lint2-terminal-root-private.json` e log. A primeira rodada global de lint5e0 havia saído1; é negativa histórica separada. Arquivos privados e caches foram arquivados pelo integrador preservando hashes, sem install/config/ignore novo; o DEV não os moveu.
+- TESTER independente no head5e0: parecer favorável informado pelo ROOT (identificador e3c7c1e…),34arquivos completos/749testes mais17controles adversariais, EXIT0. Backend continua literal697; integração independente8arquivos66testes foi concluída e o banco restaurado. Não agregar essas contagens às unitárias nem tratar testes instrumentados de falha como SQL concorrente.
+
+Os negativos originais TS2739/CampoTexto/remount da fonte697 e o lint intermediário permanecem no histórico acima. A aprovação técnica sobre5e0 os substitui como estado atual; não transforma a execução697 em green. Ainda pendem aceite visual APP/PROTO e demais gates de publicação/CI/merge coordenados pelo integrador. PR draft e feature não marcada concluída; nenhuma publicação foi feita pelo DEV. #331 criar/editar e #338 extras seguem reservadas. Sem nova execução de Node/SQL/DB nesta atualização documental.
