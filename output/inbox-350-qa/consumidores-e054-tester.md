@@ -7,7 +7,7 @@ Aprovado o recorte autorizado de três arquivos completos no commit exato e0546a
 Comando Node22 local:
 
 ```text
-C:/Users/Mendes/AppData/Local/hermes/node/node.exe --max-old-space-size=512 node_modules/vitest/vitest.mjs run "src/app/(app)/inbox/InboxNovo.interacao.test.ts" "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts" "src/app/(app)/inbox/page.test.ts" --maxWorkers=1
+node --max-old-space-size=512 node_modules/vitest/vitest.mjs run "src/app/(app)/inbox/InboxNovo.interacao.test.ts" "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts" "src/app/(app)/inbox/page.test.ts" --maxWorkers=1
 ```
 
 Sessão15921, início5444d2 e terminala2a5d9 EXIT0:3arquivos/104testes aprovados,17,58s. Sem filtros de casos ou skips. O aviso de vite-tsconfig-paths é informativo; não foram alteradas configurações. Este recorte é distinto dos26/555 históricos do TESTER e10/205 do ROOT; não se soma como suíte global nem os reatribui ao meu executor.

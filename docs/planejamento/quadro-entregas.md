@@ -7035,3 +7035,7 @@ CI e05440170735019 cincoSUCCESS:953arquivos/7616testes por fuso UTC/SP,lint/buil
 ### Inbox #350 — revisão R1 C3/C4 (25/10/2026)
 
 C3 reproduzido35945/32a8fc EXIT1(4falhas39controles),corrigido com fimJanela opcional para temMaisDepois e epoch inválido estável. GREEN2arquivos43/b83068 + consumidores4arquivos43/11e8a9 +lint4/828b4b EXIT0;semfiltros/skips,semglobal/TSC/DB. C4 mapeado ao teste existente de expiração focada. Relatório output/inbox-350-qa/revisao-r1-c3-c4.md qualifica visual histórico e preserva gates C1anexos/B1C2integração420→427→430 pendentes. Sem marcar issue concluída.
+
+### Inbox #350 / PR430 — revisão R3 C5/C6
+
+C5: duas cópias públicas sanitizadas somente no caminho do executável; hashes originais privados e hashes de publicação separados no índice. C6: limite da janela de mensagens mantido após verificar o filtro de notas anterior à intercalação; não ampliar janela por notas ainda não visíveis. ROOT regressão três arquivos completos/65 testes EXIT0 terminal7a1c3c, heap512/w1/sem filtros ou skips. Primeiro7b542b falhou antes dos testes por EPERM cache; repetição autorizada0. Índice original continha hashes LF; validador inicial2d75bf encontrou checkout CRLF, sem falha de runtime; comparação aos seis objetos Git originais e curadoria de duas cópias6b0a34 EXIT0, sem normalizar os demais arquivos. Relatório output/inbox-350-qa/revisao-r3-c5-c6.md. Nenhum runtime/DB/visual alterado; anexos e composição420→427→430 ainda pendentes, issue aberta.

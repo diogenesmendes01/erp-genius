@@ -6,8 +6,13 @@
   "pareceres": [
     {
       "path": "geral-85e.md",
-      "bytes": 10781,
-      "sha256": "7a30df71b40f37366dfd0d2452e238e3d089b805cc57bd557a35f01f8c9fb32d"
+      "bytes": 10735,
+      "sha256": "2d78dc16aa84571611d081222e1b7c7cfd4e8b381523a3de0396ee9fbf26c6b9",
+      "originalPrivado": {
+        "bytes": 10781,
+        "sha256": "7a30df71b40f37366dfd0d2452e238e3d089b805cc57bd557a35f01f8c9fb32d"
+      },
+      "curadoria": "Somente caminho absoluto do executável local substituído por node; resultados e fonte históricos preservados."
     },
     {
       "path": "resultados-85e.json",
@@ -31,8 +36,13 @@
     },
     {
       "path": "consumidores-e054-tester.md",
-      "bytes": 2522,
-      "sha256": "a197389cbc4c46fd7a502727b8bad78056c7375af70fabf599cc157620dbab73"
+      "bytes": 2476,
+      "sha256": "a627bb8f2f96b642ad37188303daf72e60546c7c31385237c7dc670f5629d6ff",
+      "originalPrivado": {
+        "bytes": 2522,
+        "sha256": "a197389cbc4c46fd7a502727b8bad78056c7375af70fabf599cc157620dbab73"
+      },
+      "curadoria": "Somente caminho absoluto do executável local substituído por node; resultados e fonte históricos preservados."
     }
   ],
   "unit": {
@@ -51,13 +61,13 @@
     "exit": 0
   },
   "ci": {
-    "run": 40170735019,
-    "head": "e0546ae59da59c5d805b0a4900654ba44294256c",
+    "run": 40176546035,
+    "head": "84e28e571bcb51fc5a3e9adbbfceb3dd680a0943",
     "jobs": 5,
     "status": "SUCCESS",
     "unit": {
       "files": 953,
-      "tests": 7616,
+      "tests": 7620,
       "timezones": [
         "UTC",
         "America/Sao_Paulo"
@@ -86,5 +96,37 @@
     "attachments": "AGUARDANDO_AUTORIZACAO_DO_DONO"
   },
   "limites": "Visual nativo nominal à fonte85e/runtime4b, composição e054 preservada e testada separadamente; quatro lotes, sem reclassificar agregados negativos. Sem prova de envio real ou anúncio audível.",
-  "publicationCode": "e0546ae59da59c5d805b0a4900654ba44294256c"
+  "publicationCode": "84e28e571bcb51fc5a3e9adbbfceb3dd680a0943",
+  "ciAnterior": {
+    "run": 40170735019,
+    "head": "e0546ae59da59c5d805b0a4900654ba44294256c",
+    "jobs": 5,
+    "status": "SUCCESS",
+    "unit": {
+      "files": 953,
+      "tests": 7616,
+      "timezones": [
+        "UTC",
+        "America/Sao_Paulo"
+      ],
+      "eachTimezone": true
+    },
+    "typescript": "PASS",
+    "lint": "PASS",
+    "build": "PASS"
+  },
+  "revisaoR3": {
+    "C5": "COPIAS_PUBLICAS_SANITIZADAS",
+    "C6": "MANTIDO_CONTRATO_JANELA_MENSAGENS",
+    "regressao": {
+      "files": 3,
+      "tests": 65,
+      "exit": 0,
+      "terminal": "7a1c3c",
+      "filtros": 0,
+      "skips": 0
+    },
+    "runtimeAlterado": false
+  },
+  "representacaoHashes": "Bytes dos objetos Git/publicação LF; checkout Windows pode materializar CRLF. Hashes históricos privados preservados separadamente nas duas cópias sanitizadas."
 }

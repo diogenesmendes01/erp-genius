@@ -16,7 +16,7 @@ Node22 local, heap512MB e maxWorkers1; configuração UNIT original. Sem -t, fil
 
 ## Lista exata dos26 arquivos completos
 
-Comando: C:/Users/Mendes/AppData/Local/hermes/node/node.exe --max-old-space-size=512 node_modules/vitest/vitest.mjs run com TODOS os paths abaixo e --maxWorkers=1. A lista foi verificada como26 únicos existentes antes de executar, gravada em output/inbox-350-85e-unit26-lista-tester.json.
+Comando: node --max-old-space-size=512 node_modules/vitest/vitest.mjs run com TODOS os paths abaixo e --maxWorkers=1. A lista foi verificada como26 únicos existentes antes de executar, gravada em output/inbox-350-85e-unit26-lista-tester.json.
 
 ~~~text
 src/app/(app)/inbox/aria/CartaoSugestaoAria.interacao.test.ts
