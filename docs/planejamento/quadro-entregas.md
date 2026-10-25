@@ -6817,3 +6817,14 @@ PR421 mergeada em7931001311476d4381576b8fdf8bba3d0f8e7bb3 após CI finaldbbd5/5 
 PR425 mergeada a0b8f82c9ed0f30c5908cb4bc8ca4a68afdd74af,issue423extra fechada;81originais permanecem32fechadas/49abertas. Mainintegral+blocos343preservados. Os12SRC343 continuamnominais3de/f1f;os2SRC423incorporadossãobyteiguaisaosdaPR425/QA38. TSCoriginalcombinado26136/db8c4fEXIT0semexclusões. Integração343full40139991809nominalf1f anterior423,semalegarexecuçãointegralcombinada;CIglobalfinaldacomposiçãopendente. Fontes/limitesemoutput/inbox-343-qa/composicao-main-423.json.
 
 343 — integração remota40139991809/f1f concluiu4/4:350arquivos/3112testes aprovados,3arquivos/4preparadores visuais opt-in ignorados. Watch25375/b8935a e verificador44543/662895 terminais0;4logs/SHA/totais emoutput/inbox-343-qa/ci-f1f.json. Composição com425 mantém12SRC343+2SRC423homologados; fullf1f é anterior423, não suíte integral combinada. TSC combinado26136/db8c4f0. CI global final e merge343pendentes,semnovaexecuçãoINTlocalROOT.
+
+
+## Inbox #344 — marco 1, tradutor SQL fechado DEV — 24/10/2026
+
+Base main170edbad, branch codex/inbox-e3-344-contagens. Somente where-sql e testes de paridade foram implementados; ACL/CRM, lista, rota/API, InboxNovo, #342/#343/uso, schema/deps permanecem intactos. Registry finito, valores parametrizados, formatos novos recusados e EXISTS correlacionado. Contextos canônicos de equipe/titulares/pares docentes não têm cap; não se materializa universo de IDs de atendimentos.
+
+Corpus próprio: 26 UNIT (inclui 512 construções canônicas nos 256 subconjuntos dos oito papéis em leitura/envio) e 67 INT com SQL versus Prisma no mesmo where/Db. Posse e carteira independentes, NULL/NOT/relações, lógicos vazios/mistos, busca/escape, convites/revogações, contexto real com membro301, pool1/rollback e três TZ. O RED revelou normalização contextual de grupos vazios pelo Prisma; o where canônico foi preservado. Negativos de módulo/stub, fixture com guarda pedagógica, lógica e literal de busca permanecem nominais no relatório.
+
+Gates finais EXIT0: UNIT relacionado 32613/1d3b0f, oito arquivos/184 casos, 32,33 s; INT 71265/d0f988, dois arquivos completos/70 casos, 23,72 s, worker1, sem filtros/skips; lint3 a93b4f; TSC auxiliar 94659/c46e69, todos SRC/testes atuais incluídos e somente as duas exclusões privadas históricas declaradas. Não é global e não se somam recortes sobrepostos. ROOT d01e09 restaurou ciint491, 424 hashes/snapshot502/fixture/sequências, zero atividades. Banco liberado e sem nova DB DEV.
+
+SPEC parcial docs/specs/inbox-contagens-aria.md e relatório output/inbox-344-report.md. QA independente/revisão do marco1 e novo GO são necessários antes dos marcos2/3 (sete contagens em um agregado, Aria antes da paginação e transporte aditivo). API dos cinco chips legados deve permanecer. A #344 NÃO está concluída; nenhuma apresentação ou alçada nova foi antecipada.
