@@ -45,3 +45,37 @@ O banco foi explicitamente liberado ao ROOT depois do último terminal DB. Nenhu
 
 
 Restauro final confirmado pelo ROOT em d01e09, EXIT0: ciint491, 424 hashes, snapshot de 502 registros, fixture e sequências preservados, zero outras atividades. Nenhuma nova DB pelo DEV.
+
+## Marco 2 — estado SQL e sete contagens, 24/10/2026
+
+Base do delta: c9e710e35a56c9b64366c31b5d292f9b5ae8a516, no mesmo worktree/branch. ROOT leu integralmente QA do marco 1 (66ed1e5a/10519), aprovou o tradutor e preparou a lease exclusiva do ciint491 em 2a4d0a EXIT0, 424 hashes/502 registros. O corpus M1 e sua QA permanecem nominais; não se somam aos gates M2.
+
+Dois módulos de produção novos, quatro arquivos de testes e uma fixture local: estado-aria-sql.ts/.test.ts/.int.test.ts; contagens.ts/.test.ts/.int.test.ts; contagens-fixture.int.ts. Nenhum arquivo de fonte existente mudou. Registry M1, #342/#343, helpers ACL/CRM/uso, lista, API, SSR, InboxNovo, schema e dependências permanecem idênticos. O contexto fica em contagens.ts e não importa consultas-pagina, evitando criar o ciclo discutido para a fase 3.
+
+O contexto carrega situação, orçamento e ACL uma vez, no mesmo Db, sem H global. O agregado novo executa sete totais em uma query SQL, com H/S correlacionados e CASE equivalente à derivação342. COUNT bigint passa por validação de inteiro seguro. Não lidas usa EXISTS equivalente ao helper canônico, sem copiar ACL nem materializar IDs de atendimentos. Base retira aria/prazo/fila e mantém eu/ID/nãoLidas e os demais filtros. A nova resposta é produtor interno: consumidores do marco 3 ainda não recebem resumo.
+
+### TDD e negativos M2
+
+- UNIT 258da0 e INT 12a1ae: EXIT1 por módulos ausentes, zero casos coletados; não são provas DB.
+- Stubs explícitos: UNIT c7d501, seis falhas/sete controles esperados em 13; INT sessão67325/2eb359, dois arquivos completos/20 falhas, 89,11 s, EXIT1. As fixtures A–G executaram com matrícula financeira válida e sem desativar guardas.
+- Primeiro GREEN unitário 03c4c8: dois arquivos/13 casos, EXIT0. Integração sessão24679/30ab13: dois arquivos/20 casos, 19 passes/uma falha, 96,63 s, EXIT1. A falha era do oráculo: “Contato A” casa os sete nomes pela palavra “a” dentro de “Contato”, conforme whereBuscaConversas. A expectativa foi corrigida e acompanhada por controles de telefone único=1 e termo ausente=0. Não houve ajuste de produção para fazer o teste passar. Esse run não é reclassificado.
+- O último delta foi exclusivamente no teste INT, incluindo também leitura pessoal em T/T+1. Produção e arquivos UNIT ficaram byteiguais. TSC anterior5527/7168e6 e lint anterior6cec6d eram verdes na versão anterior do teste, sem reatribuição.
+
+### Gates finais M2
+
+| Gate | Sessão/terminal | Resultado |
+| --- | --- | --- |
+| UNIT relacionado completo | 36424/142433 | Oito arquivos/219 casos, 28,19 s, EXIT0 |
+| INT relacionado completo | 79338/8d4c6c | Três arquivos/38 casos, 184,28 s, EXIT0 |
+| TSC auxiliar final | 8911/4b8c5f | EXIT0 |
+| Lint dos sete paths | 861edb | EXIT0, sem aviso |
+
+UNIT inclui estado-aria-sql.test, contagens.test, estado-aria.test, where-sql.test, aria/uso.test, aria/permissoes-tela.test, aria/turno/guardas.test e enums-rotulos.test, todos completos, maxWorkers=2. O comando final INT usa vitest.integration.config.ts, estado-aria-sql.int.test.ts (nove), contagens.int.test.ts (onze) e estado-aria.int.test.ts (18 preservados), maxWorkers=1. Cada sessão foi acompanhada até terminal. Sem filtro por nome ou teste ignorado. Não é global; não se somam recortes sobrepostos ou execuções independentes.
+
+TSC com heap8192, --noEmit --incremental false, auxiliar privada que estende a configuração original e acrescenta somente os dois privados históricos autorizados já descritos no marco 1. Todos os SRC/testes atuais estão incluídos; nenhum TSC original/global deste worktree com privados é alegado verde. Executáveis locais Node22, sem instalação/generate.
+
+O corpus real comprova Admin A–G=7 e FINANCEIRO=1; vendedor só B/D; fila/aria/prazo removidos da base mas eu/ID e não lidas mantidos; prioridade H/pausa/sugestão/global/responsável; campos null e estado bruto versus global efetivo; prazo estrito, primeira resposta e encerramento; contagem pessoal por usuário e igualdade da leitura; múltiplos filhos sem duplicar linhas; contexto reutilizado sem duplicar situação/orçamento/versão; uma query agregada; 301 handoffs adicionais sem cap; pool1, alterações não commitadas e rollback; três TZ com restauração. Grupo é um SELECT sintético porque o trigger impede a gravação dessa fixture.
+
+SHA256 GitLF/físico LF dos módulos: estado-aria-sql.ts, 2.057 bytes, 45872a3f360b1466eb29290f9154c19271d333f4283211b0f02bbaff0ff075d2; contagens.ts, 5.922 bytes, 8587a003fcd82a005e31e3abf8da50d3ad57d91cdccefbb4cf521f74ae992f46. INT finais: estadoSQL cdaab115531e7d78642e875a87283f27bdeed5ac2ff2887e17389d4e086462a9 e contagens 9236ef84d7df24da8b26c4f2cfea36e32322f27db68de1953b9f1b0da53db925. Logs/ledger e recibo completo permanecem privados.
+
+Banco explicitamente liberado após o último terminal. ROOT confirmou restauro 3564e1 EXIT0: ciint491, 424 hashes, snapshot502, fixture e sequências preservados, zero outras atividades. Nenhuma nova DB pelo DEV. QA independente, leitura ROOT e GO3 permanecem pendentes. Não há UI nova ou prova visual nova; não se publicou PR, não se alterou provider e a #344 continua parcial.
