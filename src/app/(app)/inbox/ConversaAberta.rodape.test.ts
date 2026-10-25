@@ -21,7 +21,7 @@ const base={item:{id:'a',capacidades:[],status:'EM_ATENDIMENTO',grupo:false},usu
 function tela(p=base):ReactNode{
  let t=m.g!.renderizar(ConversaAberta,p);
  // Materializa os coordenadores reais, incluindo o novo controlador de slots da Aria.
- for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
+ for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'||typeof n.props.renderizar==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
  return t;
 }
 beforeEach(()=>{m.g=criarGanchos();m.usar.mockReset();m.usar.mockReturnValue({assumir:null,transferir:null,menu:[],feedback:null,dialogos:null,abrirAgendar:m.abrirAgendar});vi.mocked(registrarNotaAtendimento).mockClear();});

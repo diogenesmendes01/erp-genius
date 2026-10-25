@@ -641,6 +641,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma experimental agendada.",
     "compacto · Você não tem turmas atribuídas.",
   ],
+  "src/app/(app)/inbox/fluxos/transferir/PopoverTransferir.tsx": ["compacto · Ninguém disponível."],
   "src/app/(app)/inbox/AcoesAtendimento.tsx": [
     "compacto · Este número não atende outro setor.",
     "compacto · Nenhum convite ativo que você possa revogar.",

@@ -7577,3 +7577,15 @@ Complemento de alinhamento: buildf143/NzA passou23826/7d1b3a EXIT0. Em31cenas, n
 ROOT57822fc2: global1009/8753, TypeScript, lint0erros/63avisos e buildyNy todos EXIT0. Pilha R7 publicada sem force: seis PRs atualizadas e novas #444(#334), #445(#357), #446(#358), todas em rascunho. TESTER conferiu nove deltas e fontefinal446literal578 (5aa410d0484d374b9656a2ffd22b9e897330fad3f51a1129860bbfabd5ee0b9c). Nenhum merge nesta rodada; campanha permanece37fechadas/44abertas, conferida no GitHub.
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
+
+### #360 — Transferir unificado (DEV B, 2026-10-25)
+
+Em validação, sem homologação/publicação DEV. UI/controlador unificados, gerações por abertura, contexto opcional de pessoa na mesma TX e defaults históricos preservados. Setor ainda min12 nesta fase;369 e370 são dependências obrigatórias para D5 completo. Sem schema/grant/presença/carga novos.
+
+Evidência: UNIT focal115 arquivos / 1.384 casos EXIT0 (76052/75727b); INT novo14 EXIT0 (21645/32bedb), regressão histórica4 arquivos / 41 EXIT0 (26978/32a3fe), com negativos preservados.14 contém13 anteriores, não somar. Banco ciint liberado ao ROOT com fixtures declaradas; restauração só pelo integrador. SPEC docs/specs/inbox-transferir-unificado.md; relatório output/inbox-360-report.md e recibo final de freeze.
+
+Lint focal final e0ec93 EXIT0, zero avisos. Pendências: revisão técnica do delta/commit individual, TSC/global/build, visual e QA independente. Header apenas delta callbackref; ROOT integra sobre classes responsivas próprias. Ícones mock4exports seguem correção ROOT 346d8098, unir sem duplicar. Não marcar D5 concluído antes de #369/#370.
+
+### #360 R2 — porta renderizar explícita (DEV B, 2026-10-25)
+
+Filha corretiva de 78fb, em validação. Somente3 linhas de produção no coordenador da ConversaAberta; mantém forms irmãos e portais. Guarda/parser/exceções intocados. RED23(1 falha) → GREEN23/23 EXIT0 (29bf78); UI13 arquivos/222 casos EXIT0 (46301/cb2299); oráculo T 8 byteigual EXIT0 (3176f6), qualificado como Controller/Popover reais com compositor-fixture. Backend literal, sem repetir SQL14+41. Lint final no recibo R2. Relatório output/inbox-360-r2-report.md; QA exact do filho e visual pendentes.369WIP recuperável por stash/hashes, D5 ainda depende369/370.

@@ -1,12 +1,12 @@
 "use client";
-import type { ReactNode } from "react";
+import type { ReactNode, RefCallback } from "react";
 import { IconMail, IconPin, IconBellOff, IconBell, IconNote, IconClock, IconCalendarEvent, IconSearch, IconUserCheck, IconArrowBackUp, IconUserPlus, IconDoorExit, IconBan, IconDotsVertical, IconListCheck } from "@tabler/icons-react";
 import { Menu } from "@/components/Menu";
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { AcaoInbox } from "@/server/inbox/permissoes";
 
 export type ItemMenuConversa = { id: string; rotulo: string; icone: ReactNode; dica?: string; perigo?: boolean; desabilitado?: boolean; divisorDepois?: boolean; aoEscolher(): void };
-export type AcaoConversa = { rotulo: string; aoEscolher(): void; ocupado?: boolean };
+export type AcaoConversa = { gatilhoRef?: RefCallback<HTMLButtonElement>; rotulo: string; aoEscolher(): void; ocupado?: boolean };
 export type AcoesCabecalho = { assumir: AcaoConversa | null; transferir: AcaoConversa | null; menu: ItemMenuConversa[]; dialogos: ReactNode; feedback: ReactNode; abrirAgendar: (() => void) | null };
 
 /** Capacidades do ERP: não são IDs visuais do menu (notaInterna, convidar/agendar). */
