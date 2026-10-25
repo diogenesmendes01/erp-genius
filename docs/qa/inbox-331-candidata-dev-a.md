@@ -49,3 +49,7 @@ Os novos controles adversariais além do primeiro RED foram adicionados após im
 Novos registros: ModalTarefa no MAPA_BOTOES (9 controles); ROTULOS_DINAMICOS key tipo/key a.id (uma ocorrência cada); ALTERNANCIAS_SEM_ARIA_PRESSED somente submit Criar tarefa · Salvar (cinza/principal sinaliza validação, não seleção); confirmação de cancelarTarefaNoInbox somente no callsite ModalTarefa e cópia literal da guarda. Não há exceção por pasta/arquivo inteiro nem aria-pressed fictício.
 
 Pendentes: TSC/fullUNIT/lint originais ROOT, QA independente no SHA exato, visual APP+PROTO original 3larguras×2temas (nova/editar, erro/loading, sem lead/equipe, teclado/foco/mobile), CI/PR/merge. Nenhuma prova antiga435/436 é atribuída a esta fonte. Não iniciar338/339 ou outra feature.
+
+### Correção de fixture após freeze fbbd
+
+O TESTER identificou dataCivil repetido no mesmo objeto da fixture de edição DST (linha20), ambos com valor2026-11-01. A filha remove somente a segunda propriedade redundante, sem alterar valor/fixture efetiva ou fonte produtiva. ROOT solicitou não repetir SQL35/global/TSC por esta correção idêntica; o TSC original da filha permanece sob coordenação ROOT. As evidências de execução acima continuam explicitamente atribuídas à fonte fbbd; não são rebatizadas como execução nova da filha.
