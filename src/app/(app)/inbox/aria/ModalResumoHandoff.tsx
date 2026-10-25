@@ -19,6 +19,9 @@ export type PropsModalResumoHandoff = {
     aoResponder(): void;
     focoAoFechar?: RefObject<HTMLElement | null>;
     contextoAtivo?: boolean;
+    /** Só preserva callback iniciado; contextoAtivo continua obrigatório para iniciar. */
+    preservarTentativa?: boolean;
+    aoIniciarAssumir?(): boolean;
     podeAssumirAria?: boolean;
     sessaoInvalidada?: boolean;
     confirmando?: boolean;
@@ -27,14 +30,18 @@ export type PropsModalResumoHandoff = {
     aoTentarConfirmar?(): void;
 };
 export function ModalResumoHandoff(props: PropsModalResumoHandoff) { return <SessaoResumo key={props.atendimentoId + ":" + props.handoff.acaoId} {...props}/>; }
-function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoAssumido, aoResponder, focoAoFechar, contextoAtivo = true, podeAssumirAria = false, sessaoInvalidada = false, confirmacaoPendente = false, confirmando = false, erroConfirmacao, aoTentarConfirmar }: PropsModalResumoHandoff) {
+function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoAssumido, aoResponder, focoAoFechar, contextoAtivo = true, preservarTentativa = false, aoIniciarAssumir, podeAssumirAria = false, sessaoInvalidada = false, confirmacaoPendente = false, confirmando = false, erroConfirmacao, aoTentarConfirmar }: PropsModalResumoHandoff) {
     const acao = useAcaoCliente({ idempotente: true }), cancelar = useRef<HTMLButtonElement>(null), ciclo = useRef({ ativo: false });
-    useEffect(() => { const atual = { ativo: contextoAtivo && podeAssumirAria && !sessaoInvalidada && !confirmacaoPendente }; ciclo.current = atual; return () => { atual.ativo = false; }; }, [contextoAtivo, podeAssumirAria, sessaoInvalidada, confirmacaoPendente, handoff.podeAssumir, handoff.ehResponsavel]);
+    // Preservar um callback em voo não habilita o botão para outra mutação.
+    const cicloAutorizado = (contextoAtivo || preservarTentativa) && podeAssumirAria && !sessaoInvalidada && !confirmacaoPendente;
+    useEffect(() => { const atual = { ativo: cicloAutorizado }; ciclo.current = atual; return () => { atual.ativo = false; }; }, [cicloAutorizado]);
     async function assumir() {
         const atual = ciclo.current;
-        if (!atual.ativo || sessaoInvalidada || confirmacaoPendente || !podeAssumirAria || (!handoff.podeAssumir && !handoff.ehResponsavel) || confirmando)
+        if (!atual.ativo || !contextoAtivo || sessaoInvalidada || confirmacaoPendente || !podeAssumirAria || (!handoff.podeAssumir && !handoff.ehResponsavel) || confirmando)
             return;
-        const d = await acao.executar(async () => { try {
+        const d = await acao.executar(async () => {
+            if (aoIniciarAssumir && !aoIniciarAssumir()) return { ok: false as const, erro: "Esta tentativa não está mais disponível. Abra o resumo novamente." };
+            try {
             const r = await assumirConversaDaAria(atendimentoId);
             return atual.ativo ? r : { ok: true as const };
         }
