@@ -44,6 +44,8 @@ export interface PropsConversaAberta {
   item: ItemListaInbox | null;
   /** DTO autorizado do painel da seleção corrente; não é o resumo global. */
   aria?: AriaDoAtendimento | null;
+  /** Bloqueio cliente após404; não substitui a autorização por lead de cada cartão. */
+  bloquearDecisoesAria?: boolean;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
   /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
@@ -103,7 +105,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria, bloquearDecisoesAria = false }: PropsConversaAberta) {
   const tentativasNota = useChavesPorAlvo();
   const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
@@ -191,7 +193,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
             if (i.tipo === "dia") return <SeparadorDia rotulo={i.rotulo} />;
             if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
-            if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
+            if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             const m = i.m;
             return (
               <BalaoMensagem m={m} destacada={achadoAtual === m.id} autor={autorDoItem(i)} emSequencia={i.emSequencia} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
