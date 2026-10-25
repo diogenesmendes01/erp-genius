@@ -6,7 +6,7 @@ import { truncarBanco } from "@/test/integracao";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
 import { condicaoNaoLidaPessoal } from "./nao-lidas";
 import { carregarContextoListaInbox, resumoComContexto, resumoDaListaInbox } from "./contagens";
-import { AGORA344, cenarioContagens344, sugestao344, type Cenario344 } from "./contagens-fixture.int";
+import { AGORA344, cenarioContagens344, sugestao344, type Cenario344 } from "@/test/inbox-contagens-fixture";
 let c:Cenario344;
 const totais={todas:7,ia:2,aprovacao:1,handoff:1,humano:2,semResposta:1,naoAtribuidas:3};
 beforeEach(async()=>{await truncarBanco();c=await cenarioContagens344();});

@@ -5,6 +5,9 @@ import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
 import { contarChipsInbox, listarAtendimentosPagina } from "@/server/inbox/consultas-pagina";
 
+import { criarOperacaoListaInbox } from "@/server/inbox/contexto-lista";
+import { resumoDaListaInbox } from "@/server/inbox/contagens";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -26,9 +29,12 @@ export async function GET(req: Request) {
   if (bruto && !cursor) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
   // `envio=1`: só os atendimentos em que o usuário pode enviar (destino do encaminhar).
   const enviar = params.get("envio") === "1";
-  const [pagina, contagens] = await Promise.all([
-    listarAtendimentosPagina(usuario, filtros, cursor, undefined, { enviar }),
-    params.get("contagens") === "1" && !cursor ? contarChipsInbox(usuario, filtros, { enviar }) : Promise.resolve(undefined),
+  const operacao=criarOperacaoListaInbox(usuario,{enviar});
+  const pedirResumo=params.get("contagens")==="1"&&!cursor;
+  const [pagina, contagens, resumo] = await Promise.all([
+    listarAtendimentosPagina(usuario, filtros, cursor, undefined, { enviar,operacao }),
+    pedirResumo ? contarChipsInbox(usuario, filtros, { enviar,operacao }) : Promise.resolve(undefined),
+    pedirResumo ? resumoDaListaInbox(usuario,filtros,undefined,{enviar,operacao}) : Promise.resolve(undefined),
   ]);
-  return NextResponse.json({ ...pagina, ...(contagens ? { contagens } : {}) }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ ...pagina, ...(contagens ? { contagens } : {}),...(resumo?{resumo}:{}) }, { headers: { "Cache-Control": "no-store" } });
 }
