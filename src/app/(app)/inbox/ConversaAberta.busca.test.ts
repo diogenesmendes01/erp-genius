@@ -17,7 +17,12 @@ import { BalaoMensagem } from '@/components/conversa/BalaoMensagem';
 import { criarDomMinimo } from '@/test/dom-minimo';
 const ms=Array.from({length:150},(_,i)=>({id:'id['+i+']',corpo:i===149?'Matrícula no fim':'outra',direcao:'ENTRADA',tipo:'TEXTO',status:'RECEBIDA',criadoEm:'2026-10-22T12:00:00Z'}));
 const props={item:{id:'a',capacidades:[],status:'EM_ATENDIMENTO'},usuario:{id:'u',papeis:[]},fuso:'UTC',conversa:{mensagens:ms,notas:[{id:'nota',nota:'Matrícula não buscável',criadoEm:'2026-10-22T12:00:00Z'}],temMaisAntes:true,temMaisDepois:true,maisAntigas:vi.fn()},aoVoltar(){},aoAlternarPainel(){},aoMudar(){},podeEnviar:false} as unknown as PropsConversaAberta;
-function tela(p=props){const t=g.atual!.renderizar(ConversaAberta,p);const c=elementos(t).find(n=>typeof n.props.children==='function');return c?(c.type as (p:unknown)=>ReactNode)(c.props):t;}
+function tela(p=props){
+ let t=g.atual!.renderizar(ConversaAberta,p);
+ // Mantém os testes de ligação reais atravessando os dois coordenadores de slots.
+ for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
+ return t;
+}
 beforeEach(()=>{g.atual=criarGanchos();});
 it('ligação real header→barra→destaque/pin usa ID da mensagem decorada, não índice de mensagens',()=>{let t=tela();const identidade=identidadeNoReact(t,VirtualList);const header=elementos(t).find(e=>e.type===CabecalhoConversa)!;(header.props.aoBuscar as ()=>void)();t=tela();let barra=elementos(t).find(e=>e.type===BuscaConversa)!;expect(barra).toBeDefined();(barra.props.aoMudar as (s:string)=>void)('matricula');t=tela();barra=elementos(t).find(e=>e.type===BuscaConversa)!;expect(barra.props.total).toBe(1);expect(barra.props.temMaisDepois).toBe(true);const list=elementos(t).find(e=>e.type===VirtualList)!;expect(list.props.pinKeys).toEqual(['id[149]']);expect(identidadeNoReact(t,VirtualList)).toEqual(identidade);const items=list.props.items as {id:string;tipo:string}[];expect(items.length).toBeGreaterThan(150);const render=list.props.renderItem as (i:unknown)=>ReactNode;const balao=elementos(render(items.find(i=>i.id==='id[149]'))).find(e=>e.type===BalaoMensagem)!;expect(balao.props.destacada).toBe(true);const nota=elementos(render(items.find(i=>i.tipo==='nota'))).find(e=>e.type===BalaoMensagem)!;expect(nota.props.destacada).not.toBe(true);});
 

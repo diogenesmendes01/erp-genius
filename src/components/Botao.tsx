@@ -14,7 +14,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 // troca só as classes sem mexer no elemento — um <button> sem `type` dentro de <form> continua sendo
 // "submit". Código novo usa <Botao>, que é type="button" por padrão (submit só quando declarado).
 
-export type VarianteBotao = "primario" | "secundario" | "perigo" | "fantasma" | "neutro";
+export type VarianteBotao = "primario" | "secundario" | "perigo" | "fantasma" | "neutro" | "ia";
 export type TamanhoBotao = "sm" | "md" | "lg";
 
 export const BASE_BOTAO =
@@ -27,6 +27,7 @@ export const VARIANTES_BOTAO: Record<VarianteBotao, string> = {
   perigo: "bg-danger text-white hover:brightness-95",
   fantasma: "text-brand-700 hover:bg-highlight",
   neutro: "border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight",
+  ia: "bg-ai-50 text-ai-700 hover:bg-highlight",
 };
 
 export const TAMANHOS_BOTAO: Record<TamanhoBotao, string> = {
