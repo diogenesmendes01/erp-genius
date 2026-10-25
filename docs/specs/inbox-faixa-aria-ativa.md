@@ -26,3 +26,7 @@ Gerenciar usa NextLink real com prefetch=false para /aria, estilizado por `botao
 Os casos existentes foram renomeados, sem criar duplicatas da mesma cobertura. ativa_com_contagens corresponde ao caso ativo com soma/apresentação mono; pausada_e_shadow aparece no caso de pausa e nos dois controles parametrizados de SHADOW; desligada_nao_renderiza identifica os dois controles de pausa ligada/desligada; sem_interruptor_no_padrao_d4 conserva o nome nominal literal; gerenciar_so_para_quem_pode_pausar verifica presença/ausência pela capacidade. Sufixos explicitam condições parametrizadas. Os testes adicionais de zero, tokens, DS, anúncio limitado ao título e NextLink sem prefetch são controles próprios, não substituem o nominal.
 
 R1 C4 limita os anúncios de status ao título, preservando a atualização visual das contagens fora da região viva. R1 C6 conserva href/capacidade/DS e foco do link, com navegação NextLink e prefetch=false explícito; nenhum polling/SSE/ação ou backend novo.
+
+### R2 PR433: C7, região nomeada
+
+A raiz da faixa tem role=region e aria-label=Situação da Aria, dando semântica ao nome acessível antes presente numa div genérica. Somente o título permanece role=status; contagens e Gerenciar continuam fora da região viva. Cobertura ativa/pausada/ensaio e consumidores de foco/SSE preservada. NextLink real/prefetch=false, capacidade/tokens e ausência do interruptor permanecem iguais; evidências no report.

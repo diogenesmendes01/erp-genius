@@ -7214,3 +7214,9 @@ RED b6e00b EXIT1:13casos/2falhas11controles. Primeiro recorte97402/e20c43 EXIT1:
 DEV B em branch temporária codex/inbox-revisoes-431-433-r2, filha22462240, preservando docs352. Revisão real5643199383 lida: prazo/fila saem de etiquetas/selo e os dois Limpar preservam filtros já representados pelos chips, de forma simétrica a aria. Eu/ID/naoLidas continuam removíveis; legacy/URL/busca/número intactos. Saída pessoa sem rótulo usa Equipe:, sem atribuir ao contato. Sem backend/ACL/query/SSE.
 
 RED f7ef4b EXIT1 (47 casos/sete falhas), negativo fixture522042 preservado. GREEN sessão29766/6f4fe5 EXIT0:11 arquivos/273 testes, incluindo consumidor InboxNovo/URLs/prévias/guarda85, w1/heap1024/sem filtro de caso/skip. Lint6 16e99b EXIT0 --max-warnings=0. SPEC/report atualizados; QA/gates de integração/visual separados. Sem DB/INT/HTTP/browser/build/install/env/push; #353 continua só plano.
+
+### PR433 — R2 C7: semântica da faixa nomeada (25/10/2026)
+
+Comentário real5643202248 lido: FaixaAriaAtiva recebe role=region com nome Situação da Aria, preservando role=status somente no título. Contagens fora da região viva, NextLink/prefetch=false, foco, tokens e capacidades permanecem. RED7a2717 EXIT1 (16 casos/três falhas); GREEN sessão98074/b43768 EXIT0:8 arquivos/267 testes, guarda85/paleta/contraste/tipografia e consumidores reais Inbox/foco/SSE incluídos, w1/heap1024/sem filtro de caso/skip. Lint2 b55446 EXIT0 --max-warnings=0.
+
+Commit próprio separado do PR431 R2 para restack coordenado. SPEC/report atualizados; docs352 preservados. Não houve Node global/TSC/DB/INT/HTTP/browser/build/install/config/env/push; QA e gates integrados/visual permanecem separados. #353 continua sem GO de implementação.
