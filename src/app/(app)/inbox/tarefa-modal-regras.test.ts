@@ -1,0 +1,6 @@
+import {expect,it} from "vitest";
+import {validarTarefaModal} from "./tarefa-modal-regras";
+const base={titulo:"Retornar",descricao:"",dataCivil:null,hora:null,lembreteAntecedenciaMin:null,fusoEscola:"America/Sao_Paulo"};
+it("título obrigatório e limite coerente200",()=>{expect(validarTarefaModal({...base,titulo:" "})).toBe("Dê um título para a tarefa.");expect(validarTarefaModal({...base,titulo:"x".repeat(200)})).toBeNull();expect(validarTarefaModal({...base,titulo:"x".repeat(201)})).toContain("200");});
+it("descrição e pares de agenda são validados sem data local implícita",()=>{expect(validarTarefaModal({...base,descricao:"x".repeat(2001)})).toContain("2000");expect(validarTarefaModal({...base,hora:"09:00"})).toContain("data");expect(validarTarefaModal({...base,lembreteAntecedenciaMin:30})).toContain("lembrete");expect(validarTarefaModal({...base,dataCivil:"2026-10-25"})).toBeNull();});
+it("horário inexistente e ambíguo recusados no fuso declarado",()=>{expect(validarTarefaModal({...base,dataCivil:"2026-03-08",hora:"02:30",fusoEscola:"America/New_York"})).not.toBeNull();expect(validarTarefaModal({...base,dataCivil:"2026-11-01",hora:"01:30",fusoEscola:"America/New_York"})).not.toBeNull();});
