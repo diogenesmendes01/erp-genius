@@ -1,5 +1,5 @@
 import type { AvisoInbox } from "@/server/inbox/barramento";
-const TIPOS: AvisoInbox["tipo"][] = ["atendimento.atualizado", "mensagem.nova", "mensagem.status", "resync"];
+const TIPOS: AvisoInbox["tipo"][] = ["atendimento.atualizado", "mensagem.nova", "mensagem.status", "resync", "aria.global"];
 const resync = (): AvisoInbox => ({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
 export type FonteEventos = {
   readonly readyState: number;

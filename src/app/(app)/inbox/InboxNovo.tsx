@@ -121,6 +121,14 @@ export function avisoMarcaLida(aviso: AvisoInbox, selecionado: string | null): b
   return aviso.tipo === "mensagem.nova" && aviso.atendimentoId !== null && aviso.atendimentoId === selecionado;
 }
 
+/** Invalida também os dados da Aria, sem trocar o painel conhecido durante a recarga. */
+export function avisoRecarregaPainel(a: AvisoInbox, selecionado: string | null): boolean {
+  return a.tipo === "resync" || a.tipo === "aria.global"
+    || (a.tipo === "atendimento.atualizado"
+      && a.atendimentoId !== null
+      && a.atendimentoId === selecionado);
+}
+
 /** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
 /** Painel do atendimento; "sem-acesso" no 404 (fora do escopo, ex.: convite revogado); null em outra falha. */
 async function buscarPainel(id: string): Promise<DadosPainelSetor | "sem-acesso" | null> {
@@ -357,7 +365,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
   // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
-    setEventoRecente(a);
+    // React pode agrupar mensagem+global: preservar o aviso que reconcilia a thread.
+    if (a.tipo !== "aria.global") setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current)) {
       const repetida = entradasPendentesRef.current?.id === a.atendimentoId && entradasPendentesRef.current.mensagens.has(a.mensagemId);
       if (!repetida) versaoEntradasRef.current++;
@@ -368,7 +377,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, !repetida);
       else if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
     }
-    if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
+    if (avisoRecarregaPainel(a, selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     carregarLista();
   }, [carregarLista, pedirLeitura]);
   const { conectado } = useEventosInbox(aoAviso);
