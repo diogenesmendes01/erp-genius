@@ -1,6 +1,40 @@
 # Quadro único de entregas
 
-Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
+Checkpoint do Inbox: 25/10/2026, 14:12 UTC. O restante do quadro preserva os registros de outras entregas e as etapas históricas; as evidências não passam automaticamente a valer para commits posteriores.
+
+## Inbox — estado da campanha em 25/10/2026
+
+O épico #379 contém 81 issues de implementação (#298–#378): **37 fechadas e 44 abertas**, conforme consulta ao GitHub nesta rodada. Há **10 PRs abertas, todas em rascunho**, e nenhum novo merge em main nesta retomada. O ref remoto main foi conferido em `abb961625f57bf20d9eb4734df98e59dda362957`. Aprovação das decisões D1–D6, D9–D13, D20 e D22 continua válida; não há nova pergunta de produto nestas correções.
+
+| Issue | PR | Estado real e próximo gate |
+|---|---|---|
+| #326 | #420 | Código e nove jobs de CI/integração aprovados no head fd60e408; autorização/publicação dos anexos R9/R10 ainda pendentes. |
+| #327 | #427 | Implementação e integração anteriores preservadas; anexos e CI após retarget pendentes. |
+| #328 | #432 | Implementação revisada; aceite visual/publicação e sequência de integração pendentes. |
+| #329 | #435 | DEV A corrige regressão do vínculo global legado e separa o fluxo Cliente voltou; testes de concorrência em andamento. Não aprovada para merge. |
+| #330 | #436 | Lista/ações entregues; gates originais e QA da fonte `5e0` aprovados. DEV A tratará reconciliação do cancelamento com SSE e ordem/contrato da consulta de tarefas após congelar a correção435. Visual e CI continuam pendentes. |
+| #346 | #431 | R2 publicada em `073cce32`. QA posterior reproduziu três combinações válidas com filtro secundário invisível; correção R3 pendente. Trinta capturas da fonte `17fe` passaram na QA nominal, sem serem aceite do head R2/R3. |
+| #347 | #433 | Região acessível corrigida em f3c35381 e base atualizada; aceite visual final e CI após retarget pendentes. |
+| #348 | #434 | Composição96642890 preserva cartões, cabeçalho e as revisões da coluna. Recorte10/314 aprovado; achado de filtros da base permanece aberto. Visual final pendente; retirada da duplicação pertence à353. |
+| #350 | #430 | Cartões e conflitos compostos; autorização/publicação do pacote visual ainda pendentes. |
+| #352 | #437 | Faixa/modal entregues e base atualizada em d03d2d39, sem incluir330 no delta. Gates e QA anteriores continuam atribuídos a d0e; build/visual/QA da composição e CI final pendentes. |
+| #353 | — | DEV B implementou retirada do painel legado e contrato exclusivo; 86 arquivos/1.024 testes unitários e lint dirigidos aprovados. Integração60306 ainda ativa: não presumir aprovação ou commit final. |
+
+Ordem da pilha publicada:420 →427 →432 →435 →430 →431 →433 →434 →437;436 parte de435. O integrador mantém também uma composição local de330 com a pilha e352, sem misturá-las na publicação de cada PR. Após resolver os gates, cada PR será composta/retargetada e verificada na nova base antes do merge.
+
+### Evidências da rodada, com fonte e limites
+
+Composição local `29e48cf82680b0372fa5cb9f7909755ed8c9feef`: TypeScript original, sem configuração/exclusões auxiliares, código0 (sessão46416/d512ae); recorte Inbox/diálogos/guardas,90 arquivos e1.037 testes completos,UTC,código0 (9654/f7eff1). É um recorte, não uma nova suíte global. A tentativa anterior do TypeScript com heap2GB terminou em134 por falta de memória; o replay usou8GB, mantendo a configuração e a fonte. Esse resultado não corrige nem aprova o achado de filtros combinados.
+
+Aceite técnico e inspeção independente de30 imagens APP346 nas três larguras/dois temas, fonte `17feea9990cebfa5ccefee4d4fa20551441e152a`, build `bhiv24SNW2TugdijY0UGv`: lote7023/dbd15c código0, manifestações/PNG/DOM conferidos e16 controles offline adicionais aprovados pelo TESTER. Parecer SHA256 `c0c90b40e814ea1553f3f27e23a142764d3f0d098aca8cf9013ace9aa1cc5c0e`. Limites: não é aceite do head final R2/R3, não substitui comparação com o protótipo nem prova estabilidade de pixels de toda a página. Variação periférica da sidebar escura registrada; regiões346 inspecionadas favoravelmente.
+
+Cada documento encerrou a mesma conexão SSE200 enquanto a página ainda estava viva, sem pedidos finitos pendentes. Ações comerciais, Motor, WebSocket e destinos externos permaneceram bloqueados. Prefetches locais do Next foram admitidos somente para URLs/cabeçalhos observados, com digest conferido e resposta200/MIME/hash; cancelamentos naturais aceitos preservam a prova da resposta integral já recebida. Os negativos anteriores foram preservados, sem tratar teste falso como captura.
+
+Auditoria pós-captura conferiu os503 registros originais,424 hashes de tabelas/sequências e47 registros fictícios, sem alteração de campos de negócio. Preview próprio encerrado (PID414736 ausente/porta3130 livre); banco ci-integracao restaurado ao snapshot492 com código0 (400323), e perfil ROOT restaurado byte a byte. Lease posterior: DEV B/ci-integracao para353; DEV A/dev-email para435/436; TESTER livre. Nenhum cluster compartilhado foi parado, dependência reinstalada, integração externa ativada ou deploy realizado.
+
+QA independente da composição966:20 arquivos/552 testes aprovados, mas contraprova14casos teve11 controles aprovados e3 falhas reais em combinações de filtros. Parecer SHA256 `f79c9620f51f669997f8a99ebc068034afd96a87145a7bd1578a719216ad8b32`. A correção deve manter parser/produtor e as combinações válidas, ocultando das etiquetas apenas a dimensão efetivamente representada pelo chip ativo. Não há aprovação final dessa composição.
+
+As demais 33 issues abertas ainda não têm implementação entregue nesta rodada: #331–#334, #338–#341, #354–#359 e #360–#378. A próxima frente #331 já tem plano de QA de leitura; depende de #330. A #339 consome o vínculo de agendamento da #375, apesar do metadado histórico de dependência vazio. Continuam no máximo dois DEVs e duas funcionalidades em implementação; o TESTER revisa o commit exato em ambiente próprio.
 
 ## Inbox E2.15 — atalhos de saída (#335) — checkpoint de código 23/10/2026
 
