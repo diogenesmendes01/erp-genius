@@ -122,9 +122,11 @@ export function avisoMarcaLida(aviso: AvisoInbox, selecionado: string | null): b
 }
 
 /** Invalida também os dados da Aria, sem trocar o painel conhecido durante a recarga. */
-export function avisoRecarregaPainel(a:AvisoInbox,selecionado:string|null):boolean {
-  return a.tipo==="resync" || a.tipo==="aria.global"
-    || (a.tipo==="atendimento.atualizado" && a.atendimentoId!==null && a.atendimentoId===selecionado);
+export function avisoRecarregaPainel(a: AvisoInbox, selecionado: string | null): boolean {
+  return a.tipo === "resync" || a.tipo === "aria.global"
+    || (a.tipo === "atendimento.atualizado"
+      && a.atendimentoId !== null
+      && a.atendimentoId === selecionado);
 }
 
 /** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */

@@ -25,10 +25,15 @@ export function formatarSSE(a: AvisoInbox): string {
 const MAX_CHAVES_CACHE = 500;
 
 /** Global nunca é transporte de IDs/conteúdo: só o contrato próprio de quatro campos passa. */
-function globalValido(a:AvisoInbox):boolean {
-  const chaves=Reflect.ownKeys(a);
-  return chaves.length===4 && Object.keys(a).length===4 && chaves.every(k=>typeof k==="string" && ["tipo","atendimentoId","mensagemId","conversaId"].includes(k))
-    && a.atendimentoId===null && a.mensagemId===null && a.conversaId==="";
+function globalValido(a: AvisoInbox): boolean {
+  const chaves = Reflect.ownKeys(a);
+  return chaves.length === 4
+    && Object.keys(a).length === 4
+    && chaves.every(k => typeof k === "string"
+      && ["tipo", "atendimentoId", "mensagemId", "conversaId"].includes(k))
+    && a.atendimentoId === null
+    && a.mensagemId === null
+    && a.conversaId === "";
 }
 
 export function criarFiltroDeAvisos(usuario: UsuarioSessao, ttlMs: number = TTL_FILTRO_MS): (a: AvisoInbox) => Promise<boolean> {

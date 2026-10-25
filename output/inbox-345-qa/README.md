@@ -10,3 +10,5 @@ A entrega avisa mudanças de sugestões e do estado global da Aria, recarrega li
 São 14 arquivos/354 UNIT; o barramento passou 26 casos e os cinco arquivos de regressão passaram 48. Os recortes não são somados como suíte global. TypeScript DEV é auxiliar qualificado, excluindo somente dois diagnósticos privados não versionados; o comando original, o lint completo, o build, os dois fusos e a integração global serão verificados no CI limpo antes do merge.
 
 A SQL usa o ID reservado `20261025020000_inbox_aria_tempo_real`; o ID histórico do plano não foi reutilizado. O parecer distingue o SQL Git/LF da cópia Windows/CRLF, sem normalizar os artefatos de origem. Nenhum snapshot, credencial, log bruto, imagem ou executor privado integra este pacote.
+
+A [revisão R1 e os adendos de integração](revisao-r1.md) registram os comentários tratados, a CI nominal F96 e duas regressões de expectativas antigas. O candidato corrigido passou o arquivo CRM completo (28 casos) e o barramento completo (26), em executores independentes; a CI do próximo head permanece obrigatória antes do merge.

@@ -14,5 +14,27 @@
     }
   ],
   "composicao": "composicao.json",
-  "limite": "Parecer e resultados nominais à fonte2cd; recortes separados, não somados como global."
+  "limite": "Parecer e resultados nominais à fonte2cd; recortes separados, não somados como global.",
+  "adendos": [
+    {
+      "path": "ci-f96.json",
+      "bytes": 1847,
+      "sha256": "6be7f08c3408f6f5c8ae25e1758a6fb2a182b5c8a9f3ff66c6bb582e5c10952f"
+    },
+    {
+      "path": "crm-f96-red-tester.md",
+      "bytes": 5133,
+      "sha256": "83c3db8ceaaabb4e825945177e908635e90a752dbfee08e7cb809bddec56ed1f"
+    },
+    {
+      "path": "pg-proc-f96-tester.md",
+      "bytes": 3554,
+      "sha256": "b7cbac0cef74c130a1a6013c38b909d1b4c1b9443c639f1ba372a446687a1c2c"
+    },
+    {
+      "path": "revisao-r1.md",
+      "bytes": 2327,
+      "sha256": "06425389ba9efbe4ddbaf13225c7536aef7a58391f7d242edda80c6afd64488c"
+    }
+  ]
 }
