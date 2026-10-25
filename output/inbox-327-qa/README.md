@@ -16,3 +16,6 @@ O finding B1 é real: os pinos físicos CRLF do Windows recusavam os blobs LF no
 C3: sem cabeçalho, a aba recebe todas as capacidades negadas. As regressões ausente/nulo falharam antes da correção e o controle positivo preserva as capacidades recebidas. B1 GREEN2arquivos/24 e C3 GREEN3arquivos/132, sem filtros/skips, são recortes diferentes e não são somados. Lint5 EXIT0; TypeScript original9539/74fac3 EXIT0, Node22heap8192/noEmit/incrementalfalse, semconfigaux/exclusões extras; QA final ainda pendente. [Prova e fontes R1](revisao-r1.json).
 
 [Integração completa668](ci-full-668.json):357arquivos/3.185testes aprovados, três arquivos/quatro opt-in ignorados, quatro shards. Essa execução antecede o patchR1 e não é uma nova integração dele. Backend/schema/contratos de transação não foram alterados pelo patch. A prova composicao.json de44objetos permanece nominal ao porte anterior; os cinco deltasR1 têm hashes separados. Dependência326, autorização/publicação de anexos, composição com main e merge continuam pendentes.
+
+
+A [composição candidata com 326/344/345](composicao-345-candidata.json) preserva 40 objetos literais e combina quatro compartilhados, incluindo os testes de resumo e alçada do Funil. Treze arquivos passaram (258 testes), sem capturas nativas. Preparação local: nova CI e os gates de dependência e anexos continuam pendentes.

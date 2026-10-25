@@ -1,0 +1,73 @@
+{
+  "fonte": "f99fa9a71bf79c7a0771b7811866d02f7d407424",
+  "run": 40145615424,
+  "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40145615424",
+  "status": "completed",
+  "conclusao": "success",
+  "shards": [
+    {
+      "shard": 1,
+      "job": 121026191768,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40145615424/job/121026191768",
+      "conclusao": "success",
+      "arquivos": 89,
+      "testes": 718,
+      "arquivosIgnorados": 0,
+      "testesIgnorados": 0,
+      "duracaoSegundos": 1501.13,
+      "arquivosOptIn": [],
+      "logSha256": "586b017d06c41a74af03be03eb35b207d0762f9d07d5f43399f614cb3b52a48f"
+    },
+    {
+      "shard": 2,
+      "job": 121026192031,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40145615424/job/121026192031",
+      "conclusao": "success",
+      "arquivos": 87,
+      "testes": 803,
+      "arquivosIgnorados": 2,
+      "testesIgnorados": 3,
+      "duracaoSegundos": 2362.57,
+      "arquivosOptIn": [
+        "src/server/contratos/aditivo-taxas-ui-homologacao.int.test.ts",
+        "src/server/matricula/desistencia-reconferencia-delta-ui-homologacao.int.test.ts"
+      ],
+      "logSha256": "3e73073569530c36340995403cb9af3445da90515376704f727d9bd3d97a0d5d"
+    },
+    {
+      "shard": 3,
+      "job": 121026191966,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40145615424/job/121026191966",
+      "conclusao": "success",
+      "arquivos": 87,
+      "testes": 887,
+      "arquivosIgnorados": 1,
+      "testesIgnorados": 1,
+      "duracaoSegundos": 2469.67,
+      "arquivosOptIn": [
+        "src/server/matricula/desistencia-acerto-ui-homologacao.int.test.ts"
+      ],
+      "logSha256": "81504a0280726193c95c21db9faab6298cf11055e4ccc267c815873ab6b218ea"
+    },
+    {
+      "shard": 4,
+      "job": 121026191976,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40145615424/job/121026191976",
+      "conclusao": "success",
+      "arquivos": 88,
+      "testes": 736,
+      "arquivosIgnorados": 0,
+      "testesIgnorados": 0,
+      "duracaoSegundos": 1690.98,
+      "arquivosOptIn": [],
+      "logSha256": "36b686a74a26f7136871238ae78a4307243723abb48cf3650ed558cc56d36eeb"
+    }
+  ],
+  "arquivosAprovados": 351,
+  "testesAprovados": 3144,
+  "arquivosIgnorados": 3,
+  "testesIgnorados": 4,
+  "limite": "Quatro partições do mesmo comando, sem filtro extra de nomes. Skips são declarados separadamente e não contam como aprovados. Gates locais/UNIT e fusos não se somam à integração.",
+  "confirmacaoTerminal": "40858/6d61da/EXIT0",
+  "conferenciaTotais": "92067/5de763/EXIT0"
+}

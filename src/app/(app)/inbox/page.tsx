@@ -4,6 +4,8 @@ import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
 import { contarChipsInbox, listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { criarOperacaoListaInbox } from "@/server/inbox/contexto-lista";
+import { resumoDaListaInbox } from "@/server/inbox/contagens";
 import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import { InboxNovo } from "./InboxNovo";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
@@ -32,6 +34,7 @@ export default async function InboxPage({
   const filtros = lerFiltrosInbox(parametros);
   const bruto = um(parametros.cursor);
   const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
+  const operacao=criarOperacaoListaInbox(usuario);
   const admin = temPapel(usuario, Papel.ADMINISTRADOR);
   // listarTriagemWhatsApp recusa (ErroPermissao) quem não é administrador nem responsável pela triagem de um número.
   const triagemOuNula = () => listarTriagemWhatsApp().catch((e: unknown) => {
@@ -39,8 +42,8 @@ export default async function InboxPage({
     throw e;
   });
 
-  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola, contagens] = await Promise.all([
-    listarAtendimentosPagina(usuario, filtros, cursor),
+  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola, contagens, resumo] = await Promise.all([
+    listarAtendimentosPagina(usuario, filtros, cursor,undefined,{operacao}),
     listarOpcoesAtendimento(),
     triagemOuNula(),
     admin ? listarRevisoesEnvio() : Promise.resolve(null),
@@ -49,11 +52,12 @@ export default async function InboxPage({
     // Sino (SLA): o aviso de prazo estourado abre o atendimento aqui (?c=).
     listarNotificacoes(usuario),
     fusoDaEscola(),
-    contarChipsInbox(usuario, filtros),
+    contarChipsInbox(usuario, filtros,{operacao}),
+    resumoDaListaInbox(usuario,filtros,undefined,{operacao}),
   ]);
   // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
   if (c && !inicial.itens.some((i) => i.id === c)) {
-    const item = await obterItemListaInbox(usuario, c);
+    const item = await obterItemListaInbox(usuario, c,{operacao});
     if (item) inicial.itens = [item, ...inicial.itens];
   }
   // Fuso de exibição já resolvido: o pessoal; sem ele, o da escola (antes, sem preferência, a lista e o balão saíam
@@ -67,7 +71,7 @@ export default async function InboxPage({
     <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
       <InboxNovo podeAbrirFunil={capacidadesCrm(usuario.papeis).has("funil.ver")} agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fusoEscola={fusoEscola} fuso={fuso}
         destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
-        triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens}
+        triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo}
         opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />
     </div>
   );

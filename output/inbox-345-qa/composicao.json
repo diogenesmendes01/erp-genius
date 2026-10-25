@@ -1,0 +1,117 @@
+{
+  "fonte": "2cd984b773e576886e878642650e17a25e04c3a5",
+  "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "branch": "codex/inbox-e3-345-publicacao",
+  "pathsFonte": 18,
+  "objetosExecutaveis": [
+    {
+      "path": "prisma/migrations/20261025020000_inbox_aria_tempo_real/migration.sql",
+      "oid": "b0662c8ff7ce34eea475dae81cd729957e3a63b9"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts",
+      "oid": "a9eae4b1be9026b511c03c04a5ca59905669a1df"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.test.ts",
+      "oid": "d06e834e3f0b01b5f8e27f6b040234513e60dc4f"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "oid": "ef49e6c7c8cb7385ee95fba29eb3cb4c7252ac4d"
+    },
+    {
+      "path": "src/app/(app)/inbox/useEventosInbox.test.ts",
+      "oid": "94b106a6fdf746ac283e888900d47438e53a2274"
+    },
+    {
+      "path": "src/app/api/inbox/eventos/route.test.ts",
+      "oid": "721461e5338f565db93985e2d71dc8f2698b0834"
+    },
+    {
+      "path": "src/components/SeloNaoLidasInbox.test.ts",
+      "oid": "eb04ecd775178cb4f988548c504f401e5b1e47f6"
+    },
+    {
+      "path": "src/components/conversa/historico-conversa.test.ts",
+      "oid": "52e2d13631a42afdb4471e78108af6f0cb7d183a"
+    },
+    {
+      "path": "src/components/conversa/historico-conversa.ts",
+      "oid": "ae131d7985682381f848176f61f70df9183338fc"
+    },
+    {
+      "path": "src/lib/eventos-inbox.test.ts",
+      "oid": "a3c32e9ac538eef4b3e79d4cdb1b2642382f4a00"
+    },
+    {
+      "path": "src/lib/eventos-inbox.ts",
+      "oid": "f20475cb94c7006a1b6c7d325b16e572159be94a"
+    },
+    {
+      "path": "src/server/inbox/barramento.int.test.ts",
+      "oid": "0534d402fa88752f5abe6fc5efb0b1ed778c8e50"
+    },
+    {
+      "path": "src/server/inbox/barramento.ts",
+      "oid": "4d52ae60c46481e22f9d7a69dc2aa2c6f98b0720"
+    },
+    {
+      "path": "src/server/inbox/eventos-sse.test.ts",
+      "oid": "dca49e44fd01289729b15fa299911b850b20ce78"
+    },
+    {
+      "path": "src/server/inbox/eventos-sse.ts",
+      "oid": "3573c339add3c8fdd8a3415c7488d4c2bc0a78e5"
+    }
+  ],
+  "pareceres": [
+    {
+      "path": "codigo-2cd.md",
+      "bytes": 9909,
+      "sha256": "72fa9a5d858034b6c650c4ba2a72a06c2cf33b402e78d643963cddcd8dd71e39"
+    },
+    {
+      "path": "resultados-2cd.json",
+      "bytes": 1993,
+      "sha256": "99723155c43aa736dfbaa7aa8c7a0c763bea545a8b35f5b14fc12db6a49066a5"
+    }
+  ],
+  "gatesNominais": {
+    "unit": {
+      "arquivos": 14,
+      "testes": 354,
+      "exit": 0
+    },
+    "integracao1": {
+      "arquivos": 1,
+      "testes": 26,
+      "exit": 0,
+      "executor": "46336/b24a65"
+    },
+    "integracao2": {
+      "arquivos": 5,
+      "testes": 48,
+      "exit": 0,
+      "executor": "90341/f06ed8"
+    },
+    "lint": {
+      "arquivos": 14,
+      "exit": 0
+    },
+    "typescriptDEV": {
+      "tipo": "auxiliar qualificado",
+      "exit": 0,
+      "exclusoesPrivadas": 2
+    },
+    "ci": "PENDENTE"
+  },
+  "restauroROOT": {
+    "banco": "TESTER492 descartável",
+    "executor": "5f99cc",
+    "exit": 0,
+    "tabelas": 424,
+    "linhas": 1393
+  },
+  "limites": "Composição documental sem alteração de runtime; global/TypeScript original/lint completo/build/fusos/integração CI ainda pendentes. Sem relação de dependência artificial com344."
+}

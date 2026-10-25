@@ -1,7 +1,7 @@
 {
   "issue": 326,
-  "base": "cf29add93cd63fe14f95bf8a53fb079d3efe9a27",
-  "composicao": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+  "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "composicao": "0342e776eff91ccfa41ab06450aba2e9671d59bb",
   "devFreeze": "6f92673dfb526e11ad1e349bea484d135819e849",
   "pareceres": [
     {
@@ -92,5 +92,17 @@
     "R9 comprova Save/ACK/rascunhos/SSE; R10 completa os seis pares visuais em fonteDEV6f. Oito pareceres não reatribuem capturas ao SHA798f. A identidade executável da composição está em composicao-798f.json.",
     "CI rápida e integração completa798f aprovadas; fixtureB restaurada. Autorização/publicação do ZIP visual e consolidação documental/CI final ainda pendentes."
   ],
-  "composicaoHistorica": "8b91bab362416ba3dd42a99831d5898356e99479"
+  "composicaoHistorica": "8b91bab362416ba3dd42a99831d5898356e99479",
+  "composicaoAnterior798f": {
+    "base": "cf29add93cd63fe14f95bf8a53fb079d3efe9a27",
+    "composicao": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+    "prova": "composicao-798f.json",
+    "ci": "ci-798f.json"
+  },
+  "composicaoAtual": {
+    "fonteExecutavel": "0342e776eff91ccfa41ab06450aba2e9671d59bb",
+    "main": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+    "prova": "composicao-main351.json",
+    "estado": "IDENTIDADE_E_RECORTE_LOCAL_APROVADOS_CI_QA_FINAL_PENDENTES"
+  }
 }
