@@ -5,6 +5,8 @@ import {expect,it} from "vitest";
 import type {SituacaoAriaInbox} from "@/server/inbox/contagens";
 import {FaixaAriaAtiva} from "./FaixaAriaAtiva";
 import {BASE_BOTAO} from "@/components/Botao";
+import { elementos } from "@/test/tela-sem-dom";
+import { InterruptorAria } from "./InterruptorAria";
 const montar=(s:Partial<SituacaoAriaInbox>={},contagens={ia:3,aprovacao:1,handoff:1})=>renderToStaticMarkup(createElement(FaixaAriaAtiva,{situacao:{estado:"ATIVA",pausada:false,podeGerenciar:false,...s},contagens}));
 const texto=(s:string)=>s.replace(/<[^>]*>/g,"");
 it("ativa_com_contagens",()=>{const h=montar();expect(texto(h)).toContain("Aria ativa3 em atendimento · 2 aguardando você");expect(h.match(/class="font-mono tabular-nums"/g)).toHaveLength(2);expect(h).toContain('role="status"');});
@@ -30,4 +32,16 @@ it("Gerenciar usa NextLink real sem prefetch para preservar navegação e não a
 });
 it.each([{estado:"ATIVA" as const,pausada:false},{estado:"ATIVA" as const,pausada:true},{estado:"SHADOW" as const,pausada:false}])("R2 faixa é região nomeada, com somente título vivo: %j",situacao=>{
  const h=montar(situacao);expect(h).toMatch(/^<div role="region" aria-label="Situação da Aria"/);expect(h.match(/role="region"/g)).toHaveLength(1);expect(h.match(/role="status"/g)).toHaveLength(1);
+});
+it("agrupa somente os controles autorizados sem incluir o título vivo",()=>{
+ const tree=FaixaAriaAtiva({situacao:{estado:"ATIVA",pausada:false,podeGerenciar:true},contagens:{ia:1,aprovacao:1,handoff:1}});
+ const grupo=elementos(tree).find(n=>n.props.role==="group"&&n.props["aria-label"]==="Ações da Aria");
+ expect(grupo).toBeDefined();
+ if(!isValidElement<{children:ReactNode}>(grupo))throw Error("Grupo de ações ausente");
+ const controles=elementos(grupo.props.children);
+ expect(controles.filter(n=>n.type===InterruptorAria)).toHaveLength(1);
+ expect(controles.filter(n=>n.type===Link&&n.props.href==="/aria")).toHaveLength(1);
+ expect(controles.some(n=>n.props.role==="status")).toBe(false);
+ const semPermissao=FaixaAriaAtiva({situacao:{estado:"ATIVA",pausada:false,podeGerenciar:false},contagens:{ia:1,aprovacao:1,handoff:1}});
+ expect(elementos(semPermissao).some(n=>n.props.role==="group")).toBe(false);
 });
