@@ -7018,3 +7018,13 @@ RED consumidores histórico: sessão81813/chunk0689f9 EXIT1, dois arquivos39 cas
 SPEC docs/specs/inbox-faixa-aria-ativa.md; report output/inbox-347-report.md. Visual três larguras/dois temas, QA independente, TSC/global/CI e homologação permanecem pendentes. Nenhum DB/INT, migração, instalação/generate/package/env, servidor, preview, provider, mensagem real, push ou deploy. Publicação/integração exclusivas do ROOT; issue permanece aberta.
 
 Verificação final DEV347 c80b0f EXIT0: seis arquivos69/69 completos e lint cinco arquivos --max-warnings0, mais diff-check. Visual/QA/TSC/global/CI continuam pendentes.
+
+### Inbox #348 — cabeçalho e devolução implementados; QA e CI pendentes (25/10/2026)
+
+DEV B na base716a6261 (#347 sobre346252), branch codex/inbox-e3-348-cabecalho-aria. LinhaestadoAria do item343 e capacidades do painel corrente compõem o cabeçalho68px; helperpausa movido/reexportado sem remover PainelAria353. Botão Devolver usa action existente/useAcaoCliente idempotentetrue, feedbackirmão apósheader e token de ciclo para impedir ACK/erro/transporte antigos em A→B→A ou revogação/retorno, preservando rascunho/scroller.404 limpa somente podeDevolver/podeDecidir da cópiaAria histórica;503preserva. Sem servidor/ACL/D3/357/358/359 ou novoSSE.
+
+TDD0fcced EXIT1 quatro arquivos72 casos(30falhas/42controles),266230 EXIT1 consumidor11(1falha/10controles);8casoscontroladorRED2eb47b→GREEN85ce7e. Primeira pastaInbox62193/1f0f89 EXIT1:64arquivos603casos,19falhas em dois helperslocais de materialização; asserções preservadas, adaptação real verificada19/19e7f3b4. GREEN final sessão18529/chunk2d9eb4 EXIT0:64arquivos605/605, w1/heap512, sem filtros de caso/skips novos, integração excluída pela configuração original. Lint13arquivos272d21 EXIT0 --max-warnings0. Negativos administrativos/SVG/lint/edição intermediária detalhados no report; aviso vite-tsconfig-paths preexistente. Recorte de pasta, não global.
+
+SPEC docs/specs/inbox-cabecalho-aria.md; report output/inbox-348-report.md. Visual, QA independente, TSC/global/CI/build/homologação permanecem pendentes. SemDB/INT/lease, instalação/generate/migração/env/provider/preview/browser/captura/mensagem real/push/deploy. Fonte347 congelada preservada; correção347ROOT futura exige carry separado. Não marcar issue concluída por estes gates.
+
+Adendo348DS coordenadoROOT: varianteia canônica Botao adicionada sem overrides ou relaxar guardas. REDbd85c8(2falhas/8controles)→GREEN0c8b48 dois arquivos20/20. Replay final sessão83786/chunk807675 EXIT0:65 arquivos615/615(pastaInbox+Botao), w1/heap512; lint15arquivos89af41 EXIT0 --max-warnings0. Faixa347 permanece literal aguardando carry da correçãoROOT. QA/TSC/visual/global/CI seguem pendentes.

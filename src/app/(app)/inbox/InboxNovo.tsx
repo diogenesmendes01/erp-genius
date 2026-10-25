@@ -354,7 +354,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (!ativo) return;
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
-        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false } : null };
+        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false } : conhecido.aria } : null };
         return !r && conhecido ? ant! : { id: selecionado, dado: r };
       });
     });
@@ -493,6 +493,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ) : (
           <ConversaAberta
             item={atual}
+            aria={painelDoAberto?.dado?.aria}
             usuario={usuario}
             fuso={fuso}
             agoraInicial={agoraInicial}
