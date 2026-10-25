@@ -26,8 +26,13 @@ const primeiroNome = (nome: string | null) => nome?.trim().split(/\s+/)[0] || "R
 
 export function estadoVisualItem(item: ItemListaInbox, agora: Date, usuarioId?: string): { badges: BadgeVisual[]; previa: string; avatarTom: number; seloIa: boolean } {
   const badges: BadgeVisual[] = [];
+  const estado = item.grupo ? null : item.estadoAria;
   if (!item.grupo) {
-    if (item.status === "ENCERRADO") badges.push({ tom: "neutro", texto: "Encerrado" });
+    if (estado === "ia") badges.push({ tom: "ia", texto: "IA atendendo" });
+    else if (estado === "aprovacao") badges.push({ tom: "aprovacao", texto: "Aguardando aprovação" });
+    else if (estado === "handoff") badges.push({ tom: "handoff", texto: "Handoff pendente" });
+    else if (estado === "humano") badges.push({ tom: "humano", texto: item.atendidoPorVoce ? "Com você" : item.responsavelNome?.trim() ? "Com " + primeiroNome(item.responsavelNome) : "Humano" });
+    else if (item.status === "ENCERRADO") badges.push({ tom: "neutro", texto: "Encerrado" });
     else if (item.responsavelId) badges.push({ tom: "humano", texto: item.responsavelId === usuarioId ? "Com você" : "Com " + primeiroNome(item.responsavelNome) });
     badges.push({ tom: "neutro", texto: rotular(SETOR_ATENDIMENTO_LABEL, item.finalidade), ponto: false });
     if (prazoEstourado(item, agora.getTime())) {
@@ -37,7 +42,12 @@ export function estadoVisualItem(item: ItemListaInbox, agora: Date, usuarioId?: 
     if (!iniciais(item.contatoNome)) badges.push({ tom: "neutro", texto: "Sem nome", tracejado: true, icone: "sem-nome", ponto: false });
     if (item.status !== "ENCERRADO" && !item.responsavelId) badges.push({ tom: "neutro", texto: "Na fila", tracejado: true, ponto: false });
   }
-  return { badges, previa: item.preview ?? "", avatarTom: tomDoAvatar(item.contatoId), seloIa: false };
+  const preview = item.preview ?? "";
+  const previa = item.previaAutor === "sugestao" ? "Aria sugere: " + (item.previaRotulo ?? "")
+    : item.previaAutor === "aria" ? "Aria: " + preview
+    : item.previaAutor === "voce" ? "Você: " + preview
+    : item.previaAutor === "pessoa" && item.previaRotulo ? item.previaRotulo + ": " + preview : preview;
+  return { badges, previa, avatarTom: tomDoAvatar(item.contatoId), seloIa: estado === "ia" || estado === "aprovacao" || estado === "handoff" };
 }
 
 export type ItemEstadoCabecalho = Pick<ItemListaInbox, "grupo" | "status" | "responsavelId" | "responsavelNome" | "finalidade" | "numeroRotulo">;

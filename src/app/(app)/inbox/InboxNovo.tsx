@@ -146,7 +146,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
   const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
@@ -155,8 +155,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
   // Agregados do servidor, reconciliados por leitura/SSE; nunca pelo tamanho da página.
   const [contagens, setContagens] = useState(contagensIniciais);
+  const [resumo, setResumo] = useState(resumoInicial);
   const [novaConversaAberta, setNovaConversaAberta] = useState(false);
-  const possuiContagensRef = useRef(contagensIniciais !== undefined);
+  const possuiContagensRef = useRef(contagensIniciais !== undefined || resumoInicial !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [selecionadoRecebido, setSelecionadoRecebido] = useState(selecionadoInicial);
@@ -195,6 +196,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
       setProximo(inicial.proximo);
       setContagens(contagensIniciais);
+      setResumo(resumoInicial);
       setSelecionado(selecionadoInicial);
       setVista(selecionadoInicial ? "conversa" : "lista");
     } else {
@@ -202,6 +204,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       setItens((atualLista) => mesclarPrimeiraPagina(atualLista, inicial.itens, inicial.proximo, selecionado));
       if (itens.length <= inicial.itens.length || !inicial.proximo) setProximo(inicial.proximo);
       setContagens(contagensIniciais);
+      setResumo(resumoInicial);
     }
   }
   const selecionadoRef = useRef(selecionado);
@@ -234,7 +237,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;
   }, [chaveFiltros, filtros, selecionadoInicial, versaoNavegacao]);
-  useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
+  useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined || resumoInicial !== undefined; }, [contagensIniciais, resumoInicial]);
   const executarAtualizacao = useCallback(async (contextoVigente: () => boolean) => {
     const filtro = filtrosRef.current;
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
@@ -251,8 +254,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     if (leitura.fase === "falha" && !mesmaLeitura) return;
     consultasRef.current.aplicada = pedido;
     // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
-    if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
-      && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
+    if (leitura.fase !== "pendente" && inicio.id === leitura.id
+      && inicio.versao === leitura.versao && inicio.fase === leitura.fase) {
+      if (p.contagens) setContagens(p.contagens);
+      if (p.resumo) setResumo(p.resumo);
+    }
     const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
     const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
     if (linha && !(leitura.fase === "sucesso" && antiga)) {
@@ -465,7 +471,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   return (
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
-        <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} sino={sino}
+        <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo} sino={sino}
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
