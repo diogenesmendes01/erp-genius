@@ -10,7 +10,7 @@ InboxNovo repassa apenas painelDoAberto.aria. A troca de atendimento descarta a 
 
 ## Ordenação e apresentação
 
-intercalarSugestoes recebe itens crus e sugestões e retorna uma cópia estável ordenada por instante. No empate os itens existentes precedem a sugestão; instantes nulos ficam por último. A sugestão anterior ao inicioJanela aparece no topo quando pendente e é omitida quando decidida. inicioJanela nulo admite todas as fornecidas; o cursor continua exclusivo das mensagens. Comparação usa epoch, inclusive offsets.
+intercalarSugestoes recebe itens crus e sugestões e retorna uma cópia estável ordenada por instante. No empate os itens existentes precedem a sugestão; instantes nulos ou inválidos ficam por último, em ordem estável. A sugestão anterior ao inicioJanela aparece no topo quando pendente e é omitida quando decidida. Quando temMaisDepois indica uma janela antiga, fimJanela limita todas as sugestões ao instante da última mensagem carregada, com fronteira inclusiva; uma sugestão sem instante válido não entra nessa janela limitada. Sem fimJanela, a janela mais recente mantém as sugestões fornecidas, inclusive pendentes posteriores à última mensagem. O cursor continua exclusivo das mensagens. Comparação usa epoch, inclusive offsets.
 
 O fio real já contém mensagens e notas; não se antecipa intercalarFio/330, tarefas ou agendadas. A nova variante temporal é intercalada ANTES de decorarThread: recebe o dia correto, interrompe sequências de balões e usa key sugestao-aria:id, mantendo keys/cursores das mensagens e notas. Decoração sem sugestões preserva o legado. VirtualList continua com seu núcleo/ancoragem/stableMount; só o consumidor inclui a nova variante entre as linhas com foco. Busca continua lendo mensagens.
 

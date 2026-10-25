@@ -7031,3 +7031,7 @@ A candidata preserva os 17 objetos exclusivos da publicação897e1003 e os 3.590
 ### Inbox #350 — visual composto e CI concluídos; anexos pendentes (25/10/2026)
 
 CI e05440170735019 cincoSUCCESS:953arquivos/7616testes por fuso UTC/SP,lint/build/TSC0. Tcheckoutexato3/104 EXIT0; Root10/205 e lint0. Visual18pares36RAW inspecionados: T12desktop/celular e Root6tablet,quatro lotes18APP+10PROTOpending+6approved+2tabletfinal. Agregados negativos iniciais preservados; sem execução36única/sem açõesnegócio. Índice e pareceres em output/inbox-350-qa;ZIP692aedb59f79e1cde5eac4f14310684e9fa60f04751a88ace2f9058dbdbea8ef aguarda consentimento para anexo na430. BancoB restaurado424hashes/DDL492/0outroator EXIT0. Sem encerramento da issue/merge/deploy presumidos.
+
+### Inbox #350 — revisão R1 C3/C4 (25/10/2026)
+
+C3 reproduzido35945/32a8fc EXIT1(4falhas39controles),corrigido com fimJanela opcional para temMaisDepois e epoch inválido estável. GREEN2arquivos43/b83068 + consumidores4arquivos43/11e8a9 +lint4/828b4b EXIT0;semfiltros/skips,semglobal/TSC/DB. C4 mapeado ao teste existente de expiração focada. Relatório output/inbox-350-qa/revisao-r1-c3-c4.md qualifica visual histórico e preserva gates C1anexos/B1C2integração420→427→430 pendentes. Sem marcar issue concluída.

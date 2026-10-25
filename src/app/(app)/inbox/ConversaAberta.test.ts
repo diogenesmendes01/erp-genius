@@ -227,6 +227,13 @@ describe("319: estados públicos da thread",()=>{
 });
 
 // #350: cartões vêm do painel autorizado; envio do compositor é outro contrato.
+it("não mostra sugestão posterior à janela antiga, mas a conserva na janela atual",()=>{
+ const cartao={id:"futura",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T16:00Z",expiraEm:null,justificativa:null,texto:"Sugestão posterior à janela",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ for(const temMaisDepois of [true,false]){
+  const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens:[msg],temMaisDepois},aria:{cartoes:[cartao]}} as never)));
+  expect(h.includes(cartao.texto)).toBe(!temMaisDepois);
+ }
+});
 it("renderiza sugestão autorizada mesmo sem podeDecidir no lead do atendimento ou envio",()=>{
  const cartao={id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:"Pedido de informação",texto:"Resposta sugerida",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
  const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,aria:{podeDecidir:false,cartoes:[cartao]}} as never)));
