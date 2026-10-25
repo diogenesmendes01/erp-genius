@@ -59,7 +59,7 @@ function decidir(atendimentoId:string,id:string,verbo:Verbo,motivo?:string){
    // Configuração necessária precede o atendimento; o executor reutiliza o mesmo lock/tx.
    const opcoes=verbo==="aprovar"&&acao.acao==="CRIAR_TAREFA"?{fusoTarefa:await carregarFusoInstitucionalTx(tx)}:undefined;
    if(verbo==="aprovar"&&acao.acao==="AGENDAR_MENSAGEM")await tx.$queryRaw`SELECT id FROM "ConfiguracaoOperacional" WHERE id='escola' FOR SHARE`;
-   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR UPDATE`;
+   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR NO KEY UPDATE`;
    const inicial=await conferir(tx,autor.id,atendimentoId,acao);
    await travarAlvos(tx,acao,acao.oportunidadeId??inicial.a.leadId,verbo,inicial.a.leadId);
    // Nada capturado antes de uma espera autoriza a escrita posterior.

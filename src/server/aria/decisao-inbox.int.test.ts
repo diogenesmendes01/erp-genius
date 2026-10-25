@@ -217,4 +217,23 @@ describe("354 D1 decisão contextual real", () => {
   if(!ambos){expect(await prisma.intencaoMensagem.count()).toBe(0);expect(await aprovarAcaoAria(acao.id)).toEqual({ok:true});}
   expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({leadId:atual.id,acaoAgenteIAId:acao.id});
  });
+ it("lock inicial continua serializando troca de responsável durante espera do Lead",async()=>{
+  const acao=await sugestao();const url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");
+  const holder=new PrismaClient({datasources:{db:{url:url.toString()}}}),writer=new PrismaClient({datasources:{db:{url:url.toString()}}}),observer=new PrismaClient({datasources:{db:{url:url.toString()}}});
+  let liberar!:()=>void,entrou!:()=>void,holderPid=0;const retido=new Promise<void>(r=>{liberar=r;}),travado=new Promise<void>(r=>{entrou=r;});
+  const lock=holder.$transaction(async tx=>{holderPid=(await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`)[0].pid;await tx.$queryRaw`SELECT id FROM "Lead" WHERE id=${c.op.id} FOR UPDATE`;entrou();await retido;},{timeout:20000});
+  let decisao:ReturnType<typeof aprovarSugestaoNoInbox>|undefined,troca:Promise<unknown>|undefined;
+  type Espera={pid:number;blockers:number[]};
+  async function esperar(condicao:(r:Espera[])=>number|false|undefined){const fim=Date.now()+1800;while(Date.now()<fim){const r=await observer.$queryRaw<Espera[]>`SELECT pid,pg_blocking_pids(pid) AS blockers FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND pid<>pg_backend_pid()`;const id=condicao(r);if(id)return id;await new Promise<void>(r=>setImmediate(r));}throw Error("Espera nativa não observada");}
+  try{
+   await travado;decisao=aprovarSugestaoNoInbox(c.at.id,acao.id);
+   const pidDecisao=await esperar(rows=>rows.find(r=>r.blockers.includes(holderPid))?.pid);
+   troca=writer.atendimentoWhatsApp.update({where:{id:c.at.id},data:{responsavelId:null}}).then(r=>r);
+   await esperar(rows=>rows.find(r=>r.pid!==pidDecisao&&r.blockers.includes(pidDecisao))?.pid);
+   liberar();await lock;expect(await decisao).toEqual({ok:true});await troca;
+   expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.at.id}})).responsavelId).toBeNull();
+   expect(await prisma.evento.count({where:{tipo:"AcaoAriaAprovada",agregadoId:acao.id}})).toBe(1);
+   expect((await aprovarSugestaoNoInbox(c.at.id,acao.id)).ok).toBe(false);
+  }finally{liberar();await Promise.allSettled([lock,decisao,troca]);await Promise.allSettled([holder.$disconnect(),writer.$disconnect(),observer.$disconnect()]);}
+ });
 });

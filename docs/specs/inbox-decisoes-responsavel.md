@@ -14,7 +14,7 @@ A consulta do atendimento continua passando por escopoAtendimentos. A autorizaç
 
 ## Transações e ordem
 
-A fronteira decisao-inbox.ts recebe atendimentoId e acaoId e resolve tudo novamente no servidor. Ordem: ação FOR UPDATE; configuração necessária FOR SHARE antes do atendimento; atendimento FOR UPDATE; alvo específico e FKs pertinentes. Para CRIAR_TAREFA o fuso é capturado antes do atendimento e passado ao núcleo/executor; inclusive ausência da configuração não provoca aquisição posterior de Config. Sem advisory novo. O futuro #357 precisa tomar ações em ordem determinística antes do atendimento.
+A fronteira decisao-inbox.ts recebe atendimentoId e acaoId e resolve tudo novamente no servidor. Ordem: ação FOR UPDATE; configuração necessária FOR SHARE antes do atendimento; atendimento FOR NO KEY UPDATE; alvo específico e FKs pertinentes. Para CRIAR_TAREFA o fuso é capturado antes do atendimento e passado ao núcleo/executor; inclusive ausência da configuração não provoca aquisição posterior de Config. Sem advisory novo. O futuro #357 precisa tomar ações em ordem determinística antes do atendimento.
 
 Usuário ativo/papéis, responsável, acesso ao atendimento e alvo são conferidos após as esperas. O lead é travado antes da escrita; TAG/campo têm pais e vínculos próprios protegidos; desfazer tarefa/agendada trava e confere a pertença do alvo. O snapshot do cliente e o payload não escolhem outro atendimento/lead/pessoa para a exceção.
 
@@ -56,3 +56,19 @@ No Inbox, RESPONDER/ENVIAR_DOCUMENTO usam o lead efetivo atual no executor. Se o
 - Lint final26 arquivos838fc7 EXIT0, --max-warnings=0, sem supressões/configurações.
 
 QA independente, TypeScript/gates globais do integrador e aceite visual continuam pendentes. Não marcar issue concluída por estes recortes. Sem PR/push/build/Next/browser/HTTP/install/schema/env nesta implementação. Banco reservado somente para as integrações coordenadas; não declarar restauração após os testes.
+
+## R1 — ciclo de FK e fechamento dos controles (25/10/2026)
+
+A contraprova nativa mostrou que o INSERT de Tarefa global com leadId+atendimentoId pode manter KEY SHARE no Lead e esperar KEY SHARE no Atendimento. O wrapper antigo mantinha FOR UPDATE no Atendimento e esperava FOR UPDATE no Lead: grafo bilateral observado e SQLSTATE40P01, com rollback integral do CRM. A leitura dos catálogos confirmou RI de Lead antes de Atendimento naquele perfil; a conclusão veio da execução causal, não só da ordem do schema.
+
+O único ajuste de produção é o lock inicial do atendimento na fronteira Inbox para FOR NO KEY UPDATE. Ele permanece incompatível com UPDATE de responsável, mas é compatível com a referência FK do INSERT. Ação/Config precedem Atendimento, leads continuam FOR UPDATE ordenados e o executor conserva sua eventual elevação de lock somente depois dos leads protegidos. APIs/núcleos CRM globais e executor não mudaram nesta revisão.
+
+A regressão nativa observa o resultado real do SQL antes de uma barreira; aceita somente as duas formas exatas do lock inicial. Enquanto o wrapper está pausado, aguarda o CRM concluir OU bloquear no Atendimento, comprovados por estado/metadados. O grafo é capturado oportunisticamente, sem exigir deadlock no caso corrigido. Asserta ambos sucessos,1tarefa/1eventoTarefa e1tag/1aprovação, sem40P01/P2034, além de rollback do perdedor antes do assert de sucesso no RED. Um controle separado comprova troca de responsável bloqueada enquanto a decisão espera o Lead.
+
+O teste de capacidade geral falsa/cartão explícito autorizado usa agora NOTA_INTERNA, preservando a diferença entre capacidades. RESPONDER/DOCUMENTO com lead efetivo null têm negativos separados; o positivo com ambos os alvos autorizados permanece. Isso corrige expectativa histórica incompatível com o fechamento técnico dos dois alvos, sem mudar o predicado de produção.
+
+Recibos: RED nativo60db37 EXIT1/1caso por ambos-sucessos; patch único e MESMO teste GREEN065da6 EXIT0/1caso. INT37761/b722c4 EXIT1:4arquivos45casos/44passagens, única falha era trace de pool1 que não classificava NO KEY UPDATE. Após ajuste FECHADO desse trace e reforço do controle NOTA, INT90635/7a739e EXIT0:2arquivos18casos completos, sem filtro/skip; asserções Configúnico/antesAtendimento preservadas. Lint5 ee2284 EXIT0 --max-warnings=0. Os demais26contextuais+regressão nativa passaram na rodada45, sem nova mudança funcional após ela. Não chamar a rodada18 de suíte completa45/global.
+
+Oráculos privados v1, grafo e logs negativos permanecem imutáveis. QA independente da filha, TypeScript/gates globais e visual seguem com ROOT. Sem implementação355/356/357, schema, instalações, build, browser, HTTP ou push.
+
+Replay nativo final10428/a9c2c3 EXIT0:2casos/2arquivos, filtro explícito CRMglobal×wrapper e serializaçãoresponsável,25fora; sem alteração funcional adicional. Lint final5 51de77 EXIT0. Causalv1 e seus hashes preservados; filha R1 aguarda QA/TSC/global/visual ROOT.
