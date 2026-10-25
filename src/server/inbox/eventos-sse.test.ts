@@ -91,3 +91,20 @@ it("IDs públicos podem conter o trecho do destinatário sem vazá-lo", () => {
   expect(dados).toEqual(publico);
   expect(dados).not.toHaveProperty("paraUsuarioId");
 });
+
+
+const global345=():AvisoInbox=>({tipo:"aria.global",atendimentoId:null,mensagemId:null,conversaId:""});
+describe("aria.global é uma invalidação de quatro campos",()=>{
+  it("passa canônico para sessão admitida sem consulta/cache de escopo",async()=>{const passa=criarFiltroDeAvisos(outro);expect(await passa(global345())).toBe(true);expect(await passa(global345())).toBe(true);expect(m.atendimento).not.toHaveBeenCalled();expect(m.conversa).not.toHaveBeenCalled();});
+  it.each([
+    ["atendimento",{atendimentoId:"privado"}],["mensagem",{mensagemId:"privada"}],["conversa",{conversaId:"privada"}],
+    ["destinatário",{paraUsuarioId:"u-dest"}],["payload",{payload:{texto:"segredo"}}],["campo extra",{extra:true}],
+  ])("recusa %s mesmo se o escopo permitir",async(_nome,extra)=>{m.atendimento.mockResolvedValue({id:"privado"});m.conversa.mockResolvedValue({id:"privada"});expect(await criarFiltroDeAvisos(destinatario)({...global345(),...extra} as AvisoInbox)).toBe(false);expect(m.atendimento).not.toHaveBeenCalled();expect(m.conversa).not.toHaveBeenCalled();});
+  it("recusa campo ausente/undefined, símbolo e extra não enumerável",async()=>{m.conversa.mockResolvedValue({id:"qualquer"});const sem=global345() as Partial<AvisoInbox>;delete sem.mensagemId;const simbolo={...global345(),[Symbol("extra")]:"segredo"},oculto=Object.defineProperty(global345(),"payload",{value:"segredo"});for(const a of [sem,{...global345(),mensagemId:undefined},simbolo,oculto])expect(await criarFiltroDeAvisos(outro)(a as AvisoInbox)).toBe(false);expect(m.conversa).not.toHaveBeenCalled();});
+  it("formata global canônico com exatamente os quatro campos públicos",()=>{const quadro=formatarSSE(global345());expect(quadro.split("\n")[0]).toBe("event: aria.global");expect(JSON.parse(quadro.split("\n")[1].slice(6))).toEqual(global345());});
+});
+
+it("global com campo obrigatório não enumerável não produziria quadro de quatro campos",async()=>{
+  const aviso=Object.defineProperty(global345(),"mensagemId",{value:null,enumerable:false});
+  expect(await criarFiltroDeAvisos(outro)(aviso)).toBe(false);
+});

@@ -20,6 +20,7 @@ import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
+import type { ResumoListaInbox } from "@/server/inbox/contagens";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
 import { marcarAtendimentoLidoAutomatico } from "@/server/whatsapp/preferencias";
@@ -60,6 +61,8 @@ export interface PropsInboxNovo {
   opcoesFiltro?: OpcoesFiltroInbox;
   /** Agregados autorizados; a apresentação em chips é entregue pela etapa 313. */
   contagens?: ContagensChipsInbox;
+  /** Resumo autorizado aditivo; apresentação nas etapas345–347. */
+  resumo?: ResumoListaInbox;
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
@@ -75,12 +78,13 @@ export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null, opcoes
   if (f.naoLidas) q.set("naoLidas", "1");
   if (f.prazoEstourado) q.set("prazo", "estourado");
   if (f.busca) q.set("busca", f.busca);
+  if (f.aria) q.set("aria", f.aria);
   if (cursor) q.set("cursor", cursor);
   else if (opcoes.contagens) q.set("contagens", "1");
   return q.toString();
 }
 
-type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?: ContagensChipsInbox };
+type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?: ContagensChipsInbox; resumo?:ResumoListaInbox };
 
 async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<PaginaInbox | null> {
   try {
@@ -116,6 +120,14 @@ export function zerarNaoLidas(itens: ItemListaInbox[], id: string): ItemListaInb
 
 export function avisoMarcaLida(aviso: AvisoInbox, selecionado: string | null): boolean {
   return aviso.tipo === "mensagem.nova" && aviso.atendimentoId !== null && aviso.atendimentoId === selecionado;
+}
+
+/** Invalida também os dados da Aria, sem trocar o painel conhecido durante a recarga. */
+export function avisoRecarregaPainel(a: AvisoInbox, selecionado: string | null): boolean {
+  return a.tipo === "resync" || a.tipo === "aria.global"
+    || (a.tipo === "atendimento.atualizado"
+      && a.atendimentoId !== null
+      && a.atendimentoId === selecionado);
 }
 
 /** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
@@ -354,7 +366,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
   // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
-    setEventoRecente(a);
+    // React pode agrupar mensagem+global: preservar o aviso que reconcilia a thread.
+    if (a.tipo !== "aria.global") setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current)) {
       const repetida = entradasPendentesRef.current?.id === a.atendimentoId && entradasPendentesRef.current.mensagens.has(a.mensagemId);
       if (!repetida) versaoEntradasRef.current++;
@@ -365,7 +378,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, !repetida);
       else if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
     }
-    if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
+    if (avisoRecarregaPainel(a, selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     carregarLista();
   }, [carregarLista, pedirLeitura]);
   const { conectado } = useEventosInbox(aoAviso);

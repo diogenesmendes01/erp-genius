@@ -15,6 +15,8 @@ vi.mock("@/server/_shared/sessao", async (orig) => {
   };
 });
 vi.mock("@/server/inbox/barramento", () => ({ assinarInbox: vi.fn(() => m.sair), iniciarEscuta: vi.fn(async () => {}) }));
+vi.mock("@/lib/prisma",()=>({prisma:{atendimentoWhatsApp:{findFirst:vi.fn(async()=>null)},conversaWhatsApp:{findFirst:vi.fn(async()=>null)}}}));
+import { assinarInbox } from "@/server/inbox/barramento";
 import { GET } from "./route";
 import * as rota from "./route";
 import { REVALIDAR_MS, RETRY_MS, VIDA_MAX_MS } from "./limites";
@@ -143,3 +145,6 @@ describe("prazo de vida e revalidação da sessão (B9, #201 C6)", () => {
     expect((await GET(new Request("http://x/api/inbox/eventos"))).status).toBe(401);
   });
 });
+
+
+it("global canônico chega à sessão admitida e não passa após revogação",async()=>{m.sessao.mockResolvedValue(sessao([Papel.VENDEDOR]));const {res,ctl}=await abrir();try{await ler(res);const aviso=vi.mocked(assinarInbox).mock.calls.at(-1)![0],g={tipo:"aria.global" as const,atendimentoId:null,mensagemId:null,conversaId:""};aviso(g);await vi.advanceTimersByTimeAsync(0);expect((await ler(res)).texto).toContain("event: aria.global");m.fresco.mockResolvedValue(null);await vi.advanceTimersByTimeAsync(REVALIDAR_MS);aviso(g);await vi.advanceTimersByTimeAsync(0);const fim=await ler(res);expect(fim.fechado).toBe(true);expect(fim.texto).not.toContain("aria.global");}finally{ctl.abort();}});

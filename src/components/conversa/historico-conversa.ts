@@ -165,12 +165,14 @@ export class HistoricoConversa {
 }
 
 /**
- * Todo aviso do SSE (de qualquer tipo ou atendimento) reconcilia a janela aberta com `maisNovas`. O SSE e global ao
+ * Todo aviso individual do SSE (de qualquer tipo ou atendimento) reconcilia a janela aberta com `maisNovas`. O SSE e global ao
  * usuario e o React agrupa avisos no mesmo render, entao o hook so enxerga o ultimo; filtrar por tipo/atendimento
  * perderia a `mensagem.nova` do atendimento aberto agrupada com outro aviso. `maisNovas` e idempotente e barato
  * (consulta `depois` do cursor da ultima; sem novidade volta vazio); `resync` recarrega.
  */
 export function reagirAoAviso(h: HistoricoConversa, _atendimentoId: string, aviso: AvisoInbox): Promise<void> {
+  // Invalidação global é só da lista/painel e não busca mensagens.
+  if (aviso.tipo === "aria.global") return Promise.resolve();
   if (aviso.tipo === "resync") return h.recarregar();
   return h.maisNovas();
 }
