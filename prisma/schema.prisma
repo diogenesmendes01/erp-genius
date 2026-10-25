@@ -1479,6 +1479,10 @@ model Oportunidade {
   aguardandoReagendamentoEm DateTime?
 
   // valor da oportunidade (Ficha do Lead — doc 09)
+  // Previsão manual opcional (D13): data civil literal, sem conversão de fuso.
+  probabilidadePct   Int?
+  previsaoFechamento String?
+
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
   comissaoPrevista Decimal? @db.Decimal(12, 2)
