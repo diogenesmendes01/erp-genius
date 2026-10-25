@@ -31,3 +31,7 @@ A regressão inclui pasta Inbox inteira, consumidores Modal e Compositor, Botao,
 ### R1: abertura invalidada
 
 Após revogação e retorno da capacidade com o mesmo acaoId, a abertura continua sem CTA de ação e orienta Feche e abra o resumo novamente. Somente fechar e reabrir deliberadamente cria uma geração viva; não há reativação automática. O ciclo do Modal também respeita a invalidação. Resumo e Fechar permanecem disponíveis. O teste real resolve ACK antigo depois de abrir e iniciar a nova tentativa: o antigo não atualiza nem foca; o novo atualiza e só foca após leitura fresca. Cobertura SSR garante ausência de Assumir/Responder/retry mesmo com ambas capacidades devolvidas. Backend #357 continua pendente e literal.
+
+### R2: retenção do resumo após ACK
+
+A espera de confirmação é separada do busy de leitura. Se painel200 já vier sem handoff, a lista ainda não reconciliar o responsável e a leitura seguinte falhar503, o resumo permanece montado com Cancelar e retry de leitura. Não oferece nova action assumir nem Responder a partir do snapshot. Somente o DTO atual participa da autorização; nova leitura fresca com responsável/envio vigentes pode concluir o foco. Cancelamento impede qualquer reconciliação tardia; nova abertura começa outra geração. Nenhuma query, polling ou política backend foi acrescentada.

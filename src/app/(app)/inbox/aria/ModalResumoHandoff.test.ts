@@ -14,3 +14,7 @@ it("abertura invalidada preserva resumo e mostra somente Fechar mesmo com capaci
  const html=renderToStaticMarkup(createElement(ModalResumoHandoff,{atendimentoId:"a",contatoNome:"Ana",handoff:{...handoff,podeAssumir:true,ehResponsavel:true},fuso:"UTC",sessaoInvalidada:true,contextoAtivo:false,erroConfirmacao:"falha",aoTentarConfirmar(){},aoFechar(){},aoAssumido(){},aoResponder(){}}));
  expect(html).toContain("Feche e abra o resumo novamente");expect(html).toContain(">Fechar<");expect(html).not.toContain("Assumir e responder");expect(html).not.toContain(">Responder<");expect(html).not.toContain("Tentar de novo");
 });
+it("snapshot em confirmação não autoriza novo assumir nem Responder, mas permite cancelar e retry de leitura",()=>{
+ const html=renderToStaticMarkup(createElement(ModalResumoHandoff,{atendimentoId:"a",contatoNome:"Ana",handoff:{...handoff,podeAssumir:true,ehResponsavel:true},fuso:"UTC",confirmacaoPendente:true,confirmando:false,erroConfirmacao:"Não foi possível atualizar",aoTentarConfirmar(){},aoFechar(){},aoAssumido(){},aoResponder(){}}));
+ expect(html).toContain("Quer 15% para 12 matrículas");expect(html).toContain(">Cancelar<");expect(html).toContain("Tentar de novo");expect(html).not.toContain("Assumir e responder");expect(html).not.toContain(">Responder<");expect(html).not.toContain("Atualizando a conversa…");
+});
