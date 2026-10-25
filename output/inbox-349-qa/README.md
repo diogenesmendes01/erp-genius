@@ -10,3 +10,9 @@ BaseMain170edbad. Merge5b50cb4b+correção d9b1b08e (origem14337900),oito pathsS
 
 
 Atualização dos gates da composição: TypeScript original terminou com código0 (sessão28227,terminala6beb3), sem exclusões auxiliares e sem incremental. Lint global terminou0 (sessão42789,terminal5d9ca8), zero erros e40avisos herdados. Nenhuma fonte foi alterada durante essas execuções. CI e integração completa da nova composição permanecem pendentes.
+
+
+### Integração completa aprovada no código23fb
+A nova integração40144382961 terminou com quatro shards aprovados:350arquivos/3.128testes;trêsarquivos/quatrotestes opt-in ignorados, declarados separadamente. Terminal32578/3fce24 EXIT0 e conferência45436/a19dd2 EXIT0. CI rápida40144356996 também aprovada5/5,939arquivos/7.457UNIT em cada fuso. [Registro dos jobs e fontes](ci-23fb.json).
+
+O negativo anteriorb292 continua preservado com suas duas falhas;os quatro literais completos foram corrigidos e a nova execução combinada incluiMain343/423. Revisão independente23fb favorável e comentáriosR1C1–C6 tratados. Este fechamento altera somente documentação;as oito fontes/testes permanecem23fb. A CI do filho documental e o merge serão conferidos antes de encerrar349.
