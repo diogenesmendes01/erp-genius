@@ -1,0 +1,28 @@
+import { act, createElement, StrictMode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import type { Root } from "react-dom/client";
+import { afterEach,beforeEach,expect,it,vi } from "vitest";
+import { criarDomMinimo,desligarObservadores,type Elemento,type Documento } from "@/test/dom-minimo";
+import { BotaoDevolverAria, ControladorDevolverAria } from "./BotaoDevolverAria";
+const devolver=vi.hoisted(()=>vi.fn());
+// DOM mínimo não implementa SVG; manter controlador/hook reais.
+vi.mock("@tabler/icons-react",()=>({IconSparkles:()=>createElement("span",{"aria-hidden":true})}));
+vi.mock("@/server/aria/acoes",()=>({devolverParaAria:devolver}));
+let root:Root,host:Elemento,doc:Documento;
+const mudar=vi.fn();
+function eventos(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return (el as unknown as Record<string,{onClick():void}>)[k];}
+const botao=()=>host.querySelector('button')!;
+const montar=async(id="A",permitido=true)=>{
+ const props = { atendimentoId:id,dica:"Pausa manual",aoMudar:mudar,permitido,
+  children:({botao,feedback}:{botao:import("react").ReactNode;feedback:import("react").ReactNode})=>createElement("section",null,createElement("header",null,botao),feedback,createElement("input",{"aria-label":"Rascunho"})) };
+ await act(async()=>root.render(createElement(StrictMode,null,createElement(ControladorDevolverAria,{key:id,...props}))));
+};
+const clicar=async()=>act(async()=>{eventos(botao()).onClick();});
+beforeEach(async()=>{vi.resetAllMocks();devolver.mockResolvedValue({ok:true});const dom=criarDomMinimo();doc=dom.documento;Object.assign(doc,{addEventListener(){},removeEventListener(){}});Object.assign(dom.janela,{addEventListener(){},removeEventListener(){}});vi.stubGlobal("window",dom.janela);vi.stubGlobal("document",doc);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);host=doc.createElement("div");doc.body.appendChild(host);Object.assign(host,{addEventListener(){},removeEventListener(){}});const {createRoot}=await import("react-dom/client");root=createRoot(host as unknown as HTMLElement);});
+afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
+it("SSR mantém nome acessível, title e rótulos responsivos",()=>{const h=renderToStaticMarkup(createElement(BotaoDevolverAria,{atendimentoId:"A",dica:"Aria pausada · Pausa manual",aoMudar:mudar}));expect(h).toContain('title="Aria pausada · Pausa manual"');expect(h).toContain('aria-label="Devolver para Aria"');expect(h).toContain('min-[1200px]');expect(h).toContain('Devolver');expect(h).toContain('bg-ai-50');});
+it("clique duplo tem uma ação e ACK atual reconcilia uma vez",async()=>{let resolver!:(r:{ok:true})=>void;devolver.mockImplementation(()=>new Promise(r=>resolver=r));await montar();await act(async()=>{eventos(botao()).onClick();eventos(botao()).onClick();});expect(devolver).toHaveBeenCalledExactlyOnceWith("A");expect(botao().getAttribute("disabled")).not.toBeNull();await act(async()=>resolver({ok:true}));expect(mudar).toHaveBeenCalledOnce();expect(host.textContent).toContain("Aria retomou o atendimento.");});
+it("erro e transporte anunciam fora do header e retry mantém action idempotente",async()=>{devolver.mockResolvedValueOnce({ok:false,erro:"Negado"}).mockRejectedValueOnce(Error("rede"));await montar();await clicar();const alerta=host.querySelector('[role="alert"]')!;expect(alerta.textContent).toContain("Negado");expect(host.querySelector("header")!.textContent).not.toContain("Negado");expect(doc.activeElement===alerta).toBe(true);expect(mudar).not.toHaveBeenCalled();await clicar();expect(host.textContent).toContain("Reenvie sem alterar os dados");expect(mudar).not.toHaveBeenCalled();await clicar();expect(mudar).toHaveBeenCalledOnce();expect(devolver).toHaveBeenCalledTimes(3);});
+it.each(["B","A-B-A","revogada","desmontada"])("ACK antigo não reconcilia após %s",async(caso)=>{let resolver!:(r:{ok:true})=>void;devolver.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar();if(caso==="revogada")await montar("A",false);else if(caso==="desmontada")await act(async()=>root.render(null));else {await montar("B");if(caso==="A-B-A")await montar("A");}await act(async()=>resolver({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Aria retomou");});
+it("perda e retorno da capacidade não remonta rascunho e não aceita ACK anterior",async()=>{let resolver!:(r:{ok:true})=>void;devolver.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();const rascunho=host.querySelector("input")!;await clicar();await montar("A",false);expect(host.querySelector("button")).toBeNull();expect(host.querySelector("input")===rascunho).toBe(true);await montar("A",true);await act(async()=>resolver({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Aria retomou");expect(host.querySelector("input")===rascunho).toBe(true);});
+it.each(["erro","transporte"])("resposta %s antiga não reaparece nem foca após recuperar capacidade",async(caso)=>{let resolver!:(r:{ok:false;erro:string})=>void,rejeitar!:(e:Error)=>void;devolver.mockImplementationOnce(()=>new Promise((r,j)=>{resolver=r;rejeitar=j;}));await montar();await clicar();await montar("A",false);await montar("A",true);const rascunho=host.querySelector("input")!;rascunho.focus();await act(async()=>{if(caso==="erro")resolver({ok:false,erro:"Negado antigo"});else rejeitar(Error("rede antiga"));});expect(host.querySelector('[role="alert"]')).toBeNull();expect(doc.activeElement===rascunho).toBe(true);expect(mudar).not.toHaveBeenCalled();await clicar();expect(mudar).toHaveBeenCalledOnce();});
