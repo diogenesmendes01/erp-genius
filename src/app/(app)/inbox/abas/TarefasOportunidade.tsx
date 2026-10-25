@@ -20,15 +20,18 @@ export function TarefasOportunidade(props:Props){
 function SessaoTarefas({atendimentoId,tarefas,fusoEscola,podeCriar,aoNova,aoEditar,aoMudar}:Props){
  const exec=useAcaoCliente({idempotente:false}),vivo=useRef(false),emCurso=useRef(false);
   const geracao=useRef(0),tarefasAtuais=useRef(tarefas);
+ const tentativaAtual=useRef<{abertura:number;ok:boolean}|null>(null);
+ const [envio,setEnvio]=useState<number|null>(null);
  const [cancelando,setCancelando]=useState<(TarefaPainel & {token:number;invalidada:boolean})|null>(null),[motivo,setMotivo]=useState("");
  const alvoAtual=cancelando?tarefas.find(t=>t.id===cancelando.id):undefined;
+ const aguardando=!!cancelando&&envio===cancelando.token;
  const alvoMudou=!!cancelando&&(!alvoAtual||alvoAtual.versao!==cancelando.versao||alvoAtual.status!=="ABERTA");
  // Ajusta somente o estado deste alvo; o campo permanece montado e o rascunho não muda.
- if(cancelando&&alvoMudou&&!cancelando.invalidada)setCancelando({...cancelando,invalidada:true});
+ if(cancelando&&alvoMudou&&!aguardando&&!cancelando.invalidada)setCancelando({...cancelando,invalidada:true});
  const alvoValido=!!cancelando&&!cancelando.invalidada&&!alvoMudou;
  useEffect(()=>{tarefasAtuais.current=tarefas;},[tarefas]);
  useEffect(()=>{if(cancelando?.invalidada)geracao.current++;},[cancelando]);
- function fecharCancelamento(){geracao.current++;setCancelando(null);}
+ function fecharCancelamento(){geracao.current++;tentativaAtual.current=null;setEnvio(null);setCancelando(null);}
  useEffect(()=>{vivo.current=true;return()=>{vivo.current=false;};},[]);
  async function executar(alvo:TarefaPainel,acao:()=>Promise<Resultado>){
   if(emCurso.current)return;emCurso.current=true;
@@ -44,6 +47,11 @@ function SessaoTarefas({atendimentoId,tarefas,fusoEscola,podeCriar,aoNova,aoEdit
    {t.podeAgir&&<div className="flex shrink-0 flex-wrap gap-1"><Botao variante="fantasma" tamanho="sm" title="Reagendar para amanhã 09:00" aria-label="Reagendar para amanhã 09:00" disabled={exec.ocupado||!amanha} onClick={()=>{const atual=atalhosDeHorario(new Date(),fusoEscola).find(a=>a.id==="amanha9");if(atual)void executar(t,()=>reagendarTarefaNoInbox(atendimentoId,t.id,t.versao,{...partesDoValorLocal(atual.valorLocal),fusoEscolaEsperado:fusoEscola}));}}><IconCalendarTime size={16}/></Botao>{aoEditar&&<Botao variante="fantasma" tamanho="sm" title="Editar" aria-label={"Editar "+t.titulo} disabled={exec.ocupado} onClick={()=>aoEditar(t)}><IconPencil size={16}/></Botao>}<Botao variante="perigo" tamanho="sm" title="Cancelar tarefa" aria-label={"Cancelar tarefa "+t.titulo} disabled={exec.ocupado} onClick={()=>{setCancelando({...t,token:++geracao.current,invalidada:false});setMotivo("");}}><IconTrash size={16}/></Botao></div>}
   </li>)}</ul>}
   <FeedbackAcao erro={exec.erro}/>
-  {cancelando&&<ConfirmarAcao key={cancelando.id} titulo={"Cancelar a tarefa “"+cancelando.titulo+"”?"} confirmacao="cancelamento" idempotente={true} podeConfirmar={alvoValido && motivo.trim().length > 0 && motivo.trim().length <= 500} acao={()=>cancelarTarefaNoInbox(atendimentoId,cancelando.id,cancelando.versao,motivo.trim())} aoCancelar={fecharCancelamento} aoConcluir={()=>{if(vivo.current&&cancelando.token===geracao.current){fecharCancelamento();aoMudar();}}} aoFalhar={f=>{if(vivo.current&&cancelando.token===geracao.current&&f.tipo==="erro"&&f.mensagem===VERSAO)aoMudar();}}><p>A tarefa será cancelada e continuará no histórico.</p><label className="grid gap-1 text-sm">Motivo<CampoTexto required minLength={1} maxLength={500} value={motivo} onChange={(e:ChangeEvent<HTMLTextAreaElement>)=>setMotivo(e.target.value)} className="rounded-md border border-border-soft bg-surface p-2"/></label>{!alvoValido&&<FeedbackAcao erro={VERSAO}/>}</ConfirmarAcao>}
+  {cancelando&&<ConfirmarAcao key={cancelando.id} titulo={"Cancelar a tarefa “"+cancelando.titulo+"”?"} confirmacao="cancelamento" idempotente={true} podeConfirmar={alvoValido && motivo.trim().length > 0 && motivo.trim().length <= 500} acao={async()=>{
+   const tentativa={abertura:cancelando.token,ok:false};tentativaAtual.current=tentativa;setEnvio(cancelando.token);
+   const r=await cancelarTarefaNoInbox(atendimentoId,cancelando.id,cancelando.versao,motivo.trim());
+   if(tentativaAtual.current===tentativa)tentativa.ok=r.ok;
+   return r;
+  }} aoCancelar={fecharCancelamento} aoConcluir={()=>{if(vivo.current&&cancelando.token===geracao.current&&tentativaAtual.current?.abertura===cancelando.token&&tentativaAtual.current.ok){fecharCancelamento();aoMudar();}}} aoFalhar={f=>{if(vivo.current&&cancelando.token===geracao.current){tentativaAtual.current=null;setEnvio(null);if(f.tipo==="erro"&&f.mensagem===VERSAO)aoMudar();}}}><p>A tarefa será cancelada e continuará no histórico.</p><label className="grid gap-1 text-sm">Motivo<CampoTexto required minLength={1} maxLength={500} value={motivo} onChange={(e:ChangeEvent<HTMLTextAreaElement>)=>setMotivo(e.target.value)} className="rounded-md border border-border-soft bg-surface p-2"/></label>{!alvoValido&&!aguardando&&<FeedbackAcao erro={VERSAO}/>}</ConfirmarAcao>}
  </section>;
 }
