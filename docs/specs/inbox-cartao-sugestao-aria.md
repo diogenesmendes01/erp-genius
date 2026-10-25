@@ -20,7 +20,7 @@ Cartão alinhado à direita em min(520px,80%), raio14, sem sombra, borda warning
 
 ## Ações e estado de tela
 
-CartaoSugestaoAria usa useAcaoCliente({idempotente:true}), Botao e FeedbackAcao reais. Uma sessão por ID impede que ACK antigo execute callback em cartão/contexto novo. Trava síncrona bloqueia clique duplo e aprovar/rejeitar simultâneos. Sucesso chama aoDecidir uma vez quando ainda montado; erro de negócio/expiração mostra a mensagem com foco e não chama o callback. Falha de transporte apresenta resultado incerto; não há retry automático nem status otimista. Retry manual continua validado pela #349.
+CartaoSugestaoAria usa useAcaoCliente({idempotente:true}), Botao e FeedbackAcao reais. Uma sessão por ID impede que ACK antigo execute callback em cartão/contexto novo. Trava síncrona bloqueia clique duplo e aprovar/rejeitar simultâneos. Sucesso chama aoDecidir uma vez quando ainda montado. Ao receber decisão no mesmo cartão, a propriedade do foco é capturada antes de desabilitar e no detach estável do grupo antes da remoção; o resultado conectado recebe foco somente se o disparador foi perdido e não há um novo foco externo. A região role=status permanece montada vazia antes do texto de decisão, inclusive para SSE sem nosso ACK. Não há foco genérico em toda recarga. Erro de negócio/expiração mostra a mensagem com foco e não chama o callback. Falha de transporte apresenta resultado incerto; não há retry automático nem status otimista. Retry manual continua validado pela #349.
 
 Pendente envia/documento tem aviso explícito de envio irreversível; agendar usa Agendar/Ignorar; demais Aprovar/Rejeitar. Decidida não tem botões. Sem Editar, Editar tarefa, Desfazer ou nova ação de negócio.
 
