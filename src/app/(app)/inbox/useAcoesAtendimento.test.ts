@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 const m=vi.hoisted(()=>({g:null as null|import("@/test/tela-sem-dom").Ganchos}));
-vi.mock("react",async original=>{const r=await original<typeof import("react")>();return {...r,useState:((i:unknown)=>m.g!.useState(i)) as typeof r.useState,useCallback:((f:unknown)=>f) as typeof r.useCallback};});
+vi.mock("react",async original=>{const r=await original<typeof import("react")>();return {...r,useRef:((i:unknown)=>m.g!.useRef(i)) as typeof r.useRef,useEffect:(()=>{}) as typeof r.useEffect,useState:((i:unknown)=>m.g!.useState(i)) as typeof r.useState,useCallback:((f:unknown)=>f) as typeof r.useCallback};});
 vi.mock("@/server/whatsapp/acoes-atendimento",()=>({assumirAtendimento:vi.fn(),devolverParaFila:vi.fn()}));
 vi.mock("@/server/whatsapp/acoes-conversa",()=>({agendarMensagemNoAtendimentoLocal:vi.fn(),registrarNotaAtendimento:vi.fn(),cancelarAgendamentoDoAtendimento:vi.fn()}));
 vi.mock("@/server/whatsapp/consultas-acoes-atendimento",()=>({listarConvitesEAgendamentos:vi.fn(),listarPessoasParaAtendimento:vi.fn()}));

@@ -68,3 +68,11 @@ it.each([true,false])("332 entradas nominais na seção de ações com oportunid
  const criar=vi.fn(),nota=vi.fn();await render({dados:{...dados,atual:visivel?dados.atual:null},capacidades:{...cap,tarefas:true},aoNovaTarefa:criar,aoAdicionarNota:nota});for(const texto of ["Criar tarefa","Adicionar nota"]){const b=host.querySelectorAll("button").find(e=>e.textContent===texto)!;expect(b).toBeDefined();await act(async()=>handler(b,"onClick")());}expect(criar).toHaveBeenCalledOnce();expect(nota).toHaveBeenCalledOnce();expect(mover).not.toHaveBeenCalled();
 });
 it("332 callback não concede capacidade de tarefas e nota continua independente",async()=>{await render({aoNovaTarefa:vi.fn(),aoAdicionarNota:vi.fn()});expect(host.querySelectorAll("button").some(b=>b.textContent==="Criar tarefa")).toBe(false);expect(host.querySelectorAll("button").some(b=>b.textContent==="Adicionar nota")).toBe(true);});
+
+it("357 Aba não reconcilia ACK depois de perder e recuperar a capacidade no mesmo atendimento",async()=>{
+ let concluir!:(r:{ok:true})=>void;assumir328.mockImplementation(()=>new Promise(r=>concluir=r));
+ const p={podeAssumir:true,aoAssumir:assumir328,contextoAria:true};await render(p);await clicar328("Assumir conversa");await render({...p,podeAssumir:false});await render(p);await act(async()=>concluir({ok:true}));expect(mudar).not.toHaveBeenCalled();
+});
+it("357 handler antigo da Aba não executa após revogação e retorno de capacidade",async()=>{
+ const p={podeAssumir:true,aoAssumir:assumir328,contextoAria:true};await render(p);const onClick=handler(acao328("Assumir conversa")!,"onClick");await render({...p,podeAssumir:false});await render(p);await act(async()=>onClick());expect(assumir328).not.toHaveBeenCalled();
+});
