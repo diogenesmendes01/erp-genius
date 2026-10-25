@@ -36,7 +36,7 @@ export function useTransferirConversa({ atendimentoId, identidade, opcoes, execu
     if (!sessao?.viva || sessao.token !== abertura?.token || atual.current.chave !== chave || invalidada || acao.ocupado) return;
     const permitido = entrada.alvo.tipo === "pessoa" ? opcoes.pessoas : entrada.alvo.tipo === "aria" ? opcoes.aria : entrada.alvo.tipo === "fila" ? opcoes.filaDoSetor !== null : opcoes.setores.includes(entrada.alvo.setor);
     if (!permitido) return;
-    const tentativa = tentativas.para(JSON.stringify([atendimentoId, entrada.alvo, entrada.contexto]));
+    const tentativa = tentativas.para(JSON.stringify([atendimentoId, entrada.alvo, entrada.contexto, entrada.alvo.tipo === "setor" && entrada.anexarResumoAria === true]));
     const comando = { ...entrada, atendimentoId, chaveIdempotencia: tentativa.atual };
     const d = await acao.executar(async () => {
       try { const r = await executar(comando); return sessao.viva && atual.current.chave === chave ? r : { ok: true as const }; }

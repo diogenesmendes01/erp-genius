@@ -10,6 +10,7 @@ import { comoErroRegra } from "./erro-regra-atendimento";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { ehLinhaComercial } from "./linha-comercial";
 import { proximoStatus } from "./status-atendimento";
+import { lerResumoDaAriaParaNota } from "../aria/resumo-nota";
 type Tx = Prisma.TransactionClient;
 const MSG_FORA_DO_ESCOPO = "Atendimento fora do seu escopo.";
 const MSG_SEM_ALCADA = "Sua função não autoriza esta ação neste atendimento.";
@@ -108,23 +109,36 @@ export async function atribuirAtendimentoTx(tx: Tx, u: UsuarioSessao, id: string
 }
 
 export interface DadosTransferirSetor { atendimentoId: string; destino: Setor; destinoChave: string | null; contexto: string }
-export async function transferirAtendimentoTx(tx: Tx, u: UsuarioSessao, dados: DadosTransferirSetor, marca: MarcaIdempotencia | null) {
+export async function transferirAtendimentoTx(tx: Tx, u: UsuarioSessao, dados: DadosTransferirSetor, marca: MarcaIdempotencia | null, inbox?: { anexarResumoAria: boolean }) {
+      let repetido: Awaited<ReturnType<typeof repeticaoIdempotente>> = null;
       if (marca) {
-        const repetido = await repeticaoIdempotente(tx, {
+        repetido = await repeticaoIdempotente(tx, {
           tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
           mensagemConflito: "Esta tentativa já foi usada com outra transferência. Confira os atendimentos da conversa antes de repetir.",
         });
-        if (repetido) return String((repetido.payload as { novoId?: unknown }).novoId);
+        if (repetido && !inbox) return String((repetido.payload as { novoId?: unknown }).novoId);
       }
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
-      const a = await atendimentoVisivel(u, dados.atendimentoId, false, tx);
+      const autor = inbox ? await lerAutorTransferencia(tx, u.id) : u;
+      const a = await atendimentoVisivel(autor, dados.atendimentoId, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
+      if (inbox) {
+        if (!podeExecutar(autor, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+        if (repetido) {
+          const payload = repetido.payload as { origemId?: unknown; novoId?: unknown };
+          if (payload.origemId !== a.id || typeof payload.novoId !== "string") throw new ErroRegra("Recibo de transferência incompatível com esta conversa.");
+          const novo = await tx.atendimentoWhatsApp.findFirst({ where: { id: payload.novoId, atendimentoOrigemId: a.id, conversaId: a.conversaId }, select: { id: true } });
+          if (!novo) throw new ErroRegra("O contexto de destino mudou depois desta tentativa. Confira a conversa.");
+          return novo.id;
+        }
+      }
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
-      if (!podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+      if (!inbox && !podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
       if (dados.destino === a.finalidade && !["FINANCEIRO", "PEDAGOGICO"].includes(dados.destino)) throw new ErroRegra("O atendimento já pertence a este setor.");
       const ctx = await resolverDestino(tx, dados.destino, dados.destinoChave, a.contato.telefoneE164);
       if (!(await setoresDoNumero(tx, a.numeroId)).includes(dados.destino)) throw new ErroRegra("O número deste atendimento não atende o setor escolhido.");
-      await encerrarAtendimentoNaTransacao(tx, a.id, u.id);
+      const resumo = inbox?.anexarResumoAria ? await lerResumoDaAriaParaNota(tx, a.id) : null;
+      await encerrarAtendimentoNaTransacao(tx, a.id, autor.id);
       const conversaId = a.conversaId;
       const antes = new Set((await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, select: { id: true } })).map((x) => x.id));
       let novo;
@@ -139,11 +153,12 @@ export async function transferirAtendimentoTx(tx: Tx, u: UsuarioSessao, dados: D
       } catch (e) { comoErroRegra(e); }
       if (antes.has(novo.id)) throw new ErroRegra("Já existe um atendimento aberto neste setor e contexto para esta conversa.");
       if (!novo.atendimentoOrigemId) novo = await tx.atendimentoWhatsApp.update({ where: { id: novo.id }, data: { atendimentoOrigemId: a.id } });
-      const payload = { de: a.finalidade, para: dados.destino, origemId: a.id, novoId: novo.id, contexto: dados.contexto, ...marca };
+      const payload = { de: a.finalidade, para: dados.destino, origemId: a.id, novoId: novo.id, contexto: inbox ? dados.contexto || null : dados.contexto, ...marca };
       for (const agregadoId of [a.id, novo.id]) {
-        await registrarEvento(tx, { tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", agregadoId, autorId: u.id, payload });
+        await registrarEvento(tx, { tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", agregadoId, autorId: autor.id, payload });
       }
       // O contexto também vira nota interna do novo atendimento (mesmo mecanismo de registrarNotaAtendimento), autor = quem transferiu.
-      await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: novo.id, autorId: u.id, payload: { nota: dados.contexto } });
+      if (!inbox || dados.contexto) await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: novo.id, autorId: autor.id, payload: { nota: dados.contexto } });
+      if (resumo) await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: novo.id, autorId: autor.id, payload: { nota: resumo.nota, origem: "resumoAria", acaoAgenteIAId: resumo.acaoId } });
       return novo.id;
 }
