@@ -71,3 +71,14 @@ it.each([{prazoEstourado:true},{responsavel:"fila" as const},{aria:"handoff" as 
  const chave="prazoEstourado" in chip?"prazo":"responsavel" in chip?"resp":"aria";const valor="prazoEstourado" in chip?"estourado":"responsavel" in chip?"fila":"handoff";expect(url.searchParams.get(chave)).toBe(valor);
  await disparar("click",rotulo("Filtros"));const limparDialogo=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparDialogo);expect(replace.mock.calls.at(-1)![0]).toBe(url.pathname+url.search);
 });
+it.each([
+ {filtros:{aria:"handoff" as const,prazoEstourado:true},rotulos:["Prazo estourado"],ativo:{aria:"handoff"}},
+ {filtros:{aria:"handoff" as const,responsavel:"fila"},rotulos:["Não atribuídas"],ativo:{aria:"handoff"}},
+ {filtros:{prazoEstourado:true,responsavel:"fila"},rotulos:["Não atribuídas"],ativo:{prazo:"estourado"}},
+ {filtros:{aria:"handoff" as const,prazoEstourado:true,responsavel:"fila"},rotulos:["Prazo estourado","Não atribuídas"],ativo:{aria:"handoff"}},
+])("R3 só chip ativo é preservado; dimensões secundárias visíveis e dois Limpar coerentes: $filtros",async({filtros,rotulos,ativo})=>{
+ await montar({resumo:resumoAria,filtros:{numeroId:"n1",busca:"ana",...filtros}});for(const r of rotulos)expect(rotulo("Remover filtro "+r)).not.toBeNull();expect(rotulo("Filtros").textContent).toBe(String(rotulos.length));
+ await disparar("click",rotulo("Remover filtro "+rotulos[0]));const removido=new URL(replace.mock.calls.at(-1)![0],"http://local");expect(removido.searchParams.has(rotulos[0]==="Prazo estourado"?"prazo":"resp")).toBe(false);for(const[k,v]of Object.entries(ativo))expect(removido.searchParams.get(k)).toBe(v);
+ await disparar("click",botao("Limpar"));const limpo=new URL(replace.mock.calls.at(-1)![0],"http://local");expect(Object.fromEntries(limpo.searchParams)).toEqual({numero:"n1",busca:"ana",...ativo});
+ await disparar("click",rotulo("Filtros"));const limparPopover=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparPopover);expect(replace.mock.calls.at(-1)![0]).toBe(limpo.pathname+limpo.search);
+});

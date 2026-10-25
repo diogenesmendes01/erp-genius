@@ -7247,3 +7247,15 @@ RED f7ef4b EXIT1 (47 casos/sete falhas), negativo fixture522042 preservado. GREE
 Comentário real5643202248 lido: FaixaAriaAtiva recebe role=region com nome Situação da Aria, preservando role=status somente no título. Contagens fora da região viva, NextLink/prefetch=false, foco, tokens e capacidades permanecem. RED7a2717 EXIT1 (16 casos/três falhas); GREEN sessão98074/b43768 EXIT0:8 arquivos/267 testes, guarda85/paleta/contraste/tipografia e consumidores reais Inbox/foco/SSE incluídos, w1/heap1024/sem filtro de caso/skip. Lint2 b55446 EXIT0 --max-warnings=0.
 
 Commit próprio separado do PR431 R2 para restack coordenado. SPEC/report atualizados; docs352 preservados. Não houve Node global/TSC/DB/INT/HTTP/browser/build/install/config/env/push; QA e gates integrados/visual permanecem separados. #353 continua sem GO de implementação.
+
+### PR435 — revisão R2 B2: legado preservado e endpoint dedicado
+
+Patch separado sobre737506d7, sem publicação. `ClienteVoltou` chama `vincularLeadRetornoNoInbox`; helper estrito329 mantém a identidade selecionada. `AcoesContato` conserva ação pública/assinatura e semântica83ad, incluindo atendimento COMERCIAL em número institucional, outro selected/candidato e Pessoa divergente; mantém papéis, telefone, carteira e veto a contato já vinculado. Novo helper local trava candidatos comerciais porID antes de Contato→Lead, revalida e usa CAS/create/rollback; inbound global não mudou. SPEC329 legível, histórico preservado no QA.
+
+RED nativo4falhas/3pass → GREEN inicial3arquivos13. UNIT12/417 EXIT0 (55311/b93fa1). INT final3/31 EXIT0 (5983/437655), depois concorrência completa1/12 EXIT0 (74188/57edf8), cobrindo cruzamento strict×legado;5arquivos INT distintos38casos nos recortes. Lint12final0fe7f3 EXIT0. Negativos de mensagem e erro acidental do import/barreira ficam explicitados no QA, sem classificar como deadlock produtivo. TSC/global/QA/visual final e conflitos B1/C2 continuam Root; feature não homologada. #436 C3/C4 será outro commit; #331 suspensa.
+
+### PR431 — R3: manter restrições secundárias visíveis (25/10/2026)
+
+P2 posterior à R2: combinações válidas aria+prazo/aria+fila/prazo+fila escondiam filtro secundário. Corrigido somente cliente: a dimensão do chip ativo fica fora de etiquetas/selo; secundárias são visíveis/removíveis e os dois Limpar usam helper puro compartilhado. Busca/número e modo legacy preservados. Parser/produtor/contratos de combinação não mudam. Commit separado após353fa7, sem alterar a feature entregue.
+
+Oráculo T literal RED149136 EXIT1 (14 casos/três falhas) → GREENbbbc70 EXIT0 (14/14). GREEN final sessão70459/3e4d23 EXIT0:10 arquivos/241 casos, botões85/parser/URL/Inbox completos; casos simples/legacy e quatro combinações reais com os dois Limpar. Lint4 7340e3 EXIT0 --max-warnings=0. Sem DB/SQL/INT/TSC/global/build/browser/install/push; QA/composição originais separados.
