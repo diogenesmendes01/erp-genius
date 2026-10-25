@@ -7,3 +7,5 @@ A publicação integraMainc045 (#344); o cartão mantém os objetos da fonte350 
 Aceite visual18pares/36RAW e navegação nativa continuam pendentes de fixture/ambiente. A região status e o foco foram exercitados em ReactDOM/DOMmínimo; isso não demonstra anúncio audível. A palavra BODY e blur nativo do relato DEV anterior devem ser lidas como perda de foco contextual e blur emulado, conforme os pareceres integrais.
 
 Sem D1/D2 antecipadas: responsável vendedor/edição/pacotes seguem354–356. Sem alteração de ACL/schema/backend. Este pacote textual não contém imagens, credenciais, logs brutos ou executores privados.
+
+A nova [composição com main #345](composicao-main345.json) preserva os objetos exclusivos da #350 e acrescenta a mudança do barramento já integrada em main abb9616. O recorte de 10 arquivos/205 testes e o lint do consumidor passaram; CI remota e aceite visual da composição continuam pendentes.

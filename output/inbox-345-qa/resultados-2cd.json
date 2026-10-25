@@ -1,0 +1,82 @@
+{
+  "source": "2cd984b773e576886e878642650e17a25e04c3a5",
+  "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "profile": "tester",
+  "schemaLevel": 492,
+  "gates": [
+    {
+      "gate": "UNIT",
+      "session": 95270,
+      "terminal": "c75407",
+      "exit": 0,
+      "files": 14,
+      "tests": 354,
+      "seconds": 104.1
+    },
+    {
+      "gate": "lint14",
+      "session": 59992,
+      "terminal": "c1a114",
+      "exit": 0
+    },
+    {
+      "gate": "INT1",
+      "session": 46336,
+      "terminal": "b24a65",
+      "exit": 0,
+      "files": 1,
+      "tests": 26,
+      "seconds": 105.23
+    },
+    {
+      "gate": "INT2",
+      "session": 90341,
+      "terminal": "f06ed8",
+      "exit": 0,
+      "files": 5,
+      "tests": 48,
+      "seconds": 194.83
+    }
+  ],
+  "evidence": [
+    {
+      "path": "output/inbox-345-2cd-preliminar-review-tester.md",
+      "bytes": 11641,
+      "sha256": "b1057ee40912771c96de29cae724f15f5dc0f3e8e4bf0c9c174dbc5017addcd9"
+    },
+    {
+      "path": "output/inbox-345-2cd-identidade-tester.json",
+      "bytes": 12065,
+      "sha256": "89701da96294dbb4f60f6c44bcc793cc791b3772e606d863a91af7ede83f18d5"
+    },
+    {
+      "path": "output/inbox-345-2cd-unit-tester.log",
+      "bytes": 489,
+      "sha256": "db81c7188c8e4f4f0654dd768a8c871df6080a10d0be7d4202bba095da3e52be"
+    },
+    {
+      "path": "output/inbox-345-barramento-int-tester.log",
+      "bytes": 812,
+      "sha256": "e4756a1863d963dd5412100ef14207399101ebcd119c9ecb203436c094b5994b"
+    },
+    {
+      "path": "output/inbox-345-regressoes-int-tester.log",
+      "bytes": 812,
+      "sha256": "e262e06865e7438025df3aaf104b2cc3bbb8fe8e370c84badce7956fe87645e7"
+    }
+  ],
+  "trackedClean": true,
+  "dbReleased": true,
+  "restoreExecutedByTester": false,
+  "filters": [],
+  "skipped": 0,
+  "rootRestore": {
+    "terminal": "5f99cc",
+    "exit": 0,
+    "source": "mensagem ROOT posterior ao release",
+    "tables": 424,
+    "records": 1393,
+    "functions": 3,
+    "triggers": 615
+  }
+}

@@ -6966,6 +6966,43 @@ HEAD 4df9816fcdf7b2121921b6b361ce98fb8981e584: fast40157067583 com cinco jobs ap
 
 
 
+### Inbox #345 — tempo real da Aria (25/10/2026 UTC)
+
+DEV B na base MAIN fabf7addf291de6e4b821927cfc1c88ce93bd9fb, branch codex/inbox-e3-345-tempo-real. Dois triggers novos publicam invalidações por IDs no commit de AcaoAgenteIA/AgenteIA; global exige quatro campos próprios/enumeráveis e não sobrescreve mensagem/resync da thread no batch React. Lista/painel recarregam pela fonte/coalescedor existentes. Tipos antigos, sessão/ACL, fonte/reconexão396 e produtores manuais preservados; sem filtros novos ou alçadas D1–D4 antecipadas. A issue é independente da #344; ROOT fará a união dos hunks com #328/#344.
+
+Reserva ROOT 20261025020000_inbox_aria_tempo_real, SQL LF 1.466 bytes/SHA256 b7c9f6eb0c411a379e4392b5851b18e6a3ea44b4dd4f11661af7aaa3d358441e. Sem redefinir a função/migration antiga ou alterar dados/modelo/deps. RED completo no491 em 50815/eef889: 26 casos, 13 falhas causais/13 controles, EXIT1; restauro ROOT c9fcdc. Aplicação somente ROOT cae862: 492, dados/histórico antigo preservados; snapshot novo 6b8c41 com 503 registros/424 hashes, SHA f68811b11edabd292bd9c3d25e3d00159b79d677ea26834e359e19a2dea31e94.
+
+Gates DEV finais: barramento completo 55837/fa785d, 26/26, EXIT0; outro executor 46768/4a7dc6, cinco INT completos/48 casos, EXIT0 (escopo SSE, estado, pausa, expiração e handoff). Recortes separados, sem filtros/skips ou suíte global presumida. UNIT 14/354 em 14119/7900e7, lint dos 14 SRC/testes em 5e786f e TSC auxiliar qualificado em 3554/52eb7f, todos EXIT0. Duas exclusões privadas históricas explícitas no report; nenhum SRC atual excluído. Negativos unitários/React/serialização e RED DB mantidos com fontes próprias.
+
+Prova AST preserva sete funções da fonte e nove do barramento, além dos paths protegidos. SQL, testes e produto não mudaram durante os executores. Banco492 liberado e restaurado exclusivamente pelo ROOT em c80ad9, EXIT0: 424 tabelas, hashes/dados/fixture/snapshot503 preservados, zero outra atividade; três funções/615 triggers e histórico492 reconferidos. Snapshot f68811b11edabd292bd9c3d25e3d00159b79d677ea26834e359e19a2dea31e94 mantido; nenhuma nova lease. Todos os executores DEV encerrados. Sem instalação/generate/DDL pelo DEV, provider, mensagem real, navegador ou deploy. SPEC: docs/specs/inbox-tempo-real-aria.md. Report: output/inbox-345-report.md. QA independente no commit exato, união/CI e publicação ROOT pendentes; #345 não concluída por presunção.
+
+
+### Inbox #345 — publicação independente em rascunho (25/10/2026)
+
+Fonte executável 2cd984b7, base Main fabf, sem dependência artificial 344. TESTER independente confirmou 14 arquivos/354 UNIT/lint14,INT barramento26 e cinco arquivos48 em executores separados, w1, sem filtros/skips, todos EXIT0. ROOT restaurou TESTER492 5f99cc:424 hashes/1393 registros/snapshot/três funções 615 triggers preservados. Migration reservada 25020000, GitLF 1466/b7c9f6; raw Windows 1505/9ad86e explicitamente distinto.
+
+Pacote QA sanitizado publica parecer integral e resultados nominais, sem raw/credenciais/banco. TypeScript DEV é auxiliar qualificado com somente 2 exclusões privadas não versionadas; CI limpo verificará original/global/lint/build/fusos/integral. A publicação édocumental com 15 objetos executáveis literais 2cd. PR em rascunho/Refs345; sem encerramento ou homologação presumidos.
+
+
+### #345 — união técnica com #344 para integração (25/10/2026)
+
+Fonte 11f unida à 344d6c, mantendo todo o quadro 344 e todo o sufixo 345 desde Main fabf. Produto InboxNovo mergeado automaticamente; dois testes aditivos conservados. Objetos exclusivos das duas fontes preservados; paramsDosFiltros literal 344 e avisoRecarregaPainel literal 345. UNIT dois arquivos 105/766671 EXIT0, w1, sem filtros/skips. Primeira tentativa 63960/5add21 não coletou por EPERM sandbox e permanece negativa. CI/global e FULL desta união ainda pendentes; resultados remotos isolados não substituem esses gates. Sem nova DDL/DB/mensagens/deploy.
+
+### #345 — inventário fechado de funções PostgreSQL (25/10/2026)
+
+FULL isolado 11f 40158191442/shard3 encontrou um item novo não declarado no teste pg-proc-whatsapp: notificar_inbox_acao_ia. A função é a adicionada pela migration 345 e contém AtendimentoWhatsApp, por isso entra na consulta regex preexistente. RED independente TESTER b91d0b: 1 arquivo/1 caso, esperado 7/recebido 8, EXIT1, sem DML. Correção registra somente esse nome em NOVAS; BASE/HASH_BASE/query/igualdade exata e verificação de triggers continuam intactos. A fonte produtiva/migration não muda. GREEN exato/CI composição/FULL ainda pendentes; o resultado isolado negativo não vira aprovação.
+
+### #345 — revisão R1 e regressão do contrato de notas (25/10/2026)
+
+R1 aprovada sem bloqueadores; legibilidade de globalValido/avisoRecarregaPainel e teste ajustada sem mudar tokens. AST folhas: 628/5834/2602 tokens idênticos a F96; parse sem diagnósticos e lint3 EXIT0. Espaçamento do último bloco do quadro corrigido, prefixo preservado. FULL F96 40161155167 terminou três shards aprovados e dois casos antigos de nota SUGERIR/SHADOW falhando no quarto, por esperar nenhum aviso de refresh. RED independente 41047/650c8a EXIT1 confirmou ambos, 26 fora do filtro. O candidato exige igualdade exata de um aviso com quatro campos e reforça ausência de NotaInterna/intenção/SAIDA e IDs de efeitos nulos; execução real e rollback mantidos. Runtime e migration não mudaram por esta correção. GREEN completo e CI do novo head ainda pendentes; negativos e skips históricos constam de output/inbox-345-qa/ci-f96.json. #345 permanece aberta.
+
+Candidato pré-commit validado independentemente: executor CRM COMPLETO 28/28 (14717/80ce7f EXIT0,178,90s) e barramento COMPLETO 26/26 (98565/cd96a8 EXIT0,118,40s), executores separados/w1/heap512/sem filtros ou skips. Patch físico f8fb83a4c928ff3d2678ca7a1941a7eb80d6b154fc96e9dded513573373f61ce idêntico ROOT/TESTER; não chamar de FULL54. Lint do arquivo corrigido 98129/d57739 EXIT0. TESTER liberou a lease492 ao ROOT; restauro e conferência estática do commit final serão registrados separadamente. CI final ainda necessário antes de merge.
+
+Restauro ROOT do TESTER492 concluído: 2882/fc788e EXIT0, 424 hashes/fixture/snapshot preservados, nenhuma outra atividade. A integração do candidato foi concluída antes deste restauro; não há lease ativa.
+
+
+
+
 ### Inbox #350 — cartão Aria sugere (DEV, gates em preparação)
 
 Base MAIN fabf7add, branch codex/inbox-e3-350-cartao-sugestao. Projeção/intercalação/cartão usam DTO/actions349 autorizados, sem payload bruto ou alçadas novas. D1/D2 aprovadas ficam nas354–356; PainelAria legado preservado para353. Hunk aditivo do painel atual, decoração temporal antes dos dias/sequências e foco do novo item, sem mudar cursores/compositor/núcleo virtual. perigoContorno/classificador fechado e registro exato de dois rótulos com âncora AST aprovados ROOT.
@@ -6984,3 +7021,8 @@ Fonte4b682c913e02960cb6a3ee7b5400476d14114379 congelada após QA causal independ
 ### #350 — publicação textual em rascunho (25/10/2026)
 
 Fonte85e/src4b integrada àMainc045/344, sem antecipar345pendente. TESTER26completos555/a031a2 e lint18/02df44 EXIT0,semfiltros/skips; pareceres integrais preservados. QuadroMainprefixo integral+sufixo350inteiro. Relato editorial BODY/blur nativo corrigido para perda de foco contextual/blur emulado; nenhuma fonte produtiva modificada nessa correção. Aceite18pares36RAW/native e CI/composição permanecem gates pendentes. PR emrascunho/Refs350;nenhumencerramentoouenvio presumido.
+
+
+### Inbox #350 — composição com main #345 (25/10/2026)
+
+A candidata preserva os 17 objetos exclusivos da publicação897e1003 e os 3.590 objetos restantes da main abb9616; InboxNovo mantém somente a prop aria aditiva. O quadro conserva o prefixo main e o sufixo #350 integrais. Recorte local: 10 arquivos/205 testes, um worker, sem filtros ou skips, sessão88594/090488 EXIT0; lint do consumidor sessão62548/28a363 EXIT0. A nova CI remota e a homologação visual continuam pendentes. O smoke anterior negativo permanece preservado e não é aceite. Prova textual em output/inbox-350-qa/composicao-main345.json.
