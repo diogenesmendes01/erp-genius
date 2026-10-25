@@ -4,8 +4,9 @@ import { situacaoAria } from "@/server/aria/estado";
 import { estadoOrcamento } from "@/server/aria/uso";
 import { motivoParaNaoAtuar } from "@/server/aria/turno/guardas";
 
-export const ESTADOS_ARIA = ["ia", "aprovacao", "handoff", "humano"] as const;
-export type EstadoAria = (typeof ESTADOS_ARIA)[number];
+import type { EstadoAria } from "./estado-aria-valores";
+export { ESTADOS_ARIA } from "./estado-aria-valores";
+export type { EstadoAria };
 export interface ContextoEstadoAria {
   ariaAtiva: boolean;
   handoffPendentes: ReadonlySet<string>;

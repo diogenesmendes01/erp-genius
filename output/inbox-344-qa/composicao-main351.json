@@ -1,0 +1,267 @@
+{
+  "base": "170edbadfdf35a93f5366ba504bb7870a1ebf0c1",
+  "fonte344": "d0dfa5a3b2470e70490cd4167a58f9b2073c2b3c",
+  "main": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "arquivosDoEscopo344": 31,
+  "objetosDoEscopoMainFora344Preservados": 3567,
+  "paths344": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.test.ts",
+      "oid": "091f2c04c7fe1f1a8ee6b627cfaae23c805908a3"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "oid": "376ce4f7872be51b0808df976fe9f3c867d94a6e"
+    },
+    {
+      "path": "src/app/(app)/inbox/filtros-url.test.ts",
+      "oid": "b4dcf767698407d3ead4ef475bf791e1aef29c3b"
+    },
+    {
+      "path": "src/app/(app)/inbox/filtros-url.ts",
+      "oid": "77527cd87ed0124ddbe998cca9235cc6f4bb6ad1"
+    },
+    {
+      "path": "src/app/(app)/inbox/page.test.ts",
+      "oid": "d8a75d11a3a118aea26353018fcf6d95c5d4519c"
+    },
+    {
+      "path": "src/app/(app)/inbox/page.tsx",
+      "oid": "29adbbace8c559691a4e9bdc91173f9e4b5a6ba3"
+    },
+    {
+      "path": "src/app/api/inbox/atendimentos/route.test.ts",
+      "oid": "8d67d698ad9e7a00fbb28fed99f2a7624d7f000c"
+    },
+    {
+      "path": "src/app/api/inbox/atendimentos/route.ts",
+      "oid": "7a34decec981f117b9922c2a4f594ba074ff3a8f"
+    },
+    {
+      "path": "src/server/inbox/consulta-sql.cursor.int.test.ts",
+      "oid": "e89e856d107730687186a16671246fdfe38ec1ff"
+    },
+    {
+      "path": "src/server/inbox/consulta-sql.int.test.ts",
+      "oid": "3a813bdd0672816e93b34d127a4a95e9e94509ed"
+    },
+    {
+      "path": "src/server/inbox/consulta-sql.test.ts",
+      "oid": "72aa31e0590e4c281af8513a01958ec96c676c85"
+    },
+    {
+      "path": "src/server/inbox/consulta-sql.ts",
+      "oid": "6a2a8d55d9a418c7c1571d7bc7b8c642bfd49137"
+    },
+    {
+      "path": "src/server/inbox/consultas-pagina.ts",
+      "oid": "2812a8c8833477419d032acf47507d5191fa5ec9"
+    },
+    {
+      "path": "src/server/inbox/contagens.int.test.ts",
+      "oid": "cf67da2963a691997ab2e2aed6f55c891d1f47d8"
+    },
+    {
+      "path": "src/server/inbox/contagens.test.ts",
+      "oid": "e8c34eb241101e9014607f54e872fae8d3cebece"
+    },
+    {
+      "path": "src/server/inbox/contagens.ts",
+      "oid": "d166551199a10e6f6e15a7123300636cfe9a701c"
+    },
+    {
+      "path": "src/server/inbox/contexto-lista.test.ts",
+      "oid": "09fe33260b575fd9fcc90bd152bd0a9f30bf91a4"
+    },
+    {
+      "path": "src/server/inbox/contexto-lista.ts",
+      "oid": "190c237686c7a56a5819ed9e2020cbe9156d8c2b"
+    },
+    {
+      "path": "src/server/inbox/estado-aria-sql.int.test.ts",
+      "oid": "5db5a98c3df42e00d250c58285ec7726a510f41f"
+    },
+    {
+      "path": "src/server/inbox/estado-aria-sql.test.ts",
+      "oid": "ebd50ebf976f6e8f3956300295161bbc942e3db9"
+    },
+    {
+      "path": "src/server/inbox/estado-aria-sql.ts",
+      "oid": "9927cc7a016cd5e79a3e5ef31a8ea91666a0a690"
+    },
+    {
+      "path": "src/server/inbox/estado-aria-valores.ts",
+      "oid": "2bd5d322653677239377dc1a7fd1e48de0dd6950"
+    },
+    {
+      "path": "src/server/inbox/estado-aria.ts",
+      "oid": "89891973ea68db95a2573916ef3b9b6aa4502a30"
+    },
+    {
+      "path": "src/server/inbox/filtros-sql.test.ts",
+      "oid": "6ddf5519baf0d68eb237d3d918af825be22967b9"
+    },
+    {
+      "path": "src/server/inbox/filtros-sql.ts",
+      "oid": "fbd9ed64b05a05bf2f1d6a596c2260490c73dda7"
+    },
+    {
+      "path": "src/server/inbox/filtros.test.ts",
+      "oid": "fb980e2b0358f2192daa8976c03da6520845e3e4"
+    },
+    {
+      "path": "src/server/inbox/filtros.ts",
+      "oid": "48f73211cc66b1bebc973dac250bffe1d4cd6246"
+    },
+    {
+      "path": "src/server/inbox/where-sql.int.test.ts",
+      "oid": "6c45515f4be9ea414a4cdbd0c1839921c033394c"
+    },
+    {
+      "path": "src/server/inbox/where-sql.test.ts",
+      "oid": "f85d07ddb54ac60e18d08ab67bb57c35e6827869"
+    },
+    {
+      "path": "src/server/inbox/where-sql.ts",
+      "oid": "b692463d87f93c5dde9d36577abcca2ad16f88bc"
+    },
+    {
+      "path": "src/test/inbox-contagens-fixture.ts",
+      "oid": "7833c2019897811ee25fb438a372d473794d133c"
+    }
+  ],
+  "quadro": {
+    "prefixoMainIntegral": true,
+    "sufixo344Caracteres": 7319,
+    "separadorAdicionalLF": 1,
+    "sufixoCompletoPreservado": true
+  },
+  "limites": "Identidade, global unitária, TypeScript original e lint dirigido confirmados; CI limpa de lint integral/build/typecheck/dois fusos e quatro shards de integração concluída no HEAD4df. Três arquivos e quatro testes ignorados discriminados em ci-final.json; publicação documental posterior sem delta executável.",
+  "gatesROOT": {
+    "global": {
+      "sessao": 24868,
+      "terminal": "8da234",
+      "exit": 0,
+      "arquivos": 947,
+      "testes": 7540,
+      "duracaoSegundos": 646.28,
+      "maxWorkers": 1,
+      "config": "vitest.config.ts original",
+      "filtros": 0,
+      "skips": 0,
+      "integracao": "excluída pela configuração padrão",
+      "reporterAdicional": "progresso de módulos; não altera testes",
+      "log": {
+        "bytes": 705431,
+        "sha256": "9a9f6166fcefa2dd926359988d6c8d23dab4c35f9b7e116a970a1356c5964a83"
+      },
+      "negativoAnterior": {
+        "sessao": 54716,
+        "exit": 1,
+        "contexto": "Interrompida sem resultados após ausência de progresso; não é aprovação nem falha causal de produto."
+      }
+    },
+    "typescript": {
+      "sessao": 92288,
+      "terminal": "6326e2",
+      "exit": 0,
+      "config": "tsconfig.json original",
+      "heapMiB": 8192,
+      "noEmit": true,
+      "incremental": false,
+      "auxiliar": false,
+      "exclusoesAdicionais": 0
+    },
+    "lint": {
+      "sessao": 28465,
+      "terminal": "4bc0ad",
+      "exit": 0,
+      "arquivos": 31,
+      "config": "ESLint original",
+      "maxWarnings": 0,
+      "heapMiB": 512,
+      "escopo": "31 fontes da344; lint completo reservado ao CI limpo",
+      "globalLocalInterrompido": {
+        "sessao": 73499,
+        "terminal": "e08b5c",
+        "exit": 1,
+        "motivo": "Windows1450: liberado recurso para TSC do DEV, sem aprovação presumida"
+      }
+    },
+    "ci": {
+      "head": "4df9816fcdf7b2121921b6b361ce98fb8981e584",
+      "verificadoEm": "2026-10-25T03:55:00Z",
+      "fast": {
+        "run": 40157067583,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40157067583",
+        "conclusion": "success",
+        "jobs": 5,
+        "typecheck": "success",
+        "lintIntegral": "success",
+        "build": "success",
+        "unitariosPorFuso": {
+          "UTC": {
+            "arquivos": 947,
+            "testes": 7540
+          },
+          "America_Sao_Paulo": {
+            "arquivos": 947,
+            "testes": 7540
+          }
+        },
+        "somarFusos": false
+      },
+      "full": {
+        "run": 40157093746,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40157093746",
+        "conclusion": "success",
+        "watcher": {
+          "sessao": 50123,
+          "terminal": "4815d1",
+          "exit": 0
+        },
+        "shards": [
+          {
+            "shard": 1,
+            "job": 121060683489,
+            "arquivos": 90,
+            "testes": 743,
+            "arquivosIgnorados": 0,
+            "testesIgnorados": 0
+          },
+          {
+            "shard": 2,
+            "job": 121060683543,
+            "arquivos": 88,
+            "testes": 873,
+            "arquivosIgnorados": 2,
+            "testesIgnorados": 3
+          },
+          {
+            "shard": 3,
+            "job": 121060683373,
+            "arquivos": 89,
+            "testes": 901,
+            "arquivosIgnorados": 1,
+            "testesIgnorados": 1
+          },
+          {
+            "shard": 4,
+            "job": 121060683544,
+            "arquivos": 89,
+            "testes": 742,
+            "arquivosIgnorados": 0,
+            "testesIgnorados": 0
+          }
+        ],
+        "total": {
+          "arquivos": 356,
+          "testes": 3259,
+          "arquivosIgnorados": 3,
+          "testesIgnorados": 4
+        }
+      },
+      "limites": "Resultados nominais ao HEAD indicado. Este adendo altera somente documentação; os quatro pareceres históricos permanecem integrais. Nenhum resultado de CI futura ou merge é presumido."
+    }
+  }
+}
