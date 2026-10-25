@@ -7023,3 +7023,8 @@ Verificação final DEV347 c80b0f EXIT0: seis arquivos69/69 completos e lint cin
 ### Inbox #347 — integração do link Gerenciar canônico
 
 Guarda integral identificou ação com classes próprias na Faixa. RED11casos/1fail10controles df9b56EXIT1; correção opt-in iaFantasma conserva tokens AI e mantém Gerenciar como link. Mapa declarativo atualizado, guardas sem alteração. GREEN3files105testes5bef7cEXIT0/lint5dc8c34EXIT0. TESTER153 anterior é recorte716, diagnóstico estático independente 1e455a... confirma causa. TSCoriginalfinal8192c27643EXIT0;4096OOMpreservado1f61b0. Primeira globalinterrompida168b60apósfalha conhecida, nova global92937emcurso semresultadoalegado. Report/SPEC atualizados, visual/CI pendentes; issue continua aberta.
+
+
+### Inbox #347 — gates finais e preparação da PR
+
+ROOT globalUTC950/7597 sessão92937/655010 EXIT0, TSCoriginal8192 sessão47511/c27643 EXIT0, lintglobal0+lint5correção0. TESTERexato287 nove arquivos248 testes19598/495e17 EXIT0, guardacanônica85preservada. Curadoria pública com originaishashseparados em output/inbox-347-qa; onze paths featurevsbase252 protegidos fora whitelist. PR deverábasear431, visual/CI/build permanecem pendentes; nada fechado/homologado por suposição.

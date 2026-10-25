@@ -1,0 +1,88 @@
+{
+  "issue": 347,
+  "base": "252b177a05ce718e87584bd0992ff3f21153b72b",
+  "feature": "716a6261f1bb920bbd4d5c9013535c2acf2ed058",
+  "runtime": "287b4c2c88303cd1a2208129b6f0268851d74ae1",
+  "alterados": [
+    "docs/planejamento/quadro-entregas.md",
+    "docs/specs/inbox-faixa-aria-ativa.md",
+    "output/inbox-347-report.md",
+    "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts",
+    "src/app/(app)/inbox/InboxNovo.test.ts",
+    "src/app/(app)/inbox/InboxNovo.tsx",
+    "src/app/(app)/inbox/aria/FaixaAriaAtiva.test.ts",
+    "src/app/(app)/inbox/aria/FaixaAriaAtiva.tsx",
+    "src/app/botoes-mapa.ts",
+    "src/components/Botao.test.ts",
+    "src/components/Botao.tsx"
+  ],
+  "objetosBaseProtegidos": 5828,
+  "pareceres": [
+    {
+      "path": "tester-716-historico.md",
+      "bytes": 3382,
+      "sha256": "7d6a5afb3c147af15c3c46688b787e7620e7ec80945c53ae1ef83be03e7cd6ab",
+      "originalPrivado": {
+        "path": "inbox-347-716-functional-review-tester.md",
+        "bytes": 3355,
+        "sha256": "77969ac1afae1ac11dbf3377aa544a8d9ae2cccd43209dea0f4723a89ce9cb91"
+      }
+    },
+    {
+      "path": "tester-287-final.md",
+      "bytes": 3513,
+      "sha256": "70e041ebb020d7fdc8485e9d3e5afb5fa494ec2ee54ba2f473963af8f14b90d0",
+      "originalPrivado": {
+        "path": "inbox-347-287b-final-review-tester.md",
+        "bytes": 3458,
+        "sha256": "c5f93f1a1ad4e87de09082a5d051fb0a015e037a0af5859bb03f68876cadf803"
+      }
+    }
+  ],
+  "root": {
+    "globalUTC": {
+      "files": 950,
+      "tests": 7597,
+      "exit": 0,
+      "session": 92937,
+      "terminal": "655010",
+      "workers": 2,
+      "heapMiB": 1536,
+      "filtros": 0,
+      "skips": 0
+    },
+    "typescriptOriginal": {
+      "exit": 0,
+      "session": 47511,
+      "terminal": "c27643",
+      "heapMiB": 8192,
+      "exclusoesNovas": 0
+    },
+    "lintGlobal": {
+      "exit": 0,
+      "terminal": "0efcbe",
+      "warningsRastreados": 40,
+      "warningsPrivados": 7
+    },
+    "lintCorrecao": {
+      "files": 5,
+      "exit": 0,
+      "terminal": "dc8c34"
+    }
+  },
+  "testerFinal": {
+    "files": 9,
+    "tests": 248,
+    "exit": 0,
+    "session": 19598,
+    "terminal": "495e17"
+  },
+  "negativosPreservados": [
+    "TSC4096OOM1f61b0",
+    "UNITinicialinterrompida168b60apósfalhaconhecida",
+    "REDlinkdf9b56"
+  ],
+  "visual": "PENDENTE",
+  "ci": "AGUARDA_BASE_MAIN_APOS_431",
+  "deploy": false
+}
