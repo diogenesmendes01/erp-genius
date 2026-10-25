@@ -13,7 +13,7 @@ vi.mock("./RodapeConversa", () => ({ RodapeConversa: (p: PropsCompositor) => {
   return null;
 } }));
 vi.mock("./CabecalhoConversa", () => ({ CabecalhoConversa: () => null }));
-vi.mock("./AcoesAtendimento", () => ({ useAcoesAtendimento: () => ({ feedback: null, dialogos: null, abrirAgendar: null }) }));
+vi.mock("./AcoesAtendimento", () => ({ useAcoesAtendimento: () => ({ feedback: null, dialogos: null, abrirAgendar: null, menu: [] }) }));
 vi.mock("./AcoesMensagem", () => ({ AcoesMensagem: () => null }));
 vi.mock("@/components/conversa/VirtualList", () => ({ VirtualList: () => null }));
 vi.mock("@/components/conversa/agora-thread", () => ({ useAgoraDaThread: () => Date.UTC(2026, 9, 24, 12) }));

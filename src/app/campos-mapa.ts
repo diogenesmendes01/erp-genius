@@ -19,6 +19,7 @@ export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
+  "src/app/(app)/inbox/fluxos/transferir/PopoverTransferir.tsx": ["Pessoa · obrigatório · select", "Equipe ou fila · obrigatório · select", "Contexto do destino · obrigatório · select", "Contexto da transferência · obrigatório se alvo?.tipo === \"setor\" · CampoTexto"],
   "src/app/(app)/inbox/aria/InterruptorAria.tsx": [
     "Motivo da pausa · obrigatório · input",
   ],
