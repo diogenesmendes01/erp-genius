@@ -6,11 +6,11 @@ import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL } from "@/lib/labels"
 import type { FiltrosInbox } from "@/server/inbox/filtros";
 import type { Setor } from "@/server/whatsapp/setor";
 import { PopoverColuna } from "./PopoverColuna";
-export function contarFiltrosAplicados(f: FiltrosInbox, incluirPessoais = false): number { return Number(!!f.setor) + Number(!!f.status) + (incluirPessoais ? Number(!!f.responsavel) + Number(!!f.naoLidas) + Number(!!f.prazoEstourado) : 0); }
+export function contarFiltrosAplicados(f: FiltrosInbox, incluirPessoais = false): number { return Number(!!f.setor) + Number(!!f.status) + (incluirPessoais ? Number(!!f.responsavel && f.responsavel !== "fila") + Number(!!f.naoLidas) : 0); }
 export function PopoverFiltros({ filtros, setores, incluirPessoais = false, aoAplicar, aoFechar, focoAoFechar }: { filtros: FiltrosInbox; setores: Setor[]; incluirPessoais?: boolean; aoAplicar(f: FiltrosInbox): void; aoFechar(): void; focoAoFechar?: RefObject<HTMLElement | null> }) {
  const [setor, setSetor] = useState(filtros.setor); const [status, setStatus] = useState(filtros.status);
  const [responsavel, setResponsavel] = useState(filtros.responsavel); const [naoLidas, setNaoLidas] = useState(!!filtros.naoLidas);
- function aplicar(limpar = false) { const f = { ...filtros }; delete f.setor; delete f.status; if (incluirPessoais) { delete f.responsavel; delete f.naoLidas; if (limpar) delete f.prazoEstourado; else { if (responsavel) f.responsavel = responsavel; if (naoLidas) f.naoLidas = true; } } if (!limpar) { if (setor) f.setor = setor; if (status) f.status = status; } aoAplicar(f); aoFechar(); }
+ function aplicar(limpar = false) { const f = { ...filtros }; delete f.setor; delete f.status; if (incluirPessoais) { if (f.responsavel !== "fila") delete f.responsavel; delete f.naoLidas; if (!limpar) { if (responsavel) f.responsavel = responsavel; if (naoLidas) f.naoLidas = true; } } if (!limpar) { if (setor) f.setor = setor; if (status) f.status = status; } aoAplicar(f); aoFechar(); }
  const opcao = "inline-flex h-7 items-center gap-1 rounded-[15px] border px-2.5 text-[12.5px] ";
  return <PopoverColuna titulo="Filtrar conversas" aberto aoFechar={aoFechar} focoAoFechar={focoAoFechar} rodape={<><Botao variante="secundario" onClick={() => aplicar(true)}>Limpar</Botao><Botao className="flex-1" onClick={() => aplicar()}>Mostrar conversas</Botao></>}>
   <div className="space-y-4">

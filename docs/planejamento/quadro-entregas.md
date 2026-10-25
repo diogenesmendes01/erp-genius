@@ -7182,3 +7182,9 @@ O TSC ORIGINAL 59652, heap8192/noEmit/incrementalfalse, foi interrompido via Ctr
 ### Inbox #346 — correção R1 da PR #431 (ROOT, 25/10)
 
 Filtros pessoais ativos ficam visíveis/removíveis e acessíveis pelo popover com os sete chips; Limpar preserva número/busca/estado Aria. Prévia de sugestão sem rótulo não expõe texto bruto; pessoa sem rótulo conserva autor. SPEC documenta replace, nomes e controles fechados. RED d8e18f e negativo guardas ca4a3b preservados; GREEN 57597/4d17ae EXIT0 (8 arquivos/148 testes completos, UTC), lint6ec062 EXIT0. Sem DB/schema/ACL/envio/HTTP. Não concluída: composição dos conflitos, QA independente/CI final e aceite visual pendentes.
+
+### PR431 — R2 C1/C2: chips sem duplicação e autoria neutra (25/10/2026)
+
+DEV B em branch temporária codex/inbox-revisoes-431-433-r2, filha22462240, preservando docs352. Revisão real5643199383 lida: prazo/fila saem de etiquetas/selo e os dois Limpar preservam filtros já representados pelos chips, de forma simétrica a aria. Eu/ID/naoLidas continuam removíveis; legacy/URL/busca/número intactos. Saída pessoa sem rótulo usa Equipe:, sem atribuir ao contato. Sem backend/ACL/query/SSE.
+
+RED f7ef4b EXIT1 (47 casos/sete falhas), negativo fixture522042 preservado. GREEN sessão29766/6f4fe5 EXIT0:11 arquivos/273 testes, incluindo consumidor InboxNovo/URLs/prévias/guarda85, w1/heap1024/sem filtro de caso/skip. Lint6 16e99b EXIT0 --max-warnings=0. SPEC/report atualizados; QA/gates de integração/visual separados. Sem DB/INT/HTTP/browser/build/install/env/push; #353 continua só plano.
