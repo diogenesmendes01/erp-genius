@@ -127,8 +127,31 @@ it.each(['outroVendor','semToken','tokenSufixo','prefixoAntigo'] as const)('R3 t
  expect(api.semanticaAcoes328(f.desc)).toBe(false);
 });
 it('R3 PROTO continua recusando ausencia do fragmento original calendar-check',()=>{const f=proto();f.card.querySelector('i')!.setAttribute('class','icon-calendar');expect(api.semanticaAcoes328(f.desc)).toBe(false);});
-it.each(['cabecalho','lapis'] as const)('R3 contrafactual condicional %s recortado nao e observacao nativa',alvo=>{
+it.each(['cabecalho','subtitulo','lapis'] as const)('R4 %s apenas foraViewport e aceito so em cartao',alvo=>{
  const f=dom();expect(api.semanticaAcoes328({...f.desc,fase:'topo'})).toBe(true);expect(api.semanticaAcoes328(f.desc)).toBe(true);
- const n=alvo==='cabecalho'?f.p.querySelector('h2')!:f.p.querySelector('button[aria-label="Editar contato"]')!;
- f.rects.set(n,f.rect(-50,-6));expect(api.semanticaAcoes328({...f.desc,fase:'cartao'})).toBe(false);
+ const n=alvoCabecalho328(f,alvo);f.rects.set(n,f.rect(-50,-6));
+ expect(n.isConnected).toBe(true);expect(api.semanticaAcoes328({...f.desc,fase:'topo'})).toBe(false);
+ expect(api.semanticaAcoes328({...f.desc,fase:'cartao'})).toBe(true);
+ const callback=runInNewContext('('+api.semanticaAcoes328.toString()+')',{document,window});expect(callback({...f.desc,fase:'cartao'})).toBe(true);
+});
+function alvoCabecalho328(f:ReturnType<typeof dom>,alvo:'cabecalho'|'subtitulo'|'lapis'){
+ return alvo==='cabecalho'?f.p.querySelector('h2')!:alvo==='subtitulo'?f.p.querySelector('[data-cabecalho-contato]')!.querySelector('p')!:f.p.querySelector('button[aria-label="Editar contato"]')!;
+}
+for(const alvo of ['cabecalho','subtitulo','lapis'] as const)it.each(['hidden','inert','ariahidden','displaynone','visibilityhidden','disabled','ariaDisabled','textoErrado','duplicadoOculto','desconectado'] as const)('R4 '+alvo+' inacessivel/incorreto %s continua recusado no cartao',caso=>{
+ const f=dom(),n=alvoCabecalho328(f,alvo);expect(api.semanticaAcoes328(f.desc)).toBe(true);
+ if(caso==='hidden')n.setAttribute('hidden','');else if(caso==='inert')n.setAttribute('inert','');else if(caso==='ariahidden')n.setAttribute('aria-hidden','true');
+ else if(caso==='displaynone')f.styles.set(n,{display:'none'});else if(caso==='visibilityhidden')f.styles.set(n,{visibility:'hidden'});
+ else if(caso==='disabled')Object.assign(n,{disabled:true});else if(caso==='ariaDisabled')n.setAttribute('aria-disabled','true');
+ else if(caso==='textoErrado'){if(alvo==='lapis')n.setAttribute('aria-label','Outra acao');else n.textContent='Outra identidade';}
+ else if(caso==='duplicadoOculto'){const attrs:Record<string,string>=alvo==='lapis'?{'aria-label':'Editar contato',hidden:''}:{hidden:''};f.e(alvo==='cabecalho'?'h2':alvo==='subtitulo'?'p':'button',attrs,n.textContent??'',n.parentElement!);}
+ else {n.parentElement!.removeChild(n);expect(n.isConnected).toBe(false);}
+ expect(api.semanticaAcoes328({...f.desc,fase:'cartao'})).toBe(false);
+});
+it.each(['cabecalho','subtitulo'] as const)('R4 detalhes preserva visibilidade inteira de %s',alvo=>{
+ const f=dom();f.tab.setAttribute('data-aba','detalhes');f.tab.textContent='Detalhes';
+ for(const n of [...f.area.childNodes])f.area.removeChild(n);
+ f.e('button',{role:'tab','data-aba':'oportunidades','aria-selected':'false'},'Oportunidades',f.p);
+ f.e('button',{'aria-label':'Abrir oportunidade atual'},['Oportunidade atual',f.desc.produto,f.desc.valorTexto,f.desc.etapaRotulo].join(' '),f.area);
+ const d={...f.desc,fase:'detalhes' as const};expect(api.semanticaAcoes328(d)).toBe(true);
+ f.rects.set(alvoCabecalho328(f,alvo),f.rect(-50,-6));expect(api.semanticaAcoes328(d)).toBe(false);
 });

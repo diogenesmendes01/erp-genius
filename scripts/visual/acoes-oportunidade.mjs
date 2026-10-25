@@ -114,8 +114,15 @@ export function semanticaAcoes328(d) {
     }
     const app = d.alvo === 'app', painel = app ? document.getElementById('painel-contato') : document.querySelector('[data-m="panel"]');
     if (!visivel(painel, false) || painel.getAnimations({ subtree: true }).some(a => a.playState === 'running') || modais.some(m => m !== painel)) return false;
-    if (!um(painel.querySelectorAll(app ? 'h2' : 'div'), e => texto(e) === d.nomeCabecalho && visivel(e))) return false;
-    if (app && !um((painel.querySelector('[data-cabecalho-contato]')?.querySelectorAll('p') ?? []), e => texto(e) === d.subtitulo && visivel(e))) return false;
+    const fotoInferiorApp = app && d.fase === 'cartao';
+    const identidadeAcessivel = e => !!e && e.isConnected && !e.disabled && e.getAttribute('aria-disabled') !== 'true' && acessivel(e);
+    if (fotoInferiorApp) {
+        const titulos = [...painel.querySelectorAll('h2')], subtitulos = [...painel.querySelectorAll('[data-cabecalho-contato]')].flatMap(c => [...c.querySelectorAll('p')]);
+        if (titulos.length !== 1 || subtitulos.length !== 1 || texto(titulos[0]) !== d.nomeCabecalho || texto(subtitulos[0]) !== d.subtitulo || !identidadeAcessivel(titulos[0]) || !identidadeAcessivel(subtitulos[0])) return false;
+    } else {
+        if (!um(painel.querySelectorAll(app ? 'h2' : 'div'), e => texto(e) === d.nomeCabecalho && visivel(e))) return false;
+        if (app && !um((painel.querySelector('[data-cabecalho-contato]')?.querySelectorAll('p') ?? []), e => texto(e) === d.subtitulo && visivel(e))) return false;
+    }
     let area;
     if (app) {
         const tab = um(painel.querySelectorAll('[role="tab"]'), e => e.getAttribute('data-aba') === (d.fase === 'detalhes' ? 'detalhes' : 'oportunidades') && e.getAttribute('aria-selected') === 'true' && !e.disabled && visivel(e));
@@ -156,7 +163,11 @@ export function semanticaAcoes328(d) {
         const cores = spans.map(e => window.getComputedStyle(e).backgroundColor);
         if (cores.slice(0, 5).some(c => c !== cores[4]) || cores.slice(5).some(c => c !== cores[5]) || cores[4] === cores[5]) return false;
         for (const c of d.campos) { const dt = um(bloco.querySelectorAll('dt'), e => texto(e) === c.rotulo), dd = dt?.parentElement?.querySelector('dd'); if (!dd || texto(dd) !== c.valor || (!topo && !visivel(dd))) return false; }
-        const lapis = painel.querySelector('button[aria-label="Editar contato"]'); if (d.ator === 'admin' ? (!visivel(lapis) || lapis.disabled) : !!lapis) return false;
+        const lapis = painel.querySelector('button[aria-label="Editar contato"]');
+        if (fotoInferiorApp) {
+            const lapisTodos = [...painel.querySelectorAll('button[aria-label="Editar contato"]')];
+            if (d.ator === 'admin' ? lapisTodos.length !== 1 || !identidadeAcessivel(lapisTodos[0]) : lapisTodos.length !== 0) return false;
+        } else if (d.ator === 'admin' ? (!visivel(lapis) || lapis.disabled) : !!lapis) return false;
     } else {
         const barras = [...area.querySelectorAll('div[title]')].filter(e => d.segmentos.includes(e.getAttribute('title')));
         if (barras.length !== 6 || barras.some((b, i) => b.getAttribute('title') !== d.segmentos[i] || !visivel(b) || Math.abs(b.getBoundingClientRect().height - 4) > .5 || !Number.isFinite(parseFloat(window.getComputedStyle(b).borderRadius)) || Math.abs(parseFloat(window.getComputedStyle(b).borderRadius) - 2) > .5)) return false;
