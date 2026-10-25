@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { modeloPermitido } from "../provedor/custo";
-import type { PedidoIA, RespostaIA } from "../provedor/tipos";
+import { ErroProvedorIA,type PedidoIA,type RespostaIA } from "../provedor/tipos";
 
 const tokens = z.number().finite().int().min(0).max(2_147_483_647);
 export const UsoInsightSchema = z.object({
@@ -56,4 +56,14 @@ export function envelopeRespostaControladaInsight(r: RespostaIA, modeloEsperado:
   if (!uso) return { ...meta, tipo: "incerto", fase: "possivelmente-enviado", codigo: "USO_DESCONHECIDO", uso: null };
   if (diagnostico.fase !== "enviado") return { ...meta, tipo: "incerto", fase: "possivelmente-enviado", codigo: "TRANSPORTE", uso };
   return envelopeRespostaInsight({ modelo, provedor: r.provedor, latenciaMs: r.latenciaMs }, { texto: r.texto, recusa: r.recusa, uso });
+}
+/** Também cobre uma rejeição excepcional da porta sem apagar diagnóstico conhecido. */
+export function envelopeErroInsight(erro:unknown,modeloEsperado:string,latenciaMs:number):EnvelopeInsight {
+  const d=erro instanceof ErroProvedorIA?erro.diagnostico:undefined;
+  if(d?.fase==="nao-enviado")return {tipo:"nao-enviada",fase:"nao-enviado",codigo:erro instanceof ErroProvedorIA&&erro.codigo==="ABORTADO_ANTES_ENVIO"?"ABORTADO_ANTES_ENVIO":"CONFIG_INVALIDA"};
+  const modelo=d?.modeloObservado&&modeloPermitido(d.modeloObservado)?d.modeloObservado:null;
+  const uso=UsoInsightSchema.safeParse(d?.uso);
+  const c=erro instanceof ErroProvedorIA?erro.codigo:null;
+  const codigo=modelo&&modelo!==modeloEsperado?"MODELO_DIVERGENTE":c==="CORPO_INVALIDO"||c==="DEADLINE"||c==="ABORTADO_APOS_ENVIO"||c==="MODELO_DESCONHECIDO"?c:"TRANSPORTE";
+  return {tipo:"incerto",fase:"possivelmente-enviado",modelo,provedor:"anthropic",latenciaMs:tokens.parse(latenciaMs),codigo,uso:uso.success?uso.data:null};
 }
