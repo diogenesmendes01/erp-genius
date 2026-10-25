@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
-import { IconMail, IconPin, IconBellOff, IconBell, IconNote, IconClock, IconCalendarEvent, IconSearch, IconUserCheck, IconArrowBackUp, IconUserPlus, IconDoorExit, IconBan, IconDotsVertical } from "@tabler/icons-react";
+import { IconMail, IconPin, IconBellOff, IconBell, IconNote, IconClock, IconCalendarEvent, IconSearch, IconUserCheck, IconArrowBackUp, IconUserPlus, IconDoorExit, IconBan, IconDotsVertical, IconListCheck } from "@tabler/icons-react";
 import { Menu } from "@/components/Menu";
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { AcaoInbox } from "@/server/inbox/permissoes";
@@ -17,6 +17,7 @@ export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: bo
   item("fixar", o.fixada ? "Desafixar conversa" : "Fixar conversa", IconPin, { dica: "só você" }),
   item("silenciar", o.silenciada ? "Reativar notificações" : "Silenciar", o.silenciada ? IconBell : IconBellOff, { dica: "8 h · só você", divisorDepois: true }),
   ...(o.pode("notaInterna") ? [item("nota", "Nota interna", IconNote)] : []),
+  ...(typeof o.acoes.criarTarefa === "function" ? [item("criar-tarefa", "Criar tarefa", IconListCheck, { aoEscolher: o.acoes.criarTarefa })] : []),
   ...(o.pode("agendar") ? [item("agendar", "Agendar mensagem", IconClock)] : []),
   ...(o.pode("convidar") || o.pode("agendar") ? [item("pendentes", "Convites e agendamentos", IconCalendarEvent)] : []),
   item("buscar", "Buscar na conversa", IconSearch, { divisorDepois: true }),
