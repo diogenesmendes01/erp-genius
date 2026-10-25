@@ -7628,3 +7628,5 @@ Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
 <<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
 =======
+
+#358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
