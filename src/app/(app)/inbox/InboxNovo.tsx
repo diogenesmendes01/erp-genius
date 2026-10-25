@@ -353,7 +353,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => pagina.removeEventListener("visibilitychange", aoRetornar);
   }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
-  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
+  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null; leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
   useEffect(() => {
     if (!selecionado) return;
@@ -367,8 +367,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (!ativo) return;
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
-        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false } : conhecido.aria } : null };
-        return !r && conhecido ? ant! : { id: selecionado, dado: r };
+        const leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } = { versao: versaoPainel, resultado: r === "sem-acesso" ? "sem-acesso" : r ? "ok" : "falha" };
+        if (r === "sem-acesso") return { id: selecionado, leitura, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
+        return !r && conhecido ? { ...ant!, leitura } : { id: selecionado, dado: r, leitura };
       });
     });
     return () => { ativo = false; };
@@ -550,6 +551,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           <ConversaAberta
             item={atual}
             aria={painelDoAberto?.dado?.aria}
+            leituraPainel={{ solicitada: versaoPainel, finalizada: painelDoAberto?.leitura.versao ?? -1, resultado: painelDoAberto?.leitura.resultado ?? "pendente" }}
             usuario={usuario}
             fuso={fuso}
             agoraInicial={agoraInicial}

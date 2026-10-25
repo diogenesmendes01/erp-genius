@@ -257,3 +257,10 @@ it("348 usa estado e capacidades Aria recebidos sem inferir papel",()=>{
  expect(negado).toContain("Aria aguarda aprovação");expect(negado).not.toContain('aria-label="Devolver para Aria"');
 });
 it("348 grupo e encerrada preservam estados legados sem devolução",()=>{for(const alteracao of [{grupo:true},{status:"ENCERRADO" as const}]){const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"ia",...alteracao}),aria:{handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:null,podeDevolver:true,sugestoes:[]}})));expect(h).not.toContain("Aria está atendendo");expect(h).not.toContain('aria-label="Devolver para Aria"');}});
+
+it("352 faixa usa handoff autorizado e relógio SSR existente, sem inferir apenas estado da lista",()=>{
+ const handoff={acaoId:"h352",pedidoEm:"2026-10-25T11:56:00Z",motivo:null,motivoTexto:"Valor alto",destino:"FILA_SETOR" as const,responsavelNome:null,resumo:null,feito:[],podeAssumir:true,ehResponsavel:false};
+ const props=propsConversa({podeEnviar:true,item:item({estadoAria:"handoff"}),agoraInicial:Date.parse("2026-10-25T12:00:00Z"),aria:{handoff,podeDecidir:false,cartoes:[],pausada:true,motivo:"HANDOFF",podeDevolver:false,sugestoes:[]}});
+ const h=renderToStaticMarkup(createElement(ConversaAberta,props));expect(h).toContain("Aria pediu ajuda há 4 min");expect(h).toContain("Ver resumo e assumir");
+ const sem=renderToStaticMarkup(createElement(ConversaAberta,{...props,aria:{...props.aria!,handoff:null}}));expect(sem).not.toContain("Ver resumo e assumir");
+});
