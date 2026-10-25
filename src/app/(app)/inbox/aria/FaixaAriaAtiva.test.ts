@@ -1,0 +1,15 @@
+import {createElement} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import {expect,it} from "vitest";
+import type {SituacaoAriaInbox} from "@/server/inbox/contagens";
+import {FaixaAriaAtiva} from "./FaixaAriaAtiva";
+const montar=(s:Partial<SituacaoAriaInbox>={},contagens={ia:3,aprovacao:1,handoff:1})=>renderToStaticMarkup(createElement(FaixaAriaAtiva,{situacao:{estado:"ATIVA",pausada:false,podeGerenciar:false,...s},contagens}));
+const texto=(s:string)=>s.replace(/<[^>]*>/g,"");
+it("ativa mostra contagens e soma handoff/aprovação sem contar pela página",()=>{const h=montar();expect(texto(h)).toContain("Aria ativa3 em atendimento · 2 aguardando você");expect(h.match(/class="font-mono tabular-nums"/g)).toHaveLength(2);expect(h).toContain('role="status"');});
+it("zero é contado e handoff sozinho compõe aguardando você",()=>{expect(texto(montar({}, {ia:0,aprovacao:0,handoff:7}))).toContain("0 em atendimento · 7 aguardando você");});
+it("pausada troca título/linha sem prometer atuação",()=>{const h=texto(montar({pausada:true}));expect(h).toContain("Aria pausadaPausada · novas conversas vão para a equipe");expect(h).not.toContain("em atendimento");});
+it.each([false,true])("shadow é ensaio inclusive com pausada=%s",pausada=>{const h=texto(montar({estado:"SHADOW",pausada}));expect(h).toContain("Aria em ensaioSimula respostas sem falar com os contatos");expect(h).not.toContain("em atendimento");});
+it.each([false,true])("desligada não renderiza mesmo com capacidade, pausada=%s",pausada=>expect(montar({estado:"DESLIGADA",pausada,podeGerenciar:true})).toBe(""));
+it("sem_interruptor_no_padrao_d4",()=>{for(const estado of ["ATIVA","SHADOW","DESLIGADA"] as const){const h=montar({estado,podeGerenciar:true});expect(h).not.toContain('role="switch"');expect(h).not.toMatch(/<button|<input|aria-checked|onClick|\/api\//);}});
+it("Gerenciar é link real apenas pela capacidade recebida",()=>{expect(montar({podeGerenciar:true})).toMatch(/<a[^>]*href="\/aria"[^>]*>Gerenciar<\/a>/);expect(montar({podeGerenciar:false})).not.toContain('href="/aria"');});
+it("usa tokens e dimensões originais com corpo flexível e ícone decorativo",()=>{const h=montar({podeGerenciar:true});for(const c of ["mx-[18px]","mb-3","rounded-[10px]","bg-ai-50","h-7","w-7","rounded-lg","bg-ai-solid","text-[13px]","font-semibold","text-xs","text-gray-600","min-w-0","text-ai-700"])expect(h).toContain(c);expect(h).toContain('aria-hidden="true"');});

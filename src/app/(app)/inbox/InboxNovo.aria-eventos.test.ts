@@ -97,3 +97,20 @@ it("346 GET antigo não substitui o resumo SSR de outra navegação",async()=>{
  await act(async()=>{finish(new Response(JSON.stringify({...props.inicial,resumo:{...resumo346,contagens:{...resumo346.contagens,ia:999}}})));await vi.advanceTimersByTimeAsync(50);});
  expect(chips346()).toContain("IA atendendo12");expect(chips346()).not.toContain("999");
 });
+
+it("347 faixa e chips reconciliam MESMO resumo SSE, preservando o link focado",async()=>{
+ const original=fetcher.getMockImplementation()!;
+ let resumo:NonNullable<PropsInboxNovo["resumo"]>={...resumo346,aria:{...resumo346.aria,podeGerenciar:true},contagens:{...resumo346.contagens,ia:8,aprovacao:3,handoff:2}};
+ fetcher.mockImplementation((u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?Promise.resolve(new Response(JSON.stringify({...props.inicial,resumo}))):original(u,o));
+ await emitir(global345);const faixa=()=>document.querySelector('[aria-label="Situação da Aria"]');expect(faixa()?.textContent).toContain("8 em atendimento · 5 aguardando você");expect(chips346()).toContain("IA atendendo8");
+ const link=faixa()!.querySelector('a')!;link.focus();
+ resumo={...resumo,aria:{...resumo.aria,pausada:true},contagens:{...resumo.contagens,ia:0}};
+ await emitir(global345);expect(faixa()?.textContent).toContain("Aria pausada");expect(chips346()).toContain("IA atendendo0");expect(document.activeElement===link).toBe(true);
+ resumo={...resumo,aria:{...resumo.aria,estado:"SHADOW" as const,pausada:false}};
+ await emitir(global345);expect(faixa()?.textContent).toContain("Aria em ensaio");expect(document.activeElement===link).toBe(true);expect(m.pagina).not.toHaveBeenCalled();
+});
+it("347 erro na recarga mantém faixa/contagem conhecidas e global não substitui aviso da thread",async()=>{
+ const original=fetcher.getMockImplementation()!;
+ fetcher.mockImplementation((u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?Promise.resolve(new Response("",{status:503})):original(u,o));
+ await emitir(nova345,global345);expect(m.observado).toBe(nova345);expect(document.querySelector('[aria-label="Situação da Aria"]')?.textContent).toContain("Aria ativa3 em atendimento · 3 aguardando você");expect(chips346()).toContain("IA atendendo3");
+});
