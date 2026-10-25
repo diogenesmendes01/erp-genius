@@ -28,7 +28,6 @@ type Sessao = {
     ack: boolean;
     responder: boolean;
     minimo: number;
-    falha: number;
 };
 const useLayoutCliente = typeof window === "undefined" ? useEffect : useLayoutEffect;
 export function useHandoffConversa(props: PropsHandoffConversa) {
@@ -51,7 +50,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
             return;
         if (s.ack && p.item.responsavelId !== p.usuarioId)
             return;
-        if (!s.ack && (!p.handoff?.ehResponsavel || p.handoff.acaoId !== s.acaoId))
+        if (!s.ack && (!p.handoff?.ehResponsavel || p.handoff.acaoId !== s.acaoId || p.item.responsavelId !== p.usuarioId))
             return;
         if (!controleResposta.current)
             return;
@@ -64,6 +63,36 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         setConfirmando(false);
         setErro(null);
     }, []);
+    const reconciliarResposta = useCallback((s: Sessao) => {
+        if (!s.ativa || sessao.current !== s || !s.responder)
+            return;
+        const p = atual.current, l = p.leitura;
+        if (!l) {
+            setConfirmando(false);
+            setErro("Não foi possível confirmar sua permissão. Tente atualizar a conversa.");
+            return;
+        }
+        if (l.finalizada < s.minimo || l.finalizada !== l.solicitada || l.resultado === "pendente") {
+            setConfirmando(true);
+            setErro(null);
+            return;
+        }
+        if (l.resultado === "falha") {
+            setConfirmando(false);
+            setErro("Não foi possível atualizar a conversa. Tente de novo para confirmar sua permissão.");
+            return;
+        }
+        if (l.resultado !== "ok")
+            return;
+        if (p.podeEnviar !== true) {
+            // Voltar a ter permissão não retoma uma intenção antes recusada.
+            s.responder = false;
+            setConfirmando(false);
+            setErro("Você não tem permissão para responder nesta conversa. Atualize para conferir seu acesso.");
+            return;
+        }
+        concluir(s);
+    }, [concluir]);
     useLayoutCliente(() => {
         atual.current = props;
         const s = sessao.current;
@@ -74,26 +103,19 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         // Assumir pode remover o handoff do DTO; o ACK só libera foco após nova leitura e envio vigente.
         const mudou = props.handoff?.acaoId !== s.acaoId && (!s.ack || props.handoff != null);
         const perdeu = !s.ack && props.handoff?.acaoId === s.acaoId && !props.handoff.podeAssumir && !props.handoff.ehResponsavel;
-        if (proibido || mudou || perdeu || envioRevogado) {
+        const perdeuResponsabilidade = !s.ack && s.responder && (!props.handoff?.ehResponsavel || props.item.responsavelId !== props.usuarioId);
+        if (proibido || mudou || perdeu || envioRevogado || perdeuResponsabilidade) {
             s.ativa = false;
             querResposta.current = false;
-            retorno.current = proibido || envioRevogado ? null : gatilho.current;
+            retorno.current = proibido || envioRevogado || perdeuResponsabilidade ? null : gatilho.current;
             setConfirmando(false);
             setModal(m => m?.numero === s.numero ? { ...m, invalidada: true } : m);
             if (mudou)
                 setModal(null);
             return;
         }
-        if (s.ack && s.responder && l && l.finalizada >= s.minimo) {
-            if (l.resultado === "falha" && s.falha !== l.finalizada) {
-                s.falha = l.finalizada;
-                setConfirmando(false);
-                setErro("Não foi possível atualizar a conversa. Tente de novo para confirmar sua permissão.");
-            }
-            else if (l.resultado === "ok")
-                concluir(s);
-        }
-    }, [props, concluir]);
+        reconciliarResposta(s);
+    }, [props, reconciliarResposta]);
     useEffect(() => () => { if (sessao.current)
         sessao.current.ativa = false; retorno.current = null; }, []);
     function abrir() {
@@ -103,7 +125,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         if (sessao.current)
             sessao.current.ativa = false;
         const n = ++numero.current;
-        sessao.current = { numero: n, acaoId: p.handoff.acaoId, ativa: true, ack: false, responder: false, minimo: 0, falha: -1 };
+        sessao.current = { numero: n, acaoId: p.handoff.acaoId, ativa: true, ack: false, responder: false, minimo: 0 };
         querResposta.current = false;
         retorno.current = gatilho.current;
         setErro(null);
@@ -126,15 +148,20 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         if (!s?.ativa || s.numero !== n)
             return;
         s.responder = true;
-        if (s.ack)
-            concluir(s);
-        else {
+        if (!s.ack)
             s.minimo = atual.current.leitura?.solicitada ?? 0;
-            concluir(s);
-        }
+        reconciliarResposta(s);
     }
-    function tentar(n: number) { const s = sessao.current; if (!s?.ativa || s.numero !== n || !s.ack)
-        return; s.minimo = (atual.current.leitura?.solicitada ?? 0) + 1; setConfirmando(true); setErro(null); atual.current.aoMudar(); }
+    function tentar(n: number) {
+        const s = sessao.current, p = atual.current;
+        if (!s?.ativa || s.numero !== n || (!s.ack && (!p.handoff?.ehResponsavel || p.handoff.acaoId !== s.acaoId || p.item.responsavelId !== p.usuarioId)))
+            return;
+        s.responder = true;
+        s.minimo = (p.leitura?.solicitada ?? 0) + 1;
+        setConfirmando(true);
+        setErro(null);
+        p.aoMudar();
+    }
     const valido = !props.item.grupo && props.item.status !== "ENCERRADO", h = props.handoff;
     const atualModal = modal && (h?.acaoId === modal.handoff.acaoId || modal.aguardandoConfirmacao || modal.invalidada) ? (h?.acaoId === modal.handoff.acaoId ? h : modal.handoff) : null;
     // A autorização vem somente do DTO atual; o fallback acima é exclusivamente de leitura.
