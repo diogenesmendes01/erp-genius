@@ -4,7 +4,7 @@ import { criarGanchos, elementos, identidadeNoReact } from "@/test/tela-sem-dom"
 const g=vi.hoisted(()=>({atual:null as ReturnType<typeof criarGanchos>|null}));
 vi.mock("react",async original=>{const real=await original<typeof import('react')>();return {...real,useState:((i:unknown)=>g.atual!.useState(i)) as typeof real.useState,useRef:((i:unknown)=>g.atual!.useRef(i)) as typeof real.useRef,useMemo:((fn:()=>unknown)=>fn()) as typeof real.useMemo,useCallback:((fn:unknown)=>fn) as typeof real.useCallback,useEffect:()=>{},useLayoutEffect:()=>{}};});
 vi.mock('@/components/conversa/agora-thread',()=>({useAgoraDaThread:()=>Date.UTC(2026,9,22,12)}));
-vi.mock('./AcoesAtendimento',()=>({useAcoesAtendimento:()=>({feedback:null,dialogos:null})}));
+vi.mock('./AcoesAtendimento',()=>({useAcoesAtendimento:()=>({feedback:null,dialogos:null,menu:[]})}));
 vi.mock('@/server/whatsapp/acoes',()=>({enviarMidiaInbox:vi.fn(),enviarTextoInbox:vi.fn()}));
 vi.mock('@/server/crm-config/acoes-respostas',()=>({respostasRapidasDoCompositor:vi.fn()}));
 vi.mock('@/server/whatsapp/acoes-conversa',()=>({registrarNotaAtendimento:vi.fn()}));
@@ -20,7 +20,7 @@ const props={item:{id:'a',capacidades:[],status:'EM_ATENDIMENTO'},usuario:{id:'u
 function tela(p=props){
  let t=g.atual!.renderizar(ConversaAberta,p);
  // Mantém os testes de ligação reais atravessando os dois coordenadores de slots.
- for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
+ for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'||typeof n.props.renderizar==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
  return t;
 }
 beforeEach(()=>{g.atual=criarGanchos();});

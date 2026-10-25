@@ -7530,3 +7530,11 @@ DoisSRCModal literais0b5a:5íconesgenéricosdecorativos,Responsávelinteirosóca
 ### Inbox composição R6 — fixture e TSC (25/10/2026)
 
 Originalc2b48093/2743cc EXIT2: únicoTS2304test-only nohelperabrirAba331 referiap.inicialsemparamp. Usaagoraprops.inicialjádefinido,semruntime/asserçõesalterados;arquivocompleto119casoscb8485 EXIT0. ReplayoriginalWIP83354/7b68cf EXIT0,fontehash79ae7bff8413c00382589df600be456eb1f1dd023b6f80d038cc5c7467a46370econfigspreservados,nãoexecutadonoHEADanterior. QA358finalb23e43...favorável:23native/48reg/568UNIT26/3oráculos0,recortesnãosomados;SQLnão repetidapelafix. Globalhabitual2048w2/lint/build/visual/CIaindapendentes. Reservas futuras493Insights377e494grant370registradasapenasnooutput,nãomigradas/geradas.
+
+### #360 — Transferir unificado (DEV B, 2026-10-25)
+
+Em validação, sem homologação/publicação DEV. UI/controlador unificados, gerações por abertura, contexto opcional de pessoa na mesma TX e defaults históricos preservados. Setor ainda min12 nesta fase;369 e370 são dependências obrigatórias para D5 completo. Sem schema/grant/presença/carga novos.
+
+Evidência: UNIT focal115 arquivos / 1.384 casos EXIT0 (76052/75727b); INT novo14 EXIT0 (21645/32bedb), regressão histórica4 arquivos / 41 EXIT0 (26978/32a3fe), com negativos preservados.14 contém13 anteriores, não somar. Banco ciint liberado ao ROOT com fixtures declaradas; restauração só pelo integrador. SPEC docs/specs/inbox-transferir-unificado.md; relatório output/inbox-360-report.md e recibo final de freeze.
+
+Lint focal final e0ec93 EXIT0, zero avisos. Pendências: revisão técnica do delta/commit individual, TSC/global/build, visual e QA independente. Header apenas delta callbackref; ROOT integra sobre classes responsivas próprias. Ícones mock4exports seguem correção ROOT 346d8098, unir sem duplicar. Não marcar D5 concluído antes de #369/#370.
