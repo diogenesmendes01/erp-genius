@@ -190,3 +190,15 @@ it("assumir e responder preserva os dois rascunhos ao alternar a aba sem remonta
     await clicar("Nota interna");
     expect((host.querySelector("[data-compositor-campo]") as unknown as HTMLTextAreaElement).value).toBe("nota guardada");
 });
+it("abertura invalidada não oferece segundo assumir; fechar e reabrir cria geração que aceita só ACK novo",async()=>{
+ let antigo!:(r:{ok:true})=>void,novo!:(r:{ok:true})=>void;
+ assumir.mockImplementationOnce(()=>new Promise(r=>antigo=r)).mockImplementationOnce(()=>new Promise(r=>novo=r));
+ await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder",dialogo());
+ await montar({handoff:{...h,podeAssumir:false,ehResponsavel:false}});await montar();
+ expect(botao("Assumir e responder",dialogo())).toBeUndefined();expect(botao("Responder",dialogo())).toBeUndefined();
+ expect(dialogo().textContent).toContain("Feche e abra o resumo novamente");
+ await clicar("Fechar",dialogo());await clicar("Ver resumo e assumir");await clicar("Assumir e responder",dialogo());expect(assumir).toHaveBeenCalledTimes(2);
+ await act(async()=>antigo({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(dialogo()).not.toBeNull();
+ await act(async()=>novo({ok:true}));expect(mudar).toHaveBeenCalledOnce();
+ await montar({responsavel:"u",handoff:null,leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);
+});
