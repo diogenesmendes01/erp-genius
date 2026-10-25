@@ -1,0 +1,32 @@
+import{beforeEach,expect,it,vi}from"vitest";
+import{Papel}from"@prisma/client";
+const m=vi.hoisted(()=>({atendimento:vi.fn(),acoes:vi.fn(),lead:vi.fn(),historicos:vi.fn(),ver:vi.fn(),publicada:vi.fn(),decidiveis:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{atendimentoWhatsApp:{findFirst:m.atendimento},oportunidade:{findUnique:m.lead,findMany:m.historicos},acaoAgenteIA:{findMany:m.acoes}}}));
+vi.mock("@/server/whatsapp/escopo",()=>({escopoAtendimentos:async()=>({})}));
+vi.mock("@/server/whatsapp/atendimentos",()=>({atendimentoVisivel:m.atendimento}));
+vi.mock("@/server/whatsapp/visibilidade-lead",()=>({podeVerLeadNaThread:m.ver}));
+vi.mock("@/server/whatsapp/consultas-inbox",()=>({podeVerLeadNaThread:m.ver}));
+vi.mock("@/server/_shared/escopo-comercial",()=>({escopoComercialAtual:async()=>({vendedorDonoId:"u"})}));
+vi.mock("@/server/aria/versoes",()=>({versaoPublicada:m.publicada}));
+vi.mock("@/server/aria/escopo-decisao-inbox",async original=>({...await original<typeof import("@/server/aria/escopo-decisao-inbox")>(),acoesDecidiveisNoInbox:m.decidiveis}));
+import{carregarCabecalhoPainel}from"./painel-detalhes";
+import{carregarAriaAtividade}from"./painel-atividade-aria";
+const u={id:"u",nome:"Leitor",papeis:[Papel.VENDEDOR]};
+const a={id:"at",finalidade:"COMERCIAL",leadId:"lead",responsavelId:"u",encerradoEm:null,conversa:{id:"cv",grupoId:null,numero:{finalidade:"VENDAS",ativo:true},contato:{id:"ct",pessoaId:null,nomeExibicao:"Contato",nomePerfil:null,telefoneE164:"+50680000444"}}};
+const acao=(id="acao",status="EXECUTADA",oportunidadeId="lead",payload:unknown={})=>({id,status,oportunidadeId,atendimentoId:"at",payload,acao:"NOTA_INTERNA",criadoEm:new Date("2026-10-25T10:00Z"),confianca:80,reversivel:true,motivoIrreversivel:null});
+beforeEach(()=>{vi.resetAllMocks();m.atendimento.mockResolvedValue(a);m.ver.mockResolvedValue(true);m.lead.mockResolvedValue({id:"lead",nome:"Lead",pessoaId:"p",pessoa:null,etapa:"NOVO",participantes:[],b2b:false});m.historicos.mockResolvedValue([]);m.acoes.mockResolvedValue([acao()]);m.publicada.mockRejectedValue(Error("Configuração publicada inválida fictícia"));m.decidiveis.mockResolvedValue(new Set());});
+it("444 C3 header usa apenas lista/contador autorizado sem versão, última ou decisão",async()=>{expect((await carregarCabecalhoPainel(u,"at"))?.contadorAtividade).toBe(1);expect(m.publicada).not.toHaveBeenCalled();expect(m.decidiveis).not.toHaveBeenCalled();expect(m.acoes).toHaveBeenCalledTimes(1);expect(m.acoes.mock.calls[0][0]).toMatchObject({where:{AND:[{atendimentoId:"at"},{status:{in:["EXECUTADA","APROVADA","DESFEITA"]},acao:{not:"CLASSIFICAR_SETOR"}}]},take:100,orderBy:[{criadoEm:"desc"},{id:"desc"}]});});
+it("444 C3 módulo completo ainda rejeita publicação inválida, sem novo fallback",async()=>{await expect(carregarAriaAtividade(u,"at")).rejects.toThrow("Configuração publicada inválida");expect(m.publicada).toHaveBeenCalledOnce();});
+it("444 C3 fora do escopo não consulta ação/versão/decisão",async()=>{m.atendimento.mockResolvedValue(null);expect(await carregarCabecalhoPainel(u,"at")).toBeNull();expect(m.acoes).not.toHaveBeenCalled();expect(m.publicada).not.toHaveBeenCalled();expect(m.decidiveis).not.toHaveBeenCalled();});
+it("444 C3 lead não autorizado mantém cabeçalho mínimo e contador zero",async()=>{m.ver.mockResolvedValue(false);expect((await carregarCabecalhoPainel(u,"at"))?.contadorAtividade).toBe(0);expect(m.acoes).not.toHaveBeenCalled();expect(m.publicada).not.toHaveBeenCalled();});
+it("444 C3 DESFEITA é lida na mesma lista mas só EXECUTADA/APROVADA contam",async()=>{m.acoes.mockResolvedValue([acao("1","DESFEITA"),acao("2","APROVADA"),acao("3","EXECUTADA")]);expect((await carregarCabecalhoPainel(u,"at"))?.contadorAtividade).toBe(2);});
+
+it("444 C3 Db explícito mantém toda leitura na mesma conexão sem usar prisma global",async()=>{
+ const {carregarContadorAtividadeAria}=await import("./historico-aria-leitura");
+ const lerLead=vi.fn().mockResolvedValue({id:"lead",pessoaId:"p",etapa:"NOVO"}),lerAcoes=vi.fn().mockResolvedValue([acao()]);
+ const db={oportunidade:{findUnique:lerLead,findMany:vi.fn()},acaoAgenteIA:{findMany:lerAcoes}};
+ expect(await carregarContadorAtividadeAria(u,"at",db as never)).toBe(1);
+ expect(m.atendimento).toHaveBeenCalledExactlyOnceWith(u,"at",false,db);
+ expect(lerLead).toHaveBeenCalledOnce();expect(lerAcoes).toHaveBeenCalledOnce();
+ expect(m.lead).not.toHaveBeenCalled();expect(m.acoes).not.toHaveBeenCalled();expect(m.publicada).not.toHaveBeenCalled();expect(m.decidiveis).not.toHaveBeenCalled();
+});

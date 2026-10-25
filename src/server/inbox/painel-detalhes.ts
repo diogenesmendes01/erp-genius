@@ -1,4 +1,4 @@
-import { carregarAriaAtividade } from "./painel-atividade-aria";
+import { carregarContadorAtividadeAria } from "./historico-aria-leitura";
 import type { EtapaLead, OrigemCanal, PapelParticipante, Prisma } from "@prisma/client";
 import { hrefConversa } from "@/lib/href-conversa";
 import { atendimentosParaPessoas } from "./atalhos";
@@ -117,7 +117,7 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   const capacidades = capacidadesPainel(u, { finalidade: a.finalidade, veLead: !!op });
   const { fonte } = nomeEFonteDoAtendimento(a);
   return {
-    contadorAtividade: (await carregarAriaAtividade(u, atendimentoId)).contadorAtividade,
+    contadorAtividade: await carregarContadorAtividadeAria(u, atendimentoId),
     clienteVoltou: await retornoDoCliente(u, c, prisma),
     pessoaId: pessoa?.id ?? null,
     tagsDisponiveis: pessoa && capacidades.editarTags ? (await tagsAtivas()).map(({ id, nome }) => ({ id, nome })) : [],
