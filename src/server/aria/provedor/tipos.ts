@@ -1,7 +1,26 @@
+/** Controle opt-in. Chamadores legados não recebem diagnóstico nem mudam retry/deadline. */
+export interface ControleExecucaoIA {
+  signal?: AbortSignal;
+  deadlineMs: number;
+  maxRetries: 0;
+}
+export interface UsoChamadaIA {
+  tokensEntrada: number;
+  tokensSaida: number;
+  tokensCache: number;
+  tokensEscritaCache: number;
+}
+export interface DiagnosticoChamadaIA {
+  fase: "nao-enviado" | "possivelmente-enviado" | "enviado";
+  modeloObservado: string | null;
+  uso: UsoChamadaIA | null;
+  codigo?: string;
+}
 export type TarefaIA = "conversa" | "classificacao" | "resumo" | "extracao";
 
 export interface PedidoIA {
   tarefa: TarefaIA;
+  controle?: ControleExecucaoIA;
   sistema: string;
   mensagens: { papel: "usuario" | "assistente"; texto: string }[];
   maxTokens: number;
@@ -10,6 +29,7 @@ export interface PedidoIA {
 }
 
 export interface RespostaIA {
+  diagnostico?: DiagnosticoChamadaIA;
   texto: string;
   modelo: string;
   provedor: "anthropic" | "simulado";
@@ -34,9 +54,11 @@ export interface ModelosIA {
 
 export class ErroProvedorIA extends Error {
   codigo: string;
-  constructor(codigo: string, mensagem?: string) {
+  declare diagnostico?: DiagnosticoChamadaIA;
+  constructor(codigo: string, mensagem?: string, diagnostico?: DiagnosticoChamadaIA) {
     super(mensagem ?? codigo);
     this.name = "ErroProvedorIA";
     this.codigo = codigo;
+    if (diagnostico) this.diagnostico = diagnostico;
   }
 }

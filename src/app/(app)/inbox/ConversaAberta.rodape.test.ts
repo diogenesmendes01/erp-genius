@@ -65,3 +65,9 @@ it.each(['ia','aprovacao','handoff'] as const)('358 rodapé %s bloqueia saída e
  const r=elementos(tela({...base,item:{...base.item!,responsavelId:null,estadoAria},aria:{handoff:null,podeAssumirAria:true,podeDecidir:false,podeDevolver:false,cartoes:[],pausada:false,motivo:null},podeEnviar:true,leituraPainel:{solicitada:1,finalizada:1,resultado:'ok'}})).find(n=>n.type===RodapeConversa)!;
  expect(r.props.modo).toBe('travado');expect((r.props.travado as {texto:string;aoAssumir?:()=>void}).texto).toContain('Aria');expect((r.props.travado as {aoAssumir?:()=>void}).aoAssumir).toBeTypeOf('function');expect(m.usar).toHaveBeenCalledTimes(1);
 });
+
+it("377 encaminha porta opt-in ao rodapé sem mudar controlador ou permissões",()=>{
+ const publicar=vi.fn(),t=tela({...base,aoPortaRascunhoInsight:publicar});
+ expect(elementos(t).find(n=>n.type===RodapeConversa)!.props.aoPortaRascunhoInsight).toBe(publicar);
+ expect(m.usar).toHaveBeenCalledTimes(1);
+});
