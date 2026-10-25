@@ -8,6 +8,7 @@ import { atendimentoVisivel } from "./atendimentos";
 import { PAPEIS_INBOX } from "./escopo";
 import { ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
 import { Papel } from "@prisma/client";
+import { resumoDaAriaParaNota } from "@/server/aria/resumo-nota";
 
 const IdSchema = z.string().min(1);
 
@@ -65,4 +66,12 @@ export async function listarConvitesEAgendamentos(atendimentoId: string): Promis
     convites: convites.map((c) => ({ id: c.id, nome: c.usuario.nome, fim: c.fim.toISOString(), podeEnviar: c.podeEnviar })),
     agendamentos: agendadas.map((m) => ({ id: m.id, texto: m.corpoRenderizado, agendadaPara: m.agendadaPara!.toISOString() })),
   };
+}
+/** Só metadado booleano de um atendimento visível em que o ator pode transferir; nenhum payload exposto. */
+export async function temResumoDaAria(atendimentoId: string): Promise<boolean> {
+  const u = await exigirSessao();
+  const id = IdSchema.parse(atendimentoId);
+  const a = await atendimentoVisivel(u, id);
+  if (!a || a.encerradoEm || !podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) return false;
+  return (await resumoDaAriaParaNota(prisma, id)) !== null;
 }
