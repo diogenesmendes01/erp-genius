@@ -18,11 +18,18 @@ export function formatarSSE(a: AvisoInbox): string {
  * aviso sem atendimento só passa se for conversa de grupo dentro do `escopoGrupos`.
  * Só `visivel: true` é guardado (um "não" em cache faria o usuário perder avisos de quem acabou de ganhar acesso,
  * por transferência ou participação), `atendimento.atualizado` invalida a chave (o escopo pode ter mudado) e o
- * Map é podado de expirados com teto de chaves. `resync` (escuta reconectada) passa sempre. `atendimento.atualizado`
+ * Map é podado de expirados com teto de chaves. `resync` (escuta reconectada) passa sempre; `aria.global` só passa no contrato fechado sem IDs/conteúdo. `atendimento.atualizado`
  * direcionado (`paraUsuarioId`, da revogação de convite) passa só para esse usuário e não consulta o escopo: o
  * ex-convidado já está fora dele, e o aviso só carrega ids (o cliente recarrega o painel e recebe 404).
  */
 const MAX_CHAVES_CACHE = 500;
+
+/** Global nunca é transporte de IDs/conteúdo: só o contrato próprio de quatro campos passa. */
+function globalValido(a:AvisoInbox):boolean {
+  const chaves=Reflect.ownKeys(a);
+  return chaves.length===4 && Object.keys(a).length===4 && chaves.every(k=>typeof k==="string" && ["tipo","atendimentoId","mensagemId","conversaId"].includes(k))
+    && a.atendimentoId===null && a.mensagemId===null && a.conversaId==="";
+}
 
 export function criarFiltroDeAvisos(usuario: UsuarioSessao, ttlMs: number = TTL_FILTRO_MS): (a: AvisoInbox) => Promise<boolean> {
   const cache = new Map<string, { ate: number; visivel: boolean }>();
@@ -44,6 +51,7 @@ export function criarFiltroDeAvisos(usuario: UsuarioSessao, ttlMs: number = TTL_
     while (cache.size >= MAX_CHAVES_CACHE) cache.delete(cache.keys().next().value!);
   };
   return async (a) => {
+    if (a.tipo === "aria.global") return globalValido(a);
     if (a.tipo === "resync") return true;
     if (a.paraUsuarioId !== undefined) {
       if (a.tipo !== "atendimento.atualizado" || a.paraUsuarioId !== usuario.id) return false;

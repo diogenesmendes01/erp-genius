@@ -104,3 +104,6 @@ it("pílula numérica usa mono/tabular sem transformar o ponto em contador", () 
  const ponto=renderToStaticMarkup(createElement(SeloNaoLidasInbox,{inicial:120,variante:"ponto"}));
  expect(ponto).not.toContain("99");expect(ponto).not.toContain("font-mono");expect(ponto).not.toContain("tabular-nums");
 });
+
+
+it("aria.global não reconta ou modifica o selo pessoal",async()=>{const buscar=vi.fn(),loja=criarLojaNaoLidas(7,buscar);loja.aoAviso({tipo:"aria.global",atendimentoId:null,mensagemId:null,conversaId:""});await tick();expect(buscar).not.toHaveBeenCalled();expect(loja.valor()).toBe(7);});
