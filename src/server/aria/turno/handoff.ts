@@ -44,6 +44,28 @@ export function montarNotaResumo(resumo: ResumoHandoff | null, campos: string[])
   return linhas.length ? linhas.join("\n") : null;
 }
 
+/** Leitura do formato legado: rótulos repetidos/fora de ordem são ambíguos. */
+export function lerNotaResumo(nota: string): Partial<ResumoHandoff> {
+  const chaves = Object.keys(ROTULOS_RESUMO) as (keyof ResumoHandoff)[];
+  const partes = new Map<keyof ResumoHandoff, string[]>();
+  let atual: keyof ResumoHandoff | null = null, anterior = -1;
+  for (const linha of nota.replace(/\r\n?/g, "\n").split("\n")) {
+    const indice = chaves.findIndex(k => linha.startsWith(ROTULOS_RESUMO[k] + ":"));
+    if (indice >= 0) {
+      if (indice <= anterior) return {};
+      anterior = indice; atual = chaves[indice];
+      partes.set(atual, [linha.slice(ROTULOS_RESUMO[atual].length + 1).trimStart()]);
+    } else if (atual) partes.get(atual)!.push(linha);
+    else return {};
+  }
+  const resumo: Partial<ResumoHandoff> = {};
+  for (const [chave, linhas] of partes) {
+    const valor = linhas.join("\n").trim();
+    if (valor) resumo[chave] = valor;
+  }
+  return resumo;
+}
+
 /**
  * Passa o atendimento a uma pessoa: define o destino (responsável da oportunidade, usuário fixo ou fila),
  * avisa o lead, anota o resumo, pausa a Aria e grava o Evento, tudo na transação recebida.

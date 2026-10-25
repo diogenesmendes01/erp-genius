@@ -1,10 +1,14 @@
+import { handoffDoAtendimento, type HandoffDoAtendimento } from "../aria/handoff-inbox";
+import { podeVerLeadNaThread } from "./visibilidade-lead";
+export { podeVerLeadNaThread } from "./visibilidade-lead";
+import { cartoesDaThread, type SugestaoAriaThread } from "../aria/sugestoes-thread";
 import { Papel, type AcaoAgenteIATipo, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { temPapel, type UsuarioSessao } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
-import { escopoAtendimentos, type Db } from "./escopo";
+import { escopoAtendimentos } from "./escopo";
 import { ehLinhaComercial } from "./linha-comercial";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
@@ -169,19 +173,6 @@ export async function carregarAcoesContatoInbox(usuario: UsuarioSessao, atendime
   };
 }
 
-/**
- * Quem já via o lead antes da SPEC-ERP-005 continua vendo: administração, carteira/equipe/cobertura
- * atual e participante vigente do atendimento. Só o acesso "pela linha" não mostra o painel.
- */
-export async function podeVerLeadNaThread(usuario: UsuarioSessao, atendimentoId: string, leadId: string, agora: number, db: Db = prisma): Promise<boolean> {
-  if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
-  if (temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
-    && await db.oportunidade.count({ where: { AND: [{ id: leadId }, await escopoComercialAtual(usuario, db)] } })) return true;
-  const instante = new Date(agora);
-  return !!await db.participanteAtendimentoWhatsApp.count({ where: {
-    atendimentoId, usuarioId: usuario.id, inicio: { lte: instante }, fim: { gt: instante }, revogadoEm: null,
-  } });
-}
 
 /** Linhas comerciais de que o usuário é dono — estado da sessão em leitura (LC §5.5, doc 37). */
 export interface LinhaDoUsuario { id: string; rotulo: string; telefoneE164: string; driver: string; sessao: string }
@@ -251,6 +242,9 @@ export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: stri
 
 /** Estado da Aria no detalhe do atendimento (Task 29): pausa e sugestões pendentes de `AcaoAgenteIA` (fonte única). */
 export interface AriaDoAtendimento {
+  handoff: HandoffDoAtendimento | null;
+  podeDecidir: boolean;
+  cartoes: SugestaoAriaThread[];
   pausada: boolean;
   motivo: MotivoPausaAtendimentoIA | null;
   /** Mostra "Devolver para Aria": Aria pausada e o usuário com escopo de envio (a regra de `devolverParaAria`). */
@@ -269,7 +263,7 @@ function resumoDaSugestao(a: { acao: AcaoAgenteIATipo; payload: Prisma.JsonValue
 export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendimentoId: string, agora: Date = new Date()): Promise<AriaDoAtendimento | null> {
   const a = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
-    select: { id: true, leadId: true, iaPausadaEm: true, iaPausaMotivo: true },
+    select: { id: true, leadId: true, iaPausadaEm: true, iaPausaMotivo: true, finalidade: true, responsavelId: true, conversa: { select: { numero: { select: { donoId: true, finalidade: true } } } } },
   });
   if (!a) return null;
   const candidatas = capacidadesAria(usuario).has("decidirHistorico")
@@ -286,6 +280,9 @@ export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendime
   const sugestoes = candidatas.filter((s) => decidiveis.has(leadDe(s)));
   const pausada = a.iaPausadaEm !== null;
   return {
+    podeDecidir: capacidadesAria(usuario).has("decidirHistorico") && (await leadsDecidiveis(prisma, usuario, [a.leadId])).has(a.leadId),
+    cartoes: await cartoesDaThread(prisma, usuario, a, agora),
+    handoff: await handoffDoAtendimento(prisma, usuario, a, agora),
     pausada,
     motivo: pausada ? a.iaPausaMotivo : null,
     podeDevolver: pausada && (await podeDevolverParaAria(prisma, usuario, a.id)),
