@@ -1,3 +1,4 @@
+import {garantirAtendimento} from "@/server/whatsapp/atendimentos";
 import * as registro from "@/server/_shared/evento";
 import {afterAll,afterEach,beforeEach,expect,it,vi} from "vitest";
 import {Papel,PrismaClient,type FinalidadeNumero} from "@prisma/client";
@@ -5,7 +6,7 @@ const sessao=vi.hoisted(()=>({id:""}));
 vi.mock("@/server/_shared/sessao",async original=>{const real=await original<typeof import("@/server/_shared/sessao")>();return {...real,exigirSessao:async()=>{const u=await real.carregarUsuarioFresco(sessao.id);if(!u)throw new real.ErroAutenticacao();return u;}};});
 vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 import {prisma} from "@/lib/prisma";
-import {criarUsuario,truncarBanco} from "@/test/integracao";
+import {criarUsuario,criarAlunoMinimo,seedCatalogoMinimo,truncarBanco} from "@/test/integracao";
 import {vincularContatoWhatsApp} from "@/server/whatsapp/acoes";
 beforeEach(()=>truncarBanco());afterEach(()=>vi.restoreAllMocks());afterAll(()=>prisma.$disconnect());
 let seq=0;
@@ -71,4 +72,17 @@ it("duas vinculações legadas reais em selecteds distintos não sobrescrevem co
 it.each(["atendimento inexistente","contato diferente"])("recusa de alcance mantém mensagem legada: %s",async caso=>{
  const c=await cenario();const r=await vincularContatoWhatsApp({...c.input,...(caso==="atendimento inexistente"?{atendimentoId:"inexistente435"}:{contatoId:"outro-contato435"})});
  expect(r).toEqual({ok:false,erro:"Atendimento fora do seu escopo para vinculação."});expect(await prisma.evento.count({where:{tipo:"ContatoVinculado"}})).toBe(0);
+});
+async function comAlunoTurma(finalidade:FinalidadeNumero){
+ const c=await cenario(finalidade),cat=await seedCatalogoMinimo(),nivel=await prisma.nivel.create({data:{idiomaId:cat.idioma.id,codigo:"A1",ordem:1}}),turma=await prisma.turma.create({data:{modalidadeId:cat.modalidade.id,nivelId:nivel.id,nome:"Turma legada435"}}),aluno=await criarAlunoMinimo({telefoneE164:c.contato.telefoneE164});
+ await prisma.atendimentoWhatsApp.update({where:{id:c.a.id},data:{leadId:c.anterior.id,alunoId:aluno.id,turmaId:turma.id}});
+ return{...c,aluno,turma,contexto:["COMERCIAL",c.lead.id,aluno.id,turma.id].join(":")};
+}
+it.each(["AGENDA","VENDAS"] as const)("controle histórico garantirAtendimento preserva aluno e turma no contexto %s",async finalidade=>{
+ const c=await comAlunoTurma(finalidade),a=await prisma.$transaction(tx=>garantirAtendimento(tx,{numeroId:c.numero.id,contatoId:c.contato.id,finalidade:"COMERCIAL",leadId:c.lead.id,alunoId:c.aluno.id,turmaId:c.turma.id}));expect(a).toMatchObject({contextoChave:c.contexto,leadId:c.lead.id,alunoId:c.aluno.id,turmaId:c.turma.id});
+});
+it.each(["AGENDA","VENDAS"] as const)("ação legada preserva aluno e turma no contexto %s",async finalidade=>{
+ const c=await comAlunoTurma(finalidade);expect(await vincularContatoWhatsApp(c.input)).toEqual({ok:true});
+ const novo=await prisma.atendimentoWhatsApp.findUnique({where:{conversaId_contextoChave:{conversaId:c.conversa.id,contextoChave:c.contexto}}});expect(novo).toMatchObject({leadId:c.lead.id,alunoId:c.aluno.id,turmaId:c.turma.id});
+ expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.a.id}})).toMatchObject({leadId:c.anterior.id,alunoId:c.aluno.id,turmaId:c.turma.id});
 });

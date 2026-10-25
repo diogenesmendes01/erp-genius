@@ -4,6 +4,8 @@ import {escopoComercialAtual} from "@/server/_shared/escopo-comercial";
 import {atendimentoVisivel} from "./atendimentos";
 import {CHAVE_LINHA} from "./linha-comercial";
 
+type DestinoLegado = {id:string|null;contextoChave:string;marcar:boolean;responsavelId?:string|null;alunoId?:string|null;turmaId?:string|null};
+
 /** Caminho de AcoesContato: conserva o roteamento legado sem impor identidade de Pessoa/selected do cartão329. */
 export async function vincularLeadLegadoTx(tx:Prisma.TransactionClient,sessao:UsuarioSessao,entrada:{contatoId:string;atendimentoId?:string;leadId:string}){
  const {contatoId,atendimentoId,leadId}=entrada;
@@ -26,14 +28,20 @@ export async function vincularLeadLegadoTx(tx:Prisma.TransactionClient,sessao:Us
   const abertos=atendimentos.filter(t=>!t.encerradoEm);
   const candidato=abertos.find(t=>t.leadId===leadId)??abertos.find(t=>t.contextoChave.startsWith(CHAVE_LINHA))??abertos[0];
   if(a.numero.finalidade==="VENDAS"&&!a.conversa.grupoId){
-   if(candidato&&(!candidato.leadId||candidato.leadId===leadId))return{a,contato,ids,destino:{id:candidato.id,contextoChave:candidato.contextoChave,marcar:!candidato.leadId,responsavelId:undefined as string|null|undefined}};
+   if(candidato&&(!candidato.leadId||candidato.leadId===leadId)){
+    const destino:DestinoLegado={id:candidato.id,contextoChave:candidato.contextoChave,marcar:!candidato.leadId};
+    return{a,contato,ids,destino};
+   }
    if(!candidato){
     const anteriores=await tx.atendimentoWhatsApp.count({where:{conversaId:a.conversaId,contextoChave:{startsWith:CHAVE_LINHA}}});
-    return{a,contato,ids,destino:{id:null,contextoChave:anteriores?`${CHAVE_LINHA}:${anteriores+1}`:CHAVE_LINHA,marcar:false,responsavelId:a.numero.donoId}};
+    const destino:DestinoLegado={id:null,contextoChave:anteriores?`${CHAVE_LINHA}:${anteriores+1}`:CHAVE_LINHA,marcar:false,responsavelId:a.numero.donoId};
+    return{a,contato,ids,destino};
    }
   }
-  const contextoChave=["COMERCIAL",leadId,"",""].join(":"),existente=atendimentos.find(t=>t.contextoChave===contextoChave);
-  return{a,contato,ids,destino:{id:existente?.id??null,contextoChave,marcar:false,responsavelId:undefined as string|null|undefined}};
+  const contextoChave=["COMERCIAL",leadId,a.alunoId??"",a.turmaId??""].join(":"),existente=atendimentos.find(t=>t.contextoChave===contextoChave);
+  // Mesmo contexto de garantirAtendimento no institucional/fallback: não descarta os vínculos do selected.
+  const destino:DestinoLegado={id:existente?.id??null,contextoChave,marcar:false,alunoId:a.alunoId,turmaId:a.turmaId};
+  return{a,contato,ids,destino};
  }
  // Todos os atendimentos que podem ser escolhidos são travados antes do contato e em ordem comum.
  // Uma inserção concorrente fora desse conjunto exige rollback, nunca lock tardio de outra identidade.
@@ -50,7 +58,7 @@ export async function vincularLeadLegadoTx(tx:Prisma.TransactionClient,sessao:Us
  if(destinoId&&destino.marcar){const r=await tx.atendimentoWhatsApp.updateMany({where:{id:destinoId,leadId:null,encerradoEm:null},data:{leadId}});if(r.count!==1)throw new ErroRegra("O atendimento mudou. Recarregue a conversa.");}
  if(!destinoId){
   // Registro novo desta TX; create não reutiliza silenciosamente contexto que apareceu depois dos locks.
-  const novo=await tx.atendimentoWhatsApp.create({data:{conversaId:antes.a.conversaId,contextoChave:destino.contextoChave,finalidade:"COMERCIAL",leadId,...(destino.responsavelId?{responsavelId:destino.responsavelId,status:"EM_ATENDIMENTO" as const}:{})}});destinoId=novo.id;
+  const novo=await tx.atendimentoWhatsApp.create({data:{conversaId:antes.a.conversaId,contextoChave:destino.contextoChave,finalidade:"COMERCIAL",leadId,alunoId:destino.alunoId,turmaId:destino.turmaId,...(destino.responsavelId?{responsavelId:destino.responsavelId,status:"EM_ATENDIMENTO" as const}:{})}});destinoId=novo.id;
  }
  const idsFinais=[...new Set([...inicial.ids,destinoId])].sort();const depois=await resolver(idsFinais,inicial.a.conversaId);
  if(depois.contato.leadId!==leadId||depois.destino.id!==destinoId)throw new ErroRegra("Não foi possível confirmar o vínculo da oportunidade.");
