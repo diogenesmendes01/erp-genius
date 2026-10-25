@@ -45,3 +45,11 @@ Feito vazio usa EstadoVazio compacto com o texto Nenhuma ação registrada. O t�
 ROOT verificou d0e987752d045ab8835e12838cc329bb33b6ec12 com TypeScript original67703/7dc488 EXIT0 (sem novas exclusões/config), unitária global UTC51740/ca1ea0 EXIT0 (978 arquivos/8.382 testes, sem filtros/skips) e eslint .7431/c1440c EXIT0 (zero erros/94 avisos). Históricos/cópias privadas causais foram arquivados fisicamente com hashes antes do replay, preservando negativos e fonte.
 
 TESTER revisou o delta exato e executou15 arquivos/222 testes62927/9a962f EXIT0; parecer favorável sem novo achado acionável, relatório SHA25662ce1ca0e1d7589dc6e522b6da98a0a3b0a81e1d09a99d74058eecd3f373a872. Evidências completas no report. Build/CI de publicação e aceite visual permanecem separados; backend #357/D3 segue explicitamente pendente. Este adendo é documental e preserva runtime d0e literal.
+
+### Revisão da PR #437: responder quando já é responsável
+
+O responsável recebe feedback quando a leitura do painel falha ou não confirma a permissão de envio. “Tentar de novo” solicita somente a atualização existente do painel, sem chamar Assumir. Uma intenção aceita durante a leitura pendente só chega ao compositor depois de um recibo atual, bem-sucedido, com responsável e envio válidos. O recibo anterior ao retry não libera foco.
+
+Perder a responsabilidade ou o acesso invalida a abertura. Recuperar a permissão de envio não retoma uma intenção já recusada; é necessário novo pedido explícito. Resumo, rascunhos, identidade da conversa e protocolos de ACK continuam preservados. A chegada de um 200 sem intenção não muda o modo do compositor.
+
+Os testes de assumir e depois responder já estão em `HandoffConversa.interacao.test.ts`, nos casos de ACK atual e de preservação dos dois rascunhos; o nome do plano é uma referência de comportamento. O relatório versionado registra evidências exigidas pelo quadro do repositório; capturas, credenciais e logs privados ficam fora do diff. Build, visual e CI continuam gates separados.
