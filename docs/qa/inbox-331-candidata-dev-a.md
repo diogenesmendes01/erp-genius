@@ -61,9 +61,8 @@ O TESTER reprovou a candidata fbbd: ao definir horário+lembrete em tarefa sem p
 A correção filha57f valida a presença de data/instante da agenda efetiva quando a opção interna existe; na ausência dela mantém a validação legada data/hora. Não reinterpreta DST nem altera o diff/rearmar de lembretes. Oráculo T original (arquivo privado SHA2563ae139f7efd44093bd281ed1c1c5ca684ce6fb28335ee4d84db120f558ab1d73) reproduzido: b08c4e EXIT1,2fail5pass7. Casos adicionais de agenda efetiva inválida e caminho legado:5eb452 EXIT1,4fail6pass10. GREEN núcleo6939e0 EXIT0,10/10.
 
 Integração causal antes do patch76235/9a1469 EXIT1,2fail4pass6: sem prazo/sódata +novo horário/lembrete30 falhavam; controles sem lembrete, veto sem horário e DST com lembrete disparado passavam. GREEN focal32289/a93b85 EXIT0:3arquivos22testes82.90s, UTC/w1/heap1024, sem filtros/skips. Atravessa dadosModalTarefaNoInbox/editarTarefaNoInbox reais (6casos), mais CRM15 e pool1real1. Lint whitelist3 9c65ab EXIT0, sem erros/warnings. LeaseA liberada novamente após terminal, sem executor pendente. Nenhum teste global/TSC/build executado pelo DEV nesta correção. Candidata segue sem QA independente aprovada até o TESTER verificar a filha.
-# Revisão da composição pelo integrador
+## Revisão da composição pelo integrador
 
 No commit composto `d2719c1866bf6c0447d70c005fcc5eece27c7762`, o TypeScript original e o lint original terminaram com código 0 (lint: 48 avisos). A suíte global original terminou com código 1: 972 arquivos passaram e um falhou; 8.291 testes passaram e um falhou. A guarda `src/app/anuncios.test.ts` encontrou a região de carregamento do modal montada junto com seu texto.
 
 O integrador substituiu somente essa região pelo `MensagemStatus` sempre montado, preservando o formulário e as ações. O recorte original de anúncios, modal e botões passou: três arquivos e 122 testes, código 0, executor `5cfdff`. O caminho solicitado `MensagemStatus.test.ts` não existe e não é contado como arquivo executado. Os gates globais da correção serão registrados separadamente; o resultado negativo anterior permanece preservado.
-
