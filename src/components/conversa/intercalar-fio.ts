@@ -9,6 +9,6 @@ export function intercalarFio(base:readonly ItemThread[],tarefas:readonly Tarefa
  const datas=base.filter((i):i is Extract<ItemThread,{tipo:"mensagem"}>=>i.tipo==="mensagem").map(epoch).filter(Number.isFinite);
  const inicio=o.temMaisAntes&&datas.length?Math.min(...datas):null;
  const fim=o.temMaisDepois&&datas.length?Math.max(...datas):null;
- const cartoes:ItemTarefaThread[]=tarefas.map(t=>({tipo:"tarefa",id:"tarefa:"+t.id,t})).filter(i=>{const em=epoch(i);return (inicio===null||em>=inicio)&&(fim===null||em<=fim)&&((inicio===null&&fim===null)||Number.isFinite(em));});
+ const cartoes:ItemTarefaThread[]=tarefas.map((t):ItemTarefaThread=>({tipo:"tarefa",id:"tarefa:"+t.id,t})).filter(i=>{const em=epoch(i);return (inicio===null||em>=inicio)&&(fim===null||em<=fim)&&((inicio===null&&fim===null)||Number.isFinite(em));});
  return [...base,...cartoes].sort((a,b)=>{const x=epoch(a),y=epoch(b);return x===y?ordem(a)-ordem(b)||a.id.localeCompare(b.id):x<y?-1:1;});
 }
