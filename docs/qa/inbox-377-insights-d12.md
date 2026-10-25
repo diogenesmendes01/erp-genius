@@ -60,3 +60,13 @@ Técnicas e pendências: versão/modelo/preços e metadata da base são contrato
 - Núcleos claim/start/finalização/operacional têm doubles DB-aware e testes de ordem/CAS/shape, não prova SQL de locks/concorrência. Os REDs anteriores e controles estão nos logs privados. Testes PostgreSQL ainda serão escritos/executados no perfil493 após review/lease ROOT; não atribuir RED causal nativo retroativo a testes pós-implementação.
 
 Plano nativo entregue no output/inbox-377-preflight-nativo-plano-private.md: invariantes exclusividade/START, budget/config, ACL/binding frescos, custos/ACKlost/late/reconcile/discard, barreiras reais, pool1, NOTIFY commit/replay/rollback. Nenhuma lease SQL pedida/executada neste checkpoint. Endpoints/aba, UI operacional completa e bridges continuam pendentes. Schema/SQL493 e client permanecem congelados.
+
+### Autoria nativa posterior ao checkpoint (ainda não executada)
+
+Quatro arquivos .int.test.ts, 24 casos previstos: kernel12, concorrencia6, pool1 dois, notify quatro. Fixtures/instrumentação exclusivas377 em src/test/inbox-insights.ts e inbox-insights-observacao.ts. Lint desses6 arquivos19bc84 EXIT0, zero avisos; isso não executa nem valida comportamento SQL.
+
+Barreiras usam Client pg real, holder e observador separados, pg_blocking_pids e snapshots autocommit. Papéis/ativo/binding são alterados no holder antes do commit; finally libera holder e acompanha tentativas. KEY SHARE é retido até assertar conclusão, sem alegar ausência geral de deadlock. Pool1 usa PrismaClient próprio connection_limit1 e trap somente da abertura de TX global; queries/locks/ACL continuam reais.
+
+NOTIFY usa LISTEN real em inbox_eventos, conta entrega após commit e verifica replay0/rollback0. Rollback é injetado após callback real da TX, explicitamente instrumentação. ACKlost simula exclusivamente perda da entrega após COMMIT PostgreSQL real: uma ou duas finalizações perdem ACK, provider é fake e invocado uma vez, Chamada/Evento/aviso devem permanecer únicos; GET posterior resolve PRONTA mesmo quando a resposta do orquestrador é NAO_CONFIRMADA. Esses testes foram escritos depois do kernel, sem RED causal nativo retroativo.
+
+Nenhum dos 24 casos foi executado nesta autoria. Execução depende de revisão e lease ROOT493. Não foi criado wrapper público só para fixture. Aba/bridge/endpoint continuam pendentes; produção literal8364385f.
