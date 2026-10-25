@@ -2,7 +2,7 @@ Cópia pública sanitizada somente nos caminhos locais; fonte e resultados hist�
 
 # Parecer próprio TESTER #347 — fonte716
 
-Fonte exata 716a6261f1bb920bbd4d5c9013535c2acf2ed058, base252b177a05ce718e87584bd0992ff3f21153b72b. Worktree exclusivo worktree exclusivo do TESTER preparado pelo ROOT. HEAD e trackedclean confirmados antes da execução. Perfil SHA256 5b0926e5b01feb50b0c9ede29cdd69eb124c2f563ce20937409d34991722bfcc e client/schema.prisma SHA256 647c2586589198b10c9345265e0cce7a43819d5cb44633dbad5e0e0b611fae2b preservados. Não houve checkout próprio, DB/lease, servidor, navegador, instalação, generate, alteração de configuração, TSC/global ou edição de produção.
+Fonte exata 716a6261f1bb920bbd4d5c9013535c2acf2ed058, base252b177a05ce718e87584bd0992ff3f21153b72b. Worktree exclusivo do TESTER preparado pelo ROOT. HEAD e trackedclean confirmados antes da execução. Perfil SHA256 5b0926e5b01feb50b0c9ede29cdd69eb124c2f563ce20937409d34991722bfcc e client/schema.prisma SHA256 647c2586589198b10c9345265e0cce7a43819d5cb44633dbad5e0e0b611fae2b preservados. Não houve checkout próprio, DB/lease, servidor, navegador, instalação, generate, alteração de configuração, TSC/global ou edição de produção.
 
 Lidos SPEC docs/specs/inbox-faixa-aria-ativa.md, report output/inbox-347-report.md e diff completo dos oito paths entre252 e716. Mudança funcional limitada ao novo componente e import/slot no InboxNovo; resumo/frescura346 reutilizados. Fonte exata inspecionada sem depender da aprovação do DEV.
 

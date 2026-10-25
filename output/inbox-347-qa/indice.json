@@ -20,13 +20,14 @@
   "pareceres": [
     {
       "path": "tester-716-historico.md",
-      "bytes": 3381,
-      "sha256": "e5ba377bd86f89ee52ddc74389c0d5f54639627c40c688201eb5238b580799b8",
+      "bytes": 3362,
+      "sha256": "200610761dacbed54867358873ebc9356f6562c975fd932955365b1f91a3eebd",
       "originalPrivado": {
         "path": "inbox-347-716-functional-review-tester.md",
         "bytes": 3355,
         "sha256": "77969ac1afae1ac11dbf3377aa544a8d9ae2cccd43209dea0f4723a89ce9cb91"
-      }
+      },
+      "curadoria": "Caminhos locais substituídos por rótulos genéricos, evitando duplicação editorial do rótulo worktree; resultados históricos preservados."
     },
     {
       "path": "tester-287-final.md",
