@@ -10,6 +10,7 @@ import type { FonteHistorico } from "@/components/conversa/historico-conversa";
 const m=vi.hoisted(()=>({
   receber:null as ((a:AvisoInbox)=>void)|null,
   observado:null as AvisoInbox|null,
+  ariaRecebida:null as import("@/server/whatsapp/consultas-inbox").AriaDoAtendimento|null|undefined,
   pagina:vi.fn<FonteHistorico["pagina"]>(),
   marcar:vi.fn(async()=>({ok:true})),
 }));
@@ -23,7 +24,7 @@ vi.mock("@/components/conversa/useConversa",async original=>{
 vi.mock("@/server/whatsapp/preferencias",()=>({marcarAtendimentoLidoAutomatico:m.marcar}));
 vi.mock("@/server/whatsapp/operacoes-atendimento",()=>({abrirAtendimentoInstitucional:vi.fn()}));
 vi.mock("@/server/whatsapp/acoes",()=>({registrarOptOutContato:vi.fn(),removerOptOutContato:vi.fn(),enviarTextoInbox:vi.fn(),enviarMidiaInbox:vi.fn()}));
-vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:()=>createElement("header",null,"Thread teste345")};});
+vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:(p:import("./ConversaAberta").PropsConversaAberta)=>{m.ariaRecebida=p.aria;return createElement("header",null,"Thread teste345");}};});
 vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react"),I=()=>createElement("span");return{IconMessages:I,IconPhone:I,IconChevronLeft:I,IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
 
 const item={id:"a1",numeroId:"n1",numeroRotulo:"Fake345",finalidade:"COMERCIAL",driver:DriverWhatsApp.MOTOR,contatoId:"ct1",contatoNome:"Ana",contatoTelefone:"+50600000345",optOut:false,vinculo:null,naoLidas:0,ultimaMensagemEm:null,preview:"",linhaComercial:false,status:"EM_ATENDIMENTO",responsavelNome:null,prazoRespostaEm:null,fixada:false,silenciada:false,grupo:false,responsavelId:null,numeroDonoId:null,setoresDoNumero:["COMERCIAL"],atendimentoOrigemId:null,capacidades:[],estadoAria:null,atendidoPorVoce:false,previaAutor:null,previaRotulo:null};
@@ -37,7 +38,7 @@ const paineis=()=>fetcher.mock.calls.filter(([url])=>String(url).endsWith("/pain
 const listas=()=>fetcher.mock.calls.filter(([url])=>String(url).startsWith("/api/inbox/atendimentos?"));
 
 beforeEach(async()=>{
-  vi.clearAllMocks();m.receber=null;m.observado=null;
+  vi.clearAllMocks();m.receber=null;m.observado=null;m.ariaRecebida=null;
   const dom=criarDomMinimo(),doc=dom.documento;
   Object.assign(doc,{visibilityState:"visible",addEventListener(){},removeEventListener(){},querySelector:(s:string)=>doc.body.querySelector(s)});
   Object.assign(dom.janela,{setTimeout:(callback:()=>void,ms:number)=>setTimeout(callback,ms),innerWidth:1440,addEventListener(){},removeEventListener(){},matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});
@@ -113,4 +114,14 @@ it("347 erro na recarga mantém faixa/contagem conhecidas e global não substitu
  const original=fetcher.getMockImplementation()!;
  fetcher.mockImplementation((u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?Promise.resolve(new Response("",{status:503})):original(u,o));
  await emitir(nova345,global345);expect(m.observado).toBe(nova345);expect(document.querySelector('[aria-label="Situação da Aria"]')?.textContent).toContain("Aria ativa3 em atendimento · 3 aguardando você");expect(chips346()).toContain("IA atendendo3");
+});
+
+it("348 painel corrente mantém história no503 e revoga só capacidades Aria no404",async()=>{
+ const original=fetcher.getMockImplementation()!;
+ const aria={handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:"MANUAL" as const,podeDevolver:true,sugestoes:[]};
+ let status=200;
+ fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true,aria,acoes:null})):new Response("",{status})):original(u,o));
+ await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
+ status=503;await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
+ status=404;await emitir(global345);expect(m.ariaRecebida).toEqual({...aria,podeDevolver:false,podeDecidir:false});
 });

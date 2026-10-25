@@ -19,6 +19,9 @@ import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { intercalarSugestoes } from "./aria/intercalar";
 import { CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
+
+import { ControladorDevolverAria, type ControlesDevolverAria } from "./aria/BotaoDevolverAria";
+import { linhaEstadoAria, type LinhaEstadoAria } from "./aria/textos-aria";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
@@ -39,13 +42,13 @@ import type { CandidatoMencao } from "@/lib/mencoes-nota";
 
 export interface PropsConversaAberta {
   item: ItemListaInbox | null;
+  /** DTO autorizado do painel da seleção corrente; não é o resumo global. */
+  aria?: AriaDoAtendimento | null;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
   /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
   agoraInicial?: number;
   conversa: ConversaHook;
-  /** Cartões já autorizados pelo painel do atendimento atual; sem nova consulta. */
-  aria?: AriaDoAtendimento | null;
   /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); null enquanto carrega. */
   podeEnviar: boolean | null;
   /** O painel não carregou: "Tentar de novo" do compositor (C2 da revisão do #218). */
@@ -151,15 +154,17 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           void conversa.maisAntigas();
         }} />;
 
-  const renderizarConversa = (acoes: AcoesCabecalho | null) => (
+  const linhaAria = item && !item.grupo && item.status !== "ENCERRADO" ? linhaEstadoAria(item.estadoAria, { atendidoPorVoce: item.atendidoPorVoce, responsavelNome: item.responsavelNome, podeDecidir: aria?.podeDecidir === true, pausada: aria?.pausada === true, motivo: aria?.motivo ?? null }) : null;
+  const renderizarConversa = (acoes: AcoesCabecalho | null, devolver?: ControlesDevolverAria) => (
     <>
-      {item && acoes ? <CabecalhoConversa atendimento={item} acoes={acoes} usuarioId={usuario.id} painelAberto={painelAberto === true} painelAuto={painelAuto === true} aoAlternarPainel={aoAlternarPainel} buscaAberta={buscaAberta} aoBuscar={abrirBusca} aoVoltar={aoVoltar} /> : (
+      {item && acoes ? <CabecalhoConversa atendimento={item} acoes={acoes} linhaAria={linhaAria} acoesAria={devolver?.botao} usuarioId={usuario.id} painelAberto={painelAberto === true} painelAuto={painelAuto === true} aoAlternarPainel={aoAlternarPainel} buscaAberta={buscaAberta} aoBuscar={abrirBusca} aoVoltar={aoVoltar} /> : (
         <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface px-3">
           <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
           <p className="min-w-0 flex-1 truncate">Conversa</p>
           <BotaoIcone tamanho={36} rotulo="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel}><IconLayoutSidebarRight size={17} /></BotaoIcone>
         </header>
       )}
+      {devolver?.feedback}
       {acoes?.feedback}{acoes?.dialogos}
       {barraBusca}
       <div ref={rolagem} aria-busy={ocupada ? true : undefined} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
@@ -224,15 +229,15 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       )}
     </>
   );
-  return item ? <CoordenadorAcoesConversa key={item.id} item={item} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca}>{renderizarConversa}</CoordenadorAcoesConversa> : renderizarConversa(null);
+  return item ? <CoordenadorAcoesConversa key={item.id} item={item} aria={aria} linhaAria={linhaAria} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca}>{renderizarConversa}</CoordenadorAcoesConversa> : renderizarConversa(null);
 }
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
-function CoordenadorAcoesConversa({ item, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aoBuscar(): void; children(acoes: AcoesCabecalho): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar">) {
+function CoordenadorAcoesConversa({ item, aria, linhaAria, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; children(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar">) {
   const acoes = useAcoesAtendimento({
     atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
     usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
     linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar,
   });
-  return children(acoes);
+  return <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => children(acoes, devolver)}</ControladorDevolverAria>;
 }
