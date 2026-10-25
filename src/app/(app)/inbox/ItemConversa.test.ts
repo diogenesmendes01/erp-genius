@@ -60,3 +60,9 @@ describe("ItemConversa", () => {
     expect(h({ ultimaMensagemEm: null })).not.toContain(">09:42<");
   });
 });
+
+it("346 usa selo real do Avatar nos três estados Aria e não no humano",()=>{
+ for(const estadoAria of ["ia","aprovacao","handoff"] as const)expect(h({estadoAria})).toContain('aria-label="Aria atendendo"');
+ expect(h({estadoAria:"humano",atendidoPorVoce:true})).not.toContain('aria-label="Aria atendendo"');
+ expect(h({estadoAria:"ia",grupo:true})).not.toContain('aria-label="Aria atendendo"');
+});

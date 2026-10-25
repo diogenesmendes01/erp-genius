@@ -48,3 +48,37 @@ it("substituir popover preserva sóum e desmontar limpa atalho sem capturar even
  await montar();await disparar("click",rotulo("Filtros"));await disparar("click",rotulo("Central"));expect(container.querySelectorAll('[role="dialog"]')).toHaveLength(1);expect(dialogo()?.getAttribute("aria-label")).toBe("Ver conversas de");
  await act(async()=>root.unmount());expect(ouvintes.filter(o=>o.alvo===doc&&o.tipo==="keydown")).toHaveLength(0);const {createRoot}=await import("react-dom/client");root=createRoot(container as unknown as HTMLElement);
 });
+const resumoAria={contagens:{todas:5,ia:1,aprovacao:1,handoff:1,humano:2,semResposta:1,naoAtribuidas:2},aria:{estado:"ATIVA" as const,pausada:false,podeGerenciar:false}};
+it("346 filtros pessoais de URL ficam visíveis e removíveis sem perder contexto",async()=>{
+ await montar({resumo:resumoAria});
+ expect(rotulo("Remover filtro Minhas")).not.toBeNull();expect(rotulo("Remover filtro Não lidas")).not.toBeNull();
+ await disparar("click",rotulo("Remover filtro Minhas"));expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&naoLidas=1&busca=ana");
+ await disparar("click",rotulo("Remover filtro Não lidas"));expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&resp=eu&busca=ana");
+ await disparar("click",botao("Limpar"));expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&busca=ana");
+ await montar({resumo:resumoAria,filtros:{responsavel:"u9"}});expect(rotulo("Remover filtro Responsável selecionado")).not.toBeNull();
+});
+it("346 popover oferece Minhas e Não lidas com os sete chips, e Limpar remove os pessoais",async()=>{
+ await montar({resumo:resumoAria,filtros:{setor:"COMERCIAL",numeroId:"n1",busca:"ana"}});
+ await disparar("click",rotulo("Filtros"));await disparar("click",botao("Minhas conversas"));await disparar("click",botao("Somente não lidas"));await disparar("click",botao("Mostrar conversas"));
+ expect(replace).toHaveBeenLastCalledWith("/inbox?setor=COMERCIAL&numero=n1&resp=eu&naoLidas=1&busca=ana");
+ await montar({resumo:resumoAria,filtros:{...props.filtros,setor:"COMERCIAL"}});await disparar("click",rotulo("Filtros"));const limparPopover=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparPopover);expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&busca=ana");
+});
+it.each([{prazoEstourado:true},{responsavel:"fila" as const},{aria:"handoff" as const}])("R2 filtros Limpar preservam o chip representado %j sem etiqueta ou selo duplicados",async(chip)=>{
+ await montar({resumo:resumoAria,filtros:{numeroId:"n1",busca:"ana",...chip}});
+ expect(rotulo("Remover filtro Prazo estourado")).toBeNull();expect(rotulo("Remover filtro Não atribuídas")).toBeNull();expect(botao("Limpar")).toBeUndefined();expect(rotulo("Filtros").textContent).toBe("");
+ const filtros={numeroId:"n1",busca:"ana",setor:"COMERCIAL" as const,naoLidas:true,...chip};await montar({resumo:resumoAria,filtros});
+ const limpar=botao("Limpar");await disparar("click",limpar);const url=new URL(replace.mock.calls.at(-1)![0],"http://local");expect(url.searchParams.get("numero")).toBe("n1");expect(url.searchParams.get("busca")).toBe("ana");expect(url.searchParams.has("setor")).toBe(false);expect(url.searchParams.has("naoLidas")).toBe(false);
+ const chave="prazoEstourado" in chip?"prazo":"responsavel" in chip?"resp":"aria";const valor="prazoEstourado" in chip?"estourado":"responsavel" in chip?"fila":"handoff";expect(url.searchParams.get(chave)).toBe(valor);
+ await disparar("click",rotulo("Filtros"));const limparDialogo=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparDialogo);expect(replace.mock.calls.at(-1)![0]).toBe(url.pathname+url.search);
+});
+it.each([
+ {filtros:{aria:"handoff" as const,prazoEstourado:true},rotulos:["Prazo estourado"],ativo:{aria:"handoff"}},
+ {filtros:{aria:"handoff" as const,responsavel:"fila"},rotulos:["Não atribuídas"],ativo:{aria:"handoff"}},
+ {filtros:{prazoEstourado:true,responsavel:"fila"},rotulos:["Não atribuídas"],ativo:{prazo:"estourado"}},
+ {filtros:{aria:"handoff" as const,prazoEstourado:true,responsavel:"fila"},rotulos:["Prazo estourado","Não atribuídas"],ativo:{aria:"handoff"}},
+])("R3 só chip ativo é preservado; dimensões secundárias visíveis e dois Limpar coerentes: $filtros",async({filtros,rotulos,ativo})=>{
+ await montar({resumo:resumoAria,filtros:{numeroId:"n1",busca:"ana",...filtros}});for(const r of rotulos)expect(rotulo("Remover filtro "+r)).not.toBeNull();expect(rotulo("Filtros").textContent).toBe(String(rotulos.length));
+ await disparar("click",rotulo("Remover filtro "+rotulos[0]));const removido=new URL(replace.mock.calls.at(-1)![0],"http://local");expect(removido.searchParams.has(rotulos[0]==="Prazo estourado"?"prazo":"resp")).toBe(false);for(const[k,v]of Object.entries(ativo))expect(removido.searchParams.get(k)).toBe(v);
+ await disparar("click",botao("Limpar"));const limpo=new URL(replace.mock.calls.at(-1)![0],"http://local");expect(Object.fromEntries(limpo.searchParams)).toEqual({numero:"n1",busca:"ana",...ativo});
+ await disparar("click",rotulo("Filtros"));const limparPopover=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparPopover);expect(replace.mock.calls.at(-1)![0]).toBe(limpo.pathname+limpo.search);
+});

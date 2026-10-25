@@ -40,3 +40,8 @@ it("rótulos consideram largura útil local sem alterar shell ou nomes acessíve
  expect(html).toContain("[@container(min-width:576px)]"); expect(html).toContain("[@container(min-width:432px)]");
  expect(html).toContain('title="Transferir"'); expect(html).toContain('title="Assumir conversa"');
 });
+
+it("348 linha autorizada e slot de ação preservam header68 e subtítulo",()=>{
+ const html=h({linhaAria:{tom:"handoff",texto:"Aria pediu um humano",dica:"Aria pausada · Transferido para humano"},acoesAria:createElement("button",null,"Devolver teste")});
+ expect(html).toContain("Aria pediu um humano");expect(html).toContain('title="Aria pausada · Transferido para humano"');expect(html).toContain("Devolver teste");expect(html).toContain("Comercial · Central da escola");expect(html).toContain("h-[68px]");expect(html).toContain("text-red-700");
+});

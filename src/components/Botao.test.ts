@@ -37,8 +37,11 @@ describe("Botao (E1)", () => {
       primario: "bg-brand-solid text-on-brand hover:brightness-95",
       secundario: "border border-border-soft bg-transparent text-brand-700 hover:bg-highlight",
       perigo: "bg-danger text-white hover:brightness-95",
+      perigoContorno: "border border-red-700 bg-transparent text-red-700 hover:bg-red-50",
       fantasma: "text-brand-700 hover:bg-highlight",
+      iaFantasma: "text-ai-700 hover:bg-highlight",
       neutro: "border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight",
+      ia: "bg-ai-50 text-ai-700 hover:bg-highlight",
     });
     expect(TAMANHOS_BOTAO).toEqual({ sm: "px-3 py-1 text-xs", md: "px-4 py-1.5 text-sm", lg: "px-[22px] py-2.5 text-sm" });
   });
@@ -49,7 +52,7 @@ describe("Botao (E1)", () => {
   });
 
   it("não anula o indicador de foco global do app (sem outline-none, sem anel próprio com halo)", () => {
-    for (const v of ["primario", "secundario", "perigo", "fantasma"] as const) {
+    for (const v of ["primario", "secundario", "perigo", "perigoContorno", "fantasma"] as const) {
       const c = botaoClasses({ variante: v });
       expect(c).not.toMatch(/outline-none|ring-/);
     }
@@ -73,4 +76,10 @@ describe("Botao (E1)", () => {
 it("neutro usa borda neutra sem alterar o mínimo móvel", () => {
   expect(botaoClasses({ variante: "neutro" })).toContain("border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight");
   expect(botaoClasses({ variante: "neutro" })).toContain("max-sm:min-h-11");
+});
+
+it("ia apresenta a ação da Aria sem cor brand conflitante e preserva foco/ocupado",()=>{
+ const html=renderToStaticMarkup(createElement(Botao,{variante:"ia",ocupado:true},"Devolver para Aria"));
+ for(const c of ["bg-ai-50","text-ai-700","hover:bg-highlight","max-sm:min-h-11"])expect(html).toContain(c);
+ expect(html).not.toMatch(/text-brand-700|!text|outline-none|ring-/);expect(html).toContain('disabled=""');expect(html).toContain('aria-busy="true"');
 });

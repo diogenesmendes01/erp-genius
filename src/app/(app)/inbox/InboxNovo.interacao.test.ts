@@ -59,7 +59,6 @@ vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: v
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
 import { ColunaConversas } from "./ColunaConversas";
-import { PainelAria } from "./PainelAria";
 import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
@@ -123,17 +122,14 @@ const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaA
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
 describe("InboxNovo: identidades React dos painéis", () => {
-  it("distingue irmãos, conserva a mesma conversa e troca identidades ao selecionar outra", async () => {
+  it("conserva ações restantes na mesma conversa e troca sua identidade ao selecionar outra", async () => {
     respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
-    const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
+    const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
     tela(); await esvaziar();
     const anteriores = paineis(tela());
-    expect(anteriores).toHaveLength(2); // uma única montagem do painel
+    expect(anteriores).toHaveLength(1); // AcoesContato permanece uma única montagem.
     expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
-    for (let i = 0; i < anteriores.length; i += 2) {
-      expect(anteriores[i].key).not.toBeNull();
-      expect(anteriores[i + 1].key).not.toBe(anteriores[i].key);
-    }
+    expect(anteriores[0].key).not.toBeNull();
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", conversaId: "cv1", mensagemId: null });
     tela(); await esvaziar();
     expect(paineis(tela()).map((p) => p.key)).toEqual(anteriores.map((p) => p.key));
@@ -141,7 +137,7 @@ describe("InboxNovo: identidades React dos painéis", () => {
     lista(tela()).aoSelecionar("a2");
     tela(); await esvaziar();
     const atuais = paineis(tela());
-    expect(atuais).toHaveLength(2);
+    expect(atuais).toHaveLength(1);
     for (const [i, atual] of atuais.entries()) {
       expect(atual.props.atendimentoId).toBe("a2");
       expect(atual.type).toBe(anteriores[i].type);
@@ -706,15 +702,15 @@ it("navegar para null descarta repetição e falha tardia da leitura anterior",a
 
 describe("composição318: Detalhes do contato selecionado", () => {
   const painel = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!;
-  it("liga identidade/tags autorizadas e mantém a ordem dos blocos e a aprovação Aria", async () => {
+  it("liga identidade/tags autorizadas e mantém a ordem dos blocos restantes sem painel Aria", async () => {
     const tags = [{ id: "noite", rotulo: "Noite", ia: true }];
-    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, cabecalho: { pessoaId: null, tagsDisponiveis: [], semNome: false, subtitulo: "Pessoa física · Inglês", quadrado: false, capacidades: { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false } }, aria: { pausada: true, sugestoes: [] }, acoes: {} }));
+    respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags, podeEnviar: true, cabecalho: { pessoaId: null, tagsDisponiveis: [], semNome: false, subtitulo: "Pessoa física · Inglês", quadrado: false, capacidades: { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false } }, aria: { pausada: true, motivo: "CELULAR", podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null }, acoes: {} }));
     const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
     tela(p); await esvaziar(); const t = tela(p), no = painel(t);
     expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Pessoa física · Inglês", tags, quadrado: false });
     expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }, { id: "oportunidades", rotulo: "Oportunidades" }]); expect(no.props.abaAtiva).toBe("detalhes");
-    const blocos = elementos(no.props.children as ReactNode).filter(n => [AbaDetalhes, PainelAria, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
-    expect(blocos.map(n => n.type)).toEqual([AbaDetalhes, PainelAria, AcoesContato, OptOutContato, PainelTriagem]);
+    const blocos = elementos(no.props.children as ReactNode).filter(n => [AbaDetalhes, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
+    expect(blocos.map(n => n.type)).toEqual([AbaDetalhes, AcoesContato, OptOutContato, PainelTriagem]);
     expect(blocos[0].props.dados).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
     expect(elementos(t).filter(n => n.type === PainelContato)).toHaveLength(1);
     expect(elementos(t).filter(n => n.type === PainelTriagem)).toHaveLength(1);
@@ -1093,4 +1089,42 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
  vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.endsWith('/painel') ? { setor: 'COMERCIAL', podeEnviar: false, tags: [], acoes: null, cabecalho } : url.endsWith('/oportunidades') ? { atual: null, outras: [], pessoaId: null } : { pessoa: null, oportunidade: null, b2b: null, campos: [] }))));
  tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!; (painel.props.aoTrocarAba as (id: string) => void)('oportunidades'); tela(); await esvaziar();
  const aba = elementos(tela()).find(n => n.type === AbaOportunidades)!; expect(aba).toBeDefined(); expect(aba.props.capacidades).toEqual(caso === 'presente' ? capacidades : Object.fromEntries(Object.keys(capacidades).map(k => [k, false])));
+});
+
+// #350: uma fonte de painel, sem prop antiga enquanto a seleção nova carrega.
+it("sugestões da thread pertencem só ao painel atual, inclusive podeDecidir=false",async()=>{
+ const a={podeDecidir:false,cartoes:[{id:"cartao-a"}]};respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:a}));
+ tela();await esvaziar();expect(cabecalho(tela()).aria).toEqual(a);
+ let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise(r=>{resolver=r;});
+ lista(tela()).aoSelecionar("a2");expect(cabecalho(tela()).aria).toBeUndefined();
+ resolver(new Response(JSON.stringify({podeEnviar:false,aria:{podeDecidir:true,cartoes:[{id:"cartao-b"}]}})));await esvaziar();
+ expect(cabecalho(tela()).aria?.cartoes.map(s=>s.id)).toEqual(["cartao-b"]);
+});
+
+describe("346: resumo e snapshot pessoal",()=>{
+ const resumo:NonNullable<PropsInboxNovo["resumo"]>={contagens:{todas:90,ia:3,aprovacao:2,handoff:1,humano:4,semResposta:2,naoAtribuidas:9},aria:{estado:"ATIVA",pausada:false,podeGerenciar:false}};
+ const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+ const response=(ia:number)=>new Response(JSON.stringify({itens:props.inicial.itens,proximo:null,resumo:{...resumo,contagens:{...resumo.contagens,ia}}}));
+ it.each([true,false])("não aplica resumo enquanto leitura está pendente e aceita o fresco após resultado %s",async ok=>{
+  let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+  const resolvers:((r:Response)=>void)[]=[];respostaLista=()=>new Promise(r=>resolvers.push(r));
+  const p={...props,resumo};render(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});await esvaziar();
+  resolvers[0](response(999));await esvaziar();expect(coluna313(render(p)).resumo).toEqual(resumo);
+  ler({ok});await esvaziar();expect(resolvers).toHaveLength(2);resolvers[1](response(ok?0:8));await esvaziar();expect(coluna313(render(p)).resumo?.contagens.ia).toBe(ok?0:8);
+ });
+ it("paginação cursor não pede nem substitui resumo, mesmo com campo extra inesperado no retorno",async()=>{
+  const p={...props,selecionado:null,resumo,inicial:{...props.inicial,proximo:"cursor-fixture"}};
+  respostaLista=async()=>response(999);const coluna=coluna313(render(p));await coluna.aoCarregarMais();await esvaziar();expect(coluna313(render(p)).resumo).toEqual(resumo);
+  const url=String(vi.mocked(fetch).mock.calls.find(([url])=>String(url).includes("cursor="))?.[0]);expect(url).toContain("cursor=cursor-fixture");expect(url).not.toContain("contagens=1");
+ });
+});
+it("353 Detalhes não contém mais bloco Aria, mantendo a aquisição e refresh da conversa",async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,aria:{pausada:true,motivo:"CELULAR",podeDevolver:true,podeDecidir:false,cartoes:[],handoff:null},acoes:{}}));
+ tela();await esvaziar();const t=tela();expect(elementos(t).filter(n=>typeof n.type==="function"&&n.type.name==="PainelAria")).toHaveLength(0);
+ const antes=chamadasPainel.length;const listasAntes=vi.mocked(fetch).mock.calls.filter(([u])=>String(u).startsWith("/api/inbox/atendimentos?")).length;const c=elementos(t).find(n=>n.type===ConversaAberta)!.props as {aoMudar():void};c.aoMudar();tela();await esvaziar();expect(chamadasPainel.length).toBe(antes+1);expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).startsWith("/api/inbox/atendimentos?")).length).toBe(listasAntes+1);
+});
+it("434 retry inicial depois404 mantém bloqueio em503; só200 fresco limpa",async()=>{
+ respostaPainel=()=>new Response("",{status:404});tela();await esvaziar();const estado=()=>elementos(tela()).find(n=>n.type===ConversaAberta)!.props as {bloquearDecisoesAria?:boolean;falhaPermissao?():void};
+ expect(estado().bloquearDecisoesAria).toBe(true);respostaPainel=()=>new Response("",{status:503});estado().falhaPermissao!();tela();await esvaziar();expect(estado().bloquearDecisoesAria).toBe(true);
+ respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:{pausada:false,motivo:null,podeDevolver:false,podeDecidir:false,cartoes:[],handoff:null}}));estado().falhaPermissao!();tela();await esvaziar();expect(estado().bloquearDecisoesAria).toBe(false);
 });
