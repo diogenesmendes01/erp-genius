@@ -1,0 +1,258 @@
+{
+  "fontes": {
+    "ariaTempoReal": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+    "filtrosContagens": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4"
+  },
+  "objetosNaoCompartilhadosLiterais": [
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/app/(app)/inbox/filtros-url.test.ts",
+      "oid": "b4dcf767698407d3ead4ef475bf791e1aef29c3b"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/app/(app)/inbox/filtros-url.ts",
+      "oid": "77527cd87ed0124ddbe998cca9235cc6f4bb6ad1"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/app/(app)/inbox/page.test.ts",
+      "oid": "d8a75d11a3a118aea26353018fcf6d95c5d4519c"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/app/(app)/inbox/page.tsx",
+      "oid": "29adbbace8c559691a4e9bdc91173f9e4b5a6ba3"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/app/api/inbox/atendimentos/route.test.ts",
+      "oid": "8d67d698ad9e7a00fbb28fed99f2a7624d7f000c"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/app/api/inbox/atendimentos/route.ts",
+      "oid": "7a34decec981f117b9922c2a4f594ba074ff3a8f"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/consulta-sql.cursor.int.test.ts",
+      "oid": "e89e856d107730687186a16671246fdfe38ec1ff"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/consulta-sql.int.test.ts",
+      "oid": "3a813bdd0672816e93b34d127a4a95e9e94509ed"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/consulta-sql.test.ts",
+      "oid": "72aa31e0590e4c281af8513a01958ec96c676c85"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/consulta-sql.ts",
+      "oid": "6a2a8d55d9a418c7c1571d7bc7b8c642bfd49137"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/consultas-pagina.ts",
+      "oid": "2812a8c8833477419d032acf47507d5191fa5ec9"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/contagens.int.test.ts",
+      "oid": "cf67da2963a691997ab2e2aed6f55c891d1f47d8"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/contagens.test.ts",
+      "oid": "e8c34eb241101e9014607f54e872fae8d3cebece"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/contagens.ts",
+      "oid": "d166551199a10e6f6e15a7123300636cfe9a701c"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/contexto-lista.test.ts",
+      "oid": "09fe33260b575fd9fcc90bd152bd0a9f30bf91a4"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/contexto-lista.ts",
+      "oid": "190c237686c7a56a5819ed9e2020cbe9156d8c2b"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/estado-aria-sql.int.test.ts",
+      "oid": "5db5a98c3df42e00d250c58285ec7726a510f41f"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/estado-aria-sql.test.ts",
+      "oid": "ebd50ebf976f6e8f3956300295161bbc942e3db9"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/estado-aria-sql.ts",
+      "oid": "9927cc7a016cd5e79a3e5ef31a8ea91666a0a690"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/estado-aria-valores.ts",
+      "oid": "2bd5d322653677239377dc1a7fd1e48de0dd6950"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/estado-aria.ts",
+      "oid": "89891973ea68db95a2573916ef3b9b6aa4502a30"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/filtros-sql.test.ts",
+      "oid": "6ddf5519baf0d68eb237d3d918af825be22967b9"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/filtros-sql.ts",
+      "oid": "fbd9ed64b05a05bf2f1d6a596c2260490c73dda7"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/filtros.test.ts",
+      "oid": "fb980e2b0358f2192daa8976c03da6520845e3e4"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/filtros.ts",
+      "oid": "48f73211cc66b1bebc973dac250bffe1d4cd6246"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/where-sql.int.test.ts",
+      "oid": "6c45515f4be9ea414a4cdbd0c1839921c033394c"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/where-sql.test.ts",
+      "oid": "f85d07ddb54ac60e18d08ab67bb57c35e6827869"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/server/inbox/where-sql.ts",
+      "oid": "b692463d87f93c5dde9d36577abcca2ad16f88bc"
+    },
+    {
+      "fonte": "d6c3039474f6ed873b65a7ca57a47fcee79c7fc4",
+      "path": "src/test/inbox-contagens-fixture.ts",
+      "oid": "7833c2019897811ee25fb438a372d473794d133c"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "prisma/migrations/20261025020000_inbox_aria_tempo_real/migration.sql",
+      "oid": "b0662c8ff7ce34eea475dae81cd729957e3a63b9"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/app/(app)/inbox/InboxNovo.aria-eventos.test.ts",
+      "oid": "a9eae4b1be9026b511c03c04a5ca59905669a1df"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/app/(app)/inbox/useEventosInbox.test.ts",
+      "oid": "94b106a6fdf746ac283e888900d47438e53a2274"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/app/api/inbox/eventos/route.test.ts",
+      "oid": "721461e5338f565db93985e2d71dc8f2698b0834"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/components/SeloNaoLidasInbox.test.ts",
+      "oid": "eb04ecd775178cb4f988548c504f401e5b1e47f6"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/components/conversa/historico-conversa.test.ts",
+      "oid": "52e2d13631a42afdb4471e78108af6f0cb7d183a"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/components/conversa/historico-conversa.ts",
+      "oid": "ae131d7985682381f848176f61f70df9183338fc"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/lib/eventos-inbox.test.ts",
+      "oid": "a3c32e9ac538eef4b3e79d4cdb1b2642382f4a00"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/lib/eventos-inbox.ts",
+      "oid": "f20475cb94c7006a1b6c7d325b16e572159be94a"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/server/inbox/barramento.int.test.ts",
+      "oid": "0534d402fa88752f5abe6fc5efb0b1ed778c8e50"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/server/inbox/barramento.ts",
+      "oid": "4d52ae60c46481e22f9d7a69dc2aa2c6f98b0720"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/server/inbox/eventos-sse.test.ts",
+      "oid": "dca49e44fd01289729b15fa299911b850b20ce78"
+    },
+    {
+      "fonte": "11f913f2f59780c83fa9aa45a77ecfd7f358da39",
+      "path": "src/server/inbox/eventos-sse.ts",
+      "oid": "3573c339add3c8fdd8a3415c7488d4c2bc0a78e5"
+    }
+  ],
+  "shared": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "oid": "33f1c459f6525560a2dbeb599dd48133b906f05d"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.test.ts",
+      "oid": "df926f7894b84d4b195bac46e589e30a4b56fc93"
+    }
+  ],
+  "functions": {
+    "paramsDosFiltros": "literal344",
+    "avisoRecarregaPainel": "literal345"
+  },
+  "resolucao": {
+    "produto": "Merge automático",
+    "testes": "Ambos os casos preservados",
+    "quadro": "Prefixo344 integral seguido do sufixo345 integral desde Mainfabf"
+  },
+  "gates": {
+    "unitariosUniao": {
+      "arquivos": 2,
+      "testes": 105,
+      "exit": 0,
+      "terminal": "766671",
+      "maxWorkers": 1,
+      "filtros": 0,
+      "skips": 0
+    },
+    "negativoSandbox": {
+      "sessao": 63960,
+      "terminal": "5add21",
+      "exit": 1,
+      "coletados": 0,
+      "motivo": "EPERM rename cache temporário, não falha de produto"
+    },
+    "ciUniao": "PENDENTE",
+    "fullUniao": "PENDENTE"
+  },
+  "limites": "Gates remotos anteriores são nominais às fontes isoladas; não se reatribuem à união. Os pareceres originais permanecem integrais."
+}

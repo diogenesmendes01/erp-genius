@@ -19,6 +19,7 @@ import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
+import type { ResumoListaInbox } from "@/server/inbox/contagens";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
 import { marcarAtendimentoLidoAutomatico } from "@/server/whatsapp/preferencias";
@@ -59,6 +60,8 @@ export interface PropsInboxNovo {
   opcoesFiltro?: OpcoesFiltroInbox;
   /** Agregados autorizados; a apresentação em chips é entregue pela etapa 313. */
   contagens?: ContagensChipsInbox;
+  /** Resumo autorizado aditivo; apresentação nas etapas345–347. */
+  resumo?: ResumoListaInbox;
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
@@ -74,12 +77,13 @@ export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null, opcoes
   if (f.naoLidas) q.set("naoLidas", "1");
   if (f.prazoEstourado) q.set("prazo", "estourado");
   if (f.busca) q.set("busca", f.busca);
+  if (f.aria) q.set("aria", f.aria);
   if (cursor) q.set("cursor", cursor);
   else if (opcoes.contagens) q.set("contagens", "1");
   return q.toString();
 }
 
-type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?: ContagensChipsInbox };
+type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?: ContagensChipsInbox; resumo?:ResumoListaInbox };
 
 async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<PaginaInbox | null> {
   try {

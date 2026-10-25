@@ -6913,6 +6913,59 @@ A PR424 foi mergeada em7c880a81eedea7d6c9fc4167b8d7bad310c63586. A composição3
 A execução40145615424 terminou com quatro shards aprovados:351arquivos/3.144testes;trêsarquivos/quatrotestes opt-in ignorados, declarados à parte. Fontef99fa9a7;watch40858/6d61da e conferência92067/5de763,ambosEXIT0. [Prova dos jobs](../../output/inbox-351-qa/ci-full-f99.json). A composição comMain7c88 preserva toda a árvore executável dessa fonte;este registro não muda código. A PR será retarget paraMain e a CI final/revisão serão conferidas antes do merge.
 
 
+
+## Inbox #344 — marco 1, tradutor SQL fechado DEV — 24/10/2026
+
+Base main170edbad, branch codex/inbox-e3-344-contagens. Somente where-sql e testes de paridade foram implementados; ACL/CRM, lista, rota/API, InboxNovo, #342/#343/uso, schema/deps permanecem intactos. Registry finito, valores parametrizados, formatos novos recusados e EXISTS correlacionado. Contextos canônicos de equipe/titulares/pares docentes não têm cap; não se materializa universo de IDs de atendimentos.
+
+Corpus próprio: 26 UNIT (inclui 512 construções canônicas nos 256 subconjuntos dos oito papéis em leitura/envio) e 67 INT com SQL versus Prisma no mesmo where/Db. Posse e carteira independentes, NULL/NOT/relações, lógicos vazios/mistos, busca/escape, convites/revogações, contexto real com membro301, pool1/rollback e três TZ. O RED revelou normalização contextual de grupos vazios pelo Prisma; o where canônico foi preservado. Negativos de módulo/stub, fixture com guarda pedagógica, lógica e literal de busca permanecem nominais no relatório.
+
+Gates finais EXIT0: UNIT relacionado 32613/1d3b0f, oito arquivos/184 casos, 32,33 s; INT 71265/d0f988, dois arquivos completos/70 casos, 23,72 s, worker1, sem filtros/skips; lint3 a93b4f; TSC auxiliar 94659/c46e69, todos SRC/testes atuais incluídos e somente as duas exclusões privadas históricas declaradas. Não é global e não se somam recortes sobrepostos. ROOT d01e09 restaurou ciint491, 424 hashes/snapshot502/fixture/sequências, zero atividades. Banco liberado e sem nova DB DEV.
+
+SPEC parcial docs/specs/inbox-contagens-aria.md e relatório output/inbox-344-report.md. QA independente/revisão do marco1 e novo GO são necessários antes dos marcos2/3 (sete contagens em um agregado, Aria antes da paginação e transporte aditivo). API dos cinco chips legados deve permanecer. A #344 NÃO está concluída; nenhuma apresentação ou alçada nova foi antecipada.
+
+## Inbox #344 — marco 2 DEV: estado SQL e sete totais — 24/10/2026
+
+Marco 1 c9e710e3 aprovado pelo ROOT após QA independente; nova lease2a4d0a confirmou snapshot502/424 hashes. O marco 2 acrescenta somente estado-aria-sql, contagens, quatro testes e fixture local. Contexto reutilizável no mesmo Db carrega situação/orçamento/ACL uma vez, sem H global e sem ciclo com consultas-pagina. Um agregado SQL produz sete COUNT com estado parametrizado e predicados correlacionados, seguro para bigint; base remove aria/prazo/responsável somente fila, preserva eu/ID/nãoLidas. FINANCEIRO Admin=1. Sem lista/API/SSR/InboxNovo, registry M1, helper canônico, schema ou dependência alterados.
+
+Gates finais EXIT0: UNIT36424/142433, oito completos/219 casos, 28,19 s; INT79338/8d4c6c, três completos/38 casos (nove estadoSQL, onze contagens, 18 produtor342), 184,28 s, worker1, sem filtros/skips; TSC auxiliar8911/4b8c5f com exatamente as duas exclusões privadas históricas e todos SRC atuais; lint7 861edb sem aviso. Não é global nem soma de execuções sobrepostas. Negativos de módulos/stubs e primeiro agregado19/20 estão preservados; o último era oráculo da busca canônica, corrigido com controles1/0, sem mexer na produção.
+
+Corpus inclui H/S/CASE versus produtor342, NULL/prioridades, não lidas pessoais/limite estrito, SLA, estado bruto e global efetivo, query única e ausência de multiplicação, 301 handoffs adicionais, pool1/rollback/contexto não commitado e três TZ. ROOT3564e1 restaurou ciint491, 424 hashes/snapshot502/fixture/sequências, zero atividades; banco liberado, nenhuma nova DB DEV. SPEC/report recebem adendos; logs/raw ficam privados. Marco 3 e conclusão da #344 aguardam leitura/QA independente/novo GO. API dos cinco chips legados continua intacta; nenhuma alçada D1–D3 antecipada.
+
+
+### Inbox #344 — marco 3: filtro antes da paginação e resumo aditivo (24/10/2026)
+
+DEV B recebeu GO M3 após aprovação M1/M2 e QA. O filtro aria no parser/URL usa uma whitelist pura com os quatro valores originais da #342. A seleção SQL parametrizada aplica escopo/filtros/aria antes do keyset e dos limites; mantém 100 fixadas + 200 normais, cursor NULL/empates e exclusão de TODAS as fixadas nas páginas normais. A hidratação reaplica ACL e o snapshot pessoal é limitado à página, no mesmo Db, sem N+1 ou universo de IDs. A operação preguiçosa memoiza promessas concorrentes e compartilha ator/instante/envio; lista isolada vazia sem aria/resumo continua retornando antes dos loaders.
+
+Os cinco chips legados e suas bases foram preservados. O resumo novo separado contém sete contagens em um agregado. A API acrescenta resumo somente com contagens=1 e sem cursor; envio restringe lista e ambos os resumos; 401/403/400 vêm antes das consultas. O SSR pede resumo sempre após a guarda e mantém a primeira página no cursor inválido. O deep link continua autorizado. InboxNovo recebe somente serializer/tipagem aditiva, sem controles #345–#347 e sem alterar editor/foco/ações. ROOT fará a união dos hunks da A328.
+
+TDD nominal: URL RED três falhas/32 → GREEN 55; composição/contexto RED por módulos ausentes → GREEN 27; seleção RED quatro falhas/seis → GREEN seis; HTTP/SSR RED sete falhas/24 → GREEN 24. INT quatro completos/59 (sessão51235/b392f4), 495,32 s, EXIT0; cobre volume de 305 linhas, 307 IA, 105 fixadas, cursor, ACL/pool1, 32 casos legados e M2/TZ. UNIT 20/471 (76902/3c580a) foi NEGATIVO real: fixture M2 fora de src/test mais dois timeouts beforeEach. A fixture foi movida literalmente (3.934 bytes/SHA 7cf26683...) com três imports INT; guardas intactas. Revalidação afetada 67178/5c49ef: três completos/44, EXIT0, sem aumentar timeouts. Lint 24/353b0d: EXIT0. TSC auxiliar inicial 18178/77de0d falhou apenas em duas tipagens dos novos testes, corrigidas sem alterar produção. Revalidações finais e restauro serão registrados no fechamento abaixo e no report.
+
+Prova AST 1decdf: sete funções da #342, corpo de não lidas e thread preservados; registry M1, ACL/uso/prévia da #343/schema/deps iguais. Nenhum install/generate/migração/provider/browser/submit. #344 aguarda TSC final qualificado, QA independente, união ROOT, CI e publicação; não concluída. SPEC: docs/specs/inbox-contagens-aria.md. Relatório: output/inbox-344-report.md.
+
+Fechamento de gates DEV M3: sessão31050/7c85a2, três INT completos/27 após o movimento literal, EXIT0; produção idêntica à prova anterior59. TSC auxiliar final6077/04c1ce EXIT0, com apenas as duas exclusões privadas históricas explicitadas no report. Banco491 liberado ao ROOT; nenhum executor B ativo ou nova DB. Handoff aguarda constância do restauro, QA independente, união/CI e publicação; sem conclusão presumida.
+
+Constância final ROOT após a liberação: sessão72031/460f14 EXIT0. ciint491, 491 migrações/424 tabelas, hashes originais, fixture e snapshot preservados, zero outra atividade. Nenhuma nova lease DB ao DEV. QA independente M3 e TSC original/global pertencem à composição ROOT, sem reatribuir o auxiliar como original.
+
+
+### Inbox344 — correção causal do cursor após QA M3
+
+QA713:UNIT20/471+INT4/59+lint24 verdes, porém P2offset confirmado em6/18controles. ROOTregressãoSQLREADONLY21:RED9falhas12passes→GREEN21/21(8845ac),UNIT2/6(d8f7a5),lint2(c96bba);normalizaapenasnewDate(c.em).toISOString antescast. TSCoriginal26267/03ef61 EXIT0;hashesauditados53cc14iguais. QAcausal/composiçãoMain/CI pendentes. NenhumaDDL/fixture/tabelaescrita;decoder/ACL/NULL/id/registry preservados.
+
+
+### Inbox #344 — composição e publicação em rascunho (25/10/2026)
+
+Fonte final d0dfa5a3 unida com main fabf7add: 31 fontes preservadas por OID, 3.567 objetos de main fora desse recorte intactos e todo o adendo anterior do quadro preservado. ROOT global24868/8da234:947 arquivos/7.540 testes,646,28s,w1,sem filtros/skips,EXIT0. TypeScript original92288/6326e2:heap8192/noEmit/incrementalfalse,EXIT0. Lint dirigido31fontes28465/4bc0ad,config original,zero avisos/erros,EXIT0. Tentativas globais interrompidas54716 e73499 permanecem negativas administrativas; não foram tratadas como aprovação.
+
+Pacote output/inbox-344-qa contém quatro pareceres integrais com fontes distintas, incluindo o negativo713 e a correção causal do cursord0. CI limpo (inclusive eslint completo) e integração remota ainda pendentes; PR em rascunho/Refs344, sem homologação ou encerramento presumido.
+
+
+### #344 — CI final da PR #428 (25/10/2026)
+
+HEAD 4df9816fcdf7b2121921b6b361ce98fb8981e584: fast40157067583 com cinco jobs aprovados (build, TypeScript original, lint integral e 947 arquivos/7.540 testes por fuso). FULL40157093746 com quatro shards aprovados:356 arquivos/3.259 testes aprovados;3 arquivos/4 testes ignorados. Watcher50123/4815d1 EXIT0. QA estática independente a8dd24 EXIT0 confirma31 fontes/3.567 objetos protegidos e os quatro pareceres históricos integrais. Adendo de publicação somente documental; nenhuma aprovação de merge presumida. Índice/ci-final.json distinguem fontes, fusos e recortes.
+
+
+
 ### Inbox #345 — tempo real da Aria (25/10/2026 UTC)
 
 DEV B na base MAIN fabf7addf291de6e4b821927cfc1c88ce93bd9fb, branch codex/inbox-e3-345-tempo-real. Dois triggers novos publicam invalidações por IDs no commit de AcaoAgenteIA/AgenteIA; global exige quatro campos próprios/enumeráveis e não sobrescreve mensagem/resync da thread no batch React. Lista/painel recarregam pela fonte/coalescedor existentes. Tipos antigos, sessão/ACL, fonte/reconexão396 e produtores manuais preservados; sem filtros novos ou alçadas D1–D4 antecipadas. A issue é independente da #344; ROOT fará a união dos hunks com #328/#344.
@@ -6929,3 +6982,8 @@ Prova AST preserva sete funções da fonte e nove do barramento, além dos paths
 Fonte executável2cd984b7, baseMainfabf, sem dependência artificial344. TESTER independente confirmou14arquivos/354UNIT/lint14,INTbarramento26 e cincoarquivos48 em executoresseparados,w1,semfiltros/skips,todosEXIT0. ROOTrestaurouTESTER4925f99cc:424hashes/1393registros/snapshot/trêsfunções615triggerspreservados. Migration reservada25020000, GitLF1466/b7c9f6; rawWindows1505/9ad86e explicitamente distinto.
 
 PacoteQA sanitizado publica parecer integral e resultados nominais,semraw/credenciais/banco. TypeScriptDEV éauxiliar qualificado comsomente2exclusões privadas nãoversionadas;CIlimpoverificaráoriginal/global/lint/build/fusos/integral. A publicação édocumental com15objetosexecutáveisliterais2cd. PRemrascunho/Refs345;semencerramentoouhomologaçãopresumidos.
+
+
+### #345 — união técnica com #344 para integração (25/10/2026)
+
+Fonte11f unida à344d6c, mantendo todo o quadro344 e todo o sufixo345 desdeMainfabf. Produto InboxNovo mergeado automaticamente; dois testes aditivos conservados. Objetos exclusivos das duas fontes preservados; paramsDosFiltros literal344 e avisoRecarregaPainel literal345. UNITdoisarquivos105/766671 EXIT0,w1,semfiltros/skips. Primeira tentativa63960/5add21 não coletou porEPERM sandbox e permanece negativa. CI/global e FULL desta união ainda pendentes; resultados remotos isolados não substituem esses gates. Sem novaDDL/DB/mensagens/deploy.
