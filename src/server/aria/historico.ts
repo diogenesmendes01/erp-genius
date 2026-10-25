@@ -188,9 +188,16 @@ async function reverter(tx: Tx, u: UsuarioSessao, acao: AcaoAgenteIA): Promise<v
   }
 }
 
-export async function desfazerAcaoAriaTx(tx: Tx, acao: AcaoAgenteIA, u: UsuarioSessao): Promise<void> {
+export async function desfazerAcaoAriaTx(tx: Tx, acao: AcaoAgenteIA, u: UsuarioSessao, opcoes?: { replayMesmoAutorNoInbox: true }): Promise<void> {
   const id = acao.id;
-  if (acao.status === "DESFEITA") throw new ErroRegra("Esta ação já foi desfeita.");
+  if (acao.status === "DESFEITA") {
+    // Opt-in exclusivo do wrapper Inbox: autorização e bindings já foram revalidados após os locks.
+    // A API global mantém o erro histórico; replay não reaplica efeito nem emite Evento/aviso.
+    if (opcoes?.replayMesmoAutorNoInbox && acao.desfeitaPorId === u.id && await ultimoEventoDoAutor(tx, {
+      tipo: "AcaoAriaDesfeita", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id,
+    })) return;
+    throw new ErroRegra("Esta ação já foi desfeita.");
+  }
   if (acao.status !== "EXECUTADA" && acao.status !== "APROVADA") throw new ErroRegra("Só ações executadas ou aprovadas podem ser desfeitas.");
   if (!acao.reversivel) throw new ErroRegra(acao.motivoIrreversivel ?? "Esta ação não pode ser desfeita.");
   await reverter(tx, u, acao);

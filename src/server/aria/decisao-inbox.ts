@@ -66,7 +66,7 @@ function decidir(atendimentoId:string,id:string,verbo:Verbo,motivo?:string){
    const {u}=await conferir(tx,autor.id,atendimentoId,acao);
    if(verbo==="aprovar")await aprovarAcaoAriaTx(tx,acao,u,opcoes);
    else if(verbo==="rejeitar")await rejeitarAcaoAriaTx(tx,acao,u,motivo?.trim()?motivo.trim().slice(0,500):null);
-   else await desfazerAcaoAriaTx(tx,acao,u);
+   else await desfazerAcaoAriaTx(tx,acao,u,{replayMesmoAutorNoInbox:true});
   });
  });
 }
