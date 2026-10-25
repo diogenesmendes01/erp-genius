@@ -38,6 +38,8 @@ export type PropsConfirmarAcao<T> = {
    * digitar ("Digite Costa Rica para confirmar"); `esperado` é o texto exato (espaços nas pontas não contam).
    */
   digitacao?: { rotulo: string; esperado: string };
+  /** Validação adicional do conteúdo; não substitui conferência/digitação nem a validação no servidor. */
+  podeConfirmar?: boolean;
   /** A ação. Só é chamada no clique de confirmação. */
   acao: () => Promise<Resultado<T>>;
   /** A action recebe chave de idempotência estável? Decide a instrução do resultado incerto. */
@@ -52,7 +54,7 @@ export type PropsConfirmarAcao<T> = {
   folha?: boolean;
 };
 
-export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, digitacao, acao, idempotente, aoConcluir, aoFalhar, aoCancelar, folha }: PropsConfirmarAcao<T>) {
+export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, digitacao, acao, idempotente, aoConcluir, aoFalhar, aoCancelar, folha, podeConfirmar = true }: PropsConfirmarAcao<T>) {
   const execucao = useAcaoCliente({ idempotente });
   const [conferido, setConferido] = useState(false);
   const [digitado, setDigitado] = useState("");
@@ -61,7 +63,7 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, d
   const ocupado = execucao.ocupado;
   const aguardaConferencia = conferencia !== undefined && !conferido;
   const aguardaDigitacao = digitacao !== undefined && digitado.trim() !== digitacao.esperado.trim();
-  const aguarda = aguardaConferencia || aguardaDigitacao;
+  const aguarda = aguardaConferencia || aguardaDigitacao || !podeConfirmar;
 
   async function confirmar() {
     if (aguarda) return;

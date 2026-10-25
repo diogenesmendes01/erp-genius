@@ -1,0 +1,62 @@
+import {act,createElement} from "react";
+import type {Root} from "react-dom/client";
+import {afterEach,beforeEach,expect,it,vi} from "vitest";
+import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
+const {concluir,reabrir,reagendar,cancelar}=vi.hoisted(()=>({concluir:vi.fn(),reabrir:vi.fn(),reagendar:vi.fn(),cancelar:vi.fn()}));
+vi.mock("@/server/inbox/acoes-painel",()=>({concluirTarefaNoInbox:concluir,reabrirTarefaNoInbox:reabrir,reagendarTarefaNoInbox:reagendar,cancelarTarefaNoInbox:cancelar}));
+vi.mock("@tabler/icons-react",()=>({IconCalendarTime:()=>createElement("span"),IconPencil:()=>createElement("span"),IconTrash:()=>createElement("span")}));
+import {TarefasOportunidade} from "./TarefasOportunidade";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
+const tarefa:TarefaPainel={id:"t330",versao:1,titulo:"Retorno fictício330",descricao:null,tipo:"LIGACAO",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"America/Sao_Paulo",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a330",criadoEm:"2026-10-20T12:00:00Z",criadorNome:null,podeAgir:true};
+let root:Root,host:Elemento,pagina:Elemento;
+const mudar=vi.fn(),teclas=new Set<(e:KeyboardEvent)=>void>();
+const render=(atendimentoId="a330",t=tarefa)=>act(async()=>root.render(createElement(TarefasOportunidade,{atendimentoId,tarefas:[t],fusoEscola:"America/Sao_Paulo",fuso:"America/Costa_Rica",podeCriar:false,aoMudar:mudar})));
+function prop(e:Elemento,n:string,arg?:unknown){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"))!;(e as unknown as Record<string,Record<string,(a?:unknown)=>unknown>>)[k][n](arg);}
+const btn=(texto:string)=>pagina.querySelectorAll("button").find(b=>b.textContent===texto)!;
+const gatilho=()=>host.querySelectorAll("button").find(b=>b.getAttribute("title")==="Cancelar tarefa")!;
+const abrir=()=>act(async()=>prop(gatilho(),"onClick"));
+const clicar=(texto:string)=>act(async()=>prop(btn(texto),"onClick"));
+async function revisar(m="Cliente pediu"){await act(async()=>prop(pagina.querySelector("textarea")!,"onChange",{target:{value:m}}));}
+beforeEach(async()=>{
+ vi.clearAllMocks();teclas.clear();for(const f of [concluir,reabrir,reagendar,cancelar])f.mockResolvedValue({ok:true});
+ const d=criarDomMinimo();pagina=d.documento.body;Object.assign(d.documento,{addEventListener(t:string,f:(e:KeyboardEvent)=>void){if(t==="keydown")teclas.add(f);},removeEventListener(t:string,f:(e:KeyboardEvent)=>void){if(t==="keydown")teclas.delete(f);}});
+ vi.stubGlobal("document",d.documento);vi.stubGlobal("window",d.janela);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+ host=d.documento.createElement("div");pagina.appendChild(host);const {createRoot}=await import("react-dom/client");root=createRoot(host as unknown as HTMLElement);
+});
+afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
+it("concluir trava clique duplo antes de rerender e recarrega só após ACK",async()=>{
+ let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();
+ await act(async()=>{prop(host.querySelector("input")!,"onChange");prop(host.querySelector("input")!,"onChange");});
+ expect(concluir).toHaveBeenCalledExactlyOnceWith("a330","t330",1);expect(mudar).not.toHaveBeenCalled();
+ await act(async()=>fim({ok:true}));expect(mudar).toHaveBeenCalledOnce();
+});
+it("reabrir concluída não depende de podeAgir das abertas",async()=>{await render("a330",{...tarefa,status:"CONCLUIDA",podeAgir:false});await act(async()=>prop(host.querySelector("input")!,"onChange"));expect(reabrir).toHaveBeenCalledExactlyOnceWith("a330","t330",1);});
+it("erro de versão fica visível e pede atualização",async()=>{concluir.mockResolvedValue({ok:false,erro:"Esta tarefa foi alterada por outra pessoa. Recarregue."});await render();await act(async()=>prop(host.querySelector("input")!,"onChange"));expect(host.textContent).toContain("Esta tarefa foi alterada por outra pessoa. Recarregue.");expect(mudar).toHaveBeenCalledOnce();});
+it("cancelar exige motivo e confirmação real; Voltar não chama action",async()=>{await render();gatilho().focus();await abrir();expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);await clicar("Confirmar cancelamento");expect(cancelar).not.toHaveBeenCalled();await clicar("Voltar");expect(pagina.querySelector("textarea")).toBeNull();expect(cancelar).not.toHaveBeenCalled();});
+it("confirmação final recebe motivo normalizado, foco seguro, busy e duplo clique único",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("  Cliente pediu  ");
+ expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(btn("Voltar")).toBeTruthy();expect(cancelar).not.toHaveBeenCalled();
+ await act(async()=>{prop(btn("Confirmar cancelamento"),"onClick");prop(btn("Confirmar cancelamento"),"onClick");});expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Cliente pediu");expect(btn("Confirmando…").hasAttribute("disabled")).toBe(true);
+ await revisar("Alterado durante execução");await act(async()=>prop(btn("Confirmando…"),"onClick"));expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Cliente pediu");
+ await act(async()=>fim({ok:true}));expect(mudar).toHaveBeenCalledOnce();expect(pagina.querySelector('[role="alertdialog"]')).toBeNull();
+});
+it("falha de transporte mantém confirmação sem retry automático",async()=>{cancelar.mockRejectedValue(Error("rede"));await render();await abrir();await revisar();await clicar("Confirmar cancelamento");expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(cancelar).toHaveBeenCalledOnce();expect(mudar).not.toHaveBeenCalled();});
+it("ACK A→B→A antigo não fecha nova abertura nem atualiza outra sessão",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar();await clicar("Confirmar cancelamento");
+ await render("b330");await render();await abrir();await revisar("Novo motivo");await act(async()=>fim({ok:true}));
+ expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Novo motivo");expect(mudar).not.toHaveBeenCalled();expect(cancelar).toHaveBeenCalledOnce();
+});
+it("amanhã é resolvido no clique, mesmo se o painel atravessa a meia-noite",async()=>{
+ vi.useFakeTimers({toFake:["Date"]});try{
+  vi.setSystemTime(new Date("2026-10-23T02:59:00Z"));await render();
+  vi.setSystemTime(new Date("2026-10-23T03:01:00Z"));
+  const b=host.querySelectorAll("button").find(b=>b.getAttribute("title")==="Reagendar para amanhã 09:00")!;
+  await act(async()=>prop(b,"onClick"));
+  expect(reagendar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,{dataCivil:"2026-10-24",hora:"09:00",fusoEscolaEsperado:"America/Sao_Paulo"});
+ }finally{vi.useRealTimers();}
+});
+it("fuso institucional alterado recusa e pede recarregar o painel",async()=>{
+ reagendar.mockResolvedValue({ok:false,erro:"O fuso da escola mudou ou está indisponível. Recarregue o painel."});await render();
+ const b=host.querySelectorAll("button").find(b=>b.getAttribute("title")==="Reagendar para amanhã 09:00")!;await act(async()=>prop(b,"onClick"));
+ expect(host.textContent).toContain("O fuso da escola mudou");expect(mudar).toHaveBeenCalledOnce();
+});

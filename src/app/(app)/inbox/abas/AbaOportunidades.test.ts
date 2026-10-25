@@ -5,10 +5,10 @@ import {afterEach,beforeEach,expect,it,vi} from "vitest";
 import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
 import type {OportunidadesPainel} from "@/server/inbox/painel-oportunidades";
 // O DOM mínimo não implementa namespaces SVG; apresentação dos ícones reais é coberta no SSR do cartão.
-vi.mock("@tabler/icons-react",()=>({IconBriefcase:()=>createElement('span'),IconPlus:()=>createElement('span'),IconHandStop:()=>createElement('span'),IconThumbDown:()=>createElement('span'),IconCalendarCheck:()=>createElement('span')}));
+vi.mock("@tabler/icons-react",()=>({IconCalendarTime:()=>createElement('span'),IconPencil:()=>createElement('span'),IconTrash:()=>createElement('span'),IconBriefcase:()=>createElement('span'),IconPlus:()=>createElement('span'),IconHandStop:()=>createElement('span'),IconThumbDown:()=>createElement('span'),IconCalendarCheck:()=>createElement('span')}));
 const {mover}=vi.hoisted(()=>({mover:vi.fn()}));vi.mock("@/server/inbox/acoes-painel",()=>({moverEtapaNoInbox:mover}));
 import {AbaOportunidades} from "./AbaOportunidades";
-const dados:OportunidadesPainel={atual:{id:"op327",titulo:"Curso fictício327",produto:"Inglês327",valor:"650.00",moeda:"BRL",etapa:"QUALIFICADO",temperatura:"MORNO",responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,motivoPerda:null},outras:[],pessoaId:null};
+const dados:OportunidadesPainel={atual:{id:"op327",titulo:"Curso fictício327",produto:"Inglês327",valor:"650.00",moeda:"BRL",etapa:"QUALIFICADO",temperatura:"MORNO",responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,motivoPerda:null},outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"};
 const cap={veLead:true,verContato:false,editarContato:false,editarTags:false,criarTag:false,moverEtapa:true,tarefas:false,tarefasEquipe:false,desfazerAria:false,verEmpresa:false};
 type Props=Parameters<typeof AbaOportunidades>[0];
 let root:Root,host:Elemento;const mudar=vi.fn(),perder=vi.fn();
@@ -58,4 +58,9 @@ it.each(['atendimento','oportunidade'])('328: ACK de assumir antigo não reconci
 it("329: compõe outras oportunidades e criação pela alçada global independente de mover etapa",()=>{
  const h=renderToStaticMarkup(createElement(AbaOportunidades,{...props(),podeCriarOportunidade:true,podeAbrirFunil:true,dados:{...dados,pessoaId:"p/329",outras:[{id:"outra329",titulo:"Outro curso fictício",etapa:"PERDIDO",valor:"0",moeda:"BRL"}]},capacidades:{...cap,moverEtapa:false}} as Parameters<typeof AbaOportunidades>[0]));
  expect(h).toContain("Oportunidade atual");expect(h).toContain("Outras oportunidades deste contato");expect(h).toContain("Outro curso fictício");expect(h).toContain('href="/funil?nova=p%2F329"');expect(h).toContain('href="/funil?o=outra329"');
+});
+
+it("330: tarefas diretamente ligadas continuam visíveis sem oportunidade atual",()=>{
+ const html=renderToStaticMarkup(createElement(AbaOportunidades,{...props(),capacidades:{...cap,tarefas:true},dados:{...dados,atual:null,tarefas:[{id:"t330",versao:1,titulo:"Tarefa direta330",descricao:null,tipo:"LIGACAO",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"America/Sao_Paulo",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a327",criadoEm:"2026-10-22T12:00:00Z",criadorNome:null,podeAgir:true}],fusoEscola:"America/Sao_Paulo"}}));
+ expect(html).toContain("Tarefa direta330");expect(html).toContain("Tarefas · 1 aberta(s)");
 });
