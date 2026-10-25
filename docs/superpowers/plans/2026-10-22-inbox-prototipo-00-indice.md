@@ -81,7 +81,7 @@ Arquivos novos e responsabilidades. Um plano de etapa cria o arquivo na etapa in
 | `src/components/conversa/EventoSistema.tsx`, `SeparadorDia.tsx` | E1 | Pílula de evento e separador de dia | — |
 | `src/components/Avatar.tsx` | E1 (muda) | Cor por hash do id (8 tons) e selo opcional | acrescenta `tom?: number` e `selo?: "ia"` |
 
-Componentes atuais que somem ou viram conteúdo de aba, sem perder função: `PainelSetor` (vira conteúdo de `AbaDetalhes` em finalidade não comercial), `PainelAria` (E3), `PainelFiltros` (vira o filtro da coluna), `NovoAtendimento` (vira o popover de nova conversa), `AcoesAtendimento` e `AcoesContato` (botões vão para `CabecalhoConversa` e `MenuConversa`).
+Componentes atuais que somem ou viram conteúdo de aba, sem perder função: `PainelSetor` (vira conteúdo de `AbaDetalhes` em finalidade não comercial), `PainelAria` (retirado na E3.12: pausa/devolver no cabeçalho, cartões na thread, handoff na faixa/modal), `PainelFiltros` (vira o filtro da coluna), `NovoAtendimento` (vira o popover de nova conversa), `AcoesAtendimento` e `AcoesContato` (botões vão para `CabecalhoConversa` e `MenuConversa`).
 
 ## Tokens
 
@@ -155,7 +155,7 @@ Pontos em que um plano estende ou substitui o que outro cria. A ordem de execuç
 - **Fio da conversa.** A E0 entrega `itensDaThread` e `ItemThread`. A E1.9 os decora (`decorarThread`). A E2 monta `ItemFio`/`intercalarFio` sobre eles; a E3 acrescenta a variante `sugestao-aria`; as mensagens agendadas entram pelo slot `cartoesNoFio` da E4.
 - **Agendamento.** A E4 é dona da leitura de `?agendar=1`, do popover, dos atalhos, do conflito, do rascunho e dos cartões no fio. A E2 só gera os links e cria `src/lib/atalhos-horario.ts` com a interface que a E4 usa. "Reagendar" e "Enviar agora" na aba Atividade entram pela E4.3.
 - **Abas do painel.** `ABAS_ENTREGUES` começa em `["detalhes"]` na E1.13; a E2.7 acrescenta `"oportunidades"`, a E2.13 `"atividade"`, a E4 (D12) `"insights"`.
-- **`PainelAria`.** Fica na aba Detalhes até a E3.12, que o retira depois de o cartão e o handoff estarem na thread.
+- **Aria sem painel legado (E3.12/#353).** Pausa/motivo e Devolver para Aria ficam no cabeçalho; sugestões/decisões, nos cartões da thread; handoff, na faixa e no modal. O bloco PainelAria e o campo legado AriaDoAtendimento.sugestoes foram retirados. Cartões/handoff mantêm os produtores e permissões existentes. Ver SPEC inbox-aria-sem-painel-legado.md. D1–D4 têm aprovação humana no registro de produto; suas extensões continuam com implementação/aceite próprios, sem conclusão presumida da E3.
 - **Transferir.** "Atribuir" e "Devolver para a fila" saem do menu ⋮ da E1.10 e viram opções do Transferir na E4.1.
 - **Desfazer e decidir da Aria.** Ficam idempotentes por natureza em `src/server/aria/historico.ts`: desfazer na E2.14, aprovar e rejeitar na E3.8.
 - **Selo de não lidas do menu lateral.** Exceção autorizada ao escopo: E1.6, sobre a regra pessoal da E0.2.

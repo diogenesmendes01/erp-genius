@@ -2,7 +2,7 @@ import { handoffDoAtendimento, type HandoffDoAtendimento } from "../aria/handoff
 import { podeVerLeadNaThread } from "./visibilidade-lead";
 export { podeVerLeadNaThread } from "./visibilidade-lead";
 import { cartoesDaThread, type SugestaoAriaThread } from "../aria/sugestoes-thread";
-import { Papel, type AcaoAgenteIATipo, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
+import { Papel, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { temPapel, type UsuarioSessao } from "@/server/_shared";
@@ -19,7 +19,6 @@ import { comContatoIndividual } from "./grupos";
 import { capacidadesAria } from "@/server/aria/permissoes-tela";
 import { leadsDecidiveis } from "@/server/aria/escopo-decisao";
 import { podeDevolverParaAria } from "@/server/aria/pausa";
-import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 import { podeExecutar, TIPOS_DESVINCULAVEIS, type TipoVinculoContato } from "@/server/inbox/permissoes";
 
 export interface ConversaResumo {
@@ -240,7 +239,7 @@ export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: stri
   return fora === 0;
 }
 
-/** Estado da Aria no detalhe do atendimento (Task 29): pausa e sugestões pendentes de `AcaoAgenteIA` (fonte única). */
+/** Estado canônico da Aria no atendimento: pausa, cartões e handoff de `AcaoAgenteIA` (fonte única). */
 export interface AriaDoAtendimento {
   handoff: HandoffDoAtendimento | null;
   podeDecidir: boolean;
@@ -249,35 +248,15 @@ export interface AriaDoAtendimento {
   motivo: MotivoPausaAtendimentoIA | null;
   /** Mostra "Devolver para Aria": Aria pausada e o usuário com escopo de envio (a regra de `devolverParaAria`). */
   podeDevolver: boolean;
-  sugestoes: { id: string; acao: AcaoAgenteIATipo; resumo: string; expiraEm: string }[];
 }
 
-const RESUMO_MAX = 200;
-function resumoDaSugestao(a: { acao: AcaoAgenteIATipo; payload: Prisma.JsonValue; justificativa: string | null }): string {
-  const p = (a.payload && typeof a.payload === "object" && !Array.isArray(a.payload) ? a.payload : {}) as Record<string, unknown>;
-  const bruto = typeof p.texto === "string" && p.texto.trim() ? p.texto : a.justificativa?.trim() || ACAO_AGENTE_IA_LABEL[a.acao];
-  return bruto.length > RESUMO_MAX ? `${bruto.slice(0, RESUMO_MAX - 1)}…` : bruto;
-}
-
-/** null fora do escopo do usuário. Só quem decide o histórico da Aria recebe as sugestões; sugestão vencida não entra. */
+/** null fora do escopo do usuário. Cartões e handoff mantêm seus produtores e escopos canônicos. */
 export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendimentoId: string, agora: Date = new Date()): Promise<AriaDoAtendimento | null> {
   const a = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
     select: { id: true, leadId: true, iaPausadaEm: true, iaPausaMotivo: true, finalidade: true, responsavelId: true, conversa: { select: { numero: { select: { donoId: true, finalidade: true } } } } },
   });
   if (!a) return null;
-  const candidatas = capacidadesAria(usuario).has("decidirHistorico")
-    ? await prisma.acaoAgenteIA.findMany({
-        where: { atendimentoId: a.id, status: "SUGERIDA", OR: [{ expiraEm: null }, { expiraEm: { gt: agora } }] },
-        orderBy: { criadoEm: "asc" },
-        select: { id: true, acao: true, payload: true, justificativa: true, expiraEm: true, oportunidadeId: true },
-      })
-    : [];
-  // Mesmo critério de aprovarAcaoAria/rejeitarAcaoAria: escopoAtendimentos (setor inteiro para o
-  // Gerente) mostra o atendimento, mas só aparece a sugestão que ele de fato pode decidir.
-  const leadDe = (s: { oportunidadeId: string | null }) => s.oportunidadeId ?? a.leadId;
-  const decidiveis = candidatas.length ? await leadsDecidiveis(prisma, usuario, candidatas.map(leadDe)) : new Set<string | null>();
-  const sugestoes = candidatas.filter((s) => decidiveis.has(leadDe(s)));
   const pausada = a.iaPausadaEm !== null;
   return {
     podeDecidir: capacidadesAria(usuario).has("decidirHistorico") && (await leadsDecidiveis(prisma, usuario, [a.leadId])).has(a.leadId),
@@ -286,6 +265,5 @@ export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendime
     pausada,
     motivo: pausada ? a.iaPausaMotivo : null,
     podeDevolver: pausada && (await podeDevolverParaAria(prisma, usuario, a.id)),
-    sugestoes: sugestoes.map((s) => ({ id: s.id, acao: s.acao, resumo: resumoDaSugestao(s), expiraEm: (s.expiraEm ?? agora).toISOString() })),
   };
 }
