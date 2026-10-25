@@ -37,6 +37,8 @@ import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
 import type { AcoesCabecalho } from "./MenuConversa";
 import { useRevisoesRascunhos } from "@/components/conversa/rascunhos-conversa";
 import { RodapeConversa } from "./RodapeConversa";
+import { modoRodape, textoTravado } from "./aria/modo-rodape";
+import { useAssumirParaResponder } from "./aria/useAssumirParaResponder";
 import { useHandoffConversa, type LeituraPainelHandoff } from "./aria/useHandoffConversa";
 import { CabecalhoConversa } from "./CabecalhoConversa";
 import { BuscaConversa } from "./BuscaConversa";
@@ -173,7 +175,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
         }} />;
 
   const linhaAria = item && !item.grupo && item.status !== "ENCERRADO" ? linhaEstadoAria(item.estadoAria, { atendidoPorVoce: item.atendidoPorVoce, responsavelNome: item.responsavelNome, podeDecidir: aria?.podeDecidir === true, pausada: aria?.pausada === true, motivo: aria?.motivo ?? null }) : null;
-  const renderizarConversa = (acoes: AcoesCabecalho | null, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>) => (
+  const renderizarConversa = (acoes: AcoesCabecalho | null, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>, tomada?: ReturnType<typeof useAssumirParaResponder>) => (
     <>
       {item && acoes ? <CabecalhoConversa atendimento={item} acoes={acoes} linhaAria={linhaAria} acoesAria={devolver?.botao} usuarioId={usuario.id} painelAberto={painelAberto === true} painelAuto={painelAuto === true} aoAlternarPainel={aoAlternarPainel} buscaAberta={buscaAberta} aoBuscar={abrirBusca} aoVoltar={aoVoltar} /> : (
         <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface px-3">
@@ -185,6 +187,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
       {devolver?.feedback}
       {acoes?.feedback}{acoes?.dialogos}
       {handoff?.faixa}
+      {tomada?.feedback}
       {barraBusca}
       <div ref={rolagem} aria-busy={ocupada ? true : undefined} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
         {conversa.temMaisAntes && <Botao variante="fantasma" tamanho="sm" ocupado={ocupada} className="mx-auto mb-2 block bg-surface text-gray-600" onClick={() => {
@@ -226,9 +229,10 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
       {item ? (
         <RodapeConversa
           controleResposta={handoff?.controleResposta}
-          aoCampoResponder={handoff?.aoCampoResponder}
+          aoCampoResponder={(campo) => { handoff?.aoCampoResponder(campo); tomada?.aoCampoResponder(campo); }}
           atendimentoId={item.id}
-          modo="compositor"
+          modo={!item.grupo && item.status !== "ENCERRADO" ? modoRodape(item.estadoAria, false) : "compositor"}
+          travado={item.estadoAria === "ia" || item.estadoAria === "aprovacao" || item.estadoAria === "handoff" ? { texto: textoTravado(item.estadoAria), aoNota() {}, aoAssumir: tomada?.aoAssumir, ocupado: tomada?.ocupado } : undefined}
           aoCriarTarefa={aoCriarTarefa}
           pedidoNota={pedidoNota}
           podeAnotar={!item.grupo}
@@ -258,8 +262,9 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
 }
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
-function CoordenadorAcoesConversa({ item, aoCriarTarefa, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; children(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoCriarTarefa">) {
-  const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, podeAssumirAria: aria?.podeAssumirAria === true, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
+function CoordenadorAcoesConversa({ item, aoCriarTarefa, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; children(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>, tomada?: ReturnType<typeof useAssumirParaResponder>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoCriarTarefa">) {
+  const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, respostaDisponivel: !item.grupo && item.status !== "ENCERRADO" && modoRodape(item.estadoAria, false) === "compositor", podeAssumirAria: aria?.podeAssumirAria === true, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
+  const tomada = useAssumirParaResponder({ atendimentoId: item.id, usuarioId: usuario.id, responsavelId: item.responsavelId, estadoAria: !item.grupo && item.status !== "ENCERRADO" ? item.estadoAria : null, podeAssumirAria: aria?.podeAssumirAria === true && !item.grupo && item.status !== "ENCERRADO", podeEnviar, leitura: leituraPainel, aoMudar, controleResposta: handoff.controleResposta });
   const acoes = useAcoesAtendimento({
     contextoAria: ["ia", "aprovacao", "handoff"].includes(item.estadoAria ?? "") || !!aria?.handoff,
     podeAssumirAria: aria?.podeAssumirAria === true,
@@ -267,5 +272,5 @@ function CoordenadorAcoesConversa({ item, aoCriarTarefa, aria, leituraPainel, po
     usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
     linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar, aoCriarTarefa,
   });
-  return <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => children(acoes, devolver, handoff)}</ControladorDevolverAria>;
+  return <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => children(acoes, devolver, handoff, tomada)}</ControladorDevolverAria>;
 }

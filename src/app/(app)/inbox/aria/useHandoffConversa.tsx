@@ -17,6 +17,8 @@ export type PropsHandoffConversa = {
     handoff: HandoffDoAtendimento | null | undefined;
     podeEnviar: boolean | null;
     podeAssumirAria?: boolean;
+    /** Disponibilidade visual do campo; ausente preserva o comportamento352. Não revoga alçada. */
+    respostaDisponivel?: boolean;
     leitura?: LeituraPainelHandoff;
     fuso: string | null;
     agora: Date;
@@ -61,7 +63,7 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         sessao.current.ativa = false; querResposta.current = false; retorno.current = gatilho.current; setModal(null); setConfirmando(false); setErro(null); }, []);
     const concluir = useCallback((s: Sessao) => {
         const p = atual.current, l = p.leitura;
-        if (!s.ativa || !s.ack || sessao.current !== s || p.podeEnviar !== true || p.podeAssumirAria !== true || !l || l.resultado !== "ok" || l.finalizada !== l.solicitada || l.finalizada < s.minimo)
+        if (!s.ativa || !s.ack || sessao.current !== s || p.podeEnviar !== true || p.podeAssumirAria !== true || p.respostaDisponivel === false || !l || l.resultado !== "ok" || l.finalizada !== l.solicitada || l.finalizada < s.minimo)
             return;
         if (s.ack && p.item.responsavelId !== p.usuarioId)
             return;
@@ -104,6 +106,11 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
             s.responder = false;
             setConfirmando(false);
             setErro("Você não tem permissão para responder nesta conversa. Atualize para conferir seu acesso.");
+            return;
+        }
+        if (p.respostaDisponivel === false) {
+            setConfirmando(false);
+            setErro("A lista ainda está sendo atualizada. Tente de novo para confirmar a conversa.");
             return;
         }
         concluir(s);
