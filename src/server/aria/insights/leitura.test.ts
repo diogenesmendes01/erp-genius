@@ -16,3 +16,8 @@ it.each(["PRONTA","FALHOU","RECUSADA"])("GET resolve terminal %s após ACKlost s
 it("tarefa observada de outro atendimento não é retornada",async()=>{await ler("outro");const q=m.findFirst.mock.calls.find(([q])=>q.where.id)[0];expect(q.where).toEqual({id:"outro",atendimentoId:"a"});expect(q.select).not.toHaveProperty("resultadoJson");});
 it("Pessoa incompatível permite resolução operacional mas nunca geração/cache",async()=>{m.contexto.mockResolvedValue({contextoHash:h,referenciasHash:h,pessoasCompativeis:false,autor:{id:"u"}});m.findFirst.mockResolvedValue(null);const r=await ler();expect(r.painel.podeAtualizar).toBe(false);expect(m.findFirst.mock.calls.some(([q])=>q.select?.resultadoJson)).toBe(false);});
 it("prestart de binding anterior não oferece retomada com hash atual",async()=>{m.findFirst.mockImplementation(({where,select})=>where.estado?.in?{...base,estado:"PROCESSANDO",iniciadaEm:null,contextoHash:old}:select?.resultadoJson?null:null);const r=await ler();expect(r.emCurso.podeRetomar).toBe(false);});
+it("Pessoa incompatível + INCERTO mantém sinais de descarte coerentes e geração negada",async()=>{
+  m.contexto.mockResolvedValue({contextoHash:h,referenciasHash:h,pessoasCompativeis:false,autor:{id:"u"}});
+  m.findFirst.mockImplementation(({where})=>where.estado?.in?{...base,estado:"INCERTO",contextoHash:old}:null);
+  const r=await ler();expect(r.emCurso.podeDescartar).toBe(true);expect(r.painel.podeDescartarIncerta).toBe(true);expect(r.painel.podeAtualizar).toBe(false);expect(r.painel.ultima).toBeNull();expect(m.findFirst.mock.calls.some(([q])=>q.select?.resultadoJson)).toBe(false);
+});
