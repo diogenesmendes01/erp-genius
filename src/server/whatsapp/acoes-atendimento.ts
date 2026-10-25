@@ -34,7 +34,6 @@ const AtribuirSchema = z.object({ atendimentoId: z.string().min(1), usuarioId: z
 /** Eventos que mudam o responsável do atendimento: o último deles diz quem deixou o estado atual. */
 const TIPOS_RESPONSAVEL = ["AtendimentoAssumido", "AtendimentoDevolvido", "AtendimentoAtribuido"];
 
-/** Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional). */
 /** O atendimento já é de `u` porque `u` o assumiu por último (#166): o reenvio não grava outro Evento. */
 async function jaAssumidoPor(tx: Tx, id: string, u: { id: string }): Promise<boolean> {
   const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { responsavelId: true, encerradoEm: true } });
@@ -43,9 +42,8 @@ async function jaAssumidoPor(tx: Tx, id: string, u: { id: string }): Promise<boo
 }
 
 /**
- * Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional).
- * Idempotente por natureza (#166): o reenvio de quem já o assumiu devolve ok sem outro Evento. Se o atendimento
- * chegou a quem repete por atribuição de outra pessoa, ou está com outro, segue "já assumiu".
+ * D3: assume a condução da Aria com atribuição, pausa MANUAL e cancelamentos canônicos.
+ * Autorização contextual e ator são relidos na TX; replay pertence ao mesmo ciclo MANUAL.
  */
 export async function assumirConversaDaAria(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
@@ -55,6 +53,11 @@ export async function assumirConversaDaAria(atendimentoId: string): Promise<Resu
   });
 }
 
+/**
+ * Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional).
+ * Idempotente por natureza (#166): o reenvio de quem já o assumiu devolve ok sem outro Evento. Se o atendimento
+ * chegou a quem repete por atribuição de outra pessoa, ou está com outro, segue "já assumiu".
+ */
 export async function assumirAtendimento(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
