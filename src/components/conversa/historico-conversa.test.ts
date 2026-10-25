@@ -289,3 +289,6 @@ describe("fonteErp", () => {
     } finally { vi.unstubAllGlobals(); }
   });
 });
+
+
+it("aria.global não consulta nem troca a janela da thread",async()=>{const f=fonteFalsa({a:10}),h=new HistoricoConversa(f);await h.abrir("a");const estado=h.getState(),chamadas=f.chamadas.length;await reagirAoAviso(h,"a",{tipo:"aria.global",atendimentoId:null,mensagemId:null,conversaId:""});expect(f.chamadas).toHaveLength(chamadas);expect(h.getState()).toBe(estado);});

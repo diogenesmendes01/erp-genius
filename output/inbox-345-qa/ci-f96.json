@@ -1,0 +1,69 @@
+{
+  "head": "f96cb2cbf4c9497baf6e030d1d106a8254cfb3b1",
+  "fast": {
+    "run": 40161100539,
+    "conclusion": "success",
+    "jobs": 5,
+    "UTC": {
+      "files": 948,
+      "tests": 7561
+    },
+    "AmericaSaoPaulo": {
+      "files": 948,
+      "tests": 7561
+    },
+    "limite": "Mesma suíte em dois fusos; não somar."
+  },
+  "integration": {
+    "run": 40161155167,
+    "conclusion": "failure",
+    "shards": [
+      {
+        "shard": 1,
+        "job": 121073179224,
+        "conclusion": "success",
+        "filesPassed": 90,
+        "testsPassed": 762
+      },
+      {
+        "shard": 2,
+        "job": 121073179286,
+        "conclusion": "success",
+        "filesPassed": 88,
+        "filesSkipped": 2,
+        "testsPassed": 873,
+        "testsSkipped": 3
+      },
+      {
+        "shard": 3,
+        "job": 121073179288,
+        "conclusion": "success",
+        "filesPassed": 89,
+        "filesSkipped": 1,
+        "testsPassed": 901,
+        "testsSkipped": 1
+      },
+      {
+        "shard": 4,
+        "job": 121073179359,
+        "conclusion": "failure",
+        "filesPassed": 88,
+        "filesFailed": 1,
+        "testsPassed": 740,
+        "testsFailed": 2
+      }
+    ],
+    "skips": [
+      "src/server/contratos/aditivo-taxas-ui-homologacao.int.test.ts (1)",
+      "src/server/matricula/desistencia-reconferencia-delta-ui-homologacao.int.test.ts (2)",
+      "src/server/matricula/desistencia-acerto-ui-homologacao.int.test.ts (1)"
+    ],
+    "failure": "Dois testes de nota SUGERIR/SHADOW ainda esperavam ausência de invalidação. O trigger de INSERT da ação passa a emitir um refresh de quatro campos, sem aplicar a nota.",
+    "watch": {
+      "session": 95519,
+      "terminal": "f04866",
+      "exit": 1
+    },
+    "limite": "Não é integração completa aprovada. O próximo head precisa de validação."
+  }
+}
