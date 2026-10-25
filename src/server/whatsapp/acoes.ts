@@ -25,7 +25,7 @@ import { despacharFila } from "./despachante";
 import { executarAcaoMotor } from "./motor/acoes";
 import { capacidadesDoNumero } from "./motor/capacidades";
 import { escopoConversas } from "./escopo";
-import { vincularLeadSelecionadoTx } from "./vincular-lead-selecionado";
+import { vincularLeadLegadoTx } from "./vincular-lead-legado";
 import { garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial";
 import { criarLeadDeInboundWhatsApp, resolverPessoaPorTelefone } from "@/server/comercial/captura";
@@ -478,7 +478,7 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
     const autor = await exigirSessao();
     const { contatoId, alvo, atendimentoId } = VincularContatoSchema.parse(input);
     if (alvo.tipo === "lead") {
-      await prisma.$transaction(tx => vincularLeadSelecionadoTx(tx, autor, { contatoId, atendimentoId, leadId: alvo.id }));
+      await prisma.$transaction(tx => vincularLeadLegadoTx(tx, autor, { contatoId, atendimentoId, leadId: alvo.id }));
       revalidatePath("/inbox");
       return;
     }
