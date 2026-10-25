@@ -161,3 +161,10 @@ it("E1 fora do comercial mantém WhatsApp recebido em mono", () => {
 it("319: sem seleção tem área central livre, ícone e nenhum painel de contato",()=>{
  const h=html();expect(h).toContain("Escolha uma conversa");expect(h).toContain("As mensagens aparecem aqui.");expect(h).toContain("text-[15px]");expect(h).toContain("text-[13px]");expect(h).toContain("items-center justify-center");expect(h).not.toContain('id="painel-contato"');
 });
+
+
+it("paramsDosFiltros escreve aria antes de cursor/contagens", () => {
+  expect(paramsDosFiltros({ aria: "humano", setor: "COMERCIAL" })).toBe("setor=COMERCIAL&aria=humano");
+  expect(paramsDosFiltros({ aria: "handoff" }, "cur", { contagens: true })).toBe("aria=handoff&cursor=cur");
+  expect(paramsDosFiltros({ aria: "ia" }, null, { contagens: true })).toBe("aria=ia&contagens=1");
+});
