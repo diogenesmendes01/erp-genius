@@ -15,6 +15,9 @@
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/insights/PainelInsights.tsx": ["<Botao> Atualizar → iaFantasma/sm", "<Botao> Usar como rascunho → ia/sm"],
+
+  "inbox/fluxos/transferir/ControladorTransferir.tsx": ["<Botao> Fechar → secundario/md"],
+  "inbox/fluxos/transferir/PopoverTransferir.tsx": ["<Botao> Pessoas → neutro/md", "<Botao> Equipes e filas → neutro/md", "<Botao> Devolver para a Aria → ia/md", "<Botao> Cancelar → secundario/md", "<Botao> Voltar → neutro/md", "<Botao> Transferir → primario/md"],
   "inbox/abas/AlteracoesAria.tsx": ["<Botao> Desfazer → neutro/sm"],
   "src/components/conversa/CartaoTarefaFio.tsx": ["<Botao> Editar → fantasma/sm", "<Botao> Concluir → secundario/sm"],
   "inbox/aria/CartaoSugestaoAria.tsx": ["<Botao> → primario/md", "<Botao> → perigoContorno/md", "<Botao> Desfazer → neutro/md"],

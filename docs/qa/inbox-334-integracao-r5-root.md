@@ -9,3 +9,7 @@ O TypeScript original da composição com a fixture corrigida (`35cdfe90`) termi
 Replay original `72946/c02852`, EXIT0, `tsc --noEmit --incremental false`, teto8192 MiB. Executado na fonte de trabalho corrigida, antes do commit, com SHA256 `f9f68424e5fd626f9094a526dea80d283c3830b99a967b2847b6f11ec3879e1d`; fonte e configurações permaneceram intactas durante a execução. Não é execução no HEAD anterior. Sem exclusões novas ou configuração alternativa. SQL83 não foi repetida por anotações apagáveis; a evidência continua atribuída à candidata original.
 
 Global/lint finais, build/CI e aceite visual APP/PROTO permanecem pendentes. Nenhum fechamento de issue, homologação visual ou merge em main é presumido.
+
+## R7 — contador autorizado e spy de vínculo
+
+O global32c048c01 teve uma falha em cliente-voltou.test.ts: o caso Professor proibia qualquer atendimentoVisivel, mas o contador334 faz uma leitura legítima com exatamente dois argumentos, sem envio=true. O TESTER reproduziu o original671223 EXIT1(15/16) e demonstrou em cópia privada17/17fcc528 que vínculo/candidatos continuam proibidos. Parecer ddb759c06f91283f356081beb290871cc6afc6eef2bb56c8cf8a37b6420264ec. O teste rastreado agora preserva podeVincularfalse e escoposPessoa/Comercial, exige leitura exata, contador0, proíbe terceiro argumento true e zero candidatos/leadatual. Produção não mudou. Recorte rastreado1fd562 EXIT0:5 arquivos66casoscompletos(inclui16docliente), sem novos skips/filtros. Global anterior não reclassificado; replay global pendente, SQL não repetida.
