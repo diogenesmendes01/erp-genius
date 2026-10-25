@@ -36,7 +36,7 @@ CartaoSugestaoAria recebe atendimentoId e usa somente as três actions Inbox. Ap
 
 A identidade inclui conversa e ação. Revogação404, perda de capacidade, desmontagem e troca A→B→A invalidam a geração; recuperar dados não reabre confirmação antiga nem aceita ACK antigo. Sem remount da conversa/rascunhos, query global de foco, autoenvio ou liberação pelo ACK. O estado de acesso revogado404→503→200 existente permanece no coordenador.
 
-A guarda de botões continua fechada: exatamente dois controles dinâmicos da projeção original, suas variantes, e um terceiro literal Desfazer/contorno. Parser/resolvedor genérico intactos; negativos incluem terceiro vazio/variante errada e botão extra. Mapa declarativo exato.
+A guarda de botões continua fechada: exatamente dois controles dinâmicos da projeção original, suas variantes, e um terceiro literal Desfazer/neutro. Parser/resolvedor genérico intactos; negativos incluem terceiro vazio/variante errada e botão extra. Mapa declarativo exato.
 
 ## Evidências e pendências
 
@@ -72,3 +72,11 @@ Recibos: RED nativo60db37 EXIT1/1caso por ambos-sucessos; patch único e MESMO t
 Oráculos privados v1, grafo e logs negativos permanecem imutáveis. QA independente da filha, TypeScript/gates globais e visual seguem com ROOT. Sem implementação355/356/357, schema, instalações, build, browser, HTTP ou push.
 
 Replay nativo final10428/a9c2c3 EXIT0:2casos/2arquivos, filtro explícito CRMglobal×wrapper e serializaçãoresponsável,25fora; sem alteração funcional adicional. Lint final5 51de77 EXIT0. Causalv1 e seus hashes preservados; filha R1 aguarda QA/TSC/global/visual ROOT.
+
+## R2 — variante canônica de Desfazer (25/10/2026)
+
+O gate TypeScript ORIGINAL no head2af4 saiu2 (84020/5d68c6): um TS2322 real, pois contorno não é VarianteBotao, e cinco TS2769 em três cópias privadas históricas sem atendimentoId. O lint ORIGINAL2af4 saiu0 (55099/ae17b5),0erros/98avisos (40src+58output). São gates dessa fonte, sem atribuir TSCgreen à filha. ROOT arquivou fisicamente os três históricos fora da árvore em a88569, preservando hashes/bytes; não se editaram originais nem configuração para excluir erros.
+
+O botão Desfazer usa agora a variante existente neutro (contorno cinza). Botao/VARIANTES/typing do design system permanecem intactos. Mapa e âncora nominal continuam exigindo total3, dois filhos dinâmicos/variantes originais e terceiro texto literal Desfazer/neutro. Negativos preservados e ampliados para recusar também o nome inexistente contorno. Sem override de classes, mudança de handler, ACL, DTO, foco, backend ou schema; atendimentoId continua obrigatório.
+
+RED93c55e EXIT1:11casos/1falha, mostrando classundefined em vez de botaoClasses(neutro). GREEN34172/a2537c EXIT0:24arquivos/510casos completos de UI/consumidores/Botao/guardas, sem filtro de caso ou skips. Lint focal4 61127e EXIT0 --max-warnings=0. INT não repetida porque backend permanece literal2af4; TSC original da filha depende da janela coordenada de memória, além de QA/global/visual ROOT. Nenhuma implementação355.

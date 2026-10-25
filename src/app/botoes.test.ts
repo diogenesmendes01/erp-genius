@@ -2170,12 +2170,12 @@ function ancoraRotulosCartao350(fonte:string):boolean {
   const filhos=b.children.filter(c=>!ts.isJsxText(c)||!!c.getText(sf).trim());
   const esperado=i===0?"v.rotuloAprovar":"v.rotuloRejeitar";
   const variante=b.openingElement.attributes.properties.find(a=>ts.isJsxAttribute(a)&&a.name.getText(sf)==="variante");
-  if(i===2)return filhos.length===1&&ts.isJsxText(filhos[0])&&filhos[0].getText(sf).trim()==="Desfazer"&&!!variante&&ts.isJsxAttribute(variante)&&variante.initializer?.getText(sf)==='"contorno"';
+  if(i===2)return filhos.length===1&&ts.isJsxText(filhos[0])&&filhos[0].getText(sf).trim()==="Desfazer"&&!!variante&&ts.isJsxAttribute(variante)&&variante.initializer?.getText(sf)==='"neutro"';
   return filhos.length===1&&ts.isJsxExpression(filhos[0])&&filhos[0].expression?.getText(sf)===esperado
    &&(i===0?!variante:!!variante&&ts.isJsxAttribute(variante)&&variante.initializer?.getText(sf)==='"perigoContorno"');
  });
 }
 it("entrada dinâmica350 preserva dois filhos exatos e terceiro Desfazer354 literal",()=>{
  const fonte=readFileSync("src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx","utf8");expect(ancoraRotulosCartao350(fonte)).toBe(true);
- for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"'),fonte.replace('>Desfazer</Botao>','>{""}</Botao>'),fonte.replace('variante="contorno"','variante="secundario"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
+ for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"'),fonte.replace('>Desfazer</Botao>','>{""}</Botao>'),fonte.replace('variante="neutro"','variante="secundario"'),fonte.replace('variante="neutro"','variante="contorno"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
 });

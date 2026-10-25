@@ -7375,3 +7375,11 @@ QA80 anterior do TESTER (25225/ffebbd:79pass/1expectativa obsoleta) tratada sem 
 Pendentes QAfilha, TSC/gates globais e visual do integrador. LeaseBci492 usada uma suíteporvez, conexões encerradas após terminal; sem restore presumido. Nada de patchglobalCRM, alteração de executor/ACL, schema/deps/env/build/browser/HTTP/PR/push. SPEC e report output/inbox-354-r1-locks-report.md com negativos qualificados. #355 permanece investigação/plano.
 
 Fechamento R1: replay10428/a9c2c3 EXIT0 em2casos nativos (filtro declarado '354: criarTarefa|lock inicial continua',25fora), após somente tipagem/cleanup de testes; lint final5 51de77 EXIT0. Produção continua1query conferida d60d2d, globais/executor/ACL/componentes literais7440. Lease sem outros Node/testes ativos, entregue aROOT sem restauração presumida. Não antecipar QA/TSC/global/visual nem355.
+
+### Inbox #354 — R2: Desfazer com variante canônica neutro (25/10/2026)
+
+Gate ORIGINAL exato2af4: TSC84020/5d68c6 EXIT2,6diagnósticos (1TS2322REAL no Card por variantecontorno inexistente;5TS2769 em3oráculos históricosUNTRACKED sem atendimentoId). Lint ORIGINAL55099/ae17b5 EXIT0,0erros98avisos=40src+58output. Head/pins pré/pós idênticos e trackedclean, recibo output/inbox-354-2af4-gates-original-private.json SHAe157f3d5.... Não chamar esse TSC de aprovado nem atribuir gates21f à354.
+
+ROOT autorizou e realizou arquivo FÍSICO dos3históricos em a88569 com bytes/hashes84bc7e4b/8bdd3efd/08edc23f preservados foraB; DEV não os moveu/editou/copiou de volta e não alterou config/cache/contrato obrigatório para esconder diagnósticos. Correção REAL em filhaisolada2af4: Desfazer usaNEUTRO canônicoDS (contorno cinza), mapa e âncora ASTFECHADA total3,2dinâmicos originais+Desfazer literal preservados; negativos vazio/varianteerrada/contornoinexistente/quartobotão. DS e backend literais.
+
+RED93c55e EXIT1(11casos/1falha classundefined); GREEN34172/a2537c EXIT0(24arquivos/510casos UI/consumidores/Botao/guardas completos,sem filtrodecaso/skips); lint4 61127e EXIT0 --max-warnings=0. Sem repetiçãoINT45 por ausência de delta backend. Próximo TSC ORIGINAL aguarda admissãoROOT/liberação compiladorA; QAfilha/global/visualpendentes. SemDB/build/install/config/env/PR/push ou355. SPEC/report output/inbox-354-r2-neutro-report.md atualizados.
