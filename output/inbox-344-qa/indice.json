@@ -83,7 +83,81 @@
         "motivo": "Windows1450: liberado recurso para TSC do DEV, sem aprovação presumida"
       }
     },
-    "ci": "PR_AINDA_NAO_ABERTA"
+    "ci": {
+      "head": "4df9816fcdf7b2121921b6b361ce98fb8981e584",
+      "verificadoEm": "2026-10-25T03:55:00Z",
+      "fast": {
+        "run": 40157067583,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40157067583",
+        "conclusion": "success",
+        "jobs": 5,
+        "typecheck": "success",
+        "lintIntegral": "success",
+        "build": "success",
+        "unitariosPorFuso": {
+          "UTC": {
+            "arquivos": 947,
+            "testes": 7540
+          },
+          "America_Sao_Paulo": {
+            "arquivos": 947,
+            "testes": 7540
+          }
+        },
+        "somarFusos": false
+      },
+      "full": {
+        "run": 40157093746,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40157093746",
+        "conclusion": "success",
+        "watcher": {
+          "sessao": 50123,
+          "terminal": "4815d1",
+          "exit": 0
+        },
+        "shards": [
+          {
+            "shard": 1,
+            "job": 121060683489,
+            "arquivos": 90,
+            "testes": 743,
+            "arquivosIgnorados": 0,
+            "testesIgnorados": 0
+          },
+          {
+            "shard": 2,
+            "job": 121060683543,
+            "arquivos": 88,
+            "testes": 873,
+            "arquivosIgnorados": 2,
+            "testesIgnorados": 3
+          },
+          {
+            "shard": 3,
+            "job": 121060683373,
+            "arquivos": 89,
+            "testes": 901,
+            "arquivosIgnorados": 1,
+            "testesIgnorados": 1
+          },
+          {
+            "shard": 4,
+            "job": 121060683544,
+            "arquivos": 89,
+            "testes": 742,
+            "arquivosIgnorados": 0,
+            "testesIgnorados": 0
+          }
+        ],
+        "total": {
+          "arquivos": 356,
+          "testes": 3259,
+          "arquivosIgnorados": 3,
+          "testesIgnorados": 4
+        }
+      },
+      "limites": "Resultados nominais ao HEAD indicado. Este adendo altera somente documentação; os quatro pareceres históricos permanecem integrais. Nenhum resultado de CI futura ou merge é presumido."
+    }
   },
   "limites": "Gates antigos nominais às fontes; nenhum recorte é chamado de global e resultados sobrepostos não se somam."
 }

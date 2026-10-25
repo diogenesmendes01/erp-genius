@@ -9,6 +9,6 @@ Os pareceres são nominais a cada fonte; resultados sobrepostos não são somado
 - [Marco 3, parecer negativo](marco3-713-negativo.md): fonte 7138574b. O oráculo independente encontrou cursores com offset interpretados incorretamente no SQL.
 - [Correção do cursor](cursor-d0.md): fonte d0dfa5a3. O instante é convertido para UTC antes dos casts; os 21 casos e o mesmo oráculo independente de 18 combinações passaram. O parecer negativo anterior permanece preservado.
 
-[Composição com main](composicao-main351.json) registra os OIDs das fontes e a união do quadro. [Índice](indice.json) fixa bytes/SHA256 dos quatro pareceres. As integrações anteriores, a correção causal e os gates da composição têm identidades distintas. CI da publicação será registrada após a abertura da PR.
+[Composição com main](composicao-main351.json) registra os OIDs das fontes e a união do quadro. [Índice](indice.json) fixa bytes/SHA256 dos quatro pareceres. As integrações anteriores, a correção causal e os gates da composição têm identidades distintas. [CI final da publicação](ci-final.json) registra os cinco jobs rápidos e os quatro shards completos aprovados no HEAD4df, com 3.259 testes de integração aprovados e quatro ignorados em três arquivos. A unitária passou nos dois fusos (7.540 testes por fuso); esses resultados não são somados.
 
 Nenhum log bruto, snapshot de banco, credencial, fixture, ZIP ou imagem integra este pacote.

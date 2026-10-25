@@ -6958,3 +6958,8 @@ QA713:UNIT20/471+INT4/59+lint24 verdes, porém P2offset confirmado em6/18control
 Fonte final d0dfa5a3 unida com main fabf7add: 31 fontes preservadas por OID, 3.567 objetos de main fora desse recorte intactos e todo o adendo anterior do quadro preservado. ROOT global24868/8da234:947 arquivos/7.540 testes,646,28s,w1,sem filtros/skips,EXIT0. TypeScript original92288/6326e2:heap8192/noEmit/incrementalfalse,EXIT0. Lint dirigido31fontes28465/4bc0ad,config original,zero avisos/erros,EXIT0. Tentativas globais interrompidas54716 e73499 permanecem negativas administrativas; não foram tratadas como aprovação.
 
 Pacote output/inbox-344-qa contém quatro pareceres integrais com fontes distintas, incluindo o negativo713 e a correção causal do cursord0. CI limpo (inclusive eslint completo) e integração remota ainda pendentes; PR em rascunho/Refs344, sem homologação ou encerramento presumido.
+
+
+### #344 — CI final da PR #428 (25/10/2026)
+
+HEAD 4df9816fcdf7b2121921b6b361ce98fb8981e584: fast40157067583 com cinco jobs aprovados (build, TypeScript original, lint integral e 947 arquivos/7.540 testes por fuso). FULL40157093746 com quatro shards aprovados:356 arquivos/3.259 testes aprovados;3 arquivos/4 testes ignorados. Watcher50123/4815d1 EXIT0. QA estática independente a8dd24 EXIT0 confirma31 fontes/3.567 objetos protegidos e os quatro pareceres históricos integrais. Adendo de publicação somente documental; nenhuma aprovação de merge presumida. Índice/ci-final.json distinguem fontes, fusos e recortes.
