@@ -43,3 +43,13 @@ Somente o diagnóstico opt-in comprova as quatro contagens explícitas e o model
 Preços são capturados da tabela canônica no claim, incluindo faixa longa e fator de escrita de cache. A finalização calcula sobre esse snapshot, sem consultar configuração ou preços atuais. Uso/modelo não calculáveis retornam ausência de registro, não uma chamada de custo zero. Só a demonstração explicitamente simulada aceita custo conhecido zero com modelo/provedor simulados e contagens zero.
 
 Esses contratos estão testados com HTTP fake e funções puras. Claim, início, finalização transacional, reconciliação, descarte, avisos e integração real do provider ainda dependem do kernel e de provas SQL nativas; não estão homologados por estes testes.
+
+## Checkpoint do kernel privado (sem homologação SQL)
+
+Claim usa ConfigIA SHARE → AgenteIA SHARE → Atendimento NO KEY UPDATE → geração. START relê orçamento global atual sem upsert, mantém modelo/configuração/preços históricos e congela as mensagens efetivamente enviadas na mesma marca CAS. Ausência de Config ou orçamento estourado antes da marca termina FALHOU, sem chamada fictícia. RETOMAR é explícito, do autor original e com id/versão/hash atuais, sem devolver a chave antiga. Pré-start inválido pode ser recusado antes de nova intenção, sem reatribuir autor/contexto; iniciado e INCERTO nunca sofrem limpeza automática.
+
+Finalização trava Atendimento → geração e contabiliza uso conhecido no mesmo commit, mesmo quando ACL/binding impedem publicação. INCERTO/DESCARTADA aceitam somente contabilização tardia, sem publicar/reviver. Reconciliação e descarte usam ator atual realmente autorizado, hash atual esperado, versão CAS e Evento com chave operacional nova; não precisam expor chave/autor/contexto antigo. Replays exatos não geram Evento/aviso.
+
+O orquestrador privado chama o provider uma vez e tenta apenas persistência duas vezes com envelope/recebidoEm imutáveis. Duas falhas retornam statusPersistencia NAO_CONFIRMADA e estado conhecido ANTES da finalização, sem afirmar estado atual/custo salvo. GET autorizado por geração+atendimento resolve o terminal real; não dispara provider/mutação. Leitura RepeatableRead mantém a audiência e as consultas no mesmo snapshot; análise somente PRONTA e contexto atual compatível. Metadata operacional não inclui autor/chave/pointers/configuração/resultados antigos.
+
+O código deste checkpoint tem testes puros/doubles e lint; invariantes de locks, rollback, concorrência, custo e NOTIFY ainda exigem testes PostgreSQL reais. Nenhum endpoint, aba ou bridge foi habilitado. A definição anterior de pendências do kernel passa a significar prova nativa/integração, não ausência de autoria do código.

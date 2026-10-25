@@ -50,3 +50,13 @@ Schema fonte SHA257b91c3772970ad6d2c16b50172c4ccc205a40a4d055533f2de374f737010a2
 - Lint final dos 10 arquivos alterados: 6a96ef EXIT0, zero avisos. Sourceproof confirma chamarComRetry legado literal ao checkpoint85c, normalizando somente EOL. O formato do retorno e a chamada de um argumento dos consumidores sem controle foram testados.
 
 Técnicas e pendências: versão/modelo/preços e metadata da base são contratos internos propostos/aprovados; nenhum endpoint recebe envelope/custo do browser. O custo tardio com ACL revogada, replay transacional, concorrência e rollback ainda exigem kernel e SQL nativos. A aba real, reconciliação/descarte UI e bridge/scheduler permanecem pendentes. Testes HTTP são fake; não houve chamada externa, leitura de chave real, instalação, build ou TSC global do DEV.
+
+## Checkpoint kernel privado — 25/10/2026
+
+- Pasta original completa src/server/aria/insights: b500a7 EXIT0, 17 arquivos/155 testes, UTC/w1/heap1024, sem filtro por nome/skips. Recorte backend somente, não suíte global nem SQL.
+- Lint whitelist25 arquivos: negativo fc7b18 EXIT1 por Function no double/catch não usado; corrigidos, replay797242 EXIT0/zero avisos.
+- Leitura RED ed94eb EXIT1/8 falhas; rebind pré-start11188e EXIT1/1 falha8 controles; final leitura+controlador702a80 EXIT0/2 arquivos17 testes. GETterminal PRONTA/FALHOU/RECUSADA é leitura, não reconciliação automática.
+- Orquestrador inicial tinha sete falhas por módulo ausente e um unhandled do próprio double; esse erro de instrumentação não prova bug produtivo. Double corrigido sem chamar implementação na preparação e resetado entre casos. Diagnóstico knownusage: RED09ac81 EXIT1/1 falha7 controles; primeira correção1b870a teve erro local ReferenceError, preservado; replayf49d4e EXIT0/3 arquivos26 testes. Não somar recortes sobrepostos.
+- Núcleos claim/start/finalização/operacional têm doubles DB-aware e testes de ordem/CAS/shape, não prova SQL de locks/concorrência. Os REDs anteriores e controles estão nos logs privados. Testes PostgreSQL ainda serão escritos/executados no perfil493 após review/lease ROOT; não atribuir RED causal nativo retroativo a testes pós-implementação.
+
+Plano nativo entregue no output/inbox-377-preflight-nativo-plano-private.md: invariantes exclusividade/START, budget/config, ACL/binding frescos, custos/ACKlost/late/reconcile/discard, barreiras reais, pool1, NOTIFY commit/replay/rollback. Nenhuma lease SQL pedida/executada neste checkpoint. Endpoints/aba, UI operacional completa e bridges continuam pendentes. Schema/SQL493 e client permanecem congelados.
