@@ -14,8 +14,8 @@ describe("intercalação temporal de sugestões",()=>{
  });
  it("janela limitada não admite sugestão sem instante válido; limite nulo mantém a janela mais recente",()=>{
   const sugestoes=[s("sem-instante","invalido"),s("futura","2026-10-23T12:00Z")];
-  expect(ids(intercalarSugestoes([],em,sugestoes,{inicioJanela:null,fimJanela:"2026-10-23T11:00Z"}))).toEqual([]);
-  expect(ids(intercalarSugestoes([],em,sugestoes,{inicioJanela:null,fimJanela:null}))).toEqual(["futura","sem-instante"]);
+  expect(ids(intercalarSugestoes<{id:string;em:string|null}>([],em,sugestoes,{inicioJanela:null,fimJanela:"2026-10-23T11:00Z"}))).toEqual([]);
+  expect(ids(intercalarSugestoes<{id:string;em:string|null}>([],em,sugestoes,{inicioJanela:null,fimJanela:null}))).toEqual(["futura","sem-instante"]);
  });
  it("empate coloca sugestão depois dos itens; entradas e empates são estáveis",()=>{expect(ids(intercalarSugestoes([i("a","2026-10-23T10:00Z"),i("b","2026-10-23T10:00Z")],em,[s("p","2026-10-23T10:00Z"),s("q","2026-10-23T10:00Z")],{inicioJanela:null}))).toEqual(["a","b","p","q"]);});
  it("ordena por instante incluindo offsets, não texto",()=>{expect(ids(intercalarSugestoes([i("m","2026-10-23T10:00Z")],em,[s("depois","2026-10-23T08:01:00-02:00"),s("antes","2026-10-23T18:59:00+09:00")],{inicioJanela:null}))).toEqual(["antes","m","depois"]);});
