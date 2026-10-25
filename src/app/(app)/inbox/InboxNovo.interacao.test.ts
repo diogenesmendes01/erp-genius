@@ -62,6 +62,7 @@ import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
 import { PainelSetor } from "./PainelSetor";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
+import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { LinhaCampo } from "./LinhaCampo";
 import { OptOutContato } from "./OptOutContato";
 import { PainelTriagem } from "./PainelTriagem";
@@ -1061,4 +1062,12 @@ it("326: componentes reais mantêm um único modal, foco e editor fora de inert 
   } finally {
     await act(async () => root.unmount()); desligarObservadores(); m.g = g;
   }
+});
+
+it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capacidades fechadas com cabecalho %s', async (caso) => {
+ const capacidades = { veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: true, moverEtapa: true, tarefas: true, tarefasEquipe: true, desfazerAria: true, verEmpresa: true };
+ const cabecalho = caso === 'ausente' ? undefined : caso === 'nulo' ? null : { pessoaId: 'p327', tagsDisponiveis: [], semNome: false, capacidades };
+ vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.endsWith('/painel') ? { setor: 'COMERCIAL', podeEnviar: false, tags: [], acoes: null, cabecalho } : url.endsWith('/oportunidades') ? { atual: null, outras: [], pessoaId: null } : { pessoa: null, oportunidade: null, b2b: null, campos: [] }))));
+ tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!; (painel.props.aoTrocarAba as (id: string) => void)('oportunidades'); tela(); await esvaziar();
+ const aba = elementos(tela()).find(n => n.type === AbaOportunidades)!; expect(aba).toBeDefined(); expect(aba.props.capacidades).toEqual(caso === 'presente' ? capacidades : Object.fromEntries(Object.keys(capacidades).map(k => [k, false])));
 });

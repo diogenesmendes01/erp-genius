@@ -257,8 +257,9 @@ export function configurarOportunidadesCli(estado, env = process.env) {
     const ator = estado === 'painel-oportunidades-leitor' ? 'leitor' : 'admin', prefixo = 'INBOX_VISUAL_OPORTUNIDADES_' + ator.toUpperCase();
     return configurarOportunidades({ atendimentoId: env.INBOX_VISUAL_OPORTUNIDADES_ATENDIMENTO, oportunidadeId: env.INBOX_VISUAL_OPORTUNIDADES_ID, pessoaId: env.INBOX_VISUAL_OPORTUNIDADES_PESSOA, ator, usuarioId: env[prefixo + '_USUARIO_ID'] ?? env.INBOX_VISUAL_USUARIO_ID, email: env[prefixo + '_EMAIL'] ?? env.INBOX_VISUAL_EMAIL });
 }
+// Mesmos originais: blobs Git LF ou checkout Windows CRLF; hashes físicos continuam no manifesto.
 export function excecaoConsolePrototipo327({ alvo, tipo, texto, hashes }) {
-    if (alvo !== 'prototipo' || tipo !== 'error' || hashes?.htmlSha256 !== '7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf' || hashes?.supportSha256 !== 'd6bb6dd3aadb9ff722d5d6db2193572ece476b915899575a571de7a0717f001f')
+    if (alvo !== 'prototipo' || tipo !== 'error' || !['7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf', 'd798650956fba7ccee3b4efb22d56e81fb6504d89909c23178b9691d3515db50'].includes(hashes?.htmlSha256) || !['d6bb6dd3aadb9ff722d5d6db2193572ece476b915899575a571de7a0717f001f', '8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe'].includes(hashes?.supportSha256))
         return false;
     const suporte = new URL('../../docs/planejamento/inbox-prototipo/prototipo/support.js', import.meta.url).href;
     return typeof texto === 'string' && texto.startsWith("TypeError: Cannot read properties of undefined (reading 'sel')\n") && texto.includes('Component.componentDidUpdate (eval at evalDcLogic (' + suporte + ':844:16), <anonymous>:143:202)') && texto.includes('StreamableComponent.componentDidUpdate (' + suporte + ':1013:24)');

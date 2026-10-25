@@ -1,8 +1,9 @@
 {
+  "estadoAtual": "REVISAO_R1_MANIFESTO_5PATHS",
+  "fonteExecutavelHistorica": "9a8ebc81fe59eb978a219443485952d56ab83bbe",
+  "composicaoHistorica": "c9016471ee2393ee0645e8d333d5cba6591e370a",
   "issue": 327,
-  "fonteExecutavel": "9a8ebc81fe59eb978a219443485952d56ab83bbe",
   "docsDev": "346ec2e7e687db74f23febf64ac25c53e3205bf4",
-  "composicao": "c9016471ee2393ee0645e8d333d5cba6591e370a",
   "dependencia326": {
     "pr": 420,
     "base": "ecac425dbfaa59e8438e6afc094bed044fa67579",
@@ -137,5 +138,21 @@
     "Corpus misto nominalEBF,sem atribuição de captura ao porte9a8/Main491.A7/A9agregadosEXIT1preservados;A10zeroPNG.Checksnovoshref/slot/fronteiranãoretroaplicadosàA7,badgeNextmobilequalificado.PROTOreferênciaestática.",
     "CLIhistórica não equivale ao wrapper A11 e não autoriza novaUI/escrita.",
     "Dependência326/anexos/CI/full/revisão final e merge327 pendentes;328UIparcialpermaneceaberta."
-  ]
+  ],
+  "revisaoR1": {
+    "prova": "revisao-r1.json",
+    "fonteAnterior": "668abe6576c1834ddb94d2e3f0a547d25b4f1a15",
+    "estado": "CORRECOES_TESTES_LINT_TSC_APROVADOS_QA_FINAL_PENDENTE",
+    "escopo": "Cinco paths: doisMJS de guarda, CLItest, fallbackInboxNovo e testeinteracao. Manifeste original44objetos permanece nominal à fonte anterior9a8/c901/668; não é identidade da revisãoR1."
+  },
+  "integracaoCompleta668": {
+    "prova": "ci-full-668.json",
+    "run": 40146868322,
+    "arquivos": 357,
+    "testes": 3185,
+    "arquivosIgnorados": 3,
+    "testesIgnorados": 4,
+    "fonte": "668abe6576c1834ddb94d2e3f0a547d25b4f1a15",
+    "conclusao": "success"
+  }
 }

@@ -125,3 +125,12 @@ ROOT confirmou restauroA491 posterior aos67INT (5369daEXIT0):424hashes/557regist
 
 ### Publicação e QA independente da composição327
 Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](../../output/inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.
+
+
+## Revisão R1: portabilidade dos originais e cabeçalho opcional
+
+O finding B1 é real: os pinos físicos CRLF do Windows recusavam os blobs LF no Linux. As conversões completas nos dois sentidos provaram que só os finais de linha diferem. A guarda anterior ao browser e a exceção estrita de console passam a admitir somente os hashes raw exatos das duas representações conhecidas, sem normalizar o arquivo servido ou editar os originais. O manifesto conserva o hash físico real; o corpus anterior continua nominal às fontes físicas originais. Não houve recaptura nem execução de browser real nesta correção.
+
+C3: sem cabeçalho, a aba recebe todas as capacidades negadas. As regressões ausente/nulo falharam antes da correção e o controle positivo preserva as capacidades recebidas. B1 GREEN2arquivos/24 e C3 GREEN3arquivos/132, sem filtros/skips, são recortes diferentes e não são somados. Lint5 EXIT0; TypeScript original9539/74fac3 EXIT0, Node22heap8192/noEmit/incrementalfalse, semconfigaux/exclusões extras; QA final ainda pendente. Prova em output/inbox-327-qa/revisao-r1.json.
+
+Integração completa668 em output/inbox-327-qa/ci-full-668.json:357arquivos/3.185testes aprovados, três arquivos/quatro opt-in ignorados, quatro shards. Essa execução antecede o patchR1 e não é uma nova integração dele. Backend/schema/contratos de transação não foram alterados pelo patch. A prova composicao.json de44objetos permanece nominal ao porte anterior; os cinco deltasR1 têm hashes separados. Dependência326, autorização/publicação de anexos, composição com main e merge continuam pendentes.

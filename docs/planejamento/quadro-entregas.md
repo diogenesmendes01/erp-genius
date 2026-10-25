@@ -6875,3 +6875,8 @@ RestauroROOTA4915369daEXIT0 posterior aos67INT confirmado:424hashes/557registros
 
 ### Publicação e QA independente da composição327
 Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](../../output/inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.
+
+
+### Inbox327 — revisão R1 e integração nominal668
+
+B1 confirmado: gate de originais WindowsCRLF versus blobsLF; guarda/exceção admitem somente os dois rawhashes exatos conhecidos. C3 fallback de capacidades negadas cobre cabeçalho ausente/nulo. B1 RED15/16→GREEN2files24; C3 RED89/91→GREEN3files132; lint5zero;TSCoriginal9539/74fac3 EXIT0;QA final pendente. Full40146868322 nominal668 anteriorpatch:357/3185+3files4optinskips. Backend/schema intocados; corpus histórico não recapturado/relabelado, anexos326/327 e merge continuam pendentes. Fontes em output/inbox-327-qa/revisao-r1.json e ci-full-668.json.
