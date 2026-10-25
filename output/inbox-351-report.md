@@ -37,7 +37,7 @@ TSC usa heap de 8192 MB, --noEmit --incremental false e tsconfig.inbox-342-aux-p
 
 ## Identidades e fontes
 
-Prova 77429/edbd4f, EXIT0: montarNotaResumo, executarHandoff e 11 outras funções de consultas permanecem literais. O corpo extraído de podeVerLeadNaThread tem 633 bytes LF e SHA256 e68b8aee4fdfa9c6934fb7c378a1357c60c2b55eeb66e06615b914fbedabb4c7. Os 13 textos antigos do Playground e 13 paths protegidos são iguais à base. Não há alteração de #349, #342, uso, executor, tarefas, schema ou dependências.
+Prova 77429/edbd4f, EXIT0: montarNotaResumo, executarHandoff e 11 outras funções de consultas permanecem literais. A função completa extraída de podeVerLeadNaThread (export, assinatura e corpo) tem 633 bytes LF e SHA256 e68b8aee4fdfa9c6934fb7c378a1357c60c2b55eeb66e06615b914fbedabb4c7. Os 13 textos antigos do Playground e 13 paths protegidos são iguais à base. Não há alteração de #349, #342, uso, executor, tarefas, schema ou dependências.
 
 Hashes SHA256 da fonte final, em LF; os bytes físicos destes arquivos também estão em LF:
 
@@ -61,3 +61,11 @@ O banco foi liberado ao ROOT após o último terminal; nenhuma nova operação D
 ### Constância final do banco — #351
 
 ROOT confirmou restauro do ciint491 na sessão 362469, EXIT0: 424 hashes conferidos, fixture e snapshot preservados, zero outras atividades. Nenhuma nova operação DB pelo DEV. Fonte funcional 55d9c5eb159649f73a35686183fa81d5400304b5 preservada; este adendo é exclusivamente documental. QA independente, revisão, CI e publicação seguem pendentes.
+
+
+### Composição sobre349 corrigida e expectativas completas
+A fontef95688f7 incorpora34923fb eMain170edbad;12SRC351 são byteiguais aoDEV/QA6fe. Um13ºpath de teste acrescenta somente handoff:null a quatro expectativas completas, mantendo os nove toEqual. RED completo1124/3d2992:11passes/2falhas em13,saída1; GREEN completo49233/22d738:13/13,76,35s,saída0,um worker,sem filtro/skips. RestauroROOT98878/db4b5d terminou0:424hashes/1378registros/sequências preservados. QA independente nominal:7/235UNIT e3/34INT,lint12;restauroTESTER55a5ff. [Evidências e limites](inbox-351-qa/indice.json). UNITglobal/TSCoriginal da composição em curso;CI/revisão final/publicação/merge pendentes. Não concluir351 e não somar recortes.
+
+
+### Gates originais da fonte integrada e899cef2
+ROOT aprovou a regressão UNIT global:941arquivos/7.483testes,448,67s,doisworkers,sem filtro/skips na configuração unitária que excluiINT (sessão53058/terminalc68959,saída0). TypeScript ORIGINAL sem exclusões/incremental,heap8192MB:85065/e8c411,saída0. Lint GLOBAL43255/98c001,saída0,zero erros/40avisos herdados. Os13SRC do manifesto foram conferidos no commit e899cef25252452614a73b46303c444c8ba8e51e:12iguais aoDEV6fe e fixture adicional com4defaults completos. Nenhuma fonte mudou durante os gates. A dependência349 ainda aguarda integração completa/merge;CI/full351 e revisão final continuam separadas.

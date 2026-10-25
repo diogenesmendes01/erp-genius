@@ -35,3 +35,11 @@ podeVerLeadNaThread foi movido literalmente para whatsapp/visibilidade-lead.ts, 
 Fontes da #349, decoder, histórico, executor, estado da #342, uso, schema e dependências ficam preservados. Cinco literais de teste do cliente e três expectativas completas recebem somente handoff: null. A guarda de mapas acrescenta o novo mapa e uma exceção exata por arquivo/nome para a descrição histórica contextual, sem alterar o classificador.
 
 Visual novo: N/A, produtor interno e refatoração de rótulos com layout e textos existentes preservados. [Relatório DEV](../../output/inbox-351-report.md) registra gates, negativos e limites. QA independente, CI e publicação permanecem com ROOT.
+
+
+### Composição sobre349 corrigida e expectativas completas
+A fontef95688f7 incorpora34923fb eMain170edbad;12SRC351 são byteiguais aoDEV/QA6fe. Um13ºpath de teste acrescenta somente handoff:null a quatro expectativas completas, mantendo os nove toEqual. RED completo1124/3d2992:11passes/2falhas em13,saída1; GREEN completo49233/22d738:13/13,76,35s,saída0,um worker,sem filtro/skips. RestauroROOT98878/db4b5d terminou0:424hashes/1378registros/sequências preservados. QA independente nominal:7/235UNIT e3/34INT,lint12;restauroTESTER55a5ff. [Evidências e limites](../../output/inbox-351-qa/indice.json). UNITglobal/TSCoriginal da composição em curso;CI/revisão final/publicação/merge pendentes. Não concluir351 e não somar recortes.
+
+
+### Gates originais da fonte integrada e899cef2
+ROOT aprovou a regressão UNIT global:941arquivos/7.483testes,448,67s,doisworkers,sem filtro/skips na configuração unitária que excluiINT (sessão53058/terminalc68959,saída0). TypeScript ORIGINAL sem exclusões/incremental,heap8192MB:85065/e8c411,saída0. Lint GLOBAL43255/98c001,saída0,zero erros/40avisos herdados. Os13SRC do manifesto foram conferidos no commit e899cef25252452614a73b46303c444c8ba8e51e:12iguais aoDEV6fe e fixture adicional com4defaults completos. Nenhuma fonte mudou durante os gates. A dependência349 ainda aguarda integração completa/merge;CI/full351 e revisão final continuam separadas.

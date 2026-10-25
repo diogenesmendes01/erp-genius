@@ -1,0 +1,83 @@
+{
+  "issue": 351,
+  "fonteDevQa": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+  "composicaoFonte": "e899cef25252452614a73b46303c444c8ba8e51e",
+  "dependencia349": {
+    "pr": 424,
+    "fonte": "23fb69f001fb05ba6df49e884b8260058e00de6f",
+    "mergeada": false
+  },
+  "parecer": {
+    "path": "codigo-6fe.md",
+    "bytes": 10091,
+    "sha256": "cd7e4b338e344a5672a8789e0ab726b55c960d1813cc6b848c8766cfd78b0f5e"
+  },
+  "gatesTester": {
+    "UNIT": {
+      "arquivos": 7,
+      "testes": 235,
+      "sessao": 41035,
+      "terminal": "8f32b8",
+      "exit": 0,
+      "segundos": 30.72
+    },
+    "INT": {
+      "arquivos": 3,
+      "testes": 34,
+      "sessao": 11991,
+      "terminal": "65d9c9",
+      "exit": 0,
+      "segundos": 144.89,
+      "workers": 1,
+      "filtros": 0,
+      "skips": 0
+    },
+    "lint": {
+      "paths": 12,
+      "terminal": "fbe2f5",
+      "exit": 0
+    }
+  },
+  "restauroTester": {
+    "executor": "55a5ff/EXIT0",
+    "tabelas": 424,
+    "registros": 1392,
+    "mensagens": 9,
+    "notas": 4
+  },
+  "limites": [
+    "RecortesDEV/TESTER/ROOT sobrepostos não são somados.",
+    "Visual N/A, produtorDTO/refatoração de rótulos; consumidor352 ainda pendente.",
+    "Função podeVerLeadNaThread completa tem633bytes;bodyASTisolado478bytes.",
+    "Composição e gates originaisROOT aprovados nominalmente em e899. CI/full351,publicação/revisãofinal e dependência349 permanecem pendentes."
+  ],
+  "gatesRoot": {
+    "UNITglobal": {
+      "sessao": 53058,
+      "terminal": "c68959",
+      "exit": 0,
+      "arquivos": 941,
+      "testes": 7483,
+      "segundos": 448.67,
+      "workers": 2,
+      "filtros": 0,
+      "skips": 0,
+      "config": "vitest.config.ts exclui INT"
+    },
+    "typeScriptOriginal": {
+      "sessao": 85065,
+      "terminal": "e8c411",
+      "exit": 0,
+      "incremental": false,
+      "heapMB": 8192,
+      "exclusoesAuxiliares": false
+    },
+    "lintGlobal": {
+      "sessao": 43255,
+      "terminal": "98c001",
+      "exit": 0,
+      "erros": 0,
+      "avisosHerdados": 40
+    }
+  }
+}
