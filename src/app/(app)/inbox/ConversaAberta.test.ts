@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
+const virtual350=vi.hoisted(()=>({props:null as null|import("@/components/conversa/VirtualList").VirtualListProps<unknown>}));
+vi.mock("@/components/conversa/VirtualList",async original=>{const real=await original<typeof import("@/components/conversa/VirtualList")>();return {...real,VirtualList:(p:import("@/components/conversa/VirtualList").VirtualListProps<unknown>)=>{virtual350.props=p;return real.VirtualList(p);}};});
 const permissao = vi.hoisted(() => ({ enviar: true, chamadas: [] as unknown[][] }));
 vi.mock("@/server/inbox/permissoes", async (orig) => {
   const real = await orig<typeof import("@/server/inbox/permissoes")>();
@@ -12,6 +14,7 @@ vi.mock("@/server/inbox/permissoes", async (orig) => {
     return args[1] === "enviar" ? permissao.enviar : real.podeExecutar(...args);
   } };
 });
+vi.mock("@/server/aria/acoes",()=>({aprovarAcaoAria:vi.fn(),rejeitarAcaoAria:vi.fn()}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn() }));
 vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), revogarParticipante: vi.fn(), transferirAtendimento: vi.fn() }));
@@ -221,4 +224,20 @@ describe("319: estados públicos da thread",()=>{
   const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens:[msg],carregandoAntigas:true,temMaisAntes:true}})));
   expect(h).toContain("Olá");expect(h).not.toContain("Carregando mensagens");expect(h).toContain('aria-busy="true"');expect(h).toContain("Mensagens anteriores");
  });
+});
+
+// #350: cartões vêm do painel autorizado; envio do compositor é outro contrato.
+it("renderiza sugestão autorizada mesmo sem podeDecidir no lead do atendimento ou envio",()=>{
+ const cartao={id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:"Pedido de informação",texto:"Resposta sugerida",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,aria:{podeDecidir:false,cartoes:[cartao]}} as never)));
+ expect(h).toContain("Resposta sugerida");expect(h).toContain("Aprovar e enviar");
+});
+
+it("cartões são alcançáveis no consumidor da lista virtual real sem alterar keys legadas",()=>{
+ const mensagens=Array.from({length:120},(_,i)=>({...msg,id:"m"+i,criadoEm:new Date(Date.UTC(2026,9,17,12,i)).toISOString()}));
+ const cartao={id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T12:01:30Z",expiraEm:null,justificativa:null,texto:"Resposta",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens},aria:{cartoes:[cartao]}} as never)));
+ const v=virtual350.props!;const row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;
+ expect(v.stableMount).toBe(true);expect(v.isItemFocusable!(row,0)).toBe(true);expect(v.getKey(row,0)).toBe("sugestao-aria:s");
+ expect(v.items.filter(x=>(x as {tipo:string}).tipo==="mensagem").map((x,i)=>v.getKey(x,i))).toEqual(mensagens.map(m=>m.id));
 });

@@ -476,6 +476,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             fuso={fuso}
             agoraInicial={agoraInicial}
             conversa={conversa}
+            aria={painelDoAberto?.dado?.aria}
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}
             destinos={destinos}
