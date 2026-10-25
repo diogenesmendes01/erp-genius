@@ -50,6 +50,16 @@ const mesmo = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.str
 const eventoAcao = (tx: Tx, tipo: string, acao: AcaoAgenteIA, autorId: string, extra: Record<string, Json | null> = {}) =>
   registrarEvento(tx, { tipo, agregadoTipo: "AcaoAgenteIA", agregadoId: acao.id, autorId, payload: { acaoAgenteIAId: acao.id, acao: acao.acao, ...extra } });
 
+export async function aprovarAcaoAriaTx(tx: Tx, acao: AcaoAgenteIA, u: UsuarioSessao, opcoes?: { fusoTarefa: string | null }): Promise<void> {
+  const id = acao.id;
+  if (acao.status === "APROVADA" && acao.decididaPorId === u.id && await ultimoEventoDoAutor(tx, { tipo: "AcaoAriaAprovada", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id })) return;
+  if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
+  if (acao.expiraEm && acao.expiraEm.getTime() <= Date.now()) throw new ErroRegra("Esta sugestão expirou.");
+  const r = acao.acao === "RESPONDER" || acao.acao === "ENVIAR_DOCUMENTO" ? await efetivarRespostaSugerida(tx, acao) : await aplicarAcao(tx, acao, undefined, opcoes);
+  await tx.acaoAgenteIA.update({ where: { id }, data: { status: "APROVADA", decididaPorId: u.id, decididaEm: new Date(), eventoId: r.eventoId } });
+  await eventoAcao(tx, "AcaoAriaAprovada", acao, u.id, { efeitoEventoId: r.eventoId });
+}
+
 export async function aprovarAcaoAria(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirDecisor();
@@ -57,14 +67,21 @@ export async function aprovarAcaoAria(id: string): Promise<Resultado> {
       const acao = await travarAcao(tx, id);
       const u = await decisorAtual(tx, autor.id);
       await exigirEscopo(tx, u, acao);
-      if (acao.status === "APROVADA" && acao.decididaPorId === u.id && await ultimoEventoDoAutor(tx, { tipo: "AcaoAriaAprovada", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id })) return;
-      if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
-      if (acao.expiraEm && acao.expiraEm.getTime() <= Date.now()) throw new ErroRegra("Esta sugestão expirou.");
-      const r = acao.acao === "RESPONDER" || acao.acao === "ENVIAR_DOCUMENTO" ? await efetivarRespostaSugerida(tx, acao) : await aplicarAcao(tx, acao);
-      await tx.acaoAgenteIA.update({ where: { id }, data: { status: "APROVADA", decididaPorId: u.id, decididaEm: new Date(), eventoId: r.eventoId } });
-      await eventoAcao(tx, "AcaoAriaAprovada", acao, u.id, { efeitoEventoId: r.eventoId });
+      await aprovarAcaoAriaTx(tx, acao, u);
     });
   });
+}
+
+export async function rejeitarAcaoAriaTx(tx: Tx, acao: AcaoAgenteIA, u: UsuarioSessao, m: string | null): Promise<void> {
+  const id = acao.id;
+  if (acao.status === "REJEITADA" && acao.decididaPorId === u.id) {
+    const ultimo = await ultimoEventoDoAutor(tx, { tipo: "AcaoAriaRejeitada", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id });
+    if (ultimo && ultimo.motivo === m) return;
+  }
+  if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
+  const payload = { ...((acao.payload ?? {}) as Dados), ...(m ? { motivoRejeicao: m } : {}) } as Prisma.InputJsonObject;
+  await tx.acaoAgenteIA.update({ where: { id }, data: { status: "REJEITADA", decididaPorId: u.id, decididaEm: new Date(), payload } });
+  await eventoAcao(tx, "AcaoAriaRejeitada", acao, u.id, { motivo: m });
 }
 
 export async function rejeitarAcaoAria(id: string, motivo?: string): Promise<Resultado> {
@@ -75,14 +92,7 @@ export async function rejeitarAcaoAria(id: string, motivo?: string): Promise<Res
       const acao = await travarAcao(tx, id);
       const u = await decisorAtual(tx, autor.id);
       await exigirEscopo(tx, u, acao);
-      if (acao.status === "REJEITADA" && acao.decididaPorId === u.id) {
-        const ultimo = await ultimoEventoDoAutor(tx, { tipo: "AcaoAriaRejeitada", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id });
-        if (ultimo && ultimo.motivo === m) return;
-      }
-      if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
-      const payload = { ...((acao.payload ?? {}) as Dados), ...(m ? { motivoRejeicao: m } : {}) } as Prisma.InputJsonObject;
-      await tx.acaoAgenteIA.update({ where: { id }, data: { status: "REJEITADA", decididaPorId: u.id, decididaEm: new Date(), payload } });
-      await eventoAcao(tx, "AcaoAriaRejeitada", acao, u.id, { motivo: m });
+      await rejeitarAcaoAriaTx(tx, acao, u, m);
     });
   });
 }
@@ -178,18 +188,23 @@ async function reverter(tx: Tx, u: UsuarioSessao, acao: AcaoAgenteIA): Promise<v
   }
 }
 
+export async function desfazerAcaoAriaTx(tx: Tx, acao: AcaoAgenteIA, u: UsuarioSessao): Promise<void> {
+  const id = acao.id;
+  if (acao.status === "DESFEITA") throw new ErroRegra("Esta ação já foi desfeita.");
+  if (acao.status !== "EXECUTADA" && acao.status !== "APROVADA") throw new ErroRegra("Só ações executadas ou aprovadas podem ser desfeitas.");
+  if (!acao.reversivel) throw new ErroRegra(acao.motivoIrreversivel ?? "Esta ação não pode ser desfeita.");
+  await reverter(tx, u, acao);
+  await tx.acaoAgenteIA.update({ where: { id }, data: { status: "DESFEITA", desfeitaPorId: u.id, desfeitaEm: new Date() } });
+  await eventoAcao(tx, "AcaoAriaDesfeita", acao, u.id);
+}
+
 export async function desfazerAcaoAria(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirDecisor();
     await prisma.$transaction(async (tx) => {
       const acao = await travarAcao(tx, id);
       await exigirEscopo(tx, u, acao);
-      if (acao.status === "DESFEITA") throw new ErroRegra("Esta ação já foi desfeita.");
-      if (acao.status !== "EXECUTADA" && acao.status !== "APROVADA") throw new ErroRegra("Só ações executadas ou aprovadas podem ser desfeitas.");
-      if (!acao.reversivel) throw new ErroRegra(acao.motivoIrreversivel ?? "Esta ação não pode ser desfeita.");
-      await reverter(tx, u, acao);
-      await tx.acaoAgenteIA.update({ where: { id }, data: { status: "DESFEITA", desfeitaPorId: u.id, desfeitaEm: new Date() } });
-      await eventoAcao(tx, "AcaoAriaDesfeita", acao, u.id);
+      await desfazerAcaoAriaTx(tx, acao, u);
     });
   });
 }
