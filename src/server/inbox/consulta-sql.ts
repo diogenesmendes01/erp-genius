@@ -12,8 +12,10 @@ export interface IdPaginaInbox { id:string; ultimaMensagemEm:Date|null }
 /** Cursor é composição fechada. Não pertence ao registry do where canônico. */
 export function depoisDoCursorEmSql(c:CursorInbox):Prisma.Sql {
   if(c.em===null)return Prisma.sql`a."ultimaMensagemEm" IS NULL AND a."id" < ${c.id}::text`;
-  return Prisma.sql`(a."ultimaMensagemEm" < ${c.em}::timestamp(3)
-    OR (a."ultimaMensagemEm" = ${c.em}::timestamp(3) AND a."id" < ${c.id}::text)
+  // O decoder legado aceita offsets: preservar o instante antes do cast sem fuso.
+  const instante=new Date(c.em).toISOString();
+  return Prisma.sql`(a."ultimaMensagemEm" < ${instante}::timestamp(3)
+    OR (a."ultimaMensagemEm" = ${instante}::timestamp(3) AND a."id" < ${c.id}::text)
     OR a."ultimaMensagemEm" IS NULL)`;
 }
 /** Apenas IDs da página; todos os filtros são aplicados antes de LIMIT. */

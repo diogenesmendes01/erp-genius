@@ -58,3 +58,10 @@ Uma guarda real identificou a fixture M2 como produção pelo nome `.int.ts`. Fo
 Fechamento DEV M3: INT quatro completos/59 seguido da revalidação de três/27 após mover fixture literalmente; UNIT relacionado20/471 preserva seu negativo e três afetados/44 foram revalidados verdes; lint24/TSC auxiliar final EXIT0. São recortes nominais sobrepostos, não suíte global. Nenhuma nova interface visível foi criada. Constância/restauro, QA independente e CI serão atribuídos às execuções do integrador no relatório.
 
 ROOT confirmou restauro491 em72031/460f14 EXIT0, com hashes/snapshot/fixture preservados e zero outra atividade. QA independente e publicação continuam pendentes.
+
+
+## Revisão de QA M3 — cursor aceito com offset
+
+A QA independente no7138574 passou UNIT20/471, INT4/59 e lint24, mas não aprovou a fonte: oráculo somente leitura demonstrou seis divergências em18combinações de cursor/fuso. O decoder preserva strings Date.parse válidas; o cast direto para timestamp ignorava o offset. O integrador preservou o negativo e acrescentou consulta-sql.cursor.int.test.ts com21combinações reais, em três fusos, CTE VALUES e TX READ ONLY. RED a3fdbe:9falhas/12passes, incluindo os offsets e a entrada legada aceita0 que produzia erroSQL. Nenhuma tabela/fixture foi escrita.
+
+A correção somente normaliza a fronteira temporal com new Date(c.em).toISOString antes do cast. Decoder, NULL, desempate por ID, parametrização, ACL, registry e todos os demais corpos permanecem intactos. GREEN8845ac EXIT0:21/21,3,21s,w1. UNITd8f7a5 EXIT0:dois arquivos completos/seis casos,1,35s,w1;lint2c96bba EXIT0. TSC original26267/03ef61 EXIT0, Node22heap8192/noEmit/incrementalfalse, sem configuração auxiliar ou exclusões extras. Após RED/GREEN, auditoria53cc14 confirmou424hashes/1378registros iguais ao snapshot4834: somente leitura, sem restauro necessário. Esses recortes não são somados nem convertem a QA negativa original em aprovação. Nova QA causal/composiçãoMain/CI continuam pendentes.

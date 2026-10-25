@@ -6851,3 +6851,8 @@ Prova AST 1decdf: sete funções da #342, corpo de não lidas e thread preservad
 Fechamento de gates DEV M3: sessão31050/7c85a2, três INT completos/27 após o movimento literal, EXIT0; produção idêntica à prova anterior59. TSC auxiliar final6077/04c1ce EXIT0, com apenas as duas exclusões privadas históricas explicitadas no report. Banco491 liberado ao ROOT; nenhum executor B ativo ou nova DB. Handoff aguarda constância do restauro, QA independente, união/CI e publicação; sem conclusão presumida.
 
 Constância final ROOT após a liberação: sessão72031/460f14 EXIT0. ciint491, 491 migrações/424 tabelas, hashes originais, fixture e snapshot preservados, zero outra atividade. Nenhuma nova lease DB ao DEV. QA independente M3 e TSC original/global pertencem à composição ROOT, sem reatribuir o auxiliar como original.
+
+
+### Inbox344 — correção causal do cursor após QA M3
+
+QA713:UNIT20/471+INT4/59+lint24 verdes, porém P2offset confirmado em6/18controles. ROOTregressãoSQLREADONLY21:RED9falhas12passes→GREEN21/21(8845ac),UNIT2/6(d8f7a5),lint2(c96bba);normalizaapenasnewDate(c.em).toISOString antescast. TSCoriginal26267/03ef61 EXIT0;hashesauditados53cc14iguais. QAcausal/composiçãoMain/CI pendentes. NenhumaDDL/fixture/tabelaescrita;decoder/ACL/NULL/id/registry preservados.

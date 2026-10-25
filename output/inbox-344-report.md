@@ -121,3 +121,10 @@ Hashes SHA256 GitLF de produção M3: contexto-lista.ts 7338379b9995b7e1d0849035
 DEV concluído para handoff. Restauro491 pelo ROOT, QA independente no commit exato, união dos hunks A328, regressão integrada/CI e publicação permanecem sob coordenação ROOT. #344 não é marcada concluída ou homologada por estes gates locais.
 
 Constância final ROOT após a liberação: sessão72031/460f14 EXIT0. ciint491, 491 migrações/424 tabelas, hashes originais, fixture e snapshot preservados, zero outra atividade. Nenhuma nova lease DB ao DEV. QA independente M3 e TSC original/global pertencem à composição ROOT, sem reatribuir o auxiliar como original.
+
+
+## Revisão de QA M3 — cursor aceito com offset
+
+A QA independente no7138574 passou UNIT20/471, INT4/59 e lint24, mas não aprovou a fonte: oráculo somente leitura demonstrou seis divergências em18combinações de cursor/fuso. O decoder preserva strings Date.parse válidas; o cast direto para timestamp ignorava o offset. O integrador preservou o negativo e acrescentou consulta-sql.cursor.int.test.ts com21combinações reais, em três fusos, CTE VALUES e TX READ ONLY. RED a3fdbe:9falhas/12passes, incluindo os offsets e a entrada legada aceita0 que produzia erroSQL. Nenhuma tabela/fixture foi escrita.
+
+A correção somente normaliza a fronteira temporal com new Date(c.em).toISOString antes do cast. Decoder, NULL, desempate por ID, parametrização, ACL, registry e todos os demais corpos permanecem intactos. GREEN8845ac EXIT0:21/21,3,21s,w1. UNITd8f7a5 EXIT0:dois arquivos completos/seis casos,1,35s,w1;lint2c96bba EXIT0. TSC original26267/03ef61 EXIT0, Node22heap8192/noEmit/incrementalfalse, sem configuração auxiliar ou exclusões extras. Após RED/GREEN, auditoria53cc14 confirmou424hashes/1378registros iguais ao snapshot4834: somente leitura, sem restauro necessário. Esses recortes não são somados nem convertem a QA negativa original em aprovação. Nova QA causal/composiçãoMain/CI continuam pendentes.
