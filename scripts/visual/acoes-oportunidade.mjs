@@ -92,6 +92,7 @@ export function semanticaAcoes328(d) {
         }
         return inteiro ? r.left >= l.left - 1 && r.right <= l.right + 1 && r.top >= l.top - 1 && r.bottom <= l.bottom + 1 : Math.min(r.right, l.right) > Math.max(r.left, l.left) && Math.min(r.bottom, l.bottom) > Math.max(r.top, l.top);
     };
+    const focoValido = modal => { const foco = document.activeElement; return !!foco && foco.isConnected && !foco.disabled && modal.contains(foco) && visivel(foco); };
     const pendente = area => [area, ...area.querySelectorAll('[aria-busy="true"], [role="alert"], [role="status"]')].some(e => acessivel(e) && (e.getAttribute('aria-busy') === 'true' || (['alert', 'status'].includes(e.getAttribute('role')) && !!(texto(e) || (e.getAttribute('aria-label') ?? '').trim() || (e.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map(id => document.getElementById(id)).filter(acessivel).map(texto).join(' ')))));
     const um = (lista, pred) => { const ns = [...lista].filter(pred); return ns.length === 1 ? ns[0] : null; };
     if (document.documentElement.scrollWidth > window.innerWidth + 1) return false;
@@ -105,11 +106,11 @@ export function semanticaAcoes328(d) {
         const campo = um(m.querySelectorAll('textarea[name="observacao"]'), e => e.value === d.observacao && !e.disabled && e.getAttribute('maxlength') === '500' && texto(e.parentElement).includes('Observação (obrigatória)') && visivel(e));
         const voltar = um(m.querySelectorAll('button'), e => texto(e) === 'Voltar' && visivel(e) && !e.disabled);
         const confirmar = um(m.querySelectorAll('button'), e => texto(e) === 'Marcar como perdida' && visivel(e) && !e.disabled && e.getAttribute('aria-busy') !== 'true');
-        return !!campo && !!voltar && !!confirmar;
+        return !!campo && !!voltar && !!confirmar && focoValido(m);
     }
     if (d.fase === 'funil') {
         const m = um(modais, e => ((e.getAttribute('aria-label') ?? '').trim() || (e.getAttribute('aria-labelledby') ?? '').split(/\s+/).map(id => texto(document.getElementById(id))).join(' ')) === d.titulo);
-        return d.alvo === 'app' && d.podeAbrirFunil && !!m && m.contains(document.activeElement) && acessivel(document.activeElement) && !m.getAnimations({ subtree: true }).some(a => a.playState === 'running') && !pendente(m) && !!um(m.querySelectorAll('button'), e => texto(e) === 'Marcar como perdida' && !e.disabled && visivel(e));
+        return d.alvo === 'app' && d.podeAbrirFunil && !!m && focoValido(m) && !m.getAnimations({ subtree: true }).some(a => a.playState === 'running') && !pendente(m) && !!um(m.querySelectorAll('button'), e => texto(e) === 'Marcar como perdida' && !e.disabled && visivel(e));
     }
     const app = d.alvo === 'app', painel = app ? document.getElementById('painel-contato') : document.querySelector('[data-m="panel"]');
     if (!visivel(painel, false) || painel.getAnimations({ subtree: true }).some(a => a.playState === 'running') || modais.some(m => m !== painel)) return false;

@@ -6891,3 +6891,8 @@ UNITglobal76840/115414 EXIT0:948arquivos/7799testes,303,68s,maxWorkers2,semfiltr
 ### Inbox #328 — harness offline preparado; visual/operação pendentes — 24/10/2026
 
 Sobre87c01c49, novo adapter/testes328+ligaçãoCLI sem produto runtime/servidor/ACL/schema/coletores/originais alterados(deltaSRC sótestes). Enumeração real268=238+30únicas,API327continua238;190/220byteiguais.30planejadas=18InboxAPP+6PROTO+6FunilreferênciafuncionalAPP(nuncaPROTO). Código somente ler/abrir/preencher/Voltar; semAssumir/Salvar/mover/perda real. UNIT4/128 eb1a25 e lint6 EXIT0,w1,sem filtros/skips/warnings;TSC_FINAL: 73293/4bd4b8 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Negativos/identidades/limites em output/inbox-328-harness-report.md e inbox-328-harness-fontes.json. NenhumaDB/fixture/preview/browser/HTTP/captura/upload. QAdo harness,wrapperrestritivo/admissãofresh eGOoperacional continuam pendentes; corpus327 eD3/#357não reatribuídos;328não concluída.
+
+
+### Inbox #328 — R1 do oráculo de foco; QA/native pendentes
+
+Sobre fa7, perda e Funil passam a exigir foco interno conectado/nãodisabled/perceptível no instante do callback, reutilizando visivel/clipping. Nenhum focus no driver/shared/produto;CLI/declarações/originais/coletores/pinos intactos. RED72f6f9=18/100;GREENe70747=arquivo118/118+lint2 EXIT0,w1. TSC_R1: 9345/bd4aa7 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Evidências em output/inbox-328-harness-foco-r1-report.md/fontes.json. Pacotefa7 e parecer negativo são preservados;semDB/UI/HTTP/fixture/preview/ação/captura. #328segueaberta,semaceitenativo presumido.
