@@ -1122,3 +1122,9 @@ describe("346: resumo e snapshot pessoal",()=>{
   const url=String(vi.mocked(fetch).mock.calls.find(([url])=>String(url).includes("cursor="))?.[0]);expect(url).toContain("cursor=cursor-fixture");expect(url).not.toContain("contagens=1");
  });
 });
+
+it("434 retry inicial depois404 mantém bloqueio em503; só200 fresco limpa",async()=>{
+ respostaPainel=()=>new Response("",{status:404});tela();await esvaziar();const estado=()=>elementos(tela()).find(n=>n.type===ConversaAberta)!.props as {bloquearDecisoesAria?:boolean;falhaPermissao?():void};
+ expect(estado().bloquearDecisoesAria).toBe(true);respostaPainel=()=>new Response("",{status:503});estado().falhaPermissao!();tela();await esvaziar();expect(estado().bloquearDecisoesAria).toBe(true);
+ respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:{pausada:false,motivo:null,podeDevolver:false,podeDecidir:false,cartoes:[],handoff:null,sugestoes:[]}}));estado().falhaPermissao!();tela();await esvaziar();expect(estado().bloquearDecisoesAria).toBe(false);
+});

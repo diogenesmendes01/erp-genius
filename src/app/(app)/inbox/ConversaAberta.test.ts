@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, isValidElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
@@ -257,3 +257,9 @@ it("348 usa estado e capacidades Aria recebidos sem inferir papel",()=>{
  expect(negado).toContain("Aria aguarda aprovação");expect(negado).not.toContain('aria-label="Devolver para Aria"');
 });
 it("348 grupo e encerrada preservam estados legados sem devolução",()=>{for(const alteracao of [{grupo:true},{status:"ENCERRADO" as const}]){const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"ia",...alteracao}),aria:{handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:null,podeDevolver:true,sugestoes:[]}})));expect(h).not.toContain("Aria está atendendo");expect(h).not.toContain('aria-label="Devolver para Aria"');}});
+
+it.each([false,true])("434 consumidor transporta bloqueio cliente=%s sem usar podeDecidir geral",bloquearDecisoesAria=>{
+ const cartao={id:"434",turnoId:"t",acao:"RESPONDER" as const,status:"SUGERIDA" as const,criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:null,texto:"Autorizado pelo lead da ação",detalhe:{tipo:"enviar" as const,documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,bloquearDecisoesAria,aria:{pausada:false,motivo:null,podeDevolver:false,podeDecidir:false,cartoes:[cartao],handoff:null,sugestoes:[]}})));
+ const v=virtual350.props!,row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;const no=v.renderItem(row,0);if(!isValidElement<{bloqueado?:boolean}>(no))throw Error("Cartão ausente");expect(no.props.bloqueado).toBe(bloquearDecisoesAria);
+});
