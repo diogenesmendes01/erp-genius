@@ -27,10 +27,11 @@ export function visualSugestao(s:SugestaoAriaThread,o:{usuarioId:string;fuso:str
  }
  let decidido:VisualSugestao["decidido"]=null;
  if(!pendente){
-  const nome=s.decididaPorNome?.trim().split(/\s+/)[0];
-  const autor=s.decididaPorId===o.usuarioId?"você":nome;
-  const texto=s.status==="APROVADA"?"Aprovado"+(autor?" por "+autor:""):s.status==="REJEITADA"?"Rejeitado":"Expirou";
-  decidido={tom:s.status==="APROVADA"?"brand":"neutro",texto:texto+(s.decididaEm?" · "+hora(s.decididaEm):"")};
+  const desfeita=s.status==="DESFEITA";
+  const nome=(desfeita?s.desfeitaPorNome:s.decididaPorNome)?.trim().split(/\s+/)[0];
+  const autor=(desfeita?s.desfeitaPorId:s.decididaPorId)===o.usuarioId?"você":nome;
+  const texto=s.status==="APROVADA"?"Aprovado"+(autor?" por "+autor:""):s.status==="REJEITADA"?"Rejeitado":s.status==="EXECUTADA"?"Executado":desfeita?"Desfeito"+(autor?" por "+autor:""):"Expirou";
+  decidido={tom:s.status==="APROVADA"?"brand":"neutro",texto:texto+((desfeita?s.desfeitaEm:s.decididaEm)?" · "+hora((desfeita?s.desfeitaEm:s.decididaEm)!):"")};
  }
  return {cabecalho:pendente?"Aria sugere · aguardando aprovação":"Aria sugeriu",titulo,linhas,
   textoProposto:d.tipo==="enviar"||d.tipo==="agendar"||d.tipo==="nota"?s.texto:null,

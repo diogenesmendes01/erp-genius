@@ -270,7 +270,7 @@ async function planejar(tx: Tx, ctx: ContextoTurno, p: AcaoProposta, config: Con
       const quando = new Date(p.enviarEmISO);
       if (Number.isNaN(quando.getTime()) || quando.getTime() <= Date.now()) return bloqueio("DATA_INVALIDA");
       // D12 (#202 C4): a mesma recusa do agendamento humano, no fuso da escola.
-      const foraDaJanela = await recusaForaDaJanela(quando);
+      const foraDaJanela = await recusaForaDaJanela(quando, tx);
       if (foraDaJanela) return bloqueio("FORA_DA_JANELA", { mensagem: foraDaJanela });
       const contato = await tx.contatoWhatsApp.findUnique({ where: { id: ctx.contatoId }, select: { optOutEm: true } });
       const at = await tx.atendimentoWhatsApp.findUnique({ where: { id: ctx.atendimentoId }, select: { encerradoEm: true } });
@@ -349,7 +349,7 @@ function dataCivilNoFuso(instante: Date, fuso: string): string {
  * grava a mutação e o Evento da Aria na transação recebida, e devolve o id do Evento. Reusada na
  * aprovação de uma ação SUGERIDA. Lança ErroRegra se o estado mudou e a ação não vale mais.
  */
-export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: ConfigAria["politicas"]): Promise<{ eventoId: string }> {
+export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: ConfigAria["politicas"], opcoes?: { fusoTarefa: string | null }): Promise<{ eventoId: string }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload gravado pelo próprio planejar
   const payload = (acao.payload ?? {}) as Record<string, any>;
   // Só a CLASSIFICAR_SETOR SIMULADA (triagem em SHADOW) não tem atendimento, e nunca é aplicada.
@@ -420,7 +420,7 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
     }
     case "CRIAR_TAREFA": {
       const lead = opId ? await tx.oportunidade.findUnique({ where: { id: opId }, select: { id: true, pessoaId: true, vendedorDonoId: true } }) : null;
-      const fuso = (await carregarFusoInstitucionalTx(tx)) ?? "UTC";
+      const fuso = (opcoes ? opcoes.fusoTarefa : await carregarFusoInstitucionalTx(tx)) ?? "UTC";
       const vence = new Date(payload.venceEmISO);
       const t = await tx.tarefa.create({
         data: {
@@ -458,7 +458,7 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
       const quando = new Date(payload.agendadaPara);
       if (quando.getTime() <= Date.now()) throw new ErroRegra("O horário agendado já passou.");
       // Sugestão aprovada depois: a janela pode ter mudado desde o planejamento (D12).
-      await exigirAgendamentoNaJanela(quando);
+      await exigirAgendamentoNaJanela(quando, tx);
       const pol = politicas ?? (await versaoPublicada(tx))?.config.politicas ?? POLITICAS_PADRAO;
       const precos = opId ? await precosDaOportunidade(opId, tx) : [];
       const respostasRapidas = await respostasParaAria(at.finalidade, tx);
