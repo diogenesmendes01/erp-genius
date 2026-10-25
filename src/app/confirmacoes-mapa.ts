@@ -28,6 +28,7 @@ export type AcaoConfirmada = {
 };
 
 export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
+  { arquivo: "src/app/(app)/inbox/abas/AgendadasAtividade.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarAgendadaNoInbox", achado: "Inbox-E2.13-D11", efeito: "cancela uma mensagem agendada autorizada do atendimento sem envio e sem desfazer pela tela" },
   { arquivo: "src/app/(app)/inbox/ModalTarefa.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarTarefaNoInbox", achado: "Inbox-E2.11-D10", efeito: "cancela a tarefa com motivo em uma única confirmação canônica" },
   { arquivo: "src/app/(app)/inbox/abas/TarefasOportunidade.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarTarefaNoInbox", achado: "Inbox-E2.10-D10", efeito: "cancela a tarefa com motivo preservando o histórico, sem reabertura pela tela" },
   {
