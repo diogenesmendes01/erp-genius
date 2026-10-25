@@ -909,3 +909,10 @@ export const MOTIVO_HANDOFF_LABEL: Readonly<Record<MotivoHandoff, string>> = Obj
   ERRO_PROVEDOR: "Falha do provedor",
   TURNO_INTERROMPIDO: "Turno interrompido",
 });
+
+/** Estimativa de apresentação dos Insights; não altera o estado comercial manual. */
+export const SENTIMENTO_INSIGHT_LABEL: Readonly<Record<"POSITIVO" | "NEUTRO" | "NEGATIVO", string>> = Object.freeze({
+  POSITIVO: "Positivo",
+  NEUTRO: "Neutro",
+  NEGATIVO: "Negativo",
+});
