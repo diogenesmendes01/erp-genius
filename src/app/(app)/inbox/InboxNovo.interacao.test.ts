@@ -16,6 +16,8 @@ const m = vi.hoisted(() => ({
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
   aoVisibilidade: null as null | (() => void),
 }));
+const assumir328Inbox=vi.hoisted(()=>vi.fn(async()=>({ok:true})));
+vi.mock("@/server/whatsapp/acoes-atendimento",()=>({assumirAtendimento:assumir328Inbox,atribuirAtendimento:vi.fn(),convidarParticipante:vi.fn(),devolverParaFila:vi.fn(),revogarParticipante:vi.fn(),transferirAtendimento:vi.fn()}));
 const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -60,6 +62,7 @@ import { ColunaConversas } from "./ColunaConversas";
 import { PainelAria } from "./PainelAria";
 import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
+import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { PainelSetor } from "./PainelSetor";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
 import { LinhaCampo } from "./LinhaCampo";
@@ -1062,3 +1065,23 @@ it("326: componentes reais mantêm um único modal, foco e editor fora de inert 
     await act(async () => root.unmount()); desligarObservadores(); m.g = g;
   }
 });
+
+async function abrirAba328(p:PropsInboxNovo){
+  respostaPainel=()=>new Response(JSON.stringify({setor:'COMERCIAL',podeEnviar:false,cabecalho:{pessoaId:null,tagsDisponiveis:[],semNome:false,subtitulo:'Pessoa física',quadrado:false,capacidades:{veLead:true,verContato:false,editarContato:false,editarTags:false,criarTag:false,moverEtapa:false,tarefas:false,tarefasEquipe:false,desfazerAria:false,verEmpresa:false}},acoes:{},aria:{}}));
+  const anterior=fetch;vi.stubGlobal('fetch',vi.fn(async(url:string)=>url.endsWith('/painel/oportunidades')?new Response(JSON.stringify({atual:{id:'op328',titulo:'Curso328',produto:null,valor:null,moeda:null,etapa:'QUALIFICADO',temperatura:'MORNO',responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,motivoPerda:null},outras:[],pessoaId:null})):anterior(url)));
+  tela(p);await esvaziar();const painel=elementos(tela(p)).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as (id:string)=>void)('oportunidades');tela(p);await esvaziar();return elementos(tela(p)).find(n=>n.type===AbaOportunidades)!;
+}
+it.each([
+ ['VENDEDOR',null,false,null,'ABERTO_SEM_RESPONSAVEL',false,true],
+ ['PROFESSOR',null,false,null,'ABERTO_SEM_RESPONSAVEL',false,false],
+ ['GERENTE_COMERCIAL',null,true,'outro','ABERTO_SEM_RESPONSAVEL',false,true],
+ ['VENDEDOR',null,true,'outro','ABERTO_SEM_RESPONSAVEL',false,false],
+ ['VENDEDOR',null,true,'u1','ABERTO_SEM_RESPONSAVEL',false,true],
+ ['VENDEDOR','outro',false,null,'EM_ATENDIMENTO',false,false],
+ ['ADMINISTRADOR',null,false,null,'ABERTO_SEM_RESPONSAVEL',true,false],
+ ['VENDEDOR',null,false,null,'ENCERRADO',false,false],
+] as const)('328: assumir respeita contexto completo %s/%s/%s/%s/%s/grupo%s',async(papel,responsavelId,linhaComercial,numeroDonoId,status,grupo,esperado)=>{
+ const p={...props,usuario:{id:'u1',papeis:[papel]},fuso:'Asia/Tokyo',fusoEscola:'America/Costa_Rica',inicial:{itens:[{...item('a1'),responsavelId,linhaComercial,numeroDonoId,status,grupo}],proximo:null}} as PropsInboxNovo;
+ const aba=await abrirAba328(p);if(grupo){expect(aba).toBeUndefined();return;}expect(aba).toBeTruthy();expect(aba.props.podeAssumir).toBe(esperado);expect(aba.props.fusoEscola).toBe('America/Costa_Rica');expect(aba.props.capacidades).toMatchObject({moverEtapa:false});
+});
+it('328: callback de assumir captura somente ID do atendimento, sem oportunidade ou carteira',async()=>{assumir328Inbox.mockClear();const aba=await abrirAba328(props);expect(aba).toBeTruthy();lista(tela()).aoSelecionar('a2');tela();await esvaziar();await (aba.props.aoAssumir as ()=>Promise<unknown>)();expect(assumir328Inbox).toHaveBeenCalledOnce();expect(assumir328Inbox).toHaveBeenCalledWith('a1');});
