@@ -667,6 +667,7 @@ const ANCORAS: readonly string[] = [
 
 /** Arquivos com "Próxima" e sem "Anterior" (critério da métrica 7.5) em que "Próxima" é texto de domínio, não paginação. */
 const NAO_E_PAGINACAO: readonly { arquivo: string; motivo: string }[] = [
+  { arquivo: "src/app/(app)/inbox/aria/ModalResumoHandoff.tsx", motivo: "Título de domínio Próxima ação sugerida (resumo.proximoPasso): zero links/cursor. handoffDoAtendimento em src/server/aria/handoff-inbox.ts limita feito às dez últimas autorizadas e as devolve cronológicas; não é navegação de lista." },
   { arquivo: "src/app/(app)/home/HomeProfessor.tsx", motivo: "\"Próxima aula experimental\": título do cartão da aula seguinte, não navegação de lista" },
   { arquivo: "src/app/(app)/matriculas/[id]/continuidade-mensal/PreviaContinuidadeMensal.tsx", motivo: "\"Próxima cobertura\": rótulo do período seguinte da continuidade, não navegação de lista" },
   { arquivo: "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/page.tsx", motivo: "\"Próximas cobranças\": nome do domínio CONDICOES_FUTURAS do aditivo; a navegação das conferências fica em ParticipantesHistorico (<Paginacao>)" },
@@ -675,6 +676,7 @@ const NAO_E_PAGINACAO: readonly { arquivo: string; motivo: string }[] = [
 /** O conjunto que a medição conta como "só para frente" depois desta PR (cópia literal). */
 const SO_PARA_FRENTE_MEDIDOS: readonly string[] = [
   "src/app/(app)/home/HomeProfessor.tsx",
+  "src/app/(app)/inbox/aria/ModalResumoHandoff.tsx",
   "src/app/(app)/matriculas/[id]/continuidade-mensal/PreviaContinuidadeMensal.tsx",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/page.tsx",
 ];
@@ -988,4 +990,14 @@ describe("paginação nos dois sentidos — telas", () => {
     expect(EXCECOES_FILA.filter((e) => e.motivo.trim().length < 20)).toEqual([]);
     expect(EXCECOES_FILA.map((e) => `${e.arquivo} | ${e.trecho}`)).toEqual([...ANCORAS_FILA]);
   });
+});
+
+it("classificação nominal do resumo de handoff não mascara um link paginado introduzido no mesmo consumidor",()=>{
+  const arquivo="src/app/(app)/inbox/aria/ModalResumoHandoff.tsx";
+  const fonte=readFileSync(arquivo,"utf8");
+  expect(soParaFrente(fonte)).toBe(true);
+  expect(linksDePagina(fonte).links).toEqual([]);
+  expect(casosDoArquivo(arquivo,virtual({[arquivo]:fonte}))).toEqual([]);
+  const adulterado=fonte+String.fromCharCode(10)+'const linkPaginado = <a href={`?pagina=${pagina + 1}`}>Próxima</a>;';
+  expect(casosDoArquivo(arquivo,virtual({[arquivo]:adulterado}))).toContainEqual(expect.objectContaining({arquivo,regra:"so-para-frente",chaves:["pagina"]}));
 });

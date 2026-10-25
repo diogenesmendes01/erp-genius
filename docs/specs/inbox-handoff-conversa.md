@@ -35,3 +35,7 @@ Após revogação e retorno da capacidade com o mesmo acaoId, a abertura continu
 ### R2: retenção do resumo após ACK
 
 A espera de confirmação é separada do busy de leitura. Se painel200 já vier sem handoff, a lista ainda não reconciliar o responsável e a leitura seguinte falhar503, o resumo permanece montado com Cancelar e retry de leitura. Não oferece nova action assumir nem Responder a partir do snapshot. Somente o DTO atual participa da autorização; nova leitura fresca com responsável/envio vigentes pode concluir o foco. Cancelamento impede qualquer reconciliação tardia; nova abertura começa outra geração. Nenhuma query, polling ou política backend foi acrescentada.
+
+### R3: vazio e sequência limitada
+
+Feito vazio usa EstadoVazio compacto com o texto Nenhuma ação registrada. O título Próxima ação sugerida é texto de domínio, sem link/cursor de página: classificação nominal coordenada na guarda, preservando parser e asserções. A sequência feito contém no máximo dez últimas ações autorizadas entregues cronologicamente por handoffDoAtendimento (lotes internos100 não são paginação de interface). Teste de mutação no próprio path do Modal exige detectar um link avançar injetado, evitando que a classificação nominal mascare paginação real futura. Backend e hook permanecem inalterados na R3.
