@@ -7639,6 +7639,8 @@ Audiência COMERCIAL+veLead e D12 completos sob demanda aprovados. Tipos/normali
 
 #377 — integração ROOT43c1e582 + QA independente809: nativos34, UNIT próprio579, oráculos2 e guardas462, todos EXIT0 nas fontes registradas. TypeScript global inicial falhou com 21 diagnósticos em cinco testes; filho corretivo estreita tipos sem alterar produção/expectativas. Recorte completo5/38 EXIT0 (13e4c7), após negativo de infraestrutura EPERM antes da coleta. ROOT client493/DDL/snapshot425tabelas/1380linhas prontos, bundle anterior Z9 arquivado com230assets verificados. Compilador global, regressão global, lint, build, visual e publicação continuam pendentes; ver docs/qa/inbox-377-integracao-r12-root.md. Não homologada.
 
+#377 — TypeScript cde0c654 EXIT0 (83894/50fa34). UNIT global original98185/38e1d9 terminou EXIT1:1051arquivos/9137casos, quatrofalhas em trêsarquivos; corrigidos grade móvelInsights, duasexpectativas antigas de abas e declaraçãoenum emfixtureC1. Guardas/whitelists/configs preservados. Recorte completo5/34 EXIT0 (3169d7), não global. Publicação ainda sópreparada localmente; repetir gates no filho corretivo, sem homologação presumida.
+
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
 <<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
 =======
@@ -7666,8 +7668,13 @@ Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
 <<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
 =======
+<<<<<<< 5e2bf6961f3a8386007cc92535333b63373aea56
 >>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
 <<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
 =======
+=======
+
+#358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
+>>>>>>> c4b5211cbe643524c8f10a042031d4d22820b27d
