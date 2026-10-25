@@ -1,15 +1,11 @@
 import type { EtapaLead } from "@prisma/client";
 import { IconBriefcase, IconPlus } from "@tabler/icons-react";
 import { botaoClasses } from "@/components/Botao";
-import { ETAPA_LABEL } from "@/lib/labels";
+import { rotular, SITUACAO_OUTRA_OPORTUNIDADE_LABEL } from "@/lib/labels";
 import { formatarMoedaOuIndefinida } from "@/lib/dinheiro";
 import type { OutraOportunidadePainel } from "@/server/inbox/painel-oportunidades";
 
-export function situacaoOutra(etapa: EtapaLead): string {
-  if (etapa === "MATRICULADO") return "Ganha";
-  if (etapa === "PERDIDO") return "Perdida";
-  return ETAPA_LABEL[etapa] + " · em aberto";
-}
+export function situacaoOutra(etapa: EtapaLead): string { return rotular(SITUACAO_OUTRA_OPORTUNIDADE_LABEL, etapa); }
 export function hrefNovaOportunidade(pessoaId: string): string { return "/funil?nova=" + encodeURIComponent(pessoaId); }
 export function OutrasOportunidades({ outras, pessoaId, podeCriar, verContato, podeAbrirFunil = false }: {
   outras: OutraOportunidadePainel[]; pessoaId: string | null; podeCriar: boolean; verContato: boolean; podeAbrirFunil?: boolean;
