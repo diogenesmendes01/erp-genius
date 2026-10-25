@@ -10,3 +10,7 @@ it("secoes_em_sentence_case", () => { const h = montar(); for (const t of ["Resu
     expect(h).toContain(t); expect(h).not.toContain("uppercase"); expect(h).toContain('role="dialog"'); });
 it("botoes_por_alcada", () => { expect(montar()).toContain("Assumir e responder"); expect(montar()).toContain("Cancelar"); expect(montar({ podeAssumir: false, ehResponsavel: true })).toContain(">Responder<"); const h = montar({ podeAssumir: false }); expect(h).toContain(">Fechar<"); expect(h).not.toMatch(/>Cancelar<|Assumir e responder|>Responder</); });
 it("resumo_nulo_e_feito_vazio", () => { const h = montar({ resumo: null, feito: [] }); expect(h).toContain("A Aria não deixou resumo."); expect(h).toContain("Nenhuma ação registrada."); expect(h).not.toContain("Próxima ação sugerida"); });
+it("abertura invalidada preserva resumo e mostra somente Fechar mesmo com capacidades devolvidas",()=>{
+ const html=renderToStaticMarkup(createElement(ModalResumoHandoff,{atendimentoId:"a",contatoNome:"Ana",handoff:{...handoff,podeAssumir:true,ehResponsavel:true},fuso:"UTC",sessaoInvalidada:true,contextoAtivo:false,erroConfirmacao:"falha",aoTentarConfirmar(){},aoFechar(){},aoAssumido(){},aoResponder(){}}));
+ expect(html).toContain("Feche e abra o resumo novamente");expect(html).toContain(">Fechar<");expect(html).not.toContain("Assumir e responder");expect(html).not.toContain(">Responder<");expect(html).not.toContain("Tentar de novo");
+});
