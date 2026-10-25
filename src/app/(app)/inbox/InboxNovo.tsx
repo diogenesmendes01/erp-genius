@@ -15,7 +15,7 @@ import { ModalTarefa } from "./ModalTarefa";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { ModalPerda } from "../funil/ModalPerda";
 import { marcarPerdidoNoInbox } from "@/server/inbox/acoes-painel";
-import { assumirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { assumirAtendimento, assumirConversaDaAria } from "@/server/whatsapp/acoes-atendimento";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import type { Setor } from "@/server/whatsapp/setor";
 import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
@@ -368,7 +368,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
         const leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } = { versao: versaoPainel, resultado: r === "sem-acesso" ? "sem-acesso" : r ? "ok" : "falha" };
-        if (r === "sem-acesso") return { id: selecionado, leitura, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
+        if (r === "sem-acesso") return { id: selecionado, leitura, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, podeAssumirAria: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
         return !r && conhecido ? { ...ant!, leitura } : { id: selecionado, dado: r, leitura, acessoRevogado: !r && ant?.id === selecionado && ant.acessoRevogado === true };
       });
     });
@@ -436,6 +436,22 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const podeAssumir = !!atual && !atual.grupo && atual.status !== "ENCERRADO" && podeExecutar(usuario, "assumir", {
     setor: atual.finalidade as Setor, responsavelId: atual.responsavelId, linhaComercial: atual.linhaComercial, donoLinhaId: atual.numeroDonoId,
   });
+  const contextoAriaParaAssumir = !!atual && !atual.grupo && atual.status !== "ENCERRADO"
+    && (["ia", "aprovacao", "handoff"].includes(atual.estadoAria ?? "") || !!painelDoAberto?.dado?.aria?.handoff);
+  const podeAssumirDaAria = contextoAriaParaAssumir && painelDoAberto?.dado?.aria?.podeAssumirAria === true && !painelDoAberto.acessoRevogado;
+  const chaveAssumirAria = JSON.stringify([selecionado, atual?.id, atual?.responsavelId, usuario.id, usuario.papeis, contextoAriaParaAssumir, podeAssumirDaAria]);
+  const [ofertaAssumirAria, setOfertaAssumirAria] = useState(() => ({ chave: chaveAssumirAria, token: Symbol("assumir-aria") }));
+  if (ofertaAssumirAria.chave !== chaveAssumirAria) setOfertaAssumirAria({ chave: chaveAssumirAria, token: Symbol("assumir-aria") });
+  const cicloAssumirAria = useRef({ ativo: false, token: ofertaAssumirAria.token });
+  useEffect(() => {
+    const atual = { ativo: podeAssumirDaAria, token: ofertaAssumirAria.token };
+    cicloAssumirAria.current = atual; return () => { atual.ativo = false; };
+  }, [ofertaAssumirAria.token, podeAssumirDaAria]);
+  async function assumirAriaPelaAba(id: string, token: symbol) {
+    const ciclo = cicloAssumirAria.current;
+    if (!ciclo.ativo || ciclo.token !== token || selecionadoRef.current !== id) return { ok: false as const, erro: "A conversa ou sua permissão mudou. Atualize antes de assumir." };
+    return assumirConversaDaAria(id);
+  }
   const perdaAberta = !!(podeMudarEtapa && perdaOportunidade.aberta && perdaOportunidade.atendimentoId === selecionado && perdaOportunidade.id
     && (!oportunidadesDoContato.dado || oportunidadesDoContato.dado.atual?.id === perdaOportunidade.id));
   const [modalTarefa,setModalTarefa]=useState<{atendimentoId:string;modo:{tipo:"nova"}|{tipo:"editar";tarefa:{id:string;versao:number}};sessao:number}|null>(null);
@@ -520,7 +536,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ? detalhesComerciais
           ? abaAtiva === "oportunidades"
             ? oportunidadesDoContato.erro ? falhaDosDetalhes(oportunidadesDoContato.recarregar, "oportunidades")
-              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} aoNovaTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"}):undefined} aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}}):undefined} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
+              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} aoNovaTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"}):undefined} aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}}):undefined} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} contextoAria={contextoAriaParaAssumir} podeAssumir={contextoAriaParaAssumir ? podeAssumirDaAria : podeAssumir} aoAssumir={() => contextoAriaParaAssumir ? assumirAriaPelaAba(atual.id, ofertaAssumirAria.token) : assumirAtendimento(atual.id)} />
                 : <EsqueletoPainel rotulo="oportunidades" />
             : detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
               : detalhesDoContato.dado ? <AbaDetalhes dados={detalhesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { verContato: false, verEmpresa: false }} aoAbrirOportunidades={() => setAbaDoContato({ atendimentoId: selecionado, id: "oportunidades" })} />

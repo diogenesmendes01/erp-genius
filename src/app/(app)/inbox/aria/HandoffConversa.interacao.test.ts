@@ -6,7 +6,7 @@ import { RodapeConversa } from "../RodapeConversa";
 import { useHandoffConversa, type LeituraPainelHandoff } from "./useHandoffConversa";
 import type { HandoffDoAtendimento } from "@/server/aria/handoff-inbox";
 const assumir = vi.hoisted(() => vi.fn());
-vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: assumir }));
+vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirConversaDaAria: assumir }));
 const h: HandoffDoAtendimento = { acaoId: "h1", pedidoEm: "2026-10-25T11:56:00Z", motivo: "VALOR", motivoTexto: "Valor alto", destino: "FILA_SETOR", responsavelNome: null, resumo: { quer: "Quer vaga", proximoPasso: "Ligar" }, feito: [], podeAssumir: true, ehResponsavel: false };
 type TelaProps = {
     id?: string;
@@ -18,7 +18,7 @@ type TelaProps = {
 };
 const mudar = vi.fn();
 function Tela({ id = "A", handoff = h, envio = true, responsavel = null, leitura = { solicitada: 0, finalizada: 0, resultado: "ok" }, nota = false }: TelaProps) {
-    const c = useHandoffConversa({ item: { id, contatoNome: "Grupo", grupo: false, status: "EM_ATENDIMENTO", responsavelId: responsavel }, usuarioId: "u", handoff, podeEnviar: envio, leitura, fuso: "UTC", agora: new Date("2026-10-25T12:00:00Z"), aoMudar: mudar });
+    const c = useHandoffConversa({ item: { id, contatoNome: "Grupo", grupo: false, status: "EM_ATENDIMENTO", responsavelId: responsavel }, usuarioId: "u", handoff, podeAssumirAria: true, podeEnviar: envio, leitura, fuso: "UTC", agora: new Date("2026-10-25T12:00:00Z"), aoMudar: mudar });
     return createElement("section", null, c.faixa, c.modal, createElement(RodapeConversa, { modo: "compositor", atendimentoId: id, abaInicial: nota ? "nota" : "responder", podeEnviar: envio, capacidades: [], aoEnviarTexto: async () => ({ ok: true as const }), aoEnviarMidia: async () => ({ ok: true as const }), aoNota: async () => ({ ok: true as const }), controleResposta: c.controleResposta, aoCampoResponder: c.aoCampoResponder }), createElement("textarea", { "data-outra-conversa": "" }));
 }
 let root: Root, host: Elemento, doc: Documento;
@@ -143,14 +143,14 @@ it("perda de envio confirmada após ACK invalida intenção mesmo se capacidade 
     await montar({ envio: true, responsavel: "u", handoff: null, leitura: { solicitada: 2, finalizada: 2, resultado: "ok" } });
     expect(doc.activeElement === host.querySelector("[data-compositor-campo]")).toBe(false);
 });
-it("responsável responde sem ação de negócio e sem escolher campo de outra conversa", async () => {
-    await montar({ nota: true, responsavel: "u", handoff: { ...h, podeAssumir: false, ehResponsavel: true } });
-    await clicar("Ver resumo");
-    await clicar("Responder", dialogo());
-    expect(assumir).not.toHaveBeenCalled();
-    expect(mudar).not.toHaveBeenCalled();
-    expect(dialogo()).toBeNull();
-    expect(doc.activeElement === host.querySelector("[data-compositor-campo]")).toBe(true);
+it("357 responsável confirma MANUAL e só responde após ACK e200 posterior na mesma conversa", async () => {
+ const p={nota:true,responsavel:"u",handoff:{...h,podeAssumir:false,ehResponsavel:true}};
+ await montar(p);await clicar("Ver resumo");await clicar("Responder",dialogo());
+ expect(assumir).toHaveBeenCalledExactlyOnceWith("A");expect(mudar).toHaveBeenCalledOnce();expect(dialogo()).not.toBeNull();
+ expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);
+ await montar({...p,handoff:null,leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);
+ expect(doc.activeElement===host.querySelector("[data-outra-conversa]")).toBe(false);
 });
 it("dois cliques antes do render fazem uma única tentativa de assumir", async () => {
     let resolver!: (r: {
@@ -220,26 +220,31 @@ it.each(["sucesso","cancelar-reabrir"] as const)("snapshot pósACK sem handoff p
 });
 
 const dono437={...h,podeAssumir:false,ehResponsavel:true};
-it("responsável retenta somente a leitura, ignora recibo antigo e responde sem assumir",async()=>{
+it("357 responsável retenta só leitura após503; nova transição exige ACK e200 novo",async()=>{
  const p={nota:true,responsavel:"u",handoff:dono437};
- await montar({...p,leitura:{solicitada:1,finalizada:1,resultado:"falha"}});await clicar("Ver resumo");await clicar("Responder",dialogo());
- expect(botao("Tentar de novo",dialogo())).toBeDefined();expect(mudar).not.toHaveBeenCalled();
+ await montar({...p,leitura:{solicitada:1,finalizada:1,resultado:"falha"}});await clicar("Ver resumo");
+ expect(botao("Responder",dialogo()).hasAttribute("disabled")).toBe(true);expect(botao("Tentar de novo",dialogo())).toBeDefined();
  await clicar("Tentar de novo",dialogo());expect(mudar).toHaveBeenCalledOnce();expect(assumir).not.toHaveBeenCalled();
  await montar({...p,leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(dialogo()).not.toBeNull();
  await montar({...p,leitura:{solicitada:2,finalizada:1,resultado:"pendente"}});expect(dialogo()).not.toBeNull();
- await montar({...p,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);expect(assumir).not.toHaveBeenCalled();
+ await montar({...p,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(dialogo()).not.toBeNull();
+ await clicar("Responder",dialogo());expect(assumir).toHaveBeenCalledExactlyOnceWith("A");expect(mudar).toHaveBeenCalledTimes(2);
+ await montar({...p,handoff:null,leitura:{solicitada:3,finalizada:3,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);
 });
-it("perder o responsável durante a intenção invalida a abertura e não retoma ao voltar",async()=>{
- const p={nota:true,responsavel:"u",handoff:dono437,leitura:{solicitada:2,finalizada:1,resultado:"pendente" as const}};
- await montar(p);await clicar("Ver resumo");await clicar("Responder",dialogo());
- await montar({...p,responsavel:"outro",handoff:{...dono437,ehResponsavel:false,podeAssumir:true}});
- await montar({...p,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(dialogo()).not.toBeNull();expect(botao("Responder",dialogo())).toBeUndefined();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);expect(assumir).not.toHaveBeenCalled();
-});
-it("recuperar envio sem novo pedido não retoma a intenção recusada",async()=>{
+it("perder o responsável durante ACK invalida abertura e não retoma ao voltar",async()=>{
+ let ack!:(r:{ok:true})=>void;assumir.mockImplementationOnce(()=>new Promise(r=>ack=r));
  const p={nota:true,responsavel:"u",handoff:dono437,leitura:{solicitada:1,finalizada:1,resultado:"ok" as const}};
- await montar({...p,envio:false});await clicar("Ver resumo");await clicar("Responder",dialogo());
- await montar({...p,envio:true});expect(dialogo()).not.toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);
- await clicar("Responder",dialogo());expect(dialogo()).toBeNull();expect(assumir).not.toHaveBeenCalled();
+ await montar(p);await clicar("Ver resumo");await clicar("Responder",dialogo());
+ await montar({...p,responsavel:"outro",handoff:{...dono437,ehResponsavel:false,podeAssumir:false}});
+ await montar(p);await act(async()=>ack({ok:true}));expect(mudar).not.toHaveBeenCalled();
+ expect(dialogo()).not.toBeNull();expect(botao("Responder",dialogo())).toBeUndefined();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);expect(assumir).toHaveBeenCalledOnce();
+});
+it("recuperar envio não dispara ação sem novo clique; novo ACK ainda exige200 posterior",async()=>{
+ const p={nota:true,responsavel:"u",handoff:dono437,leitura:{solicitada:1,finalizada:1,resultado:"ok" as const}};
+ await montar({...p,envio:false});await clicar("Ver resumo");expect(botao("Responder",dialogo()).hasAttribute("disabled")).toBe(true);
+ await montar({...p,envio:true});expect(dialogo()).not.toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);expect(assumir).not.toHaveBeenCalled();
+ await clicar("Responder",dialogo());expect(dialogo()).not.toBeNull();expect(assumir).toHaveBeenCalledOnce();
+ await montar({...p,handoff:null,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);
 });
 it("200 sem intenção não fecha o resumo nem muda o compositor",async()=>{
  const p={nota:true,responsavel:"u",handoff:dono437};
@@ -251,9 +256,11 @@ it("TESTER C1 responsável GET503 não oferece Responder habilitado silencioso",
  expect(assumir).not.toHaveBeenCalled();expect(dialogo()).not.toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);
  const respostaExplicita=b.hasAttribute("disabled")||!!dialogo().querySelector('[role="alert"]')||!!botao("Tentar de novo",dialogo());expect(respostaExplicita).toBe(true);
 });
-it("TESTER C1 intenção Responder durante leitura pendente conclui no200 fresco ou CTA fica bloqueado até200",async()=>{
- const pendente={nota:true,responsavel:"u",handoff:dono437,leitura:{solicitada:2,finalizada:1,resultado:"pendente" as const}};await montar(pendente);await clicar("Ver resumo");const bloqueado=botao("Responder",dialogo()).hasAttribute("disabled");if(!bloqueado)await clicar("Responder",dialogo());
- await montar({...pendente,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});if(bloqueado)await clicar("Responder",dialogo());expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);expect(assumir).not.toHaveBeenCalled();
+it("TESTER C1 leitura pendente bloqueia Responder;200 libera só a transição, não o foco",async()=>{
+ const p={nota:true,responsavel:"u",handoff:dono437};await montar({...p,leitura:{solicitada:2,finalizada:1,resultado:"pendente"}});await clicar("Ver resumo");
+ expect(botao("Responder",dialogo()).hasAttribute("disabled")).toBe(true);expect(assumir).not.toHaveBeenCalled();
+ await montar({...p,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});await clicar("Responder",dialogo());expect(dialogo()).not.toBeNull();expect(assumir).toHaveBeenCalledOnce();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);
+ await montar({...p,handoff:null,leitura:{solicitada:3,finalizada:3,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);
 });
 it("TESTER C1 responsável sem envio não recebe CTA habilitado sem feedback",async()=>{
  await montar({nota:true,responsavel:"u",handoff:dono437,envio:false,leitura:{solicitada:1,finalizada:1,resultado:"ok"}});await clicar("Ver resumo");const b=botao("Responder",dialogo());expect(b).toBeDefined();if(!b.hasAttribute("disabled"))await clicar("Responder",dialogo());expect(assumir).not.toHaveBeenCalled();expect(dialogo()).not.toBeNull();const explicito=b.hasAttribute("disabled")||!!dialogo().querySelector('[role="alert"]')||!!botao("Tentar de novo",dialogo());expect(explicito).toBe(true);

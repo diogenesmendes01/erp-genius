@@ -243,8 +243,10 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
 function CoordenadorAcoesConversa({ item, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; children(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar">) {
-  const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
+  const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, podeAssumirAria: aria?.podeAssumirAria === true, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
   const acoes = useAcoesAtendimento({
+    contextoAria: ["ia", "aprovacao", "handoff"].includes(item.estadoAria ?? "") || !!aria?.handoff,
+    podeAssumirAria: aria?.podeAssumirAria === true,
     atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
     usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
     linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar,
