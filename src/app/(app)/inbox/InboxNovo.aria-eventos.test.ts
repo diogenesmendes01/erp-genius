@@ -40,8 +40,8 @@ beforeEach(async()=>{
   vi.clearAllMocks();m.receber=null;m.observado=null;
   const dom=criarDomMinimo(),doc=dom.documento;
   Object.assign(doc,{visibilityState:"visible",addEventListener(){},removeEventListener(){},querySelector:(s:string)=>doc.body.querySelector(s)});
-  Object.assign(dom.janela,{innerWidth:1440,addEventListener(){},removeEventListener(){},matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});
-  vi.stubGlobal("window",dom.janela);vi.stubGlobal("document",doc);vi.stubGlobal("MutationObserver",dom.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+  Object.assign(dom.janela,{setTimeout:(callback:()=>void,ms:number)=>setTimeout(callback,ms),innerWidth:1440,addEventListener(){},removeEventListener(){},matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});
+  vi.stubGlobal("window",dom.janela);vi.stubGlobal("self",dom.janela);vi.stubGlobal("document",doc);vi.stubGlobal("MutationObserver",dom.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
   Object.defineProperty(Elemento.prototype,"getClientRects",{configurable:true,value:()=>[{}]});
   Object.defineProperty(Elemento.prototype,"options",{configurable:true,get:function(this:Elemento){return this.querySelectorAll("option");}});
   m.pagina.mockImplementation(async(_id,o)=>({mensagens:o.depois?[]:[{id:"m1",direcao:"ENTRADA",tipo:"TEXTO",corpo:"Fixture345",midiaPath:null,status:"RECEBIDA",origem:null,autorNome:null,templateNome:null,criadoEm:"2026-10-25T00:00:00.000Z",participanteNome:null,favorita:false,clientMessageId:null}],notas:[],antes:"c1",depois:"c1",temMais:false}));

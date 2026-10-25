@@ -15,7 +15,7 @@
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/aria/FaixaAriaAtiva.tsx": [
-    "<a> Gerenciar → iaFantasma/sm",
+    "<Link> Gerenciar → iaFantasma/sm",
   ],
   "aria/_componentes/Abas.tsx": [
     "<Link> → primario|fantasma/md",
