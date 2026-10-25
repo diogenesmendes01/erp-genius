@@ -57,3 +57,11 @@ O código deste checkpoint tem testes puros/doubles e lint; invariantes de locks
 ### Correção da capacidade de resolução após retarget
 
 Gerar/publicar continua exigindo compatibilidade de Pessoa. Descartar uma geração INCERTO exige a audiência operacional atual COMERCIAL+veLead, independentemente dessa compatibilidade; resolve metadata/custo, sem publicar nem retargetar análise. O DTO recebe capacidadeOperacional separada (fallback conserva o contrato dos consumidores puros anteriores); o produtor autorizado a informa explicitamente. Assim painel.podeDescartarIncerta e emCurso.podeDescartar permanecem coerentes após retarget. Negação da audiência operacional continua negando tudo.
+
+## Provas PostgreSQL do kernel privado
+
+No perfil A493 isolado, os quatro arquivos nativos completos passaram em série: kernel13, concorrência6, pool1 dois e NOTIFY quatro. Provider só fake na fronteira externa; queries, ACL, transações, locks e entrega LISTEN são reais. Revogação/binding após espera foram revalidados, holder KEY SHARE continuou retido até conclusão, custo conhecido sobreviveu à recusa de publicação, rollback reverteu efeitos, replays não duplicaram Chamada/Evento/aviso e GET resolveu PRONTA após ACK perdido de persistência. Não se afirma ausência geral de deadlock nem cobertura global do ERP.
+
+Um negativo era do observador do teste: exigia que dois aguardantes fossem bloqueados diretamente pelo holder. O PostgreSQL mostrou segundo aguardante bloqueado pelo primeiro na fila. A instrumentação agora exige uma cadeia real de pg_blocking_pids até o holder retido, mantendo dois aguardantes comprovados e a eleição de pacote único. Nenhum núcleo produtivo foi alterado por esse ajuste.
+
+A aba, endpoints e pontes continuam pendentes. Essas provas do kernel não equivalem a homologação visual, QA independente SQL ou gates globais da funcionalidade inteira.

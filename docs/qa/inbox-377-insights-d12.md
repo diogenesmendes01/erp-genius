@@ -76,3 +76,22 @@ Nenhum dos 24 casos foi executado nesta autoria. Execução depende de revisão 
 Achado T/ROOT procedente: leitura operacional INCERTO oferecia emCurso.podeDescartar=true, mas o DTO reutilizava capacidade de geração e devolvia painel.podeDescartarIncerta=false. RED b03079 EXIT1:2 falhas/15 controles em DTO+leitura. Capacidade operacional separada e explícita no produtor; gerar/análise continuam negados com Pessoa incompatível. GREEN24c38f EXIT0:2 arquivos18 testes, UTC/w1/1024, sem filtro/skips; lint5 18cc09 EXIT0/zero avisos. Acrescentado controle negativo da própria capacidade operacional.
 
 Novo caso PostgreSQL autorado exige ambos sinalizadores true, gerarfalse/análisenull após retarget incompatível e descarte real; ainda NÃO executado. Autoria nativa passa a25 casos previstos (kernel13+conc6+pool1dois+notify4). Schema257b91c/SQL241ee9/profile67580e/AGENTS0544fa preservados; nenhum SQL/endpoint/bridge nesta correção.
+
+## Execução PostgreSQL real — fonte338899e8 + instrumentação de fila
+
+Admissão exclusiva ROOT a0036e EXIT0: A493/425 tabelas/559 originais/hash conferidos/client72b4825a, zero outros atores. Todas execuções usaram vitest.integration.config.ts e perfil originais, TZ UTC, w1/heap1024 e sete provedores vazios. Provider fake somente na fronteira de geração; nenhuma API real/DDL/generate/install. Sessões acompanhadas até saída terminal.
+
+| Arquivo completo | Sessão / terminal | Casos | Resultado |
+| --- | --- | --- | --- |
+| kernel.int.test.ts | 74580 / 0323be | 13 | EXIT0 |
+| concorrencia.int.test.ts (replay completo) | 53348 / 15142c | 6 | EXIT0 |
+| pool1.int.test.ts | 99863 / 0c1168 | 2 | EXIT0 |
+| notify.int.test.ts | 19117 / 555cec | 4 | EXIT0 |
+
+São quatro arquivos disjuntos/25 testes, sem filtros/skips nos finais acima; não uma execução global. Avisos habituais mixedexports/tsconfigpaths foram mantidos. Lint do helper alterado764726 EXIT0/zero avisos.
+
+Negativo de instrumentação preservado: concorrência22482/386ab1 EXIT1,5pass/1fail. Observador esperava dois bloqueios DIRETOS pelo holder; não falhou asserção de produto. Diagnóstico83673/92cea0 EXIT1 com filtro explícito de UM caso e5skips mostrou holder1990884←aguardante1991264←aguardante1984708 em SELECT Atendimento FOR NO KEY UPDATE. Ajuste somente no helper de teste exige que a cadeia real observada alcance o holder, sem reduzir mínimo2 nem eleição de pacote único. Replay completo6 passou. Isso não é RED causal de bug produtivo/deadlock.
+
+Cobertura nativa realizada: CAS e unicidade de claim/START; orçamento diminuído/Config apagada antesSTART; custo conhecido com ACL revogada ou JSON inválido; Config apagada apósSTART; reconciliação/descarte/replay/latecost; Pessoa incompatível com capacidades coerentes; watermark/data/id após exclusão física da última mensagem; revalidação após esperas reais; KEY SHARE mantido até conclusão assertada; pool1 sem TX global aninhada. LISTEN nativo verifica finalização commit1/replay0/rollback0 e operações sem avisos duplicados. A perda de ACK é instrumentada DEPOIS do COMMIT PostgreSQL real, uma ou duas vezes: provider1/Chamada1/Evento1/notify1, recebidoEm imutável e GET posterior PRONTA; duas falhas não afirmam estado atual no retorno intermediário. Rollback pós-callback é falha injetada explicitamente, não concorrência.
+
+Lease e NodeSQL liberados ao ROOT após555cec. Somente ROOT restaura snapshot493; nunca492. Restauração ainda não recebida neste registro. Nenhuma nova SQL autorizada após a liberação. Pendências da funcionalidade: endpoint/aba, UI operacional e pontes reais, QA independente, gates originais integrados/visual/CI. Os25 testes foram autorados após o kernel; não existe alegação retroativa de RED nativo.
