@@ -653,6 +653,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/abas/OutrasOportunidades.tsx": [
     "compacto · Nenhuma outra. Rematrícula ou novo curso geram uma nova oportunidade.",
   ],
+  "src/app/(app)/inbox/aria/ModalResumoHandoff.tsx": ["compacto · Nenhuma ação registrada."],
   "src/app/(app)/inbox/abas/TagsContato.tsx": [
     "compacto · Nenhuma tag encontrada.",
   ],
