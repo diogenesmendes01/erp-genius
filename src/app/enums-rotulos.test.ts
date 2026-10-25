@@ -1,3 +1,4 @@
+import { MOTIVOS_HANDOFF } from "@/server/aria/turno/tipos";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -1850,6 +1851,7 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
 ];
 /** Mapas fora das telas (src/lib, src/server) que não são rótulo do valor: mensagens, frases de documento, regras. */
 const MAPAS_DE_DOMINIO: { arquivo: string; nome: string; motivo: string }[] = [
+  { arquivo: "src/server/aria/handoff-inbox.ts", nome: "switch acao", motivo: "descrição histórica contextual com payload/fallbacks, não rótulo do enum" },
   { arquivo: "src/server/matricula/desistencia-documental.ts", nome: "(literal em descricaoEstado)", motivo: "fragmento minúsculo no meio da frase do servidor (\"processo com envio incerto\"), não o nome do estado" },
   { arquivo: "src/server/portal-aluno/envio-resend.ts", nome: "ternário mensagem.finalidade", motivo: "assunto do e-mail por finalidade (\"Seu acesso ao portal da escola\"), frase e não o nome da finalidade" },
   { arquivo: "src/server/whatsapp/drivers/motor.ts", nome: "TIPO_MIDIA", motivo: "valor técnico do payload do motor (\"imagem\", \"audio\"), não rótulo" },
@@ -2137,6 +2139,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["CATEGORIA_DOCUMENTO_LABEL", L.CATEGORIA_DOCUMENTO_LABEL, Object.values(CategoriaDocumento)],
   ["STATUS_FATURA_B2B_LABEL", L.STATUS_FATURA_B2B_LABEL, Object.values(StatusFaturaB2B)],
   ["ACAO_AGENTE_IA_LABEL", L.ACAO_AGENTE_IA_LABEL, Object.values(AcaoAgenteIATipo)],
+  ["MOTIVO_HANDOFF_LABEL", L.MOTIVO_HANDOFF_LABEL, [...MOTIVOS_HANDOFF, "TURNO_INTERROMPIDO"]],
   ["STATUS_ACAO_AGENTE_IA_LABEL", L.STATUS_ACAO_AGENTE_IA_LABEL, Object.values(StatusAcaoAgenteIA)],
   ["MOTIVO_PAUSA_IA_LABEL", L.MOTIVO_PAUSA_IA_LABEL, Object.values(MotivoPausaAtendimentoIA)],
   ["STATUS_VERSAO_AGENTE_IA_LABEL", L.STATUS_VERSAO_AGENTE_IA_LABEL, Object.values(StatusVersaoAgenteIA)],

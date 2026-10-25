@@ -1,0 +1,75 @@
+{
+  "fonteComposta": "d9b1b08e2d97bdf89371673a2d2330ac0ac45d28",
+  "baseMain": "170edbadfdf35a93f5366ba504bb7870a1ebf0c1",
+  "fontes349Preservadas": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+  "correcaoLiterais": "1433790090ca35a784ed7c19c6843ccf8a876504",
+  "paths": [
+    {
+      "path": "src/app/(app)/inbox/PainelAtendimento.aria.test.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 3481,
+      "sha256": "ffdb6d3883d56ee38fd46b49255cb1de6a5762bbef9a8bea016fb1b3f1cd44de"
+    },
+    {
+      "path": "src/server/aria/historico.int.test.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 24078,
+      "sha256": "6b4a260ac6d9fab60f7b85eab854c75a06d0a1a1d79bc8f99868dfd858fafd55"
+    },
+    {
+      "path": "src/server/aria/historico.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 12087,
+      "sha256": "0bbd1784bbbd733c3d5019e716a613407024dc499da2e42a65fb6b92e3b4cca8"
+    },
+    {
+      "path": "src/server/aria/sugestoes-thread.test.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 2486,
+      "sha256": "084633f5f24ef8f5bd9c19c2e983cfed560766dab30f916c2f2b2b0ac8ebcaea"
+    },
+    {
+      "path": "src/server/aria/sugestoes-thread.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 6162,
+      "sha256": "b6affb2e4a8d960c6e53cd395b41549432142beb11fed1b28501182d25d86a41"
+    },
+    {
+      "path": "src/server/inbox/paineis.int.test.ts",
+      "origem": "1433790090ca35a784ed7c19c6843ccf8a876504",
+      "bytes": 22121,
+      "sha256": "01858be4581e73b0cd670bb7be59b94214d3e0f9fe855a0cbfa659a3b595a04e"
+    },
+    {
+      "path": "src/server/whatsapp/consultas-inbox.aria.int.test.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 13110,
+      "sha256": "ba3c047b5ee73fb06a76a6e4b7aa2b1a67412cacd74b3baf3cd253aabec7e63d"
+    },
+    {
+      "path": "src/server/whatsapp/consultas-inbox.ts",
+      "origem": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+      "bytes": 19666,
+      "sha256": "7571d8b3b90d297eebb95fcf16671ff4b129f398be37b4a087fa64bcef95b8cf"
+    }
+  ],
+  "quadroMainPrefixoIntegro": true,
+  "limite": "7SRC349 idênticoscb285/b292;único delta novo de SRC é4literais completos no teste paineis. Main343/423 incorporada. Fullb292negativo mantido,novaCI/full composta pendentes. Sem reatribuir fontes ou resultados.",
+  "gatesOriginaisRootComposicao": {
+    "typeScriptOriginal": {
+      "sessao": 28227,
+      "terminal": "a6beb3",
+      "exit": 0,
+      "incremental": false,
+      "heapMB": 8192,
+      "exclusoesAuxiliares": false
+    },
+    "lintGlobal": {
+      "sessao": 42789,
+      "terminal": "5d9ca8",
+      "exit": 0,
+      "erros": 0,
+      "avisosHerdados": 40
+    }
+  }
+}
