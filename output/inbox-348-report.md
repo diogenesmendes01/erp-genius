@@ -28,3 +28,9 @@ Não houve DB/INT/lease, servidor/preview/browser/captura, migração/schema/ins
 Após identificar guardas de botões no global347, ROOT autorizou variante canônica ia em Botao para348: bg-ai-50 text-ai-700 hover:bg-highlight. Não alterei guardas ou Faixa347. Devolver usa varianteia sem overrides de cor. REDbd85c8 EXIT1 Botao10 casos(2falhas/8controles); GREEN0c8b48 EXIT0 Botao+Devolver20/20. Lint DS final89af41 EXIT0 quinze arquivos --max-warnings0.
 
 Replay final após DS: sessão83786/chunk807675 EXIT0,65 arquivos615/615 (pasta Inbox completa + Botao.test.ts),24,02s,w1/heap512/configuração original; logs inbox-348-inbox-ds-final-private.log/inbox-348-lint-ds-final-private.log. Ainda recorte, não global/INT. Sem alteração produtiva após esta execução. Whitelist final18arquivos, incluindo dois arquivos Botao. Revisão independente solicitada via ROOT/TESTER, respeitando doisDEVs+TESTER e worktree próprio.
+
+## Correção declarativa do mapa (#348, revisão independente)
+
+TESTER informou RED independente32314e EXIT1: guarda completa botoes.test.ts85casos,83aprovados/2falhas, sendo ausência de entrada348 no mapa e linkcru herdado347. ROOT autorizou somente registro canônico da entrada: inbox/aria/BotaoDevolverAria.tsx → <Botao> Devolver · Devolver para Aria → ia/sm. Nenhuma guarda, botão, variante ou Faixa347 alterados por este ajuste.
+
+Verificação própria258122 EXIT1: um arquivo completo85casos,84aprovados/1falha. Mapa348 passou; única falha restante é nenhum botão de ação montado à mão, apontando FaixaAriaAtiva.tsx347. Resultado não é GREEN e depende carry347ROOT. Sem filtro de caso/skip, w1/heap1024, executor síncrono sem session_id. Log inbox-348-guarda-mapa-full-private.log. Alteração declarativa e report/quadro serão commitseparado, preservando db30como fonte anterior. JSON/README dafixture são privados e não entram nesse commit.

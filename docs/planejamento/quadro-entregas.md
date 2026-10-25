@@ -7028,3 +7028,7 @@ TDD0fcced EXIT1 quatro arquivos72 casos(30falhas/42controles),266230 EXIT1 consu
 SPEC docs/specs/inbox-cabecalho-aria.md; report output/inbox-348-report.md. Visual, QA independente, TSC/global/CI/build/homologação permanecem pendentes. SemDB/INT/lease, instalação/generate/migração/env/provider/preview/browser/captura/mensagem real/push/deploy. Fonte347 congelada preservada; correção347ROOT futura exige carry separado. Não marcar issue concluída por estes gates.
 
 Adendo348DS coordenadoROOT: varianteia canônica Botao adicionada sem overrides ou relaxar guardas. REDbd85c8(2falhas/8controles)→GREEN0c8b48 dois arquivos20/20. Replay final sessão83786/chunk807675 EXIT0:65 arquivos615/615(pastaInbox+Botao), w1/heap512; lint15arquivos89af41 EXIT0 --max-warnings0. Faixa347 permanece literal aguardando carry da correçãoROOT. QA/TSC/visual/global/CI seguem pendentes.
+
+### #348 — entrada declarativa no mapa após QA independente (25/10/2026)
+
+TESTER32314e EXIT1 identificou2falhas na guarda completa85(83pass):mapa348ausente e linkcru347herdado. PorGO ROOT, foi adicionada somente entrada inbox/aria/BotaoDevolverAria.tsx → <Botao> Devolver · Devolver para Aria → ia/sm, sem alterar guarda/variante/runtime. VerificaçãoDEV258122 EXIT1:85casoscompletos84pass/1fail, única restanteFaixaAriaAtiva347à mão. Mapa348passa, mas guardaNÃO estáGREEN antesdocarry347ROOT. w1/heap1024/semfiltro/skip; logs/reportdetalhados. Ajuste separado de db30; QAvisual/TSC/global/CI continuam pendentes.
