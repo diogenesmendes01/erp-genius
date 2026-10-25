@@ -12,7 +12,7 @@ import { ChipsFiltro, chipsDaColuna } from "./ChipsFiltro";
 import { ListaAtendimentos, type PropsListaAtendimentos } from "./ListaAtendimentos";
 import { chipAtivo, hrefDosFiltros } from "./filtros-url";
 import { PopoverColuna } from "./PopoverColuna";
-import { contarFiltrosAplicados, PopoverFiltros } from "./PopoverFiltros";
+import { contarFiltrosAplicados, limparFiltrosAplicados, PopoverFiltros } from "./PopoverFiltros";
 import { SeletorNumero } from "./SeletorNumero";
 export interface PropsColunaConversas extends PropsListaAtendimentos {
  filtros: FiltrosInbox; opcoesFiltro?: OpcoesFiltroInbox; contagens?: ContagensChipsInbox; resumo?: ResumoListaInbox; faixaAria?: ReactNode;
@@ -49,16 +49,17 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, resumo, faix
   return () => document.removeEventListener("keydown", atalho);
  }, [popover, novaAberta, aoFecharNovaConversa, focoRetorno]);
  const total = contarFiltrosAplicados(filtros, !!resumo);
- type ChaveAplicada = "setor" | "status" | "responsavel" | "naoLidas";
+ type ChaveAplicada = "setor" | "status" | "responsavel" | "naoLidas" | "prazoEstourado";
  const aplicados: { chave: ChaveAplicada; rotulo: string }[] = [];
  if (filtros.setor) aplicados.push({ chave: "setor", rotulo: SETOR_ATENDIMENTO_LABEL[filtros.setor] });
  if (filtros.status) aplicados.push({ chave: "status", rotulo: STATUS_ATENDIMENTO_LABEL[filtros.status] });
  if (resumo) {
-  if (filtros.responsavel && filtros.responsavel !== "fila") aplicados.push({ chave: "responsavel", rotulo: filtros.responsavel === "eu" ? "Minhas" : "Responsável selecionado" });
+  if (filtros.responsavel && (filtros.responsavel !== "fila" || chipAriaAtivo(filtros) !== "fila")) aplicados.push({ chave: "responsavel", rotulo: filtros.responsavel === "eu" ? "Minhas" : filtros.responsavel === "fila" ? "Não atribuídas" : "Responsável selecionado" });
+  if (filtros.prazoEstourado && chipAriaAtivo(filtros) !== "sem-resposta") aplicados.push({ chave: "prazoEstourado", rotulo: "Prazo estourado" });
   if (filtros.naoLidas) aplicados.push({ chave: "naoLidas", rotulo: "Não lidas" });
 
  }
- function remover(chave?: ChaveAplicada) { const novo = { ...filtros }; if (chave) delete novo[chave]; else { delete novo.setor; delete novo.status; if (resumo) { if (novo.responsavel !== "fila") delete novo.responsavel; delete novo.naoLidas; } } aplicar(novo); }
+ function remover(chave?: ChaveAplicada) { const novo = chave ? { ...filtros } : limparFiltrosAplicados(filtros, !!resumo); if (chave) delete novo[chave]; aplicar(novo); }
  return <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
   <div className="min-h-0 max-h-[50%] shrink-0 overflow-y-auto">
    <header className="flex items-center gap-2 px-[18px] pb-2.5 pt-[18px]">

@@ -6,11 +6,21 @@ import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL } from "@/lib/labels"
 import type { FiltrosInbox } from "@/server/inbox/filtros";
 import type { Setor } from "@/server/whatsapp/setor";
 import { PopoverColuna } from "./PopoverColuna";
-export function contarFiltrosAplicados(f: FiltrosInbox, incluirPessoais = false): number { return Number(!!f.setor) + Number(!!f.status) + (incluirPessoais ? Number(!!f.responsavel && f.responsavel !== "fila") + Number(!!f.naoLidas) : 0); }
+import { chipAtivo as chipAriaAtivo } from "./chips-inbox";
+/** Só a dimensão do chip ativo fica fora das etiquetas/selo; combinações de URL continuam válidas. */
+export function contarFiltrosAplicados(f: FiltrosInbox, incluirPessoais = false): number {
+ const ativo=chipAriaAtivo(f);
+ return Number(!!f.setor)+Number(!!f.status)+(incluirPessoais?Number(!!f.responsavel&&(f.responsavel!=="fila"||ativo!=="fila"))+Number(!!f.naoLidas)+Number(!!f.prazoEstourado&&ativo!=="sem-resposta"):0);
+}
+export function limparFiltrosAplicados(f: FiltrosInbox, incluirPessoais = false): FiltrosInbox {
+ const novo={...f},ativo=chipAriaAtivo(f);delete novo.setor;delete novo.status;
+ if(incluirPessoais){if(ativo!=="fila")delete novo.responsavel;if(ativo!=="sem-resposta")delete novo.prazoEstourado;delete novo.naoLidas;}
+ return novo;
+}
 export function PopoverFiltros({ filtros, setores, incluirPessoais = false, aoAplicar, aoFechar, focoAoFechar }: { filtros: FiltrosInbox; setores: Setor[]; incluirPessoais?: boolean; aoAplicar(f: FiltrosInbox): void; aoFechar(): void; focoAoFechar?: RefObject<HTMLElement | null> }) {
  const [setor, setSetor] = useState(filtros.setor); const [status, setStatus] = useState(filtros.status);
  const [responsavel, setResponsavel] = useState(filtros.responsavel); const [naoLidas, setNaoLidas] = useState(!!filtros.naoLidas);
- function aplicar(limpar = false) { const f = { ...filtros }; delete f.setor; delete f.status; if (incluirPessoais) { if (f.responsavel !== "fila") delete f.responsavel; delete f.naoLidas; if (!limpar) { if (responsavel) f.responsavel = responsavel; if (naoLidas) f.naoLidas = true; } } if (!limpar) { if (setor) f.setor = setor; if (status) f.status = status; } aoAplicar(f); aoFechar(); }
+ function aplicar(limpar = false) { const f = limpar ? limparFiltrosAplicados(filtros, incluirPessoais) : { ...filtros }; if (!limpar) { delete f.setor; delete f.status; if (incluirPessoais) { delete f.responsavel; delete f.naoLidas; if (responsavel) f.responsavel = responsavel; if (naoLidas) f.naoLidas = true; } if (setor) f.setor = setor; if (status) f.status = status; } aoAplicar(f); aoFechar(); }
  const opcao = "inline-flex h-7 items-center gap-1 rounded-[15px] border px-2.5 text-[12.5px] ";
  return <PopoverColuna titulo="Filtrar conversas" aberto aoFechar={aoFechar} focoAoFechar={focoAoFechar} rodape={<><Botao variante="secundario" onClick={() => aplicar(true)}>Limpar</Botao><Botao className="flex-1" onClick={() => aplicar()}>Mostrar conversas</Botao></>}>
   <div className="space-y-4">
