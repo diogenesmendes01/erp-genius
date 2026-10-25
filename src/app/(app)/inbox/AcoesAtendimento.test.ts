@@ -173,6 +173,6 @@ describe("convites e agendamentos no fuso de exibição", () => {
 });
 
 it("332 entrada de tarefa é nominal por callback autorizado, fora CRM e sem agenda/envio",()=>{
- const base={papeis:[Papel.SECRETARIA],finalidade:"SECRETARIA" as Setor,status:"ENCERRADO",aoCriarTarefa:vi.fn()};
+ const base={papeis:[Papel.SECRETARIA_ACADEMICA],finalidade:"SECRETARIA" as Setor,status:"ENCERRADO",aoCriarTarefa:vi.fn()};
  expect(html(base)).toContain("Criar tarefa");expect(html(base)).not.toContain("Agendar mensagem");expect(html({...base,aoCriarTarefa:undefined})).not.toContain("Criar tarefa");expect(html({...base,grupo:true})).not.toContain("Criar tarefa");
 });
