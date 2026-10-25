@@ -39,3 +39,7 @@ Gates ROOT com saída terminal 0: global 4382/ccacc3, 928 arquivos e 7.346 teste
 Preparação local nova executada pelo integrador: inspeção 4967db e aplicação f14779 com saída 0, 18 registros fictícios suplementares, total de 516; 498 registros originais, hashes das 424 tabelas e sequências preservados. Número desconectado e provedores externos vazios. O preflight HTTP confirmou Painel, Detalhes e HTML com status 200, permissão de editar e envio desabilitado. A preparação não executou Salvar pela interface.
 
 A PR permanece em rascunho até concluir uma persistência real controlada, prova de ACK antigo/SSE, fechamento e restauração do banco e QA visual. O histórico 2588/2bca76 continua negativo; as 39 imagens antigas não são reatribuídas à composição atual. Não concluir a issue com essas pendências.
+
+
+### Composição com main343/423
+A composição74d4dbc6 incorpora main170edbad preservando os17SRC de326 e todos os registros do quadro. O18ºSRC,teste InboxNovo.foco, recebe somente os quatro defaultsDTO343; removê-los recompõe o teste179b byte a byte. TypeScript original98161/c46003 terminou0, sem exclusões e sem incremental. Recorte de foco/editor/cache:3arquivos/43testes,terminal33f166,saída0,sem filtros/skips. A integração completa798f continua nominal à fonte anterior342/343/423 e não é apresentada como full combinado. NovaCI da publicação e autorização dos anexos326 continuam pendentes. Nenhum novoSave,testeUI ouDB nesta composição.
