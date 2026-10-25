@@ -7208,3 +7208,31 @@ ROOT globalUTC950/7597 sessão92937/655010 EXIT0, TSCoriginal8192 sessão47511/c
 DEV B na branch codex/inbox-e3-347-review-r1/base32c48333. C4 move role=status somente ao título; contagens fora da região viva. C6 Gerenciar usa NextLink/prefetch=false mantendo href/capacidade/iaFantasma; mapa sótroca tag. C5 renomeia cobertura existente pelos nomes nominais da Task6 e documenta vínculos naSPEC, semduplicarcasos. Nenhuma348/ACL/backend alterada.
 
 RED b6e00b EXIT1:13casos/2falhas11controles. Primeiro recorte97402/e20c43 EXIT1:172casos1falha171pass por selfdoDOMmínimoausente; setup local completado paraNextLinkREAL,semrelaxartestes/harness. GREEN sessão11275/ab1127 EXIT0:7arquivos172/172, incluindo guarda85/paleta/contraste/SSR/SSE/foco, w1/heap1024/semfiltro/skipnovo. Lint4/148a1b EXIT0 --max-warnings0. Relatório/SPEC atualizados; QA/composição/visual/TSC/CI pendentesROOT. SemDB/Next/provider/browser/HTTP/install/env/migração/push.
+
+
+### Inbox #348 — cabeçalho e devolução implementados; QA e CI pendentes (25/10/2026)
+
+DEV B na base716a6261 (#347 sobre346252), branch codex/inbox-e3-348-cabecalho-aria. LinhaestadoAria do item343 e capacidades do painel corrente compõem o cabeçalho68px; helperpausa movido/reexportado sem remover PainelAria353. Botão Devolver usa action existente/useAcaoCliente idempotentetrue, feedbackirmão apósheader e token de ciclo para impedir ACK/erro/transporte antigos em A→B→A ou revogação/retorno, preservando rascunho/scroller.404 limpa somente podeDevolver/podeDecidir da cópiaAria histórica;503preserva. Sem servidor/ACL/D3/357/358/359 ou novoSSE.
+
+TDD0fcced EXIT1 quatro arquivos72 casos(30falhas/42controles),266230 EXIT1 consumidor11(1falha/10controles);8casoscontroladorRED2eb47b→GREEN85ce7e. Primeira pastaInbox62193/1f0f89 EXIT1:64arquivos603casos,19falhas em dois helperslocais de materialização; asserções preservadas, adaptação real verificada19/19e7f3b4. GREEN final sessão18529/chunk2d9eb4 EXIT0:64arquivos605/605, w1/heap512, sem filtros de caso/skips novos, integração excluída pela configuração original. Lint13arquivos272d21 EXIT0 --max-warnings0. Negativos administrativos/SVG/lint/edição intermediária detalhados no report; aviso vite-tsconfig-paths preexistente. Recorte de pasta, não global.
+
+SPEC docs/specs/inbox-cabecalho-aria.md; report output/inbox-348-report.md. Visual, QA independente, TSC/global/CI/build/homologação permanecem pendentes. SemDB/INT/lease, instalação/generate/migração/env/provider/preview/browser/captura/mensagem real/push/deploy. Fonte347 congelada preservada; correção347ROOT futura exige carry separado. Não marcar issue concluída por estes gates.
+
+Adendo348DS coordenadoROOT: varianteia canônica Botao adicionada sem overrides ou relaxar guardas. REDbd85c8(2falhas/8controles)→GREEN0c8b48 dois arquivos20/20. Replay final sessão83786/chunk807675 EXIT0:65 arquivos615/615(pastaInbox+Botao), w1/heap512; lint15arquivos89af41 EXIT0 --max-warnings0. Faixa347 permanece literal aguardando carry da correçãoROOT. QA/TSC/visual/global/CI seguem pendentes.
+
+### #348 — entrada declarativa no mapa após QA independente (25/10/2026)
+
+TESTER32314e EXIT1 identificou2falhas na guarda completa85(83pass):mapa348ausente e linkcru347herdado. PorGO ROOT, foi adicionada somente entrada inbox/aria/BotaoDevolverAria.tsx → <Botao> Devolver · Devolver para Aria → ia/sm, sem alterar guarda/variante/runtime. VerificaçãoDEV258122 EXIT1:85casoscompletos84pass/1fail, única restanteFaixaAriaAtiva347à mão. Mapa348passa, mas guardaNÃO estáGREEN antesdocarry347ROOT. w1/heap1024/semfiltro/skip; logs/reportdetalhados. Ajuste separado de db30; QAvisual/TSC/global/CI continuam pendentes.
+### #348 — composição com correção347 canônica verificada (25/10/2026)
+
+Carry autorizado287b4c2cROOT sobre d4a38114. União dos tiposia/iaFantasma e quadro preservou ambas as variantes/mapas e sufixos integrais; quatroblobs347 idênticos287 e runtime348/servidor/schema literais àfonte348, prova b86f78 EXIT0. Composição sessão85767/chunkdb85c2 EXIT0:66arquivos701/701 (Inboxpasta+Botao+guardabotoes85COMPLETOS), w1/heap1024/semfiltro/skipnovo. Lint5b3076b EXIT0 --max-warnings0. Não é global/TSC/CI. Falha347herdada258122 documentada foi corrigida nesta composição, sem relaxar guardas. QAexato/visual/TSCglobal/CI/build pendentesROOT; semDB/preview/provider/env/browser/captura/push.
+
+
+### Inbox #348 — composição sobre PR433
+
+Composição ROOT preserva integralmente a publicação347/PR433 e os dezoito objetos próprios348 fora do quadro. Quadros combinados com prefixo32c literal e sufixo348 integral, removendo somente a repetição exata do registro347 já presente. Variantes ia/iaFantasma e ambos mapas mantidos. QA/TSC/global/visual próprios desta composição permanecem pendentes.
+
+### Inbox #348 — integração R1 após #433 revisada
+
+Preservados os cartões #350 e o cabeçalho #348 sobre a pilha #435/#432/#427/#420; todos os testes/históricos e variantes canônicas foram mantidos. Correção editorial C4 rastreia nomes do plano; C5 coexistência até #353 registrada no SPEC. Primeiro TSC63251/18df2c EXIT2 apontou prop JSX duplicada gerada pelo merge; global63160 interrompida84a514 EXIT1 antes da correção. Negativos preservados. Prop única corrigida; gates finais e visual pendentes. Nenhum merge em main, envio ou deploy.
+Validação da composição R1 corrigida (25/10): TypeScript original sem exclusões novas49054/963b46 EXIT0; suíte unitária completa UTC48880/d86765 EXIT0, 975 arquivos/8.356 testes, sem filtros/skips, 240,79s. Ambos usaram a árvore893c1d5c338071ed82b5f58696d7b6dc82c7c3ad. Lint original47508/6a8278 EXIT0, zero erros/47 avisos, sem mudar regras/config/ignores. O primeiro lint46844/779224 EXIT1 examinou caches históricos de Next gerados dentro de output (11.172 arquivos; 5.812 erros no código gerado); os caches foram preservados por renomeação em diretório de artefatos autorizado, com pins conferidos, antes do replay. Não é correção de código gerado nem exclusão de fonte. Esse negativo também fica preservado. Apenas documentação de resultados foi acrescentada depois dos gates; build do head exato e QA independente final permanecem pendentes. Capturas, CI após retarget e merge não foram presumidos.

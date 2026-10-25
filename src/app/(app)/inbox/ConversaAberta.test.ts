@@ -248,3 +248,12 @@ it("cartões são alcançáveis no consumidor da lista virtual real sem alterar 
  expect(v.stableMount).toBe(true);expect(v.isItemFocusable!(row,0)).toBe(true);expect(v.getKey(row,0)).toBe("sugestao-aria:s");
  expect(v.items.filter(x=>(x as {tipo:string}).tipo==="mensagem").map((x,i)=>v.getKey(x,i))).toEqual(mensagens.map(m=>m.id));
 });
+
+it("348 usa estado e capacidades Aria recebidos sem inferir papel",()=>{
+ const aria={handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:"MANUAL" as const,podeDevolver:true,sugestoes:[]};
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"aprovacao"}),aria})));
+ expect(h).toContain("Aria aguarda sua aprovação");expect(h).toContain('aria-label="Devolver para Aria"');expect(h).toContain('title="Aria pausada · Pausa manual"');
+ const negado=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"aprovacao"}),aria:{...aria,podeDecidir:false,podeDevolver:false}})));
+ expect(negado).toContain("Aria aguarda aprovação");expect(negado).not.toContain('aria-label="Devolver para Aria"');
+});
+it("348 grupo e encerrada preservam estados legados sem devolução",()=>{for(const alteracao of [{grupo:true},{status:"ENCERRADO" as const}]){const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"ia",...alteracao}),aria:{handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:null,podeDevolver:true,sugestoes:[]}})));expect(h).not.toContain("Aria está atendendo");expect(h).not.toContain('aria-label="Devolver para Aria"');}});
