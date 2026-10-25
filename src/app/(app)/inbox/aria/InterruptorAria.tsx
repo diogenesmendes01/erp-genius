@@ -29,7 +29,7 @@ export function InterruptorAria({ pausada, aoMudar }: { pausada: boolean; aoMuda
         <span className={"h-4 w-4 rounded-full bg-white transition-transform " + (pausada ? "translate-x-0.5" : "translate-x-[18px]")} />
       </span><span className="sr-only">Aria ativa</span>
     </Botao>
-    {!aberto && <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />}
+    {!aberto && <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="basis-full" />}
     {aberto && <Modal titulo="Pausar a Aria em todas as conversas" aoFechar={() => setAberto(false)} bloquearFechamento={acao.ocupado} focoInicial={campo}>
       <p className="mb-3 text-sm text-gray-600">A pausa é global. Novas conversas vão para a equipe. O motivo fica no histórico de auditoria.</p>
       <Campo rotulo="Motivo da pausa" obrigatorio>

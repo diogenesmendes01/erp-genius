@@ -1,0 +1,13 @@
+import {createElement} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import {expect,it,vi} from "vitest";
+import {CartaoTarefaFio,textoCriadorTarefa} from "./CartaoTarefaFio";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
+const t:TarefaPainel={id:"t332",versao:1,titulo:"Retornar sobre o curso",descricao:null,tipo:"WHATSAPP",status:"ABERTA",prioridade:"NORMAL",dataCivil:"2026-11-01",hora:"01:30",fusoOrigem:"America/New_York",lembreteAntecedenciaMin:null,responsavel:{id:"u",nome:"Ana"},atrasada:false,ia:false,leadId:null,atendimentoId:"a332",criadoEm:"2026-10-25T12:20:00Z",criadorNome:"Ana",podeAgir:true};
+const h=(item:TarefaPainel=t,ocupado=false)=>renderToStaticMarkup(createElement(CartaoTarefaFio,{t:item,usuarioNome:"Ana",fuso:"America/Costa_Rica",aoEditar:vi.fn(),aoConcluir:vi.fn(),ocupado}));
+it("autor é apresentação: Aria, você, outro nome ou desconhecido",()=>{expect(textoCriadorTarefa({ia:true,criadorNome:"Ana"},"Ana")).toBe("Aria criou uma tarefa");expect(textoCriadorTarefa({ia:false,criadorNome:"Ana"},"Ana")).toBe("Você criou uma tarefa");expect(textoCriadorTarefa({ia:false,criadorNome:"Bruno"},"Ana")).toBe("Bruno criou uma tarefa");expect(textoCriadorTarefa({ia:false,criadorNome:null},null)).toBe("Uma tarefa foi criada");});
+it("aberta autorizada tem Editar e Concluir; ocupação bloqueia ambos",()=>{expect(h()).toContain('aria-label="Editar"');expect(h()).toContain(">Concluir<");expect((h(t,true).match(/disabled=""/g)??[])).toHaveLength(2);});
+it.each(["CONCLUIDA","CANCELADA"] as const)("%s mostra só estado e nunca ações",status=>{const html=h({...t,status,podeAgir:false});expect(html).toContain(status==="CONCLUIDA"?"Concluída":"Cancelada");expect(html).not.toContain(">Concluir<");expect(html).not.toContain('aria-label="Editar"');});
+it("sem alçada de ação não oferece comandos e atraso usa token sem converter civil DST",()=>{const html=h({...t,podeAgir:false,atrasada:true});expect(html).not.toContain(">Concluir<");expect(html).toContain("01/11/2026 · 01:30 (America/New_York)");expect(html).toContain("06:20");expect(html).toContain("text-red-700");});
+it("sem prazo/responsável e texto escapado são claros no SSR",()=>{const html=h({...t,titulo:'<script>alert("x")</script>',dataCivil:null,hora:null,responsavel:null});expect(html).toContain("Sem prazo");expect(html).toContain("Sem responsável");expect(html).toContain("&lt;script&gt;");expect(html).not.toContain("<script>");});
+it("callback de edição ausente não produz lápis sem operação",()=>{const html=renderToStaticMarkup(createElement(CartaoTarefaFio,{t,fuso:"UTC",usuarioNome:null,aoConcluir:vi.fn()}));expect(html).not.toContain('aria-label="Editar"');expect(html).toContain(">Concluir<");});

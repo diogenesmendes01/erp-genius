@@ -19,7 +19,7 @@ export function FaixaAriaAtiva({ situacao, contagens, aoMudar }: PropsFaixaAriaA
   const titulo = ensaio ? "Aria em ensaio" : pausada ? "Aria pausada" : "Aria ativa";
 
   return (
-    <div role="region" aria-label="Situação da Aria" className="mx-[18px] mb-3 flex items-center gap-2.5 rounded-[10px] bg-ai-50 p-3">
+    <div role="region" aria-label="Situação da Aria" className="mx-[18px] mb-3 grid grid-cols-[28px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-2 rounded-[10px] bg-ai-50 p-3">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ai-solid text-white" aria-hidden="true">
         <IconSparkles size={16} />
       </span>
@@ -29,8 +29,10 @@ export function FaixaAriaAtiva({ situacao, contagens, aoMudar }: PropsFaixaAriaA
           {ensaio ? "Simula respostas sem falar com os contatos" : pausada ? "Pausada · novas conversas vão para a equipe" : <><span className="font-mono tabular-nums">{contagens.ia}</span> em atendimento · <span className="font-mono tabular-nums">{contagens.aprovacao + contagens.handoff}</span> aguardando você</>}
         </p>
       </div>
-      {situacao.podeGerenciar && <InterruptorAria key={`${situacao.estado}:${situacao.pausada}`} pausada={situacao.pausada} aoMudar={aoMudar} />}
-      {situacao.podeGerenciar && <Link href="/aria" prefetch={false} className={botaoClasses({ variante: "iaFantasma", tamanho: "sm" }) + " shrink-0"}>Gerenciar</Link>}
+      {situacao.podeGerenciar && <div role="group" aria-label="Ações da Aria" className="col-span-2 flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+        <InterruptorAria key={`${situacao.estado}:${situacao.pausada}`} pausada={situacao.pausada} aoMudar={aoMudar} />
+        <Link href="/aria" prefetch={false} className={botaoClasses({ variante: "iaFantasma", tamanho: "sm" }) + " shrink-0"}>Gerenciar</Link>
+      </div>}
     </div>
   );
 }

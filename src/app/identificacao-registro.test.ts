@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
 import {
   ATRIBUTOS_DE_TEXTO_NATIVO, FABRICAS_DE_ELEMENTO, FUNCOES_TRANSPARENTES, ITERADORES_DE_ELEMENTO, ITERADORES_DE_VALOR, METODOS_DE_BUSCA,
   METODOS_TRANSPARENTES, NOME_DE_ID, PROP_DE_DESTINO, PROPS_LIVRES, idsCrusNaTela, sinaisDeIdentificacao,
@@ -68,7 +69,26 @@ const PENDENTE_LISTAS_ACERTO = "pendente (docs/42 L2030): a lista não traz alun
 const PENDENTE_RECEBIMENTOS = "pendente: o histórico de recebimentos não traz o código da matrícula nem o da cobrança destinada; exige a consulta";
 const PENDENTE_REMARCACAO = "pendente: a conferência da remarcação lista a reserva pelo id; aluno e matrícula já estão na identificação logo acima";
 
+const EXCECAO_PIN_TAREFA: ExcecaoId = {
+ arquivo:"src/app/(app)/inbox/ConversaAberta.tsx",tipo:"prop",
+ trecho:'pinKeys={[...(achadoAtual?[achadoAtual]:[]),...(tarefaEmEdicaoId?["tarefa:"+tarefaEmEdicaoId]:[])]}',
+ alvo:"tarefaEmEdicaoId",vezes:1,categoria:"nao-registro",
+ motivo:"chave interna de VirtualList.pinKeys mantém a linha da tarefa editada montada e seu retorno de foco; é valor de controle, nunca rótulo, texto ou identificação apresentada à pessoa",
+};
+/** Âncora só desta exceção nominal: a expressão exata precisa pertencer ao VirtualList real do arquivo. */
+function ancoraPinTarefaNoVirtualList(fonte:string):boolean {
+ const sf=ts.createSourceFile("ConversaAberta.tsx",fonte,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ const correspondencias:string[]=[];
+ function visitar(n:ts.Node){
+  if(ts.isJsxSelfClosingElement(n)||ts.isJsxOpeningElement(n))for(const a of n.attributes.properties){
+   if(ts.isJsxAttribute(a)&&normaliza(a.getText(sf))===normaliza(EXCECAO_PIN_TAREFA.trecho))correspondencias.push(n.tagName.getText(sf));
+  }
+  ts.forEachChild(n,visitar);
+ }
+ visitar(sf);return correspondencias.length===1&&correspondencias[0]==="VirtualList";
+}
 export const EXCECOES_ID: ExcecaoId[] = [
+  EXCECAO_PIN_TAREFA,
   { arquivo: "src/app/(app)/inbox/abas/GavetaContato.tsx", tipo: "prop", trecho: "form={id}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId liga o botão submit do rodapé Drawer ao formulário da gaveta; não vem do DTO nem identifica registro ERP" },
   { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", tipo: "prop", trecho: "aria-controls={aberto ? id : undefined}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId para ligar o gatilho ao popover de tags; não é ID de registro do ERP nem vem do DTO" },
   {"arquivo":"src/components/conversa/Compositor.tsx","tipo":"prop","trecho":"aria-controls={opcoesMencao.length ? listaMencoesId : undefined}","alvo":"listaMencoesId","categoria":"nao-registro","motivo":"useId gera referência DOM local entre combobox e lista; não contém ID de registro nem é apresentado como texto à pessoa"},
@@ -273,6 +293,7 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES_ID.map((e) => `${e.arquivo} :: ${e.tipo} :: ${e.alvo} :: ${e.categoria}${e.vezes ? ` ×${e.vezes}` : ""}`)).toEqual([
+      "src/app/(app)/inbox/ConversaAberta.tsx :: prop :: tarefaEmEdicaoId :: nao-registro ×1",
       "src/app/(app)/inbox/abas/GavetaContato.tsx :: prop :: id :: nao-registro",
       "src/app/(app)/inbox/abas/TagsContato.tsx :: prop :: id :: nao-registro",
       "src/components/conversa/Compositor.tsx :: prop :: listaMencoesId :: nao-registro",
@@ -652,4 +673,21 @@ it("sinaisDaTela resolve o import local pelo caminho do arquivo (posix)", () => 
   const pagina = "src/app/(app)/diario/reposicoes/[id]/troca-fonte/page.tsx";
   const s = sinaisDaTela(pagina, (c) => (existsSync(c) ? readFileSync(c, "utf8") : null));
   expect(s.fontes).toEqual([pagina, posix.join(dirname(pagina).split("\\").join("/"), "TrocaFonteReposicao.tsx")]);
+});
+
+describe("#332 — exceção nominal da chave de montagem da tarefa",()=>{
+ const arquivo="src/app/(app)/inbox/ConversaAberta.tsx";
+ const fonte=readFileSync(arquivo,"utf8");
+ it("expressão interna tem uma única âncora VirtualList e não pode migrar para outro componente",()=>{
+  expect(ancoraPinTarefaNoVirtualList(fonte)).toBe(true);
+  expect(ancoraPinTarefaNoVirtualList(fonte.replace("<VirtualList stableMount","<Outro stableMount"))).toBe(false);
+  expect(ancoraPinTarefaNoVirtualList(fonte+"\nconst extra=<VirtualList "+EXCECAO_PIN_TAREFA.trecho+"/>;")).toBe(false);
+ });
+ it.each(['<p>{tarefaEmEdicaoId}</p>','<span aria-label={tarefaEmEdicaoId}/>','<input placeholder={tarefaEmEdicaoId}/>'])("id em texto/atributo apresentado continua recusado: %s",trecho=>{
+  const r=conferirExcecoesId(idsCrusNaTela(trecho,arquivo),[EXCECAO_PIN_TAREFA]);expect(r.semExcecao).not.toHaveLength(0);
+ });
+ it("mesma prop em outro componente não recebe a âncora nominal",()=>{
+  const outro="const x=<Outro "+EXCECAO_PIN_TAREFA.trecho+"/>;";
+  expect(idsCrusNaTela(outro,arquivo)).toHaveLength(1);expect(ancoraPinTarefaNoVirtualList(outro)).toBe(false);
+ });
 });
