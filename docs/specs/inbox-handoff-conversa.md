@@ -39,3 +39,9 @@ A espera de confirmação é separada do busy de leitura. Se painel200 já vier 
 ### R3: vazio e sequência limitada
 
 Feito vazio usa EstadoVazio compacto com o texto Nenhuma ação registrada. O título Próxima ação sugerida é texto de domínio, sem link/cursor de página: classificação nominal coordenada na guarda, preservando parser e asserções. A sequência feito contém no máximo dez últimas ações autorizadas entregues cronologicamente por handoffDoAtendimento (lotes internos100 não são paginação de interface). Teste de mutação no próprio path do Modal exige detectar um link avançar injetado, evitando que a classificação nominal mascare paginação real futura. Backend e hook permanecem inalterados na R3.
+
+### Verificação final da fonte d0e
+
+ROOT verificou d0e987752d045ab8835e12838cc329bb33b6ec12 com TypeScript original67703/7dc488 EXIT0 (sem novas exclusões/config), unitária global UTC51740/ca1ea0 EXIT0 (978 arquivos/8.382 testes, sem filtros/skips) e eslint .7431/c1440c EXIT0 (zero erros/94 avisos). Históricos/cópias privadas causais foram arquivados fisicamente com hashes antes do replay, preservando negativos e fonte.
+
+TESTER revisou o delta exato e executou15 arquivos/222 testes62927/9a962f EXIT0; parecer favorável sem novo achado acionável, relatório SHA25662ce1ca0e1d7589dc6e522b6da98a0a3b0a81e1d09a99d74058eecd3f373a872. Evidências completas no report. Build/CI de publicação e aceite visual permanecem separados; backend #357/D3 segue explicitamente pendente. Este adendo é documental e preserva runtime d0e literal.
