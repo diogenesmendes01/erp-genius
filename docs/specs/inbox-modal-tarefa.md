@@ -41,3 +41,7 @@ Edição envia camposAlterados. Título/descrição não reconstroem instante DS
 ## Verificação e pendências
 
 Evidências e negativos em `docs/qa/inbox-331-candidata-dev-a.md`. Schema/lock/deps/client/config permanecem intactos; não houve integração externa, push ou deploy. Banco foi liberado ao ROOT depois do terminal SQL35. TSC/fullUNIT/lint originais, QA independente, APP+PROTO original em três larguras/dois temas e CI continuam pendentes no commit exato.
+
+### Correção independente da agenda efetiva
+
+Na edição com agenda já resolvida, a exigência data/horário do lembrete considera dataCivil/inicioEm dessa agenda, inclusive quando a tarefa anterior não tinha prazo ou possuía somente data. Sem opção interna, a validação pública CRM anterior permanece. O instante resolvido e a comparação do lembrete continuam autoridades; horário DST não é reinterpretado e lembrete idêntico não rearma. A contraprova P2 do TESTER foi reproduzida em unidade e pelo wrapper SQL antes da correção; QA da candidata deve ser refeita na filha.
