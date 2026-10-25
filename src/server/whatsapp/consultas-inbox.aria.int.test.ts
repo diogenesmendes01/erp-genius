@@ -38,7 +38,7 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
 
   it("pausa e motivo vêm do atendimento; sem pausa o motivo é nulo", async () => {
     const c = await cenario();
-    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: true, cartoes: [], handoff: null });
+    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, podeDecidir: true, cartoes: [], handoff: null });
     await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "CELULAR" } });
     expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toMatchObject({ pausada: true, motivo: "CELULAR" });
   });
@@ -49,13 +49,13 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
     await c.sugerir({ expiraEm: new Date(Date.now() - 1000) });
     await c.sugerir({ status: "APROVADA", expiraEm: null });
     const r = await carregarAriaDoAtendimento(c.gerente, c.a.id);
-    expect(r?.sugestoes).toEqual([{ id: viva.id, acao: "RESPONDER", resumo: "Posso ajudar?", expiraEm: viva.expiraEm!.toISOString() }]);
+    expect(r?.cartoes.filter(s=>s.status==="SUGERIDA")).toEqual([expect.objectContaining({ id: viva.id, acao: "RESPONDER", texto: "Posso ajudar?", expiraEm: viva.expiraEm!.toISOString() })]);
   });
 
   it("vendedor vê a pausa mas não recebe sugestões; fora do escopo devolve null", async () => {
     const c = await cenario();
     await c.sugerir({ expiraEm: new Date(Date.now() + 3_600_000) });
-    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: false, cartoes: [], handoff: null });
+    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null });
     const estranho = await criarUsuario([Papel.FINANCEIRO]);
     expect(await carregarAriaDoAtendimento(estranho, c.a.id)).toBeNull();
   });
@@ -68,18 +68,18 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
     const outroLead = await prisma.oportunidade.create({ data: { nome: "João", vendedorDonoId: outroVendedor.id } });
     const deOutraEquipe = await c.sugerir({ expiraEm: futuro, texto: "outra equipe", oportunidadeId: outroLead.id });
     const r = await carregarAriaDoAtendimento(c.gerente, c.a.id);
-    expect(r?.sugestoes.map((s) => s.id)).toEqual([daEquipe.id]);
+    expect(r?.cartoes.filter(s=>s.status==="SUGERIDA").map((s) => s.id)).toEqual([daEquipe.id]);
     // O Admin vê as duas.
     const admin = await criarUsuario([Papel.ADMINISTRADOR]);
-    expect((await carregarAriaDoAtendimento(admin, c.a.id))?.sugestoes.map((s) => s.id)).toEqual([daEquipe.id, deOutraEquipe.id]);
+    expect((await carregarAriaDoAtendimento(admin, c.a.id))?.cartoes.filter(s=>s.status==="SUGERIDA").map((s) => s.id)).toEqual([daEquipe.id, deOutraEquipe.id]);
   });
 
   it("atendimento sem lead: gerente vê o atendimento sem sugestões; Admin as vê", async () => {
     const c = await cenario({ semLead: true });
     const s = await c.sugerir({ expiraEm: new Date(Date.now() + 3_600_000) });
-    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [], podeDecidir: false, cartoes: [], handoff: null });
+    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null });
     const admin = await criarUsuario([Papel.ADMINISTRADOR]);
-    expect((await carregarAriaDoAtendimento(admin, c.a.id))?.sugestoes.map((x) => x.id)).toEqual([s.id]);
+    expect((await carregarAriaDoAtendimento(admin, c.a.id))?.cartoes.filter(s=>s.status==="SUGERIDA").map((x) => x.id)).toEqual([s.id]);
   });
 
   it("podeDevolver só com a Aria pausada e escopo de envio (mesma regra de devolverParaAria)", async () => {
@@ -163,4 +163,8 @@ describe("cartoes349 autorizados e DTO", () => {
     } finally { await db.$disconnect(); }
   });
 
+});
+
+it("353 consulta_sem_sugestoes_legadas conserva somente contrato canônico autorizado",async()=>{
+ await truncarBanco();const c=await cenario();const r=await carregarAriaDoAtendimento(c.gerente,c.a.id);expect(r).not.toHaveProperty("sugestoes");expect(Object.keys(r!).sort()).toEqual(["cartoes","handoff","motivo","pausada","podeDecidir","podeDevolver"]);
 });
