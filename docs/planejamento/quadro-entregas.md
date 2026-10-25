@@ -6866,3 +6866,48 @@ Atualização dos gates da composição: TypeScript original terminou com códig
 A nova integração40144382961 terminou com quatro shards aprovados:350arquivos/3.128testes;trêsarquivos/quatrotestes opt-in ignorados, declarados separadamente. Terminal32578/3fce24 EXIT0 e conferência45436/a19dd2 EXIT0. CI rápida40144356996 também aprovada5/5,939arquivos/7.457UNIT em cada fuso. [Registro dos jobs e fontes](../../output/inbox-349-qa/ci-23fb.json).
 
 O negativo anteriorb292 continua preservado com suas duas falhas;os quatro literais completos foram corrigidos e a nova execução combinada incluiMain343/423. Revisão independente23fb favorável e comentáriosR1C1–C6 tratados. Este fechamento altera somente documentação;as oito fontes/testes permanecem23fb. A CI do filho documental e o merge serão conferidos antes de encerrar349.
+
+
+
+
+
+
+## Inbox #351 — resumo de handoff no servidor DEV — 24/10/2026
+
+Base b292bf79, contrato compartilhado da #349 e produtor #342 preservados. O DTO acrescenta handoff com última HANDOFF EXECUTADA, parser canônico, motivo seguro e dez ações autorizadas por keyset antes do limite, em ordem cronológica. A autorização E0 mantém resumo positivo ao convidado vigente. Campos e tarefas restritos usam descrições genéricas; tarefa exige payload.tarefaId e escopo atual em lote no mesmo Db. Sem consumidor #352, mutação, alçadas D1–D3, migração, schema ou dependência. Extração literal de podeVerLeadNaThread, com reexport compatível.
+
+Gates DEV com saída 0: UNIT 45914/cbccdf, 29 arquivos/420 casos; INT 50642/4afe5a, cinco arquivos completos/68 casos, 275,93 s. Depois, somente a fixture ganhou tarefa não commitada/rollback em pool1 e convite expirado: arquivo completo final 59826/ec297e, 16/16, 73,91 s; produção e UNIT inalterados. TSC auxiliar final 13026/0d4887 e lint final c73316 aprovados; lint dos 12 paths 18b2c5 também aprovado. Não somar recortes sobrepostos nem chamar UNIT global. CI global fica para publicação, conforme coordenação.
+
+TSC auxiliar conserva exatamente as duas exclusões privadas históricas autorizadas; todos os SRC/testes atuais estão incluídos. Negativos de parser, loader ausente, guarda contextual (153/154) e coluna resultado inexistente estão preservados e explicados. Prova AST 77429/edbd4f confirma formatter/executor, 11 funções de consultas e 13 paths protegidos iguais à base; os 13 textos antigos do Playground permanecem. A guarda recebeu somente a exceção exata aprovada para descrição histórica contextual. APROVADA/EXECUTADA não prova entrega externa; a resposta de transição real integra feito.
+
+Banco ciint491 liberado ao ROOT após os terminais; nenhuma nova operação DEV. Visual novo N/A, produtor interno e rótulos/layout existentes preservados. SPEC docs/specs/inbox-handoff-resumo.md e relatório output/inbox-351-report.md. Restauro ROOT, QA independente, revisão, CI e publicação pendentes; não concluir a issue. Publicar somente após integração da #349.
+
+
+### Constância final do banco — #351
+
+ROOT confirmou restauro do ciint491 na sessão 362469, EXIT0: 424 hashes conferidos, fixture e snapshot preservados, zero outras atividades. Nenhuma nova operação DB pelo DEV. Fonte funcional 55d9c5eb159649f73a35686183fa81d5400304b5 preservada; este adendo é exclusivamente documental. QA independente, revisão, CI e publicação seguem pendentes.
+
+
+## #351 — composição e QA nominal preservada
+
+
+### Composição sobre349 corrigida e expectativas completas
+A fontef95688f7 incorpora34923fb eMain170edbad;12SRC351 são byteiguais aoDEV/QA6fe. Um13ºpath de teste acrescenta somente handoff:null a quatro expectativas completas, mantendo os nove toEqual. RED completo1124/3d2992:11passes/2falhas em13,saída1; GREEN completo49233/22d738:13/13,76,35s,saída0,um worker,sem filtro/skips. RestauroROOT98878/db4b5d terminou0:424hashes/1378registros/sequências preservados. QA independente nominal:7/235UNIT e3/34INT,lint12;restauroTESTER55a5ff. [Evidências e limites](../../output/inbox-351-qa/indice.json). UNITglobal/TSCoriginal da composição em curso;CI/revisão final/publicação/merge pendentes. Não concluir351 e não somar recortes.
+
+
+### Gates originais da fonte integrada e899cef2
+ROOT aprovou a regressão UNIT global:941arquivos/7.483testes,448,67s,doisworkers,sem filtro/skips na configuração unitária que excluiINT (sessão53058/terminalc68959,saída0). TypeScript ORIGINAL sem exclusões/incremental,heap8192MB:85065/e8c411,saída0. Lint GLOBAL43255/98c001,saída0,zero erros/40avisos herdados. Os13SRC do manifesto foram conferidos no commit e899cef25252452614a73b46303c444c8ba8e51e:12iguais aoDEV6fe e fixture adicional com4defaults completos. Nenhuma fonte mudou durante os gates. A dependência349 ainda aguarda integração completa/merge;CI/full351 e revisão final continuam separadas.
+
+
+## #351 — dependência349 mergeada e retargetMain
+
+
+### Dependência349 integrada em main
+A PR424 foi mergeada em7c880a81eedea7d6c9fc4167b8d7bad310c63586. A composição351 incorpora essaMain, preservando toda a árvore executávelf99fa9a7:os conflitos de squash foram resolvidos mantendo os quatro arquivos351 já testados e a documentação349 atual. O quadroMain permanece integral, com o bloco351 unido. [Identidade](../../output/inbox-351-qa/composicao-main349.json). Não houve mudança de função/ACL/schema/dependência nem repetição dos gates de código. Full35140145615424 segue nominalf99 e está emcurso;CI final será conferida após retarget paraMain.
+
+
+## #351 — integração completa aprovada
+
+
+### Integração completa351 aprovada
+A execução40145615424 terminou com quatro shards aprovados:351arquivos/3.144testes;trêsarquivos/quatrotestes opt-in ignorados, declarados à parte. Fontef99fa9a7;watch40858/6d61da e conferência92067/5de763,ambosEXIT0. [Prova dos jobs](../../output/inbox-351-qa/ci-full-f99.json). A composição comMain7c88 preserva toda a árvore executável dessa fonte;este registro não muda código. A PR será retarget paraMain e a CI final/revisão serão conferidas antes do merge.
