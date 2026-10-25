@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { executarTarefaInboxTx, type ReagendamentoInbox } from "./tarefas-transicoes";
 import { EtapaLead } from "@prisma/client";
 import { moverEtapaTx } from "@/server/crm/mover-etapa";
 import { revalidatePath } from "next/cache";
@@ -129,4 +130,17 @@ export async function moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead,
     }));
     revalidatePath("/funil");
   });
+}
+/** Fronteiras autenticadas; transição, Evento e aviso pertencem à mesma transação. */
+export async function concluirTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number):Promise<Resultado>{
+ return executarAcao(async()=>{await executarTarefaInboxTx(await exigirSessao(),atendimentoId,tarefaId,versao,{tipo:"concluir"});revalidatePath("/tarefas");revalidatePath("/inicio");});
+}
+export async function reabrirTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number):Promise<Resultado>{
+ return executarAcao(async()=>{await executarTarefaInboxTx(await exigirSessao(),atendimentoId,tarefaId,versao,{tipo:"reabrir"});revalidatePath("/tarefas");revalidatePath("/inicio");});
+}
+export async function reagendarTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number,q:ReagendamentoInbox):Promise<Resultado>{
+ return executarAcao(async()=>{await executarTarefaInboxTx(await exigirSessao(),atendimentoId,tarefaId,versao,{tipo:"reagendar",q});revalidatePath("/tarefas");revalidatePath("/inicio");});
+}
+export async function cancelarTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number,motivo:string):Promise<Resultado>{
+ return executarAcao(async()=>{await executarTarefaInboxTx(await exigirSessao(),atendimentoId,tarefaId,versao,{tipo:"cancelar",motivo});revalidatePath("/tarefas");revalidatePath("/inicio");});
 }

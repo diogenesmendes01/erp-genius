@@ -1,0 +1,43 @@
+# Tarefas da oportunidade no Inbox — #330 (D10)
+
+Status: implementação candidata em progresso na branch `codex/inbox-e2-330-tarefas`, base329 `26c4da69f4785ea57d4393a4069a871fa2597915`. Não homologada; sem aceite visual, TypeScript do integrador, regressão global ou revisão independente desta fonte330.
+
+## Escopo aprovado
+
+A aba Oportunidades mostra tarefas autorizadas do atendimento ou do lead atual: abertas e cinco concluídas mais recentes; canceladas permanecem no histórico e aparecem somente ao consumidor de vínculo direto do fio. A consulta sempre intersecta pertença OR e escopoTarefas; lead null nunca vira critério global. Tarefas diretamente ligadas sobrevivem à ausência de oportunidade atual. Não amplia a aba a outros setores.
+
+Concluir, reabrir, reagendar e cancelar com motivo usam uma transação. Cancelar mantém histórico, exige motivo trim1–500 e aceita replay apenas do mesmo autor/motivo depois da autorização. Criar/editar continuam dependentes da #331: callbacks preparados, controles somente quando o consumidor real existe. Campos adicionais D10, recorrência/colegas e prioridade BAIXA pertencem à #338; nenhum schema novo.
+
+## Transações e autorização
+
+A extração aprovada pelo integrador move apenas quatro transições para `crm/tarefas-transicoes.ts`, sem use-server; APIs CRM públicas preservadas, incluindo resultado opcional e InteracaoRegistrada somente quando texto/canal reais existem. Não chama ação pública nem cliente global de dentro da transação do Inbox.
+
+Ordem parcial: ConfiguracaoOperacional FOR SHARE somente no reagendamento → Atendimento selecionado FOR UPDATE → Tarefa candidata FOR UPDATE. Após esperas, relê usuário ativo/papéis/permissões pela tx; exige tarefas.ver, atendimentoVisivel e escopoTarefas. O predicado do CAS também contém escopo/pertença, versão e status. Não depende de funil.mover e não concede capacidade a convidado. Replay continua sujeito à ACL atual. Evento, efeitos de lembrete e aviso UPDATE Atendimento participam do mesmo commit; falha propaga antes de executarAcao convertê-la em Resultado.
+
+Refresh dos writers26c: CRM/assumir/lembretes escrevem Tarefa sem lock posterior do Atendimento; Aria CRIAR_TAREFA usa AcaoAgenteIA→Tarefa, sem aviso do Atendimento nesse ramo. Vincular329 usa Atendimento→Contato→Lead, desvincular329 Atendimento→Contato. Não foi identificado ciclo concreto nesses callsites; não se afirma ausência global de deadlocks nem linearizabilidade global de ACL.
+
+## Calendário e fusos
+
+Atalhos hoje18/amanha9/amanha14/seg9 usam calendário institucional explícito. Hoje18 requer futuro estrito; segunda sempre próxima; candidatos pulados/repetidos são omitidos, sem parser de Date no fuso do processo. Amanhã é recalculado no clique, inclusive quando o painel atravessa meia-noite.
+
+O wrapper novo recebe q.fusoEscolaEsperado, compara com Config atual na tx e recusa painel antigo. Resolve o instante na escola e preserva esse instante no núcleo, sem round-trip de texto em dobra DST da origem. Mantém fusoOrigem; dataCivil/hora e grupoDaTarefa são coerentes nesse fuso, inclusive quando civil da origem ainda é dia anterior. A tela global /tarefas conserva sua regra atual.
+
+## Interface e extensão coordenada
+
+Lista: contagem aberta, checkbox concluir/reabrir, prazo/origem, responsável/tipo central rotular(TIPO_TAREFA_LABEL), atraso na cor canônica perigo e indicador IA. Reagendar/editar/cancelar somente abertas; concluir/reabrir/reagendar usam useAcaoCliente idempotente:false sem retry automático. Cancelar usa ConfirmarAcao real idempotente:true, um único alertdialog com Motivo, Voltar/Escape e foco seguro.
+
+Extensão compartilhada explicitamente aprovada pelo Root: `ConfirmarAcao.podeConfirmar?:boolean`, default true. A validação adicional compõe aguardaConferencia/aguardaDigitacao e bloqueia disabled e handler. Não substitui autorização/validação do servidor. Mantém consumidores por padrão. TDD RED952e13 (2falhas/18pass)→GREEN62e5f1 (4arquivos30). Diálogo de cancelamento muda de identidade ao trocar atendimento ou versões das tarefas; ACK A→B→A antigo não fecha nova sessão nem atualiza outro painel. Trocar campo durante envio não produz segundo request, e o primeiro request conserva os argumentos do clique original.
+
+Manifestações nominais: novo EstadoVazio compacto, botões específicos e par exato cancelarTarefaNoInbox/callsite no registro ConfirmarAcao e cópia literal. Não há exceção nova nem relaxamento de parser/guardas. Tokens text-danger-text/text-text-muted do plano não existem no Tailwind atual: usa text-red-700/text-gray-600, sem inventar token global.
+
+## Evidências e limites
+
+- 329 FullUNIT base: sessão30541/terminal6f8ad2 EXIT0,966arquivos8219testes, UTC/w2/heap1536, zero filtros/skips. Prova privada própria; não equivale à regressão330.
+- Atalhos RED módulo ausente→GREENeb4e79 EXIT0,2arquivos17. UI inicial SSR RED módulo ausente→GREEN98fb6e,17; integração Aba RED funcional5b076d→GREEN373d6e,46.
+- Ações RED14168/2e3262 por funções ausentes→GREEN29779/509ad6 EXIT0 novos4+CRM15=19. Corridas posteriores não foram chamadas de RED causal.
+- Ações ampliadas78979/4083c4 EXIT0,14SQL reais: esperas observadas pg_stat_activity para troca lead/papel/inativo/escopo; concorrência SQL nativa de concluir/cancelar; DST e rollback após aviso SQL com falha injetada. Não confundir injeção de falha com concorrência.
+- Painéis99553/d77b3f EXIT0,2arquivos11. Guards69465/8f3059 EXIT1,364pass/4fail: novos manifestos e cores canônicas corrigidos; confirmação/enums/transport/fundo já passavam.
+- Meia-noite RED4507e9 (1falha/7pass); correção rederiva o atalho no clique; regressão em curso.
+- Gates55564/7aa6b0 EXIT0,10arquivos389; SQL61008/901d01 EXIT0,3arquivos21 (ações18/pool1real1/consulta2); regressões38708/d05145 EXIT0,3arquivos20. UNITfinal87731/bba26c EXIT0,16arquivos474,60.19s; lint24b0d3c0 EXIT0. Stale-fuso REDb6f2c4→GREEN4181bb,9/9, integrado na rodada474. Não é regressão global nem homologação.
+
+Pendentes: terminais dos recortes atuais, TSC no integrador e regressão global coordenada, revisão TESTER no commit exato, aceite visual APP/PROTO claro/escuro×três larguras e evidência no PR. Sem browser/fixture/realaction visual nem envio/provider ativado nesta implementação. Não publicar nem marcar issue concluída enquanto gates obrigatórios faltam.

@@ -1,0 +1,31 @@
+import {cenarioPerda328} from "@/test/inbox-perda";
+import { afterAll, beforeEach, expect, it } from "vitest";
+import { Papel } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { carregarTarefasDoAtendimento } from "./painel-tarefas";
+beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
+it("intersecta pertença OR e escopo, abertas mais cinco concluídas, sem canceladas",async()=>{
+ const u=await criarUsuario([Papel.VENDEDOR]),outro=await criarUsuario([Papel.VENDEDOR]);
+ const lead=await prisma.oportunidade.create({data:{nome:"Lead330",vendedorDonoId:u.id}});
+ const base={tipo:"LIGACAO" as const,setor:"COMERCIAL" as const,fusoOrigem:"America/Costa_Rica",leadId:lead.id,responsavelId:u.id};
+ for(let i=0;i<7;i++)await prisma.tarefa.create({data:{...base,id:"concluida330-"+i,titulo:"Concluída"+i,status:"CONCLUIDA",concluidaEm:new Date("2026-10-23T12:00:00Z")}});
+ await prisma.tarefa.create({data:{...base,id:"aberta330",titulo:"Aberta IA",origem:"IA_SUGERIDA",dataCivil:"2026-10-22",inicioEm:new Date("2026-10-23T05:00:00Z")}});
+ await prisma.tarefa.create({data:{...base,id:"cancelada330",titulo:"Cancelada",status:"CANCELADA"}});
+ await prisma.tarefa.create({data:{...base,id:"fora330",titulo:"Fora escopo",responsavelId:outro.id}});
+ const r=await carregarTarefasDoAtendimento(u,{id:"sem-conversa330",leadId:lead.id},{soDaConversa:false,agora:new Date("2026-10-23T04:30:00Z")});
+ expect(r.map(t=>t.id)).toEqual(["aberta330","concluida330-6","concluida330-5","concluida330-4","concluida330-3","concluida330-2"]);
+ expect(r[0]).toMatchObject({ia:true,atrasada:false,hora:"23:00",podeAgir:true});
+ expect(r.slice(1).every(t=>!t.podeAgir)).toBe(true);
+ expect(await carregarTarefasDoAtendimento(u,{id:"sem-conversa330",leadId:null},{soDaConversa:false})).toEqual([]);
+ const professor=await criarUsuario([Papel.PROFESSOR]);
+ expect(await carregarTarefasDoAtendimento(professor,{id:"sem-conversa330",leadId:lead.id},{soDaConversa:false})).toEqual([]);
+});
+it("modo fio é vínculo direto e qualquer status sem duplicação ou fallback lead null",async()=>{
+ const c=await cenarioPerda328(),base={tipo:"OUTRO" as const,setor:"COMERCIAL" as const,responsavelId:c.dono.id,fusoOrigem:"America/Sao_Paulo"};
+ const ambos=await prisma.tarefa.create({data:{...base,titulo:"Ambos",leadId:c.op.id,atendimentoId:c.a.id,status:"CANCELADA"}});
+ const direta=await prisma.tarefa.create({data:{...base,titulo:"Direta",atendimentoId:c.a.id,status:"CONCLUIDA"}});
+ await prisma.tarefa.create({data:{...base,titulo:"Só lead",leadId:c.op.id}});await prisma.tarefa.create({data:{...base,titulo:"Nenhum"}});
+ const r=await carregarTarefasDoAtendimento(c.dono,c.a,{soDaConversa:true});expect(r.map(t=>t.id).sort()).toEqual([ambos.id,direta.id].sort());
+ const semLead=await carregarTarefasDoAtendimento(c.dono,{id:c.a.id,leadId:null},{soDaConversa:false});expect(semLead.map(t=>t.id)).toEqual([direta.id]);
+});

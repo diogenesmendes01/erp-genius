@@ -79,3 +79,9 @@ describe("ConfirmarAcao — camada (DS)", () => {
     expect(html()).toContain('class="mt-6 flex flex-wrap justify-end gap-3"');
   });
 });
+
+it("podeConfirmar falso desabilita somente a confirmação e mantém padrão habilitado",()=>{
+ expect(botoes(html({podeConfirmar:false}))[1].atributos).toContain('disabled=""');
+ expect(botoes(html({podeConfirmar:true}))[1].atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
+ expect(botoes(html({podeConfirmar:false}))[0].atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
+});

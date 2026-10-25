@@ -650,6 +650,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/AcoesContato.tsx": [
     "compacto · Nenhum encontrado.",
   ],
+  "src/app/(app)/inbox/abas/TarefasOportunidade.tsx": ["compacto · Nenhuma tarefa para esta oportunidade."],
   "src/app/(app)/inbox/abas/OutrasOportunidades.tsx": [
     "compacto · Nenhuma outra. Rematrícula ou novo curso geram uma nova oportunidade.",
   ],
