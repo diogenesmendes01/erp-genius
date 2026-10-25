@@ -16,7 +16,7 @@ export function FaixaAriaAtiva({ situacao, contagens }: PropsFaixaAriaAtiva) {
   const titulo = ensaio ? "Aria em ensaio" : pausada ? "Aria pausada" : "Aria ativa";
 
   return (
-    <div aria-label="Situação da Aria" className="mx-[18px] mb-3 flex items-center gap-2.5 rounded-[10px] bg-ai-50 p-3">
+    <div role="region" aria-label="Situação da Aria" className="mx-[18px] mb-3 flex items-center gap-2.5 rounded-[10px] bg-ai-50 p-3">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ai-solid text-white" aria-hidden="true">
         <IconSparkles size={16} />
       </span>

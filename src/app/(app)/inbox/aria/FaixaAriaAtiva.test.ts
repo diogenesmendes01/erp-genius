@@ -28,3 +28,6 @@ it("Gerenciar usa NextLink real sem prefetch para preservar navegação e não a
  expect(link?.href).toBe("/aria");expect(link?.prefetch).toBe(false);
  expect(encontrar(FaixaAriaAtiva({situacao:{...situacao,podeGerenciar:false},contagens:{ia:3,aprovacao:1,handoff:1}}))).toBeUndefined();
 });
+it.each([{estado:"ATIVA" as const,pausada:false},{estado:"ATIVA" as const,pausada:true},{estado:"SHADOW" as const,pausada:false}])("R2 faixa é região nomeada, com somente título vivo: %j",situacao=>{
+ const h=montar(situacao);expect(h).toMatch(/^<div role="region" aria-label="Situação da Aria"/);expect(h.match(/role="region"/g)).toHaveLength(1);expect(h.match(/role="status"/g)).toHaveLength(1);
+});
