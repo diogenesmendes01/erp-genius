@@ -48,11 +48,17 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, resumo, faix
   document.addEventListener("keydown", atalho);
   return () => document.removeEventListener("keydown", atalho);
  }, [popover, novaAberta, aoFecharNovaConversa, focoRetorno]);
- const total = contarFiltrosAplicados(filtros);
- const aplicados: { chave: "setor" | "status"; rotulo: string }[] = [];
+ const total = contarFiltrosAplicados(filtros, !!resumo);
+ type ChaveAplicada = "setor" | "status" | "responsavel" | "naoLidas" | "prazoEstourado";
+ const aplicados: { chave: ChaveAplicada; rotulo: string }[] = [];
  if (filtros.setor) aplicados.push({ chave: "setor", rotulo: SETOR_ATENDIMENTO_LABEL[filtros.setor] });
  if (filtros.status) aplicados.push({ chave: "status", rotulo: STATUS_ATENDIMENTO_LABEL[filtros.status] });
- function remover(chave?: "setor" | "status") { const novo = { ...filtros }; if (chave) delete novo[chave]; else { delete novo.setor; delete novo.status; } aplicar(novo); }
+ if (resumo) {
+  if (filtros.responsavel) aplicados.push({ chave: "responsavel", rotulo: filtros.responsavel === "eu" ? "Minhas" : filtros.responsavel === "fila" ? "Não atribuídas" : "Responsável selecionado" });
+  if (filtros.naoLidas) aplicados.push({ chave: "naoLidas", rotulo: "Não lidas" });
+  if (filtros.prazoEstourado) aplicados.push({ chave: "prazoEstourado", rotulo: "Prazo estourado" });
+ }
+ function remover(chave?: ChaveAplicada) { const novo = { ...filtros }; if (chave) delete novo[chave]; else { delete novo.setor; delete novo.status; if (resumo) { delete novo.responsavel; delete novo.naoLidas; delete novo.prazoEstourado; } } aplicar(novo); }
  return <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
   <div className="min-h-0 max-h-[50%] shrink-0 overflow-y-auto">
    <header className="flex items-center gap-2 px-[18px] pb-2.5 pt-[18px]">
@@ -81,7 +87,7 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, resumo, faix
    </div>}
   </div>
   <ListaAtendimentos {...lista} aoSelecionar={selecionar} />
-  {!novaAberta && popover === "filtros" && <PopoverFiltros filtros={filtros} setores={opcoesFiltro?.setores ?? []} aoAplicar={aplicar} aoFechar={() => setPopover(null)} focoAoFechar={focoRetorno} />}
+  {!novaAberta && popover === "filtros" && <PopoverFiltros filtros={filtros} setores={opcoesFiltro?.setores ?? []} incluirPessoais={!!resumo} aoAplicar={aplicar} aoFechar={() => setPopover(null)} focoAoFechar={focoRetorno} />}
   <PopoverColuna titulo="Nova conversa" aberto={novaAberta && !!novaConversa} aoFechar={fecharNova} focoAoFechar={focoRetorno}>{novaConversa}</PopoverColuna>
  </div>;
 }

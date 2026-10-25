@@ -28,3 +28,7 @@ Visual ainda pendente: cinco estados aria-* e Handoff ativo, 1440x900/1024x768/3
 ## Freeze para integração
 
 O integrador autorizou o commit de fonte com TSC, visual e QA explicitamente pendentes, sem fechamento da issue. Somente cinco runtimes cliente e seus sete arquivos de teste mudam nesta frente. page.tsx, ItemConversa.tsx, Avatar, backend, schema, dependências, scripts, fonte SSE e histórico da thread foram conferidos idênticos à base abb96162 em b3cfef EXIT0. A SPEC e este report, junto do adendo ao quadro, completam a whitelist de 15 paths. Nenhum binário, executor/log privado, AGENTS ou artefato350 será incluído. CI/TSC remotos aprovados futuramente terão fonte e executor próprios; não serão reatribuídos a este TSC interrompido.
+
+## ROOT — revisão R1 #431
+
+Reproduções d8e18f EXIT1: dois arquivos, três casos novos falharam e 35 controles passaram (filtros invisíveis e prévia vazia). Primeiro recorte 93537/ca4a3b EXIT1: 146 passaram, duas guardas cobraram o registro nominal dos novos seletores. Nenhum negativo foi reclassificado. Após registrar exatamente os dois controles, execução 57597/4d17ae EXIT0: oito arquivos completos, 148 testes, UTC, heap1024, um worker, sem filtros de caso ou skips. Inclui ColunaConversas/interação, PopoverFiltros, ChipsFiltro, estado-visual/servidor, botoes e estados-vazios. Lint dos seis arquivos alterados 6ec062 EXIT0 e zero avisos. Config original, sem banco/HTTP/provedor/browser. QA independente, suíte integrada, CI e capturas continuam separados.

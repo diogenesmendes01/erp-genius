@@ -13,3 +13,13 @@ D1/D2 e alçadas/edição/pacote seguem nas extensões354–356. #346 não alter
 Validação nominal e negativos: output/inbox-346-report.md. Aceite visual nas três larguras/dois temas, fixture e harness coordenados, QA independente e CI integrada ainda são obrigatórios; esta entrega de fonte não conclui a issue por presunção.
 
 Checkpoint DEV: UNIT em dois executores separados (23 arquivos/347 casos e guarda de um arquivo/131 casos), mais lint12, com EXIT0. TSC original local interrompido por coordenação devido à pressão de memória observada; não houve aprovação local de tipo. CI/TSC remotos do commit exato, visual e QA permanecem pendentes conforme relatório.
+
+## Revisão R1 da PR #431 (25/10/2026)
+
+C1: com o resumo da Aria, filtros pessoais e prazo presentes na URL aparecem em etiquetas removíveis e entram no selo de filtros. O popover oferece Minhas conversas e Somente não lidas. Limpar remove setor/status e estes filtros adicionais, preservando número, busca e o estado Aria escolhido. O fallback sem resumo mantém o contrato anterior. Um responsável por ID aparece como Responsável selecionado, sem expor identificador ou inferir nome não recebido.
+
+C4: sugestão sem rótulo usa Sugestão da Aria, inclusive para rótulo vazio, sem mostrar o preview bruto. Mensagem de pessoa sem rótulo usa o nome já autorizado no item, com fallback Contato.
+
+C5: router.replace é intencional: mantém a navegação dos filtros legados e evita uma entrada de histórico por seleção de chip. Não altera o serializer nem apaga filtros pessoais ao escolher Todas. C6: seloIa continua o nome usado pelo Avatar. A rastreabilidade nominal do plano é: badge_de_estado_da_aria_vem_primeiro_e_e_unico corresponde aos três casos parametrizados estado %s vem primeiro; previa_da_sugestao_nao_expoe_payload corresponde a prévia só projeta autor/rótulo autorizado; chips_da_aria corresponde a chips-inbox.test.ts e à interação 346 href autorizado do chip prevalece. Nenhum caso foi omitido por divergência editorial.
+
+Os dois novos controles são seletores de filtro, sem ação de negócio; seus nomes exatos foram adicionados ao inventário fechado da guarda de botões, mantendo os detectores. B1/C3 (composição) e C2 (visual) permanecem gates do integrador; nenhuma issue foi concluída aqui.

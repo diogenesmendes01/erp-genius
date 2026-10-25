@@ -38,7 +38,7 @@ const FONTE_DO_BOTAO = "src/components/Botao.tsx";
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/inbox/PainelContato.tsx": 1, // aba: seleção em aria-selected, não ação de negócio
   "src/app/(app)/inbox/ChipsFiltro.tsx": 1, // filtros rápidos, grupo rotulado com aria-pressed
-  "src/app/(app)/inbox/PopoverFiltros.tsx": 2, // seleção única de setor e status
+  "src/app/(app)/inbox/PopoverFiltros.tsx": 4, // seleção de setor/status e filtros pessoais; nenhuma ação de negócio
   "src/app/(app)/inbox/SeletorNumero.tsx": 2, // itens do seletor, não ação de negócio
   "src/app/(app)/inbox/ItemConversa.tsx": 1, // item de lista: seleção anuncia aria-current, não ação de negócio
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 2, // chip de dia da semana (selecionado = marca)
@@ -75,7 +75,7 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/components/BotaoIcone.tsx": ["rotulo"],
   "src/app/(app)/inbox/ChipsFiltro.tsx": ["key c.id"],
   "src/app/(app)/inbox/ColunaConversas.tsx": ['"Remover filtro " + f.rotulo', "Limpar"],
-  "src/app/(app)/inbox/PopoverFiltros.tsx": ["key s", "key s"],
+  "src/app/(app)/inbox/PopoverFiltros.tsx": ["Minhas conversas", "Somente não lidas", "key s", "key s"],
   "src/app/(app)/inbox/SeletorNumero.tsx": ["rotulo", "Todos os números", "instavel · Instável"],
   "src/app/(app)/inbox/ItemConversa.tsx": ["(sem nome)"], // só a linha de conversa: nome dinâmico, seleção em aria-current
   "src/app/(app)/aria/_componentes/Campos.tsx": ["Ligado · Desligado"], // interruptor (role=switch): liga/desliga, é estado e não ação
