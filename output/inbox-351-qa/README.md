@@ -1,5 +1,8 @@
 # QA independente #351
 
+
+Estado atual: [PR426](https://github.com/diogenesmendes01/erp-genius/pull/426) aponta diretamente para main após o merge da dependência349. A fonte executável permanecef99/e899, com full351/3144 aprovado. A CI final deste head e a revisão da composição são os gates restantes antes do merge.
+
 [Parecer integral](codigo-6fe.md), [índice](indice.json) e [composição](composicao.json). Os resultados do TESTER são nominais ao commit6fe:7arquivos/235UNIT e3arquivos/34INT completos, além de lint12. ROOT acrescentou apenas quatro defaults handoff:null a expectativas completas de paineis, com RED11/13 e GREEN13/13 em comandos distintos.
 
 A dependência349 ainda aguarda integração completa/merge. Não se afirma aprovação de CI/globalUNIT/TSC original da composição enquanto estiverem em execução. Não há nova interface nesta entrega.
