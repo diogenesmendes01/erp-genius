@@ -2192,3 +2192,9 @@ it("359 mapa exato do interruptor não admite nome vazio, variante errada ou qua
     expect(mapaDeBotoes(mutante)).not.toEqual(esperado);
   }
 });
+
+it("358 retry do rodapé tem único botão literal canônico e mutantes fechados",()=>{
+ const fonte=readFileSync("src/app/(app)/inbox/aria/useAssumirParaResponder.tsx","utf8"),esperado=MAPA_BOTOES["inbox/aria/useAssumirParaResponder.tsx"];
+ expect(esperado).toEqual(["<Botao> Tentar de novo → secundario/md"]);expect(mapaDeBotoes(fonte)).toEqual(esperado);
+ for(const alterado of [fonte.replace('>Tentar de novo</Botao>','>{""}</Botao>'),fonte.replace('variante="secundario"','variante="primario"'),fonte+'<Botao>Extra</Botao>'])expect(mapaDeBotoes(alterado)).not.toEqual(esperado);
+});

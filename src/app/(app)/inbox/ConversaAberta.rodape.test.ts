@@ -54,3 +54,8 @@ it.each(['ENCERRADO','EM_ATENDIMENTO'] as const)('C2 participante com leitura em
  const r=elementos(tela({...base,item:{...base.item!,status,responsavelId:'outro'},usuario:{...base.usuario,id:'participante'},podeEnviar:false})).find(n=>n.type===RodapeConversa)!;
  expect(r.props.podeAnotar).toBe(true);expect(r.props.podeEnviar).toBe(false);expect(r.props.aoAgendar).toBeUndefined();
 });
+
+it.each(['ia','aprovacao','handoff'] as const)('358 rodapé %s bloqueia saída externa sem duplicar controlador do cabeçalho',estadoAria=>{
+ const r=elementos(tela({...base,item:{...base.item!,responsavelId:null,estadoAria},aria:{handoff:null,podeAssumirAria:true,podeDecidir:false,podeDevolver:false,cartoes:[],pausada:false,motivo:null},podeEnviar:true,leituraPainel:{solicitada:1,finalizada:1,resultado:'ok'}})).find(n=>n.type===RodapeConversa)!;
+ expect(r.props.modo).toBe('travado');expect((r.props.travado as {texto:string;aoAssumir?:()=>void}).texto).toContain('Aria');expect((r.props.travado as {aoAssumir?:()=>void}).aoAssumir).toBeTypeOf('function');expect(m.usar).toHaveBeenCalledTimes(1);
+});
