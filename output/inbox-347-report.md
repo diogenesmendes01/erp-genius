@@ -18,3 +18,11 @@ Executores separados, Node local, heap512, um worker; nenhum filtro de caso/skip
 Visual finito em três larguras/dois temas, QA independente no commit exato, TSC/global/CI e homologação aguardam ROOT. Sem DB/INT, migração, instalação/generate/package/env/cache/provider, servidor/preview/navegador/captura ou mensagem real. Não houve push/deploy. Fonte346 protegida; output350 e evidências anteriores preservados. SPEC docs/specs/inbox-faixa-aria-ativa.md; quadro único atualizado sem concluir a issue.
 
 Verificação final c80b0f EXIT0: seis arquivos69/69 completos, lint dos cinco arquivos com --max-warnings0 e git diff --check, todos terminados. Logs inbox-347-green-final-private.log/inbox-347-lint-final-private.log; nenhuma aprovação visual/TSC/global implícita.
+
+## Correção de integração — Gerenciar canônico
+
+O TESTER aprovou sete arquivos completos/153 testes no commit716, terminal6f6f19 EXIT0. O recorte não incluía a guarda global de botões. A primeira suíte completa ROOT identificou em `botoes.test.ts` o link Gerenciar montado com classes próprias; foi interrompida na mesma sessão31757/168b60 EXIT1 para corrigir o defeito, sem alegar conclusão global. Diagnóstico independente confirmou a causa.
+
+RED próprio df9b56 EXIT1: um teste novo falha e dez controles passam, exigindo a superfície canônica no link. A correção mantém link real e cor AI com a variante opt-in `iaFantasma`, registra sua combinação no mapa declarativo e não altera guardas ou variantes existentes. GREEN5bef7c EXIT0: três arquivos completos/105 testes, incluindo a guarda integral de botões; lint dos cinco arquivos dc8c34 EXIT0. Nenhuma captura visual anterior é atribuída ao novo estilo.
+
+TypeScript original final, sem exclusões ou mudança de configuração, heap8192/incrementalfalse: sessão47511/c27643 EXIT0. A tentativa inicial heap4096 terminou OOM1f61b0 e foi preservada; nova medição mostrou43GB livres antes da repetição. Lint integral anterior terminou0efcbe EXIT0 com47 avisos (40 no código rastreado e sete em executores privados existentes); o lint dos cinco arquivos corrigidos não teve avisos. A suíte global final foi iniciada na sessão92937 e ainda não é declarada aprovada neste registro. Visual e CI continuam pendentes.

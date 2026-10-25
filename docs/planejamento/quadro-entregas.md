@@ -7032,3 +7032,11 @@ Adendo348DS coordenadoROOT: varianteia canônica Botao adicionada sem overrides 
 ### #348 — entrada declarativa no mapa após QA independente (25/10/2026)
 
 TESTER32314e EXIT1 identificou2falhas na guarda completa85(83pass):mapa348ausente e linkcru347herdado. PorGO ROOT, foi adicionada somente entrada inbox/aria/BotaoDevolverAria.tsx → <Botao> Devolver · Devolver para Aria → ia/sm, sem alterar guarda/variante/runtime. VerificaçãoDEV258122 EXIT1:85casoscompletos84pass/1fail, única restanteFaixaAriaAtiva347à mão. Mapa348passa, mas guardaNÃO estáGREEN antesdocarry347ROOT. w1/heap1024/semfiltro/skip; logs/reportdetalhados. Ajuste separado de db30; QAvisual/TSC/global/CI continuam pendentes.
+
+### Inbox #347 — integração do link Gerenciar canônico
+
+Guarda integral identificou ação com classes próprias na Faixa. RED11casos/1fail10controles df9b56EXIT1; correção opt-in iaFantasma conserva tokens AI e mantém Gerenciar como link. Mapa declarativo atualizado, guardas sem alteração. GREEN3files105testes5bef7cEXIT0/lint5dc8c34EXIT0. TESTER153 anterior é recorte716, diagnóstico estático independente 1e455a... confirma causa. TSCoriginalfinal8192c27643EXIT0;4096OOMpreservado1f61b0. Primeira globalinterrompida168b60apósfalha conhecida, nova global92937emcurso semresultadoalegado. Report/SPEC atualizados, visual/CI pendentes; issue continua aberta.
+
+### #348 — composição com correção347 canônica verificada (25/10/2026)
+
+Carry autorizado287b4c2cROOT sobre d4a38114. União dos tiposia/iaFantasma e quadro preservou ambas as variantes/mapas e sufixos integrais; quatroblobs347 idênticos287 e runtime348/servidor/schema literais àfonte348, prova b86f78 EXIT0. Composição sessão85767/chunkdb85c2 EXIT0:66arquivos701/701 (Inboxpasta+Botao+guardabotoes85COMPLETOS), w1/heap1024/semfiltro/skipnovo. Lint5b3076b EXIT0 --max-warnings0. Não é global/TSC/CI. Falha347herdada258122 documentada foi corrigida nesta composição, sem relaxar guardas. QAexato/visual/TSCglobal/CI/build pendentesROOT; semDB/preview/provider/env/browser/captura/push.

@@ -38,6 +38,7 @@ describe("Botao (E1)", () => {
       secundario: "border border-border-soft bg-transparent text-brand-700 hover:bg-highlight",
       perigo: "bg-danger text-white hover:brightness-95",
       fantasma: "text-brand-700 hover:bg-highlight",
+      iaFantasma: "text-ai-700 hover:bg-highlight",
       neutro: "border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight",
       ia: "bg-ai-50 text-ai-700 hover:bg-highlight",
     });

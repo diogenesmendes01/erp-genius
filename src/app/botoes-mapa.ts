@@ -14,6 +14,9 @@
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
+  "inbox/aria/FaixaAriaAtiva.tsx": [
+    "<a> Gerenciar → iaFantasma/sm",
+  ],
   "aria/_componentes/Abas.tsx": [
     "<Link> → primario|fantasma/md",
   ],
