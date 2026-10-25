@@ -25,3 +25,13 @@ ModalResumoHandoff usa o Modal/hook canônicos. O responsável atual também con
 Evidências detalhadas, sessões e negativos ficam em output/inbox-357-report.md. Integração usa perfil ci-integracao492 original e sete providers vazios no executor. Driver fake é fronteira explícita do teste de ENVIANDO, sem rede externa.
 
 A entrega DEV não presume homologação: QA independente, TypeScript e gates globais originais na composição de publicação, build e visual continuam sujeitos à coordenação ROOT. Não alterar a issue para concluída com aceite visual pendente.
+
+## R2 — SSE próprio antes do ACK (#357 P2)
+
+Uma tentativa local é registrada na abertura atual antes de chamar a action. Se um GET 200 do próprio SSE antecipar o ACK e trouxer handoff nulo, mesmo atendimento, responsável atual e capacidades compatíveis, o resumo permanece somente como recibo de leitura. Isso não habilita outra mutação, não simula ACK e não autoriza foco. O ciclo do Modal preserva somente o callback já iniciado; iniciar continua exigindo contextoAtivo e o executor canônico mantém a trava de duplo clique.
+
+O ACK válido sempre pede uma aquisição nova: o mínimo é a sequência solicitada no instante do ACK mais um. GET já solicitado antes dele, mesmo terminando depois, não basta. Somente a leitura posterior 200 vigente, responsável atual, envio e capacidade válidos concluem a intenção e selecionam/focam Responder localmente. O campo físico e os rascunhos permanecem.
+
+404, perda de capacidade, responsável diferente, desatribuição depois de posse própria observada e revogação de envio invalidam o recibo; reconcessão posterior não revive a intenção antiga. Responsável ainda nulo antes de qualquer posse própria confirmada conserva o resumo e permite tentar apenas a leitura, sem foco. Fechar/reabrir, trocar A→B→A ou desmontar também criam fronteira de geração. Erro de negócio/transporte preserva o resumo sem fabricar sucesso.
+
+Esta correção é somente UI. Backend, DTO, idempotência da action, configuração e dependências permanecem literais à fonte 07312678. SQL não foi repetida. QA R2 em docs/qa/inbox-357-r2-sse-antes-ack.md; gates originais e parecer independente continuam com o ROOT.

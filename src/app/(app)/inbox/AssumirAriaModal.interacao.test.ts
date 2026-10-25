@@ -38,3 +38,72 @@ it("357 ACK não atravessa capacidade perdida e devolvida na mesma abertura",asy
 it("357 404 após ACK não autoriza foco quando capacidade volta com503",async()=>{
  await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");expect(m.aria).toHaveBeenCalledOnce();await montar({cap:false,envio:false,leitura:{solicitada:1,finalizada:1,resultado:"sem-acesso"}});await montar({leitura:{solicitada:2,finalizada:2,resultado:"falha"}});expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);expect(Boolean(botao("Assumir e responder"))).toBe(false);
 });
+
+// Três adversariais do oráculo independente T, original SHA9c2c05ed preservado em output.
+it("T357 SSE próprio antes do ACK preserva intenção; somente 200 posterior ao ACK conclui",async()=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");
+ await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ expect(Boolean(dialogo())).toBe(true);expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);
+ await act(async()=>resolver({ok:true}));expect(m.mudar,"ACK da tentativa atual deve pedir leitura posterior, mesmo com próprio SSE já confirmado").toHaveBeenCalledOnce();
+ expect(Boolean(dialogo())).toBe(true);
+ await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:2,resultado:"ok"}});
+ expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(true);
+});
+it("T357 erro antigo A→B→A não anuncia erro nem foca nova abertura",async()=>{
+ let rejeitar!:(e:Error)=>void;m.aria.mockImplementationOnce(()=>new Promise((_r,j)=>rejeitar=j));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");await montar({id:"B"});await montar();await clicar("Ver resumo e assumir");const foco=doc.activeElement;
+ await act(async()=>rejeitar(Error("Transporte antigo T357")));expect(m.mudar).not.toHaveBeenCalled();expect(Boolean(dialogo())).toBe(true);expect(dialogo()!.textContent).not.toContain("Resultado não confirmado");expect(doc.activeElement).toBe(foco);
+});
+it("T357 200 sem clique não chama transição nem muda foco",async()=>{
+ await montar({owner:"u",handoff:{...h,podeAssumir:false,ehResponsavel:true}});await clicar("Ver resumo");const foco=doc.activeElement;await montar({owner:"u",handoff:{...h,podeAssumir:false,ehResponsavel:true},leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(m.aria).not.toHaveBeenCalled();expect(m.mudar).not.toHaveBeenCalled();expect(Boolean(dialogo())).toBe(true);expect(doc.activeElement).toBe(foco);
+});
+it.each(["owner-outro","capacidade","404"] as const)("357 SSE anterior ao ACK não atravessa %s nem volta posterior",async caso=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");
+ await montar({handoff:null,owner:caso==="owner-outro"?"outra":"u",cap:caso!=="capacidade",leitura:{solicitada:1,finalizada:1,resultado:caso==="404"?"sem-acesso":"ok"}});
+ await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:2,resultado:"ok"}});await act(async()=>resolver({ok:true}));
+ expect(m.mudar).not.toHaveBeenCalled();expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);
+});
+it.each(["negocio","transporte"] as const)("357 erro %s depois do SSE próprio preserva resumo sem simular ACK",async caso=>{
+ let fim!:(r:{ok:false;erro:string})=>void,rejeitar!:(e:Error)=>void;m.aria.mockImplementationOnce(()=>new Promise((r,j)=>{fim=r;rejeitar=j;}));
+ await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ await act(async()=>{if(caso==="negocio")fim({ok:false,erro:"Resultado recusado357"});else rejeitar(Error("Rede357"));});
+ expect(Boolean(dialogo())).toBe(true);expect(m.mudar).not.toHaveBeenCalled();expect(dialogo()!.textContent).toContain(caso==="negocio"?"Resultado recusado357":"Resultado não confirmado");
+ await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);expect(m.aria).toHaveBeenCalledOnce();
+});
+it("357 outro owner após ACK invalida intenção mesmo se owner voltar com200",async()=>{
+ await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");expect(m.mudar).toHaveBeenCalledOnce();
+ await montar({handoff:null,owner:"outra",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:2,resultado:"ok"}});
+ expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);
+});
+it("357 próprio SSE com duplo clique mantém campo/rascunho e exige200 pedido após ACK",async()=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();const campo=host.querySelector('[data-compositor-campo]')!;
+ await act(async()=>{(eventos(campo) as unknown as {onChange(e:{target:{value:string;selectionStart:number}}):void}).onChange({target:{value:"Rascunho357",selectionStart:12}});});
+ await clicar("Ver resumo e assumir");await act(async()=>{eventos(botao("Assumir e responder")!).onClick();eventos(botao("Assumir e responder")!).onClick();});expect(m.aria).toHaveBeenCalledOnce();
+ await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(host.querySelector('[data-compositor-campo]')).toBe(campo);expect((campo as unknown as HTMLTextAreaElement).value).toBe("Rascunho357");
+ await act(async()=>resolver({ok:true}));expect(Boolean(dialogo())).toBe(true);await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(Boolean(dialogo())).toBe(true);
+ await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(dialogo()).toBeNull();expect(host.querySelector('[data-compositor-campo]')).toBe(campo);expect((campo as unknown as HTMLTextAreaElement).value).toBe("Rascunho357");expect(doc.activeElement).toBe(campo);expect(m.mudar).toHaveBeenCalledOnce();
+});
+it("357 próprio SSE não revive recibo após unmount e nova abertura",async()=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ await act(async()=>root.render(null));await montar();await clicar("Ver resumo e assumir");await act(async()=>resolver({ok:true}));expect(m.mudar).not.toHaveBeenCalled();expect(Boolean(dialogo())).toBe(true);
+});
+it.each(["pendente","falha"] as const)("357 GET %s solicitado antes do ACK não substitui GET posterior",async resultado=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");
+ await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:resultado==="pendente"?1:2,resultado}});expect(Boolean(dialogo())).toBe(true);
+ await act(async()=>resolver({ok:true}));expect(m.mudar).toHaveBeenCalledOnce();await montar({handoff:null,owner:"u",leitura:{solicitada:2,finalizada:2,resultado:"ok"}});expect(Boolean(dialogo())).toBe(true);expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);
+ await montar({handoff:null,owner:"u",leitura:{solicitada:3,finalizada:3,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(true);
+});
+it("357 desatribuição após próprio200 invalida recibo sem confundir owner nulo ainda não confirmado",async()=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ await montar({handoff:null,owner:null,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});await montar({handoff:null,owner:"u",leitura:{solicitada:3,finalizada:3,resultado:"ok"}});await act(async()=>resolver({ok:true}));expect(m.mudar).not.toHaveBeenCalled();expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);
+});
+it("357 cancelar resumo retido e reabrir cria geração independente do ACK antigo",async()=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});await clicar("Cancelar");expect(dialogo()).toBeNull();
+ await montar({handoff:{...h,acaoId:"h-novo357"}});await clicar("Ver resumo e assumir");const foco=doc.activeElement;await act(async()=>resolver({ok:true}));expect(m.mudar).not.toHaveBeenCalled();expect(Boolean(dialogo())).toBe(true);expect(doc.activeElement).toBe(foco);
+});
+it.each(["nulo","snapshot"] as const)("357 envio revogado após own200 invalida mesmo com handoff %s e posterior reconcessão",async tipo=>{
+ let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});
+ await montar({handoff:tipo==="nulo"?null:h,owner:"u",envio:false,leitura:{solicitada:2,finalizada:2,resultado:"ok"}});
+ await montar({handoff:h,owner:"u",envio:true,leitura:{solicitada:3,finalizada:3,resultado:"ok"}});await act(async()=>resolver({ok:true}));
+ expect(m.mudar).not.toHaveBeenCalled();await montar({handoff:null,owner:"u",leitura:{solicitada:4,finalizada:4,resultado:"ok"}});expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);
+});
