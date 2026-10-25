@@ -24,6 +24,8 @@ describe("pedido de Insights sem efeitos externos",()=>{
   });
   it("esquema exige exatamente os nove campos, null explícito e limites aprovados",async()=>{
     const e=criarPedidoInsight(contexto,{instrucoesPublicadas:"",campos:{}},s=>s).esquemaSaida;
+    expect(e).toBeDefined();
+    if(!e)throw Error("Esquema de Insights ausente");
     expect(e.required).toEqual(["temperatura","chanceFechar","sentimento","melhorHorario","intencao","sinais","riscos","proximoPasso","textoSugerido"]);
     expect(e.properties).toMatchObject({sinais:{maxItems:8},riscos:{maxItems:8},textoSugerido:{maxLength:4000},intencao:{maxLength:500}});
   });

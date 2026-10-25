@@ -12,7 +12,8 @@ function Tela({id="A",versao=0}:{id?:string;versao?:number}){const a=useAcoesAte
 async function montar(id="A",versao=0){await act(async()=>root.render(createElement(Tela,{id,key:id,versao})));}
 const botao=(t:string)=>Array.from(doc.body.querySelectorAll("button")).find(b=>b.textContent===t);const evento=(e:Elemento)=>(e as unknown as Record<string,Record<string,(e?:unknown)=>void>>)[Object.keys(e).find(k=>k.startsWith("__reactProps"))!];
 async function clicar(t:string){expect(botao(t),t).toBeDefined();await act(async()=>evento(botao(t)!).onClick());}
-const campo=()=>doc.body.querySelector("textarea")!;
+// O React instala value no textarea do DOM mínimo durante o commit.
+const campo=()=>doc.body.querySelector("textarea")! as Elemento & {value:string};
 async function digitar(texto:string){await act(async()=>evento(campo()).onChange({target:{value:texto}}));}
 beforeEach(async()=>{vi.resetAllMocks();buscar.mockResolvedValue(resposta());m.agendar.mockResolvedValue({ok:true});const d=criarDomMinimo();doc=d.documento;Object.assign(doc,{createElementNS:(_n:string,t:string)=>doc.createElement(t),addEventListener(){},removeEventListener(){}});Object.assign(d.janela,{innerWidth:390,innerHeight:844,addEventListener(){},removeEventListener(){}});vi.stubGlobal("window",d.janela);vi.stubGlobal("document",doc);vi.stubGlobal("MutationObserver",d.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.stubGlobal("fetch",buscar);host=doc.createElement("div");doc.body.appendChild(host);const {createRoot}=await import("react-dom/client");root=createRoot(host as unknown as HTMLElement);});
 afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
