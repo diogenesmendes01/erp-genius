@@ -16,6 +16,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
+import { vincularLeadRetornoNoInbox } from "@/server/inbox/acoes-cliente-voltou";
 
 beforeEach(async () => { await truncarBanco(); sessao.usuarioId = ""; falha.evento = false; });
 afterEach(() => vi.restoreAllMocks());
@@ -39,8 +40,8 @@ const eventos = (contatoId: string) => prisma.evento.findMany({ where: { tipo: "
 
 it("pool1 ACTION real mantém Contato/selected/Evento na TX, repetição manual grava novamente",async()=>{
  const c=await cenario("VENDAS");
- expect((await vincularContatoWhatsApp(c.input)).ok).toBe(true);
- expect((await vincularContatoWhatsApp(c.input)).ok).toBe(true);
+ expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
+ expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
  expect((await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}})).leadId).toBe(c.lead.id);
  expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}})).leadId).toBe(c.lead.id);
  expect(await eventos(c.contato.id)).toHaveLength(2);
@@ -49,15 +50,22 @@ it.each(["contato-null","lead-null"])("legado Pessoa %s continua permitido pelo 
  const c=await cenario("VENDAS");
  if(caso==="contato-null")await prisma.contatoWhatsApp.update({where:{id:c.contato.id},data:{pessoaId:null}});
  else await prisma.oportunidade.update({where:{id:c.lead.id},data:{pessoaId:null}});
- expect((await vincularContatoWhatsApp(c.input)).ok).toBe(true);
+ expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
  expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}})).leadId).toBe(c.lead.id);
 });
 it("erro injetado após writes faz rollback real de Contato/selected e não cria Evento",async()=>{
  const c=await cenario("VENDAS");falha.evento=true;
  const log=vi.spyOn(console,"error").mockImplementation(()=>{});
- try {expect((await vincularContatoWhatsApp(c.input)).ok).toBe(false);}finally{log.mockRestore();falha.evento=false;}
+ try {expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(false);}finally{log.mockRestore();falha.evento=false;}
  expect((await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}})).leadId).toBeNull();
  expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}})).leadId).toBeNull();
  expect(await eventos(c.contato.id)).toHaveLength(0);
  expect(await prisma.atendimentoWhatsApp.count({where:{conversaId:c.conversa.id}})).toBe(1);
+});
+it.each(["VENDAS","AGENDA"] as const)("pool1 legado real %s mantém contexto e repetição manual",async finalidade=>{
+ expect(process.env.DATABASE_URL).toContain("connection_limit=1");const c=await cenario(finalidade);
+ const outra=await prisma.pessoa.create({data:{nome:"Pessoa divergente legada435"}});await prisma.contatoWhatsApp.update({where:{id:c.contato.id},data:{pessoaId:outra.id}});
+ expect(await vincularContatoWhatsApp(c.input)).toEqual({ok:true});expect(await vincularContatoWhatsApp(c.input)).toEqual({ok:true});
+ expect(await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}})).toMatchObject({leadId:c.lead.id,pessoaId:outra.id});
+ expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.selecionado.id}})).leadId).toBe(finalidade==="VENDAS"?c.lead.id:null);expect(await eventos(c.contato.id)).toHaveLength(2);
 });
