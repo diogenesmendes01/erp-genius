@@ -59,3 +59,22 @@ describe("estadoVisualCabecalho", () => {
 it("tempoDeEspera", () => {
   expect([1, 59, 60, 125].map(tempoDeEspera)).toEqual(["1 min", "59 min", "1 h", "2 h 5 min"]); expect(tempoDeEspera(0)).toBe("1 min");
 });
+
+// #346: projeção aditiva; os casos E1 acima continuam com estadoAria:null.
+it.each([["ia","ia","IA atendendo"],["aprovacao","aprovacao","Aguardando aprovação"],["handoff","handoff","Handoff pendente"]] as const)("estado %s vem primeiro, sem badge humano duplicado, com selo",(estadoAria,tom,texto)=>{
+ const original=Object.freeze(item({estadoAria,responsavelId:"u2",responsavelNome:"Camila Souza"}));
+ const v=estadoVisualItem(original,agora,"u1");expect(v.badges[0]).toEqual({tom,texto});expect(v.badges.filter(b=>b.tom==="humano")).toHaveLength(0);expect(v.seloIa).toBe(true);
+});
+it("humano usa atendidoPorVoce, nome real ou Humano, sem selo",()=>{
+ for(const [o,texto] of [[{atendidoPorVoce:true},"Com você"],[{responsavelNome:"  Camila Souza "},"Com Camila"],[{responsavelNome:null},"Humano"],[{responsavelNome:"   "},"Humano"]] as const){const v=estadoVisualItem(item({estadoAria:"humano",...o}),agora,"outro");expect(v.badges[0]).toEqual({tom:"humano",texto});expect(v.seloIa).toBe(false);}
+});
+it("Aria mantém prazo e fila sem alterar fronteira30min; grupos não ganham selo",()=>{
+ const v=estadoVisualItem(item({estadoAria:"ia",responsavelId:null,status:"ABERTO_SEM_RESPONSAVEL",prazoRespostaEm:menos(29)}),agora);
+ expect(v.badges.map(b=>b.texto)).toEqual(["IA atendendo","Comercial","Prazo estourado · 29 min","Na fila"]);
+ expect(estadoVisualItem(item({estadoAria:"ia",prazoRespostaEm:menos(30)}),agora).badges.some(b=>b.tom==="atraso")).toBe(true);
+ expect(estadoVisualItem(item({grupo:true,estadoAria:"ia"}),agora)).toMatchObject({badges:[],seloIa:false});
+});
+it("prévia só projeta autor/rótulo autorizado, sugestão nunca mostra preview bruto",()=>{
+ for(const [previaAutor,previaRotulo,previa] of [["aria",null,"Aria: Oi"],["voce",null,"Você: Oi"],["pessoa","Camila","Camila: Oi"],["sugestao","Responder","Aria sugere: Responder"],[null,null,"Oi"]] as const)expect(estadoVisualItem(item({previaAutor,previaRotulo}),agora).previa).toBe(previa);
+ expect(estadoVisualItem(item({previaAutor:"sugestao",previaRotulo:"Responder",preview:"segredo"}),agora).previa).not.toContain("segredo");
+});

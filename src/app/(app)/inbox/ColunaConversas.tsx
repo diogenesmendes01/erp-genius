@@ -6,6 +6,8 @@ import { BotaoIcone } from "@/components/BotaoIcone";
 import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL } from "@/lib/labels";
 import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
+import type { ResumoListaInbox } from "@/server/inbox/contagens";
+import { chipsDoInbox, chipAtivo as chipAriaAtivo } from "./chips-inbox";
 import { ChipsFiltro, chipsDaColuna } from "./ChipsFiltro";
 import { ListaAtendimentos, type PropsListaAtendimentos } from "./ListaAtendimentos";
 import { chipAtivo, hrefDosFiltros } from "./filtros-url";
@@ -13,14 +15,14 @@ import { PopoverColuna } from "./PopoverColuna";
 import { contarFiltrosAplicados, PopoverFiltros } from "./PopoverFiltros";
 import { SeletorNumero } from "./SeletorNumero";
 export interface PropsColunaConversas extends PropsListaAtendimentos {
- filtros: FiltrosInbox; opcoesFiltro?: OpcoesFiltroInbox; contagens?: ContagensChipsInbox; faixaAria?: ReactNode;
+ filtros: FiltrosInbox; opcoesFiltro?: OpcoesFiltroInbox; contagens?: ContagensChipsInbox; resumo?: ResumoListaInbox; faixaAria?: ReactNode;
  aoNovaConversa(): void; novaConversa?: ReactNode; novaConversaAberta?: boolean; aoFecharNovaConversa?(): void;
  usuarioId: string; fuso: string | null; podeGerenciarNumeros: boolean; sino?: ReactNode; focoAoFecharPopover?: MutableRefObject<HTMLElement | null>;
 }
 export function ehAtalhoBusca(e: { key: string; metaKey: boolean; ctrlKey: boolean; altKey?: boolean; isComposing?: boolean; defaultPrevented?: boolean }): boolean {
  return !e.defaultPrevented && !e.isComposing && !e.altKey && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
 }
-export function ColunaConversas({ filtros, opcoesFiltro, contagens, faixaAria, aoNovaConversa, novaConversa, novaConversaAberta, aoFecharNovaConversa, podeGerenciarNumeros, sino, focoAoFecharPopover, ...lista }: PropsColunaConversas) {
+export function ColunaConversas({ filtros, opcoesFiltro, contagens, resumo, faixaAria, aoNovaConversa, novaConversa, novaConversaAberta, aoFecharNovaConversa, podeGerenciarNumeros, sino, focoAoFecharPopover, ...lista }: PropsColunaConversas) {
  const router = useRouter(); const caminho = usePathname() ?? "/inbox";
  const [popover, setPopover] = useState<"filtros" | "numero" | "nova" | null>(null);
  const novaAberta = novaConversaAberta ?? popover === "nova";
@@ -72,7 +74,7 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, faixaAria, a
     </div>
    </form>
    {faixaAria}
-   <ChipsFiltro chips={chipsDaColuna(contagens)} ativo={chipAtivo(filtros)} filtros={filtros} />
+   <ChipsFiltro chips={resumo ? chipsDoInbox(resumo.contagens, filtros) : chipsDaColuna(contagens)} ativo={resumo ? chipAriaAtivo(filtros) : chipAtivo(filtros)} filtros={filtros} />
    {aplicados.length > 0 && <div className="flex flex-wrap items-center gap-1.5 px-[18px] pb-2.5">
     {aplicados.map((f) => <span key={f.chave} className="inline-flex h-6 items-center gap-1 rounded-[6px] bg-brand-bg pl-[9px] pr-1 text-xs font-medium text-brand-700">{f.rotulo}<button type="button" aria-label={"Remover filtro " + f.rotulo} onClick={() => remover(f.chave)} className="inline-flex h-5 w-5 items-center justify-center rounded-full hover:bg-highlight"><IconX size={12} aria-hidden /></button></span>)}
     <button type="button" className="text-xs text-gray-600" onClick={() => remover()}>Limpar</button>

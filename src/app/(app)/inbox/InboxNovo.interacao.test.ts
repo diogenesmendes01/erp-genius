@@ -990,3 +990,21 @@ it("composição324: 404 preserva leitura do snapshot no mesmoID e retira escrit
   expect(depois.props.contato).toMatchObject({ tags });
   expect((depois.props.slotTags as ReactElement).props).toMatchObject({ tags, podeEditar: false, podeCriar: false });
 });
+
+describe("346: resumo e snapshot pessoal",()=>{
+ const resumo:NonNullable<PropsInboxNovo["resumo"]>={contagens:{todas:90,ia:3,aprovacao:2,handoff:1,humano:4,semResposta:2,naoAtribuidas:9},aria:{estado:"ATIVA",pausada:false,podeGerenciar:false}};
+ const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+ const response=(ia:number)=>new Response(JSON.stringify({itens:props.inicial.itens,proximo:null,resumo:{...resumo,contagens:{...resumo.contagens,ia}}}));
+ it.each([true,false])("não aplica resumo enquanto leitura está pendente e aceita o fresco após resultado %s",async ok=>{
+  let ler!:(r:{ok:boolean})=>void;marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+  const resolvers:((r:Response)=>void)[]=[];respostaLista=()=>new Promise(r=>resolvers.push(r));
+  const p={...props,resumo};render(p);m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});await esvaziar();
+  resolvers[0](response(999));await esvaziar();expect(coluna313(render(p)).resumo).toEqual(resumo);
+  ler({ok});await esvaziar();expect(resolvers).toHaveLength(2);resolvers[1](response(ok?0:8));await esvaziar();expect(coluna313(render(p)).resumo?.contagens.ia).toBe(ok?0:8);
+ });
+ it("paginação cursor não pede nem substitui resumo, mesmo com campo extra inesperado no retorno",async()=>{
+  const p={...props,selecionado:null,resumo,inicial:{...props.inicial,proximo:"cursor-fixture"}};
+  respostaLista=async()=>response(999);const coluna=coluna313(render(p));await coluna.aoCarregarMais();await esvaziar();expect(coluna313(render(p)).resumo).toEqual(resumo);
+  const url=String(vi.mocked(fetch).mock.calls.find(([url])=>String(url).includes("cursor="))?.[0]);expect(url).toContain("cursor=cursor-fixture");expect(url).not.toContain("contagens=1");
+ });
+});
