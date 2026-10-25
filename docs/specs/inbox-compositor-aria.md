@@ -20,9 +20,13 @@ Foco exige ACK vivo, painel200 posterior ao ACK/retry, owner/envio/capacidade at
 
 A ponte #352 recebe apenas gate aditivo de disponibilidade, default true, separado de perda de permissão. Enquanto a lista ainda informa condução Aria, o campo indisponível adia a conclusão; não passar podeEnviar falso só por atraso de lista. A integração inclui o carry coordenado da correção357 (f347→1a8aaa), com regressões próprias da disponibilidade.
 
-## Duas actions no servidor
+## Actions de saída no servidor
 
 EnviarTextoInbox e enviarMidiaInbox enfileiram pelo mesmo núcleo db-aware, na mesma TX da autorização e da regra de condução; despacho ocorre somente após commit. Schemas de entrada, posse de mídia por autor, MIME, número ativo, opt-out, destinatário e escopo de envio continuam exigidos. ConversaVisivel é alias literal de atendimentoVisivel, já db-aware; nenhum leitor global substitui a TX.
+
+A correção C1 da PR #446 inclui também enviarConteudoInbox: enquete, localização, contato, figurinha e GIF usam esse núcleo. O ramo especial preserva atendimento aberto, canal MOTOR conectado, MIME específico e arquivo do próprio autor. As exigências de canal/sessão continuam específicas desse ramo. Texto e mídia conservam os seus contratos.
+
+O ator relido depois do lock também passa pela barreira pura apenasPortal usada por exigirSessao. Assim, uma mudança concorrente para papel exclusivamente ALUNO não aproveita um convite antigo para continuar enviando. Essa verificação usa a mesma row da transação, sem sessão memoizada ou conexão global.
 
 Ordem: pré-materializar ConfigIA antes do pai → Atendimento FOR NO KEY UPDATE → ator/escopo/destino frescos → situacaoAria, ConfigIA.findUnique e aggregate de custo com relógio fresco → handoff/sugestão canônicos → derivar estado → recusar ou criar intenção HUMANO. Ausência de Config depois do pai falha fechado; não há upsert tardio, lock novo de Agente/Ação, advisory ou skip-locked. Estado global/configurados anteriores à espera não autorizam o envio.
 
