@@ -6987,3 +6987,7 @@ PacoteQA sanitizado publica parecer integral e resultados nominais,semraw/creden
 ### #345 — união técnica com #344 para integração (25/10/2026)
 
 Fonte11f unida à344d6c, mantendo todo o quadro344 e todo o sufixo345 desdeMainfabf. Produto InboxNovo mergeado automaticamente; dois testes aditivos conservados. Objetos exclusivos das duas fontes preservados; paramsDosFiltros literal344 e avisoRecarregaPainel literal345. UNITdoisarquivos105/766671 EXIT0,w1,semfiltros/skips. Primeira tentativa63960/5add21 não coletou porEPERM sandbox e permanece negativa. CI/global e FULL desta união ainda pendentes; resultados remotos isolados não substituem esses gates. Sem novaDDL/DB/mensagens/deploy.
+
+### #345 — inventário fechado de funções PostgreSQL (25/10/2026)
+
+FULLisolado11f40158191442/shard3 encontrou um item novo não declarado no teste pg-proc-whatsapp: notificar_inbox_acao_ia. A função é a adicionada pela migration345 e contém AtendimentoWhatsApp, por isso entra na consulta regex preexistente. REDindependente TESTERb91d0b:1arquivo/1caso,esperado7/recebido8,EXIT1,semDML. Correção registra somente esse nome em NOVAS; BASE/HASH_BASE/query/igualdade exata e verificação de triggers continuam intactos. A fonte produtiva/migration não muda. GREENexato/CIcomposição/FULL ainda pendentes; o resultado isolado negativo não vira aprovação.
