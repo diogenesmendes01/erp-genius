@@ -7463,3 +7463,7 @@ Filha #333, aviso sem upgrade de PK: contraprova T75b2bc e RED A3a3818 confirmar
 ### Inbox #348 — R4.1, cabeçalho pela largura da coluna (25/10/2026)
 
 Smoke b437/z1iv de três tamanhos (8b42e0 EXIT0) corrigiu mobile, mas demonstrou nome/estado comprimidos em colunas de500px tablet e496px desktop. TESTER confirmou P2, parecer a7edd5abfc5c410724d4ebb35ed07c097fcc04e538e99e1217d28fb26bb8e5d2. Regra somente por viewport substituída por duas linhas até640px do wrapper local; altura mínima68/natural, Menu irmão fora do containment e alinhado à base das ações. Handlers/caps/API intactos. Focal conjunto a080c2 EXIT0,3arquivos41casos; gates anteriores997/8617/TSC/lint/build pertencem à b437. Preview próprio parado e PID/porta comprovados b1cd86 EXIT0; banco Root restaurado936c06 EXIT0 antes das edições. SPEC/QA atualizados. Gates da nova fonte, medição real e aceite visual continuam pendentes; sem merge/fechamento presumido.
+
+### Inbox #359 — faixa estreita na composição R4 (25/10/2026)
+
+Captura tablet b437/z1iv mostrou título/resumo comprimidos pelo switch e Gerenciar; confirmado pelo TESTER no mesmo parecer R4.1. Ícone/texto passam à primeira linha e controles autorizados à segunda, em grupo acessível nomeado; feedback fora do Modal ocupa largura do grupo. Política/handlers/Modal/motivo/ACK permanecem literais. RED f262c4 EXIT1,16controles/1falha; GREEN conjunto a080c2 EXIT0,3arquivos41casos completos. QA docs/qa/inbox-359-faixa-responsiva-r4-root.md. TSC/global/lint/build desta fonte e aceite visual ainda pendentes; sem homologação/merge presumidos.
