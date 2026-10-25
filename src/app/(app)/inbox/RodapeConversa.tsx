@@ -14,7 +14,7 @@ export type PropsRodapeConversa = Omit<PropsCompositor, "modo" | "contido"> & {
   abaInicial?: Aba;
   /** Grupos não são atendimentos individuais anotáveis; a action revalida o escopo. */
   podeAnotar?: boolean;
-  travado?: { texto: string; aoNota(): void; aoAssumir?: () => void };
+  travado?: { texto: string; aoNota(): void; aoAssumir?: () => void; ocupado?: boolean };
 };
 
 export function RodapeConversa({ modo, abaInicial = "responder", podeAnotar = true, travado, controleResposta, ...compositor }: PropsRodapeConversa) {
@@ -23,25 +23,26 @@ export function RodapeConversa({ modo, abaInicial = "responder", podeAnotar = tr
   if (estado.atendimentoId !== compositor.atendimentoId) setEstado({ atendimentoId: compositor.atendimentoId, aba: abaInicial });
   const selecionada = estado.atendimentoId === compositor.atendimentoId ? estado.aba : abaInicial;
   const aba = !podeAnotar && selecionada === "nota" ? "responder" : selecionada;
-  const escolher = (nova: Aba) => { if (nova !== "nota" || podeAnotar) setEstado({ atendimentoId: compositor.atendimentoId, aba: nova }); };
+  const barra = modo === "travado" && aba !== "nota";
+  const escolher = (nova: Aba) => { if ((nova !== "nota" || podeAnotar) && (nova !== "responder" || modo !== "travado")) setEstado({ atendimentoId: compositor.atendimentoId, aba: nova }); };
   useImperativeHandle(controleResposta, () => ({ selecionarResponder: () => escolher("responder") }));
   function aoTeclar(e: KeyboardEvent<HTMLButtonElement>) {
     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.nativeEvent.isComposing) return;
     if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
     e.preventDefault();
-    const proxima: Aba = !podeAnotar || e.key === "Home" ? "responder" : e.key === "End" ? "nota" : aba === "responder" ? "nota" : "responder";
+    const proxima: Aba = modo === "travado" && podeAnotar ? "nota" : !podeAnotar || e.key === "Home" ? "responder" : e.key === "End" ? "nota" : aba === "responder" ? "nota" : "responder";
     escolher(proxima);
     e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[proxima === "nota" ? 1 : 0]?.focus({ preventScroll: true });
   }
   return <footer className="shrink-0 border-t border-gray-200 bg-surface px-4 pb-3.5 pt-2.5">
-    {modo === "travado" ? <div className="flex min-h-12 flex-wrap items-center gap-3 rounded-lg bg-ai-50 py-[7px] pl-3.5 pr-2">
+    {barra ? <div className="flex min-h-12 flex-wrap items-center gap-3 rounded-lg bg-ai-50 py-[7px] pl-3.5 pr-2">
       <IconSparkles size={17} className="shrink-0 text-ai-700" aria-hidden />
       <p className="min-w-0 flex-1 truncate text-[13.5px]" title={travado?.texto}>{travado?.texto}</p>
-      {travado && <Botao variante="neutro" onClick={travado.aoNota}><IconNote size={16} aria-hidden />Nota interna</Botao>}
-      {travado?.aoAssumir && <Botao onClick={travado.aoAssumir}>Assumir para responder</Botao>}
-    </div> : <>
-      <div role="tablist" aria-label="Tipo da mensagem" className="mb-2 flex flex-wrap items-center gap-1.5">
-        <button type="button" id={uid + "-responder"} role="tab" aria-selected={aba === "responder"} aria-controls={uid + "-campo"} tabIndex={aba === "responder" ? 0 : -1} onClick={() => escolher("responder")} onKeyDown={aoTeclar} className="inline-flex min-h-11 items-center rounded-item">
+      {travado && podeAnotar && <Botao variante="neutro" onClick={() => { escolher("nota"); travado.aoNota(); }}><IconNote size={16} aria-hidden />Nota interna</Botao>}
+      {travado?.aoAssumir && <Botao ocupado={travado.ocupado} onClick={travado.aoAssumir}>Assumir para responder</Botao>}
+    </div> : null}
+      <div role="tablist" hidden={barra} aria-label="Tipo da mensagem" className="mb-2 flex flex-wrap items-center gap-1.5">
+        <button type="button" id={uid + "-responder"} role="tab" aria-selected={aba === "responder"} aria-controls={uid + "-campo"} tabIndex={aba === "responder" ? 0 : -1} disabled={modo === "travado"} onClick={() => escolher("responder")} onKeyDown={aoTeclar} className="inline-flex min-h-11 items-center rounded-item">
           <span className={"inline-flex h-[26px] items-center rounded-[7px] px-2.5 text-xs font-semibold " + (aba === "responder" ? "bg-brand-bg text-brand-700" : "text-gray-600")}>Responder</span>
         </button>
         <button type="button" id={uid + "-nota"} role="tab" aria-selected={aba === "nota"} aria-controls={uid + "-campo"} tabIndex={aba === "nota" ? 0 : -1} disabled={!podeAnotar} onClick={() => escolher("nota")} onKeyDown={aoTeclar} className="inline-flex min-h-11 items-center rounded-item disabled:cursor-not-allowed disabled:opacity-50">
@@ -49,7 +50,7 @@ export function RodapeConversa({ modo, abaInicial = "responder", podeAnotar = tr
         </button>
         <span className="ml-auto self-center text-xs text-gray-400">/ respostas rápidas</span>
       </div>
-      <div role="tabpanel" id={uid + "-campo"} aria-labelledby={uid + "-" + aba}><Compositor {...compositor} modo={aba} contido /></div>
-    </>}
+      <div role="tabpanel" id={uid + "-campo"} aria-labelledby={uid + "-" + aba}><Compositor {...compositor} modo={aba} bloqueioExterno={modo === "travado"} contido /></div>
+
   </footer>;
 }

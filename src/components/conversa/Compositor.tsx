@@ -29,6 +29,8 @@ export interface PropsCompositor {
   /** Ref local do campo Responder; null na aba Nota ou quando o campo não está disponível. */
   aoCampoResponder?: (campo: HTMLTextAreaElement | null) => void;
   modo: "responder" | "nota";
+  /** Bloqueia somente saída externa; conserva a instância e o rascunho. */
+  bloqueioExterno?: boolean;
   /** null: a permissão ainda não chegou (carregando). Só false é falta de permissão. Falha fechada: só true envia. */
   podeEnviar: boolean | null;
   /** Presente quando a permissão não pôde ser carregada: o compositor mostra o erro e este é o "Tentar de novo". */
@@ -75,7 +77,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -90,6 +92,12 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
   const gravador = useRef<MediaRecorder | null>(null);
   const descartar = useRef(false);
   const nota = modo === "nota";
+  const [geracaoEnvio, setGeracaoEnvio] = useState(() => ({ bloqueada: bloqueioExterno, token: {} }));
+  if (geracaoEnvio.bloqueada !== bloqueioExterno) setGeracaoEnvio({ bloqueada: bloqueioExterno, token: {} });
+  const geracaoAtual = useRef<typeof geracaoEnvio | null>(geracaoEnvio);
+  useLayoutEffect(() => { geracaoAtual.current = geracaoEnvio; return () => { if (geracaoAtual.current === geracaoEnvio) geracaoAtual.current = null; }; }, [geracaoEnvio]);
+  const saidaPermitida = () => nota || (!bloqueioExterno && geracaoAtual.current === geracaoEnvio);
+  useEffect(() => { if (!nota && bloqueioExterno && gravador.current?.state === "recording") { descartar.current = true; gravador.current.stop(); } }, [nota, bloqueioExterno]);
   const listaMencoesId = useId();
   const [tokensMencao, setTokensMencao] = useState<TokenMencao[]>([]);
   const [consultaMencao, setConsultaMencao] = useState<ReturnType<typeof consultaMencaoNoCursor>>(null);
@@ -178,6 +186,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
     if (consultandoMencao && opcoesMencao.length) document.getElementById?.(listaMencoesId + "-" + indiceMencao)?.scrollIntoView?.({ block: "nearest" });
   }, [consultandoMencao, opcoesMencao.length, indiceMencao, listaMencoesId]);
 
+  if (!nota && bloqueioExterno) return null;
   if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
       <div className={contido ? "flex flex-wrap items-center gap-2 text-sm" : "flex flex-wrap items-center gap-2 border-t border-gray-200 bg-surface px-4 py-3 text-sm"}>
@@ -240,7 +249,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
 
   async function enviar() {
     const corpo = texto.trim();
-    if (!contextoVigente() || enviando || emCurso.current.has(contexto) || (!corpo && !arquivo)) return;
+    if (!contextoVigente() || !saidaPermitida() || enviando || emCurso.current.has(contexto) || (!corpo && !arquivo)) return;
     const revisaoEnviada = revisaoRascunho.current;
     const intencaoEnviada = revisoes.capturar(chave, contexto);
     emCurso.current.add(contexto);
@@ -259,7 +268,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
       }
       else if (arquivo) {
         const url = await subir(arquivo, revisaoEnviada);
-        if (!url) return;
+        if (!url || !saidaPermitida()) return;
         r = await aoEnviarMidia(url, corpo);
       } else r = await aoEnviarTexto(corpo);
       // Sucesso de A em B limpa apenas o armazenamento exato da tentativa confirmada.
@@ -316,6 +325,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
   }
 
   async function iniciarGravacao() {
+    if (!saidaPermitida()) return;
     setErro("");
     const formato = formatoDeVoz();
     if (!formato || !navigator.mediaDevices?.getUserMedia) {
@@ -324,7 +334,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
     }
     try {
       const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (!contextoVigente()) { fluxo.getTracks().forEach(t => t.stop()); return; }
+      if (!contextoVigente() || !saidaPermitida()) { fluxo.getTracks().forEach(t => t.stop()); return; }
       const g = new MediaRecorder(fluxo, { mimeType: formato });
       const pedacos: BlobPart[] = [];
       descartar.current = false;
@@ -349,6 +359,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
   }
 
   function abrirSeletor(accept: string) {
+    if (!saidaPermitida()) return;
     if (seletor.current) { seletor.current.accept = accept; seletor.current.click(); }
     setAnexos(false);
   }
