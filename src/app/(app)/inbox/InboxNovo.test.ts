@@ -164,3 +164,9 @@ it("319: sem seleção tem área central livre, ícone e nenhum painel de contat
 
 
 it("avisoRecarregaPainel distingue global/resync, selecionado e mensagem",()=>{const a=(tipo:import("@/server/inbox/barramento").AvisoInbox["tipo"],atendimentoId:string|null=null)=>({tipo,atendimentoId,mensagemId:null,conversaId:""});expect(avisoRecarregaPainel(a("aria.global"),"a1")).toBe(true);expect(avisoRecarregaPainel(a("resync"),null)).toBe(true);expect(avisoRecarregaPainel(a("atendimento.atualizado","a1"),"a1")).toBe(true);expect(avisoRecarregaPainel(a("atendimento.atualizado","a2"),"a1")).toBe(false);expect(avisoRecarregaPainel(a("mensagem.nova","a1"),"a1")).toBe(false);expect(avisoRecarregaPainel(a("mensagem.status","a1"),"a1")).toBe(false);});
+
+it("paramsDosFiltros escreve aria antes de cursor/contagens", () => {
+  expect(paramsDosFiltros({ aria: "humano", setor: "COMERCIAL" })).toBe("setor=COMERCIAL&aria=humano");
+  expect(paramsDosFiltros({ aria: "handoff" }, "cur", { contagens: true })).toBe("aria=handoff&cursor=cur");
+  expect(paramsDosFiltros({ aria: "ia" }, null, { contagens: true })).toBe("aria=ia&contagens=1");
+});

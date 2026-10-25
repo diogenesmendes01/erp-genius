@@ -18,3 +18,11 @@ describe("filtros da URL do inbox", () => {
     expect(lerFiltrosInbox({ responsavel: "u123" })).toEqual({ responsavel: "u123" });
   });
 });
+
+
+it("aria na URL usa enum exato e primeiro valor", () => {
+  for (const aria of ["ia", "aprovacao", "handoff", "humano"]) expect(lerFiltrosInbox({ aria })).toEqual({ aria });
+  expect(lerFiltrosInbox({ aria: "IA" })).toEqual({});
+  expect(lerFiltrosInbox({ aria: ["aprovacao", "ia"] })).toEqual({ aria: "aprovacao" });
+  expect(lerFiltrosInbox({ aria: " humano " })).toEqual({ aria: "humano" });
+});
