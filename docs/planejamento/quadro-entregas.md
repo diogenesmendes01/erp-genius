@@ -7360,3 +7360,7 @@ Smoke b437/z1iv de três tamanhos (8b42e0 EXIT0) corrigiu mobile, mas demonstrou
 ### Inbox #353 — fixture completa na revisão C3 (25/10/2026)
 
 Fixture de paineis-tags.test.ts agora usa DTO completo com satisfies AriaDoAtendimento, sem casts e preservando todas as asserções. Focal85cba9 EXIT0:1arquivo11testes completos,UTC/w1/1024 e sete providers vazios. Nenhum runtime/ACL/consulta/schema alterado; SQL não repetida. QA docs/qa/inbox-353-fixture-r5-root.md; TSC/global da composição final e aceite visual continuam gates separados.
+
+### Inbox #353 — escopo do backport da fixture
+
+Backport inicial incluiu mock de tarefas de330, ausente nesta base. Filha recompõe teste a partir02ca1895 comsomenteimport/DTOcompleto/usonomock, semtarefas. SourceRootcomposta permanece correta comsuasprópriasdependências. QAexata dafilha pendente; negativo deescopo preservado.
