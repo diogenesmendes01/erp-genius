@@ -15,6 +15,10 @@
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/aria/CartaoSugestaoAria.tsx": ["<Botao> → primario/md", "<Botao> → perigoContorno/md"],
+
+  "inbox/aria/FaixaAriaAtiva.tsx": [
+    "<Link> Gerenciar → iaFantasma/sm",
+  ],
   "aria/_componentes/Abas.tsx": [
     "<Link> → primario|fantasma/md",
   ],
