@@ -26,3 +26,7 @@ Os dois novos controles são seletores de filtro, sem ação de negócio; seus n
 ### R2 PR431: Limpar preserva chips e fallback de autoria
 
 Filtros representados pelos chips Sem resposta (prazoEstourado) e Não atribuídas (responsavel=fila) não são duplicados em etiquetas/selo. Limpar nas etiquetas e no popover preserva esses chips e aria, removendo somente setor/status e filtros pessoais eu/ID/naoLidas no modo com resumo. Busca/número e modo legado continuam preservados. A prévia de saída pessoa sem rótulo usa Equipe:; nunca atribui mensagem da equipe ao nome do contato. Testes reais da coluna cobrem os três chips, os dois Limpar, ausência de etiquetas/selo duplicados e preservação de contexto. Revisão5643199383 C1/C2 atendida; evidências no report, sem novo comportamento servidor.
+
+### R3 PR431: combinações válidas e dimensão ativa
+
+A regra R2 é refinada: ocultar etiqueta/selo apenas da dimensão representada pelo chip ATIVO. Em aria+prazo ou aria+fila, a dimensão secundária continua visível/removível; em prazo+fila, fila continua visível. Combinação tripla conserva duas secundárias. Contagem e etiquetas concordam. Limpar nas etiquetas e no popover compartilha helper puro e remove somente filtros fora do chip ativo, preservando busca/número; modo sem resumo mantém comportamento legado. Parser e produtores não canonizam nem rejeitam combinações. Oráculo original e controles reais descritos no report.
