@@ -25,3 +25,13 @@ O preview foi encerrado pela sessão `71324` (terminal `ecd049`, EXIT1 por inter
 ## Pendências
 
 Build e comparação visual da fonte corrigida, com medição da largura útil de nome/estado, geometria dos controles e Menu, nos dois temas e na borda 699/700. Verificar também 320/360px e conjuntos parciais, preservando o comportamento a partir de 700px. Nenhuma homologação visual ou merge é presumido. A composição com #332/#333/#354/#359 terá seus próprios gates.
+
+## R4.1 — diagnóstico do build composto e correção local
+
+A composição `b437e13c`, build `z1ivcGA6NikkKmXZP6V_S`, passou TSC original (`77524/4d2480`, EXIT0), global original de 997 arquivos/8617 casos (`84212/ec84b9`, EXIT0), lint original com zero erros/48 avisos (`8750/ad3541`, EXIT0) e build original (`23043/5feba8`, EXIT0). Esses resultados pertencem à fonte anterior a R4.1.
+
+O smoke novo de Handoff claro (`8b42e0`, EXIT0, três tamanhos) foi inspecionado pelo integrador e pelo TESTER. Mobile estava legível, mas tablet tinha cabeçalho de 500×68px e desktop de 496×68px, ambos comprimindo nome/estado. Essas capturas são diagnóstico, sem aceite. Parecer independente SHA256 `a7edd5abfc5c410724d4ebb35ed07c097fcc04e538e99e1217d28fb26bb8e5d2`.
+
+A linha fictícia foi restaurada para inativa (`03cccf`, EXIT0); auditoria posterior `9d1c9f`, EXIT0, preservou os 1379 registros originais/424 hashes, 47 fictícios e sequências, com três alterações de datas permitidas. Preview interrompido pela mesma sessão `84452` (`1f64d6`, EXIT1 por interrupção); `b1cd86`, EXIT0, comprovou PID 1515516 ausente e porta 3130 livre. Restauração `936c06`, EXIT0, recompôs o banco original antes de editar a fonte.
+
+R4.1 usa container query no wrapper existente até 640px e altura natural, mantendo o Menu fora do containment. A regressão focal conjunta com a apresentação do switch global passou `a080c2`, EXIT0: três arquivos completos/41 testes, sem filtro de caso ou novos skips, um worker/1024 MiB. O teste de agrupamento do switch teve RED causal `f262c4`, EXIT1 (16 controles aprovados/uma falha); tentativa anterior `dc7717` falhou no cache antes de executar casos. Nenhum teste de CSS por comparação literal foi adicionado. Novo build, medição real de identidade/estado/ações/Menu e aceite dos dois temas continuam pendentes.
