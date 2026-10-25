@@ -1,6 +1,6 @@
 # Inbox #327 — Oportunidades: validação retomada
 
-Status atual: corpus misto18 individualmente certificado (6APPadminA7+6PROTOA9+6APPleitorA11), QA operacional/visual favorável; curadoria/handoff preparados, sem publicação ou integração/homologação final. APP EBF; HARNESS cfa. Relatos abaixo são históricos nominais e mantêm seus negativos.328UI continua pendente.
+Status atual: porteR2 sobrePR420+Main composto e gates947/7742UNIT,67INT,TSC/lint aprovados na fonte9a8ebc81;QA/publicação/CI/final ROOT pendentes. Corpus18 permanece histórico APP EBF com qualificações individuais;328UI continua pendente. Registros abaixo são históricos nominais e preservam negativos.
 
 ## Consulta
 
@@ -113,3 +113,9 @@ ZIP sanitizado18originais+README+manifesto e PNGrepresentativa propostos, semupl
 ## Porte R2 para Main preservado — 24/10/2026
 
 Produto327 composto sobre74d4(PR420179b+Main170edbad) por hunks;OR420 do hook Detalhes e4defaultsMain343 preservados,sem sobrepor337/Compositor/Sino/notificacoes/whatsapp/schema/deps. Fundacao328 separada ca208d9c,restante328UI pendente. Gates desta fonte integrada aguardam freeze+UNIT/TSC e GOINTROOTA491;QA/capturas487 e corpus18 continuam nominais historicos,nao aceite da nova composicao. Nenhum browser/DB usado neste porte.
+
+## Gates R2 finais — 24/10/2026
+
+Fonte9a8ebc81 sobreBase74d4 preservaOR420/4defaultsMain343 e3509OIDsBase não selecionados. UNITglobal44258/56df77EXIT0:947/7742,438,64s,maxWorkers2;lint43/1bebe70;TSC5350/2c07e30,heap8192/configoriginal semaux/exclusões extras. INT84101/84d73dEXIT0:7completos/67casos,243,42s,maxWorkers1,semfiltros/skips,perfilA491 eGOspecROOT. Banco explicitamente liberado aoROOT;restauro somentehelperA491,sem presumir conclusão.
+
+Report output/inbox-327-port-r2-report.md e manifesto output/inbox-327-port-r2-fontes.json registram45OIDs,40literais/5exceções,proteções,gates e listaINT. Nenhumruntime mudou apósfreeze,nenhumUI/browser/captura/manual/envio/DDL/install executado. Corpus18nominalEBF eZIP preservados,semupload;CLI≠wrapperA11. QAexata/CI/composição/publicação ROOT e restante328UI continuam separados.

@@ -6854,3 +6854,9 @@ Consulta/movimento/UI327 portados por hunks sobre74d4,OR420(abaDetalhesOUeditor)
 ## Inbox327 — harness e curadoria portados R2, gates pendentes — 24/10/2026
 
 11paths harness327(compostos porpatchcheck) preservam base325/953/coletorDetalhes e adicionam18casos;nao tornamCLIequivalente ao wrapperA11 nem autorizamUI/escritas. Relatorio/manifesto dehandofffd6preservam corpus18misto,qualificacoes e negativos;ZIP/PNGs/raw privados intocados. Antesgates novo manifesto comparaOIDs45paths comcfa e protecao integral3530OIDsBase74d4,com excecoes justificadasOR420/defaultsMain/imports/docs. Nenhum DB/UI/UNIT/TSC iniciado;ROOTrevermanifestoantesGOINTA491.
+
+## Inbox327 — gates R2 verdes, banco liberado — 24/10/2026
+
+Fonte executável9a8ebc81/Base74d4(PR420+Main):UNITglobal947/7742(44258/56df77)EXIT0,lint43(17924/1bebe7)EXIT0,TSC8GBconfigoriginal(5350/2c07e3)EXIT0. INTUMAvez7arquivosCOMPLETOS/67(84101/84d73d)EXIT0,243,42s,maxWorkers1,semfiltro/skips,GOespecROOT/A491. DB explicitamente liberado;semnovoDB e sem presumir restauro(sóhelperROOTA491).
+
+45paths40OIDs literaiscfa/5exceções justificadas;3509OIDsBasenão-selecionados exatos/0divergência. OR420/editor326,4defaultsMain343,337/Compositor/Sino/whatsapp/labels/schema/deps/953 preservados. Report output/inbox-327-port-r2-report.md e manifesto output/inbox-327-port-r2-fontes.json documentam checkpoints separados328mínima/327produto/harness. Corpus18ZIP/raw permanecemnominaisEBF/privados/qualificados,nãorecapturados/semupload;nenhumruntime pósfreeze. QAfinal/CI/composição/publicaçãoROOT e328UI ainda pendentes;semhomologaçãofinalpresumida.
