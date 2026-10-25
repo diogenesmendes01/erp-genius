@@ -38,3 +38,10 @@ Freeze eb1a25:4arquivos completos/128UNIT e lint6 EXIT0, sem filtros/skips/warni
 A QA da fontefa7 encontrou que perda aceitava formulário estável sem foco e Funil não verificava perceptibilidade do foco. Novo callback aplica nos dois ramos a mesma guarda:activeElement conectado,não disabled,contido no modal e visivel pelo helper/clipping existente. Não se acrescenta focus() ao driver para fabricar condição positiva. Fixture estabelece/asserta foco real nos positivos; negativos isolamBODY/externo/desconectado/hidden/inert/aria-hidden/disabled/opacity0/clipping/fora/zero, preservando os outros selos.
 
 RED72f6f9=18falhas/100controles;GREENe70747=1arquivo completo118/118+lint2 EXIT0,w1,sem filtros/skips/warnings. TSC_R1: 9345/bd4aa7 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Manifesto/report desta revisão são output/inbox-328-harness-foco-r1-fontes.json e inbox-328-harness-foco-r1-report.md. Pacotefa7/QAnegativa/gatesanteriores permanecem nominais;CLI/declarações/produto/originais/coletores/pinos literais. SemDB/HTTP/browser/captura/ação real;homologação/visual328 continuam pendentes.
+
+
+## Revisão R2: nome do modal conforme o chamador
+
+Inbox abre perda com produto??título; Funil usa nome da oportunidade(=tituloDTO). Adapter passa a aplicar esse contrato no callback e no selectorreal getByRole, preservando produto/título distintos na fixture formal. Testes de callback com rótulosDOM independentes rejeitam a outra superfície; selectorreal extraído por AST cobre os dois nomes e fallback semproduto. Nenhum dado foi igualado para mascarar a diferença;R1foco/produto/owner/Modal/fluxodeconfirmação/CLI/declarações/shareds/coletores/pinos continuam intactos.
+
+REDbb6776=4falhas/120controles;GREEN639ae8=arquivo124/124+lint2 EXIT0,w1,sem filtros/skips/warnings. TSC_R2: 37760/f6d472 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Manifesto/report novos inbox-328-harness-nome-r2-fontes.json/report.md preservamfa7/R1 e suas QA/gatesnominais. SemDB/HTTP/browser/captura/ação;#328não homologada.

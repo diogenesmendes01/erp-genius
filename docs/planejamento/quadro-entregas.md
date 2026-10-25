@@ -6896,3 +6896,8 @@ Sobre87c01c49, novo adapter/testes328+ligaçãoCLI sem produto runtime/servidor/
 ### Inbox #328 — R1 do oráculo de foco; QA/native pendentes
 
 Sobre fa7, perda e Funil passam a exigir foco interno conectado/nãodisabled/perceptível no instante do callback, reutilizando visivel/clipping. Nenhum focus no driver/shared/produto;CLI/declarações/originais/coletores/pinos intactos. RED72f6f9=18/100;GREENe70747=arquivo118/118+lint2 EXIT0,w1. TSC_R1: 9345/bd4aa7 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Evidências em output/inbox-328-harness-foco-r1-report.md/fontes.json. Pacotefa7 e parecer negativo são preservados;semDB/UI/HTTP/fixture/preview/ação/captura. #328segueaberta,semaceitenativo presumido.
+
+
+### Inbox #328 — R2 nome do modal por superfície; gates DEV verdes, QA/native pendentes
+
+SobreR1, callback/selectorreal passam a esperar Inbox produto??titulo e Funil titulo/op.nome, com fixture formal mantendo os nomes distintos. Sóduasexpressões noadapter+testesfiéis;focoR1/produto/CLI/declarações/shareds/coletores/pinos e artefatosfa7/R1 intactos. REDbb6776=4/120;GREEN639ae8=arquivo124/124+lint2 EXIT0,w1. TSC_R2: 37760/f6d472 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Evidências em output/inbox-328-harness-nome-r2-report.md/fontes.json. SemDB/HTTP/browser/fixture/preview/ação/captura;QA/admissão evisual permanecem pendentes.

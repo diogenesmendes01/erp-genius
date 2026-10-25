@@ -1,0 +1,165 @@
+{
+  "issue": 328,
+  "revisao": "R2_NOME_MODAL_POR_SUPERFICIE",
+  "estado": "R2_NOME_DEV_CONGELADO_GATES0_QA_NATIVE_PENDENTES",
+  "baseHarness": "2f160b78e1de0b722c7a0e5be4c25092b9e95fba",
+  "runtimeProduto": "87c01c49bdd91fbbcf7640768d1f0a47125a2606",
+  "fontesExecutaveis": [
+    {
+      "path": "scripts/visual/acoes-oportunidade.mjs",
+      "bytes": 31702,
+      "sha256Fisico": "39fa9f737ac24411648cc3959f4b453f3934d67b63a40e32d0c649c578ea86da",
+      "sha256GitLF": "39fa9f737ac24411648cc3959f4b453f3934d67b63a40e32d0c649c578ea86da",
+      "gitOidWorking": "f58de50b247586df7ecd765fc0dc412b1ef27fed"
+    },
+    {
+      "path": "src/test/visual-inbox-acoes-oportunidade.test.ts",
+      "bytes": 30383,
+      "sha256Fisico": "bcb9eb30af97ec6002159b919369aa13600bdbbd99bf2ff63703a061a74b6c7c",
+      "sha256GitLF": "bcb9eb30af97ec6002159b919369aa13600bdbbd99bf2ff63703a061a74b6c7c",
+      "gitOidWorking": "1304bbd787fbef59d9a20d4f27eca2f2ef07aa77"
+    }
+  ],
+  "contrato": {
+    "inbox": "produto??titulo",
+    "funil": "titulo (=op.nome)",
+    "dadosFormaisProdutoDistintoTitulo": true,
+    "semNovoCampoOuExport": true
+  },
+  "provas": {
+    "deltaExatoDuasExpressoes": true,
+    "demaisFuncoesLiterais": [
+      "combinacoesAcoes328",
+      "combinacoesCaptura328",
+      "configurarAcoes328",
+      "configurarAcoesCli328",
+      "descreverAcoes328",
+      "baseLocal",
+      "confirmarAcoes328",
+      "semanticaFechamento328",
+      "abrirAcoesApp328",
+      "descricaoPrototipo328",
+      "abrirAcoesPrototipo328"
+    ],
+    "R1FocoLiteral": true,
+    "todosASTtestesR1LiteraisExcetoFixtureModal": true,
+    "selectorRealExtraidoPorAST": true,
+    "callbackRealTambemVM": true,
+    "pathsProtegidos": 5841,
+    "vetorOidSha256": "61d7c9eb9661c9cf5d24dad323f23338ae893c85b31c148878f0f07c9cdc51ed",
+    "CLI_Decls_Shareds_Coletores_Pinos_Originais_Produto_Literais": true
+  },
+  "gates": {
+    "red": {
+      "executor": "bb6776",
+      "exit": 1,
+      "failed": 4,
+      "passed": 120,
+      "total": 124
+    },
+    "unit": {
+      "executor": "639ae8",
+      "exit": 0,
+      "arquivos": 1,
+      "testes": 124,
+      "maxWorkers": 1,
+      "segundos": 1.72,
+      "filtrosInternos": 0,
+      "skips": 0
+    },
+    "lint": {
+      "executor": "639ae8",
+      "exit": 0,
+      "arquivos": 2,
+      "warnings": 0
+    },
+    "TSC": {
+      "session": 37760,
+      "terminal": "f6d472",
+      "exit": 0,
+      "node22": true,
+      "heapMiB": 8192,
+      "noEmit": true,
+      "incremental": false,
+      "configOriginal": true,
+      "configAuxiliar": false,
+      "exclusoesExtras": false
+    }
+  },
+  "pacotesFa7R1NominaisIntactos": [
+    {
+      "path": "output/inbox-328-harness-fontes.json",
+      "gitOid": "503eaa96fb38758db3771d1765677c02154f39d1",
+      "sha256Fisico": "d5ac26dee0bd36d9ac2ec9383bbe0c6e025ccbd2c9d8907d8a4f1a458be66529"
+    },
+    {
+      "path": "output/inbox-328-harness-report.md",
+      "gitOid": "15d7991a6131cc033d3029b10fba9b55a3244212",
+      "sha256Fisico": "27e48e24565bcc5fed9b388d81c68b19d7ce59e54b92c7f29b46e3b335fa609f"
+    },
+    {
+      "path": "output/inbox-328-harness-foco-r1-fontes.json",
+      "gitOid": "3846b54d8cddabb5f11b119adbcf8666e4587760",
+      "sha256Fisico": "82787ad1e8c6d2e64fdd4207919b4017b3720cf6d26e3c8d411a68ce1730f9f2"
+    },
+    {
+      "path": "output/inbox-328-harness-foco-r1-report.md",
+      "gitOid": "b1b10dbf487221c279e5b42fc31c829603dab971",
+      "sha256Fisico": "22d28bd06264cd0a1d27be4289c0c6ffcc9043d47dd10819a960a19c9eba2ec6"
+    }
+  ],
+  "evidencias": [
+    {
+      "path": "output/inbox-328-harness-nome-r2-red.log",
+      "bytes": 2938,
+      "sha256": "359931a87fbcc998189574e1efc3120ead1da32d902f3c9187d83c2328e4fe8a"
+    },
+    {
+      "path": "output/inbox-328-harness-nome-r2-green.log",
+      "bytes": 482,
+      "sha256": "f3a181d86f073d4bbd8bab16eac91bc60879f4ae6743727baea75f45ced73039"
+    },
+    {
+      "path": "output/inbox-328-harness-nome-r2-lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-nome-r2-tsc.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "operacaoReal": {
+    "DB": 0,
+    "HTTP": 0,
+    "browser": 0,
+    "captura": 0,
+    "preview": 0,
+    "fixture": 0,
+    "acao": 0
+  },
+  "documentos": [
+    {
+      "path": "docs/specs/inbox-acoes-oportunidade.md",
+      "bytes": 8361,
+      "sha256Fisico": "a9ed2ec28ffc3d7b61b3af0bd94facad43120db03a0bed5ad971157a807a62a3",
+      "sha256GitLF": "a9ed2ec28ffc3d7b61b3af0bd94facad43120db03a0bed5ad971157a807a62a3",
+      "gitOidWorking": "7a55510b0175e252076d997216c7ccafe5ab5d24"
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "bytes": 1156658,
+      "sha256Fisico": "d4eda9673fd4b643f29ae44a766e60886a7255f46ac023a140e5352514103eb4",
+      "sha256GitLF": "e6d4d3befa29e65a9510dd3ab674cf501d47e5ffd698617451ff07d8599ae830",
+      "gitOidWorking": "6b54394de250dac9ad42a6e18af193da697c7555"
+    },
+    {
+      "path": "output/inbox-328-harness-nome-r2-report.md",
+      "bytes": 2728,
+      "sha256Fisico": "490ab86425bbd325ce405eb969f048ae6535d01942db184756ced0ed9c7fb548",
+      "sha256GitLF": "490ab86425bbd325ce405eb969f048ae6535d01942db184756ced0ed9c7fb548",
+      "gitOidWorking": "f5258868fa50c8773e230d938f32ae29f433b73e"
+    }
+  ]
+}

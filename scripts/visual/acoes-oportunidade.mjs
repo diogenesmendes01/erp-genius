@@ -100,7 +100,7 @@ export function semanticaAcoes328(d) {
     if (d.fase === 'perda') {
         if (d.alvo !== 'app' || !d.podeMover || modais.length !== 1) return false;
         const m = modais[0], titulo = (m.getAttribute('aria-labelledby') ?? '').split(/\s+/).map(id => texto(document.getElementById(id))).join(' ') || m.getAttribute('aria-label');
-        if (m.getAttribute('role') !== 'dialog' || titulo !== 'Marcar ' + d.titulo + ' como perdida' || pendente(m) || m.getAnimations({ subtree: true }).some(a => a.playState === 'running')) return false;
+        if (m.getAttribute('role') !== 'dialog' || titulo !== 'Marcar ' + (d.superficie === 'funil' ? d.titulo : d.produto ?? d.titulo) + ' como perdida' || pendente(m) || m.getAnimations({ subtree: true }).some(a => a.playState === 'running')) return false;
         const radios = [...m.querySelectorAll('input[type="radio"]')];
         if (radios.length !== d.motivos.length || radios.some((r, i) => r.name && r.name !== 'motivoPerda' || r.getAttribute('name') !== 'motivoPerda' || (r.value ?? r.getAttribute('value')) !== d.motivos[i][0] || r.disabled || r.checked !== (d.motivos[i][0] === 'OUTRO') || !visivel(r.parentElement) || texto(r.parentElement) !== d.motivos[i][1])) return false;
         const campo = um(m.querySelectorAll('textarea[name="observacao"]'), e => e.value === d.observacao && !e.disabled && e.getAttribute('maxlength') === '500' && texto(e.parentElement).includes('Observação (obrigatória)') && visivel(e));
@@ -195,7 +195,7 @@ export function semanticaFechamento328() {
     const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= l.top && r.bottom <= l.bottom && r.left >= l.left && r.right <= l.right && ![...document.querySelectorAll('[aria-modal="true"]')].some(m => m.textContent.includes('Motivo da perda') && !m.inert && window.getComputedStyle(m).display !== 'none');
 }
 async function preencherPerda(pagina, descricao) {
-    const modal = pagina.getByRole('dialog', { name: 'Marcar ' + descricao.titulo + ' como perdida', exact: true });
+    const modal = pagina.getByRole('dialog', { name: 'Marcar ' + (descricao.superficie === 'funil' ? descricao.titulo : descricao.produto ?? descricao.titulo) + ' como perdida', exact: true });
     await modal.getByRole('radio', { name: 'Outro', exact: true }).check();
     await modal.locator('textarea[name="observacao"]').fill(descricao.observacao);
     await pagina.waitForFunction(semanticaAcoes328, descricao);
