@@ -1,0 +1,147 @@
+{
+  "feature": "897e100317713e1e14597f429a433fc674df56cc",
+  "base": "c045fa0e79e6c419ffafd386eb2e955dc8cb9ae4",
+  "main": "abb961625f57bf20d9eb4734df98e59dda362957",
+  "exclusiveObjectsLiteral": [
+    {
+      "path": "src/app/(app)/inbox/ConversaAberta.test.ts",
+      "mode": "100644",
+      "oid": "9a8332e96a5d39786eb0d80bd4d447a4af7c7999"
+    },
+    {
+      "path": "src/app/(app)/inbox/ConversaAberta.tsx",
+      "mode": "100644",
+      "oid": "b518fff2af76bcaed5ecf9cb48ae6b84ee000118"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "mode": "100644",
+      "oid": "c1511fce72d055ad3bf3a74f071406ab9d4b43ab"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/CartaoSugestaoAria.foco.test.ts",
+      "mode": "100644",
+      "oid": "8a312d40c2b6b414a1cea494564bbff76e5c2c5d"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/CartaoSugestaoAria.interacao.test.ts",
+      "mode": "100644",
+      "oid": "c6be725e1350fb08271804477001c42f13d33b3a"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/CartaoSugestaoAria.test.ts",
+      "mode": "100644",
+      "oid": "87e5d3cb77bb11509d2832ab9ca09d5f87493451"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx",
+      "mode": "100644",
+      "oid": "50d16f46371154b68a6b342a40d96d2ef43e3935"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/intercalar.test.ts",
+      "mode": "100644",
+      "oid": "e07c49bb3ea38099516cccb278abd350f3df0f2c"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/intercalar.ts",
+      "mode": "100644",
+      "oid": "bd394a7119af71c3520f2867d748529d46b7fceb"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/sugestao-visual.test.ts",
+      "mode": "100644",
+      "oid": "3f445acb6bd62d6e07bf702e0921e4a00e6a9040"
+    },
+    {
+      "path": "src/app/(app)/inbox/aria/sugestao-visual.ts",
+      "mode": "100644",
+      "oid": "38e65ca2f5b376a01ee7342452cca00cf3a5e920"
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "mode": "100644",
+      "oid": "8d1561cf382055e2f3f199c337d00dc4a0212598"
+    },
+    {
+      "path": "src/app/botoes.test.ts",
+      "mode": "100644",
+      "oid": "5dc60af3c085ee4e8966d949a63d886737c90d21"
+    },
+    {
+      "path": "src/components/Botao.test.ts",
+      "mode": "100644",
+      "oid": "4ef4b472ff62103593e380100a489103195a9e47"
+    },
+    {
+      "path": "src/components/Botao.tsx",
+      "mode": "100644",
+      "oid": "d96a12190b76277aaf9583719fe4a3f65622539f"
+    },
+    {
+      "path": "src/components/conversa/itens-thread.test.ts",
+      "mode": "100644",
+      "oid": "355abedbf3ab896ae941ae340e45b6284ed5d693"
+    },
+    {
+      "path": "src/components/conversa/itens-thread.ts",
+      "mode": "100644",
+      "oid": "69bbf968c0944136abf14af795798f49eae159e7"
+    }
+  ],
+  "shared": {
+    "path": "src/app/(app)/inbox/InboxNovo.tsx",
+    "mode": "100644",
+    "oid": "58199e8da2366776c6a1c995a54016277d9cabd6",
+    "delta": "Somente aria={painelDoAberto?.dado?.aria}"
+  },
+  "protectedMainObjects": 3590,
+  "quadro": {
+    "feature": "897e100317713e1e14597f429a433fc674df56cc",
+    "main": "abb961625f57bf20d9eb4734df98e59dda362957",
+    "base": "c045fa0e79e6c419ffafd386eb2e955dc8cb9ae4",
+    "mainPrefix": {
+      "bytes": 1162778,
+      "sha256": "fd75c1f955ce421f98eb3150be0b7377c79d6a185cdcbc05d8c51b817e410f07"
+    },
+    "featureSuffix": {
+      "bytes": 3393,
+      "sha256": "e00cd9f96db0c5b5a39ceb764d88779589faf10ef53a0b6de206b7528ee36482"
+    },
+    "union": {
+      "bytes": 1166172,
+      "sha256": "5e389d64f8760d26517ca4b10393bc8ce0258518510a300f95d4434f3b5fead5"
+    },
+    "allHistoryPreserved": true,
+    "adendo": {
+      "bytes": 620,
+      "sha256": "62d61b7bdab0edb27b62ddf19e62820f7dba4df4f81014ed5f0cba038263da6e"
+    },
+    "final": {
+      "bytes": 1166792,
+      "sha256": "5a21802aa0653947981176b8eba1daccb95faa151958125013bab7f3e26168ab"
+    }
+  },
+  "validation": {
+    "unit": {
+      "files": 10,
+      "tests": 205,
+      "session": 88594,
+      "terminal": "090488",
+      "exit": 0,
+      "workers": 1,
+      "filters": 0,
+      "skips": 0,
+      "logSha256": "6a0c48cbc35f25254da3096f6c62841cd91b0e4f8cb6d8936ff51b1a5750fc99"
+    },
+    "lint": {
+      "files": 1,
+      "session": 62548,
+      "terminal": "28a363",
+      "exit": 0
+    },
+    "integration": "Não executada localmente; backend350 não alterado.",
+    "ci": "Nova CI remota da composição pendente.",
+    "visual": "Pendente; smoke anterior negativo foi preservado e não é aceite."
+  }
+}

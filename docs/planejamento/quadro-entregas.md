@@ -7133,3 +7133,40 @@ A composição preserva a base4275d78/main345 e os objetos exclusivos3288af, com
 25/10/2026 — #329 fix frontend filho65 após fullUNITROOT65 negativo(966arquivos/3fails;8166pass/3fail8169) e TSCoriginalA negativa(1086TS2307cachesprivadospreservados+1TS2352fixture). ConfirmarAcao real/idempotentefalse agora guarda vínculo; EstadoVazio compacto+manifesto e borda neutra nas linhas. Fixture TS de fronteira documentada com unknown, sem relaxar tipo produtivo. Bugmultiowner da seleção de imports confirmado/testado: Set exato(modulo,acao) por arquivo, sem alterar parser/exceções/PorArquivo; negativos terceiro/alias/reexport/chamadafora/módulodiferente mantidos. REDs e causas no relatórioQA. Guardas/UI14arquivos417/417 EXIT0 9172fe/session73994→a7fc53,semfiltros/skips; lint8/diffcheck21c7f3 EXIT0. Backend/DTO65==47 congelados; sem DBleaseA/provider. TSCoriginalfull/global, fullUNITnovo, visual, QAindep eCI seguem pendentes ROOT, sem conclusão/homologação.
 
 25/10/2026 — #329 filha510 somente guarda/documentação: ROOT TSCoriginal51043207/3bc11b0 e BUILDoriginal51092830/80e2880; fullUNIT510966arquivos965pass/1fail,8178pass/1fail8179, único falso positivo lexical de transporte ao delegar ConfirmarAcao real. Fallback AST estrito sem hook/catch redundante/filenameexception reconhece import nomeado real, calls diretas em acao, todos os bindings e sem shadow/escape; loaders/reexports valor não suportados fechados. Heurísticas antigas/PorArquivo/parsers irreversíveis e produçãoUI/DTO/backend510 intactos. REDs e limites no relatórioQA; execução final guarda+18focais d7c725/session48722→3c7535 EXIT0,19arquivos487/487,60.90s,semfiltros/skips. Lint/diffcheck05016b0. FullUNIT/TSCfinal/visual/QA/CI pendentes ROOT; sem330/push/DB.
+
+### Inbox #350 — cartão Aria sugere (DEV, gates em preparação)
+
+Base MAIN fabf7add, branch codex/inbox-e3-350-cartao-sugestao. Projeção/intercalação/cartão usam DTO/actions349 autorizados, sem payload bruto ou alçadas novas. D1/D2 aprovadas ficam nas354–356; PainelAria legado preservado para353. Hunk aditivo do painel atual, decoração temporal antes dos dias/sequências e foco do novo item, sem mudar cursores/compositor/núcleo virtual. perigoContorno/classificador fechado e registro exato de dois rótulos com âncora AST aprovados ROOT.
+
+TDD: três completos43 GREEN40d526; Botao/guardas4/124 GREENf5c8d7 após RED5; interação real6/6 GREEN7eec99 (glifosSVGfakes, não layout); consumidor4/127 GREEN019fed; guarda/estático98 GREEN6f2d83; lint17 final GREENdd095a (5a2b9b anterior). Negativo2038/9d59cb12/424=422passes+2falhasREAISdeguarda preservado, sem chamar recorte verde. UNIT25 terminou75190/298d77 EXIT0:25completos/544casos,61,61s/w1,semfiltro/skip; TSC aguardando janela ROOT. Nenhum DB/INT/fixture/preview/captura/provider/install/schema ou branch extra. SPEC docs/specs/inbox-cartao-sugestao-aria.md; report output/inbox-350-report.md. Visual6pares, nativo, QA/união/CI/publicação pendentes; não concluir350.
+
+
+#### #350 — contrafactuais e correção de foco
+TSCoriginal80288/44bd90EXIT2:2privadoshistóricos326 TS2307+1testeintercalar TS2345. Genérico explícito isolado emefd561;6/6+lint13930c7EXIT0, runtime b0be preservado. TESTER a25472RED4falhas/2controles no foco/anúncio após decisão; DEV b4c093RED9falhas/2controles ampliados. Fix sóCard: snapshot antesbusy/refdetach, foco significativo no resultado do mesmo cartão se perdeu disparador, preservando foco externo; statusjá montado anuncia ACK/SSE, inclusive sem nossa ação. GREEN1a4f1d4completos/40 e lint2ac46f8EXIT0,heap512/w1. UNIT25/544 anterior continua nominalb0be, não reatribuído. TSCauxfinal/QAcausal/visual/nativo/INT ainda pendentes; semDB/build/global nesta correção.
+
+
+#### #350 — TypeScript auxiliar final qualificado
+Fonte4b682c913e02960cb6a3ee7b5400476d14114379 congelada após QA causal independente6/6+11/11/lint2. TSCaux92312/b61820EXIT0,Node22/heap8192/noEmit/incrfalse; validação9c3b13 preserva configuração original e exclui SOMENTE output/inbox-326-a2-diagnostico-private.test.ts e output/inbox-326-package-r8-7a30d4-preservado-private/inbox-326-a2-diagnostico-private.test.ts. NenhumSRC/teste novo excluído. Original80288/44bd90EXIT2/3diagnósticos preservado; não se chama auxiliar de original/global. Runtime4b literal neste fechamento documental. UNIT25/544 continua nominalb0be; fix4btem4/40+lint2 próprios. VisualFS18pares/36RAWs ainda plano, sem build/browser/DB/negócio; exige repinarruntime/composição. Visual/nativo/QA geral/integração/união328-344-345/CI/publicação pendentes.
+
+
+### #350 — publicação textual em rascunho (25/10/2026)
+
+Fonte85e/src4b integrada àMainc045/344, sem antecipar345pendente. TESTER26completos555/a031a2 e lint18/02df44 EXIT0,semfiltros/skips; pareceres integrais preservados. QuadroMainprefixo integral+sufixo350inteiro. Relato editorial BODY/blur nativo corrigido para perda de foco contextual/blur emulado; nenhuma fonte produtiva modificada nessa correção. Aceite18pares36RAW/native e CI/composição permanecem gates pendentes. PR emrascunho/Refs350;nenhumencerramentoouenvio presumido.
+
+
+### Inbox #350 — composição com main #345 (25/10/2026)
+
+A candidata preserva os 17 objetos exclusivos da publicação897e1003 e os 3.590 objetos restantes da main abb9616; InboxNovo mantém somente a prop aria aditiva. O quadro conserva o prefixo main e o sufixo #350 integrais. Recorte local: 10 arquivos/205 testes, um worker, sem filtros ou skips, sessão88594/090488 EXIT0; lint do consumidor sessão62548/28a363 EXIT0. A nova CI remota e a homologação visual continuam pendentes. O smoke anterior negativo permanece preservado e não é aceite. Prova textual em output/inbox-350-qa/composicao-main345.json.
+
+
+### Inbox #350 — visual composto e CI concluídos; anexos pendentes (25/10/2026)
+
+CI e05440170735019 cincoSUCCESS:953arquivos/7616testes por fuso UTC/SP,lint/build/TSC0. Tcheckoutexato3/104 EXIT0; Root10/205 e lint0. Visual18pares36RAW inspecionados: T12desktop/celular e Root6tablet,quatro lotes18APP+10PROTOpending+6approved+2tabletfinal. Agregados negativos iniciais preservados; sem execução36única/sem açõesnegócio. Índice e pareceres em output/inbox-350-qa;ZIP692aedb59f79e1cde5eac4f14310684e9fa60f04751a88ace2f9058dbdbea8ef aguarda consentimento para anexo na430. BancoB restaurado424hashes/DDL492/0outroator EXIT0. Sem encerramento da issue/merge/deploy presumidos.
+
+### Inbox #350 — revisão R1 C3/C4 (25/10/2026)
+
+C3 reproduzido35945/32a8fc EXIT1(4falhas39controles),corrigido com fimJanela opcional para temMaisDepois e epoch inválido estável. GREEN2arquivos43/b83068 + consumidores4arquivos43/11e8a9 +lint4/828b4b EXIT0;semfiltros/skips,semglobal/TSC/DB. C4 mapeado ao teste existente de expiração focada. Relatório output/inbox-350-qa/revisao-r1-c3-c4.md qualifica visual histórico e preserva gates C1anexos/B1C2integração420→427→430 pendentes. Sem marcar issue concluída.
+
+### Inbox #350 / PR430 — revisão R3 C5/C6
+
+C5: duas cópias públicas sanitizadas somente no caminho do executável; hashes originais privados e hashes de publicação separados no índice. C6: limite da janela de mensagens mantido após verificar o filtro de notas anterior à intercalação; não ampliar janela por notas ainda não visíveis. ROOT regressão três arquivos completos/65 testes EXIT0 terminal7a1c3c, heap512/w1/sem filtros ou skips. Primeiro7b542b falhou antes dos testes por EPERM cache; repetição autorizada0. Índice original continha hashes LF; validador inicial2d75bf encontrou checkout CRLF, sem falha de runtime; comparação aos seis objetos Git originais e curadoria de duas cópias6b0a34 EXIT0, sem normalizar os demais arquivos. Relatório output/inbox-350-qa/revisao-r3-c5-c6.md. Nenhum runtime/DB/visual alterado; anexos e composição420→427→430 ainda pendentes, issue aberta.

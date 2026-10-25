@@ -440,10 +440,13 @@ export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: 
   return botoes;
 }
 
+// Duas variantes semânticas fechadas; desconhecidas continuam recusadas.
+const varianteDePerigo = (v: string) => v === "perigo" || v === "perigoContorno";
+
 /** Nomes dos botões do design system com rótulo destrutivo sem `perigo` entre as variantes possíveis. */
 export function destrutivosSemPerigo(fonte: string): string[] {
   // Rótulo resolvido (constante, template, caixa, símbolo inicial) — não só o texto literal do nome.
-  return variantesDosBotoes(fonte).filter((b) => (rotuloDestrutivo(b.rotulo) || b.fragmentos.some(fragmentoDestrutivo)) && !b.variantes.includes("perigo")).map((b) => b.rotulo);
+  return variantesDosBotoes(fonte).filter((b) => (rotuloDestrutivo(b.rotulo) || b.fragmentos.some(fragmentoDestrutivo)) && !b.variantes.some(varianteDePerigo)).map((b) => b.rotulo);
 }
 
 /**
@@ -499,13 +502,13 @@ export function ramosDestrutivosDesalinhados(fonte: string): string[] {
               if (ts.isConditionalExpression(e)) return chave(e.condition)[0] === cv ? [] : [...fora(e.whenTrue), ...fora(e.whenFalse)];
               return [];
             };
-            if (cr !== cv && [vSim, vNao].includes("perigo") && [...fora(m.whenTrue), ...fora(m.whenFalse)].some((t) => rotuloDestrutivo(t))) {
+            if (cr !== cv && [vSim, vNao].some(varianteDePerigo) && [...fora(m.whenTrue), ...fora(m.whenFalse)].some((t) => rotuloDestrutivo(t))) {
               desalinhados.push(`condições diferentes: variante por ${cv} × rótulo por ${cr}`);
             }
             if (cr === cv) {
               const [rSim, rNao] = negR ? [m.whenFalse, m.whenTrue] : [m.whenTrue, m.whenFalse];
               for (const [ramo, v] of [[rSim, vSim], [rNao, vNao]] as const) {
-                for (const t of textos(ramo)) if (rotuloDestrutivo(t) && v !== "perigo") desalinhados.push(`${t} → ${v}`);
+                for (const t of textos(ramo)) if (rotuloDestrutivo(t) && !varianteDePerigo(v)) desalinhados.push(`${t} → ${v}`);
               }
             }
           }
@@ -894,7 +897,7 @@ export function tabelasDeBotaoSemPerigo(fonte: string): string[] {
         const textos = rotulo === "opaco" ? null : alternativasDeTexto(rotulo);
         if (textos === null || !textos.every(comecoConhecido)) {
           if (variante !== "opaco") achados.push(`(rótulo não resolvível) → ${variantes.join("|")}`);
-        } else if (textos.some(fragmentoDestrutivo) && !variantes.every((v) => v === "perigo")) achados.push(`${textos.map(legivel).join(" · ")} → ${variantes.join("|")}`);
+        } else if (textos.some(fragmentoDestrutivo) && !variantes.every(varianteDePerigo)) achados.push(`${textos.map(legivel).join(" · ")} → ${variantes.join("|")}`);
       }
     }
     ts.forEachChild(n, visita);
@@ -1780,6 +1783,7 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 // usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
+  { arquivo: "src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx", nome: "(sem nome)", vezes: 2, motivo: "visualSugestao é projeção pura tipada: aprovar usa Aprovar e enviar/Agendar/Aprovar; recusar usa Rejeitar/Ignorar. Âncora AST exige exatamente estes dois filhos v.rotuloAprovar/v.rotuloRejeitar e origem da projeção" },
   { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", nome: "key t.id", vezes: 1, motivo: "sugestão de tag: o texto do botão é t.nome, nome legível do DTO autorizado, escapado pelo React; a key é somente a identidade do vínculo" },
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
   { arquivo: "src/app/(app)/aria/_componentes/Abas.tsx", nome: "(sem nome)", vezes: 1, motivo: "link de aba da Aria: o rótulo vem de ROTULO_ABA (Visão geral, Comportamento, Permissões…) a cada item do mapa" },
@@ -2137,4 +2141,40 @@ describe("R1 da #148: rótulo lido como na tela, desestruturação opaca e lista
     // Vizinhos que não destroem.
     for (const r of ["Confirmar divergência material", "Confirmar", "Efetivar matrícula"]) expect(fragmentoDestrutivo(r), r).toBe(false);
   });
+});
+
+// #350: segunda apresentação de perigo, conjunto fechado, nunca dispensa os ramos/folhas.
+describe("perigoContorno tem a mesma semântica destrutiva fechada",()=>{
+ it("botão simples aceita apenas as duas variantes de perigo",()=>{expect(destrutivosSemPerigo('<Botao variante="perigoContorno">Rejeitar</Botao>')).toEqual([]);for(const v of ["secundario","fantasma","perigoContornoInventado"]){expect(destrutivosSemPerigo('<Botao variante="'+v+'">Rejeitar</Botao>')).toEqual(["Rejeitar"]);}});
+ it("ramo destrutivo alinhado aceita contorno; invertido continua falhando",()=>{const b=(v:string)=>'<Botao variante={'+v+'}>{ativo ? "Rejeitar" : "Ativar"}</Botao>';expect(ramosDestrutivosDesalinhados(b('ativo ? "perigoContorno" : "fantasma"'))).toEqual([]);expect(ramosDestrutivosDesalinhados(b('ativo ? "fantasma" : "perigoContorno"'))).toEqual(["Rejeitar → fantasma"]);});
+ it("condição distinta continua conservadora também com contorno",()=>{expect(ramosDestrutivosDesalinhados('<Botao variante={ativo ? "perigoContorno" : "fantasma"}>{ocupado ? "Rejeitando…" : "Rejeitar"}</Botao>')).toEqual(["condições diferentes: variante por ativo × rótulo por ocupado"]);});
+ it("tabela exige perigo em TODAS alternativas e recusa opaco",()=>{expect(tabelasDeBotaoSemPerigo('const a={rotulo:"Rejeitar",variante:cond ? "perigo" : "perigoContorno"}')).toEqual([]);expect(tabelasDeBotaoSemPerigo('const a={rotulo:"Rejeitar",variante:cond ? "perigoContorno" : "secundario"}')).toHaveLength(1);expect(tabelasDeBotaoSemPerigo('const a={rotulo:"Rejeitar",variante:"perigoContorno",...opaco}')).toHaveLength(1);});
+});
+
+/** Âncora específica da entrada dinâmica350; não muda o resolvedor genérico de rótulos. */
+function ancoraRotulosCartao350(fonte:string):boolean {
+ const sf=ts.createSourceFile("cartao.tsx",fonte,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ const botoes:ts.JsxElement[]=[],declaracoes:ts.VariableDeclaration[]=[];let importou=false,mutou=false;
+ const visitar=(n:ts.Node)=>{
+  if(ts.isImportDeclaration(n)&&ts.isStringLiteral(n.moduleSpecifier)&&n.moduleSpecifier.text==="./sugestao-visual"){
+   const b=n.importClause?.namedBindings;importou=!!b&&ts.isNamedImports(b)&&b.elements.some(e=>e.name.text==="visualSugestao"&&!e.propertyName);
+  }
+  if(ts.isVariableDeclaration(n)&&ts.isIdentifier(n.name)&&n.name.text==="v")declaracoes.push(n);
+  if(ts.isBinaryExpression(n)&&n.operatorToken.kind>=ts.SyntaxKind.FirstAssignment&&n.operatorToken.kind<=ts.SyntaxKind.LastAssignment&&/^v(?:\.|$)/.test(n.left.getText(sf)))mutou=true;
+  if(ts.isJsxElement(n)&&n.openingElement.tagName.getText(sf)==="Botao")botoes.push(n);
+  ts.forEachChild(n,visitar);
+ };visitar(sf);
+ const inicial=declaracoes[0]?.initializer;
+ if(!importou||mutou||declaracoes.length!==1||!inicial||!ts.isCallExpression(inicial)||inicial.expression.getText(sf)!=="visualSugestao"||botoes.length!==2)return false;
+ return botoes.every((b,i)=>{
+  const filhos=b.children.filter(c=>!ts.isJsxText(c)||!!c.getText(sf).trim());
+  const esperado=i===0?"v.rotuloAprovar":"v.rotuloRejeitar";
+  const variante=b.openingElement.attributes.properties.find(a=>ts.isJsxAttribute(a)&&a.name.getText(sf)==="variante");
+  return filhos.length===1&&ts.isJsxExpression(filhos[0])&&filhos[0].expression?.getText(sf)===esperado
+   &&(i===0?!variante:!!variante&&ts.isJsxAttribute(variante)&&variante.initializer?.getText(sf)==='"perigoContorno"');
+ });
+}
+it("entrada dinâmica350 está ancorada nos dois filhos exatos da projeção real",()=>{
+ const fonte=readFileSync("src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx","utf8");expect(ancoraRotulosCartao350(fonte)).toBe(true);
+ for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
 });
