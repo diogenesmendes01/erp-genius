@@ -2169,16 +2169,26 @@ function ancoraRotulosCartao350(fonte:string):boolean {
   ts.forEachChild(n,visitar);
  };visitar(sf);
  const inicial=declaracoes[0]?.initializer;
- if(!importou||mutou||declaracoes.length!==1||!inicial||!ts.isCallExpression(inicial)||inicial.expression.getText(sf)!=="visualSugestao"||botoes.length!==2)return false;
+ if(!importou||mutou||declaracoes.length!==1||!inicial||!ts.isCallExpression(inicial)||inicial.expression.getText(sf)!=="visualSugestao"||botoes.length!==3)return false;
  return botoes.every((b,i)=>{
   const filhos=b.children.filter(c=>!ts.isJsxText(c)||!!c.getText(sf).trim());
   const esperado=i===0?"v.rotuloAprovar":"v.rotuloRejeitar";
   const variante=b.openingElement.attributes.properties.find(a=>ts.isJsxAttribute(a)&&a.name.getText(sf)==="variante");
+  if(i===2)return filhos.length===1&&ts.isJsxText(filhos[0])&&filhos[0].getText(sf).trim()==="Desfazer"&&!!variante&&ts.isJsxAttribute(variante)&&variante.initializer?.getText(sf)==='"neutro"';
   return filhos.length===1&&ts.isJsxExpression(filhos[0])&&filhos[0].expression?.getText(sf)===esperado
    &&(i===0?!variante:!!variante&&ts.isJsxAttribute(variante)&&variante.initializer?.getText(sf)==='"perigoContorno"');
  });
 }
-it("entrada dinâmica350 está ancorada nos dois filhos exatos da projeção real",()=>{
+it("entrada dinâmica350 preserva dois filhos exatos e terceiro Desfazer354 literal",()=>{
  const fonte=readFileSync("src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx","utf8");expect(ancoraRotulosCartao350(fonte)).toBe(true);
- for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
+ for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"'),fonte.replace('>Desfazer</Botao>','>{""}</Botao>'),fonte.replace('variante="neutro"','variante="secundario"'),fonte.replace('variante="neutro"','variante="contorno"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
+});
+
+it("359 mapa exato do interruptor não admite nome vazio, variante errada ou quarto botão", () => {
+  const fonte = readFileSync("src/app/(app)/inbox/aria/InterruptorAria.tsx", "utf8");
+  const esperado = MAPA_BOTOES["inbox/aria/InterruptorAria.tsx"];
+  expect(esperado).toHaveLength(3); expect(mapaDeBotoes(fonte)).toEqual(esperado);
+  for (const mutante of [fonte.replace('>Aria ativa</span>', '></span>').replace('aria-label="Aria ativa"', ''), fonte.replace('variante="iaFantasma"', 'variante="primario"'), fonte + '<Botao>Extra</Botao>']) {
+    expect(mapaDeBotoes(mutante)).not.toEqual(esperado);
+  }
 });

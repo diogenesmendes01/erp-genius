@@ -2,7 +2,7 @@ import { EtapaLead, type AcaoAgenteIATipo, type Prisma } from "@prisma/client";
 import type { UsuarioSessao } from "../_shared";
 import { sugestaoVigente } from "../inbox/estado-aria";
 import type { Db } from "../whatsapp/escopo";
-import { leadsDecidiveis } from "./escopo-decisao";
+import { acoesDecidiveisNoInbox, type ContextoResponsavelAria } from "./escopo-decisao-inbox";
 import { capacidadesAria } from "./permissoes-tela";
 
 export type DetalheSugestao =
@@ -17,7 +17,7 @@ export type DetalheSugestao =
   | { tipo: "condicao"; descontoPct: number; parcelas: number }
   | { tipo: "outro" };
 
-type StatusCartao = "SUGERIDA" | "APROVADA" | "REJEITADA" | "EXPIRADA";
+type StatusCartao = "SUGERIDA" | "APROVADA" | "REJEITADA" | "EXPIRADA" | "EXECUTADA" | "DESFEITA";
 export interface SugestaoAriaThread {
   id: string;
   turnoId: string;
@@ -31,6 +31,11 @@ export interface SugestaoAriaThread {
   decididaPorId: string | null;
   decididaPorNome: string | null;
   decididaEm: string | null;
+  podeDecidir?: boolean;
+  podeDesfazer?: boolean;
+  desfeitaPorId?: string | null;
+  desfeitaPorNome?: string | null;
+  desfeitaEm?: string | null;
 }
 
 const objeto = (p: unknown): Record<string, unknown> | null => p !== null && typeof p === "object" && !Array.isArray(p) ? p as Record<string, unknown> : null;
@@ -78,16 +83,16 @@ export function detalheDaSugestao(acao: AcaoAgenteIATipo, payload: unknown): Det
   return { tipo: "outro" };
 }
 
-const statusCartao = (s: string): s is StatusCartao => s === "SUGERIDA" || s === "APROVADA" || s === "REJEITADA" || s === "EXPIRADA";
+const statusCartao = (s: string): s is StatusCartao => s === "SUGERIDA" || s === "APROVADA" || s === "REJEITADA" || s === "EXPIRADA" || s === "EXECUTADA" || s === "DESFEITA";
 
 /** Primeiros 20 autorizados, ASC criadoEm/id; keyset sem limite artificial de candidatos. */
-export async function cartoesDaThread(db: Db, usuario: UsuarioSessao, atendimento: { id: string; leadId: string | null }, agora: Date): Promise<SugestaoAriaThread[]> {
-  if (!capacidadesAria(usuario).has("decidirHistorico")) return [];
+export async function cartoesDaThread(db: Db, usuario: UsuarioSessao, atendimento: ContextoResponsavelAria, agora: Date): Promise<SugestaoAriaThread[]> {
+  if (!capacidadesAria(usuario).has("decidirHistorico") && !(usuario.papeis.includes("VENDEDOR") && atendimento.finalidade === "COMERCIAL" && atendimento.responsavelId === usuario.id)) return [];
   const where: Prisma.AcaoAgenteIAWhereInput = {
     atendimentoId: atendimento.id,
-    OR: [sugestaoVigente(agora), { status: { in: ["APROVADA", "REJEITADA", "EXPIRADA"] }, decididaEm: { gte: new Date(agora.getTime() - 86_400_000) } }],
+    OR: [sugestaoVigente(agora), { status: { in: ["APROVADA", "REJEITADA", "EXPIRADA"] }, decididaEm: { gte: new Date(agora.getTime() - 86_400_000) } }, { status: "EXECUTADA", reversivel: true, criadoEm: { gte: new Date(agora.getTime() - 86_400_000) } }, { status: "DESFEITA", desfeitaEm: { gte: new Date(agora.getTime() - 86_400_000) } }],
   };
-  const select = { id: true, turnoId: true, acao: true, status: true, criadoEm: true, expiraEm: true, justificativa: true, payload: true, oportunidadeId: true, decididaPorId: true, decididaEm: true } as const;
+  const select = { id: true, turnoId: true, acao: true, status: true, criadoEm: true, expiraEm: true, justificativa: true, payload: true, oportunidadeId: true, decididaPorId: true, decididaEm: true, reversivel: true, desfeitaPorId: true, desfeitaEm: true } as const;
   type Linha = Prisma.AcaoAgenteIAGetPayload<{ select: typeof select }>;
   const autorizadas: Linha[] = [];
   let cursor: { id: string; criadoEm: Date } | null = null;
@@ -96,19 +101,19 @@ export async function cartoesDaThread(db: Db, usuario: UsuarioSessao, atendiment
       where: cursor ? { AND: [where, { OR: [{ criadoEm: { gt: cursor.criadoEm } }, { criadoEm: cursor.criadoEm, id: { gt: cursor.id } }] }] } : where,
       orderBy: [{ criadoEm: "asc" }, { id: "asc" }], take: 100, select,
     });
-    const permitidas = await leadsDecidiveis(db, usuario, pagina.map(s => s.oportunidadeId ?? atendimento.leadId));
+    const permitidas = await acoesDecidiveisNoInbox(db, usuario, atendimento, pagina.map(s => ({ ...s, atendimentoId: atendimento.id })));
     for (const s of pagina) {
-      if (permitidas.has(s.oportunidadeId ?? atendimento.leadId)) autorizadas.push(s);
+      if (permitidas.has(s.id)) autorizadas.push(s);
       if (autorizadas.length === 20) break;
     }
     if (autorizadas.length === 20 || pagina.length < 100) break;
     cursor = pagina[pagina.length - 1];
   }
-  const ids = [...new Set(autorizadas.flatMap(s => s.decididaPorId ? [s.decididaPorId] : []))];
+  const ids = [...new Set(autorizadas.flatMap(s => [s.decididaPorId,s.desfeitaPorId].filter((id): id is string => !!id)))];
   const nomes = new Map(ids.length ? (await db.usuario.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true } })).map(u => [u.id, u.nome]) : []);
   return autorizadas.flatMap(s => {
     if (!statusCartao(s.status)) return [];
     const p = objeto(s.payload);
-    return [{ id: s.id, turnoId: s.turnoId, acao: s.acao, status: s.status, criadoEm: s.criadoEm.toISOString(), expiraEm: s.expiraEm?.toISOString() ?? null, justificativa: s.justificativa, texto: typeof p?.texto === "string" ? p.texto : null, detalhe: detalheDaSugestao(s.acao, s.payload), decididaPorId: s.decididaPorId, decididaPorNome: s.decididaPorId ? nomes.get(s.decididaPorId) ?? null : null, decididaEm: s.decididaEm?.toISOString() ?? null }];
+    return [{ id: s.id, turnoId: s.turnoId, acao: s.acao, status: s.status, criadoEm: s.criadoEm.toISOString(), expiraEm: s.expiraEm?.toISOString() ?? null, justificativa: s.justificativa, texto: typeof p?.texto === "string" ? p.texto : null, detalhe: detalheDaSugestao(s.acao, s.payload), decididaPorId: s.decididaPorId, decididaPorNome: s.decididaPorId ? nomes.get(s.decididaPorId) ?? null : null, decididaEm: s.decididaEm?.toISOString() ?? null, podeDecidir: s.status === "SUGERIDA", podeDesfazer: s.reversivel && (s.status === "APROVADA" || s.status === "EXECUTADA"), desfeitaPorId: s.desfeitaPorId, desfeitaPorNome: s.desfeitaPorId ? nomes.get(s.desfeitaPorId) ?? null : null, desfeitaEm: s.desfeitaEm?.toISOString() ?? null }];
   });
 }

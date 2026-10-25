@@ -5,6 +5,8 @@ import {expect,it} from "vitest";
 import type {SituacaoAriaInbox} from "@/server/inbox/contagens";
 import {FaixaAriaAtiva} from "./FaixaAriaAtiva";
 import {BASE_BOTAO} from "@/components/Botao";
+import { elementos } from "@/test/tela-sem-dom";
+import { InterruptorAria } from "./InterruptorAria";
 const montar=(s:Partial<SituacaoAriaInbox>={},contagens={ia:3,aprovacao:1,handoff:1})=>renderToStaticMarkup(createElement(FaixaAriaAtiva,{situacao:{estado:"ATIVA",pausada:false,podeGerenciar:false,...s},contagens}));
 const texto=(s:string)=>s.replace(/<[^>]*>/g,"");
 it("ativa_com_contagens",()=>{const h=montar();expect(texto(h)).toContain("Aria ativa3 em atendimento · 2 aguardando você");expect(h.match(/class="font-mono tabular-nums"/g)).toHaveLength(2);expect(h).toContain('role="status"');});
@@ -12,7 +14,7 @@ it("zero é contado e handoff sozinho compõe aguardando você",()=>{expect(text
 it("pausada_e_shadow · pausa",()=>{const h=texto(montar({pausada:true}));expect(h).toContain("Aria pausadaPausada · novas conversas vão para a equipe");expect(h).not.toContain("em atendimento");});
 it.each([false,true])("pausada_e_shadow · shadow com pausada=%s",pausada=>{const h=texto(montar({estado:"SHADOW",pausada}));expect(h).toContain("Aria em ensaioSimula respostas sem falar com os contatos");expect(h).not.toContain("em atendimento");});
 it.each([false,true])("desligada_nao_renderiza · pausada=%s",pausada=>expect(montar({estado:"DESLIGADA",pausada,podeGerenciar:true})).toBe(""));
-it("sem_interruptor_no_padrao_d4",()=>{for(const estado of ["ATIVA","SHADOW","DESLIGADA"] as const){const h=montar({estado,podeGerenciar:true});expect(h).not.toContain('role="switch"');expect(h).not.toMatch(/<button|<input|aria-checked|onClick|\/api\//);}});
+it("D4 interruptor só para quem pode pausar, com estado global atual",()=>{for(const estado of ["ATIVA","SHADOW"] as const){expect(montar({estado,podeGerenciar:true})).toContain('role="switch"');expect(montar({estado,podeGerenciar:false})).not.toContain('role="switch"');expect(montar({estado,podeGerenciar:true,pausada:true})).toContain('aria-checked="false"');}expect(montar({estado:"DESLIGADA",podeGerenciar:true})).toBe("");});
 it("gerenciar_so_para_quem_pode_pausar",()=>{expect(montar({podeGerenciar:true})).toMatch(/<a[^>]*href="\/aria"[^>]*>Gerenciar<\/a>/);expect(montar({podeGerenciar:false})).not.toContain('href="/aria"');});
 it("Gerenciar mantém aparência AI no botão canônico sem redefinir sua superfície",()=>{const h=montar({podeGerenciar:true});const link=h.match(/<a[^>]*>Gerenciar<\/a>/)?.[0];expect(link).toContain(BASE_BOTAO);expect(link).toContain("text-ai-700 hover:bg-highlight");expect(link).toContain("px-3 py-1 text-xs");});
 it("usa tokens e dimensões originais com corpo flexível e ícone decorativo",()=>{const h=montar({podeGerenciar:true});for(const c of ["mx-[18px]","mb-3","rounded-[10px]","bg-ai-50","h-7","w-7","rounded-lg","bg-ai-solid","text-[13px]","font-semibold","text-xs","text-gray-600","min-w-0","text-ai-700"])expect(h).toContain(c);expect(h).toContain('aria-hidden="true"');});
@@ -30,4 +32,16 @@ it("Gerenciar usa NextLink real sem prefetch para preservar navegação e não a
 });
 it.each([{estado:"ATIVA" as const,pausada:false},{estado:"ATIVA" as const,pausada:true},{estado:"SHADOW" as const,pausada:false}])("R2 faixa é região nomeada, com somente título vivo: %j",situacao=>{
  const h=montar(situacao);expect(h).toMatch(/^<div role="region" aria-label="Situação da Aria"/);expect(h.match(/role="region"/g)).toHaveLength(1);expect(h.match(/role="status"/g)).toHaveLength(1);
+});
+it("agrupa somente os controles autorizados sem incluir o título vivo",()=>{
+ const tree=FaixaAriaAtiva({situacao:{estado:"ATIVA",pausada:false,podeGerenciar:true},contagens:{ia:1,aprovacao:1,handoff:1}});
+ const grupo=elementos(tree).find(n=>n.props.role==="group"&&n.props["aria-label"]==="Ações da Aria");
+ expect(grupo).toBeDefined();
+ if(!isValidElement<{children:ReactNode}>(grupo))throw Error("Grupo de ações ausente");
+ const controles=elementos(grupo.props.children);
+ expect(controles.filter(n=>n.type===InterruptorAria)).toHaveLength(1);
+ expect(controles.filter(n=>n.type===Link&&n.props.href==="/aria")).toHaveLength(1);
+ expect(controles.some(n=>n.props.role==="status")).toBe(false);
+ const semPermissao=FaixaAriaAtiva({situacao:{estado:"ATIVA",pausada:false,podeGerenciar:false},contagens:{ia:1,aprovacao:1,handoff:1}});
+ expect(elementos(semPermissao).some(n=>n.props.role==="group")).toBe(false);
 });

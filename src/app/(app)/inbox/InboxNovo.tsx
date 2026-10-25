@@ -560,7 +560,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
         <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo} sino={sino}
-          faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} /> : undefined}
+          faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} aoMudar={recarregarLista} /> : undefined}
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}

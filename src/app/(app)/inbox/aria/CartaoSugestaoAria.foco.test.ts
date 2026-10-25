@@ -12,7 +12,7 @@ const acoes = vi.hoisted(() => ({
   aprovar: vi.fn<() => Promise<Resultado>>(),
   rejeitar: vi.fn<() => Promise<Resultado>>(),
 }));
-vi.mock("@/server/aria/acoes", () => ({ aprovarAcaoAria: acoes.aprovar, rejeitarAcaoAria: acoes.rejeitar }));
+vi.mock("@/server/aria/acoes", () => ({ aprovarSugestaoNoInbox: acoes.aprovar, rejeitarSugestaoNoInbox: acoes.rejeitar }));
 // Apenas glifos: o DOM mínimo compartilhado não implementa namespace SVG.
 vi.mock("@tabler/icons-react", async () => {
   const { createElement: el } = await import("react");
@@ -98,13 +98,13 @@ describe("350: retorno autoritativo do pai no mesmo ID", () => {
       const [s, setS] = useState(() => sugestao("a"));
       const receberPainel = () => setS(ant => ({ ...ant, status, decididaPorId: "u", decididaPorNome: "Usuário fictício", decididaEm: "2026-10-23T13:50:00Z" }));
       emitirStatus = receberPainel;
-      return createElement(Cartao, { s, usuarioId: "u", fuso: "UTC", aoDecidir() { callback(s.id); receberPainel(); } });
+      return createElement(Cartao, { atendimentoId:"thread", s, usuarioId: "u", fuso: "UTC", aoDecidir() { callback(s.id); receberPainel(); } });
     }
     await act(async () => root.render(createElement(Pai)));
     const card = host.querySelector("article")!, liveAntes = new Set(regioes());
     const alvo = botao(status === "APROVADA" ? "Aprovar e enviar" : "Rejeitar");
     alvo.focus(); expect(doc.activeElement).toBe(alvo); expect(alvo.isConnected).toBe(true);
-    await clicar(alvo); expect(executar).toHaveBeenCalledExactlyOnceWith("a");
+    await clicar(alvo); expect(executar).toHaveBeenCalledExactlyOnceWith("thread","a");
     expect(callback).not.toHaveBeenCalled();
     if (via === "SSE antes do ACK") {
       await act(async () => emitirStatus());
@@ -119,7 +119,7 @@ describe("350: retorno autoritativo do pai no mesmo ID", () => {
 
 it("controle: erro mantém decisão pendente, alert real e foco conectado no contexto", async () => {
   const fim = deferred<Resultado>(); acoes.aprovar.mockReturnValue(fim.promise);
-  await act(async () => root.render(createElement(Cartao, { s: sugestao(), usuarioId: "u", fuso: "UTC", aoDecidir: callback })));
+  await act(async () => root.render(createElement(Cartao, { atendimentoId:"thread", s: sugestao(), usuarioId: "u", fuso: "UTC", aoDecidir: callback })));
   const alvo = botao("Aprovar e enviar"), card = host.querySelector("article")!;
   alvo.focus(); await clicar(alvo);
   await act(async () => fim.resolve({ ok: false, erro: "Esta sugestão expirou." }));
@@ -137,7 +137,7 @@ it("controle: ACK antigo desmontado não chama callback nem rouba foco do cartã
   let selecionar!: (id: string) => void;
   function Pai() {
     const [s, setS] = useState(() => sugestao("a")); selecionar = id => setS(sugestao(id));
-    return createElement(Cartao, { s, usuarioId: "u", fuso: "UTC", aoDecidir() { callback(s.id); } });
+    return createElement(Cartao, { atendimentoId:"thread", s, usuarioId: "u", fuso: "UTC", aoDecidir() { callback(s.id); } });
   }
   await act(async () => root.render(createElement(Pai)));
   const antigo = botao("Aprovar e enviar"); antigo.focus(); await clicar(antigo);
@@ -149,16 +149,16 @@ it("controle: ACK antigo desmontado não chama callback nem rouba foco do cartã
 });
 // DEV: controles adicionais sem substituir os quatro oráculos causais independentes acima.
 it.each(["APROVADA","REJEITADA"] as const)("SSE %s sem nossa ação/ACK também restaura foco e anuncia",async status=>{
- let emitir!:()=>void;function Pai(){const [s,setS]=useState(()=>sugestao());emitir=()=>setS(a=>({...a,status,decididaEm:"2026-10-23T13:50Z",decididaPorId:"u"}));return createElement(Cartao,{s,usuarioId:"u",fuso:"UTC",aoDecidir:callback});}
+ let emitir!:()=>void;function Pai(){const [s,setS]=useState(()=>sugestao());emitir=()=>setS(a=>({...a,status,decididaEm:"2026-10-23T13:50Z",decididaPorId:"u"}));return createElement(Cartao,{atendimentoId:"thread",s,usuarioId:"u",fuso:"UTC",aoDecidir:callback});}
  await act(async()=>root.render(createElement(Pai)));const card=host.querySelector("article")!,antes=new Set(regioes());botao("Aprovar e enviar").focus();await act(async()=>emitir());conferir(card,status,antes,"SSE remoto sem ACK");expect(acoes.aprovar).not.toHaveBeenCalled();expect(acoes.rejeitar).not.toHaveBeenCalled();expect(callback).not.toHaveBeenCalled();
 });
 it.each(["ACK","SSE"] as const)("%s respeita foco externo movido durante espera",async via=>{
  const fim=deferred<Resultado>();acoes.aprovar.mockReturnValue(fim.promise);let emitir!:()=>void;
- function Pai(){const [s,setS]=useState(()=>sugestao());emitir=()=>setS(a=>({...a,status:"APROVADA",decididaEm:"2026-10-23T13:50Z",decididaPorId:"u"}));return createElement(Cartao,{s,usuarioId:"u",fuso:"UTC",aoDecidir(){callback();emitir();}});}
+ function Pai(){const [s,setS]=useState(()=>sugestao());emitir=()=>setS(a=>({...a,status:"APROVADA",decididaEm:"2026-10-23T13:50Z",decididaPorId:"u"}));return createElement(Cartao,{atendimentoId:"thread",s,usuarioId:"u",fuso:"UTC",aoDecidir(){callback();emitir();}});}
  await act(async()=>root.render(createElement(Pai)));const antes=new Set(regioes());botao("Aprovar e enviar").focus();if(via==="ACK")await clicar(botao("Aprovar e enviar"));const fora=doc.createElement("button");fora.textContent="Foco fora";doc.body.appendChild(fora);fora.focus();if(via==="ACK")await act(async()=>fim.resolve({ok:true}));else await act(async()=>emitir());expect(doc.activeElement).toBe(fora);expect(anuncioDecisao("APROVADA",antes)).toBe(true);
 });
 it("perda nativa de foco ao desabilitar antes do ACK não apaga a origem",async()=>{
  const fim=deferred<Resultado>();acoes.aprovar.mockReturnValue(fim.promise);
- function Pai(){const [s,setS]=useState(()=>sugestao());return createElement(Cartao,{s,usuarioId:"u",fuso:"UTC",aoDecidir(){setS(a=>({...a,status:"APROVADA",decididaPorId:"u",decididaEm:"2026-10-23T13:50Z"}));}});}
+ function Pai(){const [s,setS]=useState(()=>sugestao());return createElement(Cartao,{atendimentoId:"thread",s,usuarioId:"u",fuso:"UTC",aoDecidir(){setS(a=>({...a,status:"APROVADA",decididaPorId:"u",decididaEm:"2026-10-23T13:50Z"}));}});}
  await act(async()=>root.render(createElement(Pai)));const card=host.querySelector("article")!,antes=new Set(regioes()),alvo=botao("Aprovar e enviar");alvo.focus();await clicar(alvo);alvo.blur();expect(doc.activeElement).toBe(doc.body);await act(async()=>fim.resolve({ok:true}));conferir(card,"APROVADA",antes,"blur nativo após disabled");
 });
