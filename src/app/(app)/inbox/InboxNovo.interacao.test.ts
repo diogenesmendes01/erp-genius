@@ -1096,7 +1096,7 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
 
 async function abrirAba331(){
  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:true,tarefasEquipe:false,editarContato:true,verContato:true}})}));
- const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify(p.inicial)):url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
+ const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify(props.inicial)):url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
  tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as (id:string)=>void)("oportunidades");tela();await esvaziar();return elementos(tela()).find(n=>n.type===AbaOportunidades)!;
 }
 it("331: callbacks reais abrem modal no atendimento e troca de seleção encerra sessão",async()=>{

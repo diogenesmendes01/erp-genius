@@ -7357,6 +7357,18 @@ Fechamento técnico R4: TSC5530/ecb26a EXIT1 apontou só o novo teste passando N
 
 Smoke b437/z1iv de três tamanhos (8b42e0 EXIT0) corrigiu mobile, mas demonstrou nome/estado comprimidos em colunas de500px tablet e496px desktop. TESTER confirmou P2, parecer a7edd5abfc5c410724d4ebb35ed07c097fcc04e538e99e1217d28fb26bb8e5d2. Regra somente por viewport substituída por duas linhas até640px do wrapper local; altura mínima68/natural, Menu irmão fora do containment e alinhado à base das ações. Handlers/caps/API intactos. Focal conjunto a080c2 EXIT0,3arquivos41casos; gates anteriores997/8617/TSC/lint/build pertencem à b437. Preview próprio parado e PID/porta comprovados b1cd86 EXIT0; banco Root restaurado936c06 EXIT0 antes das edições. SPEC/QA atualizados. Gates da nova fonte, medição real e aceite visual continuam pendentes; sem merge/fechamento presumido.
 
+### Inbox #353 — fixture completa na revisão C3 (25/10/2026)
+
+Fixture de paineis-tags.test.ts agora usa DTO completo com satisfies AriaDoAtendimento, sem casts e preservando todas as asserções. Focal85cba9 EXIT0:1arquivo11testes completos,UTC/w1/1024 e sete providers vazios. Nenhum runtime/ACL/consulta/schema alterado; SQL não repetida. QA docs/qa/inbox-353-fixture-r5-root.md; TSC/global da composição final e aceite visual continuam gates separados.
+
+### Inbox #353 — escopo do backport da fixture
+
+Backport inicial incluiu mock de tarefas de330, ausente nesta base. Filha recompõe teste a partir02ca1895 comsomenteimport/DTOcompleto/usonomock, semtarefas. SourceRootcomposta permanece correta comsuasprópriasdependências. QAexata dafilha pendente; negativo deescopo preservado.
+
+### Inbox #353 — QA exata do backport corrigido
+
+QA independente na filha `d3733ff077330a664826d961633911d79f510421`: terminal `2576ca`, EXIT0, arquivo completo/11 testes, UTC/w1/1024, sem filtros ou novos skips. Parecer SHA256 `6aea653a698ed18bcc39207265a659baeb22b188fba695536b7c745510f283b1`; log SHA256 `629d1d8b5a728753feaca9f10b2cd0e1143b5fc28f655b6b0b6173d980999dc1`. TESTER confirmou runtime literal à base02ca, somente import/DTO completo/uso no mock e todas as assertivas preservadas. Nenhum mock de tarefas330; perfil/client/bundle preservados. Não houve SQL nem TSC nessa QA.
+
 ### Inbox #330 — tarefas da oportunidade (DEV A, em implementação)
 
 Branch `codex/inbox-e2-330-tarefas` desde329 `26c4da69f4785ea57d4393a4069a871fa2597915`; candidata congelada no commit que contém este checkpoint, sem homologação. SPEC: `docs/specs/inbox-tarefas-oportunidade.md`. Consulta com escopo∩pertença OR, quatro núcleos TX CRM públicos preservados, wrapper Config→Atendimento→Tarefa, fuso escolar esperado e instante preservado, lista/ações e cancelamento em ConfirmarAcao único. Extensão compartilhada podeConfirmar defaulttrue coordenada e aprovada Root; não toca Modal da frente B. #331 criação/edição e #338 extensões permanecem reservadas.
@@ -7393,6 +7405,15 @@ O gate global original em `d2719c18` encontrou uma falha real na guarda de anún
 O texto abaixo pertence ao checkpoint de setembro, substituído pelo checkpoint datado do Inbox no início deste documento. Não representa a contagem atual da campanha.
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
+
+### Inbox #439 — C3, apresentação do ModalTarefa (25/10/2026)
+
+DEV A em branch isolada sobre a publicação bbdd7549782ff4263550dbe27278a09cba354082. Produção restrita a ModalTarefa.tsx: cinco ícones Tabler genéricos decorativos nos tipos, bloco Responsável inteiro por podeAtribuirResponsavel (sem fallback readonly ou predicado por lista) e rótulos locais de lembrete conforme issue. Seleção, valores null/0/10/30/60, estado, payload, defaults e CAS preservados; sem novos campos D10, label global, CRM/backend, mapa de exceção, parser, config ou dependência.
+
+RED 6d75f9 EXIT 1, 8 falhas/22 controles → GREEN 9cebb0 EXIT 0, 30 testes do modal. Final 85552/61c458 EXIT 0: 17 arquivos completos/662 testes, 92,39 s, original/UTC/w1/heap1024, sem filtros por nome/skips. Lint e433a8 EXIT 0, 2 arquivos/zero avisos. UI real com harness e SSR do carregamento, ícones/seleção, capacidade versus lista, responsável oculto preservado na edição e valores de todos os lembretes. SPEC inbox-modal-tarefa.md e QA inbox-439-c3-modal-tarefa.md. Nenhuma SQL/TSC/build/push; backend literal à base, visual e gates originais/QA independente coordenados pelo ROOT. Refs #334/f347 e AGENTS histórico preservados; nenhuma alteração na revisão #438.
+### Integração R7 PR439
+
+346d8098: quatro exports fechados de ícones no mock de eventos, sem copiar testes futuros. Focal R7 aprovado; aceite visual e integração em main pendentes.
 
 ### Inbox #332 — tarefa no fio e entradas de tarefa/nota (25/10/2026)
 
@@ -7458,6 +7479,10 @@ Originais da b7a: TSC77053/bbd8d2 EXIT0; lint38801/31b02b EXIT0,0erros/98avisos;
 
 Captura tablet b437/z1iv mostrou título/resumo comprimidos pelo switch e Gerenciar; confirmado pelo TESTER no mesmo parecer R4.1. Ícone/texto passam à primeira linha e controles autorizados à segunda, em grupo acessível nomeado; feedback fora do Modal ocupa largura do grupo. Política/handlers/Modal/motivo/ACK permanecem literais. RED f262c4 EXIT1,16controles/1falha; GREEN conjunto a080c2 EXIT0,3arquivos41casos completos. QA docs/qa/inbox-359-faixa-responsiva-r4-root.md. TSC/global/lint/build desta fonte e aceite visual ainda pendentes; sem homologação/merge presumidos.
 
+### Integração R7 pr442
+
+495365c2: correção estrutural da faixa, validada no focal global R7. Aceite visual e integração em main continuam pendentes.
+
 ### Inbox #333 — Atividade com agendadas, recente e notas (25/10/2026)
 
 DEV A sobre eed1cce1 (PR #440), branch codex/inbox-e2-333-atividade. Nova aba em todas as finalidades, consulta autorizada antes dos dados, todas as origens de agendada elegível e política operacional compartilhada tarefas.ver + autor/Admin; IA somente Admin, sem mudar default HUMANO/equipe CRM. D11 vigente preservado: este recorte só lista/cancela, sem novo requisito Assumir para cancelar; criação/edição/enviar agora continuam fora. Recente conta conversas visíveis, tarefas próprias por direto OU lead e duas notas E0. Núcleo Inbox usa Atendimento FOR NO KEY UPDATE → Intencao com vínculo/shape no SQL, ator/ACL/pertença frescos, CAS, Evento + aviso atômicos e replay próprio marcado sem duplicação. Não desfaz AcaoAria.
@@ -7484,6 +7509,10 @@ Fixture de paineis-tags.test.ts agora usa DTO completo com satisfies AriaDoAtend
 ### Inbox #334 — composição R5 e tipos do leitor (25/10/2026)
 
 Composição05bb5a6d sobrePR443preservou23SRC literais63b0, conflito sóquadro comhistórico completo. QAindependente:SQL40986/862e18 EXIT0,4/83; UNIT75910/c2a900 EXIT0,26/701; oráculo03b0a0 EXIT0,14casos, recortes sobrepostos. TSC35cd60067/d32f5b EXIT2 sóTS7022 lote/ultimo; correção explicita AcaoAgenteIA[]/AcaoAgenteIA e LFfinal, semcast/query/regra. ReplayoriginalWIP72946/c02852 EXIT0, fontehashf9f68424e5fd626f9094a526dea80d283c3830b99a967b2847b6f11ec3879e1d preservada, configs intactas; nãoexecutadonoHEADanterior. SQLnão repetidaporanotaçãoapagável. QA docs/qa/inbox-334-integracao-r5-root.md; global/lint/build/visual/CI ainda pendentes.
+
+### Integração R7 issue334
+
+57822fc2: expectativa precisa de leitura do contador, sem concessão de envio, validada no focal global R7. Aceite visual e integração em main continuam pendentes.
 
 ### Inbox #357 — Assumir com pausa MANUAL e cancelamentos D3 (25/10/2026)
 
