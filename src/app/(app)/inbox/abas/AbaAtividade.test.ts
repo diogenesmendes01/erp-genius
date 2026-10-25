@@ -1,13 +1,20 @@
 import {createElement} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {expect,it,vi} from "vitest";
+vi.mock("@/server/aria/acoes",()=>({desfazerSugestaoNoInbox:vi.fn()}));
 vi.mock("@/server/inbox/acoes-painel",()=>({cancelarAgendadaNoInbox:vi.fn()}));
 import {AbaAtividade} from "./AbaAtividade";
 import type {AtividadePainel} from "@/server/inbox/painel-atividade";
-const dados:AtividadePainel={agendadas:[{id:"oculto333",texto:"Aviso fictício de aula",agendadaPara:"2026-10-27T12:00Z",autor:{tipo:"voce"},podeCancelar:true},{id:"aria333",texto:"Lembrete da Aria",agendadaPara:"2026-10-27T13:00Z",autor:{tipo:"aria"},podeCancelar:false}],recente:{ultimaInteracaoEm:"2026-10-25T12:00Z",conversas:3,tarefasAbertas:1,notas:[]}};
+const dados:AtividadePainel={aria:null,alteracoes:[],agendadas:[{id:"oculto333",texto:"Aviso fictício de aula",agendadaPara:"2026-10-27T12:00Z",autor:{tipo:"voce"},podeCancelar:true},{id:"aria333",texto:"Lembrete da Aria",agendadaPara:"2026-10-27T13:00Z",autor:{tipo:"aria"},podeCancelar:false}],recente:{ultimaInteracaoEm:"2026-10-25T12:00Z",conversas:3,tarefasAbertas:1,notas:[]}};
 const h=(d=dados)=>renderToStaticMarkup(createElement(AbaAtividade,{dados:d,atendimentoId:"a333",fuso:"America/Costa_Rica",fusoEscola:"America/Sao_Paulo",aoMudar:vi.fn()}));
 it("333 seções e contagens sem exigir envio/Assumir e sem controlesE4",()=>{const s=h();expect(s).toContain("Mensagens agendadas");expect(s).toContain("Atividade recente");expect(s).toContain("3 conversas");expect(s).toContain("1 tarefa(s) aberta(s)");for(const t of ["Reagendar","Enviar agora","Assumir"])expect(s).not.toContain(t);});
 it("333 seção agendadas ausente quando lista vazia; notas com vazio canônico",()=>{const s=h({...dados,agendadas:[]});expect(s).not.toContain("Mensagens agendadas");expect(s).toContain("Nenhuma nota interna ainda.");expect(s).toContain('data-estado-vazio=""');});
 it("333 cancelar só em item autorizado, autoria e fuso explícitos sem IDs visíveis",()=>{const s=h();expect(s.match(/aria-label="Cancelar mensagem agendada"/g)).toHaveLength(1);expect(s).toContain("Você");expect(s).toContain("Aria");expect(s).toContain("27/10/2026, 06:00");expect(s).not.toContain("oculto333");expect(s).not.toContain("aria333");});
 it("333 notas escapam texto e mostram autor/hora; interação ausente tem fallback",()=>{const s=h({...dados,recente:{...dados.recente,ultimaInteracaoEm:null,notas:[{id:"nota333",nota:"<script>falso</script>",autorNome:"Ana",criadoEm:"2026-10-25T12:00Z",origem:"atendimento"}]}});expect(s).toContain("&lt;script&gt;falso&lt;/script&gt;");expect(s).toContain("Ana");expect(s).toContain("Sem interação registrada");expect(s).not.toContain("Nenhuma nota interna ainda.");});
 it("333 controles usam medida canônica do BotaoIcone sem classe indefinida",()=>expect(h()).not.toContain("undefined"));
+
+it("334 módulos Aria aparecem apenas com DTO autorizado",()=>{
+ expect(h()).not.toContain("Alterações da Aria");
+ const s=h({...dados,aria:{ultimaAcao:null,faixa:{executaAPartirDe:80,transfereAbaixoDe:50},etapa:null,automatico:[],comAprovacao:[]}});
+ expect(s).toContain("Aria neste contato");expect(s).toContain("Alterações da Aria");expect(s).toContain("Aria ainda não alterou nada neste contato.");
+});

@@ -568,6 +568,21 @@ export const ACAO_AGENTE_IA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = 
   CLASSIFICAR_SETOR: "Classificar setor",
 });
 
+/** Frases de histórico da Atividade; preparar intenção não significa entrega externa. */
+export const ALTERACAO_ARIA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = Object.freeze({
+  RESPONDER: "Preparou uma resposta",
+  ENVIAR_DOCUMENTO: "Preparou o envio de documento",
+  ATUALIZAR_CAMPO: "Atualizar campo",
+  TAG: "Aplicar tag",
+  MOVER_ETAPA: "Mover de etapa",
+  MARCAR_PERDIDO: "Marcou como perdido",
+  CRIAR_TAREFA: "Criar tarefa",
+  AGENDAR_MENSAGEM: "Agendou uma mensagem",
+  NOTA_INTERNA: "Registrou uma nota interna",
+  CONDICAO_COMERCIAL: "Preparou uma condição comercial",
+  HANDOFF: "Pediu ajuda a uma pessoa",
+  CLASSIFICAR_SETOR: "Classificou o setor",
+});
 export const STATUS_ACAO_AGENTE_IA_LABEL: Readonly<Record<StatusAcaoAgenteIA, string>> = Object.freeze({
   SUGERIDA: "Sugerida",
   EXECUTADA: "Executada",

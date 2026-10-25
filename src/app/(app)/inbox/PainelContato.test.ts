@@ -47,3 +47,9 @@ it("slots324 substituem somente tags/aviso e undefined conserva fallback de leit
 it("lápis de edição é opcional e não duplica o fechar nem oferece ação sem contrato", () => {
  const h=p({aoEditar(){}});expect(h.match(/aria-label="Editar contato"/g)).toHaveLength(1);expect(h.match(/aria-label="Fechar painel do contato"/g)).toHaveLength(1);expect(h).toContain("max-sm:min-h-11");expect(h).toContain("max-sm:min-w-11");expect(p()).not.toContain("Editar contato");
 });
+
+it("334 badge aditivo recebe a contagem autorizada e esconde zero",()=>{
+ expect(abasDoPainel("COMERCIAL",{atividade:0}).find(a=>a.id==="atividade")).not.toHaveProperty("contagem");
+ expect(abasDoPainel("COMERCIAL",{atividade:29}).find(a=>a.id==="atividade")).toMatchObject({contagem:29});
+ expect(abasDoPainel("SECRETARIA",{atividade:0})).toEqual(abasDoPainel("SECRETARIA"));
+});
