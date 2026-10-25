@@ -7,7 +7,7 @@ vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMid
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => null }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
-import { InboxNovo, mesclarPrimeiraPagina, paramsDosFiltros } from "./InboxNovo";
+import { InboxNovo, mesclarPrimeiraPagina, paramsDosFiltros, avisoRecarregaPainel } from "./InboxNovo";
 import { lerFiltrosInbox, type FiltrosInbox } from "@/server/inbox/filtros";
 
 const item = (id: string, nome: string) => ({
@@ -161,3 +161,6 @@ it("E1 fora do comercial mantém WhatsApp recebido em mono", () => {
 it("319: sem seleção tem área central livre, ícone e nenhum painel de contato",()=>{
  const h=html();expect(h).toContain("Escolha uma conversa");expect(h).toContain("As mensagens aparecem aqui.");expect(h).toContain("text-[15px]");expect(h).toContain("text-[13px]");expect(h).toContain("items-center justify-center");expect(h).not.toContain('id="painel-contato"');
 });
+
+
+it("avisoRecarregaPainel distingue global/resync, selecionado e mensagem",()=>{const a=(tipo:import("@/server/inbox/barramento").AvisoInbox["tipo"],atendimentoId:string|null=null)=>({tipo,atendimentoId,mensagemId:null,conversaId:""});expect(avisoRecarregaPainel(a("aria.global"),"a1")).toBe(true);expect(avisoRecarregaPainel(a("resync"),null)).toBe(true);expect(avisoRecarregaPainel(a("atendimento.atualizado","a1"),"a1")).toBe(true);expect(avisoRecarregaPainel(a("atendimento.atualizado","a2"),"a1")).toBe(false);expect(avisoRecarregaPainel(a("mensagem.nova","a1"),"a1")).toBe(false);expect(avisoRecarregaPainel(a("mensagem.status","a1"),"a1")).toBe(false);});
