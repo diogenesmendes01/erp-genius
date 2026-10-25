@@ -1,0 +1,86 @@
+{
+  "fonte": "b292bf791e2a4762f892a68bba87a9de5f407b5f",
+  "run": 40140932662,
+  "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40140932662",
+  "status": "completed",
+  "conclusao": "failure",
+  "confirmacaoTerminal": "watch50907/41298d/EXIT1",
+  "shards": [
+    {
+      "shard": 1,
+      "job": 121012339293,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40140932662/job/121012339293",
+      "conclusao": "success",
+      "arquivosAprovados": 89,
+      "arquivosFalhos": 0,
+      "arquivosIgnorados": 0,
+      "testesAprovados": 718,
+      "testesFalhos": 0,
+      "testesIgnorados": 0,
+      "logSha256": "8d90e9140f5ea921c0bcdc7eca7929e84486a97c022d24b3e767cf6b8c5b7c60"
+    },
+    {
+      "shard": 2,
+      "job": 121012339220,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40140932662/job/121012339220",
+      "conclusao": "success",
+      "arquivosAprovados": 86,
+      "arquivosFalhos": 0,
+      "arquivosIgnorados": 2,
+      "testesAprovados": 789,
+      "testesFalhos": 0,
+      "testesIgnorados": 3,
+      "logSha256": "37a4603717c08b27d87f6860c77ad07bf027e660783876daaccd09d2a5b8c95b"
+    },
+    {
+      "shard": 3,
+      "job": 121012339248,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40140932662/job/121012339248",
+      "conclusao": "success",
+      "arquivosAprovados": 87,
+      "arquivosFalhos": 0,
+      "arquivosIgnorados": 1,
+      "testesAprovados": 877,
+      "testesFalhos": 0,
+      "testesIgnorados": 1,
+      "logSha256": "1c5457b7c17eec6dec84bed7b508ad1a14edcda030acefebf4258fd722c467fd"
+    },
+    {
+      "shard": 4,
+      "job": 121012339272,
+      "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40140932662/job/121012339272",
+      "conclusao": "failure",
+      "arquivosAprovados": 87,
+      "arquivosFalhos": 1,
+      "arquivosIgnorados": 0,
+      "testesAprovados": 733,
+      "testesFalhos": 2,
+      "testesIgnorados": 0,
+      "logSha256": "86ade38642d5ec9cda1f6ddd42c63d4e3bf3212a68cb3a4bc6e2ba2fd5f61e14"
+    }
+  ],
+  "totais": {
+    "arquivosAprovados": 349,
+    "arquivosFalhos": 1,
+    "arquivosIgnorados": 3,
+    "testesAprovados": 3117,
+    "testesFalhos": 2,
+    "testesIgnorados": 4
+  },
+  "falhas": {
+    "arquivo": "src/server/inbox/paineis.int.test.ts",
+    "casos": [
+      "secretaria: documentos pendentes da matrícula",
+      "professor no pedagógico vê turma e frequência; sem telefone"
+    ],
+    "causa": "Quatro literais completos antigos omitem podeDecidir:false e cartoes:[], campos obrigatórios adicionados349. Primeiras2 falhas impediam alcançar outras2 expectativas."
+  },
+  "correcao": {
+    "fonte": "1433790090ca35a784ed7c19c6843ccf8a876504",
+    "red": "86203/c0d741/EXIT1/11-13",
+    "green": "87482/a575d7/EXIT0/13-13/58.07s",
+    "lint": "4caa73/EXIT0",
+    "restauro": "cf2a26/EXIT0/424hashes",
+    "limite": "Correção apenas de quatro literais toEqual completos, sem mudar produção ou adicionar handoff351. Novo full composto ainda necessário; resultado nominal negativo preservado."
+  }
+}
