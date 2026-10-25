@@ -12,7 +12,7 @@ vi.mock("@/server/_shared/sessao", async original => {
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
-import { vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
+import { vincularLeadRetornoNoInbox } from "@/server/inbox/acoes-cliente-voltou";
 
 beforeEach(async () => { await truncarBanco(); sessao.usuarioId = ""; });
 afterEach(() => vi.restoreAllMocks());
@@ -36,7 +36,7 @@ const eventos = (contatoId: string) => prisma.evento.findMany({ where: { tipo: "
 // Correções após caracterização real: provas anteriores preservadas na SPEC/ledger.
 it("ACTION real institucional recusa sem Contato, novo atendimento ou Evento", async () => {
   const c = await cenario("AGENDA");
-  expect((await vincularContatoWhatsApp(c.input)).ok).toBe(false);
+  expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(false);
   expect((await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { id: c.contato.id } })).leadId).toBeNull();
   expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.selecionado.id } })).leadId).toBeNull();
   const outro = await prisma.atendimentoWhatsApp.findFirst({ where: { conversaId: c.conversa.id, leadId: c.lead.id } });
@@ -46,15 +46,15 @@ it("ACTION real institucional recusa sem Contato, novo atendimento ou Evento", a
 });
 it("controle ACTION real VENDAS mantém identidade selecionada", async () => {
   const c = await cenario("VENDAS");
-  expect((await vincularContatoWhatsApp(c.input)).ok).toBe(true);
+  expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
   expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.selecionado.id } })).leadId).toBe(c.lead.id);
   expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: c.conversa.id } })).toBe(1);
   expect(await eventos(c.contato.id)).toHaveLength(1);
 });
 it("repetição manual da ACTION real registra dois Eventos", async () => {
   const c = await cenario("VENDAS");
-  expect((await vincularContatoWhatsApp(c.input)).ok).toBe(true);
-  expect((await vincularContatoWhatsApp(c.input)).ok).toBe(true);
+  expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
+  expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
   expect(await eventos(c.contato.id)).toHaveLength(2);
 });
 /** Espera observável no Postgres: não basta esperar uma duração arbitrária. */
@@ -79,7 +79,7 @@ it("deriva do Contato durante espera SQL real é recusada sem sobrescrita", asyn
     entrou(p.pid); await liberar;
   }, {timeout:20000});
   const pid = await pronta;
-  const acao = vincularContatoWhatsApp(c.input);
+  const acao = vincularLeadRetornoNoInbox(c.input);
   try { await aguardarBloqueadoPor(pid); } finally { soltar(); await bloqueadora; }
   expect((await acao).ok).toBe(false);
   expect((await prisma.contatoWhatsApp.findUniqueOrThrow({where:{id:c.contato.id}})).leadId).toBe(outro.id);
