@@ -7385,8 +7385,58 @@ O texto abaixo pertence ao checkpoint de setembro, substituído pelo checkpoint 
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+<<<<<<< HEAD
 
 ## #348 — correção mobile R4 em validação — 25/10/2026
 ROOT identificou no build21f/hKc a compressão real de nome/estado em390px quando Transferir+Devolver+Assumir+Painel+Menu coexistem. TESTER confirmou e aprovou plano de duas linhas até699px, altura natural, Menu fora do containment, controles/capacidades preservados; >=700 mantém68px. Duas SRC alteradas e contrato acessível novo. RED be745b EXIT1 (10/11); GREEN62c59b EXIT0 11/11; recorte9arquivos235 sessão80663/9b25c9 EXIT0; lint2arquivos525966 EXIT0 zeroavisos. TSCoriginal5530 em acompanhamento; build/visual/composição global pendentes. Capturas anteriores são diagnóstico, não aceite. Preview próprio encerrado (71324/ecd049 EXIT1, PID/porta ausentes010773); bancoRoot492 restaurado e77e56 EXIT0 aos1379 originais/424hashes e sequências; cluster compartilhado intacto. Evidências/limites docs/qa/inbox-348-mobile-r4-root.md. Não concluirissue ou PR434.
 
 Fechamento técnico R4: TSC5530/ecb26a EXIT1 apontou só o novo teste passando No abstrato ao lugar de ReactNode. Corrigido com isValidElement e filhos reais, sem cast/exclusão; focal11/11 e9aab3 EXIT0. TSC ORIGINAL final73242/95ba03 EXIT0 sem diagnósticos, heap8192, config original; lintfinal2arquivos b1a3ea EXIT0 zeroavisos. Código do componente não mudou entre o recorte235 e estes últimos gates. Build/medição visual e composição global continuam pendentes; negativos preservados.
+=======
+### Inbox #354 — início D1 contextual (25/10/2026)
+
+DEV B na base16b7d3d, branch codex/inbox-e3-354-decisoes-responsavel. GO para aprovar/rejeitar/desfazer pelo vendedor responsável ATUAL da conversa COMERCIAL autorizada, preservando APIs globais/capacidadesAria. Somente predicado puro local e13 testes implementados; ainda não ligado à execução/DTO. RED comportamental8a55c9 EXIT1 (2 falhas/11 passagens), GREEN268fb2 EXIT0 (2 arquivos/23 casos incluindo permissões globais), worker1/heap1024. Primeiro negativo de import b5854e registra zero casos e não é RED comportamental.
+
+Matriz de locks/escapes pool1 enviada ao integrador antes da extração: CRIAR_TAREFA adquire Config FOR SHARE; inserir Atendimento antes disso inverte a ordem coordenada A331. Contexto de resposta/busca e janela de agendamento ainda usam conexões globais transitivas; dependem de extensão db-aware coordenada. Report output/inbox-354-report.md. Pendentes núcleos/DTO/CTA desfazer/concorrência/INT/QA/gates/visual. Sem DB/SQL/INT/lease, Node global/TSC/build/browser/HTTP/install/config/schema/env/PR/push; #355/#356/#357 fora do escopo.
+
+### Inbox #354 — implementação DEV e gates focais (25/10/2026)
+
+Três verbos contextuais completos: exceção D1 pelo responsável ATUAL da conversa COMERCIAL autorizada, alvo atual não nulo/existente e payloadPessoa coerente. APIs globais/capacidadesAria preservadas. DTO por cartão, estados EXECUTADA/DESFEITA, confirmação canônica e foco local/gerações; marcador404 mantido. Limites20/keyset100 e consultas agrupadas, sem N+1. Config necessária precede Atendimento; fuso de tarefa capturado/reutilizado, leads envolvidos ordenados e autorização pós-esperas. Extensões mínimas db-aware em busca/janela/política, com fonte/FTS e agendamento reais em pool1. Não implementa355/356/357.
+
+UNIT77278/6a462d EXIT0:88 arquivos/1.087 casos completos do Inbox e guardas/cascos. INT75695/ea223b EXIT0:5 arquivos/78 casos completos, incluindo convites/carteira/equipe/usuário/concorrência/DTO/defaultglobal/pool1/Config. Ambos anteriores ao fechamento técnico final dos dois alvos RESPONDER/DOCUMENTO, que preservou APIs globais e exigiu AMBOS os escopos somente no wrapper/DTO Inbox. RED UNIT5c17ea EXIT1(5casos/3falhas); RED INT33247/ef50fc EXIT1(2executados/1falha,23fora do filtro). GREEN posterior UNIT75ea5e EXIT0(5arquivos/41casos) e INT1074/01dec4 EXIT0(2executados, filtro alvo efetivo:,23fora desse recorte). Não chamar esse filtro de suíte completa. Lint26 838fc7 EXIT0 --max-warnings=0.
+
+Negativos preservados no output354, incluindo foco síncrono pós-desfazer071830 EXIT1 corrigido a9f63e EXIT0 e guarda Botao nominal fechada autorizada pelo ROOT. Recorte amplo manteve parser genérico, demais negativas e contratos350/348/352. Revisão automática rejeitou uma tentativa de iniciar RED antes do terminal75695; comando não executado, espera cumprida, depois retomada autorizada. Sem contorno.
+
+Entrega DEV aguarda QA independente, TypeScript/gates globais do integrador e aceite visual. Banco ci-integracao lease B usada só pelas suítes autorizadas, sem outra suíte simultânea; perfil/client pins preservados. Sem restore presumido, PR/push/build/servidor/browser/HTTP/install/config/deps/schema/env. SPEC docs/specs/inbox-decisoes-responsavel.md; report output/inbox-354-report.md. Não marcar concluída nem D3 implantado.
+
+### Inbox #354 — R1: serialização compatível com FK de tarefa (25/10/2026)
+
+Filha da7440, sem355. RO24de37 EXIT0 consultou somentepg_constraint/pg_trigger em BEGIN READ ONLY/ROLLBACK: LeadRI1533938 antesAtendRI6149584, enabled/não deferred. Contraprova causal nativa99337a EXIT1 confirmou40P01 e grafoCRM↔wrapper; CRMrollback0tarefas/0eventos, wrapper1tag/1aprovação. Nenhuma conclusão apenas por ordem implícita. V1 f6de65/ledger6c11ba/log2bfd7e preservados imutáveis; sua classificação incompleta de UnknownRequestError PT está documentada.
+
+Regressão pública nativa com duas formas exatas de lock, next(params) sempre REAL e barreira após SQL, sem mockSQL/ACL: RED60db37 EXIT1 na asserção ambos-sucessos (40P01/grafo/rollback confirmados). ÚNICO patchprod: Atendimento inicial do wrapper FOR NO KEY UPDATE, mantendoAcao→Config→Atend→leadsFORUPDATE ordenados e autorização fresca; APIsCRM/executor literais7440. MESMOtesteGREEN065da6 EXIT0/1caso. Controle real novo demonstra que UPDATEresponsável continua bloqueado enquanto wrapper esperaLead.
+
+QA80 anterior do TESTER (25225/ffebbd:79pass/1expectativa obsoleta) tratada sem remover controle: NOTA_INTERNA conserva geralfalse/cartãopodeDecidirtrue; RESP/DOCnull têm negativas próprias, positivo doisalvos preservado. INT37761/b722c4 EXIT1:4arquivos45casos/44passagens, único fail tracepool não reconhecia NO KEY UPDATE. Ajuste fechado desse trace mantémConfigúnico/ordem; repetição afetada90635/7a739e EXIT0:2arquivos18casos completos/sem filtros ou skips. Demais contexto26+native1 passaram anteriormente sob mesmo patchprod. Lint5 ee2284 EXIT0 --max-warnings=0. Não alegar45/global/TSCgreen como sessão única.
+
+Pendentes QAfilha, TSC/gates globais e visual do integrador. LeaseBci492 usada uma suíteporvez, conexões encerradas após terminal; sem restore presumido. Nada de patchglobalCRM, alteração de executor/ACL, schema/deps/env/build/browser/HTTP/PR/push. SPEC e report output/inbox-354-r1-locks-report.md com negativos qualificados. #355 permanece investigação/plano.
+
+Fechamento R1: replay10428/a9c2c3 EXIT0 em2casos nativos (filtro declarado '354: criarTarefa|lock inicial continua',25fora), após somente tipagem/cleanup de testes; lint final5 51de77 EXIT0. Produção continua1query conferida d60d2d, globais/executor/ACL/componentes literais7440. Lease sem outros Node/testes ativos, entregue aROOT sem restauração presumida. Não antecipar QA/TSC/global/visual nem355.
+
+### Inbox #354 — R2: Desfazer com variante canônica neutro (25/10/2026)
+
+Gate ORIGINAL exato2af4: TSC84020/5d68c6 EXIT2,6diagnósticos (1TS2322REAL no Card por variantecontorno inexistente;5TS2769 em3oráculos históricosUNTRACKED sem atendimentoId). Lint ORIGINAL55099/ae17b5 EXIT0,0erros98avisos=40src+58output. Head/pins pré/pós idênticos e trackedclean, recibo output/inbox-354-2af4-gates-original-private.json SHAe157f3d5.... Não chamar esse TSC de aprovado nem atribuir gates21f à354.
+
+ROOT autorizou e realizou arquivo FÍSICO dos3históricos em a88569 com bytes/hashes84bc7e4b/8bdd3efd/08edc23f preservados foraB; DEV não os moveu/editou/copiou de volta e não alterou config/cache/contrato obrigatório para esconder diagnósticos. Correção REAL em filhaisolada2af4: Desfazer usaNEUTRO canônicoDS (contorno cinza), mapa e âncora ASTFECHADA total3,2dinâmicos originais+Desfazer literal preservados; negativos vazio/varianteerrada/contornoinexistente/quartobotão. DS e backend literais.
+
+RED93c55e EXIT1(11casos/1falha classundefined); GREEN34172/a2537c EXIT0(24arquivos/510casos UI/consumidores/Botao/guardas completos,sem filtrodecaso/skips); lint4 61127e EXIT0 --max-warnings=0. Sem repetiçãoINT45 por ausência de delta backend. Próximo TSC ORIGINAL aguarda admissãoROOT/liberação compiladorA; QAfilha/global/visualpendentes. SemDB/build/install/config/env/PR/push ou355. SPEC/report output/inbox-354-r2-neutro-report.md atualizados.
+
+### Inbox #359 — interruptor global D4 / entrega DEV (25/10/2026)
+
+DEV B sobre c8e89565, branch codex/inbox-e4-359-interruptor. Admin/GC pela capacidade existente pausar, motivo obrigatório1..500trim e idempotência estrita por último Evento do mesmo autor/motivo. Ator relido dentroTX após lock real AgenteIA; sem Config/Atendimento novo, modo/cancelamento/ACL/schema alterado. ATIVA/SHADOW com checked=!pausada, ensaio preservado, DESLIGADA null. Modal/hook/DS reais, retry/duploclique/tokens de ACK e callback da recarga atual do Inbox; /aria somente flag idempotente.
+
+RED estado20972/0c648b EXIT1(5falhas/19); fixture concorrente NextAuth corrigida separadamente, GREEN82158/90b4f6 EXIT0(19). RED UI causal e2e794 EXIT1(9falhas/10); mapa nominal fechado3botões e mutantes, sem exceção genérica. INT final48274/05a045 EXIT0:2arquivos completos46casos (estado20+barramento26), incluindo desativação durante espera REAL observada pg_blocking_pids e avisoscommit/rollback. UNIT6028/a50a86 EXIT0:93arquivos1.177casos completos do recorte Inbox+DS/guardas; todos os testes legados da faixa preservados. Novo controle posterior de resumo/aviso/503:3arquivos45casos cb79e1 EXIT0. Lint focal11 dd936f EXIT0, replay final no freeze. SPEC docs/specs/inbox-interruptor-global-aria.md; relatório output/inbox-359-report.md.
+
+Banco ci-integracao492 lease liberada após terminal; fixtures finais permanecem, não presumir restore503. Sem DB concorrente, envio/provedor real, servidor/build/captura/install/schema/config/push. QA independente, TypeScript/gates globais originais e aceite visual1440/1024/390 claro/escuro +switch/modais ainda PENDENTES. Não encerrar issue/D4 homologada;355 aguarda decisão e não foi implementada.
+
+### Inbox #359 — R1 manifesto nominal de Campo (25/10/2026)
+
+Originais da b7a: TSC77053/bbd8d2 EXIT0; lint38801/31b02b EXIT0,0erros/98avisos; globalUTC71353/89ca77 EXIT1,990arquivos/8.542casos com uma única falha no manifesto de Campos. Negativo preservado, não chamar o global de aprovado. R1 registra exatamente InterruptorAria.tsx → Motivo da pausa · obrigatório · input e acrescenta mutantes de registro ausente/rótulo/obrigatoriedade. Parser e EXCECOES_CAMPO intactos. Guarda completa535ae7 EXIT0:28casos. Runtime/backend literalb7a; INT46 não repetida. Replay original da filha e QA/visual acompanham recibos próprios; issue ainda não encerrada.
+>>>>>>> 0d0e9d2b73dffe7f16409eb6aaf464dc1a5c5fce
