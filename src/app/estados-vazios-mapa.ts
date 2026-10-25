@@ -129,6 +129,7 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
 ];
 
 export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
+  "src/app/(app)/inbox/insights/PainelInsights.tsx": ["compacto · Nenhum Insight gerado ainda.", "compacto · Nenhum sinal de compra identificado.", "compacto · Nenhuma objeção ou risco identificado."],
   "src/app/(app)/inbox/abas/AlteracoesAria.tsx": ["compacto · Aria ainda não alterou nada neste contato."],
   "src/app/(app)/inbox/abas/AbaAtividade.tsx": ["compacto · Nenhuma nota interna ainda."],
   "src/app/(app)/aria/_componentes/Comportamento.tsx": [
