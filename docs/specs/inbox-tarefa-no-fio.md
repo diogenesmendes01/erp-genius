@@ -1,0 +1,13 @@
+# Inbox — tarefa no fio e entradas de tarefa/nota (#332)
+
+A tarefa ligada diretamente ao atendimento aparece no fio pelo instante de criação. O servidor intersecta o atendimento visível com a ACL própria de tarefas; inclui aberta, concluída e cancelada. Mesmo lead em outra conversa e tarefa ligada apenas ao lead ficam fora do fio. A lista do painel #330 continua com sua regra própria de vínculo direto OU lead.
+
+A composição preserva mensagens/notas E0 e sugestões #350: limites inferior/superior vêm das mensagens carregadas, inclusivos; `temMaisDepois` é aditivo. Empates usam mensagem → nota → tarefa → sugestão, com ID por classe. A exceção de sugestão pendente antiga permanece exclusiva da #350. Tarefas não participam de cursores ou do limite de mensagens. Chave `tarefa:<id>` não contém versão/status; decoração interrompe sequência de autor e usa o relógio SSR compartilhado, renovado também por revisão das tarefas.
+
+O cartão é de apresentação e recebe callbacks. Mostra autoria humana/Aria, horário de criação no fuso de exibição, prazo civil/hora no `fusoOrigem` explícito, responsável e tipo. O nome do criador só define o texto apresentado, nunca identidade/ACL. Não reconstrói o instante DST a partir do prazo. Atraso usa o token existente `text-red-700`; `text-danger-text` da referência não existe na paleta atual. Concluída fica riscada; cancelada diz Cancelada (D10 preservada).
+
+O controlador liga Concluir à action existente, sem retry automático, impede duplo clique e revalida o alvo/versão antes de chamar. ACK próprio pode reconciliar o SSE que já trouxe a conclusão na mesma tentativa; troca A→B→A, desmontagem ou revogação conhecida invalidam sucesso/erro antigos. A action continua responsável por ACL fresca e CAS. Editar abre o ModalTarefa #331 único do Inbox; a linha permanece pinada enquanto editada.
+
+Criar tarefa aparece no menu, no ícone Nova tarefa do rodapé e na seção de ações da aba. Entradas dependem da capacidade de tarefas do atendimento individual, inclusive fora CRM e sem envio. A edição originada no fio usa o snapshot direto, não a lista limitada do painel. Grupos não recebem as entradas. Adicionar nota na aba solicita a seleção Nota e o foco opt-in no CampoTexto real, sem remontar compositor ou apagar rascunhos. Pedido é consumido por abertura e invalidado na troca de seleção; refresh igual não rouba foco.
+
+Sem schema/migração/dependências ou novas permissões. Preservados MensagemStatus do Modal331, recibo do handoff #352, remoção legada #353 e marcador sticky404. Hook/Modal compartilhados permanecem sob coordenação do ROOT. Gates originais, QA independente, composição com #354 e aceite visual fio-tarefa em três larguras/dois temas são pendentes do integrador; esta candidata não representa homologação.

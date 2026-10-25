@@ -7384,3 +7384,12 @@ Origem DEV: `400834bf`, na branch `codex/inbox-435-documentacao-r2`, filha de `4
 O texto abaixo pertence ao checkpoint de setembro, substituído pelo checkpoint datado do Inbox no início deste documento. Não representa a contagem atual da campanha.
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
+
+### Inbox #332 — tarefa no fio e entradas de tarefa/nota (25/10/2026)
+
+DEV A sobre base composta da8937d2 (pais720ac2bf +11194158, revisada ROOT), branch codex/inbox-e2-332-tarefas-fio. Fio usa somente tarefa direta AND ACL própria, todos estados; painel330 conserva direto OU lead. Intercalação E0→tarefas→350 mantém limites das mensagens, empate por classe/ID e cursores intactos. Cartão puro com controlador de ação/ACK, Modal331 único inclusive fora CRM sem envio, pin por tarefa, menu/rodapé/seção de ações e Nota com foco opt-in/rascunho preservado. Troca A→B→A invalida pedidos/ACK antigos; refresh não remonta campo/lista. Nenhuma action/TX330/331/schema/dependência/permissão alterada; Modal compartilhado437C1 fica com ROOT.
+
+SQL nativa53361/bb7926 EXIT0:2 arquivos17 testes,65.22s, originalintegrationconfig/dev-email492/558,UTC/w1/heap1024, sete providers vazios. Lease liberada após terminal; sem nova SQL. Focais13527/95c043 EXIT0:23 arquivos397 testes; composição97856/e58624 EXIT0:10 arquivos262 testes; guardas7 73421/0561ff EXIT0:333 testes; lint whitelist29 fad680 EXIT0,zero warnings. Negativos causais e de fixture, módulo ausente vs comportamento e controles posteriores separados no QA, sem atribuir green ao RED. Registros de botões somente quatro controles nominais, sem parser/exceção ampliados. SPEC inbox-tarefa-no-fio.md e QA inbox-332-candidata-dev-a.md.
+
+Blueprint visual offline privado com quatro atores/contextos e controles de paginação, somente dados novos fictícios para ROOT aplicar. TSC/global/lint originais, QA independente do SHA final, composição354/437C1 e aceite visual fio-tarefa APP/PROTO original três larguras/dois temas continuam pendentes. Candidata para integração, não concluída/homologada; sem PR/push/build/browser pelo DEV.
+Fechamento do recorte #332: guardas ampliadas34396/8589c9 EXIT0,15 arquivos464 casos,89.10s; fonte funcional congelada para gates do ROOT. Totais dos recortes são sobrepostos.
