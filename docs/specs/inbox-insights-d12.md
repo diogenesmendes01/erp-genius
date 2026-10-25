@@ -1,6 +1,6 @@
 # Inbox — Insights D12 (#377)
 
-Estado: kernel privado e integração API/UI autorados; nativos do kernel passaram. Wrappers públicos SQL, QA independente, visual e gates originais integrados continuam pendentes. Não homologada.
+Estado: kernel privado e integração API/UI implementados; nativos do kernel e dos wrappers passaram nas fontes qualificadas abaixo. QA independente, visual e gates originais integrados continuam pendentes. Não homologada.
 
 ## Produto e audiência
 
@@ -56,4 +56,4 @@ DialogoAgendar faz GET somente enquanto aberto, mesmo sem visitar Insights. Usa 
 
 A493 foi validada/gerada/aplicada exclusivamente pelo ROOT; client 72b4825a,425 tabelas e baseline de 559 linhas. FKs históricas Restrict e retenção são escolhas deliberadas, sem alegação de purga equivalente. Schema SHA 257b91c e SQL SHA 241ee9 congelados. Restaurador A é exclusivamente 493, nunca 492.
 
-Kernel anterior338899e8:4 INT/25 casos reais passaram, incluindo LISTEN/KEYSHARE/pool1/ACKlost; qualificação e negativo de instrumentação na QA. Após essa fonte, o controlador ganhou somente mensagem de pré-envio e o contexto a barreira apenasPortal na rowfresh. Wrappers nativos novos foram autorados e ainda não executados. UI/API/consumidores: 41 arquivos/566 testes e 12 guardas/462 casos passaram em recortes; não suíte global. QA independente, nativos dos novos deltas, TypeScript/global/lint/build integrados, visual e CI continuam pendentes. [Evidências](../qa/inbox-377-insights-d12.md).
+Kernel anterior338899e8:4 INT/25 casos reais passaram, incluindo LISTEN/KEYSHARE/pool1/ACKlost; qualificação e negativo de instrumentação na QA. Após essa fonte, o controlador ganhou somente mensagem de pré-envio e o contexto a barreira apenasPortal na rowfresh. Os nove casos nativos dos wrappers passaram na fonte e3590209, sessão56492/03fe13 EXIT0, incluindo os dois deltas posteriores. UI/API/consumidores: 41 arquivos/566 testes e 12 guardas/462 casos passaram em recortes; não suíte global. QA independente, TypeScript/global/lint/build integrados, visual e CI continuam pendentes. [Evidências](../qa/inbox-377-insights-d12.md).
