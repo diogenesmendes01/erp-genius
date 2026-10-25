@@ -47,7 +47,7 @@ export function estadoVisualItem(item: ItemListaInbox, agora: Date, usuarioId?: 
   const previa = item.previaAutor === "sugestao" ? rotuloPrevia ? "Aria sugere: " + rotuloPrevia : "Sugestão da Aria"
     : item.previaAutor === "aria" ? "Aria: " + preview
     : item.previaAutor === "voce" ? "Você: " + preview
-    : item.previaAutor === "pessoa" ? (rotuloPrevia || item.contatoNome?.trim() || "Contato") + ": " + preview : preview;
+    : item.previaAutor === "pessoa" ? (rotuloPrevia || "Equipe") + ": " + preview : preview;
   return { badges, previa, avatarTom: tomDoAvatar(item.contatoId), seloIa: estado === "ia" || estado === "aprovacao" || estado === "handoff" };
 }
 
