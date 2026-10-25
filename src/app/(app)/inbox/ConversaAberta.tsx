@@ -15,6 +15,7 @@ import { useAgoraDaThread } from "@/components/conversa/agora-thread";
 import { EventoSistema } from "@/components/conversa/EventoSistema";
 import { SeparadorDia } from "@/components/conversa/SeparadorDia";
 import { MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
+import type { PublicarPortaRascunhoInsight } from "@/components/conversa/rascunho-insight";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import type { ConversaHook } from "@/components/conversa/useConversa";
@@ -55,6 +56,8 @@ export interface PropsConversaAberta {
   aoCriarTarefa?: () => void;
   aoEditarTarefa?: (t:TarefaPainel) => void;
   pedidoNota?: number;
+  versaoInsights?: number;
+  aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   tarefaEmEdicaoId?: string | null;
   /** DTO autorizado do painel da seleção corrente; não é o resumo global. */
   aria?: AriaDoAtendimento | null;
@@ -122,7 +125,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
 }
 
 const TAREFAS_FIO_VAZIAS:TarefaPainel[]=[];
-export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarTarefa, aoEditarTarefa, pedidoNota, tarefaEmEdicaoId, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria, leituraPainel, bloquearDecisoesAria = false }: PropsConversaAberta) {
+export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarTarefa, aoEditarTarefa, pedidoNota, versaoInsights, aoPortaRascunhoInsight, tarefaEmEdicaoId, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria, leituraPainel, bloquearDecisoesAria = false }: PropsConversaAberta) {
   const tentativasNota = useChavesPorAlvo();
   const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
@@ -238,6 +241,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
           travado={item.estadoAria === "ia" || item.estadoAria === "aprovacao" || item.estadoAria === "handoff" ? { texto: textoTravado(item.estadoAria), aoNota() {}, aoAssumir: tomada?.aoAssumir, ocupado: tomada?.ocupado } : undefined}
           aoCriarTarefa={aoCriarTarefa}
           pedidoNota={pedidoNota}
+          aoPortaRascunhoInsight={!item.grupo?aoPortaRascunhoInsight:undefined}
           podeAnotar={!item.grupo}
           tentativasNota={tentativasNota}
           revisoesRascunhos={revisoesRascunhos}
@@ -261,14 +265,15 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
       )}
     </>
   );
-  return item ? <CoordenadorAcoesConversa key={item.id} item={item} aoCriarTarefa={aoCriarTarefa} aria={aria} leituraPainel={leituraPainel} podeEnviar={envioLiberado} agora={new Date(agora)} linhaAria={linhaAria} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca} renderizar={renderizarConversa} /> : renderizarConversa(null);
+  return item ? <CoordenadorAcoesConversa key={item.id} item={item} versaoInsights={versaoInsights} aoCriarTarefa={aoCriarTarefa} aria={aria} leituraPainel={leituraPainel} podeEnviar={envioLiberado} agora={new Date(agora)} linhaAria={linhaAria} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca} renderizar={renderizarConversa} /> : renderizarConversa(null);
 }
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
-function CoordenadorAcoesConversa({ item, aoCriarTarefa, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos = [], aoMudar, aoBuscar, renderizar }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; renderizar(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>, tomada?: ReturnType<typeof useAssumirParaResponder>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoCriarTarefa">) {
+function CoordenadorAcoesConversa({ item, versaoInsights, aoCriarTarefa, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos = [], aoMudar, aoBuscar, renderizar }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; renderizar(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>, tomada?: ReturnType<typeof useAssumirParaResponder>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoCriarTarefa" | "versaoInsights">) {
   const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, respostaDisponivel: !item.grupo && item.status !== "ENCERRADO" && modoRodape(item.estadoAria, false) === "compositor", podeAssumirAria: aria?.podeAssumirAria === true, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
   const tomada = useAssumirParaResponder({ atendimentoId: item.id, usuarioId: usuario.id, responsavelId: item.responsavelId, estadoAria: !item.grupo && item.status !== "ENCERRADO" ? item.estadoAria : null, podeAssumirAria: aria?.podeAssumirAria === true && !item.grupo && item.status !== "ENCERRADO", podeEnviar, leitura: leituraPainel, aoMudar, controleResposta: handoff.controleResposta });
   const acoes = useAcoesAtendimento({
+    versaoInsights,
     contextoAria: ["ia", "aprovacao", "handoff"].includes(item.estadoAria ?? "") || !!aria?.handoff,
     podeAssumirAria: aria?.podeAssumirAria === true,
     atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
