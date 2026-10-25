@@ -1,0 +1,244 @@
+{
+  "versao": 1,
+  "issue": 328,
+  "estado": "PRODUTO_DEV_CONGELADO_QA_VISUAL_PENDENTES",
+  "base": "668abe6576c1834ddb94d2e3f0a547d25b4f1a15",
+  "branch": "codex/inbox-e2-328-acoes",
+  "fontesExecutaveis": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "bytes": 25607,
+      "sha256Fisico": "38dda3051c3e1fde8f124ba7131b8b89ecee052574d8d0f6e134109a86c99db7",
+      "sha256GitLF": "38dda3051c3e1fde8f124ba7131b8b89ecee052574d8d0f6e134109a86c99db7",
+      "gitOidWorking": "78f4b94793286ad35684b3bed6cf55ecdc33d325"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "bytes": 78141,
+      "sha256Fisico": "a28530cdfd9afbd8005be2e467430c3c959246b3db42c559b43dddd54fc6c8c3",
+      "sha256GitLF": "a28530cdfd9afbd8005be2e467430c3c959246b3db42c559b43dddd54fc6c8c3",
+      "gitOidWorking": "fe01c5e909b308e1a336d11e8bd8cf49db3a75bb"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "bytes": 38929,
+      "sha256Fisico": "8d25cf9ee4bc2952c654a265c52633dd49ca58d0483de8d4fedf4cfeb782da2f",
+      "sha256GitLF": "8d25cf9ee4bc2952c654a265c52633dd49ca58d0483de8d4fedf4cfeb782da2f",
+      "gitOidWorking": "513574944d1d220099325114042ca7a8f060568a"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaOportunidades.test.ts",
+      "bytes": 12119,
+      "sha256Fisico": "214217b78b4af9214d212d685cdb22dbeef88b6d7596bb394d2bddb2f0002ea6",
+      "sha256GitLF": "214217b78b4af9214d212d685cdb22dbeef88b6d7596bb394d2bddb2f0002ea6",
+      "gitOidWorking": "72a8923b044ec2070beea1e3fcb960ec6c8f196b"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaOportunidades.tsx",
+      "bytes": 5556,
+      "sha256Fisico": "24e44c4cf76c6b48a5dc71140566db259dc92e43ac09c709922e3d818ae1254f",
+      "sha256GitLF": "24e44c4cf76c6b48a5dc71140566db259dc92e43ac09c709922e3d818ae1254f",
+      "gitOidWorking": "c0258bacc605f5d1f242818a2d2376c7df0654cf"
+    },
+    {
+      "path": "src/app/(app)/inbox/page.test.ts",
+      "bytes": 15093,
+      "sha256Fisico": "f6f53e6b911e988241cced4f59e91f65b8213c9045bc452fa76a9ad306a2048b",
+      "sha256GitLF": "f6f53e6b911e988241cced4f59e91f65b8213c9045bc452fa76a9ad306a2048b",
+      "gitOidWorking": "be549cd8b4129fef62ce96bdcd0a8253acedc1ad"
+    },
+    {
+      "path": "src/app/(app)/inbox/page.tsx",
+      "bytes": 4575,
+      "sha256Fisico": "49220ad7da4e893803b65c371c0d1736da4413be759c0247ceca601f69d7f952",
+      "sha256GitLF": "49220ad7da4e893803b65c371c0d1736da4413be759c0247ceca601f69d7f952",
+      "gitOidWorking": "edf2a5a3c9df2ce9cab201a8c19544640d07c5a3"
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "bytes": 60439,
+      "sha256Fisico": "c9471232cf702ee1a63549f33c096274913815c911e2e056930e5f6be2452854",
+      "sha256GitLF": "c9471232cf702ee1a63549f33c096274913815c911e2e056930e5f6be2452854",
+      "gitOidWorking": "710315cd606b5e498d6a73ead0a44bdf391a86f5"
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "bytes": 175411,
+      "sha256Fisico": "3e33ff1934dc553179461dde7c85309ce37461fcc40e468d51e72c438f8332a3",
+      "sha256GitLF": "3e33ff1934dc553179461dde7c85309ce37461fcc40e468d51e72c438f8332a3",
+      "gitOidWorking": "b8b5ab634778ff91a06cfbb27ea4b294d378c104"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/CartaoExperimental.test.ts",
+      "bytes": 3475,
+      "sha256Fisico": "7ddd7938777ae41f120055bc132215123e4d7a61707ab7952dfbc270542eb01d",
+      "sha256GitLF": "7ddd7938777ae41f120055bc132215123e4d7a61707ab7952dfbc270542eb01d",
+      "gitOidWorking": "bd30ed9ab0dd21ad3e430cc866cb7c750f9d694c"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/CartaoExperimental.tsx",
+      "bytes": 1960,
+      "sha256Fisico": "4176d66dc20bf7e574a14cfc33bbf6a333f9e72fe770d8f3399709cede7fbc90",
+      "sha256GitLF": "4176d66dc20bf7e574a14cfc33bbf6a333f9e72fe770d8f3399709cede7fbc90",
+      "gitOidWorking": "c81b7db571a730485d14149941d4c22e4f32b2ea"
+    }
+  ],
+  "protecao": {
+    "baselineOIDs": 3553,
+    "naoSelecionadosPreservados": 3544,
+    "sha256VetorOID": "62136e6bfa6e2a47f2451452afa3773c172bdccbe6ed366c983d99c075aa0871",
+    "semDeltaServidorLibComponentsSchemaDepsHarness": true,
+    "owner327Literal": {
+      "abrirPerda": true,
+      "ModalPerda": true,
+      "GavetaContato": true,
+      "OR420": true
+    },
+    "quatroDefaults343": true
+  },
+  "excecaoGuarda": {
+    "arquivo": "src/app/(app)/inbox/abas/CartaoExperimental.tsx",
+    "nome": "if o.etapa",
+    "aprovacaoROOT": "aae0ca/leitura e mensagem explícita",
+    "finding": "71152/11c102 EXIT1",
+    "classificadorLiteralBaseSemEssaEntrada": true
+  },
+  "gates": {
+    "UNIT": {
+      "sessao": 76840,
+      "terminal": "115414",
+      "exit": 0,
+      "arquivos": 948,
+      "testes": 7799,
+      "duracaoSegundos": 303.68,
+      "maxWorkers": 2,
+      "semFiltroNome": true,
+      "skips": 0,
+      "config": "vitest.config.ts,INTexcluida"
+    },
+    "TSC": {
+      "sessao": 19172,
+      "terminal": "614085",
+      "exit": 0,
+      "heapMB": 8192,
+      "original": true,
+      "noEmit": true,
+      "incremental": false
+    },
+    "lint": {
+      "terminal": "965991 EXIT0 onze arquivos;fc19c1 EXIT0 foco após ajuste só de tipo",
+      "paths": 11,
+      "maxWarnings": 0
+    },
+    "dirigidos": {
+      "quatroArquivos184": "936c96 EXIT0",
+      "foco21Tipado": "fc19c1 EXIT0"
+    }
+  },
+  "logs": [
+    {
+      "path": "output/inbox-328-cartao-red-r1.log",
+      "bytes": 7931,
+      "sha256Fisico": "22aa03f6b5a6cb8c4f72be50589f9f8ef6c3a158acfcea8de6732501b96542ba"
+    },
+    {
+      "path": "output/inbox-328-cartao-green-r1.log",
+      "bytes": 480,
+      "sha256Fisico": "ce515436f46e2bac1ba94c28af3e34f10484912d44c8b7b923c9e5d4747bc130"
+    },
+    {
+      "path": "output/inbox-328-acoes-red-r1.log",
+      "bytes": 12670,
+      "sha256Fisico": "eb7ccec7427a54ad3007ee8c86672bb51e42ff2ffec94f45e9c24a21ce0463e1"
+    },
+    {
+      "path": "output/inbox-328-acoes-red-r2.log",
+      "bytes": 10325,
+      "sha256Fisico": "a2e6d49710b6f528aa31591ecd433291ab86f7093b20a2783ff30e1dc9ead175"
+    },
+    {
+      "path": "output/inbox-328-acoes-red-r3.log",
+      "bytes": 9042,
+      "sha256Fisico": "6f7351626103bee0291c4c45d4cf7daa87eb2df21d01568b9a22f2d3b4cb10df"
+    },
+    {
+      "path": "output/inbox-328-acoes-green-r1.log",
+      "bytes": 57695,
+      "sha256Fisico": "653ccf430307e4ee619516a585d4f3c28e5c9685a02043ea53831553e564c107"
+    },
+    {
+      "path": "output/inbox-328-acoes-green-r2.log",
+      "bytes": 482,
+      "sha256Fisico": "3fef1f0e8b23347242c09b6bec0722ef1570ef03e1a018638378c6c2ba195e14"
+    },
+    {
+      "path": "output/inbox-328-guardas-r1.log",
+      "bytes": 2943,
+      "sha256Fisico": "ac4ef025c9591cfd4c1ca61b06618ce032afa76ab4600ee365a31bd081c94878"
+    },
+    {
+      "path": "output/inbox-328-regressao-ui-r1.log",
+      "bytes": 1140,
+      "sha256Fisico": "83f8c09ac3e984d8b40d48859a044045fd033e685e972366cfd9a5324b1cd296"
+    },
+    {
+      "path": "output/inbox-328-guardas-foco-green-r2.log",
+      "bytes": 1138,
+      "sha256Fisico": "949ea381718a079cc619c9725d725652cb23e0cf8c35d6bf8df77fc3d2828b51"
+    },
+    {
+      "path": "output/inbox-328-foco-diagnostico-r1.log",
+      "bytes": 1502,
+      "sha256Fisico": "52247c1ffa579640beb96fac0716c7cab678b714fcd270bc72cd456f22ba5002"
+    },
+    {
+      "path": "output/inbox-328-foco-green-final.log",
+      "bytes": 480,
+      "sha256Fisico": "ac23b946ce73fb371a90cb4bcaac0ba1956303f60191b533bcd4e99634c46c11"
+    },
+    {
+      "path": "output/inbox-328-foco-tipagem-green.log",
+      "bytes": 480,
+      "sha256Fisico": "14f32e4cac21a6a448a8d0169cba7082dbecf4ca09e4dc250e4e4dba820fc81d"
+    },
+    {
+      "path": "output/inbox-328-tsc-r1.log",
+      "bytes": 129,
+      "sha256Fisico": "014e692c79f2aa6dc521ce192258ac754ad24a7bdae6b77d4a17bb7b03a7ca18"
+    },
+    {
+      "path": "output/inbox-328-tsc-r2.log",
+      "bytes": 0,
+      "sha256Fisico": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-lint-r1.log",
+      "bytes": 0,
+      "sha256Fisico": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-unit-global-r1.log",
+      "bytes": 7538,
+      "sha256Fisico": "a44e4901ef1397787ce88b65574e7dbb529e7878e5b03f356e22573729350185"
+    }
+  ],
+  "negativos": {
+    "cartao": "00041a EXIT1:moduleausente0coletados+1falhaAba/21controles",
+    "acoes": "a0e9eb EXIT1:23falhas/135passes,antesimplementacao",
+    "fixtures": "50661/14a42e e87515/969dd9 preservados;mockpage e retornoindevidodebeforeEach corrigidos só no teste",
+    "SVG": "1039cf EXIT1:DOMmínimosemnamespace;mocklocal,SSRCardrealpreservado",
+    "guardas": "71152/11c102 EXIT1:enumsemantico+classesinexistentes;entradaexataaprovada ealiascoresreais",
+    "foco": "62872/701019 e73437/88a4b3 e90e98d EXIT1:oráculooriginalexigiabotão;mediuFecharpainelvisível/nãoinert/1modal",
+    "tipagem": "36214/50e328 EXIT2 TS2339somenteteste;tipolocaldométodorealinstaladocorrigido"
+  },
+  "INTBackend": "NAOEXECUTADO_semGO_backendimutavel",
+  "DB": false,
+  "preview": false,
+  "browser": false,
+  "capturasNativas": false,
+  "operacoesReaisAssumirPerdaEnvio": false,
+  "corpus327Reatribuido": false,
+  "visual328": "PENDENTE_admissaoespecifica",
+  "QAIndependente": "PENDENTE",
+  "publicado": false
+}

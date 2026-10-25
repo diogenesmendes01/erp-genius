@@ -6875,3 +6875,9 @@ RestauroROOTA4915369daEXIT0 posterior aos67INT confirmado:424hashes/557registros
 
 ### Publicação e QA independente da composição327
 Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](../../output/inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.
+
+## Inbox #328 — produto DEV congelado; QA/visual pendentes — 24/10/2026
+
+DEV A entregou cartão experimental/status/fuso institucional já lido/linkFunil autorizado e seção de ações. Perda reutiliza D8/owner/modal/CAS3 já entregues327;Assumir conversa usa ação canônica1arg e contexto completo,pending/erro/identidade/recarga existente. Não altera carteira,agendamento ou D3/#357,nem promete avisoSSE novo. Servidor/helpers/schema/deps/ConversaAberta/Compositor/harness intactos;OR420/defaults343 preservados.
+
+UNITglobal76840/115414 EXIT0:948arquivos/7799testes,303,68s,maxWorkers2,semfiltro/skips. TSCoriginal8GB19172/614085 EXIT0;lint11fontes965991+foco fc19c1 EXIT0. Única exceção enum aprovada,ancoradaCartaoExperimental/if o.etapa,classificador literal;paleta usaaliases reais. NegativosTDD/fixtures/foco/TS2339 preservados em output/inbox-328-produto-report.md e manifesto output/inbox-328-produto-fontes.json. NenhumINT/DB/preview/browser/operação/captura/upload;67backend imutável não repetido. Corpus327 não reatribuído. QA independente,admissões/visual epublicação ROOT pendentes;328 não concluída.
