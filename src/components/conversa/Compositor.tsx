@@ -26,6 +26,8 @@ const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
   atendimentoId: string;
+  /** Pedido explícito novo para focar a Nota; ausente mantém os consumidores anteriores. */
+  pedidoFoco?: number;
   /** Ref local do campo Responder; null na aba Nota ou quando o campo não está disponível. */
   aoCampoResponder?: (campo: HTMLTextAreaElement | null) => void;
   modo: "responder" | "nota";
@@ -75,7 +77,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -85,6 +87,7 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
   const [anexos, setAnexos] = useState(false);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
+  const focoAtendido=useRef<{atendimentoId:string;pedido:number}|null>(null);
   const ligarEntrada = useCallback((campo: HTMLTextAreaElement | null) => { entrada.current = campo; aoCampoResponder?.(modo === "responder" ? campo : null); }, [aoCampoResponder, modo]);
   const seletor = useRef<HTMLInputElement | null>(null);
   const gravador = useRef<MediaRecorder | null>(null);
@@ -134,6 +137,11 @@ export function Compositor({ atendimentoId, aoCampoResponder, modo, podeEnviar, 
     });
     return () => { cancelar(); if (contextoAtual.current === contexto) contextoAtual.current = null; };
   }, [contexto, chave, revisoes]);
+  useLayoutEffect(()=>{
+    if(modo!=="nota"||pedidoFoco===undefined||contextoAtual.current!==contexto||!entrada.current)return;
+    if(focoAtendido.current?.atendimentoId===atendimentoId&&focoAtendido.current.pedido===pedidoFoco)return;
+    focoAtendido.current={atendimentoId,pedido:pedidoFoco};entrada.current.focus({preventScroll:true});
+  },[atendimentoId,modo,pedidoFoco,contexto]);
   // O value controlado precisa estar no DOM antes de aplicar indices UTF16.
   useLayoutEffect(() => {
     const selecao = selecaoMencao.current;

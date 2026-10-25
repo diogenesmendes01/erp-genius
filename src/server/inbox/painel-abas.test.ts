@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const { detalhes, oportunidades } = vi.hoisted(() => ({ detalhes: vi.fn(), oportunidades: vi.fn() }));
+const { detalhes, oportunidades, atividade } = vi.hoisted(() => ({ detalhes: vi.fn(), oportunidades: vi.fn(), atividade: vi.fn() }));
 vi.mock("./painel-detalhes", () => ({ carregarDetalhesPainel: detalhes }));
 vi.mock("./painel-oportunidades", () => ({ carregarOportunidadesPainel: oportunidades }));
+vi.mock("./painel-atividade",()=>({carregarAtividadePainel:atividade}));
 import { carregarAbaPainel } from "./painel-abas";
 import { Papel } from "@prisma/client";
 const u = { id: "u1", nome: "Usuário", papeis: [Papel.VENDEDOR] };
@@ -13,9 +14,11 @@ describe("dispatcher das abas entregues", () => {
     expect(detalhes).toHaveBeenCalledWith(u, "a1");
     expect(await carregarAbaPainel(u, "a1", "detalhes")).toBeNull();
   });
-  it.each(["atividade"] as const)("%s não consulta nem fabrica dados antes da entrega", async aba => {
-    expect(await carregarAbaPainel(u, "a1", aba)).toBeNull();
-    expect(detalhes).not.toHaveBeenCalled();
+  it("333 Atividade despacha produtor autorizado e preserva null",async()=>{
+    atividade.mockResolvedValueOnce({agendadas:[],recente:{conversas:1}}).mockResolvedValueOnce(null);
+    expect(await carregarAbaPainel(u,"a1","atividade")).toEqual({agendadas:[],recente:{conversas:1}});
+    expect(atividade).toHaveBeenCalledWith(u,"a1");expect(detalhes).not.toHaveBeenCalled();expect(oportunidades).not.toHaveBeenCalled();
+    expect(await carregarAbaPainel(u,"a1","atividade")).toBeNull();
   });
 });
 

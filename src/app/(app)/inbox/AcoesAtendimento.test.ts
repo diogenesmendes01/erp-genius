@@ -24,13 +24,13 @@ function AcoesAtendimento(p: PropsAcoesAtendimento) {
   ...[a.assumir,a.transferir].filter(x=>x!==null).map(x=>createElement("button",{key:x.rotulo},x.rotulo)),
   ...a.menu.map(x=>createElement("button",{key:x.id,disabled:x.desabilitado,title:x.dica},x.rotulo)),a.feedback,a.dialogos);
 }
-type Opcoes = { papeis?: Papel[]; responsavelId?: string | null; finalidade?: Setor; status?: string; linhaComercial?: boolean; donoLinhaId?: string | null };
+type Opcoes = { papeis?: Papel[]; responsavelId?: string | null; finalidade?: Setor; status?: string; linhaComercial?: boolean; donoLinhaId?: string | null; grupo?:boolean; aoCriarTarefa?:()=>void };
 const html = (o: Opcoes = {}) =>
   renderToStaticMarkup(createElement(AcoesAtendimento, {
     atendimento: { id: "a1", finalidade: o.finalidade ?? "COMERCIAL", responsavelId: o.responsavelId === undefined ? "eu" : o.responsavelId, status: o.status ?? "EM_ATENDIMENTO" },
     usuario: { id: "eu", papeis: o.papeis ?? [Papel.VENDEDOR] },
     setoresDoNumero: ["COMERCIAL", "SECRETARIA"], fixada: false, silenciada: false,
-    linhaComercial: o.linhaComercial, donoLinhaId: o.donoLinhaId, fuso: "America/Sao_Paulo",
+    grupo:o.grupo,aoCriarTarefa:o.aoCriarTarefa,linhaComercial: o.linhaComercial, donoLinhaId: o.donoLinhaId, fuso: "America/Sao_Paulo",
   } as never));
 const htmlTransferir = (o: { setoresDoNumero: Setor[]; finalidade: Setor }) =>
   renderToStaticMarkup(createElement(DialogoTransferir, { atendimentoId: "a1", aoFechar: vi.fn(), aoConcluir: vi.fn(), ...o }));
@@ -170,4 +170,9 @@ describe("convites e agendamentos no fuso de exibição", () => {
     expect(quandoPendente("2026-10-21T02:30:00.000Z", "America/Sao_Paulo")).toBe("20/10/2026, 23:30");
     expect(quandoPendente("2026-10-21T02:30:00.000Z", "America/Costa_Rica")).toBe("20/10/2026, 20:30");
   });
+});
+
+it("332 entrada de tarefa é nominal por callback autorizado, fora CRM e sem agenda/envio",()=>{
+ const base={papeis:[Papel.SECRETARIA_ACADEMICA],finalidade:"SECRETARIA" as Setor,status:"ENCERRADO",aoCriarTarefa:vi.fn()};
+ expect(html(base)).toContain("Criar tarefa");expect(html(base)).not.toContain("Agendar mensagem");expect(html({...base,aoCriarTarefa:undefined})).not.toContain("Criar tarefa");expect(html({...base,grupo:true})).not.toContain("Criar tarefa");
 });

@@ -32,6 +32,8 @@ export interface DestinoTransferencia { chave: string; nome: string; finalidade:
 
 export interface PropsAcoesAtendimento {
   grupo?: boolean;
+  /** Callback autorizado pelo painel: tarefas não dependem da permissão de envio. */
+  aoCriarTarefa?: () => void;
   atendimento: { id: string; finalidade: Setor; responsavelId: string | null; status: StatusAtendimentoWhatsApp };
   usuario: { id: string; papeis: Papel[] };
   setoresDoNumero: Setor[];
@@ -71,7 +73,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
+export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   // Fixar alterna o estado: o reenvio desfaria o primeiro clique, então fica sem garantia de repetição.
@@ -100,6 +102,7 @@ export function useAcoesAtendimento({ atendimento, usuario, setoresDoNumero, fix
     naoLida: () => void rodar(() => marcarNaoLida(atendimento.id), "Conversa marcada como não lida só para você.", responsavel, recontarNaoLidasInbox),
     fixar: () => void rodar(() => alternarFixada(atendimento.id), fixada ? "Conversa desafixada." : "Conversa fixada."),
     silenciar: () => void rodar(() => silenciarConversa(atendimento.id, silenciada ? null : new Date(Date.now() + SILENCIO_HORAS * 3_600_000).toISOString()), silenciada ? "Notificações reativadas." : "Silenciada por " + SILENCIO_HORAS + " horas."),
+    ...(!grupo && aoCriarTarefa ? { criarTarefa: aoCriarTarefa } : {}),
     nota: () => setDialogo("nota"), agendar: () => setDialogo("agendar"), pendentes: () => setDialogo("pendentes"), buscar: aoBuscar,
     atribuir: () => setDialogo("atribuir"), devolver: () => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.", responsavel),
     convidar: () => setDialogo("convidar"), encerrar: () => setDialogo("encerrar"), bloquear: () => {},
