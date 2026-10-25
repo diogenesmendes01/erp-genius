@@ -70,3 +70,9 @@ Barreiras usam Client pg real, holder e observador separados, pg_blocking_pids e
 NOTIFY usa LISTEN real em inbox_eventos, conta entrega após commit e verifica replay0/rollback0. Rollback é injetado após callback real da TX, explicitamente instrumentação. ACKlost simula exclusivamente perda da entrega após COMMIT PostgreSQL real: uma ou duas finalizações perdem ACK, provider é fake e invocado uma vez, Chamada/Evento/aviso devem permanecer únicos; GET posterior resolve PRONTA mesmo quando a resposta do orquestrador é NAO_CONFIRMADA. Esses testes foram escritos depois do kernel, sem RED causal nativo retroativo.
 
 Nenhum dos 24 casos foi executado nesta autoria. Execução depende de revisão e lease ROOT493. Não foi criado wrapper público só para fixture. Aba/bridge/endpoint continuam pendentes; produção literal8364385f.
+
+### Revisão independente: descarte operacional após Pessoa incompatível
+
+Achado T/ROOT procedente: leitura operacional INCERTO oferecia emCurso.podeDescartar=true, mas o DTO reutilizava capacidade de geração e devolvia painel.podeDescartarIncerta=false. RED b03079 EXIT1:2 falhas/15 controles em DTO+leitura. Capacidade operacional separada e explícita no produtor; gerar/análise continuam negados com Pessoa incompatível. GREEN24c38f EXIT0:2 arquivos18 testes, UTC/w1/1024, sem filtro/skips; lint5 18cc09 EXIT0/zero avisos. Acrescentado controle negativo da própria capacidade operacional.
+
+Novo caso PostgreSQL autorado exige ambos sinalizadores true, gerarfalse/análisenull após retarget incompatível e descarte real; ainda NÃO executado. Autoria nativa passa a25 casos previstos (kernel13+conc6+pool1dois+notify4). Schema257b91c/SQL241ee9/profile67580e/AGENTS0544fa preservados; nenhum SQL/endpoint/bridge nesta correção.

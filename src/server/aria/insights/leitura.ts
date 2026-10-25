@@ -31,7 +31,7 @@ export async function lerInsightAutorizado(autorId:string,atendimentoId:string,o
     const disponivel=servicosPadraoInsight.disponivel();
     const emCurso=ativo?{...status(ativo),podeRetomar:ativo.estado==="PROCESSANDO"&&ativo.iniciadaEm===null&&ativo.autorId===autorId&&ativo.contextoHash===c.contextoHash&&c.pessoasCompativeis,
       podeReconciliar:ativo.estado==="PROCESSANDO"&&ativo.iniciadaEm!==null,podeDescartar:ativo.estado==="INCERTO"}:null;
-    const painel=projetarInsightPainel({autorizado:true,capacidadeAtualizar:c.pessoasCompativeis,indisponivel:!disponivel,
+    const painel=projetarInsightPainel({autorizado:true,capacidadeAtualizar:c.pessoasCompativeis,capacidadeOperacional:true,indisponivel:!disponivel,
       emCurso:ativo?{id:ativo.id,estado:ativo.estado as "PROCESSANDO"|"INCERTO"}:null,
       ultima:ultima?.geradoEm?{id:ultima.id,geradoEm:ultima.geradoEm,simulada:ultima.simulada,resultadoJson:ultima.resultadoJson}:null,
       novasMensagens,contextoAlterado});

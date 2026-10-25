@@ -77,3 +77,12 @@ it("orquestrador real não chama provider mais de1vez e conserva snapshotrecebid
   const c=await cenarioInsight377(),executar=vi.fn(async()=>respostaInsight377());
   expect(await executarAtualizacaoInsight(c.dono.id,{tipo:"NOVO",atendimentoId:c.a.id,chaveTentativa:"377-orquestrador-0001"},{servicos:{disponivel:()=>true,executar}})).toMatchObject({estado:"PRONTA",statusPersistencia:"CONFIRMADA"});expect(executar).toHaveBeenCalledOnce();expect(await prisma.chamadaIA.count()).toBe(1);
 });
+
+it("Pessoa incompatível após retarget permite descarte operacional coerente sem gerar/análise",async()=>{
+  const c=await cenarioInsight377(),s=await start(c),r=await lerInsightAutorizado(c.dono.id,c.a.id);if(!r)throw Error("fixture ACL");
+  const incerta=await reconciliarInsightInconclusivo(c.dono.id,{atendimentoId:c.a.id,geracaoId:s.geracaoId,versaoEsperada:s.versao,estadoEsperado:"PROCESSANDO",contextoAtualEsperadoHash:r.contextoAtualEsperadoHash,chaveReconciliacao:"377-pessoa-incerta-01"});
+  const pLead=await prisma.pessoa.create({data:{nome:"Pessoa oportunidade377"}}),pContato=await prisma.pessoa.create({data:{nome:"Pessoa contato377"}});
+  await prisma.oportunidade.update({where:{id:c.op.id},data:{pessoaId:pLead.id}});await prisma.contatoWhatsApp.update({where:{id:c.contato.id},data:{pessoaId:pContato.id}});
+  const atual=await lerInsightAutorizado(c.dono.id,c.a.id);expect(atual?.emCurso?.podeDescartar).toBe(true);expect(atual?.painel?.podeDescartarIncerta).toBe(true);expect(atual?.painel?.podeAtualizar).toBe(false);expect(atual?.painel?.ultima).toBeNull();if(!atual)throw Error("fixture audiência operacional");
+  expect(await descartarInsightIncerto(c.dono.id,{atendimentoId:c.a.id,geracaoId:s.geracaoId,versaoEsperada:incerta.versao,estadoEsperado:"INCERTO",contextoAtualEsperadoHash:atual.contextoAtualEsperadoHash,chaveDescarte:"377-pessoa-descartar-01"})).toMatchObject({estado:"DESCARTADA"});expect(await prisma.chamadaIA.count()).toBe(0);
+});

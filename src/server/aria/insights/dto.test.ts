@@ -25,3 +25,12 @@ describe("DTO fechado de Insights",()=>{
     expect(await projetar({...entrada(),ultima:null,indisponivel:true})).toMatchObject({estado:"indisponivel",podeAtualizar:false});
   });
 });
+
+it("INCERTO com Pessoa incompatível conserva descarte operacional sem gerar/publicar",()=>{
+  const dado=projetarInsightPainel({autorizado:true,capacidadeAtualizar:false,capacidadeOperacional:true,indisponivel:false,emCurso:{id:"g-incerta",estado:"INCERTO"},ultima:null,novasMensagens:0,contextoAlterado:false});
+  expect(dado).toMatchObject({podeAtualizar:false,podeDescartarIncerta:true,estado:"incerto",ultima:null});
+});
+
+it("descarte operacional também exige sua capacidade explícita",()=>{
+  expect(projetarInsightPainel({...entrada(),capacidadeOperacional:false,emCurso:{id:"g",estado:"INCERTO"}})?.podeDescartarIncerta).toBe(false);
+});

@@ -3,6 +3,8 @@ import { normalizarInsight, type AnaliseInsight } from "./saida";
 export interface LeituraInsightAutorizada {
   autorizado: boolean;
   capacidadeAtualizar: boolean;
+  /** Resolução operacional não depende da compatibilidade necessária à geração. */
+  capacidadeOperacional?: boolean;
   indisponivel: boolean;
   emCurso: { id: string; estado: "PROCESSANDO" | "INCERTO" } | null;
   ultima: { id: string; geradoEm: Date; simulada: boolean; resultadoJson: unknown } | null;
@@ -29,7 +31,7 @@ export function projetarInsightPainel(entrada: LeituraInsightAutorizada): Insigh
       : entrada.ultima ? "pronto" : "vazio";
   return {
     podeAtualizar: entrada.capacidadeAtualizar && !entrada.indisponivel && !entrada.emCurso,
-    podeDescartarIncerta: entrada.capacidadeAtualizar && estado === "incerto",
+    podeDescartarIncerta: (entrada.capacidadeOperacional ?? entrada.capacidadeAtualizar) && estado === "incerto",
     estado,
     geracaoEmCursoId: entrada.emCurso?.id ?? null,
     ultima: entrada.ultima && analise ? {
