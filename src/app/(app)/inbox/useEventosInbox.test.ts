@@ -56,3 +56,6 @@ describe("assinarEventosInbox", () => {
     expect(estados.at(-1)).toBe(false);
   });
 });
+
+
+it("wrapper registra e entrega aria.global",()=>{const {fonte,avisos,sair}=montar();try{const g={tipo:"aria.global",atendimentoId:null,mensagemId:null,conversaId:""};expect(fonte.ouvintes.has("aria.global")).toBe(true);fonte.emitir("aria.global",JSON.stringify(g));expect(avisos).toEqual([g]);}finally{sair();}});

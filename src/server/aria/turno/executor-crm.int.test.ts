@@ -166,14 +166,23 @@ describe("executor: ações no CRM", () => {
     expect(JSON.stringify(avisos)).not.toContain("Prefere noite");
   });
 
-  it.each(["SUGERIR", "SHADOW"] as const)("nota %s não publica aviso nem evento efetivo", async (modo) => {
+  it.each(["SUGERIR", "SHADOW"] as const)("nota %s publica apenas refresh da ação, sem nota efetiva", async (modo) => {
     const { resultado, avisos } = await comAvisosInbox(() => exec(
       { acao: "NOTA_INTERNA", texto: "Ainda não aplicada", justificativa: "x" },
       modo === "SUGERIR" ? "SUGERIR" : "EXECUTAR", { simulado: modo === "SHADOW" },
     ));
     expect(resultado.status).toBe(modo === "SUGERIR" ? "SUGERIDA" : "SIMULADA");
-    expect(avisos).toEqual([]);
+    expect(avisos).toEqual([{
+      tipo: "atendimento.atualizado",
+      atendimentoId: c.at.id,
+      conversaId: c.at.conversaId,
+      mensagemId: null,
+    }]);
+    expect(JSON.stringify(avisos)).not.toContain("Ainda não aplicada");
+    expect(resultado).toMatchObject({ eventoId: null, intencaoId: null });
     expect(await prisma.evento.count({ where: { tipo: "NotaInterna" } })).toBe(0);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.mensagemWhatsApp.count({ where: { direcao: "SAIDA" } })).toBe(0);
   });
 
   it("nota revertida por rollback não publica aviso nem persiste o evento", async () => {

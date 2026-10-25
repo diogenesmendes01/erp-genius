@@ -7,7 +7,8 @@ export const CANAL_INBOX = "inbox_eventos";
 
 export type AvisoInbox = {
   // `resync`: a escuta caiu e voltou; avisos podem ter sido perdidos, o cliente recarrega o que mostra.
-  tipo: "atendimento.atualizado" | "mensagem.nova" | "mensagem.status" | "resync";
+  tipo: "atendimento.atualizado" | "mensagem.nova" | "mensagem.status" | "resync" | "aria.global";
+  // aria.global usa somente os quatro campos públicos: ids nulos e conversaId vazio.
   atendimentoId: string | null;
   mensagemId: string | null;
   conversaId: string;

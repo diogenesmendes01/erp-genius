@@ -2,10 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
-import { whereBuscaConversas } from "@/server/whatsapp/busca-inbox";
 import { setoresDeNumero } from "@/server/whatsapp/numero-setor";
 import type { Setor } from "@/server/whatsapp/setor";
-import { preferenciasDoUsuario } from "@/server/whatsapp/preferencias-consulta";
 import {
   contextoInclude, podeVerLeadNaThread, notasDoLead, resumirConversa,
   type ConversaResumo, type MensagemThread, type NotaInternaThread,
@@ -13,10 +11,12 @@ import {
 import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
 import { notasInternasDoAtendimento } from "@/server/whatsapp/notas-consulta";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
-import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
+import { codificarCursor, decodificarCursor } from "./cursor";
 import type { ContagensChipsInbox, FiltrosInbox } from "./filtros";
-import { condicaoNaoLidaPessoal } from "./nao-lidas";
-import { carregarContextoAria, sugestoesPendentesPorAtendimento, derivarEstadoAria, linhaEstadoDe, type EstadoAria } from "./estado-aria";
+import { resolverOperacaoListaInbox, type OperacaoListaInbox, type OpcoesOperacaoInbox } from "./contexto-lista";
+import { condicoesWhereDosFiltros } from "./filtros-sql";
+import { selecionarIdsPaginaInbox, preferenciasDaPaginaSql, contarLegadosComContexto } from "./consulta-sql";
+import { idsHandoffPendente, sugestoesPendentesPorAtendimento, derivarEstadoAria, linhaEstadoDe, type EstadoAria } from "./estado-aria";
 import { autorDaPrevia, type AutorPrevia } from "./previa";
 
 export interface ItemListaInbox extends ConversaResumo {
@@ -30,81 +30,32 @@ export interface ItemListaInbox extends ConversaResumo {
 }
 
 const LIMITE_LISTA = 50;
-const LIMITE_FIXADAS = 100;
 const LIMITE_THREAD = 60;
 const LIMITE_THREAD_MAX = 100;
 
-/** Filtros da URL como condições; sempre combinadas com o escopo (nunca o substituem). */
-async function condicoesDosFiltros(u: UsuarioSessao, f: FiltrosInbox): Promise<Prisma.AtendimentoWhatsAppWhereInput[]> {
-  const c: Prisma.AtendimentoWhatsAppWhereInput[] = [];
-  if (f.setor) c.push({ finalidade: f.setor });
-  if (f.numeroId) c.push({ conversa: { numeroId: f.numeroId } });
-  if (f.responsavel === "eu") c.push({ responsavelId: u.id });
-  else if (f.responsavel === "fila") c.push({ responsavelId: null, encerradoEm: null });
-  else if (f.responsavel) c.push({ responsavelId: f.responsavel });
-  if (f.status) c.push({ status: f.status });
-  if (f.prazoEstourado) c.push({ prazoRespostaEm: { lt: new Date() }, primeiraRespostaEm: null, encerradoEm: null });
-  if (f.busca) c.push(whereBuscaConversas(f.busca));
-  if (f.naoLidas) c.push(await condicaoNaoLidaPessoal(u.id));
-  return c;
+/** Cinco chips legados: mesma base histórica, agora em um agregado SQL. */
+export async function contarChipsInbox(u:UsuarioSessao,f:FiltrosInbox,o:OpcoesOperacaoInbox={}):Promise<ContagensChipsInbox> {
+  const op=resolverOperacaoListaInbox(u,o);
+  const ctx=f.aria?await op.global():{db:op.db,usuarioId:op.usuarioId,agora:op.agora,escopo:await op.escopo()};
+  return contarLegadosComContexto(ctx,f);
 }
-
-/** Agregados do mesmo universo autorizado, retirando somente os filtros controlados pelos chips. */
-export async function contarChipsInbox(
-  u: UsuarioSessao, f: FiltrosInbox, opcoes: { enviar?: boolean } = {},
-): Promise<ContagensChipsInbox> {
-  const filtrosBase = { ...f, responsavel: undefined, naoLidas: undefined, prazoEstourado: undefined };
-  const base = [await escopoAtendimentos(u, { enviar: opcoes.enviar === true }), ...await condicoesDosFiltros(u, filtrosBase)];
-  const contar = (extra: Prisma.AtendimentoWhatsAppWhereInput[] = []) => prisma.atendimentoWhatsApp.count({ where: { AND: [...base, ...extra] } });
-  const naoLida = await condicaoNaoLidaPessoal(u.id);
-  const [todas, minhas, naoLidas, prazo, fila] = await Promise.all([
-    contar(), contar([{ responsavelId: u.id }]), contar([naoLida]),
-    contar(await condicoesDosFiltros(u, { prazoEstourado: true })),
-    contar([{ responsavelId: null, encerradoEm: null }]),
-  ]);
-  return { todas, minhas, naoLidas, prazo, fila };
-}
-
-const fixadaDoUsuario = (usuarioId: string): Prisma.AtendimentoWhatsAppWhereInput =>
-  ({ conversa: { preferenciasUsuarios: { some: { usuarioId, fixadaEm: { not: null } } } } });
-
-/** Condição "depois do cursor" na ordem (ultimaMensagemEm DESC NULLS LAST, id DESC). */
-function depoisDoCursor(c: CursorInbox): Prisma.AtendimentoWhatsAppWhereInput {
-  if (c.em === null) return { ultimaMensagemEm: null, id: { lt: c.id } };
-  const em = new Date(c.em);
-  return { OR: [{ ultimaMensagemEm: { lt: em } }, { ultimaMensagemEm: em, id: { lt: c.id } }, { ultimaMensagemEm: null }] };
-}
-
-/**
- * Página da lista do inbox (keyset). O escopo é sempre a base; filtros só restringem. Fixadas do usuário
- * vêm numa consulta própria, só na primeira página, e ficam fora das páginas por cursor.
- * `enviar`: a base vira o escopo de ENVIO (aberto, número ativo, convite com envio), para escolher o destino do
- * encaminhar; a action confere de novo (destinatário atual, opt-out, mesmo número, sessão do motor).
- */
-export async function listarAtendimentosPagina(
-  u: UsuarioSessao, f: FiltrosInbox, cursor: string | null, limite = LIMITE_LISTA, opcoes: { enviar?: boolean } = {},
-): Promise<{ itens: ItemListaInbox[]; proximo: string | null }> {
-  const tamanho = Math.min(Math.max(Math.trunc(limite) || LIMITE_LISTA, 1), 200);
-  const pos = cursor ? decodificarCursor(cursor) : null;
-  const base: Prisma.AtendimentoWhatsAppWhereInput = { AND: [await escopoAtendimentos(u, { enviar: opcoes.enviar === true }), ...await condicoesDosFiltros(u, f)] };
-  const include = includeLista;
-
-  const fixadas = pos ? [] : await prisma.atendimentoWhatsApp.findMany({
-    where: { AND: [base, fixadaDoUsuario(u.id)] }, take: LIMITE_FIXADAS, include,
-    orderBy: [{ ultimaMensagemEm: { sort: "desc", nulls: "last" } }, { id: "desc" }],
+/** SQL seleciona antes do limite; a hidratação reaplica escopo e filtros atuais sem conceder acesso por ID. */
+export async function listarAtendimentosPagina(u:UsuarioSessao,f:FiltrosInbox,cursor:string|null,limite=LIMITE_LISTA,o:OpcoesOperacaoInbox={}):Promise<{itens:ItemListaInbox[];proximo:string|null}> {
+  const op=resolverOperacaoListaInbox(u,o),tamanho=Math.min(Math.max(Math.trunc(limite)||LIMITE_LISTA,1),200);
+  const pos=cursor?decodificarCursor(cursor):null;
+  const ctx=f.aria?await op.global():{db:op.db,usuarioId:op.usuarioId,agora:op.agora,escopo:await op.escopo()};
+  const {fixadas,normais}=await selecionarIdsPaginaInbox(ctx,f,pos,tamanho);
+  const pagina=normais.slice(0,tamanho),ultimo=pagina.at(-1);
+  const proximo=normais.length>tamanho&&ultimo?codificarCursor({em:ultimo.ultimaMensagemEm?.toISOString()??null,id:ultimo.id}):null;
+  const ids=[...new Set([...fixadas,...pagina].map(a=>a.id))];
+  if(!ids.length)return {itens:[],proximo};
+  const linhas=await op.db.atendimentoWhatsApp.findMany({
+    where:{AND:[{id:{in:ids}},await op.escopo(),...condicoesWhereDosFiltros(u.id,f,op.agora)]},include:includeLista,
   });
-  const naoFixada: Prisma.AtendimentoWhatsAppWhereInput = { NOT: fixadaDoUsuario(u.id) };
-  const linhas = await prisma.atendimentoWhatsApp.findMany({
-    where: { AND: [base, naoFixada, ...(pos ? [depoisDoCursor(pos)] : [])] }, take: tamanho + 1, include,
-    orderBy: [{ ultimaMensagemEm: { sort: "desc", nulls: "last" } }, { id: "desc" }],
-  });
-  const temMais = linhas.length > tamanho;
-  const pagina = linhas.slice(0, tamanho);
-  const ultimo = pagina[pagina.length - 1];
-  const proximo = temMais && ultimo ? codificarCursor({ em: ultimo.ultimaMensagemEm?.toISOString() ?? null, id: ultimo.id }) : null;
-
-  const itens = await montarItens(u.id, [...fixadas, ...pagina]);
-  return { itens, proximo };
+  const porId=new Map(linhas.map(a=>[a.id,a]));
+  const ordenadas=ids.flatMap(id=>{const a=porId.get(id);return a?[a]:[];});
+  const itens=(await montarItens(op,ordenadas)).filter(a=>(!f.aria||a.estadoAria===f.aria)&&(!f.naoLidas||a.naoLidas>0));
+  return {itens,proximo};
 }
 
 type LinhaLista = Awaited<ReturnType<typeof prisma.atendimentoWhatsApp.findMany<{ include: typeof includeLista }>>>[number];
@@ -112,12 +63,13 @@ const includeLista = { ...contextoInclude, responsavel: { select: { nome: true }
   mensagens: { orderBy: [{ criadoEm: "desc" as const }, { id: "desc" as const }], take: 1,
     select: { corpo: true, tipo: true, direcao: true, origem: true, autorId: true, criadoEm: true, autor: { select: { nome: true } } } } };
 
-async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<ItemListaInbox[]> {
-  if (!todas.length) return [];
-  const ids = [...new Set(todas.map(a => a.id))];
-  const ctx = await carregarContextoAria(prisma, { atendimentoIds: ids });
-  const pendentes = await sugestoesPendentesPorAtendimento(prisma, ids, ctx.agora);
-  const prefs = await preferenciasDoUsuario(usuarioId, ids);
+async function montarItens(op:OperacaoListaInbox, todas:LinhaLista[]):Promise<ItemListaInbox[]> {
+  if(!todas.length)return [];
+  const {db,usuarioId,agora}=op,ids=[...new Set(todas.map(a=>a.id))];
+  const global=await op.global();
+  const ctx={ariaAtiva:global.ariaAtiva,agora,handoffPendentes:new Set(await idsHandoffPendente(db,ids))};
+  const pendentes=await sugestoesPendentesPorAtendimento(db,ids,agora);
+  const prefs=await preferenciasDaPaginaSql(db,usuarioId,ids,agora);
   return todas.map((a): ItemListaInbox => {
     const pref = prefs.get(a.id), mensagem = a.mensagens[0];
     const previa = autorDaPrevia(mensagem ? { ...mensagem, autorNome: mensagem.autor?.nome ?? null } : null, pendentes.get(a.id) ?? null, usuarioId);
@@ -134,11 +86,10 @@ async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<Item
 }
 
 /** Um atendimento como linha da lista, só se estiver no escopo do usuário (deep link `?c=` fora da primeira página). */
-export async function obterItemListaInbox(u: UsuarioSessao, atendimentoId: string): Promise<ItemListaInbox | null> {
-  const a = await prisma.atendimentoWhatsApp.findFirst({
-    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] }, include: includeLista,
-  });
-  return a ? (await montarItens(u.id, [a]))[0]! : null;
+export async function obterItemListaInbox(u:UsuarioSessao,atendimentoId:string,o:OpcoesOperacaoInbox={}):Promise<ItemListaInbox|null> {
+  const op=resolverOperacaoListaInbox(u,o);
+  const a=await op.db.atendimentoWhatsApp.findFirst({where:{AND:[{id:atendimentoId},await op.escopo()]},include:includeLista});
+  return a?(await montarItens(op,[a]))[0]!:null;
 }
 
 const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: m.criadoEm.toISOString(), id: m.id });
