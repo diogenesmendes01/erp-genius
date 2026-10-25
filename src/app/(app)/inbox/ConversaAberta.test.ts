@@ -1,9 +1,11 @@
-import { createElement } from "react";
+import { createElement, isValidElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
+const virtual350=vi.hoisted(()=>({props:null as null|import("@/components/conversa/VirtualList").VirtualListProps<unknown>}));
+vi.mock("@/components/conversa/VirtualList",async original=>{const real=await original<typeof import("@/components/conversa/VirtualList")>();return {...real,VirtualList:(p:import("@/components/conversa/VirtualList").VirtualListProps<unknown>)=>{virtual350.props=p;return real.VirtualList(p);}};});
 const permissao = vi.hoisted(() => ({ enviar: true, chamadas: [] as unknown[][] }));
 vi.mock("@/server/inbox/permissoes", async (orig) => {
   const real = await orig<typeof import("@/server/inbox/permissoes")>();
@@ -12,6 +14,7 @@ vi.mock("@/server/inbox/permissoes", async (orig) => {
     return args[1] === "enviar" ? permissao.enviar : real.podeExecutar(...args);
   } };
 });
+vi.mock("@/server/aria/acoes",()=>({aprovarAcaoAria:vi.fn(),rejeitarAcaoAria:vi.fn()}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn() }));
 vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), revogarParticipante: vi.fn(), transferirAtendimento: vi.fn() }));
@@ -221,4 +224,55 @@ describe("319: estados públicos da thread",()=>{
   const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens:[msg],carregandoAntigas:true,temMaisAntes:true}})));
   expect(h).toContain("Olá");expect(h).not.toContain("Carregando mensagens");expect(h).toContain('aria-busy="true"');expect(h).toContain("Mensagens anteriores");
  });
+});
+
+// #350: cartões vêm do painel autorizado; envio do compositor é outro contrato.
+it("não mostra sugestão posterior à janela antiga, mas a conserva na janela atual",()=>{
+ const cartao={id:"futura",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T16:00Z",expiraEm:null,justificativa:null,texto:"Sugestão posterior à janela",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ for(const temMaisDepois of [true,false]){
+  const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens:[msg],temMaisDepois},aria:{cartoes:[cartao]}} as never)));
+  expect(h.includes(cartao.texto)).toBe(!temMaisDepois);
+ }
+});
+it("renderiza sugestão autorizada mesmo sem podeDecidir no lead do atendimento ou envio",()=>{
+ const cartao={id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:"Pedido de informação",texto:"Resposta sugerida",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,aria:{podeDecidir:false,cartoes:[cartao]}} as never)));
+ expect(h).toContain("Resposta sugerida");expect(h).toContain("Aprovar e enviar");
+});
+
+it("cartões são alcançáveis no consumidor da lista virtual real sem alterar keys legadas",()=>{
+ const mensagens=Array.from({length:120},(_,i)=>({...msg,id:"m"+i,criadoEm:new Date(Date.UTC(2026,9,17,12,i)).toISOString()}));
+ const cartao={id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T12:01:30Z",expiraEm:null,justificativa:null,texto:"Resposta",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,conversa:{...conversaVazia,mensagens},aria:{cartoes:[cartao]}} as never)));
+ const v=virtual350.props!;const row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;
+ expect(v.stableMount).toBe(true);expect(v.isItemFocusable!(row,0)).toBe(true);expect(v.getKey(row,0)).toBe("sugestao-aria:s");
+ expect(v.items.filter(x=>(x as {tipo:string}).tipo==="mensagem").map((x,i)=>v.getKey(x,i))).toEqual(mensagens.map(m=>m.id));
+});
+
+it("348 usa estado e capacidades Aria recebidos sem inferir papel",()=>{
+ const aria={handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:"MANUAL" as const,podeDevolver:true,};
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"aprovacao"}),aria})));
+ expect(h).toContain("Aria aguarda sua aprovação");expect(h).toContain('aria-label="Devolver para Aria"');expect(h).toContain('title="Aria pausada · Pausa manual"');
+ const negado=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"aprovacao"}),aria:{...aria,podeDecidir:false,podeDevolver:false}})));
+ expect(negado).toContain("Aria aguarda aprovação");expect(negado).not.toContain('aria-label="Devolver para Aria"');
+});
+it("348 grupo e encerrada preservam estados legados sem devolução",()=>{for(const alteracao of [{grupo:true},{status:"ENCERRADO" as const}]){const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true,item:item({estadoAria:"ia",...alteracao}),aria:{handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:null,podeDevolver:true,}})));expect(h).not.toContain("Aria está atendendo");expect(h).not.toContain('aria-label="Devolver para Aria"');}});
+
+it("352 faixa usa handoff autorizado e relógio SSR existente, sem inferir apenas estado da lista",()=>{
+ const handoff={acaoId:"h352",pedidoEm:"2026-10-25T11:56:00Z",motivo:null,motivoTexto:"Valor alto",destino:"FILA_SETOR" as const,responsavelNome:null,resumo:null,feito:[],podeAssumir:true,ehResponsavel:false};
+ const props=propsConversa({podeEnviar:true,item:item({estadoAria:"handoff"}),agoraInicial:Date.parse("2026-10-25T12:00:00Z"),aria:{handoff,podeDecidir:false,cartoes:[],pausada:true,motivo:"HANDOFF",podeDevolver:false,}});
+ const h=renderToStaticMarkup(createElement(ConversaAberta,props));expect(h).toContain("Aria pediu ajuda há 4 min");expect(h).toContain("Ver resumo e assumir");
+ const sem=renderToStaticMarkup(createElement(ConversaAberta,{...props,aria:{...props.aria!,handoff:null}}));expect(sem).not.toContain("Ver resumo e assumir");
+});
+
+it("353 cartão mantém callback da conversa depois de retirar painel legado",()=>{
+ const cartao={id:"353-cartao",turnoId:"t",acao:"RESPONDER" as const,status:"SUGERIDA" as const,criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:null,texto:"Resposta353",detalhe:{tipo:"enviar" as const,documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ const aoMudar=vi.fn();renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,aoMudar,aria:{pausada:false,motivo:null,podeDevolver:false,podeDecidir:false,cartoes:[cartao],handoff:null}})));
+ const v=virtual350.props!,row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;const no=v.renderItem(row,0);
+ if(!isValidElement<{aoDecidir():void}>(no))throw Error("Cartão ausente na thread");expect(no.props.aoDecidir).toBe(aoMudar);no.props.aoDecidir();expect(aoMudar).toHaveBeenCalledOnce();
+});
+it.each([false,true])("434 consumidor transporta bloqueio cliente=%s sem usar podeDecidir geral",bloquearDecisoesAria=>{
+ const cartao={id:"434",turnoId:"t",acao:"RESPONDER" as const,status:"SUGERIDA" as const,criadoEm:"2026-10-17T15:31Z",expiraEm:null,justificativa:null,texto:"Autorizado pelo lead da ação",detalhe:{tipo:"enviar" as const,documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+ renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:false,bloquearDecisoesAria,aria:{pausada:false,motivo:null,podeDevolver:false,podeDecidir:false,cartoes:[cartao],handoff:null}})));
+ const v=virtual350.props!,row=v.items.find(x=>(x as {tipo:string}).tipo==="sugestao-aria")!;const no=v.renderItem(row,0);if(!isValidElement<{bloqueado?:boolean}>(no))throw Error("Cartão ausente");expect(no.props.bloqueado).toBe(bloquearDecisoesAria);
 });

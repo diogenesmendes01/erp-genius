@@ -26,3 +26,11 @@ it("atalho exigeCtrl/MetaK e não captura composição,Alt ou evento já consumi
  expect(ehAtalhoBusca({key:"k",metaKey:true,ctrlKey:false})).toBe(true);expect(ehAtalhoBusca({key:"K",metaKey:false,ctrlKey:true})).toBe(true);
  for(const f of [{key:"j",metaKey:true,ctrlKey:false},{key:"k",metaKey:false,ctrlKey:false},{key:"k",metaKey:false,ctrlKey:true,isComposing:true},{key:"k",metaKey:false,ctrlKey:true,altKey:true},{key:"k",metaKey:true,ctrlKey:false,defaultPrevented:true}])expect(ehAtalhoBusca(f)).toBe(false);
 });
+
+it("346 prefere sete agregados do resumo e mantém fallback legado se ausente",()=>{
+ const resumo={contagens:{todas:900,ia:30,aprovacao:20,handoff:10,humano:50,semResposta:4,naoAtribuidas:7},aria:{estado:"ATIVA" as const,pausada:false,podeGerenciar:false}};
+ const h=html({resumo,filtros:{aria:"handoff"},contagens:{todas:1,minhas:1,naoLidas:1,prazo:1,fila:1}});
+ for(const text of ["IA atendendo","Aprovação","Handoff","Humanos","Sem resposta",">900<",">30<"])expect(h).toContain(text);
+ expect(h).not.toContain(">Minhas<");expect(h).not.toContain(">Não lidas<");expect(h.match(/aria-pressed="true"/g)).toHaveLength(1);
+ expect(html()).toContain("Minhas");
+});

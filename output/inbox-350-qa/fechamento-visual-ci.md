@@ -1,0 +1,13 @@
+# Fechamento textual de QA #350
+
+A candidata e054 preserva os 17 objetos exclusivos da #350 e integra a main abb9616. CI40170735019: cinco jobs SUCCESS, TypeScript/lint/build e 953 arquivos/7.616 testes em cada fuso UTC e America/Sao_Paulo. ROOT: recorte10/205 e lint do consumidor EXIT0; TESTER no checkout exato: três arquivos completos/104 testes EXIT0, sem filtros ou skips. Resultados sobrepostos não são somados.
+
+O corpus visual tem 18 pares/36 PNGs originais: três cenas (resposta pendente, tarefa pendente e aprovada), três larguras e dois temas. TESTER inspecionou os 12 pares desktop/celular; ROOT inspecionou os seis pares tablet. Cartões-alvo, texto e ações ficam legíveis e inteiros. Nas duas referências resposta/tablet, a captura final usa rolagem nativa adicional: card inteiro, CTA e composição sem sobreposição. As referências antigas cortadas não integram os 36 selecionados. Nenhum PNG foi editado ou recodificado.
+
+Quatro proveniências: 18 APP do formalV4 (run98b84822), dez referências pendentes do CLI2 (run049f5847), seis referências aprovadas (runb789ee16) e duas referências resposta/tablet finais (runeb73bfa7). Os dois primeiros agregados continuam EXIT1 por falhas posteriores; seus arquivos individuais foram auditados. Os dois últimos lotes têm EXIT0 apenas nos respectivos escopos. Não houve execução única de 36 imagens. Manifesto selecionado: visual-manifesto.json.
+
+APP: auditorias individuais de rede positivas, recursos fechados e SSE terminal com Page viva. PROTO: seloDOM e auditorias posteriores próprios; network.sealed=false permanece literal. O erro legado de console sel foi classificado estritamente pelos frames e hashes originais. PROTO é referência estática; não comprova autoscroll, foco ou comportamento após seleção. Roboto declarado mas não usado em toda largura não foi forçado. Badges Next/Rendering e popup da referência permanecem nas imagens; não cobrem os alvos.
+
+O original de resposta aprova pacote de três ações e permite edição; APP350 exibe cartões individuais/histórico autorizado, com expiração existente. Pacote/edição/alçadas D1/D2 pertencem às #354–356. A comparação não afirma identidade de pixels, execução de envio, anúncio audível ou equivalência funcional de pacote. Nenhuma ação de negócio foi executada no APP para as capturas.
+
+ZIP 4.261.535 bytes, SHA256 692aedb59f79e1cde5eac4f14310684e9fa60f04751a88ace2f9058dbdbea8ef: 36 PNGs, manifesto e README; ROOT conferiu as 38 entradas e todos os hashes (4771ef EXIT0). Arquivos locais aguardam consentimento para anexar à PR430; sem anexação ou merge presumidos. Banco ci-integracao restaurado ao backup com 424 hashes, DDL492 e zero outro ator (937809 EXIT0). Provedores permaneceram vazios; sem deploy.

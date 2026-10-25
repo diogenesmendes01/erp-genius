@@ -1,26 +1,30 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useState, useImperativeHandle, type Ref, type KeyboardEvent } from "react";
 import { IconLock, IconNote, IconSparkles } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
 import { Compositor, type PropsCompositor } from "@/components/conversa/Compositor";
 
 type Aba = "responder" | "nota";
+export interface ControleResposta { selecionarResponder(): void }
 export type PropsRodapeConversa = Omit<PropsCompositor, "modo" | "contido"> & {
   modo: "travado" | "compositor";
+  /** Ponte local da conversa: muda a aba sem remontar o compositor/rascunho. */
+  controleResposta?: Ref<ControleResposta>;
   abaInicial?: Aba;
   /** Grupos não são atendimentos individuais anotáveis; a action revalida o escopo. */
   podeAnotar?: boolean;
   travado?: { texto: string; aoNota(): void; aoAssumir?: () => void };
 };
 
-export function RodapeConversa({ modo, abaInicial = "responder", podeAnotar = true, travado, ...compositor }: PropsRodapeConversa) {
+export function RodapeConversa({ modo, abaInicial = "responder", podeAnotar = true, travado, controleResposta, ...compositor }: PropsRodapeConversa) {
   const uid = useId();
   const [estado, setEstado] = useState(() => ({ atendimentoId: compositor.atendimentoId, aba: abaInicial }));
   if (estado.atendimentoId !== compositor.atendimentoId) setEstado({ atendimentoId: compositor.atendimentoId, aba: abaInicial });
   const selecionada = estado.atendimentoId === compositor.atendimentoId ? estado.aba : abaInicial;
   const aba = !podeAnotar && selecionada === "nota" ? "responder" : selecionada;
   const escolher = (nova: Aba) => { if (nova !== "nota" || podeAnotar) setEstado({ atendimentoId: compositor.atendimentoId, aba: nova }); };
+  useImperativeHandle(controleResposta, () => ({ selecionarResponder: () => escolher("responder") }));
   function aoTeclar(e: KeyboardEvent<HTMLButtonElement>) {
     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.nativeEvent.isComposing) return;
     if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;

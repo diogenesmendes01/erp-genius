@@ -1,0 +1,81 @@
+# Entrega DEV B — Inbox #352
+
+Base final autorizada: 17feea9990cebfa5ccefee4d4fa20551441e152a. Branch codex/inbox-e3-352-handoff-conversa. Recorte exclusivamente frontend; backend #357 e D3 permanecem explicitamente pendentes. Nenhuma mudança de servidor, schema, contrato de action, package, lock, env, perfil, banco ou integrações.
+
+## TDD e negativos preservados
+
+- c8f91b: módulos ausentes, saída 1 administrativa; zero casos executados, não é RED de comportamento.
+- d9b268: scaffold vazio, cinco falhas de comportamento.
+- 5081c0: prop Modal, uma falha e três controles; GREEN apresentação 86a28d, três arquivos/nove casos, saída 0.
+- dcfbf8 (log red-interacao): sete casos de interação RED; GREEN 5404a3, sete casos, saída 0.
+- 3dae43: consumidores, dois arquivos/49 casos, duas falhas e 47 controles.
+- d380a0: primeira integração, 18 falhas/43 controles por variável leituraPainel não desestruturada; corrigida. GREEN a17356: três arquivos/56 casos, saída 0.
+- 014f6d: revogação e mapa, 99 casos, duas falhas/97 controles; intenção de foco revivida após revogação e entradas de mapa ausentes. Ambas corrigidas sem alterar guardas.
+- sessão7006/d3106b: regressão1, 88 arquivos/1.032 casos, 36 falhas/996 controles. Somente mocks legados de hooks em dois testes. Adaptações locais preservaram asserções; comportamento novo usa React/Modal/hook reais.
+- sessão53138/3d53c6: regressão2, 88 arquivos/1.032 testes, saída 0. w1/heap1024. Recorte, não suíte global.
+- 6c4939: interação ampliada, 12/12 saída 0; controles adicionais de clique duplo, revogação pré-ACK e preservação dos rascunhos.
+- 65c6b0: lint inicial de oito fontes, saída 0.
+
+Gates finais serão registrados somente após saída terminal. Logs privados originais permanecem em output/inbox-352-*. Nenhum filtro de caso ou skip novo. Integração de banco excluída pela configuração original; sem DB/Next/browser/HTTP/install/env/provider/captura/push/deploy. Histórico output/v1/v2 preservado.
+
+- sessão5328/afbbc7: regressão ampliada com paleta/contraste/tipografia, saída 1; 92 arquivos/1.072 casos, única falha foi bg-danger-bg inexistente no mapa Tailwind (1.071 controles). Corrigida para bg-red-50, mapeado ao MESMO --danger-bg original; nenhuma mudança de token global/guarda/config.
+- 99272c: lint de todos os 17 arquivos TS/TSX alterados, --max-warnings=0, saída 0.
+## Gates finais
+
+- sessão39987/chunk602cf1, saída 0: 92 arquivos/1.072 testes. Pasta Inbox completa + Modal (3 arquivos), Compositor (4), Botao, mapa botões completo (85 casos), paleta, contraste, contraste-elementos e tipografia. w1/heap1024, sem filtro de caso/skip novo. Não é suíte global.
+- aa6cb8, saída 0: quatro arquivos/31 testes canônicos de useDialogo, retorno de foco e guarda de diálogos.
+- 547cb1, saída 0: lint dos 17 arquivos TS/TSX tocados, --max-warnings=0.
+- 71b8e6, saída 0: git diff --check.
+
+TypeScript original sessão53407/58eee5 terminou EXIT2: 1.107 diagnósticos em output histórico privado e três TS2769 na fixture nova (ok boolean). Fixture corrigida com literal true: 12 testes EXIT0 71eeb0, lint EXIT0 0f870e. Replay original incremental já iniciado antes da orientação de não repetir terminou sessão24094/ce82c4 EXIT2: zero diagnóstico src, 1.107 em output. Não é TSC aprovado. Inventário privado contém 23 arquivos causais/hash, todos untracked e não ignorados, zero versionado; ROOT arquivará históricos preservando hashes antes de outro original. Nenhuma configuração/exclusão/generate foi alterada. QA independente/build/CI/visual estão pendentes do integrador/TESTER, sem alegação de homologação. Matriz visual e limite #357 documentados no SPEC.
+
+## R1 — abertura invalidada por revogação
+
+A contraprova independente do TESTER em f368 encontrou P2: voltar podeAssumir no mesmo acaoId reabilitava o botão do Modal, mas o hook mantinha a geração encerrada; a segunda action era enviada e seu ACK não reconciliava. Negativo TESTER ab6bea (13 casos/12 controles/uma falha) preservado byte a byte em output privado próprio, sem alterar o original do TESTER.
+
+A abertura invalidada agora permanece encerrada no estado renderizado do hook e no ciclo do Modal. Resumo continua disponível, sem Assumir/Responder/retry, com Fechar e orientação explícita de fechar/reabrir. Somente abertura deliberada gera token vivo. ACK da abertura antiga continua rejeitado, inclusive depois de iniciar nova action na abertura seguinte; ACK novo solicita atualização e só foca com painel fresco. Não há reativação automática, nova política, remount de conversa ou alteração de rascunho/backend.
+
+TDD DEV de7152 EXIT1:13 casos/12 controles/uma falha (CTA indevidamente presente). Primeira edição b4f9f8 EXIT1 ainda não atribuiu a marca por substituição textual que não encontrou newline; negativo preservado. GREEN634d14 EXIT0:16 casos em dois arquivos. Teste adicional SSR cobre ausência de CTA/retry e Fechar com capacidades devolvidas. Focais19/279 sessão45556/19aec8 EXIT0, lint4/67f3c1 EXIT0. Gate final após reforço do ciclo será registrado abaixo.
+
+O oráculo T literal pressupõe que o botão existe e chama hasAttribute sem guard para ausência; após a escolha aprovada de retirar CTA ele precisa de novo caso do TESTER. Não foi relaxado nem declarado verde. DEV adicionou oráculo real mais estrito de ausência/reabertura/ACK antigo/novo/foco, no teste versionado. Tentativa inicial de configuração privada para rodar o oráculo concatenou include original e iniciou cobertura além do focal (sessão75513); interrompida c4f214 EXIT1, sem alegação de global. Configuração privada foi corrigida para include fechado; nenhuma configuração versionada alterada. Não houve novo TSC/DB/Next/browser nem gate global concluído após R1.
+
+GREEN final sessão90187/e8f758 EXIT0:19 arquivos/279 testes, w1/heap1024, sem filtro de caso ou skips novos, guarda botões85 completa incluída. Lint4 final b785ce EXIT0 --max-warnings=0. Revisão restrita a quatro fontes/testes e três documentos.
+
+## R2 — resumo pós-ACK durante reconciliação incompleta
+
+TESTER confirmou P2 preexistente em f368 e presente em 7c8: ACK assumir → painel200 sem handoff com lista ainda sem responsável → novo painel503 preservando DTO sem handoff. O busy confirmando baixava no erro e o fallback do resumo desaparecia. Oráculo T literal e log preservados por cópia em output próprio; RED DEV do mesmo arquivo 8b2d39 EXIT1:14 casos/13 controles/uma falha. Controles novos de sucesso e cancelar/reabrir RED07b669 EXIT1:15 casos/13 controles/duas falhas.
+
+A retenção agora tem estado aguardandoConfirmacao, distinto do busy de leitura. Permanece desde ACK até conclusão válida, cancelamento ou invalidação da abertura. O snapshot é exclusivamente conteúdo de leitura: contexto autorizado depende somente do DTO atual; Modal não oferece novo Assumir/Responder enquanto aguarda confirmação. No503 preserva resumo e retry de leitura, sem busy enganoso. O retry chama só aoMudar existente. Nova leitura OK ainda exige responsável/envio vigentes antes do foco local. Cancelar invalida a intenção, e reabrir outro handoff cria nova geração sem erro/retry antigos.
+
+GREEN0cc894 EXIT0:dois arquivos/19 casos. Oráculo T ORIGINAL sem alterações8ff734 EXIT0:14/14. Focais finais sessão50483/787880 EXIT0:19 arquivos/282 casos, incluindo guarda botões85 completa, w1/heap1024/sem filtro de caso ou skip novo. Lint4 f3e760 EXIT0 --max-warnings=0. SSR adicional prova resumo/Cancelar/retry sem CTAs de negócio nem progresso de leitura após falha. Nenhum TSC/global/DB/Next/browser/query/polling/backend/schema/env/push foi executado/alterado nesta R2. Gates originais e QA exata permanecem do integrador/TESTER.
+
+## R3 — EstadoVazio e classificação nominal de paginação
+
+ROOT executou originais em f37 após arquivar históricos com hashes: TSC11676/863492 EXIT0; FullUNIT96732/a8b3e2 EXIT1 (978 arquivos, 8.381 casos, duas falhas/8.379 controles). Falhas: vazio cru de feito no Modal e classificação textual de Próxima ação sugerida. Lint global88481/fa897c EXIT1 teve três erros somente em cópias privadas de bibliotecas, cujo arquivo físico é coordenado por ROOT; nenhuma biblioteca/config foi editada pelo DEV.
+
+TDD R3 a1164c EXIT1:três arquivos/38 casos, três falhas/35 controles (guardas reais + SSR exige data-estado-vazio). O vazio agora usa EstadoVazio compacto, preservando Nenhuma ação registrada.; entrada declarativa exata acrescentada no mapa de estados vazios, sem relaxar detector.
+
+A guarda de paginação já distingue texto de domínio em NAO_E_PAGINACAO. Por coordenação explícita ROOT, somente ModalResumoHandoff foi adicionado nessa classificação e na cópia literal da medição. O callsite é o título Próxima ação sugerida, condicionado a handoff.resumo.proximoPasso, sem href, cursor ou navegação de página. Produtor351 literal handoff-inbox.ts77–88 consulta lotes internos take100, filtra autorização e interrompe escolhidas.length===10; linha97 reverse/map devolve as dez últimas autorizadas em ordem cronológica. Não confundir lote100 com limite público10. O teste INT preexistente handoff-inbox.int.test.ts106–116 cobre 201 negadas e 15 autorizadas, retornando dez tags05–14; foi inspecionado, não reexecutado nesta R3 sem lease. Backend permaneceu literal.
+
+O controle novo lê a fonte real do Modal no mesmo path nominal, confirma ausência de links/casos e injeta um link avançar página; exige a detecção so-para-frente. Parser, linksDePagina==[] e casosDoArquivo==[] originais permanecem inteiros. Uma paginação futura nesse path continua falhando; nenhuma exceção genérica foi criada.
+
+Replay intermediário sessão10822/fb33b8 EXIT1:178 casos, três falhas/175 controles (manifesto do vazio ainda ausente, ordem da cópia literal e fixture de mutação precisaram ajuste). GREEN final sessão54522/3b7ba5 EXIT0:8 arquivos/178 casos, guardas estados-vazios/paginacao completas, SSR/Modal/hook reais, botões85, paleta/contraste/tipografia, w1/heap1024/sem filtro de caso/skip novo. EstadoVazio canônico3e8fdb EXIT0:17/17. Lint4 final48cb12 EXIT0 --max-warnings=0. Sem novo TSC/global/DB/Next/browser/HTTP/schema/env/push; hook/backend f37 e negativos preservados. ROOT repetirá originais/QA antes de publicação; visual permanece pendente.
+
+## Gates originais e QA finais da fonte d0e (ROOT/TESTER)
+
+Fonte verificada d0e987752d045ab8835e12838cc329bb33b6ec12, antes deste adendo somente documental. ROOT preservou e arquivou fisicamente históricos/cópias privadas causais com inventário/hash, sem alterar source/config/deps ou acrescentar exclusões. Negativos anteriores permanecem históricos com suas saídas originais; o replay abaixo é evidência nova da fonte final.
+
+- TypeScript original: sessão67703/chunk7dc488 EXIT0, tsc --noEmit --incremental false. Recibo output/inbox-352-final-tsc-terminal-root-private.json confirma fonte/head d0e, configChanged=false/exclusionsAdded=false.
+- Unitária global original UTC: sessão51740/chunkca1ea0 EXIT0, 978 arquivos/8.382 testes, 234,06s, sem filtros/skips solicitados. Log e recibo output/inbox-352-final-global-root-private.* preservados.
+- Lint original eslint .: sessão7431/chunkc1440c EXIT0, zero erros/94 avisos. Recibo confirma fonte/head d0e e configChanged=false; não alegar zero warnings nem descartar os negativos de cópias privadas anteriores.
+- QA independente TESTER: sessão62927/chunk9a962f EXIT0, 15 arquivos completos/222 testes, UTC, w1/heap1024/sem filtros/skips/todo. Parecer favorável sem novo achado acionável no delta R3. Relatório original T/output/inbox-352-d0e-independent-review-tester.md SHA25662ce1ca0e1d7589dc6e522b6da98a0a3b0a81e1d09a99d74058eecd3f373a872 lido integralmente. Não é global nem nova integração de banco.
+
+DEV leu os três recibos originais, o resumo terminal global/lint e o relatório QA antes de registrar estes resultados. Esta atualização toca somente SPEC, report/QA e quadro. Runtime permanece literal d0e; não houve nova execução Node/SQL/INT/Next/browser nem push pelo DEV. Publicação/CI/build de PR e aceite visual continuam gates separados do integrador. D3/MANUAL/cancelamentos continuam na #357; aprovação do código frontend não representa implantação ou homologação desses efeitos.
+
+## Correção do comentário C1 da PR #437
+
+A revisão `5643573873` apontou um clique sem retorno para quem já era responsável. O TESTER confirmou três falhas na fonte publicada `11194158`, cujo hook era literal à base `61a55cfd` desta correção: falha 503, leitura pendente seguida de 200 e ausência de envio. O oráculo original de 18 casos foi preservado; 15 controles passaram e três cenários falharam. O integrador reproduziu os mesmos três negativos no teste nativo: executor `b46cbd`, código 1.
+
+A reconciliação agora atende também à intenção do responsável sem ACK. Falha permite retentar somente a leitura; recibos antigos não liberam o compositor. Perda de responsabilidade invalida a abertura, e recuperar envio não retoma intenção recusada. Nenhuma action de negócio, API, backend ou consulta adicional foi criada.
+
+GREEN inicial `025ea8`: dois arquivos e 23 testes, código 0; `HandoffConversa.test.ts` solicitado não existe e não foi contado. Depois de acrescentar controles de retry, perda de responsável, recuperação de envio e 200 sem intenção, o recorte completo de Aria, rodapé, compositor e guardas passou: executor `1225`/`0457da`, 18 arquivos e 333 testes, código 0, UTC, um worker, sem filtros de casos ou skips solicitados. TypeScript/global/QA independente da correção serão registrados separadamente. Os resultados anteriores continuam atribuídos às suas fontes; o visual ainda está pendente.
