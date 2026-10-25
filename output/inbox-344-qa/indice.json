@@ -1,0 +1,163 @@
+{
+  "issue": 344,
+  "fonteFinal": "d0dfa5a3b2470e70490cd4167a58f9b2073c2b3c",
+  "main": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "pareceres": [
+    {
+      "path": "marco1-c9e.md",
+      "bytes": 10519,
+      "sha256": "66ed1e5a233717d1dda16fdddba9f1c4ab1c83affc8622eb24c701bd6766ed39"
+    },
+    {
+      "path": "marco2-0fd.md",
+      "bytes": 11326,
+      "sha256": "6b5a24b38c3acc3d8e5eb30862c4e0f3811c355506872045c8c4e52323448c8b"
+    },
+    {
+      "path": "marco3-713-negativo.md",
+      "bytes": 10184,
+      "sha256": "a7a780ee45a112215c90578671966ab56bf897e40326305ab2841b62dae71648"
+    },
+    {
+      "path": "cursor-d0.md",
+      "bytes": 7625,
+      "sha256": "e9234c7d6a622ea300f7b0eb232fed8692012188733ba43122f20244a5223f1e"
+    }
+  ],
+  "ordemFontes": [
+    "c9e710e35a56c9b64366c31b5d292f9b5ae8a516",
+    "0fdedf47ba900fd8a43c06a20b78fe716e27471f",
+    "7138574b547b7169445268edab3fe60fae5f3489",
+    "d0dfa5a3b2470e70490cd4167a58f9b2073c2b3c"
+  ],
+  "parecerNegativoPreservado": "marco3-713-negativo.md",
+  "composicao": "composicao-main351.json",
+  "gatesComposicao": {
+    "global": {
+      "sessao": 24868,
+      "terminal": "8da234",
+      "exit": 0,
+      "arquivos": 947,
+      "testes": 7540,
+      "duracaoSegundos": 646.28,
+      "maxWorkers": 1,
+      "config": "vitest.config.ts original",
+      "filtros": 0,
+      "skips": 0,
+      "integracao": "excluída pela configuração padrão",
+      "reporterAdicional": "progresso de módulos; não altera testes",
+      "log": {
+        "bytes": 705431,
+        "sha256": "9a9f6166fcefa2dd926359988d6c8d23dab4c35f9b7e116a970a1356c5964a83"
+      },
+      "negativoAnterior": {
+        "sessao": 54716,
+        "exit": 1,
+        "contexto": "Interrompida sem resultados após ausência de progresso; não é aprovação nem falha causal de produto."
+      }
+    },
+    "typescript": {
+      "sessao": 92288,
+      "terminal": "6326e2",
+      "exit": 0,
+      "config": "tsconfig.json original",
+      "heapMiB": 8192,
+      "noEmit": true,
+      "incremental": false,
+      "auxiliar": false,
+      "exclusoesAdicionais": 0
+    },
+    "lint": {
+      "sessao": 28465,
+      "terminal": "4bc0ad",
+      "exit": 0,
+      "arquivos": 31,
+      "config": "ESLint original",
+      "maxWarnings": 0,
+      "heapMiB": 512,
+      "escopo": "31 fontes da344; lint completo reservado ao CI limpo",
+      "globalLocalInterrompido": {
+        "sessao": 73499,
+        "terminal": "e08b5c",
+        "exit": 1,
+        "motivo": "Windows1450: liberado recurso para TSC do DEV, sem aprovação presumida"
+      }
+    },
+    "ci": {
+      "head": "4df9816fcdf7b2121921b6b361ce98fb8981e584",
+      "verificadoEm": "2026-10-25T03:55:00Z",
+      "fast": {
+        "run": 40157067583,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40157067583",
+        "conclusion": "success",
+        "jobs": 5,
+        "typecheck": "success",
+        "lintIntegral": "success",
+        "build": "success",
+        "unitariosPorFuso": {
+          "UTC": {
+            "arquivos": 947,
+            "testes": 7540
+          },
+          "America_Sao_Paulo": {
+            "arquivos": 947,
+            "testes": 7540
+          }
+        },
+        "somarFusos": false
+      },
+      "full": {
+        "run": 40157093746,
+        "url": "https://github.com/diogenesmendes01/erp-genius/actions/runs/40157093746",
+        "conclusion": "success",
+        "watcher": {
+          "sessao": 50123,
+          "terminal": "4815d1",
+          "exit": 0
+        },
+        "shards": [
+          {
+            "shard": 1,
+            "job": 121060683489,
+            "arquivos": 90,
+            "testes": 743,
+            "arquivosIgnorados": 0,
+            "testesIgnorados": 0
+          },
+          {
+            "shard": 2,
+            "job": 121060683543,
+            "arquivos": 88,
+            "testes": 873,
+            "arquivosIgnorados": 2,
+            "testesIgnorados": 3
+          },
+          {
+            "shard": 3,
+            "job": 121060683373,
+            "arquivos": 89,
+            "testes": 901,
+            "arquivosIgnorados": 1,
+            "testesIgnorados": 1
+          },
+          {
+            "shard": 4,
+            "job": 121060683544,
+            "arquivos": 89,
+            "testes": 742,
+            "arquivosIgnorados": 0,
+            "testesIgnorados": 0
+          }
+        ],
+        "total": {
+          "arquivos": 356,
+          "testes": 3259,
+          "arquivosIgnorados": 3,
+          "testesIgnorados": 4
+        }
+      },
+      "limites": "Resultados nominais ao HEAD indicado. Este adendo altera somente documentação; os quatro pareceres históricos permanecem integrais. Nenhum resultado de CI futura ou merge é presumido."
+    }
+  },
+  "limites": "Gates antigos nominais às fontes; nenhum recorte é chamado de global e resultados sobrepostos não se somam."
+}

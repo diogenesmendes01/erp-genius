@@ -1,0 +1,41 @@
+{
+  "issue": 350,
+  "source": "85e5cc7c9a7112d12a8bb464ac12d673740c2a1f",
+  "runtime": "4b682c913e02960cb6a3ee7b5400476d14114379",
+  "main": "c045fa0e79e6c419ffafd386eb2e955dc8cb9ae4",
+  "pareceres": [
+    {
+      "path": "geral-85e.md",
+      "bytes": 10781,
+      "sha256": "7a30df71b40f37366dfd0d2452e238e3d089b805cc57bd557a35f01f8c9fb32d"
+    },
+    {
+      "path": "resultados-85e.json",
+      "bytes": 4310,
+      "sha256": "7aa2c50c0ff89e4413aed19802d1c7d09bd6fcb04abdef963723d5afbc5de46a"
+    },
+    {
+      "path": "foco-4b.md",
+      "bytes": 8588,
+      "sha256": "c8ecd91b823ea7e7440b6443e5420b82e9133833c7c7cd8a9115ded56822d88a"
+    }
+  ],
+  "unit": {
+    "arquivos": 26,
+    "testes": 555,
+    "sessao": 29371,
+    "terminal": "a031a2",
+    "exit": 0,
+    "maxWorkers": 1,
+    "filtros": 0,
+    "skips": 0
+  },
+  "lint": {
+    "arquivos": 18,
+    "terminal": "02df44",
+    "exit": 0
+  },
+  "ci": "PENDENTE",
+  "visual": "PENDENTE_18PARES_36RAW",
+  "limites": "Resultados nominais; nenhuma homologação ou merge presumidos."
+}
