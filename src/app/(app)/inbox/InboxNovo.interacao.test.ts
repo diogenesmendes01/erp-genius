@@ -65,6 +65,7 @@ import { PainelContato } from "./PainelContato";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { PainelSetor } from "./PainelSetor";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
+
 import { LinhaCampo } from "./LinhaCampo";
 import { OptOutContato } from "./OptOutContato";
 import { PainelTriagem } from "./PainelTriagem";
@@ -1085,3 +1086,11 @@ it.each([
  const aba=await abrirAba328(p);if(grupo){expect(aba).toBeUndefined();return;}expect(aba).toBeTruthy();expect(aba.props.podeAssumir).toBe(esperado);expect(aba.props.fusoEscola).toBe('America/Costa_Rica');expect(aba.props.capacidades).toMatchObject({moverEtapa:false});
 });
 it('328: callback de assumir captura somente ID do atendimento, sem oportunidade ou carteira',async()=>{assumir328Inbox.mockClear();const aba=await abrirAba328(props);expect(aba).toBeTruthy();lista(tela()).aoSelecionar('a2');tela();await esvaziar();await (aba.props.aoAssumir as ()=>Promise<unknown>)();expect(assumir328Inbox).toHaveBeenCalledOnce();expect(assumir328Inbox).toHaveBeenCalledWith('a1');});
+
+it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capacidades fechadas com cabecalho %s', async (caso) => {
+ const capacidades = { veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: true, moverEtapa: true, tarefas: true, tarefasEquipe: true, desfazerAria: true, verEmpresa: true };
+ const cabecalho = caso === 'ausente' ? undefined : caso === 'nulo' ? null : { pessoaId: 'p327', tagsDisponiveis: [], semNome: false, capacidades };
+ vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.endsWith('/painel') ? { setor: 'COMERCIAL', podeEnviar: false, tags: [], acoes: null, cabecalho } : url.endsWith('/oportunidades') ? { atual: null, outras: [], pessoaId: null } : { pessoa: null, oportunidade: null, b2b: null, campos: [] }))));
+ tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!; (painel.props.aoTrocarAba as (id: string) => void)('oportunidades'); tela(); await esvaziar();
+ const aba = elementos(tela()).find(n => n.type === AbaOportunidades)!; expect(aba).toBeDefined(); expect(aba.props.capacidades).toEqual(caso === 'presente' ? capacidades : Object.fromEntries(Object.keys(capacidades).map(k => [k, false])));
+});

@@ -1,10 +1,10 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, expect, it, vi } from 'vitest';
-const h = vi.hoisted(() => ({ launch: vi.fn(), writes: new Map<string, string>(), modo: 'ok', paginas: [] as unknown[], browser: null as unknown, indice: 0, alvoIndice: 0, badReference: false }));
+const h = vi.hoisted(() => ({ launch: vi.fn(), writes: new Map<string, string>(), modo: 'ok', paginas: [] as unknown[], browser: null as unknown, indice: 0, alvoIndice: 0, badReference: false, referenceEol: null as null | 'LF' | 'CRLF' }));
 vi.mock('playwright-core', () => ({ chromium: { launch: h.launch } }));
 vi.mock('node:fs/promises', async () => ({ ...await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises'), readFile: async (p: unknown, ...args: unknown[]) => { if (h.badReference && String(p).endsWith('support.js'))
-        return Buffer.from('divergente'); const real = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises'); return real.readFile(p as never, ...args as [
-    ]); }, mkdir: vi.fn(async () => { }), writeFile: vi.fn(async (p: unknown, s: unknown) => { h.writes.set(String(p), String(s)); }) }));
+        return Buffer.from('divergente'); const real = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises'); const dado = await real.readFile(p as never, ...args as [
+    ]); if (h.referenceEol && /[\\/]prototipo[\\/](?:Inbox\.dc\.html|support\.js)$/.test(String(p))) { const lf = Buffer.from(dado).toString().replace(/\r\n/g, '\n'); return Buffer.from(h.referenceEol === 'LF' ? lf : lf.replace(/\n/g, '\r\n')); } return dado; }, mkdir: vi.fn(async () => { }), writeFile: vi.fn(async (p: unknown, s: unknown) => { h.writes.set(String(p), String(s)); }) }));
 vi.mock('../../scripts/visual/espera-app.mjs', async () => ({ ...await vi.importActual('../../scripts/visual/espera-app.mjs'), autenticarApp: vi.fn(async () => { }) }));
 vi.mock('../../scripts/visual/oportunidades-inbox.mjs', async () => ({ ...await vi.importActual('../../scripts/visual/oportunidades-inbox.mjs'), abrirOportunidadesApp: async (p: unknown, _c: unknown, _b: unknown, _cfg: unknown, i: unknown) => abrir(p as FakePage, i as never), abrirOportunidadesPrototipo: async (p: unknown) => { eventos(p as FakePage); return { metadados: { referenciaOriginal: true } }; } }));
 import * as cli from '../../scripts/visual/capturar-inbox.mjs';
@@ -83,7 +83,7 @@ function preparar() { h.writes.clear(); h.paginas = []; h.indice = 0; h.launch.m
             q.fim();
         } } }; } }; h.browser = b; return b; }); for (const [k, v] of Object.entries({ PW_CHROMIUM: 'fake-no-browser', INBOX_VISUAL_OPORTUNIDADES_ATENDIMENTO: 'inbox-327-proposta-atendimento', INBOX_VISUAL_OPORTUNIDADES_ID: 'inbox-327-proposta', INBOX_VISUAL_OPORTUNIDADES_PESSOA: 'inbox-327-pessoa', INBOX_VISUAL_OPORTUNIDADES_ADMIN_USUARIO_ID: 'inbox-327-admin', INBOX_VISUAL_OPORTUNIDADES_ADMIN_EMAIL: 'admin327@genius.test', INBOX_VISUAL_OPORTUNIDADES_ADMIN_SENHA: 'ficticia-unit', INBOX_VISUAL_OPORTUNIDADES_LEITOR_USUARIO_ID: 'inbox-327-leitor', INBOX_VISUAL_OPORTUNIDADES_LEITOR_EMAIL: 'leitor327@genius.test', INBOX_VISUAL_OPORTUNIDADES_LEITOR_SENHA: 'ficticia-unit' }))
     vi.stubEnv(k, v); }
-afterEach(() => { vi.unstubAllEnvs(); h.modo = 'ok'; h.alvoIndice = 0; h.badReference = false; });
+afterEach(() => { vi.unstubAllEnvs(); h.modo = 'ok'; h.alvoIndice = 0; h.badReference = false; h.referenceEol = null; });
 const executar = (estado = 'painel-oportunidades', alvo = 'app') => cli.executarCapturas327(['--estado', estado, '--alvo', alvo, '--base', base]);
 function manifesto() { const raw = [...h.writes.entries()].find(([k]) => k.endsWith('manifesto.json'))?.[1]; expect(raw).toBeTruthy(); return JSON.parse(raw!) as {
     browsersClosed: boolean;
@@ -116,8 +116,8 @@ it('todos18novos casos passam pela mesma guardaReact953, inclusive PROTO e leito
         expect(m.capturas[indice].falhas.join(' ')).toMatch(/React|Hydration/);
         expect(m.browsersClosed).toBe(true);
     } });
-it('consoleerrorPROTO exato tem bruto privado e limite estatico, APP/pageerror/quase nunca excecao', async () => {
-    preparar();
+it.each(['LF', 'CRLF'] as const)('consoleerrorPROTO %s exato tem bruto privado e limite estatico, APP/pageerror/quase nunca excecao', async (eol) => {
+    preparar(); h.referenceEol = eol;
     h.modo = 'excecao';
     await executar('painel-oportunidades', 'prototipo');
     const m = manifesto();
@@ -136,3 +136,5 @@ it('consoleerrorPROTO exato tem bruto privado e limite estatico, APP/pageerror/q
     }
 });
 it('hash diferente do original recusa anteslaunch sem editar referencia', async () => { preparar(); h.badReference = true; h.launch.mockClear(); await expect(executar('painel-oportunidades', 'prototipo')).rejects.toThrow(/Originais/); expect(h.launch).not.toHaveBeenCalled(); });
+
+it.each(['LF', 'CRLF'] as const)('referencia versionada %s valida e registra os hashes fisicos sem reatribuir capturas', async (eol) => { preparar(); h.referenceEol = eol; await executar('painel-oportunidades', 'prototipo'); const raw = [...h.writes.entries()].find(([k]) => k.endsWith('manifesto.json'))![1]; const m = JSON.parse(raw); expect(m.browsersClosed).toBe(true); expect(m.capturas).toHaveLength(6); expect(m.capturas.every((c: { falhas: string[]; aceiteCandidato: boolean }) => c.falhas.length === 0 && c.aceiteCandidato)).toBe(true); const arquivos = eol === 'LF' ? ['d798650956fba7ccee3b4efb22d56e81fb6504d89909c23178b9691d3515db50', '8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe'] : ['7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf', 'd6bb6dd3aadb9ff722d5d6db2193572ece476b915899575a571de7a0717f001f']; expect(m.referencia327.htmlSha256).toBe(arquivos[0]); expect(m.referencia327.supportSha256).toBe(arquivos[1]); });
