@@ -7018,3 +7018,8 @@ RED consumidores histórico: sessão81813/chunk0689f9 EXIT1, dois arquivos39 cas
 SPEC docs/specs/inbox-faixa-aria-ativa.md; report output/inbox-347-report.md. Visual três larguras/dois temas, QA independente, TSC/global/CI e homologação permanecem pendentes. Nenhum DB/INT, migração, instalação/generate/package/env, servidor, preview, provider, mensagem real, push ou deploy. Publicação/integração exclusivas do ROOT; issue permanece aberta.
 
 Verificação final DEV347 c80b0f EXIT0: seis arquivos69/69 completos e lint cinco arquivos --max-warnings0, mais diff-check. Visual/QA/TSC/global/CI continuam pendentes.
+
+
+### Inbox #347 — integração do link Gerenciar canônico
+
+Guarda integral identificou ação com classes próprias na Faixa. RED11casos/1fail10controles df9b56EXIT1; correção opt-in iaFantasma conserva tokens AI e mantém Gerenciar como link. Mapa declarativo atualizado, guardas sem alteração. GREEN3files105testes5bef7cEXIT0/lint5dc8c34EXIT0. TESTER153 anterior é recorte716, diagnóstico estático independente 1e455a... confirma causa. TSCoriginalfinal8192c27643EXIT0;4096OOMpreservado1f61b0. Primeira globalinterrompida168b60apósfalha conhecida, nova global92937emcurso semresultadoalegado. Report/SPEC atualizados, visual/CI pendentes; issue continua aberta.

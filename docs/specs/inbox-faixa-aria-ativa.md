@@ -16,3 +16,7 @@ D4 aprovada será entregue pela #359. A #347 não apresenta interruptor, role=sw
 O InboxNovo compõe o slot faixaAria já oferecido pela coluna e usa o MESMO estado resumo da #346, com suas barreiras de navegação, leitura e respostas antigas. Sem resumo não há faixa. SSR, tokens, detalhes325, fonte SSE345, compositor e backend permanecem com seus contratos atuais. A329 altera outro slot, sem cópia integral dos arquivos.
 
 Validação nominal será registrada em output/inbox-347-report.md. Visual nas três larguras e nos dois temas, QA independente, TypeScript/global/CI e publicação permanecem pendentes até evidências próprias; este contrato não constitui homologação.
+
+## Integração com o design system
+
+Gerenciar usa um link real estilizado por `botaoClasses`, variante `iaFantasma` e tamanho `sm`. A variante conserva texto AI e hover highlight, com alvo móvel/foco canônicos; não redefine a superfície no componente. O mapa declarativo e a guarda global de botões verificam essa combinação. A comparação visual do espaçamento permanece um gate próprio.
