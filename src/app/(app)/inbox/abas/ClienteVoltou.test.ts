@@ -1,0 +1,21 @@
+import {act,createElement} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import type {Root} from "react-dom/client";
+import {afterEach,beforeEach,expect,it,vi} from "vitest";
+import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
+const vincular=vi.hoisted(()=>vi.fn());
+vi.mock("@/server/whatsapp/acoes",()=>({vincularContatoWhatsApp:vincular}));
+import {ClienteVoltou} from "./ClienteVoltou";
+type Props=Parameters<typeof ClienteVoltou>[0];
+const mudar=vi.fn();
+const props=():Props=>({atendimentoId:"a",nome:"  Fernanda Fictícia ",pessoaId:"p/8",dado:{oportunidadeId:"op",titulo:"Francês A1 · Semestral",situacao:"ganha",contatoId:"ct",podeVincular:true},podeCriar:true,aoMudar:mudar});
+let root:Root,host:Elemento;
+const render=(p:Partial<Props>={})=>act(async()=>root.render(createElement(ClienteVoltou,{...props(),...p})));
+function clicar(){const b=host.querySelector('button')!;const k=Object.keys(b).find(k=>k.startsWith('__reactProps'))!;(b as unknown as Record<string,{onClick():void}>)[k].onClick();}
+beforeEach(async()=>{vi.clearAllMocks();vincular.mockResolvedValue({ok:true});const d=criarDomMinimo();vi.stubGlobal('document',d.documento);vi.stubGlobal('window',d.janela);vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);host=d.documento.createElement('div');d.documento.body.appendChild(host);const {createRoot}=await import('react-dom/client');root=createRoot(host as unknown as HTMLElement);});
+afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
+it("D18 informa reaproveitamento, encurta apenas o botão e codifica só Pessoa na URL",()=>{const t=renderToStaticMarkup(createElement(ClienteVoltou,props()));expect(t).toContain("Fernanda já é cliente e voltou a escrever. A oportunidade Francês A1 · Semestral foi ganha.");expect(t).toContain("Vincular a Francês A1");expect(t).toContain('href="/funil?nova=p%2F8"');expect(t).not.toContain("novo interesse");});
+it("telefone/veto impede vínculo sem esconder o histórico; criação tem sua alçada separada",async()=>{await render({dado:{...props().dado,podeVincular:false,situacao:"perdida"},podeCriar:false});expect(host.textContent).toContain("foi perdida.");expect(host.querySelector('button')).toBeNull();expect(host.querySelector('a')).toBeNull();expect(vincular).not.toHaveBeenCalled();});
+it("duplo clique executa uma ação pública com identidades exatas e só ACK ok recarrega",async()=>{let resolver!:(r:{ok:true})=>void;vincular.mockImplementation(()=>new Promise(r=>resolver=r));await render();await act(async()=>{clicar();clicar();});expect(vincular).toHaveBeenCalledExactlyOnceWith({contatoId:"ct",atendimentoId:"a",alvo:{tipo:"lead",id:"op"}});expect(host.querySelector('button')!.getAttribute('disabled')).not.toBeNull();expect(mudar).not.toHaveBeenCalled();await act(async()=>resolver({ok:true}));expect(mudar).toHaveBeenCalledOnce();});
+it.each(["negocio","transporte"])("erro %s é apresentado sem retry automático ou recarga",async tipo=>{if(tipo==="negocio")vincular.mockResolvedValue({ok:false,erro:"Contato já ligado."});else vincular.mockRejectedValue(Error('offline'));await render();await act(async()=>clicar());expect(host.textContent).toContain(tipo==="negocio"?"Contato já ligado.":"Resultado não confirmado.");expect(mudar).not.toHaveBeenCalled();expect(vincular).toHaveBeenCalledOnce();expect(host.textContent).not.toContain("tente novamente");});
+it.each(["atendimento","oportunidade","contato","pessoa","permissao","ida-volta"])("ACK antigo não reconcilia sessão %s",async troca=>{let resolver!:(r:{ok:true})=>void;vincular.mockImplementation(()=>new Promise(r=>resolver=r));await render();await act(async()=>clicar());const novo:Partial<Props>=troca==="atendimento"||troca==="ida-volta"?{atendimentoId:"b"}:troca==="pessoa"?{pessoaId:"p2"}:{dado:{...props().dado,...(troca==="oportunidade"?{oportunidadeId:"op2"}:troca==="contato"?{contatoId:"ct2"}:{podeVincular:false})}};await render(novo);if(troca==="ida-volta")await render();await act(async()=>resolver({ok:true}));expect(mudar).not.toHaveBeenCalled();});
