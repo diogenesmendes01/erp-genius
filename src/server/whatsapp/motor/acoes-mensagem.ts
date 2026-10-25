@@ -10,8 +10,7 @@ import { atendimentoVisivel } from "../atendimentos";
 import { despacharFila, despacharMensagemGrupo } from "../despachante";
 import { escopoGrupos, grupoNovoNoEscopo } from "../escopo";
 import { randomUUID } from "node:crypto";
-import { contentTypePorExtensao } from "@/lib/uploads";
-import { midiaSaidaDoAutor } from "../midia";
+import { enfileirarSaidaInbox } from "../enfileirar-inbox";
 import type { ConteudoEspecial } from "../canal";
 import type { EnvioInboxResultado } from "../acoes";
 import { executarAcaoMotor } from "./acoes";
@@ -390,14 +389,6 @@ const ConteudoSchema = z.discriminatedUnion("tipo", [
 ]);
 const EnviarConteudoSchema = z.object({ atendimentoId: z.string().min(1), conteudo: ConteudoSchema, midiaUrl: z.string().min(1).optional() });
 
-const TIPO_INTENCAO = { FIGURINHA: "FIGURINHA", GIF: "VIDEO", ENQUETE: "ENQUETE", LOCALIZACAO: "LOCALIZACAO", CONTATO: "CONTATO" } as const;
-
-function resumo(c: ConteudoEspecial): string {
-  if (c.tipo === "ENQUETE") return c.nome;
-  if (c.tipo === "LOCALIZACAO") return `📍 ${c.nome ?? "Localização"}`;
-  return "";
-}
-
 /**
  * Enquete, figurinha, GIF, localização ou contato pela inbox. Vira intenção HUMANO e passa pelo despachante
  * (opt-out, kill switch, claim). Figurinha exige webp e GIF exige mp4, ambos subidos pelo próprio autor.
@@ -408,29 +399,7 @@ export async function enviarConteudoInbox(input: { atendimentoId: string; conteu
     const dados = EnviarConteudoSchema.parse(input);
     const c = dados.conteudo as ConteudoEspecial;
     if (c.tipo === "ENQUETE" && c.maxEscolhas > c.opcoes.length) throw new ErroRegra("Escolhas por pessoa não pode passar do número de opções.");
-    const a = await atendimentoVisivel(u, dados.atendimentoId, true);
-    if (!a || a.encerradoEm) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
-    if (!a.numero.ativo) throw new ErroRegra("Este número está inativo.");
-    if (a.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não envia esse tipo de conteúdo.");
-    if (a.contato.optOutEm) throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
-    exigirMotorConectado(a.numero);
-
-    let midiaPath: string | null = null;
-    if (c.tipo === "FIGURINHA" || c.tipo === "GIF") {
-      const esperado = c.tipo === "FIGURINHA" ? "image/webp" : "video/mp4";
-      if (!dados.midiaUrl || !midiaSaidaDoAutor(dados.midiaUrl, u.id)) throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
-      if (contentTypePorExtensao(dados.midiaUrl) !== esperado) {
-        throw new ErroRegra(c.tipo === "FIGURINHA" ? "A figurinha precisa ser uma imagem WebP." : "O GIF precisa ser um vídeo MP4.");
-      }
-      midiaPath = dados.midiaUrl;
-    }
-
-    const intencao = await prisma.intencaoMensagem.create({
-      data: {
-        numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: TIPO_INTENCAO[c.tipo],
-        conteudo: c as unknown as object, midiaPath, corpoRenderizado: resumo(c), autorId: u.id,
-      },
-    });
+    const intencao = await enfileirarSaidaInbox(prisma, u.id, dados.atendimentoId, { tipo: "especial", conteudo: c, midiaUrl: dados.midiaUrl });
     await despacharFila(new Date(), { intencaoId: intencao.id });
     const final = await prisma.intencaoMensagem.findUnique({ where: { id: intencao.id }, select: { status: true, motivoFalha: true } });
     revalidatePath("/inbox");
