@@ -10,6 +10,7 @@ import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
 const tarefa:TarefaPainel={id:"t330",versao:1,titulo:"Retorno fictício330",descricao:null,tipo:"LIGACAO",status:"ABERTA",prioridade:"NORMAL",dataCivil:null,hora:null,fusoOrigem:"America/Sao_Paulo",lembreteAntecedenciaMin:null,responsavel:null,atrasada:false,ia:false,leadId:null,atendimentoId:"a330",criadoEm:"2026-10-20T12:00:00Z",criadorNome:null,podeAgir:true};
 let root:Root,host:Elemento,pagina:Elemento;
 const mudar=vi.fn(),teclas=new Set<(e:KeyboardEvent)=>void>();
+const renderLista=(tarefas:TarefaPainel[],atendimentoId="a330")=>act(async()=>root.render(createElement(TarefasOportunidade,{atendimentoId,tarefas,fusoEscola:"America/Sao_Paulo",fuso:"America/Costa_Rica",podeCriar:false,aoMudar:mudar})));
 const render=(atendimentoId="a330",t=tarefa)=>act(async()=>root.render(createElement(TarefasOportunidade,{atendimentoId,tarefas:[t],fusoEscola:"America/Sao_Paulo",fuso:"America/Costa_Rica",podeCriar:false,aoMudar:mudar})));
 function prop(e:Elemento,n:string,arg?:unknown){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"))!;(e as unknown as Record<string,Record<string,(a?:unknown)=>unknown>>)[k][n](arg);}
 const btn=(texto:string)=>pagina.querySelectorAll("button").find(b=>b.textContent===texto)!;
@@ -59,4 +60,33 @@ it("fuso institucional alterado recusa e pede recarregar o painel",async()=>{
  reagendar.mockResolvedValue({ok:false,erro:"O fuso da escola mudou ou está indisponível. Recarregue o painel."});await render();
  const b=host.querySelectorAll("button").find(b=>b.getAttribute("title")==="Reagendar para amanhã 09:00")!;await act(async()=>prop(b,"onClick"));
  expect(host.textContent).toContain("O fuso da escola mudou");expect(mudar).toHaveBeenCalledOnce();
+});
+it("refresh de outra tarefa preserva o mesmo campo e motivo digitado",async()=>{
+ const outra={...tarefa,id:"outra330",titulo:"Outra tarefa"};await renderLista([tarefa,outra]);await abrir();await revisar("Motivo preservado");const campo=pagina.querySelector("textarea");
+ await renderLista([{...tarefa},{...outra,versao:2}]);
+ expect(pagina.querySelector("textarea")).toBe(campo);expect((campo as unknown as {value:string}).value).toBe("Motivo preservado");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(false);
+ await clicar("Confirmar cancelamento");expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Motivo preservado");
+});
+it("alvo atualizado conserva motivo mas bloqueia confirmação obsoleta e ignora ACK antigo",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Motivo do alvo");await clicar("Confirmar cancelamento");
+ const campo=pagina.querySelector("textarea");await render("a330",{...tarefa,versao:2});
+ expect(pagina.querySelector("textarea")).toBe(campo);expect((campo as unknown as {value:string}).value).toBe("Motivo do alvo");
+ await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+});
+it("alvo removido conserva rascunho, bloqueia nova chamada e ACK não fecha diálogo",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Não perder");await clicar("Confirmar cancelamento");await renderLista([]);
+ await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea") as unknown as {value:string}).value).toBe("Não perder");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);expect(cancelar).toHaveBeenCalledOnce();
+});
+it("ACK de cancelamento vigente continua válido após refresh de outra tarefa",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));const outra={...tarefa,id:"outra330"};await renderLista([tarefa,outra]);await abrir();await revisar("Alvo vigente");await clicar("Confirmar cancelamento");
+ await renderLista([{...tarefa},{...outra,versao:2}]);await act(async()=>fim({ok:true}));
+ expect(mudar).toHaveBeenCalledOnce();expect(pagina.querySelector('[role="alertdialog"]')).toBeNull();expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Alvo vigente");
+});
+it("ACK de conclusão do alvo atualizado não reconcilia outra versão",async()=>{
+ let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();await act(async()=>prop(host.querySelector("input")!,"onChange"));await render("a330",{...tarefa,versao:2});await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();
+});
+it("alvo removido e reapresentado não reabilita a abertura invalidada",async()=>{
+ await render();await abrir();await revisar("Preservado mesmo assim");const campo=pagina.querySelector("textarea");await renderLista([]);await render();
+ expect(pagina.querySelector("textarea")).toBe(campo);expect((campo as unknown as {value:string}).value).toBe("Preservado mesmo assim");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+ await clicar("Confirmar cancelamento");expect(cancelar).not.toHaveBeenCalled();
 });
