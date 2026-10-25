@@ -15,9 +15,10 @@ Uma contraprova adicional mostrou que o ator podia virar exclusivamente ALUNO en
 - Regressão histórica: 62600/20dd21, EXIT0, três arquivos completos/48 casos, 201,56 s: trava-aria.int.test.ts, motor/acoes-mensagem.int.test.ts e motor/conteudo.int.test.ts.
 - Unitários pertinentes: 610a94, EXIT0, três arquivos/18 casos completos, UTC/um worker/heap1024. Um replay anterior também passou no fuso local (30d859), separado da evidência UTC.
 - Lint focal dos três arquivos de código/teste: af5dd1, EXIT0, zero avisos.
+- TypeScript original sobre o commit congelado 708edde7: sessão 63009, terminal a4dab6, EXIT0, sem alteração de fonte ou configuração.
 
 Os testes nativos usaram vitest.integration.config.ts original, perfil ROOT dev-gravacoes, UTC, um worker, heap1024 e arquivos sequenciais, sem filtro de caso ou skip. No arquivo novo, sete provedores ficam vazios e todos os drivers são falsos; nenhum driver é acionado. A regressão histórica conteudo.int.test.ts ativa WHATSAPP_LIVE apenas dentro de fixtures com driver falso para provar o despacho; isso não é envio real e não é descrito como sete variáveis sempre vazias durante todo esse arquivo.
 
 ## Pendências
 
-Revisão independente no commit exato corrigido, TypeScript/gates da nova composição e atualização da publicação. O aceite visual específico da #358 continua pendente. O parecer RO anterior `5f569643eb35e18fe01d07f6ae64131831acbf8bbcad1c24242e697f0b9fb4c7` validou a estrutura e identificou a barreira de portal antes da correção final; não substitui a QA exata posterior. Nenhum merge, fechamento de issue ou deploy é presumido.
+Revisão independente no commit exato corrigido, gates globais da nova composição e atualização da publicação. O aceite visual específico da #358 continua pendente. O parecer RO anterior `5f569643eb35e18fe01d07f6ae64131831acbf8bbcad1c24242e697f0b9fb4c7` validou a estrutura e identificou a barreira de portal antes da correção final; não substitui a QA exata posterior. Nenhum merge, fechamento de issue ou deploy é presumido.
