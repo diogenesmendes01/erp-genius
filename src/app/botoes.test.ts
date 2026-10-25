@@ -2183,3 +2183,12 @@ it("entrada dinâmica350 preserva dois filhos exatos e terceiro Desfazer354 lite
  const fonte=readFileSync("src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx","utf8");expect(ancoraRotulosCartao350(fonte)).toBe(true);
  for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"'),fonte.replace('>Desfazer</Botao>','>{""}</Botao>'),fonte.replace('variante="neutro"','variante="secundario"'),fonte.replace('variante="neutro"','variante="contorno"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
 });
+
+it("359 mapa exato do interruptor não admite nome vazio, variante errada ou quarto botão", () => {
+  const fonte = readFileSync("src/app/(app)/inbox/aria/InterruptorAria.tsx", "utf8");
+  const esperado = MAPA_BOTOES["inbox/aria/InterruptorAria.tsx"];
+  expect(esperado).toHaveLength(3); expect(mapaDeBotoes(fonte)).toEqual(esperado);
+  for (const mutante of [fonte.replace('>Aria ativa</span>', '></span>').replace('aria-label="Aria ativa"', ''), fonte.replace('variante="iaFantasma"', 'variante="primario"'), fonte + '<Botao>Extra</Botao>']) {
+    expect(mapaDeBotoes(mutante)).not.toEqual(esperado);
+  }
+});

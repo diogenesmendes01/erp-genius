@@ -16,6 +16,11 @@
 export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/aria/CartaoSugestaoAria.tsx": ["<Botao> → primario/md", "<Botao> → perigoContorno/md", "<Botao> Desfazer → neutro/md"],
 
+  "inbox/aria/InterruptorAria.tsx": [
+    "<Botao> Aria ativa → iaFantasma/sm",
+    "<Botao> Cancelar → fantasma/md",
+    "<Botao> Pausar a Aria → primario/md",
+  ],
   "inbox/aria/FaixaAriaAtiva.tsx": [
     "<Link> Gerenciar → iaFantasma/sm",
   ],
