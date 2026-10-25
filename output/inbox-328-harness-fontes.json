@@ -1,0 +1,290 @@
+{
+  "issue": 328,
+  "estado": "HARNESS_DEV_CONGELADO_GATES0_QA_NATIVE_PENDENTES",
+  "baseProduto": "87c01c49bdd91fbbcf7640768d1f0a47125a2606",
+  "fonteRuntimeProduto": "87c01c49bdd91fbbcf7640768d1f0a47125a2606",
+  "namespace": "hashesFisicosEgitLFSeparados;GitOidWorkingPorPath",
+  "fontesExecutaveis": [
+    {
+      "path": "scripts/visual/acoes-oportunidade.mjs",
+      "bytes": 31445,
+      "sha256Fisico": "928db1bec3cab7eb59670807dbe11facbca24344b7869bb24cb2885fbee05979",
+      "sha256GitLF": "928db1bec3cab7eb59670807dbe11facbca24344b7869bb24cb2885fbee05979",
+      "gitOidWorking": "6eb0d96de15e8a348ee96d789a02e64a2bbc3fa1"
+    },
+    {
+      "path": "scripts/visual/acoes-oportunidade.d.mts",
+      "bytes": 3046,
+      "sha256Fisico": "170b7734699199839573a863116ada599311804309ecea92ee2a55e8ea2de369",
+      "sha256GitLF": "170b7734699199839573a863116ada599311804309ecea92ee2a55e8ea2de369",
+      "gitOidWorking": "07e32f19c5eaab9ca7fac830de1c2940a4d8a681"
+    },
+    {
+      "path": "scripts/visual/capturar-inbox.mjs",
+      "bytes": 30423,
+      "sha256Fisico": "f7b5b7eb1dcd67b2b3fbebb3004b20d21158b2d2ff47c3ccc1c230687dbe5dbb",
+      "sha256GitLF": "f7b5b7eb1dcd67b2b3fbebb3004b20d21158b2d2ff47c3ccc1c230687dbe5dbb",
+      "gitOidWorking": "2256bfcf6b03d07dead44aa88ace4e94bce3c0b9"
+    },
+    {
+      "path": "scripts/visual/capturar-inbox.d.mts",
+      "bytes": 1377,
+      "sha256Fisico": "bce11106941af007d41f56a694c1b3e0682475adc712afdf11297982c00799be",
+      "sha256GitLF": "1098ce178cafa58dd083a22b2ae82cd250cf0c0970e8e93b01956e3797ee9ca1",
+      "gitOidWorking": "2354c11292829d269ddfe424155c53e9cddd29bf"
+    },
+    {
+      "path": "src/test/visual-inbox-acoes-oportunidade.test.ts",
+      "bytes": 24748,
+      "sha256Fisico": "521aeffc2dd388a450549383b90520132a73406984c2e9eb9c1355b3c780dc48",
+      "sha256GitLF": "521aeffc2dd388a450549383b90520132a73406984c2e9eb9c1355b3c780dc48",
+      "gitOidWorking": "eb8ff66e3efca489ef6c4c7161170d463130bacb"
+    },
+    {
+      "path": "src/test/visual-inbox-cli-acoes-oportunidade.test.ts",
+      "bytes": 9755,
+      "sha256Fisico": "c0c21be017b016a1b45ce288304a20039524c2c87ea7a85dabc01bfcf2d7d18e",
+      "sha256GitLF": "c0c21be017b016a1b45ce288304a20039524c2c87ea7a85dabc01bfcf2d7d18e",
+      "gitOidWorking": "c6b56fd4574938bc0f5bd7cc258789d01cfd0f3a"
+    }
+  ],
+  "produto11Intacto": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "gitOid": "78f4b94793286ad35684b3bed6cf55ecdc33d325",
+      "sha256Fisico": "38dda3051c3e1fde8f124ba7131b8b89ecee052574d8d0f6e134109a86c99db7"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "gitOid": "5f4e476bde2c69b7469ffa0e7554fb519e7e2742",
+      "sha256Fisico": "92d0c9f6805efe27ccaaf10e1605263011817833f29efa82a7e88bd646b49626"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "gitOid": "812962b14db6b59cbfa81fc1aaac8ac997b9cd2e",
+      "sha256Fisico": "3f61fd8ac5eb1c1713bdaa4c676ef40e5ebd13e9f7c1ab4ab6c8242a2e1738e1"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaOportunidades.test.ts",
+      "gitOid": "72a8923b044ec2070beea1e3fcb960ec6c8f196b",
+      "sha256Fisico": "214217b78b4af9214d212d685cdb22dbeef88b6d7596bb394d2bddb2f0002ea6"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaOportunidades.tsx",
+      "gitOid": "c0258bacc605f5d1f242818a2d2376c7df0654cf",
+      "sha256Fisico": "24e44c4cf76c6b48a5dc71140566db259dc92e43ac09c709922e3d818ae1254f"
+    },
+    {
+      "path": "src/app/(app)/inbox/page.test.ts",
+      "gitOid": "be549cd8b4129fef62ce96bdcd0a8253acedc1ad",
+      "sha256Fisico": "f6f53e6b911e988241cced4f59e91f65b8213c9045bc452fa76a9ad306a2048b"
+    },
+    {
+      "path": "src/app/(app)/inbox/page.tsx",
+      "gitOid": "edf2a5a3c9df2ce9cab201a8c19544640d07c5a3",
+      "sha256Fisico": "49220ad7da4e893803b65c371c0d1736da4413be759c0247ceca601f69d7f952"
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "gitOid": "710315cd606b5e498d6a73ead0a44bdf391a86f5",
+      "sha256Fisico": "c9471232cf702ee1a63549f33c096274913815c911e2e056930e5f6be2452854"
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "gitOid": "b8b5ab634778ff91a06cfbb27ea4b294d378c104",
+      "sha256Fisico": "3e33ff1934dc553179461dde7c85309ce37461fcc40e468d51e72c438f8332a3"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/CartaoExperimental.test.ts",
+      "gitOid": "bd30ed9ab0dd21ad3e430cc866cb7c750f9d694c",
+      "sha256Fisico": "7ddd7938777ae41f120055bc132215123e4d7a61707ab7952dfbc270542eb01d"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/CartaoExperimental.tsx",
+      "gitOid": "c81b7db571a730485d14149941d4c22e4f32b2ea",
+      "sha256Fisico": "4176d66dc20bf7e574a14cfc33bbf6a333f9e72fe770d8f3399709cede7fbc90"
+    }
+  ],
+  "protecao": {
+    "trackedForaEscopo": [],
+    "pathsProtegidos": 5832,
+    "vetorOidSha256": "16cbfd26c9fd3ce84ae70f8c92e67a3e95b0bfde959ac82d2176397d1fe127f3",
+    "prepararRedeLiteral": true,
+    "guardaPinsLFCRLFRootLiteral": true,
+    "originaisColetoresGuardas953Contratos327Literais": true,
+    "ownerModalGavetaOR420Defaults343Intactos": true,
+    "excecoesDocumentaisExplicitas": [
+      "docs/specs/inbox-acoes-oportunidade.md",
+      "docs/planejamento/quadro-entregas.md"
+    ]
+  },
+  "matriz": {
+    "totalCLI328": 268,
+    "herdadas327": 238,
+    "herdadas325": 220,
+    "herdadas336": 190,
+    "novas": 30,
+    "novasInboxAPP": 18,
+    "novasPROTO": 6,
+    "novasFunilReferenciaAPP": 6,
+    "prova190Sha256": "c669324e360cf097784814ae7750dc2d54becb933b4d8f0ea27b416b236c1ea4",
+    "prova220Sha256": "67dafd95efaa1e8ad6aea9c531fff03bffabe8066abafe566f947a35a5ce1a52",
+    "capturasNativasRealizadas": 0
+  },
+  "gates": {
+    "unit": {
+      "executor": "eb1a25",
+      "exit": 0,
+      "arquivos": 4,
+      "testes": 128,
+      "maxWorkers": 1,
+      "segundos": 2.01,
+      "filtrosInternos": 0,
+      "skips": 0
+    },
+    "lint": {
+      "executor": "eb1a25",
+      "exit": 0,
+      "fontes": 6,
+      "warnings": 0
+    },
+    "tscFinal": {
+      "session": 73293,
+      "terminal": "4bd4b8",
+      "exit": 0,
+      "node": "22",
+      "heapMiB": 8192,
+      "noEmit": true,
+      "incremental": false,
+      "configOriginal": true,
+      "configAuxiliar": false,
+      "exclusoesExtras": false
+    },
+    "tsc2NominalPreFunil": "21726/55d552 EXIT0",
+    "tsc1Negativo": "89068/032253 EXIT2 TS2322 somente datetime no helper APP"
+  },
+  "semDB_HTTP_browser_UI_upload": true,
+  "evidencias": [
+    {
+      "path": "output/inbox-328-harness-red-r1.log",
+      "bytes": 16341,
+      "sha256": "ecacb1ce5203a080e63874a961768b601f6db6ccdb799ca1e168d09c4db1e5fd"
+    },
+    {
+      "path": "output/inbox-328-harness-red-r2.log",
+      "bytes": 2761,
+      "sha256": "e9c4d581eb18b649be6bc56afc084e7b0e0912e6ba459450c55f237c08655d7d"
+    },
+    {
+      "path": "output/inbox-328-harness-red-r3.log",
+      "bytes": 9352,
+      "sha256": "d078081dad08cdd61081917de96a0b2f1532389f26cbba2891c6172f9838fd09"
+    },
+    {
+      "path": "output/inbox-328-harness-green-r1.log",
+      "bytes": 11399,
+      "sha256": "fb8edad1f39359c7c81d47eceef6d64af8a402de6641a66ff3b8df10c94e68e1"
+    },
+    {
+      "path": "output/inbox-328-harness-red-r4.log",
+      "bytes": 2632,
+      "sha256": "296d3d5b05d735bc68fbfbf52bbcb6559f4d50e53cb3abcf9da4d138e3816e01"
+    },
+    {
+      "path": "output/inbox-328-harness-red-r5.log",
+      "bytes": 2452,
+      "sha256": "4ad02d8d1fac7b8a4ff11e1e331e4292010bfd4722ddc2561aaa2e17eb240e25"
+    },
+    {
+      "path": "output/inbox-328-harness-funil-red-r1.log",
+      "bytes": 2311,
+      "sha256": "a1412bef24c61e8240a90e49a49c719a3bba3aa4e795e1c26deedbbc6aa3cb95"
+    },
+    {
+      "path": "output/inbox-328-harness-meta-red-r1.log",
+      "bytes": 3739,
+      "sha256": "b4b9cff45f3373a62293a0ed0b5df31642bb27e0f8d85d598dcb5a2184dc4945"
+    },
+    {
+      "path": "output/inbox-328-harness-unit-freeze.log",
+      "bytes": 10719,
+      "sha256": "ae1d8af0f995a5c6c2c79d84e56efc99ac8d308d3585184870c0d858ad0c2254"
+    },
+    {
+      "path": "output/inbox-328-harness-lint-freeze.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-tsc-r1.log",
+      "bytes": 181,
+      "sha256": "636bb5449b1356ea69a0a553ae1bec3dcec2c2a0decec488e06dedec62d8c4b2"
+    },
+    {
+      "path": "output/inbox-328-harness-tsc-r2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-tsc-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-tipo-unit.log",
+      "bytes": 480,
+      "sha256": "3d0ff060e7d5c561cdf04b0363207ffaff47e4935e85e982e8bb463cff21c4cf"
+    },
+    {
+      "path": "output/inbox-328-harness-tipo-lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-funil-green-r1.log",
+      "bytes": 2240,
+      "sha256": "9b5a1e4750d364fa17133c135c93542993dfefacceba4f67a42107e5dcb50c5b"
+    }
+  ],
+  "pathsComDeltaDesdeSnapshotPreTSC1": [
+    "scripts/visual/acoes-oportunidade.mjs",
+    "scripts/visual/capturar-inbox.mjs",
+    "src/test/visual-inbox-acoes-oportunidade.test.ts",
+    "src/test/visual-inbox-cli-acoes-oportunidade.test.ts"
+  ],
+  "referenciaSnapshotPreTSC1": {
+    "path": "output/inbox-328-harness-pre-tsc-private.json",
+    "sha256": "45a6c37cfc1142aed7f48f26956f3c293d429d5a5ec036d2933a5b9e9cb1f31b"
+  },
+  "documentos": [
+    {
+      "path": "scripts/visual/README.md",
+      "bytes": 39192,
+      "sha256Fisico": "944f8fb6f66ae5be4c3cff4d165309c5788c03937bb471c3924472606628ea64",
+      "sha256GitLF": "ea525bddb040b4d4976db077d1243b7451d6ef059e8979b969414b3bb658178d",
+      "gitOidWorking": "81ac9ab4b40f3a28df9330a2b5dddff917c96115"
+    },
+    {
+      "path": "docs/specs/inbox-acoes-oportunidade.md",
+      "bytes": 6263,
+      "sha256Fisico": "427aa689d3594c6c2629c21ee4ed6d0aa686700da78ed51ff7dfdf140d8fc3e8",
+      "sha256GitLF": "427aa689d3594c6c2629c21ee4ed6d0aa686700da78ed51ff7dfdf140d8fc3e8",
+      "gitOidWorking": "47be59fb77712e90e815961ca7abdf610ff22c0e"
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "bytes": 1155297,
+      "sha256Fisico": "65155b0c51966da16dfd73e1f01874f10a1ca1252d8cad0fccb78197cde159f1",
+      "sha256GitLF": "8a35c2cf651d3ed31255c22dc5384bf60779d3e3049f51772bd8f22ccf4896ac",
+      "gitOidWorking": "255bd106e2fa3f211e5b9fa12a24985b5282a135"
+    },
+    {
+      "path": "output/inbox-328-harness-report.md",
+      "bytes": 5034,
+      "sha256Fisico": "27e48e24565bcc5fed9b388d81c68b19d7ce59e54b92c7f29b46e3b335fa609f",
+      "sha256GitLF": "27e48e24565bcc5fed9b388d81c68b19d7ce59e54b92c7f29b46e3b335fa609f",
+      "gitOidWorking": "15d7991a6131cc033d3029b10fba9b55a3244212"
+    }
+  ],
+  "administrativo": "49a104/a33e9a gitdiffcheck negativos apenas EOF MD (3docs e depoisreportnovo ao stage); corrigidos sem alterar executaveis/gates."
+}

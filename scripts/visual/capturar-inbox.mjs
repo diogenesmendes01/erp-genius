@@ -10,7 +10,8 @@ import { confirmarPainelSecretaria, semanticaPainelSecretariaPronto, confirmarPa
 import { configurarEntrada, abrirEntradaApp } from "./entradas-inbox.mjs";
 import { ESTADOS_DETALHES_325, configurarDetalhes325, abrirDetalhes325, abrirPrototipoDetalhes325, semanticaDetalhes325Pronto } from "./detalhes-inbox.mjs";
 import { instalarColetorDetalhes325, finalizarCapturasDetalhes325 } from "./coletor-detalhes.mjs";
-import { ESTADOS_CAPTURA327 as ESTADOS, combinacoesCaptura327 as combinacoes, ESTADOS_OPORTUNIDADES327, configurarOportunidadesCli, abrirOportunidadesApp, abrirOportunidadesPrototipo, semanticaOportunidadesProntas, excecaoConsolePrototipo327 } from './oportunidades-inbox.mjs';
+import { ESTADOS_CAPTURA327 as ESTADOS327, combinacoesCaptura327 as combinacoes, ESTADOS_OPORTUNIDADES327, configurarOportunidadesCli, abrirOportunidadesApp, abrirOportunidadesPrototipo, semanticaOportunidadesProntas, excecaoConsolePrototipo327 } from './oportunidades-inbox.mjs';
+import { ESTADOS_CAPTURA328 as ESTADOS, ESTADOS_ACOES328, combinacoesCaptura328, configurarAcoesCli328, abrirAcoesApp328, abrirAcoesPrototipo328, semanticaAcoes328 } from './acoes-oportunidade.mjs';
 import { instalarColetorOportunidades327, finalizarCapturasOportunidades327 } from './coletor-oportunidades.mjs';
 import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
@@ -38,8 +39,14 @@ function argumentos(argv) {
 
 export function planejarCapturas327(argv) {
   const o=argumentos(argv);if(o.ajuda)return o;
-  const alvos=o.alvo==='ambos'?['app','prototipo']:[o.alvo],estados=o.estado==='todos'?Object.keys(ESTADOS):[o.estado];
+  const alvos=o.alvo==='ambos'?['app','prototipo']:[o.alvo],estados=o.estado==='todos'?Object.keys(ESTADOS327):[o.estado];
   return {...o,alvos,estados,tarefas:combinacoes({alvos,estados})};
+}
+
+export function planejarCapturas328(argv) {
+  const o = argumentos(argv); if (o.ajuda) return o;
+  const alvos = o.alvo === 'ambos' ? ['app', 'prototipo'] : [o.alvo], estados = o.estado === 'todos' ? Object.keys(ESTADOS) : [o.estado];
+  return { ...o, alvos, estados, tarefas: combinacoesCaptura328({ alvos, estados }) };
 }
 
 async function idsDaDemo() {
@@ -74,6 +81,12 @@ async function prepararRede(contexto, alvo, base, falhas) {
 }
 
 export async function abrirApp(pagina, contexto, base, ids, estado, tamanho, instrumentacao327) {
+  if (Object.hasOwn(ESTADOS_ACOES328, estado)) {
+    const config = configurarAcoesCli328(estado), senha = process.env['INBOX_VISUAL_ACOES_' + config.ator.toUpperCase() + '_SENHA'];
+    if (!senha) throw new Error('Cenario328 exige senha/credencial ficticia explicita.');
+    await autenticarApp(contexto, base, config.email, senha);
+    return abrirAcoesApp328(pagina, contexto, base, config, estado, instrumentacao327);
+  }
   if(Object.hasOwn(ESTADOS_OPORTUNIDADES327,estado)){
     const config=configurarOportunidadesCli(estado),prefixo='INBOX_VISUAL_OPORTUNIDADES_'+config.ator.toUpperCase();
     const senha=process.env[prefixo+'_SENHA']??process.env.INBOX_VISUAL_SENHA;
@@ -145,6 +158,10 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho, ins
 }
 
 export async function abrirPrototipo(pagina, estado) {
+  if (Object.hasOwn(ESTADOS_ACOES328, estado)) {
+    if (estado !== 'painel-acoes-experimental') throw new Error('Estado328 APP-only: nenhuma referencia PROTO funcional.');
+    return abrirAcoesPrototipo328(pagina, estado);
+  }
   if(Object.hasOwn(ESTADOS_OPORTUNIDADES327,estado))return abrirOportunidadesPrototipo(pagina,configurarOportunidadesCli(estado));
   if (ESTADOS_DETALHES_325.includes(estado)) return abrirPrototipoDetalhes325(pagina, pathToFileURL(prototipo).href, estado);
   const c = estado === "painel-sem-nome" ? "c9" : ["humano-compositor", "nota"].includes(estado) ? "c4" : "c1";
@@ -210,16 +227,17 @@ export async function abrirPrototipo(pagina, estado) {
   await pagina.waitForTimeout(4000);
 }
 
-export async function executarCapturas327(argv=process.argv.slice(2)) {
-  const o = planejarCapturas327(argv);
+export async function executarCapturas327(argv=process.argv.slice(2)) { return executarPlanejadas(planejarCapturas327(argv)); }
+export async function executarCapturas328(argv=process.argv.slice(2)) { return executarPlanejadas(planejarCapturas328(argv)); }
+async function executarPlanejadas(o) {
   if (o.ajuda) { process.stdout.write(`${AJUDA}\nEstados: ${Object.keys(ESTADOS).join(", ")}\n`); return; }
   const { alvos, estados, tarefas } = o;
-  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-") || ESTADOS_DETALHES_325.includes(e) || Object.hasOwn(ESTADOS_OPORTUNIDADES327,e)) ? {} : await idsDaDemo() : null;
+  const ids = alvos.includes("app") ? estados.every(e => e.startsWith("entrada-") || ESTADOS_DETALHES_325.includes(e) || Object.hasOwn(ESTADOS_OPORTUNIDADES327,e) || Object.hasOwn(ESTADOS_ACOES328,e)) ? {} : await idsDaDemo() : null;
   const executablePath = process.env.PW_CHROMIUM;
   if (!executablePath) throw new Error("Defina PW_CHROMIUM para o Chrome local; o harness não baixa navegador.");
   await mkdir(destino, { recursive: true });
-  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs", "detalhes-inbox.mjs", "coletor-detalhes.mjs", "oportunidades-inbox.mjs", "coletor-oportunidades.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
-  const referencias327=tarefas.some(t=>t.alvo==='prototipo'&&Object.hasOwn(ESTADOS_OPORTUNIDADES327,t.estado))?Object.fromEntries(await Promise.all([['htmlSha256',prototipo],['supportSha256',path.join(path.dirname(prototipo),'support.js')]].map(async([k,p])=>[k,createHash('sha256').update(await readFile(p)).digest('hex')]))):null;
+  const fontesHarness = Object.fromEntries(await Promise.all(["capturar-inbox.mjs", "nucleo-captura.mjs", "espera-app.mjs", "anonimizar-telefones.mjs", "estados-inbox.mjs", "entradas-inbox.mjs", "detalhes-inbox.mjs", "coletor-detalhes.mjs", "oportunidades-inbox.mjs", "coletor-oportunidades.mjs", "acoes-oportunidade.mjs"].map(async nome => [nome, createHash("sha256").update(await readFile(new URL(nome, import.meta.url))).digest("hex")])));
+  const referencias327=tarefas.some(t=>t.alvo==='prototipo'&&(Object.hasOwn(ESTADOS_OPORTUNIDADES327,t.estado)||Object.hasOwn(ESTADOS_ACOES328,t.estado)))?Object.fromEntries(await Promise.all([['htmlSha256',prototipo],['supportSha256',path.join(path.dirname(prototipo),'support.js')]].map(async([k,p])=>[k,createHash('sha256').update(await readFile(p)).digest('hex')]))):null;
   if(referencias327&&(!['7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf', 'd798650956fba7ccee3b4efb22d56e81fb6504d89909c23178b9691d3515db50'].includes(referencias327.htmlSha256)||!['d6bb6dd3aadb9ff722d5d6db2193572ece476b915899575a571de7a0717f001f', '8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe'].includes(referencias327.supportSha256)))throw new Error('Originais327 divergentes; referencia recusada antesbrowser.');
   const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox", "--allow-file-access-from-files"] });
   const capturas = [], coletoresDetalhes = [], coletoresOportunidades = [], brutosReferencia327 = [], auditoriasGenericas327 = [];
@@ -228,14 +246,15 @@ export async function executarCapturas327(argv=process.argv.slice(2)) {
   try {
     for (const tarefa of tarefas) {
       const [width, height] = TAMANHOS[tarefa.tamanho];
-      const contexto = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, locale: "pt-BR", timezoneId: "America/Sao_Paulo", hasTouch: tarefa.tamanho === "celular" });
+      const contexto = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, locale: "pt-BR", timezoneId: "America/Sao_Paulo", hasTouch: tarefa.tamanho === "celular", ...(Object.hasOwn(ESTADOS_ACOES328, tarefa.estado) ? { serviceWorkers: "block" } : {}) });
       const falhas = [];
       const abortados = [];
       const concluidos = new Set();
       const conclusoes = [];
       const contextoId = randomUUID(), paginaId = randomUUID(), ordens = new WeakMap();
       let inicioRequest = 0, coletorDetalhes = null, vinculoDetalhes = null, fotoCapturada = false, coletorOp = null, vinculoOp = null, identidadeOp = null;
-      const novo327=Object.hasOwn(ESTADOS_OPORTUNIDADES327,tarefa.estado);
+      const novo328=Object.hasOwn(ESTADOS_ACOES328,tarefa.estado);
+      const novo327=Object.hasOwn(ESTADOS_OPORTUNIDADES327,tarefa.estado)||novo328;
       const diagnosticos327=[], abortosVistos327=new Set();let erroControlado;
       const auditarGenericos327=async()=>{
         await Promise.all(conclusoes);
@@ -263,8 +282,8 @@ export async function executarCapturas327(argv=process.argv.slice(2)) {
           coletorDetalhes = instalarColetorDetalhes325(pagina, { base: o.base, contextoId, paginaId, atendimentoId: idDetalhes });
           vinculoDetalhes = { coletor: coletorDetalhes, captura: null }; coletoresDetalhes.push(vinculoDetalhes);
         }
-        if(novo327&&tarefa.alvo==='app'){
-          const config=configurarOportunidadesCli(tarefa.estado);
+        if(novo327&&tarefa.alvo==='app'&&tarefa.estado!=='funil-perda-referencia'){
+          const config=novo328?configurarAcoesCli328(tarefa.estado):configurarOportunidadesCli(tarefa.estado);
           identidadeOp={base:o.base,contextoId,paginaId,atendimentoId:config.atendimentoId,oportunidadeId:config.oportunidadeId,pessoaId:config.pessoaId,usuarioId:config.usuarioId};
           coletorOp=instalarColetorOportunidades327(pagina,identidadeOp);vinculoOp={coletor:coletorOp,captura:null};coletoresOportunidades.push(vinculoOp);
         }
@@ -287,7 +306,7 @@ export async function executarCapturas327(argv=process.argv.slice(2)) {
         if (tarefa.alvo === "app") estadoApp = await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho, coletorOp?{coletor:coletorOp,identidade:identidadeOp}:undefined);
         else estadoApp = await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
-        const anonimizacao = novo327 ? {aplicada:false,motivo:"Fixture327 ficticia; DOM original preservado."} : await pagina.evaluate(anonimizarTelefonesNoDom);
+        const anonimizacao = novo327 ? {aplicada:false,motivo:novo328?"Fixture328 ficticia; DOM original preservado.":"Fixture327 ficticia; DOM original preservado."} : await pagina.evaluate(anonimizarTelefonesNoDom);
         if (coletorDetalhes) {
           const token = await coletorDetalhes.aguardar();
           const esperado = estadoApp.metadados.detalhes325;
@@ -296,7 +315,7 @@ export async function executarCapturas327(argv=process.argv.slice(2)) {
         }
         if(coletorOp){
           const token=await coletorOp.aguardar(),preflight=estadoApp.metadados.oportunidadesPreflight;
-          coletorOp.selar(token,{...identidadeOp,fase:'oportunidades',atendimentoAtualId:new URL(pagina.url()).searchParams.get('c'),corpoEsperadoSha256:preflight.corpoOportunidadesSha256,paginaAtiva:!pagina.isClosed(),semanticaFinal:await pagina.evaluate(semanticaOportunidadesProntas,estadoApp.metadados.descricaoEsperada)});
+          coletorOp.selar(token,{...identidadeOp,fase:'oportunidades',atendimentoAtualId:new URL(pagina.url()).searchParams.get('c'),corpoEsperadoSha256:preflight.corpoOportunidadesSha256,paginaAtiva:!pagina.isClosed(),semanticaFinal:await pagina.evaluate(novo328?semanticaAcoes328:semanticaOportunidadesProntas,estadoApp.metadados.descricaoEsperada)});
         }
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" && !novo327 ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
@@ -348,4 +367,4 @@ export async function executarCapturas327(argv=process.argv.slice(2)) {
   process.stdout.write(`Capturas concluídas: ${capturas.length} em ${destino}\n`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) executarCapturas327().catch((erro) => { console.error(erro); process.exitCode = 1; });
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) executarCapturas328().catch((erro) => { console.error(erro); process.exitCode = 1; });
