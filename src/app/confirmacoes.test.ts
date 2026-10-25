@@ -43,6 +43,7 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", modulo: "@/server/paises/acoes", acao: "alterarStatusPais", achado: "L2428" },
   { arquivo: "src/app/(app)/home/HomeProfessor.tsx", modulo: "@/server/comercial/acoes", acao: "checkinExperimental", achado: "L2693" },
   { arquivo: "src/app/(app)/inbox/AcoesContato.tsx", modulo: "@/server/whatsapp/acoes", acao: "vincularContatoWhatsApp", achado: "L2298" },
+  { arquivo: "src/app/(app)/inbox/abas/ClienteVoltou.tsx", modulo: "@/server/whatsapp/acoes", acao: "vincularContatoWhatsApp", achado: "L2298" },
   { arquivo: "src/app/(app)/inbox/AcoesContato.tsx", modulo: "@/server/whatsapp/desvincular-contato", acao: "desvincularContatoWhatsApp", achado: "L2298" },
   { arquivo: "src/app/(app)/inbox/OptOutContato.tsx", modulo: "@/server/whatsapp/acoes", acao: "registrarOptOutContato", achado: "L2298" },
   { arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx", modulo: "@/server/agenda/replanejamento-decisao", acao: "decidirEAplicarReplanejamentoConjunto", achado: "L1102" },
@@ -513,6 +514,11 @@ const PorArquivo = () => {
   return mapa;
 };
 
+/** Seleção do mesmo caminho usado pela varredura global; teste local protege múltiplos donos nominais. */
+function acoesProibidasNoArquivo(arquivo: string, lista: { arquivo: string; modulo: string; acao: string }[]) {
+  const paresDoArquivo = new Set(lista.filter(a => a.arquivo === arquivo).map(a => JSON.stringify([a.modulo, a.acao])));
+  return lista.filter(a => !paresDoArquivo.has(JSON.stringify([a.modulo, a.acao])));
+}
 describe("ações irreversíveis passam pelo ConfirmarAcao", () => {
   it("a lista do mapa é exatamente a cópia literal (ação e exceção não saem num rebase distraído)", () => {
     expect(ACOES_CONFIRMADAS.map(({ arquivo, modulo, acao, achado }) => ({ arquivo, modulo, acao, achado }))).toEqual(COPIA_ACOES);
@@ -543,7 +549,7 @@ describe("ações irreversíveis passam pelo ConfirmarAcao", () => {
 
   it("nenhum outro arquivo do src (telas, src/lib, src/test, src/server) importa ou reexporta uma ação da lista", () => {
     const ofensas = FONTES.flatMap(({ arquivo, conteudo }) =>
-      importacoesForaDaLista(conteudo, COPIA_ACOES.filter((a) => a.arquivo !== arquivo), arquivo).map((i) => `${arquivo}: ${i}`));
+      importacoesForaDaLista(conteudo, acoesProibidasNoArquivo(arquivo, COPIA_ACOES), arquivo).map((i) => `${arquivo}: ${i}`));
     expect(ofensas).toEqual([]);
   });
 
@@ -910,5 +916,37 @@ describe("R2 da #154, C6 \u2014 codigoOpaco (autoteste)", () => {
   });
   it("o que não é código opaco passa: tipo Function, função local chamada eval, timer com função", () => {
     expect(codigoOpaco(`type F = Function; function eval2() {} const t = setTimeout(() => 1, 0); function g(eval: number) { return eval; }`)).toEqual([]);
+  });
+});
+
+describe("registro nominal de confirmação com múltiplos donos", () => {
+  const ownerA = "src/app/(app)/a/T.tsx", ownerB = "src/app/(app)/b/T.tsx", terceiro = "src/app/(app)/sem-registro/T.tsx";
+  const outroModulo = "@/server/financeiro/acoes";
+  const lista = [
+    { arquivo: ownerA, modulo: M, acao: "enviar" },
+    { arquivo: ownerB, modulo: M, acao: "enviar" },
+    { arquivo: "src/app/(app)/financeiro/T.tsx", modulo: outroModulo, acao: "enviar" },
+  ];
+  const dentro = `${CABECALHO}export function T() { return <ConfirmarAcao titulo="Enviar?" confirmacao="envio" idempotente={false} acao={() => enviar("id")} aoConcluir={() => {}} aoCancelar={() => {}}>Consequência.</ConfirmarAcao>; }`;
+  it.each([ownerA, ownerB])("o dono nominal %s passa só com a chamada dentro da confirmação real", arquivo => {
+    expect(importacoesForaDaLista(dentro, acoesProibidasNoArquivo(arquivo, lista), arquivo)).toEqual([]);
+    expect(verificarConfirmacoes(dentro, ACOES, arquivo)).toEqual({ fora: [], naConfirmacao: { enviar: 1 }, problemas: [] });
+  });
+  it.each([
+    [`import { enviar } from "${M}";`, `enviar from ${M}`],
+    [`import { enviar as alias } from "${M}";`, `enviar from ${M}`],
+    [`export { enviar as alias } from "${M}";`, `export { enviar } from ${M}`],
+  ])("arquivo não registrado continua recusado: %s", (fonte, ofensa) => {
+    expect(importacoesForaDaLista(fonte, acoesProibidasNoArquivo(terceiro, lista), terceiro)).toEqual([ofensa]);
+  });
+  it("registro não autoriza chamada fora de ConfirmarAcao", () => {
+    const fora = `${CABECALHO}export function T() { return <button onClick={() => enviar("id")}>Enviar</button>; }`;
+    expect(importacoesForaDaLista(fora, acoesProibidasNoArquivo(ownerA, lista), ownerA)).toEqual([]);
+    expect(verificarConfirmacoes(fora, ACOES, ownerA).fora).toHaveLength(1);
+    expect(verificarConfirmacoes(fora, ACOES, ownerA).naConfirmacao.enviar).toBe(0);
+  });
+  it("mesmo nome de ação em outro módulo não herda o registro", () => {
+    const fonte = `import { enviar } from "${outroModulo}";`;
+    expect(importacoesForaDaLista(fonte, acoesProibidasNoArquivo(ownerA, lista), ownerA)).toEqual([`enviar from ${outroModulo}`]);
   });
 });
