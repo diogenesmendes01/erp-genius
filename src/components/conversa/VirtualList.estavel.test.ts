@@ -88,3 +88,7 @@ it("332 cartão com chave por tarefa conserva botão físico focado ao atualizar
  await renderFio(101);expect(botao("tarefa:r40")).toBe(editar);expect(editar.parentElement).toBe(pai);expect(doc.activeElement).toBe(editar);
  await renderFio(99);expect(botao("tarefa:r40")).toBe(editar);expect(doc.activeElement).toBe(editar);
 });
+it("332 chave pinada fica somente no controle interno e não vira texto nem rótulo do botão",async()=>{
+ const p=props(1);await act(async()=>root.render(createElement(VirtualList<Item>,{...p,items:[{id:"tarefa:r40"}],pinKeys:["tarefa:r40"],renderItem:()=>createElement("button",{"aria-label":"Editar tarefa"},"Editar tarefa")})));
+ expect(scroll.textContent).toBe("Editar tarefa");expect(scroll.textContent).not.toContain("r40");const b=scroll.querySelector("button")!;expect(b.getAttribute("aria-label")).toBe("Editar tarefa");expect(b.getAttribute("title")).toBeNull();expect(scroll.querySelector('[data-virtual-key="tarefa:r40"]')).not.toBeNull();
+});

@@ -1,4 +1,4 @@
-import {IconBrandWhatsapp,IconPhone,IconMail,IconCalendarEvent,IconListCheck,IconPencil,IconCheck} from "@tabler/icons-react";
+import {IconMessageCircle,IconPhone,IconMail,IconCalendarEvent,IconListCheck,IconPencil,IconCheck} from "@tabler/icons-react";
 import {Botao} from "@/components/Botao";
 import {rotular,TIPO_TAREFA_LABEL,STATUS_TAREFA_LABEL} from "@/lib/labels";
 import {formatarInstanteExibicao} from "@/server/operacao/fuso-exibicao";
@@ -8,7 +8,7 @@ export function textoCriadorTarefa(t:Pick<TarefaPainel,"ia"|"criadorNome">,usuar
  const nome=t.criadorNome?.trim();if(!nome)return "Uma tarefa foi criada";
  return nome===usuarioNome?.trim()?"Você criou uma tarefa":nome+" criou uma tarefa";
 }
-const ICONES={WHATSAPP:IconBrandWhatsapp,LIGACAO:IconPhone,EMAIL:IconMail,REUNIAO:IconCalendarEvent,OUTRO:IconListCheck};
+const ICONES={WHATSAPP:IconMessageCircle,LIGACAO:IconPhone,EMAIL:IconMail,REUNIAO:IconCalendarEvent,OUTRO:IconListCheck};
 export function CartaoTarefaFio({t,fuso,usuarioNome,aoEditar,aoConcluir,ocupado=false}:{t:TarefaPainel;fuso:string|null;usuarioNome:string|null;aoEditar?():void;aoConcluir():void;ocupado?:boolean}){
  const Icone=ICONES[t.tipo];
  const prazo=t.dataCivil?t.dataCivil.split("-").reverse().join("/")+(t.hora?" · "+t.hora:"")+" ("+t.fusoOrigem+")":"Sem prazo";
