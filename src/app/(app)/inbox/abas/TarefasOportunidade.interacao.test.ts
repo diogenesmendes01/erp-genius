@@ -67,15 +67,15 @@ it("refresh de outra tarefa preserva o mesmo campo e motivo digitado",async()=>{
  expect(pagina.querySelector("textarea")).toBe(campo);expect((campo as unknown as {value:string}).value).toBe("Motivo preservado");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(false);
  await clicar("Confirmar cancelamento");expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Motivo preservado");
 });
-it("alvo atualizado conserva motivo mas bloqueia confirmação obsoleta e ignora ACK antigo",async()=>{
- let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Motivo do alvo");await clicar("Confirmar cancelamento");
+it("alvo atualizado conserva motivo quando a própria tentativa é recusada por versão",async()=>{
+ let fim!:(r:{ok:false;erro:string})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Motivo do alvo");await clicar("Confirmar cancelamento");
  const campo=pagina.querySelector("textarea");await render("a330",{...tarefa,versao:2});
  expect(pagina.querySelector("textarea")).toBe(campo);expect((campo as unknown as {value:string}).value).toBe("Motivo do alvo");
- await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+ await act(async()=>fim({ok:false,erro:"Esta tarefa foi alterada por outra pessoa. Recarregue."}));expect(mudar).toHaveBeenCalledOnce();expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
 });
-it("alvo removido conserva rascunho, bloqueia nova chamada e ACK não fecha diálogo",async()=>{
- let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Não perder");await clicar("Confirmar cancelamento");await renderLista([]);
- await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea") as unknown as {value:string}).value).toBe("Não perder");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);expect(cancelar).toHaveBeenCalledOnce();
+it("alvo removido conserva rascunho e recusa de permissão não fecha diálogo",async()=>{
+ let fim!:(r:{ok:false;erro:string})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Não perder");await clicar("Confirmar cancelamento");await renderLista([]);
+ await act(async()=>fim({ok:false,erro:"Você não tem acesso a esta função do CRM."}));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea") as unknown as {value:string}).value).toBe("Não perder");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);expect(cancelar).toHaveBeenCalledOnce();
 });
 it("ACK de cancelamento vigente continua válido após refresh de outra tarefa",async()=>{
  let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));const outra={...tarefa,id:"outra330"};await renderLista([tarefa,outra]);await abrir();await revisar("Alvo vigente");await clicar("Confirmar cancelamento");
@@ -89,4 +89,18 @@ it("alvo removido e reapresentado não reabilita a abertura invalidada",async()=
  await render();await abrir();await revisar("Preservado mesmo assim");const campo=pagina.querySelector("textarea");await renderLista([]);await render();
  expect(pagina.querySelector("textarea")).toBe(campo);expect((campo as unknown as {value:string}).value).toBe("Preservado mesmo assim");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
  await clicar("Confirmar cancelamento");expect(cancelar).not.toHaveBeenCalled();
+});
+it("refresh próprio antes do ACK de sucesso não exibe obsolescência nem deixa diálogo aberto",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Cliente pediu");await clicar("Confirmar cancelamento");
+ await renderLista([]);expect(pagina.textContent).not.toContain("Esta tarefa foi alterada por outra pessoa.");expect(btn("Confirmando…")).toBeTruthy();
+ await act(async()=>fim({ok:true}));expect(mudar).toHaveBeenCalledOnce();expect(pagina.querySelector('[role="alertdialog"]')).toBeNull();
+});
+it.each([403,404])("revogação %s desmonta a sessão e ACK antigo não reconcilia",async status=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar();await clicar("Confirmar cancelamento");await act(async()=>root.render(createElement("p",null,"Sem acesso "+status)));await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect(pagina.querySelector('[role="alertdialog"]')).toBeNull();
+});
+it("resultado incerto após refresh preserva motivo sem converter em sucesso",async()=>{
+ let falhar!:(e:Error)=>void;cancelar.mockImplementation(()=>new Promise((_r,reject)=>falhar=reject));await render();await abrir();await revisar("Motivo incerto");await clicar("Confirmar cancelamento");await renderLista([]);await act(async()=>falhar(Error("rede")));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Motivo incerto");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+});
+it("fechar superfície e reabrir mesma conversa invalida o ACK da abertura anterior",async()=>{
+ let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Tentativa antiga");await clicar("Confirmar cancelamento");await act(async()=>root.render(null));await render();await abrir();await revisar("Abertura nova");await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Abertura nova");expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();
 });

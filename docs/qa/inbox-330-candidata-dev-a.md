@@ -55,3 +55,21 @@ PR [#436](https://github.com/diogenesmendes01/erp-genius/pull/436), draft aberta
 - TESTER independente no head5e0: parecer favorável informado pelo ROOT (identificador e3c7c1e…),34arquivos completos/749testes mais17controles adversariais, EXIT0. Backend continua literal697; integração independente8arquivos66testes foi concluída e o banco restaurado. Não agregar essas contagens às unitárias nem tratar testes instrumentados de falha como SQL concorrente.
 
 Os negativos originais TS2739/CampoTexto/remount da fonte697 e o lint intermediário permanecem no histórico acima. A aprovação técnica sobre5e0 os substitui como estado atual; não transforma a execução697 em green. Ainda pendem aceite visual APP/PROTO e demais gates de publicação/CI/merge coordenados pelo integrador. PR draft e feature não marcada concluída; nenhuma publicação foi feita pelo DEV. #331 criar/editar e #338 extras seguem reservadas. Sem nova execução de Node/SQL/DB nesta atualização documental.
+## PR436 — revisão R2: sucesso próprio antes do ACK e ordem explícita de alçadas
+
+O comentário [6398421505](https://github.com/diogenesmendes01/erp-genius/pull/436#issuecomment-6398421505), C3, foi reproduzido em DOM real: durante a action pendente, a lista era atualizada e o diálogo mostrava versão obsoleta; depois ignorava o ok do próprio cancelamento. REDa7aeca EXIT1,2falhas/17pass. A tentativa ativa agora guarda abertura e resultado próprios; esse refresh esperado não invalida o envio, mas erro/incerto não viram sucesso. A confirmação só fecha para o ok daquela tentativa/abertura ainda viva.
+
+Dois casos anteriores que tratavam um ok da mesma tentativa como resposta obsoleta foram separados em recusa real de versão/permissão e sucesso próprio autoritativo. Não foram eliminados os controles de A→B→A, alvo obsoleto antes de envio, remoção/reapresentação, conclusão em versão superada, fechamento/reabertura, permissão negada, resultado incerto e clique duplo. Foram adicionados os controles403/404 de desmontagem e o sucesso com refresh antes do ACK. O motivo e o campo físico continuam preservados após atualização irrelevante.
+
+C4 foi tratado sem criar uma restrição de carteira para tarefas: podeVerLeadNaThread é calculado antes do carregamento, porém sua negativa não impede tarefas que a ACL própria autoriza. Unidade de ordem RED3c2ebc2fail1pass→GREEN4157aa3/3; caso sem lead continua direto. A integração real com vendedor dono da linha e oportunidade fora da carteira devolve atualnull mas mantém suas tarefas vinculadas diretamente ou ao lead; leitura não emite Evento.
+
+| Execução final deste recorte | Sessão/terminal | Exit | Resultado |
+|---|---|---|---|
+| UI/confirmacoes intermediária |95934/db6353|0|2arquivos86:20DOM+66guardas|
+| Leitura painéis reais |46569/ca6c5f|0|2arquivos13,65.49s|
+| UNIT focal + guardas completas |36496/d4922d|0|19arquivos518,93.49s|
+| Lint whitelist5 |904df3|0|0warnings|
+
+Runners locais UTC/heap1024/w1; GREENs completos sem filtro por nome/skips. A integração usou somente perfildev-email492 original sob lease concedida, externa7blank; lease liberada explicitamente após o terminal. Não houve outra INT, TSC ou global pesado. Mutadores330, endpointestrito435 e helperlegado435 não foram modificados por este patch. O leitor mudou só a ordem, mantendo OR/escopo e retorno direto sem lead.
+
+Limites: DOM usa ReactDOM/Modal/ConfirmarAcao/useAcaoCliente reais, actions duplas e refresh de props controlado. Isso não prova SSE de rede nem HTTP403/404 reais. A camada visual/browser e QA independente do novo SHA seguem Root. Os gates originais969/8254/TSC0/lint0 e TESTER34/749+17 descritos acima pertencem à fonte5e0, não à candidata R2. Patch sem push/merge; #331 e #353 fora da frente.

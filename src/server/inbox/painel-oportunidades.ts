@@ -27,8 +27,10 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
   if (!a) return null;
   if (a.finalidade !== "COMERCIAL") return vazio();
   const fusoEscola = await carregarFusoInstitucionalTx(db) ?? "";
+  const leadVisivel = a.leadId && a.conversa.contatoId ? await podeVerLeadNaThread(u, a.id, a.leadId, Date.now(), db) : false;
+  // A alçada do lead não substitui a ACL das tarefas: inclui vínculo direto e tarefas próprias com lead oculto.
   const tarefas = await carregarTarefasDoAtendimento(u, a, { soDaConversa: false }, db);
-  if (!a.leadId || !a.conversa.contatoId || !await podeVerLeadNaThread(u, a.id, a.leadId, Date.now(), db)) return vazio(tarefas, fusoEscola);
+  if (!a.leadId || !leadVisivel) return vazio(tarefas, fusoEscola);
   const op = await db.oportunidade.findUnique({
     where: { id: a.leadId },
     select: {
