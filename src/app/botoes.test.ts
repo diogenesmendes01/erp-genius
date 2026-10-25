@@ -1216,6 +1216,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
+  {arquivo:"src/app/(app)/inbox/ModalTarefa.tsx",rotulo:"Criar tarefa · Salvar",motivo:"submit acionável: neutro sinaliza título vazio e primário título preenchido; validação é anunciada em FeedbackAcao, não é um controle de alternância"},
   { arquivo: "src/components/conversa/Compositor.tsx", rotulo: "`Mencionar ${p.nome} · ${p.descricao}`", motivo: "opção do autocomplete (role=option): aria-selected anuncia a opção ativa; aria-pressed não representa seleção de listbox" },
   { arquivo: "src/components/conversa/Compositor.tsx", rotulo: "Enviar", motivo: "comando de envio, não interruptor: cor indica modo Responder/Nota; ocupado é anunciado em aria-busy" },
   { arquivo: "src/app/(app)/inbox/PainelContato.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected; aria-pressed não vale para tab" },
@@ -1780,6 +1781,8 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 // usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
+  {arquivo:"src/app/(app)/inbox/ModalTarefa.tsx",nome:"key tipo",vezes:1,motivo:"tipo da tarefa rotulado pelo mapa central TIPO_TAREFA_LABEL via rotular, com seleção anunciada em aria-pressed"},
+  {arquivo:"src/app/(app)/inbox/ModalTarefa.tsx",nome:"key a.id",vezes:1,motivo:"atalho institucional canônico de atalhosDeHorario; rótulo legível Hoje/Amanhã/Segunda acompanhado do horário"},
   { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", nome: "key t.id", vezes: 1, motivo: "sugestão de tag: o texto do botão é t.nome, nome legível do DTO autorizado, escapado pelo React; a key é somente a identidade do vínculo" },
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
   { arquivo: "src/app/(app)/aria/_componentes/Abas.tsx", nome: "(sem nome)", vezes: 1, motivo: "link de aba da Aria: o rótulo vem de ROTULO_ABA (Visão geral, Comportamento, Permissões…) a cada item do mapa" },
