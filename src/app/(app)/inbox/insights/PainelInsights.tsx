@@ -53,7 +53,7 @@ export function PainelInsights(props: PropsPainelInsights) {
     {!ultima && <EstadoVazio>Nenhum Insight gerado ainda.</EstadoVazio>}
     {ultima && analise && <>
       {ultima.simulada && <p className="text-xs font-medium text-ai-700">Demonstração simulada</p>}
-      <dl className="grid grid-cols-2 gap-2">
+      <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="rounded-lg border border-gray-200 bg-surface-muted p-3"><dt className="text-xs text-gray-600">Temperatura</dt><dd className="text-sm font-medium">{analise.temperatura ? rotular(TEMPERATURA_LABEL, analise.temperatura) : "Não identificado"}</dd><dd className="text-xs text-gray-600">Estimativa da análise</dd></div>
         <div className="space-y-1 rounded-lg border border-gray-200 bg-surface-muted p-3"><dt className="text-xs text-gray-600">Chance de fechar</dt><dd className="text-sm font-medium">{analise.chanceFechar === null ? "Não identificado" : `${analise.chanceFechar}%`}</dd>{analise.chanceFechar !== null && <div role="meter" aria-label="Chance estimada de fechar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={analise.chanceFechar} aria-valuetext={`${analise.chanceFechar}%; estimativa da análise`} className="h-1 overflow-hidden rounded-full bg-gray-200"><div aria-hidden className="h-1 bg-brand-solid" style={{width:`${analise.chanceFechar}%`}}/></div>}</div>
         <div className="rounded-lg border border-gray-200 bg-surface-muted p-3"><dt className="text-xs text-gray-600">Sentimento</dt><dd className="text-sm font-medium">{analise.sentimento ? rotular(SENTIMENTO_INSIGHT_LABEL, analise.sentimento) : "Não identificado"}</dd></div>
