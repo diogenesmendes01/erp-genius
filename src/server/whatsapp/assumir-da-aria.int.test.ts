@@ -1,12 +1,13 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { Papel, PrismaClient, type AcaoAgenteIATipo, type MotivoPausaAtendimentoIA } from "@prisma/client";
-const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+const { authMock, papeisExternosPortal } = vi.hoisted(() => ({ authMock: vi.fn(), papeisExternosPortal: [] as string[][] }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("@/server/_shared/sessao", async original => {
  const real = await original<typeof import("@/server/_shared/sessao")>();
  return { ...real, exigirSessao: async () => {
   const id = (await authMock())?.user?.id, u = id ? await real.carregarUsuarioFresco(id) : null;
   if (!u) throw new real.ErroAutenticacao();
+  papeisExternosPortal.push([...u.papeis]);
   if (real.apenasPortal(u)) throw new real.ErroPermissao(); return u;
  } };
 });
@@ -37,7 +38,7 @@ async function cenario() {
  const turno = await prisma.turnoAgenteIA.create({ data: { ancoraMensagemId:ancora.id,atendimentoId:at.id,tipo:"ATENDIMENTO",resultado:"SUGERIU" } });
  return {admin,outro,numero,contato,at,turno};
 }
-beforeEach(async()=>{await truncarBanco();authMock.mockReset();c=await cenario();authMock.mockResolvedValue({user:{id:c.admin.id}});});
+beforeEach(async()=>{await truncarBanco();authMock.mockReset();papeisExternosPortal.length=0;c=await cenario();authMock.mockResolvedValue({user:{id:c.admin.id}});});
 const estado = () => prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.at.id}});
 async function sugestao(acao: AcaoAgenteIATipo = "RESPONDER") {
  return prisma.acaoAgenteIA.create({data:{turnoId:c.turno.id,atendimentoId:c.at.id,acao,modoConfigurado:"SUGERIR",status:"SUGERIDA",confianca:90,payload:{texto:"Sugestão fictícia"},reversivel:false}});
@@ -173,4 +174,43 @@ it("357 ações, intenções e responsável de OUTRO atendimento permanecem inta
  const msg=await prisma.mensagemWhatsApp.create({data:{numeroId:c.numero.id,conversaId:outro.conversaId,atendimentoId:outro.id,direcao:"ENTRADA",corpo:"Sentinela357",driver:"MOTOR"}}),t=await prisma.turnoAgenteIA.create({data:{ancoraMensagemId:msg.id,atendimentoId:outro.id,tipo:"ATENDIMENTO",resultado:"SUGERIU"}});
  const s=await prisma.acaoAgenteIA.create({data:{turnoId:t.id,atendimentoId:outro.id,acao:"RESPONDER",status:"SUGERIDA",modoConfigurado:"SUGERIR",confianca:90,payload:{texto:"Sentinela"},reversivel:false}}),i=await prisma.intencaoMensagem.create({data:{numeroId:c.numero.id,contatoId:contato.id,atendimentoId:outro.id,origem:"IA",status:"PENDENTE",tipo:"TEXTO",corpoRenderizado:"Sentinela"}});
  expect((await assumir(c.at.id)).ok).toBe(true);expect((await prisma.acaoAgenteIA.findUniqueOrThrow({where:{id:s.id}})).status).toBe("SUGERIDA");expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:i.id}})).status).toBe("PENDENTE");expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:outro.id}})).toMatchObject({responsavelId:null,iaPausadaEm:null});expect(await prisma.evento.count({where:{agregadoId:outro.id}})).toBe(0);
+});
+
+async function esperarBloqueioPortal(holderPid:number){
+ const fim=Date.now()+3500;
+ while(Date.now()<fim){
+  const[r]=await prisma.$queryRaw<{espera:boolean}[]>`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND ${holderPid}=ANY(pg_blocking_pids(pid))) AS espera`;
+  if(r.espera)return;
+  await new Promise<void>(resolver=>setImmediate(resolver));
+ }
+ throw Error("Assumir não aguardou o holder real do atendimento");
+}
+const casosPortal:{rotulo:string;papeis:Papel[];recusar:boolean}[]=[
+ {rotulo:"ALUNO exclusivo",papeis:[Papel.ALUNO],recusar:true},
+ {rotulo:"sem papéis",papeis:[],recusar:false},
+ {rotulo:"ALUNO e VENDEDOR",papeis:[Papel.ALUNO,Papel.VENDEDOR],recusar:false},
+];
+it.each(casosPortal)("357 papel após espera $rotulo respeita apenasPortal sem alterar políticas ERP",async({papeis,recusar})=>{
+ await prisma.atendimentoWhatsApp.update({where:{id:c.at.id},data:{responsavelId:c.admin.id,status:"EM_ATENDIMENTO",iaPausadaEm:new Date("2026-01-01T00:00:00Z"),iaPausaMotivo:"HANDOFF"}});
+ await prisma.participanteAtendimentoWhatsApp.create({data:{atendimentoId:c.at.id,usuarioId:c.admin.id,concedenteId:c.admin.id,inicio:new Date(Date.now()-60000),fim:new Date(Date.now()+3600000),podeEnviar:true,motivo:"Convite legítimo de fixture portal357"}});
+ const s=await sugestao(),antes=await estado();
+ const whereEventos={agregadoTipo:"AtendimentoWhatsApp",agregadoId:c.at.id};
+ const eventosAntes=await prisma.evento.count({where:whereEventos});
+ const preso=sinal(),soltar=sinal();let pid=0;
+ const holder=prisma.$transaction(async tx=>{pid=(await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`)[0].pid;await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.at.id} FOR NO KEY UPDATE`;preso.resolve();await soltar.promise;},{timeout:12000});
+ let chamada:ReturnType<typeof assumir>|null=null,capacidade:boolean|null=null;
+ try{
+  await esperarBarreira(preso.promise);chamada=assumir(c.at.id);await esperarBloqueioPortal(pid);
+  expect(papeisExternosPortal).toEqual([[Papel.ADMINISTRADOR]]);
+  await prisma.usuario.update({where:{id:c.admin.id},data:{papeis}});
+  const fresco=await prisma.usuario.findUniqueOrThrow({where:{id:c.admin.id},select:{id:true,nome:true,papeis:true,permissoes:true}});
+  capacidade=(await carregarAriaDoAtendimento(fresco,c.at.id))?.podeAssumirAria??null;
+ }finally{
+  soltar.resolve();const fins=await Promise.allSettled([holder,...(chamada?[chamada]:[])]);
+  for(const f of fins)if(f.status==="rejected")throw f.reason;
+ }
+ if(!chamada)throw Error("Action de fixture não foi iniciada");
+ const r=await chamada,depois=await estado(),acao=await prisma.acaoAgenteIA.findUniqueOrThrow({where:{id:s.id}});
+ if(recusar){expect(capacidade).toBe(false);expect(r.ok).toBe(false);expect(depois).toEqual(antes);expect(acao.status).toBe("SUGERIDA");expect(await prisma.evento.count({where:whereEventos})).toBe(eventosAntes);}
+ else{expect(capacidade).toBe(true);expect(r.ok).toBe(true);expect(depois.iaPausaMotivo).toBe("MANUAL");expect(depois.responsavelId).toBe(c.admin.id);expect(acao.status).toBe("REJEITADA");expect(await prisma.evento.count({where:whereEventos})).toBeGreaterThan(eventosAntes);}
 });

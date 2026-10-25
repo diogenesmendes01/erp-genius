@@ -2212,7 +2212,7 @@ const EXPORTS_DE_LABELS = ["rotular", "TEMPERATURA_CLS", ...ANTIGOS, ...MAPAS_NO
 describe("(iii) labels.ts: exports e mapas novos", () => {
   it("334 alterações Aria não confundem intenção preparada com entrega externa",()=>{
     expect(L.ALTERACAO_ARIA_LABEL).toEqual({
-      RESPONDER:"Preparou uma resposta",ENVIAR_DOCUMENTO:"Preparou o envio de documento",ATUALIZAR_CAMPO:"Atualizar campo",TAG:"Aplicar tag",MOVER_ETAPA:"Mover de etapa",MARCAR_PERDIDO:"Marcou como perdido",CRIAR_TAREFA:"Criar tarefa",AGENDAR_MENSAGEM:"Agendou uma mensagem",NOTA_INTERNA:"Registrou uma nota interna",CONDICAO_COMERCIAL:"Preparou uma condição comercial",HANDOFF:"Pediu ajuda a uma pessoa",CLASSIFICAR_SETOR:"Classificou o setor",
+      RESPONDER:"Preparou uma resposta",ENVIAR_DOCUMENTO:"Preparou o envio de documento",ATUALIZAR_CAMPO:"Preencheu um campo",TAG:"Adicionou uma tag",MOVER_ETAPA:"Moveu a etapa",MARCAR_PERDIDO:"Marcou como perdido",CRIAR_TAREFA:"Criou uma tarefa",AGENDAR_MENSAGEM:"Agendou uma mensagem",NOTA_INTERNA:"Registrou uma nota interna",CONDICAO_COMERCIAL:"Preparou uma condição comercial",HANDOFF:"Pediu ajuda a uma pessoa",CLASSIFICAR_SETOR:"Classificou o setor",
     });
     for(const texto of Object.values(L.ALTERACAO_ARIA_LABEL))expect(texto).not.toMatch(/entregou|mensagem enviada|documento enviado/i);
     expect(problemasDoMapa(Object.freeze({...L.ALTERACAO_ARIA_LABEL,RESPONDER:"RESPONDER"}),Object.values(AcaoAgenteIATipo))).toContain("RESPONDER: repete o código");

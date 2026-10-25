@@ -31,3 +31,12 @@ A UI usa ConfirmarAcao real e idempotente para esse contrato contextual. Voltar 
 Sem schema, migração, dependências, configuração global ou permissão nova. Não se afirma ausência geral de deadlocks nem linearizabilidade global de ACL. SQL usa perfil descartável exclusivo e barreiras reais com finally. Falha de Evento injetada é distinguida de falha SQL espontânea no QA.
 
 Pendentes no freeze: gates originais coordenados, QA independente e visual APP/PROTO original em três larguras e dois temas. O blueprint offline não é captura nem aplicação de fixture.
+## PR444 R1 — contador independente e textos históricos (C3/C4)
+
+O cabeçalho usa carregarContadorAtividadeAria, que compartilha o leitor autorizado de histórico com carregarAriaAtividade. A fábrica mantém atendimentoVisivel, COMERCIAL+lead, podeVerLeadNaThread, escopoComercialAtual/Pessoa, lotes100/keyset criadoEm/id desc e até30 depois da autorização. DESFEITA ocupa a janela mas só EXECUTADA/APROVADA contam. Não é contador global por countSQL.
+
+A leitura de contador não busca publicação/configuração, última ação nem alçada de desfazer. O módulo completo continua parseando publicação estritamente; configPadrao só vale na ausência, nunca em publicação inválida. Header/painel podem manter contador e podeEnviar de contexto mesmo se a configuração publicada for inválida; isso não afrouxa os guards de envio/execução da Aria. O Db opcional inclui leituras/autorização na mesma conexão; o default preserva a chamada de leitura histórica de dois argumentos.
+
+Quatro fallbacks de ALTERACAO_ARIA_LABEL passam ao passado: Preencheu um campo, Adicionou uma tag, Moveu a etapa, Criou uma tarefa. ACAO_AGENTE_IA_LABEL permanece neutro para sugestão ainda nãoexecutada. Preparou resposta/documento continua sem afirmar entrega externa. IDs do payload não viram nomes.
+
+Validação DEV: RED nativo2/10 por ConfigAriaSchema real, GREEN arquivo completo10/10; UNIT3/161 (mapa completo de enums), focal final11/106 com UI real/guarda paginação e Db explícito; detalhes e recibos no relatório C3/C4. Ambiente compatível B493grant/client383 preparado pelo ROOT, não atribuído ao perfil492. O fix histórico de fixture cliente-voltou (ROOT57822fc2) é carry qualificado; nenhum mock do contador. C1 visual de Atividade como gerente/vendedor e gates de composição continuam pendentes.
