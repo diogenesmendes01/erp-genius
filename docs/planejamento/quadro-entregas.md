@@ -7526,3 +7526,7 @@ RED 6d75f9 EXIT 1, 8 falhas/22 controles → GREEN 9cebb0 EXIT 0, 30 testes do m
 ### Inbox #439 C3 — composição R6 e QA independente
 
 DoisSRCModal literais0b5a:5íconesgenéricosdecorativos,Responsávelinteirosócapacidade,labelslembretevaloresinalterados. QAindep88670/276834 EXIT0:10arquivos442casos,62.02s,UTC/w1/1024semfiltro/skips;parecercf79c5e4e2d153a642b730096442a19735c884b2d7dbf035a8127297b06ade46. Backend/ciclos/salvar/cancel/payload/registriesliteraisbase;semSQLrepetida. Integraçãosóconflitoquadro,históricopreservado;global/TSC/lint/build/visualpendentes.
+
+### Inbox composição R6 — fixture e TSC (25/10/2026)
+
+Originalc2b48093/2743cc EXIT2: únicoTS2304test-only nohelperabrirAba331 referiap.inicialsemparamp. Usaagoraprops.inicialjádefinido,semruntime/asserçõesalterados;arquivocompleto119casoscb8485 EXIT0. ReplayoriginalWIP83354/7b68cf EXIT0,fontehash79ae7bff8413c00382589df600be456eb1f1dd023b6f80d038cc5c7467a46370econfigspreservados,nãoexecutadonoHEADanterior. QA358finalb23e43...favorável:23native/48reg/568UNIT26/3oráculos0,recortesnãosomados;SQLnão repetidapelafix. Globalhabitual2048w2/lint/build/visual/CIaindapendentes. Reservas futuras493Insights377e494grant370registradasapenasnooutput,nãomigradas/geradas.
