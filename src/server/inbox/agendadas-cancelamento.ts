@@ -5,7 +5,7 @@ import {registrarEvento} from "@/server/_shared/evento";
 import {exigirCapacidadeCrm} from "@/server/crm/permissoes";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {podeGerirAgendadaInbox} from "./atividade-regras";
-import {avisarAtendimento} from "./aviso";
+import {avisarAtendimentoAtualizado} from "./barramento";
 const Id=z.string().min(1,"Mensagem agendada não encontrada.");
 const MARCA="cancelada_pelo_autor_inbox";
 /** Operação específica Inbox: mantém as APIs/defaults HUMANO do CRM e não desfaz AcaoAgenteIA. */
@@ -18,7 +18,8 @@ export async function cancelarAgendadaInboxTx(sessao:UsuarioSessao,atendimentoId
   const u=await tx.usuario.findUnique({where:{id:sessao.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
   if(!u?.ativo)throw new ErroRegra("Sua sessão não está mais ativa.");
   exigirCapacidadeCrm(u,"tarefas.ver");
-  if(!await atendimentoVisivel(u,id,false,tx))throw new ErroRegra("Atendimento não encontrado.");
+  const a=await atendimentoVisivel(u,id,false,tx);
+  if(!a)throw new ErroRegra("Atendimento não encontrado.");
   const m=await tx.intencaoMensagem.findFirst({where:{id:mid,atendimentoId:id,agendadaPara:{not:null},passo:null,passoComercial:null}});
   if(!m||!podeGerirAgendadaInbox(u,m))throw new ErroRegra("Mensagem agendada não encontrada ou sem permissão para cancelar.");
   if(m.status==="CANCELADA"){
@@ -30,6 +31,6 @@ export async function cancelarAgendadaInboxTx(sessao:UsuarioSessao,atendimentoId
   const r=await tx.intencaoMensagem.updateMany({where:{id:mid,atendimentoId:id,status:m.status,origem:m.origem,autorId:m.autorId,agendadaPara:m.agendadaPara,passo:null,passoComercial:null},data:{status:"CANCELADA",motivoFalha:MARCA}});
   if(r.count!==1)throw new ErroRegra("A mensagem mudou. Atualize a atividade e tente novamente.");
   await registrarEvento(tx,{tipo:"MensagemAgendadaCancelada",agregadoTipo:"AtendimentoWhatsApp",agregadoId:id,autorId:u.id,payload:{intencaoId:mid,atendimentoId:id,contexto:"inbox333"}});
-  await avisarAtendimento(tx,id);
+  await avisarAtendimentoAtualizado(tx,a);
  });
 }
