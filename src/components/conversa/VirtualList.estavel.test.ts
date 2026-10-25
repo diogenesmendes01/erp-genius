@@ -12,8 +12,8 @@ const frames = new Map<number, FrameRequestCallback>(); let quadroId = 0;
 const chave = (item: Item) => item.id;
 const itens = (n: number) => Array.from({ length: n }, (_, i) => ({ id: "r" + i }));
 let fracionaria = false;
-const altura = (id: string) => fracionaria ? (Number(id.slice(1)) % 3 === 0 ? 71.75 : 71.875) : Number(id.slice(1)) % 3 === 0 ? 90 : 50;
-const topo = (id: string) => itens(Number(id.slice(1))).reduce((s, i) => s + altura(i.id), 0);
+const altura = (id: string) => fracionaria ? (Number(id.replace("tarefa:","").slice(1)) % 3 === 0 ? 71.75 : 71.875) : Number(id.replace("tarefa:","").slice(1)) % 3 === 0 ? 90 : 50;
+const topo = (id: string) => itens(Number(id.replace("tarefa:","").slice(1))).reduce((s, i) => s + altura(i.id), 0);
 const botao = (id: string) => scroll.querySelector('[data-row="' + id + '"]');
 const props = (n: number) => ({ items: itens(n), getKey: chave, estimatedHeight: 72, scrollRef: { current: scroll as unknown as HTMLElement }, stableMount: true,
   renderItem: (item: Item) => createElement("button", { "data-row": item.id }, item.id) });
@@ -80,4 +80,11 @@ it("opt-in não acumula diferenças subpixel ignoradas perto da altura estimada"
   const antes = (botao("r40") as unknown as HTMLElement).getBoundingClientRect().top;
   await render(101);
   expect((botao("r40") as unknown as HTMLElement).getBoundingClientRect().top).toBe(antes);
+});
+
+it("332 cartão com chave por tarefa conserva botão físico focado ao atualizar versão e intercalar novas linhas",async()=>{
+ const renderFio=async(n:number)=>{const p=props(n);await act(async()=>root.render(createElement(VirtualList<Item>,{...p,items:p.items.map(i=>i.id==="r40"?{id:"tarefa:r40"}:i),pinKeys:["tarefa:r40"]})));};
+ await renderFio(99);const editar=botao("tarefa:r40")!;editar.focus();await eventos("focusin",editar);const pai=editar.parentElement;
+ await renderFio(101);expect(botao("tarefa:r40")).toBe(editar);expect(editar.parentElement).toBe(pai);expect(doc.activeElement).toBe(editar);
+ await renderFio(99);expect(botao("tarefa:r40")).toBe(editar);expect(doc.activeElement).toBe(editar);
 });

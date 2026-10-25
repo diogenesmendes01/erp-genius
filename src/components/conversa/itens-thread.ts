@@ -1,3 +1,4 @@
+import type { TarefaPainel } from "@/server/inbox/painel-tarefas";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consultas-inbox";
@@ -23,8 +24,10 @@ export function itensDaThread(mensagens: MensagemThread[], notas: NotaInternaThr
 /** Variante visual autorizada pelo painel; não é mensagem/nota do transporte. */
 export type ItemSugestaoThread = { tipo: "sugestao-aria"; id: string; s: SugestaoAriaThread };
 
+export type ItemTarefaThread = { tipo: "tarefa"; id: string; t: TarefaPainel };
+
 export type AutorBalao = "cliente" | "humano" | "aria" | "nota";
-export type ItemThreadVisual = ((ItemThread | ItemSugestaoThread) & { emSequencia: boolean })
+export type ItemThreadVisual = ((ItemThread | ItemSugestaoThread | ItemTarefaThread) & { emSequencia: boolean })
   | { tipo: "dia"; id: string; rotulo: string }
   | { tipo: "evento"; id: string; tom: "ia" | "neutro"; icone: "transferencia"; texto: string; hora: string | null };
 
@@ -72,15 +75,15 @@ function identidade(i: ItemThread): string | null {
 }
 
 /** Apenas decora a janela existente: não altera cursor, ordenação, limites ou as keys dos itens E0. */
-export function decorarThread(itens: (ItemThread | ItemSugestaoThread)[], { fuso, agora, transferidoDe }: { fuso: string | null; agora: Date; transferidoDe?: string | null }): ItemThreadVisual[] {
+export function decorarThread(itens: (ItemThread | ItemSugestaoThread | ItemTarefaThread)[], { fuso, agora, transferidoDe }: { fuso: string | null; agora: Date; transferidoDe?: string | null }): ItemThreadVisual[] {
   const visual: ItemThreadVisual[] = [];
   // Um formatador por decoração, não por mensagem de um histórico virtualizado.
   const formatador = formatadorDoDia(fuso), hoje = chaveDoDia(agora, formatador);
   if (transferidoDe) visual.push({ tipo: "evento", id: "evento:transferencia", tom: "neutro", icone: "transferencia", texto: `Transferido de ${transferidoDe}`, hora: null });
   let diaAnterior: string | null = null, autorAnterior: string | null = null;
   for (const i of itens) {
-    const iso = i.tipo === "sugestao-aria" ? i.s.criadoEm : i.tipo === "nota" ? i.n.criadoEm : i.m.criadoEm;
-    const dia = chaveDoDia(iso, formatador), autor = i.tipo === "sugestao-aria" ? null : identidade(i);
+    const iso = i.tipo === "tarefa" ? i.t.criadoEm : i.tipo === "sugestao-aria" ? i.s.criadoEm : i.tipo === "nota" ? i.n.criadoEm : i.m.criadoEm;
+    const dia = chaveDoDia(iso, formatador), autor = i.tipo === "sugestao-aria" || i.tipo === "tarefa" ? null : identidade(i);
     const emSequencia = !!dia && dia === diaAnterior && autor !== null && autor === autorAnterior;
     if (dia && dia !== diaAnterior) visual.push({ tipo: "dia", id: `dia:${dia}`, rotulo: rotuloParaChaves(iso, fuso, dia, hoje) });
     visual.push({ ...i, emSequencia });
