@@ -63,3 +63,11 @@ it("346 popover oferece Minhas e Não lidas com os sete chips, e Limpar remove o
  expect(replace).toHaveBeenLastCalledWith("/inbox?setor=COMERCIAL&numero=n1&resp=eu&naoLidas=1&busca=ana");
  await montar({resumo:resumoAria,filtros:{...props.filtros,setor:"COMERCIAL"}});await disparar("click",rotulo("Filtros"));const limparPopover=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparPopover);expect(replace).toHaveBeenLastCalledWith("/inbox?numero=n1&busca=ana");
 });
+it.each([{prazoEstourado:true},{responsavel:"fila" as const},{aria:"handoff" as const}])("R2 filtros Limpar preservam o chip representado %j sem etiqueta ou selo duplicados",async(chip)=>{
+ await montar({resumo:resumoAria,filtros:{numeroId:"n1",busca:"ana",...chip}});
+ expect(rotulo("Remover filtro Prazo estourado")).toBeNull();expect(rotulo("Remover filtro Não atribuídas")).toBeNull();expect(botao("Limpar")).toBeUndefined();expect(rotulo("Filtros").textContent).toBe("");
+ const filtros={numeroId:"n1",busca:"ana",setor:"COMERCIAL" as const,naoLidas:true,...chip};await montar({resumo:resumoAria,filtros});
+ const limpar=botao("Limpar");await disparar("click",limpar);const url=new URL(replace.mock.calls.at(-1)![0],"http://local");expect(url.searchParams.get("numero")).toBe("n1");expect(url.searchParams.get("busca")).toBe("ana");expect(url.searchParams.has("setor")).toBe(false);expect(url.searchParams.has("naoLidas")).toBe(false);
+ const chave="prazoEstourado" in chip?"prazo":"responsavel" in chip?"resp":"aria";const valor="prazoEstourado" in chip?"estourado":"responsavel" in chip?"fila":"handoff";expect(url.searchParams.get(chave)).toBe(valor);
+ await disparar("click",rotulo("Filtros"));const limparDialogo=dialogo()!.querySelectorAll("button").find(b=>b.textContent==="Limpar")!;await disparar("click",limparDialogo);expect(replace.mock.calls.at(-1)![0]).toBe(url.pathname+url.search);
+});
