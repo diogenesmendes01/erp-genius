@@ -31,7 +31,7 @@ const DICA_ESTADO = "Desligada não faz nada. Sombra simula e registra o que far
 
 export function Cabecalho({ nome, funcao, versaoPublicada, estado, pausada, motivoPausa, supervisao, podeMudarEstado, podePausar, verProvedor }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: true });
   const [motivo, setMotivo] = useState("");
   const [pedindoMotivo, setPedindoMotivo] = useState(false);
 

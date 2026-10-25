@@ -197,7 +197,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
             if (i.tipo === "dia") return <SeparadorDia rotulo={i.rotulo} />;
             if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
-            if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
+            if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} atendimentoId={item!.id} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             const m = i.m;
             return (
               <BalaoMensagem m={m} destacada={achadoAtual === m.id} autor={autorDoItem(i)} emSequencia={i.emSequencia} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
