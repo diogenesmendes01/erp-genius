@@ -40,3 +40,22 @@ it("vínculo interno ainda exige validação comercial real do núcleo",async()=
  const t={id:"t",status:"ABERTA",versao:1,leadId:null,pessoaId:null} as unknown as Tarefa;
  await expect(editarTarefaTx(tx,autor,t,1,{}, {vinculo:{leadId:"fora",pessoaId:null}})).rejects.toThrow("fora da sua carteira");expect(updateMany).not.toHaveBeenCalled();
 });
+
+it.each([null,"2026-11-01"])("TESTER agenda resolvida adiciona horário/lembrete a tarefa sem horário anterior data=%s",async dataCivil=>{
+ const updateMany=vi.fn(async()=>({count:1}));const tx={tarefa:{updateMany}} as unknown as Prisma.TransactionClient;
+ const t={id:"t",status:"ABERTA",versao:1,dataCivil,inicioEm:null,lembrarEm:null,lembreteAntecedenciaMin:null,fusoOrigem:"America/New_York"} as unknown as Tarefa;
+ const inicioEm=new Date("2026-11-01T15:00:00Z"),lembrarEm=new Date("2026-11-01T14:30:00Z");
+ await editarTarefaTx(tx,autor,t,1,{}, {agendamento:{dataCivil:"2026-11-01",inicioEm,lembrarEm,lembreteAntecedenciaMin:30}});
+ expect(updateMany).toHaveBeenCalledWith({where:{id:"t",versao:1,status:"ABERTA"},data:{...(dataCivil?{}:{dataCivil:"2026-11-01"}),inicioEm,lembrarEm,lembreteAntecedenciaMin:30,lembreteDisparadoEm:null,versao:{increment:1}}});
+});
+
+it.each([null,"2026-11-01"])("agenda efetiva sem horário não aceita lembrete apesar do horário antigo: %s",async dataCivil=>{
+ const updateMany=vi.fn(async()=>({count:1}));const tx={tarefa:{updateMany}} as unknown as Prisma.TransactionClient;
+ const t={id:"t",status:"ABERTA",versao:1,dataCivil:"2026-10-31",inicioEm:new Date("2026-10-31T15:00:00Z"),fusoOrigem:"America/New_York"} as unknown as Tarefa;
+ await expect(editarTarefaTx(tx,autor,t,1,{}, {agendamento:{dataCivil,inicioEm:null,lembrarEm:null,lembreteAntecedenciaMin:30}})).rejects.toThrow("O lembrete exige data e horário.");expect(updateMany).not.toHaveBeenCalled();
+});
+it("sem opção interna conserva validação legada de lembrete sem horário",async()=>{
+ const updateMany=vi.fn(async()=>({count:1}));const tx={tarefa:{updateMany}} as unknown as Prisma.TransactionClient;
+ const t={id:"t",status:"ABERTA",versao:1,dataCivil:"2026-10-31",inicioEm:new Date("2026-10-31T15:00:00Z"),fusoOrigem:"America/New_York"} as unknown as Tarefa;
+ await expect(editarTarefaTx(tx,autor,t,1,{dataCivil:null,hora:null,lembreteAntecedenciaMin:30})).rejects.toThrow("O lembrete exige data e horário.");expect(updateMany).not.toHaveBeenCalled();
+});

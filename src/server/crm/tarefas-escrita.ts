@@ -141,7 +141,9 @@ export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSe
         const dataCivil = d.dataCivil !== undefined ? d.dataCivil : t.dataCivil;
         const hora = d.hora !== undefined ? d.hora : t.inicioEm ? horaLocal(t.inicioEm, t.fusoOrigem) : null;
         const antecedencia = opcoes.agendamento ? opcoes.agendamento.lembreteAntecedenciaMin : d.lembreteAntecedenciaMin !== undefined ? d.lembreteAntecedenciaMin : t.lembreteAntecedenciaMin;
-        if (antecedencia !== null && !(dataCivil && hora)) throw new ErroRegra("O lembrete exige data e horário.");
+        // No Inbox, a agenda já foi resolvida pelo wrapper; a anterior não decide sua validade.
+        const temHorario = opcoes.agendamento ? !!(opcoes.agendamento.dataCivil && opcoes.agendamento.inicioEm) : !!(dataCivil && hora);
+        if (antecedencia !== null && !temHorario) throw new ErroRegra("O lembrete exige data e horário.");
         const q = opcoes.agendamento ?? agendamentoTarefa(dataCivil, hora, t.fusoOrigem, antecedencia);
         const mesmoInstante = (a: Date | null, b: Date | null) => (a?.getTime() ?? null) === (b?.getTime() ?? null);
         if (q.dataCivil !== t.dataCivil) set("dataCivil", q.dataCivil, t.dataCivil);
