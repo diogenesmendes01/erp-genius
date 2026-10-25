@@ -43,10 +43,11 @@ export function estadoVisualItem(item: ItemListaInbox, agora: Date, usuarioId?: 
     if (item.status !== "ENCERRADO" && !item.responsavelId) badges.push({ tom: "neutro", texto: "Na fila", tracejado: true, ponto: false });
   }
   const preview = item.preview ?? "";
-  const previa = item.previaAutor === "sugestao" ? "Aria sugere: " + (item.previaRotulo ?? "")
+  const rotuloPrevia = item.previaRotulo?.trim();
+  const previa = item.previaAutor === "sugestao" ? rotuloPrevia ? "Aria sugere: " + rotuloPrevia : "Sugestão da Aria"
     : item.previaAutor === "aria" ? "Aria: " + preview
     : item.previaAutor === "voce" ? "Você: " + preview
-    : item.previaAutor === "pessoa" && item.previaRotulo ? item.previaRotulo + ": " + preview : preview;
+    : item.previaAutor === "pessoa" ? (rotuloPrevia || item.contatoNome?.trim() || "Contato") + ": " + preview : preview;
   return { badges, previa, avatarTom: tomDoAvatar(item.contatoId), seloIa: estado === "ia" || estado === "aprovacao" || estado === "handoff" };
 }
 
