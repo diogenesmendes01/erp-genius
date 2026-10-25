@@ -7357,6 +7357,18 @@ Fechamento técnico R4: TSC5530/ecb26a EXIT1 apontou só o novo teste passando N
 
 Smoke b437/z1iv de três tamanhos (8b42e0 EXIT0) corrigiu mobile, mas demonstrou nome/estado comprimidos em colunas de500px tablet e496px desktop. TESTER confirmou P2, parecer a7edd5abfc5c410724d4ebb35ed07c097fcc04e538e99e1217d28fb26bb8e5d2. Regra somente por viewport substituída por duas linhas até640px do wrapper local; altura mínima68/natural, Menu irmão fora do containment e alinhado à base das ações. Handlers/caps/API intactos. Focal conjunto a080c2 EXIT0,3arquivos41casos; gates anteriores997/8617/TSC/lint/build pertencem à b437. Preview próprio parado e PID/porta comprovados b1cd86 EXIT0; banco Root restaurado936c06 EXIT0 antes das edições. SPEC/QA atualizados. Gates da nova fonte, medição real e aceite visual continuam pendentes; sem merge/fechamento presumido.
 
+### Inbox #353 — fixture completa na revisão C3 (25/10/2026)
+
+Fixture de paineis-tags.test.ts agora usa DTO completo com satisfies AriaDoAtendimento, sem casts e preservando todas as asserções. Focal85cba9 EXIT0:1arquivo11testes completos,UTC/w1/1024 e sete providers vazios. Nenhum runtime/ACL/consulta/schema alterado; SQL não repetida. QA docs/qa/inbox-353-fixture-r5-root.md; TSC/global da composição final e aceite visual continuam gates separados.
+
+### Inbox #353 — escopo do backport da fixture
+
+Backport inicial incluiu mock de tarefas de330, ausente nesta base. Filha recompõe teste a partir02ca1895 comsomenteimport/DTOcompleto/usonomock, semtarefas. SourceRootcomposta permanece correta comsuasprópriasdependências. QAexata dafilha pendente; negativo deescopo preservado.
+
+### Inbox #353 — QA exata do backport corrigido
+
+QA independente na filha `d3733ff077330a664826d961633911d79f510421`: terminal `2576ca`, EXIT0, arquivo completo/11 testes, UTC/w1/1024, sem filtros ou novos skips. Parecer SHA256 `6aea653a698ed18bcc39207265a659baeb22b188fba695536b7c745510f283b1`; log SHA256 `629d1d8b5a728753feaca9f10b2cd0e1143b5fc28f655b6b0b6173d980999dc1`. TESTER confirmou runtime literal à base02ca, somente import/DTO completo/uso no mock e todas as assertivas preservadas. Nenhum mock de tarefas330; perfil/client/bundle preservados. Não houve SQL nem TSC nessa QA.
+
 ### Inbox #330 — tarefas da oportunidade (DEV A, em implementação)
 
 Branch `codex/inbox-e2-330-tarefas` desde329 `26c4da69f4785ea57d4393a4069a871fa2597915`; candidata congelada no commit que contém este checkpoint, sem homologação. SPEC: `docs/specs/inbox-tarefas-oportunidade.md`. Consulta com escopo∩pertença OR, quatro núcleos TX CRM públicos preservados, wrapper Config→Atendimento→Tarefa, fuso escolar esperado e instante preservado, lista/ações e cancelamento em ConfirmarAcao único. Extensão compartilhada podeConfirmar defaulttrue coordenada e aprovada Root; não toca Modal da frente B. #331 criação/edição e #338 extensões permanecem reservadas.
