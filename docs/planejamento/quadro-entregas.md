@@ -7480,3 +7480,7 @@ Freeze do recorte #334: guardas/consumidores finais 54043/79e5ba EXIT 0, 26 arqu
 ### Inbox #353 — fixture completa na revisão C3 (25/10/2026)
 
 Fixture de paineis-tags.test.ts agora usa DTO completo com satisfies AriaDoAtendimento, sem casts e preservando todas as asserções. Focal85cba9 EXIT0:1arquivo11testes completos,UTC/w1/1024 e sete providers vazios. Nenhum runtime/ACL/consulta/schema alterado; SQL não repetida. QA docs/qa/inbox-353-fixture-r5-root.md; TSC/global da composição final e aceite visual continuam gates separados.
+
+### Inbox #334 — composição R5 e tipos do leitor (25/10/2026)
+
+Composição05bb5a6d sobrePR443preservou23SRC literais63b0, conflito sóquadro comhistórico completo. QAindependente:SQL40986/862e18 EXIT0,4/83; UNIT75910/c2a900 EXIT0,26/701; oráculo03b0a0 EXIT0,14casos, recortes sobrepostos. TSC35cd60067/d32f5b EXIT2 sóTS7022 lote/ultimo; correção explicita AcaoAgenteIA[]/AcaoAgenteIA e LFfinal, semcast/query/regra. ReplayoriginalWIP72946/c02852 EXIT0, fontehashf9f68424e5fd626f9094a526dea80d283c3830b99a967b2847b6f11ec3879e1d preservada, configs intactas; nãoexecutadonoHEADanterior. SQLnão repetidaporanotaçãoapagável. QA docs/qa/inbox-334-integracao-r5-root.md; global/lint/build/visual/CI ainda pendentes.

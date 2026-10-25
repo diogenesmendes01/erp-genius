@@ -35,10 +35,10 @@ export async function carregarAriaAtividade(u:UsuarioSessao,atendimentoId:string
  async function pagina(where:Prisma.AcaoAgenteIAWhereInput,limite:number){
   const resultado:AcaoAgenteIA[]=[];let cursor:{id:string;criadoEm:Date}|null=null;
   while(resultado.length<limite){
-   const lote=await prisma.acaoAgenteIA.findMany({where:{AND:[{atendimentoId:a!.id},where,...(cursor?[{OR:[{criadoEm:{lt:cursor.criadoEm}},{criadoEm:cursor.criadoEm,id:{lt:cursor.id}}]}]:[])]},orderBy:[{criadoEm:"desc"},{id:"desc"}],take:100});
+   const lote:AcaoAgenteIA[]=await prisma.acaoAgenteIA.findMany({where:{AND:[{atendimentoId:a!.id},where,...(cursor?[{OR:[{criadoEm:{lt:cursor.criadoEm}},{criadoEm:cursor.criadoEm,id:{lt:cursor.id}}]}]:[])]},orderBy:[{criadoEm:"desc"},{id:"desc"}],take:100});
    resultado.push(...await autorizadas(lote));
    if(lote.length<100)break;
-   const ultimo=lote[lote.length-1];cursor={id:ultimo.id,criadoEm:ultimo.criadoEm};
+   const ultimo:AcaoAgenteIA=lote[lote.length-1];cursor={id:ultimo.id,criadoEm:ultimo.criadoEm};
   }
   return resultado.slice(0,limite);
  }
