@@ -7589,3 +7589,7 @@ Lint focal final e0ec93 EXIT0, zero avisos. Pendências: revisão técnica do de
 ### #360 R2 — porta renderizar explícita (DEV B, 2026-10-25)
 
 Filha corretiva de 78fb, em validação. Somente3 linhas de produção no coordenador da ConversaAberta; mantém forms irmãos e portais. Guarda/parser/exceções intocados. RED23(1 falha) → GREEN23/23 EXIT0 (29bf78); UI13 arquivos/222 casos EXIT0 (46301/cb2299); oráculo T 8 byteigual EXIT0 (3176f6), qualificado como Controller/Popover reais com compositor-fixture. Backend literal, sem repetir SQL14+41. Lint final no recibo R2. Relatório output/inbox-360-r2-report.md; QA exact do filho e visual pendentes.369WIP recuperável por stash/hashes, D5 ainda depende369/370.
+
+### #360 — integração ROOT e destinos opcionais (25/10/2026)
+
+Composição fce34926 sobre a PR #446, preservando o cabeçalho responsivo. Recorte integrado 28 arquivos/501 casos EXIT0 (4711/c8014e). TypeScript original falhou somente na passagem de destinos opcionais. Consumidor real reproduziu undefined.filter (1fe07a); normalização local destinos=[] passou os três casos completos (493590 EXIT0). Backend e contrato público opcional preservados. QA docs/qa/inbox-360-integracao-r10-root.md registra negativos e limites. TypeScript/global/lint/build corrigidos, visual de transferência, publicação e CI ainda pendentes; D5 continua dependente de #369/#370.
