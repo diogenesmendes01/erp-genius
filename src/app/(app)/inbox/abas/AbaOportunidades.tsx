@@ -17,6 +17,7 @@ import { opcoesEtapa } from "./etapas-painel";
 import { TarefasOportunidade } from "./TarefasOportunidade";
 import { OutrasOportunidades } from "./OutrasOportunidades";
 import { CartaoExperimental } from "./CartaoExperimental";
+import { PrevisaoOportunidade } from "./PrevisaoOportunidade";
 
 type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; fusoEscola?: string; aoMudar(): void; aoNovaTarefa?(): void; aoAdicionarNota?(): void; aoEditarTarefa?(t: import("@/server/inbox/painel-tarefas").TarefaPainel): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean; podeCriarOportunidade?: boolean; contextoAria?: boolean; podeAssumir?: boolean; aoAssumir?(): Promise<Resultado> };
 /** Mudança de thread/oportunidade encerra a sessão de ação, sem ACK antigo reconciliar outra. */
@@ -80,6 +81,7 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
     <dl className="space-y-2 text-[13px]">
       {([['Responsável', o.responsavel?.nome ?? 'Sem responsável'], ['Temperatura', TEMPERATURA_LABEL[o.temperatura]], ['Produto', o.produto ?? '—']] as const).map(([rotulo, valor]) => <div key={rotulo} className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] gap-2"><dt className="text-gray-600">{rotulo}</dt><dd className="min-w-0 [overflow-wrap:anywhere]">{valor}</dd></div>)}
     </dl>
+    <PrevisaoOportunidade atendimentoId={atendimentoId} oportunidadeId={o.id} probabilidadePct={o.probabilidadePct} previsaoFechamento={o.previsaoFechamento} podeEditar={o.podeEditarPrevisao} aoMudar={aoMudar}/>
     <div className="flex flex-col items-start">
       {podeAssumir && aoAssumir && <Botao variante="fantasma" tamanho="md" disabled={acao.ocupado} aria-busy={acao.ocupado || undefined} onClick={() => void assumir()} className="min-h-11 justify-start gap-4 px-0 text-brand-700"><IconHandStop size={17} aria-hidden />Assumir conversa</Botao>}
       {capacidades.moverEtapa && destinoPerda?.tipo === "acao" && destinoPerda.acao === "marcarPerdido" && <Botao variante="fantasma" tamanho="md" disabled={acao.ocupado} onClick={() => escolher("PERDIDO", destinoPerda)} className="min-h-11 justify-start gap-4 px-0 text-red-700"><IconThumbDown size={17} aria-hidden />Marcar como perdido</Botao>}
