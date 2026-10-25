@@ -23,7 +23,7 @@ vi.mock("@/lib/prisma", async()=>{
  const {PrismaClient}=await import("@prisma/client");
  const url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");url.searchParams.set("pool_timeout","2");
   const prisma=new PrismaClient({datasources:{db:{url:url.toString()}},log:[{emit:"event",level:"query"}]});
- prisma.$on("query",e=>{if(e.query.includes('websearch_to_tsquery'))trace.push("FTS");else if(e.query.includes('FOR SHARE')&&e.query.includes('ConfiguracaoOperacional'))trace.push("CONFIG_SHARE");else if(e.query.includes('FOR UPDATE')&&e.query.includes('AtendimentoWhatsApp'))trace.push("ATENDIMENTO_UPDATE");else if(e.query.includes('FOR UPDATE')&&e.query.includes('AcaoAgenteIA'))trace.push("ACAO_UPDATE");});
+ prisma.$on("query",e=>{if(e.query.includes('websearch_to_tsquery'))trace.push("FTS");else if(e.query.includes('FOR SHARE')&&e.query.includes('ConfiguracaoOperacional'))trace.push("CONFIG_SHARE");else if((e.query.includes('FOR UPDATE')||e.query.includes('FOR NO KEY UPDATE'))&&e.query.includes('AtendimentoWhatsApp'))trace.push("ATENDIMENTO_UPDATE");else if(e.query.includes('FOR UPDATE')&&e.query.includes('AcaoAgenteIA'))trace.push("ACAO_UPDATE");});
  return {prisma};
 });
 import { prisma } from "@/lib/prisma";
