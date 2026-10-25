@@ -1,10 +1,11 @@
+import { ESTADOS_ARIA, type EstadoAria } from "./estado-aria-valores";
 import type { StatusAtendimentoWhatsApp } from "@prisma/client";
 import { SETORES, type Setor } from "@/server/whatsapp/setor";
 import { lerBuscaInbox } from "@/server/whatsapp/busca-inbox";
 
 export interface FiltrosInbox {
   setor?: Setor; numeroId?: string; responsavel?: "eu" | "fila" | string; status?: StatusAtendimentoWhatsApp;
-  naoLidas?: boolean; prazoEstourado?: boolean; busca?: string;
+  naoLidas?: boolean; prazoEstourado?: boolean; busca?: string; aria?: EstadoAria;
 }
 
 const STATUS: readonly StatusAtendimentoWhatsApp[] = ["ABERTO_SEM_RESPONSAVEL", "EM_ATENDIMENTO", "AGUARDANDO_CLIENTE", "ENCERRADO"];
@@ -24,6 +25,8 @@ export function lerFiltrosInbox(p: Record<string, string | string[] | undefined>
   if ((STATUS as readonly string[]).includes(status)) f.status = status as StatusAtendimentoWhatsApp;
   if (["1", "true"].includes(um(p.naoLidas))) f.naoLidas = true;
   if (um(p.prazo) === "estourado") f.prazoEstourado = true;
+  const aria = um(p.aria);
+  if ((ESTADOS_ARIA as readonly string[]).includes(aria)) f.aria = aria as EstadoAria;
   const busca = lerBuscaInbox(p);
   if (busca) f.busca = busca;
   return f;
