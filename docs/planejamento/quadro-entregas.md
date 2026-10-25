@@ -7384,3 +7384,9 @@ Origem DEV: `400834bf`, na branch `codex/inbox-435-documentacao-r2`, filha de `4
 O texto abaixo pertence ao checkpoint de setembro, substituído pelo checkpoint datado do Inbox no início deste documento. Não representa a contagem atual da campanha.
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
+
+
+## #348 — correção mobile R4 em validação — 25/10/2026
+ROOT identificou no build21f/hKc a compressão real de nome/estado em390px quando Transferir+Devolver+Assumir+Painel+Menu coexistem. TESTER confirmou e aprovou plano de duas linhas até699px, altura natural, Menu fora do containment, controles/capacidades preservados; >=700 mantém68px. Duas SRC alteradas e contrato acessível novo. RED be745b EXIT1 (10/11); GREEN62c59b EXIT0 11/11; recorte9arquivos235 sessão80663/9b25c9 EXIT0; lint2arquivos525966 EXIT0 zeroavisos. TSCoriginal5530 em acompanhamento; build/visual/composição global pendentes. Capturas anteriores são diagnóstico, não aceite. Preview próprio encerrado (71324/ecd049 EXIT1, PID/porta ausentes010773); bancoRoot492 restaurado e77e56 EXIT0 aos1379 originais/424hashes e sequências; cluster compartilhado intacto. Evidências/limites docs/qa/inbox-348-mobile-r4-root.md. Não concluirissue ou PR434.
+
+Fechamento técnico R4: TSC5530/ecb26a EXIT1 apontou só o novo teste passando No abstrato ao lugar de ReactNode. Corrigido com isValidElement e filhos reais, sem cast/exclusão; focal11/11 e9aab3 EXIT0. TSC ORIGINAL final73242/95ba03 EXIT0 sem diagnósticos, heap8192, config original; lintfinal2arquivos b1a3ea EXIT0 zeroavisos. Código do componente não mudou entre o recorte235 e estes últimos gates. Build/medição visual e composição global continuam pendentes; negativos preservados.
