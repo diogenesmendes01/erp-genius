@@ -12,6 +12,8 @@ import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
 import { ClienteVoltou } from "./abas/ClienteVoltou";
 import { ModalTarefa } from "./ModalTarefa";
+import {AbaAtividade} from "./abas/AbaAtividade";
+import type {AtividadePainel} from "@/server/inbox/painel-atividade";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { ModalPerda } from "../funil/ModalPerda";
 import { marcarPerdidoNoInbox } from "@/server/inbox/acoes-painel";
@@ -425,6 +427,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // A aba Detalhes e o editor compartilham uma única aquisição por contexto.
   const detalhesDoContato = useAbaPainel<DetalhesPainel>(selecionado, "detalhes", versaoPainel, (detalhesComerciais && abaAtiva === "detalhes") || editorAberto);
   const oportunidadesDoContato = useAbaPainel<OportunidadesPainel>(selecionado, "oportunidades", versaoPainel, detalhesComerciais && abaAtiva === "oportunidades");
+  const atividadeDoContato=useAbaPainel<AtividadePainel>(selecionado,"atividade",versaoPainel,abaAtiva==="atividade");
   const [perdaOportunidade, setPerdaOportunidade] = useState<{ atendimentoId: string | null; id: string | null; nome: string; aberta: boolean; sessao: number }>({ atendimentoId: selecionado, id: null, nome: "", aberta: false, sessao: 0 });
   // Loading conserva o rascunho; uma identidade conhecida diferente encerra a sessao.
   // Nao basta ocultar o modal: o proximo loading nao pode ressuscitar a oportunidade antiga.
@@ -511,9 +514,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setCarregandoMais(false);
   }
 
-  function falhaDosDetalhes(recarregar: () => void, aba: "detalhes" | "oportunidades" = "detalhes") {
+  function falhaDosDetalhes(recarregar: () => void, aba: "detalhes" | "oportunidades" | "atividade" = "detalhes") {
     return <div role="alert" className="space-y-2 text-sm text-red-700">
-      <p>{aba === "detalhes" ? "Não foi possível carregar os detalhes." : "Não foi possível carregar as oportunidades."}</p>
+      <p>{aba === "detalhes" ? "Não foi possível carregar os detalhes." : aba === "atividade" ? "Não foi possível carregar a atividade." : "Não foi possível carregar as oportunidades."}</p>
       <Botao variante="secundario" tamanho="sm" onClick={(e) => {
         e.currentTarget.closest<HTMLElement>('[id="painel-contato"]')?.focus({ preventScroll: true });
         recarregar();
@@ -527,7 +530,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">
       {(!detalhesComerciais || detalhesDoContato.dado?.pessoa === null) && atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
       <div className={secaoDetalhes}>{painelSetor?.id === atual.id && painelSetor.dado
-        ? detalhesComerciais
+        ? abaAtiva === "atividade"
+          ? atividadeDoContato.erro ? falhaDosDetalhes(atividadeDoContato.recarregar,"atividade")
+            : atividadeDoContato.dado ? <AbaAtividade dados={atividadeDoContato.dado} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola??""} aoMudar={recarregarLista}/>
+              : <EsqueletoPainel rotulo="atividade"/>
+          : detalhesComerciais
           ? abaAtiva === "oportunidades"
             ? oportunidadesDoContato.erro ? falhaDosDetalhes(oportunidadesDoContato.recarregar, "oportunidades")
               : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} aoAdicionarNota={atendimentoIndividual?adicionarNota:undefined} aoNovaTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"}):undefined} aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}}):undefined} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
