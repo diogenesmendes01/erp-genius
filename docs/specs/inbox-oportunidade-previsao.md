@@ -16,4 +16,4 @@ O ROOT reservou 20261025202000_inbox_oportunidade_previsao_probabilidade (495 l�
 
 A probabilidade manual é independente de chanceFechar dos Insights. Não se ampliam prompt, campos ATUALIZAR_CAMPO da Aria ou contratos de #357/#358/#377. Não há API externa.
 
-Estado: WIP. Infraestrutura lógica495 preparada pelo ROOT somente no banco A; execução nativa do DEV, guardas, TypeScript/global, QA independente e visual pendentes. Não homologada.
+Estado: WIP. Infraestrutura lógica495 preparada pelo ROOT somente no banco A; 19 nativos do DEV passaram na fonte 997 (quatro arquivos completos, terminais 0); guardas, TypeScript/global, QA independente e visual pendentes. Não homologada.

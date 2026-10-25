@@ -1,6 +1,6 @@
 # QA #341 — probabilidade e previsão (WIP)
 
-Base: 8096683c5d812e3c61adb8ec452dd47cd6fb46b7. Branch: codex/inbox-e2-341-previsao. #377 permanece recuperável na ref anterior. AGENTS M histórico preservado e excluído da entrega. Nenhum install, generate, DDL, SQL, provider, build, TSC ou teste global executado pelo DEV nesta etapa.
+Base: 8096683c5d812e3c61adb8ec452dd47cd6fb46b7. Branch: codex/inbox-e2-341-previsao. #377 permanece recuperável na ref anterior. AGENTS M histórico preservado e excluído da entrega. Nenhum install, generate, DDL, provider, build, TSC ou teste global executado pelo DEV. SQL nativo foi executado somente na lease A495 descrita abaixo.
 
 ## Evidências observadas
 
@@ -22,14 +22,31 @@ Schemas puros: extremos 0/100, omissão/null/vazio, fração/NaN/infinito/boolea
 
 DOM: zero distinto de ausência, data civil, readonly sem controles, cancelamento sem action, referência física do campo preservada em refresh, envio apenas do campo alterado, limpeza null, erro e transporte incerto sem retry, duplo envio bloqueado, ACK antigo A→B→A e perda de capacidade. Usa ReactDOM e o harness mínimo local, sem mock do hook de ação.
 
-SQL ainda não executado: quatro arquivos/19 casos autorados após implementação. São 10 contratos, 5 concorrência/FK/ACL, 1 pool1 e 3 LISTEN real. O interleaving com atribuirDono real usa uma barreira instrumental de chegada após SQL delegado e observará pg_blocking_pids. Não alegar deadlock produtivo ou ausência geral de deadlocks. SELECT 1/0 depois de mutação, Evento e NOTIFY na mesma TX testa rollback real dos três efeitos.
+## Nativos na fonte congelada 997acd53
+
+Admissão exclusiva ROOT aecc2c EXIT 0: 425 hashes/560 linhas originais/sequências/snapshot conferidos, zero outros atores/listeners. Reserva lógica495, contagem real de 494 migrações. Quatro arquivos completos, executados em série com vitest.integration.config.ts original, perfil próprio, UTC, um worker, heap1024, sem paralelismo, filtros por nome ou skips. Sete nomes zerados explicitamente: MOTOR_URL, MOTOR_API_KEY, MOTOR_WEBHOOK_SECRET, WHATSAPP_LIVE, OPENAI_API_KEY, ANTHROPIC_API_KEY e RESEND_API_KEY. Nenhum .env ou segredo lido.
+
+| Arquivo | Sessão / terminal | Resultado |
+| --- | --- | --- |
+| previsao-oportunidade.int.test.ts | 53901 / 6f3465 | EXIT 0, 10 testes, 48,67s |
+| previsao-concorrencia.int.test.ts | 56078 / bc82e3 | EXIT 0, 5 testes, 27,41s |
+| previsao-pool1.int.test.ts | 96017 / 98cf3d | EXIT 0, 1 teste, 9,10s |
+| previsao-notify.int.test.ts | 24436 / fe3abd | EXIT 0, 3 testes, 17,77s |
+
+São 19 casos nativos sem sobreposição entre esses quatro arquivos, autorados após implementação; não são REDs retroativos. SQL, ACL e transações são reais. Actions usam mock de sessão/nextcache, mas ator e autorização do núcleo são relidos do banco. Nenhum provider foi chamado ou simulado, porque estes writers não chamam IA ou envio.
+
+O interleaving com atribuirDono REAL confirmou a espera no Atendimento por pg_blocking_pids. A barreira instrumental pausa somente após o SQL real delegado do setter; liberar a barreira provoca NOWAIT55P03/rollback e permite terminar a transferência. Isso não prova ciclo/deadlock produtivo ou ausência geral de deadlocks. Papel Portal/carteira após espera e FK do País com revogação também recusaram sem mutação.
+
+LISTEN real confirmou um aviso de IDs no commit, zero no no-op repetido e zero no rollback. SELECT 1/0 posterior à mutação, Evento e NOTIFY na mesma TX causou rollback dos três efeitos. Pool1 atravessou setter, editarLead e leitor, sem cliente global dentro da TX.
+
+Recibo privado com comandos, paths, hashes dos logs/fontes e pins antes/depois: SHA 2e924e493f946af918db8b9262c09976a81774c8ab2543dca588bc3721c4739f. HEAD permaneceu 997acd53 e pins schema/SQL/client/perfil/AGENTS ficaram iguais. Avisos habituais MIXED_EXPORTS e tsconfig-paths preservados. Todos os executores terminaram; holders/listeners fecharam em finally/afterAll. Lease A495 e Node liberados ao ROOT após fe3abd; restauração não presumida pelo DEV.
 
 Schema/SQL congelados para revisão ROOT/T: schema SHA 7522228da4465511edbe603d59829f535c3775554cbd931b9b00a7b72608cf22; SQL SHA 4b1f5b4d3594fa581ecf25894f779936b704759c7e945fc7ef06cfb05b1e07d2. O client anterior 72b4825a foi preservado até a preparação exclusiva do ROOT; nenhum cast de produção mascarou campos ausentes.
 
-Infraestrutura pronta pelo ROOT: validate e64939 EXIT 0; generate 97558/dfe8ab EXIT 0; client e251ba321793510fa473b2778f6d4ffd9f0ef2d9e0f60f0c3fb1f15bd5861a9b. DDL c4892b EXIT 0 somente no banco A: 494 migrações reais, 425 tabelas, reserva lógica495. Snapshot novo com 560 linhas e 425 hashes, SHA 9b050bc705535c638ee4b1c470622dc3be08bd9ed22fb13672129267c3e5cb59. Hashes de schema/SQL e perfil local foram conferidos pelo DEV em 45d7f4. Nativos ainda sem lease; nenhum SQL executado pelo DEV. Usar somente o restaurador A495 coordenado pelo ROOT, nunca os antigos A493/A492.
+Infraestrutura pronta pelo ROOT: validate e64939 EXIT 0; generate 97558/dfe8ab EXIT 0; client e251ba321793510fa473b2778f6d4ffd9f0ef2d9e0f60f0c3fb1f15bd5861a9b. DDL c4892b EXIT 0 somente no banco A: 494 migrações reais, 425 tabelas, reserva lógica495. Snapshot novo com 560 linhas e 425 hashes, SHA 9b050bc705535c638ee4b1c470622dc3be08bd9ed22fb13672129267c3e5cb59. Hashes de schema/SQL e perfil local foram conferidos pelo DEV em 45d7f4. A lease foi concedida para os 19 nativos acima e depois liberada. Usar somente o restaurador A495 coordenado pelo ROOT, nunca os antigos A493/A492.
 
 ## Pendências
 
-Executar 19 nativos após nova lease e regressões CRM pertinentes; guardas originais em janela coordenada; TypeScript, unitária global, lint original, QA independente, visual e CI. Nativos e global só contam após terminal 0 observado. Não concluída ou homologada.
+Regressões CRM globais pertinentes e guardas originais em janela coordenada; TypeScript, unitária global, lint original, QA independente, visual e CI. Nativos e global só contam após terminal 0 observado. Não concluída ou homologada.
 
 A composição ROOT contém correções test-only de tipagem da #377 (DOM value, find, union e optional), ainda fora desta base. Não reatribuir os gates antigos ou a seleção independente T 41/579 à seleção DEV 41/566, cuja lista exata não foi recuperada. Nenhum patch de produção #377 foi feito nesta #341.
