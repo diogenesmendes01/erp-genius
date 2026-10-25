@@ -7538,3 +7538,7 @@ Em validação, sem homologação/publicação DEV. UI/controlador unificados, g
 Evidência: UNIT focal115 arquivos / 1.384 casos EXIT0 (76052/75727b); INT novo14 EXIT0 (21645/32bedb), regressão histórica4 arquivos / 41 EXIT0 (26978/32a3fe), com negativos preservados.14 contém13 anteriores, não somar. Banco ciint liberado ao ROOT com fixtures declaradas; restauração só pelo integrador. SPEC docs/specs/inbox-transferir-unificado.md; relatório output/inbox-360-report.md e recibo final de freeze.
 
 Lint focal final e0ec93 EXIT0, zero avisos. Pendências: revisão técnica do delta/commit individual, TSC/global/build, visual e QA independente. Header apenas delta callbackref; ROOT integra sobre classes responsivas próprias. Ícones mock4exports seguem correção ROOT 346d8098, unir sem duplicar. Não marcar D5 concluído antes de #369/#370.
+
+### #360 R2 — porta renderizar explícita (DEV B, 2026-10-25)
+
+Filha corretiva de 78fb, em validação. Somente3 linhas de produção no coordenador da ConversaAberta; mantém forms irmãos e portais. Guarda/parser/exceções intocados. RED23(1 falha) → GREEN23/23 EXIT0 (29bf78); UI13 arquivos/222 casos EXIT0 (46301/cb2299); oráculo T 8 byteigual EXIT0 (3176f6), qualificado como Controller/Popover reais com compositor-fixture. Backend literal, sem repetir SQL14+41. Lint final no recibo R2. Relatório output/inbox-360-r2-report.md; QA exact do filho e visual pendentes.369WIP recuperável por stash/hashes, D5 ainda depende369/370.
