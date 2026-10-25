@@ -1,3 +1,4 @@
+import {carregarPainel} from "./paineis";
 import {afterAll,beforeEach,expect,it} from "vitest";
 import {Papel,type StatusAcaoAgenteIA} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
@@ -71,4 +72,21 @@ it("334 convite expirado e comercial sem lead não recebem módulo Aria",async()
 it("334 última sugestão não afirma alteração ainda não executada",async()=>{
  const c=await cenario();const s=await c.criar("334-sugestao","SUGERIDA");await prisma.acaoAgenteIA.update({where:{id:s.id},data:{acao:"MOVER_ETAPA",payload:{para:"PERDIDO"}}});
  const r=await carregarAriaAtividade(c.dono,c.a.id);expect(r.aria?.ultimaAcao?.texto).toBe("Mover de etapa");expect(r.alteracoes).toEqual([]);expect(r.contadorAtividade).toBe(0);
+});
+it("444 C3 cabeçalho conta histórico mesmo com publicação inválida; módulo completo continua recusando",async()=>{
+ const c=await cenario();await c.criar("444-c3");
+ await prisma.versaoAgenteIA.create({data:{numero:1,status:"PUBLICADA",config:{invalida:true},criadaPorId:c.dono.id}});
+ await expect(carregarAriaAtividade(c.dono,c.a.id)).rejects.toThrow();
+ expect((await carregarCabecalhoPainel(c.dono,c.a.id))?.contadorAtividade).toBe(1);
+});
+it("444 C3 painel preserva podeEnviar do contexto sem depender do parse de versão publicada",async()=>{
+ const c=await cenario();await c.criar("444-painel");const baseline=await carregarPainel(c.dono,c.a.id);expect(baseline).not.toBeNull();
+ await prisma.versaoAgenteIA.create({data:{numero:1,status:"PUBLICADA",config:{invalida:true},criadaPorId:c.dono.id}});
+ const p=await carregarPainel(c.dono,c.a.id);expect(p).not.toBeNull();expect(p?.podeEnviar).toBe(baseline?.podeEnviar);expect(p?.cabecalho?.contadorAtividade).toBe(1);
+});
+it("444 C3 DESFEITA ocupa janela30 e não infla contador por EXECUTADA mais antiga",async()=>{
+ const c=await cenario();await c.criar("444-antiga","EXECUTADA");
+ for(let i=0;i<30;i++)await c.criar("zz444-desfeita-"+String(i).padStart(3,"0"),"DESFEITA");
+ const completo=await carregarAriaAtividade(c.dono,c.a.id);expect(completo.alteracoes).toHaveLength(30);expect(completo.contadorAtividade).toBe(0);
+ expect((await carregarCabecalhoPainel(c.dono,c.a.id))?.contadorAtividade).toBe(0);
 });
