@@ -1,0 +1,157 @@
+{
+  "revisao": "328-harness-svg-R3",
+  "baseGit": "f9485756a67a450a58e61607f01b99f1b1e83f6a",
+  "fonteProdutoRuntime": "f9485756a67a450a58e61607f01b99f1b1e83f6a",
+  "novoNamespaceHarness": "commit desta revisao; sem reatribuir f948/READY/PNGhistoricas",
+  "arquivos": [
+    {
+      "path": "scripts/visual/acoes-oportunidade.mjs",
+      "bytes": 31761,
+      "sha256Fisico": "841652006803c192a82ddbe51754000da93b8b070b933a4dc03d101ad9409ac6",
+      "sha256GitLF": "841652006803c192a82ddbe51754000da93b8b070b933a4dc03d101ad9409ac6",
+      "gitBlobAtual": "ca348179e039134a9a36facd0dd6bfb7d5e8bf64"
+    },
+    {
+      "path": "src/test/visual-inbox-acoes-oportunidade.test.ts",
+      "bytes": 34227,
+      "sha256Fisico": "6b185e6607ed0bafeac66b2bd52557862496b1eb8c44b081922fe47b5b760c96",
+      "sha256GitLF": "6b185e6607ed0bafeac66b2bd52557862496b1eb8c44b081922fe47b5b760c96",
+      "gitBlobAtual": "30aa332fb72b342524212fe3d51f6098254bf163"
+    },
+    {
+      "path": "docs/specs/inbox-acoes-oportunidade.md",
+      "bytes": 10051,
+      "sha256Fisico": "289949e53428db734e5455fd381e88ef51a08eff0f4a12779dcd67178051a774",
+      "sha256GitLF": "289949e53428db734e5455fd381e88ef51a08eff0f4a12779dcd67178051a774",
+      "gitBlobAtual": "e6e960cd24d39e6f48c21cd448510dc31b5bc9bd"
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "bytes": 1157683,
+      "sha256Fisico": "f3303c98e9c3d9403742df9b48027113c7d4f0f93d4a0690436fd587fe632a5e",
+      "sha256GitLF": "58d151389337e54dee42c9fc6ebe48a8cabfee768d372022bf3ffcad8ff909f5",
+      "gitBlobAtual": "89a6aab7684e4af7f2d8f544d54c384b75726749"
+    },
+    {
+      "path": "output/inbox-328-harness-svg-r3-report.md",
+      "bytes": 3970,
+      "sha256Fisico": "30b92d27ffc935a8a322af59e59446a12989dec53364fc563ec79237f4a3003b",
+      "sha256GitLF": "30b92d27ffc935a8a322af59e59446a12989dec53364fc563ec79237f4a3003b",
+      "gitBlobAtual": "221fd5d2626148f0bd31bfde197822d15b1dd96a"
+    }
+  ],
+  "congruencia": {
+    "funcoes": 13,
+    "funcoesLiterais": 12,
+    "mudadas": [
+      "semanticaAcoes328"
+    ],
+    "reversaoUmaLinhaByteIgualGitLF": true,
+    "runtimeSRCExcetoTestePrismaDepsConfigIguais": true,
+    "CLI953ColetoresDeclaracoesOriginaisIguais": true
+  },
+  "vendorVersao": "3.44.0",
+  "vendor": [
+    {
+      "path": "node_modules/@tabler/icons-react/package.json",
+      "bytes": 1672,
+      "sha256Fisico": "62711298b2da693b8816a9df0912233530594c6f8b9ae453cc13e6d4ab3a42ec",
+      "sha256LF": "62711298b2da693b8816a9df0912233530594c6f8b9ae453cc13e6d4ab3a42ec"
+    },
+    {
+      "path": "node_modules/@tabler/icons-react/dist/esm/createReactComponent.mjs",
+      "bytes": 1262,
+      "sha256Fisico": "e4f79ca47ac2d5fa0e928916cc40c573a23062495ac1883504738709caa45168",
+      "sha256LF": "e4f79ca47ac2d5fa0e928916cc40c573a23062495ac1883504738709caa45168"
+    },
+    {
+      "path": "node_modules/@tabler/icons-react/dist/esm/icons/IconCalendarCheck.mjs",
+      "bytes": 771,
+      "sha256Fisico": "93920134e9e1943e937a077d61bd32863407f67968ac0397c5d9b9e9b0534b5a",
+      "sha256LF": "93920134e9e1943e937a077d61bd32863407f67968ac0397c5d9b9e9b0534b5a"
+    },
+    {
+      "path": "node_modules/@tabler/icons-react/dist/esm/icons/IconCalendar.mjs",
+      "bytes": 796,
+      "sha256Fisico": "219bb1a05db9734bcd08688732e1a1f3bb07eff59919777b638555f72ce0c710",
+      "sha256LF": "219bb1a05db9734bcd08688732e1a1f3bb07eff59919777b638555f72ce0c710"
+    }
+  ],
+  "forenseB": [
+    {
+      "nome": "inbox-328-v4-forense-semantic-fs-b-private.md",
+      "bytes": 6658,
+      "sha256": "e23f0e7ef2876756e9e77c97b7132c12f9a00f47e330f0d9ffa4add487fd998a",
+      "acesso": "somente-leitura"
+    },
+    {
+      "nome": "inbox-328-v4-forense-semantic-fs-b-private.json",
+      "bytes": 15809,
+      "sha256": "1624a2af06569f13f8fc9109172bb9985814b5cfe62687d85f368e08d1f619a0",
+      "acesso": "somente-leitura"
+    }
+  ],
+  "evidencias": [
+    {
+      "path": "output/inbox-328-harness-svg-r3-red-private.log",
+      "bytes": 1664,
+      "sha256": "0db22bb0994d4f2c09005c16be411a56052f277c7e3b2772f869a2d09f3c236a"
+    },
+    {
+      "path": "output/inbox-328-harness-svg-r3-green-private.log",
+      "bytes": 1102,
+      "sha256": "43fb54042a407060f5898dd602d7a9412273af04c021341ba539e85604a19c25"
+    },
+    {
+      "path": "output/inbox-328-harness-svg-r3-green-final-private.log",
+      "bytes": 482,
+      "sha256": "945ea8484e97d8975b4f60123c88c6ce744a3639e7b4dbd288d17530312bddc4"
+    },
+    {
+      "path": "output/inbox-328-harness-svg-r3-lint-private.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-acoes-f948-pre-svg-r3.snapshot.txt",
+      "bytes": 31702,
+      "sha256": "39fa9f737ac24411648cc3959f4b453f3934d67b63a40e32d0c649c578ea86da"
+    },
+    {
+      "path": "output/inbox-328-formal-v4-attempt-private.json",
+      "bytes": 300,
+      "sha256": "da1bb8a99b595bebdd9a57a0df95576178b3e6926149bb86a7d85bfe7dbe8318"
+    },
+    {
+      "path": "output/inbox-328-formal-v4-466ed44a-826f-4ce0-9d70-f486b4908125/manifesto-private.json",
+      "bytes": 21143,
+      "sha256": "68c52e4102ef74da36558086ca22682349c67c0a8fc615547fbd41231ffd14d0"
+    },
+    {
+      "path": "output/inbox-328-diag-waits-v4-attempt-private.json",
+      "bytes": 535,
+      "sha256": "35b82cf10955aca0c684a4d2ab4328abea069751f1ecdd21d8a3e958dd68d8b0"
+    },
+    {
+      "path": "output/inbox-328-diag-waits-v4-4c57bb42-4f16-41a7-b7fc-66e86b1e3803/manifesto-private.json",
+      "bytes": 13254,
+      "sha256": "7af700f4320bf7045db0419cfe0db5626d8a96f0187e875c120410ea0817bf39"
+    }
+  ],
+  "gates": {
+    "RED": "2dfd36 EXIT1:2falhas/1controle/124fora filtro",
+    "negativoIntermediario": "c91a53 EXIT1:133pass/1teste indevidoPROTO",
+    "GREEN": "b5734e EXIT0:134/134 completo,w1,Node22heap512,sem filtro/skips",
+    "lint": "b5734e EXIT0:2paths",
+    "TSC": "nao repetido por orientacao ROOT; gates anteriores nominais",
+    "globalINT": "nao executados"
+  },
+  "limites": [
+    "0novaDB/HTTP/browser/preview/acao/captura/wrapper",
+    "findingSVGdeterministico nao causa exclusiva observadaV4",
+    "contrafactuaisheaderlapis nao observacao nativa",
+    "PROTO conserva includes original",
+    "328aberta; QA/READYV5/native/publicacao pendentes"
+  ],
+  "trackedGit": "AGENTS.md\ndocs/planejamento/quadro-entregas.md\ndocs/specs/inbox-acoes-oportunidade.md\nscripts/visual/acoes-oportunidade.mjs\nsrc/test/visual-inbox-acoes-oportunidade.test.ts"
+}

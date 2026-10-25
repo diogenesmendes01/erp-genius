@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { IconCalendarCheck, IconCalendar } from '@tabler/icons-react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { runInNewContext } from 'node:vm';
 import { criarDomMinimo, desligarObservadores, Elemento } from './dom-minimo';
@@ -30,7 +33,7 @@ function dom(ator:'admin'|'leitor'='admin'){
  const grupo=e('div',{role:'group','aria-label':'Etapas da oportunidade'},'',bloco),desc=descricao(ator);
  const barras=desc.segmentos.map((nome:string,i:number)=>{const b=e('button',{'aria-label':'Etapa '+nome,...(i===4?{'aria-current':'step'}:{})},'',grupo);Object.assign(b,{disabled:ator==='leitor'});const s=e('span',{'aria-hidden':'true','data-cor':i<=4?'rgb(0, 100, 80)':'rgb(160, 160, 160)'},'',b);rects.set(s,{...rect(10,14),width:30,right:40});return b;});
  e('label',{for:'et328'},'Etapa da oportunidade',bloco);const select=e('select',{id:'et328',name:'etapaOportunidade'},'',bloco);Object.assign(select,{value:desc.etapa,disabled:!desc.podeMover});for(const o of desc.opcoes){const n=e('option',{},o.rotulo,select);Object.assign(n,{value:o.valor,disabled:o.recusada});}
- const card=e('section',{'aria-label':'Aula experimental'},'',bloco);e('svg',{class:'icon icon-tabler icon-tabler-calendar-check'},'',card);e('h4',{},'Aula experimental',card);const linha=e('p',{},'',card);const time=e('time',{datetime:desc.experimental.instante,title:'Horário em '+desc.experimental.fuso},desc.experimental.quando,linha);linha.appendChild(d.createTextNode(' · '+desc.experimental.professor));const badge=e('span',{class:'bg-brand-bg text-brand-700'},desc.experimental.status,card);const editar=ator==='admin'?e('a',{href:desc.hrefFunilAtual},'Editar',card):null;
+ const card=e('section',{'aria-label':'Aula experimental'},'',bloco);svgTablerReal328(e,card);e('h4',{},'Aula experimental',card);const linha=e('p',{},'',card);const time=e('time',{datetime:desc.experimental.instante,title:'Horário em '+desc.experimental.fuso},desc.experimental.quando,linha);linha.appendChild(d.createTextNode(' · '+desc.experimental.professor));const badge=e('span',{class:'bg-brand-bg text-brand-700'},desc.experimental.status,card);const editar=ator==='admin'?e('a',{href:desc.hrefFunilAtual},'Editar',card):null;
  for(const c of desc.campos){const row=e('div',{},'',e('dl',{},'',bloco));e('dt',{},c.rotulo,row);e('dd',{},c.valor,row);}
  const assumir=ator==='admin'?e('button',{},'Assumir conversa',bloco):null,perda=ator==='admin'?e('button',{},'Marcar como perdido',bloco):null;
  if(ator==='admin')e('button',{'aria-label':'Editar contato'},'',p);
@@ -89,3 +92,43 @@ it.each([
  ['funil','Produto independente','Titulo independente','Marcar Titulo independente como perdida'],
  ['inbox',null,'Titulo fallback independente','Marcar Titulo fallback independente como perdida'],
 ] as const)('R2 selector REAL %s/produto%s usa nome correto sem chamar confirmacao',async(superficie,produto,titulo,esperado)=>{const p=pagina(),nomes:string[]=[],original=p.getByRole;p.getByRole=(role,o)=>{if(role==='dialog'){nomes.push(o.name);expect(o.name).toBe(esperado);}return original(role,o);};const finalizar=await preencherPerdaReal328()(p,{...descricao(),superficie,produto,titulo,fase:'perda'});expect(nomes).toEqual([esperado]);expect(p.ordem).toContain('check:Outro');await finalizar();expect(p.ordem.filter(x=>x.startsWith('click:'))).toEqual(['click:Voltar']);});
+
+// R3: o SVG positivo vem do produtor instalado, com atributos e paths originais; nunca classe inventada.
+function svgTablerReal328(criar:(tag:string,attrs:Record<string,string>,txt:string,pai:Elemento)=>Elemento,pai:Elemento,icone=IconCalendarCheck){
+ const markup=renderToStaticMarkup(createElement(icone,{size:16,'aria-hidden':true}));
+ const sf=ts.createSourceFile('icone-vendor-real.tsx','const svg = '+markup,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ const stmt=sf.statements[0];if(!ts.isVariableStatement(stmt))throw Error('SVG vendor sem declaracao');
+ const raiz=stmt.declarationList.declarations[0].initializer;
+ if(!raiz||!ts.isJsxElement(raiz))throw Error('SVG vendor sem raiz');
+ const copiar=(node:ts.JsxElement|ts.JsxSelfClosingElement,destino:Elemento):Elemento=>{
+  const abertura=ts.isJsxElement(node)?node.openingElement:node,attrs:Record<string,string>={};
+  for(const a of abertura.attributes.properties){if(!ts.isJsxAttribute(a)||!a.initializer||!ts.isStringLiteral(a.initializer))throw Error('SVG vendor atributo nao literal');attrs[a.name.getText(sf)]=a.initializer.text;}
+  const e=criar(abertura.tagName.getText(sf),attrs,'',destino);
+  if(ts.isJsxElement(node))for(const n of node.children){if(ts.isJsxElement(n)||ts.isJsxSelfClosingElement(n))copiar(n,e);else if(ts.isJsxText(n)&&n.text.trim())e.textContent=n.text;}
+  return e;
+ };
+ return{markup,svg:copiar(raiz,pai)};
+}
+it.each(['topo','cartao'] as const)('R3 SVG vendor real passa no callback APP em %s',fase=>{
+ const f=dom(),antigo=f.card.querySelector('svg')!;f.card.removeChild(antigo);const real=svgTablerReal328(f.e,f.card);
+ expect(real.markup).toContain('class="tabler-icon tabler-icon-calendar-check ');
+ expect(real.svg.getAttribute('class')!.split(/\s+/)).toContain('tabler-icon-calendar-check');
+ expect(real.svg.getAttribute('class')).not.toContain('icon-tabler-calendar-check');expect(real.svg.querySelectorAll('path')).toHaveLength(5);
+ expect(api.semanticaAcoes328({...f.desc,fase})).toBe(true);
+ const callback=runInNewContext('('+api.semanticaAcoes328.toString()+')',{document,window});expect(callback({...f.desc,fase})).toBe(true);
+});
+it('R3 SVG vendor mantem a classe original PROTO independente',()=>{const f=proto();expect(f.card.querySelector('i')!.getAttribute('class')).toBe('icon-calendar-check');expect(api.semanticaAcoes328(f.desc)).toBe(true);});
+it.each(['outroVendor','semToken','tokenSufixo','prefixoAntigo'] as const)('R3 token SVG APP rejeita %s',caso=>{
+ const f=dom(),svg=f.card.querySelector('svg')!;
+ if(caso==='outroVendor'){f.card.removeChild(svg);svgTablerReal328(f.e,f.card,IconCalendar);}
+ else if(caso==='semToken')svg.setAttribute('class','tabler-icon');
+ else if(caso==='tokenSufixo')svg.setAttribute('class',svg.getAttribute('class')!.replace('tabler-icon-calendar-check','tabler-icon-calendar-check-indevido'));
+ else svg.setAttribute('class','icon icon-tabler icon-tabler-calendar-check'); // mutacao negativa explicita: nao e output do vendor.
+ expect(api.semanticaAcoes328(f.desc)).toBe(false);
+});
+it('R3 PROTO continua recusando ausencia do fragmento original calendar-check',()=>{const f=proto();f.card.querySelector('i')!.setAttribute('class','icon-calendar');expect(api.semanticaAcoes328(f.desc)).toBe(false);});
+it.each(['cabecalho','lapis'] as const)('R3 contrafactual condicional %s recortado nao e observacao nativa',alvo=>{
+ const f=dom();expect(api.semanticaAcoes328({...f.desc,fase:'topo'})).toBe(true);expect(api.semanticaAcoes328(f.desc)).toBe(true);
+ const n=alvo==='cabecalho'?f.p.querySelector('h2')!:f.p.querySelector('button[aria-label="Editar contato"]')!;
+ f.rects.set(n,f.rect(-50,-6));expect(api.semanticaAcoes328({...f.desc,fase:'cartao'})).toBe(false);
+});

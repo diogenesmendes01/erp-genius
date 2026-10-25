@@ -171,7 +171,7 @@ export function semanticaAcoes328(d) {
     if (!card || !bloco.contains(card) || (!topo && !visivel(card)) || !(app ? card.querySelector('svg') : card.querySelector('i')) || !texto(card).includes(d.experimental.professor)) return false;
     if (app && !um(card.querySelectorAll('h4'), e => texto(e) === 'Aula experimental')) return false;
     const icon = card.querySelector(app ? 'svg' : 'i');
-    if (!(icon.getAttribute('class') ?? '').includes(app ? 'icon-tabler-calendar-check' : 'icon-calendar-check')) return false;
+    if (app ? !(icon.getAttribute('class') ?? '').split(/\s+/).includes('tabler-icon-calendar-check') : !(icon.getAttribute('class') ?? '').includes('icon-calendar-check')) return false;
     const badge = um(card.querySelectorAll('span'), e => texto(e) === d.experimental.status && (topo || visivel(e)));
     if (!badge || (app && !(badge.getAttribute('class') ?? '').includes(d.experimental.status === 'Não compareceu' ? 'bg-red-50 text-red-700' : 'bg-brand-bg text-brand-700'))) return false;
     if (app) {
