@@ -36,6 +36,8 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         numero: number;
         handoff: HandoffDoAtendimento;
         invalidada: boolean;
+        /** Retém resumo após ACK; não é autorização nem indicador de GET em voo. */
+        aguardandoConfirmacao: boolean;
     } | null>(null), [confirmando, setConfirmando] = useState(false), [erro, setErro] = useState<string | null>(null);
     const atual = useRef(props), sessao = useRef<Sessao | null>(null), numero = useRef(0), querResposta = useRef(false);
     const gatilho = useRef<HTMLButtonElement>(null), campo = useRef<HTMLTextAreaElement | null>(null), retorno = useRef<HTMLElement | null>(null), controleResposta = useRef<ControleResposta | null>(null);
@@ -106,13 +108,14 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         retorno.current = gatilho.current;
         setErro(null);
         setConfirmando(false);
-        setModal({ numero: n, handoff: p.handoff, invalidada: false });
+        setModal({ numero: n, handoff: p.handoff, invalidada: false, aguardandoConfirmacao: false });
     }
     function assumirConfirmado(n: number) {
         const s = sessao.current, p = atual.current;
         if (!s?.ativa || s.numero !== n || p.handoff?.acaoId !== s.acaoId || !p.handoff.podeAssumir)
             return;
         s.ack = true;
+        setModal(m => m?.numero === s.numero ? { ...m, aguardandoConfirmacao: true } : m);
         s.minimo = (p.leitura?.solicitada ?? 0) + 1;
         setErro(null);
         setConfirmando(true);
@@ -133,11 +136,12 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
     function tentar(n: number) { const s = sessao.current; if (!s?.ativa || s.numero !== n || !s.ack)
         return; s.minimo = (atual.current.leitura?.solicitada ?? 0) + 1; setConfirmando(true); setErro(null); atual.current.aoMudar(); }
     const valido = !props.item.grupo && props.item.status !== "ENCERRADO", h = props.handoff;
-    const atualModal = modal && (h?.acaoId === modal.handoff.acaoId || confirmando || modal.invalidada) ? (h?.acaoId === modal.handoff.acaoId ? h : modal.handoff) : null;
-    const contextoAtivo = !modal?.invalidada && valido && props.leitura?.resultado !== "sem-acesso" && !!atualModal && (confirmando || atualModal.podeAssumir || atualModal.ehResponsavel);
+    const atualModal = modal && (h?.acaoId === modal.handoff.acaoId || modal.aguardandoConfirmacao || modal.invalidada) ? (h?.acaoId === modal.handoff.acaoId ? h : modal.handoff) : null;
+    // A autorização vem somente do DTO atual; o fallback acima é exclusivamente de leitura.
+    const contextoAtivo = !modal?.invalidada && valido && props.leitura?.resultado !== "sem-acesso" && !!atualModal && h?.acaoId === modal?.handoff.acaoId && !!h && (h.podeAssumir || h.ehResponsavel);
     return {
         faixa: valido && h ? <FaixaHandoff handoff={h} agora={props.agora} aoVerResumo={abrir} gatilhoRef={gatilho}/> : null,
-        modal: modal && atualModal ? <ModalResumoHandoff key={modal.numero} atendimentoId={props.item.id} contatoNome={props.item.contatoNome} handoff={atualModal} fuso={props.fuso} contextoAtivo={contextoAtivo} sessaoInvalidada={modal.invalidada} confirmando={confirmando} erroConfirmacao={erro} aoTentarConfirmar={() => tentar(modal.numero)} focoAoFechar={retorno} aoFechar={fechar} aoAssumido={() => assumirConfirmado(modal.numero)} aoResponder={() => responder(modal.numero)}/> : null,
+        modal: modal && atualModal ? <ModalResumoHandoff key={modal.numero} atendimentoId={props.item.id} contatoNome={props.item.contatoNome} handoff={atualModal} fuso={props.fuso} contextoAtivo={contextoAtivo} sessaoInvalidada={modal.invalidada} confirmacaoPendente={modal.aguardandoConfirmacao} confirmando={confirmando} erroConfirmacao={erro} aoTentarConfirmar={() => tentar(modal.numero)} focoAoFechar={retorno} aoFechar={fechar} aoAssumido={() => assumirConfirmado(modal.numero)} aoResponder={() => responder(modal.numero)}/> : null,
         controleResposta, aoCampoResponder
     };
 }

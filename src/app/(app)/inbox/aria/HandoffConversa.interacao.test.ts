@@ -202,3 +202,19 @@ it("abertura invalidada não oferece segundo assumir; fechar e reabrir cria gera
  await act(async()=>novo({ok:true}));expect(mudar).toHaveBeenCalledOnce();
  await montar({responsavel:"u",handoff:null,leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);
 });
+it.each(["sucesso","cancelar-reabrir"] as const)("snapshot pósACK sem handoff permanece após503, sem nova ação; %s",async(fim)=>{
+ await montar({nota:true});await clicar("Ver resumo e assumir");await clicar("Assumir e responder",dialogo());
+ await montar({nota:true,responsavel:null,handoff:null,leitura:{solicitada:1,finalizada:1,resultado:"ok"}});expect(dialogo()).not.toBeNull();
+ await montar({nota:true,responsavel:null,handoff:null,leitura:{solicitada:2,finalizada:2,resultado:"falha"}});
+ expect(dialogo()).not.toBeNull();expect(dialogo().textContent).toContain("Quer vaga");expect(botao("Tentar de novo",dialogo())).toBeDefined();expect(botao("Assumir e responder",dialogo())).toBeUndefined();expect(botao("Responder",dialogo())).toBeUndefined();
+ expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);expect(assumir).toHaveBeenCalledOnce();
+ if(fim==="sucesso"){
+  await clicar("Tentar de novo",dialogo());expect(mudar).toHaveBeenCalledTimes(2);
+  await montar({nota:true,responsavel:"u",handoff:null,leitura:{solicitada:3,finalizada:2,resultado:"falha"}});expect(dialogo()).not.toBeNull();
+  await montar({nota:true,responsavel:"u",handoff:null,leitura:{solicitada:3,finalizada:3,resultado:"ok"}});expect(dialogo()).toBeNull();expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(true);expect(assumir).toHaveBeenCalledOnce();
+ }else{
+  await clicar("Cancelar",dialogo());expect(dialogo()).toBeNull();
+  await montar({nota:true,responsavel:"u",handoff:null,leitura:{solicitada:3,finalizada:3,resultado:"ok"}});expect(doc.activeElement===host.querySelector("[data-compositor-campo]")).toBe(false);
+  await montar({nota:true,handoff:{...h,acaoId:"h2"},leitura:{solicitada:4,finalizada:4,resultado:"ok"}});await clicar("Ver resumo e assumir");expect(botao("Tentar de novo",dialogo())).toBeUndefined();await clicar("Assumir e responder",dialogo());expect(assumir).toHaveBeenCalledTimes(2);expect(mudar).toHaveBeenCalledTimes(2);
+ }
+});
