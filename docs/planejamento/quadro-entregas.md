@@ -7534,3 +7534,5 @@ Originalc2b48093/2743cc EXIT2: únicoTS2304test-only nohelperabrirAba331 referia
 ### #377 — Insights D12: fase pura (em implementação)
 
 Audiência COMERCIAL+veLead e D12 completos sob demanda aprovados. Tipos/normalização, contexto limitado, prompt estruturado e DTO puro implementados com REDs causais; final DEV4 arquivos/35 testes UTC,w1/1024 terminal ab6019 EXIT0. A aba não foi habilitada. Schema493/claim/custos/provider/UI/bridge/SQL/QA independente/gates globais/visual permanecem pendentes, sem homologação presumida. [SPEC](../specs/inbox-insights-d12.md) e [QA](../qa/inbox-377-insights-d12.md).
+
+#377 — checkpoint UI local: painel isolado, hook de geração por clique e confirmação canônica para substituir rascunho, com portas fake. Guardas completas e recorte: sessão 66794/b69a66 EXIT0, 12 arquivos/365 testes; adicionais 77403/b0d5e5 EXIT0, 10 arquivos/199 testes; lint 10 arquivos acba52 EXIT0. Sem aba real, Prisma/provider/bridge ou SQL. Descarte/reconciliação incerta, persistência e QA independente/visual continuam pendentes; não homologada. Negativos e distinção entre fake e consumidor real na QA377.

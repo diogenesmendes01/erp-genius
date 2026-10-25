@@ -2113,6 +2113,7 @@ const ANTIGOS = ["ETAPA_LABEL", "TEMPERATURA_LABEL", "SEGMENTO_LABEL", "MOTIVO_P
   "STATUS_COMISSAO_LABEL", "STATUS_ALUNO_LABEL", "TIPO_COBRANCA_LABEL", "FORMA_PAGAMENTO_LABEL", "GENERO_LABEL", "ESCOLARIDADE_LABEL",
   "SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL", "STATUS_ENCONTRO_LABEL"];
 const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valores: readonly string[]][] = [
+  ["SENTIMENTO_INSIGHT_LABEL", L.SENTIMENTO_INSIGHT_LABEL, ["POSITIVO", "NEUTRO", "NEGATIVO"]],
   ["ALTERACAO_ARIA_LABEL", L.ALTERACAO_ARIA_LABEL, Object.values(AcaoAgenteIATipo)],
   ["SITUACAO_CLIENTE_VOLTOU_LABEL", L.SITUACAO_CLIENTE_VOLTOU_LABEL, ["ganha", "perdida"]],
   ["SITUACAO_OUTRA_OPORTUNIDADE_LABEL", L.SITUACAO_OUTRA_OPORTUNIDADE_LABEL, Object.values(EtapaLead)],
@@ -2218,6 +2219,14 @@ describe("(iii) labels.ts: exports e mapas novos", () => {
     expect(problemasDoMapa(Object.freeze({...L.ALTERACAO_ARIA_LABEL,RESPONDER:"RESPONDER"}),Object.values(AcaoAgenteIATipo))).toContain("RESPONDER: repete o código");
     const incompleto={...L.ALTERACAO_ARIA_LABEL};delete (incompleto as Partial<typeof incompleto>).TAG;
     expect(problemasDoMapa(Object.freeze(incompleto),Object.values(AcaoAgenteIATipo)).some(p=>p.startsWith("chaves ["))).toBe(true);
+  });
+  it("377 sentimento de Insight mantém cópia nominal, chaves completas e negativos", () => {
+    expect(L.SENTIMENTO_INSIGHT_LABEL).toEqual({POSITIVO:"Positivo",NEUTRO:"Neutro",NEGATIVO:"Negativo"});
+    const valores=["POSITIVO","NEUTRO","NEGATIVO"];
+    expect(problemasDoMapa(Object.freeze({...L.SENTIMENTO_INSIGHT_LABEL,POSITIVO:"POSITIVO"}),valores)).toContain("POSITIVO: repete o código");
+    const incompleto={...L.SENTIMENTO_INSIGHT_LABEL};delete (incompleto as Partial<typeof incompleto>).NEUTRO;
+    expect(problemasDoMapa(Object.freeze(incompleto),valores)).not.toEqual([]);
+    expect(problemasDoMapa(Object.freeze({...L.SENTIMENTO_INSIGHT_LABEL,OUTRO:"Outro"}),valores)).not.toEqual([]);
   });
   for (const [nome, mapa, valores] of MAPAS_NOVOS) {
     it(`${nome}: chaves = valores do enum; rótulo em texto de gente; congelado`, () => {
