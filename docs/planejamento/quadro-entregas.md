@@ -7516,3 +7516,13 @@ UNIT final90722/f9d48b EXIT0:106arquivos1.364casos do recorte completo; lintfree
 ### Inbox #358 — composição R6 com tarefas e nota (25/10/2026)
 
 Rootcompõe766+ca58;4conflitosSRCresolvidosmantendotarefa/pedidoNota/pedidoFoco/setterfuncionalpreservacampo+travaexterna/Assumir/gate352. Backendalteradoegatehandoffliteraisàcandidata; ambosblocosdetestespreservados. Focalcompleto12808/52fe1c EXIT0:131arquivos1594testes,108.35s,UTC/w1/2048/configoriginal,semfiltro/skips;log/reciboprivadosfull,pinningstagedTree9096a81f. SQLindepca58:23native945439e48reg4849510,nãosomar;UNIT/oráculoTfinalpendente. Bancotesterrestaurado26472c0apóslease. TSC/global/lint/build/visual/CIpendentes,semmerge/homologaçãopresumidos. QA docs/qa/inbox-358-integracao-r6-root.md.
+
+### Inbox #439 — C3, apresentação do ModalTarefa (25/10/2026)
+
+DEV A em branch isolada sobre a publicação bbdd7549782ff4263550dbe27278a09cba354082. Produção restrita a ModalTarefa.tsx: cinco ícones Tabler genéricos decorativos nos tipos, bloco Responsável inteiro por podeAtribuirResponsavel (sem fallback readonly ou predicado por lista) e rótulos locais de lembrete conforme issue. Seleção, valores null/0/10/30/60, estado, payload, defaults e CAS preservados; sem novos campos D10, label global, CRM/backend, mapa de exceção, parser, config ou dependência.
+
+RED 6d75f9 EXIT 1, 8 falhas/22 controles → GREEN 9cebb0 EXIT 0, 30 testes do modal. Final 85552/61c458 EXIT 0: 17 arquivos completos/662 testes, 92,39 s, original/UTC/w1/heap1024, sem filtros por nome/skips. Lint e433a8 EXIT 0, 2 arquivos/zero avisos. UI real com harness e SSR do carregamento, ícones/seleção, capacidade versus lista, responsável oculto preservado na edição e valores de todos os lembretes. SPEC inbox-modal-tarefa.md e QA inbox-439-c3-modal-tarefa.md. Nenhuma SQL/TSC/build/push; backend literal à base, visual e gates originais/QA independente coordenados pelo ROOT. Refs #334/f347 e AGENTS histórico preservados; nenhuma alteração na revisão #438.
+
+### Inbox #439 C3 — composição R6 e QA independente
+
+DoisSRCModal literais0b5a:5íconesgenéricosdecorativos,Responsávelinteirosócapacidade,labelslembretevaloresinalterados. QAindep88670/276834 EXIT0:10arquivos442casos,62.02s,UTC/w1/1024semfiltro/skips;parecercf79c5e4e2d153a642b730096442a19735c884b2d7dbf035a8127297b06ade46. Backend/ciclos/salvar/cancel/payload/registriesliteraisbase;semSQLrepetida. Integraçãosóconflitoquadro,históricopreservado;global/TSC/lint/build/visualpendentes.
