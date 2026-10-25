@@ -33,8 +33,8 @@ beforeEach(async () => {
 afterEach(async () => { await act(async () => root.unmount()); desligarObservadores(); vi.unstubAllGlobals(); });
 it("integra escolha, leitura de pessoas e executor; exclui responsável atual e ACK conclui", async () => {
  await montar(); expect(carregar).not.toHaveBeenCalled(); await clicar("Abrir"); await clicar("Pessoas");
- expect(doc.body.querySelectorAll("option").map(o=>o.textContent)).toEqual(["Escolha…","Beatriz"]);
- await mudar("select","b"); await confirmar(); expect(executar).toHaveBeenCalledOnce(); expect(concluir).toHaveBeenCalledOnce(); expect(doc.body.querySelector('[role="dialog"]')).toBeNull();
+ expect(doc.body.querySelectorAll('input[type="radio"]').map(o=>(o as unknown as {value:string}).value)).toEqual(["b"]);expect(doc.body.textContent).toContain("Beatriz");
+ await mudar('input[type="radio"]',"b"); await confirmar(); expect(executar).toHaveBeenCalledOnce(); expect(concluir).toHaveBeenCalledOnce(); expect(doc.body.querySelector('[role="dialog"]')).toBeNull();
 });
 it("perda e restauração só permitem fechar; nova abertura deliberada recupera CTA", async () => {
  await montar(); await clicar("Abrir"); await montar(false); await montar(true);
@@ -50,13 +50,13 @@ it("leitura velha A→B→A não publica pessoas em outra abertura", async () =>
 it("nova abertura não reutiliza pessoas antigas antes da nova leitura", async () => {
  await montar(); await clicar("Abrir"); await clicar("Cancelar");
  let resolver!:(v:{id:string;nome:string}[])=>void; carregar.mockReturnValueOnce(new Promise(r=>resolver=r));
- await clicar("Abrir"); await clicar("Pessoas"); expect(doc.body.querySelectorAll("option").some(o=>o.textContent==="Beatriz")).toBe(false);
+ await clicar("Abrir"); await clicar("Pessoas"); expect(doc.body.textContent).not.toContain("Beatriz");
  await act(async()=>resolver([{id:"c",nome:"Carla"}])); expect(doc.body.textContent).toContain("Carla");
 });
 
 it("troca de responsável invalida ACK mesmo que gerente conserve as mesmas capacidades", async () => {
  let resolver!:(r:{ok:true})=>void; executar.mockReturnValueOnce(new Promise(r=>resolver=r));
- await montar(); await clicar("Abrir"); await clicar("Pessoas"); await mudar("select","b");
+ await montar(); await clicar("Abrir"); await clicar("Pessoas"); await mudar('input[type="radio"]',"b");
  await confirmar(); await montar(true,"a","c"); await act(async()=>resolver({ok:true}));
  expect(concluir).not.toHaveBeenCalled(); expect(doc.body.textContent).toContain("Feche e abra novamente");
 });
