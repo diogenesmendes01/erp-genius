@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { Papel, PrismaClient } from "@prisma/client";
+import { DriverWhatsApp, Papel, PrismaClient } from "@prisma/client";
 import type { ConteudoEspecial } from "./canal";
 
 const { authMock, driver } = vi.hoisted(() => ({
@@ -150,7 +150,7 @@ it.each(["reativada", "config-removida", "ator", "papel-portal", "numero", "opto
       if (caso === "ator") return prisma.usuario.update({ where: { id: c.admin.id }, data: { ativo: false } });
       if (caso === "papel-portal") return prisma.usuario.update({ where: { id: c.admin.id }, data: { papeis: [Papel.ALUNO] } });
       if (caso === "optout") return prisma.contatoWhatsApp.update({ where: { id: c.contato.id }, data: { optOutEm: new Date() } });
-      return prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: caso === "sessao" ? { sessao: "DESCONECTADO" } : caso === "canal" ? { driver: "BAILEYS" } : { ativo: false } });
+      return prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: caso === "sessao" ? { sessao: "DESCONECTADO" } : caso === "canal" ? { driver: DriverWhatsApp.BAILEYS } : { ativo: false } });
     });
     expect(resultado.ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
