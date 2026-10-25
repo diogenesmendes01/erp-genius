@@ -6941,3 +6941,8 @@ PR420 continua em rascunho/Refs326. Pendente a autorização/publicação do ZIP
 
 ### Composição com main343/423
 A composição74d4dbc6 incorpora main170edbad preservando os17SRC de326 e todos os registros do quadro. O18ºSRC,teste InboxNovo.foco, recebe somente os quatro defaultsDTO343; removê-los recompõe o teste179b byte a byte. TypeScript original98161/c46003 terminou0, sem exclusões e sem incremental. Recorte de foco/editor/cache:3arquivos/43testes,terminal33f166,saída0,sem filtros/skips. A integração completa798f continua nominal à fonte anterior342/343/423 e não é apresentada como full combinado. NovaCI da publicação e autorização dos anexos326 continuam pendentes. Nenhum novoSave,testeUI ouDB nesta composição.
+
+
+### Inbox326 — composição sobre main351
+
+Fonte0342e776/mainfabf7add;17SRC byteiguaisecac e guarda com só3linhasMain351. Preservados3567objetosMain fora18fontes e quadroMainprefixo+todo sufixo326. Recorte16409/c6fa62 EXIT0:4arquivos/182testes,semfiltro/skips. Índice e composição-final agora apontamàfonte atual;798f/74d/ecac mantidos históricos. CI rápida/full/QA final ainda pendentes; anexos R9/R10 e merge continuam sem presumir autorização.
