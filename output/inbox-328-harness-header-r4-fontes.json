@@ -20,24 +20,24 @@
     },
     {
       "path": "docs/specs/inbox-acoes-oportunidade.md",
-      "bytes": 11539,
-      "sha256Fisico": "68fec2f97effe3f62dbdd08abc3c054c2ea1a59725f665e712a877863e357f9b",
-      "sha256GitLF": "68fec2f97effe3f62dbdd08abc3c054c2ea1a59725f665e712a877863e357f9b",
-      "gitBlobAtual": "d0904ecf9e5670b340b46a61e57fdcc179de2dc5"
+      "bytes": 11656,
+      "sha256Fisico": "a61d259758bb9b328ceaabdd17390c4c9543b35b19661f0cd246b6b7bb70a0d6",
+      "sha256GitLF": "a61d259758bb9b328ceaabdd17390c4c9543b35b19661f0cd246b6b7bb70a0d6",
+      "gitBlobAtual": "d3d3bc21b7f8696a1c522e146baa5c675f89bd19"
     },
     {
       "path": "docs/planejamento/quadro-entregas.md",
-      "bytes": 1158551,
-      "sha256Fisico": "c9fbf3e7ee01f34492555d5e4fe9079da4e46c86c4061f4f1914c01ac828b493",
-      "sha256GitLF": "0eb4cfd53d6dccca72aa705e03adf1e4d68b205778ff9973865fb87eb6ee2399",
-      "gitBlobAtual": "244583cdda6c232f5dcb76172d8918a1d8631fb7"
+      "bytes": 1158660,
+      "sha256Fisico": "8ffd8663d791048ce7673d5018b7f36544f41d6512911788e27af4fe18417e50",
+      "sha256GitLF": "af27d3f6b9c43cfe7ef179b7a4336b31f53a6d31f0f0c858816bfc692ea10aca",
+      "gitBlobAtual": "8718b2b13b3d09f21bb762a40b9c79718c08199c"
     },
     {
       "path": "output/inbox-328-harness-header-r4-report.md",
-      "bytes": 3587,
-      "sha256Fisico": "7d4a8d7133bdf17b51d39e15556b8e2a822bb2ad745538eef68f4351843ec619",
-      "sha256GitLF": "7d4a8d7133bdf17b51d39e15556b8e2a822bb2ad745538eef68f4351843ec619",
-      "gitBlobAtual": "139210e879e5f932ba2933ad052a47774b974eb7"
+      "bytes": 3679,
+      "sha256Fisico": "de13be8faa3c35339372216f4917038ebb15160ad7c43d733538bc5c68475eb7",
+      "sha256GitLF": "de13be8faa3c35339372216f4917038ebb15160ad7c43d733538bc5c68475eb7",
+      "gitBlobAtual": "ce0e645c20d7fbbd117eed87e79125755dc387c5"
     }
   ],
   "congruencia": {
@@ -130,5 +130,20 @@
     "PROTO e TopoDetalhes preservados",
     "328aberta; QA/READYfutura/native/publicacao pendentes"
   ],
-  "trackedGit": "AGENTS.md\ndocs/planejamento/quadro-entregas.md\ndocs/specs/inbox-acoes-oportunidade.md\nscripts/visual/acoes-oportunidade.mjs\nsrc/test/visual-inbox-acoes-oportunidade.test.ts"
+  "trackedGit": "AGENTS.md\ndocs/planejamento/quadro-entregas.md\ndocs/specs/inbox-acoes-oportunidade.md\nscripts/visual/acoes-oportunidade.mjs\nsrc/test/visual-inbox-acoes-oportunidade.test.ts",
+  "correcaoDocumental": {
+    "baseTecnica": "0d758c4ee095a42d711b5c8663c5bf2db5344f2b",
+    "escopo": "somente report/SPEC/quadro e hashes; codigo/teste/gates literais0d75",
+    "qualificacao": "ROOT decidiu explicitar o escopo; recusa condicional de header recortado; sem contradicao universal ou geometria nativa comprovada",
+    "historicos": [
+      {
+        "git": "0d758c4ee095a42d711b5c8663c5bf2db5344f2b:output/inbox-328-harness-header-r4-report.md",
+        "oid": "139210e879e5f932ba2933ad052a47774b974eb7"
+      },
+      {
+        "git": "0d758c4ee095a42d711b5c8663c5bf2db5344f2b:output/inbox-328-harness-header-r4-fontes.json",
+        "oid": "3ccb6a88d76ffec865d41e819561385eadbcd78c"
+      }
+    ]
+  }
 }

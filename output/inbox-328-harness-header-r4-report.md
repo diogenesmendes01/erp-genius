@@ -4,7 +4,7 @@ Base Git41a34afdc4024e4069f594855d52fb9524141088/R3. Produto runtime continua f9
 
 ## Contrato autorizado e implementação
 
-A metadata do driver declara naoProvaHeaderNaFotoInferior=true após observar o topo. O callback exigia nome/subtítulo/lápis inteiros na viewport também na fase cartao. ROOT/T confirmaram a contradição de contrato por fonte, sem prova de recorte no navegador. A decisão técnica explícita limita a foto inferior a identidade/acessibilidade desses três alvos.
+A metadata do driver declara naoProvaHeaderNaFotoInferior=true após observar o topo. O callback exigia nome/subtítulo/lápis inteiros na viewport também na fase cartao. ROOT decidiu explicitar o escopo da foto inferior; o requisito anterior recusaria condicionalmente um header recortado. Não há contradição universal ou geometria nativa comprovada. A decisão técnica explícita limita a foto inferior a identidade/acessibilidade desses três alvos.
 
 Somente app && fase==='cartao': h2 e subtítulo têm cardinalidade1, texto correto e estão conectados/acessíveis/não disabled ou aria-disabled. Lápis é único e acessível para admin e ausente para leitor. Esses três alvos não exigem recorte inteiro na viewport. Não são aceitos hidden/inert/aria-hidden/display:none/visibility:hidden. A regra de acessibilidade existente é reutilizada; não se altera visivel, CSS ou DOM para obter aceite.
 
