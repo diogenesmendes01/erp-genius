@@ -69,7 +69,7 @@ export default async function InboxPage({
   const agoraInicial = Date.now();
   return (
     <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
-      <InboxNovo podeAbrirFunil={capacidadesCrm(usuario.papeis).has("funil.ver")} agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fusoEscola={fusoEscola} fuso={fuso}
+      <InboxNovo podeCriarOportunidade={capacidadesCrm(usuario.papeis).has("funil.mover")} podeAbrirFunil={capacidadesCrm(usuario.papeis).has("funil.ver")} agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fusoEscola={fusoEscola} fuso={fuso}
         destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
         triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo}
         opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />
