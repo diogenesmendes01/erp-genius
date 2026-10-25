@@ -1,3 +1,4 @@
+import {renderToStaticMarkup} from "react-dom/server";
 import {act,createElement} from "react";
 import type {Root} from "react-dom/client";
 import {afterEach,beforeEach,expect,it,vi} from "vitest";
@@ -14,7 +15,7 @@ const campo=(nome:string)=>pagina.querySelectorAll("input").find(e=>e.getAttribu
 const render=(atendimentoId="a",modo:{tipo:"nova"}|{tipo:"editar";tarefa:{id:string;versao:number}}={tipo:"nova"},alvoDisponivel=true)=>act(async()=>root.render(createElement(ModalTarefa,{atendimentoId,modo,alvoDisponivel,fuso:null,aoFechar:fechar,aoSalvo:salvo})));
 const alterar=(nome:string,v:string)=>act(async()=>prop(campo(nome),"onChange",{target:{value:v}}));
 const submeter=()=>act(async()=>prop(pagina.querySelector("form")!,"onSubmit",{preventDefault(){}}));
-beforeEach(async()=>{vi.clearAllMocks();dados.mockResolvedValue({ok:true,dado:dto});criar.mockResolvedValue({ok:true,dado:{id:"t"}});editar.mockResolvedValue({ok:true});cancelar.mockResolvedValue({ok:true});const d=criarDomMinimo();const criarEl=d.documento.createElement.bind(d.documento);d.documento.createElement=tag=>{const el=criarEl(tag);if(tag==="select")Object.defineProperty(el,"options",{get:()=>el.querySelectorAll("option")});return el;};pagina=d.documento.body;Object.assign(d.documento,{addEventListener(){},removeEventListener(){}});vi.stubGlobal("document",d.documento);vi.stubGlobal("window",d.janela);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);host=d.documento.createElement("div");pagina.appendChild(host);const {createRoot}=await import("react-dom/client");root=createRoot(host as unknown as HTMLElement);});
+beforeEach(async()=>{vi.clearAllMocks();dados.mockResolvedValue({ok:true,dado:dto});criar.mockResolvedValue({ok:true,dado:{id:"t"}});editar.mockResolvedValue({ok:true});cancelar.mockResolvedValue({ok:true});const d=criarDomMinimo();const criarEl=d.documento.createElement.bind(d.documento);d.documento.createElement=tag=>{const el=criarEl(tag);if(tag==="select")Object.defineProperty(el,"options",{get:()=>el.querySelectorAll("option")});return el;};pagina=d.documento.body;Object.assign(d.documento,{createElementNS:(_ns:string,tag:string)=>d.documento.createElement(tag),addEventListener(){},removeEventListener(){}});vi.stubGlobal("document",d.documento);vi.stubGlobal("window",d.janela);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);host=d.documento.createElement("div");pagina.appendChild(host);const {createRoot}=await import("react-dom/client");root=createRoot(host as unknown as HTMLElement);});
 afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
 it("carrega ao abrir, mostra contador200 e valida vazio com botão acionável",async()=>{await render();expect(dados).toHaveBeenCalledExactlyOnceWith("a",undefined);expect(pagina.textContent).toContain("0/200");expect(btn("Criar tarefa").hasAttribute("disabled")).toBe(false);await submeter();expect(pagina.textContent).toContain("Dê um título");expect(criar).not.toHaveBeenCalled();await render();expect(dados).toHaveBeenCalledOnce();});
 it("criação usa WhatsApp/default vínculo e chave estável após transporte incerto",async()=>{criar.mockRejectedValueOnce(new Error("rede"));await render();await alterar("Título da tarefa"," Retornar ");await submeter();expect(criar).toHaveBeenCalledOnce();const i=criar.mock.calls[0][1];expect(i).toMatchObject({titulo:"Retornar",tipo:"WHATSAPP",vincularOportunidade:true,jaFeita:false,contextoEsperado:"contexto331",fusoEscolaEsperado:"America/Sao_Paulo"});await submeter();expect(criar.mock.calls[1][1].chaveIdempotencia).toBe(i.chaveIdempotencia);expect(salvo).toHaveBeenCalledOnce();});
@@ -36,3 +37,31 @@ it("cancelamento recusado após atualização preserva motivo e não anuncia suc
 
 it("criação trava dois submits no mesmo instante e só fecha após ACK",async()=>{let fim!:(r:{ok:true;dado:{id:string}})=>void;criar.mockImplementation(()=>new Promise(r=>fim=r));await render();await alterar("Título da tarefa","Uma tentativa");await act(async()=>{prop(pagina.querySelector("form")!,"onSubmit",{preventDefault(){}});prop(pagina.querySelector("form")!,"onSubmit",{preventDefault(){}});});expect(criar).toHaveBeenCalledOnce();expect(salvo).not.toHaveBeenCalled();await act(async()=>fim({ok:true,dado:{id:"t"}}));expect(salvo).toHaveBeenCalledOnce();});
 it("checkbox pode vincular tarefa direta à oportunidade atual com intenção explícita",async()=>{dados.mockResolvedValue({ok:true,dado:{...snapshot(),tarefa:{...snapshot().tarefa,leadId:null,vinculadaAtual:false}}});await render("a",{tipo:"editar",tarefa:{id:"t",versao:2}});const check=pagina.querySelectorAll("input").find(e=>e.getAttribute("type")==="checkbox")!;await act(async()=>prop(check,"onChange",{target:{checked:true}}));await submeter();expect(editar).toHaveBeenCalledExactlyOnceWith("a","t",2,{vinculo:"vincularAtual",contextoEsperado:"contexto331",fusoEscolaEsperado:"America/Sao_Paulo"});});
+
+it.each([
+ ["WhatsApp","WHATSAPP","message-circle"],["Ligação","LIGACAO","phone"],["E-mail","EMAIL","mail"],["Reunião","REUNIAO","calendar"],["Outro","OUTRO","circle-dot"],
+] as const)("439 C3 tipo %s tem ícone genérico decorativo e preserva seleção/payload",async(rotulo,tipo,icone)=>{
+ await render();const chip=btn(rotulo),svg=chip.querySelector("svg");expect(svg?.getAttribute("class")).toContain("tabler-icon-"+icone);expect(svg?.getAttribute("aria-hidden")).toBe("true");expect(pagina.querySelectorAll("svg").map(s=>s.getAttribute("class")).join(" ")).not.toContain("brand-whatsapp");
+ await act(async()=>prop(chip,"onClick"));expect(chip.getAttribute("aria-pressed")).toBe("true");await alterar("Título da tarefa","Tipo preservado");await submeter();expect(criar.mock.calls[0][1].tipo).toBe(tipo);
+});
+it("439 C3 capacidade falsa oculta bloco inteiro mesmo com lista e preserva responsável de outro na edição",async()=>{
+ const s=snapshot();dados.mockResolvedValue({ok:true,dado:{...s,podeAtribuirResponsavel:false,responsaveis:[{id:"outro",nome:"Colega fictício"}],tarefa:{...s.tarefa,responsavelId:"outro"}}});
+ await render("a",{tipo:"editar",tarefa:{id:"t",versao:2}});expect(pagina.textContent).not.toContain("Responsável");expect(pagina.textContent).not.toContain("Sem responsável");expect(pagina.textContent).not.toContain("Colega fictício");expect(pagina.querySelectorAll("select").find(e=>e.getAttribute("aria-label")==="Responsável")).toBeUndefined();
+ await alterar("Título da tarefa","Só título");await submeter();expect(editar).toHaveBeenCalledExactlyOnceWith("a","t",2,{titulo:"Só título",vinculo:"manter",contextoEsperado:"identidade331",fusoEscolaEsperado:"America/Sao_Paulo"});
+});
+it("439 C3 capacidade verdadeira mostra seletor mesmo com lista vazia e mantém valor null",async()=>{
+ dados.mockResolvedValue({ok:true,dado:{...dto,podeAtribuirResponsavel:true,responsaveis:[]}});await render();const seletor=pagina.querySelectorAll("select").find(e=>e.getAttribute("aria-label")==="Responsável")!;expect(seletor).toBeDefined();expect(seletor.querySelectorAll("option").map(o=>o.textContent)).toEqual(["Você","Sem responsável"]);
+ await act(async()=>prop(seletor,"onChange",{target:{value:""}}));await alterar("Título da tarefa","Sem atribuição");await submeter();expect(criar.mock.calls[0][1].responsavelId).toBeNull();
+});
+it("439 C3 ocultar o bloco não muda o responsável padrão da criação",async()=>{
+ await render();expect(pagina.textContent).not.toContain("Responsável");await alterar("Título da tarefa","Default preservado");await submeter();expect(criar.mock.calls[0][1].responsavelId).toBe("u");
+});
+it("439 C3 rótulos literais de lembrete conservam opções e valores",async()=>{
+ await render();const s=pagina.querySelectorAll("select").find(e=>e.getAttribute("aria-label")==="Lembrete")!;expect(s.querySelectorAll("option").map(o=>[o.textContent,o.getAttribute("value")])).toEqual([["Sem lembrete",""],["Na hora","0"],["10 min antes","10"],["30 min antes","30"],["1 h antes","60"]]);
+});
+it.each([["",null],["0",0],["10",10],["30",30],["60",60]] as const)("439 C3 lembrete %s mantém valor de entrada %j",async(valor,esperado)=>{
+ await render();await alterar("Título da tarefa","Lembrete preservado");await alterar("Horário da tarefa","09:00");const s=pagina.querySelectorAll("select").find(e=>e.getAttribute("aria-label")==="Lembrete")!;await act(async()=>prop(s,"onChange",{target:{value:valor}}));await submeter();expect(criar.mock.calls[0][1].lembreteAntecedenciaMin).toBe(esperado);
+});
+it("439 C3 SSR conserva loading canônico e não pressupõe dados/capacidade antes do DTO",()=>{
+ const s=renderToStaticMarkup(createElement(ModalTarefa,{atendimentoId:"a",modo:{tipo:"nova"},fuso:null,aoFechar:fechar,aoSalvo:salvo}));expect(s).toContain("Nova tarefa");expect(s).toContain("Carregando formulário");expect(s).toContain('role="status"');expect(s).not.toContain("Responsável");expect(s).not.toContain("<form");expect(dados).not.toHaveBeenCalled();
+});
