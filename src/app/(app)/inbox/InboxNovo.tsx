@@ -11,6 +11,7 @@ import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
 import { ClienteVoltou } from "./abas/ClienteVoltou";
+import { ModalTarefa } from "./ModalTarefa";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { ModalPerda } from "../funil/ModalPerda";
 import { marcarPerdidoNoInbox } from "@/server/inbox/acoes-painel";
@@ -430,8 +431,24 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   });
   const perdaAberta = !!(podeMudarEtapa && perdaOportunidade.aberta && perdaOportunidade.atendimentoId === selecionado && perdaOportunidade.id
     && (!oportunidadesDoContato.dado || oportunidadesDoContato.dado.atual?.id === perdaOportunidade.id));
-  const dialogoAberto = editorAberto || perdaAberta;
+  const [modalTarefa,setModalTarefa]=useState<{atendimentoId:string;modo:{tipo:"nova"}|{tipo:"editar";tarefa:{id:string;versao:number}};sessao:number}|null>(null);
+  const sessaoTarefa=useRef(0);
+  const [aberturaTarefa,setAberturaTarefa]=useState(0);
+  const podeTarefas=detalhesComerciais&&painelDoAberto?.dado?.acoes!=null&&painelDoAberto.dado.cabecalho?.capacidades.tarefas===true;
+  const permissaoTarefasConhecida=painelDoAberto?.dado?painelDoAberto.dado.acoes!=null&&painelDoAberto.dado.cabecalho?.capacidades.tarefas===true:null;
+  if(modalTarefa&&(modalTarefa.atendimentoId!==selecionado||!detalhesComerciais||permissaoTarefasConhecida===false))setModalTarefa(null);
+  const tarefaAberta=!!modalTarefa&&modalTarefa.atendimentoId===selecionado&&detalhesComerciais&&permissaoTarefasConhecida!==false;
+  function abrirTarefa(modo:{tipo:"nova"}|{tipo:"editar";tarefa:{id:string;versao:number}}){
+    if(!selecionado||!podeTarefas)return;
+    setEdicaoContato({atendimentoId:selecionado,aberta:false});setPerdaOportunidade(p=>({...p,aberta:false}));
+    setAberturaTarefa(n=>n+1);
+    setModalTarefa({atendimentoId:selecionado,modo,sessao:++sessaoTarefa.current});
+  }
+  const idTarefaDoModal=modalTarefa?.modo.tipo==="editar"?modalTarefa.modo.tarefa.id:null;
+  const tarefaAtualDoModal=idTarefaDoModal?oportunidadesDoContato.dado?.tarefas.find(t=>t.id===idTarefaDoModal):undefined;
+  const dialogoAberto = editorAberto || perdaAberta || tarefaAberta;
   function abrirPerda() {
+    setModalTarefa(null);
     const o = oportunidadesDoContato.dado?.atual;
     if (!selecionado || !podeMudarEtapa || !o) return;
     setEdicaoContato({ atendimentoId: selecionado, aberta: false });
@@ -496,7 +513,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ? detalhesComerciais
           ? abaAtiva === "oportunidades"
             ? oportunidadesDoContato.erro ? falhaDosDetalhes(oportunidadesDoContato.recarregar, "oportunidades")
-              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
+              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} aoNovaTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"}):undefined} aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}}):undefined} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
                 : <EsqueletoPainel rotulo="oportunidades" />
             : detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
               : detalhesDoContato.dado ? <AbaDetalhes dados={detalhesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { verContato: false, verEmpresa: false }} aoAbrirOportunidades={() => setAbaDoContato({ atendimentoId: selecionado, id: "oportunidades" })} />
@@ -557,7 +574,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         )}
       </section>
 
-      {selecionado && <PainelContato aoEditar={podeEditarContato ? () => { setPerdaOportunidade(p => ({ ...p, aberta: false })); setEdicaoContato({ atendimentoId: selecionado, aberta: true }); } : undefined} contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
+      {selecionado && <PainelContato aoEditar={podeEditarContato ? () => { setModalTarefa(null); setPerdaOportunidade(p => ({ ...p, aberta: false })); setEdicaoContato({ atendimentoId: selecionado, aberta: true }); } : undefined} contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
         subtitulo: detalhesComerciais ? painelDoAberto?.dado?.cabecalho?.subtitulo ?? "" : rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade) + " · " + atual.numeroRotulo,
         tags: painelDoAberto?.dado?.tags ?? [], quadrado: detalhesComerciais && painelDoAberto?.dado?.cabecalho?.quadrado === true } : undefined}
         slotTags={painelDoAberto?.dado?.cabecalho?.pessoaId ? <TagsContato atendimentoId={selecionado} tags={painelDoAberto.dado.tags ?? []} disponiveis={painelDoAberto.dado.cabecalho.tagsDisponiveis}
@@ -568,6 +585,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           podeEditar={painelDoAberto.dado.acoes?.podeEditarNome === true} aoMudar={recarregarLista} /> : null}</> : undefined}
         abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => { if (abas.some(a => a.id === id)) setAbaDoContato({ atendimentoId: selecionado, id }); }} visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres" && !dialogoAberto}
         aoFechar={fecharPainel} focarAoAbrir={painelAberto === true} className={classesDoPainel(painelAberto, vista)}>{painel}</PainelContato>}
+      {tarefaAberta&&modalTarefa&&<ModalTarefa key={aberturaTarefa} atendimentoId={modalTarefa.atendimentoId} modo={modalTarefa.modo.tipo==="editar"&&tarefaAtualDoModal?{tipo:"editar",tarefa:{id:tarefaAtualDoModal.id,versao:tarefaAtualDoModal.versao}}:modalTarefa.modo} alvoDisponivel={modalTarefa.modo.tipo==="nova"||oportunidadesDoContato.dado===null||!!tarefaAtualDoModal&&tarefaAtualDoModal.podeAgir} fuso={fuso} aoFechar={()=>setModalTarefa(t=>t?.sessao===modalTarefa.sessao?null:t)} aoSalvo={()=>{if(selecionadoRef.current===modalTarefa.atendimentoId&&sessaoTarefa.current===modalTarefa.sessao){setModalTarefa(null);recarregarLista();}}}/>}
       {perdaAberta && perdaOportunidade.atendimentoId && perdaOportunidade.id && <ModalPerda key={perdaOportunidade.sessao} oportunidadeId={perdaOportunidade.id} nome={perdaOportunidade.nome}
         acao={i => marcarPerdidoNoInbox(perdaOportunidade.atendimentoId!, i, perdaOportunidade.id!)}
         aoConcluir={() => { if (selecionadoRef.current === perdaOportunidade.atendimentoId) recarregarLista(); }}
