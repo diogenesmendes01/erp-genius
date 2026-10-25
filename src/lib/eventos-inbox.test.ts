@@ -256,3 +256,6 @@ describe("B1 — fonte física definitivamente encerrada", () => {
     expect(fontes.every(f => f.fechada)).toBe(true);
   });
 });
+
+
+it("aria.global usa a mesma fonte compartilhada e respeita unsubscribe",()=>{const f=new FonteFalsa(),a=vi.fn(),b=vi.fn(),criar=vi.fn(()=>f),g={tipo:"aria.global",atendimentoId:null,mensagemId:null,conversaId:""};const sairA=assinarEventosCompartilhados(a,vi.fn(),criar),sairB=assinarEventosCompartilhados(b,vi.fn(),criar);try{expect(criar).toHaveBeenCalledTimes(1);expect(f.listeners.has("aria.global")).toBe(true);f.emitir("aria.global",JSON.stringify(g));expect(a).toHaveBeenCalledWith(g);expect(b).toHaveBeenCalledWith(g);sairA();f.emitir("aria.global",JSON.stringify(g));expect(a).toHaveBeenCalledTimes(1);expect(b).toHaveBeenCalledTimes(2);}finally{sairA();sairB();}expect(f.fechada).toBe(true);f.emitir("aria.global",JSON.stringify(g));expect(b).toHaveBeenCalledTimes(2);});
