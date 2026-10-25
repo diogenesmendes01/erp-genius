@@ -5,7 +5,9 @@
   "dependencia349": {
     "pr": 424,
     "fonte": "23fb69f001fb05ba6df49e884b8260058e00de6f",
-    "mergeada": false
+    "mergeada": true,
+    "mergeMain": "7c880a81eedea7d6c9fc4167b8d7bad310c63586",
+    "headDocumental349": "25a886697b129851c4bc9973c463b1720bb29d0e"
   },
   "parecer": {
     "path": "codigo-6fe.md",
@@ -49,7 +51,7 @@
     "RecortesDEV/TESTER/ROOT sobrepostos não são somados.",
     "Visual N/A, produtorDTO/refatoração de rótulos; consumidor352 ainda pendente.",
     "Função podeVerLeadNaThread completa tem633bytes;bodyASTisolado478bytes.",
-    "Composição e gates originaisROOT aprovados nominalmente em e899. CI/full351,publicação/revisãofinal e dependência349 permanecem pendentes."
+    "Gates originaisROOT nominaise899 aprovados;349 integradaMain7c88. CI do novoheadMain/fullF99/revisãofinal e merge351 permanecem pendentes."
   ],
   "gatesRoot": {
     "UNITglobal": {
@@ -79,5 +81,10 @@
       "erros": 0,
       "avisosHerdados": 40
     }
+  },
+  "integracaoMain349": {
+    "manifesto": "composicao-main349.json",
+    "runtimeNominal": "f99fa9a71bf79c7a0771b7811866d02f7d407424",
+    "semDeltaExecutavel": true
   }
 }

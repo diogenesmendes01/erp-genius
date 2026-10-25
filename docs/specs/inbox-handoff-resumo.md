@@ -43,3 +43,7 @@ A fontef95688f7 incorpora34923fb eMain170edbad;12SRC351 são byteiguais aoDEV/QA
 
 ### Gates originais da fonte integrada e899cef2
 ROOT aprovou a regressão UNIT global:941arquivos/7.483testes,448,67s,doisworkers,sem filtro/skips na configuração unitária que excluiINT (sessão53058/terminalc68959,saída0). TypeScript ORIGINAL sem exclusões/incremental,heap8192MB:85065/e8c411,saída0. Lint GLOBAL43255/98c001,saída0,zero erros/40avisos herdados. Os13SRC do manifesto foram conferidos no commit e899cef25252452614a73b46303c444c8ba8e51e:12iguais aoDEV6fe e fixture adicional com4defaults completos. Nenhuma fonte mudou durante os gates. A dependência349 ainda aguarda integração completa/merge;CI/full351 e revisão final continuam separadas.
+
+
+### Dependência349 integrada em main
+A PR424 foi mergeada em7c880a81eedea7d6c9fc4167b8d7bad310c63586. A composição351 incorpora essaMain, preservando toda a árvore executávelf99fa9a7:os conflitos de squash foram resolvidos mantendo os quatro arquivos351 já testados e a documentação349 atual. O quadroMain permanece integral, com o bloco351 unido. [Identidade](../../output/inbox-351-qa/composicao-main349.json). Não houve mudança de função/ACL/schema/dependência nem repetição dos gates de código. Full35140145615424 segue nominalf99 e está emcurso;CI final será conferida após retarget paraMain.

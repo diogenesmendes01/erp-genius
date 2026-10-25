@@ -100,5 +100,24 @@
       "erros": 0,
       "avisosHerdados": 40
     }
+  },
+  "atualizacaoFinal": {
+    "fonte": "23fb69f001fb05ba6df49e884b8260058e00de6f",
+    "ci": "ci-23fb.json",
+    "jobsRapidos": 5,
+    "unitPorFuso": {
+      "arquivos": 939,
+      "testes": 7457
+    },
+    "shardsFull": 4,
+    "INT": {
+      "arquivos": 350,
+      "testes": 3128,
+      "arquivosOptInIgnorados": 3,
+      "testesOptInIgnorados": 4
+    },
+    "revisaoEstatica": "https://github.com/diogenesmendes01/erp-genius/pull/424#issuecomment-6391146451",
+    "comentariosR1": "https://github.com/diogenesmendes01/erp-genius/pull/424#issuecomment-6391093940",
+    "limite": "Código aprovado;CI do filho somente documental e merge serão conferidos antes do fechamento."
   }
 }

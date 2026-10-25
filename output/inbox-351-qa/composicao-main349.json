@@ -1,0 +1,99 @@
+{
+  "mainIntegrada": "7c880a81eedea7d6c9fc4167b8d7bad310c63586",
+  "dependencia349Mergeada": true,
+  "fonteRuntimeNominal": "f99fa9a71bf79c7a0771b7811866d02f7d407424",
+  "paths351": [
+    {
+      "path": "src/app/(app)/aria/_componentes/Playground.tsx",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 6382,
+      "sha256": "f4603076dd6f95ae9cf629ac509bfb1a0d27b2600990f99153678a3ea9cc1b40"
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelAtendimento.aria.test.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 3556,
+      "sha256": "cb379416c9a96b4eab1e26ab4892eb93446f496e52137f0e04653bdf3f9b4a70"
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 173190,
+      "sha256": "1f646f2fffe9f490d8b0549ae998a3362b6a1c2205a1fd29cc604881ae2660da"
+    },
+    {
+      "path": "src/lib/labels.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 32426,
+      "sha256": "3661b5312b63aff7c782ade2bcd934182b16763216b6ebfbb70e1d1a70aaefa8"
+    },
+    {
+      "path": "src/server/aria/handoff-inbox.int.test.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 17295,
+      "sha256": "00fbb86009e76c6188dc7aa13f7fbb2a17656e026fe06a3f861987407e95f995"
+    },
+    {
+      "path": "src/server/aria/handoff-inbox.test.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 1952,
+      "sha256": "770010bdb16087e5590d311b93c021832587bc0d836a9726762e98916c364588"
+    },
+    {
+      "path": "src/server/aria/handoff-inbox.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 7448,
+      "sha256": "76b10f1de93af4a6baf1e54a53f0a23aa7443f5cafbe3df1ccb2ccce8a6b5edd"
+    },
+    {
+      "path": "src/server/aria/turno/handoff.test.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 1857,
+      "sha256": "83a70272f8fad3f9f25f19bb988d9aa947152af6b8302ce27ec3031132f4ba94"
+    },
+    {
+      "path": "src/server/aria/turno/handoff.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 7338,
+      "sha256": "1ea4d7187ef04ec707e61fbc1ed460c37003f85d1640a47fe2cdbfbcdd38d2f6"
+    },
+    {
+      "path": "src/server/whatsapp/consultas-inbox.aria.int.test.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 13155,
+      "sha256": "df73deb3273c1a3b1b610446c87f3a1a2c5c10dcddb869a720713a5a876126db"
+    },
+    {
+      "path": "src/server/whatsapp/consultas-inbox.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 19251,
+      "sha256": "72f33d17a603641b6403812ccf42a38ad13fc6ea4151b98cf1401a38794cbb79"
+    },
+    {
+      "path": "src/server/whatsapp/visibilidade-lead.ts",
+      "fonte": "6fe007f3baa860c8eb0fff8b5ee523e08d1ac24e",
+      "bytes": 1098,
+      "sha256": "6bca255bc36ad8e07ea0d11c6ff61642a0c771fc7e5c9d2f8161cfa5baaf7a31"
+    },
+    {
+      "path": "src/server/inbox/paineis.int.test.ts",
+      "fonte": "DeltaROOT dequatro defaults handoff:null sobre349corrigida",
+      "bytes": 22181,
+      "sha256": "104227f35227cffa67cfe9e48b34cf1e38232edbc38499adee6d7ad01c6ab1e4"
+    }
+  ],
+  "conflitosResolvidos": {
+    "fonte": "quatroarquivos351 mantidosf99;Main349runtimeidêntico23fb",
+    "docs": "349adotadosMain7c88;quadroMainintegral+bloco351"
+  },
+  "limite": "Toda árvoresrc/scripts/prisma/workflows/packages igualF99. Conflitos por ancestry de squash resolvidos por identidade, sem mudança executável. FullF99 emcurso;CIbaseMainapósretarget obrigatória.",
+  "objetosDoEscopoPreservados": 3579,
+  "escopo": [
+    "src",
+    "scripts",
+    "prisma",
+    ".github",
+    "package.json",
+    "package-lock.json"
+  ]
+}

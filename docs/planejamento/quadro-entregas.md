@@ -6859,6 +6859,17 @@ BaseMain170edbad. Merge5b50cb4b+correção d9b1b08e (origem14337900),oito pathsS
 Atualização dos gates da composição: TypeScript original terminou com código0 (sessão28227,terminala6beb3), sem exclusões auxiliares e sem incremental. Lint global terminou0 (sessão42789,terminal5d9ca8), zero erros e40avisos herdados. Nenhuma fonte foi alterada durante essas execuções. CI e integração completa da nova composição permanecem pendentes.
 
 
+## #349 — código e integração completa aprovados
+
+
+### Integração completa aprovada no código23fb
+A nova integração40144382961 terminou com quatro shards aprovados:350arquivos/3.128testes;trêsarquivos/quatrotestes opt-in ignorados, declarados separadamente. Terminal32578/3fce24 EXIT0 e conferência45436/a19dd2 EXIT0. CI rápida40144356996 também aprovada5/5,939arquivos/7.457UNIT em cada fuso. [Registro dos jobs e fontes](../../output/inbox-349-qa/ci-23fb.json).
+
+O negativo anteriorb292 continua preservado com suas duas falhas;os quatro literais completos foram corrigidos e a nova execução combinada incluiMain343/423. Revisão independente23fb favorável e comentáriosR1C1–C6 tratados. Este fechamento altera somente documentação;as oito fontes/testes permanecem23fb. A CI do filho documental e o merge serão conferidos antes de encerrar349.
+
+
+
+
 
 
 ## Inbox #351 — resumo de handoff no servidor DEV — 24/10/2026
@@ -6886,3 +6897,10 @@ A fontef95688f7 incorpora34923fb eMain170edbad;12SRC351 são byteiguais aoDEV/QA
 
 ### Gates originais da fonte integrada e899cef2
 ROOT aprovou a regressão UNIT global:941arquivos/7.483testes,448,67s,doisworkers,sem filtro/skips na configuração unitária que excluiINT (sessão53058/terminalc68959,saída0). TypeScript ORIGINAL sem exclusões/incremental,heap8192MB:85065/e8c411,saída0. Lint GLOBAL43255/98c001,saída0,zero erros/40avisos herdados. Os13SRC do manifesto foram conferidos no commit e899cef25252452614a73b46303c444c8ba8e51e:12iguais aoDEV6fe e fixture adicional com4defaults completos. Nenhuma fonte mudou durante os gates. A dependência349 ainda aguarda integração completa/merge;CI/full351 e revisão final continuam separadas.
+
+
+## #351 — dependência349 mergeada e retargetMain
+
+
+### Dependência349 integrada em main
+A PR424 foi mergeada em7c880a81eedea7d6c9fc4167b8d7bad310c63586. A composição351 incorpora essaMain, preservando toda a árvore executávelf99fa9a7:os conflitos de squash foram resolvidos mantendo os quatro arquivos351 já testados e a documentação349 atual. O quadroMain permanece integral, com o bloco351 unido. [Identidade](../../output/inbox-351-qa/composicao-main349.json). Não houve mudança de função/ACL/schema/dependência nem repetição dos gates de código. Full35140145615424 segue nominalf99 e está emcurso;CI final será conferida após retarget paraMain.
