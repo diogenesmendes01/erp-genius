@@ -1,4 +1,4 @@
-import {afterAll,beforeEach,expect,it,vi} from "vitest";
+import {afterAll,afterEach,beforeEach,expect,it,vi} from "vitest";
 import {Prisma} from "@prisma/client";
 const {authMock}=vi.hoisted(()=>({authMock:vi.fn()}));
 vi.mock("@/server/_shared/sessao",async original=>{const real=await original<typeof import("@/server/_shared/sessao")>();return {...real,exigirSessao:async()=>{const s=await authMock(),u=await real.carregarUsuarioFresco(s.user.id);if(!u)throw new real.ErroAutenticacao();return u;}};});
@@ -6,9 +6,12 @@ vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 import {prisma} from "@/lib/prisma";
 import {truncarBanco,configurarFusoDaEscola} from "@/test/integracao";
 import {cenarioPerda328} from "@/test/inbox-perda";
-import {dadosModalTarefaNoInbox,criarTarefaNoInbox,concluirTarefaNoInbox,reabrirTarefaNoInbox} from "@/server/inbox/acoes-painel";
-import {materializarRecorrenciaTarefa} from "./tarefa-recorrencia-materializacao";
-beforeEach(truncarBanco);afterAll(()=>prisma.$disconnect());
+import {dadosModalTarefaNoInbox,criarTarefaNoInbox,concluirTarefaNoInbox,reabrirTarefaNoInbox,editarTarefaNoInbox} from "@/server/inbox/acoes-painel";
+import {materializarRecorrenciaTarefa,rodarRecorrenciasTarefas} from "./tarefa-recorrencia-materializacao";
+import * as eventos338 from "@/server/_shared/evento";
+import {rodarLembretesTarefas} from "./lembretes";
+beforeEach(async()=>{vi.restoreAllMocks();vi.stubGlobal("fetch",vi.fn(async()=>{throw Error("Fetch externo proibido338");}));await truncarBanco();});
+afterEach(()=>{try{expect(fetch).not.toHaveBeenCalled();}finally{vi.unstubAllGlobals();}});afterAll(()=>prisma.$disconnect());
 async function cenario(){
  const c=await cenarioPerda328();await configurarFusoDaEscola("UTC");authMock.mockResolvedValue({user:{id:c.dono.id}});
  const d=await dadosModalTarefaNoInbox(c.a.id);if(!d.ok||!d.dado)throw new Error("Canário de contexto recusado");
@@ -63,4 +66,20 @@ it("CHECKsnapshot rejeita ausente/null/string/array/versão errada sem classific
  expect(await prisma.intencaoRecorrenciaTarefa.count()).toBe(0);
  await prisma.intencaoRecorrenciaTarefa.create({data:{tarefaId:c.tid,conclusaoVersao:1,corteEm:new Date("2030-01-01T00:00:00Z"),snapshot:{versao:1} as Prisma.InputJsonValue,atualizadaEm:new Date()}});
  expect(await prisma.intencaoRecorrenciaTarefa.count()).toBe(1);
+});
+it("458 C1 snapshot v1 inválido não bloqueia intenção saudável nem lembrete independente",async()=>{
+ const a=await cenario(),ia=await concluir(a),b=await cenario(),ib=await concluir(b);await prisma.intencaoRecorrenciaTarefa.update({where:{id:ia.id},data:{snapshot:{versao:1}}});
+ const lembrete=await prisma.tarefa.create({data:{titulo:"Lembrete independente458",tipo:"OUTRO",setor:"COMERCIAL",responsavelId:b.dono.id,fusoOrigem:"UTC",lembrarEm:new Date("2030-01-01T00:00:00Z")}});
+ expect(await rodarRecorrenciasTarefas({agora:()=>new Date("2030-02-01T00:00:00Z")})).toEqual({criadas:1});expect((await prisma.intencaoRecorrenciaTarefa.findUniqueOrThrow({where:{id:ia.id}})).estado).toBe("IMPEDIDA_CONTEXTO");expect(await prisma.tarefa.count({where:{recorrenciaAnteriorId:a.tid}})).toBe(0);expect((await prisma.evento.findFirstOrThrow({where:{tipo:"RecorrenciaTarefaImpedida",agregadoId:a.tid}})).payload).toMatchObject({intencaoId:ia.id,codigo:"SNAPSHOT_INVALIDO"});expect((await prisma.intencaoRecorrenciaTarefa.findUniqueOrThrow({where:{id:ib.id}})).estado).toBe("MATERIALIZADA");
+ expect(await rodarLembretesTarefas(new Date("2030-02-01T00:00:00Z"))).toEqual({notificadas:1});expect(await prisma.notificacaoUsuario.count({where:{refId:lembrete.id}})).toBe(1);expect(await rodarRecorrenciasTarefas()).toEqual({criadas:0});expect(await prisma.tarefa.count({where:{recorrenciaAnteriorId:b.tid}})).toBe(1);
+});
+it("458 C1 falha SQL após Evento de impedimento reverte A e permite materialização B",async()=>{
+ const a=await cenario(),ia=await concluir(a),b=await cenario(),ib=await concluir(b);await prisma.intencaoRecorrenciaTarefa.update({where:{id:ia.id},data:{snapshot:{versao:1}}});const falha=Error("falha pós Evento impedimento458"),real=eventos338.registrarEvento;
+ const spy=vi.spyOn(eventos338,"registrarEvento").mockImplementation(async(...args)=>{const r=await real(...args);if(args[1].tipo==="RecorrenciaTarefaImpedida"&&args[1].agregadoId===a.tid)throw falha;return r;});
+ try{await expect(rodarRecorrenciasTarefas({agora:()=>new Date("2030-02-01T00:00:00Z")})).rejects.toBe(falha);expect((await prisma.intencaoRecorrenciaTarefa.findUniqueOrThrow({where:{id:ia.id}})).estado).toBe("PENDENTE");expect(await prisma.evento.count({where:{tipo:"RecorrenciaTarefaImpedida",agregadoId:a.tid}})).toBe(0);expect((await prisma.intencaoRecorrenciaTarefa.findUniqueOrThrow({where:{id:ib.id}})).estado).toBe("MATERIALIZADA");expect(await prisma.tarefa.count({where:{recorrenciaAnteriorId:a.tid}})).toBe(0);expect(await prisma.tarefa.count({where:{recorrenciaAnteriorId:b.tid}})).toBe(1);}finally{spy.mockRestore();}
+ expect(await rodarRecorrenciasTarefas()).toEqual({criadas:0});expect(await prisma.tarefa.count({where:{recorrenciaAnteriorId:b.tid}})).toBe(1);
+});
+it("458 C3 editar ocorrência muda hora local mas próxima mantém calendário original",async()=>{
+ const c=await cenario(),d=await dadosModalTarefaNoInbox(c.a.id,c.tid),t=await prisma.tarefa.findUniqueOrThrow({where:{id:c.tid}});if(!d.ok||!d.dado)throw Error("Canário de edição recusado");expect(await editarTarefaNoInbox(c.a.id,c.tid,t.versao,{dataCivil:"2030-02-28",hora:"11:00",vinculo:"manter",contextoEsperado:d.dado.contextoIdentidadeEsperada,fusoEscolaEsperado:"UTC"})).toEqual({ok:true});
+ expect(await prisma.tarefa.findUniqueOrThrow({where:{id:c.tid}})).toMatchObject({dataCivil:"2030-02-28",inicioEm:new Date("2030-02-28T11:00:00Z"),recorrenciaAncoraDataCivil:"2030-01-31",recorrenciaAncoraHora:"09:00"});const i=await concluir(c),r=await materializarRecorrenciaTarefa(i.id,{agora:()=>new Date("2030-03-01T00:00:00Z")});if(r.tipo!=="CRIADA")throw Error("Filho da ocorrência editada ausente");expect(await prisma.tarefa.findUniqueOrThrow({where:{id:r.tarefaId}})).toMatchObject({dataCivil:"2030-03-31",inicioEm:new Date("2030-03-31T09:00:00Z"),recorrenciaAncoraHora:"09:00"});
 });
