@@ -93,10 +93,10 @@ export async function editarPais(id: string, input: PaisInput): Promise<Resultad
     }
 
     await prisma.$transaction(async (tx) => {
-      const atuais = await tx.tipoDocumento.findMany({ where: { paisId: id }, include: { _count: { select: { alunos: true } } } });
+      const atuais = await tx.tipoDocumento.findMany({ where: { paisId: id }, include: { _count: { select: { alunos: true, pessoas: true } } } });
       const plano = planejarTiposDocumento(atuais, dados.tiposDocumento);
       if (plano.remover.length) {
-        const removidos = await tx.tipoDocumento.deleteMany({ where: { paisId: id, id: { in: plano.remover }, alunos: { none: {} } } });
+        const removidos = await tx.tipoDocumento.deleteMany({ where: { paisId: id, id: { in: plano.remover }, alunos: { none: {} }, pessoas: { none: {} } } });
         if (removidos.count !== plano.remover.length) throw new ErroRegra("Um tipo passou a ser utilizado. Atualize a página e tente novamente.");
       }
       for (const tipo of plano.atualizar) {

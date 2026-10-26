@@ -1,6 +1,6 @@
 import { ErroRegra } from "@/server/_shared/sessao";
 
-type TipoAtual = { id: string; nome: string; validador: string; _count: { alunos: number } };
+type TipoAtual = { id: string; nome: string; validador: string; _count: { alunos: number; pessoas: number } };
 type TipoInformado = { id?: string; nome: string; validador: string };
 
 /** Preserva IDs de documentos e aceita formulários antigos apenas quando a identidade é inequívoca. */
@@ -22,5 +22,7 @@ export function planejarTiposDocumento(atuais: TipoAtual[], informados: TipoInfo
   const remover = atuais.filter((a) => !usados.has(a.id));
   if (remover.some((a) => a._count.alunos > 0))
     throw new ErroRegra("Não é possível excluir tipo de documento usado por alunos. Preserve o tipo e seu histórico.");
+  if (remover.some((a) => a._count.pessoas > 0))
+    throw new ErroRegra("Não é possível excluir tipo de documento usado por pessoas. Preserve o tipo e seu histórico.");
   return { atualizar, criar, remover: remover.map((a) => a.id) };
 }

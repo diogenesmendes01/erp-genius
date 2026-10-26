@@ -1,6 +1,7 @@
 "use client";
+import {formatarDataCivil} from "@/lib/data-civil";
 
-import { useState } from "react";
+import { useLayoutEffect,useRef,useState } from "react";
 import Link from "next/link";
 import { hrefConversa } from "@/lib/href-conversa";
 import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
@@ -126,6 +127,16 @@ function FichaCorpo({
   const [cidade, setCidade] = useState(d.cidade ?? "");
   const [cargo, setCargo] = useState(d.cargo ?? "");
   const [linkedin, setLinkedin] = useState(d.linkedin ?? "");
+  const [cadastroOriginal]=useState(d.cadastroPessoa);
+  const [cadastro,setCadastro]=useState(()=>d.cadastroPessoa?{documento:d.cadastroPessoa.documento??"",tipoDocumentoId:d.cadastroPessoa.tipoDocumentoId??"",documentoPaisEmissor:d.cadastroPessoa.documentoPaisEmissor??"",nascimento:d.cadastroPessoa.nascimento??""}:null);
+  const [cadastroInvalidado,setCadastroInvalidado]=useState(false);
+  const podeVerCadastro=!!d.cadastroPessoa&&!!d.informacoesCadastro&&pode("contatos.ver");
+  const cadastroEditavel=podeVerCadastro&&podeEditar&&d.informacoesCadastro?.catalogo!==null;
+  if(cadastroOriginal&&!cadastroEditavel&&!cadastroInvalidado)setCadastroInvalidado(true);
+  const podeEditarCadastro=cadastroEditavel&&!cadastroInvalidado&&!!cadastro;
+  const sessaoCadastro=useRef({vivo:true,pode:podeEditarCadastro,ocupado:acao.ocupado,geracao:0});
+  useLayoutEffect(()=>{const s=sessaoCadastro.current;s.vivo=true;return()=>{s.vivo=false;s.pode=false;s.geracao++;};},[]);
+  useLayoutEffect(()=>{const s=sessaoCadastro.current;if(s.pode&&!podeEditarCadastro)s.geracao++;s.pode=podeEditarCadastro;s.ocupado=acao.ocupado;},[podeEditarCadastro,acao.ocupado]);
   const [tagNova, setTagNova] = useState("");
   const [nota, setNota] = useState("");
   const [motivoOptOut, setMotivoOptOut] = useState("");
@@ -155,9 +166,28 @@ function FichaCorpo({
     }
   }
 
+  function mudarCadastro(campo:"documento"|"tipoDocumentoId"|"documentoPaisEmissor"|"nascimento",valor:string){
+    const s=sessaoCadastro.current;
+    if(s.vivo&&s.pode&&!s.ocupado)setCadastro(atual=>atual?{...atual,[campo]:valor}:atual);
+  }
   async function salvarDados() {
+    const patchCadastro:Record<string,string|null>={};
+    if(podeEditarCadastro&&cadastro&&cadastroOriginal){
+      for(const campo of ["documento","tipoDocumentoId","documentoPaisEmissor","nascimento"] as const){const valor=cadastro[campo].trim()||null;if(valor!==cadastroOriginal[campo])patchCadastro[campo]=valor;}
+    }
+    if(Object.keys(patchCadastro).length){
+      const s=sessaoCadastro.current;if(!s.vivo||!s.pode||s.ocupado)return;
+      const geracao=s.geracao;s.ocupado=true;acaoNota.limpar();
+      try{
+        const r=await acao.executar(()=>editarPessoaDaFicha(d.id,{nome,email:email||null,cidade:cidade||null,cargo:cargo||null,linkedin:linkedin||null,...patchCadastro}));
+        if(!s.vivo)return;
+        if(s.geracao!==geracao||!s.pode){acao.limpar();return;}
+        if(r?.tipo==="ok"){acao.setSucesso("Dados salvos.");router.refresh();}
+      }finally{if(s.geracao===geracao)s.ocupado=false;}
+      return;
+    }
     await rodar(
-      () => editarPessoaDaFicha(d.id, { nome, email: email || null, cidade: cidade || null, cargo: cargo || null, linkedin: linkedin || null }),
+      () => editarPessoaDaFicha(d.id, { nome, email: email || null, cidade: cidade || null, cargo: cargo || null, linkedin: linkedin || null,...patchCadastro }),
       "Dados salvos.",
     );
   }
@@ -248,6 +278,13 @@ function FichaCorpo({
             <Linha rotulo="Cidade">{d.cidade ?? "Não informada"}</Linha>
             <Linha rotulo="Cargo">{d.cargo ?? "Não informado"}</Linha>
             <Linha rotulo="Origem">{d.origemCanal ? ORIGEM_CANAL_LABEL[d.origemCanal] : "Não informada"}</Linha>
+            {podeVerCadastro&&<>
+              <Linha rotulo="Documento pessoal">{d.cadastroPessoa!.documento??"Não informado"}</Linha>
+              <Linha rotulo="Tipo de documento">{d.informacoesCadastro!.documento?.tipoNome??"Não informado"}</Linha>
+              <Linha rotulo="País emissor">{d.cadastroPessoa!.documentoPaisEmissor??"Não informado"}</Linha>
+              <Linha rotulo="Nascimento">{formatarDataCivil(d.cadastroPessoa!.nascimento)}</Linha>
+              <Linha rotulo="Idade">{d.informacoesCadastro!.idade===null?"—":`${d.informacoesCadastro!.idade} anos`}</Linha>
+            </>}
             <Linha rotulo="Cadastrado em">{dataHora(d.criadoEm, preferenciaFusoExibicao, fuso)}</Linha>
           </dl>
 
@@ -305,6 +342,14 @@ function FichaCorpo({
               <Campo rotulo="Cidade">{(campo) => <input {...campo} className={CONTROLE} value={cidade} maxLength={120} onChange={(e) => setCidade(e.target.value)} />}</Campo>
               <Campo rotulo="Cargo">{(campo) => <input {...campo} className={CONTROLE} value={cargo} maxLength={120} onChange={(e) => setCargo(e.target.value)} />}</Campo>
               <Campo rotulo="LinkedIn">{(campo) => <input {...campo} className={CONTROLE} value={linkedin} maxLength={300} onChange={(e) => setLinkedin(e.target.value)} />}</Campo>
+              {podeEditarCadastro&&cadastro&&<fieldset className="space-y-3">
+                <legend className="text-sm font-medium">Cadastro pessoal</legend>
+                <Campo rotulo="Documento pessoal">{campo=><input {...campo} name="documento" className={CONTROLE} value={cadastro.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)}/>}</Campo>
+                <Campo rotulo="Tipo de documento">{campo=><select {...campo} name="tipoDocumentoId" className={CONTROLE} value={cadastro.tipoDocumentoId} disabled={acao.ocupado} onChange={e=>mudarCadastro("tipoDocumentoId",e.target.value)}><option value="">Sem tipo</option>{d.informacoesCadastro?.catalogo?.map(t=><option key={t.id} value={t.id}>{t.pais.nome} · {t.nome}</option>)}</select>}</Campo>
+                <Campo rotulo="País emissor (ISO)">{campo=><input {...campo} name="documentoPaisEmissor" className={CONTROLE} value={cadastro.documentoPaisEmissor} maxLength={2} disabled={acao.ocupado} onChange={e=>mudarCadastro("documentoPaisEmissor",e.target.value)}/>}</Campo>
+                <Campo rotulo="Nascimento">{campo=><input {...campo} name="nascimento" type="date" min="0001-01-01" max="9999-12-31" className={CONTROLE} value={cadastro.nascimento} disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)}/>}</Campo>
+                {d.cadastroPessoa?.documento&&!d.informacoesCadastro?.documento?.validado&&<p className="text-sm text-gray-600">Documento não validado. Confira o número e o tipo informado.</p>}
+              </fieldset>}
               <Botao type="submit" tamanho="lg" disabled={acao.ocupado}>Salvar dados</Botao>
             </form>
           )}
