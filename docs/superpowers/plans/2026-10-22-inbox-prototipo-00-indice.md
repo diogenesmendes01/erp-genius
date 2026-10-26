@@ -45,7 +45,7 @@ Enquanto uma decisão estiver aberta, vale a **regra atual do ERP** (coluna "Pad
 | D9 | Nova conversa por número: quem, em quais números, qual template? | Fluxo atual de "Abrir atendimento" | E4 |
 | D10 | Tarefa no Inbox: prioridade baixa, lembretes, recorrência, "notificar também"; excluir ou cancelar com motivo? | Campos atuais de `criarTarefa`; cancelar com motivo | E2 |
 | D11 | Agendamento: "perguntar se o contato responder", anexo, vínculo, editar, enviar agora? Exige ter assumido? | Campos atuais; não exige ter assumido | E4 |
-| D12 | Insights entram? Quando? Quais campos? | Fora | E4 |
+| D12 | Insights entram? Quando? Quais campos? | Respondida: Insights completos com IA sob demanda pelo botão Atualizar, data da geração e aviso de mensagens não analisadas. Rascunho e Escrever com Aria reutilizam o mesmo texto sugerido; responder continua sujeito a Assumir. Decisão canônica em `docs/planejamento/inbox-decisoes-produto.md`. | E4 |
 | D13 | Painel mostra telefone, e-mail e CPF em todos os setores? Criar CPF e idade na Pessoa? Abas em conversa não comercial? | Regra 5 (sem telefone no pedagógico); sem CPF/idade na Pessoa; abas comerciais só na finalidade comercial | E2 |
 | D14 | Oportunidade, contato e tarefa abrem em gaveta dentro do Inbox ou navegam para fora? | Gaveta dentro do Inbox para edição rápida; "Abrir ficha completa" navega | E2 |
 | D15 | Bloquear contato: Admin e gerentes, com motivo (doc 03)? | Doc 03 | E1 |

@@ -427,7 +427,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   if (edicaoContato.atendimentoId !== selecionado) setEdicaoContato({ atendimentoId: selecionado, aberta: false });
   const podeEditarContato = atual?.finalidade === "COMERCIAL" && painelDoAberto?.dado?.acoes != null && !!painelDoAberto.dado.cabecalho?.pessoaId && painelDoAberto.dado.cabecalho.capacidades.editarContato;
   const editorAberto = !!selecionado && podeEditarContato && edicaoContato.atendimentoId === selecionado && edicaoContato.aberta;
-  const abas = abasDoPainel(atual?.finalidade ?? "", { atividade: painelDoAberto?.dado?.cabecalho?.contadorAtividade }).filter(a=>a.id!=="insights"||!atual?.grupo&&painelDoAberto?.dado?.cabecalho?.capacidades.veLead===true);
+  const podeUsarInsights = atual?.finalidade === "COMERCIAL" && !atual.grupo && painelDoAberto?.acessoRevogado !== true && painelDoAberto?.dado?.cabecalho?.capacidades.veLead === true;
+  const abas = abasDoPainel(atual?.finalidade ?? "", { atividade: painelDoAberto?.dado?.cabecalho?.contadorAtividade }).filter(a=>a.id!=="insights"||podeUsarInsights);
   const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
   const detalhesComerciais = atual?.finalidade === "COMERCIAL" && !atual.grupo;
   // A aba Detalhes e o editor compartilham uma única aquisição por contexto.
@@ -614,6 +615,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             pedidoNota={notaSolicitada?.id===selecionado?notaSolicitada.pedido:undefined}
             aoPortaRascunhoInsight={publicarPortaRascunhoInsight}
             versaoInsights={versaoPainel}
+            podeUsarInsights={podeUsarInsights}
             tarefaEmEdicaoId={tarefaAberta&&modalTarefa?.origem==="fio"?idTarefaDoModal??undefined:undefined}
             aria={painelDoAberto?.dado?.aria}
             bloquearDecisoesAria={painelDoAberto?.acessoRevogado === true}
