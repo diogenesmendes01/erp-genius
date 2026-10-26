@@ -7940,3 +7940,12 @@ ROOTrestore final2680d9 EXIT0/A502566 confirmado. Mig499b108/schema/client/GP362
 ### PR #454 C1/C2 — decisão humana e composição pública R28
 
 Usuário decidiu recusar o documento quando um validador cadastrado reprovar o valor. Tipos desconhecidos/sem validador e documento opcional nulo continuam aceitos; valor fornecido é revalidado mesmo se igual ao histórico, enquanto campo omitido preserva dados antigos. Limite comum de100caracteres no servidor e formulários, sem restringir os documentos latino-americanos aCPF. Selecionados16arquivos do checkpoint274170a6 sobre a fonte pública, mais este quadro composto; nenhum ancestral privadoGP362, schema, migration499 ou dependência importados. DEV175UNIT e38nativos/8arquivos passaram, conforme QA, com tentativa antiga pool1 explicitamente preservada e teste corrigido em lease posterior. São evidências DEV: QA independente desta composição e CI permanecem pendentes.
+
+
+### #362 — composição pública com cancelamento próprio do gerente pedagógico, R28
+
+Selecionados o servidor de agendadas do checkpointb76c94e5 e a extensão autorizada no checkpoint546cfedd sobre a PR454dd449ac. A correção SHARE da333 já está herdada, sem reaplicar sua política antiga sobre a exceção. Sem ancestrais privados, schema Prisma ou pacotes novos. Migrações501/502 mantêm os bytes reservados/aplicados no ambiente DEV e serão aplicadas explicitamente pelo integrador no ambiente de QA.
+
+A decisão humana permite ao gerente pedagógico ativo que criou uma intenção manual/HUMANO e continua responsável pela conversa cancelar o próprio agendamento pelo Inbox, com ACL de leitura fresca, sem exigir tarefas.ver. O CRM global conserva suas permissões. O painel e a action usam a mesma regra do núcleo, com revalidação após esperas; estado encerrado não acrescenta veto quando os critérios expressos continuam satisfeitos. IA, outro autor e perda de papel/atividade/responsável não entram na exceção.
+
+DEV confirmou113UNIT/7arquivos e24nativos completos no checkpoint final (aceite5,claim1,LISTEN7,ciclo11), além dos recortes históricos qualificados no QA. Os negativos reais comprovam recusa após perda de responsável/papel durante a espera pelo pai, sem Evento ou aviso da operação. Fontes, contagens e leases constam nos registros DEV; não são QA independente desta composição. BancoDEV restaurado pelo integrador. QA pública exata, regressões integradas e CI ainda pendentes; não concluirissue antecipadamente.

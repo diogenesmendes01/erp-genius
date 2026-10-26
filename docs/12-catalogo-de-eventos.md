@@ -125,6 +125,17 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `ConfigComercialAlterada` | Salvar a config comercial (auto-lead / saudação — fase doc 27 C1); agregado `ConfigComercial` | Gerente Com./Admin | `{ antes, depois }` (`antes: null` na 1ª materialização) |
 | `PoliticaComercialAlterada` | Salvar a régua comercial (lead-novo: estado/remetente/degraus — doc 27 C1); agregado `PoliticaComercial` | Gerente Com./Admin | `{ antes, depois }` |
 
+### Agendadas no atendimento (#362)
+
+| Evento | Gatilho | Quem | Payload |
+|---|---|---|---|
+| `MensagemAgendada` (`AtendimentoWhatsApp`) | Núcleo Inbox confirma criação HUMANO agendada | Responsável atual autorizado a enviar (D11) | `{ contexto: "inbox362", operacao: "CRIAR", intencaoId, atendimentoId, agendadaPara, numeroId, chaveIdempotencia?, entradaHash? }` |
+| `MensagemReagendada` (`AtendimentoWhatsApp`) | Núcleo Inbox confirma reagendamento ou torna elegível ao próximo ciclo | Responsável atual autorizado (D11), com autoria/equipe/Admin conforme policy da intenção; Admin não ignora Assumir | `{ contexto: "inbox362", operacao: "REAGENDAR" ou "ENVIAR_AGORA", intencaoId, atendimentoId, agendadaPara, numeroId, enviarAgora?: true, chaveIdempotencia?, entradaHash? }` |
+
+`MensagemReagendada` leva a marca (`chaveIdempotencia`, `entradaHash`) quando o chamador fornece chave. O hash inclui operação, atendimento e intenção; reagendar inclui o instante normalizado. Enviar agora não inclui o relógio variável no hash. O namespace existente é por autor e **tipo de Evento**: CRIAR e ALTERAR podem reutilizar a chave; REAGENDAR e ENVIAR_AGORA com a mesma chave conflitam entre si. Replay exato confirma ACL, responsável, binding, estado e intenção elegível atuais antes de devolver o recibo, sem outro Evento. O recibo histórico de criação mantém seu hash legado. Os caminhos CRM sem atendimento preservam seus próprios agregados/payloads.
+
+Evento e intenção são gravados na mesma transação; uma recusa da conferência final desfaz ambos. O aviso do fio é independente da marca de Evento: a migração502 observa INSERT/UPDATE de intenção agendada, inclusive IA/legado/despachante sem Evento, e publica apenas IDs após commit. Replay não escreve e rollback não publica. O wire compacto coincide com `JSON.stringify` do aviso manual333, permitindo a coalescência PostgreSQL no mesmo canal/transação; não há omissão por `motivoFalha` ou alteração do cancelamento333.
+
 > **6º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em: `AtendimentoTransferido`
 > (nos dois Eventos, origem e novo; hash de atendimento, destino, chave do destino e contexto), `MensagemWhatsAppEncaminhamentoIniciado`
 > (Evento novo, gravado antes da chamada ao motor; hash de mensagem e atendimento de destino. O desfecho entra numa
@@ -217,7 +228,7 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > tentativa reaproveita um envio ainda preparado, com `reaproveitado: true`; o reenvio com a mesma chave devolve o envio
 > original mesmo já despachado, e chave nova é reemissão deliberada). Em `NotaInterna` e `MensagemAgendada` do atendimento e em
 > `PromessaPagamento`, a busca da repetição vem antes das validações de estado: o reenvio tardio devolve o registro
-> já feito. Sem marca, por estado-alvo (o reenvio não grava Evento de novo): `DocumentoAnexado` (o mesmo upload) e
+> já feito. Para agendadas do Inbox #362, esse contrato histórico é subordinado às conferências atuais de D11/ACL/binding descritas acima. Sem marca, por estado-alvo (o reenvio não grava Evento de novo): `DocumentoAnexado` (o mesmo upload) e
 > `DocumentoArquivado` do `Lead`; `ContatoVinculado` de "criar oportunidade pela conversa"; `PoliticaComissaoPublicada`
 > (a última versão já é a pedida, do mesmo autor); `AgenteIARascunhoSalvo`, `AgenteIAPublicado` e
 > `AgenteIARascunhoDescartado`; `EmpresaEditada` com o mesmo cadastro; `PendenciaAcessoPortalAlunoEmailAusente`, `TrocaEmailPortalAlunoPreparada` e a decisão da troca.

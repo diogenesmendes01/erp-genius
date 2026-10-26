@@ -37,3 +37,8 @@ Uma contraprova com vendedor autorizado e a fixture328 existente comprovou o cic
 O teste de rollback mede a baseline depois do setup, que pode publicar um aviso no ambiente com ciclo genérico502. Mantém cancelamento com um aviso, replay sem aviso adicional e exige delta zero de avisos e Eventos no rollback, com status `PENDENTE`. Assim o teste não confunde o aviso válido do setup com uma publicação de transação revertida. A compatibilidade pré502 ainda será verificada no candidato público exato da443, sem depender da fonte362 ou da sua migração. [Evidências desta correção](../qa/inbox-333-cancelamento-share-r27.md).
 
 GP sem `tarefas.ver` no cancelamento continua aguardando decisão humana; esta correção não amplia sua alçada. QA pública independente e publicação permanecem sob coordenação do ROOT.
+
+
+## #362 — decisão humana de cancelamento pedagógico, R28
+
+A decisão pendente registrada na correção333 foi respondida pelo usuário: o gerente pedagógico ativo que criou o agendamento manual/HUMANO e permanece responsável pela conversa pode cancelar esse próprio agendamento pelo Inbox mesmo sem tarefas.ver. A extensão entra na composição da362 e exige ACL fresca da conversa e todas as verificações transacionais de estado, autoria, pertença, replay e CAS. A ausência de contexto dessa exceção conserva a política333 anterior; o CRM global não ganha permissões. O leitor do painel usa a mesma política. A conversa encerrada não impede a exceção por si só. Perda de atividade, papel ou responsável durante a espera deve recusar a operação sem Evento ou aviso de cancelamento.
