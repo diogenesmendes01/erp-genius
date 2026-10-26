@@ -811,3 +811,14 @@ describe("Campo nas telas", () => {
     expect(fonte).toMatch(/import \{[^}]*\bCampo\b[^}]*\} from "@\/components\/Campo"/);
   });
 });
+
+it("359 manifesto exige registro do motivo e detecta rótulo alterado sem exceção", () => {
+  const arquivo = "src/app/(app)/inbox/aria/InterruptorAria.tsx";
+  const fonte = readFileSync(arquivo, "utf8"), real = mapaDeCampos(fonte, arquivo);
+  expect(real).toEqual(["Motivo da pausa · obrigatório · input"]);
+  expect(MAPA_CAMPOS[arquivo]).toEqual(real);
+  const semRegistro = { ...MAPA_CAMPOS }; delete semRegistro[arquivo];
+  expect(real).not.toEqual(semRegistro[arquivo]);
+  expect(mapaDeCampos(fonte.replace('rotulo="Motivo da pausa"', 'rotulo="Outro motivo"'), arquivo)).not.toEqual(MAPA_CAMPOS[arquivo]);
+  expect(mapaDeCampos(fonte.replace('rotulo="Motivo da pausa" obrigatorio', 'rotulo="Motivo da pausa"'), arquivo)).not.toEqual(MAPA_CAMPOS[arquivo]);
+});
