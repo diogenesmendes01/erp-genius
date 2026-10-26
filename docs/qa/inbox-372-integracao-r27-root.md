@@ -77,3 +77,10 @@ A medição independente na produção pública da455 confirmou três ausências
 Selecionado o checkpoint localDEV e2ff47c4, limitado a sete arquivos. Os dois núcleos chamam um helper local antes das últimas verificações; replay sai antes da emissão. O helper publica os quatro campos IDs-only com serialização textual igual ao trigger legado, permitindo coalescência na mesma transação quando NULLMAP já notificou. Não toca PK, trigger aplicado, helper global compacto, política, UI, inbound, timeout, schema ou dependências.
 
 DEV reproduziuRED54(2falhas de chamada/52controles) e depois validou58UNIT, lint e TypeScript com código0. Oito nativos pós-fix estão autorados, incluindo falha e revogação após SQL real do aviso; ainda pendem execução. O recorte nativo próprio doDEV aguarda o banco ci-integracao reservado ao aceite432; a QA pública independente será executada em bancoTESTER. Esses papéis e fontes não são intercambiáveis. C4 ainda não é declarada concluída; QA de banco, regressões públicas, CI e visual permanecem pendentes.
+
+
+## #372 D9 e #361 C1 — contratos visuais e orientação do contato, R29
+
+A suíte global pública6cc5525 encontrou três falhas reais de contrato: controles novos fora do mapa, dois vazios sem o componente canônico e expressões antigas no mapa do Popover. Selecionados seis arquivos do checkpoint7caaad9c; os dois mapas foram compostos por blocos/hunks, preservando integralmente as sete linhas públicas de Insights/Doc. Nenhuma guarda, exceção, teto, schema ou dependência foi alterado. O fallback legado de telefone sem contato agora usa o texto aprovado, preservando o ramo novo por telefone.
+
+DEV confirmou154testes completos em cinco arquivos, lint e TypeScript com código0. C4 permaneceu congelado: seu recorte próprio oito casos passou948062 e o banco foi restaurado f3f060; na fonte pública6cc, TESTER confirmou8C4 mais18arquivos/78regressões, com restauração be0af1. O global6cc reprovado continua registrado; estes resultados não são uma aprovação global desta nova composição. A validação pública dos contratos e a repetição da suíte global ainda estão pendentes.
