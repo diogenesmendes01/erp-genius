@@ -7209,33 +7209,6 @@ DEV B na branch codex/inbox-e3-347-review-r1/base32c48333. C4 move role=status s
 
 RED b6e00b EXIT1:13casos/2falhas11controles. Primeiro recorte97402/e20c43 EXIT1:172casos1falha171pass por selfdoDOMmínimoausente; setup local completado paraNextLinkREAL,semrelaxartestes/harness. GREEN sessão11275/ab1127 EXIT0:7arquivos172/172, incluindo guarda85/paleta/contraste/SSR/SSE/foco, w1/heap1024/semfiltro/skipnovo. Lint4/148a1b EXIT0 --max-warnings0. Relatório/SPEC atualizados; QA/composição/visual/TSC/CI pendentesROOT. SemDB/Next/provider/browser/HTTP/install/env/migração/push.
 
-### Inbox #348 — cabeçalho e devolução implementados; QA e CI pendentes (25/10/2026)
-
-DEV B na base716a6261 (#347 sobre346252), branch codex/inbox-e3-348-cabecalho-aria. LinhaestadoAria do item343 e capacidades do painel corrente compõem o cabeçalho68px; helperpausa movido/reexportado sem remover PainelAria353. Botão Devolver usa action existente/useAcaoCliente idempotentetrue, feedbackirmão apósheader e token de ciclo para impedir ACK/erro/transporte antigos em A→B→A ou revogação/retorno, preservando rascunho/scroller.404 limpa somente podeDevolver/podeDecidir da cópiaAria histórica;503preserva. Sem servidor/ACL/D3/357/358/359 ou novoSSE.
-
-TDD0fcced EXIT1 quatro arquivos72 casos(30falhas/42controles),266230 EXIT1 consumidor11(1falha/10controles);8casoscontroladorRED2eb47b→GREEN85ce7e. Primeira pastaInbox62193/1f0f89 EXIT1:64arquivos603casos,19falhas em dois helperslocais de materialização; asserções preservadas, adaptação real verificada19/19e7f3b4. GREEN final sessão18529/chunk2d9eb4 EXIT0:64arquivos605/605, w1/heap512, sem filtros de caso/skips novos, integração excluída pela configuração original. Lint13arquivos272d21 EXIT0 --max-warnings0. Negativos administrativos/SVG/lint/edição intermediária detalhados no report; aviso vite-tsconfig-paths preexistente. Recorte de pasta, não global.
-
-SPEC docs/specs/inbox-cabecalho-aria.md; report output/inbox-348-report.md. Visual, QA independente, TSC/global/CI/build/homologação permanecem pendentes. SemDB/INT/lease, instalação/generate/migração/env/provider/preview/browser/captura/mensagem real/push/deploy. Fonte347 congelada preservada; correção347ROOT futura exige carry separado. Não marcar issue concluída por estes gates.
-
-Adendo348DS coordenadoROOT: varianteia canônica Botao adicionada sem overrides ou relaxar guardas. REDbd85c8(2falhas/8controles)→GREEN0c8b48 dois arquivos20/20. Replay final sessão83786/chunk807675 EXIT0:65 arquivos615/615(pastaInbox+Botao), w1/heap512; lint15arquivos89af41 EXIT0 --max-warnings0. Faixa347 permanece literal aguardando carry da correçãoROOT. QA/TSC/visual/global/CI seguem pendentes.
-
-### #348 — entrada declarativa no mapa após QA independente (25/10/2026)
-
-TESTER32314e EXIT1 identificou2falhas na guarda completa85(83pass):mapa348ausente e linkcru347herdado. PorGO ROOT, foi adicionada somente entrada inbox/aria/BotaoDevolverAria.tsx → <Botao> Devolver · Devolver para Aria → ia/sm, sem alterar guarda/variante/runtime. VerificaçãoDEV258122 EXIT1:85casoscompletos84pass/1fail, única restanteFaixaAriaAtiva347à mão. Mapa348passa, mas guardaNÃO estáGREEN antesdocarry347ROOT. w1/heap1024/semfiltro/skip; logs/reportdetalhados. Ajuste separado de db30; QAvisual/TSC/global/CI continuam pendentes.
-### #348 — composição com correção347 canônica verificada (25/10/2026)
-
-Carry autorizado287b4c2cROOT sobre d4a38114. União dos tiposia/iaFantasma e quadro preservou ambas as variantes/mapas e sufixos integrais; quatroblobs347 idênticos287 e runtime348/servidor/schema literais àfonte348, prova b86f78 EXIT0. Composição sessão85767/chunkdb85c2 EXIT0:66arquivos701/701 (Inboxpasta+Botao+guardabotoes85COMPLETOS), w1/heap1024/semfiltro/skipnovo. Lint5b3076b EXIT0 --max-warnings0. Não é global/TSC/CI. Falha347herdada258122 documentada foi corrigida nesta composição, sem relaxar guardas. QAexato/visual/TSCglobal/CI/build pendentesROOT; semDB/preview/provider/env/browser/captura/push.
-
-
-### Inbox #348 — composição sobre PR433
-
-Composição ROOT preserva integralmente a publicação347/PR433 e os dezoito objetos próprios348 fora do quadro. Quadros combinados com prefixo32c literal e sufixo348 integral, removendo somente a repetição exata do registro347 já presente. Variantes ia/iaFantasma e ambos mapas mantidos. QA/TSC/global/visual próprios desta composição permanecem pendentes.
-
-### Inbox #348 — integração R1 após #433 revisada
-
-Preservados os cartões #350 e o cabeçalho #348 sobre a pilha #435/#432/#427/#420; todos os testes/históricos e variantes canônicas foram mantidos. Correção editorial C4 rastreia nomes do plano; C5 coexistência até #353 registrada no SPEC. Primeiro TSC63251/18df2c EXIT2 apontou prop JSX duplicada gerada pelo merge; global63160 interrompida84a514 EXIT1 antes da correção. Negativos preservados. Prop única corrigida; gates finais e visual pendentes. Nenhum merge em main, envio ou deploy.
-Validação da composição R1 corrigida (25/10): TypeScript original sem exclusões novas49054/963b46 EXIT0; suíte unitária completa UTC48880/d86765 EXIT0, 975 arquivos/8.356 testes, sem filtros/skips, 240,79s. Ambos usaram a árvore893c1d5c338071ed82b5f58696d7b6dc82c7c3ad. Lint original47508/6a8278 EXIT0, zero erros/47 avisos, sem mudar regras/config/ignores. O primeiro lint46844/779224 EXIT1 examinou caches históricos de Next gerados dentro de output (11.172 arquivos; 5.812 erros no código gerado); os caches foram preservados por renomeação em diretório de artefatos autorizado, com pins conferidos, antes do replay. Não é correção de código gerado nem exclusão de fonte. Esse negativo também fica preservado. Apenas documentação de resultados foi acrescentada depois dos gates; build do head exato e QA independente final permanecem pendentes. Capturas, CI após retarget e merge não foram presumidos.
-
 ### PR431 — R2 C1/C2: chips sem duplicação e autoria neutra (25/10/2026)
 
 DEV B em branch temporária codex/inbox-revisoes-431-433-r2, filha22462240, preservando docs352. Revisão real5643199383 lida: prazo/fila saem de etiquetas/selo e os dois Limpar preservam filtros já representados pelos chips, de forma simétrica a aria. Eu/ID/naoLidas continuam removíveis; legacy/URL/busca/número intactos. Saída pessoa sem rótulo usa Equipe:, sem atribuir ao contato. Sem backend/ACL/query/SSE.
@@ -7260,25 +7233,52 @@ P2 posterior à R2: combinações válidas aria+prazo/aria+fila/prazo+fila escon
 
 Oráculo T literal RED149136 EXIT1 (14 casos/três falhas) → GREENbbbc70 EXIT0 (14/14). GREEN final sessão70459/3e4d23 EXIT0:10 arquivos/241 casos, botões85/parser/URL/Inbox completos; casos simples/legacy e quatro combinações reais com os dois Limpar. Lint4 7340e3 EXIT0 --max-warnings=0. Sem DB/SQL/INT/TSC/global/build/browser/install/push; QA/composição originais separados.
 
-### Composição #434 — cartões preservados e decisões bloqueadas após404 (25/10/2026)
-
-P2 independente61dc03 confirmado: cartões SUGERIDA preservados após404 continuavam acionáveis. Marcador SOMENTE cliente acessoRevogado no snapshot do painel é ativado por404, mantido em503/retry inicial e limpo só por200 fresco aceito. Props opcionais Conversa→Cartao, defaultfalse, bloqueiam DOM+handler e invalidam ACK/erro/transporte/foco da geração anterior. Cartões/status/histórico/DTO/backend/ACL preservados; não usar podeDecidir geral como autorização por cartão.200 com cartão autorizado por outro lead e podeDecidir=false recupera normalmente.
-
-Oráculo T literal copiado RED408cc1 EXIT1 (13 casos/uma falha); versão separada adaptou somente a projeção mockConversa para repassar a prop nova e passou13/13 20b080 EXIT0, sem alegar greenliteral. RED próprioe37cf0 (63 casos/sete falhas) e RED retry3377ba (106/uma falha) preservados. UNIT ampla15699/2b130f EXIT0:86 arquivos/1.044 testes; final85294/fd3621 EXIT0:9 arquivos/306 casos com foco/gerações/404→503/404→200/GETantigo e guarda85/paleta/contraste. Lint7 2b5b6a e recheckteste db24cf EXIT0 --max-warnings=0. SPEC/report próprios atualizados; commit separado filho386d42f, sem misturar353/431R3. Sem DB/SQL/INT/TSC/global/build/browser/install/PR/push; QA/gates originais/visual pendentes do integrador.
-
 #### PR #435 — observações documentais da revisão R2
 
 Origem DEV: `400834bf`, na branch `codex/inbox-435-documentacao-r2`, filha de `4c155828`. Composição ROOT: `21252b70`, filho de `be8e63e1`, com somente os quatro arquivos do patch e a seção desta revisão; sem incorporar #330/#331/#332. Review 5643684239 lida pelo conector: blockers aprovados, C3/C4/C5 conferidos. SPEC efetiva de be8/4c já não contém a seção histórica citada; não foi inventada remoção. SPEC curta ganha somente explicação de recarga/repetição manual e ponte de manutenção. QA registra a comparação literal e preserva fatos/evidências. `linha-comercial.ts` ganha comentário que aponta a seleção/contexto reproduzidos no helper legado e a necessidade de equivalência futura, incluindo aluno/turma. Runtime, assinaturas, testes e regras de concorrência permanecem idênticos. Sem Node/DB/build/push pelo DEV. Pendências visuais/CI continuam com ROOT.
 
-## #348 — correção mobile R4 em validação — 25/10/2026
-ROOT identificou no build21f/hKc a compressão real de nome/estado em390px quando Transferir+Devolver+Assumir+Painel+Menu coexistem. TESTER confirmou e aprovou plano de duas linhas até699px, altura natural, Menu fora do containment, controles/capacidades preservados; >=700 mantém68px. Duas SRC alteradas e contrato acessível novo. RED be745b EXIT1 (10/11); GREEN62c59b EXIT0 11/11; recorte9arquivos235 sessão80663/9b25c9 EXIT0; lint2arquivos525966 EXIT0 zeroavisos. TSCoriginal5530 em acompanhamento; build/visual/composição global pendentes. Capturas anteriores são diagnóstico, não aceite. Preview próprio encerrado (71324/ecd049 EXIT1, PID/porta ausentes010773); bancoRoot492 restaurado e77e56 EXIT0 aos1379 originais/424hashes e sequências; cluster compartilhado intacto. Evidências/limites docs/qa/inbox-348-mobile-r4-root.md. Não concluirissue ou PR434.
 
-Fechamento técnico R4: TSC5530/ecb26a EXIT1 apontou só o novo teste passando No abstrato ao lugar de ReactNode. Corrigido com isValidElement e filhos reais, sem cast/exclusão; focal11/11 e9aab3 EXIT0. TSC ORIGINAL final73242/95ba03 EXIT0 sem diagnósticos, heap8192, config original; lintfinal2arquivos b1a3ea EXIT0 zeroavisos. Código do componente não mudou entre o recorte235 e estes últimos gates. Build/medição visual e composição global continuam pendentes; negativos preservados.
+## PR #420 integrada; preparação final da PR #427 — 26/10/2026
 
-### Inbox #348 — R4.1, cabeçalho pela largura da coluna (25/10/2026)
+PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
 
-Smoke b437/z1iv de três tamanhos (8b42e0 EXIT0) corrigiu mobile, mas demonstrou nome/estado comprimidos em colunas de500px tablet e496px desktop. TESTER confirmou P2, parecer a7edd5abfc5c410724d4ebb35ed07c097fcc04e538e99e1217d28fb26bb8e5d2. Regra somente por viewport substituída por duas linhas até640px do wrapper local; altura mínima68/natural, Menu irmão fora do containment e alinhado à base das ações. Handlers/caps/API intactos. Focal conjunto a080c2 EXIT0,3arquivos41casos; gates anteriores997/8617/TSC/lint/build pertencem à b437. Preview próprio parado e PID/porta comprovados b1cd86 EXIT0; banco Root restaurado936c06 EXIT0 antes das edições. SPEC/QA atualizados. Gates da nova fonte, medição real e aceite visual continuam pendentes; sem merge/fechamento presumido.
+427fonte5d78:fd60éancestral e3074tree==fd60. Merge9708fffb preservou candidata nos7conflitos de ancestralidade, com INDEXINTEIRO==5d78 antescommit/árvoreinteira69e5503d inalterada. QA5d78 e FULL40168347724(363/3350+3/4opt-in) permanecem nominais; sem novo DB/testes/clientlocal. Registro output/pr427-qa/integracao-20261026.md. CI finalmain/anexos327 ainda gates, sem fechar327 antecipadamente.
 
-### Cabeçalho R9 — aceite restrito
 
-Fonte7e798e6b/buildQcX: build original EXIT0; focal4/37,31medidas,30capturas inspecionadas e20interaçõesMenu, todosEXIT0. Auditoria pós-lote424hashes/1379originais intactos. Parecer restritoHeader, sem homologar outrasfuncionalidades; binários/CI/merges pendentes. docs/qa/inbox-header-aceite-r9-root.md.
+### #327 — C2 visual anexado com autorização específica, 26/10/2026
+
+ZIP de18capturas históricas/README/manifesto anexado à release QA DRAFT421321214, asset678657729,size1935721,SHA2e06d855...; upload387fe0 e downloadroundtrip0a21aa EXIT0, hashidêntico. Usuário autorizou explicitamente o arquivo no repositório público mantendo a release emrascunho; não alegar download público anônimo. TESTER conferiu18/18 PNGs e manifestos, preservandoA7/A9negativos/A10semPNG e fontesnominais. C2daR2 resolvido pelo anexo, sem nova homologação visual presumida.
+
+CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCESS e integração40168347724/363files3350testes+3files4optinskips mantêm suas fontes. A revisão final foi favorável após atualizar corpo/C2. Registro: docs/qa/inbox-327-anexo-r28-root.md. Este commit é sódocumentação; aguardaCIheadfinalantesdo mergeautorizado e fechamento327. Nenhuma alteração de produto, schema, pacote ou release publicada.
+
+
+## PR #430 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 5764ddb6afb5e1eef0c3c826b73d0191900eeb58. O ancestral original 5d78ded3c63822d7a9ff8d40987e9c71cd79fce0 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
+### PR #432 — composição documental com a dependência #427, 26/10/2026
+
+União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
+
+Permanecem pendentes o anexo visual328, a integração da dependência427, o retarget e as verificações do head final. Os registros históricos que chamam a release de privada não descrevem a visibilidade atual do repositório: a API informa repositório público e release de QA em rascunho. Nenhum upload327/328, merge ou fechamento328 foi realizado nesta preparação.
+
+### PR #435 — composição documental com a dependência #432, 26/10/2026
+
+Preservados integralmente o prefixo comum e os sufixos329 e432/427 do quadro. O head desta composição incorpora7fc073e5, com toda a árvore executável idêntica ao a82d76ff. A única diferença está em dois Markdown: quadro e registro da integração427, este literal à dependência. Sem nova execução de testes nesta preparação documental.
+
+Continuam pendentes o anexo visual Cliente voltou, as integrações427 e432, o retarget e a CI do head final. Os pareceres e testes anteriores mantêm suas fontes nominais; esta composição não os transforma em execução nova, aprovação formal GitHub ou aceite visual. Nenhum upload, merge ou fechamento329 nesta preparação.
+
+## PR #430 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência 464d542c03653fadfe82e1c29ab65a57217027ec usando seu ancestral original a82d76ff0b7659bff6ec3d395ac8a572f256bc96. A composição preserva a árvore executável integral do head 5764ddb6afb5e1eef0c3c826b73d0191900eeb58, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+
+### PR #432 — base main após integração da #327, R28
+
+A base lógica9bd31f13 foi integrada em main pelo squash414d932a. A diferença de suas árvores contém somente quadro e o registro do anexo327. Esta composição acrescenta esses documentos e o pai main414 à branch432, preservando integralmente a árvore executável7fc073e5 usada no ambiente de QA. A PR pode apontar para main e executar CI sem reatribuir seus gates visuais; aceite visual completo e revisão continuam obrigatórios antes do merge.
+
+
+### PR #432 / issue #328 — matriz R5 e harness R6, 26/10/2026
+
+Matriz única30/30 concluída com código0, com24APP+6PROTO, dois temas e três larguras; fonteAPP7fc preservada. Incorporados três seletores estritos do protótipo e uma rolagem nativa após preencher perda, sem confirmar. Arquivo completo179/179 e lint2 código0; TypeScript original8GB código0 (a4e7e4), sem alterar includes/excludes. Provas e limitações em docs/qa/inbox-328-visual-r5-harness-r6-bd6f.md. R1–R4 negativos preservados e não somados. QA independente comunicada favorável com ressalva do badgeNextDEV sobre o canto de Voltar nos dois temas celular, sem prova de clique na região coberta. Banco descartável auditado426tabelas/506originais,520total/2prefs,zeroLISTEN e restaurado pelo integrador. ZIPcurado30PNG+README+manifesto SHA b012e8d2 pronto localmente; sem upload desta frente. PR continua DRAFT: anexo autorizado, revisão e CIheadfinal pendentes antes de merge e fechamento328. Nenhum produto/schema/deps/config, mensagem real ou deploy alterado.
