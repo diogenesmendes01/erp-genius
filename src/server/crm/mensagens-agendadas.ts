@@ -1,12 +1,11 @@
+import { executarAgendadaInbox } from "@/server/inbox/agendadas-operacao-inbox";
+import { AgendarSchema, InstanteSchema, futuro, dataFutura } from "./mensagens-agendadas-regras";
 import { revalidatePath } from "next/cache";
 import { Papel, type Prisma, type StatusIntencao } from "@prisma/client";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento, type AgregadoTipo } from "@/server/_shared/evento";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
-import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
-import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
@@ -24,35 +23,11 @@ export type ItemAgenda =
   | { tipo: "tarefa"; tarefa: TarefaLista }
   | { tipo: "mensagem"; id: string; texto: string; agendadaPara: Date; status: StatusIntencao; motivoFalha: string | null; nomeContato: string };
 
-export type AgendarMensagemInput = {
-  numeroId: string;
-  texto: string;
-  agendadaPara: string;
-  validaAte?: string;
-  tarefaId?: string;
-  leadId?: string;
-  pessoaId?: string;
-  /** Agendamento pelo Inbox: o destino é o contato do atendimento e o número é o dele (o acesso vem do atendimento). */
-  atendimentoId?: string;
-  /** Só no agendamento pelo atendimento (#166): a mesma chave até o sucesso; o reenvio devolve a mensagem já agendada. */
-  chaveIdempotencia?: string;
-};
+export type { AgendarMensagemInput } from "./mensagens-agendadas-regras";
+import type { AgendarMensagemInput } from "./mensagens-agendadas-regras";
 
-const MSG_FUTURO = "Escolha uma data e hora no futuro.";
 const MSG_NAO_ENCONTRADA = "Mensagem não encontrada.";
 
-const InstanteSchema = z.string().refine((v) => !Number.isNaN(new Date(v).getTime()), "Informe uma data e hora válidas.");
-const AgendarSchema = z.object({
-  numeroId: z.string().min(1, "Escolha o número de envio."),
-  texto: z.string().trim().min(1, "Escreva a mensagem.").max(4096, "A mensagem deve ter até 4096 caracteres."),
-  agendadaPara: InstanteSchema,
-  validaAte: InstanteSchema.optional(),
-  tarefaId: z.string().min(1).optional(),
-  leadId: z.string().min(1).optional(),
-  pessoaId: z.string().min(1).optional(),
-  atendimentoId: z.string().min(1).optional(),
-  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
-});
 
 const ehAdmin = (u: UsuarioSessao) => u.papeis.includes(Papel.ADMINISTRADOR);
 
@@ -82,11 +57,6 @@ const baseAgendada: Prisma.IntencaoMensagemWhereInput = {
   passoComercial: null,
 };
 
-function futuro(v: string, agora = new Date()): Date {
-  const d = new Date(v);
-  if (d.getTime() <= agora.getTime()) throw new ErroRegra(MSG_FUTURO);
-  return d;
-}
 
 function aggregadoDe(m: { tarefaId: string | null; leadId: string | null; atendimentoId?: string | null; contato: { pessoaId: string | null } }): { agregadoTipo: AgregadoTipo; agregadoId: string } | null {
   if (m.tarefaId) return { agregadoTipo: "Tarefa", agregadoId: m.tarefaId };
@@ -100,59 +70,23 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const d = AgendarSchema.parse(i);
+    if (d.atendimentoId) {
+      const r = await executarAgendadaInbox(prisma, autor.id, {
+        tipo: "CRIAR", atendimentoId: d.atendimentoId, numeroEsperado: d.numeroId,
+        texto: d.texto, agendadaPara: d.agendadaPara, validaAte: d.validaAte, chaveIdempotencia: d.chaveIdempotencia,
+      });
+      revalidar();
+      return r;
+    }
     if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
     // A marca mora no `MensagemAgendada` do atendimento; o agendamento pelo CRM nem sempre grava esse Evento.
     if (d.chaveIdempotencia && !d.atendimentoId) throw new ErroRegra("Chave de idempotência só no agendamento pelo atendimento.");
-    // Idempotência (#166): a chave e o hash da entrada vão no payload do `MensagemAgendada`; o reenvio devolve
-    // a mesma intenção em vez de agendar um segundo envio ao contato.
-    const marca = d.atendimentoId
-      ? marcaIdempotencia(d.chaveIdempotencia, {
-        atendimentoId: d.atendimentoId, numeroId: d.numeroId, texto: d.texto,
-        agendadaPara: new Date(d.agendadaPara).toISOString(), validaAte: d.validaAte ? new Date(d.validaAte).toISOString() : null,
-      })
-      : null;
-    const alvoRepeticao = marca && {
-      tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", autorId: autor.id, marca,
-      mensagemConflito: "Esta tentativa já foi usada com outra mensagem ou outro horário. Confira os agendamentos do atendimento antes de repetir.",
-    };
-    const intencaoDe = (e: { payload: unknown }) => String((e.payload as { intencaoId?: unknown }).intencaoId);
-    if (alvoRepeticao) {
-      // C3 da R2 do #267: a repetição é procurada antes das validações de horário, janela, encerramento e
-      // opt-out. O reenvio tardio da tentativa já gravada devolve a mesma mensagem em vez de um erro. A busca
-      // se repete dentro da transação de criação, que é quem serializa os envios simultâneos.
-      const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvoRepeticao));
-      if (repetido) return { id: intencaoDe(repetido) };
-    }
-    // N1 da R1 do #274: sem repetição, o escopo vem antes das validações de horário e janela. Assim quem não vê o
-    // atendimento recebe a mesma resposta para um id existente e um inexistente.
-    const a = d.atendimentoId ? await atendimentoVisivel(autor, d.atendimentoId, true) : null;
-    if (d.atendimentoId) {
-      if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
-      if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
-      if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
-    }
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
     // D12 (#202 C4): a mensagem agendada sai como decisão humana e pula a janela do despachante; por isso o
     // horário de silêncio é barrado aqui, no fuso da escola, antes de gravar.
     await exigirAgendamentoNaJanela(quando);
-
-    if (a) {
-      const id = await prisma.$transaction(async (tx) => {
-        if (alvoRepeticao) {
-          const repetido = await repeticaoIdempotente(tx, alvoRepeticao);
-          if (repetido) return intencaoDe(repetido);
-        }
-        const m = await tx.intencaoMensagem.create({
-          data: { numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: "TEXTO", corpoRenderizado: d.texto, agendadaPara: quando, validaAte, autorId: autor.id },
-        });
-        await registrarEvento(tx, { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: autor.id, payload: { intencaoId: m.id, agendadaPara: quando.toISOString(), numeroId: a.numeroId, ...marca } });
-        return m.id;
-      });
-      revalidar();
-      return { id };
-    }
 
     const id = await prisma.$transaction(async (tx) => {
       const numero = await tx.numeroWhatsApp.findFirst({ where: { AND: [{ id: d.numeroId }, numeroDoUsuario(autor)] }, select: { id: true } });
@@ -313,9 +247,6 @@ async function alterar(
   });
 }
 
-function dataFutura(m: { validaAte: Date | null }, quando: Date) {
-  if (m.validaAte && m.validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A nova data passa da validade da mensagem.");
-}
 
 export async function reagendarMensagem(id: string, agendadaPara: string): Promise<Resultado> {
   return alterar(id, "MensagemReagendada", async (m) => {

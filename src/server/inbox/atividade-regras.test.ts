@@ -13,3 +13,11 @@ describe("cancelar Inbox preserva tarefas.ver e autoria; IA sóAdmin",()=>{
  it.each(["CANCELADA","ENVIANDO","DESPACHADA","FALHOU","SIMULADA"] as const)("estado %s não oferece cancelar",status=>expect(podeCancelarAgendadaInbox(admin,{...agendada,status})).toBe(false));
  it("ADIADA também permite; sem agenda ou com passo real não",()=>{expect(podeCancelarAgendadaInbox(vendedor,{...agendada,status:"ADIADA"})).toBe(true);expect(podeCancelarAgendadaInbox(admin,{...agendada,agendadaPara:null})).toBe(false);expect(podeCancelarAgendadaInbox(admin,{...agendada,passo:"D1"})).toBe(false);expect(podeCancelarAgendadaInbox(admin,{...agendada,passoComercial:"EXPERIMENTAL"})).toBe(false);});
 });
+describe("362 exceção GP somente com contexto servidor ativo e responsável",()=>{
+ const gp={id:"gp",papeis:[Papel.GERENTE_PEDAGOGICO]},minha={...agendada,autorId:"gp"},contexto={ativo:true,responsavelId:"gp"};
+ it("GP sem contexto mantém negativa333",()=>expect(podeCancelarAgendadaInbox(gp,minha)).toBe(false));
+ it("GP própriaHUMANO recebe cancelar e replay gerível com contexto atual",()=>expect(podeCancelarAgendadaInbox(gp,minha,contexto)).toBe(true));
+ it.each([{ativo:false,responsavelId:"gp"},{ativo:true,responsavelId:null},{ativo:true,responsavelId:"outro"}])("GP contexto revogado recusa %j",ctx=>expect(podeCancelarAgendadaInbox(gp,minha,ctx)).toBe(false));
+ it("GP não ganha outraautoria/IA/CRON mesmo responsável",()=>{for(const patch of [{autorId:"outro"},{origem:"IA" as const},{origem:"CRON" as const}])expect(podeCancelarAgendadaInbox(gp,{...minha,...patch},contexto)).toBe(false);});
+ it("professor não herda exceção de autor/responsável",()=>expect(podeCancelarAgendadaInbox({...gp,papeis:[Papel.PROFESSOR]},minha,contexto)).toBe(false));
+});
