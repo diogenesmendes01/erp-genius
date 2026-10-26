@@ -7417,15 +7417,3 @@ RED 6d75f9 EXIT 1, 8 falhas/22 controles → GREEN 9cebb0 EXIT 0, 30 testes do m
 ### Integração R7 PR439
 
 346d8098: quatro exports fechados de ícones no mock de eventos, sem copiar testes futuros. Focal R7 aprovado; aceite visual e integração em main pendentes.
-
-### Inbox #332 — tarefa no fio e entradas de tarefa/nota (25/10/2026)
-
-DEV A sobre base composta da8937d2 (pais720ac2bf +11194158, revisada ROOT), branch codex/inbox-e2-332-tarefas-fio. Fio usa somente tarefa direta AND ACL própria, todos estados; painel330 conserva direto OU lead. Intercalação E0→tarefas→350 mantém limites das mensagens, empate por classe/ID e cursores intactos. Cartão puro com controlador de ação/ACK, Modal331 único inclusive fora CRM sem envio, pin por tarefa, menu/rodapé/seção de ações e Nota com foco opt-in/rascunho preservado. Troca A→B→A invalida pedidos/ACK antigos; refresh não remonta campo/lista. Nenhuma action/TX330/331/schema/dependência/permissão alterada; Modal compartilhado437C1 fica com ROOT.
-
-SQL nativa53361/bb7926 EXIT0:2 arquivos17 testes,65.22s, originalintegrationconfig/dev-email492/558,UTC/w1/heap1024, sete providers vazios. Lease liberada após terminal; sem nova SQL. Focais13527/95c043 EXIT0:23 arquivos397 testes; composição97856/e58624 EXIT0:10 arquivos262 testes; guardas7 73421/0561ff EXIT0:333 testes; lint whitelist29 fad680 EXIT0,zero warnings. Negativos causais e de fixture, módulo ausente vs comportamento e controles posteriores separados no QA, sem atribuir green ao RED. Registros de botões somente quatro controles nominais, sem parser/exceção ampliados. SPEC inbox-tarefa-no-fio.md e QA inbox-332-candidata-dev-a.md.
-
-Blueprint visual offline privado com quatro atores/contextos e controles de paginação, somente dados novos fictícios para ROOT aplicar. TSC/global/lint originais, QA independente do SHA final, composição354/437C1 e aceite visual fio-tarefa APP/PROTO original três larguras/dois temas continuam pendentes. Candidata para integração, não concluída/homologada; sem PR/push/build/browser pelo DEV.
-Fechamento do recorte #332: guardas ampliadas34396/8589c9 EXIT0,15 arquivos464 casos,89.10s; fonte funcional congelada para gates do ROOT. Totais dos recortes são sobrepostos.
-
-Revisão dos gates globais #332:8b8 original26145/ab2fff EXIT1,987/989 arquivos e8.521/8.523 testes; ESLint .81736/45e511 EXIT0,0 erros50 warnings. Filho corrige ícone de marca para IconMessageCircle e registra somente a chave interna VirtualList.pinKeys com âncora AST nominal+mutantes/DOM, sem parser geral ou ID apresentado. RED26a8c3 (2/57) →GREEN9c3660 (6 arquivos79 testes). Evidências anteriores continuam atribuídas às fontes reais; repetição global/TSC/lint originais na filha ainda pendente. Nenhuma homologação/visual presumida.
-Gates da901 #332: GLOBAL8796/26776a EXIT0,989 arquivos8.529 testes; eslint .88420/45797b EXIT0,0 erros50 warnings. TSC72090/8ba967 EXIT2 por3 diagnósticos reais de enum fixture/inferência literal; filha usa SECRETARIA_ACADEMICA e retorno map ItemTarefaThread sem casts. Focais636da2 EXIT0,4/61. Repetição original da filha pendente; nenhum negativo reatribuído como verde.
