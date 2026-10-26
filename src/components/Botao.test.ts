@@ -39,6 +39,7 @@ describe("Botao (E1)", () => {
       perigo: "bg-danger text-white hover:brightness-95",
       perigoContorno: "border border-red-700 bg-transparent text-red-700 hover:bg-red-50",
       fantasma: "text-brand-700 hover:bg-highlight",
+      iaFantasma: "text-ai-700 hover:bg-highlight",
       neutro: "border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight",
     });
     expect(TAMANHOS_BOTAO).toEqual({ sm: "px-3 py-1 text-xs", md: "px-4 py-1.5 text-sm", lg: "px-[22px] py-2.5 text-sm" });
