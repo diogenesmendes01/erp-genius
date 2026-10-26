@@ -1199,12 +1199,12 @@ it("377 semveLead nãoofereceabaInsights mesmoCOMERCIAL",async()=>{
  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:false}})}));tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as {id:string}[]).some(a=>a.id==="insights")).toBe(false);
 });
 
-it("447 C1 confirmação persiste quando transferência remove a conversa e a seleção é limpa",async()=>{
+it.each(["Atendimento transferido para Secretaria.", "Falha externa não deve virar aviso de sucesso"])("447 C1 confirmação local persiste após remover conversa e ignora texto externo: %s",async(texto)=>{
  tela();await esvaziar();const c=conversa(tela()) as {aoTransferirConcluido?:(texto:string)=>void};
- expect(c.aoTransferirConcluido).toBeTypeOf("function");c.aoTransferirConcluido!("Atendimento transferido para Secretaria.");
+ expect(c.aoTransferirConcluido).toBeTypeOf("function");c.aoTransferirConcluido!(texto);
  respostaLista=async()=>pagina([]);m.aoAviso!({tipo:"atendimento.atualizado",atendimentoId:"a1",conversaId:"cv1",mensagemId:null});await esvaziar();tela();
  const semSelecao={...props,selecionado:null};tela(semSelecao);await esvaziar();const final=tela(semSelecao);
  expect(elementos(final).some(n=>n.type===ConversaAberta)).toBe(false);
- const status=elementos(final).find(n=>typeof n.type==="function"&&n.type.name==="MensagemStatus");expect(status?.props.texto).toBe("Atendimento transferido para Secretaria.");
+ const status=elementos(final).find(n=>typeof n.type==="function"&&n.type.name==="MensagemStatus");expect(status?.props.texto).toBe("Transferência concluída.");
 
 });
