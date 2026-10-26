@@ -7611,3 +7611,7 @@ Normalização coordenada ROOT360 (88aa57d7): somente destinos = [] no parâmetr
 ### PR444 / #334 — revisão R1 C3/C4 (DEV B, 25/10/2026)
 
 Contador do cabeçalho separado de configuração/última ação/decisão com leitor autorizado compartilhado; limite30 após autorização, keyset100 e Pessoa/CRM preservados. Quatro fallbacks históricos no passado, sem alterar rótulos neutros ou recibo de entrega. RED nativo14776/636807 EXIT1 (2falhas/8pass); GREEN85994/89a8da EXIT0 (10/10), UNIT94717/1961c3 EXIT0 (3arquivos/161), focal finalcaf8e4 EXIT0 (11/106, sem filtros). Lint final e freeze no relatório específico. B493grant/425tabelas/client383; lease liberadaff859e0 e ROOTrestaurouf020fe0/baseline504. Isolamento370 preservado por manifesto17b68d64, stash78d35dbb e checkpoint PRIVADO76f9 de2schema paths; não publicar esse pai. Commit334 terá só deltaC3C4/fixturecarry578. QA independente/gates de composição/visualC1 pendentes, sem afirmar PR334/Aria completa por esse recorte. #370 continua bloqueada aguardando autorização humana específica; nenhum grant foi ligado ao escopo.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
