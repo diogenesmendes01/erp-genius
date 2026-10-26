@@ -7084,3 +7084,9 @@ A preparação local une F7bc à composição 326/fd60. O quadro preserva o pref
 Todos os casos Main e o novo caso Funil da #327 são literais. Cinco casos antigos já atualizados pela #344 seguem a Main. O primeiro comparador (73449/b2fc7b, EXIT1) exigia indevidamente esses cinco casos F7 literais; a V2 (25425/85b005, EXIT0) qualifica a origem e preserva o negativo administrativo.
 
 UNIT: 13 arquivos/258 testes, 2939/a38ef0 EXIT0, w1/heap512, sem filtros/skips, 40,42s. As mensagens de capturas do teste CLI são doubles, sem PNG nativa. Lint dos quatro compartilhados: c694fc EXIT0, max-warnings0. Não houve TSC, INT, global, navegador, DDL ou mensagem real nesta composição. A CI do novo head continua necessária. Preparação local, sem push, merge ou encerramento de issue: aguarda a #345 na Main, a dependência #326 e as autorizações dos anexos #326/#327.
+
+## PR #420 integrada; preparação final da PR #427 — 26/10/2026
+
+PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
+
+427fonte5d78:fd60éancestral e3074tree==fd60. Merge9708fffb preservou candidata nos7conflitos de ancestralidade, com INDEXINTEIRO==5d78 antescommit/árvoreinteira69e5503d inalterada. QA5d78 e FULL40168347724(363/3350+3/4opt-in) permanecem nominais; sem novo DB/testes/clientlocal. Registro output/pr427-qa/integracao-20261026.md. CI finalmain/anexos327 ainda gates, sem fechar327 antecipadamente.

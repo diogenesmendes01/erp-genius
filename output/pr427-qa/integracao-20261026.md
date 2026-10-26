@@ -1,0 +1,13 @@
+# PR #427 — integração após #420
+
+Fonte executável e árvore revisadas: `5d78ded3c63822d7a9ff8d40987e9c71cd79fce0`, árvore `69e5503d31f7c48cd201c0209ee88816039e9a5f`. A dependência #420 foi integrada por squash `3074ff8cebb6a84294447b1a63182081ffccff54`; sua árvore inteira é igual ao head `fd60e408`. Esse head é ancestral da fonte5d78.
+
+O merge de ancestralidade gerou sete conflitos: quadro, InboxNovo e dois testes, mapas de botões/campos e acoes-painel. O lado recebido é exatamente uma árvore ancestral já contida na candidata; foram preservadas as versões da candidata nos sete caminhos, sem descartar conteúdo novo recebido. O índice INTEIRO foi comparado com5d78 antes do commit `9708fffb`, com saída0. A árvore inteira permaneceu idêntica. Não houve alteração de código, schema, dependências, permissões, guardas ou fixtures.
+
+A QA independente da fonte5d78 permanece nominal àquela inspeção: 40 objetos próprios literais ao head aprovadof7bc e quatro compartilhados compostos, conforme comentário6397634040 e parecerf2ab00a6…; nenhuma nova execução do TESTER é presumida. A integração completa40168347724 tem quatro shards aprovados na fonte5d78:363arquivos/3.350testes, mais3arquivos/4testes opt-in ignorados. Não se soma às execuções anteriores nem se reatribui a um novo runtime. Após este registro Markdown, a comparação não Markdown deverá permanecer vazia.
+
+R1/R2: guardas admitem apenas os hashes raw conhecidos LF/CRLF dos originais, sem normalizar o arquivo servido; cabeçalho ausente usa capacidades negadas. A lista outras permanece limitada/filtrada conforme o contrato da327. As duas representações de cada arquivo não ampliam o conteúdo lógico aceito. O conflito com main é resolvido pela composição descrita.
+
+O corpus visual selecionado possui18originais:6APPadminA7,6PROTOA9,6APPleitorA11, com qualificações individuais. Produto visualebf7675d/harnessesnominais; não é uma nova captura5d78. Agregados A7/A8/A9EXIT1 e A10zeroPNG permanecem negativos; a seleção individual e o aceite A11 não os convertem em aprovação. ZIP1.935.721bytes/SHA2562e06d8551647a73f4e8760c31c09b5767cc5de15e4d6b5a7a739c2f33fd53994 e imagem representativa164.617bytes/SHA25609f69eb67ab4326b7db8f4e2b1bc0fcaa4c3341e54d5b88f2f028ddd7a548224 foram identificados para publicação no mesmo rascunho privado autorizado; anexação/roundtrip e CI rápida final contra main continuam gates antes do merge.
+
+Sem testes locais adicionais, banco, cluster, cliente Prisma, browser ou envio real nesta composição. A issue327 permanece aberta até concluir anexos, CI e merge. As 38 issues já fechadas refletem a API após326CLOSED, sem presumir a conclusão desta filha.
