@@ -188,3 +188,21 @@ it('PR384 C3: descrição mantém o ID ao atualizar capacidades e reabrir o menu
   expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
   expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Contato', 'Enquete', 'Localização']);
 });
+
+it("358 bloqueio externo conserva arquivo e rascunho; callback retido não envia nem após desbloqueio",async()=>{
+ const texto=vi.fn(async()=>({ok:true as const})),midia=vi.fn(async()=>({ok:true as const}));
+ const p=props({aoEnviarTexto:texto,aoEnviarMidia:midia});await montar(p);await digitar("rascunho358");
+ const enter=ui.campo.onKeyDown as (e:unknown)=>void;
+ await anexar("preservado358.txt");const enviarAntes=eventos(host.querySelectorAll("button").find(b=>b.textContent==="Enviar")!).onClick;
+ await montar({...p,bloqueioExterno:true} as PropsCompositor);await act(async()=>{enter({key:"Enter",shiftKey:false,nativeEvent:{isComposing:false},preventDefault(){}});enviarAntes();});
+ expect(texto).not.toHaveBeenCalled();expect(midia).not.toHaveBeenCalled();expect(host.textContent).not.toContain("preservado358.txt");
+ await montar(p);await act(async()=>enviarAntes());expect(midia).not.toHaveBeenCalled();expect(texto).not.toHaveBeenCalled();expect(ui.campo.value).toBe("rascunho358");expect(host.textContent).toContain("preservado358.txt");
+});
+it("358 nota permanece permitida com bloqueio externo",async()=>{
+ const nota=vi.fn(async()=>({ok:true as const})),texto=vi.fn();await montar({...props({modo:"nota",aoNota:nota,aoEnviarTexto:texto}),bloqueioExterno:true} as PropsCompositor);await digitar("nota358");await enviar();expect(nota).toHaveBeenCalledOnce();expect(texto).not.toHaveBeenCalled();
+});
+it("358 upload iniciado antes da trava não autoriza envio depois do await",async()=>{
+ let resolver!:(r:Response)=>void;const fetcher=vi.fn(()=>new Promise<Response>(r=>resolver=r)),midia=vi.fn(async()=>({ok:true as const}));vi.stubGlobal("fetch",fetcher);
+ const p=props({aoEnviarMidia:midia});await montar(p);await anexar("upload358.txt");await enviar();expect(fetcher).toHaveBeenCalledOnce();await montar({...p,bloqueioExterno:true} as PropsCompositor);
+ await act(async()=>resolver(new Response(JSON.stringify({url:"/api/files/whatsapp-out/u/upload358.txt"}),{status:200})));expect(midia).not.toHaveBeenCalled();await montar(p);expect(host.textContent).toContain("upload358.txt");
+});

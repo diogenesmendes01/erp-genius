@@ -7534,8 +7534,11 @@ REDs adicionais 441de4 (5/16), regressão 201a29 (2/46, owner nulo ainda não co
 ### Inbox #357 — composição R5 com tarefas e atividade (25/10/2026)
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
+<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
+=======
 <<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
 =======
+>>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
 
 ### Inbox #358 — compositor durante Aria / entrega DEV (25/10/2026)
 
@@ -7583,6 +7586,8 @@ Complemento de alinhamento: buildf143/NzA passou23826/7d1b3a EXIT0. Em31cenas, n
 ROOT57822fc2: global1009/8753, TypeScript, lint0erros/63avisos e buildyNy todos EXIT0. Pilha R7 publicada sem force: seis PRs atualizadas e novas #444(#334), #445(#357), #446(#358), todas em rascunho. TESTER conferiu nove deltas e fontefinal446literal578 (5aa410d0484d374b9656a2ffd22b9e897330fad3f51a1129860bbfabd5ee0b9c). Nenhum merge nesta rodada; campanha permanece37fechadas/44abertas, conferida no GitHub.
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
+<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
+=======
 
 ### #360 — Transferir unificado (DEV B, 2026-10-25)
 
@@ -7618,6 +7623,13 @@ Contador do cabeçalho separado de configuração/última ação/decisão com le
 ### #357 — hardening portal após espera (DEV B, 25/10/2026)
 
 Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado DTO/action com rowTXfresh; sempapéisgenéricosnovos e semalterar[]/mistos. OracleTbyte8196 RED30130/612418 EXIT1 (1ERPpass/1portalfail)→GREEN29510/3b5aa3 EXIT0 2/2; UNIT27d736 RED→728dbe GREEN2/10; regressão42600/93843a EXIT0 2arquivos32casos incluindo3ROLErastreados (não somaroracle2sobreposto); lint9dad9f0/4SRC/zeroavisos. D3TODASSUGERIDAinclusiveCRM documentada/C5JSDoclegado recolocado. QA em docs/qa/inbox-357-portal-apos-espera.md. B493grant/client383, liberação6618d60/0outros; ROOTrestaura depois, não presumir504. Commitisolado357 sobrepaisprivados334/76f9, integrar sódelta. QA/gatescompostos/visual pendentes;370continua aguardandoautorizaçãohumana específica, semgrantACLativado.
+>>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
+
+Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
+<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
+=======
+
+#358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
 
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 
