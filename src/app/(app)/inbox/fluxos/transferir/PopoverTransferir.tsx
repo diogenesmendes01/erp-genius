@@ -7,12 +7,13 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { Setor } from "@/server/whatsapp/setor";
+import type { StatusPresencaInbox } from "@/lib/presenca-inbox";
 import type { OpcoesTransferir } from "./opcoes-transferir";
 import type { DestinoTransferencia } from "../../AcoesAtendimento";
 import { PopoverFluxo } from "../PopoverFluxo";
 export type AlvoTransferir = { tipo: "pessoa"; usuarioId: string } | { tipo: "setor"; setor: Setor; destinoChave: string | null } | { tipo: "fila" } | { tipo: "aria" };
 export interface EntradaConfirmacaoTransferir { alvo: AlvoTransferir; contexto: string; anexarResumoAria?: boolean }
-export interface PessoaTransferir { id:string; nome:string; carga?:number }
+export interface PessoaTransferir { id:string; nome:string; carga?:number; presenca?:StatusPresencaInbox }
 export interface PropsPopoverTransferir {
   atendimentoId: string; ancora: RefObject<HTMLButtonElement | null>; opcoes: OpcoesTransferir;
   pessoas: PessoaTransferir[] | null; destinos: DestinoTransferencia[];
@@ -65,7 +66,7 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
           {pessoas === null ? <p className="text-sm text-gray-600" role="status">Carregando pessoas…</p> : <div className="max-h-56 space-y-2 overflow-y-auto overscroll-contain">
             {pessoas.map((p,i)=><label key={p.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-surface p-3 has-checked:border-brand-500 has-checked:bg-brand-50">
               <input ref={pessoa===p.id||(!pessoa&&i===0)?campoPessoa:undefined} type="radio" name={nomeGrupoPessoa} value={p.id} checked={pessoa===p.id} required disabled={ocupado} onChange={e=>{if(!ocupado)setPessoa(e.target.value);}} className="mt-1 h-4 w-4 shrink-0 accent-brand-600" />
-              <span className="min-w-0"><span className="block break-words text-sm font-medium text-gray-800">{p.nome}</span><span className="block text-xs text-gray-500">{p.carga===undefined?"Carga indisponível":`${p.carga} ${p.carga===1?"conversa aberta":"conversas abertas"} neste setor`}</span></span>
+              <span className="min-w-0"><span className="block break-words text-sm font-medium text-gray-800">{p.nome}</span><span className="block text-xs text-gray-500">{p.carga===undefined?"Carga indisponível":`${p.carga} ${p.carga===1?"conversa aberta":"conversas abertas"} neste setor`} · {p.presenca === "online" ? "Online" : p.presenca === "ausente" ? "Ausente" : p.presenca === "offline" ? "Offline" : "Presença indisponível"}</span></span>
             </label>)}
           </div>}
         </fieldset>}

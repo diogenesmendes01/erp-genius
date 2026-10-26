@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { criarGanchos, elementos, identidadeNoReact } from "@/test/tela-sem-dom";
 const g=vi.hoisted(()=>({atual:null as ReturnType<typeof criarGanchos>|null}));
-vi.mock("react",async original=>{const real=await original<typeof import('react')>();return {...real,useState:((i:unknown)=>g.atual!.useState(i)) as typeof real.useState,useRef:((i:unknown)=>g.atual!.useRef(i)) as typeof real.useRef,useMemo:((fn:()=>unknown)=>fn()) as typeof real.useMemo,useCallback:((fn:unknown)=>fn) as typeof real.useCallback,useEffect:()=>{},useLayoutEffect:()=>{}};});
+vi.mock("react",async original=>{const real=await original<typeof import('react')>();return {...real,useId:()=>g.atual!.useId(),useState:((i:unknown)=>g.atual!.useState(i)) as typeof real.useState,useRef:((i:unknown)=>g.atual!.useRef(i)) as typeof real.useRef,useMemo:((fn:()=>unknown)=>fn()) as typeof real.useMemo,useCallback:((fn:unknown)=>fn) as typeof real.useCallback,useEffect:()=>{},useLayoutEffect:()=>{}};});
 vi.mock('@/components/conversa/agora-thread',()=>({useAgoraDaThread:()=>Date.UTC(2026,9,22,12)}));
 vi.mock('./AcoesAtendimento',()=>({useAcoesAtendimento:()=>({feedback:null,dialogos:null,menu:[]})}));
 vi.mock('@/server/whatsapp/acoes',()=>({enviarMidiaInbox:vi.fn(),enviarTextoInbox:vi.fn()}));
