@@ -1178,8 +1178,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Cancelar → fantasma/md",
     "<Botao> Criar tarefa · Salvar → primario|neutro/md",
   ],
-  "inbox/NovoAtendimento.tsx": [
-    "<button> Abrir atendimento → primario/lg",
+  "inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx": [
+    "<Botao> Conversa → fantasma/sm",
+    "<Botao> Contato → fantasma/sm",
+    "<Botao> Abrir atendimento → primario/md",
   ],
   "inbox/PopoverFiltros.tsx": ["<Botao> Limpar → secundario/md", "<Botao> Mostrar conversas → primario/md"],
   "inbox/OptOutContato.tsx": [

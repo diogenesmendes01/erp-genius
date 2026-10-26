@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
   parametros313: null as string | null,
+  navegar361: vi.fn(),
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   avisoThread: null as unknown,
@@ -56,7 +57,7 @@ vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => 
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: m.navegar361, refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
@@ -96,6 +97,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   m.modo = null;
   m.parametros313 = null;
+  m.navegar361.mockReset();
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   m.aoVisibilidade = null;
@@ -1216,4 +1218,13 @@ it.each(["Atendimento transferido para Secretaria.", "Falha externa não deve vi
  expect(elementos(final).some(n=>n.type===ConversaAberta)).toBe(false);
  const status=elementos(final).find(n=>typeof n.type==="function"&&n.type.name==="MensagemStatus");expect(status?.props.texto).toBe("Transferência concluída.");
 
+});
+it("361 R1B1 ACK fora dos itens navega pela rota canônica e abre item autorizado do SSR",async()=>{
+ habilitarRota313("busca=ana&c=a1");const p={...props,filtros:{busca:"ana"},opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;
+ const popover=(t:ReactNode)=>(elementos(t).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props;
+ tela(p);await esvaziar();popover(tela(p)).aoSelecionar("novo-sem-mensagem");expect(m.navegar361).toHaveBeenCalledExactlyOnceWith("/inbox?busca=ana&c=novo-sem-mensagem",{scroll:false});expect(elementos(tela(p)).find(n=>n.type===ConversaAberta)?.props.item).toMatchObject({id:"a1"});
+ m.parametros313="busca=ana&c=novo-sem-mensagem";const novo={...item("novo-sem-mensagem"),ultimaMensagemEm:null,preview:""};const recebido={...p,selecionado:novo.id,inicial:{itens:[novo,...p.inicial.itens],proximo:null}} as PropsInboxNovo;const t=navegar313(recebido);await esvaziar();expect(elementos(tela(recebido)).find(n=>n.type===ConversaAberta)?.props.item).toMatchObject({id:novo.id,ultimaMensagemEm:null});expect(coluna313(t).itens.some(x=>x.id===novo.id)).toBe(true);
+});
+it("361 R1B1 ACK retido depois de outra seleção não navega nem troca atendimento",()=>{
+ habilitarRota313("c=a1");const p={...props,opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;const antigo=(elementos(tela(p)).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props.aoSelecionar;lista(tela(p)).aoSelecionar("a2");tela(p);antigo("novo-retido");expect(m.navegar361).not.toHaveBeenCalled();expect(coluna313(tela(p)).selecionado).toBe("a2");
 });

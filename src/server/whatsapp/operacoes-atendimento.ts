@@ -39,12 +39,16 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
   const comercial = temPapel(u, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   const academico = temPapel(u, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   if (comercial || academico) {
-    const leads = await prisma.oportunidade.findMany({ where: { OR: [
-      ...(comercial ? [await escopoComercialAtual(u)] : []),
+    const scopeComercial = comercial ? await escopoComercialAtual(u) : null;
+    // Prisma descarta {} dentro de OR; o escopo canônico irrestrito precisa manter TRUE OR x.
+    const comercialIrrestrito = scopeComercial !== null && Object.keys(scopeComercial).length === 0;
+    const where: Prisma.OportunidadeWhereInput = comercialIrrestrito ? {} : { OR: [
+      ...(scopeComercial !== null ? [scopeComercial] : []),
       ...(academico ? [{ professorExperimentalId: u.id, etapa: "EXPERIMENTAL_AGENDADA" as const }] : []),
-    ] }, take: 200, select: { id: true, nome: true, professorExperimentalId: true, etapa: true } });
+    ] };
+    const leads = await prisma.oportunidade.findMany({ where, take: 200, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true, nome: true, professorExperimentalId: true, etapa: true } });
     for (const l of leads) {
-      if (comercial && await prisma.oportunidade.count({ where: { AND: [{ id: l.id }, await escopoComercialAtual(u)] } })) destinos.push({ chave: `COMERCIAL:${l.id}`, nome: `Comercial · ${l.nome}`, finalidade: "COMERCIAL", leadId: l.id });
+      if (comercial && (comercialIrrestrito || await prisma.oportunidade.count({ where: { AND: [{ id: l.id }, await escopoComercialAtual(u)] } }))) destinos.push({ chave: `COMERCIAL:${l.id}`, nome: `Comercial · ${l.nome}`, finalidade: "COMERCIAL", leadId: l.id });
       if (academico && l.professorExperimentalId === u.id && l.etapa === "EXPERIMENTAL_AGENDADA") destinos.push({ chave: `PEDAGOGICO:${l.id}`, nome: `Experimental · ${l.nome}`, finalidade: "PEDAGOGICO", leadId: l.id });
     }
   }
