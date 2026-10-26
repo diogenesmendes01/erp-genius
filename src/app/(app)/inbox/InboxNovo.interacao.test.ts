@@ -1185,3 +1185,13 @@ it("357 callback Aria retido não atravessa A-B-A",async()=>{
 it("357 404 limpa capacidade copiada e bloqueia callback antigo sem cair no legado",async()=>{
  const p=props357(),aba=await abrirAba357(p,true);respostaPainel=()=>new Response("",{status:404});(elementos(tela(p)).find(n=>n.type===ConversaAberta)!.props.aoMudar as()=>void)();tela(p);await esvaziar();const conversa=elementos(tela(p)).find(n=>n.type===ConversaAberta)!;expect((conversa.props.aria as{podeAssumirAria:boolean}).podeAssumirAria).toBe(false);await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).not.toHaveBeenCalled();expect(assumir328Inbox).not.toHaveBeenCalled();
 });
+
+it.each(["Atendimento transferido para Secretaria.", "Falha externa não deve virar aviso de sucesso"])("447 C1 confirmação local persiste após remover conversa e ignora texto externo: %s",async(texto)=>{
+ tela();await esvaziar();const c=conversa(tela()) as {aoTransferirConcluido?:(texto:string)=>void};
+ expect(c.aoTransferirConcluido).toBeTypeOf("function");c.aoTransferirConcluido!(texto);
+ respostaLista=async()=>pagina([]);m.aoAviso!({tipo:"atendimento.atualizado",atendimentoId:"a1",conversaId:"cv1",mensagemId:null});await esvaziar();tela();
+ const semSelecao={...props,selecionado:null};tela(semSelecao);await esvaziar();const final=tela(semSelecao);
+ expect(elementos(final).some(n=>n.type===ConversaAberta)).toBe(false);
+ const status=elementos(final).find(n=>typeof n.type==="function"&&n.type.name==="MensagemStatus");expect(status?.props.texto).toBe("Transferência concluída.");
+
+});
