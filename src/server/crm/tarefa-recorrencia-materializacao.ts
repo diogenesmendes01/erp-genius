@@ -36,8 +36,24 @@ export async function materializarRecorrenciaTarefa(id:string,opcoes:Opcoes={}):
   const confirmado=await tx.tarefa.findUnique({where:{recorrenciaAnteriorId:tarefaId}});
   if(confirmado)return {tipo:"REPLAY",tarefaId:confirmado.id};
   const originalSnapshot=JSON.stringify(inicial.snapshot);
+  const identidadeInicial=JSON.stringify([inicial.id,inicial.tarefaId,inicial.conclusaoVersao,inicial.versao,inicial.corteEm]);
   const parsed=SnapshotRecorrenciaTarefaSchema.safeParse(inicial.snapshot);
-  if(!parsed.success)throw new ErroRegra("Snapshot de recorrência inválido.");
+  if(!parsed.success){
+   // Só a versão suportada estruturalmente inválida é terminal; infra/futuras não são consumidas.
+   if(typeof inicial.snapshot!=="object"||inicial.snapshot===null||Array.isArray(inicial.snapshot)||inicial.snapshot.versao!==1)throw new ErroRegra("Snapshot de recorrência inválido.");
+   await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id=${tarefaId} FOR UPDATE`;
+   await tx.$queryRaw`SELECT id FROM "IntencaoRecorrenciaTarefa" WHERE id=${id} FOR UPDATE`;
+   const tarefa=await tx.tarefa.findUnique({where:{id:tarefaId}}),atual=await tx.intencaoRecorrenciaTarefa.findUnique({where:{id}});
+   if(!tarefa||!atual)return {tipo:"IGNORADA"};
+   if(JSON.stringify([atual.id,atual.tarefaId,atual.conclusaoVersao,atual.versao,atual.corteEm])!==identidadeInicial||JSON.stringify(atual.snapshot)!==originalSnapshot)throw new ErroRegra("A intenção de recorrência mudou.");
+   const filhoConfirmado=await tx.tarefa.findUnique({where:{recorrenciaAnteriorId:tarefaId}});
+   if(filhoConfirmado)return {tipo:"REPLAY",tarefaId:filhoConfirmado.id};
+   if(atual.estado!=="PENDENTE")return {tipo:"IGNORADA"};
+   const r=await tx.intencaoRecorrenciaTarefa.updateMany({where:{id:atual.id,versao:atual.versao,estado:"PENDENTE"},data:{estado:"IMPEDIDA_CONTEXTO",versao:{increment:1}}});
+   if(r.count!==1)throw new ErroRegra("A intenção de recorrência foi alterada.");
+   await registrarEvento(tx,{tipo:"RecorrenciaTarefaImpedida",agregadoTipo:"Tarefa",agregadoId:tarefa.id,autorId:null,payload:{intencaoId:atual.id,codigo:"SNAPSHOT_INVALIDO"}});
+   return {tipo:"IMPEDIDA"};
+  }
   const s=parsed.data;
   const usuariosIds=[...new Set([s.dados.responsavelId,s.dados.criadorId,...s.notificarUsuarioIds].filter((v):v is string=>v!==null))].sort();
   // Alvos deFK antes do pai; NOWAIT evita aguardar escritor reverso mantendo Task.
@@ -90,6 +106,9 @@ export async function rodarRecorrenciasTarefas(opcoes:Opcoes={}):Promise<{criada
  const db=opcoes.db??prisma;
  const pendentes=await db.intencaoRecorrenciaTarefa.findMany({where:{estado:"PENDENTE"},orderBy:[{criadaEm:"asc"},{id:"asc"}],take:50,select:{id:true}});
  let criadas=0;
- for(const i of pendentes)if((await materializarRecorrenciaTarefa(i.id,{...opcoes,db})).tipo==="CRIADA")criadas++;
+ const erros:unknown[]=[];
+ for(const i of pendentes)try{if((await materializarRecorrenciaTarefa(i.id,{...opcoes,db})).tipo==="CRIADA")criadas++;}catch(erro){erros.push(erro);}
+ if(erros.length===1)throw erros[0];
+ if(erros.length>1)throw new AggregateError(erros,"Falhas independentes ao materializar recorrências de tarefas.");
  return {criadas};
 }
