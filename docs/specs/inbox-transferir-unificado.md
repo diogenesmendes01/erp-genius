@@ -21,3 +21,15 @@ Lint focal final e0ec93 EXIT0, zero avisos; recibo de freeze separado. Pendênci
 A guarda original classificava a função passada como JSX children em CoordenadorAcoesConversa como formulário aninhado. O oráculo independente confirmou que os formulários físicos são irmãos. A função agora passa por prop explícita renderizar, no padrão já usado pelo controlador, com chamada selfclosing. Não há mudança de topologia, portal, handlers, key, permissões, backend, parser ou exceções.
 
 Evidência R2: RED dad62b EXIT1,23casos22 pass/1 fail; GREEN 29bf78 EXIT0,23/23 incluindo negativas originais, w1/heap2048. UI relevante 46301/cb2299 EXIT0,13 arquivos/222 casos, w1/1024. Oráculo T copiado byteigual SHA d9698922575d40cbf72363ede30339d653baae38d1af7471c3826a2d79839d4c,3176f6 EXIT0,8 casos (5 sobrepostos e3 independentes); Controller/Popover/useDialogo reais e compositor como fixture form, não teste visual. Config privada adapta só include; original intacta. Lint e recibo final R2 separados. Backend literal78fb: INT14+41 não repetidos, conforme coordenação ROOT.
+
+## PR447 R1 — confirmação persistente e identidade semântica
+
+A conclusão atual e confirmada pelo servidor informa mensagem fechada por alvo: pessoa (“Atendimento atribuído.”), setor (“Atendimento transferido para <rótulo canônico do setor>.”), fila (“Devolvido para a fila.”) ou Aria (“Atendimento devolvido para a Aria.”). Não revela nome de pessoa/contato ou conteúdo fora do escopo. Somente o ramo existente ACK ok + abertura/geração/contexto vivos emite o callback; erro, resultado incerto, troca de conversa, revogação e ACK após desmontagem não anunciam sucesso.
+
+InboxNovo mantém a mensagem acima da seleção, com MensagemStatus canônico sempre montado. O callback é opcional na ConversaAberta, recebido antes da reconciliação da lista; desmontar a conversa ou retirar a seleção não apaga o resultado confirmado. As mesmas colunas ficam num flex interno e a região de resultado fica fora dos filhos condicionais; sem portal, overlay, timer ou autofocus. O feedback não concede acesso nem representa autorização futura.
+
+A identidade de transferência usa apenas status === ENCERRADO. AGUARDANDO_CLIENTE → EM_ATENDIMENTO preserva abertura, contexto e chave de retry; atendimento/ator/papéis/linha/owner/capacidades continuam invalidando conforme contratos anteriores.
+
+C5: #369 resolveu contexto opcional no novo fluxo e no opt-in interno transferirSetorInbox; a API histórica mantém min12. O ponto RegrasTransferir/OpcoesTransferir.regras do plano não foi implementado e não há prop minContextoSetor. Não introduzir configuração nova para reproduzir comportamento já entregue. #370 e grants seguem separados e pendentes de autorização específica.
+
+C6: PopoverFluxo compartilhado permanece literal: sheet abaixo de sm, ancorado desde640px, enquanto plano antigo citava md768. Matriz visual pendente em639/640/767/768px, dois temas, teclado/foco/ESC/scroll e gatilho próximo às bordas; decisão de alinhamento de breakpoint exige coordenação ROOT por afetar outros fluxos. Este delta não alega aceite visual nem muda shared global.

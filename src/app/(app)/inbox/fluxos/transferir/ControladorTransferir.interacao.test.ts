@@ -1,4 +1,5 @@
-import { act, createElement } from "react";
+import { MensagemStatus } from "@/components/MensagemStatus";
+import { act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } from "@/test/dom-minimo";
@@ -69,4 +70,9 @@ it("369 transferir setor sem alçada de pessoas ainda consulta resumo, sem lista
 });
 it("369 resposta tardia de resumo não revive checkbox de uma abertura anterior",async()=>{
  let resolver!:(v:boolean)=>void;resumo.mockReturnValueOnce(new Promise(r=>resolver=r)).mockResolvedValueOnce(false);await montar(true,"a","atual",true);await clicar("Abrir");await clicar("Cancelar");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");expect(doc.body.querySelector('input[type="checkbox"]')).toBeNull();await act(async()=>resolver(true));expect(doc.body.querySelector('input[type="checkbox"]')).toBeNull();
+});
+
+it("447 C1 ACK setorial desmonta o controlador mas preserva aviso canônico no pai real",async()=>{
+ function Tela(){const [aberta,setAberta]=useState(true),[msg,setMsg]=useState<string|null>(null);return createElement("div",null,createElement(MensagemStatus,{texto:msg,tom:"sucesso"}),aberta&&createElement(ControladorTransferir,{atendimentoId:"a",identidade:"u",responsavelAtualId:"u",opcoes:{visivel:true,pessoas:false,setores:["SECRETARIA"],filaDoSetor:null,aria:false},destinos:[],executar,carregarPessoas:carregar,aoConcluir:(texto:string)=>{setMsg(texto);setAberta(false);},renderizar:({transferir,dialogo})=>createElement("div",null,transferir&&createElement(Botao,{ref:transferir.gatilhoRef,onClick:transferir.aoEscolher},"Abrir"),dialogo)}));}
+ await act(async()=>root.render(createElement(Tela)));expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");await mudar("textarea","Contexto preservado");await confirmar();expect(executar).toHaveBeenCalledOnce();expect(doc.body.querySelector('[role="dialog"]')).toBeNull();expect(botao("Abrir")).toBeUndefined();expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("Atendimento transferido para Secretaria.");expect(doc.body.textContent).toContain("Atendimento transferido para Secretaria.");
 });
