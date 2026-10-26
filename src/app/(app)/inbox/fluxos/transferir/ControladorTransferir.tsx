@@ -15,7 +15,7 @@ interface Props {
   executar(comando: ComandoTransferirInbox): Promise<Resultado>;
   carregarPessoas(id: string): Promise<PessoaTransferir[]>;
   carregarResumo?(id: string): Promise<boolean>;
-  aoConcluir(): void;
+  aoConcluir(mensagem: string): void;
   renderizar(controles: { transferir: AcaoConversa | null; dialogo: ReactNode }): ReactNode;
 }
 /** Fronteira local; o coordenador da conversa fornece actions autorizadas, sem política paralela. */
