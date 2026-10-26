@@ -28,6 +28,8 @@ export type AcaoConfirmada = {
 };
 
 export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
+  { arquivo: "src/app/(app)/inbox/insights/OperacoesInsights.tsx", modulo: "@/server/inbox/acoes-insights", acao: "reconciliarInsightNoInbox", achado: "Inbox-377-D12", efeito: "registra explicitamente a incerteza da análise em andamento, impedindo publicação e preservando custo conhecido" },
+  { arquivo: "src/app/(app)/inbox/insights/OperacoesInsights.tsx", modulo: "@/server/inbox/acoes-insights", acao: "descartarInsightNoInbox", achado: "Inbox-377-D12", efeito: "descarta análise inconclusiva sem publicar ou cancelar custo, permitindo nova intenção somente em clique separado" },
   { arquivo: "src/app/(app)/inbox/abas/AgendadasAtividade.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarAgendadaNoInbox", achado: "Inbox-E2.13-D11", efeito: "cancela uma mensagem agendada autorizada do atendimento sem envio e sem desfazer pela tela" },
   { arquivo: "src/app/(app)/inbox/ModalTarefa.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarTarefaNoInbox", achado: "Inbox-E2.11-D10", efeito: "cancela a tarefa com motivo em uma única confirmação canônica" },
   { arquivo: "src/app/(app)/inbox/abas/TarefasOportunidade.tsx", modulo: "@/server/inbox/acoes-painel", acao: "cancelarTarefaNoInbox", achado: "Inbox-E2.10-D10", efeito: "cancela a tarefa com motivo preservando o histórico, sem reabertura pela tela" },

@@ -1,5 +1,5 @@
 import { CACHE_CONTROL_SISTEMA, modeloPermitido } from "./custo";
-import { ErroProvedorIA, type ModelosIA, type PedidoIA, type ProvedorIA, type RespostaIA } from "./tipos";
+import { ErroProvedorIA, type ModelosIA, type PedidoIA, type ProvedorIA, type RespostaIA, type ControleExecucaoIA, type DiagnosticoChamadaIA } from "./tipos";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -9,6 +9,7 @@ const MODELO_COM_RESERVA = "claude-sonnet-5-5";
 const BETA_RESERVA = "server-side-fallback-2026-07-01";
 
 interface RespostaBruta {
+  model?: string;
   stop_reason?: string | null;
   content?: { type: string; text?: string }[];
   usage?: {
@@ -26,7 +27,7 @@ interface ErroAPI {
 }
 
 export interface ClienteMensagens {
-  beta: { messages: { create(req: Record<string, unknown>): Promise<unknown> } };
+  beta: { messages: { create(req: Record<string, unknown>, controle?: ControleExecucaoIA): Promise<unknown> } };
 }
 
 export class AnthropicHTTPClient implements ClienteMensagens {
@@ -45,12 +46,60 @@ export class AnthropicHTTPClient implements ClienteMensagens {
 
   beta = {
     messages: {
-      create: async (req: Record<string, unknown>): Promise<RespostaBruta> => {
+      create: async (req: Record<string, unknown>, controle?: ControleExecucaoIA): Promise<RespostaBruta> => {
+        if (controle) return this.chamarControlado(req, controle);
         return this.chamarComRetry(req, 0);
       },
     },
   };
 
+  /** Deadline total opt-in: inclui o body e nunca repete o POST. */
+  private async chamarControlado(req: Record<string, unknown>, controle: ControleExecucaoIA): Promise<RespostaBruta> {
+    let enviado = false;
+    const erro = (codigo: string) => new ErroProvedorIA(codigo, codigo, {
+      fase: enviado ? "possivelmente-enviado" : "nao-enviado", modeloObservado: null, uso: null, codigo,
+    });
+    if (!Number.isFinite(controle.deadlineMs) || controle.deadlineMs <= 0 || controle.deadlineMs > TIMEOUT_MS || controle.maxRetries !== 0) throw erro("CONTROLE_INVALIDO");
+    if (controle.signal?.aborted) throw erro("ABORTADO_ANTES_ENVIO");
+    const controller = new AbortController();
+    let rejeitar!: (e: ErroProvedorIA) => void;
+    const interrompida = new Promise<never>((_resolver, reject) => { rejeitar = reject; });
+    const interromper = (codigo: string) => { rejeitar(erro(codigo)); controller.abort(); };
+    const abortar = () => interromper(enviado ? "ABORTADO_APOS_ENVIO" : "ABORTADO_ANTES_ENVIO");
+    controle.signal?.addEventListener("abort", abortar, { once: true });
+    const timer = setTimeout(() => interromper("DEADLINE"), controle.deadlineMs);
+    try {
+      const trabalho = async () => {
+        // Mesma normalização de payload do caminho legado abaixo; teste de bytes trava a paridade.
+        const betas = req.betas as string[] | undefined;
+        const bodyReq = { ...req };
+        delete bodyReq.betas;
+        delete bodyReq.fallbacks;
+        const headers: Record<string, string> = {
+          "x-api-key": this.apiKey, "anthropic-version": ANTHROPIC_VERSION, "content-type": "application/json",
+        };
+        if (betas?.length) headers["anthropic-beta"] = betas.join(",");
+        const url = betas?.length ? `${ANTHROPIC_API_URL}?beta=true` : ANTHROPIC_API_URL;
+        enviado = true;
+        const response = await fetch(url, { method: "POST", headers, body: JSON.stringify(bodyReq), signal: controller.signal });
+        let corpo: unknown;
+        try { corpo = await response.json(); } catch { throw erro("CORPO_INVALIDO"); }
+        if (!response.ok) {
+          const diagnostico = diagnosticoDaResposta(corpo, "possivelmente-enviado");
+          throw new ErroProvedorIA(String(response.status), "Falha do provedor.", diagnostico);
+        }
+        if (corpo === null || typeof corpo !== "object" || Array.isArray(corpo)) throw erro("CORPO_INVALIDO");
+        return corpo as RespostaBruta;
+      };
+      return await Promise.race([trabalho(), interrompida]);
+    } catch (e) {
+      if (e instanceof ErroProvedorIA) throw e;
+      throw erro("TRANSPORTE");
+    } finally {
+      clearTimeout(timer);
+      controle.signal?.removeEventListener("abort", abortar);
+    }
+  }
   private async chamarComRetry(req: Record<string, unknown>, tentativa: number): Promise<RespostaBruta> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -191,13 +240,23 @@ function montarMensagens(p: PedidoIA): Record<string, unknown>[] {
   });
 }
 
+/** Só nomes canônicos exatos; ausência não é alias do modelo pedido. */
+function diagnosticoDaResposta(resposta: unknown, fase: DiagnosticoChamadaIA["fase"], modeloEsperado?: string): DiagnosticoChamadaIA {
+  const r = resposta !== null && typeof resposta === "object" && !Array.isArray(resposta) ? resposta as Record<string, unknown> : {};
+  const modeloObservado = typeof r.model === "string" && modeloPermitido(r.model) ? r.model : null;
+  const u = r.usage !== null && typeof r.usage === "object" && !Array.isArray(r.usage) ? r.usage as Record<string, unknown> : {};
+  const campos = [u.input_tokens, u.output_tokens, u.cache_read_input_tokens, u.cache_creation_input_tokens];
+  const valido = campos.every(v => typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 2_147_483_647);
+  const uso = valido ? { tokensEntrada: campos[0] as number, tokensSaida: campos[1] as number, tokensCache: campos[2] as number, tokensEscritaCache: campos[3] as number } : null;
+  return { fase, modeloObservado, uso, ...(!modeloObservado ? { codigo: "MODELO_DESCONHECIDO" } : modeloEsperado && modeloObservado !== modeloEsperado ? { codigo: "MODELO_DIVERGENTE" } : !uso ? { codigo: "USO_DESCONHECIDO" } : {}) };
+}
 export function criarProvedorAnthropic(cliente: ClienteMensagens, modelos: ModelosIA): ProvedorIA {
   return {
     nome: "anthropic",
     async gerar(p: PedidoIA): Promise<RespostaIA> {
       const modelo = p.tarefa === "classificacao" ? modelos.classificacao : modelos.conversa;
       if (!modeloPermitido(modelo)) {
-        throw new ErroProvedorIA("MODELO_NAO_PERMITIDO", `Modelo fora de MODELOS_PERMITIDOS: ${modelo}`);
+        throw new ErroProvedorIA("MODELO_NAO_PERMITIDO", `Modelo fora de MODELOS_PERMITIDOS: ${modelo}`, p.controle ? { fase: "nao-enviado", modeloObservado: null, uso: null, codigo: "MODELO_NAO_PERMITIDO" } : undefined);
       }
       const outputConfig: Record<string, unknown> = { effort: "low" };
       if (p.esquemaSaida) outputConfig.format = { type: "json_schema", schema: p.esquemaSaida };
@@ -215,9 +274,16 @@ export function criarProvedorAnthropic(cliente: ClienteMensagens, modelos: Model
       const inicio = Date.now();
       let r: RespostaBruta;
       try {
-        r = (await cliente.beta.messages.create(req)) as RespostaBruta;
+        r = (await (p.controle ? cliente.beta.messages.create(req, p.controle) : cliente.beta.messages.create(req))) as RespostaBruta;
       } catch (e) {
         throw traduzirErro(e);
+      }
+      if (p.controle) {
+        const diagnostico = diagnosticoDaResposta(r, "enviado", modelo);
+        const objeto = r !== null && typeof r === "object" && !Array.isArray(r);
+        const motivoValido = objeto && ["end_turn", "refusal", "max_tokens", "stop_sequence"].includes(r.stop_reason ?? "");
+        const conteudoValido = objeto && (r.stop_reason === "refusal" || (Array.isArray(r.content) && r.content.every(b => b && typeof b === "object" && typeof b.type === "string" && (b.type !== "text" || typeof b.text === "string"))));
+        if (!motivoValido || !conteudoValido) throw new ErroProvedorIA("CORPO_INVALIDO", "Resposta inválida do provedor.", { ...diagnostico, codigo: "CORPO_INVALIDO" });
       }
       const recusa = r.stop_reason === "refusal";
       const texto = recusa
@@ -225,6 +291,7 @@ export function criarProvedorAnthropic(cliente: ClienteMensagens, modelos: Model
         : (r.content ?? []).filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
       return {
         texto,
+        ...(p.controle ? { diagnostico: diagnosticoDaResposta(r, "enviado", modelo) } : {}),
         modelo,
         provedor: "anthropic",
         recusa,
