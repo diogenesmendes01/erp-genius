@@ -6,6 +6,7 @@ import { papeisDoGuardArquivo } from "@/test/guard-pagina";
 const mocks = vi.hoisted(() => ({
   conversa: vi.fn(async () => ({ atendimentoId: "at-336", aberta: true })),
   usuario: { valor: { id: "u1", nome: "U", papeis: ["VENDEDOR"], permissoes: [] as string[] } },
+  pessoa: vi.fn(), escopoPessoa: vi.fn(async () => ({ mescladaEmId: null, id: "autorizada" })),
   carregar: vi.fn(),
   listarFiltros: vi.fn(async () => [] as unknown[]),
   obter: vi.fn(async () => null as unknown),
@@ -22,11 +23,12 @@ vi.mock("@/server/crm/filtros-salvos", () => ({ listarFiltros: mocks.listarFiltr
 vi.mock("@/server/crm/historico", () => ({ obterOportunidade: mocks.obter, historicoOportunidade: mocks.historico }));
 vi.mock("@/server/comercial/consultas", () => ({ listarVendedores: mocks.vendedores }));
 vi.mock("@/server/paises/consultas", () => ({ listarPaisesOperacionais: mocks.paises }));
-vi.mock("@/lib/prisma", () => ({ prisma: { configuracaoOperacional: { findUnique: mocks.config } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { pessoa: { findFirst: mocks.pessoa }, configuracaoOperacional: { findUnique: mocks.config } } }));
 vi.mock("./FunilCliente", () => ({ FunilCliente: mocks.cliente }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 
 vi.mock("@/server/inbox/atalhos", () => ({ atendimentoParaAbrir: mocks.conversa }));
+vi.mock("@/server/crm/pessoas", () => ({ escopoPessoas: mocks.escopoPessoa }));
 import Page from "./page";
 
 const semOportunidades = [{ etapa: "NOVO", total: 0, somaPorMoeda: [], cartoes: [], possuiMais: false }];
@@ -85,4 +87,25 @@ it("#336 só consulta conversa depois da oportunidade autorizada e transporta o 
   await renderPagina({ o: "op336" }, comOportunidade);
   expect(mocks.conversa).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: "u1" }), { leadId: "op336", pessoaId: "p336" });
   expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ aberta: { conversa: { atendimentoId: "at-336", aberta: true } } });
+});
+
+it("#329 nova Pessoa autorizada chega preenchida; URL leva só id e nome só vem da consulta", async () => {
+  mocks.pessoa.mockResolvedValue({ id: "p329", nome: "Fernanda fictícia" });
+  await renderPagina({ nova: "  p329  ", busca: "curso" }, semOportunidades);
+  expect(mocks.pessoa).toHaveBeenCalledWith({ where: { AND: [{ id: "p329", responsavel: null }, { mescladaEmId: null, id: "autorizada" }] }, select: { id: true, nome: true } });
+  expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ preenchidoNova: { pessoaId: "p329", nome: "Fernanda fictícia" } });
+  expect(mocks.escopoPessoa).toHaveBeenCalledWith(expect.objectContaining({ id: "u1" }));
+});
+it("#329 Pessoa fora do escopo é ignorada e nova vazia não consulta", async () => {
+  mocks.pessoa.mockResolvedValue(null);
+  await renderPagina({ nova: "negada" }, semOportunidades);
+  expect(mocks.cliente.mock.calls.at(-1)?.[0]).toMatchObject({ preenchidoNova: null });
+  mocks.pessoa.mockClear();
+  await renderPagina({ nova: " " }, semOportunidades);
+  expect(mocks.pessoa).not.toHaveBeenCalled();
+});
+it("#329 nova array usa primeiro item sem buscar por nome/telefone", async () => {
+  mocks.pessoa.mockResolvedValue({ id: "p1", nome: "Primeira fictícia" });mocks.carregar.mockResolvedValue(semOportunidades);
+  renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ nova: ["p1", "p2"] }) }));
+  expect(mocks.pessoa.mock.calls.at(-1)?.[0].where.AND[0]).toEqual({ id: "p1", responsavel: null });
 });

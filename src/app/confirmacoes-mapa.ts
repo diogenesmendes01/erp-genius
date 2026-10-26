@@ -121,6 +121,13 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     efeito: "amarra o histórico da conversa a um aluno, responsável ou oportunidade; só a administração ou o gerente do setor desfaz, com motivo",
   },
   {
+    arquivo: "src/app/(app)/inbox/abas/ClienteVoltou.tsx",
+    modulo: "@/server/inbox/acoes-cliente-voltou",
+    acao: "vincularLeadRetornoNoInbox",
+    achado: "L2298",
+    efeito: "vincula o contato e o atendimento selecionado à oportunidade anterior; desfazer exige administração ou gerente, com motivo",
+  },
+  {
     arquivo: "src/app/(app)/inbox/AcoesContato.tsx",
     modulo: "@/server/whatsapp/desvincular-contato",
     acao: "desvincularContatoWhatsApp",

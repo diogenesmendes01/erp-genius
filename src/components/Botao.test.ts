@@ -37,6 +37,7 @@ describe("Botao (E1)", () => {
       primario: "bg-brand-solid text-on-brand hover:brightness-95",
       secundario: "border border-border-soft bg-transparent text-brand-700 hover:bg-highlight",
       perigo: "bg-danger text-white hover:brightness-95",
+      perigoContorno: "border border-red-700 bg-transparent text-red-700 hover:bg-red-50",
       fantasma: "text-brand-700 hover:bg-highlight",
       neutro: "border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight",
     });
@@ -49,7 +50,7 @@ describe("Botao (E1)", () => {
   });
 
   it("não anula o indicador de foco global do app (sem outline-none, sem anel próprio com halo)", () => {
-    for (const v of ["primario", "secundario", "perigo", "fantasma"] as const) {
+    for (const v of ["primario", "secundario", "perigo", "perigoContorno", "fantasma"] as const) {
       const c = botaoClasses({ variante: v });
       expect(c).not.toMatch(/outline-none|ring-/);
     }

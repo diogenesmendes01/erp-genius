@@ -14,6 +14,7 @@
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
+  "inbox/aria/CartaoSugestaoAria.tsx": ["<Botao> → primario/md", "<Botao> → perigoContorno/md"],
   "aria/_componentes/Abas.tsx": [
     "<Link> → primario|fantasma/md",
   ],
@@ -1133,6 +1134,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/abas/AbaOportunidades.tsx": ["<Botao> Assumir conversa → fantasma/md", "<Botao> Marcar como perdido → fantasma/md"],
   "inbox/abas/BarraEtapas.tsx": ["<Botao> \"Etapa \" + ETAPA_LABEL[s.etapa] → fantasma/md"],
   "inbox/abas/GavetaContato.tsx": ["<Botao> Cancelar → fantasma/md", "<Botao> Salvar → primario/md", "<Botao> Tentar de novo → secundario/sm"],
+  "inbox/abas/ClienteVoltou.tsx": ["<Botao> Vincular a → secundario/md"],
+  "inbox/abas/OutrasOportunidades.tsx": ["<a> Nova oportunidade → fantasma/md"],
   "inbox/abas/ContatoSemNome.tsx": ["<Botao> Salvar → primario/sm"],
   "inbox/abas/TagsContato.tsx": ["<Botao> + tag → fantasma/sm", "<Botao> key t.id → fantasma/sm", "<Botao> Criar tag “ · ” → fantasma/sm"],
   "inbox/NovoAtendimento.tsx": [

@@ -19,13 +19,13 @@ import { REGUA } from "@/server/cobrancas/regua";
 import { POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabrica";
 import { carregarPoliticaRegua, traduzirDegrausPolitica, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import { contarAlcanceRegua, type AlcanceRegua } from "./alcance-regua";
-import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
 import { executarAcaoMotor } from "./motor/acoes";
 import { capacidadesDoNumero } from "./motor/capacidades";
 import { escopoConversas } from "./escopo";
+import { vincularLeadLegadoTx } from "./vincular-lead-legado";
 import { garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial";
 import { criarLeadDeInboundWhatsApp, resolverPessoaPorTelefone } from "@/server/comercial/captura";
@@ -477,6 +477,11 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { contatoId, alvo, atendimentoId } = VincularContatoSchema.parse(input);
+    if (alvo.tipo === "lead") {
+      await prisma.$transaction(tx => vincularLeadLegadoTx(tx, autor, { contatoId, atendimentoId, leadId: alvo.id }));
+      revalidatePath("/inbox");
+      return;
+    }
     const alcance = atendimentoId ? await conversaVisivel(autor, atendimentoId, true) : null;
     if (!alcance || alcance.contatoId !== contatoId || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para vinculação.");
 
@@ -501,15 +506,7 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
       if (!resp) throw new ErroRegra("Responsável fora da finalidade ou vínculo deste atendimento.");
       if (contato.responsavelId && contato.responsavelId !== resp.id) throw new ErroRegra("Contato já vinculado a outro responsável.");
       data = { responsavelId: resp.id };
-    } else {
-      if (alcance.finalidade !== "COMERCIAL" || !temPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) throw new ErroRegra("Vínculo de lead exige atendimento comercial.");
-      const lead = await prisma.oportunidade.findFirst({
-        where: { AND: [{ id: alvo.id, telefoneE164: contato.telefoneE164 }, await escopoComercialAtual(autor)] },
-        select: { id: true },
-      });
-      if (!lead) throw new ErroRegra("Lead não encontrado ou fora do seu escopo.");
-      if (contato.leadId && contato.leadId !== lead.id) throw new ErroRegra("Contato já vinculado a outro lead. Preserve o contexto histórico.");
-      data = { leadId: lead.id };
+    } else { throw new ErroRegra("Tipo de vínculo não permitido.");
     }
 
     await prisma.$transaction(async (tx) => {

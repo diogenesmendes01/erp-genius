@@ -10,6 +10,7 @@ import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
+import { ClienteVoltou } from "./abas/ClienteVoltou";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { ModalPerda } from "../funil/ModalPerda";
 import { marcarPerdidoNoInbox } from "@/server/inbox/acoes-painel";
@@ -57,6 +58,7 @@ export interface PropsInboxNovo {
   selecionado: string | null;
   usuario: { id: string; papeis: Papel[] };
   podeAbrirFunil?: boolean;
+  podeCriarOportunidade?: boolean;
   fuso: string | null;
   /** Fuso institucional já consultado pela página, para fallback dos instantes. */
   fusoEscola?: string;
@@ -157,7 +159,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
   const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
@@ -494,7 +496,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ? detalhesComerciais
           ? abaAtiva === "oportunidades"
             ? oportunidadesDoContato.erro ? falhaDosDetalhes(oportunidadesDoContato.recarregar, "oportunidades")
-              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} podeAbrirFunil={podeAbrirFunil} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
+              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
                 : <EsqueletoPainel rotulo="oportunidades" />
             : detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
               : detalhesDoContato.dado ? <AbaDetalhes dados={detalhesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { verContato: false, verEmpresa: false }} aoAbrirOportunidades={() => setAbaDoContato({ atendimentoId: selecionado, id: "oportunidades" })} />
@@ -543,6 +545,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             fuso={fuso}
             agoraInicial={agoraInicial}
             conversa={conversa}
+            aria={painelDoAberto?.dado?.aria}
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}
             destinos={destinos}
@@ -560,8 +563,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         tags: painelDoAberto?.dado?.tags ?? [], quadrado: detalhesComerciais && painelDoAberto?.dado?.cabecalho?.quadrado === true } : undefined}
         slotTags={painelDoAberto?.dado?.cabecalho?.pessoaId ? <TagsContato atendimentoId={selecionado} tags={painelDoAberto.dado.tags ?? []} disponiveis={painelDoAberto.dado.cabecalho.tagsDisponiveis}
           podeEditar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.editarTags} podeCriar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.criarTag} aoMudar={recarregarLista} /> : undefined}
-        slotAviso={painelDoAberto?.dado?.cabecalho?.semNome ? <ContatoSemNome atendimentoId={selecionado} nomeAnterior={painelDoAberto.dado.acoes?.nomeSalvo ?? null}
-          podeEditar={painelDoAberto.dado.acoes?.podeEditarNome === true} aoMudar={recarregarLista} /> : undefined}
+        slotAviso={painelDoAberto?.dado?.cabecalho?.semNome || painelDoAberto?.dado?.cabecalho?.clienteVoltou ? <>
+          {painelDoAberto?.dado?.cabecalho?.clienteVoltou && atual?.finalidade === "COMERCIAL" && <ClienteVoltou atendimentoId={selecionado} nome={atual.contatoNome} pessoaId={painelDoAberto.dado.cabecalho.pessoaId} dado={painelDoAberto.dado.cabecalho.clienteVoltou} podeCriar={podeCriarOportunidade && !!painelDoAberto.dado.cabecalho.pessoaId} aoMudar={recarregarLista} />}
+          {painelDoAberto?.dado?.cabecalho?.semNome ? <ContatoSemNome atendimentoId={selecionado} nomeAnterior={painelDoAberto.dado.acoes?.nomeSalvo ?? null}
+          podeEditar={painelDoAberto.dado.acoes?.podeEditarNome === true} aoMudar={recarregarLista} /> : null}</> : undefined}
         abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => { if (abas.some(a => a.id === id)) setAbaDoContato({ atendimentoId: selecionado, id }); }} visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres" && !dialogoAberto}
         aoFechar={fecharPainel} focarAoAbrir={painelAberto === true} className={classesDoPainel(painelAberto, vista)}>{painel}</PainelContato>}
       {perdaAberta && perdaOportunidade.atendimentoId && perdaOportunidade.id && <ModalPerda key={perdaOportunidade.sessao} oportunidadeId={perdaOportunidade.id} nome={perdaOportunidade.nome}
