@@ -1,3 +1,4 @@
+import { carregarContadorAtividadeAria } from "./historico-aria-leitura";
 import type { EtapaLead, OrigemCanal, PapelParticipante, Prisma } from "@prisma/client";
 import { hrefConversa } from "@/lib/href-conversa";
 import { atendimentosParaPessoas } from "./atalhos";
@@ -16,7 +17,7 @@ import { CHAVE_LINHA } from "@/server/whatsapp/linha-comercial";
 import { capacidadesPainel, type CapacidadesPainel } from "./permissoes";
 
 export type ClienteVoltouPainel = { oportunidadeId: string; titulo: string; situacao: "ganha" | "perdida"; contatoId: string; podeVincular: boolean };
-export type CabecalhoPainel = { clienteVoltou: ClienteVoltouPainel | null; pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel };
+export type CabecalhoPainel = { contadorAtividade: number; clienteVoltou: ClienteVoltouPainel | null; pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel };
 export type CampoPainel = CampoDaFicha & { ia: boolean };
 export type PessoaPainel = { id: string; nome: string; email: string | null; cidade: string | null; cargo: string | null; linkedin: string | null; origemCanal: OrigemCanal | null; telefone: string | null; empresa: { id: string; nome: string; documento: string | null; segmentoMercado: string | null; porte: string | null; site: string | null } | null };
 export type ResumoOportunidadePainel = { id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null; etapa: EtapaLead; b2b: boolean };
@@ -116,6 +117,7 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   const capacidades = capacidadesPainel(u, { finalidade: a.finalidade, veLead: !!op });
   const { fonte } = nomeEFonteDoAtendimento(a);
   return {
+    contadorAtividade: await carregarContadorAtividadeAria(u, atendimentoId),
     clienteVoltou: await retornoDoCliente(u, c, prisma),
     pessoaId: pessoa?.id ?? null,
     tagsDisponiveis: pessoa && capacidades.editarTags ? (await tagsAtivas()).map(({ id, nome }) => ({ id, nome })) : [],

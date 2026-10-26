@@ -29,7 +29,7 @@ import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 
 
 
-import { aprovarAcaoAria, desfazerAcaoAria, rejeitarAcaoAria } from "./historico";
+import { aprovarAcaoAria, desfazerAcaoAria, desfazerAcaoAriaTx, rejeitarAcaoAria } from "./historico";
 import { aprovarSugestaoNoInbox, rejeitarSugestaoNoInbox, desfazerSugestaoNoInbox } from "./decisao-inbox";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
@@ -71,6 +71,81 @@ describe("354 D1 decisão contextual real", () => {
   const dados=payload??(acao==="TAG"?{pessoaId:c.pessoa.id,tagId:c.tag.id,nome:c.tag.nome}:acao==="MOVER_ETAPA"?{de:"NOVO",para:"EM_ATENDIMENTO"}:acao==="RESPONDER"?{texto:"Olá, podemos conversar."}:acao==="CRIAR_TAREFA"?{titulo:"Ligar",venceEmISO:new Date(Date.now()+86400000).toISOString()}:{texto:"Olá",agendadaPara:diaUtilAs(10).toISOString()});
   return prisma.acaoAgenteIA.create({data:{turnoId:c.turno.id,atendimentoId:c.at.id,oportunidadeId:c.op.id,acao,modoConfigurado:"SUGERE",status:"SUGERIDA",confianca:90,payload:dados,reversivel:acao!=="RESPONDER"}});
  }
+ it("334 undo concorrente do mesmo autor emite efeito/Evento/aviso uma vez, replay zero",async()=>{
+  const s=await sugestao();await aprovarSugestaoNoInbox(c.at.id,s.id);
+  const primeiro=await comAvisosInbox(()=>Promise.all([desfazerSugestaoNoInbox(c.at.id,s.id),desfazerSugestaoNoInbox(c.at.id,s.id)]));
+  expect(primeiro.resultado).toEqual([{ok:true},{ok:true}]);
+  expect(primeiro.avisos.filter(a=>a.tipo==="atendimento.atualizado"&&a.atendimentoId===c.at.id)).toHaveLength(1);
+  expect(await prisma.evento.count({where:{tipo:"TagRemovida",payload:{path:["acaoAgenteIAId"],equals:s.id}}})).toBe(1);
+  const replay=await comAvisosInbox(()=>desfazerSugestaoNoInbox(c.at.id,s.id));expect(replay.resultado).toEqual({ok:true});expect(replay.avisos).toEqual([]);
+ });
+ it("334 Evento posterior de outro autor não comprova replay mesmo com desfeitaPorId antigo",async()=>{
+  const s=await sugestao();await aprovarSugestaoNoInbox(c.at.id,s.id);await desfazerSugestaoNoInbox(c.at.id,s.id);
+  await prisma.evento.create({data:{tipo:"AcaoAriaDesfeita",agregadoTipo:"AcaoAgenteIA",agregadoId:s.id,autorId:c.gerente.id,payload:{acaoAgenteIAId:s.id,acao:s.acao},criadoEm:new Date(Date.now()+1000)}});
+  expect((await desfazerSugestaoNoInbox(c.at.id,s.id)).ok).toBe(false);
+ });
+ it("334 replay revalida papel após espera SQL real",async()=>{
+  const s=await sugestao();await aprovarSugestaoNoInbox(c.at.id,s.id);await desfazerSugestaoNoInbox(c.at.id,s.id);
+  const r=await duranteLock(s.id,"acao",()=>desfazerSugestaoNoInbox(c.at.id,s.id),db=>db.usuario.update({where:{id:c.dono.id},data:{papeis:[Papel.PROFESSOR]}}));
+  expect(r.ok).toBe(false);expect(await prisma.evento.count({where:{tipo:"AcaoAriaDesfeita",agregadoId:s.id}})).toBe(1);
+ });
+ it("334 replay mantém verificação do vínculo real da tarefa",async()=>{
+  const s=await sugestao("CRIAR_TAREFA");await aprovarSugestaoNoInbox(c.at.id,s.id);expect(await desfazerSugestaoNoInbox(c.at.id,s.id)).toEqual({ok:true});
+  const outro=await prisma.oportunidade.create({data:{nome:"Outro contexto334",vendedorDonoId:c.dono.id}});
+  await prisma.tarefa.updateMany({where:{atendimentoId:c.at.id},data:{leadId:outro.id}});
+  expect((await desfazerSugestaoNoInbox(c.at.id,s.id)).ok).toBe(false);expect(await prisma.evento.count({where:{tipo:"AcaoAriaDesfeita",agregadoId:s.id}})).toBe(1);
+ });
+ it("334 alteração humana posterior recusa undo sem Evento/aviso e preserva o valor",async()=>{
+  const s=await sugestao("TAG");await prisma.acaoAgenteIA.update({where:{id:s.id},data:{acao:"ATUALIZAR_CAMPO",payload:{pessoaId:c.pessoa.id,campoId:c.campo.id,nomeCampo:"Objetivo",de:null,para:"Aria"}}});
+  expect(await aprovarSugestaoNoInbox(c.at.id,s.id)).toEqual({ok:true});
+  await prisma.valorCampoPersonalizado.updateMany({where:{pessoaId:c.pessoa.id,campoId:c.campo.id},data:{valor:"Humano"}});
+  const r=await comAvisosInbox(()=>desfazerSugestaoNoInbox(c.at.id,s.id));expect(r.resultado.ok).toBe(false);expect(r.avisos).toEqual([]);
+  expect((await prisma.valorCampoPersonalizado.findFirstOrThrow({where:{pessoaId:c.pessoa.id,campoId:c.campo.id}})).valor).toBe("Humano");
+  expect(await prisma.evento.count({where:{tipo:"AcaoAriaDesfeita",agregadoId:s.id}})).toBe(0);
+ });
+ it("334 núcleo: falha de Evento injetada reverte efeito/status/Evento e não publica NOTIFY",async()=>{
+  const s=await sugestao();await aprovarSugestaoNoInbox(c.at.id,s.id);
+  const r=await comAvisosInbox(async()=>{
+   await expect(prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT id FROM "AcaoAgenteIA" WHERE id=${s.id} FOR UPDATE`;
+    const atual=await tx.acaoAgenteIA.findUniqueOrThrow({where:{id:s.id}});
+    const falho=new Proxy(tx,{get(alvo,chave){
+     if(chave==="evento")return new Proxy(alvo.evento,{get(modelo,metodo){
+      if(metodo==="create")return (args:Prisma.EventoCreateArgs)=>{if(args.data.tipo==="AcaoAriaDesfeita")throw Error("FalhaEvento334");return modelo.create(args);};
+      const valor=Reflect.get(modelo,metodo);return typeof valor==="function"?valor.bind(modelo):valor;
+     }});
+     const valor=Reflect.get(alvo,chave);return typeof valor==="function"?valor.bind(alvo):valor;
+    }});
+    await desfazerAcaoAriaTx(falho,atual,c.dono,{replayMesmoAutorNoInbox:true});
+   })).rejects.toThrow("FalhaEvento334");
+  });
+  expect(r.avisos).toEqual([]);expect(await prisma.pessoaTag.count()).toBe(1);
+  expect((await prisma.acaoAgenteIA.findUniqueOrThrow({where:{id:s.id}})).status).toBe("APROVADA");
+  expect(await prisma.evento.count({where:{agregadoId:s.id,tipo:"AcaoAriaDesfeita"}})).toBe(0);
+  expect(await prisma.evento.count({where:{tipo:"TagRemovida",payload:{path:["acaoAgenteIAId"],equals:s.id}}})).toBe(0);
+ });
+ it("334 replay Inbox exige mesmo autor e Evento comprovado; global continua recusando",async()=>{
+  const s=await sugestao();
+  expect(await aprovarSugestaoNoInbox(c.at.id,s.id)).toEqual({ok:true});
+  expect(await desfazerSugestaoNoInbox(c.at.id,s.id)).toEqual({ok:true});
+  expect(await desfazerSugestaoNoInbox(c.at.id,s.id)).toEqual({ok:true});
+  expect(await prisma.evento.count({where:{tipo:"AcaoAriaDesfeita",agregadoId:s.id}})).toBe(1);
+  logado(c.gerente);expect((await desfazerAcaoAria(s.id)).ok).toBe(false);
+  expect((await desfazerSugestaoNoInbox(c.at.id,s.id)).ok).toBe(false);
+  logado(c.dono);
+  await prisma.evento.deleteMany({where:{tipo:"AcaoAriaDesfeita",agregadoId:s.id}});
+  expect((await desfazerSugestaoNoInbox(c.at.id,s.id)).ok).toBe(false);
+ });
+ it("334 replay não contorna revogação nem troca de Pessoa do efeito",async()=>{
+  const s=await sugestao();await aprovarSugestaoNoInbox(c.at.id,s.id);await desfazerSugestaoNoInbox(c.at.id,s.id);
+  await prisma.atendimentoWhatsApp.update({where:{id:c.at.id},data:{responsavelId:null}});
+  expect((await desfazerSugestaoNoInbox(c.at.id,s.id)).ok).toBe(false);
+  await prisma.atendimentoWhatsApp.update({where:{id:c.at.id},data:{responsavelId:c.dono.id}});
+  const outra=await prisma.pessoa.create({data:{nome:"Outra334"}});
+  await prisma.oportunidade.update({where:{id:c.op.id},data:{pessoaId:outra.id}});
+  expect((await desfazerSugestaoNoInbox(c.at.id,s.id)).ok).toBe(false);
+  expect(await prisma.evento.count({where:{tipo:"AcaoAriaDesfeita",agregadoId:s.id}})).toBe(1);
+ });
  it("responsável aprova e desfaz sem receber a API global",async()=>{
   const s=await sugestao();
   expect((await aprovarAcaoAria(s.id)).ok).toBe(false);

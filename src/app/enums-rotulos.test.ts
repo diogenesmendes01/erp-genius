@@ -2113,6 +2113,7 @@ const ANTIGOS = ["ETAPA_LABEL", "TEMPERATURA_LABEL", "SEGMENTO_LABEL", "MOTIVO_P
   "STATUS_COMISSAO_LABEL", "STATUS_ALUNO_LABEL", "TIPO_COBRANCA_LABEL", "FORMA_PAGAMENTO_LABEL", "GENERO_LABEL", "ESCOLARIDADE_LABEL",
   "SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL", "STATUS_ENCONTRO_LABEL"];
 const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valores: readonly string[]][] = [
+  ["ALTERACAO_ARIA_LABEL", L.ALTERACAO_ARIA_LABEL, Object.values(AcaoAgenteIATipo)],
   ["SITUACAO_CLIENTE_VOLTOU_LABEL", L.SITUACAO_CLIENTE_VOLTOU_LABEL, ["ganha", "perdida"]],
   ["SITUACAO_OUTRA_OPORTUNIDADE_LABEL", L.SITUACAO_OUTRA_OPORTUNIDADE_LABEL, Object.values(EtapaLead)],
   ["ORIGEM_ENVIO_LABEL", L.ORIGEM_ENVIO_LABEL, Object.values(OrigemEnvio)],
@@ -2209,6 +2210,15 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
 const EXPORTS_DE_LABELS = ["rotular", "TEMPERATURA_CLS", ...ANTIGOS, ...MAPAS_NOVOS.map(([nome]) => nome)].sort();
 
 describe("(iii) labels.ts: exports e mapas novos", () => {
+  it("334 alterações Aria não confundem intenção preparada com entrega externa",()=>{
+    expect(L.ALTERACAO_ARIA_LABEL).toEqual({
+      RESPONDER:"Preparou uma resposta",ENVIAR_DOCUMENTO:"Preparou o envio de documento",ATUALIZAR_CAMPO:"Preencheu um campo",TAG:"Adicionou uma tag",MOVER_ETAPA:"Moveu a etapa",MARCAR_PERDIDO:"Marcou como perdido",CRIAR_TAREFA:"Criou uma tarefa",AGENDAR_MENSAGEM:"Agendou uma mensagem",NOTA_INTERNA:"Registrou uma nota interna",CONDICAO_COMERCIAL:"Preparou uma condição comercial",HANDOFF:"Pediu ajuda a uma pessoa",CLASSIFICAR_SETOR:"Classificou o setor",
+    });
+    for(const texto of Object.values(L.ALTERACAO_ARIA_LABEL))expect(texto).not.toMatch(/entregou|mensagem enviada|documento enviado/i);
+    expect(problemasDoMapa(Object.freeze({...L.ALTERACAO_ARIA_LABEL,RESPONDER:"RESPONDER"}),Object.values(AcaoAgenteIATipo))).toContain("RESPONDER: repete o código");
+    const incompleto={...L.ALTERACAO_ARIA_LABEL};delete (incompleto as Partial<typeof incompleto>).TAG;
+    expect(problemasDoMapa(Object.freeze(incompleto),Object.values(AcaoAgenteIATipo)).some(p=>p.startsWith("chaves ["))).toBe(true);
+  });
   for (const [nome, mapa, valores] of MAPAS_NOVOS) {
     it(`${nome}: chaves = valores do enum; rótulo em texto de gente; congelado`, () => {
       expect(problemasDoMapa(mapa, valores), nome).toEqual([]);
