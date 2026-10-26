@@ -353,7 +353,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => pagina.removeEventListener("visibilitychange", aoRetornar);
   }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
-  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
+  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null; acessoRevogado: boolean } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
   useEffect(() => {
     if (!selecionado) return;
@@ -367,8 +367,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (!ativo) return;
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
-        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false } : null };
-        return !r && conhecido ? ant! : { id: selecionado, dado: r };
+        if (r === "sem-acesso") return { id: selecionado, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false } : conhecido.aria } : null };
+        return !r && conhecido ? ant! : { id: selecionado, dado: r, acessoRevogado: !r && ant?.id === selecionado && ant.acessoRevogado === true };
       });
     });
     return () => { ativo = false; };
@@ -407,7 +407,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // (buscarPainel devolve null) vira erro com "Tentar de novo", que volta a carregar. Só true envia.
   const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
   const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
-  const tentarPainelDeNovo = useCallback(() => { setPainelSetor(null); setVersaoPainel((v) => v + 1); }, []);
+  const tentarPainelDeNovo = useCallback(() => { setPainelSetor((ant) => ant?.acessoRevogado ? ant : null); setVersaoPainel((v) => v + 1); }, []);
   const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
@@ -549,11 +549,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ) : (
           <ConversaAberta
             item={atual}
+            aria={painelDoAberto?.dado?.aria}
+            bloquearDecisoesAria={painelDoAberto?.acessoRevogado === true}
             usuario={usuario}
             fuso={fuso}
             agoraInicial={agoraInicial}
             conversa={conversa}
-            aria={painelDoAberto?.dado?.aria}
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}
             destinos={destinos}

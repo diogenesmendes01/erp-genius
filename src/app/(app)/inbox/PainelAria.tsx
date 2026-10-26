@@ -1,17 +1,15 @@
 "use client";
 
-import type { MotivoPausaAtendimentoIA } from "@prisma/client";
+import { textoPausaAria } from "./aria/textos-aria";
+export { textoPausaAria } from "./aria/textos-aria";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { ACAO_AGENTE_IA_LABEL, MOTIVO_PAUSA_IA_LABEL } from "@/lib/labels";
+import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 import { aprovarAcaoAria, devolverParaAria, rejeitarAcaoAria } from "@/server/aria/acoes";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
-export function textoPausaAria(motivo: MotivoPausaAtendimentoIA | null): string {
-  return motivo ? `Aria pausada · ${MOTIVO_PAUSA_IA_LABEL[motivo]}` : "Aria pausada";
-}
 
 /** Bloco "Aria" do painel do atendimento: pausa com "Devolver para Aria" (só com escopo de envio) e sugestões a aprovar ou rejeitar. */
 export function PainelAria({ atendimentoId, aria, fuso, aoMudar }: { atendimentoId: string; aria: AriaDoAtendimento | null | undefined; fuso: string | null; aoMudar(): void }) {
