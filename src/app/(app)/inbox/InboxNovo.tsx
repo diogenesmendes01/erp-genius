@@ -36,6 +36,7 @@ import { ConversaAberta } from "./ConversaAberta";
 import type { ItemTriagem, RevisaoEnvio, OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
 import { ColunaConversas } from "./ColunaConversas";
+import { FaixaAriaAtiva } from "./aria/FaixaAriaAtiva";
 import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
 import { PainelAria } from "./PainelAria";
@@ -352,7 +353,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => pagina.removeEventListener("visibilitychange", aoRetornar);
   }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
-  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
+  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null; acessoRevogado: boolean } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
   useEffect(() => {
     if (!selecionado) return;
@@ -366,8 +367,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (!ativo) return;
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
-        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false } : null };
-        return !r && conhecido ? ant! : { id: selecionado, dado: r };
+        if (r === "sem-acesso") return { id: selecionado, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false } : conhecido.aria } : null };
+        return !r && conhecido ? ant! : { id: selecionado, dado: r, acessoRevogado: !r && ant?.id === selecionado && ant.acessoRevogado === true };
       });
     });
     return () => { ativo = false; };
@@ -406,7 +407,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // (buscarPainel devolve null) vira erro com "Tentar de novo", que volta a carregar. Só true envia.
   const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
   const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
-  const tentarPainelDeNovo = useCallback(() => { setPainelSetor(null); setVersaoPainel((v) => v + 1); }, []);
+  const tentarPainelDeNovo = useCallback(() => { setPainelSetor((ant) => ant?.acessoRevogado ? ant : null); setVersaoPainel((v) => v + 1); }, []);
   const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
@@ -528,6 +529,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
         <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo} sino={sino}
+          faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} /> : undefined}
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
@@ -547,11 +549,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ) : (
           <ConversaAberta
             item={atual}
+            aria={painelDoAberto?.dado?.aria}
+            bloquearDecisoesAria={painelDoAberto?.acessoRevogado === true}
             usuario={usuario}
             fuso={fuso}
             agoraInicial={agoraInicial}
             conversa={conversa}
-            aria={painelDoAberto?.dado?.aria}
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}
             destinos={destinos}
