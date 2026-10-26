@@ -7955,3 +7955,17 @@ Selecionado o delta isolado deeea09c: somente onScrollCapture passa a onWheelCap
 ### PR #453 — escopo irrestrito e abertura fora da primeira página, R28
 
 Selecionadas correções isoladas7dc0b358(ORcomercial canônico irrestrito) eec8f2cd5(ACK de conversa fora dos itens navega para rota canônica; SSR carrega item autorizado). As duas novas provas de navegação passaram no DEV, junto dos21casos Page; o recorte completo142/143 manteve uma falha447 previamente reproduzida, qualificada no QA. O teste nativo próprio de opções3/3 já passou no DEV. A seleção preserva Insights377, presença452, demais fontes públicas e não importa D9/372 ou ancestrais privados. QA independente desta composição, teclado/foco em browser e CI continuam pendentes.
+
+### PR454 C1/C2 — DEV aprovado em recortes; checkpoint local proposto
+GP362 permanece congelado em546cfedd. A resposta humana c76fcdd exige recusar documento reprovado por validador conhecido quando o grupo é fornecido, inclusive reapresentação explícita invariável. Omitido/DOB-only/undefined/null/unknown sem validador continuam preservados. Constante100 compartilhada ZOD+Gaveta/Ficha; registroown-key sem alterar validadoresAluno/ACL/D13/birth.
+
+REDb740da:14 falhas assertivas/129; GREEN06d1a6 EXIT0:6 arquivos175 casos. Lint e TSC original passaram, último68aa39/sess66471→92302d EXIT0. Nativo454 novo5 e sete legados completos:38 casos distintos/oito arquivos EXIT0, em duas leases. Terminais:0662e3(5),8231e4(7),7834a3(5),073c01(8),8f95d3(3),a2e2c3(3),fbaa73(3),959f4c(4). Sem filtros/skips ou repetição dos cinco primeiros arquivos na continuação.
+
+Tentativa antiga393ab0 pool1 teve2/3: assert ainda esperava o literal inválido; minha auditoria inicial deixou esse ponto passar. A sequência parou. Após ROOTrestore419a65, somente o literal esperado foi ajustado; inversa215f→e444 recupera snapshot anterior. Pool1/redação/cache passaram em nova lease, sem relaxar contrato. Negativo90995540 preservado e não somado aos38 aprovados. ReciboGREEN38 e4bdcd21; artefato real de dois canáriosPrisma/log04fc61fc, emissão preservada.
+
+ROOTrestore final2680d9 EXIT0/A502566 confirmado. Mig499b108/schema/client/GP362/AGENTS preservados; sem SQL novo, DDL, instalação, provider real ou push. SPEC e QA454 finais qualificam decisão, fontes e limites. Whitelist17 proposta para commit local do deltaDoc454 sobre público d173, sem importar ancestrais privados362. QA independente no candidato exato, gates integrados/CI, visual e merge continuam pendentes; não homologar340/454 por este recorte.
+
+
+### PR #454 C1/C2 — decisão humana e composição pública R28
+
+Usuário decidiu recusar o documento quando um validador cadastrado reprovar o valor. Tipos desconhecidos/sem validador e documento opcional nulo continuam aceitos; valor fornecido é revalidado mesmo se igual ao histórico, enquanto campo omitido preserva dados antigos. Limite comum de100caracteres no servidor e formulários, sem restringir os documentos latino-americanos aCPF. Selecionados16arquivos do checkpoint274170a6 sobre a fonte pública, mais este quadro composto; nenhum ancestral privadoGP362, schema, migration499 ou dependência importados. DEV175UNIT e38nativos/8arquivos passaram, conforme QA, com tentativa antiga pool1 explicitamente preservada e teste corrigido em lease posterior. São evidências DEV: QA independente desta composição e CI permanecem pendentes.

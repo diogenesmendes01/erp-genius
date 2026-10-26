@@ -23,7 +23,7 @@ export async function cenarioCadastroPessoa(){
  return {dono,outro,admin,guest,pais,tipo,pessoa,op,contato,numero,conversa,atendimento};
 }
 export type CenarioCadastroPessoa=Awaited<ReturnType<typeof cenarioCadastroPessoa>>;
-export const entradaCadastro=(c:CenarioCadastroPessoa)=>({pessoaIdEsperada:c.pessoa.id,pessoa:{documento:"FICTICIO-LATAM340",tipoDocumentoId:c.tipo.id,documentoPaisEmissor:"CR",nascimento:"2000-02-29"}});
+export const entradaCadastro=(c:CenarioCadastroPessoa)=>({pessoaIdEsperada:c.pessoa.id,pessoa:{documento:"1-0234-0567",tipoDocumentoId:c.tipo.id,documentoPaisEmissor:"CR",nascimento:"2000-02-29"}});
 export function barreiraCadastro(){let liberar!:()=>void;const promessa=new Promise<void>(r=>{liberar=r;});return {promessa,liberar};}
 export async function conectarCadastro(){const c=new Client({connectionString:process.env.DATABASE_URL});await c.connect();return c;}
 export async function bloquearPessoaCadastro(pessoaId:string){const c=await conectarCadastro();await c.query("BEGIN");await c.query('SELECT id FROM "Pessoa" WHERE id=$1 FOR UPDATE',[pessoaId]);const r=await c.query<{pid:number}>("SELECT pg_backend_pid() pid");return {client:c,pid:r.rows[0]!.pid,async sair(){await c.query("ROLLBACK");await c.end();}};}

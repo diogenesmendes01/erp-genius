@@ -1,6 +1,7 @@
 import type {Pessoa,Prisma} from "@prisma/client";
 import type {Db} from "@/server/whatsapp/escopo";
 import {ErroPermissao,ErroRegra,apenasPortal,type UsuarioSessao} from "@/server/_shared/sessao";
+import {temValidadorDocumento} from "@/server/_shared/validacao";
 import {ZodError} from "zod";
 import {escopoPessoas} from "./pessoas";
 import {capacidadesCrm} from "./permissoes";
@@ -41,11 +42,14 @@ export async function prepararCadastroPessoaTx(tx:Prisma.TransactionClient,autor
  const revalidar=async()=>{const u=await atorAtual(tx,autorId,true);if(!u)throw new ErroPermissao();if(!await pessoaAutorizada(tx,u,pessoaAtual.id))throw new ErroRegra("Contato não encontrado.");return u;};
  await revalidar();
  const antes=cadastroCivilDoBanco(pessoaAtual),depois=aplicarCadastroPessoa(antes,input),campos=camposCadastroAlterados(antes,depois);
- if(campos.some(k=>k!=="nascimento")&&depois.tipoDocumentoId){
+ const documentoFornecido=(["documento","tipoDocumentoId","documentoPaisEmissor"] as const).some(k=>input[k]!==undefined);
+ if(documentoFornecido&&depois.tipoDocumentoId){
   const id=depois.tipoDocumentoId;
   await tx.$queryRaw`SELECT id FROM "TipoDocumento" WHERE id=${id} FOR KEY SHARE NOWAIT`;
   const tipo=await tx.tipoDocumento.findUnique({where:{id},select:{id:true,paisId:true,validador:true}});
-  if(!avaliarDocumentoPessoa(depois,tipo).coerente)throw new ErroRegra("Tipo de documento indisponível. Atualize o cadastro.");
+  const avaliacao=avaliarDocumentoPessoa(depois,tipo);
+  if(!avaliacao.coerente)throw new ErroRegra("Tipo de documento indisponível. Atualize o cadastro.");
+  if(depois.documento&&tipo&&temValidadorDocumento(tipo.validador)&&!avaliacao.validado)throw new ErroRegra("Documento inválido para o tipo selecionado. Corrija o documento e tente novamente.");
  }
  await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id=${autorId} FOR KEY SHARE NOWAIT`;
  await revalidar();
