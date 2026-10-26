@@ -30,3 +30,13 @@ O primeiro lint terminou2 porque os scripts privados CJS históricos não carreg
 O build usou exclusivamente o banco descartável TESTER500, com os sete provedores externos vazios. A auditoria após o término confirmou as426tabelas e1.445linhas com os mesmos hashes, sem listeners ou escritas residuais (017053). Não houve envio real nem ativação de integração externa.
 
 Esta atualização substitui a pendência de unidade/lint/build globais anotada no checkpoint anterior. A fonte publicada emSRC/Prisma/config continua literalmente igual ao candidato testado; somente evidências documentais foram acrescentadas. EXISTENTE/actions/UI seguem em desenvolvimento e fora deste recorte aprovado. CI remoto, aceite visual, decisão de ownerAdmin/GC e conclusão integral da#372 continuam pendentes. O PR permanece rascunho, sem fechamento automático da issue ou indicação de merge.
+
+## Candidato de ações e abertura existente
+
+O checkpoint2a29006f foi selecionado sobre o head público7e2f4ff0, sem incorporar seus ancestrais privados. Foram acrescentados o parser, a action, o núcleo EXISTENTE, dois arquivos unitários e dois de integração, além de SPEC e QA do DEV. O quadro público foi atualizado separadamente. NOVO, inbound, helpers compartilhados, dependências e schema permanecem iguais ao último candidato aprovado.
+
+O DEV registrou RED de duas revogações ocorridas no último await; após a leitura final de ator, relações e tupla no mesmo snapshot,64/64unitários, lint e TSC terminaram0. Dois arquivos de integração completos passaram5/5 e4/4, com action, reader, helper de atendimento e SQL reais. A instrumentação de rede bloqueia chamadas inesperadas; nenhuma ocorreu. O integrador restaurou o banco descartável após os testes (13668e).
+
+O eventoAtendimentoInstitucionalAberto segue a convenção existente: audita a intenção de abertura mesmo quando reutiliza atendimento. Replay da mesma chave não acrescenta evento; nova tentativa pode acrescentar. criado:false informa que não houve criação de uma nova oportunidade.
+
+As garantias de frescor são limitadas à última leitura qualificada emREADCOMMITTED; não representam linearização global de permissões ou de todos os possíveis cadastros concorrentes. Relações de equipe do gerente e disputa simultânea de chaves ainda não foram exercitadas nesse recorte. A QA independente em fonte pública e os gates globais da composição atual ainda precisam terminar. A UI, a escolha de owner paraAdmin/GC, CI e aceite visual também seguem pendentes.

@@ -7844,3 +7844,8 @@ Núcleo NOVO e pré-requisitos selecionados, sem ancestrais privados. Acoes.ts c
 ### #372 — gates globais do núcleo NOVO, R27
 
 Candidato b8d17b12: unidade global1084arquivos/9658testes0, lintglobal0(105avisos/zeroerros), TSCglobal0 e build115páginas0. TESTER independente39nativos/86unitários0. Banco TESTER500 preservado por auditoria pósbuild. Preparação pública sobre a PR454, fontes literalmente iguais ao candidato e sem ancestrais privados. EXISTENTE/actions/UI/ownerAdminGC/CI/visual ainda pendentes; rascunho parcial, sem marcar issue concluída.
+
+
+### #372 — ações públicas e conversa existente, candidato R27
+
+Selecionados nove arquivos do checkpoint DEV2a29006f, com quadro público preservado. O DEV confirmou64unitários, lint, TSC e dois arquivos nativos completos (5+4), todos com saída0. Inclui query final de ator/vínculos, preservação de carteira e responsável, replay, recusa de conflito e rollback. O banco ci-integracao foi restaurado pelo integrador. QA independente da composição pública, novos gates globais, UI, decisão de ownerAdmin/GC, CI e visual continuam pendentes; issue parcial.
