@@ -628,7 +628,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             painelAberto={painelVisivel ?? undefined}
             painelAuto={painelAberto === null}
             aoMudar={recarregarLista}
-            aoTransferirConcluido={setAvisoTransferencia}
+            aoTransferirConcluido={() => setAvisoTransferencia("Transferência concluída.")}
           />
         )}
       </section>
