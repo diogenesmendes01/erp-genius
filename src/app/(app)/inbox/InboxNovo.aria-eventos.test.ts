@@ -11,6 +11,7 @@ const m=vi.hoisted(()=>({
   receber:null as ((a:AvisoInbox)=>void)|null,
   observado:null as AvisoInbox|null,
   bloqueioRecebido:undefined as boolean|undefined,
+  leituraRecebida:undefined as import("./aria/useHandoffConversa").LeituraPainelHandoff|undefined,
   ariaRecebida:null as import("@/server/whatsapp/consultas-inbox").AriaDoAtendimento|null|undefined,
   pagina:vi.fn<FonteHistorico["pagina"]>(),
   marcar:vi.fn(async()=>({ok:true})),
@@ -25,7 +26,7 @@ vi.mock("@/components/conversa/useConversa",async original=>{
 vi.mock("@/server/whatsapp/preferencias",()=>({marcarAtendimentoLidoAutomatico:m.marcar}));
 vi.mock("@/server/whatsapp/operacoes-atendimento",()=>({abrirAtendimentoInstitucional:vi.fn()}));
 vi.mock("@/server/whatsapp/acoes",()=>({registrarOptOutContato:vi.fn(),removerOptOutContato:vi.fn(),enviarTextoInbox:vi.fn(),enviarMidiaInbox:vi.fn()}));
-vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:(p:import("./ConversaAberta").PropsConversaAberta)=>{m.ariaRecebida=p.aria;m.bloqueioRecebido=p.bloquearDecisoesAria;return createElement("header",null,"Thread teste345");}};});
+vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react");return{ConversaAberta:(p:import("./ConversaAberta").PropsConversaAberta)=>{m.ariaRecebida=p.aria;m.leituraRecebida=p.leituraPainel;m.bloqueioRecebido=p.bloquearDecisoesAria;return createElement("header",null,"Thread teste345");}};});
 vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react"),I=()=>createElement("span");return{IconMessages:I,IconPhone:I,IconChevronLeft:I,IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
 
 const item={id:"a1",numeroId:"n1",numeroRotulo:"Fake345",finalidade:"COMERCIAL",driver:DriverWhatsApp.MOTOR,contatoId:"ct1",contatoNome:"Ana",contatoTelefone:"+50600000345",optOut:false,vinculo:null,naoLidas:0,ultimaMensagemEm:null,preview:"",linhaComercial:false,status:"EM_ATENDIMENTO",responsavelNome:null,prazoRespostaEm:null,fixada:false,silenciada:false,grupo:false,responsavelId:null,numeroDonoId:null,setoresDoNumero:["COMERCIAL"],atendimentoOrigemId:null,capacidades:[],estadoAria:null,atendidoPorVoce:false,previaAutor:null,previaRotulo:null};
@@ -39,7 +40,7 @@ const paineis=()=>fetcher.mock.calls.filter(([url])=>String(url).endsWith("/pain
 const listas=()=>fetcher.mock.calls.filter(([url])=>String(url).startsWith("/api/inbox/atendimentos?"));
 
 beforeEach(async()=>{
-  vi.clearAllMocks();m.receber=null;m.observado=null;m.ariaRecebida=null;m.bloqueioRecebido=undefined;
+  vi.clearAllMocks();m.receber=null;m.observado=null;m.ariaRecebida=null;m.leituraRecebida=undefined;m.bloqueioRecebido=undefined;
   const dom=criarDomMinimo(),doc=dom.documento;
   Object.assign(doc,{visibilityState:"visible",addEventListener(){},removeEventListener(){},querySelector:(s:string)=>doc.body.querySelector(s)});
   Object.assign(dom.janela,{setTimeout:(callback:()=>void,ms:number)=>setTimeout(callback,ms),innerWidth:1440,addEventListener(){},removeEventListener(){},matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});
@@ -125,6 +126,16 @@ it("348 painel corrente mantém história no503 e revoga só capacidades Aria no
  await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
  status=503;await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
  status=404;await emitir(global345);expect(m.ariaRecebida).toEqual({...aria,podeDevolver:false,podeDecidir:false});
+});
+
+it("352 recibo da leitura existente distingue200/503 e404 revoga capacidades do handoff sem apagar resumo",async()=>{
+ const original=fetcher.getMockImplementation()!;
+ const handoff={acaoId:"h352",pedidoEm:"2026-10-25T00:00:00Z",motivo:null,motivoTexto:"Motivo",destino:"FILA_SETOR",responsavelNome:null,resumo:{quer:"Histórico visível",proximoPasso:null},feito:[],podeAssumir:true,ehResponsavel:true};
+ const aria={handoff,podeDecidir:true,cartoes:[],pausada:true,motivo:"HANDOFF" as const,podeDevolver:true,sugestoes:[]};let status=200;
+ fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true,aria,acoes:null})):new Response("",{status})):original(u,o));
+ await emitir(global345);expect(m.leituraRecebida?.resultado).toBe("ok");expect(m.leituraRecebida?.finalizada).toBe(m.leituraRecebida?.solicitada);const primeira=m.leituraRecebida!.finalizada;
+ status=503;await emitir(global345);expect(m.leituraRecebida?.resultado).toBe("falha");expect(m.leituraRecebida!.finalizada).toBeGreaterThan(primeira);expect(m.ariaRecebida).toEqual(aria);
+ status=404;await emitir(global345);expect(m.leituraRecebida?.resultado).toBe("sem-acesso");expect(m.ariaRecebida?.handoff).toEqual({...handoff,podeAssumir:false,ehResponsavel:false});
 });
 
 it("434 marcador cliente404 persiste503 e só200 fresco recupera decisões sem remover cartões",async()=>{
