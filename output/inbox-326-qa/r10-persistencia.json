@@ -1,0 +1,21 @@
+{
+  "somenteLeitura": true,
+  "executor": "bde161/EXIT0",
+  "provaPrivadaSha256": "639debb6f45f954a2f7614f8fdef50994b0169a20aac28db41152701b1b10bea",
+  "visualRun": "ea18396c-f445-4cae-9f3b-a8af4cd12097",
+  "visualManifestoSha256": "2067ad0243a2fda1b8f219f9dba847f243bfc4bee331cf4def2a74cc300f3b54",
+  "APPNovas": 6,
+  "PROTOHistoricas": 6,
+  "novasSavesVisuais": 0,
+  "originais": 498,
+  "hashesOriginais": 424,
+  "total": 520,
+  "eventosFicticiosR9": 3,
+  "camposPersistidos": {
+    "cidade": "Cidade confirmada326R",
+    "numero": 2.75,
+    "booleano": false
+  },
+  "saveCumulativo": 2,
+  "sequenciasPreservadas": true
+}

@@ -1,0 +1,20 @@
+{
+  "somenteLeitura": true,
+  "manifestoR9Sha256": "739dc9d419d86d2c16f5c62c86e1f18d5a2eb3e06314e9c027efad0557fa92d7",
+  "hashesOriginais": 424,
+  "originais": 498,
+  "total": 520,
+  "fixtureOriginal": 18,
+  "preferenciaIncidental": 1,
+  "eventosFicticios": 3,
+  "camposPersistidos": {
+    "cidade": "Cidade confirmada326R",
+    "numero": 2.75,
+    "booleano": false
+  },
+  "sequenciasPreservadas": true,
+  "saveCumulativo": 2,
+  "executor": "e9c4f6/EXIT0",
+  "sha256ProvaPrivada": "385015078fc7c20f9e50ae99d1d313e05206c79b1decefff490a60f4fc2dbcea",
+  "limite": "Persistência e preservação conferidas pelo integrador; não autoriza outra Save."
+}

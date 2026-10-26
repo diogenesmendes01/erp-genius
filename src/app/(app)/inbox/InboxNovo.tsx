@@ -10,6 +10,7 @@ import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
+import { GavetaContato } from "./abas/GavetaContato";
 import { useAbaPainel } from "./abas/useAbaPainel";
 import type { DetalhesPainel } from "@/server/inbox/painel-detalhes";
 import { IconPhone, IconMessages } from "@tabler/icons-react";
@@ -394,11 +395,28 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [abaDoContato, setAbaDoContato] = useState<{ atendimentoId: string | null; id: IdAbaPainel }>({ atendimentoId: selecionado, id: "detalhes" });
   // Ajuste condicionado à seleção, sem remontar a casca ou esperar um efeito após o paint.
   if (abaDoContato.atendimentoId !== selecionado) setAbaDoContato({ atendimentoId: selecionado, id: "detalhes" });
+  const [edicaoContato, setEdicaoContato] = useState({ atendimentoId: selecionado, aberta: false });
+  if (edicaoContato.atendimentoId !== selecionado) setEdicaoContato({ atendimentoId: selecionado, aberta: false });
+  const podeEditarContato = atual?.finalidade === "COMERCIAL" && painelDoAberto?.dado?.acoes != null && !!painelDoAberto.dado.cabecalho?.pessoaId && painelDoAberto.dado.cabecalho.capacidades.editarContato;
+  const editorAberto = !!selecionado && podeEditarContato && edicaoContato.atendimentoId === selecionado && edicaoContato.aberta;
   const abas = abasDoPainel(atual?.finalidade ?? "");
   const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
   const detalhesComerciais = atual?.finalidade === "COMERCIAL" && !atual.grupo;
-  // A futura326 reutilizará esta instância para Detalhes ativo OU editor aberto.
-  const detalhesDoContato = useAbaPainel<DetalhesPainel>(selecionado, "detalhes", versaoPainel, detalhesComerciais && abaAtiva === "detalhes");
+  // Uma única aquisição compartilhada por Detalhes ativo OU editor aberto.
+  const detalhesDoContato = useAbaPainel<DetalhesPainel>(selecionado, "detalhes", versaoPainel, (detalhesComerciais && abaAtiva === "detalhes") || editorAberto);
+  const edicaoAnterior = useRef({ id: selecionado, aberta: editorAberto });
+  useEffect(() => {
+    const antes = edicaoAnterior.current;
+    edicaoAnterior.current = { id: selecionado, aberta: editorAberto };
+    if (!antes.aberta || editorAberto || antes.id !== selecionado) return;
+    // Drawer devolve ao gatilho original; após resize ele pode estar oculto/inert.
+    const disponivel = (el: HTMLElement | null): el is HTMLElement => !!el && !el.closest("[inert]") && el.getClientRects().length > 0;
+    const ativo = document.activeElement as HTMLElement | null;
+    if (ativo && ativo !== document.body && disponivel(ativo)) return;
+    const lapis = [...document.querySelectorAll<HTMLButtonElement>('button[aria-label="Editar contato"]')].find(disponivel);
+    const gatilho = [...document.querySelectorAll<HTMLButtonElement>('button[aria-controls="painel-contato"]')].find(disponivel);
+    (lapis ?? gatilho ?? (disponivel(regiaoConversa.current) ? regiaoConversa.current : null))?.focus();
+  }, [editorAberto, selecionado]);
 
   function abrir(id: string) {
     focoAoFecharPopover.current = regiaoConversa.current;
@@ -501,15 +519,17 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         )}
       </section>
 
-      {selecionado && <PainelContato contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
+      {selecionado && <PainelContato aoEditar={podeEditarContato ? () => setEdicaoContato({ atendimentoId: selecionado, aberta: true }) : undefined} contato={atual ? { id: atual.contatoId, nome: atual.contatoNome,
         subtitulo: detalhesComerciais ? painelDoAberto?.dado?.cabecalho?.subtitulo ?? "" : rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade) + " · " + atual.numeroRotulo,
         tags: painelDoAberto?.dado?.tags ?? [], quadrado: detalhesComerciais && painelDoAberto?.dado?.cabecalho?.quadrado === true } : undefined}
         slotTags={painelDoAberto?.dado?.cabecalho?.pessoaId ? <TagsContato atendimentoId={selecionado} tags={painelDoAberto.dado.tags ?? []} disponiveis={painelDoAberto.dado.cabecalho.tagsDisponiveis}
           podeEditar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.editarTags} podeCriar={painelDoAberto.dado.acoes != null && painelDoAberto.dado.cabecalho.capacidades.criarTag} aoMudar={recarregarLista} /> : undefined}
         slotAviso={painelDoAberto?.dado?.cabecalho?.semNome ? <ContatoSemNome atendimentoId={selecionado} nomeAnterior={painelDoAberto.dado.acoes?.nomeSalvo ?? null}
           podeEditar={painelDoAberto.dado.acoes?.podeEditarNome === true} aoMudar={recarregarLista} /> : undefined}
-        abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => { if (abas.some(a => a.id === id)) setAbaDoContato({ atendimentoId: selecionado, id }); }} visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres"}
+        abas={abas} abaAtiva={abaAtiva} aoTrocarAba={id => { if (abas.some(a => a.id === id)) setAbaDoContato({ atendimentoId: selecionado, id }); }} visivel={painelVisivel} sobreposto={painelVisivel === true && modo !== "tres" && !editorAberto}
         aoFechar={fecharPainel} focarAoAbrir={painelAberto === true} className={classesDoPainel(painelAberto, vista)}>{painel}</PainelContato>}
+      {editorAberto && selecionado && <GavetaContato key={selecionado} atendimentoId={selecionado} dados={detalhesDoContato.dado} erro={detalhesDoContato.erro} aoRecarregar={detalhesDoContato.recarregar}
+        podeVerFicha={painelDoAberto?.dado?.cabecalho?.capacidades.verContato === true} aoFechar={() => setEdicaoContato({ atendimentoId: selecionado, aberta: false })} aoSalvo={recarregarLista} />}
     </div>
   );
 }

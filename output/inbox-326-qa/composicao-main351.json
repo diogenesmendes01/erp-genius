@@ -1,0 +1,140 @@
+{
+  "base": "ecac425dbfaa59e8438e6afc094bed044fa67579",
+  "main": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "objetosMainNaoSelecionadosPreservados": 3567,
+  "fontes326": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "bytes": 13676,
+      "sha256": "8e81632068c4b689254dd2fc1e7dfdc6c6242aa3f551dc7203b2977d9c644840",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "bytes": 75116,
+      "sha256": "ab95285c34a9819abd07f38de47696a3f834ecee8e55deca40a8a828563c2c87",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "bytes": 34939,
+      "sha256": "b07207d4be71d5b37b56e4e93366f888123b97014bf2a6a9227b6f5e41ba2e6b",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.test.ts",
+      "bytes": 4607,
+      "sha256": "2ae201d2aff0959e2dc504d645a4a66285cded65221b36f02fac1a130a012749",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.tsx",
+      "bytes": 8978,
+      "sha256": "42400c04496a05edb9c9e7a2c55d0bfa73933651cd8188b804896aeefadd9f8f",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.test.ts",
+      "bytes": 11204,
+      "sha256": "38fe510f102080ddcb3a2780cb6d827f60891459f162d5c7f83c5b85725a40b2",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.tsx",
+      "bytes": 6731,
+      "sha256": "72b7f5e27ad5fac7551b8fa72def09b3a7831a2b4e5aab759b31a0a0a624c32b",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/form-contato.test.ts",
+      "bytes": 2871,
+      "sha256": "c6fb44dae540ccfa59388ef5fd8f39fffcc7087d30bf46897b62b92588b9f532",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/form-contato.ts",
+      "bytes": 1941,
+      "sha256": "5ad995f3e26098b4b389892e39b1d14bf90b6551dcdc03859f4bbc40f60ed936",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "bytes": 60130,
+      "sha256": "fd6b9005a40dddbb506e3ba3e667e513d67d3301ce971681ae14c51485197a67",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/campos-mapa.ts",
+      "bytes": 12842,
+      "sha256": "e72a275811379c5b35d3f9feb4d35f56cfef8d5921546749763555dfbb8f841e",
+      "igualEcac": true
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "bytes": 175317,
+      "sha256": "ff0f5249b9be9ce5f51986027edee9b0533c8c3a40b48ebebd368fd5dd156849",
+      "igualEcac": false
+    },
+    {
+      "path": "src/app/identificacao-registro.test.ts",
+      "bytes": 73287,
+      "sha256": "a0725dfa8010d496169ad5bb7ce4196a1f2a4e8b818c08eb5ec8070ecde0a4cf",
+      "igualEcac": true
+    },
+    {
+      "path": "src/server/crm/campos.ts",
+      "bytes": 9761,
+      "sha256": "5fd89be859d3f4c7ceaaa9791478d6a753852124102e0506359c2371f892855e",
+      "igualEcac": true
+    },
+    {
+      "path": "src/server/crm/contatos.ts",
+      "bytes": 22497,
+      "sha256": "eca2b73cc2b3cbec910e8d075ea0bfe7ca946c6f21436c7c28378610e6498afa",
+      "igualEcac": true
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-contato-pool1.int.test.ts",
+      "bytes": 2508,
+      "sha256": "3283c2c4e26a5e733b59953caab3f38b9a34501671016b3777f40b3e682a3a6f",
+      "igualEcac": true
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-contato.int.test.ts",
+      "bytes": 13425,
+      "sha256": "dc391735d26aa97ddbc00d8fd58c617efe1051e4bb111158490110f9ae5e211c",
+      "igualEcac": true
+    },
+    {
+      "path": "src/server/inbox/acoes-painel.ts",
+      "bytes": 6862,
+      "sha256": "06290786873c1940e78655e00fd15b66c558e3d91dda77e7e918e2905538da08",
+      "igualEcac": true
+    }
+  ],
+  "guardaRecompostaSemTresLinhasMain": true,
+  "semSchemaDepsAlterados": true,
+  "fonteExecutavel": "0342e776eff91ccfa41ab06450aba2e9671d59bb",
+  "gateLocal": {
+    "executor": "16409/c6fa62",
+    "exit": 0,
+    "arquivos": 4,
+    "testes": 182,
+    "segundos": 27.6,
+    "maxWorkers": 2,
+    "filtros": 0,
+    "skips": 0,
+    "escopo": [
+      "enums-rotulos",
+      "InboxNovo.foco",
+      "GavetaContato",
+      "useAbaPainel"
+    ]
+  },
+  "limites": [
+    "17SRC326 byteiguais ecac; guarda recompõe ecac retirando só as3linhas novas da main351.",
+    "3567objetos não selecionados da main preservados; quadro mantém prefixo integral main e sufixo326 de6980caracteres.",
+    "CI rápida e integração completa desta composição ainda não disparadas; full798f anterior continua histórico, não comprova a composição atual.",
+    "Sem nova captura, mutação de produto, fixture, schema ou dependência; anexos continuam pendentes."
+  ]
+}

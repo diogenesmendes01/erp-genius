@@ -1,0 +1,27 @@
+{
+  "arquivo": "inbox-326-visual-6f92673-e2a22a01-r10-20261024.zip",
+  "bytes": 1219564,
+  "sha256": "d5f4dd2a35bcdbd30895f5cfe825dcc1d4e81e285d9d462a3428dbab9b1c41ab",
+  "entradas": 15,
+  "PNG": 12,
+  "conteudo": "12PNG originais,README,manifesto,índice",
+  "verificacao": "ZIP reaberto:15/15 bytes/SHA iguais à pasta curada",
+  "publicacao": "pendente ROOT/QA;nenhum upload",
+  "consolidacaoPosterior": {
+    "qaR9Sha256": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49",
+    "qaR10Sha256": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5",
+    "QA": "Favorável FS;semnovaUI/DBTESTER",
+    "CI": "Composição798f26fa:4shardsINT+rápida favoráveis",
+    "restauro": "ROOTc1375e EXIT0,snapshot498/424hashes preservados",
+    "anexosPublicacaoMerge": "pendentesROOT",
+    "binarioRegravado": false
+  },
+  "reportInicialSha256": "d0e651f3443fff0fa77e61b3b367f1b5cf69ad78f168a521c49900bd90497c7f",
+  "reportAtual": {
+    "arquivo": "inbox-326-visual-r10-evidencias.md",
+    "bytesFisicos": 4130,
+    "sha256Fisico": "b6e94d1f5212fc3319b474de4c3c4ac5982a04e4ac5dfb914dcf1e90dc3afc9d",
+    "sha256GitLF": "b6e94d1f5212fc3319b474de4c3c4ac5982a04e4ac5dfb914dcf1e90dc3afc9d"
+  },
+  "hashesManifestoReadmeInternos": "Históricos do ZIP original, binário preservado"
+}

@@ -1,0 +1,167 @@
+{
+  "composicao": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+  "base": "cf29add93cd63fe14f95bf8a53fb079d3efe9a27",
+  "devFreeze": "6f92673dfb526e11ad1e349bea484d135819e849",
+  "pais": [
+    "efa1c3d7c0c8b580e3bbc693b39f1c23abb031d8",
+    "cf29add93cd63fe14f95bf8a53fb079d3efe9a27"
+  ],
+  "fontes": [
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "devSha256": "f2bde24080ef6b13609781d2fcf0f80cf43b0adfe6a2e887c77782ca18d42a8e",
+      "compostoSha256": "f2bde24080ef6b13609781d2fcf0f80cf43b0adfe6a2e887c77782ca18d42a8e"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "devSha256": "ab95285c34a9819abd07f38de47696a3f834ecee8e55deca40a8a828563c2c87",
+      "compostoSha256": "ab95285c34a9819abd07f38de47696a3f834ecee8e55deca40a8a828563c2c87"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "devSha256": "b07207d4be71d5b37b56e4e93366f888123b97014bf2a6a9227b6f5e41ba2e6b",
+      "compostoSha256": "b07207d4be71d5b37b56e4e93366f888123b97014bf2a6a9227b6f5e41ba2e6b"
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.test.ts",
+      "devSha256": "2ae201d2aff0959e2dc504d645a4a66285cded65221b36f02fac1a130a012749",
+      "compostoSha256": "2ae201d2aff0959e2dc504d645a4a66285cded65221b36f02fac1a130a012749"
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.tsx",
+      "devSha256": "42400c04496a05edb9c9e7a2c55d0bfa73933651cd8188b804896aeefadd9f8f",
+      "compostoSha256": "42400c04496a05edb9c9e7a2c55d0bfa73933651cd8188b804896aeefadd9f8f"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.test.ts",
+      "devSha256": "38fe510f102080ddcb3a2780cb6d827f60891459f162d5c7f83c5b85725a40b2",
+      "compostoSha256": "38fe510f102080ddcb3a2780cb6d827f60891459f162d5c7f83c5b85725a40b2"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.tsx",
+      "devSha256": "72b7f5e27ad5fac7551b8fa72def09b3a7831a2b4e5aab759b31a0a0a624c32b",
+      "compostoSha256": "72b7f5e27ad5fac7551b8fa72def09b3a7831a2b4e5aab759b31a0a0a624c32b"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/form-contato.test.ts",
+      "devSha256": "c6fb44dae540ccfa59388ef5fd8f39fffcc7087d30bf46897b62b92588b9f532",
+      "compostoSha256": "c6fb44dae540ccfa59388ef5fd8f39fffcc7087d30bf46897b62b92588b9f532"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/form-contato.ts",
+      "devSha256": "5ad995f3e26098b4b389892e39b1d14bf90b6551dcdc03859f4bbc40f60ed936",
+      "compostoSha256": "5ad995f3e26098b4b389892e39b1d14bf90b6551dcdc03859f4bbc40f60ed936"
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "devSha256": "fd6b9005a40dddbb506e3ba3e667e513d67d3301ce971681ae14c51485197a67",
+      "compostoSha256": "fd6b9005a40dddbb506e3ba3e667e513d67d3301ce971681ae14c51485197a67"
+    },
+    {
+      "path": "src/app/campos-mapa.ts",
+      "devSha256": "e72a275811379c5b35d3f9feb4d35f56cfef8d5921546749763555dfbb8f841e",
+      "compostoSha256": "e72a275811379c5b35d3f9feb4d35f56cfef8d5921546749763555dfbb8f841e"
+    },
+    {
+      "path": "src/app/identificacao-registro.test.ts",
+      "devSha256": "0c93bf4a2c17d91bb93ac01b3d1c7b1e0d036319769edf5fb8c625147f711e11",
+      "compostoSha256": "a0725dfa8010d496169ad5bb7ce4196a1f2a4e8b818c08eb5ec8070ecde0a4cf"
+    },
+    {
+      "path": "src/server/crm/campos.ts",
+      "devSha256": "5fd89be859d3f4c7ceaaa9791478d6a753852124102e0506359c2371f892855e",
+      "compostoSha256": "5fd89be859d3f4c7ceaaa9791478d6a753852124102e0506359c2371f892855e"
+    },
+    {
+      "path": "src/server/crm/contatos.ts",
+      "devSha256": "eca2b73cc2b3cbec910e8d075ea0bfe7ca946c6f21436c7c28378610e6498afa",
+      "compostoSha256": "eca2b73cc2b3cbec910e8d075ea0bfe7ca946c6f21436c7c28378610e6498afa"
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-contato-pool1.int.test.ts",
+      "devSha256": "3283c2c4e26a5e733b59953caab3f38b9a34501671016b3777f40b3e682a3a6f",
+      "compostoSha256": "3283c2c4e26a5e733b59953caab3f38b9a34501671016b3777f40b3e682a3a6f"
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-contato.int.test.ts",
+      "devSha256": "dc391735d26aa97ddbc00d8fd58c617efe1051e4bb111158490110f9ae5e211c",
+      "compostoSha256": "dc391735d26aa97ddbc00d8fd58c617efe1051e4bb111158490110f9ae5e211c"
+    },
+    {
+      "path": "src/server/inbox/acoes-painel.ts",
+      "devSha256": "06290786873c1940e78655e00fd15b66c558e3d91dda77e7e918e2905538da08",
+      "compostoSha256": "06290786873c1940e78655e00fd15b66c558e3d91dda77e7e918e2905538da08"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/useAbaPainel.ts",
+      "devSha256": "4b42281191b0c1cca618e0a19d1f3aab90eae81da802de31a55b981dbfd27b02",
+      "compostoSha256": "4b42281191b0c1cca618e0a19d1f3aab90eae81da802de31a55b981dbfd27b02"
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/useAbaPainel.test.ts",
+      "devSha256": "c8b92bc3150b95aa537dfb6361a9230059b58c85529b32f6a5d4c133ea9dbb81",
+      "compostoSha256": "c8b92bc3150b95aa537dfb6361a9230059b58c85529b32f6a5d4c133ea9dbb81"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.detalhes.test.ts",
+      "devSha256": "0050df44b8e669f8299f041a5473296e81c15b5dea26489b52f911bbe65d061b",
+      "compostoSha256": "0050df44b8e669f8299f041a5473296e81c15b5dea26489b52f911bbe65d061b"
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "devSha256": "c297f1b8f8921586ba8b6735847e6fa22019204d106586649b11bad814c9bde2",
+      "compostoSha256": "c297f1b8f8921586ba8b6735847e6fa22019204d106586649b11bad814c9bde2"
+    }
+  ],
+  "identicos": 20,
+  "deltaEsperado": {
+    "path": "src/app/identificacao-registro.test.ts",
+    "motivo": "Teste de identificação composto automaticamente com os quatro acréscimos da main337 e os dois da326; não altera runtime."
+  },
+  "srcContraMain": 18,
+  "schemaDepsWorkflowsScriptsContraMain": 0,
+  "gatesROOT": {
+    "global": {
+      "session_id": 44584,
+      "saida": "158f41",
+      "exit": 0,
+      "arquivos": 937,
+      "testes": 7437,
+      "duracaoSegundos": 311.72,
+      "maxWorkers": 2,
+      "skips": 0,
+      "filtroNome": null,
+      "config": "vitest unitária, exclui INT"
+    },
+    "integracao": {
+      "session_id": 57239,
+      "saida": "06cda2",
+      "exit": 0,
+      "arquivos": 4,
+      "testes": 44,
+      "duracaoSegundos": 186.63,
+      "maxWorkers": 1,
+      "perfil": "dev-gravacoes490",
+      "skips": 0,
+      "filtroNome": null
+    },
+    "typescript": {
+      "session_id": 27773,
+      "saida": "df7607",
+      "exit": 0
+    },
+    "lint": {
+      "session_id": 45960,
+      "saida": "c57bc6",
+      "exit": 0,
+      "erros": 0,
+      "avisosHerdados": 40
+    },
+    "restauro": {
+      "saida": "5bd290",
+      "exit": 0,
+      "hashes": 424
+    }
+  },
+  "limite": "Gates executados na árvore desta composição antes do commit de merge, sem mudança executável posterior. CI remota ainda em curso; R9 nominal ao freezeDEV, identidade de20/21 fontes acima."
+}

@@ -1,0 +1,192 @@
+{
+  "funcionalidade": 326,
+  "comentarioRevisao": "C1 da PR #420",
+  "data": "2026-10-24",
+  "estado": "Prova UI DEV favorável; QA independente nativa, auditoria ROOT, composição e CI pendentes",
+  "fontes": {
+    "app": "6f92673dfb526e11ad1e349bea484d135819e849",
+    "executorSha256": "bbb502fa355e83150b857bdc2097cdaff78995f8eae07a1aababd883e794b0ae",
+    "helperSseSha256": "a1184b319783915f91f6c7b8804a98d159a4c96191557fa14240be2bdfb23ebb",
+    "pacoteExecutorSha256": "e1a0a0c7960232aa32e39c268a3cb8700e8d0f884a70484151bb20be8c35a75c",
+    "policySha256": "5458dea681226adcd46dea89858958b42d2f74fd22cb854e4b3a5949877821ea",
+    "manifestoPrivadoSha256": "739dc9d419d86d2c16f5c62c86e1f18d5a2eb3e06314e9c027efad0557fa92d7"
+  },
+  "execucao": {
+    "saida": "433145",
+    "exitCode": 0,
+    "duracaoExecutorSegundos": 7.457,
+    "novasSaves": 1,
+    "cumulativoAnterior": 1,
+    "cumulativoFinal": 2,
+    "submitB": 0,
+    "segundoSubmit": 0,
+    "backendStatus": 200,
+    "ackOriginalRetido": true,
+    "ackEntregue": true,
+    "contextosFechados": 2,
+    "browserFechado": true,
+    "falhas": 0,
+    "errosConsole": 0,
+    "PNG": 2,
+    "framesPorProvaDirty": 2,
+    "acoesIncidentais": {
+      "leituraAutomatica": 2,
+      "respostasRapidasLeitura": 4
+    }
+  },
+  "oraculos": {
+    "fronteiraSaveUnicoPedidoEHandler": true,
+    "outrasAquisicoesPendentesAntesSave": 0,
+    "dirtyB": {
+      "mesmoNo": true,
+      "foco": true,
+      "salvarHabilitado": true,
+      "duasFrames": true
+    },
+    "dirtyA2AntesAck": {
+      "mesmoNo": true,
+      "foco": true,
+      "salvarHabilitado": true,
+      "duasFrames": true
+    },
+    "dirtyA2AposAck": {
+      "mesmoNo": true,
+      "foco": true,
+      "salvarHabilitado": true,
+      "duasFrames": true
+    },
+    "dirtyBAposAck": {
+      "mesmoNo": true,
+      "foco": true,
+      "salvarHabilitado": true,
+      "duasFrames": true
+    },
+    "dirtyA2Reedicao": {
+      "mesmoNo": true,
+      "foco": true,
+      "salvarHabilitado": true,
+      "duasFrames": true
+    },
+    "domRevalidadoAposDreno": true,
+    "tentativasFinalizacao": 1,
+    "observadorCompleto": {
+      "requestsIniciados": 15,
+      "requestsSettled": 15,
+      "pendentes": 0,
+      "aceitavel": true
+    },
+    "atores": {
+      "A": {
+        "finitosConcluidos": 53,
+        "pendentes": 0,
+        "handlersPendentes": 0,
+        "revisaoSelada": true,
+        "sse": {
+          "iniciados": 1,
+          "terminais": 1,
+          "tipoTerminal": "requestfailed",
+          "pageVivaNoTerminal": true,
+          "terminalAntesDeFecharContexto": true
+        }
+      },
+      "B": {
+        "finitosConcluidos": 52,
+        "pendentes": 0,
+        "handlersPendentes": 0,
+        "revisaoSelada": true,
+        "sse": {
+          "iniciados": 1,
+          "terminais": 1,
+          "tipoTerminal": "requestfailed",
+          "pageVivaNoTerminal": true,
+          "terminalAntesDeFecharContexto": true
+        }
+      }
+    }
+  },
+  "imagens": [
+    {
+      "arquivo": "app-A-final-estavel-1.png",
+      "bytes": 117109,
+      "sha256": "61948b4105b5bd9e10283d71825d2b4566f3edb736c9b7ad3477d2daf9d9a44a",
+      "largura": 1440,
+      "altura": 900,
+      "inspecionada": true,
+      "parecer": "Favorável para o estado capturado; fixture fictícia."
+    },
+    {
+      "arquivo": "app-B-final-estavel-1.png",
+      "bytes": 114666,
+      "sha256": "707ab3126add4aad48eee74c38740ada4cceba3567e7cafd89262a6db762bc13",
+      "largura": 1440,
+      "altura": 900,
+      "inspecionada": true,
+      "parecer": "Favorável para o estado capturado; fixture fictícia."
+    }
+  ],
+  "negativosPreservados": [
+    {
+      "execucao": "2588/2bca76",
+      "exitCode": 1,
+      "limite": "Histórico: abortos sem cronologia; sem reclassificação."
+    },
+    {
+      "execucao": "R7/760fad",
+      "exitCode": 1,
+      "novasSaves": 1,
+      "limite": "SSE sem terminal observado após fechamento; duas PNGs continuam nominais do negativo."
+    },
+    {
+      "execucao": "R8/d622dd",
+      "exitCode": 0,
+      "novasSaves": 0,
+      "limite": "Controle delimitado de dirty/cancel/SSE; aquisição de Detalhes não foi aceite formal."
+    }
+  ],
+  "gatesOffline": {
+    "saida": "999587",
+    "exitCode": 0,
+    "casos": 110,
+    "ignorados": 0,
+    "escopo": "89 regressão do bridge + 8 oráculos R8 + 13 novos",
+    "lintArquivos": 4,
+    "lintExitCode": 0
+  },
+  "curadoria": {
+    "semCredenciais": true,
+    "semIdsDeAcaoPessoaContexto": true,
+    "semHeadersCookiesLogsBrutos": true,
+    "semScriptsNoZip": true,
+    "PNGOriginaisSemAlteracao": true,
+    "pixelsDeFixtureFicticia": true,
+    "PNGZipForaGit": true,
+    "uploadPeloROOT": true,
+    "publicado": false
+  },
+  "limites": [
+    "Somente dois estados desktop 1440×900 da R9; não reatribui as 39 imagens históricas e 13 pranchas.",
+    "O checkbox Disponível fica abaixo da dobra nesta foto; a PNG não exibe todos os campos.",
+    "O roteiro envia o diff aprovado de cidade, número 2,75 e booleano false; a auditoria SQL pós-R9 é responsabilidade do ROOT.",
+    "R7 permanece EXIT1; R8 permanece controle delimitado. Nenhum resultado antigo foi convertido em aprovação.",
+    "QA independente da aquisição nativa, integração da PR e CI ainda serão consolidados pelo ROOT."
+  ],
+  "manifestoCurado": {
+    "arquivo": "manifesto.json",
+    "bytes": 5285,
+    "sha256": "6c0d03575f8ec8dca85e6b12561dc9aefe8bfd0dfca7e5fb78c806b2966ebeff"
+  },
+  "readmeCurado": {
+    "arquivo": "README.md",
+    "bytes": 1603,
+    "sha256": "d8bf945693dfbc29826d85ad8712a17bffbaa3cfe0d1a603ae83b6c7f05940c5"
+  },
+  "consolidacaoPosterior": {
+    "qaR9Sha256": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49",
+    "qaR10Sha256": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5",
+    "QA": "Favorável FS;semnovaUI/DBTESTER",
+    "CI": "Composição798f26fa:4shardsINT+rápida favoráveis",
+    "restauro": "ROOTc1375e EXIT0,snapshot498/424hashes preservados",
+    "anexosPublicacaoMerge": "pendentesROOT",
+    "binarioRegravado": false
+  }
+}

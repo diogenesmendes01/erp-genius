@@ -1,0 +1,14 @@
+{
+  "executor": "c1375e/EXIT0",
+  "previewEncerrado": "61851/b9cb3a;Ctrl+C,saída1esperada",
+  "confirmacaoPortas": "ccd40b;3111encerrada,3110e54329preservadas",
+  "clienteProprio": 487,
+  "perfil": "ci-integracao",
+  "snapshotSha256": "e1b6826140c245659b13c1887e0236ef1d089b546608b06d020d8cf96d89e445",
+  "originaisRestaurados": 498,
+  "hashesConferidos": 424,
+  "fixturePreservada": true,
+  "snapshotMantido": true,
+  "outrasAtividadesAntesRestore": 0,
+  "limite": "Restauração do banco descartável após todos os contextos fechados. Não modifica o cluster compartilhado nem a fixtureA."
+}

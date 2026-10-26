@@ -1,0 +1,108 @@
+{
+  "issue": 326,
+  "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "composicao": "0342e776eff91ccfa41ab06450aba2e9671d59bb",
+  "devFreeze": "6f92673dfb526e11ad1e349bea484d135819e849",
+  "pareceres": [
+    {
+      "origem": "inbox-326-2b43-codigo-final-review-tester.md",
+      "destino": "codigo-inicial.md",
+      "fonte": "2b43b38fc7928bb11555949ea769080459570635",
+      "escopo": "22/504 UNIT,4/44 INT,TSC/lint17; fonte anterior ao cacheR1.",
+      "bytesOriginais": 9763,
+      "bytesPublicados": 9763,
+      "sha256FisicoOriginal": "665a13d2a220820747bc40a71a0700080c52d4bcbd918a99c06e12666ef00fff",
+      "sha256GitLF": "665a13d2a220820747bc40a71a0700080c52d4bcbd918a99c06e12666ef00fff"
+    },
+    {
+      "origem": "inbox-326-08852-guard-final-review-tester.md",
+      "destino": "guarda-enums.md",
+      "fonte": "08852f53cfc29566c0656aff9a0ecf13bd4645f5",
+      "escopo": "Guarda138 e5/166 relacionados,TSC/lint; semDB.",
+      "bytesOriginais": 5199,
+      "bytesPublicados": 5199,
+      "sha256FisicoOriginal": "1e38e2ba579f177f29184c7d8336fa6e300fcf721ebc43d998b74660b4304437",
+      "sha256GitLF": "1e38e2ba579f177f29184c7d8336fa6e300fcf721ebc43d998b74660b4304437"
+    },
+    {
+      "origem": "inbox-326-6f92-conjunto-final-review-tester.md",
+      "destino": "conjunto-r1.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "24 arquivos/656 UNIT,TSC/lint21,21blobs da publicação8b91 exatos; semDB/HTTP/UI.",
+      "bytesOriginais": 8652,
+      "bytesPublicados": 8652,
+      "sha256FisicoOriginal": "3698611682eac180c1e339ba94a41f5f24e1e903d73b3213bdc8029bede9c94c",
+      "sha256GitLF": "3698611682eac180c1e339ba94a41f5f24e1e903d73b3213bdc8029bede9c94c"
+    },
+    {
+      "origem": "inbox-326-r9-final-review-tester.md",
+      "destino": "r9-executor.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "110 testes offline do executor R9; sem nova operação.",
+      "bytesOriginais": 3821,
+      "bytesPublicados": 3821,
+      "sha256FisicoOriginal": "bd6f45467535243b324733d12e52fa3cc64b526bc107eb36d72af7816ff193fc",
+      "sha256GitLF": "bd6f45467535243b324733d12e52fa3cc64b526bc107eb36d72af7816ff193fc"
+    },
+    {
+      "origem": "inbox-326-r9-operacional-final-review-tester.md",
+      "destino": "r9-operacional.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "Inspeção de manifesto, duas imagens e prova de persistência ROOT; execução433145 EXIT0.",
+      "bytesOriginais": 5395,
+      "bytesPublicados": 5395,
+      "sha256FisicoOriginal": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49",
+      "sha256GitLF": "57ac9a1349f03464cdcdd5d7a24f40c9a62e4db1fb68e161b40130e2e53c5b49"
+    },
+    {
+      "origem": "inbox-420-798f-composicao-final-review-tester.md",
+      "destino": "composicao-798f.md",
+      "fonte": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+      "escopo": "Revisão estática/adversarial da composição e teste do único automerge:1arquivo29casos;semDB.",
+      "bytesOriginais": 5193,
+      "bytesPublicados": 5193,
+      "sha256FisicoOriginal": "f858e386e2496a4ce706af5396782b73f777d44149bae56da3f025ff98bbed65",
+      "sha256GitLF": "f858e386e2496a4ce706af5396782b73f777d44149bae56da3f025ff98bbed65"
+    },
+    {
+      "origem": "inbox-326-r10-v2-final-review-tester.md",
+      "destino": "r10-executor.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "24 testes offline e5 replay independentes do executor readonly; sem nova operação.",
+      "bytesOriginais": 4990,
+      "bytesPublicados": 4990,
+      "sha256FisicoOriginal": "38b8dc56b7fe9ff52d29522df88f7ce3457eda5f80f2e6389b8d62f616ac0415",
+      "sha256GitLF": "38b8dc56b7fe9ff52d29522df88f7ce3457eda5f80f2e6389b8d62f616ac0415"
+    },
+    {
+      "origem": "inbox-326-r10-operacional-final-review-tester.md",
+      "destino": "r10-visual.md",
+      "fonte": "6f92673dfb526e11ad1e349bea484d135819e849",
+      "escopo": "Inspeção dos12 PNG/seis pares/ZIP e manifesto; operação R10 c49c9a EXIT0, sem Save.",
+      "bytesOriginais": 8239,
+      "bytesPublicados": 8239,
+      "sha256FisicoOriginal": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5",
+      "sha256GitLF": "4f158b2e84d18d1a48adb89837f3b54fd68b9459933cd3af155249a175a1cde5"
+    }
+  ],
+  "limites": [
+    "Os recortes são sobrepostos e não devem ser somados.",
+    "4/44 INT é nominal ao backend2b43, comprovadamente idêntico; não reexecutado no6f.",
+    "39 imagens e2588EXIT1 históricos não são reatribuídos à fonte atual.",
+    "R9 comprova Save/ACK/rascunhos/SSE; R10 completa os seis pares visuais em fonteDEV6f. Oito pareceres não reatribuem capturas ao SHA798f. A identidade executável da composição está em composicao-798f.json.",
+    "CI rápida e integração completa798f aprovadas; fixtureB restaurada. Autorização/publicação do ZIP visual e consolidação documental/CI final ainda pendentes."
+  ],
+  "composicaoHistorica": "8b91bab362416ba3dd42a99831d5898356e99479",
+  "composicaoAnterior798f": {
+    "base": "cf29add93cd63fe14f95bf8a53fb079d3efe9a27",
+    "composicao": "798f26faf13ff39f2c31352950d93f6f5bc9bff1",
+    "prova": "composicao-798f.json",
+    "ci": "ci-798f.json"
+  },
+  "composicaoAtual": {
+    "fonteExecutavel": "0342e776eff91ccfa41ab06450aba2e9671d59bb",
+    "main": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+    "prova": "composicao-main351.json",
+    "estado": "IDENTIDADE_E_RECORTE_LOCAL_APROVADOS_CI_QA_FINAL_PENDENTES"
+  }
+}
