@@ -7762,3 +7762,70 @@ R24 — issue #361: revisão/delta isolado preparado. Gates completos da composi
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 
 O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
+
+### #340 D13 LATAM — fase1 em autoria, não integrada
+
+Branch própria340 sobredb441, preservando338; publicação futura sódeltabase. ROOT reservou499(schema926e/SQLb108),4nullable/inversa/índiceFK, semUNIQUE/default/backfill/Aluno; semDDL/generate. REDbfdb35missingmodules→puro finalb5467c EXIT0,4files83 (inclui2regressõescanônicas),UTCw1/1024. Lint4 e41ff6 0 anteriora2testesaditivos; lintfinal aguarda janelaROOT. AuditoriaRO de raw/DTO/prompts/locks salva, sem alteração shared. GateDoc/DOB/idadeCRM+scope/comercial não habilitado e guestnão ganha acesso. Ano0000 técnico, client499/writers/UI/nativos/gates/QA/visual pendentes; NÃO concluída.
+### #340 fase1 — checkpoint puro499, compartilhados ainda NÃO habilitados
+
+RED61cc71(2fail52controles)→GREEN5ca2c3 EXIT0,4files88,UTCw1/1024/7blank; lint73cf32 EXIT0,5paths0avisos. RefinamentoDOB0001..9999 específico, genérico literal; nenhuma política1900, futuroidadeNULL,29fev→1mar. ROOT infra499 preparada efc083/d158d7:497mig/426tabelas/563baseline/client2cf; semSQLDEV e restorer498 proibido. Schema926e/SQLb108 congelados. Node liberado; gate/DTO/writers/UI/paises exclusão e nativos/gates/QA/visual aguardam próximoGO, NÃO concluída. Publicação futura sódeltadb441→340, sem carregarD10 parcial.
+### #340 fase2 — checkpoint writer CRM/leitor privado, parcial
+
+Contrato puro ligado ao ramo cadastral explícito de editarPessoaNaTransacao; omissão/no-op legado preservados. Leitor privado projeta quatro valores e catálogo mínimo sob gate, sem wire DTO/UI. RED assertivo12 e sentinelas14 preservados; barreira pós-Evento5c463d EXIT1 (1fail/15controles) corrigida só no ramo cadastro. GREENad0bc5 EXIT0:2files16casos; linta70ce9 EXIT0:5paths0avisos, UTC/w1/1024/7blank, sem SQL/global/TSC. Não somar recortes sobrepostos. Node liberado. Rollback real/NOTIFY, wrapper Inbox fresh/binding, DTO/SSR/UI/vetosTipos/QA/visual continuam pendentes; A499 sem leaseDEV. #340 NÃO concluída.
+
+### #340 fase2 — DTO/wrapper sob gate, UI/nativos pendentes
+
+REDb472b9(9fail/1controle)→GREEN68d955 EXIT0,2files10casos completos; lint0af0c2 EXIT0,7paths0avisos. Pessoa409/header/capacidades literais; blocos cadastrais separados NULL negados. Wrapper somente ramo cadastro revalida ator/CRM/escopo/COMERCIAL/binding após aviso. Três fixtures tipadas aditivas lintadas aguardam regressões. Sem SQL/UI nova/QA/visual/gates globais; Node liberado. #340 continua parcial, sem lease A499.
+
+Complemento340DTO: regressões das3fixtures tipadas04bf88 EXIT0,3files28casos completos; nenhum runtimeUI novo. PendênciasSQL/QA/visual preservadas.
+
+### #340 interface Inbox e Tipos — checkpoint parcial
+
+RED2c401d45casos(8fail/37controles;3TypeErrors de controles ausentes qualificados)→GREEN finale12dd6 EXIT0,4files48 completos. Lintad2098 negativo refs corrigido semdisable; e323f3 EXIT0,10paths0avisos. SSR/DOMlocal prova civil/idade0, rascunho/input estável, negação/ACKold e omissãoDoc/DOB não editados; NÃO browser/SQL. Tipos inclui countPessoa/veto/ANDdelete, corrida nativa pendente. GlobalCRM/guardas/SQL/QA/visual ainda ausentes; não concluída. Node liberado.
+
+### #340 globalCRM — cache isolado localmente, ainda parcial
+
+RED9bc1cd31casos(7fail/24controles) é ausênciaDTO/UI; contraprova CAUSALcache bf2e39 EXIT1,2files7(2fail/5controles), já comDTO presente, confirmou escopo antigo sobcacheREALNext+dispatcherinstrumental. Corrigido sóDocglobal emTXcurtaReadCommitted/dbtx, semalterar defaultglobal. GREEN011d5b EXIT0:4files31; lint8a61b5 EXIT0:6paths0avisos. SSRreal/harnesslegadosemDOMqualificados; nãoSQL/RSCreal/browser. Nativos/earlygatewriter/guardas/gates/DOMglobal/QA/visual ainda pendentes. SemleaseA499; Node liberado.
+
+### #340 revisão callbacks globais — checkpoint parcial
+
+TRO apontou closures e232 sem bypass servidor demonstrado. RED DOMreal28ae33 EXIT1:6casos4fail/2controles; GREEN sessão35230/6e5d43 EXIT0:6/6; lint32dc98 EXIT0:3paths0avisos. Gate/geração/busy/vida vigentes protegem handlers/ACK só cadastrais; legado permanece. Harness antigo5 adaptado/lintado ainda aguarda regressão; não reatribuir31. Bootstrap Node garante sete strings vazias pré-import. Node liberado; SQL/QA/visual pendentes, #340 não concluída.
+
+### #340 early gate cadastral — unidade, SQL pendente
+
+REDfe1007 EXIT1:20casos4fail/16controles→GREEN554bc6 EXIT0:2files20; lint2f265e EXIT0:3paths0avisos. Ator fresco ver+editar após SELECTidFORUPDATE/callback já existentes e antes da seleção dos quatro valores. Nenhum lock duplicado; omitido/finais preservados. Não é leak público demonstrado nem SQL; espera real autorada e sem lease. #340 continua parcial.
+
+### #340 callbacks no commit — layout final, parcial
+
+RED203cb8 EXIT1:2files27(2fail/25controles) no layout ancestral antes do passivo, sem bypass servidor alegado. GREEN final f54147 EXIT0:27/27, harness5 ade8cf EXIT0 e lint5paths5348be EXIT0. Versão intermediária10e1f7 não reatribuída. Layout só controla refs novas340; vivo.current legadoGaveta preservado literal. Form físico estável, sem remount/ref em render. Node liberado, SQL/QA/visual pendentes.
+
+### #340 pré-admissão nativa — autoria33, execução0
+
+7INT completos autorados7/5/8/3/3/4/3=33, incluindo2writers pertinente ao plano; nenhumSQL coletado/executado. Lint73d6e3 EXIT0:9paths0avisos. Fixture scoped e4comparaçõesDTO aditivas preservamasserts antigas. Preflight exige RO/pins/readmissãoA499426hashes563linhas/leaseROOT; cancelamento sóPIDpróprio apóscanáriologger real. Regressoes6 completas aguardamnovosINTverdes. SemnativeREDretroativo/DDL/generate/cluster. #340 não concluída; QA/visual/gates/publicação pendentes.
+
+### #340 primeiro nativo — parada controlada e refreeze de teste
+
+Fonte2eab: sessão61594/2c463e EXIT1,1file7casos(6pass1fail), demais12arquivos não iniciados. PostgreSQL recusouDELETE com23001/RESTRICT; teste exigiaP2003 incorretamente. Manutenção/rename posterior NÃO executou. RootrestoreA499ca0953 EXIT0/lease revogada. Ajuste sóexpectativa específica+estadoPessoa/Tipo, lint67278/ebc6d7 EXIT0; runtime 04eed/schema/client intactos, semreplayatélease. Negativo preservado, não homologada.
+
+### #340 concorrência — refreeze de fixture/grafo
+
+Fonte0482: core9de5ce7/7 e painelb602305/5 EXIT0; concorrênciabf632f EXIT1:8casos6pass2fail, sequência parada/Rootrestore90fba8 EXIT0. Fixture retarget usava Oportunidade em vez de Lead; doiswriters exigia2waitersdiretos semgrafo. Corrigido sóteste para3PIDs conhecidos/grafo real/2writersLock/caminho diretoouindireto, preservando resultados/Pessoa/Eventos. Lint7dedac EXIT0. Sem causa soft-block alegada antes de observar; semruntime/schema/cluster alterados. ReplayAPENASarquivo 3 aguarda execução desta fonte; demaisarquivos ainda não iniciados.
+
+
+### Instrumentação do cache nativo — revisão test-only
+O negativo 2e97b0 (1 passou/3 falharam) terminou antes do catálogo: as três revogações não ocorreram. protegerTransacoes captura o cliente base; a extensão derivada não observava a TX real. O teste agora observa por callthrough a transação protegida e o tipoDocumento.findMany efetivamente concluído. Cada cenário exige canário SQL/captura/retorno no mesmo caminho antes da revogação. React.cache instalado e dispatcher instrumental permanecem; não é renderização RSC/browser. Lint focal 12601/47af1c EXIT0. Runtime 04eed permanece literal. Arquivo7 e seis regressões seguem não executados; #340 permanece parcial.
+
+
+### Coletor de logger nativo (test-only)
+Negativo 68385/7b2518: 3 casos, 1 passou/2 falharam no canário console.error; Prisma emitiu prisma:error em stdout. O cancelamento não foi alcançado. Runtime instalado library.js contém emissores console.log/error/warn/info; o coletor agora observa os quatro com callthrough preservando emissão e registra o canal real do canário antes do teste. Ausência de Doc/DOB, ownPID/banco/app/UPDATE/holder seguem mandatórios. Lint82982/a4f108 EXIT0. Runtime04eed literal; nova execução ainda pendente neste checkpoint.
+
+### Nativos e regressões executados — fonte 25a93e83
+O arquivo 7 completo passou em 93774/e63469 EXIT0 (3/3). Os dois canários registraram o canal real console.log com emissão preservada. O cancelamento foi somente da conexão própria, com PID/banco/app/UPDATE/FKholder conferidos; ausência de Doc/DOB e rollback foram verificados. O negativo 7b2518 permanece preservado e naquela execução o cancelamento não foi alcançado.
+As seis regressões completas passaram, em série: contatos 66056/d6fb34 (5), pessoas 27193/f300c2 (16), duplicados 72700/3d3b2c (14), painel-detalhes 61600/a5cac7 (16), acoes-painel-contato 78364/fecf43 (21), pool1 18618/918ff6 (1): 73 casos nesta seleção, sem filtros/skips. Original integration config, UTC, w1, heap1024, no-file-parallelism e sete provedores vazios via bootstrap. Não é suíte global.
+Proveniência dos sete novos arquivos sem repetição indevida: arquivos 1/2 verdes 0482 (7/5), arquivo 3 verde 34c7 (8), arquivos 4/5 verdes 34c7 (3/3), arquivo 6 verde 6a6c (4), arquivo 7 verde 25a9 (3). São 33 casos distintos; históricos negativos preservados. Os 27 pins foram reconferidos; runtime 04eed/schema/client/perfil literais. Lease e Node liberados para restauro exclusivo ROOT A499; baseline não presumida.
+Recibo privado output/inbox-340-native-final25a9-receipt-private.json SHA f57383c26da54ae3b3b1d2e6293b0ab24178fbe8aa02efb10819f550b2dc920e. #340 permanece parcial: gates originais/QA independente/visual e publicação seguem pendentes; puros/DOM não são browser.
+
+
+### #340 — integração ROOT R26, validação parcial
+
+Delta42 db441→2e41 integrado sobre f591 sem ancestrais privados/D10 parcial. Contador público Aria preservado; schema somente499 com presença existente. ROOT UNIT15/171 (19417/c1264c) e lint37 (d870b3) terminaram0. Cliente próprio499 gerado b933a9 após negativo write UNKNOWN preservado. DDL c3259c preservou dados/histórico495 e deixou novos campos nulos; snapshot89e852426tabelas1383linhas, restauradorROOT499 exclusivo. QA independente, gates globais, CI, visual e publicação pendentes; não concluída. Ver docs/qa/inbox-340-integracao-r26-root.md.
