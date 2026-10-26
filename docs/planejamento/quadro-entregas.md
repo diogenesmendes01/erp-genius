@@ -7534,6 +7534,8 @@ REDs adicionais 441de4 (5/16), regressão 201a29 (2/46, owner nulo ainda não co
 ### Inbox #357 — composição R5 com tarefas e atividade (25/10/2026)
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
+<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
+=======
 
 ### Inbox #358 — compositor durante Aria / entrega DEV (25/10/2026)
 
@@ -7611,6 +7613,11 @@ Normalização coordenada ROOT360 (88aa57d7): somente destinos = [] no parâmetr
 ### PR444 / #334 — revisão R1 C3/C4 (DEV B, 25/10/2026)
 
 Contador do cabeçalho separado de configuração/última ação/decisão com leitor autorizado compartilhado; limite30 após autorização, keyset100 e Pessoa/CRM preservados. Quatro fallbacks históricos no passado, sem alterar rótulos neutros ou recibo de entrega. RED nativo14776/636807 EXIT1 (2falhas/8pass); GREEN85994/89a8da EXIT0 (10/10), UNIT94717/1961c3 EXIT0 (3arquivos/161), focal finalcaf8e4 EXIT0 (11/106, sem filtros). Lint final e freeze no relatório específico. B493grant/425tabelas/client383; lease liberadaff859e0 e ROOTrestaurouf020fe0/baseline504. Isolamento370 preservado por manifesto17b68d64, stash78d35dbb e checkpoint PRIVADO76f9 de2schema paths; não publicar esse pai. Commit334 terá só deltaC3C4/fixturecarry578. QA independente/gates de composição/visualC1 pendentes, sem afirmar PR334/Aria completa por esse recorte. #370 continua bloqueada aguardando autorização humana específica; nenhum grant foi ligado ao escopo.
+>>>>>>> f9ea5209bf7a9337c67fb2f6d1fd715f7f620e75
+
+### #357 — hardening portal após espera (DEV B, 25/10/2026)
+
+Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado DTO/action com rowTXfresh; sempapéisgenéricosnovos e semalterar[]/mistos. OracleTbyte8196 RED30130/612418 EXIT1 (1ERPpass/1portalfail)→GREEN29510/3b5aa3 EXIT0 2/2; UNIT27d736 RED→728dbe GREEN2/10; regressão42600/93843a EXIT0 2arquivos32casos incluindo3ROLErastreados (não somaroracle2sobreposto); lint9dad9f0/4SRC/zeroavisos. D3TODASSUGERIDAinclusiveCRM documentada/C5JSDoclegado recolocado. QA em docs/qa/inbox-357-portal-apos-espera.md. B493grant/client383, liberação6618d60/0outros; ROOTrestaura depois, não presumir504. Commitisolado357 sobrepaisprivados334/76f9, integrar sódelta. QA/gatescompostos/visual pendentes;370continua aguardandoautorizaçãohumana específica, semgrantACLativado.
 
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 

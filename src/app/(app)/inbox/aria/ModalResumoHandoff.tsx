@@ -6,7 +6,7 @@ import { Modal } from "@/components/Modal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { assumirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { assumirConversaDaAria } from "@/server/whatsapp/acoes-atendimento";
 import type { HandoffDoAtendimento } from "@/server/aria/handoff-inbox";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 export type PropsModalResumoHandoff = {
@@ -19,6 +19,10 @@ export type PropsModalResumoHandoff = {
     aoResponder(): void;
     focoAoFechar?: RefObject<HTMLElement | null>;
     contextoAtivo?: boolean;
+    /** Só preserva callback iniciado; contextoAtivo continua obrigatório para iniciar. */
+    preservarTentativa?: boolean;
+    aoIniciarAssumir?(): boolean;
+    podeAssumirAria?: boolean;
     sessaoInvalidada?: boolean;
     confirmando?: boolean;
     confirmacaoPendente?: boolean;
@@ -26,15 +30,19 @@ export type PropsModalResumoHandoff = {
     aoTentarConfirmar?(): void;
 };
 export function ModalResumoHandoff(props: PropsModalResumoHandoff) { return <SessaoResumo key={props.atendimentoId + ":" + props.handoff.acaoId} {...props}/>; }
-function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoAssumido, aoResponder, focoAoFechar, contextoAtivo = true, sessaoInvalidada = false, confirmacaoPendente = false, confirmando = false, erroConfirmacao, aoTentarConfirmar }: PropsModalResumoHandoff) {
+function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoAssumido, aoResponder, focoAoFechar, contextoAtivo = true, preservarTentativa = false, aoIniciarAssumir, podeAssumirAria = false, sessaoInvalidada = false, confirmacaoPendente = false, confirmando = false, erroConfirmacao, aoTentarConfirmar }: PropsModalResumoHandoff) {
     const acao = useAcaoCliente({ idempotente: true }), cancelar = useRef<HTMLButtonElement>(null), ciclo = useRef({ ativo: false });
-    useEffect(() => { const atual = { ativo: contextoAtivo && !sessaoInvalidada && !confirmacaoPendente }; ciclo.current = atual; return () => { atual.ativo = false; }; }, [contextoAtivo, sessaoInvalidada, confirmacaoPendente, handoff.podeAssumir]);
+    // Preservar um callback em voo não habilita o botão para outra mutação.
+    const cicloAutorizado = (contextoAtivo || preservarTentativa) && podeAssumirAria && !sessaoInvalidada && !confirmacaoPendente;
+    useEffect(() => { const atual = { ativo: cicloAutorizado }; ciclo.current = atual; return () => { atual.ativo = false; }; }, [cicloAutorizado]);
     async function assumir() {
         const atual = ciclo.current;
-        if (!atual.ativo || sessaoInvalidada || confirmacaoPendente || !handoff.podeAssumir || confirmando)
+        if (!atual.ativo || !contextoAtivo || sessaoInvalidada || confirmacaoPendente || !podeAssumirAria || (!handoff.podeAssumir && !handoff.ehResponsavel) || confirmando)
             return;
-        const d = await acao.executar(async () => { try {
-            const r = await assumirAtendimento(atendimentoId);
+        const d = await acao.executar(async () => {
+            if (aoIniciarAssumir && !aoIniciarAssumir()) return { ok: false as const, erro: "Esta tentativa não está mais disponível. Abra o resumo novamente." };
+            try {
+            const r = await assumirConversaDaAria(atendimentoId);
             return atual.ativo ? r : { ok: true as const };
         }
         catch (e) {
@@ -47,7 +55,7 @@ function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoA
             aoResponder();
         }
     }
-    const temAcao = !sessaoInvalidada && (confirmacaoPendente || handoff.podeAssumir || handoff.ehResponsavel);
+    const temAcao = !sessaoInvalidada && (confirmacaoPendente || (podeAssumirAria && (handoff.podeAssumir || handoff.ehResponsavel)));
     return <Modal titulo="Resumo de handoff" folha aoFechar={aoFechar} bloquearFechamento={acao.ocupado && contextoAtivo} focoInicial={cancelar} focoAoFechar={focoAoFechar}>
   <p className="mb-4 text-sm text-gray-600">Preparado pela Aria · {contatoNome}</p>
   <section className="mb-4"><h4 className="mb-1 text-sm font-semibold">O que o contato quer</h4><p className="whitespace-pre-wrap text-sm">{handoff.resumo?.quer || "A Aria não deixou resumo."}</p></section>
@@ -57,7 +65,7 @@ function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoA
   <div className="mt-4 flex flex-wrap justify-end gap-2">
    <Botao ref={cancelar} variante="fantasma" disabled={acao.ocupado && contextoAtivo} onClick={aoFechar}>{temAcao ? "Cancelar" : "Fechar"}</Botao>
    {!sessaoInvalidada && erroConfirmacao && aoTentarConfirmar && <Botao variante="secundario" onClick={aoTentarConfirmar}>Tentar de novo</Botao>}
-   {!sessaoInvalidada && !confirmacaoPendente && (handoff.podeAssumir ? <Botao ocupado={acao.ocupado} disabled={!contextoAtivo || confirmando} onClick={() => void assumir()}>Assumir e responder</Botao> : handoff.ehResponsavel ? <Botao disabled={!contextoAtivo || confirmando} onClick={aoResponder}>Responder</Botao> : null)}
+   {!sessaoInvalidada && !confirmacaoPendente && podeAssumirAria && (handoff.podeAssumir ? <Botao ocupado={acao.ocupado} disabled={!contextoAtivo || confirmando} onClick={() => void assumir()}>Assumir e responder</Botao> : handoff.ehResponsavel ? <Botao ocupado={acao.ocupado} disabled={!contextoAtivo || confirmando} onClick={() => void assumir()}>Responder</Botao> : null)}
   </div>
  </Modal>;
 }
