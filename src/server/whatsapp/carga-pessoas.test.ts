@@ -1,0 +1,22 @@
+vi.mock("@/lib/auth",()=>({auth:vi.fn()}));
+import{beforeEach,expect,it,vi}from"vitest";
+import{Papel}from"@prisma/client";
+const m=vi.hoisted(()=>({sessao:vi.fn(),visivel:vi.fn(),pessoas:vi.fn(),ator:vi.fn(),grupos:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{usuario:{findMany:m.pessoas,findUnique:m.ator},atendimentoWhatsApp:{groupBy:m.grupos}}}));
+vi.mock("@/server/_shared",()=>({exigirSessao:m.sessao}));
+vi.mock("./atendimentos",()=>({atendimentoVisivel:m.visivel}));
+import*as consultas from"./consultas-acoes-atendimento";
+const carga=(id:string,ids:string[])=>(consultas as unknown as{cargaDasPessoas(id:string,ids:string[]):Promise<Record<string,number>>}).cargaDasPessoas(id,ids);
+const gerente={id:"g",nome:"Gerente",ativo:true,papeis:[Papel.GERENTE_COMERCIAL],permissoes:[]};
+const a={id:"at",finalidade:"COMERCIAL",responsavelId:"atual",encerradoEm:null,conversa:{grupoId:null}};
+beforeEach(()=>{vi.resetAllMocks();m.sessao.mockResolvedValue(gerente);m.ator.mockResolvedValue(gerente);m.visivel.mockResolvedValue(a);m.pessoas.mockResolvedValue([{id:"b",nome:"B"},{id:"c",nome:"C"}]);m.grupos.mockResolvedValue([{responsavelId:"b",_count:{_all:2}}]);});
+it("371 devolve2/0 somente para pessoas elegíveis e faz UMA agregação do mesmo setor",async()=>{
+ expect(await carga("at",["b","c","fora","b"])).toEqual({b:2,c:0});
+ expect(m.grupos).toHaveBeenCalledOnce();expect(m.grupos.mock.calls[0][0]).toMatchObject({by:["responsavelId"],_count:{_all:true},where:{finalidade:"COMERCIAL",encerradoEm:null,status:{not:"ENCERRADO"},responsavelId:{in:["b","c"]}}});
+ expect(m.grupos.mock.calls[0][0].where).not.toHaveProperty("lead");expect(m.grupos.mock.calls[0][0].where).not.toHaveProperty("conversaId");
+});
+it("371 responsável comum ainda não recebe alçada de Pessoas da futura370",async()=>{m.sessao.mockResolvedValue({...gerente,id:"atual",papeis:[Papel.VENDEDOR]});expect(await carga("at",["b"])).toEqual({});expect(m.grupos).not.toHaveBeenCalled();});
+it.each(["fora","encerrado","grupo"])("371 fonte%s não consulta cargas",async caso=>{m.visivel.mockResolvedValue(caso==="fora"?null:{...a,encerradoEm:caso==="encerrado"?new Date():null,conversa:{grupoId:caso==="grupo"?"grupo":null}});expect(await carga("at",["b"])).toEqual({});expect(m.grupos).not.toHaveBeenCalled();});
+it("371 perda de papel/ativo do ator antes da resposta não publica contagem",async()=>{m.ator.mockResolvedValue({...gerente,ativo:false});expect(await carga("at",["b"])).toEqual({});});
+it("371 IDs omitidos/inativos não recebem zero inventado depois da agregação",async()=>{m.pessoas.mockResolvedValueOnce([{id:"b",nome:"B"},{id:"c",nome:"C"}]).mockResolvedValueOnce([{id:"b",nome:"B"}]);expect(await carga("at",["b","c"])).toEqual({b:2});});
+it("371 vazio não agrega e mais200 não é truncado silenciosamente",async()=>{expect(await carga("at",[])).toEqual({});await expect(carga("at",Array.from({length:201},(_,i)=>"u"+i))).rejects.toThrow();expect(m.grupos).not.toHaveBeenCalled();});
