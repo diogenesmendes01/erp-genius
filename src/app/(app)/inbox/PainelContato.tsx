@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
-import { IconChevronLeft, IconSparkles, IconX } from "@tabler/icons-react";
+import { IconChevronLeft, IconSparkles, IconX, IconPencil } from "@tabler/icons-react";
 import { Avatar, tomDoAvatar } from "@/components/Avatar";
 import type { TagPainel } from "@/server/inbox/paineis";
 export type { TagPainel } from "@/server/inbox/paineis";
@@ -43,9 +43,9 @@ export function AbasPainel({ abas, abaAtiva, aoTrocarAba, idBase }: { abas: read
 }
 
 /** Uma montagem para coluna, sobreposição e vista própria: não perde campos ao redimensionar. */
-export function PainelContato({ visivel, sobreposto, className, aoFechar, children, focarAoAbrir = false, contato, slotTags, slotAviso, abas = abasDoPainel(""), abaAtiva = "detalhes", aoTrocarAba }: {
+export function PainelContato({ visivel, sobreposto, className, aoFechar, children, focarAoAbrir = false, contato, slotTags, slotAviso, aoEditar, abas = abasDoPainel(""), abaAtiva = "detalhes", aoTrocarAba }: {
   visivel: boolean | null; sobreposto: boolean; className: string; aoFechar(): void; children?: ReactNode; focarAoAbrir?: boolean;
-  contato?: ContatoPainel; slotTags?: ReactNode; slotAviso?: ReactNode; abas?: readonly AbaPainel[]; abaAtiva?: IdAbaPainel; aoTrocarAba?(id: IdAbaPainel): void;
+  contato?: ContatoPainel; aoEditar?(): void; slotTags?: ReactNode; slotAviso?: ReactNode; abas?: readonly AbaPainel[]; abaAtiva?: IdAbaPainel; aoTrocarAba?(id: IdAbaPainel): void;
 }) {
   const idBase = useId();
   const painel = useRef<HTMLElement>(null);
@@ -97,6 +97,7 @@ export function PainelContato({ visivel, sobreposto, className, aoFechar, childr
       <div className="relative min-h-0 flex-1 overflow-y-auto">
         {contato && <header data-cabecalho-contato className="relative flex flex-col items-center gap-3.5 border-b border-gray-200 px-6 pb-[26px] pt-9">
           {botaoFechar}
+          {aoEditar && <div className="absolute right-2.5 top-2.5"><BotaoIcone tamanho={34} rotulo="Editar contato" onClick={aoEditar} className="max-sm:min-h-11 max-sm:min-w-11"><IconPencil size={18} aria-hidden /></BotaoIcone></div>}
           <Avatar nome={contato.nome} tamanho={132} tom={tomDoAvatar(contato.id)} quadrado={contato.quadrado} />
           <h2 className="max-w-full text-balance text-center text-xl font-medium leading-[1.25] [overflow-wrap:anywhere]">{contato.nome}</h2>
           <p className="max-w-full text-center text-sm text-gray-600 [overflow-wrap:anywhere]">{contato.subtitulo}</p>

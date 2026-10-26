@@ -1,0 +1,24 @@
+import { afterAll, beforeEach, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+vi.hoisted(() => { const url = new URL(process.env.DATABASE_URL!); url.searchParams.set("connection_limit", "1"); url.searchParams.set("pool_timeout", "3"); process.env.DATABASE_URL = url.toString(); (globalThis as { prisma?: unknown }).prisma = undefined; });
+const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: () => authMock() })); vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { editarContatoNoInbox } from "./acoes-painel";
+beforeEach(truncarBanco); afterAll(() => prisma.$disconnect());
+it("pool1: escopo/ator fresco/núcleos/Pessoa+campos/aviso usam somente a tx corrente", async () => {
+  const dono = await criarUsuario([Papel.VENDEDOR]); authMock.mockResolvedValue({ user: { id: dono.id } });
+  const pessoa = await prisma.pessoa.create({ data: { nome: "Pessoa fictícia pool1 326" } });
+  const op = await prisma.oportunidade.create({ data: { nome: "Curso fictício pool1 326", pessoaId: pessoa.id, vendedorDonoId: dono.id } });
+  const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5500000326001", pessoaId: pessoa.id } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5500000326002", rotulo: "Linha fictícia", driver: "MOTOR", finalidade: "VENDAS", donoId: dono.id } });
+  const cv = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
+  const a = await prisma.atendimentoWhatsApp.create({ data: { conversaId: cv.id, contextoChave: "COMERCIAL::pool1326", finalidade: "COMERCIAL", leadId: op.id } });
+  const campo = await prisma.campoPersonalizado.create({ data: { nome: "Disponível326", alvo: "PESSOA", tipo: "BOOLEANO" } });
+  const input = { pessoaIdEsperada: pessoa.id, pessoa: { cargo: "Professor fictício" }, campos: [{ campoId: campo.id, valor: false }] };
+  expect(await editarContatoNoInbox(a.id, input)).toEqual({ ok: true }); expect(await editarContatoNoInbox(a.id, input)).toEqual({ ok: true });
+  expect((await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoa.id } })).cargo).toBe("Professor fictício");
+  expect((await prisma.valorCampoPersonalizado.findFirstOrThrow({ where: { pessoaId: pessoa.id, campoId: campo.id } })).valor).toBe(false);
+  expect(await prisma.evento.count()).toBe(2);
+});

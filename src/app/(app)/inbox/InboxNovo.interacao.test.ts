@@ -68,6 +68,7 @@ import { PainelTriagem } from "./PainelTriagem";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
+import { GavetaContato } from "./abas/GavetaContato";
 
 const item = (id: string) => ({
   id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: id,
@@ -90,7 +91,7 @@ beforeEach(() => {
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   m.aoVisibilidade = null;
-  vi.stubGlobal("document", { visibilityState: "visible",
+  vi.stubGlobal("document", { visibilityState: "visible", querySelectorAll: () => [],
     addEventListener: (tipo: string, f: () => void) => { if (tipo === "visibilitychange") m.aoVisibilidade = f; },
     removeEventListener: (tipo: string, f: () => void) => { if (tipo === "visibilitychange" && m.aoVisibilidade === f) m.aoVisibilidade = null; },
   });
@@ -111,7 +112,7 @@ function tela(p: PropsInboxNovo = props): ReactNode {
   const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
   const secao = elementos(t).find((n) => n.type === "section" && n.props["aria-label"] === "Conversa");
   const ref = (secao as { ref?: { current: unknown } } | undefined)?.ref;
-  if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [] };
+  if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [], closest: () => null, focus() {} };
   return t;
 }
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
@@ -989,4 +990,76 @@ it("composição324: 404 preserva leitura do snapshot no mesmoID e retira escrit
   expect(conversa(tela()).podeEnviar).toBe(false);
   expect(depois.props.contato).toMatchObject({ tags });
   expect((depois.props.slotTags as ReactElement).props).toMatchObject({ tags, podeEditar: false, podeCriar: false });
+});
+
+const cabecalho326 = (extra: object = {}) => ({ pessoaId: "p326", tagsDisponiveis: [], semNome: false, capacidades: { editarContato: true, editarTags: false, criarTag: false, verContato: true }, ...extra });
+const editor326 = (t: ReactNode) => elementos(t).find(n => n.type === GavetaContato);
+const painel326 = (t: ReactNode) => elementos(t).find(n => n.type === PainelContato)!.props as { aoEditar?: () => void };
+it("325+326: lápis reutiliza aquisição/DTO de Detalhes, fecha na troca e não reabre ao voltar", async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({podeEnviar:true,acoes:{},cabecalho:cabecalho326()}),{status:200});tela();await esvaziar();expect(editor326(tela())).toBeUndefined();expect(painel326(tela()).aoEditar).toEqual(expect.any(Function));
+ expect(vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith("/painel/detalhes"))).toHaveLength(1);const detalheAnterior=elementos(tela()).find(n=>n.type===AbaDetalhes)!.props.dados;
+ painel326(tela()).aoEditar!();tela();await esvaziar();expect(editor326(tela())?.props.atendimentoId).toBe("a1");expect(editor326(tela())?.props.dados).toBe(detalheAnterior);expect(elementos(tela()).find(n=>n.type===AbaDetalhes)!.props.dados).toBe(detalheAnterior);const gets=vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith("/painel/detalhes"));expect(gets).toHaveLength(1);
+ lista(tela()).aoSelecionar("a2");tela();await esvaziar();expect(editor326(tela())).toBeUndefined();lista(tela()).aoSelecionar("a1");tela();await esvaziar();expect(editor326(tela())).toBeUndefined();
+});
+it.each(["sem pessoa","sem capacidade","sem ações"])("326: contexto %s não oferece nem mantém editor",async caso=>{
+ const cabecalho=cabecalho326(caso==="sem pessoa"?{pessoaId:null}:caso==="sem capacidade"?{capacidades:{editarContato:false}}:{});respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,acoes:caso==="sem ações"?null:{},cabecalho}),{status:200});tela();await esvaziar();expect(painel326(tela()).aoEditar).toBeUndefined();expect(editor326(tela())).toBeUndefined();
+});
+it("326: revogação404 conserva snapshot de leitura e retira o editor novo",async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({podeEnviar:true,acoes:{},cabecalho:cabecalho326()}),{status:200});tela();await esvaziar();painel326(tela()).aoEditar!();tela();await esvaziar();expect(editor326(tela())).toBeDefined();
+ respostaPainel=()=>new Response(null,{status:404});m.aoAviso!({tipo:"atendimento.atualizado",atendimentoId:"a1",conversaId:"cv1",mensagemId:null});tela();await esvaziar();const t=tela();expect(painel326(t).aoEditar).toBeUndefined();expect(editor326(t)).toBeUndefined();expect(conversa(t).podeEnviar).toBe(false);
+});
+
+it("326: gaveta mantém posse modal ao redimensionar vista móvel para sobreposição e devolve ao painel ao fechar", async () => {
+  const p = { ...props, abrirPainelPadrao: true }; m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
+  respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, acoes: {}, cabecalho: cabecalho326() }));
+  tela(p); await esvaziar();
+  (elementos(tela(p)).find(n => n.type === ConversaAberta)!.props.aoAlternarPainel as () => void)(); tela(p);
+  painel326(tela(p)).aoEditar!(); tela(p); await esvaziar();
+  const gaveta = editor326(tela(p))!;
+  m.modo = "duas"; tela(p); const redimensionada = tela(p);
+  expect(editor326(redimensionada)).toBeDefined();
+  const painel = elementos(redimensionada).find(n => n.type === PainelContato)!;
+  expect(painel.props.visivel).toBe(true); expect(painel.props.sobreposto).toBe(false);
+  (gaveta.props.aoFechar as () => void)();
+  const fechada = tela(p), painelFechado = elementos(fechada).find(n => n.type === PainelContato)!;
+  expect({ visivel: painelFechado.props.visivel, sobreposto: painelFechado.props.sobreposto, editor: !!editor326(fechada), modo: m.modo }).toEqual({ visivel: true, sobreposto: true, editor: false, modo: "duas" });
+});
+
+it("326: componentes reais mantêm um único modal, foco e editor fora de inert no resize", async () => {
+  const p = { ...props, abrirPainelPadrao: true }; m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
+  respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, acoes: {}, cabecalho: cabecalho326() }));
+  tela(p); await esvaziar();
+  (elementos(tela(p)).find(n => n.type === ConversaAberta)!.props.aoAlternarPainel as () => void)(); tela(p);
+  painel326(tela(p)).aoEditar!(); tela(p); await esvaziar();
+  const antes = tela(p); m.modo = "duas"; tela(p); const depois = tela(p);
+  const g = m.g; m.g = null; vi.useRealTimers();
+  const { criarDomMinimo, desligarObservadores } = await import("@/test/dom-minimo");
+  const dom = criarDomMinimo(), doc = dom.documento;
+  const criar = doc.createElement.bind(doc);
+  doc.createElement = tag => { const el = criar(tag); if (tag === "select") Object.defineProperty(el, "options", { get: () => el.querySelectorAll("option") }); return el; };
+  const ouvintes: { alvo: object; tipo: string; f: (e: Event) => void }[] = [];
+  for (const alvo of [doc, dom.janela]) Object.assign(alvo, {
+    addEventListener: (tipo: string, f: (e: Event) => void) => ouvintes.push({ alvo, tipo, f }),
+    removeEventListener: (tipo: string, f: (e: Event) => void) => { const i = ouvintes.findIndex(o => o.alvo === alvo && o.tipo === tipo && o.f === f); if (i >= 0) ouvintes.splice(i, 1); },
+  });
+  Object.assign(doc, { createElementNS: (_ns: string, tag: string) => doc.createElement(tag) });
+  vi.stubGlobal("document", doc); vi.stubGlobal("window", dom.janela); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const host = doc.createElement("div"); doc.body.appendChild(host);
+  const { act, createElement, cloneElement } = await import("react"), { createRoot } = await import("react-dom/client");
+  const root = createRoot(host as unknown as HTMLElement);
+  function filhos(t: ReactNode) {
+    const painel = elementos(t).find(n => n.type === PainelContato)! as unknown as ReactElement<Record<string, unknown>>;
+    const gaveta = editor326(t)! as unknown as ReactElement<Record<string, unknown>>;
+    return createElement("div", null, cloneElement(painel, { slotTags: undefined, slotAviso: undefined, children: null }), cloneElement(gaveta, { dados: { pessoa: { id: "p326", nome: "Pessoa fictícia", email: null, cidade: null, cargo: null, linkedin: null, origemCanal: null, telefone: null, empresa: null }, campos: [], b2b: null, oportunidade: null } }));
+  }
+  try {
+    await act(async () => root.render(filhos(antes)));
+    expect(host.querySelectorAll('[aria-modal="true"]')).toHaveLength(1);
+    const nome = host.querySelector('[name="nome"]')!; nome.focus();
+    await act(async () => root.render(filhos(depois)));
+    expect(host.querySelector('[name="nome"]') === nome).toBe(true);
+    expect(nome.closest("[inert]") === null).toBe(true); expect(doc.activeElement === nome).toBe(true);
+  } finally {
+    await act(async () => root.unmount()); desligarObservadores(); m.g = g;
+  }
 });
