@@ -5,6 +5,7 @@ import { listarLinhasNovaConversa, consultarTelefoneNovaConversa } from "@/serve
 import { listarVendedoresNovaConversa } from "@/server/whatsapp/nova-conversa-vendedores";
 import { iniciarConversaPorNumero } from "@/server/whatsapp/nova-conversa-acoes";
 import { Botao } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import type { EntradaTelefone, IntencaoNovaConversa } from "./intencao-nova-conversa";
 export type PropsPorNumero={usuario:{id:string;papeis:Papel[]};intencao:IntencaoNovaConversa;aoSelecionar(id:string):void;aoFechar():void};
@@ -58,14 +59,14 @@ export function NovaConversaPorNumero({usuario,intencao,aoSelecionar,aoFechar}:P
   {estado.comando?<div className="space-y-2"><p className="text-sm">Tentativa {estado.comando.modo==="NOVO"?"de novo cadastro":"de abertura"} para {estado.comando.telefone}. Reenvie os mesmos dados para confirmar o resultado.</p><Botao disabled={estado.ocupado} onClick={iniciar}>{estado.ocupado?"Confirmando…":"Reenviar mesma tentativa"}</Botao>{!estado.incerto&&!estado.ocupado&&<Botao variante="fantasma" onClick={()=>{intencao.reiniciar();setPreview(null);}}>Conferir outros dados</Botao>}</div>:<>
    <label className="grid gap-1 text-sm" htmlFor={`${id}-telefone`}>Telefone internacional<input id={`${id}-telefone`} name="telefone" type="tel" inputMode="tel" autoComplete="off" maxLength={100} value={telefone} disabled={travado} onChange={e=>alterar(()=>setTelefone(e.target.value))} className={classe}/></label>
    <label className="grid gap-1 text-sm" htmlFor={`${id}-linha`}>Canal da escola<select id={`${id}-linha`} name="numeroId" value={numero} disabled={travado||carregando} onChange={e=>alterar(()=>setNumero(e.target.value))} className={classe}><option value="">Selecione o canal</option>{linhas.map(n=><option key={n.id} value={n.id}>{n.rotulo}</option>)}</select></label>
-   {!carregando&&!linhas.length&&<p className="text-sm">Nenhuma linha comercial ativa autorizada. Peça à administração para conferir seu canal.</p>}
+   {!carregando&&!linhas.length&&<EstadoVazio>Nenhuma linha comercial ativa autorizada. Peça à administração para conferir seu canal.</EstadoVazio>}
    <Botao disabled={carregando||consultando||!telefone.trim()||!numero} onClick={conferir}>{consultando?"Conferindo…":"Conferir número"}</Botao>
    {preview?.tipo==="RECUSAR"?<p role="status" className="text-sm">Não é possível iniciar por este número e canal. Confira os dados ou procure a administração.</p>:preview&&<div className="space-y-3">
     <p role="status" className="text-sm">{preview.tipo==="NOVO"?"Será criado um novo cadastro.":"Será aberto o atendimento autorizado existente."}</p>
     {preview.tipo==="NOVO"&&<>
      <label className="grid gap-1 text-sm">Nome (opcional)<input name="nome" maxLength={200} value={nome} onChange={e=>setNome(e.target.value)} className={classe}/></label>
      {!vendedor&&<label className="grid gap-1 text-sm">Vendedor responsável<select name="ownerId" required value={owner} onChange={e=>setOwner(e.target.value)} className={classe}><option value="">Selecione um vendedor</option>{vendedores.map(v=><option key={v.id} value={v.id}>{v.nome}</option>)}</select></label>}
-     {!vendedor&&!vendedores.length&&<p className="text-sm">Nenhum vendedor ativo autorizado. Confira sua equipe com a administração.</p>}
+     {!vendedor&&!vendedores.length&&<EstadoVazio>Nenhum vendedor ativo autorizado. Confira sua equipe com a administração.</EstadoVazio>}
     </>}
     <Botao disabled={preview.tipo==="NOVO"&&!vendedor&&!vendedores.some(v=>v.id===owner)} onClick={iniciar}>Iniciar conversa</Botao>
    </div>}
