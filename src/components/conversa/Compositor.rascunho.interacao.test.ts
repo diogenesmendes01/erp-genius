@@ -8,7 +8,7 @@ import type { PropsCompositor } from "./Compositor";
 const ui = vi.hoisted(() => ({ campo: {} as Record<string, unknown>, botoes: [] as Record<string, unknown>[] }));
 vi.mock("@/components/CampoTexto", async () => { const { forwardRef } = await import("react"); return { CampoTexto: forwardRef((_p) => { ui.campo = _p as Record<string, unknown>; return null; }) }; });
 vi.mock("@/components/Botao", () => ({ Botao: (p: Record<string, unknown>) => { ui.botoes.push(p); return null; } }));
-vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash"].map(k => [k, () => null])));
+vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash", "IconBolt", "IconCamera", "IconFileCheck", "IconFileText", "IconListCheck", "IconMapPin", "IconPhoto", "IconUser"].map(k => [k, () => null])));
 vi.mock("@/components/Menu", () => ({ CLASSE_ITEM_MENU: "", CLASSE_PAINEL_MENU: "" }));
 let root: Root;
 let host: Elemento;
@@ -170,8 +170,8 @@ it('PR384 C3: cada anexo indisponível descreve seu motivo real, com IDs únicos
   expect(avisos.every(Boolean)).toBe(true);
   expect(avisos.map(s => s!.textContent)).toEqual([
     'Disponível quando o motor próprio da escola entrar em uso.',
-    'O envio deste tipo pelo Inbox ainda não está disponível.',
     'Disponível quando o motor próprio da escola entrar em uso.',
+    'O envio deste tipo pelo Inbox ainda não está disponível.',
     'Disponível quando o motor próprio da escola entrar em uso.',
     'Disponível quando o motor próprio da escola entrar em uso.',
     'Disponível quando o motor próprio da escola entrar em uso.',
@@ -186,5 +186,5 @@ it('PR384 C3: descrição mantém o ID ao atualizar capacidades e reabrir o menu
   expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
   await abrirAnexos(); await abrirAnexos();
   expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
-  expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Contato', 'Enquete', 'Localização']);
+  expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Localização', 'Contato', 'Enquete']);
 });

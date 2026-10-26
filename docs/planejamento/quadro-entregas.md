@@ -7465,3 +7465,15 @@ Gate ORIGINAL exato2af4: TSC84020/5d68c6 EXIT2,6diagnósticos (1TS2322REAL no Ca
 ROOT autorizou e realizou arquivo FÍSICO dos3históricos em a88569 com bytes/hashes84bc7e4b/8bdd3efd/08edc23f preservados foraB; DEV não os moveu/editou/copiou de volta e não alterou config/cache/contrato obrigatório para esconder diagnósticos. Correção REAL em filhaisolada2af4: Desfazer usaNEUTRO canônicoDS (contorno cinza), mapa e âncora ASTFECHADA total3,2dinâmicos originais+Desfazer literal preservados; negativos vazio/varianteerrada/contornoinexistente/quartobotão. DS e backend literais.
 
 RED93c55e EXIT1(11casos/1falha classundefined); GREEN34172/a2537c EXIT0(24arquivos/510casos UI/consumidores/Botao/guardas completos,sem filtrodecaso/skips); lint4 61127e EXIT0 --max-warnings=0. Sem repetiçãoINT45 por ausência de delta backend. Próximo TSC ORIGINAL aguarda admissãoROOT/liberação compiladorA; QAfilha/global/visualpendentes. SemDB/build/install/config/env/PR/push ou355. SPEC/report output/inbox-354-r2-neutro-report.md atualizados.
+
+## #365 — anexos, câmera e resposta rápida (DEV em andamento)
+
+Menu/câmera/resposta rápida e porta opcional de Proposta implementados no recorte autorizado. Focal completo Compositor+guarda:148/148 EXIT0; lint4 e TSC original8192 EXIT0. Regressão conversa20arquivos/325casos EXIT1:280pass/45fail causais em três mocks de ícones incompletos, aguardando autorização TEST-ONLY antes do ajuste. SPEC em docs/specs/inbox-anexos-camera-resposta-rapida.md e evidências em docs/qa/inbox-365-anexos.md. Publicação por hunks sobre MAIN0dc1ede1, QA independente e visual pendentes; sem SQL/browser/push e sem fechamento presumido.
+
+Atualização #365: após corrigir os exports ausentes nos três mocks e adaptar somente dois arrays de ordem PR384 com autorização ROOT, o mesmo recorte de conversa+guarda passou 20 arquivos completos/325 testes, sessão9655→c311dd EXIT0; lint7 EXIT0. Negativos 280/325 e 323/325 preservados. TypeScript final sessão84768→6654cd EXIT0; QA pública e visual continuam pendentes.
+
+Apresentação #365 revisada: ícones em quadrados arredondados40px e cores por tokensERP aprovados, com aproximação de hues documentada. RED focal1/56 preservado; gates finais23arquivos355/355 EXIT0 (conversa+botões+paleta+contraste), lint7 EXIT0. Aceite visual/câmera real e QA da composição pública continuam pendentes.
+
+TSC final após apresentação sessão58824→40c80c EXIT0. Recorte DEV pronto para checkpoint local autorizado dos dez paths; ROOT fará seleção por hunks na MAIN preservando diferenças públicas. Sem fechamento ou homologação presumida.
+
+Composição pública365 sobre main a20524fc:23arquivos/349testes e lint7 código0; contagem355 mantém fonte DEV. TypeScript local8GB terminouOOM/código1 em worktree com890TSprivados em output, sem resultado de tipos. Publicação em rascunho para CI limpa, QA e visual; nenhum aceite presumido, sem schema/pacote/SQL.
