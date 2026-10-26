@@ -5,7 +5,8 @@ vi.mock("@/lib/prisma",()=>({prisma:{}}));
 vi.mock("@/server/_shared/evento",()=>({registrarEvento:evento}));
 vi.mock("./pessoas",()=>({escopoPessoas:vi.fn(async()=>({}))}));
 vi.mock("./tags",()=>({escopoEmpresas:vi.fn(async()=>({}))}));
-import type {UsuarioSessao} from "@/server/_shared/sessao";
+import {ErroRegra,type UsuarioSessao} from "@/server/_shared/sessao";
+import {ZodError} from "zod";
 import {editarPessoaNaTransacao} from "./contatos";
 import {erroSeguroCadastroPessoa} from "./pessoa-cadastro";
 const autor:UsuarioSessao={id:"u",nome:"Gestor",papeis:[Papel.ADMINISTRADOR],permissoes:[]};
@@ -30,3 +31,32 @@ it.each([
  {caso:"sem editar",ativo:true,papeis:[Papel.SECRETARIA_ACADEMICA]},
 ])("gatefresh antes de selecionar valores sensíveis: $caso",async estado=>{const db=banco();db.usuario.findUnique.mockResolvedValue({...autor,ativo:estado.ativo,papeis:estado.papeis});await expect(editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:"FICTICIO"})).rejects.toThrow();expect(db.pessoa.findFirst).not.toHaveBeenCalled();expect(db.pessoa.update).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();});
 it("identidade pode travar antes, mas revogação nessa espera impede seleção dos4valores",async()=>{const db=banco();let revogado=false;db.$queryRaw.mockImplementation(async()=>{revogado=true;return [{id:"p"}];});db.usuario.findUnique.mockImplementation(async()=>({...autor,ativo:true,papeis:revogado?[Papel.ALUNO]:autor.papeis}));await expect(editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:"FICTICIO"})).rejects.toThrow();expect(db.pessoa.findFirst).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();});
+const invalid454="DOCUMENTO-FICTICIO-INVALIDO454";
+const erroDocumento454="Documento inválido para o tipo selecionado. Corrija o documento e tente novamente.";
+it.each(["cpf","cedula_cr","curp","dni_ar","dui_sv","passaporte"])("454 C1 recusa %s reprovado antes de UPDATE/Evento e semPII no erro",async validador=>{
+ const db=banco();db.tipoDocumento.findUnique.mockResolvedValue({id:"tipo",paisId:"cr",nome:"Tipo fictício454",validador,pais:{id:"cr",nome:"País fictício",codigoISO:"CR"}});
+ const erro=await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:invalid454,tipoDocumentoId:"tipo"}).then(()=>null,(e:unknown)=>e);
+ expect(erro).toBeInstanceOf(ErroRegra);expect((erro as Error).message).toBe(erroDocumento454);expect((erro as Error).message).not.toContain(invalid454);
+ expect(db.pessoa.update).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();
+});
+it.each([{validador:"cpf",documento:"529.982.247-25"},{validador:"cedula_cr",documento:"1-0234-0567"},{validador:"curp",documento:"HEGG560427MVZRRL04"},{validador:"dni_ar",documento:"12.345.678"},{validador:"dui_sv",documento:"00016297-5"},{validador:"passaporte",documento:"AB123456"}])("454 C1 aceita documento válido $validador sem CPF-only",async({validador,documento})=>{
+ const db=banco();db.tipoDocumento.findUnique.mockResolvedValue({id:"tipo",paisId:"cr",nome:"Tipo fictício454",validador,pais:{id:"cr",nome:"País fictício",codigoISO:"CR"}});
+ expect(await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento,tipoDocumentoId:"tipo"})).toBe(true);expect(db.pessoa.update).toHaveBeenCalledOnce();expect(evento).toHaveBeenCalledOnce();expect(JSON.stringify(evento.mock.calls)).not.toContain(documento);
+});
+it.each(["","validador-futuro454","toString","constructor","__proto__"])("454 tipo sem validador conhecido %j conserva número permitido",async validador=>{
+ const db=banco();db.tipoDocumento.findUnique.mockResolvedValue({id:"tipo",paisId:"cr",nome:"Tipo futuro454",validador,pais:{id:"cr",nome:"País fictício",codigoISO:"CR"}});
+ expect(await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:invalid454,tipoDocumentoId:"tipo"})).toBe(true);expect(db.pessoa.update.mock.calls[0]?.[0]).toMatchObject({data:{documento:invalid454}});
+});
+it("454 documentoNULL continua opcional mesmo com tipo que tem validador",async()=>{const db=banco();db.pessoa.findFirst.mockResolvedValue({...atual,documento:"1-0234-0567",tipoDocumentoId:"tipo"});expect(await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:null})).toBe(true);expect(db.pessoa.update.mock.calls[0]?.[0]).toMatchObject({data:{documento:null}});});
+it("454 trocar tipo revalida número efetivo já guardado,sem depender de reenviar documento",async()=>{const db=banco();db.pessoa.findFirst.mockResolvedValue({...atual,documento:invalid454,tipoDocumentoId:"anterior"});const erro=await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{tipoDocumentoId:"tipo"}).then(()=>null,(e:unknown)=>e);expect(erro).toBeInstanceOf(ErroRegra);expect((erro as Error).message).toBe(erroDocumento454);expect(db.pessoa.update).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();});
+it("454 C2 recusa101 antes de banco/Evento,sem ecoar valor no erro",async()=>{const db=banco(),documento="F".repeat(101);const erro=await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento}).then(()=>null,(e:unknown)=>e);expect(erro).toBeInstanceOf(ZodError);expect((erro as Error).message).not.toContain(documento);expect(db.pessoa.update).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();});
+it("454 DOB isolado não reescreve nem revalida documento legado omitido",async()=>{const db=banco();db.pessoa.findFirst.mockResolvedValue({...atual,documento:invalid454,tipoDocumentoId:"tipo"});expect(await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{nascimento:"2000-02-29"})).toBe(true);expect(db.tipoDocumento.findUnique).not.toHaveBeenCalled();expect(db.pessoa.update.mock.calls[0]?.[0].data).toEqual({nascimento:new Date("2000-02-29T00:00:00Z")});});
+
+it.each(["documento","tipoDocumentoId","documentoPaisEmissor"] as const)("454 C1 reapresentar %s explícito sem mudar valor não libera documento inválido histórico",async campo=>{
+ const db=banco();db.pessoa.findFirst.mockResolvedValue({...atual,documento:invalid454,tipoDocumentoId:"tipo",documentoPaisEmissor:"CR"});
+ const entrada=campo==="documento"?{documento:invalid454}:campo==="tipoDocumentoId"?{tipoDocumentoId:"tipo"}:{documentoPaisEmissor:"CR"};
+ const erro=await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",entrada).then(()=>null,(e:unknown)=>e);
+ expect(erro).toBeInstanceOf(ErroRegra);expect((erro as Error).message).toBe(erroDocumento454);expect(db.pessoa.update).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();
+});
+it("454 C1 grupo efetivamente omitido com undefined não revalida no patchDOB",async()=>{const db=banco();db.pessoa.findFirst.mockResolvedValue({...atual,documento:invalid454,tipoDocumentoId:"tipo"});expect(await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:undefined,tipoDocumentoId:undefined,documentoPaisEmissor:undefined,nascimento:"2000-02-29"})).toBe(true);expect(db.tipoDocumento.findUnique).not.toHaveBeenCalled();expect(db.pessoa.update.mock.calls[0]?.[0].data).toEqual({nascimento:new Date("2000-02-29T00:00:00Z")});});
+it("454 C1 reapresentação válida sem mudança mantém no-op sem Evento",async()=>{const db=banco();db.pessoa.findFirst.mockResolvedValue({...atual,documento:"1-0234-0567",tipoDocumentoId:"tipo"});expect(await editarPessoaNaTransacao(db as unknown as Prisma.TransactionClient,autor,"p",{documento:"1-0234-0567"})).toBe(false);expect(db.pessoa.update).not.toHaveBeenCalled();expect(evento).not.toHaveBeenCalled();});

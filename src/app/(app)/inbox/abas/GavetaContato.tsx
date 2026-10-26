@@ -1,4 +1,5 @@
 "use client";
+import {DOCUMENTO_PESSOA_MAX} from "@/lib/pessoa-cadastro-limites";
 import { useEffect, useLayoutEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { Drawer } from "@/components/Drawer";
 import { Botao } from "@/components/Botao";
@@ -71,7 +72,7 @@ function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false,
         </select>}</Campo>
         {podeEditarCadastro&&form.cadastro&&<fieldset className="space-y-4">
           <legend className="text-sm font-medium">Cadastro pessoal</legend>
-          <Campo rotulo="Documento pessoal">{ligacao=><input {...ligacao} name="documento" value={form.cadastro!.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)} className={CONTROLE}/>}</Campo>
+          <Campo rotulo="Documento pessoal">{ligacao=><input {...ligacao} name="documento" maxLength={DOCUMENTO_PESSOA_MAX} value={form.cadastro!.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)} className={CONTROLE}/>}</Campo>
           <Campo rotulo="Tipo de documento">{ligacao=><select {...ligacao} name="tipoDocumentoId" value={form.cadastro!.tipoDocumentoId} disabled={acao.ocupado} onChange={e=>mudarCadastro("tipoDocumentoId",e.target.value)} className={CONTROLE}><option value="">Sem tipo</option>{snapshot.informacoesCadastro?.catalogo?.map(t=><option key={t.id} value={t.id}>{t.pais.nome} · {t.nome}</option>)}</select>}</Campo>
           <Campo rotulo="País emissor (ISO)">{ligacao=><input {...ligacao} name="documentoPaisEmissor" value={form.cadastro!.documentoPaisEmissor} maxLength={2} disabled={acao.ocupado} onChange={e=>mudarCadastro("documentoPaisEmissor",e.target.value)} className={CONTROLE}/>}</Campo>
           <Campo rotulo="Nascimento">{ligacao=><input {...ligacao} name="nascimento" type="date" value={form.cadastro!.nascimento} min="0001-01-01" max="9999-12-31" disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)} className={CONTROLE}/>}</Campo>

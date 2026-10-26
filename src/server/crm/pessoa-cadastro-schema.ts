@@ -1,11 +1,12 @@
 import {z} from "zod";
-import {codigoISO,validarDocumento} from "@/server/_shared/validacao";
+import {codigoISO,validarDocumento,temValidadorDocumento} from "@/server/_shared/validacao";
+import {DOCUMENTO_PESSOA_MAX} from "@/lib/pessoa-cadastro-limites";
 import {NascimentoCivilSchema} from "@/lib/nascimento-civil";
 const vazioParaNull=(v:unknown)=>typeof v==="string"?(v.trim()||null):v;
 const texto=z.preprocess(vazioParaNull,z.string().nullable()).optional();
 /** Contrato puro reutilizado pelo writer CRM; fronteiras Inbox/DTO/UI têm autorização própria. */
 export const PessoaCadastroPatchSchema=z.object({
- documento:texto,
+ documento:z.preprocess(vazioParaNull,z.string().max(DOCUMENTO_PESSOA_MAX,`O documento deve ter até ${DOCUMENTO_PESSOA_MAX} caracteres.`).nullable()).optional(),
  tipoDocumentoId:texto,
  documentoPaisEmissor:z.preprocess(vazioParaNull,codigoISO.nullable()).optional(),
  nascimento:z.preprocess(vazioParaNull,NascimentoCivilSchema.nullable()).optional(),
@@ -21,11 +22,11 @@ export function aplicarCadastroPessoa(atual:CadastroPessoa,input:PessoaCadastroP
  return novo;
 }
 export type TipoDocumentoPessoa={id:string;paisId:string;validador:string};
-/** Coerência do catálogo/FK é distinta de formato: formato inválido NÃO veta o número. */
+/** Informação de leitura; o writer decide a recusa quando o grupo documental é fornecido. */
 export function avaliarDocumentoPessoa(c:CadastroPessoa,tipo:TipoDocumentoPessoa|null,paisCatalogoEsperado?:string):{coerente:boolean;validado:boolean}{
  if(!c.tipoDocumentoId)return {coerente:true,validado:false};
  if(!tipo||tipo.id!==c.tipoDocumentoId||paisCatalogoEsperado!==undefined&&tipo.paisId!==paisCatalogoEsperado)return {coerente:false,validado:false};
- return {coerente:true,validado:!!c.documento&&validarDocumento(tipo.validador,c.documento)};
+ return {coerente:true,validado:!!c.documento&&temValidadorDocumento(tipo.validador)&&validarDocumento(tipo.validador,c.documento)};
 }
 export function camposCadastroAlterados(antes:CadastroPessoa,depois:CadastroPessoa){return CAMPOS.filter(k=>antes[k]!==depois[k]);}
 /** Payload cadastral do writer: só presença/alteração; nunca número, data, idade ou hash de PII. */
