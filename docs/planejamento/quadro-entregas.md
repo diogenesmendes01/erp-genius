@@ -7849,3 +7849,8 @@ Candidato b8d17b12: unidade global1084arquivos/9658testes0, lintglobal0(105aviso
 ### #372 — ações públicas e conversa existente, candidato R27
 
 Selecionados nove arquivos do checkpoint DEV2a29006f, com quadro público preservado. O DEV confirmou64unitários, lint, TSC e dois arquivos nativos completos (5+4), todos com saída0. Inclui query final de ator/vínculos, preservação de carteira e responsável, replay, recusa de conflito e rollback. O banco ci-integracao foi restaurado pelo integrador. QA independente da composição pública, novos gates globais, UI, decisão de ownerAdmin/GC, CI e visual continuam pendentes; issue parcial.
+
+
+### #372 — QA pública de ações e EXISTENTE, R27
+
+Fonte 4eaa2b56: TESTER independente com 9 testes nativos, 64 unitários e TypeScript global, todos com código 0. O integrador confirmou unidade global de 1.086 arquivos e 9.722 testes, lint global com código 0 (105 avisos) e build de 115 páginas com código 0. Banco TESTER500 auditado e preservado. A publicação mantém o código testado e protege apenas o checkout LF da nova migração500. Preview e linhas da UI, decisão de responsável para Admin/Gerente Comercial, CI e aceite visual seguem pendentes. Issue parcial, sem indicação de merge.

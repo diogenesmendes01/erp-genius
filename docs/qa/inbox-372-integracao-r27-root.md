@@ -40,3 +40,20 @@ O DEV registrou RED de duas revogações ocorridas no último await; após a lei
 O eventoAtendimentoInstitucionalAberto segue a convenção existente: audita a intenção de abertura mesmo quando reutiliza atendimento. Replay da mesma chave não acrescenta evento; nova tentativa pode acrescentar. criado:false informa que não houve criação de uma nova oportunidade.
 
 As garantias de frescor são limitadas à última leitura qualificada emREADCOMMITTED; não representam linearização global de permissões ou de todos os possíveis cadastros concorrentes. Relações de equipe do gerente e disputa simultânea de chaves ainda não foram exercitadas nesse recorte. A QA independente em fonte pública e os gates globais da composição atual ainda precisam terminar. A UI, a escolha de owner paraAdmin/GC, CI e aceite visual também seguem pendentes.
+
+## QA independente e gates do incremento EXISTENTE — 26/10/2026
+
+O TESTER confirmou o commit público exato 4eaa2b56 em seu próprio worktree e banco. Os dois arquivos de integração completos passaram 5/5 e 4/4 (85032/61c06c e 25902/493c92); os dois arquivos unitários passaram 64/64 (df53cc); TypeScript global original terminou com código 0 (95484/e2bbcc). Nenhuma fonte foi editada durante a qualificação. O integrador restaurou o banco TESTER500 em 8c6234. Os limites de gerente comercial e disputas não amostradas permanecem explícitos.
+
+Na mesma fonte, o integrador concluiu os gates globais originais:
+
+- Unidade: 1.086 arquivos, 9.722/9.722 testes, código 0 (74024/414a8a).
+- Lint: código 0, nenhum erro e 105 avisos (97802/6a46ac).
+- TypeScript: código 0 na execução independente; o build também concluiu sua verificação de tipos.
+- Build de produção: código 0, 115 páginas, BUILD_ID YmhPYyYJANyheE9GAoygE (41704/b3d35f).
+
+As configurações originais e as fontes permaneceram intactas. A auditoria após o build confirmou as 426 tabelas, 1.445 linhas e os mesmos hashes do snapshot TESTER500, sem atividade ou listeners residuais (9e08cb). Integrações externas ficaram desligadas.
+
+A publicação acrescenta este registro, o quadro e uma regra específica em .gitattributes para manter a migração Origem500 em LF no checkout Windows. Os bytes SQL são os mesmos já aplicados e testados; nenhuma migração histórica ou checksum foi reescrito. Código, schema, dependências e configurações de execução são literalmente iguais à fonte 4eaa2b56 aprovada.
+
+A action e o caminho EXISTENTE integram este incremento. Consultas de preview e seleção de linhas para a interface, UI completa, decisão de responsável para Admin/Gerente Comercial, CI remoto e aceite visual continuam pendentes. A PR permanece em rascunho e a issue #372 aberta.
