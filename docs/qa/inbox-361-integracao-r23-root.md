@@ -13,3 +13,7 @@ Revisão independente exclusivamente estática da árvore715f:657f831ecfb6dd90fe
 Esta entrega utiliza os destinos existentes e não cria contato ou oportunidade por telefone. D9/#372, escolha de dono, migração500 e saudação manual são uma frente separada. Nenhuma mensagem, chamada a provedor, instalação ou mutação de banco ocorreu nesta integração.
 
 Suíte global e TypeScript completos, lint global, build, execução independente, visual e CI ainda precisam ser concluídos na composição final antes do aceite. A global de1.067arquivos/9.431casos aprovada anteriormente pertence à fonte73d9c2a0, anterior a esta integração.
+
+TypeScript completo na composição a2fdb274: sessão63082/terminalc927d3, CLI EXIT2 (wrapper EXIT1), um único erroTS2352 na fixture PopoverNovaConversa.interacao.test.ts:18. O cast de props omitindo children não representa o contrato obrigatório do diálogo. A fixture passa a declarar o objeto completo com children:null, sem cast, e mantém o filho real no terceiro argumento do React; produção e comportamento dos testes preservados, sem exceção de lint.
+
+Replay da pasta nova-conversa e do arquivo de foco: cdf0b1 EXIT0, quatro arquivos completos/50 casos. Lint do único arquivo ed61d4 EXIT0/zero avisos. A checagem completa ainda precisa ser repetida; essas execuções não aprovam o TypeScript por inferência.

@@ -15,7 +15,9 @@ const destino = { chave: "COMERCIAL:l", nome: "Comercial · João", finalidade: 
 const itens = [{ id: "a", contatoNome: "Ana", contatoTelefone: "", ultimaMensagemEm: "2026-10-25T12:00:00Z" }] as ItemListaInbox[];
 function props(el: Elemento) { const key = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, { onClick(): void; onChange(e: unknown): void; onSubmit(e: unknown): void }>)[key]; }
 async function montar(opcoes: OpcoesAtendimento = { destinos: [destino], numeros, comercial: true }) {
- await act(async () => root.render(createElement(PopoverColuna, { titulo: "Nova conversa", aberto: true, aoFechar: fechar } as Parameters<typeof PopoverColuna>[0], createElement(PopoverNovaConversa, { opcoes, itens, aoSelecionar: selecionar, aoFechar: fechar }))));
+ // O contrato exige a propriedade; o filho real é fornecido no terceiro argumento do React.
+ const dialogo: Parameters<typeof PopoverColuna>[0] = { titulo: "Nova conversa", aberto: true, aoFechar: fechar, children: null };
+ await act(async () => root.render(createElement(PopoverColuna, dialogo, createElement(PopoverNovaConversa, { opcoes, itens, aoSelecionar: selecionar, aoFechar: fechar }))));
 }
 async function buscar(value: string) { await act(async () => props(doc.body.querySelector('input')!).onChange({ target: { value } })); }
 async function clicar(texto: string) { const el = doc.body.querySelectorAll("button").find(b => b.textContent.includes(texto))!; expect(el).toBeDefined(); await act(async () => props(el).onClick()); }
