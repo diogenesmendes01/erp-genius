@@ -1,3 +1,4 @@
+import { avisarNovaConversaTx } from "./nova-conversa-aviso";
 import { Papel, Prisma } from "@prisma/client";
 import { apenasPortal, ErroAutenticacao, ErroPermissao, ErroRegra, exigirPapel, type UsuarioSessao } from "@/server/_shared/sessao";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
@@ -84,6 +85,7 @@ export async function criarRamoNovoConversaTx(tx:Prisma.TransactionClient,e:Entr
  const tupla:TuplaCriada={atendimentoId:atendimento.id,leadId,pessoaId:pessoa.pessoaId,contatoId:contato.id,conversaId:conversa.id,numeroId:e.numeroId,ownerId:e.ownerId,criado:true};
  await registrarEvento(tx,{tipo:"ConversaIniciadaPorNumero",agregadoTipo:"AtendimentoWhatsApp",agregadoId:atendimento.id,autorId:e.autorId,payload:{leadId,pessoaId:pessoa.pessoaId,contatoId:contato.id,conversaId:conversa.id,numeroId:e.numeroId,ownerId:e.ownerId,criado:true,...marca}});
  // Confirma inclusive restrições deferred/FKs ANTES da última leitura; nenhum write depois.
+ await avisarNovaConversaTx(tx, { id: atendimento.id, conversaId: conversa.id });
  await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
  await revalidarNovo();await conferirTupla(tx,e,tupla);
  return{atendimentoId:atendimento.id,leadId,criado:true};

@@ -1,3 +1,5 @@
+const avisoC4 = vi.hoisted(() => ({ publicar: vi.fn() }));
+vi.mock("./nova-conversa-aviso", () => ({ avisarNovaConversaTx: avisoC4.publicar }));
 import { Papel, Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErroAutenticacao, ErroRegra } from "@/server/_shared/sessao";
@@ -14,7 +16,7 @@ const entrada = { autorId: "ator", ownerId: "ator", numeroId: "numero", telefone
 const cadastro = () => ({ oportunidadesAutorizadas: [], pessoaIdentificada: false, alunoIdentificado: false, responsavelIdentificado: false, contatoIdentificado: false, oportunidadeOcultaIdentificada: false });
 const db = { usuario: { findUnique: vi.fn(), findFirst: vi.fn() }, numeroWhatsApp: { findUnique: vi.fn() }, contatoWhatsApp: { create: vi.fn(), updateMany: vi.fn() }, conversaWhatsApp: { create: vi.fn(), upsert: vi.fn() }, oportunidade: { findUnique: vi.fn(), findFirst: vi.fn() }, atendimentoWhatsApp: { create: vi.fn(), update: vi.fn(), upsert: vi.fn() }, $queryRaw: vi.fn(), $executeRaw: vi.fn() };
 const tx = db as unknown as Prisma.TransactionClient;
-beforeEach(() => {
+beforeEach(() => { avisoC4.publicar.mockReset();
  for(const f of [m.leitura,m.pessoa,m.codigo,m.lead,m.evento,m.repeticao,m.visivel,db.oportunidade.findUnique,db.oportunidade.findFirst,db.usuario.findUnique,db.usuario.findFirst,db.numeroWhatsApp.findUnique,db.contatoWhatsApp.create,db.contatoWhatsApp.updateMany,db.conversaWhatsApp.create,db.conversaWhatsApp.upsert,db.atendimentoWhatsApp.create,db.atendimentoWhatsApp.update,db.atendimentoWhatsApp.upsert,db.$queryRaw,db.$executeRaw]) f.mockReset();
  m.trilha.length=0; m.ator={ativo:true,nome:"Ator fictício",papeis:[Papel.VENDEDOR],permissoes:[]};
  db.usuario.findUnique.mockImplementation(async()=>({...m.ator})); db.usuario.findFirst.mockResolvedValue({id:"ator",gerenteComercialId:null}); db.numeroWhatsApp.findUnique.mockResolvedValue({id:"numero",ativo:true,finalidade:"VENDAS",donoId:"ator"});
@@ -81,4 +83,26 @@ it("replay com binding divergente não retorna outro alvo ou reabre conversa",as
  m.repeticao.mockResolvedValue({agregadoId:"atendimento",autorId:"ator",payload:{leadId:"lead",pessoaId:"pessoa",contatoId:"contato",conversaId:"conversa",numeroId:"numero",ownerId:"ator",criado:true}});
  m.visivel.mockResolvedValue(null);await expect(criarRamoNovoConversaTx(tx,entrada)).rejects.toBeInstanceOf(ErroRegra);
  expect(db.contatoWhatsApp.create).not.toHaveBeenCalled();expect(db.atendimentoWhatsApp.create).not.toHaveBeenCalled();
+});
+
+it("C4 NOVO efetivo publica uma vez na mesma TX com ids canônicos", async () => {
+ avisoC4.publicar.mockReset();
+ expect(await criarRamoNovoConversaTx(tx, entrada)).toEqual({ atendimentoId: "atendimento", leadId: "lead", criado: true });
+ expect(avisoC4.publicar).toHaveBeenCalledExactlyOnceWith(tx, { id: "atendimento", conversaId: "conversa" });
+});
+it("C4 replay NOVO não publica outro aviso", async () => {
+ avisoC4.publicar.mockReset();
+ m.repeticao.mockResolvedValue({agregadoId:"atendimento",payload:{leadId:"lead",pessoaId:"pessoa",contatoId:"contato",conversaId:"conversa",numeroId:"numero",ownerId:"ator",criado:true}});
+ expect(await criarRamoNovoConversaTx(tx, entrada)).toEqual({ atendimentoId:"atendimento",leadId:"lead",criado:true });
+ expect(avisoC4.publicar).not.toHaveBeenCalled();
+});
+it("C4 falha do aviso NOVO propaga e não alcança constraints", async () => {
+ const erro = new Error("Falha aviso C4"); avisoC4.publicar.mockRejectedValueOnce(erro);
+ await expect(criarRamoNovoConversaTx(tx, entrada)).rejects.toBe(erro);
+ expect(db.$executeRaw).not.toHaveBeenCalled();
+});
+it("C4 revogação durante aviso NOVO é relida antes de retornar", async () => {
+ avisoC4.publicar.mockImplementationOnce(async () => { m.ator.ativo = false; });
+ await expect(criarRamoNovoConversaTx(tx, entrada)).rejects.toBeInstanceOf(ErroAutenticacao);
+ expect(avisoC4.publicar).toHaveBeenCalledOnce();
 });
