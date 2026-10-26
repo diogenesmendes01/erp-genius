@@ -86,3 +86,8 @@ it("371 carregando e ocupado não fabricam carga ou seleção; chegada foca o ra
  await montar(false,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.activeElement).toBe(doc.body.querySelector('input[type="radio"]'));
  await montar(true,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.body.querySelector('input[type="radio"]')?.hasAttribute("disabled")).toBe(true);
 });
+
+it("376 presença opcional informa status sem mudar seleção/contexto/payload ou inventar online",async()=>{
+ executar.mockReset();await montar(false,false,[{id:"b",nome:"Beatriz",carga:2,presenca:"ausente"} as PessoaTransferir]);await clicar("Pessoas");expect(doc.body.textContent).toContain("Ausente");await mudar('input[type="radio"]',"b");await mudar("textarea","Meu contexto");
+ await montar(false,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.body.textContent).toContain("Presença indisponível");expect(doc.body.textContent).not.toContain("Online");expect((doc.body.querySelector("textarea") as unknown as {value:string}).value).toBe("Meu contexto");await confirmar();expect(executar).toHaveBeenCalledExactlyOnceWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"Meu contexto"});
+});
