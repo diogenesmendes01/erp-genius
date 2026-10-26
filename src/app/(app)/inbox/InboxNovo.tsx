@@ -45,6 +45,7 @@ import { FaixaAriaAtiva } from "./aria/FaixaAriaAtiva";
 import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
 import { Botao } from "@/components/Botao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 import { EsqueletoPainel } from "@/components/Esqueleto";
 import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
@@ -177,6 +178,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [novaConversaAberta, setNovaConversaAberta] = useState(false);
   const possuiContagensRef = useRef(contagensIniciais !== undefined || resumoInicial !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
+  const [avisoTransferencia, setAvisoTransferencia] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [selecionadoRecebido, setSelecionadoRecebido] = useState(selecionadoInicial);
   const [versaoNavegacao, setVersaoNavegacao] = useState(0);
@@ -579,7 +581,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   ) : <p className="text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
 
   return (
-    <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
+    <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <MensagemStatus texto={avisoTransferencia} tom="sucesso" className="shrink-0 px-3 py-2" />
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
         <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo} sino={sino}
           faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} aoMudar={recarregarLista} /> : undefined}
@@ -624,6 +628,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             painelAberto={painelVisivel ?? undefined}
             painelAuto={painelAberto === null}
             aoMudar={recarregarLista}
+            aoTransferirConcluido={setAvisoTransferencia}
           />
         )}
       </section>
@@ -646,6 +651,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         aoFechar={() => setPerdaOportunidade(p => p.sessao === perdaOportunidade.sessao ? { ...p, aberta: false } : p)} />}
       {editorAberto && selecionado && <GavetaContato key={selecionado} atendimentoId={selecionado} dados={detalhesDoContato.dado} erro={detalhesDoContato.erro} aoRecarregar={detalhesDoContato.recarregar}
         podeVerFicha={painelDoAberto?.dado?.cabecalho?.capacidades.verContato === true} aoFechar={() => setEdicaoContato({ atendimentoId: selecionado, aberta: false })} aoSalvo={recarregarLista} />}
+    </div>
     </div>
   );
 }
