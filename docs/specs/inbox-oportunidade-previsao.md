@@ -17,3 +17,7 @@ O ROOT reservou 20261025202000_inbox_oportunidade_previsao_probabilidade (495 l�
 A probabilidade manual é independente de chanceFechar dos Insights. Não se ampliam prompt, campos ATUALIZAR_CAMPO da Aria ou contratos de #357/#358/#377. Não há API externa.
 
 Estado: WIP. Infraestrutura lógica495 preparada pelo ROOT somente no banco A; 19 nativos do DEV passaram na fonte 997 (quatro arquivos completos, terminais 0); guardas, TypeScript/global, QA independente e visual pendentes. Não homologada.
+
+Esclarecimento de escopo PR451 C1/C3 (R22): os controles de probabilidade e previsão desta issue #341 são exibidos e editados na aba Oportunidades do Inbox. O formulário do Funil utiliza o mesmo writer sem enviar esses campos; omissão preserva os valores, inclusive os preenchidos pelo Inbox. Acrescentar controles de apresentação e edição ao formulário do Funil é uma frente futura, fora do aceite visual desta issue. O schema apenas reposiciona o comentário de valor junto a valorPrevisto; declarações, ordem de campos, SQL e migrações permanecem literais.
+
+Os nativos e o aceite independente anteriores conservam as fontes registradas na PR/QA. Este esclarecimento e o ajuste de comentário não substituem o aceite visual painel-oportunidades nem o CI após integração. A PR permanece em rascunho enquanto essas etapas estiverem pendentes.
