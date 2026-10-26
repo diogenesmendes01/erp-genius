@@ -3,7 +3,7 @@ import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
@@ -168,6 +168,7 @@ const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1
 
 export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
+  const router = useRouter();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
   const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
   const triagem = ouNulo(triagemBruta);
@@ -515,6 +516,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
 
   function abrir(id: string) {
+    // ACK novo pode estar fora da página (sem mensagem, NULLS LAST). A rota carrega o item autorizado.
+    if (!itens.some(item => item.id === id)) {
+      if (selecionadoRef.current !== selecionado) return;
+      setNovaConversaAberta(false);
+      const parametros = new URLSearchParams(parametrosDaRota?.toString() ?? paramsDosFiltros(filtros).toString());
+      parametros.set("c", id);
+      router.push("/inbox?" + parametros.toString(), { scroll: false });
+      return;
+    }
     focoAoFecharPopover.current = regiaoConversa.current;
     setNovaConversaAberta(false);
     selecionadoRef.current = id;
