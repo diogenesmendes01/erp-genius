@@ -1,0 +1,132 @@
+{
+  "issue": 350,
+  "source": "85e5cc7c9a7112d12a8bb464ac12d673740c2a1f",
+  "runtime": "4b682c913e02960cb6a3ee7b5400476d14114379",
+  "main": "abb961625f57bf20d9eb4734df98e59dda362957",
+  "pareceres": [
+    {
+      "path": "geral-85e.md",
+      "bytes": 10735,
+      "sha256": "2d78dc16aa84571611d081222e1b7c7cfd4e8b381523a3de0396ee9fbf26c6b9",
+      "originalPrivado": {
+        "bytes": 10781,
+        "sha256": "7a30df71b40f37366dfd0d2452e238e3d089b805cc57bd557a35f01f8c9fb32d"
+      },
+      "curadoria": "Somente caminho absoluto do executável local substituído por node; resultados e fonte históricos preservados."
+    },
+    {
+      "path": "resultados-85e.json",
+      "bytes": 4310,
+      "sha256": "7aa2c50c0ff89e4413aed19802d1c7d09bd6fcb04abdef963723d5afbc5de46a"
+    },
+    {
+      "path": "foco-4b.md",
+      "bytes": 8588,
+      "sha256": "c8ecd91b823ea7e7440b6443e5420b82e9133833c7c7cd8a9115ded56822d88a"
+    },
+    {
+      "path": "visual-12pares-tester.md",
+      "bytes": 4421,
+      "sha256": "4c4b84ccdef1b68bbdcf0c0cc3071abb75160b0ccaee6b28651cba000a153fca"
+    },
+    {
+      "path": "composicao-e054-tester.md",
+      "bytes": 3449,
+      "sha256": "0ac12f438b339c2232d5d42a2d1d8da04ce076251cecd6d264796ab94bb48a87"
+    },
+    {
+      "path": "consumidores-e054-tester.md",
+      "bytes": 2476,
+      "sha256": "a627bb8f2f96b642ad37188303daf72e60546c7c31385237c7dc670f5629d6ff",
+      "originalPrivado": {
+        "bytes": 2522,
+        "sha256": "a197389cbc4c46fd7a502727b8bad78056c7375af70fabf599cc157620dbab73"
+      },
+      "curadoria": "Somente caminho absoluto do executável local substituído por node; resultados e fonte históricos preservados."
+    }
+  ],
+  "unit": {
+    "arquivos": 26,
+    "testes": 555,
+    "sessao": 29371,
+    "terminal": "a031a2",
+    "exit": 0,
+    "maxWorkers": 1,
+    "filtros": 0,
+    "skips": 0
+  },
+  "lint": {
+    "arquivos": 18,
+    "terminal": "02df44",
+    "exit": 0
+  },
+  "ci": {
+    "run": 40176546035,
+    "head": "84e28e571bcb51fc5a3e9adbbfceb3dd680a0943",
+    "jobs": 5,
+    "status": "SUCCESS",
+    "unit": {
+      "files": 953,
+      "tests": 7620,
+      "timezones": [
+        "UTC",
+        "America/Sao_Paulo"
+      ],
+      "eachTimezone": true
+    },
+    "typescript": "PASS",
+    "lint": "PASS",
+    "build": "PASS"
+  },
+  "visual": {
+    "status": "18PARES_36RAW_INSPECIONADOS",
+    "appSource": "85e5cc7c9a7112d12a8bb464ac12d673740c2a1f",
+    "appRuntime": "4b682c913e02960cb6a3ee7b5400476d14114379",
+    "appImages": 18,
+    "prototypeImages": 18,
+    "lots": 4,
+    "desktopMobilePairsTester": 12,
+    "tabletPairsRoot": 6,
+    "aggregatesNegativePreserved": true,
+    "zip": {
+      "name": "inbox-350-visual-36-curado-v1.zip",
+      "bytes": 4261535,
+      "sha256": "692aedb59f79e1cde5eac4f14310684e9fa60f04751a88ace2f9058dbdbea8ef"
+    },
+    "attachments": "AGUARDANDO_AUTORIZACAO_DO_DONO"
+  },
+  "limites": "Visual nativo nominal à fonte85e/runtime4b, composição e054 preservada e testada separadamente; quatro lotes, sem reclassificar agregados negativos. Sem prova de envio real ou anúncio audível.",
+  "publicationCode": "84e28e571bcb51fc5a3e9adbbfceb3dd680a0943",
+  "ciAnterior": {
+    "run": 40170735019,
+    "head": "e0546ae59da59c5d805b0a4900654ba44294256c",
+    "jobs": 5,
+    "status": "SUCCESS",
+    "unit": {
+      "files": 953,
+      "tests": 7616,
+      "timezones": [
+        "UTC",
+        "America/Sao_Paulo"
+      ],
+      "eachTimezone": true
+    },
+    "typescript": "PASS",
+    "lint": "PASS",
+    "build": "PASS"
+  },
+  "revisaoR3": {
+    "C5": "COPIAS_PUBLICAS_SANITIZADAS",
+    "C6": "MANTIDO_CONTRATO_JANELA_MENSAGENS",
+    "regressao": {
+      "files": 3,
+      "tests": 65,
+      "exit": 0,
+      "terminal": "7a1c3c",
+      "filtros": 0,
+      "skips": 0
+    },
+    "runtimeAlterado": false
+  },
+  "representacaoHashes": "Bytes dos objetos Git/publicação LF; checkout Windows pode materializar CRLF. Hashes históricos privados preservados separadamente nas duas cópias sanitizadas."
+}

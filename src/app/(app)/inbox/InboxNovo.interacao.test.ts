@@ -1094,3 +1094,13 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
  tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!; (painel.props.aoTrocarAba as (id: string) => void)('oportunidades'); tela(); await esvaziar();
  const aba = elementos(tela()).find(n => n.type === AbaOportunidades)!; expect(aba).toBeDefined(); expect(aba.props.capacidades).toEqual(caso === 'presente' ? capacidades : Object.fromEntries(Object.keys(capacidades).map(k => [k, false])));
 });
+
+// #350: uma fonte de painel, sem prop antiga enquanto a seleção nova carrega.
+it("sugestões da thread pertencem só ao painel atual, inclusive podeDecidir=false",async()=>{
+ const a={podeDecidir:false,cartoes:[{id:"cartao-a"}]};respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:a}));
+ tela();await esvaziar();expect(cabecalho(tela()).aria).toEqual(a);
+ let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise(r=>{resolver=r;});
+ lista(tela()).aoSelecionar("a2");expect(cabecalho(tela()).aria).toBeUndefined();
+ resolver(new Response(JSON.stringify({podeEnviar:false,aria:{podeDecidir:true,cartoes:[{id:"cartao-b"}]}})));await esvaziar();
+ expect(cabecalho(tela()).aria?.cartoes.map(s=>s.id)).toEqual(["cartao-b"]);
+});

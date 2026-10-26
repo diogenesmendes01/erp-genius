@@ -1,0 +1,122 @@
+{
+  "head": "85e5cc7c9a7112d12a8bb464ac12d673740c2a1f",
+  "runtime": "4b682c913e02960cb6a3ee7b5400476d14114379",
+  "base": "fabf7addf291de6e4b821927cfc1c88ce93bd9fb",
+  "unit": {
+    "session": 29371,
+    "start": "841fc4",
+    "terminal": "a031a2",
+    "exit": 0,
+    "files": 26,
+    "tests": 555,
+    "seconds": 102.87,
+    "heapMB": 512,
+    "workers": 1,
+    "filters": [],
+    "skips": 0,
+    "paths": [
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.interacao.test.ts",
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.test.ts",
+      "src/app/(app)/inbox/aria/intercalar.test.ts",
+      "src/app/(app)/inbox/aria/sugestao-visual.test.ts",
+      "src/app/(app)/inbox/ConversaAberta.test.ts",
+      "src/app/(app)/inbox/ConversaAberta.rodape.test.ts",
+      "src/app/(app)/inbox/ConversaAberta.mencoes.interacao.test.ts",
+      "src/app/(app)/inbox/ConversaAberta.busca.test.ts",
+      "src/app/(app)/inbox/InboxNovo.test.ts",
+      "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "src/app/(app)/inbox/InboxNovo.detalhes.test.ts",
+      "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "src/components/conversa/itens-thread.test.ts",
+      "src/components/conversa/VirtualList.test.ts",
+      "src/components/conversa/VirtualList.estavel.test.ts",
+      "src/components/conversa/virtual-window.test.ts",
+      "src/components/conversa/historico-conversa.test.ts",
+      "src/components/conversa/agora-thread.test.ts",
+      "src/app/(app)/inbox/busca-conversa-virtual.test.ts",
+      "src/lib/acao-cliente.test.ts",
+      "src/components/Botao.test.ts",
+      "src/app/botoes.test.ts",
+      "src/app/paleta.test.ts",
+      "src/app/contraste.test.ts",
+      "src/app/enums-rotulos.test.ts",
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.foco.test.ts"
+    ]
+  },
+  "lint": {
+    "terminal": "02df44",
+    "exit": 0,
+    "files": 18,
+    "heapMB": 512,
+    "maxWarnings": 0,
+    "paths": [
+      "src/app/(app)/inbox/ConversaAberta.test.ts",
+      "src/app/(app)/inbox/ConversaAberta.tsx",
+      "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "src/app/(app)/inbox/InboxNovo.tsx",
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.foco.test.ts",
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.interacao.test.ts",
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.test.ts",
+      "src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx",
+      "src/app/(app)/inbox/aria/intercalar.test.ts",
+      "src/app/(app)/inbox/aria/intercalar.ts",
+      "src/app/(app)/inbox/aria/sugestao-visual.test.ts",
+      "src/app/(app)/inbox/aria/sugestao-visual.ts",
+      "src/app/botoes-mapa.ts",
+      "src/app/botoes.test.ts",
+      "src/components/Botao.test.ts",
+      "src/components/Botao.tsx",
+      "src/components/conversa/itens-thread.test.ts",
+      "src/components/conversa/itens-thread.ts"
+    ]
+  },
+  "identity": {
+    "terminal": "eacaac",
+    "exit": 0,
+    "manifestPaths": 21,
+    "protected": 15,
+    "astPreviouslyVerifiedTransitive": 12,
+    "sourceIdenticalToRuntime": true
+  },
+  "evidence": [
+    {
+      "path": "output/inbox-350-85e-unit26-tester.log",
+      "bytes": 489,
+      "sha256": "88d5ccbc7de0b2a520f5784b96b69e31471007c62d5e4dcb644f90590d1b2a6a"
+    },
+    {
+      "path": "output/inbox-350-85e-lint18-executor-tester.log",
+      "bytes": 46,
+      "sha256": "7b77b90d94580b402bca28fe95bf938c2d5b008608cd39efc3702c4dd036f962"
+    },
+    {
+      "path": "output/inbox-350-85e-unit26-lista-tester.json",
+      "bytes": 1271,
+      "sha256": "c438042051ae9ebe566522d1d240729946ad55de41611578c08f25debeed5fe6"
+    },
+    {
+      "path": "output/inbox-350-85e-lint18-lista-tester.json",
+      "bytes": 837,
+      "sha256": "f0049e2fd219b019a1c512d24ae16256b0b0b53164a07ba1b20491ee48dd9385"
+    },
+    {
+      "path": "output/inbox-350-85e-identidades-tester.json",
+      "bytes": 12256,
+      "sha256": "4ac598a62473c2112c0329b7afa4b74bdcd5abc6fc6abc0d122093e0b9c35d21"
+    }
+  ],
+  "ownTsc": false,
+  "ownGlobal": false,
+  "ownIntegration": false,
+  "ownNative": false,
+  "ownVisual": false,
+  "dbUsed": false,
+  "issueComplete": false,
+  "remaining": [
+    "TSC original/global/CI da composição",
+    "visual18pares36RAW+nativoROOT",
+    "eventualINTsobcoordenação",
+    "união328/344/345",
+    "correção editorial BODY sem nova prova nativa"
+  ]
+}
