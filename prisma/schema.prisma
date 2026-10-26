@@ -1478,6 +1478,10 @@ model Oportunidade {
   // persistido, o tick seguinte re-enfileirava o próximo degrau por cima do pedido.
   aguardandoReagendamentoEm DateTime?
 
+  // Previsão manual opcional (D13): data civil literal, sem conversão de fuso.
+  probabilidadePct   Int?
+  previsaoFechamento String?
+
   // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
