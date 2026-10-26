@@ -7835,3 +7835,8 @@ O filho documental só registra esses resultados, sem alterar a árvore executá
 ### Dependência #333 — propagação coordenada R28
 
 A correção de concorrência da PR #443 foi incorporada à cadeia #444–#455: seis arquivos literais da fonte6bfe7b40 e os registros acima, preservando o histórico de cada branch. O núcleo usa FOR SHARE antes da intenção FOR UPDATE, sem ampliar permissões. QA997/8633UNIT e25nativos pertence à fonte pública8345, conforme seu registro; esta propagação não equivale a novas execuções nestes heads. A exceção de cancelamento próprio do gerente pedagógico já foi autorizada pelo usuário e está implementada no checkpoint DEV da #362, ainda fora desta composição. Migrações501/502, schema, dependências e fontes privadas não foram importados. Permanecem os gates específicos e CI de cada PR.
+
+
+### PR #452 C1 — atividade humana e scroll programático, composição R28
+
+Selecionado o delta isolado deeea09c: somente onScrollCapture passa a onWheelCapture, com teste portátil, SPEC e QA. Backend, relógios de presença, schema e migration496 permanecem literais. DEV reproduziu duas falhas causais e validou os mesmos46testes, lint e TypeScript com código0; esses resultados não são QA executada da nova composição. Geração de eventos trusted em browser real, QA pública e CI permanecem pendentes. A propagação preserva UI361, Insights377 e histórico público, sem importar ancestrais privados372.
