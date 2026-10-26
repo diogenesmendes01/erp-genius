@@ -76,3 +76,14 @@ it("447 C1 ACK setorial desmonta o controlador mas preserva aviso canônico no p
  function Tela(){const [aberta,setAberta]=useState(true),[msg,setMsg]=useState<string|null>(null);return createElement("div",null,createElement(MensagemStatus,{texto:msg,tom:"sucesso"}),aberta&&createElement(ControladorTransferir,{atendimentoId:"a",identidade:"u",responsavelAtualId:"u",opcoes:{visivel:true,pessoas:false,setores:["SECRETARIA"],filaDoSetor:null,aria:false},destinos:[],executar,carregarPessoas:carregar,aoConcluir:(texto:string)=>{setMsg(texto);setAberta(false);},renderizar:({transferir,dialogo})=>createElement("div",null,transferir&&createElement(Botao,{ref:transferir.gatilhoRef,onClick:transferir.aoEscolher},"Abrir"),dialogo)}));}
  await act(async()=>root.render(createElement(Tela)));expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");await confirmar();expect(executar).toHaveBeenCalledOnce();expect(doc.body.querySelector('[role="dialog"]')).toBeNull();expect(botao("Abrir")).toBeUndefined();expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("Atendimento transferido para Secretaria.");expect(doc.body.textContent).toContain("Atendimento transferido para Secretaria.");
 });
+
+it("448 C1 falha do resumo opcional preserva pessoas autorizadas e permite confirmar",async()=>{
+ resumo.mockRejectedValue(new Error("Resumo indisponível"));await montar(true,"a","atual",true);await clicar("Abrir");await clicar("Pessoas");
+ expect(doc.body.textContent).toContain("Beatriz");expect(doc.body.textContent).not.toContain("Não foi possível carregar os dados");await mudar('input[type="radio"]',"b");await confirmar();expect(executar).toHaveBeenCalledOnce();expect(concluir).toHaveBeenCalledOnce();
+});
+it("448 C1 resumo pendente não retém a lista de pessoas",async()=>{
+ resumo.mockReturnValue(new Promise<boolean>(()=>{}));await montar(true,"a","atual",true);await clicar("Abrir");await clicar("Pessoas");expect(doc.body.textContent).toContain("Beatriz");await mudar('input[type="radio"]',"b");await confirmar();expect(executar).toHaveBeenCalledOnce();
+});
+it("448 C1 resumo disponível não supre falha da leitura autorizada de pessoas",async()=>{
+ carregar.mockRejectedValue(new Error("Pessoas indisponíveis"));resumo.mockResolvedValue(true);await montar(true,"a","atual",true);await clicar("Abrir");await clicar("Pessoas");expect(doc.body.textContent).toContain("Não foi possível carregar os dados");expect(doc.body.querySelectorAll('input[type="radio"]')).toHaveLength(0);expect(executar).not.toHaveBeenCalled();
+});

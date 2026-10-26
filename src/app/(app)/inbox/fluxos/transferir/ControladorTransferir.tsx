@@ -26,18 +26,27 @@ export function ControladorTransferir(props: Props) {
   const identidadeAtual = JSON.stringify([identidade, responsavelAtualId]);
   const controle = useTransferirConversa({ atendimentoId, identidade: identidadeAtual, opcoes, executar, aoConcluir });
   const chave = JSON.stringify([atendimentoId, identidadeAtual, opcoes, controle.aberturaId]);
-  const [pessoas, setPessoas] = useState<{ chave: string; lista: PessoaTransferir[]; temResumo: boolean; erro: string | null } | null>(null);
+  const [pessoas, setPessoas] = useState<{ chave: string; lista: PessoaTransferir[]; erro: string | null } | null>(null);
+  const [resumo, setResumo] = useState<{ chave: string; disponivel: boolean } | null>(null);
   const invalidada = controle.invalidada;
   const aberto = controle.aberto;
   const possuiSetores = opcoes.setores.length > 0;
   useEffect(() => {
-    if (!aberto || invalidada || (!opcoes.pessoas && !possuiSetores)) return;
+    if (!aberto || invalidada || !opcoes.pessoas) return;
     let viva = true;
-    void Promise.all([opcoes.pessoas ? carregarPessoas(atendimentoId) : Promise.resolve([]), possuiSetores ? carregarResumo(atendimentoId) : Promise.resolve(false)]).then(([lista, temResumo]) => {
-      if (viva) setPessoas({ chave, lista, temResumo, erro: null });
-    }).catch(() => { if (viva) setPessoas({ chave, lista: [], temResumo: false, erro: "Não foi possível carregar os dados da transferência. Feche e tente novamente." }); });
+    void carregarPessoas(atendimentoId).then(lista => {
+      if (viva) setPessoas({ chave, lista, erro: null });
+    }).catch(() => { if (viva) setPessoas({ chave, lista: [], erro: "Não foi possível carregar os dados da transferência. Feche e tente novamente." }); });
     return () => { viva = false; };
-  }, [atendimentoId, carregarPessoas, carregarResumo, chave, aberto, invalidada, opcoes.pessoas, possuiSetores]);
+  }, [atendimentoId, carregarPessoas, chave, aberto, invalidada, opcoes.pessoas]);
+  useEffect(() => {
+    if (!aberto || invalidada || !possuiSetores) return;
+    let viva = true;
+    void carregarResumo(atendimentoId).then(disponivel => {
+      if (viva) setResumo({ chave, disponivel });
+    }).catch(() => { if (viva) setResumo({ chave, disponivel: false }); });
+    return () => { viva = false; };
+  }, [atendimentoId, carregarResumo, chave, aberto, invalidada, possuiSetores]);
   const tokenFoto = `${useId()}:${controle.aberturaId}`;
   const [foto, setFoto] = useState<{chave:string;dado:FotoPresenca|null}|null>(null);
   useEffect(()=>{
@@ -50,6 +59,6 @@ export function ControladorTransferir(props: Props) {
   const dialogo = !aberto ? null : invalidada ? <PopoverFluxo titulo="Transferir" ancora={controle.ancora} aoFechar={controle.fechar} ocupado={controle.ocupado}>
     <p className="text-sm text-gray-600">A conversa ou suas permissões mudaram. Feche e abra novamente para transferir.</p>
     <div className="mt-3 flex justify-end"><Botao variante="secundario" disabled={controle.ocupado} onClick={controle.fechar}>Fechar</Botao></div>
-  </PopoverFluxo> : <PopoverTransferir atendimentoId={atendimentoId} ancora={controle.ancora} opcoes={opcoes} pessoas={dados ? dados.lista.filter(p => p.id !== responsavelAtualId).map(p=>({...p,presenca:presencas?.pessoas.find(s=>s.usuarioId===p.id)?.status})) : null} destinos={destinos} temResumoAria={dados?.temResumo === true} ocupado={controle.ocupado} erro={controle.erro ?? dados?.erro} aoFechar={controle.fechar} aoExecutar={entrada => void controle.confirmar(entrada)} />;
+  </PopoverFluxo> : <PopoverTransferir atendimentoId={atendimentoId} ancora={controle.ancora} opcoes={opcoes} pessoas={dados ? dados.lista.filter(p => p.id !== responsavelAtualId).map(p=>({...p,presenca:presencas?.pessoas.find(s=>s.usuarioId===p.id)?.status})) : null} destinos={destinos} temResumoAria={resumo?.chave === chave && resumo.disponivel} ocupado={controle.ocupado} erro={controle.erro ?? dados?.erro} aoFechar={controle.fechar} aoExecutar={entrada => void controle.confirmar(entrada)} />;
   return renderizar({ transferir: opcoes.visivel ? { rotulo: "Transferir", gatilhoRef: controle.gatilhoRef, aoEscolher: controle.abrir, ocupado: controle.ocupado } : null, dialogo });
 }
