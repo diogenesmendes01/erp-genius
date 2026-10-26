@@ -3,8 +3,8 @@ import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
-import { useSearchParams } from "next/navigation";
-import { NovoAtendimento } from "./NovoAtendimento";
+import { useRouter, useSearchParams } from "next/navigation";
+import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
@@ -168,6 +168,7 @@ const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1
 
 export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
+  const router = useRouter();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
   const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
   const triagem = ouNulo(triagemBruta);
@@ -515,6 +516,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
 
   function abrir(id: string) {
+    // ACK novo pode estar fora da página (sem mensagem, NULLS LAST). A rota carrega o item autorizado.
+    if (!itens.some(item => item.id === id)) {
+      if (selecionadoRef.current !== selecionado) return;
+      setNovaConversaAberta(false);
+      const parametros = new URLSearchParams(parametrosDaRota?.toString() ?? paramsDosFiltros(filtros).toString());
+      parametros.set("c", id);
+      router.push("/inbox?" + parametros.toString(), { scroll: false });
+      return;
+    }
     focoAoFecharPopover.current = regiaoConversa.current;
     setNovaConversaAberta(false);
     selecionadoRef.current = id;
@@ -593,7 +603,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
-          novaConversa={opcoesNovaConversa ? <NovoAtendimento compacto opcoes={opcoesNovaConversa} /> : undefined} />
+          novaConversa={opcoesNovaConversa ? <PopoverNovaConversa key={selecionado ?? "lista"} opcoes={opcoesNovaConversa} itens={itens} aoSelecionar={abrir} aoFechar={() => setNovaConversaAberta(false)} /> : undefined} />
       </section>
 
       <section ref={regiaoConversa} tabIndex={-1} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>

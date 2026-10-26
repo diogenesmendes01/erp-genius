@@ -7747,7 +7747,17 @@ Checkpoint10/10 41651/272572 EXIT0 (44,25s), seguido porregressão17/17 emNOVA s
 
 #376 R22 ROOT — global na fonte73d:1.067arquivos9.431casos35084/46d24d EXIT0. TSC67803/37bdba CLI2 encontrouapenasTS2345 na tabela deheaders da fixtureAPI. TabelaagoraexplicitamenteRecord<string,string>[], mesmos8cenários/asserções, produçãoinalterada;focal19/1994f3fe0+lint1e5ab120. TypeScriptcompleto/lintglobal/build/QAindependente/visual/CIpendentes; global9431continuaatribuídoa73d, semreatribuiçãoaoajustedetipo.
 
-R24 — issue #376: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
+### #361 — Nova conversa pelo fluxo existente, entrega DEV em validação
+
+UI substitui formulário fixo por busca local de conversas visíveis/destinos autorizados (recentes8/destinos12, acentos/telefonejávisível), usa abertura existente/canal elegível e chaves canônicas por alvo. Um diálogo/foco canônico, busy/handlers/ACKgeração e desmontagem protegidos. #372 não implementada: número novo só orienta cadastro atual, nenhum kernel/schema/envio/saudação. Removidos componente/testes antigos após portabilidade de comportamentos; mapas e dois registros nominais fechados sem mudar parser.
+
+REDs reais:23/1fail ACKA→revoga→A;28/2fail handlersretidos;29/1fail chaves entrealvos. Final focal3/29 EXIT0 S15281/adad48 +lint11paths0; consumidores9/237 S69451/1d06c2 anterior ao refinamento token porlint, qualificado; guardas6/267 S32971/bdf07e EXIT0 incluemmutantes. Carry447 literal conhecido mensagemconstante noInbox é integração da base, não feature361. QA/SPEC registram negativos, limites e ausência SQL. NodeB livre/seguradoROOT; TSC/global/CI/build/visual/QA independente pendentes. Publicar somente delta361, nunca ancestrais privados Grant.
+
+#361 R23 ROOT — delta02aab isolado sobre439; 17paths14SRC, único conflitoquadro append. Reversão d96321 recuperaTODOsrc439 exato,backend/schema/configs0delta. Recorte123arquivos1583casos90962/8d0b8d EXIT0; lint11 63410/91cfc7 EXIT0/zeroavisos. TESTER RO657f831e favorável sem execução própria. QA docs/qa/inbox-361-integracao-r23-root.md; globais/QAexecução/visual/CI pendentes. #372 separado, ownerD9 aguarda humano.
+
+#361 R23 ROOT — TSCa2fdb63082/c927d3 CLI2 únicoTS2352 nafixture childrenomitido. Ajustado objetoPropscompleto/children:null semcast, filhoReactcontinuaterceiroargumento; produçãoinalterada. Replay4arquivos50casoscdf0b1 EXIT0,lint1ed61d4 EXIT0/zeroavisos. RepetirTSCcompleto; globais/build/QA/visual/CIaindapendentes.
+
+R24 — issue #361: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
 
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 
@@ -7778,6 +7788,11 @@ A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva
 A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head e2fd0880aaa99f13500b8d7c9104ddd54909219b. O ancestral original 5764ddb6afb5e1eef0c3c826b73d0191900eeb58 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
 
 
+## PR #453 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 3d08ab339fa742756d51cc3dd33a3071e1f6f1ab. O ancestral original e2fd0880aaa99f13500b8d7c9104ddd54909219b foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
 ### PR #432 — composição documental com a dependência #427, 26/10/2026
 
 União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
@@ -7797,6 +7812,10 @@ Incorporada a dependência 464d542c03653fadfe82e1c29ab65a57217027ec usando seu a
 ## PR #452 — base empilhada atual reconciliada, 26/10/2026
 
 Incorporada a dependência f0dac539e0ae1497c5693755318d2a49f2d8bff5 usando seu ancestral original 479ca9f92a2e34993ee2cbd96ec829f551c1615f. A composição preserva a árvore executável integral do head e2fd0880aaa99f13500b8d7c9104ddd54909219b, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #453 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência 9a646570e93efc4e7d8349dbc3c27cce3f91581f usando seu ancestral original 0efb71cffd191149538ead4907dbea000af7a454. A composição preserva a árvore executável integral do head 3d08ab339fa742756d51cc3dd33a3071e1f6f1ab, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
 
 
 ### #333 — correção causal de lock antes da integração443, 26/10/2026
@@ -7821,3 +7840,15 @@ A correção de concorrência da PR #443 foi incorporada à cadeia #444–#455: 
 ### PR #452 C1 — atividade humana e scroll programático, composição R28
 
 Selecionado o delta isolado deeea09c: somente onScrollCapture passa a onWheelCapture, com teste portátil, SPEC e QA. Backend, relógios de presença, schema e migration496 permanecem literais. DEV reproduziu duas falhas causais e validou os mesmos46testes, lint e TypeScript com código0; esses resultados não são QA executada da nova composição. Geração de eventos trusted em browser real, QA pública e CI permanecem pendentes. A propagação preserva UI361, Insights377 e histórico público, sem importar ancestrais privados372.
+
+
+### PR #453 — escopo irrestrito e abertura fora da primeira página, R28
+
+Selecionadas correções isoladas7dc0b358(ORcomercial canônico irrestrito) eec8f2cd5(ACK de conversa fora dos itens navega para rota canônica; SSR carrega item autorizado). As duas novas provas de navegação passaram no DEV, junto dos21casos Page; o recorte completo142/143 manteve uma falha447 previamente reproduzida, qualificada no QA. O teste nativo próprio de opções3/3 já passou no DEV. A seleção preserva Insights377, presença452, demais fontes públicas e não importa D9/372 ou ancestrais privados. QA independente desta composição, teclado/foco em browser e CI continuam pendentes.
+
+
+### PR #453 C1/C3 — contato e lista determinística, R29
+
+O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
+
+DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
