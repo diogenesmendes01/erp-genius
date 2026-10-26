@@ -57,3 +57,14 @@ As configurações originais e as fontes permaneceram intactas. A auditoria apó
 A publicação acrescenta este registro, o quadro e uma regra específica em .gitattributes para manter a migração Origem500 em LF no checkout Windows. Os bytes SQL são os mesmos já aplicados e testados; nenhuma migração histórica ou checksum foi reescrito. Código, schema, dependências e configurações de execução são literalmente iguais à fonte 4eaa2b56 aprovada.
 
 A action e o caminho EXISTENTE integram este incremento. Consultas de preview e seleção de linhas para a interface, UI completa, decisão de responsável para Admin/Gerente Comercial, CI remoto e aceite visual continuam pendentes. A PR permanece em rascunho e a issue #372 aberta.
+
+
+## #372 — decisão de vendedor e interface por telefone, composição R28
+
+Incorporadas as correções R17/R19 de linhas/preview e abertura de cadastro existente, seguidas da interface D9 do checkpoint500f87a0. O escopo irrestrito OR e a navegação canônica B1 já são herdados da PR453; a presença452 e os testes públicos de Insights/transferência foram preservados. Nenhum ancestral privado foi importado. NOVO, inbound, schema, migration500 aplicada e dependências não mudam neste delta.
+
+Decisão humana aplicada: Admin ou gerente comercial sem papel vendedor deve escolher um vendedor ativo autorizado, sem padrão pelo dono da linha. Ator com papel vendedor usa seu próprio identificador, inclusive em papéis combinados. A consulta retorna somente id/nome autorizados e revalida a foto final de ator/equipe/candidatos. A intenção e chave de idempotência permanecem em memória por ator ao fechar e reabrir o diálogo; o servidor revalida os dados da confirmação. Saudação é manual no compositor existente, sem envio automático.
+
+DEV D9:166UNIT/9arquivos, lint e TypeScript0; oito nativos completos de opções e action passaram, com snapshot e direitos frescos. C1inbound: os dois arquivos pedidos passaram13+1 mantendo fonte01166434. A colisão adversarial do provider não é retry natural nem explica a causa histórica R7/P2028. R17/R19 e demais recortes históricos continuam qualificados em seus registros, sem somar testes sobrepostos.
+
+C3: a decisão aprovada não restringe a origemProspecção ativa ao novo fluxo; relatórios/importação/selects atuais preservados. C6: migration500 já aplicada é imutável, reserva exclusiva coordenada, sem reescrever SQL ou acrescentar IF NOT EXISTS. C4: tela e consultas agora incluídas, mas a emissão de AvisoInbox do atendimento criado está em correção separada; esta candidata ainda não cumpre esse ponto. QA independente exata, regressões públicas, browser/aceite visual e CI permanecem pendentes.
