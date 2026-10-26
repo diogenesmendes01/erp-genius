@@ -9,12 +9,8 @@ it("cabeçalho enriquecido tem avatar132, identidade, tags só leitura e marca s
   expect(h.match(/aria-label="Criada pela Aria"/g)).toHaveLength(1);
   expect(h).not.toContain("Editar contato"); expect(h).not.toContain("+ tag");
 });
-it("E1 publica apenas Detalhes em qualquer finalidade e liga tab ao painel", () => {
-  expect(ABAS_ENTREGUES).toEqual(["detalhes"]);
-  for (const f of ["COMERCIAL", "PEDAGOGICO", "FINANCEIRO", "SECRETARIA", "desconhecida"]) expect(abasDoPainel(f)).toEqual([{ id: "detalhes", rotulo: "Detalhes" }]);
-  const h = p(); expect(h).toContain('role="tablist"'); expect(h).toContain('aria-selected="true"'); expect(h).toContain('role="tabpanel"');
-  expect(h.match(/role="tab"/g)).toHaveLength(1); for (const nome of ["Oportunidades", "Insights", "Atividade"]) expect(h).not.toContain(nome);
-});
+it("327 publica Detalhes/Oportunidades somente no comercial e liga tabs ao painel",()=>{expect(ABAS_ENTREGUES).toEqual(["detalhes","oportunidades"]);expect(abasDoPainel("COMERCIAL")).toEqual([{id:"detalhes",rotulo:"Detalhes"},{id:"oportunidades",rotulo:"Oportunidades"}]);for(const f of["PEDAGOGICO","FINANCEIRO","SECRETARIA","desconhecida"])expect(abasDoPainel(f)).toEqual([{id:"detalhes",rotulo:"Detalhes"}]);const h=p({abas:abasDoPainel("COMERCIAL")});expect(h.match(/role="tab"/g)).toHaveLength(2);expect(h).toContain('role="tabpanel"');for(const n of["Insights","Atividade"])expect(h).not.toContain(n);});
+
 it("mantém um único fechar e um scroller local também no cabeçalho extenso", () => {
   const h = p({ contato: { ...contato, nome: "Nome extenso ".repeat(15), tags: Array.from({ length: 20 }, (_, i) => ({ id: "tag" + i, rotulo: "Tag extensa " + i, ia: false })) } });
   expect(h.match(/aria-label="Fechar painel do contato"/g)).toHaveLength(1);
