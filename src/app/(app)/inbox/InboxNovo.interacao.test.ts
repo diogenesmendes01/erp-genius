@@ -61,6 +61,7 @@ import { ConversaAberta } from "./ConversaAberta";
 import { ColunaConversas } from "./ColunaConversas";
 import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
+import { ModalTarefa } from "./ModalTarefa";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { PainelSetor } from "./PainelSetor";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
@@ -1089,6 +1090,19 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
  vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.endsWith('/painel') ? { setor: 'COMERCIAL', podeEnviar: false, tags: [], acoes: null, cabecalho } : url.endsWith('/oportunidades') ? { atual: null, outras: [], pessoaId: null } : { pessoa: null, oportunidade: null, b2b: null, campos: [] }))));
  tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!; (painel.props.aoTrocarAba as (id: string) => void)('oportunidades'); tela(); await esvaziar();
  const aba = elementos(tela()).find(n => n.type === AbaOportunidades)!; expect(aba).toBeDefined(); expect(aba.props.capacidades).toEqual(caso === 'presente' ? capacidades : Object.fromEntries(Object.keys(capacidades).map(k => [k, false])));
+});
+
+async function abrirAba331(){
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:true,tarefasEquipe:false,editarContato:true,verContato:true}})}));
+ const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
+ tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as (id:string)=>void)("oportunidades");tela();await esvaziar();return elementos(tela()).find(n=>n.type===AbaOportunidades)!;
+}
+it("331: callbacks reais abrem modal no atendimento e troca de seleção encerra sessão",async()=>{
+ const aba=await abrirAba331();expect(aba.props.aoNovaTarefa).toEqual(expect.any(Function));(aba.props.aoNovaTarefa as ()=>void)();const aberta=elementos(tela()).find(n=>n.type===ModalTarefa)!;expect(aberta.props.atendimentoId).toBe("a1");expect(aberta.props.modo).toEqual({tipo:"nova"});const key=(aberta as unknown as ReactElement).key;expect((elementos(tela()).find(n=>n.type===ModalTarefa)! as unknown as ReactElement).key).toBe(key);
+ lista(tela()).aoSelecionar("a2");tela();expect(elementos(tela()).some(n=>n.type===ModalTarefa)).toBe(false);
+});
+it("331: editar encaminha identidade/versão do alvo, e editor de contato fecha o modal",async()=>{
+ const aba=await abrirAba331();(aba.props.aoEditarTarefa as (t:{id:string;versao:number})=>void)({id:"t331",versao:4});const aberta=elementos(tela()).find(n=>n.type===ModalTarefa)!;expect(aberta.props.modo).toEqual({tipo:"editar",tarefa:{id:"t331",versao:4}});painel326(tela()).aoEditar!();expect(elementos(tela()).some(n=>n.type===ModalTarefa)).toBe(false);
 });
 
 // #350: uma fonte de painel, sem prop antiga enquanto a seleção nova carrega.
