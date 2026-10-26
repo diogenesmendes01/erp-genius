@@ -7630,3 +7630,7 @@ Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. S
 =======
 
 #358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
