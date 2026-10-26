@@ -7465,3 +7465,23 @@ Gate ORIGINAL exato2af4: TSC84020/5d68c6 EXIT2,6diagnósticos (1TS2322REAL no Ca
 ROOT autorizou e realizou arquivo FÍSICO dos3históricos em a88569 com bytes/hashes84bc7e4b/8bdd3efd/08edc23f preservados foraB; DEV não os moveu/editou/copiou de volta e não alterou config/cache/contrato obrigatório para esconder diagnósticos. Correção REAL em filhaisolada2af4: Desfazer usaNEUTRO canônicoDS (contorno cinza), mapa e âncora ASTFECHADA total3,2dinâmicos originais+Desfazer literal preservados; negativos vazio/varianteerrada/contornoinexistente/quartobotão. DS e backend literais.
 
 RED93c55e EXIT1(11casos/1falha classundefined); GREEN34172/a2537c EXIT0(24arquivos/510casos UI/consumidores/Botao/guardas completos,sem filtrodecaso/skips); lint4 61127e EXIT0 --max-warnings=0. Sem repetiçãoINT45 por ausência de delta backend. Próximo TSC ORIGINAL aguarda admissãoROOT/liberação compiladorA; QAfilha/global/visualpendentes. SemDB/build/install/config/env/PR/push ou355. SPEC/report output/inbox-354-r2-neutro-report.md atualizados.
+
+### Inbox #359 — interruptor global D4 / entrega DEV (25/10/2026)
+
+DEV B sobre c8e89565, branch codex/inbox-e4-359-interruptor. Admin/GC pela capacidade existente pausar, motivo obrigatório1..500trim e idempotência estrita por último Evento do mesmo autor/motivo. Ator relido dentroTX após lock real AgenteIA; sem Config/Atendimento novo, modo/cancelamento/ACL/schema alterado. ATIVA/SHADOW com checked=!pausada, ensaio preservado, DESLIGADA null. Modal/hook/DS reais, retry/duploclique/tokens de ACK e callback da recarga atual do Inbox; /aria somente flag idempotente.
+
+RED estado20972/0c648b EXIT1(5falhas/19); fixture concorrente NextAuth corrigida separadamente, GREEN82158/90b4f6 EXIT0(19). RED UI causal e2e794 EXIT1(9falhas/10); mapa nominal fechado3botões e mutantes, sem exceção genérica. INT final48274/05a045 EXIT0:2arquivos completos46casos (estado20+barramento26), incluindo desativação durante espera REAL observada pg_blocking_pids e avisoscommit/rollback. UNIT6028/a50a86 EXIT0:93arquivos1.177casos completos do recorte Inbox+DS/guardas; todos os testes legados da faixa preservados. Novo controle posterior de resumo/aviso/503:3arquivos45casos cb79e1 EXIT0. Lint focal11 dd936f EXIT0, replay final no freeze. SPEC docs/specs/inbox-interruptor-global-aria.md; relatório output/inbox-359-report.md.
+
+Banco ci-integracao492 lease liberada após terminal; fixtures finais permanecem, não presumir restore503. Sem DB concorrente, envio/provedor real, servidor/build/captura/install/schema/config/push. QA independente, TypeScript/gates globais originais e aceite visual1440/1024/390 claro/escuro +switch/modais ainda PENDENTES. Não encerrar issue/D4 homologada;355 aguarda decisão e não foi implementada.
+
+### Inbox #359 — R1 manifesto nominal de Campo (25/10/2026)
+
+Originais da b7a: TSC77053/bbd8d2 EXIT0; lint38801/31b02b EXIT0,0erros/98avisos; globalUTC71353/89ca77 EXIT1,990arquivos/8.542casos com uma única falha no manifesto de Campos. Negativo preservado, não chamar o global de aprovado. R1 registra exatamente InterruptorAria.tsx → Motivo da pausa · obrigatório · input e acrescenta mutantes de registro ausente/rótulo/obrigatoriedade. Parser e EXCECOES_CAMPO intactos. Guarda completa535ae7 EXIT0:28casos. Runtime/backend literalb7a; INT46 não repetida. Replay original da filha e QA/visual acompanham recibos próprios; issue ainda não encerrada.
+
+### Inbox #359 — faixa estreita na composição R4 (25/10/2026)
+
+Captura tablet b437/z1iv mostrou título/resumo comprimidos pelo switch e Gerenciar; confirmado pelo TESTER no mesmo parecer R4.1. Ícone/texto passam à primeira linha e controles autorizados à segunda, em grupo acessível nomeado; feedback fora do Modal ocupa largura do grupo. Política/handlers/Modal/motivo/ACK permanecem literais. RED f262c4 EXIT1,16controles/1falha; GREEN conjunto a080c2 EXIT0,3arquivos41casos completos. QA docs/qa/inbox-359-faixa-responsiva-r4-root.md. TSC/global/lint/build desta fonte e aceite visual ainda pendentes; sem homologação/merge presumidos.
+
+### Integração R7 pr442
+
+495365c2: correção estrutural da faixa, validada no focal global R7. Aceite visual e integração em main continuam pendentes.
