@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import type { Papel } from "@prisma/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
+import { criarIntencaoNovaConversa } from "./fluxos/nova-conversa/intencao-nova-conversa";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
@@ -178,6 +179,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [contagens, setContagens] = useState(contagensIniciais);
   const [resumo, setResumo] = useState(resumoInicial);
   const [novaConversaAberta, setNovaConversaAberta] = useState(false);
+  const [intencaoPorAtor, setIntencaoPorAtor] = useState(() => ({ atorId: usuario.id, controle: criarIntencaoNovaConversa() }));
+  if (intencaoPorAtor.atorId !== usuario.id) setIntencaoPorAtor({ atorId: usuario.id, controle: criarIntencaoNovaConversa() });
+  const intencaoNovaConversa = intencaoPorAtor.controle;
   const possuiContagensRef = useRef(contagensIniciais !== undefined || resumoInicial !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const interagirPresenca = usePresencaInbox(usuario.id);
@@ -603,7 +607,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
-          novaConversa={opcoesNovaConversa ? <PopoverNovaConversa key={selecionado ?? "lista"} opcoes={opcoesNovaConversa} itens={itens} aoSelecionar={abrir} aoFechar={() => setNovaConversaAberta(false)} /> : undefined} />
+          novaConversa={opcoesNovaConversa ? <PopoverNovaConversa key={selecionado ?? "lista"} opcoes={opcoesNovaConversa} itens={itens} usuario={usuario} intencao={intencaoNovaConversa} aoSelecionar={abrir} aoFechar={() => setNovaConversaAberta(false)} /> : undefined} />
       </section>
 
       <section ref={regiaoConversa} tabIndex={-1} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>

@@ -4,7 +4,6 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { registrarEvento } from "@/server/_shared/evento";
-import { exigirDestinoComercial } from "@/server/comercial/destino-comercial";
 import { normalizarNumeroNovaConversa } from "./telefone-nova-conversa";
 import { lerCadastroNovaConversaTx } from "./nova-conversa-leitura";
 import { classificarAlvoNovaConversa } from "./nova-conversa-interna";
@@ -12,7 +11,7 @@ import { donosDeLinhaVisiveis } from "./linha-comercial";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 
 export interface EntradaRamoExistenteConversa { autorId: string; numeroId: string; telefoneE164: string; chaveIdempotencia: string }
-interface LeadConfirmado { id: string; pessoaId: string; ownerId: string }
+interface LeadConfirmado { id: string; pessoaId: string; ownerId: string | null }
 interface TuplaExistente extends LeadConfirmado { atendimentoId: string; contatoId: string; conversaId: string; responsavelId: string | null }
 const mudou = () => new ErroRegra("O cadastro ou acesso mudou. Confira a conversa antes de repetir.");
 
@@ -28,8 +27,7 @@ async function resolverLead(tx: Prisma.TransactionClient, e: EntradaRamoExistent
  const alvo = classificarAlvoNovaConversa({ telefoneE164: e.telefoneE164 }, cadastro);
  if (alvo.tipo !== "existente" || cadastro.alunoIdentificado || cadastro.responsavelIdentificado || cadastro.oportunidadeOcultaIdentificada) throw mudou();
  const l = await tx.oportunidade.findFirst({ where: { AND: [{ id: alvo.leadId, telefoneE164: e.telefoneE164, pessoaId: { not: null }, pessoa: { mescladaEmId: null } }, await escopoComercialAtual(autor, tx)] }, select: { id: true, telefoneE164: true, pessoaId: true, vendedorDonoId: true } });
- if (!l || l.id !== alvo.leadId || l.telefoneE164 !== e.telefoneE164 || !l.pessoaId || !l.vendedorDonoId) throw mudou();
- await exigirDestinoComercial(autor, l.vendedorDonoId, tx);
+ if (!l || l.id !== alvo.leadId || l.telefoneE164 !== e.telefoneE164 || !l.pessoaId) throw mudou();
  return { autor, lead: { id: l.id, pessoaId: l.pessoaId, ownerId: l.vendedorDonoId } };
 }
 function contatoCompativel(c: { telefoneE164: string; pessoaId: string | null; leadId: string | null; alunoId: string | null; responsavelId: string | null }, e: EntradaRamoExistenteConversa, l: LeadConfirmado): boolean {
@@ -39,6 +37,7 @@ function mesmaIdentidade(a: LeadConfirmado, b: LeadConfirmado): boolean { return
 interface FotoFinal {
  autor: { id: string; ativo: boolean; papeis: Papel[]; permissoes: string[] } | null;
  owner: { id: string; ativo: boolean; papeis: Papel[]; gerenteComercialId: string | null } | null;
+ coberturaVigente: boolean;
  numero: { id: string; ativo: boolean; finalidade: string; donoId: string | null; donoGerenteId: string | null } | null;
  lead: { id: string; telefoneE164: string | null; pessoaId: string | null; vendedorDonoId: string | null } | null;
  pessoa: { id: string; mescladaEmId: string | null } | null;
@@ -55,6 +54,7 @@ async function conferirFotoFinal(tx: Prisma.TransactionClient, e: EntradaRamoExi
   SELECT jsonb_build_object(
    'autor', CASE WHEN u.id IS NULL THEN NULL ELSE jsonb_build_object('id',u.id,'ativo',u.ativo,'papeis',u.papeis,'permissoes',u.permissoes) END,
    'owner', CASE WHEN o.id IS NULL THEN NULL ELSE jsonb_build_object('id',o.id,'ativo',o.ativo,'papeis',o.papeis,'gerenteComercialId',o."gerenteComercialId") END,
+   'coberturaVigente', EXISTS(SELECT 1 FROM "CoberturaCarteira" cc WHERE cc."substitutoId"=u.id AND cc."titularId"=l."vendedorDonoId" AND cc.inicio<=timezone('UTC',statement_timestamp()) AND cc.fim>timezone('UTC',statement_timestamp()) AND cc."revogadaEm" IS NULL),
    'numero', CASE WHEN n.id IS NULL THEN NULL ELSE jsonb_build_object('id',n.id,'ativo',n.ativo,'finalidade',n.finalidade,'donoId',n."donoId",'donoGerenteId',d."gerenteComercialId") END,
    'lead', CASE WHEN l.id IS NULL THEN NULL ELSE jsonb_build_object('id',l.id,'telefoneE164',l."telefoneE164",'pessoaId',l."pessoaId",'vendedorDonoId',l."vendedorDonoId") END,
    'pessoa', CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object('id',p.id,'mescladaEmId',p."mescladaEmId") END,
@@ -79,8 +79,10 @@ async function conferirFotoFinal(tx: Prisma.TransactionClient, e: EntradaRamoExi
  const u = f.autor;
  if (!u?.ativo) throw new ErroAutenticacao();
  if (u.id !== perfilUsado.id || !mesmoConjunto(u.papeis, perfilUsado.papeis) || !mesmoConjunto(u.permissoes, perfilUsado.permissoes ?? [])) throw mudou();
- const admin = u.papeis.includes(Papel.ADMINISTRADOR), gerente = u.papeis.includes(Papel.GERENTE_COMERCIAL);
- if (!f.owner?.ativo || !f.owner.papeis.includes(Papel.VENDEDOR) || f.owner.id !== t.ownerId || (!admin && f.owner.id !== u.id && !(gerente && f.owner.gerenteComercialId === u.id))) throw mudou();
+ const admin = u.papeis.includes(Papel.ADMINISTRADOR), gerente = u.papeis.includes(Papel.GERENTE_COMERCIAL), vendedor = u.papeis.includes(Papel.VENDEDOR);
+ // Owner é histórico: abertura usa scope atual, não a política de escolha de dono de NOVO.
+ if (t.ownerId !== null && f.owner?.id !== t.ownerId) throw mudou();
+ if (!admin && !(vendedor && (t.ownerId === u.id || f.coberturaVigente)) && !(gerente && f.owner?.gerenteComercialId === u.id)) throw mudou();
  if (!f.numero?.ativo || f.numero.id !== e.numeroId || f.numero.finalidade !== "VENDAS" || (!admin && f.numero.donoId !== u.id && !(gerente && f.numero.donoId && f.numero.donoGerenteId === u.id))) throw mudou();
  if (!f.lead || f.lead.id !== t.id || f.lead.telefoneE164 !== e.telefoneE164 || f.lead.pessoaId !== t.pessoaId || f.lead.vendedorDonoId !== t.ownerId || !f.pessoa || f.pessoa.id !== t.pessoaId || f.pessoa.mescladaEmId !== null) throw mudou();
  if (!f.contato || f.contato.id !== t.contatoId || !contatoCompativel(f.contato, e, t) || f.contato.pessoaId !== t.pessoaId || f.contato.leadId !== t.id) throw mudou();
