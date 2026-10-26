@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { EtapaLead } from "@prisma/client";
+import { IconHandStop, IconThumbDown } from "@tabler/icons-react";
+import { Botao } from "@/components/Botao";
+import type { Resultado } from "@/server/_shared/resultado";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarMoedaOuIndefinida } from "@/lib/dinheiro";
@@ -10,13 +13,15 @@ import { moverEtapaNoInbox } from "@/server/inbox/acoes-painel";
 import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
 import type { CapacidadesPainel } from "@/server/inbox/permissoes";
 import { BarraEtapas } from "./BarraEtapas";
+import { opcoesEtapa } from "./etapas-painel";
+import { CartaoExperimental } from "./CartaoExperimental";
 
-type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; aoMudar(): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean };
+type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; fusoEscola?: string; aoMudar(): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean; podeAssumir?: boolean; aoAssumir?(): Promise<Resultado> };
 /** Mudança de thread/oportunidade encerra a sessão de ação, sem ACK antigo reconciliar outra. */
 export function AbaOportunidades(props: Props) {
   return <OportunidadeDoAtendimento key={JSON.stringify([props.atendimentoId, props.dados.atual?.id ?? null])} {...props} />;
 }
-function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, aoMudar, aoAbrirPerda, podeAbrirFunil = false }: Props) {
+function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fusoEscola, aoMudar, aoAbrirPerda, podeAbrirFunil = false, podeAssumir = false, aoAssumir }: Props) {
   const acao = useAcaoCliente({ idempotente: true }), vivo = useRef(false);
   const [erroLocal, setErroLocal] = useState<string | null>(null), [fluxo, setFluxo] = useState<string | null>(null);
   useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);
@@ -26,6 +31,13 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, aoMudar,
     const r = await acao.executar(() => moverEtapaNoInbox(atendimentoId, etapa, o!.id));
     if (r?.tipo === "ok" && vivo.current) aoMudar();
   }
+  async function assumir() {
+    if (!podeAssumir || !aoAssumir || acao.ocupado) return;
+    setErroLocal(null); setFluxo(null);
+    const r = await acao.executar(aoAssumir, "Atendimento assumido.");
+    if (r?.tipo === "ok" && vivo.current) aoMudar();
+  }
+  const destinoPerda = opcoesEtapa(o.etapa).find(e => e.etapa === "PERDIDO")?.destino;
   function escolher(etapa: EtapaLead, destino: DestinoArraste) {
     if (!capacidades.moverEtapa || acao.ocupado) return;
     acao.limpar(); setErroLocal(null); setFluxo(null);
@@ -45,10 +57,15 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, aoMudar,
       <p className="text-[17px] font-semibold">{o.valor === null ? "Sem valor" : formatarMoedaOuIndefinida(o.valor, o.moeda)}</p>
     </header>
     <BarraEtapas etapa={o.etapa} podeMover={capacidades.moverEtapa} ocupado={acao.ocupado} aoEscolher={escolher} />
-    <FeedbackAcao erro={erroLocal ?? acao.erro} />
+    <CartaoExperimental oportunidade={o} fuso={fuso} fusoEscola={fusoEscola ?? fuso ?? ""} podeAbrirFunil={podeAbrirFunil} />
+    <FeedbackAcao erro={erroLocal ?? acao.erro} sucesso={acao.sucesso} />
     {fluxo && <div role="status" className="space-y-1 text-sm text-gray-600"><p>{fluxo}</p>{podeAbrirFunil && <a href={"/funil?o=" + encodeURIComponent(o.id)} className="inline-flex min-h-11 items-center text-brand-700 underline">Abrir no funil</a>}</div>}
     <dl className="space-y-2 text-[13px]">
       {([['Responsável', o.responsavel?.nome ?? 'Sem responsável'], ['Temperatura', TEMPERATURA_LABEL[o.temperatura]], ['Produto', o.produto ?? '—']] as const).map(([rotulo, valor]) => <div key={rotulo} className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] gap-2"><dt className="text-gray-600">{rotulo}</dt><dd className="min-w-0 [overflow-wrap:anywhere]">{valor}</dd></div>)}
     </dl>
+    <div className="flex flex-col items-start">
+      {podeAssumir && aoAssumir && <Botao variante="fantasma" tamanho="md" disabled={acao.ocupado} aria-busy={acao.ocupado || undefined} onClick={() => void assumir()} className="min-h-11 justify-start gap-4 px-0 text-brand-700"><IconHandStop size={17} aria-hidden />Assumir conversa</Botao>}
+      {capacidades.moverEtapa && destinoPerda?.tipo === "acao" && destinoPerda.acao === "marcarPerdido" && <Botao variante="fantasma" tamanho="md" disabled={acao.ocupado} onClick={() => escolher("PERDIDO", destinoPerda)} className="min-h-11 justify-start gap-4 px-0 text-red-700"><IconThumbDown size={17} aria-hidden />Marcar como perdido</Botao>}
+    </div>
   </div>;
 }

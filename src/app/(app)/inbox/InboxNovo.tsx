@@ -13,6 +13,9 @@ import { AbaDetalhes } from "./abas/AbaDetalhes";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { ModalPerda } from "../funil/ModalPerda";
 import { marcarPerdidoNoInbox } from "@/server/inbox/acoes-painel";
+import { assumirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { podeExecutar } from "@/server/inbox/permissoes";
+import type { Setor } from "@/server/whatsapp/setor";
 import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
 import { GavetaContato } from "./abas/GavetaContato";
 import { useAbaPainel } from "./abas/useAbaPainel";
@@ -55,6 +58,8 @@ export interface PropsInboxNovo {
   usuario: { id: string; papeis: Papel[] };
   podeAbrirFunil?: boolean;
   fuso: string | null;
+  /** Fuso institucional já consultado pela página, para fallback dos instantes. */
+  fusoEscola?: string;
   /** Instante obrigatório para consumidores SSR: serializar o número capturado na página; sem ele, usa 0 até hidratar. */
   agoraInicial?: number;
   /** Destinos de transferência com contexto (FINANCEIRO/PEDAGOGICO), de `listarOpcoesAtendimento`. */
@@ -152,7 +157,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
   const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
@@ -418,6 +423,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setPerdaOportunidade(p => ({ ...p, atendimentoId: selecionado, id: null, nome: "", aberta: false }));
   }
   const podeMudarEtapa = detalhesComerciais && painelDoAberto?.dado?.acoes != null && painelDoAberto.dado.cabecalho?.capacidades.moverEtapa === true;
+  const podeAssumir = !!atual && !atual.grupo && atual.status !== "ENCERRADO" && podeExecutar(usuario, "assumir", {
+    setor: atual.finalidade as Setor, responsavelId: atual.responsavelId, linhaComercial: atual.linhaComercial, donoLinhaId: atual.numeroDonoId,
+  });
   const perdaAberta = !!(podeMudarEtapa && perdaOportunidade.aberta && perdaOportunidade.atendimentoId === selecionado && perdaOportunidade.id
     && (!oportunidadesDoContato.dado || oportunidadesDoContato.dado.atual?.id === perdaOportunidade.id));
   const dialogoAberto = editorAberto || perdaAberta;
@@ -486,7 +494,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ? detalhesComerciais
           ? abaAtiva === "oportunidades"
             ? oportunidadesDoContato.erro ? falhaDosDetalhes(oportunidadesDoContato.recarregar, "oportunidades")
-              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} podeAbrirFunil={podeAbrirFunil} />
+              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} podeAbrirFunil={podeAbrirFunil} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
                 : <EsqueletoPainel rotulo="oportunidades" />
             : detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
               : detalhesDoContato.dado ? <AbaDetalhes dados={detalhesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { verContato: false, verEmpresa: false }} aoAbrirOportunidades={() => setAbaDoContato({ atendimentoId: selecionado, id: "oportunidades" })} />
