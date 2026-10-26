@@ -1,7 +1,7 @@
 const avisoC4 = vi.hoisted(() => ({ publicar: vi.fn() }));
 vi.mock("./nova-conversa-aviso", () => ({ avisarNovaConversaTx: avisoC4.publicar }));
 import { beforeEach, expect, it, vi } from "vitest";
-import { Papel, type Prisma } from "@prisma/client";
+import { Papel, Prisma } from "@prisma/client";
 import { ErroAutenticacao, ErroPermissao, ErroRegra } from "@/server/_shared/sessao";
 const m=vi.hoisted(()=>({leitura:vi.fn(),scope:vi.fn(),linha:vi.fn(),destino:vi.fn(),abrir:vi.fn(),visivel:vi.fn(),evento:vi.fn(),repeticao:vi.fn(),pessoa:vi.fn(),lead:vi.fn(),codigo:vi.fn()}));
 vi.mock("./nova-conversa-leitura",()=>({lerCadastroNovaConversaTx:m.leitura}));
@@ -77,4 +77,33 @@ it("C4 revogação durante aviso EX é relida antes de retornar", async () => {
  avisoC4.publicar.mockImplementationOnce(async () => { db.usuario.findUnique.mockResolvedValue(null); });
  await expect(abrirRamoExistenteConversaTx(tx, e)).rejects.toBeInstanceOf(ErroAutenticacao);
  expect(avisoC4.publicar).toHaveBeenCalledOnce();
+});
+// C9 UNIT: metadata simulada testa somente o filtro futuro; não é prova de Prisma nativo.
+function semContatoC9() {
+ db.contatoWhatsApp.findUnique.mockResolvedValue(null);
+ m.leitura.mockResolvedValue({oportunidadesAutorizadas:[{id:"lead",telefoneE164}],pessoaIdentificada:true,contatoIdentificado:false,alunoIdentificado:false,responsavelIdentificado:false,oportunidadeOcultaIdentificada:false});
+}
+it("C9 mock do UNIQUE de telefone exato deve virar domínio sem continuar SQL", async () => {
+ semContatoC9();
+ db.contatoWhatsApp.create.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError("Colisão fictícia C9",{code:"P2002",clientVersion:"unit",meta:{modelName:"ContatoWhatsApp",target:["telefoneE164"]}}));
+ await expect(abrirRamoExistenteConversaTx(tx,e)).rejects.toThrow("O cadastro ou acesso mudou. Confira a conversa antes de repetir.");
+ expect(m.abrir).not.toHaveBeenCalled(); expect(m.evento).not.toHaveBeenCalled(); expect(avisoC4.publicar).not.toHaveBeenCalled();
+});
+it.each([
+ {caso:"outro modelo",code:"P2002",meta:{modelName:"Pessoa",target:["telefoneE164"]}},
+ {caso:"outro campo",code:"P2002",meta:{modelName:"ContatoWhatsApp",target:["waId"]}},
+ {caso:"target composto",code:"P2002",meta:{modelName:"ContatoWhatsApp",target:["telefoneE164","waId"]}},
+ {caso:"target string",code:"P2002",meta:{modelName:"ContatoWhatsApp",target:"telefoneE164"}},
+ {caso:"model ausente",code:"P2002",meta:{target:["telefoneE164"]}},
+ {caso:"timeout",code:"P2028",meta:{modelName:"ContatoWhatsApp",target:["telefoneE164"]}},
+])("C9 mock $caso propaga erro original sem converter ou retry", async ({code,meta}) => {
+ semContatoC9(); const erro=new Prisma.PrismaClientKnownRequestError("Erro fictício não capturável C9",{code,clientVersion:"unit",meta});
+ db.contatoWhatsApp.create.mockRejectedValueOnce(erro);
+ await expect(abrirRamoExistenteConversaTx(tx,e)).rejects.toBe(erro);
+ expect(db.contatoWhatsApp.create).toHaveBeenCalledOnce(); expect(m.abrir).not.toHaveBeenCalled(); expect(avisoC4.publicar).not.toHaveBeenCalled();
+});
+it("C9 objeto que imita metadata sem classe Prisma não é capturado", async () => {
+ semContatoC9(); const erro={code:"P2002",meta:{modelName:"ContatoWhatsApp",target:["telefoneE164"]}};
+ db.contatoWhatsApp.create.mockRejectedValueOnce(erro);
+ await expect(abrirRamoExistenteConversaTx(tx,e)).rejects.toBe(erro); expect(m.abrir).not.toHaveBeenCalled();
 });
