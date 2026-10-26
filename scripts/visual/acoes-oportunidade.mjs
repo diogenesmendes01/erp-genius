@@ -152,8 +152,14 @@ export function semanticaAcoes328(d) {
     const legados = links.filter(a => !bloco.contains(a));
     if (app && (legados.length > 1 || legados.some(a => { const slot = a.closest('section[aria-label="Cadastro do contato"]'); return !slot || slot.contains(bloco) || a.getAttribute('href') !== d.hrefFunilLegado || texto(a) !== 'Abrir oportunidade'; }))) return false;
     const topo = d.fase === 'topo';
-    if (![d.produto, d.valorTexto].every(v => !!um(header.querySelectorAll(app ? 'p' : 'div'), e => texto(e) === v && acessivel(e)))) return false;
-    if ((topo || !app) && (!(app ? visivel(header) : visivel(header, false)) || !visivel(select) || ![d.produto, d.valorTexto].every(v => [...header.querySelectorAll(app ? 'p' : 'div')].some(e => texto(e) === v && visivel(e))))) return false;
+    const noCabecalho = e => {
+        if (app) return true;
+        const ramo = n => { while (n && n.parentElement !== bloco) n = n.parentElement; return n; };
+        const filhos = [...bloco.childNodes], candidato = filhos.indexOf(ramo(e)), limite = filhos.indexOf(ramo(select));
+        return candidato >= 0 && limite >= 0 && candidato < limite;
+    };
+    if (![d.produto, d.valorTexto].every(v => !!um(header.querySelectorAll(app ? 'p' : 'div'), e => texto(e) === v && noCabecalho(e) && acessivel(e)))) return false;
+    if ((topo || !app) && (!(app ? visivel(header) : visivel(header, false)) || !visivel(select) || ![d.produto, d.valorTexto].every(v => [...header.querySelectorAll(app ? 'p' : 'div')].some(e => texto(e) === v && noCabecalho(e) && visivel(e))))) return false;
     if (app) {
         const grupo = bloco.querySelector('[role="group"][aria-label="Etapas da oportunidade"]'), botoes = [...(grupo?.querySelectorAll('button') ?? [])];
         if (!grupo || botoes.length !== 8 || Math.abs(parseFloat(window.getComputedStyle(grupo).columnGap) - 3) > .5 || !Number.isFinite(parseFloat(window.getComputedStyle(grupo).columnGap))) return false;
@@ -177,13 +183,13 @@ export function semanticaAcoes328(d) {
         const ns = [...bloco.querySelectorAll('button')].filter(b => texto(b) === nome);
         if (permitido ? ns.length !== 1 || ns[0].disabled || ns[0].getAttribute('aria-busy') === 'true' || (!topo && !visivel(ns[0])) : ns.length !== 0) return false;
     }
-    const card = app ? bloco.querySelector('section[aria-label="Aula experimental"]') : um(area.querySelectorAll('span'), e => texto(e) === 'Aula experimental')?.parentElement?.parentElement;
+    const card = app ? bloco.querySelector('section[aria-label="Aula experimental"]') : um(area.querySelectorAll('span'), e => texto(e) === 'Aula experimental' && visivel(e) && (e.parentElement?.querySelector('i')?.getAttribute('class') ?? '').split(/\s+/).includes('icon-calendar-check'))?.parentElement?.parentElement;
     if (!d.experimental) return !card;
     if (!card || !bloco.contains(card) || (!topo && !visivel(card)) || !(app ? card.querySelector('svg') : card.querySelector('i')) || !texto(card).includes(d.experimental.professor)) return false;
     if (app && !um(card.querySelectorAll('h4'), e => texto(e) === 'Aula experimental')) return false;
     const icon = card.querySelector(app ? 'svg' : 'i');
     if (app ? !(icon.getAttribute('class') ?? '').split(/\s+/).includes('tabler-icon-calendar-check') : !(icon.getAttribute('class') ?? '').includes('icon-calendar-check')) return false;
-    const badge = um(card.querySelectorAll('span'), e => texto(e) === d.experimental.status && (topo || visivel(e)));
+    const badge = um(card.querySelectorAll('span'), e => texto(e) === d.experimental.status && (topo || visivel(e)) && (app || !['transparent', 'rgba(0, 0, 0, 0)'].includes(window.getComputedStyle(e).backgroundColor)));
     if (!badge || (app && !(badge.getAttribute('class') ?? '').includes(d.experimental.status === 'Não compareceu' ? 'bg-red-50 text-red-700' : 'bg-brand-bg text-brand-700'))) return false;
     if (app) {
         const time = um(card.querySelectorAll('time'), e => e.getAttribute('datetime') === d.experimental.instante && e.getAttribute('title') === 'Horário em ' + d.experimental.fuso && texto(e) === d.experimental.quando && (topo || visivel(e)));
@@ -209,6 +215,7 @@ async function preencherPerda(pagina, descricao) {
     const modal = pagina.getByRole('dialog', { name: 'Marcar ' + (descricao.superficie === 'funil' ? descricao.titulo : descricao.produto ?? descricao.titulo) + ' como perdida', exact: true });
     await modal.getByRole('radio', { name: 'Outro', exact: true }).check();
     await modal.locator('textarea[name="observacao"]').fill(descricao.observacao);
+    await modal.getByRole('button', { name: 'Marcar como perdida', exact: true }).scrollIntoViewIfNeeded();
     await pagina.waitForFunction(semanticaAcoes328, descricao);
     return async () => { await modal.getByRole('button', { name: 'Voltar', exact: true }).click(); await pagina.waitForFunction(semanticaFechamento328); };
 }
