@@ -18,7 +18,7 @@ import { FichaContato, mensagemFalhaParcialCampos } from "./FichaContato";
 import { ListaContatos } from "./ListaContatos";
 import { MesclarContatos, escolhasDaMescla } from "./MesclarContatos";
 
-const detalhe: DetalheContato = {
+const detalhe: DetalheContato = { cadastroPessoa:null,informacoesCadastro:null,
   id: "p1", codigo: "P-000001", nome: "Ana Souza", email: "ana@exemplo.com", cidade: "Recife", cargo: null, linkedin: null,
   origemCanal: "INDICACAO", empresa: null, telefones: [{ telefone: "+5581999990000", optOut: false }], optOut: false, ehAluno: false,
   tags: [{ id: "t1", nome: "Quente", cor: "ALERTA" }],
@@ -191,3 +191,8 @@ describe("entradas autorizadas da conversa (#336)", () => {
     expect(renderFicha(detalhe, [], [], { conversa: null })).not.toContain("Abrir conversa");
   });
 });
+
+it("ficha global apresenta cadastro civil autorizado e idade0 sem alterar dadosAluno",()=>{const d={...detalhe,cadastroPessoa:{documento:"DOC GLOBAL",tipoDocumentoId:null,documentoPaisEmissor:"CR",nascimento:"2026-10-26"},informacoesCadastro:{idade:0,documento:null,catalogo:[]}};const h=renderFicha(d,["contatos.ver","contatos.editar"]);expect(h).toContain("DOC GLOBAL");expect(h).toContain("26/10/2026");expect(h).toContain("0 anos");expect(h).toContain('name="nascimento"');expect(h).not.toContain('name="idade"');});
+it("ficha global com blocoNULL não mostra campos/rótulos novos nem presença",()=>{const d={...detalhe,cadastroPessoa:null,informacoesCadastro:null};const h=renderFicha(d,["contatos.ver","contatos.editar"]);expect(h).not.toMatch(/Documento pessoal|Nascimento|Idade|name="documento"/);});
+
+it("454 C2 ficha global usa limite100 para documento LATAM",()=>{const d={...detalhe,cadastroPessoa:{documento:"DOC FICTICIO454",tipoDocumentoId:null,documentoPaisEmissor:"CR",nascimento:null},informacoesCadastro:{idade:null,documento:null,catalogo:[]}};const html=renderFicha(d,["contatos.ver","contatos.editar"]);const input=html.match(/<input\b[^>]*name="documento"[^>]*>/i)?.[0];expect(input).toBeDefined();expect(input).toMatch(/\bmaxlength="100"/i);});

@@ -1,7 +1,9 @@
+import {PessoaCadastroPatchSchema,type CadastroPessoa} from "./pessoa-cadastro-schema";
+import {prepararCadastroPessoaTx,temCadastroPessoa,erroSeguroCadastroPessoa,carregarCadastroPessoaAutorizado,type InformacoesCadastroPessoa} from "./pessoa-cadastro";
 import { EtapaLead, OrigemCanal, Papel, type CorTag, type Prisma, type Temperatura } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
+import { ErroRegra, ErroPermissao, apenasPortal, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { registrarEvento } from "@/server/_shared/evento";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
@@ -302,6 +304,8 @@ export async function listarContatos(
 // ---------------------------------------------------------------------------
 
 export type DetalheContato = {
+  cadastroPessoa:CadastroPessoa|null;
+  informacoesCadastro:InformacoesCadastroPessoa|null;
   id: string;
   codigo: string | null;
   nome: string;
@@ -351,7 +355,10 @@ export async function obterContato(id: string, usuario: UsuarioSessao): Promise<
         select: { id: true, nome: true, etapa: true, temperatura: true, vendedor: { select: { nome: true } } },
       })
     : [];
+  // A tx curta evita o memo RSC do singleton; o helper relê scope nessa conexão.
+  const cadastro=await prisma.$transaction(tx=>carregarCadastroPessoaAutorizado(tx,usuario.id,id),{isolationLevel:"ReadCommitted"});
   return {
+    cadastroPessoa:cadastro?.valores??null,informacoesCadastro:cadastro?.informacoes??null,
     id: p.id,
     codigo: p.codigo,
     nome: p.nome,
@@ -394,9 +401,13 @@ export const EditarPessoaSchema = z.object({
   linkedin: opcional(300, "O LinkedIn deve ter até 300 caracteres."),
   origemCanal: z.nativeEnum(OrigemCanal, { errorMap: () => ({ message: "Origem inválida." }) }).nullable().optional(),
   empresaId: z.string().min(1).nullable().optional(),
-});
+}).extend(PessoaCadastroPatchSchema.shape);
 
 export type EditarPessoaInput = {
+  documento?: string|null;
+  tipoDocumentoId?: string|null;
+  documentoPaisEmissor?: string|null;
+  nascimento?: string|null;
   nome?: string;
   email?: string | null;
   cidade?: string | null;
@@ -434,7 +445,17 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
   await tx.$queryRaw`SELECT id FROM "Pessoa" WHERE id = ${id} FOR UPDATE`;
   await antesDeGravar?.();
   exigirCapacidadeCrm(autor, "contatos.editar");
+  if(temCadastroPessoa(dados)){
+    // O SELECT de identidade FOR UPDATE acima já encerrou sua espera. Nenhum valor novo foi selecionado.
+    const fresco=await tx.usuario.findUnique({where:{id:autor.id},select:{id:true,nome:true,ativo:true,papeis:true,permissoes:true}});
+    if(!fresco?.ativo||apenasPortal(fresco))throw new ErroPermissao();
+    const crm=capacidadesCrm(fresco.papeis);
+    if(!crm.has("contatos.ver")||!crm.has("contatos.editar"))throw new ErroPermissao();
+    autor=fresco;
+  }
   const atual = await pessoaNoEscopo(tx, id, autor);
+  const cadastro=temCadastroPessoa(dados)?await prepararCadastroPessoaTx(tx,autor.id,atual,{documento:dados.documento,tipoDocumentoId:dados.tipoDocumentoId,documentoPaisEmissor:dados.documentoPaisEmissor,nascimento:dados.nascimento}):null;
+  if(cadastro)autor=await cadastro.revalidar();
   const mudancas: Partial<CamposPessoa> = {};
   for (const k of ["nome", "email", "cidade", "cargo", "linkedin", "origemCanal", "empresaId"] as const) {
     if (dados[k] !== undefined) (mudancas as Record<string, unknown>)[k] = dados[k];
@@ -451,7 +472,7 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
   const novo: CamposPessoa = { ...antesCampos, ...mudancas };
   const { antes, depois } = diffCampos(antesCampos, novo);
   const campos = Object.keys(depois) as (keyof CamposPessoa)[];
-  if (!campos.length) return false; // nada mudou: sem escrita e sem Evento
+  if (!campos.length&&!cadastro?.mudou) return false; // nada mudou: sem escrita e sem Evento
 
   if (atual.aluno && (campos.includes("nome") || campos.includes("email")) && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
     throw new ErroRegra("Nome e e-mail de aluno são alterados pela Secretaria.");
@@ -466,7 +487,8 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
     if (!empresa) throw new ErroRegra("Empresa não encontrada.");
   }
 
-  await tx.pessoa.update({ where: { id }, data: depois });
+  if(cadastro){await antesDeGravar?.();autor=await cadastro.revalidar();}
+  await tx.pessoa.update({ where: { id }, data: {...depois,...cadastro?.data} });
   const payload: Record<string, Prisma.InputJsonValue> = {};
   for (const c of campos) {
     // E-mail é dado de contato: o Evento guarda só se estava e passou a estar preenchido.
@@ -475,6 +497,7 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
         ? { de: antes.email ? "definido" : null, para: depois.email ? "definido" : null }
         : { de: (antes[c] as string | null | undefined) ?? null, para: (depois[c] as string | null | undefined) ?? null };
   }
+  if(cadastro)Object.assign(payload,cadastro.payload);
   await registrarEvento(tx, {
     tipo: "PessoaEditada",
     agregadoTipo: "Pessoa",
@@ -482,6 +505,7 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
     autorId: autor.id,
     payload,
   });
+  if(cadastro){await antesDeGravar?.();autor=await cadastro.revalidar();}
   return true;
 }
 
@@ -489,7 +513,7 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
 export async function editarPessoa(id: string, input: EditarPessoaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    await prisma.$transaction(tx => editarPessoaNaTransacao(tx, autor, id, input));
+    await prisma.$transaction(tx => editarPessoaNaTransacao(tx, autor, id, input)).catch(e=>{if(temCadastroPessoa(input))erroSeguroCadastroPessoa(e);throw e;});
   });
 }
 

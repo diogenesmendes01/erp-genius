@@ -37,14 +37,14 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     const c = await cenario(), cat = await seedCatalogoMinimo();
     await prisma.oportunidade.update({ where: { id: c.op.id }, data: { paisId: cat.pais.id } });
     const d = await carregarDetalhesPainel(c.dono, c.a.id);
-    expect(d).toEqual({ pessoa: { id: c.pessoa.id, nome: c.pessoa.nome, email: "principal@example.test", cidade: null, cargo: "Diretora", linkedin: null, origemCanal: null, telefone: c.contato.telefoneE164, empresa: null }, oportunidade: { id: c.op.id, titulo: "Curso fictício", produto: "Intensivo", valor: "650.00", moeda: "CRC", etapa: "PROPOSTA", b2b: false }, b2b: null, campos: [] });
+    expect(d).toEqual({ cadastroPessoa:{documento:null,tipoDocumentoId:null,documentoPaisEmissor:null,nascimento:null},informacoesCadastro:{idade:null,documento:null,catalogo:cat.pais.tiposDocumento.map(t=>({id:t.id,nome:t.nome,pais:{id:cat.pais.id,nome:cat.pais.nome,codigoISO:cat.pais.codigoISO}}))}, pessoa: { id: c.pessoa.id, nome: c.pessoa.nome, email: "principal@example.test", cidade: null, cargo: "Diretora", linkedin: null, origemCanal: null, telefone: c.contato.telefoneE164, empresa: null }, oportunidade: { id: c.op.id, titulo: "Curso fictício", produto: "Intensivo", valor: "650.00", moeda: "CRC", etapa: "PROPOSTA", b2b: false }, b2b: null, campos: [] });
     expect(await carregarCabecalhoPainel(c.dono, c.a.id)).toMatchObject({ pessoaId: c.pessoa.id, subtitulo: "Pessoa física · Intensivo", quadrado: false, semNome: false, capacidades: { veLead: true } });
     expect(await carregarPainel(c.dono, c.a.id)).toMatchObject({ pessoaId: c.pessoa.id, cabecalho: { pessoaId: c.pessoa.id } });
   });
   it("linha alheia autoriza conversa mas não lead nem fallback pelo contato; fora do escopo é null", async () => {
     const c = await cenario(), linha = await criarUsuario([Papel.VENDEDOR]), fora = await criarUsuario([Papel.VENDEDOR]);
     await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { donoId: linha.id } });
-    expect(await carregarDetalhesPainel(linha, c.a.id)).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
+    expect(await carregarDetalhesPainel(linha, c.a.id)).toEqual({ cadastroPessoa:null,informacoesCadastro:null,pessoa: null, oportunidade: null, b2b: null, campos: [] });
     expect(await carregarCabecalhoPainel(linha, c.a.id)).toMatchObject({ pessoaId: null, tagsDisponiveis: [], capacidades: { veLead: false } });
     expect(await pessoaDoAtendimento(linha, c.a.id)).toBeNull();
     expect(await carregarDetalhesPainel(fora, c.a.id)).toBeNull();
@@ -132,7 +132,7 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: c.numero.id, contatoId: contato.id } });
     for (const finalidade of ["PEDAGOGICO", "SECRETARIA", "FINANCEIRO"] as const) {
       const a = await prisma.atendimentoWhatsApp.create({ data: { conversaId: conversa.id, contextoChave: finalidade + "::323", finalidade, leadId: c.op.id, alunoId: aluno.id, matriculaId: matricula.id } });
-      expect(await carregarDetalhesPainel(admin, a.id)).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
+      expect(await carregarDetalhesPainel(admin, a.id)).toEqual({ cadastroPessoa:null,informacoesCadastro:null,pessoa: null, oportunidade: null, b2b: null, campos: [] });
       expect(await carregarCabecalhoPainel(admin, a.id)).toMatchObject({ pessoaId: null, subtitulo: null, quadrado: false, tagsDisponiveis: [], capacidades: { editarTags: false } });
     }
   });
@@ -208,7 +208,7 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     for (const finalidade of ["PEDAGOGICO", "SECRETARIA", "FINANCEIRO"] as const) {
       const setorial = await prisma.atendimentoWhatsApp.create({ data: { conversaId: conversaAluno.id, contextoChave: finalidade + "::409", finalidade, leadId: c.op.id, alunoId: aluno.id, matriculaId: matricula.id } });
       await convidar(setorial.id, c.dono, convidado);
-      expect(await carregarDetalhesPainel(convidado, setorial.id)).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
+      expect(await carregarDetalhesPainel(convidado, setorial.id)).toEqual({ cadastroPessoa:null,informacoesCadastro:null,pessoa: null, oportunidade: null, b2b: null, campos: [] });
       expect(await carregarCabecalhoPainel(convidado, setorial.id)).toMatchObject({ pessoaId: null, subtitulo: null, tagsDisponiveis: [] });
     }
   });

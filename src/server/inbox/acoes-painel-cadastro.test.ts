@@ -1,0 +1,18 @@
+import {beforeEach,expect,it,vi} from "vitest";
+import {Papel} from "@prisma/client";
+import type {UsuarioSessao} from "@/server/_shared/sessao";
+const m=vi.hoisted(()=>({sessao:vi.fn(),usuario:vi.fn(),pessoa:vi.fn(),identidade:vi.fn(),kernel:vi.fn(),aviso:vi.fn(),raw:vi.fn(),campos:vi.fn(),contexto:vi.fn(),transaction:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{$transaction:m.transaction}}));
+vi.mock("@/server/_shared/sessao",async original=>({...await original<typeof import("@/server/_shared/sessao")>(),exigirSessao:m.sessao}));
+vi.mock("@/server/crm/contatos",async original=>({...await original<typeof import("@/server/crm/contatos")>(),editarPessoaNaTransacao:m.kernel}));
+vi.mock("./painel-detalhes",()=>({pessoaDoAtendimento:m.identidade}));
+vi.mock("./aviso",()=>({avisarAtendimento:m.aviso}));
+vi.mock("@/server/crm/pessoas",()=>({escopoPessoas:vi.fn(async()=>({}))}));
+import {editarContatoNoInbox} from "./acoes-painel";
+const vendedor:UsuarioSessao={id:"u",nome:"Vendedor",papeis:[Papel.VENDEDOR]};
+const input={pessoaIdEsperada:"p",pessoa:{documento:"FICTICIO"}};
+beforeEach(()=>{vi.clearAllMocks();m.sessao.mockResolvedValue(vendedor);m.usuario.mockResolvedValue({...vendedor,ativo:true,permissoes:[]});m.identidade.mockResolvedValue({pessoaId:"p",leadId:"o"});m.pessoa.mockResolvedValue({id:"p"});m.campos.mockResolvedValue([]);m.contexto.mockResolvedValue({id:"a",finalidade:"COMERCIAL",leadId:"o",conversaId:"c",conversa:{contatoId:"ct",contato:{id:"ct",pessoaId:"p",leadId:"o"}}});m.raw.mockResolvedValue([{id:"a"}]);m.aviso.mockResolvedValue(undefined);m.kernel.mockImplementation(async(_tx,_u,_id,_dados,revalidar)=>{await revalidar();return true;});m.transaction.mockImplementation(async f=>f({$queryRaw:m.raw,atendimentoWhatsApp:{findUnique:m.contexto},usuario:{findUnique:m.usuario},pessoa:{findFirst:m.pessoa},campoPersonalizado:{findMany:m.campos}}));});
+it("cadastroInbox revogado para Portal durante aviso não retorna sucesso",async()=>{m.aviso.mockImplementation(async()=>{m.usuario.mockResolvedValue({...vendedor,ativo:true,papeis:[Papel.ALUNO],permissoes:[]});});expect(await editarContatoNoInbox("a",input)).toMatchObject({ok:false});});
+it("binding trocado durante aviso recusa a operação cadastral",async()=>{m.aviso.mockImplementation(async()=>{m.identidade.mockResolvedValue({pessoaId:"outra",leadId:"o"});});expect(await editarContatoNoInbox("a",input)).toMatchObject({ok:false});});
+it("escopoPessoa negado veta cadastro mesmo com lead visível",async()=>{m.pessoa.mockResolvedValue(null);expect(await editarContatoNoInbox("a",input)).toMatchObject({ok:false});expect(m.kernel).not.toHaveBeenCalled();});
+it("payload legado omitido mantém porta e comportamento atuais",async()=>{expect(await editarContatoNoInbox("a",{pessoaIdEsperada:"p",pessoa:{cidade:"Cidade"}})).toEqual({ok:true});expect(m.kernel).toHaveBeenCalledOnce();});

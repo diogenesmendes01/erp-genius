@@ -937,6 +937,7 @@ model TipoDocumento {
   nome      String // CPF, DNI, CURP, Cédula, Passaporte...
   validador String // nome do validador: cpf, curp, cedula_cr, passaporte...
   alunos    Aluno[] // alunos que escolheram este tipo de documento (doc 04)
+  pessoas   Pessoa[]
 }
 
 // ============================================================
@@ -9431,6 +9432,11 @@ model Pessoa {
   /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
   /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
   nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(nome, 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
+  documento            String?
+  tipoDocumentoId      String?
+  tipoDocumento        TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  documentoPaisEmissor String? // ISO3166 opcional; distinto do país do catálogo do tipo.
+  nascimento           DateTime? @db.Date
   email        String?
   cidade       String?
   cargo        String?
@@ -9452,6 +9458,7 @@ model Pessoa {
   tags             PessoaTag[]
   valoresCampo     ValorCampoPersonalizado[]
 
+  @@index([tipoDocumentoId])
   @@index([empresaId])
   @@index([mescladaEmId])
   @@index([nomeOrdenacao, id])
