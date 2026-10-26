@@ -7893,3 +7893,36 @@ A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva
 ## PR #455 — composição de ancestralidade com main, 26/10/2026
 
 A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 2cbef2903a52288d96f48afc0119fae79714b45b. O ancestral original db4de2985d886096088c7804242fe1a8abd63d54 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
+### PR #432 — composição documental com a dependência #427, 26/10/2026
+
+União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
+
+Permanecem pendentes o anexo visual328, a integração da dependência427, o retarget e as verificações do head final. Os registros históricos que chamam a release de privada não descrevem a visibilidade atual do repositório: a API informa repositório público e release de QA em rascunho. Nenhum upload327/328, merge ou fechamento328 foi realizado nesta preparação.
+
+### PR #435 — composição documental com a dependência #432, 26/10/2026
+
+Preservados integralmente o prefixo comum e os sufixos329 e432/427 do quadro. O head desta composição incorpora7fc073e5, com toda a árvore executável idêntica ao a82d76ff. A única diferença está em dois Markdown: quadro e registro da integração427, este literal à dependência. Sem nova execução de testes nesta preparação documental.
+
+Continuam pendentes o anexo visual Cliente voltou, as integrações427 e432, o retarget e a CI do head final. Os pareceres e testes anteriores mantêm suas fontes nominais; esta composição não os transforma em execução nova, aprovação formal GitHub ou aceite visual. Nenhum upload, merge ou fechamento329 nesta preparação.
+
+## PR #430 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência 464d542c03653fadfe82e1c29ab65a57217027ec usando seu ancestral original a82d76ff0b7659bff6ec3d395ac8a572f256bc96. A composição preserva a árvore executável integral do head 5764ddb6afb5e1eef0c3c826b73d0191900eeb58, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #452 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência f0dac539e0ae1497c5693755318d2a49f2d8bff5 usando seu ancestral original 479ca9f92a2e34993ee2cbd96ec829f551c1615f. A composição preserva a árvore executável integral do head e2fd0880aaa99f13500b8d7c9104ddd54909219b, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #453 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência 9a646570e93efc4e7d8349dbc3c27cce3f91581f usando seu ancestral original 0efb71cffd191149538ead4907dbea000af7a454. A composição preserva a árvore executável integral do head 3d08ab339fa742756d51cc3dd33a3071e1f6f1ab, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #454 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência e2de3b7e77e0906a52ae50ad025c06783642e39c usando seu ancestral original 2645e33b3882d30e55504bf2a61f5de76dcae99d. A composição preserva a árvore executável integral do head db4de2985d886096088c7804242fe1a8abd63d54, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #455 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência d17391f90e54a36a0e165bc4f373b70ee6217a93 usando seu ancestral original cf109b1abceb90be5e009b67b0e9a968348058c9. A composição preserva a árvore executável integral do head 2cbef2903a52288d96f48afc0119fae79714b45b, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
