@@ -7748,3 +7748,7 @@ Checkpoint10/10 41651/272572 EXIT0 (44,25s), seguido porregressão17/17 emNOVA s
 #376 R22 ROOT — global na fonte73d:1.067arquivos9.431casos35084/46d24d EXIT0. TSC67803/37bdba CLI2 encontrouapenasTS2345 na tabela deheaders da fixtureAPI. TabelaagoraexplicitamenteRecord<string,string>[], mesmos8cenários/asserções, produçãoinalterada;focal19/1994f3fe0+lint1e5ab120. TypeScriptcompleto/lintglobal/build/QAindependente/visual/CIpendentes; global9431continuaatribuídoa73d, semreatribuiçãoaoajustedetipo.
 
 R24 — issue #376: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
