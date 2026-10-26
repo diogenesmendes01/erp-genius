@@ -1,6 +1,5 @@
 "use server";
 
-import {dadosTarefaModal,criarTarefaInbox,editarTarefaInbox,type DadosModalTarefa,type CriarTarefaInboxInput,type EditarTarefaInboxInput} from "./tarefas-edicao";
 import { z } from "zod";
 import { executarTarefaInboxTx, type ReagendamentoInbox } from "./tarefas-transicoes";
 import { EtapaLead } from "@prisma/client";
@@ -144,13 +143,4 @@ export async function reagendarTarefaNoInbox(atendimentoId:string,tarefaId:strin
 }
 export async function cancelarTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number,motivo:string):Promise<Resultado>{
  return executarAcao(async()=>{await executarTarefaInboxTx(await exigirSessao(),atendimentoId,tarefaId,versao,{tipo:"cancelar",motivo});revalidatePath("/tarefas");revalidatePath("/inicio");});
-}
-export async function dadosModalTarefaNoInbox(atendimentoId:string,tarefaId?:string):Promise<Resultado<DadosModalTarefa>>{
- return executarAcao(async()=>dadosTarefaModal(await exigirSessao(),atendimentoId,tarefaId));
-}
-export async function criarTarefaNoInbox(atendimentoId:string,input:CriarTarefaInboxInput):Promise<Resultado<{id:string}>>{
- return executarAcao(async()=>{const r=await criarTarefaInbox(await exigirSessao(),atendimentoId,input);revalidatePath("/tarefas");revalidatePath("/inicio");return r;});
-}
-export async function editarTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number,input:EditarTarefaInboxInput):Promise<Resultado>{
- return executarAcao(async()=>{await editarTarefaInbox(await exigirSessao(),atendimentoId,tarefaId,versao,input);revalidatePath("/tarefas");revalidatePath("/inicio");});
 }
