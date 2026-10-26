@@ -7505,3 +7505,10 @@ O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir
 Selecionada a correção DEV2fc7aec3 sobre a candidata pública443fe23, sem trazer implementação362, schema, migrações501/502 ou ancestrais privados. O lock do atendimento passa de NO KEY UPDATE para SHARE; intenção continua FOR UPDATE e permissões/replay/CAS/eventos permanecem literais. Contraprova nativa mostrou40P01 antes e claim confirmado/recusa de domínio depois. DEV confirmou claim1, política10, cancelamento20, KEY SHARE1 e compatibilidade de notificações7+11 com código0; este último recorte pertence ao ambiente A502, não é QA pública pré502.
 
 Teste de rollback mede a baseline após o setup e mantém delta zero de avisos e Eventos. QA independente no candidato exato/T500 sem502, CI e integração ainda pendentes. A decisão de cancelamento GP sem tarefas.ver não foi aplicada. Nenhuma conclusão antecipada da333 ou362, upload ou merge. Evidência: docs/qa/inbox-333-cancelamento-share-r27.md.
+
+
+### #333 — QA independente da correção de concorrência, 26/10/2026
+
+Fonte pública8345c234 inspecionada e executada no worktree TESTER, com próprio client443 e banco descartávelT500 sem501/502. TSC8506f9 EXIT0; UNITglobal595c71 EXIT0(997arquivos/8633testes); lint9711a4 EXIT0(0erros/57avisos); quatro nativos completos25/25(c1b220,5c3195,ed6c0e,52121c),semfiltros/skips/retry. Claim confirmado e cancelamento recusado por domínio; NOTIFYpré5021→1/delta0. Primeira TSC incompatível e22nativos comclient500 são resultados anteriores separados, não reatribuídos. Snapshot1445restaurado5d606e; client/artefatos originais restituídos88b842 e fonte4eaa87d97d,semDDL oudependências novas.
+
+O filho documental só registra esses resultados, sem alterar a árvore executável testada8345. Registro: docs/qa/inbox-443-cancelamento-claim-r27-root.md. Visual C1 e CI contra main/dependências continuam pendentes; não sair de rascunho ou concluir333 antecipadamente. Permissões de cancelamento333 permanecem atuais.
