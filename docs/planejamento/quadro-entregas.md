@@ -8008,3 +8008,7 @@ DEV confirmou154testes completos em cinco arquivos, lint e TypeScript com códig
 O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
 
 DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
+
+### #372 — C9, R30
+
+Catch restrito de colisão real de telefone selecionado do checkpoint DEV a41792ca. RED2+1 e GREEN3, UNIT50/lint/TSC0; banco descartável restaurado506. QA pública exata, medição C10 ampla, visual e integração continuam pendentes. Não concluirissue nesta publicação.

@@ -1,5 +1,5 @@
 import { avisarNovaConversaTx } from "./nova-conversa-aviso";
-import { Papel, type Prisma } from "@prisma/client";
+import { Papel, Prisma } from "@prisma/client";
 import { apenasPortal, ErroAutenticacao, ErroPermissao, ErroRegra, exigirPapel, type UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
@@ -131,7 +131,12 @@ export async function abrirRamoExistenteConversaTx(tx: Prisma.TransactionClient,
    if (!contato || !contatoCompativel(contato, e, lead) || contato.pessoaId !== lead.pessoaId || contato.leadId !== lead.id) throw mudou();
   }
  } else {
-  contato = await tx.contatoWhatsApp.create({ data: { telefoneE164: e.telefoneE164, pessoaId: lead.pessoaId, leadId: lead.id } });
+  try {
+   contato = await tx.contatoWhatsApp.create({ data: { telefoneE164: e.telefoneE164, pessoaId: lead.pessoaId, leadId: lead.id } });
+  } catch (erro) {
+   if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002" && erro.meta?.modelName === "ContatoWhatsApp" && Array.isArray(erro.meta.target) && erro.meta.target.length === 1 && erro.meta.target[0] === "telefoneE164") throw mudou();
+   throw erro;
+  }
  }
  const contatoConfirmado = contato;
  if (!mesmaIdentidade(lead, (await resolverLead(tx, e)).lead)) throw mudou();
