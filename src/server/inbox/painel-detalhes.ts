@@ -10,9 +10,13 @@ import { escopoAtendimentos, type Db } from "@/server/whatsapp/escopo";
 import { podeVerLeadNaThread } from "@/server/whatsapp/consultas-inbox";
 import { comContatoIndividual } from "@/server/whatsapp/grupos";
 import { nomeEFonteDoAtendimento } from "@/server/whatsapp/nome-contato";
+import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { CHAVE_LINHA } from "@/server/whatsapp/linha-comercial";
 import { capacidadesPainel, type CapacidadesPainel } from "./permissoes";
 
-export type CabecalhoPainel = { pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel };
+export type ClienteVoltouPainel = { oportunidadeId: string; titulo: string; situacao: "ganha" | "perdida"; contatoId: string; podeVincular: boolean };
+export type CabecalhoPainel = { clienteVoltou: ClienteVoltouPainel | null; pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel };
 export type CampoPainel = CampoDaFicha & { ia: boolean };
 export type PessoaPainel = { id: string; nome: string; email: string | null; cidade: string | null; cargo: string | null; linkedin: string | null; origemCanal: OrigemCanal | null; telefone: string | null; empresa: { id: string; nome: string; documento: string | null; segmentoMercado: string | null; porte: string | null; site: string | null } | null };
 export type ResumoOportunidadePainel = { id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null; etapa: EtapaLead; b2b: boolean };
@@ -43,10 +47,10 @@ async function contextoPainel(u: UsuarioSessao, atendimentoId: string, db: Db) {
   const achado = await db.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { db })] },
     select: {
-      id: true, finalidade: true, leadId: true,
+      id: true, finalidade: true, leadId: true, encerradoEm: true,
       aluno: { select: { primeiroNome: true, sobrenome: true } },
       lead: { select: { nome: true } },
-      conversa: { select: { contato: { select: { pessoaId: true, nomeExibicao: true, nomePerfil: true, telefoneE164: true, responsavel: { select: { nome: true } } } } } },
+      conversa: { select: { id: true, grupoId: true, numero: { select: { finalidade: true, ativo: true } }, contato: { select: { id: true, leadId: true, pessoaId: true, nomeExibicao: true, nomePerfil: true, telefoneE164: true, responsavel: { select: { nome: true } } } } } },
     },
   });
   if (!achado) return null;
@@ -74,6 +78,37 @@ export async function pessoaDoAtendimento(u: UsuarioSessao, atendimentoId: strin
   return c?.pessoa ? { pessoaId: c.pessoa.id, leadId: c.op?.id ?? null } : null;
 }
 
+/** Leitura de retorno escolhe a oportunidade antes de avaliar telefone; nenhum fallback por telefone. */
+async function retornoDoCliente(u: UsuarioSessao, c: NonNullable<Awaited<ReturnType<typeof contextoPainel>>>, db: Db): Promise<ClienteVoltouPainel | null> {
+  const { a, pessoa } = c;
+  if (a.finalidade !== "COMERCIAL" || a.leadId || !pessoa) return null;
+  const op = await db.oportunidade.findFirst({
+    where: { AND: [{ pessoaId: pessoa.id, etapa: { in: ["MATRICULADO", "PERDIDO"] } }, await escopoComercialAtual(u, db)] },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+    select: { id: true, nome: true, etapa: true, telefoneE164: true },
+  });
+  if (!op) return null;
+  const contato = a.conversa.contato;
+  let podeVincular = false;
+  if (u.papeis.some(p => p === "ADMINISTRADOR" || p === "VENDEDOR" || p === "GERENTE_COMERCIAL") &&
+      !a.encerradoEm && !a.conversa.grupoId && a.conversa.numero.finalidade === "VENDAS" && a.conversa.numero.ativo &&
+      contato.telefoneE164 === op.telefoneE164 && (!contato.leadId || contato.leadId === op.id)) {
+    const alcance = await atendimentoVisivel(u, a.id, true, db);
+    if (alcance?.contatoId === contato.id && alcance.finalidade === "COMERCIAL" &&
+        alcance.contato.pessoaId === pessoa.id && alcance.contato.telefoneE164 === op.telefoneE164 &&
+        (!alcance.contato.leadId || alcance.contato.leadId === op.id)) {
+      // Mesma preferência de garantirAtendimento: não oferecer vínculo que selecionaria outra identidade.
+      const abertos = await db.atendimentoWhatsApp.findMany({
+        where: { conversaId: a.conversa.id, finalidade: "COMERCIAL", encerradoEm: null },
+        orderBy: [{ ultimaMensagemEm: { sort: "desc", nulls: "last" } }, { criadoEm: "desc" }],
+        select: { id: true, leadId: true, contextoChave: true },
+      });
+      const candidato = abertos.find(outro => outro.leadId === op.id) ?? abertos.find(outro => outro.contextoChave.startsWith(CHAVE_LINHA)) ?? abertos[0];
+      podeVincular = candidato?.id === a.id && (!candidato.leadId || candidato.leadId === op.id);
+    }
+  }
+  return { oportunidadeId: op.id, titulo: op.nome, situacao: op.etapa === "MATRICULADO" ? "ganha" : "perdida", contatoId: contato.id, podeVincular };
+}
 export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: string): Promise<CabecalhoPainel | null> {
   const c = await contextoPainel(u, atendimentoId, prisma);
   if (!c) return null;
@@ -81,6 +116,7 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   const capacidades = capacidadesPainel(u, { finalidade: a.finalidade, veLead: !!op });
   const { fonte } = nomeEFonteDoAtendimento(a);
   return {
+    clienteVoltou: await retornoDoCliente(u, c, prisma),
     pessoaId: pessoa?.id ?? null,
     tagsDisponiveis: pessoa && capacidades.editarTags ? (await tagsAtivas()).map(({ id, nome }) => ({ id, nome })) : [],
     subtitulo: a.finalidade === "COMERCIAL" ? subtituloContato({ b2b: op?.b2b ?? false, produto: op ? op.planoPrevisto ?? op.nome : null, cargo: pessoa?.cargo ?? null, empresa: op?.empresa?.nome ?? null, interlocutor: interlocutor ? { nome: interlocutor.pessoa.nome, papel: interlocutor.papel } : null }) : null,

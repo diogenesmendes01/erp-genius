@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EtapaLead } from "@prisma/client";
@@ -39,12 +39,13 @@ type Props = {
   preferenciaFusoExibicao?: string | null;
   /** Estado vazio já resolvido no servidor (carteira vazia × filtro sem resultado); null = há oportunidades. */
   vazio: ReactNode;
+  preenchidoNova?: { pessoaId: string; nome: string } | null;
 };
 
 const CAMPO = "rounded-md border border-gray-300 bg-surface px-2 py-1.5 text-sm max-sm:min-h-11";
 
 export function FunilCliente({
-  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio,
+  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio, preenchidoNova = null,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -55,6 +56,22 @@ export function FunilCliente({
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [etapaLote, setEtapaLote] = useState<EtapaLead | "">("");
 
+  const chaveNova = JSON.stringify([preenchidoNova?.pessoaId, preenchidoNova?.nome]);
+  const [sessaoNova, setSessaoNova] = useState(() => ({ chave: chaveNova, token: {}, fechada: false }));
+  let sessao = sessaoNova;
+  if (sessao.chave !== chaveNova) {
+    sessao = { chave: chaveNova, token: {}, fechada: false };
+    setSessaoNova(sessao);
+  }
+  const tokenAtual = useRef<object | null>(sessao.token);
+  useEffect(() => { tokenAtual.current = sessao.token; return () => { tokenAtual.current = null; }; }, [sessao.token]);
+  const tokenRender = sessao.token;
+  const novaDaPessoa = !!preenchidoNova && !sessao.fechada && capacidades.includes("funil.mover");
+  const fecharNovaPessoa = () => {
+    if (tokenAtual.current !== tokenRender) return;
+    setSessaoNova(s => ({ ...s, fechada: true }));
+    router.replace(comParametros(q => q.delete("nova")), { scroll: false });
+  };
   const podeMover = capacidades.includes("funil.mover");
   const nomeDe = (id: string) => colunas.flatMap((c) => c.cartoes).find((c) => c.id === id)?.nome ?? "";
 
@@ -181,7 +198,7 @@ export function FunilCliente({
         <QuadroFunil colunas={colunas} podeMover={podeMover} aoAbrir={abrir} aoPedirAcao={pedirAcao} fuso={fuso} />
       ))}
 
-      {aberta && (
+      {aberta && !novaDaPessoa && !novo && !perda && (
         <PainelOportunidade
           key={aberta.oportunidade.id}
           oportunidade={aberta.oportunidade}
@@ -195,8 +212,9 @@ export function FunilCliente({
           preferenciaFusoExibicao={preferenciaFusoExibicao}
         />
       )}
-      {novo && <NovaOportunidade podeAtribuir={podeAtribuir} vendedores={vendedores} paises={paises} aoFechar={() => setNovo(false)} />}
-      {perda && <ModalPerda oportunidadeId={perda.id} nome={perda.nome} aoFechar={() => setPerda(null)} />}
+      {novaDaPessoa && <NovaOportunidade key={chaveNova} preenchido={preenchidoNova!} podeAtribuir={podeAtribuir} vendedores={vendedores} paises={paises} aoFechar={fecharNovaPessoa} />}
+      {novo && !novaDaPessoa && <NovaOportunidade podeAtribuir={podeAtribuir} vendedores={vendedores} paises={paises} aoFechar={() => setNovo(false)} />}
+      {perda && !novaDaPessoa && !novo && <ModalPerda oportunidadeId={perda.id} nome={perda.nome} aoFechar={() => setPerda(null)} />}
     </div>
   );
 }

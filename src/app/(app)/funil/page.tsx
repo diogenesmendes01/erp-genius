@@ -10,6 +10,7 @@ import { listarPaisesOperacionais } from "@/server/paises/consultas";
 import { listarFiltros } from "@/server/crm/filtros-salvos";
 import { carregarFunil, lerFiltrosFunil } from "@/server/crm/funil";
 import { historicoOportunidade, obterOportunidade } from "@/server/crm/historico";
+import { escopoPessoas } from "@/server/crm/pessoas";
 import { capacidadesCrm } from "@/server/crm/permissoes";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { FunilCliente } from "./FunilCliente";
@@ -25,6 +26,8 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
   const modo = primeiro(params.modo) === "lista" ? "lista" : "quadro";
   const idAberto = primeiro(params.o).trim();
   const capacidades = [...capacidadesCrm(usuario.papeis)];
+  const pessoaNovaId = primeiro(params.nova).trim();
+  const preenchidoNova = pessoaNovaId && capacidades.includes("funil.mover") ? await prisma.pessoa.findFirst({ where: { AND: [{ id: pessoaNovaId, responsavel: null }, await escopoPessoas(usuario)] }, select: { id: true, nome: true } }) : null;
   const podeAtribuir = capacidades.includes("funil.atribuir");
 
   const [colunas, salvos, vendedores, paises, config, oportunidade, preferencia] = await Promise.all([
@@ -69,6 +72,7 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
         </div>
       )}
       <FunilCliente
+        preenchidoNova={preenchidoNova ? { pessoaId: preenchidoNova.id, nome: preenchidoNova.nome } : null}
         colunas={colunas}
         modo={modo}
         filtros={filtros}

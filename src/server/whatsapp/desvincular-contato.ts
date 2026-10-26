@@ -40,8 +40,27 @@ export async function desvincularContatoWhatsApp(input: DesvincularContatoInput)
     const campo = CAMPO[alvo.tipo];
 
     await prisma.$transaction(async (tx) => {
+      // Ramo lead compartilha a ordem com vínculo/criação: Selected → Contato.
+      // Os demais vínculos mantêm seu contrato e não atualizam o atendimento comercial.
+      const revalidarLead = async () => {
+        if (alvo.tipo !== "lead") return;
+        const fresco = await tx.usuario.findUnique({ where: { id: autor.id }, select: { nome: true, papeis: true, permissoes: true, ativo: true } });
+        if (!fresco?.ativo) throw new ErroRegra("Sua sessão não está mais ativa.");
+        const usuario = { id: autor.id, nome: fresco.nome, papeis: fresco.papeis, permissoes: fresco.permissoes };
+        const atual = await conversaVisivel(usuario, atendimentoId, false, tx);
+        if (!atual || atual.contatoId !== alcance.contatoId || atual.finalidade !== "COMERCIAL" ||
+            !TIPOS_DESVINCULAVEIS[atual.finalidade].includes(alvo.tipo) ||
+            !podeExecutar(usuario, "desvincular", { setor: atual.finalidade, responsavelId: atual.responsavelId })) {
+          throw new ErroRegra("Atendimento fora do seu escopo para desvincular.");
+        }
+      };
+      if (alvo.tipo === "lead") {
+        await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR UPDATE`;
+        await revalidarLead();
+      }
       // Trava a linha do contato: dois desvínculos (ou um vínculo) concorrentes não se cruzam.
       await tx.$queryRaw`SELECT id FROM "ContatoWhatsApp" WHERE id = ${alcance.contatoId} FOR UPDATE`;
+      await revalidarLead();
       const contato = await tx.contatoWhatsApp.findUniqueOrThrow({
         where: { id: alcance.contatoId }, select: { alunoId: true, responsavelId: true, leadId: true },
       });

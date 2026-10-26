@@ -970,7 +970,7 @@ it("composição324: slots recebem somente pessoa/capacidades autorizadas e CAS 
     cabecalho: { pessoaId: "p324", tagsDisponiveis: [{ id: "t325", nome: "Nova" }], semNome: true, capacidades: { editarTags: false, criarTag: false } },
     acoes: { nomeSalvo: "  ", podeEditarNome: true } }));
   tela(); await esvaziar(); const t = tela(), painel = elementos(t).find(n => n.type === PainelContato)!;
-  const tag = painel.props.slotTags as ReactElement, aviso = painel.props.slotAviso as ReactElement;
+  const tag = painel.props.slotTags as ReactElement, aviso = elementos(painel.props.slotAviso as ReactNode).find(n => n.type === ContatoSemNome)!;
   expect(tag.type).toBe(TagsContato); expect(tag.props).toMatchObject({ atendimentoId: "a1", tags, podeEditar: false, podeCriar: false });
   expect(aviso.type).toBe(ContatoSemNome); expect(aviso.props).toMatchObject({ atendimentoId: "a1", nomeAnterior: "  ", podeEditar: true });
   lista(t).aoSelecionar("a2"); const novo = elementos(tela()).find(n => n.type === PainelContato)!;
@@ -979,7 +979,7 @@ it("composição324: slots recebem somente pessoa/capacidades autorizadas e CAS 
 it("composição324: sem pessoa não monta editor de tags e sem capacidade não permite preencher nome", async () => {
   respostaPainel = () => new Response(JSON.stringify({ setor: "COMERCIAL", tags: [], cabecalho: { pessoaId: null, tagsDisponiveis: [], semNome: true, capacidades: { editarTags: true, criarTag: true } }, acoes: null }));
   tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!;
-  expect(painel.props.slotTags).toBeUndefined(); expect((painel.props.slotAviso as ReactElement).props).toMatchObject({ podeEditar: false, nomeAnterior: null });
+  expect(painel.props.slotTags).toBeUndefined(); expect(elementos(painel.props.slotAviso as ReactNode).find(n => n.type === ContatoSemNome)!.props).toMatchObject({ podeEditar: false, nomeAnterior: null });
 });
 
 it("composição324: 404 preserva leitura do snapshot no mesmoID e retira escrita das tags", async () => {
@@ -1093,4 +1093,14 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
  vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.endsWith('/painel') ? { setor: 'COMERCIAL', podeEnviar: false, tags: [], acoes: null, cabecalho } : url.endsWith('/oportunidades') ? { atual: null, outras: [], pessoaId: null } : { pessoa: null, oportunidade: null, b2b: null, campos: [] }))));
  tela(); await esvaziar(); const painel = elementos(tela()).find(n => n.type === PainelContato)!; (painel.props.aoTrocarAba as (id: string) => void)('oportunidades'); tela(); await esvaziar();
  const aba = elementos(tela()).find(n => n.type === AbaOportunidades)!; expect(aba).toBeDefined(); expect(aba.props.capacidades).toEqual(caso === 'presente' ? capacidades : Object.fromEntries(Object.keys(capacidades).map(k => [k, false])));
+});
+
+// #350: uma fonte de painel, sem prop antiga enquanto a seleção nova carrega.
+it("sugestões da thread pertencem só ao painel atual, inclusive podeDecidir=false",async()=>{
+ const a={podeDecidir:false,cartoes:[{id:"cartao-a"}]};respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:a}));
+ tela();await esvaziar();expect(cabecalho(tela()).aria).toEqual(a);
+ let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise(r=>{resolver=r;});
+ lista(tela()).aoSelecionar("a2");expect(cabecalho(tela()).aria).toBeUndefined();
+ resolver(new Response(JSON.stringify({podeEnviar:false,aria:{podeDecidir:true,cartoes:[{id:"cartao-b"}]}})));await esvaziar();
+ expect(cabecalho(tela()).aria?.cartoes.map(s=>s.id)).toEqual(["cartao-b"]);
 });
