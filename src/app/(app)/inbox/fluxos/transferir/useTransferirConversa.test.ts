@@ -20,3 +20,15 @@ it("desmontar durante a action descarta ACK; executor não reconcilia uma conver
 it("alvo fora da capacidade não usa a possibilidade geral de abrir Transferir",async()=>{await montar();await act(async()=>controle.abrir());await act(async()=>controle.confirmar({alvo:{tipo:"aria"},contexto:""}));await act(async()=>controle.confirmar({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"Contexto suficiente"}));expect(executar).not.toHaveBeenCalled();expect(concluir).not.toHaveBeenCalled();});
 it("fechar invalida handler retido; nova abertura não reutiliza token antigo",async()=>{await montar();await act(async()=>controle.abrir());const antigo=controle.confirmar;await act(async()=>controle.fechar());await act(async()=>controle.abrir());await act(async()=>antigo(entrada));expect(executar).not.toHaveBeenCalled();await act(async()=>controle.confirmar(entrada));expect(executar).toHaveBeenCalledOnce();});
 it("uma entrada diferente não reutiliza a chave de resultado incerto de outro alvo",async()=>{executar.mockResolvedValue({ok:false,erro:"Tente novamente"});await montar();await act(async()=>controle.abrir());await act(async()=>controle.confirmar(entrada));await act(async()=>controle.confirmar({...entrada,alvo:{tipo:"pessoa",usuarioId:"c"}}));expect(executar.mock.calls[0][0].chaveIdempotencia===executar.mock.calls[1][0].chaveIdempotencia).toBe(false);});
+for(const [alvo,texto] of [
+ [{tipo:"pessoa",usuarioId:"b"},"Atendimento atribuído."],
+ [{tipo:"setor",setor:"SECRETARIA",destinoChave:null},"Atendimento transferido para Secretaria."],
+ [{tipo:"fila"},"Devolvido para a fila."],
+ [{tipo:"aria"},"Atendimento devolvido para a Aria."],
+] as const) it(`447 C1 ACK atual anuncia ${alvo.tipo}`,async()=>{
+ function Todos(){const c=useTransferirConversa({atendimentoId:"a",identidade:"u",opcoes:{...opcoes,setores:["SECRETARIA"],filaDoSetor:"COMERCIAL",aria:true},executar,aoConcluir:concluir});useLayoutEffect(()=>{controle=c;});return null;}
+ await act(async()=>root.render(createElement(Todos)));await act(async()=>controle.abrir());await act(async()=>controle.confirmar({alvo,contexto:""}));expect(concluir).toHaveBeenCalledExactlyOnceWith(texto);
+});
+
+it("447 C1 transporte incerto não confirma nem anuncia sucesso",async()=>{executar.mockRejectedValue(new Error("rede"));await montar();await act(async()=>controle.abrir());await act(async()=>controle.confirmar(entrada));expect(concluir).not.toHaveBeenCalled();expect(controle.aberto).toBe(true);expect(controle.erro).toBeTruthy();});
+it("447 C1 ACK após desmontagem não anuncia sucesso",async()=>{let resolver!:(r:{ok:true})=>void;executar.mockReturnValue(new Promise(r=>resolver=r));await montar();await act(async()=>controle.abrir());let pendente!:Promise<void>;await act(async()=>{pendente=controle.confirmar(entrada);});await act(async()=>root.render(null));await act(async()=>{resolver({ok:true});await pendente;});expect(concluir).not.toHaveBeenCalled();});
