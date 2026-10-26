@@ -1,0 +1,11 @@
+# #327 — anexo de aceite e liberação da fila, 26/10/2026
+
+O usuário autorizou especificamente o ZIP `inbox-327-evidencias-selecionadas-v1.zip` na release de QA em rascunho, ciente de que o repositório está público. O upload terminou0 (`387fe0`) e criou o asset678657729, com1.935.721 bytes. O download autenticado de conferência terminou0 (`0a21aa`), bytehash SHA256 `2e06d8551647a73f4e8760c31c09b5767cc5de15e4d6b5a7a739c2f33fd53994`, igual ao original autorizado e ao digest do GitHub. Nenhum outro payload foi anexado nesta operação.
+
+[ZIP de evidências na release de QA em rascunho](https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-327-evidencias-selecionadas-v1.zip). A release421321214 continua DRAFT; o acesso ao arquivo depende de permissão para ver o rascunho, não é um download público anônimo. O repositório não teve sua visibilidade alterada.
+
+O TESTER conferiu os20 itens:18 PNGs, README e manifesto, com os18 tamanhos e hashes físicos correspondentes. São seis capturas do aplicativo Admin, seis referências do protótipo e seis do leitor. Preservadas as fontes históricas e as qualificações individuais: A7/A9 agregados negativos, A10 sem PNG e demais limites do corpus. Não são novas capturas da árvore atual, nem prova visual reatribuída à execução do código deste registro.
+
+A revisão R2 textual APPROVE5640944931 não deixou blockers; C4 de outras oportunidades foi aceito como diferido, e a checagem LF/CRLF por arquivo foi justificada no comentário6395651348. O complemento independente6397634040 confirmou os objetos compostos5d78. O merge9708fffb preservou toda a árvore5d78, e9bd31f13 só acrescentou dois Markdown. A integração completa40168347724 pertence à fonte5d78:363 arquivos e3.350 casos aprovados, com três arquivos/quatro opt-ins ignorados. A CI rápida40327192895 aprovou cinco jobs no9bd31f13, incluindo testes UTC/São Paulo, TypeScript, lint e build.
+
+Este filho documental não modifica a árvore executável9bd31f13. O TESTER deu parecer favorável ao READY/MERGE dessa fonte após a atualização do corpo da PR e de C2 com o anexo. A nova CI do head documental será aguardada antes do merge. A autorização de merge já foi fornecida pelo usuário; não houve merge ou fechamento antecipado por este registro. Sem envio real, publicação da release ou deploy.
