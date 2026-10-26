@@ -1141,6 +1141,12 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/abas/AbaOportunidades.tsx": ["<Botao> Assumir conversa → fantasma/md", "<Botao> Marcar como perdido → fantasma/md"],
   "inbox/abas/BarraEtapas.tsx": ["<Botao> \"Etapa \" + ETAPA_LABEL[s.etapa] → fantasma/md"],
   "inbox/abas/GavetaContato.tsx": ["<Botao> Cancelar → fantasma/md", "<Botao> Salvar → primario/md", "<Botao> Tentar de novo → secundario/sm"],
+  "inbox/abas/TarefasOportunidade.tsx": [
+    "<Botao> + Nova tarefa → fantasma/sm",
+    "<Botao> Reagendar para amanhã 09:00 → fantasma/sm",
+    '<Botao> "Editar "+t.titulo → fantasma/sm',
+    '<Botao> "Cancelar tarefa "+t.titulo → perigo/sm',
+  ],
   "inbox/abas/ClienteVoltou.tsx": ["<Botao> Vincular a → secundario/md"],
   "inbox/abas/OutrasOportunidades.tsx": ["<a> Nova oportunidade → fantasma/md"],
   "inbox/abas/ContatoSemNome.tsx": ["<Botao> Salvar → primario/sm"],

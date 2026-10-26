@@ -1,10 +1,11 @@
+import { concluirTarefaTx, reabrirTarefaTx, reagendarTarefaTx, cancelarTarefaTx } from "./tarefas-transicoes";
 import { revalidatePath } from "next/cache";
 import { Papel, type FinalidadeAtendimentoWhatsApp, type Prisma, type PrioridadeTarefa, type TipoTarefa } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
-import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
@@ -64,12 +65,6 @@ const CriarTarefaSchema = CamposSchema.extend({
   atendimentoId: z.string().min(1).optional(),
 });
 
-const CANAL_POR_TIPO: Partial<Record<TipoTarefa, string>> = {
-  WHATSAPP: "WHATSAPP",
-  LIGACAO: "LIGACAO",
-  EMAIL: "EMAIL",
-  REUNIAO: "PRESENCIAL",
-};
 
 /**
  * Escopo de leitura das tarefas: as minhas, mais a fila (sem responsável) dos meus setores.
@@ -290,21 +285,7 @@ export async function concluirTarefa(id: string, versao: number, resultado?: str
     const texto = z.string().trim().max(2000, "O resultado deve ter até 2000 caracteres.").optional().parse(resultado) || null;
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
-      if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser concluídas.");
-      await gravar(tx, t, versao, "ABERTA", { status: "CONCLUIDA", concluidaEm: new Date(), concluidaPorId: autor.id, resultado: texto });
-      await registrarEvento(tx, { tipo: "TarefaConcluida", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id, payload: { resultado: texto } });
-      await espelharNoLead(tx, t, "TarefaConcluida", autor.id, { tarefaId: id, titulo: t.titulo, resultado: texto });
-      const canal = CANAL_POR_TIPO[t.tipo];
-      if (t.leadId && texto && canal) {
-        // Contato real com o cliente: entra no histórico da oportunidade como interação.
-        await registrarEvento(tx, {
-          tipo: "InteracaoRegistrada",
-          agregadoTipo: "Lead",
-          agregadoId: t.leadId,
-          autorId: autor.id,
-          payload: { canal, nota: texto, resultado: texto, tarefaId: id },
-        });
-      }
+      await concluirTarefaTx({ tx, autor, tarefa: t, versao }, texto);
     });
     revalidar();
   });
@@ -316,9 +297,7 @@ export async function reabrirTarefa(id: string, versao: number): Promise<Resulta
     exigirCapacidadeCrm(autor, "tarefas.ver");
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
-      if (t.status !== "CONCLUIDA") throw new ErroRegra("Só tarefas concluídas podem ser reabertas.");
-      await gravar(tx, t, versao, "CONCLUIDA", { status: "ABERTA", concluidaEm: null, concluidaPorId: null, resultado: null });
-      await registrarEvento(tx, { tipo: "TarefaReaberta", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id, payload: { resultadoAnterior: t.resultado } });
+      await reabrirTarefaTx({ tx, autor, tarefa: t, versao });
     });
     revalidar();
   });
@@ -334,20 +313,7 @@ export async function reagendarTarefa(id: string, versao: number, q: { dataCivil
       if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser reagendadas.");
       const antecedencia = dados.dataCivil && dados.hora ? t.lembreteAntecedenciaMin : null;
       const novo = agendamento(dados.dataCivil, dados.hora, t.fusoOrigem, antecedencia);
-      await gravar(tx, t, versao, "ABERTA", {
-        dataCivil: novo.dataCivil,
-        inicioEm: novo.inicioEm,
-        lembrarEm: novo.lembrarEm,
-        lembreteAntecedenciaMin: antecedencia,
-        lembreteDisparadoEm: null,
-      });
-      await registrarEvento(tx, {
-        tipo: "TarefaReagendada",
-        agregadoTipo: "Tarefa",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { de: { dataCivil: t.dataCivil, inicioEm: t.inicioEm?.toISOString() ?? null }, para: { dataCivil: novo.dataCivil, inicioEm: novo.inicioEm?.toISOString() ?? null } },
-      });
+      await reagendarTarefaTx({ tx, autor, tarefa: t, versao }, { ...novo, lembreteAntecedenciaMin: antecedencia });
     });
     revalidar();
   });
@@ -364,13 +330,7 @@ export async function cancelarTarefa(id: string, versao: number, motivo: string)
       // cancelamento já mudou. O escopo continua conferido primeiro.
       await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id = ${id} FOR UPDATE`;
       const t = await carregarVisivel(tx, autor, id);
-      if (t.status === "CANCELADA" && t.motivoCancelamento === m) {
-        const p = await ultimoEventoDoAutor(tx, { tipo: "TarefaCancelada", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id });
-        if (p?.motivo === m) return;
-      }
-      if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser canceladas.");
-      await gravar(tx, t, versao, "ABERTA", { status: "CANCELADA", canceladaEm: new Date(), motivoCancelamento: m, lembrarEm: null });
-      await registrarEvento(tx, { tipo: "TarefaCancelada", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id, payload: { motivo: m } });
+      await cancelarTarefaTx({ tx, autor, tarefa: t, versao }, m);
     });
     revalidar();
   });
