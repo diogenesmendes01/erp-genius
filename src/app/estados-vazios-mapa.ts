@@ -129,6 +129,7 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
 ];
 
 export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
+  "src/app/(app)/inbox/abas/AbaAtividade.tsx": ["compacto · Nenhuma nota interna ainda."],
   "src/app/(app)/aria/_componentes/Comportamento.tsx": [
     "compacto · Nenhum exemplo cadastrado.",
   ],

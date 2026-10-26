@@ -7485,3 +7485,30 @@ Captura tablet b437/z1iv mostrou título/resumo comprimidos pelo switch e Gerenc
 ### Integração R7 pr442
 
 495365c2: correção estrutural da faixa, validada no focal global R7. Aceite visual e integração em main continuam pendentes.
+
+### Inbox #333 — Atividade com agendadas, recente e notas (25/10/2026)
+
+DEV A sobre eed1cce1 (PR #440), branch codex/inbox-e2-333-atividade. Nova aba em todas as finalidades, consulta autorizada antes dos dados, todas as origens de agendada elegível e política operacional compartilhada tarefas.ver + autor/Admin; IA somente Admin, sem mudar default HUMANO/equipe CRM. D11 vigente preservado: este recorte só lista/cancela, sem novo requisito Assumir para cancelar; criação/edição/enviar agora continuam fora. Recente conta conversas visíveis, tarefas próprias por direto OU lead e duas notas E0. Núcleo Inbox usa Atendimento FOR NO KEY UPDATE → Intencao com vínculo/shape no SQL, ator/ACL/pertença frescos, CAS, Evento + aviso atômicos e replay próprio marcado sem duplicação. Não desfaz AcaoAria.
+
+SQL final91763/59c901 EXIT0:2 arquivos23 casos,89,91s; perfil dev-email492 exclusivo,UTC/w1/heap1024,sete providers vazios. Barreiras reais com finally: revogação/papel/inativo/convite, perda total de ACL, retarget, claim e duas chamadas; pool1 e LISTEN/NOTIFY commit/replay/rollback. Lease liberada ao ROOT, sem SQL posterior. UNIT final45702/fc53cd EXIT0:27 arquivos741 casos,103,34s; lint whitelist21 b31ed5 EXIT0,zero warnings. Negativos de módulo ausente/fixture/harness/medida/expectativas antigas e testes posteriores separados no QA, sem alegar RED causal inexistente. ConfirmarAcao real, SSE próprio antes do ACK, contexto A→B→A e preview fresco preservados.
+
+SPEC inbox-atividade.md e QA inbox-333-candidata-dev-a.md. CRM global, WhatsApp legado, histórico Aria, Modal331, ConfirmarAcao e CabecalhoConversa não alterados. Registros somente nominais de confirmação/vazio; sem parser, schema, migração, dependência ou permissão nova. TSC/global originais do SHA congelado serão executados em sequência conforme ROOT; QA independente, CI/build e visual APP/PROTO original três larguras/dois temas ainda pendentes. Sem #334, correção #331, build/servidor/install/PR/push pelo DEV; não homologada.
+Filha #333, aviso sem upgrade de PK: contraprova T75b2bc e RED A3a3818 confirmaram bloqueio unilateral no UPDATE id=id sob KEY SHARE, sem ciclo/deadlock alegado. Patch somente no núcleo Inbox usa o barramento transacional canônico com o Atendimento fresco autorizado, preservando aviso.ts global/CRM/ACL/CAS/Evento. Original T preservado por SHA051a47; regressão adaptada exige conclusão/commit ANTES de liberar o holder, não só ausência de bloqueio observado. SQL completa80356/b591dc EXIT0:3 arquivos24 casos,92,87s; concluiuComHolder=true, CANCELADA e um Evento sob holder retido, NOTIFY1/0/0. UNIT pertinente51038/f35c27 EXIT0:7 arquivos248 casos; lint3 d25b4a EXIT0,zero avisos. Lease liberada ao ROOT após terminal. Gates originais a385 ficam atribuídos à a385; filha aguarda seus próprios TSC/global após freeze. Sem mudança de outro backend, schema, #334, Modal331 ou cabeçalho.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
+
+
+### #333 — correção causal de lock antes da integração443, 26/10/2026
+
+Selecionada a correção DEV2fc7aec3 sobre a candidata pública443fe23, sem trazer implementação362, schema, migrações501/502 ou ancestrais privados. O lock do atendimento passa de NO KEY UPDATE para SHARE; intenção continua FOR UPDATE e permissões/replay/CAS/eventos permanecem literais. Contraprova nativa mostrou40P01 antes e claim confirmado/recusa de domínio depois. DEV confirmou claim1, política10, cancelamento20, KEY SHARE1 e compatibilidade de notificações7+11 com código0; este último recorte pertence ao ambiente A502, não é QA pública pré502.
+
+Teste de rollback mede a baseline após o setup e mantém delta zero de avisos e Eventos. QA independente no candidato exato/T500 sem502, CI e integração ainda pendentes. A decisão de cancelamento GP sem tarefas.ver não foi aplicada. Nenhuma conclusão antecipada da333 ou362, upload ou merge. Evidência: docs/qa/inbox-333-cancelamento-share-r27.md.
+
+
+### #333 — QA independente da correção de concorrência, 26/10/2026
+
+Fonte pública8345c234 inspecionada e executada no worktree TESTER, com próprio client443 e banco descartávelT500 sem501/502. TSC8506f9 EXIT0; UNITglobal595c71 EXIT0(997arquivos/8633testes); lint9711a4 EXIT0(0erros/57avisos); quatro nativos completos25/25(c1b220,5c3195,ed6c0e,52121c),semfiltros/skips/retry. Claim confirmado e cancelamento recusado por domínio; NOTIFYpré5021→1/delta0. Primeira TSC incompatível e22nativos comclient500 são resultados anteriores separados, não reatribuídos. Snapshot1445restaurado5d606e; client/artefatos originais restituídos88b842 e fonte4eaa87d97d,semDDL oudependências novas.
+
+O filho documental só registra esses resultados, sem alterar a árvore executável testada8345. Registro: docs/qa/inbox-443-cancelamento-claim-r27-root.md. Visual C1 e CI contra main/dependências continuam pendentes; não sair de rascunho ou concluir333 antecipadamente. Permissões de cancelamento333 permanecem atuais.

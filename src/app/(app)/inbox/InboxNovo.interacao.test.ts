@@ -62,6 +62,7 @@ import { ColunaConversas } from "./ColunaConversas";
 import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
 import { ModalTarefa } from "./ModalTarefa";
+import { AbaAtividade } from "./abas/AbaAtividade";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { PainelSetor } from "./PainelSetor";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
@@ -709,7 +710,7 @@ describe("composição318: Detalhes do contato selecionado", () => {
     const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
     tela(p); await esvaziar(); const t = tela(p), no = painel(t);
     expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Pessoa física · Inglês", tags, quadrado: false });
-    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }, { id: "oportunidades", rotulo: "Oportunidades" }]); expect(no.props.abaAtiva).toBe("detalhes");
+    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }, { id: "oportunidades", rotulo: "Oportunidades" }, { id: "atividade", rotulo: "Atividade" }]); expect(no.props.abaAtiva).toBe("detalhes");
     const blocos = elementos(no.props.children as ReactNode).filter(n => [AbaDetalhes, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
     expect(blocos.map(n => n.type)).toEqual([AbaDetalhes, AcoesContato, OptOutContato, PainelTriagem]);
     expect(blocos[0].props.dados).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
@@ -1156,4 +1157,8 @@ it("332: nota no painel solicita foco apenas para a conversa selecionada",async(
 });
 it("332 pedido de nota consumido não ressuscita em A→B→A; próxima abertura tem token novo",async()=>{
  const aba=await abrirAba331();(aba.props.aoAdicionarNota as ()=>void)();const antigo=cabecalho(tela()).pedidoNota as number;lista(tela()).aoSelecionar("a2");tela();lista(tela()).aoSelecionar("a1");expect(cabecalho(tela()).pedidoNota).toBeUndefined();const nova=await abrirAba331();(nova.props.aoAdicionarNota as ()=>void)();expect(cabecalho(tela()).pedidoNota).toBeGreaterThan(antigo);
+});
+it.each(["COMERCIAL","SECRETARIA"])("333 Atividade usa produtor da aba %s sem restringir a CRM/envio",async setor=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor,podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:false}})}));const d={agendadas:[],recente:{ultimaInteracaoEm:null,conversas:2,tarefasAbertas:0,notas:[]}},anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/painel/atividade")?new Response(JSON.stringify(d)):anterior(url)));
+ tela();await esvaziar();const p=elementos(tela()).find(n=>n.type===PainelContato)!;(p.props.aoTrocarAba as (id:string)=>void)("atividade");tela();await esvaziar();const aba=elementos(tela()).find(n=>n.type===AbaAtividade)!;expect(aba).toBeDefined();expect(aba.props.dados).toEqual(d);expect(aba.props.atendimentoId).toBe("a1");expect(aba.props.aoMudar).toEqual(expect.any(Function));lista(tela()).aoSelecionar("a2");expect(elementos(tela()).some(n=>n.type===AbaAtividade)).toBe(false);
 });
