@@ -76,7 +76,7 @@ it("371 Pessoas usa radios nativos e carga indisponível não vira zero",async()
 
 it("371 carga0/1/2 em duas linhas e grupo único preservam alvo e foco",async()=>{
  executar.mockReset();await montar(false,false,[{id:"b",nome:"Beatriz",carga:0},{id:"c",nome:"Carla",carga:1},{id:"d",nome:"Diana",carga:2}]);await clicar("Pessoas");
- expect(doc.body.textContent).toContain("0 conversas abertas");expect(doc.body.textContent).toContain("1 conversa aberta");expect(doc.body.textContent).toContain("2 conversas abertas");
+ expect(doc.body.textContent).toContain("0 conversas abertas neste setor");expect(doc.body.textContent).toContain("1 conversa aberta neste setor");expect(doc.body.textContent).toContain("2 conversas abertas neste setor");
  const radios=doc.body.querySelectorAll('input[type="radio"]');expect(radios).toHaveLength(3);expect(new Set(radios.map(r=>(r as unknown as {name:string}).name)).size).toBe(1);
  expect(doc.activeElement).toBe(radios[0]);await act(async()=>props(radios[2]).onChange({target:{value:"d"}}));await clicar("Voltar");await clicar("Pessoas");
  expect(doc.activeElement).toBe(doc.body.querySelectorAll('input[type="radio"]')[2]);await confirmar();expect(executar).toHaveBeenCalledExactlyOnceWith({alvo:{tipo:"pessoa",usuarioId:"d"},contexto:""});
