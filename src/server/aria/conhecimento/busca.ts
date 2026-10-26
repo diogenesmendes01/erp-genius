@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 export type TrechoEncontrado = { id: string; fonteId: string; texto: string; rank: number };
 
 /** Busca textual em português (websearch_to_tsquery) só nas fontes informadas PRONTAS, não arquivadas e dentro da validade. */
-export async function buscarTrechos(consulta: string, fonteIds: string[], limite = 5): Promise<TrechoEncontrado[]> {
+export async function buscarTrechos(consulta: string, fonteIds: string[], limite = 5, db: Pick<Prisma.TransactionClient, "$queryRaw"> = prisma): Promise<TrechoEncontrado[]> {
   if (fonteIds.length === 0 || consulta.trim() === "") return [];
   const max = Math.max(1, Math.min(50, Math.trunc(limite)));
-  const linhas = await prisma.$queryRaw<{ id: string; fonteId: string; texto: string; rank: number }[]>(Prisma.sql`
+  const linhas = await db.$queryRaw<{ id: string; fonteId: string; texto: string; rank: number }[]>(Prisma.sql`
     SELECT t."id", t."fonteId", t."texto", ts_rank(t."busca", q.q)::float8 AS "rank"
     FROM "TrechoConhecimento" t
     JOIN "FonteConhecimento" f ON f."id" = t."fonteId"

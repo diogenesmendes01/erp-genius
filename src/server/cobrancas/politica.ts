@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import type { EstadoPolitica, ModoDegrau } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { MODELOS_WHATSAPP, type ModeloWhatsapp } from "@/server/financeiro/schema";
@@ -58,8 +59,8 @@ export function politicaDeFabrica(): PoliticaCarregada {
  * Linhas inválidas do banco (passo/tipo desconhecidos) são IGNORADAS com segurança — o
  * cérebro só recebe degraus bem-formados, em ordem crescente de offset.
  */
-export async function carregarPoliticaRegua(): Promise<PoliticaCarregada> {
-  const p = await prisma.politicaRegua.findFirst({
+export async function carregarPoliticaRegua(db: Pick<Prisma.TransactionClient, "politicaRegua"> = prisma): Promise<PoliticaCarregada> {
+  const p = await db.politicaRegua.findFirst({
     where: { escopo: "COBRANCA" },
     include: { degraus: { include: { template: true }, orderBy: { offsetDias: "asc" } } },
     orderBy: { criadoEm: "asc" },

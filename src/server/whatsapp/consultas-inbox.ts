@@ -16,8 +16,8 @@ import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
 import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { comContatoIndividual } from "./grupos";
-import { capacidadesAria } from "@/server/aria/permissoes-tela";
-import { leadsDecidiveis } from "@/server/aria/escopo-decisao";
+
+import { acoesDecidiveisNoInbox } from "@/server/aria/escopo-decisao-inbox";
 import { podeDevolverParaAria } from "@/server/aria/pausa";
 import { podeExecutar, TIPOS_DESVINCULAVEIS, type TipoVinculoContato } from "@/server/inbox/permissoes";
 
@@ -259,7 +259,7 @@ export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendime
   if (!a) return null;
   const pausada = a.iaPausadaEm !== null;
   return {
-    podeDecidir: capacidadesAria(usuario).has("decidirHistorico") && (await leadsDecidiveis(prisma, usuario, [a.leadId])).has(a.leadId),
+    podeDecidir: (await acoesDecidiveisNoInbox(prisma, usuario, a, [{id:"contexto",acao:"CONTEXTO",payload:null,atendimentoId:a.id,oportunidadeId:a.leadId}])).has("contexto"),
     cartoes: await cartoesDaThread(prisma, usuario, a, agora),
     handoff: await handoffDoAtendimento(prisma, usuario, a, agora),
     pausada,
