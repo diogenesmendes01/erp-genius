@@ -4,9 +4,10 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
 import type { EntradaConfirmacaoTransferir } from "./PopoverTransferir";
+import { SETOR_ATENDIMENTO_LABEL } from "@/lib/labels";
 import type { OpcoesTransferir } from "./opcoes-transferir";
 export interface ComandoTransferirInbox extends EntradaConfirmacaoTransferir { atendimentoId: string; chaveIdempotencia: string }
-interface Props { atendimentoId: string; identidade: string; opcoes: OpcoesTransferir; executar(comando: ComandoTransferirInbox): Promise<Resultado>; aoConcluir(): void }
+interface Props { atendimentoId: string; identidade: string; opcoes: OpcoesTransferir; executar(comando: ComandoTransferirInbox): Promise<Resultado>; aoConcluir(mensagem: string): void }
 /** Apresentação imutável e token imperativo separados; capacidade restaurada exige nova abertura. */
 export function useTransferirConversa({ atendimentoId, identidade, opcoes, executar, aoConcluir }: Props) {
   const ancora = useRef<HTMLButtonElement | null>(null);
@@ -43,7 +44,7 @@ export function useTransferirConversa({ atendimentoId, identidade, opcoes, execu
       catch (e) { if (!sessao.viva || atual.current.chave !== chave) return { ok: true as const }; throw e; }
     });
     if (d?.tipo === "ok" && sessao.viva && atual.current.chave === chave) {
-      tentativa.depoisDo(d); sessao.viva = false; setAbertura(null); atual.current.aoConcluir();
+      tentativa.depoisDo(d); sessao.viva = false; setAbertura(null); atual.current.aoConcluir(entrada.alvo.tipo === "pessoa" ? "Atendimento atribuído." : entrada.alvo.tipo === "fila" ? "Devolvido para a fila." : entrada.alvo.tipo === "aria" ? "Atendimento devolvido para a Aria." : `Atendimento transferido para ${SETOR_ATENDIMENTO_LABEL[entrada.alvo.setor]}.`);
     }
   }
   return { ancora, gatilhoRef, abrir, fechar, confirmar, aberturaId: abertura?.id ?? 0, aberto: abertura !== null, ocupado: acao.ocupado, invalidada, erro: acao.erro };

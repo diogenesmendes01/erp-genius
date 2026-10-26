@@ -13,7 +13,7 @@ interface Props {
   destinos: PropsPopoverTransferir["destinos"];
   executar(comando: ComandoTransferirInbox): Promise<Resultado>;
   carregarPessoas(id: string): Promise<{ id: string; nome: string }[]>;
-  aoConcluir(): void;
+  aoConcluir(mensagem: string): void;
   renderizar(controles: { transferir: AcaoConversa | null; dialogo: ReactNode }): ReactNode;
 }
 /** Fronteira local; o coordenador da conversa fornece actions autorizadas, sem política paralela. */

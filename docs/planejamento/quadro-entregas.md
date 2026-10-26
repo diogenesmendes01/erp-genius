@@ -7534,11 +7534,6 @@ REDs adicionais 441de4 (5/16), regressão 201a29 (2/46, owner nulo ainda não co
 ### Inbox #357 — composição R5 com tarefas e atividade (25/10/2026)
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
-<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
-=======
->>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
 
 ### Inbox #358 — compositor durante Aria / entrega DEV (25/10/2026)
 
@@ -7586,11 +7581,6 @@ Complemento de alinhamento: buildf143/NzA passou23826/7d1b3a EXIT0. Em31cenas, n
 ROOT57822fc2: global1009/8753, TypeScript, lint0erros/63avisos e buildyNy todos EXIT0. Pilha R7 publicada sem force: seis PRs atualizadas e novas #444(#334), #445(#357), #446(#358), todas em rascunho. TESTER conferiu nove deltas e fontefinal446literal578 (5aa410d0484d374b9656a2ffd22b9e897330fad3f51a1129860bbfabd5ee0b9c). Nenhum merge nesta rodada; campanha permanece37fechadas/44abertas, conferida no GitHub.
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
-<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
-=======
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
->>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
 
 ### #360 — Transferir unificado (DEV B, 2026-10-25)
 
@@ -7609,8 +7599,7 @@ Filha corretiva de 78fb, em validação. Somente3 linhas de produção no coorde
 Composição fce34926 sobre a PR #446, preservando o cabeçalho responsivo. Recorte integrado 28 arquivos/501 casos EXIT0 (4711/c8014e). TypeScript original falhou somente na passagem de destinos opcionais. Consumidor real reproduziu undefined.filter (1fe07a); normalização local destinos=[] passou os três casos completos (493590 EXIT0). Backend e contrato público opcional preservados. QA docs/qa/inbox-360-integracao-r10-root.md registra negativos e limites. TypeScript/global/lint/build corrigidos, visual de transferência, publicação e CI ainda pendentes; D5 continua dependente de #369/#370.
 
 Gates finais ROOT c3ba607f: TypeScript 53106/4abf1e EXIT0; unitária global original 52057/3be700 EXIT0, 1.019 arquivos/8.801 testes; lint 25049/7c6cdc EXIT0, zero erros/63 avisos; build 63477/8d5b15 EXIT0, Z9-O-_AbBHxCBkn16uRV2. OOMs do lint preservados e diagnosticados como análise dos backups gerados não rastreados; cópias movidas fisicamente para evidências externas com hashes, configurações intactas. TESTER também confirmou consumidor com ADMINISTRADOR real (2a569b EXIT0). Aceite visual de transferência e CI/revisão da publicação continuam pendentes; não homologar D5 sem #369/#370.
-<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
-=======
+
 
 ### #369 — contexto opcional e resumo setorial Inbox (DEV B, 2026-10-25)
 
@@ -7623,9 +7612,74 @@ Normalização coordenada ROOT360 (88aa57d7): somente destinos = [] no parâmetr
 ### PR444 / #334 — revisão R1 C3/C4 (DEV B, 25/10/2026)
 
 Contador do cabeçalho separado de configuração/última ação/decisão com leitor autorizado compartilhado; limite30 após autorização, keyset100 e Pessoa/CRM preservados. Quatro fallbacks históricos no passado, sem alterar rótulos neutros ou recibo de entrega. RED nativo14776/636807 EXIT1 (2falhas/8pass); GREEN85994/89a8da EXIT0 (10/10), UNIT94717/1961c3 EXIT0 (3arquivos/161), focal finalcaf8e4 EXIT0 (11/106, sem filtros). Lint final e freeze no relatório específico. B493grant/425tabelas/client383; lease liberadaff859e0 e ROOTrestaurouf020fe0/baseline504. Isolamento370 preservado por manifesto17b68d64, stash78d35dbb e checkpoint PRIVADO76f9 de2schema paths; não publicar esse pai. Commit334 terá só deltaC3C4/fixturecarry578. QA independente/gates de composição/visualC1 pendentes, sem afirmar PR334/Aria completa por esse recorte. #370 continua bloqueada aguardando autorização humana específica; nenhum grant foi ligado ao escopo.
->>>>>>> f9ea5209bf7a9337c67fb2f6d1fd715f7f620e75
 
 ### #357 — hardening portal após espera (DEV B, 25/10/2026)
+
+Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado DTO/action com rowTXfresh; sempapéisgenéricosnovos e semalterar[]/mistos. OracleTbyte8196 RED30130/612418 EXIT1 (1ERPpass/1portalfail)→GREEN29510/3b5aa3 EXIT0 2/2; UNIT27d736 RED→728dbe GREEN2/10; regressão42600/93843a EXIT0 2arquivos32casos incluindo3ROLErastreados (não somaroracle2sobreposto); lint9dad9f0/4SRC/zeroavisos. D3TODASSUGERIDAinclusiveCRM documentada/C5JSDoclegado recolocado. QA em docs/qa/inbox-357-portal-apos-espera.md. B493grant/client383, liberação6618d60/0outros; ROOTrestaura depois, não presumir504. Commitisolado357 sobrepaisprivados334/76f9, integrar sódelta. QA/gatescompostos/visual pendentes;370continua aguardandoautorizaçãohumana específica, semgrantACLativado.
+
+
+### #377 — Insights D12: fase pura (em implementação)
+
+Audiência COMERCIAL+veLead e D12 completos sob demanda aprovados. Tipos/normalização, contexto limitado, prompt estruturado e DTO puro implementados com REDs causais; final DEV4 arquivos/35 testes UTC,w1/1024 terminal ab6019 EXIT0. A aba não foi habilitada. Schema493/claim/custos/provider/UI/bridge/SQL/QA independente/gates globais/visual permanecem pendentes, sem homologação presumida. [SPEC](../specs/inbox-insights-d12.md) e [QA](../qa/inbox-377-insights-d12.md).
+
+#377 — checkpoint UI local: painel isolado, hook de geração por clique e confirmação canônica para substituir rascunho, com portas fake. Guardas completas e recorte: sessão 66794/b69a66 EXIT0, 12 arquivos/365 testes; adicionais 77403/b0d5e5 EXIT0, 10 arquivos/199 testes; lint 10 arquivos acba52 EXIT0. Sem aba real, Prisma/provider/bridge ou SQL. Descarte/reconciliação incerta, persistência e QA independente/visual continuam pendentes; não homologada. Negativos e distinção entre fake e consumidor real na QA377.
+
+#377 — checkpoint de infraestrutura/transporte: schema493 validado, client gerado e migração aplicada exclusivamente no A pelo ROOT; baseline493 preservada e restaurador493 obrigatório. Provider opt-in com deadline incluindo body/retry0/diagnóstico de uso e modelo observado, envelopes e preços snapshot: final DEV sessão8168/c0764f EXIT0, 14 arquivos/144 testes; lint10 6a96ef EXIT0. Legacy defaults e bytes de payload cobertos; sem API real. Claim/kernel, provas SQL, reconciliação/descarte e integração real da aba/bridge continuam pendentes, sem homologação. Evidências/proveniência na QA377.
+
+#377 — checkpoint kernel privado para review: claim/start CAS, snapshots, orçamento pré-envio, finalização/custo e operação de INCERTO/descarte, orquestrador provider1/persistência2, GET autorizado readonly. Pasta backend completa b500a7 EXIT0:17 arquivos155 testes UTC/w1/1024; lint25 797242 EXIT0/zero avisos. Doubles/puro NÃO qualificam concorrência/locks/NOTIFY SQL. Plano nativo privado entregue; sem lease/execução SQL, endpoint/aba/bridge ou homologação. Schema/client493 preservados; QA/SPEC detalham ACKlost e negativos de instrumentação.
+
+#377 — autoria nativa para revisão:4 arquivos/24 casos previstos (kernel12/concorrência6/pool1 dois/NOTIFY quatro), fixtures377 e LISTEN/holders reais, incluindo ACK perdido após COMMIT real. Lint6 19bc84 EXIT0/zero avisos; NENHUMA execução SQL/lease nesta fase. Kernel literal8364385f, sem endpoint inventado para fixture. Provas/contagens ainda pendentes, autoria pós-implementação não é RED causal nativo.
+
+#377 — filho corretivo da revisão: capacidade operacional de descarte separada de gerar/publicar no DTO, após retarget Pessoa incompatível. RED2falhas/15controles b03079; GREEN24c38f EXIT0/2arquivos18testes; lint5 18cc09 EXIT0/zero avisos. Ambos sinalizadores coerentes, gerarfalse e análise ausente; novo controle SQL autorado, não executado (25nativosprevistos). Infra493/pins preservados; sem lease/SQL/homologação.
+
+#377 — provas nativas privadas:4INT disjuntos/25casos completos EXIT0 em série (kernel13 74580/0323be; concorrência6 53348/15142c; pool1dois99863/0c1168; notify4 19117/555cec), originalUTC/w1/1024/provedoresvazios. LISTENreal commit1/replay0/rollback0, ACKlostpósCOMMITreal provider1/uso1/evento1/aviso1, KEYSHAREretidoatéconclusão, ACL/bindingfresh. Negativo de observador de fila e diagnóstico1caso/5skips preservados, corrigidos SOMENTEhelperteste; lint7647260. Banco/NodeSQL liberados ROOT493; semnovaSQL. Kernelprod literal338899e8; endpoint/aba/bridge/QAindep/visual/gates globais ainda pendentes.
+
+#377 — integração da API, UI e pontes sobre merge620979a9 (base #447): GET somente leitura, três actions, aba COMERCIAL + veLead e recibo NAO_CONFIRMADA resolvido por GET posterior. Retomar, reconciliar e descartar usam os controles canônicos. Rascunho físico preserva campo, anexo, Nota e revisão, sem foco/Assumir; scheduler lê os mesmos bytes persistidos somente quando aberto e invalida confirmação após SSE/refresh. Final 8700/036440 EXIT0: 41 arquivos/566 testes. Guardas 28291/aec7e6 EXIT0: 12 arquivos/462 casos. Lint a3c830 EXIT0: 36 arquivos, zero avisos. Barreira apenasPortal na row fresca e mensagem de pré-envio confirmada adicionadas com REDs qualificados; locks, custo, provider e schema/SQL literais9fe. Nove nativos dos wrappers estão autorados, ainda não executados; nova lease493 e QA independente/gates originais/visual/CI pendentes. SPEC consolidada e negativos/pins na QA377. Não homologada.
+#377 — wrappers públicos SQL na fonte e3590209: arquivo completo com nove casos, sessão56492/03fe13 EXIT0 (41,02s), configuração original/UTC/w1/heap1024, sem filtros/skips e provedores vazios. Provider fake somente na fronteira; SQL/ACL/TX/holders reais. Orçamento entre claim/START, novo clique/chave, Portal após espera, resolução operacional e custo conhecido tardio passaram. Kernel25 antigo continua qualificado à fonte anterior; não somar/reclassificar como execução global atual. Lease A493/NodeSQL liberados ao ROOT para restaurar425hashes/559; nenhuma nova SQL. Fonte executável literal e359; QA independente/gates originais/visual/CI pendentes.
+
+#377 — integração ROOT43c1e582 + QA independente809: nativos34, UNIT próprio579, oráculos2 e guardas462, todos EXIT0 nas fontes registradas. TypeScript global inicial falhou com 21 diagnósticos em cinco testes; filho corretivo estreita tipos sem alterar produção/expectativas. Recorte completo5/38 EXIT0 (13e4c7), após negativo de infraestrutura EPERM antes da coleta. ROOT client493/DDL/snapshot425tabelas/1380linhas prontos, bundle anterior Z9 arquivado com230assets verificados. Compilador global, regressão global, lint, build, visual e publicação continuam pendentes; ver docs/qa/inbox-377-integracao-r12-root.md. Não homologada.
+
+#377 — TypeScript cde0c654 EXIT0 (83894/50fa34). UNIT global original98185/38e1d9 terminou EXIT1:1051arquivos/9137casos, quatrofalhas em trêsarquivos; corrigidos grade móvelInsights, duasexpectativas antigas de abas e declaraçãoenum emfixtureC1. Guardas/whitelists/configs preservados. Recorte completo5/34 EXIT0 (3169d7), não global. Publicação ainda sópreparada localmente; repetir gates no filho corretivo, sem homologação presumida.
+### #371 — Carga por pessoa (DEV B, 25/10/2026)
+
+Em validação: radios nativos com Nome + N conversas abertas, snapshot ao abrir, indisponível quando ausente. Uma groupBy dos candidatos atuais no mesmo setor, aberto com AND status/encerradoEm; revalida ator/capacidade/candidatos. APIs históricas preservadas; sem autorização370, presença376, distribuição ou índice496. D5 ainda depende370.
+
+Gates focais17dc7c EXIT0 7/54; Campos48e540 EXIT0 28/28 (retirada nominal Pessoa/select, parser intacto); lint10SRC a7f5d3 EXIT0. Native90660/e7573c 11/11 e regressão77131/74af20 2/2 EXIT0, originais completos em série. CHECK específico comprova inconsistências impossíveis; UNIT prova AND. B493grant/client383, ROOTrestore90d2ac baseline504/425; lease encerrada. SPEC docs/specs/inbox-carga-pessoas.md e QA docs/qa/inbox-371-carga-pessoas.md. QA exact, gates compostos e visual pendentes; integrar só delta, não pais privados.
+
+### PR447 R1 — C1/C2 (DEV B, 25/10/2026)
+
+Aviso por alvo só após ACK da geração viva, persistido em InboxNovo com MensagemStatus canônico fora da seleção. Status aberto usa identidade semântica, conserva contexto/chave com inbound; owner/cap/closed continuam invalidando. REDaed2f0 6falhas/130pass→GREENe9eb6c EXIT0 8arquivos180casos; lint8SRC08c6f4 EXIT0. PaiDOM real comprova aviso após unmount setorial; harness Inbox comprova remoção da seleção, sem presumir navegador. Backend/ACL/schema371/370/PopoverFluxo intocados, sem SQL. SPEC inbox-transferir-unificado e QA inbox-447-review-r1. C5equivalência369opt-in/históricomin12 documentada, configuração do plano inexistente; C6visual639/640/767/768 e QA/gates compostos pendentes. Integrar somente delta de revisão, não pais privados.
+
+ROOT R14 publicada: composição817 passou nos quatro gates originais (1051arquivos/9137UNIT, TSC, lint0erros65avisos locais, build115), push atômico semforce das quatrobases e duasbranches novas; PR448(#369) e449(#377) abertas e anexadas, sem merge main/fechamento deissue. Bundle817 arquivado com234assets. Carga371 integrada porFF na fonte43d jávalidada peloTESTER em11+2+2SQL/EXIT0; T restaurado493/425/1394. Revisão447 integrada por delta, preservando Insights e controles anteriores: focal final8/183 EXIT0 (8dcde6), lint8SRC EXIT0 (43142/9db96e), negativos de fixture e limites em docs/qa/inbox-447-integracao-r16-root.md. Gates globais/QA exata/visual da composição nova ainda pendentes.
+
+#341 — integração ROOT sobredb360 com580, somente quadro conflitado/união histórica. Runtime27SRC originalA preservado; fixture de dois papéis corrigida após RED2falhasTypeError/15controles, GREEN17/17 (d5aac9). Recorte12/200 EXIT0 (98dd3b), lint27SRC EXIT0 (49797/ffb938). ROOT client495 e DDL prontos:494migrações reais/425tabelas, dados/histórico/índices/funções preservados; snapshot495 novo425hashes/1381linhas (38b6de). QA independente SQL/gates globais/visual/publicação pendentes. docs/qa/inbox-341-integracao-r17-root.md. TESTER447 também passou8/183 e oráculoDOM1 emdb360, parecer72fcb167; sem reatribuir ao merge341.
+
+ROOT4949 TSC original70661/58b0fb terminou código2 por NodeList.find no helper de teste447 (dois diagnósticos, nenhum em produção). Filho test-only usaArray.from; recorte completo8/183 EXIT0 (c59aed). Produção/schema/configs preservados; repetir TSC e demais gates no filho, sem presumir verde global.
+
+#341 — D13 em implementação na branch própria sobre 809. Dois campos manuais opcionais (probabilidade inteira de 0 a 100 e previsão civil); leitura contextual sem edição por convite; setter Atendimento NO KEY → Lead NOWAIT com ator, Portal, ACL e carteira frescos. EditarLeadSchema separado preserva criação e efeitos históricos. Recorte final 6471/1c4580 EXIT 0: 10 arquivos/180 testes; lint 99938/d95232 EXIT 0: 25 arquivos/zero avisos. Não são gates globais. Migração lógica495 preparada exclusivamente pelo ROOT: validate e64939, generate97558/dfe8ab e DDLc4892b EXIT 0; client e251ba32, 494 migrações reais/425 tabelas/snapshot560. Schema/SQL congelados; nenhum DDL/SQL do DEV. Na fonte 997acd53, os quatro arquivos completos passaram: 53901/6f3465 (10), 56078/bc82e3 (5), 96017/98cf3d (1), 24436/fe3abd (3), todos EXIT 0. Configuração original/UTC/w1/heap1024/sem filtros ou skips, sete provedores vazios. SQL/ACL/TX reais, barreira de chegada instrumental e atribuirDono real com pg_blocking_pids; LISTEN commit1/no-op0/rollback0. Lease e Node liberados ao ROOT, sem presumir restauração. SPEC/QA registram negativos e distinguem doubles de SQL real. Guardas, TSC/global, QA independente, visual e CI pendentes; não homologada. #377 permanece congelada em 809; correções test-only da composição ROOT não são gates desta #341.
+
+ROOT R18 — UNIT global d603:1057arquivos/9249casos, EXIT1 por callback opaco no feedback; 9248 controles passaram. Correção mínima mantém hook/textos e cria aviso persistente literal local em InboxNovo. Guarda original intacta; focal5/244 EXIT0 (63074/2a6a3e), lint2SRC EXIT0 (0cec09). Negativos/limites em docs/qa/inbox-447-integracao-r16-root.md. QA T d603:341 SQL19+CAS2 e UNIT12/200,3717/61,guardas4/136 EXIT0 separados; A/T495 restaurados425hashes/EXIT0. Repetir gates globais no filho, visual e publicação pendentes.
+
+Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
+<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
+=======
+<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
+=======
+>>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
+
+Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
+<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
+=======
+<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
+=======
+>>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
+
+Gates finais ROOT c3ba607f: TypeScript 53106/4abf1e EXIT0; unitária global original 52057/3be700 EXIT0, 1.019 arquivos/8.801 testes; lint 25049/7c6cdc EXIT0, zero erros/63 avisos; build 63477/8d5b15 EXIT0, Z9-O-_AbBHxCBkn16uRV2. OOMs do lint preservados e diagnosticados como análise dos backups gerados não rastreados; cópias movidas fisicamente para evidências externas com hashes, configurações intactas. TESTER também confirmou consumidor com ADMINISTRADOR real (2a569b EXIT0). Aceite visual de transferência e CI/revisão da publicação continuam pendentes; não homologar D5 sem #369/#370.
+<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
+=======
+
+Contador do cabeçalho separado de configuração/última ação/decisão com leitor autorizado compartilhado; limite30 após autorização, keyset100 e Pessoa/CRM preservados. Quatro fallbacks históricos no passado, sem alterar rótulos neutros ou recibo de entrega. RED nativo14776/636807 EXIT1 (2falhas/8pass); GREEN85994/89a8da EXIT0 (10/10), UNIT94717/1961c3 EXIT0 (3arquivos/161), focal finalcaf8e4 EXIT0 (11/106, sem filtros). Lint final e freeze no relatório específico. B493grant/425tabelas/client383; lease liberadaff859e0 e ROOTrestaurouf020fe0/baseline504. Isolamento370 preservado por manifesto17b68d64, stash78d35dbb e checkpoint PRIVADO76f9 de2schema paths; não publicar esse pai. Commit334 terá só deltaC3C4/fixturecarry578. QA independente/gates de composição/visualC1 pendentes, sem afirmar PR334/Aria completa por esse recorte. #370 continua bloqueada aguardando autorização humana específica; nenhum grant foi ligado ao escopo.
+>>>>>>> f9ea5209bf7a9337c67fb2f6d1fd715f7f620e75
 
 Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado DTO/action com rowTXfresh; sempapéisgenéricosnovos e semalterar[]/mistos. OracleTbyte8196 RED30130/612418 EXIT1 (1ERPpass/1portalfail)→GREEN29510/3b5aa3 EXIT0 2/2; UNIT27d736 RED→728dbe GREEN2/10; regressão42600/93843a EXIT0 2arquivos32casos incluindo3ROLErastreados (não somaroracle2sobreposto); lint9dad9f0/4SRC/zeroavisos. D3TODASSUGERIDAinclusiveCRM documentada/C5JSDoclegado recolocado. QA em docs/qa/inbox-357-portal-apos-espera.md. B493grant/client383, liberação6618d60/0outros; ROOTrestaura depois, não presumir504. Commitisolado357 sobrepaisprivados334/76f9, integrar sódelta. QA/gatescompostos/visual pendentes;370continua aguardandoautorizaçãohumana específica, semgrantACLativado.
 >>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2

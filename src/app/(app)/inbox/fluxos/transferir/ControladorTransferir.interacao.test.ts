@@ -1,4 +1,5 @@
-import { act, createElement } from "react";
+import { MensagemStatus } from "@/components/MensagemStatus";
+import { act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } from "@/test/dom-minimo";
@@ -59,4 +60,9 @@ it("troca de responsável invalida ACK mesmo que gerente conserve as mesmas capa
  await montar(); await clicar("Abrir"); await clicar("Pessoas"); await mudar("select","b");
  await confirmar(); await montar(true,"a","c"); await act(async()=>resolver({ok:true}));
  expect(concluir).not.toHaveBeenCalled(); expect(doc.body.textContent).toContain("Feche e abra novamente");
+});
+
+it("447 C1 ACK setorial desmonta o controlador mas preserva aviso canônico no pai real",async()=>{
+ function Tela(){const [aberta,setAberta]=useState(true),[msg,setMsg]=useState<string|null>(null);return createElement("div",null,createElement(MensagemStatus,{texto:msg,tom:"sucesso"}),aberta&&createElement(ControladorTransferir,{atendimentoId:"a",identidade:"u",responsavelAtualId:"u",opcoes:{visivel:true,pessoas:false,setores:["SECRETARIA"],filaDoSetor:null,aria:false},destinos:[],executar,carregarPessoas:carregar,aoConcluir:(texto:string)=>{setMsg(texto);setAberta(false);},renderizar:({transferir,dialogo})=>createElement("div",null,transferir&&createElement(Botao,{ref:transferir.gatilhoRef,onClick:transferir.aoEscolher},"Abrir"),dialogo)}));}
+ await act(async()=>root.render(createElement(Tela)));expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");await mudar("textarea","Contexto preservado");await confirmar();expect(executar).toHaveBeenCalledOnce();expect(doc.body.querySelector('[role="dialog"]')).toBeNull();expect(botao("Abrir")).toBeUndefined();expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("Atendimento transferido para Secretaria.");expect(doc.body.textContent).toContain("Atendimento transferido para Secretaria.");
 });
