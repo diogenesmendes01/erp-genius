@@ -7961,3 +7961,7 @@ Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco desca
 O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
 
 DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
+
+### #362 — QA pública independente, R30
+
+Fonte5b936: dez arquivos completos/79 casos nativos em duas leases; sete UNIT focais/99; global1085 arquivos/9737 testes; TypeScript, lint e build115páginas, todos código0. Banco descartável restaurado1385 antes dos gates semSQL. ExceçãoGP autorizada coberta, CRMglobal preservado. CI apósbase e revisão remota pendentes; fluxosUIfilhos não incluídos.
