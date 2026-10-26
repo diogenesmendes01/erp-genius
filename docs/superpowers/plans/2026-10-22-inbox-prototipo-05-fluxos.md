@@ -105,7 +105,7 @@ O módulo também exporta `lerRascunho` e `gravarRascunho`, para o "Salvar rascu
 | `20261023300000_inbox_aviso_agendada` | 3 | Função `notificar_inbox_agendada()` e trigger em `IntencaoMensagem` |
 | `20261023310000_agendada_perguntar_se_responder` | 14 (D11) | `perguntarSeResponder`, `confirmadaAposRespostaEm` |
 | `20261023320000_origem_prospeccao_ativa` | 13 (D9) | `OrigemCanal.PROSPECCAO_ATIVA` |
-| `20261023330000`–`20261023340000` | reserva da Task 18 (D12) | modelo de Insights, se a decisão for "completo" |
+| `20261025200000_inbox_insights_d12` | Task 18 (D12), issue #377 | Reserva493 efetivamente utilizada: modelo de geração de Insights e origem INSIGHT. A faixa provisória `20261023330000`–`20261023340000` foi retirada; não reutilizar seus IDs. |
 | `20261023350000`–`20261023360000` | reserva da Task 17 (D6) | presença e equipes, se a decisão pedir modelo |
 | `20261023370000` | reserva da Task 19 (D22) | catálogo, se a decisão pedir modelo |
 
@@ -1831,7 +1831,7 @@ No ERP:
 - `OrigemChamadaIA.RESUMO` existe sem gerador;
 - nenhuma fase planeja Insights (`03-fase-inbox.md:1474`).
 
-Pelo contrato, `abas/AbaInsights.tsx` é da E4, mas só depois desta decisão. Até lá, a aba "insights" de `IdAbaPainel` não aparece (D12 padrão: fora).
+Pelo contrato, a aba Insights é da E4. D12 já foi respondida: a implementação completa da issue #377 usa geração sob demanda, conforme `docs/planejamento/inbox-decisoes-produto.md`. A hipótese inicial de manter a aba fora foi superada; o aceite ainda exige evidências de implementação e QA.
 
 **Files:**
 - Modify: `docs/superpowers/plans/2026-10-22-inbox-prototipo-00-indice.md` (linha D12)
@@ -1850,7 +1850,7 @@ Pelo contrato, `abas/AbaInsights.tsx` é da E4, mas só depois desta decisão. A
      - modelo próprio (por exemplo, `InsightOportunidade`: chance, sentimento, melhor horário, sinais, riscos, próximo passo, texto sugerido, base e `geradoEm`);
      - gerador da Aria (`OrigemChamadaIA.RESUMO`);
      - gatilho e custo definidos;
-     - migration na reserva `20261023330000`–`20261023340000`.
+     - migration na reserva efetiva493 `20261025200000_inbox_insights_d12`; a faixa provisória anterior foi retirada e não deve ser reutilizada.
 2. **Quando gera** (só C): a cada turno da Aria, a cada mensagem de entrada (com limite) ou sob demanda ("Atualizar")? O rodapé "Atualizado há 2 min" exige guardar `geradoEm`.
 3. **Quem vê?** Todos os papéis do Inbox na finalidade comercial, ou só quem tem `funil.ver` (D13)?
 4. **"Escrever com Aria" no agendar:** usa o mesmo "próximo passo" (B e C) ou fica fora?
