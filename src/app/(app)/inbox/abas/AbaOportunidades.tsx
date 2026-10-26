@@ -14,20 +14,22 @@ import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
 import type { CapacidadesPainel } from "@/server/inbox/permissoes";
 import { BarraEtapas } from "./BarraEtapas";
 import { opcoesEtapa } from "./etapas-painel";
+import { TarefasOportunidade } from "./TarefasOportunidade";
 import { OutrasOportunidades } from "./OutrasOportunidades";
 import { CartaoExperimental } from "./CartaoExperimental";
 
-type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; fusoEscola?: string; aoMudar(): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean; podeCriarOportunidade?: boolean; podeAssumir?: boolean; aoAssumir?(): Promise<Resultado> };
+type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; fusoEscola?: string; aoMudar(): void; aoNovaTarefa?(): void; aoEditarTarefa?(t: import("@/server/inbox/painel-tarefas").TarefaPainel): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean; podeCriarOportunidade?: boolean; podeAssumir?: boolean; aoAssumir?(): Promise<Resultado> };
 /** Mudança de thread/oportunidade encerra a sessão de ação, sem ACK antigo reconciliar outra. */
 export function AbaOportunidades(props: Props) {
   return <OportunidadeDoAtendimento key={JSON.stringify([props.atendimentoId, props.dados.atual?.id ?? null])} {...props} />;
 }
-function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fusoEscola, aoMudar, aoAbrirPerda, podeAbrirFunil = false, podeCriarOportunidade = false, podeAssumir = false, aoAssumir }: Props) {
+function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fusoEscola, aoMudar, aoNovaTarefa, aoEditarTarefa, aoAbrirPerda, podeAbrirFunil = false, podeCriarOportunidade = false, podeAssumir = false, aoAssumir }: Props) {
   const acao = useAcaoCliente({ idempotente: true }), vivo = useRef(false);
   const [erroLocal, setErroLocal] = useState<string | null>(null), [fluxo, setFluxo] = useState<string | null>(null);
   useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);
   const o = dados.atual;
-  if (!o) return <p className="text-sm text-gray-600">Sem oportunidade visível para você.</p>;
+  const tarefas = capacidades.tarefas ? <TarefasOportunidade atendimentoId={atendimentoId} tarefas={dados.tarefas} fusoEscola={dados.fusoEscola} fuso={fuso} podeCriar={!!aoNovaTarefa} aoNova={aoNovaTarefa} aoEditar={aoEditarTarefa} aoMudar={aoMudar}/> : null;
+  if (!o) return <div className="space-y-4"><p className="text-sm text-gray-600">Sem oportunidade visível para você.</p>{tarefas}</div>;
   async function mover(etapa: EtapaLead) {
     const r = await acao.executar(() => moverEtapaNoInbox(atendimentoId, etapa, o!.id));
     if (r?.tipo === "ok" && vivo.current) aoMudar();
@@ -68,6 +70,7 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
       {podeAssumir && aoAssumir && <Botao variante="fantasma" tamanho="md" disabled={acao.ocupado} aria-busy={acao.ocupado || undefined} onClick={() => void assumir()} className="min-h-11 justify-start gap-4 px-0 text-brand-700"><IconHandStop size={17} aria-hidden />Assumir conversa</Botao>}
       {capacidades.moverEtapa && destinoPerda?.tipo === "acao" && destinoPerda.acao === "marcarPerdido" && <Botao variante="fantasma" tamanho="md" disabled={acao.ocupado} onClick={() => escolher("PERDIDO", destinoPerda)} className="min-h-11 justify-start gap-4 px-0 text-red-700"><IconThumbDown size={17} aria-hidden />Marcar como perdido</Botao>}
     </div>
+    {tarefas}
     <OutrasOportunidades outras={dados.outras} pessoaId={dados.pessoaId} podeCriar={podeCriarOportunidade} verContato={capacidades.verContato} podeAbrirFunil={podeAbrirFunil} />
   </div>;
 }

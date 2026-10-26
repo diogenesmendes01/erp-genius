@@ -7371,3 +7371,40 @@ Backport inicial incluiu mock de tarefas de330, ausente nesta base. Filha recomp
 ### Inbox #353 — QA exata do backport corrigido
 
 QA independente na filha `d3733ff077330a664826d961633911d79f510421`: terminal `2576ca`, EXIT0, arquivo completo/11 testes, UTC/w1/1024, sem filtros ou novos skips. Parecer SHA256 `6aea653a698ed18bcc39207265a659baeb22b188fba695536b7c745510f283b1`; log SHA256 `629d1d8b5a728753feaca9f10b2cd0e1143b5fc28f655b6b0b6173d980999dc1`. TESTER confirmou runtime literal à base02ca, somente import/DTO completo/uso no mock e todas as assertivas preservadas. Nenhum mock de tarefas330; perfil/client/bundle preservados. Não houve SQL nem TSC nessa QA.
+
+### Inbox #330 — tarefas da oportunidade (DEV A, em implementação)
+
+Branch `codex/inbox-e2-330-tarefas` desde329 `26c4da69f4785ea57d4393a4069a871fa2597915`; candidata congelada no commit que contém este checkpoint, sem homologação. SPEC: `docs/specs/inbox-tarefas-oportunidade.md`. Consulta com escopo∩pertença OR, quatro núcleos TX CRM públicos preservados, wrapper Config→Atendimento→Tarefa, fuso escolar esperado e instante preservado, lista/ações e cancelamento em ConfirmarAcao único. Extensão compartilhada podeConfirmar defaulttrue coordenada e aprovada Root; não toca Modal da frente B. #331 criação/edição e #338 extensões permanecem reservadas.
+
+SQL19 (4novos+CRM15), depois14 nativos e11 dos painéis terminaram0; novos testes concorrentes foram adicionados após o primeiro GREEN, sem alegação de RED causal. Guardas iniciais364/368 revelaram quatro ajustes canônicos; UNITfinal87731/bba26c EXIT0,16arquivos474; lint24b0d3c0 EXIT0. SQL61008/901d01 EXIT0,3arquivos21 inclui pool1/convite/equipe/LISTEN real; regressões322/idempotência/pool1anterior38708/d05145 EXIT0,3arquivos20. Evidências e limites em docs/qa/inbox-330-candidata-dev-a.md. Sem claim green global330. Pendentes: TSC integrador, UNITglobal coordenada, QA independente/visual no commit exato, PR/CI/merge. Não concluída.
+#### #330 — correção de guardas globais da candidata697
+
+Root TSC54920/2754c9 EXIT2 (fixtureDTO incompleta), FullUNIT46010/7ca0b4 EXIT1 (969arquivos,2falhas;8246pass2fail8248). Correção filha mantém backend literal697: CampoTexto e tipagem canônica; fixtureDTO completa; sessão estável do atendimento com snapshot/token/versão somente do alvo. Refresh de outra tarefa conserva o mesmo campo e motivo; próprio alvo mudado/ausente conserva rascunho mas invalida confirmação/ACK. Sem relaxar guardas e sem nova INT/DB. RED49350/5944c6 5fail37pass→GREEN97005/713e5c42/42; lint3final4213dd0 (erro de refs da primeira tentativa preservado em log). UNIT18final60159/5058f8 EXIT0,510/510,80.13s; lint3whitelist4213dd EXIT0,0warnings; TSC/global/QA da filha pendentes. SPEC e relatório de QA detalham limites; não concluída.
+#### #330 — gates originais aprovados e PR436 draft
+
+Fonte `5e0f117beabc6fa59c3419564c8d7b063850424a`, [PR436](https://github.com/diogenesmendes01/erp-genius/pull/436) draft, branch publicação `codex/inbox-e2-330-publicacao`, base real435. ROOT TSC original53463/03fd29 EXIT0, sem config/exclusões novas; FullUNIT UTC19816/1287ab EXIT0,969arquivos8254testes (234.20s,sem filtros/skips); lint original97309/f24d9c EXIT0,0erros50warnings. TESTER no head exato: favorável34arquivos749testes+17controles adversariais, EXIT0 (parecer e3c7c1e… informado ROOT). Integração independente backend697 literal8/66 já aprovada e DB restaurado. SPEC/QA registram evidências e negativos históricos sem somar recortes. Este commit é só docs: nenhuma fonte, teste, banco ou cache alterado. Aceite visual/CI/publicação/merge continuam coordenados pelo integrador; não concluída. #331 só plano até GO; #338 fora do recorte.
+
+### PR436 — revisão R2 C3/C4 (commit separado da435)
+
+Cancelamento em voo associa sucesso à mesma abertura/tentativa, evitando obsolescência prematura causada pelo próprio refresh. A→B→A, fechamento/reabertura,403/404, permissão, erro/incerto e motivo preservado seguem controlados. A leitura calcula a alçada do lead antes das tarefas, sem early-return que suprima sua ACL própria; direto sem lead e tarefa autorizada de lead oculto permanecem. Mutadores330/strict435/legado435 intactos neste patch.
+
+REDs C3a7aeca2fail17pass eC43c2ebc2fail1pass; GREEN UI+confirm95934/db6353 2/86, INTleitura46569/ca6c5f 2/13, UNIT final36496/d4922d 19/518 EXIT0,lint5 904df30. Sem filtros/skips nas rodadasGREEN; controles DOM simulam refresh/403/404, não são SSE/HTTP nativos. DBlease liberada e Node livre. SPEC/QA330 atualizados; Root coordenará TSC/global/QA/visual finalR2, sem reaproveitar os gates5e0 como se fossem desta fonte. #331 suspensa; nenhuma publicação pelo DEV.
+
+### Inbox #331 — modal de criação/edição (candidata DEV A)
+
+Branch `codex/inbox-e2-331-modal-tarefa`, base `1ebbadc79bb42c6543ca8874d31b925ad6ac196e`. SPEC `docs/specs/inbox-modal-tarefa.md`, QA `docs/qa/inbox-331-candidata-dev-a.md`. Título200/contador200; defaults atuais, sem338/339/schema/deps. Núcleos criar/editarTx internos preservam APIs CRM. JáFeita+criação+Eventos+aviso atômicos; advisory antes Config→Atendimento→Tarefa/FKs, replay autorizado/contextual sem duplicação. Edição manter/vincularAtual/remover derivada servidor; Pessoa incompatível recusa. Manter tolera perda só de visibilidade com ACL própria atual; trocas reais de vínculo invalidam. UI real usa token de abertura independente e rascunho estável, diff sem roundtrip DST e cancelamento único canônico.
+
+SQL final59529/8dec37 EXIT0,3arquivos35testes135.46s (CRM15+novos19+pool1real1), sem filtros/skips; barreiras PostgreSQL comprovadas, CAS concorrente, LISTEN/sentinela e rollback após aviso injetado. UNIT final99758/abc344 EXIT0,18arquivos614testes99.80s,UTC,w1heap2048 (OOM1024 histórico preservado); lint18final cfe36e EXIT0 sem warnings. Negativos instrumentação/fixtures e limites de doubles DOM/harness estão no QA, sem alegação de RED causal dos casos adicionados após GREEN. LeaseA liberada após terminalSQL, sem nova INT. TSC/fullUNIT/lint originais ROOT, QA independente/visual APP+PROTO/CI/PR/merge pendentes no SHA exato. Não homologada nem concluída; sem push/deploy.
+
+#### #331 — P2 independente: lembrete em agenda nova
+
+TESTER reprovou fbbd: o núcleo conferia o horário anterior ao receber agenda resolvida. Oráculo original reproduzido b08c4e EXIT1,2fail5pass7; wrapper nativo76235/9a1469 EXIT1,2fail4pass6. Filha de57f corrige apenas a escolha da agenda efetiva no validador de lembrete; ausência da opção conserva validação CRM legada. Não altera UI/API/DST/diff/rearmar. Controles adicionais negativos de agenda efetiva inválida e legado deram RED5eb452,4fail6pass10; GREEN núcleo6939e0 EXIT0,10/10. SQL focal32289/a93b85 EXIT0,3arquivos22testes82.90s (novos6+CRM15+pool1real1),sem filtros/skips,UTC/w1heap1024; lint3 9c65ab EXIT0. LeaseA liberada após terminal, banco/restauração ROOT. SPEC/QA331 atualizados; QA independente/TSC/gates originais da filha ainda pendentes. Não homologada; #332 segue somente planejamento pausado, sem produção.
+### Validação da composição #331 — anúncio do carregamento
+
+O gate global original em `d2719c18` encontrou uma falha real na guarda de anúncios: o modal montava `role=status` junto com o texto de carregamento. TypeScript e lint desse commit terminaram com código 0; a suíte global teve 972 arquivos/8.291 testes aprovados e um arquivo/teste com falha. O integrador manteve o `MensagemStatus` montado e o recorte original de anúncios/modal/botões passou com três arquivos/122 testes, executor `5cfdff`, código 0. A correção não altera contratos, backend, submissão ou rascunhos. Novo gate global e aceite visual continuam pendentes; não marcar a issue concluída.
+
+### Registro histórico do cabeçalho anterior
+
+O texto abaixo pertence ao checkpoint de setembro, substituído pelo checkpoint datado do Inbox no início deste documento. Não representa a contagem atual da campanha.
+
+Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
