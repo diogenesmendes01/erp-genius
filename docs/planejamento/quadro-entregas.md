@@ -7351,3 +7351,23 @@ Smoke b437/z1iv de três tamanhos (8b42e0 EXIT0) corrigiu mobile, mas demonstrou
 ### Cabeçalho R9 — aceite restrito
 
 Fonte7e798e6b/buildQcX: build original EXIT0; focal4/37,31medidas,30capturas inspecionadas e20interaçõesMenu, todosEXIT0. Auditoria pós-lote424hashes/1379originais intactos. Parecer restritoHeader, sem homologar outrasfuncionalidades; binários/CI/merges pendentes. docs/qa/inbox-header-aceite-r9-root.md.
+
+### Inbox #353 — Aria na conversa sem painel duplicado (25/10/2026)
+
+DEV B na base8535c5ba, branch codex/inbox-e3-353-retirar-painel-aria. PainelAria/import/montagem/wrapper órfão e mapa de botões legados retirados. DTO AriaDoAtendimento fica com pausada/motivo/podeDevolver/podeDecidir/cartoes/handoff; campo sugestoes e query/helper exclusivos saem. textoPausaAria permanece canônico; cartões/devolução/handoff/actions/ACL/coordenadores352 e rascunhos permanecem literais. Callbacks cartão→aoMudar e conversa→refresh lista+painel verificados. Testes de escopo/vigência/histórico/limite/identidade/formulários preservados, sem permissões novas.
+
+TDD UNIT73bba1 EXIT1 (112 casos/duas falhas) e INT91605/9b8f5f EXIT1 (13 casos/quatro falhas), controles preservados. GREEN UNIT81247/2ce618 EXIT0:86 arquivos/1.024 casos; lint10 572c9b EXIT0 --max-warnings=0. GREEN INT60306/31a78a EXIT0:55 arquivos/699 casos,2677,49s, consultaAria+server/inbox+server/aria, perfil original ci-integracao/w1/heap1024/uma suíte por vez, sem filtro de caso/skip no resumo. Lease exclusiva B concedida pelo ROOT após restauro400323; devolvida após terminal, sem SQL adicional. Diagnóstico único RO autorizado8a13ca0 confirmou naquele snapshot zero bloqueadores; não substituiu o terminal. Perfilae0f54/cliente647c25 preservados. Wrapper UI limpo depois da INT:5 arquivos/158 testes6430fe e lint7e4432 EXIT0, sem repetir55por limpeza visual.
+
+SPEC inbox-aria-sem-painel-legado.md, report output/inbox-353-report.md, índice/adendos348/350 atualizados. TSC/global/build/CI/QA independente e visual1440×900/1024×768/390×844 claro/escuro continuam pendentes do integrador. D1–D4 aprovadas não representam implantação das extensões; #357/MANUAL/cancelamentos/interruptor permanecem próprios. P2 residuais431/434 serão commits separados, sem mistura nesta feature. Sem install/generate/schema/env/servidor/browser/provedor real/PR/push.
+
+### Inbox #353 — fixture completa na revisão C3 (25/10/2026)
+
+Fixture de paineis-tags.test.ts agora usa DTO completo com satisfies AriaDoAtendimento, sem casts e preservando todas as asserções. Focal85cba9 EXIT0:1arquivo11testes completos,UTC/w1/1024 e sete providers vazios. Nenhum runtime/ACL/consulta/schema alterado; SQL não repetida. QA docs/qa/inbox-353-fixture-r5-root.md; TSC/global da composição final e aceite visual continuam gates separados.
+
+### Inbox #353 — escopo do backport da fixture
+
+Backport inicial incluiu mock de tarefas de330, ausente nesta base. Filha recompõe teste a partir02ca1895 comsomenteimport/DTOcompleto/usonomock, semtarefas. SourceRootcomposta permanece correta comsuasprópriasdependências. QAexata dafilha pendente; negativo deescopo preservado.
+
+### Inbox #353 — QA exata do backport corrigido
+
+QA independente na filha `d3733ff077330a664826d961633911d79f510421`: terminal `2576ca`, EXIT0, arquivo completo/11 testes, UTC/w1/1024, sem filtros ou novos skips. Parecer SHA256 `6aea653a698ed18bcc39207265a659baeb22b188fba695536b7c745510f283b1`; log SHA256 `629d1d8b5a728753feaca9f10b2cd0e1143b5fc28f655b6b0b6173d980999dc1`. TESTER confirmou runtime literal à base02ca, somente import/DTO completo/uso no mock e todas as assertivas preservadas. Nenhum mock de tarefas330; perfil/client/bundle preservados. Não houve SQL nem TSC nessa QA.

@@ -1,57 +1,31 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@/server/aria/pausa", () => ({ devolverParaAria: vi.fn() }));
-vi.mock("@/server/aria/historico", () => ({ aprovarAcaoAria: vi.fn(), rejeitarAcaoAria: vi.fn() }));
-
 import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
-import { PainelAria } from "./PainelAria";
-import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
-
-const sug = { id: "s1", acao: "RESPONDER" as const, resumo: "Oi, posso ajudar com a matrícula.", expiraEm: "2026-10-18T15:00:00.000Z" };
-const montar = (aria: AriaDoAtendimento) => renderToStaticMarkup(createElement(PainelAria, { atendimentoId: "a1", aria, fuso: null, aoMudar: () => {} }));
-const texto = (h: string) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ");
-const botao = (h: string, rotulo: string) => new RegExp(`<button[^>]*>${rotulo}</button>`).test(h) || new RegExp(`<button[^>]*aria-label="${rotulo}[^"]*"`).test(h);
-
-const msgIA: MensagemThread = {
-  id: "m1", direcao: "SAIDA", tipo: "TEXTO", corpo: "Olá", midiaPath: null, status: "ENVIADA", origem: "IA",
-  autorNome: null, templateNome: null, criadoEm: "2026-10-17T15:30:00.000Z", participanteNome: null, favorita: false, clientMessageId: null,
-};
-
-describe("Aria no painel do atendimento (Task 29)", () => {
-  it("mostra_motivo_e_devolver", () => {
-    const h = montar({ handoff: null, podeDecidir: false, cartoes: [], pausada: true, motivo: "CELULAR", podeDevolver: true, sugestoes: [] });
-    expect(texto(h)).toContain("Aria pausada · Resposta pelo celular");
-    expect(botao(h, "Devolver para Aria")).toBe(true);
-  });
-  it("sem_escopo_de_envio_ve_a_pausa_sem_devolver", () => {
-    // Mesma regra do servidor (devolverParaAria exige o escopo de envio): quem só lê vê a pausa, sem o botão.
-    const h = montar({ handoff: null, podeDecidir: false, cartoes: [], pausada: true, motivo: "HUMANO_RESPONDEU", podeDevolver: false, sugestoes: [] });
-    expect(texto(h)).toContain("Aria pausada");
-    expect(h).not.toContain("Devolver para Aria");
-  });
-  it("pausada_sem_motivo_nao_quebra", () => {
-    expect(texto(montar({ handoff: null, podeDecidir: false, cartoes: [], pausada: true, motivo: null, podeDevolver: true, sugestoes: [] }))).toContain("Aria pausada");
-  });
-  it("sugestoes_com_aprovar_e_rejeitar", () => {
-    const h = montar({ handoff: null, podeDecidir: false, cartoes: [], pausada: false, motivo: null, podeDevolver: false, sugestoes: [sug] });
-    expect(botao(h, "Aprovar")).toBe(true);
-    expect(botao(h, "Rejeitar")).toBe(true);
-    expect(texto(h)).toContain("Oi, posso ajudar com a matrícula.");
-    expect(h).not.toContain("Devolver para Aria");
-  });
-  it("sem_pausa_e_sem_sugestao_nao_mostra_nada", () => {
-    expect(montar({ handoff: null, podeDecidir: false, cartoes: [], pausada: false, motivo: null, podeDevolver: false, sugestoes: [] })).toBe("");
-  });
-  it("mensagem_da_aria_identificada", () => {
-    const h = renderToStaticMarkup(createElement(BalaoMensagem, { m: msgIA, fuso: null, aoComando: () => {}, recursos: () => true }));
-    expect(texto(h)).toContain("Aria");
-  });
-  it("o_painel_do_inbox_monta_o_bloco_da_aria (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/InboxNovo.tsx", "utf8");
-    expect(fonte).toMatch(/<PainelAria[\s\S]*?aria=\{painelSetor\.dado\.aria\}/);
-  });
+import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
+import { textoPausaAria, linhaEstadoAria } from "./aria/textos-aria";
+import { BotaoDevolverAria } from "./aria/BotaoDevolverAria";
+import { CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
+vi.mock("@/server/aria/acoes",()=>({devolverParaAria:vi.fn(),aprovarAcaoAria:vi.fn(),rejeitarAcaoAria:vi.fn()}));
+const sug:SugestaoAriaThread={id:"s1",turnoId:"t1",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-18T14:00:00Z",expiraEm:"2026-10-18T15:00:00Z",justificativa:null,texto:"Oi, posso ajudar com a matrícula.",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
+const msgIA:MensagemThread={id:"m1",direcao:"SAIDA",tipo:"TEXTO",corpo:"Olá",midiaPath:null,status:"ENVIADA",origem:"IA",autorNome:null,templateNome:null,criadoEm:"2026-10-17T15:30:00Z",participanteNome:null,favorita:false,clientMessageId:null};
+describe("353: Aria no cabeçalho e na thread, sem painel duplicado",()=>{
+ it("o_inbox_nao_monta_mais_o_painel_da_aria",()=>{
+  expect(existsSync("src/app/(app)/inbox/PainelAria.tsx")).toBe(false);
+  const inbox=readFileSync("src/app/(app)/inbox/InboxNovo.tsx","utf8"),conversa=readFileSync("src/app/(app)/inbox/ConversaAberta.tsx","utf8");
+  expect(inbox).not.toContain("PainelAria");expect(conversa).toContain("<CartaoSugestaoAria s={i.s}");expect(conversa).toContain("aoDecidir={aoMudar}");expect(conversa).toContain("<ControladorDevolverAria");expect(conversa).toContain("acoesAria={devolver?.botao}");expect(conversa).toContain("{devolver?.feedback}");
+ });
+ it.each([["CELULAR","Aria pausada · Resposta pelo celular"],["HUMANO_RESPONDEU","Aria pausada · Humano respondeu no ERP"],[null,"Aria pausada"]] as const)("motivo de pausa continua no texto e dica do cabeçalho: %s",(motivo,dica)=>{
+  expect(textoPausaAria(motivo)).toBe(dica);expect(linhaEstadoAria("humano",{atendidoPorVoce:true,responsavelNome:"Ana",podeDecidir:false,pausada:true,motivo})?.dica).toBe(dica);
+  const h=renderToStaticMarkup(createElement(BotaoDevolverAria,{atendimentoId:"a1",dica,aoMudar(){}}));expect(h).toContain('title="'+dica+'"');expect(h).toContain('aria-label="Devolver para Aria"');
+ });
+ it("cartão pendente conserva resumo e aprovar/rejeitar fora do painel",()=>{
+  const h=renderToStaticMarkup(createElement(CartaoSugestaoAria,{s:sug,usuarioId:"u1",fuso:"UTC",aoDecidir(){}}));expect(h).toContain(sug.texto);expect(h).toContain("Aprovar e enviar");expect(h).toContain("Rejeitar");expect(h).not.toContain("Devolver para Aria");
+ });
+ it("cartão decidido conserva histórico sem ação",()=>{
+  const h=renderToStaticMarkup(createElement(CartaoSugestaoAria,{s:{...sug,status:"APROVADA",decididaEm:"2026-10-18T14:20Z",decididaPorId:"u1"},usuarioId:"u1",fuso:"UTC",aoDecidir(){}}));expect(h).toContain("Aprovado por você");expect(h).not.toContain("<button");
+ });
+ it("mensagem_da_aria_identificada",()=>{const h=renderToStaticMarkup(createElement(BalaoMensagem,{m:msgIA,fuso:null,aoComando(){},recursos:()=>true}));expect(h).toContain("Aria");});
 });

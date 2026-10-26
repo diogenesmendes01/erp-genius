@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared";
+import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 const m = vi.hoisted(() => ({ buscar: vi.fn(), tags: vi.fn(), escopo: vi.fn(), ver: vi.fn(), acoes: vi.fn(), envio: vi.fn(), aria: vi.fn(), oportunidade: vi.fn(), disponiveis: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { atendimentoWhatsApp: { findFirst: m.buscar }, pessoaTag: { findMany: m.tags }, oportunidade: { findUnique: m.oportunidade }, tag: { findMany: m.disponiveis } } }));
 vi.mock("@/server/whatsapp/escopo", () => ({ escopoAtendimentos: m.escopo }));
@@ -10,7 +11,8 @@ import { carregarPainel } from "./paineis";
 const u = { id: "u1", nome: "Vendedor", papeis: [Papel.VENDEDOR] } as UsuarioSessao;
 const registro = (extra = {}) => ({ id: "a1", finalidade: "COMERCIAL", leadId: "l1", aluno: null, lead: { id: "l1", nome: "Lead", etapa: "NOVO", valorPrevisto: null, pessoaId: "p1", pessoa: { responsavel: null } }, matricula: null, conversa: { contatoId: "c1", contato: { pessoaId: "p1", nomeExibicao: null, nomePerfil: null, telefoneE164: "+550000000001", responsavel: null } }, ...extra });
 const oportunidade = (pessoa: unknown = { id: "p1", responsavel: null }) => ({ id: "l1", nome: "Lead", b2b: false, planoPrevisto: null, pessoa, empresa: null, participantes: [] });
-beforeEach(() => { vi.resetAllMocks(); m.escopo.mockResolvedValue({ id: "a1" }); m.buscar.mockResolvedValue(registro()); m.ver.mockResolvedValue(true); m.oportunidade.mockResolvedValue(oportunidade()); m.disponiveis.mockResolvedValue([]); m.tags.mockResolvedValue([{ tag: { id: "ingles", nome: "Inglês" }, criadoPorId: "autor" }, { tag: { id: "noite", nome: "Noite" }, criadoPorId: null }]); m.acoes.mockResolvedValue({ podeVincular: true }); m.envio.mockResolvedValue({ id: "a1" }); m.aria.mockResolvedValue({ pausada: true, sugestoes: [] }); });
+const aria = { pausada: true, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null } satisfies AriaDoAtendimento;
+beforeEach(() => { vi.resetAllMocks(); m.escopo.mockResolvedValue({ id: "a1" }); m.buscar.mockResolvedValue(registro()); m.ver.mockResolvedValue(true); m.oportunidade.mockResolvedValue(oportunidade()); m.disponiveis.mockResolvedValue([]); m.tags.mockResolvedValue([{ tag: { id: "ingles", nome: "Inglês" }, criadoPorId: "autor" }, { tag: { id: "noite", nome: "Noite" }, criadoPorId: null }]); m.acoes.mockResolvedValue({ podeVincular: true }); m.envio.mockResolvedValue({ id: "a1" }); m.aria.mockResolvedValue(aria); });
 it("tags só depois do escopo e pessoa autorizada; retorno mínimo/marcaD20/ordem", async () => {
  const r = await carregarPainel(u, "a1"); expect(r?.tags).toEqual([{ id: "ingles", rotulo: "Inglês", ia: false }, { id: "noite", rotulo: "Noite", ia: true }]);
  expect(m.buscar).toHaveBeenCalledWith(expect.objectContaining({ where: { AND: [{ id: "a1" }, { id: "a1" }] } }));

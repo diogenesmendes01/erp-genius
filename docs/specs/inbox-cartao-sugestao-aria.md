@@ -33,3 +33,7 @@ Aceite visual obrigatório: 1440x900,1024x768,390x844 em claro/escuro. Matriz co
 ### Composição #434: acesso revogado no cliente
 
 404 no painel ativa um marcador cliente, preservado em503 e no retry inicial; só200 fresco aceito pela aquisição existente o limpa. Cartões/histórico/status não são removidos ou falsificados. ConversaAberta transporta prop opcional de bloqueio ao cartão; DOM e handler bloqueados e geração antiga invalidada evitam callback/foco/erro de ACK antigo, inclusive404→503 e404→200. Consumidores sem bloqueio continuam com defaultfalse e um cartão autorizado por seu lead permanece decidível apesar de aria.podeDecidir geral=false. Não muda DTO/backend/ACL; ver report inbox-434-cartoes-404-report.md para evidências e limite do oráculo de projeção adaptado.
+
+### Local definitivo após #353
+
+PainelAria e o campo DTO legado sugestoes foram removidos. Cartões da thread tornam-se a única apresentação das sugestões/decisões no Inbox; produtor cartoesDaThread, escopos, histórico24h, limite20, actions e aoDecidir=aoMudar permanecem literais. Pausa/devolução ficam no cabeçalho, handoff na faixa/modal. Não há aquisição paralela, permissão nova ou alteração das regras de aprovação. Gates e limites da remoção estão em inbox-aria-sem-painel-legado.md.

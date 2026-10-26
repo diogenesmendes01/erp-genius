@@ -120,7 +120,7 @@ it("347 erro na recarga mantém faixa/contagem conhecidas e global não substitu
 
 it("348 painel corrente mantém história no503 e revoga só capacidades Aria no404",async()=>{
  const original=fetcher.getMockImplementation()!;
- const aria={handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:"MANUAL" as const,podeDevolver:true,sugestoes:[]};
+ const aria={handoff:null,podeDecidir:true,cartoes:[],pausada:true,motivo:"MANUAL" as const,podeDevolver:true,};
  let status=200;
  fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true,aria,acoes:null})):new Response("",{status})):original(u,o));
  await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
@@ -131,7 +131,7 @@ it("348 painel corrente mantém história no503 e revoga só capacidades Aria no
 it("352 recibo da leitura existente distingue200/503 e404 revoga capacidades do handoff sem apagar resumo",async()=>{
  const original=fetcher.getMockImplementation()!;
  const handoff={acaoId:"h352",pedidoEm:"2026-10-25T00:00:00Z",motivo:null,motivoTexto:"Motivo",destino:"FILA_SETOR",responsavelNome:null,resumo:{quer:"Histórico visível",proximoPasso:null},feito:[],podeAssumir:true,ehResponsavel:true};
- const aria={handoff,podeDecidir:true,cartoes:[],pausada:true,motivo:"HANDOFF" as const,podeDevolver:true,sugestoes:[]};let status=200;
+ const aria={handoff,podeDecidir:true,cartoes:[],pausada:true,motivo:"HANDOFF" as const,podeDevolver:true,};let status=200;
  fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true,aria,acoes:null})):new Response("",{status})):original(u,o));
  await emitir(global345);expect(m.leituraRecebida?.resultado).toBe("ok");expect(m.leituraRecebida?.finalizada).toBe(m.leituraRecebida?.solicitada);const primeira=m.leituraRecebida!.finalizada;
  status=503;await emitir(global345);expect(m.leituraRecebida?.resultado).toBe("falha");expect(m.leituraRecebida!.finalizada).toBeGreaterThan(primeira);expect(m.ariaRecebida).toEqual(aria);
@@ -139,7 +139,7 @@ it("352 recibo da leitura existente distingue200/503 e404 revoga capacidades do 
 });
 
 it("434 marcador cliente404 persiste503 e só200 fresco recupera decisões sem remover cartões",async()=>{
- const original=fetcher.getMockImplementation()!,cartao={id:"s404",status:"SUGERIDA"};const aria={handoff:null,podeDecidir:false,cartoes:[cartao],pausada:false,motivo:null,podeDevolver:false,sugestoes:[]};let status=200;
+ const original=fetcher.getMockImplementation()!,cartao={id:"s404",status:"SUGERIDA"};const aria={handoff:null,podeDecidir:false,cartoes:[cartao],pausada:false,motivo:null,podeDevolver:false};let status=200;
  fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,aria,acoes:null})):new Response("",{status})):original(u,o));
  await emitir(global345);expect(m.bloqueioRecebido).toBe(false);expect(m.ariaRecebida?.podeDecidir).toBe(false);
  status=503;await emitir(global345);expect(m.bloqueioRecebido).toBe(false);
@@ -147,7 +147,7 @@ it("434 marcador cliente404 persiste503 e só200 fresco recupera decisões sem r
  status=503;await emitir(global345);expect(m.bloqueioRecebido).toBe(true);expect(m.ariaRecebida?.cartoes).toEqual([cartao]);
  status=200;await emitir(global345);expect(m.bloqueioRecebido).toBe(false);expect(m.ariaRecebida?.podeDecidir).toBe(false);expect(m.ariaRecebida?.cartoes).toEqual([cartao]);
 });it("434200 antigo não limpa marcador404 após revisão503 mais nova",async()=>{
- const original=fetcher.getMockImplementation()!;const aria={handoff:null,podeDecidir:false,cartoes:[{id:"s404",status:"SUGERIDA"}],pausada:false,motivo:null,podeDevolver:false,sugestoes:[]};let fase:"404"|"lento"|"503"|"200"="404";let resolver!:(r:Response)=>void;
+ const original=fetcher.getMockImplementation()!;const aria={handoff:null,podeDecidir:false,cartoes:[{id:"s404",status:"SUGERIDA"}],pausada:false,motivo:null,podeDevolver:false};let fase:"404"|"lento"|"503"|"200"="404";let resolver!:(r:Response)=>void;
  fetcher.mockImplementation((u,o)=>!String(u).endsWith("/painel")?original(u,o):fase==="lento"?new Promise<Response>(r=>{resolver=r;}):Promise.resolve(fase==="200"?new Response(JSON.stringify({podeEnviar:false,aria})):new Response("",{status:Number(fase)})));
  await emitir(global345);expect(m.bloqueioRecebido).toBe(true);fase="lento";await emitir(global345);fase="503";await emitir(global345);expect(m.bloqueioRecebido).toBe(true);
  await act(async()=>resolver(new Response(JSON.stringify({podeEnviar:false,aria}))));expect(m.bloqueioRecebido).toBe(true);

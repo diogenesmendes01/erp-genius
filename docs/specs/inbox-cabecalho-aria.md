@@ -23,6 +23,10 @@ C4: os casos existentes foram renomeados para linha_por_estado, textoPausaAria_m
 C5: o botão do PainelAria e o novo botão do cabeçalho coexistem até a remoção do painel na #353, conforme o plano. Ambos usam devolverParaAria; isso não cria uma nova permissão. A duplicação será registrada na inspeção visual, sem declarar que o painel já foi removido. Assumir/compositor/switch global continuam nas extensões próprias aprovadas pelo dono.
 
 O primeiro TSC da composição detectou uma prop JSX aria repetida pelo merge automático (TS17001, EXIT2). A rodada global em andamento foi interrompida pelo integrador (EXIT1) antes de mudar a fonte; não representa suíte completa nem sucesso. O atributo repetido foi removido sem alterar seu valor ou ciclo de atualização. Novos gates são registrados separadamente.
+### Remoção do legado na #353
+
+PainelAria foi retirado da aba Detalhes. textoPausaAria continua no módulo aria/textos-aria; seu reexport legado desaparece. A pausa/motivo e a única devolução permanecem no cabeçalho/controlador canônico, com feedback irmão e refresh existente. Capacidade, action, foco e token de ciclo não mudaram. A coexistência registrada em C5 era temporária e termina aqui; não implica implementação de D3/#357.
+
 ## Correção mobile R4 — 25/10/2026
 
 A inspeção com a linha fictícia ativa e desconectada mostrou um defeito em 390px: Transferir, Devolver, Assumir, Painel e Menu comprimiam nome e estado para poucos caracteres. As capturas anteriores com a linha inativa não demonstravam esse conjunto de controles e permanecem apenas como diagnóstico.
