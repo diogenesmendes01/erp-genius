@@ -1,6 +1,9 @@
 import {afterAll,beforeEach,expect,it,vi} from "vitest";
 import {Papel,PrismaClient} from "@prisma/client";
 import {Client} from "pg";
+import {mkdtemp,writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {cancelarAgendadaInboxTx} from "./agendadas-cancelamento";
 import {cancelarMensagemAgendada} from "@/server/crm/mensagens-agendadas";
 const {authMock}=vi.hoisted(()=>({authMock:vi.fn()}));
@@ -29,7 +32,32 @@ it("333 espera real no Atendimento revalida ACL após perda de carteira e linha"
 it("333 espera real reavalia predicado de vínculo após retarget válido",async()=>{const c=await cenario(),outra=await prisma.atendimentoWhatsApp.create({data:{conversaId:c.conversa.id,contextoChave:"SECRETARIA:333-retarget",finalidade:"SECRETARIA"}});const r=await barreira333("IntencaoMensagem",c.m.id,()=>cancelarAgendadaNoInbox(c.a.id,c.m.id),tx=>tx.intencaoMensagem.update({where:{id:c.m.id},data:{atendimentoId:outra.id}}));expect(r).toMatchObject({ok:false});expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:c.m.id}})).toMatchObject({atendimentoId:outra.id,status:"PENDENTE"});expect(await prisma.evento.count()).toBe(0);});
 it("333 CAS não sobrescreve claim ENVIANDO vencedor durante espera real",async()=>{const c=await cenario();const r=await barreira333("IntencaoMensagem",c.m.id,()=>cancelarAgendadaNoInbox(c.a.id,c.m.id),tx=>tx.intencaoMensagem.update({where:{id:c.m.id},data:{status:"ENVIANDO"}}));expect(r).toMatchObject({ok:false});expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:c.m.id}})).status).toBe("ENVIANDO");expect(await prisma.evento.count()).toBe(0);});
 it("333 pool1 usa somente a TX do cliente fornecido, sem cliente global aninhado",async()=>{const c=await cenario(),url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");const db=new PrismaClient({datasources:{db:{url:url.toString()}}});const global=vi.spyOn(prisma,"$transaction").mockRejectedValue(Error("Cliente global não deve ser usado333"));try{await cancelarAgendadaInboxTx(c.dono,c.a.id,c.m.id,db);}finally{global.mockRestore();await db.$disconnect();}expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:c.m.id}})).status).toBe("CANCELADA");});
-it("333 NOTIFY nativo só no commit, replay e rollback não publicam",async()=>{const c=await cenario(),listener=new Client({connectionString:process.env.DATABASE_URL}),avisos:unknown[]=[];await listener.connect();try{await listener.query("LISTEN inbox_eventos");listener.on("notification",n=>{if(n.payload){const v=JSON.parse(n.payload);if(v.atendimentoId===c.a.id)avisos.push(v);}});expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(true);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(true);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);await prisma.intencaoMensagem.update({where:{id:c.m.id},data:{status:"PENDENTE",motivoFalha:null}});const real=aviso.avisarAtendimentoAtualizado;vi.spyOn(aviso,"avisarAtendimentoAtualizado").mockImplementationOnce(async(tx,id)=>{await real(tx,id);throw Error("Rollback depois do notify333");});expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(false);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:c.m.id}})).status).toBe("PENDENTE");}finally{await listener.end();}});
+it("333 NOTIFY nativo só no commit, replay e rollback não publicam",async()=>{
+ const c=await cenario(),listener=new Client({connectionString:process.env.DATABASE_URL}),avisos:unknown[]=[];
+ await listener.connect();
+ try{
+  await listener.query("LISTEN inbox_eventos");listener.on("notification",n=>{if(n.payload){const v=JSON.parse(n.payload);if(v.atendimentoId===c.a.id)avisos.push(v);}});
+  expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(true);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);
+  expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(true);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);
+  await prisma.intencaoMensagem.update({where:{id:c.m.id},data:{status:"PENDENTE",motivoFalha:null}});
+  // O setup pode avisar quando o ciclo genérico502 está instalado; pré502 continua válido.
+  await listener.query("SELECT 1");await pausa333(30);
+  const baselineAntesRollback=avisos.length;
+  const eventosAntesRollback=await prisma.evento.count({where:{agregadoId:c.a.id,tipo:"MensagemAgendadaCancelada"}});
+  const real=aviso.avisarAtendimentoAtualizado;
+  vi.spyOn(aviso,"avisarAtendimentoAtualizado").mockImplementationOnce(async(tx,id)=>{await real(tx,id);throw Error("Rollback depois do notify333");});
+  expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(false);
+  await listener.query("SELECT 1");await pausa333(30);
+  const avisosDepoisRollback=avisos.length;
+  const statusDepoisRollback=(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:c.m.id}})).status;
+  const eventosDepoisRollback=await prisma.evento.count({where:{agregadoId:c.a.id,tipo:"MensagemAgendadaCancelada"}});
+  const pasta=await mkdtemp(join(tmpdir(),"inbox333-notify-baseline-")),arquivo=join(pasta,"curated.json");
+  await writeFile(arquivo,JSON.stringify({baselineAntesRollback,avisosDepoisRollback,deltaAvisos:avisosDepoisRollback-baselineAntesRollback,eventosAntesRollback,eventosDepoisRollback,deltaEventos:eventosDepoisRollback-eventosAntesRollback,statusDepoisRollback},null,2));
+  console.info("Evidência baseline rollback333:",arquivo);
+  expect(avisos).toHaveLength(baselineAntesRollback);
+  expect(statusDepoisRollback).toBe("PENDENTE");expect(eventosDepoisRollback).toBe(eventosAntesRollback);
+ }finally{await listener.end();}
+});
 it("333 duas chamadas realmente bloqueadas no Atendimento produzem uma única transição",async()=>{
  const c=await cenario();let pronta!:()=>void,soltar!:()=>void;const pronto=new Promise<void>(r=>pronta=r),liberar=new Promise<void>(r=>soltar=r);const segura=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.a.id} FOR NO KEY UPDATE`;pronta();await liberar;},{timeout:12000});await pronto;const chamadas=[cancelarAgendadaNoInbox(c.a.id,c.m.id),cancelarAgendadaNoInbox(c.a.id,c.m.id)];try{await esperarLock333("AtendimentoWhatsApp",2);soltar();await segura;expect((await Promise.all(chamadas)).every(r=>r.ok)).toBe(true);expect(await prisma.evento.count({where:{tipo:"MensagemAgendadaCancelada"}})).toBe(1);}finally{soltar();await Promise.allSettled([segura,...chamadas]);}
 });
