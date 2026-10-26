@@ -12,6 +12,7 @@ vi.mock("./PainelOportunidade", () => ({ PainelOportunidade: (p: { conversa?: { 
 import { FunilCliente } from "./FunilCliente";
 const oportunidade: DetalheOportunidade = {
   id: "op1", codigo: "L-000001", nome: "Pessoa fictícia", b2b: false, etapa: "NOVO", temperatura: "MORNO",
+  probabilidadePct: null, previsaoFechamento: null,
   valorPrevisto: null, moeda: null, pais: null, dono: null, proximaAcao: null, proximoFollowUp: null,
   dataExperimental: null, motivoPerda: null, criadoEm: new Date("2026-10-22T12:00Z"), pessoaId: null, interesse: null,
   objetivo: null, urgencia: null, orcamento: null, objecao: null, taxaMatricula: null,
