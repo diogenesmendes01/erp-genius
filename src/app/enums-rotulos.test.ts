@@ -18,7 +18,7 @@ import {
   FinalidadeNumero, FinalidadeAtendimentoWhatsApp, StatusAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel, OrigemEnvio,
   OrigemCanal, PapelParticipante, DriverWhatsApp,
   CorTag, TipoCampoPersonalizado, AlvoCampoPersonalizado, TelaFiltroSalvo,
-  TipoTarefa, StatusTarefa, PrioridadeTarefa, OrigemTarefa, TipoNotificacao,
+  TipoTarefa, StatusTarefa, PrioridadeTarefa, OrigemTarefa, TipoNotificacao, RecorrenciaTarefa,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as L from "@/lib/labels";
@@ -2112,6 +2112,21 @@ export function mapasInternos(fonte: string, arquivo = "x.ts"): { internos: stri
 const ANTIGOS = ["ETAPA_LABEL", "TEMPERATURA_LABEL", "SEGMENTO_LABEL", "MOTIVO_PERDA_LABEL", "STATUS_MATRICULA_LABEL", "STATUS_COBRANCA_LABEL",
   "STATUS_COMISSAO_LABEL", "STATUS_ALUNO_LABEL", "TIPO_COBRANCA_LABEL", "FORMA_PAGAMENTO_LABEL", "GENERO_LABEL", "ESCOLARIDADE_LABEL",
   "SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL", "STATUS_ENCONTRO_LABEL"];
+function mapaRecorrenciaTarefaAncorado(fonte:string):boolean {
+ const sf=ts.createSourceFile("src/lib/labels.ts",fonte,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS);
+ if((sf as unknown as {parseDiagnostics?:readonly ts.Diagnostic[]}).parseDiagnostics?.length)return false;
+ const encontrados:ts.VariableDeclaration[]=[];
+ for(const st of sf.statements)if(ts.isVariableStatement(st)&&(st.declarationList.flags&ts.NodeFlags.Const)!==0&&st.modifiers?.some(m=>m.kind===ts.SyntaxKind.ExportKeyword))for(const d of st.declarationList.declarations)if(ts.isIdentifier(d.name)&&d.name.text==="RECORRENCIA_TAREFA_LABEL")encontrados.push(d);
+ if(encontrados.length!==1)return false;
+ const d=encontrados[0],t=d.type;
+ if(!t||!ts.isTypeReferenceNode(t)||!ts.isIdentifier(t.typeName)||t.typeName.text!=="Readonly"||t.typeArguments?.length!==1)return false;
+ const record=t.typeArguments[0];
+ if(!ts.isTypeReferenceNode(record)||!ts.isIdentifier(record.typeName)||record.typeName.text!=="Record"||record.typeArguments?.length!==2)return false;
+ const familia=record.typeArguments[0];
+ if(!ts.isImportTypeNode(familia)||!ts.isLiteralTypeNode(familia.argument)||!ts.isStringLiteral(familia.argument.literal)||familia.argument.literal.text!=="@prisma/client"||!familia.qualifier||!ts.isIdentifier(familia.qualifier)||familia.qualifier.text!=="RecorrenciaTarefa"||record.typeArguments[1].kind!==ts.SyntaxKind.StringKeyword)return false;
+ const valor=d.initializer;
+ return !!valor&&ts.isCallExpression(valor)&&ts.isPropertyAccessExpression(valor.expression)&&ts.isIdentifier(valor.expression.expression)&&valor.expression.expression.text==="Object"&&valor.expression.name.text==="freeze"&&valor.arguments.length===1&&ts.isObjectLiteralExpression(valor.arguments[0]);
+}
 const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valores: readonly string[]][] = [
   ["ESTADO_GERACAO_INSIGHT_LABEL",L.ESTADO_GERACAO_INSIGHT_LABEL,Object.values(EstadoGeracaoInsightInbox)],
   ["SENTIMENTO_INSIGHT_LABEL", L.SENTIMENTO_INSIGHT_LABEL, ["POSITIVO", "NEUTRO", "NEGATIVO"]],
@@ -2204,6 +2219,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["TIPO_TAREFA_LABEL", L.TIPO_TAREFA_LABEL, Object.values(TipoTarefa)],
   ["STATUS_TAREFA_LABEL", L.STATUS_TAREFA_LABEL, Object.values(StatusTarefa)],
   ["PRIORIDADE_TAREFA_LABEL", L.PRIORIDADE_TAREFA_LABEL, Object.values(PrioridadeTarefa)],
+  ["RECORRENCIA_TAREFA_LABEL", L.RECORRENCIA_TAREFA_LABEL, Object.values(RecorrenciaTarefa)],
   ["ORIGEM_TAREFA_LABEL", L.ORIGEM_TAREFA_LABEL, Object.values(OrigemTarefa)],
   ["TIPO_NOTIFICACAO_LABEL", L.TIPO_NOTIFICACAO_LABEL, Object.values(TipoNotificacao)],
 ];
@@ -2330,4 +2346,18 @@ it("377 estado de geração tem rótulos fechados e não expõe códigos técnic
   const incompleto={...L.ESTADO_GERACAO_INSIGHT_LABEL};delete(incompleto as Partial<typeof incompleto>).INCERTO;
   expect(problemasDoMapa(Object.freeze(incompleto),valores)).not.toEqual([]);
   expect(problemasDoMapa(Object.freeze({...L.ESTADO_GERACAO_INSIGHT_LABEL,OUTRO:"Outro"}),valores)).not.toEqual([]);
+});
+describe("338 — mapa nominal da recorrência de tarefa",()=>{
+ it("ancora AST no enum Prisma RecorrenciaTarefa e freeze, com rótulos completos",()=>{
+  const fonte=readFileSync("src/lib/labels.ts","utf8");expect(mapaRecorrenciaTarefaAncorado(fonte)).toBe(true);
+  expect(L.RECORRENCIA_TAREFA_LABEL).toEqual({NAO_REPETE:"Não repetir",DIARIA:"Diariamente",SEMANAL:"Semanalmente",MENSAL:"Mensalmente"});expect(problemasDoMapa(L.RECORRENCIA_TAREFA_LABEL,Object.values(RecorrenciaTarefa))).toEqual([]);
+  expect(mapaRecorrenciaTarefaAncorado(fonte.replace('import("@prisma/client").RecorrenciaTarefa','import("@prisma/client").OrigemTarefa'))).toBe(false);
+  expect(mapaRecorrenciaTarefaAncorado(fonte.replace('=Object.freeze({NAO_REPETE:','=({NAO_REPETE:'))).toBe(false);
+ });
+ it("enum cru, chave ausente/extra e mapa mutável continuam recusados",()=>{
+  const valores=Object.values(RecorrenciaTarefa);
+  expect(problemasDoMapa(Object.freeze({...L.RECORRENCIA_TAREFA_LABEL,DIARIA:"DIARIA"}),valores)).toContain("DIARIA: repete o código");
+  const incompleto=Object.fromEntries(Object.entries(L.RECORRENCIA_TAREFA_LABEL).filter(([chave])=>chave!=="MENSAL"));
+  expect(problemasDoMapa(Object.freeze(incompleto),valores)).not.toEqual([]);expect(problemasDoMapa(Object.freeze({...L.RECORRENCIA_TAREFA_LABEL,ANUAL:"Anualmente"}),valores)).not.toEqual([]);expect(problemasDoMapa({...L.RECORRENCIA_TAREFA_LABEL},valores)).not.toEqual([]);
+ });
 });

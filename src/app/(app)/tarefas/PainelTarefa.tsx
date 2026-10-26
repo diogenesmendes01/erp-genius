@@ -28,8 +28,10 @@ const LEMBRETES: { valor: string; rotulo: string }[] = [
   { valor: "", rotulo: "Sem lembrete" },
   { valor: "0", rotulo: "Na hora" },
   { valor: "10", rotulo: "10 minutos antes" },
+  { valor: "15", rotulo: "15 minutos antes" },
   { valor: "30", rotulo: "30 minutos antes" },
   { valor: "60", rotulo: "1 hora antes" },
+  { valor: "1440", rotulo: "1 dia antes" },
 ];
 
 type Props = {
@@ -78,7 +80,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
     const base: CamposFormulario = {
       titulo, tipo, descricao, duracaoMin: duracao as 15 | 30 | 45 | 60 | 90, prioridade,
       dataCivil: dataCivil || null, hora: hora || null,
-      lembreteAntecedenciaMin: (lembrete === "" ? null : Number(lembrete)) as 0 | 10 | 30 | 60 | null,
+      lembreteAntecedenciaMin: (lembrete === "" ? null : Number(lembrete)) as CamposFormulario["lembreteAntecedenciaMin"],
     };
     const d = await acao.executar(async (): Promise<Resultado<unknown>> => {
       if (!tarefa) {

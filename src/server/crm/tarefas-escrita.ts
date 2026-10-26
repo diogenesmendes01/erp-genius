@@ -1,3 +1,6 @@
+import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
+import { configurarRecorrenciaTarefa } from "./tarefa-recorrencia-configuracao";
+import {validarNotificadosTarefaD10,gravarNotificadosTarefaD10} from "./tarefa-notificados";
 import { Papel, type FinalidadeAtendimentoWhatsApp, type Prisma, type Tarefa } from "@prisma/client";
 import { registrarEvento } from "@/server/_shared/evento";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
@@ -7,6 +10,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { capacidadesCrm, setoresDoUsuario } from "./permissoes";
 import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 import type { TarefaInput } from "./tarefas";
+const escritaD10=(d:Partial<TarefaInput>,agenda?:number|null)=>d.recorrencia!==undefined||d.notificarUsuarioIds!==undefined||d.prioridade==="BAIXA"||d.lembreteAntecedenciaMin===15||d.lembreteAntecedenciaMin===1440||agenda===15||agenda===1440;
 const MSG_VERSAO="Esta tarefa foi alterada por outra pessoa. Recarregue.";
 const MSG_FORA_CARTEIRA="Oportunidade fora da sua carteira.";
 function ehAdmin(u: UsuarioSessao) {
@@ -38,7 +42,7 @@ async function validarVinculos(tx: Prisma.TransactionClient, autor: UsuarioSessa
 }
 
 /** Define quem fica com a tarefa e o setor. Sem `tarefas.equipe`, é sempre o próprio usuário. */
-async function resolverResponsavel(
+export async function resolverResponsavel(
   tx: Prisma.TransactionClient,
   autor: UsuarioSessao,
   pedido: string | null | undefined,
@@ -74,18 +78,30 @@ async function espelharNoLead(tx: Prisma.TransactionClient, t: { id: string; lea
 
 
 export async function criarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSessao,d:Omit<TarefaInput,'chaveIdempotencia'>,fuso:string,marca:MarcaIdempotencia|null):Promise<Tarefa>{
+      const conferirD10=escritaD10(d);
       const dataCivil = d.dataCivil ?? null;
       const hora = d.hora ?? null;
       const antecedencia = d.lembreteAntecedenciaMin ?? null;
       if (antecedencia !== null && !(dataCivil && hora)) throw new ErroRegra("O lembrete exige data e horário.");
       const quando = agendamentoTarefa(dataCivil, hora, fuso, antecedencia);
+      const recorrencia = configurarRecorrenciaTarefa(d.recorrencia,{dataCivil:quando.dataCivil,hora,fusoOrigem:fuso});
       if (d.atendimentoId && !(await atendimentoVisivel(autor, d.atendimentoId, false, tx))) {
         throw new ErroRegra("Atendimento não encontrado.");
       }
       await validarVinculos(tx, autor, d);
       const dono = await resolverResponsavel(tx, autor, d.responsavelId);
+      let notificarUsuarioIds:string[]|undefined;
+      if(conferirD10){
+        const validacao=await validarNotificadosTarefaD10(tx,autor,{...dono,gerenteDoResponsavelId:null},d.notificarUsuarioIds??[]);
+        autor=validacao.autor;notificarUsuarioIds=d.notificarUsuarioIds!==undefined?validacao.ids:undefined;
+        const atual=await resolverResponsavel(tx,autor,d.responsavelId);
+        if(atual.responsavelId!==dono.responsavelId||atual.setor!==dono.setor)throw new ErroRegra("A atribuição da tarefa mudou. Reabra o formulário.");
+        await validarVinculos(tx,autor,d);
+        if(d.atendimentoId&&!(await atendimentoVisivel(autor,d.atendimentoId,false,tx)))throw new ErroRegra("Atendimento não encontrado.");
+      }
       const t = await tx.tarefa.create({
         data: {
+          ...recorrencia,
           titulo: d.titulo,
           descricao: d.descricao || null,
           tipo: d.tipo,
@@ -106,13 +122,27 @@ export async function criarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSes
           atendimentoId: d.atendimentoId ?? null,
         },
       });
-      const payload = { titulo: t.titulo, tipo: t.tipo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil, hora, atendimentoId: t.atendimentoId };
+      if(conferirD10){
+        const final=await validarNotificadosTarefaD10(tx,autor,{...dono,gerenteDoResponsavelId:null},notificarUsuarioIds??[]);
+        autor=final.autor;await validarVinculos(tx,autor,d);
+        if(d.atendimentoId&&!(await atendimentoVisivel(autor,d.atendimentoId,false,tx)))throw new ErroRegra("Atendimento não encontrado.");
+        if(notificarUsuarioIds!==undefined)await gravarNotificadosTarefaD10(tx,t.id,[],notificarUsuarioIds);
+      }
+      const payload = { ...(notificarUsuarioIds!==undefined?{notificarUsuarioIds}:{}),titulo: t.titulo, tipo: t.tipo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil, hora, atendimentoId: t.atendimentoId };
       await registrarEvento(tx, { tipo: "TarefaCriada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: autor.id, payload: { ...payload, ...marca } });
       await espelharNoLead(tx, t, "TarefaCriada", autor.id, { tarefaId: t.id, ...payload });
+      if(conferirD10){
+        const final=await validarNotificadosTarefaD10(tx,autor,{...dono,gerenteDoResponsavelId:null},notificarUsuarioIds??[]);
+        const atribuicaoFinal=await resolverResponsavel(tx,final.autor,d.responsavelId);
+        if(atribuicaoFinal.responsavelId!==dono.responsavelId||atribuicaoFinal.setor!==dono.setor)throw new ErroRegra("A atribuição da tarefa mudou. Reabra o formulário.");
+        await validarVinculos(tx,final.autor,d);
+        if(d.atendimentoId&&!(await atendimentoVisivel(final.autor,d.atendimentoId,false,tx)))throw new ErroRegra("Atendimento não encontrado.");
+      }
       return t;
 }
 export type OpcoesEdicaoTarefaTx={filtro?:Prisma.TarefaWhereInput;vinculo?:{leadId:string|null;pessoaId:string|null};agendamento?:{dataCivil:string|null;inicioEm:Date|null;lembrarEm:Date|null;lembreteAntecedenciaMin:number|null}};
 export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSessao,t:Tarefa,versao:number,d:Partial<TarefaInput>,opcoes:OpcoesEdicaoTarefaTx={}):Promise<void>{
+      const conferirD10=escritaD10(d,opcoes.agendamento?.lembreteAntecedenciaMin);
       if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser editadas.");
       if (t.versao !== versao) throw new ErroRegra(MSG_VERSAO);
       await validarVinculos(tx, autor, d);
@@ -155,8 +185,54 @@ export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSe
           data.lembreteDisparadoEm = null;
         }
       }
+      let selecao:{antes:string[];depois:string[]}|undefined;
+      if(d.notificarUsuarioIds!==undefined){
+        const antes=(await tx.tarefaNotificado.findMany({where:{tarefaId:t.id},select:{usuarioId:true}})).map(n=>n.usuarioId).sort();
+        const pedido=[...new Set(d.notificarUsuarioIds)].sort();
+        if(antes.length!==pedido.length||antes.some((id,i)=>id!==pedido[i])){
+          const responsavelId=typeof data.responsavelId==="string"||data.responsavelId===null?data.responsavelId:t.responsavelId;
+          const setor=typeof data.setor==="string"?data.setor:t.setor;
+          const validacao=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},pedido);
+          autor=validacao.autor;
+          await validarVinculos(tx,autor,d);
+          if(opcoes.vinculo)await validarVinculos(tx,autor,{leadId:opcoes.vinculo.leadId??undefined,pessoaId:opcoes.vinculo.pessoaId??undefined});
+          if(d.responsavelId!==undefined){const atual=await resolverResponsavel(tx,autor,d.responsavelId);if(atual.responsavelId!==responsavelId||atual.setor!==setor)throw new ErroRegra("A atribuição da tarefa mudou. Reabra o formulário.");}
+          selecao={antes,depois:validacao.ids};mudou.notificados={de:antes,para:validacao.ids};
+        }
+      }
+      if(conferirD10&&!selecao){
+        const responsavelId=typeof data.responsavelId==="string"||data.responsavelId===null?data.responsavelId:t.responsavelId,setor=typeof data.setor==="string"?data.setor:t.setor;
+        const final=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},[]);autor=final.autor;
+        await validarVinculos(tx,autor,d);
+      }
+      if(d.recorrencia!==undefined||["DIARIA","SEMANAL","MENSAL"].includes(t.recorrencia)){
+        const civil=typeof data.dataCivil==="string"||data.dataCivil===null?data.dataCivil:t.dataCivil;
+        const inicio=data.inicioEm instanceof Date||data.inicioEm===null?data.inicioEm:t.inicioEm;
+        const hora=inicio?valorCampoLocal(inicio,t.fusoOrigem).slice(11,16):null;
+        Object.assign(data,configurarRecorrenciaTarefa(d.recorrencia,{dataCivil:civil,hora,fusoOrigem:t.fusoOrigem},t));
+        if(d.recorrencia!==undefined&&d.recorrencia!==t.recorrencia)mudou.recorrencia={de:t.recorrencia,para:d.recorrencia};
+      }
       await gravar(tx, t, versao, "ABERTA", data, opcoes.filtro);
+      if(selecao){
+        const responsavelId=typeof data.responsavelId==="string"||data.responsavelId===null?data.responsavelId:t.responsavelId;
+        const setor=typeof data.setor==="string"?data.setor:t.setor;
+        const final=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},selecao.depois);
+        autor=final.autor;await validarVinculos(tx,autor,d);
+        if(opcoes.vinculo)await validarVinculos(tx,autor,{leadId:opcoes.vinculo.leadId??undefined,pessoaId:opcoes.vinculo.pessoaId??undefined});
+        await gravarNotificadosTarefaD10(tx,t.id,selecao.antes,selecao.depois);
+      }
+      if(conferirD10&&!selecao){
+        const responsavelId=typeof data.responsavelId==="string"||data.responsavelId===null?data.responsavelId:t.responsavelId,setor=typeof data.setor==="string"?data.setor:t.setor;
+        const final=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},[]);autor=final.autor;await validarVinculos(tx,autor,d);
+      }
       await registrarEvento(tx, { tipo: "TarefaEditada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: autor.id, payload: { campos: mudou as Prisma.InputJsonObject, versao: versao + 1 } });
+      if(conferirD10){
+        const responsavelId=typeof data.responsavelId==="string"||data.responsavelId===null?data.responsavelId:t.responsavelId,setor=typeof data.setor==="string"?data.setor:t.setor;
+        const final=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},selecao?.depois??[]);
+        if(d.responsavelId!==undefined){const atribuicaoFinal=await resolverResponsavel(tx,final.autor,d.responsavelId);if(atribuicaoFinal.responsavelId!==responsavelId||atribuicaoFinal.setor!==setor)throw new ErroRegra("A atribuição da tarefa mudou. Reabra o formulário.");}
+        await validarVinculos(tx,final.autor,d);
+        if(opcoes.vinculo)await validarVinculos(tx,final.autor,{leadId:opcoes.vinculo.leadId??undefined,pessoaId:opcoes.vinculo.pessoaId??undefined});
+      }
 
 }
 function horaLocal(inicio: Date, fuso: string): string {

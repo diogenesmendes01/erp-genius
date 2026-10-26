@@ -9,6 +9,7 @@ vi.mock("@/server/crm/tarefas-acoes", () => ({
 }));
 import { PainelTarefa } from "./PainelTarefa";
 const tarefa: TarefaLista = {
+  recorrencia: "NAO_REPETE", recorrenciaAncoraDataCivil: null, recorrenciaAncoraHora: null, recorrenciaAncoraFuso: null, recorrenciaPoliticaVersao: null, recorrenciaIndice: 0, recorrenciaAnteriorId: null,
   id: "tarefa-ficticia", titulo: "Ligação fictícia", descricao: null, tipo: "LIGACAO", setor: "COMERCIAL",
   status: "ABERTA", prioridade: "NORMAL", dataCivil: null, inicioEm: null, duracaoMin: 30,
   fusoOrigem: "America/Sao_Paulo", lembreteAntecedenciaMin: null, lembrarEm: null, lembreteDisparadoEm: null,
@@ -34,3 +35,4 @@ it("#336 conversa encerrada só abre; sem conversa não cria atalho", () => {
   expect(html).toContain('href="/inbox?c=a1"'); expect(html).not.toContain("Agendar mensagem");
   expect(h()).not.toContain("Abrir conversa"); expect(h({ conversa: null })).not.toContain("Abrir conversa");
 });
+it.each([{min:15,rotulo:"15 minutos antes"},{min:1440,rotulo:"1 dia antes"}] as const)("D10 CRM conserva lembrete $min recebido do Inbox",({min,rotulo})=>{const html=h({tarefa:{...tarefa,prioridade:"BAIXA",lembreteAntecedenciaMin:min,dataCivil:"2026-10-25",inicioEm:new Date("2026-10-25T15:00:00Z"),lembrarEm:new Date(new Date("2026-10-25T15:00:00Z").getTime()-min*60000)}});expect(html).toContain(rotulo);expect(html).toContain(`value="${min}" selected=""`);expect(html).toContain("Baixa");});

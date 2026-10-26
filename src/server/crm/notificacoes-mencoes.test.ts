@@ -1,10 +1,10 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { Papel, type TipoNotificacao } from "@prisma/client";
 const m = vi.hoisted(() => ({
-  linhas: vi.fn(), atendimentos: vi.fn(), escopo: vi.fn(),
+  linhas: vi.fn(), atendimentos: vi.fn(), escopo: vi.fn(), ator: vi.fn(), tarefas: vi.fn(), tx: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: {
-  notificacaoUsuario: { findMany: m.linhas }, atendimentoWhatsApp: { findMany: m.atendimentos },
+  notificacaoUsuario: { findMany: m.linhas }, atendimentoWhatsApp: { findMany: m.atendimentos }, usuario: { findUnique: m.ator }, tarefa: { findMany: m.tarefas }, $transaction: m.tx,
 } }));
 vi.mock("@/server/whatsapp/escopo", () => ({ escopoAtendimentos: m.escopo }));
 import { listarNotificacoes } from "./notificacoes";
@@ -22,6 +22,9 @@ let banco: Linha[];
 let permitidos: Set<string>;
 beforeEach(() => {
   vi.clearAllMocks();
+  m.ator.mockResolvedValue({ ...usuario, ativo: true, permissoes: [] });
+  m.tarefas.mockImplementation(async ({ where }) => where.AND[0].id.in.map((id: string) => ({ id })));
+  m.tx.mockImplementation(async f => f({ notificacaoUsuario: { findMany: m.linhas }, atendimentoWhatsApp: { findMany: m.atendimentos }, usuario: { findUnique: m.ator }, tarefa: { findMany: m.tarefas } }));
   banco = [linha("visivel", "MENCAO_NOTA"), linha("revogado", "MENCAO_NOTA"),
     linha("sla-legado", "SLA_ESTOURADO"), linha("tarefa-legada", "LEMBRETE_TAREFA")];
   permitidos = new Set(["visivel"]);
@@ -37,7 +40,7 @@ beforeEach(() => {
     where.AND[0].id.in.filter(id => permitidos.has(id)).map(id => ({ id })));
 });
 
-it("revogacao remove titulo/link de mencao sem aplicar ACL nova a SLA/lembrete", async () => {
+it("revogação remove título/link de menção e preserva SLA e tarefa autorizada", async () => {
   expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(["visivel", "sla-legado", "tarefa-legada"]);
 });
 it("nenhum destinatario sem sessao produz consulta", async () => {
@@ -60,8 +63,8 @@ it("percorre mais de um lote revogado ate vinte visiveis sem acumular o historic
   permitidos = new Set(validas.map(n => n.refId));
   expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(validas.slice(0, 20).map(n => n.id));
   expect(m.linhas).toHaveBeenCalledTimes(3);
-  expect(m.atendimentos).toHaveBeenCalledTimes(3);
-  expect(m.escopo).toHaveBeenCalledTimes(1);
+  expect(m.atendimentos).toHaveBeenCalledTimes(4);
+  expect(m.escopo).toHaveBeenCalledTimes(4);
   for (const [q] of m.linhas.mock.calls) {
     expect(q.take).toBe(100);
     expect(q.orderBy).toEqual([{ criadaEm: "desc" }, { id: "desc" }]);
@@ -87,7 +90,7 @@ it("deduplica referencias por lote e exclui refTipo incorreto sem N+1", async ()
   ];
   permitidos = new Set(["mesmo"]);
   expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(banco.slice(1, 21).map(n => n.id));
-  expect(m.atendimentos).toHaveBeenCalledTimes(1);
+  expect(m.atendimentos).toHaveBeenCalledTimes(2);
   expect(m.atendimentos.mock.calls[0][0]).toEqual({
     where: { AND: [
       { id: { in: ["mesmo"] } },
@@ -121,13 +124,13 @@ it("adia escopo ate o primeiro lote com referencia de mencao valida", async () =
     return { finalidade: "COMERCIAL" };
   });
   expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(["visivel"]);
-  expect(m.escopo).toHaveBeenCalledTimes(1);
+  expect(m.escopo).toHaveBeenCalledTimes(2);
 });
 it("memo de escopo nao atravessa chamadas e revogacao retira titulo/link", async () => {
   banco = [linha("visivel", "MENCAO_NOTA")];
   expect((await listarNotificacoes(usuario)).map(n => n.id)).toEqual(["visivel"]);
   permitidos.clear();
   expect(await listarNotificacoes(usuario)).toEqual([]);
-  expect(m.escopo).toHaveBeenCalledTimes(2);
-  expect(m.atendimentos).toHaveBeenCalledTimes(2);
+  expect(m.escopo).toHaveBeenCalledTimes(3);
+  expect(m.atendimentos).toHaveBeenCalledTimes(3);
 });
