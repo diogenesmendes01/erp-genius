@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { apenasPortal } from "@/server/_shared/sessao";
+import { prepararMudancaPrevisao } from "./previsao-schema";
+import { criarRegistroLeadTx } from "./criar-registro-lead-tx";
+import { exigirDestinoComercial } from "./destino-comercial";
 import { gerarCodigo } from "@/lib/codigo";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { hashEntrada, marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
@@ -31,21 +35,21 @@ import {
 } from "./experimental";
 
 /** DDI do país do lead (para normalizar o telefone); "" se sem país. */
-async function ddiDoPais(paisId?: string | null): Promise<string> {
+async function ddiDoPais(paisId?: string | null, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<string> {
   if (!paisId) return "";
-  return (await prisma.pais.findUnique({ where: { id: paisId } }))?.ddi ?? "";
+  return (await db.pais.findUnique({ where: { id: paisId } }))?.ddi ?? "";
 }
 import {
-  LeadSchema,
   CriarLeadSchema,
+  EditarLeadSchema,
   ResumoSchema,
   DatasSchema,
   InteracaoSchema,
   PerdaSchema,
   AgendarExperimentalSchema,
   NotaInternaSchema,
-  type LeadInput,
   type CriarLeadInput,
+  type EditarLeadInput,
   type ResumoInput,
   type DatasInput,
   type InteracaoInput,
@@ -100,19 +104,6 @@ async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.
   const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
   if (!lead) throw new ErroPermissao("Oportunidade fora da sua carteira.");
   return lead;
-}
-
-async function exigirDestinoComercial(usuario: UsuarioSessao, id: string | null, tx: Prisma.TransactionClient | typeof prisma = prisma) {
-  if (!id) {
-    if (!usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroRegra("Selecione um vendedor da sua equipe.");
-    return;
-  }
-  const destino = await tx.usuario.findFirst({ where: { id, ativo: true, papeis: { has: Papel.VENDEDOR } }, select: { id: true, gerenteComercialId: true } });
-  if (!destino) throw new ErroRegra("Selecione um vendedor ativo.");
-  if (!usuario.papeis.includes(Papel.ADMINISTRADOR) && destino.id !== usuario.id &&
-    !(usuario.papeis.includes(Papel.GERENTE_COMERCIAL) && destino.gerenteComercialId === usuario.id)) {
-    throw new ErroPermissao("O vendedor não pertence à sua equipe.");
-  }
 }
 
 async function exigirDocumentoPermitido(leadId: string, categoria: CategoriaDocumento, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
@@ -212,45 +203,7 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
           )
         ).pessoaId;
       }
-      const lead = await tx.oportunidade.create({
-        data: {
-          codigo,
-          nome: dados.nome,
-          telefoneE164,
-          pessoaId,
-          origemCanal: dados.origemCanal ?? null,
-          empresaId,
-          paisId: dados.paisId || null,
-          segmento: dados.segmento,
-          temperatura: dados.temperatura,
-          b2b: dados.criarEmpresa || dados.b2b,
-          vendedorDonoId: donoId,
-          origemCampanha: dados.origemCampanha || null,
-          origemConjunto: dados.origemConjunto || null,
-          origemAnuncio: dados.origemAnuncio || null,
-          origemPalavra: dados.origemPalavra || null,
-          valorPrevisto: dados.valorPrevisto ?? null,
-          planoPrevisto: dados.planoPrevisto || null,
-          comissaoPrevista: dados.comissaoPrevista ?? null,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "LeadCriado",
-        agregadoTipo: "Lead",
-        agregadoId: lead.id,
-        autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId, ...marca },
-      });
-      if (donoId) {
-        await registrarEvento(tx, {
-          tipo: "LeadAtribuido",
-          agregadoTipo: "Lead",
-          agregadoId: lead.id,
-          autorId: autor.id,
-          payload: { de: null, para: donoId },
-        });
-      }
-      return lead.id;
+      return criarRegistroLeadTx(tx, { dados, codigo, telefoneE164, pessoaId, empresaId, donoId, autorId: autor.id, marca });
     });
 
     revalidarLead();
@@ -318,20 +271,32 @@ export async function definirTemperatura(leadId: string, temperatura: Temperatur
   });
 }
 
-export async function editarLead(id: string, input: LeadInput): Promise<Resultado> {
+export async function editarLead(id: string, input: EditarLeadInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const dados = LeadSchema.parse(input);
-    const ddi = await ddiDoPais(dados.paisId);
+    const dados = EditarLeadSchema.parse(input);
 
     await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
+      const leadTravado = await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
+      if (leadTravado.length !== 1) throw new ErroRegra("Oportunidade não encontrada.");
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${id} FOR UPDATE`;
-      const leadAtual = await exigirLeadVisivel(id, autor, tx);
+      // Antecipar as FKs antes da autorização final evita uma espera posterior com papéis antigos.
+      if (dados.paisId) {
+        const paisTravado = await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Pais" WHERE id=${dados.paisId} FOR KEY SHARE`;
+        if (paisTravado.length !== 1) throw new ErroRegra("País não encontrado.");
+      }
+      const autorTravado = await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Usuario" WHERE id=${autor.id} FOR KEY SHARE`;
+      if (autorTravado.length !== 1) throw new ErroPermissao("Sua sessão não está mais ativa.");
+      const fresco = await tx.usuario.findUnique({where:{id:autor.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
+      if (!fresco?.ativo || apenasPortal(fresco)) throw new ErroPermissao("Sua sessão não permite editar esta oportunidade.");
+      exigirPapel(fresco, ...PAPEIS_COMERCIAL);
+      const ddi = await ddiDoPais(dados.paisId, tx);
+      const leadAtual = await exigirLeadVisivel(id, fresco, tx);
+      const previsao = prepararMudancaPrevisao(leadAtual, {probabilidadePct:dados.probabilidadePct,previsaoFechamento:dados.previsaoFechamento});
       const matricula = await tx.matricula.findUnique({ where: { leadId: id }, select: { secretariaAssumiuEm: true } });
       const alteraCadastro = dados.nome !== leadAtual.nome || normalizarTelefoneE164(dados.telefoneE164, ddi) !== leadAtual.telefoneE164 || (dados.paisId || null) !== leadAtual.paisId;
-      if (matricula?.secretariaAssumiuEm && alteraCadastro && !autor.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA)) throw new ErroPermissao("A secretaria assumiu a matrícula. Solicite a correção cadastral.");
+      if (matricula?.secretariaAssumiuEm && alteraCadastro && !fresco.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA)) throw new ErroPermissao("A secretaria assumiu a matrícula. Solicite a correção cadastral.");
       await tx.oportunidade.update({
         where: { id },
         data: {
@@ -348,14 +313,15 @@ export async function editarLead(id: string, input: LeadInput): Promise<Resultad
           valorPrevisto: dados.valorPrevisto ?? null,
           planoPrevisto: dados.planoPrevisto || null,
           comissaoPrevista: dados.comissaoPrevista ?? null,
+          ...previsao.dados,
         },
       });
       await registrarEvento(tx, {
         tipo: "LeadEditado",
         agregadoTipo: "Lead",
         agregadoId: id,
-        autorId: autor.id,
-        payload: { nome: dados.nome, temperatura: dados.temperatura },
+        autorId: fresco.id,
+        payload: { nome: dados.nome, temperatura: dados.temperatura, ...(previsao.alterado ? {previsoes:previsao.mudancas} : {}) },
       });
     });
     revalidarLead();

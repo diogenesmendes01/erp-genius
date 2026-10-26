@@ -11,6 +11,7 @@ import {
 import type { ConfigAria } from "./config-schema";
 import { capacidadesAria, type CapacidadeAria } from "./permissoes-tela";
 import { versaoPublicada } from "./versoes";
+import { ultimoEventoDoAutor } from "../_shared/idempotencia";
 
 // Estado operacional da Aria: DESLIGADA/SHADOW/ATIVA, pausa global com motivo e supervisão
 // (revisão humana obrigatória até uma data; "até eu desligar" = 9999-12-31T00:00:00Z).
@@ -69,6 +70,11 @@ export async function definirEstadoAria(estado: EstadoPolitica): Promise<Resulta
   });
 }
 
+async function exigirPausaAtual(tx: Tx, id: string): Promise<void> {
+  const u = await tx.usuario.findUnique({ where: { id }, select: { ativo: true, papeis: true } });
+  if (!u?.ativo || !capacidadesAria(u).has("pausar")) throw new ErroPermissao("Sem permissão para pausar ou reativar a Aria.");
+}
+
 export async function pausarAria(input: { motivo: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -79,7 +85,12 @@ export async function pausarAria(input: { motivo: string }): Promise<Resultado> 
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
       const atual = await tx.agenteIA.findUniqueOrThrow({ where: { id: ID_AGENTE } });
-      if (atual.pausadoEm) throw new ErroRegra("A Aria já está pausada.");
+      await exigirPausaAtual(tx, u.id);
+      if (atual.pausadoEm) {
+        const anterior = await ultimoEventoDoAutor(tx, { tipo: "AriaPausada", agregadoTipo: "AgenteIA", agregadoId: ID_AGENTE, autorId: u.id });
+        if (anterior?.motivo === motivo) return;
+        throw new ErroRegra("A Aria já está pausada.");
+      }
       await tx.agenteIA.update({
         where: { id: ID_AGENTE },
         data: { pausadoEm: new Date(), pausadoPorId: u.id, motivoPausa: motivo },
@@ -102,7 +113,11 @@ export async function reativarAria(): Promise<Resultado> {
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
       const atual = await tx.agenteIA.findUniqueOrThrow({ where: { id: ID_AGENTE } });
-      if (!atual.pausadoEm) throw new ErroRegra("A Aria não está pausada.");
+      await exigirPausaAtual(tx, u.id);
+      if (!atual.pausadoEm) {
+        if (await ultimoEventoDoAutor(tx, { tipo: "AriaReativada", agregadoTipo: "AgenteIA", agregadoId: ID_AGENTE, autorId: u.id })) return;
+        throw new ErroRegra("A Aria não está pausada.");
+      }
       await tx.agenteIA.update({
         where: { id: ID_AGENTE },
         data: { pausadoEm: null, pausadoPorId: null, motivoPausa: null },

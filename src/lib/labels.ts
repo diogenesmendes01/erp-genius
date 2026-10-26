@@ -1,5 +1,6 @@
 import type { MotivoHandoff } from "@/server/aria/turno/tipos";
 import {
+  EstadoGeracaoInsightInbox,
   MetricaMeta,
   TipoTarefa,
   StatusTarefa,
@@ -198,6 +199,7 @@ export const ORIGEM_CANAL_LABEL: Readonly<Record<OrigemCanal, string>> = Object.
   LINKEDIN: "Linkedin",
   IMPORTACAO: "Importação",
   OUTRO: "Outro",
+  PROSPECCAO_ATIVA: "Prospecção ativa",
 });
 
 export const TEMPERATURA_LABEL: Record<Temperatura, string> = {
@@ -568,6 +570,21 @@ export const ACAO_AGENTE_IA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = 
   CLASSIFICAR_SETOR: "Classificar setor",
 });
 
+/** Frases de histórico da Atividade; preparar intenção não significa entrega externa. */
+export const ALTERACAO_ARIA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = Object.freeze({
+  RESPONDER: "Preparou uma resposta",
+  ENVIAR_DOCUMENTO: "Preparou o envio de documento",
+  ATUALIZAR_CAMPO: "Preencheu um campo",
+  TAG: "Adicionou uma tag",
+  MOVER_ETAPA: "Moveu a etapa",
+  MARCAR_PERDIDO: "Marcou como perdido",
+  CRIAR_TAREFA: "Criou uma tarefa",
+  AGENDAR_MENSAGEM: "Agendou uma mensagem",
+  NOTA_INTERNA: "Registrou uma nota interna",
+  CONDICAO_COMERCIAL: "Preparou uma condição comercial",
+  HANDOFF: "Pediu ajuda a uma pessoa",
+  CLASSIFICAR_SETOR: "Classificou o setor",
+});
 export const STATUS_ACAO_AGENTE_IA_LABEL: Readonly<Record<StatusAcaoAgenteIA, string>> = Object.freeze({
   SUGERIDA: "Sugerida",
   EXECUTADA: "Executada",
@@ -607,6 +624,7 @@ export const STATUS_FONTE_CONHECIMENTO_LABEL: Readonly<Record<StatusFonteConheci
 });
 
 export const ORIGEM_CHAMADA_IA_LABEL: Readonly<Record<OrigemChamadaIA, string>> = Object.freeze({
+  INSIGHT: "Insights",
   ATENDIMENTO: "Atendimento",
   TRIAGEM: "Triagem de setor",
   RESUMO: "Resumo",
@@ -893,4 +911,16 @@ export const MOTIVO_HANDOFF_LABEL: Readonly<Record<MotivoHandoff, string>> = Obj
   SEM_PERMISSAO: "Sem permissão na matriz",
   ERRO_PROVEDOR: "Falha do provedor",
   TURNO_INTERROMPIDO: "Turno interrompido",
+});
+
+/** Estimativa de apresentação dos Insights; não altera o estado comercial manual. */
+export const SENTIMENTO_INSIGHT_LABEL: Readonly<Record<"POSITIVO" | "NEUTRO" | "NEGATIVO", string>> = Object.freeze({
+  POSITIVO: "Positivo",
+  NEUTRO: "Neutro",
+  NEGATIVO: "Negativo",
+});
+
+/** Estado público da tentativa; não contém motivo técnico nem contexto histórico. */
+export const ESTADO_GERACAO_INSIGHT_LABEL:Readonly<Record<EstadoGeracaoInsightInbox,string>>=Object.freeze({
+  PROCESSANDO:"Gerando análise",PRONTA:"Análise pronta",FALHOU:"Não foi possível gerar a análise",INCERTO:"Resultado inconclusivo",RECUSADA:"Análise não publicada",DESCARTADA:"Análise descartada",
 });

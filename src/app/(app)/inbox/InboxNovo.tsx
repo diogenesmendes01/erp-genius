@@ -3,19 +3,24 @@ import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
-import { useSearchParams } from "next/navigation";
-import { NovoAtendimento } from "./NovoAtendimento";
+import { useRouter, useSearchParams } from "next/navigation";
+import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
+import { criarIntencaoNovaConversa } from "./fluxos/nova-conversa/intencao-nova-conversa";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
+import { AbaInsights } from "./insights/AbaInsights";
+import type { PortaRascunhoInsight } from "@/components/conversa/rascunho-insight";
 import { ClienteVoltou } from "./abas/ClienteVoltou";
 import { ModalTarefa } from "./ModalTarefa";
+import {AbaAtividade} from "./abas/AbaAtividade";
+import type {AtividadePainel} from "@/server/inbox/painel-atividade";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { ModalPerda } from "../funil/ModalPerda";
 import { marcarPerdidoNoInbox } from "@/server/inbox/acoes-painel";
-import { assumirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { assumirAtendimento, assumirConversaDaAria } from "@/server/whatsapp/acoes-atendimento";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import type { Setor } from "@/server/whatsapp/setor";
 import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
@@ -41,9 +46,11 @@ import { FaixaAriaAtiva } from "./aria/FaixaAriaAtiva";
 import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
 import { Botao } from "@/components/Botao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 import { EsqueletoPainel } from "@/components/Esqueleto";
 import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
+import { usePresencaInbox } from "./usePresencaInbox";
 import { useEventosInbox } from "./useEventosInbox";
 import { criarMarcadorDeLeitura } from "./marcar-lida";
 import { criarAtualizadorEmLote } from "./atualizar-lista-em-lote";
@@ -162,6 +169,7 @@ const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1
 
 export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
+  const router = useRouter();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
   const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
   const triagem = ouNulo(triagemBruta);
@@ -171,8 +179,13 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [contagens, setContagens] = useState(contagensIniciais);
   const [resumo, setResumo] = useState(resumoInicial);
   const [novaConversaAberta, setNovaConversaAberta] = useState(false);
+  const [intencaoPorAtor, setIntencaoPorAtor] = useState(() => ({ atorId: usuario.id, controle: criarIntencaoNovaConversa() }));
+  if (intencaoPorAtor.atorId !== usuario.id) setIntencaoPorAtor({ atorId: usuario.id, controle: criarIntencaoNovaConversa() });
+  const intencaoNovaConversa = intencaoPorAtor.controle;
   const possuiContagensRef = useRef(contagensIniciais !== undefined || resumoInicial !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
+  const interagirPresenca = usePresencaInbox(usuario.id);
+  const [avisoTransferencia, setAvisoTransferencia] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [selecionadoRecebido, setSelecionadoRecebido] = useState(selecionadoInicial);
   const [versaoNavegacao, setVersaoNavegacao] = useState(0);
@@ -368,7 +381,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       setPainelSetor((ant) => {
         const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
         const leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } = { versao: versaoPainel, resultado: r === "sem-acesso" ? "sem-acesso" : r ? "ok" : "falha" };
-        if (r === "sem-acesso") return { id: selecionado, leitura, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
+        if (r === "sem-acesso") return { id: selecionado, leitura, acessoRevogado: true, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false, aria: conhecido.aria ? { ...conhecido.aria, podeDevolver: false, podeDecidir: false, podeAssumirAria: false, handoff: conhecido.aria.handoff ? { ...conhecido.aria.handoff, podeAssumir: false, ehResponsavel: false } : conhecido.aria.handoff } : null } : null };
         return !r && conhecido ? { ...ant!, leitura } : { id: selecionado, dado: r, leitura, acessoRevogado: !r && ant?.id === selecionado && ant.acessoRevogado === true };
       });
     });
@@ -419,12 +432,16 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   if (edicaoContato.atendimentoId !== selecionado) setEdicaoContato({ atendimentoId: selecionado, aberta: false });
   const podeEditarContato = atual?.finalidade === "COMERCIAL" && painelDoAberto?.dado?.acoes != null && !!painelDoAberto.dado.cabecalho?.pessoaId && painelDoAberto.dado.cabecalho.capacidades.editarContato;
   const editorAberto = !!selecionado && podeEditarContato && edicaoContato.atendimentoId === selecionado && edicaoContato.aberta;
-  const abas = abasDoPainel(atual?.finalidade ?? "");
+  const podeUsarInsights = atual?.finalidade === "COMERCIAL" && !atual.grupo && painelDoAberto?.acessoRevogado !== true && painelDoAberto?.dado?.cabecalho?.capacidades.veLead === true;
+  const abas = abasDoPainel(atual?.finalidade ?? "", { atividade: painelDoAberto?.dado?.cabecalho?.contadorAtividade }).filter(a=>a.id!=="insights"||podeUsarInsights);
   const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
   const detalhesComerciais = atual?.finalidade === "COMERCIAL" && !atual.grupo;
   // A aba Detalhes e o editor compartilham uma única aquisição por contexto.
   const detalhesDoContato = useAbaPainel<DetalhesPainel>(selecionado, "detalhes", versaoPainel, (detalhesComerciais && abaAtiva === "detalhes") || editorAberto);
   const oportunidadesDoContato = useAbaPainel<OportunidadesPainel>(selecionado, "oportunidades", versaoPainel, detalhesComerciais && abaAtiva === "oportunidades");
+  const atividadeDoContato=useAbaPainel<AtividadePainel>(selecionado,"atividade",versaoPainel,abaAtiva==="atividade");
+  const [portaRascunhoInsight,setPortaRascunhoInsight]=useState<PortaRascunhoInsight|null>(null);
+  const publicarPortaRascunhoInsight=useCallback((porta:PortaRascunhoInsight|null)=>setPortaRascunhoInsight(porta),[]);
   const [perdaOportunidade, setPerdaOportunidade] = useState<{ atendimentoId: string | null; id: string | null; nome: string; aberta: boolean; sessao: number }>({ atendimentoId: selecionado, id: null, nome: "", aberta: false, sessao: 0 });
   // Loading conserva o rascunho; uma identidade conhecida diferente encerra a sessao.
   // Nao basta ocultar o modal: o proximo loading nao pode ressuscitar a oportunidade antiga.
@@ -436,6 +453,22 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const podeAssumir = !!atual && !atual.grupo && atual.status !== "ENCERRADO" && podeExecutar(usuario, "assumir", {
     setor: atual.finalidade as Setor, responsavelId: atual.responsavelId, linhaComercial: atual.linhaComercial, donoLinhaId: atual.numeroDonoId,
   });
+  const contextoAriaParaAssumir = !!atual && !atual.grupo && atual.status !== "ENCERRADO"
+    && (["ia", "aprovacao", "handoff"].includes(atual.estadoAria ?? "") || !!painelDoAberto?.dado?.aria?.handoff);
+  const podeAssumirDaAria = contextoAriaParaAssumir && painelDoAberto?.dado?.aria?.podeAssumirAria === true && !painelDoAberto.acessoRevogado;
+  const chaveAssumirAria = JSON.stringify([selecionado, atual?.id, atual?.responsavelId, usuario.id, usuario.papeis, contextoAriaParaAssumir, podeAssumirDaAria]);
+  const [ofertaAssumirAria, setOfertaAssumirAria] = useState(() => ({ chave: chaveAssumirAria, token: Symbol("assumir-aria") }));
+  if (ofertaAssumirAria.chave !== chaveAssumirAria) setOfertaAssumirAria({ chave: chaveAssumirAria, token: Symbol("assumir-aria") });
+  const cicloAssumirAria = useRef({ ativo: false, token: ofertaAssumirAria.token });
+  useEffect(() => {
+    const atual = { ativo: podeAssumirDaAria, token: ofertaAssumirAria.token };
+    cicloAssumirAria.current = atual; return () => { atual.ativo = false; };
+  }, [ofertaAssumirAria.token, podeAssumirDaAria]);
+  async function assumirAriaPelaAba(id: string, token: symbol) {
+    const ciclo = cicloAssumirAria.current;
+    if (!ciclo.ativo || ciclo.token !== token || selecionadoRef.current !== id) return { ok: false as const, erro: "A conversa ou sua permissão mudou. Atualize antes de assumir." };
+    return assumirConversaDaAria(id);
+  }
   const perdaAberta = !!(podeMudarEtapa && perdaOportunidade.aberta && perdaOportunidade.atendimentoId === selecionado && perdaOportunidade.id
     && (!oportunidadesDoContato.dado || oportunidadesDoContato.dado.atual?.id === perdaOportunidade.id));
   const [modalTarefa,setModalTarefa]=useState<{atendimentoId:string;modo:{tipo:"nova"}|{tipo:"editar";tarefa:{id:string;versao:number}};sessao:number;origem:"fio"|"painel"}|null>(null);
@@ -487,6 +520,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
 
   function abrir(id: string) {
+    // ACK novo pode estar fora da página (sem mensagem, NULLS LAST). A rota carrega o item autorizado.
+    if (!itens.some(item => item.id === id)) {
+      if (selecionadoRef.current !== selecionado) return;
+      setNovaConversaAberta(false);
+      const parametros = new URLSearchParams(parametrosDaRota?.toString() ?? paramsDosFiltros(filtros).toString());
+      parametros.set("c", id);
+      router.push("/inbox?" + parametros.toString(), { scroll: false });
+      return;
+    }
     focoAoFecharPopover.current = regiaoConversa.current;
     setNovaConversaAberta(false);
     selecionadoRef.current = id;
@@ -511,9 +553,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setCarregandoMais(false);
   }
 
-  function falhaDosDetalhes(recarregar: () => void, aba: "detalhes" | "oportunidades" = "detalhes") {
+  function falhaDosDetalhes(recarregar: () => void, aba: "detalhes" | "oportunidades" | "atividade" = "detalhes") {
     return <div role="alert" className="space-y-2 text-sm text-red-700">
-      <p>{aba === "detalhes" ? "Não foi possível carregar os detalhes." : "Não foi possível carregar as oportunidades."}</p>
+      <p>{aba === "detalhes" ? "Não foi possível carregar os detalhes." : aba === "atividade" ? "Não foi possível carregar a atividade." : "Não foi possível carregar as oportunidades."}</p>
       <Botao variante="secundario" tamanho="sm" onClick={(e) => {
         e.currentTarget.closest<HTMLElement>('[id="painel-contato"]')?.focus({ preventScroll: true });
         recarregar();
@@ -527,10 +569,16 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">
       {(!detalhesComerciais || detalhesDoContato.dado?.pessoa === null) && atual.contatoTelefone && <div className={secaoDetalhes}><LinhaCampo icone={<IconPhone size={18} />} valor={<span className="font-mono">{atual.contatoTelefone}</span>} rotulo="WhatsApp" /></div>}
       <div className={secaoDetalhes}>{painelSetor?.id === atual.id && painelSetor.dado
-        ? detalhesComerciais
+        ? abaAtiva === "insights"
+          ? <AbaInsights atendimentoId={atual.id} ativo versao={versaoPainel} fuso={fuso} fusoEscola={fusoEscola??""} rascunhoPorta={portaRascunhoInsight}/>
+          : abaAtiva === "atividade"
+          ? atividadeDoContato.erro ? falhaDosDetalhes(atividadeDoContato.recarregar,"atividade")
+            : atividadeDoContato.dado ? <AbaAtividade dados={atividadeDoContato.dado} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola??""} aoMudar={recarregarLista}/>
+              : <EsqueletoPainel rotulo="atividade"/>
+          : detalhesComerciais
           ? abaAtiva === "oportunidades"
             ? oportunidadesDoContato.erro ? falhaDosDetalhes(oportunidadesDoContato.recarregar, "oportunidades")
-              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} aoAdicionarNota={atendimentoIndividual?adicionarNota:undefined} aoNovaTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"}):undefined} aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}}):undefined} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} podeAssumir={podeAssumir} aoAssumir={() => assumirAtendimento(atual.id)} />
+              : oportunidadesDoContato.dado ? <AbaOportunidades dados={oportunidadesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { veLead: false, verContato: false, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false }} atendimentoId={atual.id} fuso={fuso} fusoEscola={fusoEscola} aoMudar={recarregarLista} aoAbrirPerda={abrirPerda} aoAdicionarNota={atendimentoIndividual?adicionarNota:undefined} aoNovaTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"}):undefined} aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}}):undefined} podeAbrirFunil={podeAbrirFunil} podeCriarOportunidade={podeCriarOportunidade} contextoAria={contextoAriaParaAssumir} podeAssumir={contextoAriaParaAssumir ? podeAssumirDaAria : podeAssumir} aoAssumir={() => contextoAriaParaAssumir ? assumirAriaPelaAba(atual.id, ofertaAssumirAria.token) : assumirAtendimento(atual.id)} />
                 : <EsqueletoPainel rotulo="oportunidades" />
             : detalhesDoContato.erro ? falhaDosDetalhes(detalhesDoContato.recarregar)
               : detalhesDoContato.dado ? <AbaDetalhes dados={detalhesDoContato.dado} capacidades={painelSetor.dado.cabecalho?.capacidades ?? { verContato: false, verEmpresa: false }} aoAbrirOportunidades={() => setAbaDoContato({ atendimentoId: selecionado, id: "oportunidades" })} />
@@ -550,14 +598,16 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   ) : <p className="text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
 
   return (
-    <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 overflow-hidden">
+    <div onPointerDownCapture={interagirPresenca} onKeyDownCapture={interagirPresenca} onTouchStartCapture={interagirPresenca} onWheelCapture={interagirPresenca} data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <MensagemStatus texto={avisoTransferencia} tom="sucesso" className="shrink-0 px-3 py-2" />
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
         <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo} sino={sino}
-          faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} /> : undefined}
+          faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} aoMudar={recarregarLista} /> : undefined}
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
-          novaConversa={opcoesNovaConversa ? <NovoAtendimento compacto opcoes={opcoesNovaConversa} /> : undefined} />
+          novaConversa={opcoesNovaConversa ? <PopoverNovaConversa key={selecionado ?? "lista"} opcoes={opcoesNovaConversa} itens={itens} usuario={usuario} intencao={intencaoNovaConversa} aoSelecionar={abrir} aoFechar={() => setNovaConversaAberta(false)} /> : undefined} />
       </section>
 
       <section ref={regiaoConversa} tabIndex={-1} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
@@ -577,6 +627,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             aoCriarTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"},"fio"):undefined}
             aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}},"fio"):undefined}
             pedidoNota={notaSolicitada?.id===selecionado?notaSolicitada.pedido:undefined}
+            aoPortaRascunhoInsight={publicarPortaRascunhoInsight}
+            versaoInsights={versaoPainel}
+            podeUsarInsights={podeUsarInsights}
             tarefaEmEdicaoId={tarefaAberta&&modalTarefa?.origem==="fio"?idTarefaDoModal??undefined:undefined}
             aria={painelDoAberto?.dado?.aria}
             bloquearDecisoesAria={painelDoAberto?.acessoRevogado === true}
@@ -593,6 +646,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             painelAberto={painelVisivel ?? undefined}
             painelAuto={painelAberto === null}
             aoMudar={recarregarLista}
+            aoTransferirConcluido={() => setAvisoTransferencia("Transferência concluída.")}
           />
         )}
       </section>
@@ -615,6 +669,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         aoFechar={() => setPerdaOportunidade(p => p.sessao === perdaOportunidade.sessao ? { ...p, aberta: false } : p)} />}
       {editorAberto && selecionado && <GavetaContato key={selecionado} atendimentoId={selecionado} dados={detalhesDoContato.dado} erro={detalhesDoContato.erro} aoRecarregar={detalhesDoContato.recarregar}
         podeVerFicha={painelDoAberto?.dado?.cabecalho?.capacidades.verContato === true} aoFechar={() => setEdicaoContato({ atendimentoId: selecionado, aberta: false })} aoSalvo={recarregarLista} />}
+    </div>
     </div>
   );
 }

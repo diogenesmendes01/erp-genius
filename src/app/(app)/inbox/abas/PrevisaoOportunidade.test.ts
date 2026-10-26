@@ -1,0 +1,29 @@
+import {act,createElement} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import type {Root} from "react-dom/client";
+import {afterEach,beforeEach,expect,it,vi} from "vitest";
+import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
+const {salvar}=vi.hoisted(()=>({salvar:vi.fn()}));
+vi.mock("@/server/inbox/acoes-previsao",()=>({definirPrevisaoNoInbox:salvar}));
+async function componente(){return import("./PrevisaoOportunidade");}
+let root:Root,host:Elemento;const mudar=vi.fn();
+type Props=Parameters<typeof import("./PrevisaoOportunidade").PrevisaoOportunidade>[0];
+const props=():Props=>({atendimentoId:"a",oportunidadeId:"l",probabilidadePct:0,previsaoFechamento:"2026-09-06",podeEditar:true,aoMudar:mudar});
+async function render(extra:Partial<ReturnType<typeof props>>={}){const {PrevisaoOportunidade}=await componente();await act(async()=>root.render(createElement(PrevisaoOportunidade,{...props(),...extra})));}
+function handler(e:Elemento,n:string){const k=Object.keys(e).find(k=>k.startsWith('__reactProps'))!;return(e as unknown as Record<string,Record<string,(v:unknown)=>unknown>>)[k][n];}
+const botao=(nome:string)=>host.querySelectorAll('button').find(b=>b.textContent===nome)!;
+async function clicar(nome:string){await act(async()=>handler(botao(nome),'onClick')({}));}
+async function editar(valor:string){const e=host.querySelectorAll('input').find(e=>e.getAttribute('type')==='number')!;await act(async()=>handler(e,'onChange')({target:{value:valor}}));return e;}
+async function enviar(){await act(async()=>{handler(host.querySelector('form')!,'onSubmit')({preventDefault(){}});});}
+beforeEach(async()=>{vi.clearAllMocks();salvar.mockResolvedValue({ok:true});const d=criarDomMinimo();vi.stubGlobal('document',d.documento);vi.stubGlobal('window',d.janela);vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);host=d.documento.createElement('div');d.documento.body.appendChild(host);const{createRoot}=await import('react-dom/client');root=createRoot(host as unknown as HTMLElement);});
+afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
+it("SSR mostra zero e data civil sem conversão de fuso",async()=>{const{PrevisaoOportunidade}=await componente();const h=renderToStaticMarkup(createElement(PrevisaoOportunidade,props()));expect(h).toContain('0%');expect(h).toContain('06/09/2026');});
+it("leitura sem edição não oferece botão ou campos",async()=>{await render({podeEditar:false});expect(host.querySelectorAll('button')).toHaveLength(0);expect(host.querySelectorAll('input')).toHaveLength(0);expect(host.textContent).toContain('0%');});
+it("cancelar não chama ação",async()=>{await render();await clicar('Editar previsão');await editar('50');await clicar('Cancelar');expect(salvar).not.toHaveBeenCalled();expect(host.querySelector('form')).toBeNull();});
+it("refresh irrelevante preserva campo físico e rascunho; envia somente o campo alterado",async()=>{await render();await clicar('Editar previsão');const campo=await editar('50');await render();expect(host.querySelectorAll('input')[0]).toBe(campo);await enviar();expect(salvar).toHaveBeenCalledWith('a',{oportunidadeIdEsperada:'l',esperado:{probabilidadePct:0,previsaoFechamento:'2026-09-06'},alteracoes:{probabilidadePct:50}});expect(mudar).toHaveBeenCalledOnce();});
+it("erro preserva formulário e rascunho",async()=>{salvar.mockResolvedValue({ok:false,erro:'Atualize o painel.'});await render();await clicar('Editar previsão');const campo=await editar('50');await enviar();expect(host.querySelectorAll('input')[0]).toBe(campo);expect(host.textContent).toContain('Atualize o painel.');expect(mudar).not.toHaveBeenCalled();});
+it("ACK antigo após troca A→B→A não fecha nova edição nem atualiza outro alvo",async()=>{let ack!:(r:{ok:true})=>void;salvar.mockImplementation(()=>new Promise(r=>ack=r));await render();await clicar('Editar previsão');await editar('50');await enviar();await render({atendimentoId:'b',oportunidadeId:'outro'});await render();await clicar('Editar previsão');await act(async()=>ack({ok:true}));expect(host.querySelector('form')).not.toBeNull();expect(mudar).not.toHaveBeenCalled();});it("perda de capacidade invalida ACK sem impedir leitura",async()=>{let ack!:(r:{ok:true})=>void;salvar.mockImplementation(()=>new Promise(r=>ack=r));await render();await clicar('Editar previsão');await editar('50');await enviar();await render({podeEditar:false});await act(async()=>ack({ok:true}));expect(host.querySelector('form')).toBeNull();expect(host.textContent).toContain('0%');expect(mudar).not.toHaveBeenCalled();});
+it("duplo envio em voo chama uma vez",async()=>{let ack!:(r:{ok:true})=>void;salvar.mockImplementation(()=>new Promise(r=>ack=r));await render();await clicar('Editar previsão');await editar('50');await enviar();await enviar();expect(salvar).toHaveBeenCalledOnce();await act(async()=>ack({ok:true}));});
+it("transporte incerto preserva texto e não repete automaticamente",async()=>{salvar.mockRejectedValue(Error('transporte'));await render();await clicar('Editar previsão');const campo=await editar('50');await enviar();expect(host.querySelectorAll('input')[0]).toBe(campo);expect(salvar).toHaveBeenCalledOnce();expect(mudar).not.toHaveBeenCalled();});
+it("ausência continua distinta de zero e não inventa prazo",async()=>{const{PrevisaoOportunidade}=await componente();const h=renderToStaticMarkup(createElement(PrevisaoOportunidade,{...props(),probabilidadePct:null,previsaoFechamento:null,podeEditar:false}));expect(h.match(/Não informada/g)).toHaveLength(2);expect(h).not.toContain('0%');});
+it("limpar percentual envia null explícito e omite data inalterada",async()=>{await render();await clicar('Editar previsão');await editar('');await enviar();expect(salvar).toHaveBeenCalledWith('a',{oportunidadeIdEsperada:'l',esperado:{probabilidadePct:0,previsaoFechamento:'2026-09-06'},alteracoes:{probabilidadePct:null}});});

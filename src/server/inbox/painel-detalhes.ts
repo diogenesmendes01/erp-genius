@@ -1,3 +1,8 @@
+import {carregarCadastroPessoaAutorizado,type InformacoesCadastroPessoa} from "@/server/crm/pessoa-cadastro";
+import type {CadastroPessoa} from "@/server/crm/pessoa-cadastro-schema";
+import {capacidadesCrm} from "@/server/crm/permissoes";
+import {apenasPortal} from "@/server/_shared/sessao";
+import { carregarContadorAtividadeAria } from "./historico-aria-leitura";
 import type { EtapaLead, OrigemCanal, PapelParticipante, Prisma } from "@prisma/client";
 import { hrefConversa } from "@/lib/href-conversa";
 import { atendimentosParaPessoas } from "./atalhos";
@@ -16,12 +21,12 @@ import { CHAVE_LINHA } from "@/server/whatsapp/linha-comercial";
 import { capacidadesPainel, type CapacidadesPainel } from "./permissoes";
 
 export type ClienteVoltouPainel = { oportunidadeId: string; titulo: string; situacao: "ganha" | "perdida"; contatoId: string; podeVincular: boolean };
-export type CabecalhoPainel = { clienteVoltou: ClienteVoltouPainel | null; pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel };
+export type CabecalhoPainel = { contadorAtividade: number; clienteVoltou: ClienteVoltouPainel | null; pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel };
 export type CampoPainel = CampoDaFicha & { ia: boolean };
 export type PessoaPainel = { id: string; nome: string; email: string | null; cidade: string | null; cargo: string | null; linkedin: string | null; origemCanal: OrigemCanal | null; telefone: string | null; empresa: { id: string; nome: string; documento: string | null; segmentoMercado: string | null; porte: string | null; site: string | null } | null };
 export type ResumoOportunidadePainel = { id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null; etapa: EtapaLead; b2b: boolean };
 export type BlocoB2BPainel = { empresa: { id: string; nome: string }; participantes: { pessoaId: string; nome: string; papel: PapelParticipante; cargo: string | null; naConversa: boolean; hrefConversa: string | null }[]; decisor: boolean | null };
-export type DetalhesPainel = { pessoa: PessoaPainel | null; oportunidade: ResumoOportunidadePainel | null; b2b: BlocoB2BPainel | null; campos: CampoPainel[] };
+export type DetalhesPainel = { cadastroPessoa:CadastroPessoa|null; informacoesCadastro:InformacoesCadastroPessoa|null; pessoa: PessoaPainel | null; oportunidade: ResumoOportunidadePainel | null; b2b: BlocoB2BPainel | null; campos: CampoPainel[] };
 
 export function subtituloContato(i: { b2b: boolean; produto: string | null; cargo: string | null; empresa: string | null; interlocutor: { nome: string; papel: PapelParticipante } | null }): string {
   if (!i.b2b) return i.produto ? "Pessoa física · " + i.produto : "Pessoa física";
@@ -116,6 +121,7 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   const capacidades = capacidadesPainel(u, { finalidade: a.finalidade, veLead: !!op });
   const { fonte } = nomeEFonteDoAtendimento(a);
   return {
+    contadorAtividade: await carregarContadorAtividadeAria(u, atendimentoId),
     clienteVoltou: await retornoDoCliente(u, c, prisma),
     pessoaId: pessoa?.id ?? null,
     tagsDisponiveis: pessoa && capacidades.editarTags ? (await tagsAtivas()).map(({ id, nome }) => ({ id, nome })) : [],
@@ -126,6 +132,18 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   };
 }
 
+/** Os blocos novos têm gate próprio; a projeção antiga Pessoa409 permanece literal. */
+async function cadastroDoContexto(u:UsuarioSessao,c:NonNullable<Awaited<ReturnType<typeof contextoPainel>>>) {
+ if(c.a.finalidade!=="COMERCIAL"||!c.pessoa)return null;
+ const row=await prisma.usuario.findUnique({where:{id:u.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
+ if(!row?.ativo||apenasPortal(row)||!capacidadesCrm(row.papeis).has("contatos.ver"))return null;
+ const cadastro=await carregarCadastroPessoaAutorizado(prisma,row.id,c.pessoa.id);if(!cadastro)return null;
+ const atual=await contextoPainel(row,c.a.id,prisma);
+ if(!atual||atual.a.finalidade!=="COMERCIAL"||atual.pessoa?.id!==c.pessoa.id||atual.a.leadId!==c.a.leadId||atual.a.conversa.id!==c.a.conversa.id||atual.a.conversa.contato.id!==c.a.conversa.contato.id||atual.a.conversa.contato.pessoaId!==c.a.conversa.contato.pessoaId||atual.a.conversa.contato.leadId!==c.a.conversa.contato.leadId)return null;
+ const final=await prisma.usuario.findUnique({where:{id:u.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
+ if(!final?.ativo||apenasPortal(final)||!capacidadesCrm(final.papeis).has("contatos.ver")||JSON.stringify(final.papeis)!==JSON.stringify(row.papeis))return null;
+ return cadastro;
+}
 export async function carregarDetalhesPainel(u: UsuarioSessao, atendimentoId: string): Promise<DetalhesPainel | null> {
   const c = await contextoPainel(u, atendimentoId, prisma);
   if (!c) return null;
@@ -149,7 +167,9 @@ export async function carregarDetalhesPainel(u: UsuarioSessao, atendimentoId: st
     campos = ficha.map(campo => ({ ...campo, ia: autoria.get(campo.id) ?? false }));
   }
   const conversas = op?.b2b && op.empresa ? await atendimentosParaPessoas(u, op.participantes.map(p => p.pessoaId)) : new Map();
+  const cadastro=await cadastroDoContexto(u,c);
   return {
+    cadastroPessoa:cadastro?.valores??null,informacoesCadastro:cadastro?.informacoes??null,
     pessoa: pessoa ? { id: pessoa.id, nome: pessoa.nome, email: pessoa.email, cidade: pessoa.cidade, cargo: pessoa.cargo, linkedin: pessoa.linkedin, origemCanal: pessoa.origemCanal, telefone: a.conversa.contato.telefoneE164, empresa: pessoa.empresa } : null,
     oportunidade: op ? { id: op.id, titulo: op.nome, produto: op.planoPrevisto, valor: op.valorPrevisto?.toFixed(2) ?? null, moeda: op.pais?.moedaLocal ?? null, etapa: op.etapa, b2b: op.b2b } : null,
     b2b: op?.b2b && op.empresa ? { empresa: op.empresa, participantes: op.participantes.map(p => ({ pessoaId: p.pessoaId, nome: p.pessoa.nome, papel: p.papel, cargo: p.pessoa.cargo, naConversa: p.pessoaId === a.conversa.contato.pessoaId, hrefConversa: conversas.has(p.pessoaId) ? hrefConversa(conversas.get(p.pessoaId)!.atendimentoId) : null })), decisor: interlocutor ? interlocutor.papel === "DECISOR" : null } : null,

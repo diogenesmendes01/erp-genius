@@ -432,6 +432,7 @@ model PrazoRespostaSetor {
 }
 
 model AtendimentoWhatsApp {
+  geracoesInsight GeracaoInsightInbox[]
   id String @id @default(cuid())
   iaPausadaEm DateTime?
   iaPausaMotivo MotivoPausaAtendimentoIA?
@@ -519,6 +520,9 @@ enum Papel {
 }
 
 model Usuario {
+  inscricoesPresencaInbox PresencaInbox[]
+  geracoesInsightCriadas GeracaoInsightInbox[] @relation("AutorGeracaoInsightInbox")
+  geracoesInsightDescartadas GeracaoInsightInbox[] @relation("DescarteGeracaoInsightInbox")
   metasComerciais MetaComercial[] @relation("MetaDoUsuario")
   tarefasResponsavel Tarefa[] @relation("ResponsavelTarefa")
   tarefasCriadas Tarefa[] @relation("CriadorTarefa")
@@ -933,6 +937,7 @@ model TipoDocumento {
   nome      String // CPF, DNI, CURP, Cédula, Passaporte...
   validador String // nome do validador: cpf, curp, cedula_cr, passaporte...
   alunos    Aluno[] // alunos que escolheram este tipo de documento (doc 04)
+  pessoas   Pessoa[]
 }
 
 // ============================================================
@@ -1474,6 +1479,10 @@ model Oportunidade {
   // ação humana (o vendedor remarcar limpa o campo em `agendarExperimental`). Sem estado
   // persistido, o tick seguinte re-enfileirava o próximo degrau por cima do pedido.
   aguardandoReagendamentoEm DateTime?
+
+  // Previsão manual opcional (D13): data civil literal, sem conversão de fuso.
+  probabilidadePct   Int?
+  previsaoFechamento String?
 
   // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
@@ -9051,6 +9060,7 @@ enum MotivoPausaAtendimentoIA {
 }
 
 enum OrigemChamadaIA {
+  INSIGHT
   ATENDIMENTO
   TRIAGEM
   RESUMO
@@ -9077,6 +9087,7 @@ model AgenteIA {
 
 /// No máximo 1 RASCUNHO e 1 PUBLICADA (índices parciais na migration).
 model VersaoAgenteIA {
+  geracoesInsight GeracaoInsightInbox[]
   id              String                @id @default(cuid())
   numero          Int                   @unique
   status          StatusVersaoAgenteIA
@@ -9146,6 +9157,7 @@ model AcaoAgenteIA {
 }
 
 model ChamadaIA {
+  geracaoInsight GeracaoInsightInbox?
   id                 String          @id @default(cuid())
   origem             OrigemChamadaIA
   modelo             String
@@ -9408,6 +9420,7 @@ enum OrigemCanal {
   LINKEDIN
   IMPORTACAO
   OUTRO
+  PROSPECCAO_ATIVA
 }
 
 model Pessoa {
@@ -9420,6 +9433,11 @@ model Pessoa {
   /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
   /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
   nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(nome, 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
+  documento            String?
+  tipoDocumentoId      String?
+  tipoDocumento        TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  documentoPaisEmissor String? // ISO3166 opcional; distinto do país do catálogo do tipo.
+  nascimento           DateTime? @db.Date
   email        String?
   cidade       String?
   cargo        String?
@@ -9441,6 +9459,7 @@ model Pessoa {
   tags             PessoaTag[]
   valoresCampo     ValorCampoPersonalizado[]
 
+  @@index([tipoDocumentoId])
   @@index([empresaId])
   @@index([mescladaEmId])
   @@index([nomeOrdenacao, id])
@@ -9741,4 +9760,72 @@ model TrechoConhecimento {
 
   @@unique([fonteId, ordem])
   @@index([busca], type: Gin)
+}
+
+// Insights D12: retenção histórica deliberada; nenhuma FK de uso é removida em cascata.
+enum EstadoGeracaoInsightInbox {
+  PROCESSANDO
+  PRONTA
+  FALHOU
+  INCERTO
+  RECUSADA
+  DESCARTADA
+}
+
+model GeracaoInsightInbox {
+  id                    String @id @default(cuid())
+  versao                Int @default(0)
+  atendimentoId         String
+  atendimento           AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  autorId               String
+  autor                 Usuario @relation("AutorGeracaoInsightInbox", fields: [autorId], references: [id], onDelete: Restrict)
+  descartadaPorId       String?
+  descartadaPor         Usuario? @relation("DescarteGeracaoInsightInbox", fields: [descartadaPorId], references: [id], onDelete: Restrict)
+  descartadaEm          DateTime?
+  chaveTentativa        String @unique
+  estado                EstadoGeracaoInsightInbox @default(PROCESSANDO)
+  contextoHash          String
+  baseHash              String
+  // Referência da base, sem FK: não é um caminho de autorização nem impede exclusão física da mensagem.
+  baseUltimaMensagemId  String?
+  baseQuantidade        Int
+  configPublicadaId     String?
+  configPublicada       VersaoAgenteIA? @relation(fields: [configPublicadaId], references: [id], onDelete: Restrict)
+  configSnapshotJson    Json
+  precosSnapshotJson    Json
+  modelo                String
+  provedor              String
+  simulada              Boolean @default(false)
+  resultadoJson         Json?
+  chamadaIAId           String? @unique
+  chamadaIA             ChamadaIA? @relation(fields: [chamadaIAId], references: [id], onDelete: Restrict)
+  solicitadoEm          DateTime @default(now())
+  iniciadaEm            DateTime?
+  geradoEm              DateTime?
+  finalizadoEm          DateTime?
+  erroCodigo            String?
+
+  @@index([atendimentoId, solicitadoEm, id])
+  // UNIQUE parcial por atendimento nos estados PROCESSANDO/INCERTO em SQL na493.
+}
+
+// D6: inscrição efêmera explícita da aba Inbox; não representa login ERP, carteira ou permissão.
+model PresencaInbox {
+  id String @id @default(cuid())
+  usuarioId String
+  usuario Usuario @relation(fields:[usuarioId], references:[id], onDelete:Cascade, onUpdate:Restrict)
+  abaId String @db.Uuid
+  aberturaId String @db.Uuid
+  geracao BigInt @default(1)
+  sequencia BigInt @default(0)
+  confirmadaEm DateTime?
+  ultimoContatoEm DateTime
+  ultimaInteracaoEm DateTime?
+  desconectadaEm DateTime?
+  criadaEm DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  @@unique([usuarioId,abaId])
+  @@index([usuarioId,desconectadaEm,ultimoContatoEm])
+  @@index([ultimoContatoEm])
 }

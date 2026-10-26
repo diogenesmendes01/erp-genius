@@ -1,3 +1,4 @@
+vi.mock("@/server/inbox/acoes-previsao",()=>({definirPrevisaoNoInbox:vi.fn()}));
 import {act,createElement} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import type {Root} from "react-dom/client";
@@ -8,7 +9,7 @@ import type {OportunidadesPainel} from "@/server/inbox/painel-oportunidades";
 vi.mock("@tabler/icons-react",()=>({IconCalendarTime:()=>createElement('span'),IconPencil:()=>createElement('span'),IconTrash:()=>createElement('span'),IconBriefcase:()=>createElement('span'),IconPlus:()=>createElement('span'),IconHandStop:()=>createElement('span'),IconThumbDown:()=>createElement('span'),IconCalendarCheck:()=>createElement('span')}));
 const {mover}=vi.hoisted(()=>({mover:vi.fn()}));vi.mock("@/server/inbox/acoes-painel",()=>({moverEtapaNoInbox:mover}));
 import {AbaOportunidades} from "./AbaOportunidades";
-const dados:OportunidadesPainel={atual:{id:"op327",titulo:"Curso fictício327",produto:"Inglês327",valor:"650.00",moeda:"BRL",etapa:"QUALIFICADO",temperatura:"MORNO",responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,motivoPerda:null},outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"};
+const dados:OportunidadesPainel={atual:{id:"op327",titulo:"Curso fictício327",produto:"Inglês327",valor:"650.00",moeda:"BRL",etapa:"QUALIFICADO",temperatura:"MORNO",responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,probabilidadePct:null,previsaoFechamento:null,podeEditarPrevisao:false,motivoPerda:null},outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"};
 const cap={veLead:true,verContato:false,editarContato:false,editarTags:false,criarTag:false,moverEtapa:true,tarefas:false,tarefasEquipe:false,desfazerAria:false,verEmpresa:false};
 type Props=Parameters<typeof AbaOportunidades>[0];
 let root:Root,host:Elemento;const mudar=vi.fn(),perder=vi.fn();
@@ -20,7 +21,7 @@ async function clicar(nome:string){await act(async()=>{handler(botao(nome),'onCl
 async function selecionar(etapa:string){await act(async()=>{handler(host.querySelector('select')!,'onChange')({target:{value:etapa}});});}
 beforeEach(async()=>{vi.clearAllMocks();mover.mockResolvedValue({ok:true});const dom=criarDomMinimo();const criar=dom.documento.createElement.bind(dom.documento);dom.documento.createElement=t=>{const e=criar(t);if(t==='select')Object.defineProperty(e,'options',{get:()=>e.querySelectorAll('option')});return e;};vi.stubGlobal('document',dom.documento);vi.stubGlobal('window',dom.janela);vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);host=dom.documento.createElement('div');dom.documento.body.appendChild(host);const{createRoot}=await import('react-dom/client');root=createRoot(host as unknown as HTMLElement);});
 afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
-it("SSR apresenta valor/linhas e recusa de salto sem probabilidade ou score",()=>{const h=renderToStaticMarkup(createElement(AbaOportunidades,props()));for(const t of["Oportunidade atual","Funil Matrículas","Inglês327","Responsável","Sem responsável","Temperatura","Produto"])expect(h).toContain(t);expect(h).toMatch(/R\$\s?650,00/);expect(h).not.toContain("Probabilidade");expect(h).not.toContain("Score");expect(h).toMatch(/<option[^>]*value="NOVO"[^>]*disabled[^>]*title="Avance uma etapa por vez\."/);});
+it("SSR apresenta valor/linhas, previsão manual e recusa de salto sem score",()=>{const h=renderToStaticMarkup(createElement(AbaOportunidades,props()));for(const t of["Oportunidade atual","Funil Matrículas","Inglês327","Responsável","Sem responsável","Temperatura","Produto"])expect(h).toContain(t);expect(h).toMatch(/R\$\s?650,00/);expect(h).toContain("Probabilidade");expect(h).not.toContain("Score");expect(h).toMatch(/<option[^>]*value="NOVO"[^>]*disabled[^>]*title="Avance uma etapa por vez\."/);});
 it("sem oportunidade visível mostra vazio legítimo e nenhum select",async()=>{await render({dados:{atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"}});expect(host.textContent).toContain("Sem oportunidade visível para você.");expect(host.querySelector('select')).toBeNull();});
 it("sem capacidade os controles ficam readonly e nenhum movimento é disparado",async()=>{await render({capacidades:{...cap,moverEtapa:false}});expect((host.querySelector('select')!.getAttribute('disabled')!==null)).toBe(true);expect(host.querySelectorAll('button').every(b=>b.getAttribute('disabled')!==null)).toBe(true);expect(mover).not.toHaveBeenCalled();});
 it("mover usa atendimento e CAS da oportunidade, reconcilia só após OK; mesma etapa não executa",async()=>{await render();await selecionar("QUALIFICADO");expect(mover).not.toHaveBeenCalled();await clicar("Etapa 1º Contato");expect(mover).toHaveBeenCalledWith("A","EM_ATENDIMENTO","op327");expect(mover).toHaveBeenCalledOnce();expect(mudar).toHaveBeenCalledOnce();});
@@ -68,3 +69,11 @@ it.each([true,false])("332 entradas nominais na seção de ações com oportunid
  const criar=vi.fn(),nota=vi.fn();await render({dados:{...dados,atual:visivel?dados.atual:null},capacidades:{...cap,tarefas:true},aoNovaTarefa:criar,aoAdicionarNota:nota});for(const texto of ["Criar tarefa","Adicionar nota"]){const b=host.querySelectorAll("button").find(e=>e.textContent===texto)!;expect(b).toBeDefined();await act(async()=>handler(b,"onClick")());}expect(criar).toHaveBeenCalledOnce();expect(nota).toHaveBeenCalledOnce();expect(mover).not.toHaveBeenCalled();
 });
 it("332 callback não concede capacidade de tarefas e nota continua independente",async()=>{await render({aoNovaTarefa:vi.fn(),aoAdicionarNota:vi.fn()});expect(host.querySelectorAll("button").some(b=>b.textContent==="Criar tarefa")).toBe(false);expect(host.querySelectorAll("button").some(b=>b.textContent==="Adicionar nota")).toBe(true);});
+
+it("357 Aba não reconcilia ACK depois de perder e recuperar a capacidade no mesmo atendimento",async()=>{
+ let concluir!:(r:{ok:true})=>void;assumir328.mockImplementation(()=>new Promise(r=>concluir=r));
+ const p={podeAssumir:true,aoAssumir:assumir328,contextoAria:true};await render(p);await clicar328("Assumir conversa");await render({...p,podeAssumir:false});await render(p);await act(async()=>concluir({ok:true}));expect(mudar).not.toHaveBeenCalled();
+});
+it("357 handler antigo da Aba não executa após revogação e retorno de capacidade",async()=>{
+ const p={podeAssumir:true,aoAssumir:assumir328,contextoAria:true};await render(p);const onClick=handler(acao328("Assumir conversa")!,"onClick");await render({...p,podeAssumir:false});await render(p);await act(async()=>onClick());expect(assumir328).not.toHaveBeenCalled();
+});

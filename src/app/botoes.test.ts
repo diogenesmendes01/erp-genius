@@ -1784,6 +1784,8 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 // usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
+  { arquivo: "src/app/(app)/inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx", nome: "Conversa", vezes: 1, motivo: "linha de navegação com contatoNome do ItemListaInbox já autorizado, Avatar e marca literal Conversa; seleção não cria atendimento" },
+  { arquivo: "src/app/(app)/inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx", nome: "Contato", vezes: 1, motivo: "linha de destino com nome de OpcoesAtendimento autorizado e marca literal Contato; indisponibilidade preservada e servidor revalida abertura" },
   {arquivo:"src/app/(app)/inbox/ModalTarefa.tsx",nome:"key tipo",vezes:1,motivo:"tipo da tarefa rotulado pelo mapa central TIPO_TAREFA_LABEL via rotular, com seleção anunciada em aria-pressed"},
   {arquivo:"src/app/(app)/inbox/ModalTarefa.tsx",nome:"key a.id",vezes:1,motivo:"atalho institucional canônico de atalhosDeHorario; rótulo legível Hoje/Amanhã/Segunda acompanhado do horário"},
 
@@ -2182,4 +2184,27 @@ function ancoraRotulosCartao350(fonte:string):boolean {
 it("entrada dinâmica350 preserva dois filhos exatos e terceiro Desfazer354 literal",()=>{
  const fonte=readFileSync("src/app/(app)/inbox/aria/CartaoSugestaoAria.tsx","utf8");expect(ancoraRotulosCartao350(fonte)).toBe(true);
  for(const alterado of [fonte.replace("{v.rotuloAprovar}",'{""}'),fonte.replace("{v.rotuloRejeitar}","{outro}"),fonte.replace("const v=visualSugestao(","const v=outraProjecao("),fonte.replace('"./sugestao-visual"','"./outro"'),fonte.replace("</article>",'<Botao>{v.rotuloAprovar}</Botao></article>'),fonte.replace('variante="perigoContorno"','variante="secundario"'),fonte.replace('>Desfazer</Botao>','>{""}</Botao>'),fonte.replace('variante="neutro"','variante="secundario"'),fonte.replace('variante="neutro"','variante="contorno"')])expect(ancoraRotulosCartao350(alterado)).toBe(false);
+});
+
+it("359 mapa exato do interruptor não admite nome vazio, variante errada ou quarto botão", () => {
+  const fonte = readFileSync("src/app/(app)/inbox/aria/InterruptorAria.tsx", "utf8");
+  const esperado = MAPA_BOTOES["inbox/aria/InterruptorAria.tsx"];
+  expect(esperado).toHaveLength(3); expect(mapaDeBotoes(fonte)).toEqual(esperado);
+  for (const mutante of [fonte.replace('>Aria ativa</span>', '></span>').replace('aria-label="Aria ativa"', ''), fonte.replace('variante="iaFantasma"', 'variante="primario"'), fonte + '<Botao>Extra</Botao>']) {
+    expect(mapaDeBotoes(mutante)).not.toEqual(esperado);
+  }
+});
+
+it("358 retry do rodapé tem único botão literal canônico e mutantes fechados",()=>{
+ const fonte=readFileSync("src/app/(app)/inbox/aria/useAssumirParaResponder.tsx","utf8"),esperado=MAPA_BOTOES["inbox/aria/useAssumirParaResponder.tsx"];
+ expect(esperado).toEqual(["<Botao> Tentar de novo → secundario/md"]);expect(mapaDeBotoes(fonte)).toEqual(esperado);
+ for(const alterado of [fonte.replace('>Tentar de novo</Botao>','>{""}</Botao>'),fonte.replace('variante="secundario"','variante="primario"'),fonte+'<Botao>Extra</Botao>'])expect(mapaDeBotoes(alterado)).not.toEqual(esperado);
+});
+
+it("361 linhas dinâmicas têm duas âncoras nominais e mapa fechado de três ações", () => {
+ const fonte=readFileSync("src/app/(app)/inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx","utf8");
+ const esperado=MAPA_BOTOES["inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx"];
+ expect(esperado).toHaveLength(3);expect(mapaDeBotoes(fonte)).toEqual(esperado);expect(rotulosNaoResolvidos(fonte)).toEqual(["Conversa","Contato"]);
+ for(const mutante of [fonte.replace("<span>{c.contatoNome}",'<span>{""}'),fonte.replace("<span>{d.nome}",'<span>{""}')])expect(rotulosNaoResolvidos(mutante)).not.toEqual(["Conversa","Contato"]);
+ for(const mutante of [fonte.replace('variante="fantasma"','variante="primario"'),fonte.replace('>Conversa</span>','>Outra ação</span>'),fonte+'<Botao>Extra</Botao>'])expect(mapaDeBotoes(mutante)).not.toEqual(esperado);
 });

@@ -14,9 +14,22 @@
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
+  "inbox/abas/PrevisaoOportunidade.tsx": ["<Botao> Editar previsão → fantasma/sm", "<Botao> Salvar previsão → primario/sm", "<Botao> Cancelar → neutro/sm"],
+  "inbox/insights/AbaInsights.tsx": ["<Botao> Tentar de novo → secundario/sm"],
+  "inbox/insights/OperacoesInsights.tsx": ["<Botao> Retomar análise → iaFantasma/sm", "<Botao> Verificar análise inconclusiva → secundario/sm", "<Botao> Descartar análise inconclusiva → perigoContorno/sm"],
+  "inbox/insights/PainelInsights.tsx": ["<Botao> Atualizar → iaFantasma/sm", "<Botao> Usar como rascunho → ia/sm"],
+
+  "inbox/fluxos/transferir/ControladorTransferir.tsx": ["<Botao> Fechar → secundario/md"],
+  "inbox/fluxos/transferir/PopoverTransferir.tsx": ["<Botao> Pessoas → neutro/md", "<Botao> Equipes e filas → neutro/md", "<Botao> Devolver para a Aria → ia/md", "<Botao> Cancelar → secundario/md", "<Botao> Voltar → neutro/md", "<Botao> Transferir → primario/md"],
+  "inbox/abas/AlteracoesAria.tsx": ["<Botao> Desfazer → neutro/sm"],
   "src/components/conversa/CartaoTarefaFio.tsx": ["<Botao> Editar → fantasma/sm", "<Botao> Concluir → secundario/sm"],
   "inbox/aria/CartaoSugestaoAria.tsx": ["<Botao> → primario/md", "<Botao> → perigoContorno/md", "<Botao> Desfazer → neutro/md"],
 
+  "inbox/aria/InterruptorAria.tsx": [
+    "<Botao> Aria ativa → iaFantasma/sm",
+    "<Botao> Cancelar → fantasma/md",
+    "<Botao> Pausar a Aria → primario/md",
+  ],
   "inbox/aria/FaixaAriaAtiva.tsx": [
     "<Link> Gerenciar → iaFantasma/sm",
   ],
@@ -1093,6 +1106,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Transferir → primario/md",
     "<Botao> atribuir · Atribuir · Convidar → primario/md",
     "<Botao> Registrar nota → primario/md",
+    "<Botao> Escrever com Aria → iaFantasma/sm",
     "<Botao> Agendar → primario/md",
     "<Botao> Revogar convite → perigo/sm",
     "<Botao> Cancelar agendamento → perigo/sm",
@@ -1132,6 +1146,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "inbox/RodapeConversa.tsx": ["<Botao> Nota interna → neutro/md", "<Botao> Assumir para responder → primario/md"],
   "inbox/aria/FaixaHandoff.tsx": ["<Botao> Ver resumo e assumir · Ver resumo → perigo/sm"],
+  "inbox/aria/useAssumirParaResponder.tsx": ["<Botao> Tentar de novo → secundario/md"],
   "inbox/aria/ModalResumoHandoff.tsx": ["<Botao> Cancelar · Fechar → fantasma/md", "<Botao> Tentar de novo → secundario/md", "<Botao> Assumir e responder → primario/md", "<Botao> Responder → primario/md"],
   "inbox/aria/BotaoDevolverAria.tsx": ["<Botao> Devolver · Devolver para Aria → ia/sm"],
   "inbox/CabecalhoConversa.tsx": ["<Botao> Transferir → neutro/md", "<Botao> Assumir · Assumir conversa → primario/md"],
@@ -1163,8 +1178,16 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Cancelar → fantasma/md",
     "<Botao> Criar tarefa · Salvar → primario|neutro/md",
   ],
-  "inbox/NovoAtendimento.tsx": [
-    "<button> Abrir atendimento → primario/lg",
+  "inbox/fluxos/nova-conversa/NovaConversaPorNumero.tsx": [
+    "<Botao> Confirmando… · Reenviar mesma tentativa → primario/md",
+    "<Botao> Conferir outros dados → fantasma/md",
+    "<Botao> Conferindo… · Conferir número → primario/md",
+    "<Botao> Iniciar conversa → primario/md",
+  ],
+  "inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx": [
+    "<Botao> Conversa → fantasma/sm",
+    "<Botao> Contato → fantasma/sm",
+    "<Botao> Abrir atendimento → primario/md",
   ],
   "inbox/PopoverFiltros.tsx": ["<Botao> Limpar → secundario/md", "<Botao> Mostrar conversas → primario/md"],
   "inbox/OptOutContato.tsx": [

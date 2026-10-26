@@ -241,6 +241,11 @@ const VALIDADORES: Record<string, ValidadorDocumento> = {
   passaporte: validarPassaporte,
 };
 
+/** Só chaves próprias do catálogo canônico, sem reconhecer propriedades do protótipo. */
+export function temValidadorDocumento(validador: string): boolean {
+  return Object.prototype.hasOwnProperty.call(VALIDADORES, validador);
+}
+
 /**
  * Valida um documento por validador nomeado. Retorna se está válido.
  * NUNCA lança/bloqueia — o chamador salva sempre, gravando esta flag em
