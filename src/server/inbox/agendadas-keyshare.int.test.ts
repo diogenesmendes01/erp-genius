@@ -3,6 +3,8 @@
 import {afterAll,beforeEach,expect,it,vi} from "vitest";
 import {Client} from "pg";
 import fs from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {createHash} from "node:crypto";
 const {authMock}=vi.hoisted(()=>({authMock:vi.fn()}));
 vi.mock("@/server/_shared/sessao",async original=>{const real=await original<typeof import("@/server/_shared/sessao")>();return {...real,exigirSessao:async()=>{const s=await authMock();const u=await real.carregarUsuarioFresco(s.user.id);if(!u)throw new real.ErroAutenticacao();return u;}};});
@@ -13,6 +15,7 @@ import {cenarioPerda328} from "@/test/inbox-perda";
 import {cancelarAgendadaNoInbox} from "./acoes-painel";
 beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
 it("333 cancela e commita enquanto KEY SHARE externo continua retido, sem upgrade de PK no aviso",async()=>{
+ const pastaEvidencia=await fs.mkdtemp(join(tmpdir(),"inbox-333-keyshare-"));
  const c=await cenarioPerda328();authMock.mockResolvedValue({user:{id:c.dono.id}});const m=await prisma.intencaoMensagem.create({data:{numeroId:c.numero.id,contatoId:c.contato.id,atendimentoId:c.a.id,autorId:c.dono.id,origem:"HUMANO",corpoRenderizado:"Agendada fictícia FK333",agendadaPara:new Date("2026-10-27T12:00Z")}});
  const observer=new Client({connectionString:process.env.DATABASE_URL});await observer.connect();
  let sinal!:(pid:number)=>void,liberar!:()=>void;const pronto=new Promise<number>(r=>sinal=r),libera=new Promise<void>(r=>liberar=r);
@@ -26,5 +29,5 @@ it("333 cancela e commita enquanto KEY SHARE externo continua retido, sem upgrad
   if(terminou){evidencia.statusComHolder=(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:m.id}})).status;evidencia.eventosComHolder=await prisma.evento.count({where:{tipo:"MensagemAgendadaCancelada"}});}
   expect(evidencia.observado,"não deve tentar upgrade de PK sob KEY SHARE alheio").toBeNull();
   expect(evidencia.concluiuComHolder,"resultado deve chegar ANTES de liberar o holder").toBe(true);expect(resultado?.ok).toBe(true);expect(evidencia.statusComHolder).toBe("CANCELADA");expect(evidencia.eventosComHolder).toBe(1);
- }finally{liberar();await Promise.allSettled([holder,cancel]);evidencia.resultadoDepoisLiberar=resultado;await observer.end();await fs.writeFile("output/inbox-333-keyshare-dev-a-"+evidencia.helperSha256.slice(0,12)+"-private.json",JSON.stringify(evidencia,null,2));}
+ }finally{liberar();await Promise.allSettled([holder,cancel]);evidencia.resultadoDepoisLiberar=resultado;await observer.end();const arquivoEvidencia=join(pastaEvidencia,"inbox-333-keyshare-"+evidencia.helperSha256.slice(0,12)+".json");await fs.writeFile(arquivoEvidencia,JSON.stringify(evidencia,null,2));console.info("Evidência KEY SHARE:",arquivoEvidencia);}
 });
