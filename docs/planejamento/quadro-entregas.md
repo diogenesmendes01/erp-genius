@@ -7706,3 +7706,5 @@ ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61
 #371 / PR450 R22 ROOT — C1/C2: carga explicita "neste setor"; sucesso447C1 cobre contexto vazio e preenchido com assertpayload, sem restaurar min12 no opt-in369. SECRETARIA já presente no própriohead98205a21 do testehook (blobs literais). RED92d017 EXIT1(1falha/22controles)→GREEN8arquivos85casos88474/5f8db7 EXIT0; lint3 9ba5a0 EXIT0/zeroavisos. Sem SQL/policy/contagem nova; visual/CI e publicação da correção pendentes.
 
 #341 / PR451 R22 ROOT — C1/C3: SPEC explicita controles de previsão/probabilidade na abaOportunidadesInbox e ausência de envio desses inputs no formulárioFunil, cujo writer preservaomissão. Comentário Prisma devalor reposicionado juntoavalorPrevisto semmudar declarações/ordem/SQL. Visualpainel-oportunidades/CI e publicação do esclarecimento pendentes; nãohomologada.
+
+R24 — PR #451: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
