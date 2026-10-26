@@ -4,7 +4,7 @@ import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
 import { useSearchParams } from "next/navigation";
-import { NovoAtendimento } from "./NovoAtendimento";
+import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
@@ -593,7 +593,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
           focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
-          novaConversa={opcoesNovaConversa ? <NovoAtendimento compacto opcoes={opcoesNovaConversa} /> : undefined} />
+          novaConversa={opcoesNovaConversa ? <PopoverNovaConversa key={selecionado ?? "lista"} opcoes={opcoesNovaConversa} itens={itens} aoSelecionar={abrir} aoFechar={() => setNovaConversaAberta(false)} /> : undefined} />
       </section>
 
       <section ref={regiaoConversa} tabIndex={-1} aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>

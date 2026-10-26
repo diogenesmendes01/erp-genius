@@ -662,10 +662,12 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/abas/TagsContato.tsx": [
     "compacto · Nenhuma tag encontrada.",
   ],
-  "src/app/(app)/inbox/NovoAtendimento.tsx": [
+  "src/app/(app)/inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
     "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
+    "compacto · Cadastre o contato em Leads para iniciar uma conversa com este número.",
+    "compacto · Nenhuma conversa ou contato encontrado.",
   ],
   "src/app/(app)/inbox/PainelSetor.tsx": [
     "compacto · Nenhuma cobrança em aberto.",
