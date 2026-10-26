@@ -7756,3 +7756,5 @@ REDs reais:23/1fail ACKA→revoga→A;28/2fail handlersretidos;29/1fail chaves e
 #361 R23 ROOT — delta02aab isolado sobre439; 17paths14SRC, único conflitoquadro append. Reversão d96321 recuperaTODOsrc439 exato,backend/schema/configs0delta. Recorte123arquivos1583casos90962/8d0b8d EXIT0; lint11 63410/91cfc7 EXIT0/zeroavisos. TESTER RO657f831e favorável sem execução própria. QA docs/qa/inbox-361-integracao-r23-root.md; globais/QAexecução/visual/CI pendentes. #372 separado, ownerD9 aguarda humano.
 
 #361 R23 ROOT — TSCa2fdb63082/c927d3 CLI2 únicoTS2352 nafixture childrenomitido. Ajustado objetoPropscompleto/children:null semcast, filhoReactcontinuaterceiroargumento; produçãoinalterada. Replay4arquivos50casoscdf0b1 EXIT0,lint1ed61d4 EXIT0/zeroavisos. RepetirTSCcompleto; globais/build/QA/visual/CIaindapendentes.
+
+R24 — issue #361: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
