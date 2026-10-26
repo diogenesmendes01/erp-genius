@@ -15,3 +15,11 @@ Validação ROOT da árvore `0c844f0d6c3106f335c38f67df58483e061c5e16`:
 As evidências do DEV continuam atribuídas às suas fontes: sete arquivos nativos novos, 33 casos distintos, e seis regressões, 73 casos. O relatório original explica as correções de fixture e instrumentação, o grafo observado, os canários de log e os limites das barreiras. Essas execuções não são testes ROOT nem aceite independente.
 
 Pendentes neste checkpoint: revisão e testes independentes do candidato exato, TypeScript, unidade global, lint global, build, CI e aceite visual com anexos. DOM e dispatcher de cache instrumentado não equivalem a navegador/RSC. A issue continua parcial, sem homologação, deploy ou mensagem externa.
+
+## Manifesto de campos — correção após o gate global
+
+A primeira suíte unitária global da fonte b90e3f23 terminou em 119333, sessão94065, código1: 1.077 arquivos, 9.571 testes aprovados e uma falha entre9.572. O guard exato de campos identificou quatro campos novos em cada um dos dois formulários que ainda faltavam no manifesto. O negativo foi preservado.
+
+A correção acrescenta somente essas oito strings a src/app/campos-mapa.ts, na ordem real dos controles. O teste continua comparando o mapa inteiro, incluindo rótulo, controle e obrigatoriedade. Nenhum teste foi excluído nem teve a asserção relaxada. Esse manifesto é importado somente pelo teste de campos; os componentes produtivos não foram alterados. O arquivo completo campos.test.ts passou28/28 em e1ff32, código0; lint do manifesto também terminou0.
+
+A QA independente do TESTER b90e3f23 passou sete arquivos nativos novos33/33 e seis regressões73/73, todos completos, seguidos de15UNIT171/171. Seu parecer preserva fonte e limites; ele não é navegador nem nova execução do guard de manifesto. O banco TESTER499 foi restaurado, com426hashes e47fixtures conferidos. TypeScript original b90e3f23 também terminou0 em703d99. Os gates da nova fonte após esta correção ainda serão executados e atribuídos separadamente.

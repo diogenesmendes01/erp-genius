@@ -7825,3 +7825,8 @@ Recibo privado output/inbox-340-native-final25a9-receipt-private.json SHA f57383
 ### #340 — integração ROOT R26, validação parcial
 
 Delta42 db441→2e41 integrado sobre f591 sem ancestrais privados/D10 parcial. Contador público Aria preservado; schema somente499 com presença existente. ROOT UNIT15/171 (19417/c1264c) e lint37 (d870b3) terminaram0. Cliente próprio499 gerado b933a9 após negativo write UNKNOWN preservado. DDL c3259c preservou dados/histórico495 e deixou novos campos nulos; snapshot89e852426tabelas1383linhas, restauradorROOT499 exclusivo. QA independente, gates globais, CI, visual e publicação pendentes; não concluída. Ver docs/qa/inbox-340-integracao-r26-root.md.
+
+
+### #340 — manifesto de campos após global negativo
+
+Suíte global b90:119333EXIT1,1077arquivos/9572casos(9571pass/1fail); guard campos detectou8entradas ausentes para quatro novos controles em cada formulário. Corrigido somente manifesto8strings, comparação exata preservada; arquivo completo28/28e1ff32EXIT0 e lint0. Nenhuma alteração produtiva/schema/config. TQA b90 independente33+73SQL e171UNIT todos0, restauradoT4993d2c95; gates da próxima fonte ainda pendentes, sem homologação visual.
