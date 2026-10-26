@@ -7135,3 +7135,15 @@ PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4
 União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
 
 Permanecem pendentes o anexo visual328, a integração da dependência427, o retarget e as verificações do head final. Os registros históricos que chamam a release de privada não descrevem a visibilidade atual do repositório: a API informa repositório público e release de QA em rascunho. Nenhum upload327/328, merge ou fechamento328 foi realizado nesta preparação.
+
+
+### #327 — C2 visual anexado com autorização específica, 26/10/2026
+
+ZIP de18capturas históricas/README/manifesto anexado à release QA DRAFT421321214, asset678657729,size1935721,SHA2e06d855...; upload387fe0 e downloadroundtrip0a21aa EXIT0, hashidêntico. Usuário autorizou explicitamente o arquivo no repositório público mantendo a release emrascunho; não alegar download público anônimo. TESTER conferiu18/18 PNGs e manifestos, preservandoA7/A9negativos/A10semPNG e fontesnominais. C2daR2 resolvido pelo anexo, sem nova homologação visual presumida.
+
+CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCESS e integração40168347724/363files3350testes+3files4optinskips mantêm suas fontes. A revisão final foi favorável após atualizar corpo/C2. Registro: docs/qa/inbox-327-anexo-r28-root.md. Este commit é sódocumentação; aguardaCIheadfinalantesdo mergeautorizado e fechamento327. Nenhuma alteração de produto, schema, pacote ou release publicada.
+
+
+### PR #432 — base main após integração da #327, R28
+
+A base lógica9bd31f13 foi integrada em main pelo squash414d932a. A diferença de suas árvores contém somente quadro e o registro do anexo327. Esta composição acrescenta esses documentos e o pai main414 à branch432, preservando integralmente a árvore executável7fc073e5 usada no ambiente de QA. A PR pode apontar para main e executar CI sem reatribuir seus gates visuais; aceite visual completo e revisão continuam obrigatórios antes do merge.
