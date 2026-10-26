@@ -13,7 +13,7 @@ export async function cancelarAgendadaInboxTx(sessao:UsuarioSessao,atendimentoId
  const id=Id.parse(atendimentoId),mid=Id.parse(intencaoId);
  await db.$transaction(async tx=>{
   // Compatível com FK de novos registros; não bloqueia intenção NULL de abertura do despachante.
-  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR NO KEY UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR SHARE`;
   await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${mid} AND "atendimentoId"=${id} AND "agendadaPara" IS NOT NULL AND "passo" IS NULL AND "passoComercial" IS NULL FOR UPDATE`;
   const u=await tx.usuario.findUnique({where:{id:sessao.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
   if(!u?.ativo)throw new ErroRegra("Sua sessão não está mais ativa.");
