@@ -584,7 +584,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   ) : <p className="text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
 
   return (
-    <div onPointerDownCapture={interagirPresenca} onKeyDownCapture={interagirPresenca} onTouchStartCapture={interagirPresenca} onScrollCapture={interagirPresenca} data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div onPointerDownCapture={interagirPresenca} onKeyDownCapture={interagirPresenca} onTouchStartCapture={interagirPresenca} onWheelCapture={interagirPresenca} data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <MensagemStatus texto={avisoTransferencia} tom="sucesso" className="shrink-0 px-3 py-2" />
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
