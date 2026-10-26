@@ -1,40 +1,6 @@
 # Quadro único de entregas
 
-Checkpoint do Inbox: 25/10/2026, 14:12 UTC. O restante do quadro preserva os registros de outras entregas e as etapas históricas; as evidências não passam automaticamente a valer para commits posteriores.
-
-## Inbox — estado da campanha em 25/10/2026
-
-O épico #379 contém 81 issues de implementação (#298–#378): **37 fechadas e 44 abertas**, conforme consulta ao GitHub nesta rodada. Há **10 PRs abertas, todas em rascunho**, e nenhum novo merge em main nesta retomada. O ref remoto main foi conferido em `abb961625f57bf20d9eb4734df98e59dda362957`. Aprovação das decisões D1–D6, D9–D13, D20 e D22 continua válida; não há nova pergunta de produto nestas correções.
-
-| Issue | PR | Estado real e próximo gate |
-|---|---|---|
-| #326 | #420 | Código e nove jobs de CI/integração aprovados no head fd60e408; autorização/publicação dos anexos R9/R10 ainda pendentes. |
-| #327 | #427 | Implementação e integração anteriores preservadas; anexos e CI após retarget pendentes. |
-| #328 | #432 | Implementação revisada; aceite visual/publicação e sequência de integração pendentes. |
-| #329 | #435 | DEV A corrige regressão do vínculo global legado e separa o fluxo Cliente voltou; testes de concorrência em andamento. Não aprovada para merge. |
-| #330 | #436 | Lista/ações entregues; gates originais e QA da fonte `5e0` aprovados. DEV A tratará reconciliação do cancelamento com SSE e ordem/contrato da consulta de tarefas após congelar a correção435. Visual e CI continuam pendentes. |
-| #346 | #431 | R2 publicada em `073cce32`. QA posterior reproduziu três combinações válidas com filtro secundário invisível; correção R3 pendente. Trinta capturas da fonte `17fe` passaram na QA nominal, sem serem aceite do head R2/R3. |
-| #347 | #433 | Região acessível corrigida em f3c35381 e base atualizada; aceite visual final e CI após retarget pendentes. |
-| #348 | #434 | Composição96642890 preserva cartões, cabeçalho e as revisões da coluna. Recorte10/314 aprovado; achado de filtros da base permanece aberto. Visual final pendente; retirada da duplicação pertence à353. |
-| #350 | #430 | Cartões e conflitos compostos; autorização/publicação do pacote visual ainda pendentes. |
-| #352 | #437 | Faixa/modal entregues e base atualizada em d03d2d39, sem incluir330 no delta. Gates e QA anteriores continuam atribuídos a d0e; build/visual/QA da composição e CI final pendentes. |
-| #353 | — | DEV B implementou retirada do painel legado e contrato exclusivo; 86 arquivos/1.024 testes unitários e lint dirigidos aprovados. Integração60306 ainda ativa: não presumir aprovação ou commit final. |
-
-Ordem da pilha publicada:420 →427 →432 →435 →430 →431 →433 →434 →437;436 parte de435. O integrador mantém também uma composição local de330 com a pilha e352, sem misturá-las na publicação de cada PR. Após resolver os gates, cada PR será composta/retargetada e verificada na nova base antes do merge.
-
-### Evidências da rodada, com fonte e limites
-
-Composição local `29e48cf82680b0372fa5cb9f7909755ed8c9feef`: TypeScript original, sem configuração/exclusões auxiliares, código0 (sessão46416/d512ae); recorte Inbox/diálogos/guardas,90 arquivos e1.037 testes completos,UTC,código0 (9654/f7eff1). É um recorte, não uma nova suíte global. A tentativa anterior do TypeScript com heap2GB terminou em134 por falta de memória; o replay usou8GB, mantendo a configuração e a fonte. Esse resultado não corrige nem aprova o achado de filtros combinados.
-
-Aceite técnico e inspeção independente de30 imagens APP346 nas três larguras/dois temas, fonte `17feea9990cebfa5ccefee4d4fa20551441e152a`, build `bhiv24SNW2TugdijY0UGv`: lote7023/dbd15c código0, manifestações/PNG/DOM conferidos e16 controles offline adicionais aprovados pelo TESTER. Parecer SHA256 `c0c90b40e814ea1553f3f27e23a142764d3f0d098aca8cf9013ace9aa1cc5c0e`. Limites: não é aceite do head final R2/R3, não substitui comparação com o protótipo nem prova estabilidade de pixels de toda a página. Variação periférica da sidebar escura registrada; regiões346 inspecionadas favoravelmente.
-
-Cada documento encerrou a mesma conexão SSE200 enquanto a página ainda estava viva, sem pedidos finitos pendentes. Ações comerciais, Motor, WebSocket e destinos externos permaneceram bloqueados. Prefetches locais do Next foram admitidos somente para URLs/cabeçalhos observados, com digest conferido e resposta200/MIME/hash; cancelamentos naturais aceitos preservam a prova da resposta integral já recebida. Os negativos anteriores foram preservados, sem tratar teste falso como captura.
-
-Auditoria pós-captura conferiu os503 registros originais,424 hashes de tabelas/sequências e47 registros fictícios, sem alteração de campos de negócio. Preview próprio encerrado (PID414736 ausente/porta3130 livre); banco ci-integracao restaurado ao snapshot492 com código0 (400323), e perfil ROOT restaurado byte a byte. Lease posterior: DEV B/ci-integracao para353; DEV A/dev-email para435/436; TESTER livre. Nenhum cluster compartilhado foi parado, dependência reinstalada, integração externa ativada ou deploy realizado.
-
-QA independente da composição966:20 arquivos/552 testes aprovados, mas contraprova14casos teve11 controles aprovados e3 falhas reais em combinações de filtros. Parecer SHA256 `f79c9620f51f669997f8a99ebc068034afd96a87145a7bd1578a719216ad8b32`. A correção deve manter parser/produtor e as combinações válidas, ocultando das etiquetas apenas a dimensão efetivamente representada pelo chip ativo. Não há aprovação final dessa composição.
-
-As demais 33 issues abertas ainda não têm implementação entregue nesta rodada: #331–#334, #338–#341, #354–#359 e #360–#378. A próxima frente #331 já tem plano de QA de leitura; depende de #330. A #339 consome o vínculo de agendamento da #375, apesar do metadado histórico de dependência vazio. Continuam no máximo dois DEVs e duas funcionalidades em implementação; o TESTER revisa o commit exato em ambiente próprio.
+Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
 ## Inbox E2.15 — atalhos de saída (#335) — checkpoint de código 23/10/2026
 
@@ -7269,38 +7235,6 @@ Composição ROOT preserva integralmente a publicação347/PR433 e os dezoito ob
 
 Preservados os cartões #350 e o cabeçalho #348 sobre a pilha #435/#432/#427/#420; todos os testes/históricos e variantes canônicas foram mantidos. Correção editorial C4 rastreia nomes do plano; C5 coexistência até #353 registrada no SPEC. Primeiro TSC63251/18df2c EXIT2 apontou prop JSX duplicada gerada pelo merge; global63160 interrompida84a514 EXIT1 antes da correção. Negativos preservados. Prop única corrigida; gates finais e visual pendentes. Nenhum merge em main, envio ou deploy.
 Validação da composição R1 corrigida (25/10): TypeScript original sem exclusões novas49054/963b46 EXIT0; suíte unitária completa UTC48880/d86765 EXIT0, 975 arquivos/8.356 testes, sem filtros/skips, 240,79s. Ambos usaram a árvore893c1d5c338071ed82b5f58696d7b6dc82c7c3ad. Lint original47508/6a8278 EXIT0, zero erros/47 avisos, sem mudar regras/config/ignores. O primeiro lint46844/779224 EXIT1 examinou caches históricos de Next gerados dentro de output (11.172 arquivos; 5.812 erros no código gerado); os caches foram preservados por renomeação em diretório de artefatos autorizado, com pins conferidos, antes do replay. Não é correção de código gerado nem exclusão de fonte. Esse negativo também fica preservado. Apenas documentação de resultados foi acrescentada depois dos gates; build do head exato e QA independente final permanecem pendentes. Capturas, CI após retarget e merge não foram presumidos.
-### Inbox #352 — faixa e resumo de handoff na conversa (25/10/2026)
-
-DEV B na base final17feea9990cebfa5ccefee4d4fa20551441e152a, branch codex/inbox-e3-352-handoff-conversa. Faixa usa apenas DTO handoff autorizado, motivo/tempo/CTA; Modal canônico com resumo/feito/próximo passo, fallbacks, leitura sem CTA e saída Cancelar/Fechar. A action existente usa useAcaoCliente idempotente e sessão por atendimento/abertura/acaoId. ACK só permite escolher Responder e devolver foco ao campo local após painel fresco e envio vigente. GET antigo/503/A→B→A/novo modal/revogação não tomam foco; 404 limpa capacidades handoff copiadas preservando histórico. Ponte local não remonta nem apaga rascunhos. Modal.focoAoFechar opcional encaminha useDialogo sem mudar seu padrão.
-
-TDD e negativos preservados no report, incluindo revogação e mapa RED014f6d (2 falhas/97 controles), mocks legados d3106b (36 falhas/996 controles), token Tailwind inexistente afbbc7 (1 falha/1.071 controles), todos corrigidos sem relaxar guardas. GREEN final sessão39987/602cf1 EXIT0: 92 arquivos/1.072 casos, w1/heap1024, sem filtro de caso/skip novo. Regressão canônica de diálogos aa6cb8 EXIT0:4 arquivos/31 casos. Lint17/547cb1 EXIT0 --max-warnings=0. TSC original sessão53407/58eee5 EXIT2: três TS2769 na fixture nova e 1.107 erros privados históricos de output. Fixture corrigida: 12/12 testes71eeb0 e lint0f870e EXIT0. Replay original sessão24094/ce82c4 EXIT2 confirmou zero erro src e 1.107 output; TSC NÃO aprovado, ROOT coordenará arquivo físico com hashes dos históricos antes de novo original, sem exclusões/config.
-
-SPEC docs/specs/inbox-handoff-conversa.md; report output/inbox-352-report.md. QA independente, build, CI e matriz visual24APP pendentes. D3 aprovado NÃO foi implantado: backend MANUAL/bloqueio/cancelamento de sugestões segue responsabilidade explícita #357. Sem backend/ACL/schema/package/env/DB/Next/browser/HTTP/provider/captura/push/deploy. Feature não marcada concluída/homologada.
-
-### Inbox #352 — R1: não reativar abertura invalidada (25/10/2026)
-
-Contraprova independente TESTER f368/ab6bea (13 casos/uma falha) comprovou divergência entre sessão encerrada do hook e CTA reativada no Modal após voltar podeAssumir do mesmo acaoId. Correção mantém a abertura sem ações e informa Fechar/reabrir; só nova abertura deliberada cria geração viva. Não reativa ACK antigo, nem remonta conversa/rascunhos ou altera backend #357. Oráculo real novo exige ausência de CTAs, resolve ACK antigo e novo após reabrir e confirma foco apenas no painel fresco. Negativos e cópia literal do oráculo T preservados em output privado.
-
-TDD DEV de7152 EXIT1 (13 casos/uma falha); focais19 arquivos/279 casos sessão45556/19aec8 EXIT0 e lint4/67f3c1 EXIT0. Replay final sessão90187/e8f758 EXIT0:19 arquivos/279 casos, guarda85 completa incluída, w1/heap1024/sem filtro de caso ou skip novo. Lint4 final b785ce EXIT0 --max-warnings=0. Sem TSC/global/DB/Next/browser/HTTP/instalação/env/schema/push; QA independente e gates originais continuam do integrador.
-
-### Inbox #352 — R2: conservar resumo enquanto responsável reconcilia (25/10/2026)
-
-P2 independente TESTER01bc97: painel200 pósACK sem handoff/lista ainda sem responsável seguido de503 fazia sumir o Modal (ramo já existente em f368, não regressão R1). Retenção aguardandoConfirmacao separada do busy; resumo permanece apenas leitura, sem Assumir/Responder novos, com Cancelar/retry do refresh já existente. Autorização deriva do DTO atual, sem reconstrução de handoff como permissão. Cancela intenção ao fechar e mantém foco condicionado à nova leitura fresca/responsável/envio.
-
-Oráculo T literal copiado: RED8b2d39 EXIT1 (14 casos/uma falha) → GREEN8ff734 EXIT0 (14/14), sem alterar bytes. Controles próprios sucesso/cancelar-reabrir RED07b669. Focais finais sessão50483/787880 EXIT0:19 arquivos/282 casos, guarda85 completa, w1/heap1024/sem filtro de caso/skip novo. Lint4 f3e760 EXIT0 --max-warnings=0. SPEC/report atualizados; QA exata e gates originais pendentes do integrador. Sem TSC/global/DB/Next/browser/backend/query/polling/schema/env/push na R2.
-
-### Inbox #352 — R3: vazio canônico e título de domínio (25/10/2026)
-
-ROOT original em f37: TSC11676/863492 EXIT0; UNIT96732/a8b3e2 EXIT1 (978 arquivos/8.381 casos, duas falhas/8.379 controles); lint88481/fa897c EXIT1 com três erros somente em cópias privadas, cujo arquivo físico é coordenado pelo integrador. R3 troca o vazio feito por EstadoVazio compacto, preserva texto/mapa e classifica somente o Modal em NAO_E_PAGINACAO/cópia literal: Próxima ação sugerida é título de domínio, sem links/cursor. Produtor351 literal limita feito a dez últimas autorizadas (loop take100 interno, corte10, reverse cronológico); INT preexistente com201 negadas/15 autorizadas inspecionado, não executado sem lease. Detector/asserts genéricos intactos; controle injeta link avançar no mesmo path/fonte e exige detecção.
-
-RED a1164c EXIT1 (38 casos/três falhas), negativo intermediário fb33b8 preservado. GREEN sessão54522/3b7ba5 EXIT0:8 arquivos/178 casos, guardas completas/Modal/hook/botões85/paleta/contraste/tipografia; EstadoVazio17/17 3e8fdb EXIT0; lint4 48cb12 EXIT0 --max-warnings=0. Sem TSC/global/DB/Next/browser/schema/env/push na R3; backend/hookf37 literais. Gates originais, QA exata e visual permanecem pendentes do integrador.
-
-### Inbox #352 — gates originais finais e QA exata (25/10/2026)
-
-Fonte d0e987752d045ab8835e12838cc329bb33b6ec12 congelada. ROOT: TSC original67703/7dc488 EXIT0, sem novas exclusões/config; global UTC51740/ca1ea0 EXIT0,978 arquivos/8.382 testes/sem filtros ou skips; lint original7431/c1440c EXIT0, zero erros/94 avisos. Históricos/cópias causais arquivados fisicamente com hashes antes do replay; negativos anteriores preservados. Recibos/logs originais lidos pelo DEV, fonte/head d0e confirmados.
-
-QA independente TESTER62927/9a962f EXIT0:15 arquivos completos/222 testes, parecer favorável sem novo achado acionável; relatório SHA25662ce1ca0e1d7589dc6e522b6da98a0a3b0a81e1d09a99d74058eecd3f373a872. SPEC/report atualizados somente para evidências reais. CI/build de publicação e visual permanecem separados do integrador; #357/D3 não implantado. Sem nova execução Node/SQL/INT/Next/browser ou push pelo DEV nesta atualização documental; banco ci-integracao continua exclusivo ROOT.
-
 
 ### PR431 — R2 C1/C2: chips sem duplicação e autoria neutra (25/10/2026)
 
@@ -7331,9 +7265,6 @@ Oráculo T literal RED149136 EXIT1 (14 casos/três falhas) → GREENbbbc70 EXIT0
 P2 independente61dc03 confirmado: cartões SUGERIDA preservados após404 continuavam acionáveis. Marcador SOMENTE cliente acessoRevogado no snapshot do painel é ativado por404, mantido em503/retry inicial e limpo só por200 fresco aceito. Props opcionais Conversa→Cartao, defaultfalse, bloqueiam DOM+handler e invalidam ACK/erro/transporte/foco da geração anterior. Cartões/status/histórico/DTO/backend/ACL preservados; não usar podeDecidir geral como autorização por cartão.200 com cartão autorizado por outro lead e podeDecidir=false recupera normalmente.
 
 Oráculo T literal copiado RED408cc1 EXIT1 (13 casos/uma falha); versão separada adaptou somente a projeção mockConversa para repassar a prop nova e passou13/13 20b080 EXIT0, sem alegar greenliteral. RED próprioe37cf0 (63 casos/sete falhas) e RED retry3377ba (106/uma falha) preservados. UNIT ampla15699/2b130f EXIT0:86 arquivos/1.044 testes; final85294/fd3621 EXIT0:9 arquivos/306 casos com foco/gerações/404→503/404→200/GETantigo e guarda85/paleta/contraste. Lint7 2b5b6a e recheckteste db24cf EXIT0 --max-warnings=0. SPEC/report próprios atualizados; commit separado filho386d42f, sem misturar353/431R3. Sem DB/SQL/INT/TSC/global/build/browser/install/PR/push; QA/gates originais/visual pendentes do integrador.
-### PR #437 — feedback ao responsável no handoff
-
-O comentário C1 da revisão5643573873 foi reproduzido pelo TESTER na fonte11194158 e no teste nativo pelo integrador (b46cbd,18casos,15controles aprovados e3falhas). O hook agora reconcilia a intenção do responsável após leitura fresca e oferece retry somente de painel, sem Assumir. Recibo antigo, perda de responsabilidade e acesso continuam bloqueando foco; recuperar envio exige novo pedido. Backend/API/contratos de domínio não mudam. GREEN inicial025ea8:2arquivos23testes; após controles adicionais,1225/0457da:18arquivos333testes, código0, sem filtros/skips. TypeScript/global/QA independente e visual da correção pendentes, sem marcar a issue concluída.
 
 #### PR #435 — observações documentais da revisão R2
 
