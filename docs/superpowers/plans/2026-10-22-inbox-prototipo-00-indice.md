@@ -38,7 +38,7 @@ Enquanto uma decisão estiver aberta, vale a **regra atual do ERP** (coluna "Pad
 | D2 | Sugestão aprovada em pacote (mensagem, etapa e tarefa) e com edição? Texto editado sai como Aria ou humano? | Uma sugestão por vez, sem edição | E3 |
 | D3 | Compositor travado enquanto a IA atende? "Assumir" pausa a Aria (motivo `MANUAL`)? | Compositor livre; Aria pausa ao primeiro envio humano | E3 |
 | D4 | Interruptor "Aria ativa" no Inbox? Papéis? Motivo obrigatório? | Fora do Inbox | E3 |
-| D5 | Transferir unificado (pessoa, equipe, fila, devolver à Aria)? Vendedor → vendedor muda a carteira? Contexto opcional? | Fluxos separados atuais; contexto obrigatório (≥ 12 caracteres) | E4 |
+| D5 | Transferir unificado (pessoa, equipe, fila, devolver à Aria)? Vendedor → vendedor muda a carteira? Contexto opcional? | Respondida: fluxo unificado; contexto opcional e resumo autorizado da Aria; transferência entre colegas do mesmo setor sem mudar carteira. Decisão canônica em `docs/planejamento/inbox-decisoes-produto.md`; extensão de acesso #370 ainda tem aprovação técnica específica pendente. API histórica conserva mínimo de 12 caracteres. | E4 |
 | D6 | Presença e carga por pessoa? "Equipes" = setores ou novo cadastro? | Sem presença; equipes = setores | E4 |
 | D7 | Status manual (Aberta, Pendente, Resolvida, Arquivada) ou automático do ERP? | Automático do ERP; sem status manual | E1 (menu ⋮) |
 | D8 | Barra de etapas do Inbox segue as regras do Funil (10 etapas, um passo por vez)? | Segue o Funil (`destinoDoArraste`) | E2 |
