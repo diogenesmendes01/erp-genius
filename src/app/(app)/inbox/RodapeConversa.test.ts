@@ -16,3 +16,5 @@ it('variante travada só mostra comandos fornecidos e nunca campo',()=>{
  expect(h).toContain('Aria aguarda aprovação.');expect(h).toContain('Nota interna');expect(h).toContain('Assumir para responder');expect(h).not.toContain('<textarea');
  const sem=renderToStaticMarkup(createElement(RodapeConversa,{...base,modo:'travado',travado:{texto:'Aguardando',aoNota(){}}}));expect(sem).not.toContain('Assumir para responder');
 });
+
+it("332 Nova tarefa aparece só com callback real, mesmo sem permissão de envio",()=>{const criar=()=>{};expect(renderToStaticMarkup(createElement(RodapeConversa,{...base,modo:"compositor",podeEnviar:false,aoCriarTarefa:criar}))).toContain('aria-label="Nova tarefa"');expect(renderToStaticMarkup(createElement(RodapeConversa,{...base,modo:"compositor"}))).not.toContain('aria-label="Nova tarefa"');});
