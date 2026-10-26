@@ -2,11 +2,11 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { exigirSessao, type UsuarioSessao } from "@/server/_shared";
+import { exigirSessao } from "@/server/_shared";
 import { apenasPortal } from "@/server/_shared/sessao";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel } from "./atendimentos";
-import { PAPEIS_INBOX } from "./escopo";
+import { contextoPessoas } from "./pessoas-atendimento";
 import { ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
 import { Papel } from "@prisma/client";
 import { resumoDaAriaParaNota } from "@/server/aria/resumo-nota";
@@ -17,17 +17,6 @@ const IdSchema = z.string().min(1);
  * Pessoas para os diálogos do cabeçalho (Task 31). `atribuir`: quem atende o setor do atendimento; `convidar`: qualquer
  * pessoa ativa do Inbox. Só nome e id, só para quem tem a alçada da ação sobre um atendimento que enxerga; senão, vazio.
  */
-async function contextoPessoas(u:UsuarioSessao,id:string,para:"atribuir"|"convidar"){
-  const a=await atendimentoVisivel(u,id);
-  if(!a||a.encerradoEm)return null;
-  if(!podeExecutar(u,para,{setor:a.finalidade,responsavelId:a.responsavelId}))return null;
-  const papeis=para==="atribuir"?papeisDoSetor(a.finalidade):PAPEIS_INBOX;
-  const pessoas=await prisma.usuario.findMany({
-    where:{ativo:true,id:{not:u.id},papeis:{hasSome:papeis}},
-    select:{id:true,nome:true},orderBy:{nome:"asc"},take:200,
-  });
-  return{a,pessoas};
-}
 export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"):Promise<{id:string;nome:string}[]>{
   const u=await exigirSessao(),id=IdSchema.parse(atendimentoId);
   return(await contextoPessoas(u,id,para))?.pessoas??[];

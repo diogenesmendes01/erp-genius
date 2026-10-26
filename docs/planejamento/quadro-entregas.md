@@ -7706,3 +7706,43 @@ ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61
 #371 / PR450 R22 ROOT — C1/C2: carga explicita "neste setor"; sucesso447C1 cobre contexto vazio e preenchido com assertpayload, sem restaurar min12 no opt-in369. SECRETARIA já presente no própriohead98205a21 do testehook (blobs literais). RED92d017 EXIT1(1falha/22controles)→GREEN8arquivos85casos88474/5f8db7 EXIT0; lint3 9ba5a0 EXIT0/zeroavisos. Sem SQL/policy/contagem nova; visual/CI e publicação da correção pendentes.
 
 #341 / PR451 R22 ROOT — C1/C3: SPEC explicita controles de previsão/probabilidade na abaOportunidadesInbox e ausência de envio desses inputs no formulárioFunil, cujo writer preservaomissão. Comentário Prisma devalor reposicionado juntoavalorPrevisto semmudar declarações/ordem/SQL. Visualpainel-oportunidades/CI e publicação do esclarecimento pendentes; nãohomologada.
+
+### #376 — presença automática D6, freeze DEV antes SQL (26/10/2026)
+
+Implementação em validação: inscrição explícitaInbox, heartbeatPOST25s/atividadeUTCserver, onlineconfirmado/ausente600/offline60, close não renova. UserNOKEY→Presenca→atorfresh/clockpóswait; CASid+geração/seq, limite8/ret24hcleanup16; readerbatch sócandidatosatuaisTransferir, zero370/distribuição/SSEnovo. UIstatusopcional e2timersnominaiscom mutantes. Focal98663/5f75e2 EXIT0 17/192; consumidores14110d EXIT0 5/75, lint27SRC626d46 EXIT0; sobrepostos/nãoglobais. CausalcloseREDcb1c0f→GREEN27/ROOT394d74 preservados. Native17planejados AINDA NÃOEXECUTADOS/leaseNONE. ROOTinfra496READY real494migs426tables/client3bafe/snapshot505; semDDL/generateDEV. SPEC inbox-presenca-automatica, QA inbox-376-presenca-dev. Pendingnative/QAexact/gatescompostos/visual; sourcebase447/371 e370stashpreservados, integrar sódelta.
+
+### #376 — hardening selfbound/atividade, antesnative
+
+Filha4cb: lookupfindFirstid+usuarioId evita ler rowalheia; atividadecoalescida drena apósinteração pendente semtimerextra. RED561c0d2falhas/27pass→GREEN00e2f0 EXIT0 4/41 e lint4d8232b EXIT0. Schema/SSE/ACL/testenativo17 literais4cb; native/gates/QA/visual pendentes. Scope370inativo preservado.
+
+### #376 — revogação completa e404modal tipado (antes native)
+
+Filhadff: encerraciclo/foto/observador em401/403/404self, ACKantigos não restauram.404modal sóErroFotoPresenca, preservabatimento próprio; checkpointCAS≠lease sópara futuraentrada deliberada/authfresh. REDbroker9falhas/16pass e API3falhas/14pass→GREEN44545/0bb02f EXIT0 5/61, lint5SRC8336df EXIT0. Schema/writer/SSE/native17 intocadosdff, SQLaindaSEMLEASE, QA/gates/visual pendentes.
+
+### #376 — preflight nativo tipado, ainda sem SQL
+
+Filhatest-onlyd8e preserva17casos, exigeerrocausalErroPermissao/ErroAutenticacao/ErroFotoPresenca/ErroPresenca emvezcatchfalse/broad. Pin798históricopreservado, sematribuirREDnãoexecutado. Runtime/schema/clientinalterados. LeaseaindapendenteROOT.
+
+### #376 — RED nativo timezone e ajuste de tipo rawclock
+
+Primeiranativa59147/6462a4 EXIT1 17/12pass/5fail (76,95s), causareal casttimestamp descartafuso. ROOTRO4926e8 comprova delta-10800000ms; ajuste mínimo::timestamptz(3) nos2helpers+holder, semschema/env/TimeZonechange. ROOTrestoreB496 baseline505/426, semlease. Replay17aindapendente: NÃOchamarGREEN, manternegativo eQA/visualabertos.
+
+### #376 — nativeGREEN434 e fixpending-open somente cliente
+
+Replay81001/6f2203 EXIT0 17/17 (73,03s); ROOTrestore476af1 baseline505/426, semlease. PendingopenRED98bb87/1c83d4 confirma gen1fechada→brokercompartilha promessauser+aba/CASsemherdarvida. CheckpointabaREDb721a8→chaveuser+aba. Final39c2fd EXIT0 10/100, lint2SRC243a44 EXIT0, server/schemaSQLliteral434 (native17qualificado semrepetir). RecuperaçãoentradaDELIBERADA apósACKperdido segueROtécnico; QA/gatescompostos/visual pendentes, nãoencerrar376.
+
+### #376 — resolverSELF para entrada deliberada, freeze pré-native
+
+NovoPOSTresolverabaUUID retorna sócheckpoint|null apósUserNOKEY/fresh/ownrow/fresh, zeroescritas/lease/dadosnegócio. SóabrirDeliberadoCAS409 pode1resolver+1CAScomum; racefalhafechado, nuncaheartbeat/upsert/retryauth. TDDAPI/brokerRED5falhas49pass→focala25c14 EXIT0 7/114 e lint12SRC4bdeba EXIT0. Helperfreshwriterextraído literal; schema/SSE/ACL370intocados. NativeNOVO10 +reg17completos AINDANÃOEXECUTADOS aguardandoROOTleaseB496; source43417verde éhistórico. QA/gates/visual pendentes.
+
+### #376 — entrega DEV funcional, natives finais3dd EXIT0
+
+Checkpoint10/10 41651/272572 EXIT0 (44,25s), seguido porregressão17/17 emNOVA sessãoSERIAL19224/278a1c EXIT0 (72,19s), fonte3dd congelada/configoriginal/UTCw1heap1024/7blank/semfiltros/skips. Focal114/lint12SRC0 járegistrados, não soma histórica/global. LeaseSQL+Node liberados, ROOTrestaurará fixtures (não presumir505). Helpersfresh/CAS/ROmetadata/races/zeroeffects/pool1 verificados. Docsfilha mantémruntime3dd literal; QAindependente, gatescompostos/TSC/build/CI/visual/perf pendentes.376emvalidação,370grantinativo.
+
+#376 R21 ROOT — delta36de2770→b37 aplicado sempaisGrant;31SRC limpos, somente schema/quadro resolvidos com reversão literal e união histórica. DEV3dd10+17SQL/EXIT0 separados. Rootbuild4d8 arquivado234assets(99e156), nãoébuild376. Focais/client/DDL/QA/gates/visual/publicação pendentes, não homologada; ver docs/qa/inbox-376-integracao-r21-root.md.
+
+#376 R21 ROOT — integração focal21/369 EXIT0(97885/2600d8),lint31SRC EXIT0(60455/a17138),reversãoSRCexacta64b1ff. Rootvalidate0;generate1writeUNKNOWNpreservado→retry1024 56403/1147d3 EXIT0. DDL209a49/snapshot68355b EXIT0:ROOT495migraçõesreais/426tabelas/1382linhas,client990efce2,semGrant/dados/históricoantigospreservados. RestauradorsomenteROOT496. NativosRoot/QA/gatesglobais/visual/publicação376pendentes;docQAinbox-376-integracao-r21-root.md.
+
+#376 R22 ROOT — nativos checkpoint10 + presença17 completos/seriais EXIT0, sessão32640/5c22ed; snapshotROOT496 restaurado0. TESTER RO bce favorável, sem execução própria. Global original17923/0e062e EXIT1:1.067files/9.418casos,25falhas em2fixtures useId não ligado. Ajuste somente mocks useId→criarGanchos existente;2arquivos25/25 terminal6429fd EXIT0, sem remover asserções nem mudar produção. Regressão global não aprovada; TSC/lint/build/QAexecução/visual/CI/publicação376 ainda pendentes.
+
+#376 R22 ROOT — global na fonte73d:1.067arquivos9.431casos35084/46d24d EXIT0. TSC67803/37bdba CLI2 encontrouapenasTS2345 na tabela deheaders da fixtureAPI. TabelaagoraexplicitamenteRecord<string,string>[], mesmos8cenários/asserções, produçãoinalterada;focal19/1994f3fe0+lint1e5ab120. TypeScriptcompleto/lintglobal/build/QAindependente/visual/CIpendentes; global9431continuaatribuídoa73d, semreatribuiçãoaoajustedetipo.
