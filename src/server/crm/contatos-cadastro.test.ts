@@ -1,0 +1,16 @@
+import {beforeEach,expect,it,vi} from "vitest";
+import {Papel} from "@prisma/client";
+import type {UsuarioSessao} from "@/server/_shared/sessao";
+const m=vi.hoisted(()=>({pessoa:vi.fn(),ops:vi.fn(),cadastro:vi.fn(),transaction:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{$transaction:m.transaction,pessoa:{findFirst:m.pessoa},oportunidade:{findMany:m.ops}}}));
+vi.mock("./pessoas",()=>({escopoPessoas:vi.fn(async()=>({}))}));
+vi.mock("@/server/_shared/escopo-comercial",()=>({escopoComercialAtual:vi.fn(async()=>({}))}));
+vi.mock("./pessoa-cadastro",async original=>({...await original<typeof import("./pessoa-cadastro")>(),carregarCadastroPessoaAutorizado:m.cadastro}));
+import {obterContato} from "./contatos";
+const autor:UsuarioSessao={id:"u",nome:"Vendedor",papeis:[Papel.VENDEDOR]};
+const p={id:"p",codigo:null,nome:"Pessoa",email:null,cidade:null,cargo:null,linkedin:null,origemCanal:null,criadoEm:new Date("2026-10-01T00:00:00Z"),empresa:null,aluno:null,contatosWhatsApp:[],tags:[],documento:"RAW-NAO-EXPOR",nascimento:new Date("1999-01-01T00:00:00Z")};
+const cadastro={valores:{documento:"DOC AUTORIZADO",tipoDocumentoId:null,documentoPaisEmissor:"CR",nascimento:"2000-02-29"},informacoes:{idade:26,documento:null,catalogo:[]}};
+beforeEach(()=>{vi.clearAllMocks();m.transaction.mockImplementation(async f=>f({}));m.pessoa.mockResolvedValue(p);m.ops.mockResolvedValue([]);m.cadastro.mockResolvedValue(cadastro);});
+it("fichaCRM publica mesmos2blocos por gatefresh sem inventar atendimento",async()=>{const d=await obterContato("p",autor);expect(d).toMatchObject({cadastroPessoa:cadastro.valores,informacoesCadastro:cadastro.informacoes});expect(m.cadastro).toHaveBeenCalledWith(expect.anything(),"u","p");expect(JSON.stringify(d)).not.toMatch(/RAW-NAO|1999/);});
+it("negação fresh cadastral retorna2NULLs sem reaproveitar rawPessoa",async()=>{m.cadastro.mockResolvedValue(null);expect(await obterContato("p",autor)).toMatchObject({cadastroPessoa:null,informacoesCadastro:null});});
+it("funilver sem contatosver não recebe nova leitura nem DTO",async()=>{expect(await obterContato("p",{...autor,papeis:[Papel.PROFESSOR]})).toBeNull();expect(m.cadastro).not.toHaveBeenCalled();expect(m.pessoa).not.toHaveBeenCalled();});

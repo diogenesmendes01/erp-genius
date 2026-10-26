@@ -25,6 +25,8 @@ export type DetalheOportunidade = {
   b2b: boolean;
   etapa: EtapaLead;
   temperatura: Temperatura;
+  probabilidadePct: number | null;
+  previsaoFechamento: string | null;
   valorPrevisto: string | null;
   moeda: string | null;
   pais: string | null;
@@ -189,6 +191,8 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     b2b: l.b2b,
     etapa: l.etapa,
     temperatura: l.temperatura,
+    probabilidadePct: l.probabilidadePct,
+    previsaoFechamento: l.previsaoFechamento,
     valorPrevisto: l.valorPrevisto ? l.valorPrevisto.toFixed(2) : null,
     moeda: l.pais?.moedaLocal ?? null,
     pais: l.pais?.nome ?? null,

@@ -1,3 +1,4 @@
+import { papelEditaPrevisao } from "./previsao-capacidade";
 import { carregarTarefasDoAtendimento, type TarefaPainel } from "./painel-tarefas";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import type { EtapaLead, MotivoPerda, Temperatura } from "@prisma/client";
@@ -9,6 +10,7 @@ import { podeVerLeadNaThread } from "@/server/whatsapp/consultas-inbox";
 
 export type OportunidadeAtualPainel = {
   id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null;
+  probabilidadePct: number | null; previsaoFechamento: string | null; podeEditarPrevisao: boolean;
   etapa: EtapaLead; temperatura: Temperatura; responsavel: { id: string; nome: string } | null;
   dataExperimental: string | null; experimentalConfirmada: boolean; professorExperimental: string | null; motivoPerda: MotivoPerda | null;
 };
@@ -34,12 +36,13 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
   const op = await db.oportunidade.findUnique({
     where: { id: a.leadId },
     select: {
-      id: true, nome: true, pessoaId: true, planoPrevisto: true, valorPrevisto: true, etapa: true, temperatura: true, motivoPerda: true,
+      id: true, nome: true, pessoaId: true, probabilidadePct: true, previsaoFechamento: true, planoPrevisto: true, valorPrevisto: true, etapa: true, temperatura: true, motivoPerda: true,
       dataExperimental: true, experimentalConfirmadaEm: true, pais: { select: { moedaLocal: true } },
       vendedor: { select: { id: true, nome: true } }, professorExperimental: { select: { nome: true } },
     },
   });
   if (!op) return vazio(tarefas, fusoEscola);
+  const podeEditarPrevisao = papelEditaPrevisao(u) && !!await db.oportunidade.findFirst({where:{AND:[{id:op.id},await escopoComercialAtual(u,db)]},select:{id:true}});
   const outras = op.pessoaId ? await db.oportunidade.findMany({
     where: { AND: [{ pessoaId: op.pessoaId, id: { not: op.id } }, await escopoComercialAtual(u, db)] },
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }], take: 10,
@@ -48,6 +51,7 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
   return {
     atual: {
       id: op.id, titulo: op.nome, produto: op.planoPrevisto, valor: op.valorPrevisto?.toFixed(2) ?? null, moeda: op.pais?.moedaLocal ?? null,
+      probabilidadePct: op.probabilidadePct, previsaoFechamento: op.previsaoFechamento, podeEditarPrevisao,
       etapa: op.etapa, temperatura: op.temperatura, responsavel: op.vendedor, dataExperimental: op.dataExperimental?.toISOString() ?? null,
       experimentalConfirmada: op.experimentalConfirmadaEm !== null, professorExperimental: op.professorExperimental?.nome ?? null, motivoPerda: op.motivoPerda,
     },

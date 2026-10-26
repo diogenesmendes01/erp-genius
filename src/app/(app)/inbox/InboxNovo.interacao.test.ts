@@ -1,3 +1,4 @@
+import { AbaInsights } from "./insights/AbaInsights";
 import { DriverWhatsApp } from "@prisma/client";
 import type { ReactElement, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,14 +11,16 @@ const m = vi.hoisted(() => ({
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
   parametros313: null as string | null,
+  navegar361: vi.fn(),
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   avisoThread: null as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
   aoVisibilidade: null as null | (() => void),
 }));
+const assumir357Inbox=vi.hoisted(()=>vi.fn(async()=>({ok:true})));
 const assumir328Inbox=vi.hoisted(()=>vi.fn(async()=>({ok:true})));
-vi.mock("@/server/whatsapp/acoes-atendimento",()=>({assumirAtendimento:assumir328Inbox,atribuirAtendimento:vi.fn(),convidarParticipante:vi.fn(),devolverParaFila:vi.fn(),revogarParticipante:vi.fn(),transferirAtendimento:vi.fn()}));
+vi.mock("@/server/whatsapp/acoes-atendimento",()=>({assumirAtendimento:assumir328Inbox,assumirConversaDaAria:assumir357Inbox,atribuirAtendimento:vi.fn(),convidarParticipante:vi.fn(),devolverParaFila:vi.fn(),revogarParticipante:vi.fn(),transferirAtendimento:vi.fn()}));
 const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -49,11 +52,12 @@ vi.mock("react", async (original) => {
     }) as unknown as typeof real.useEffect,
   };
 });
+vi.mock("./usePresencaInbox",()=>({usePresencaInbox:()=>()=>{}}));
 vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => { m.aoAviso = f; return { conectado: true }; } }));
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: m.navegar361, refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
@@ -62,6 +66,7 @@ import { ColunaConversas } from "./ColunaConversas";
 import { AcoesContato } from "./AcoesContato";
 import { PainelContato } from "./PainelContato";
 import { ModalTarefa } from "./ModalTarefa";
+import { AbaAtividade } from "./abas/AbaAtividade";
 import { AbaOportunidades } from "./abas/AbaOportunidades";
 import { PainelSetor } from "./PainelSetor";
 import { AbaDetalhes } from "./abas/AbaDetalhes";
@@ -92,6 +97,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   m.modo = null;
   m.parametros313 = null;
+  m.navegar361.mockReset();
   regiaoConversaVisivel = true;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   m.aoVisibilidade = null;
@@ -119,7 +125,7 @@ function tela(p: PropsInboxNovo = props): ReactNode {
   if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [], closest: () => null, focus() {} };
   return t;
 }
-const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
+const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as Pick<import("./ConversaAberta").PropsConversaAberta, "podeEnviar" | "falhaPermissao" | "podeUsarInsights" | "aoMudar">;
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
 describe("InboxNovo: identidades React dos painéis", () => {
@@ -709,7 +715,7 @@ describe("composição318: Detalhes do contato selecionado", () => {
     const p = { ...props, triagem: [{ id: "t1" }] as PropsInboxNovo["triagem"], revisoes: [] };
     tela(p); await esvaziar(); const t = tela(p), no = painel(t);
     expect(no.props.contato).toEqual({ id: "c-a1", nome: "a1", subtitulo: "Pessoa física · Inglês", tags, quadrado: false });
-    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }, { id: "oportunidades", rotulo: "Oportunidades" }]); expect(no.props.abaAtiva).toBe("detalhes");
+    expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }, { id: "oportunidades", rotulo: "Oportunidades" }, { id: "atividade", rotulo: "Atividade" }]); expect(no.props.abaAtiva).toBe("detalhes");
     const blocos = elementos(no.props.children as ReactNode).filter(n => [AbaDetalhes, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
     expect(blocos.map(n => n.type)).toEqual([AbaDetalhes, AcoesContato, OptOutContato, PainelTriagem]);
     expect(blocos[0].props.dados).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
@@ -1094,7 +1100,7 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
 
 async function abrirAba331(){
  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:true,tarefasEquipe:false,editarContato:true,verContato:true}})}));
- const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
+ const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify(props.inicial)):url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
  tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as (id:string)=>void)("oportunidades");tela();await esvaziar();return elementos(tela()).find(n=>n.type===AbaOportunidades)!;
 }
 it("331: callbacks reais abrem modal no atendimento e troca de seleção encerra sessão",async()=>{
@@ -1156,4 +1162,69 @@ it("332: nota no painel solicita foco apenas para a conversa selecionada",async(
 });
 it("332 pedido de nota consumido não ressuscita em A→B→A; próxima abertura tem token novo",async()=>{
  const aba=await abrirAba331();(aba.props.aoAdicionarNota as ()=>void)();const antigo=cabecalho(tela()).pedidoNota as number;lista(tela()).aoSelecionar("a2");tela();lista(tela()).aoSelecionar("a1");expect(cabecalho(tela()).pedidoNota).toBeUndefined();const nova=await abrirAba331();(nova.props.aoAdicionarNota as ()=>void)();expect(cabecalho(tela()).pedidoNota).toBeGreaterThan(antigo);
+});
+it.each(["COMERCIAL","SECRETARIA"])("333 Atividade usa produtor da aba %s sem restringir a CRM/envio",async setor=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor,podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:false}})}));const d={agendadas:[],recente:{ultimaInteracaoEm:null,conversas:2,tarefasAbertas:0,notas:[]}},anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/painel/atividade")?new Response(JSON.stringify(d)):anterior(url)));
+ tela();await esvaziar();const p=elementos(tela()).find(n=>n.type===PainelContato)!;(p.props.aoTrocarAba as (id:string)=>void)("atividade");tela();await esvaziar();const aba=elementos(tela()).find(n=>n.type===AbaAtividade)!;expect(aba).toBeDefined();expect(aba.props.dados).toEqual(d);expect(aba.props.atendimentoId).toBe("a1");expect(aba.props.aoMudar).toEqual(expect.any(Function));lista(tela()).aoSelecionar("a2");expect(elementos(tela()).some(n=>n.type===AbaAtividade)).toBe(false);
+});
+
+
+async function abrirAba357(p:PropsInboxNovo,capacidade:boolean){
+ assumir328Inbox.mockClear();assumir357Inbox.mockClear();
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,cabecalho:{pessoaId:null,tagsDisponiveis:[],semNome:false,subtitulo:"Fixture357",quadrado:false,capacidades:{veLead:true,verContato:false,editarContato:false,editarTags:false,criarTag:false,moverEtapa:false,tarefas:false,tarefasEquipe:false,desfazerAria:false,verEmpresa:false}},acoes:{},aria:{pausada:false,motivo:null,podeDecidir:false,podeDevolver:false,podeAssumirAria:capacidade,cartoes:[],handoff:null}}));
+ const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify(p.inicial)):url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:{id:"op357",titulo:"Fixture357",produto:null,valor:null,moeda:null,etapa:"QUALIFICADO",temperatura:"MORNO",responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,motivoPerda:null},outras:[],pessoaId:null,tarefas:[],fusoEscola:"UTC"})):anterior(url)));
+ tela(p);await esvaziar();const painel=elementos(tela(p)).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as(id:string)=>void)("oportunidades");tela(p);await esvaziar();return elementos(tela(p)).find(n=>n.type===AbaOportunidades)!;
+}
+const props357=()=>({...props,inicial:{itens:[{...item("a1"),estadoAria:"ia"},{...item("a2"),estadoAria:"ia"}],proximo:null}} as PropsInboxNovo);
+it.each([true,false])("357 consumidor da Aba escolhe action nova só com capacidade fresca %s",async capacidade=>{
+ assumir328Inbox.mockClear();assumir357Inbox.mockClear();const aba=await abrirAba357(props357(),capacidade);expect(aba.props.podeAssumir).toBe(capacidade);const r=await(aba.props.aoAssumir as()=>Promise<{ok:boolean}>)();
+ if(capacidade){expect(r.ok).toBe(true);expect(assumir357Inbox).toHaveBeenCalledExactlyOnceWith("a1");}else{expect(r.ok).toBe(false);expect(assumir357Inbox).not.toHaveBeenCalled();}expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+it("357 capacidade de assumir da Aba independe de decidir cartões e admite o responsável atual",async()=>{
+ const p=props357();p.inicial.itens[0]={...p.inicial.itens[0],responsavelId:"u1",estadoAria:"aprovacao"};const aba=await abrirAba357(p,true);expect(aba.props.podeAssumir).toBe(true);await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).toHaveBeenCalledWith("a1");expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+it("357 callback Aria retido não atravessa A-B-A",async()=>{
+ const p=props357(),aba=await abrirAba357(p,true);lista(tela(p)).aoSelecionar("a2");tela(p);await esvaziar();lista(tela(p)).aoSelecionar("a1");tela(p);await esvaziar();await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).not.toHaveBeenCalled();expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+it("357 404 limpa capacidade copiada e bloqueia callback antigo sem cair no legado",async()=>{
+ const p=props357(),aba=await abrirAba357(p,true);respostaPainel=()=>new Response("",{status:404});(elementos(tela(p)).find(n=>n.type===ConversaAberta)!.props.aoMudar as()=>void)();tela(p);await esvaziar();const conversa=elementos(tela(p)).find(n=>n.type===ConversaAberta)!;expect((conversa.props.aria as{podeAssumirAria:boolean}).podeAssumirAria).toBe(false);await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).not.toHaveBeenCalled();expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+
+it("377 abaInsights exigeveLead e recebe porta física somente da seleção atual",async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:true}})}));tela();await esvaziar();
+ const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as {id:string}[]).some(a=>a.id==="insights")).toBe(true);
+ (painel.props.aoTrocarAba as(id:string)=>void)("insights");let t=tela();expect(elementos(t).some(n=>n.type===AbaInsights)).toBe(true);
+ const porta={atendimentoId:"a1",textoAtual:"Rascunho377",revisao:"r377",podeUsar:true,usar:async()=>({ok:true as const})};
+ (cabecalho(t).aoPortaRascunhoInsight as(p:unknown)=>void)(porta);t=tela();expect(elementos(t).find(n=>n.type===AbaInsights)!.props.rascunhoPorta).toBe(porta);
+ lista(t).aoSelecionar("a2");t=tela();expect(elementos(t).some(n=>n.type===AbaInsights)).toBe(false);
+});
+it("377 semveLead nãoofereceabaInsights mesmoCOMERCIAL",async()=>{
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:false}})}));tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as {id:string}[]).some(a=>a.id==="insights")).toBe(false);
+});
+
+it("449 C1 agendamento recebe aplicabilidade do painel atual e revogação não conserva capacidade antiga",async()=>{
+ expect(conversa(tela()).podeUsarInsights).toBe(false);
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:true}})}));
+ (conversa(tela()).aoMudar as()=>void)();tela();await esvaziar();expect(conversa(tela()).podeUsarInsights).toBe(true);
+ respostaPainel=()=>new Response("",{status:404});(conversa(tela()).aoMudar as()=>void)();tela();await esvaziar();expect(conversa(tela()).podeUsarInsights).toBe(false);
+ const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as{id:string}[]).some(a=>a.id==="insights")).toBe(false);
+});
+
+it.each(["Atendimento transferido para Secretaria.", "Falha externa não deve virar aviso de sucesso"])("447 C1 confirmação local persiste após remover conversa e ignora texto externo: %s",async(texto)=>{
+ tela();await esvaziar();const c=conversa(tela()) as {aoTransferirConcluido?:(texto:string)=>void};
+ expect(c.aoTransferirConcluido).toBeTypeOf("function");c.aoTransferirConcluido!(texto);
+ respostaLista=async()=>pagina([]);m.aoAviso!({tipo:"atendimento.atualizado",atendimentoId:"a1",conversaId:"cv1",mensagemId:null});await esvaziar();tela();
+ const semSelecao={...props,selecionado:null};tela(semSelecao);await esvaziar();const final=tela(semSelecao);
+ expect(elementos(final).some(n=>n.type===ConversaAberta)).toBe(false);
+ const status=elementos(final).find(n=>typeof n.type==="function"&&n.type.name==="MensagemStatus");expect(status?.props.texto).toBe("Transferência concluída.");
+
+});
+it("361 R1B1 ACK fora dos itens navega pela rota canônica e abre item autorizado do SSR",async()=>{
+ habilitarRota313("busca=ana&c=a1");const p={...props,filtros:{busca:"ana"},opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;
+ const popover=(t:ReactNode)=>(elementos(t).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props;
+ tela(p);await esvaziar();popover(tela(p)).aoSelecionar("novo-sem-mensagem");expect(m.navegar361).toHaveBeenCalledExactlyOnceWith("/inbox?busca=ana&c=novo-sem-mensagem",{scroll:false});expect(elementos(tela(p)).find(n=>n.type===ConversaAberta)?.props.item).toMatchObject({id:"a1"});
+ m.parametros313="busca=ana&c=novo-sem-mensagem";const novo={...item("novo-sem-mensagem"),ultimaMensagemEm:null,preview:""};const recebido={...p,selecionado:novo.id,inicial:{itens:[novo,...p.inicial.itens],proximo:null}} as PropsInboxNovo;const t=navegar313(recebido);await esvaziar();expect(elementos(tela(recebido)).find(n=>n.type===ConversaAberta)?.props.item).toMatchObject({id:novo.id,ultimaMensagemEm:null});expect(coluna313(t).itens.some(x=>x.id===novo.id)).toBe(true);
+});
+it("361 R1B1 ACK retido depois de outra seleção não navega nem troca atendimento",()=>{
+ habilitarRota313("c=a1");const p={...props,opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;const antigo=(elementos(tela(p)).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props.aoSelecionar;lista(tela(p)).aoSelecionar("a2");tela(p);antigo("novo-retido");expect(m.navegar361).not.toHaveBeenCalled();expect(coluna313(tela(p)).selecionado).toBe("a2");
 });

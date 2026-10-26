@@ -8,6 +8,7 @@ import type { PropsInboxNovo, InboxNovo as Inbox } from "./InboxNovo";
 import type { FonteHistorico } from "@/components/conversa/historico-conversa";
 
 const m=vi.hoisted(()=>({
+  aoMudarFaixa:null as (()=>void)|null,
   receber:null as ((a:AvisoInbox)=>void)|null,
   observado:null as AvisoInbox|null,
   bloqueioRecebido:undefined as boolean|undefined,
@@ -17,6 +18,7 @@ const m=vi.hoisted(()=>({
   marcar:vi.fn(async()=>({ok:true})),
 }));
 vi.mock("next/navigation",()=>({useRouter:()=>({push:vi.fn(),replace:vi.fn()}),useSearchParams:()=>null,usePathname:()=>"/inbox"}));
+vi.mock("./aria/FaixaAriaAtiva",async original=>{const real=await original<typeof import("./aria/FaixaAriaAtiva")>();return{FaixaAriaAtiva:(p:Parameters<typeof real.FaixaAriaAtiva>[0])=>{m.aoMudarFaixa=p.aoMudar??null;return createElement(real.FaixaAriaAtiva,p);}};});
 vi.mock("./useEventosInbox",()=>({useEventosInbox:(f:(a:AvisoInbox)=>void)=>{m.receber=f;return{conectado:true};}}));
 vi.mock("@/components/conversa/fonte-erp",()=>({fonteErp:{pagina:m.pagina}}));
 vi.mock("@/components/conversa/useConversa",async original=>{
@@ -125,7 +127,7 @@ it("348 painel corrente mantém história no503 e revoga só capacidades Aria no
  fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true,aria,acoes:null})):new Response("",{status})):original(u,o));
  await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
  status=503;await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
- status=404;await emitir(global345);expect(m.ariaRecebida).toEqual({...aria,podeDevolver:false,podeDecidir:false});
+ status=404;await emitir(global345);expect(m.ariaRecebida).toEqual({...aria,podeDevolver:false,podeDecidir:false,podeAssumirAria:false});
 });
 
 it("352 recibo da leitura existente distingue200/503 e404 revoga capacidades do handoff sem apagar resumo",async()=>{
@@ -152,4 +154,15 @@ it("434 marcador cliente404 persiste503 e só200 fresco recupera decisões sem r
  await emitir(global345);expect(m.bloqueioRecebido).toBe(true);fase="lento";await emitir(global345);fase="503";await emitir(global345);expect(m.bloqueioRecebido).toBe(true);
  await act(async()=>resolver(new Response(JSON.stringify({podeEnviar:false,aria}))));expect(m.bloqueioRecebido).toBe(true);
  fase="200";await emitir(global345);expect(m.bloqueioRecebido).toBe(false);expect(m.ariaRecebida?.podeDecidir).toBe(false);
+});
+
+it("359 ACK da faixa reutiliza a mesma recarga de lista/painel sem SSE paralelo",async()=>{expect(m.aoMudarFaixa).toBeTypeOf("function");await act(async()=>m.aoMudarFaixa!());await act(async()=>{await vi.advanceTimersByTimeAsync(50);});expect(listas()).toHaveLength(1);expect(paineis()).toHaveLength(1);expect(m.pagina).not.toHaveBeenCalled();expect(m.marcar).not.toHaveBeenCalled();});
+
+it("359 faixa muda para pausada somente pelo resumo fresco do aviso global e conserva503",async()=>{
+ const regiao=()=>document.querySelector('[aria-label="Situação da Aria"]')?.textContent;
+ expect(regiao()).toContain("Aria ativa");const original=fetcher.getMockImplementation()!;
+ fetcher.mockImplementation(async(u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify({...props.inicial,resumo:{...resumo346,aria:{...resumo346.aria,pausada:true}}})):original(u,o));
+ await emitir(global345);expect(regiao()).toContain("Aria pausada");expect(regiao()).toContain("Pausada · novas conversas vão para a equipe");
+ fetcher.mockImplementation(async(u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?new Response("",{status:503}):original(u,o));
+ await emitir(global345);expect(regiao()).toContain("Aria pausada");expect(m.pagina).not.toHaveBeenCalled();
 });

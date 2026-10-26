@@ -1,0 +1,7 @@
+import {DataCivilSchema} from "@/server/matricula/cobertura";
+import {expect,it} from "vitest";
+import {idadeCivil,idadeCivilInstitucional} from "./idade-civil";
+it.each([{n:"2000-10-25",h:"2026-10-24",v:25},{n:"2000-10-25",h:"2026-10-25",v:26},{n:"2026-10-25",h:"2026-10-25",v:0},{n:"1890-01-01",h:"2026-01-01",v:136},{n:"2004-02-29",h:"2025-02-28",v:20},{n:"2004-02-29",h:"2025-03-01",v:21},{n:"2004-02-29",h:"2024-02-29",v:20}])("idade civil $n em$h=$v",({n,h,v})=>expect(idadeCivil(n,h)).toBe(v));
+it.each([{n:null,h:"2026-10-25"},{n:"2027-10-25",h:"2026-10-25"},{n:"2001-02-29",h:"2026-10-25"},{n:"2000-01-01",h:"invalida"}])("ausente/futuro/calendário inválido não inventa idade%j",({n,h})=>expect(idadeCivil(n,h)).toBeNull());
+it("hoje vem do fuso escolar canônico no mesmo instante, não do browser/processo",()=>{const agora=new Date("2026-10-25T01:00:00Z");expect(idadeCivilInstitucional("2000-10-25",agora,"America/Costa_Rica")).toBe(25);expect(idadeCivilInstitucional("2000-10-25",agora,"UTC")).toBe(26);});
+it.each([null,"fuso-invalido"])("sem fuso%j não usa fallback silencioso",f=>expect(idadeCivilInstitucional("2000-01-01",new Date("2026-10-25T01:00:00Z"),f)).toBeNull());it("DOB ano0000 é inválido e0001 não inventa piso1900",()=>{expect(DataCivilSchema.safeParse("0000-01-01").success).toBe(true);expect(idadeCivil("0000-01-01","2026-01-01")).toBeNull();expect(idadeCivil("0001-01-01","2026-01-01")).toBe(2025);});

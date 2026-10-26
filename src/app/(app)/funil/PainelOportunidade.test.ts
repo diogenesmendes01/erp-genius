@@ -18,6 +18,7 @@ import { ModalPerda, validarPerda } from "./ModalPerda";
 
 const base: DetalheOportunidade = {
   id: "op1", codigo: "L-000001", nome: "Maria Souza", b2b: false, etapa: "NOVO", temperatura: "MORNO",
+  probabilidadePct: null, previsaoFechamento: null,
   valorPrevisto: "85000.00", moeda: "CRC", pais: "Costa Rica", dono: { id: "v1", nome: "Ana Vendedora" },
   proximaAcao: "Ligar", proximoFollowUp: null, dataExperimental: null, motivoPerda: null,
   criadoEm: new Date("2026-10-01T12:00:00Z"), pessoaId: "p1", interesse: null, objetivo: null,

@@ -35,6 +35,27 @@ function eventos(el: Elemento) { const k = Object.keys(el).find(k => k.startsWit
 async function enviar() { const b = Array.from(host.querySelectorAll("button")).find(b => b.textContent === "Enviar")!; await act(async () => eventos(b).onClick()); }
 async function anexar(nome: string) { const input = host.querySelector("input")!; await act(async () => eventos(input).onChange({ target: { files: [new File(["conteúdo"], nome)], value: nome } })); }
 
+it.each(["Resposta rápida", "Proposta"])("365 composição: callback retido de %s não atravessa o bloqueio da Aria nem uma nova geração", async rotulo => {
+  const abrirProposta = vi.fn();
+  const p = props({ aoEnviarTexto: vi.fn(async () => ({ ok: true as const })), aoEnviarMidia: vi.fn(async () => ({ ok: true as const })), respostas: [{ id: "r365", atalho: "/preco", titulo: "Preço", corpo: "Olá" }], propostas: { oportunidadeId: "op365", aoAbrir: abrirProposta } });
+  await montar(p); await digitar("Rascunho preservado");
+  const anexos = Array.from(host.querySelectorAll("button")).find(b => b.getAttribute("aria-label") === "Anexar")!;
+  await act(async () => eventos(anexos).onClick());
+  const item = Array.from(host.querySelectorAll("button")).find(b => b.getAttribute("aria-label") === rotulo)!;
+  expect(item).toBeDefined();
+  const retido = eventos(item).onClick;
+  await montar({ ...p, bloqueioExterno: true });
+  await act(async () => retido());
+  expect(storage.get("conversa-rascunho:A:responder")).toBe("Rascunho preservado");
+  expect(abrirProposta).not.toHaveBeenCalled();
+  await montar({ ...p, bloqueioExterno: false });
+  await act(async () => retido());
+  expect(storage.get("conversa-rascunho:A:responder")).toBe("Rascunho preservado");
+  expect(abrirProposta).not.toHaveBeenCalled();
+  expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+  expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+});
+
 it.each(["responder", "nota"] as const)("C3 montagem real %s: sucesso de A após trocar para B remove só o rascunho confirmado", async modo => {
   let concluir!: (r: { ok: true }) => void;
   const pendente = new Promise<{ ok: true }>(r => { concluir = r; });
@@ -187,4 +208,22 @@ it('PR384 C3: descrição mantém o ID ao atualizar capacidades e reabrir o menu
   await abrirAnexos(); await abrirAnexos();
   expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
   expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Localização', 'Contato', 'Enquete']);
+});
+
+it("358 bloqueio externo conserva arquivo e rascunho; callback retido não envia nem após desbloqueio",async()=>{
+ const texto=vi.fn(async()=>({ok:true as const})),midia=vi.fn(async()=>({ok:true as const}));
+ const p=props({aoEnviarTexto:texto,aoEnviarMidia:midia});await montar(p);await digitar("rascunho358");
+ const enter=ui.campo.onKeyDown as (e:unknown)=>void;
+ await anexar("preservado358.txt");const enviarAntes=eventos(host.querySelectorAll("button").find(b=>b.textContent==="Enviar")!).onClick;
+ await montar({...p,bloqueioExterno:true} as PropsCompositor);await act(async()=>{enter({key:"Enter",shiftKey:false,nativeEvent:{isComposing:false},preventDefault(){}});enviarAntes();});
+ expect(texto).not.toHaveBeenCalled();expect(midia).not.toHaveBeenCalled();expect(host.textContent).not.toContain("preservado358.txt");
+ await montar(p);await act(async()=>enviarAntes());expect(midia).not.toHaveBeenCalled();expect(texto).not.toHaveBeenCalled();expect(ui.campo.value).toBe("rascunho358");expect(host.textContent).toContain("preservado358.txt");
+});
+it("358 nota permanece permitida com bloqueio externo",async()=>{
+ const nota=vi.fn(async()=>({ok:true as const})),texto=vi.fn();await montar({...props({modo:"nota",aoNota:nota,aoEnviarTexto:texto}),bloqueioExterno:true} as PropsCompositor);await digitar("nota358");await enviar();expect(nota).toHaveBeenCalledOnce();expect(texto).not.toHaveBeenCalled();
+});
+it("358 upload iniciado antes da trava não autoriza envio depois do await",async()=>{
+ let resolver!:(r:Response)=>void;const fetcher=vi.fn(()=>new Promise<Response>(r=>resolver=r)),midia=vi.fn(async()=>({ok:true as const}));vi.stubGlobal("fetch",fetcher);
+ const p=props({aoEnviarMidia:midia});await montar(p);await anexar("upload358.txt");await enviar();expect(fetcher).toHaveBeenCalledOnce();await montar({...p,bloqueioExterno:true} as PropsCompositor);
+ await act(async()=>resolver(new Response(JSON.stringify({url:"/api/files/whatsapp-out/u/upload358.txt"}),{status:200})));expect(midia).not.toHaveBeenCalled();await montar(p);expect(host.textContent).toContain("upload358.txt");
 });

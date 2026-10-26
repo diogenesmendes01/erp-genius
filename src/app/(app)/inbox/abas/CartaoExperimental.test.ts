@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { COLUNAS_FUNIL } from "@/server/crm/etapas";
 import type { OportunidadeAtualPainel } from "@/server/inbox/painel-oportunidades";
 import { CartaoExperimental, statusExperimental } from "./CartaoExperimental";
-const oportunidade: OportunidadeAtualPainel = { id: "op/328?A", titulo: "Curso fictício", produto: null, valor: null, moeda: null, etapa: "EXPERIMENTAL_AGENDADA", temperatura: "MORNO", responsavel: null, dataExperimental: "2026-11-01T01:30:00.000Z", experimentalConfirmada: false, professorExperimental: "Helena fictícia", motivoPerda: null };
+const oportunidade: OportunidadeAtualPainel = { id: "op/328?A", titulo: "Curso fictício", produto: null, valor: null, moeda: null, etapa: "EXPERIMENTAL_AGENDADA", temperatura: "MORNO", responsavel: null, dataExperimental: "2026-11-01T01:30:00.000Z", experimentalConfirmada: false, professorExperimental: "Helena fictícia", probabilidadePct: null, previsaoFechamento: null, podeEditarPrevisao: false, motivoPerda: null };
 type Props = Parameters<typeof CartaoExperimental>[0];
 const h = (extra: Partial<Props> = {}) => renderToStaticMarkup(createElement(CartaoExperimental, { oportunidade, fuso: null, fusoEscola: "America/Sao_Paulo", podeAbrirFunil: true, ...extra }));
 describe("status da ocorrência experimental", () => {

@@ -19,6 +19,10 @@ export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
+  "src/app/(app)/inbox/fluxos/transferir/PopoverTransferir.tsx": [ "Equipe ou fila · obrigatório · select", "Contexto do destino · obrigatório · select", "Contexto da transferência · opcional · CampoTexto · dica"],
+  "src/app/(app)/inbox/aria/InterruptorAria.tsx": [
+    "Motivo da pausa · obrigatório · input",
+  ],
   "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/ResolverImpedimento.tsx": [
     "Realização posterior com nota oficial · obrigatório · select",
     "Justificativa · obrigatório · CampoTexto",
@@ -121,6 +125,10 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Cidade · opcional · input",
     "Cargo · opcional · input",
     "LinkedIn · opcional · input",
+    "Documento pessoal · opcional · input",
+    "Tipo de documento · opcional · select",
+    "País emissor (ISO) · opcional · input",
+    "Nascimento · opcional · input",
     "Motivo · opcional · input",
     "Nota interna · opcional · CampoTexto · dica",
     "{c.nome} · obrigatório se c.obrigatorio · select",
@@ -223,6 +231,10 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
   "src/app/(app)/inbox/abas/GavetaContato.tsx": [
     '{rotulo} · obrigatório se nome === "nome" · input',
     "Origem do contato · opcional · select",
+    "Documento pessoal · opcional · input",
+    "Tipo de documento · opcional · select",
+    "País emissor (ISO) · opcional · input",
+    "Nascimento · opcional · input",
     "{campo.nome} · obrigatório se campo.obrigatorio · input",
     "{campo.nome} · obrigatório se campo.obrigatorio · select",
     "{campo.nome} · obrigatório se campo.obrigatorio · input",

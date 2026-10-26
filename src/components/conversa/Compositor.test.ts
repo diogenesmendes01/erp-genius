@@ -512,11 +512,11 @@ describe("Compositor: itens de anexo (#365 E4.6)",()=>{
   expect(elementos(tela()).filter(n=>n.props.role==="menuitem").map(n=>n.props["aria-label"]??n.props.children)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Resposta rápida"]);
  });
  it.each([["Documento","*/*"],["Fotos e vídeos","image/*,video/*"],["Áudio","audio/*"]])("Câmera captura imagem; %s remove capture e preserva rascunho",(rotulo,accept)=>{
-  m.g=criarGanchos();const p=props(),tela=()=>m.g!.renderizar(Compositor,p),input={accept:"",setAttribute:vi.fn(),removeAttribute:vi.fn(),click:vi.fn()};
+  m.g=criarGanchos();const p=props(),tela=()=>m.g!.renderizar(Compositor,p),input={accept:"",capture:"",removeAttribute:vi.fn(),click:vi.fn()};
   const seletor=elementos(tela()).find(n=>n.type==="input"&&n.props["aria-label"]==="Escolher arquivo")!;
   (ref365(seletor) as {current:unknown}).current=input;digitar(tela(),"Rascunho mantido");
   abrirAnexos365(tela());clicarBotao(tela(),"Câmera");
-  expect(input.accept).toBe("image/*");expect(input.setAttribute).toHaveBeenCalledExactlyOnceWith("capture","environment");expect(input.click).toHaveBeenCalledOnce();
+  expect(input.accept).toBe("image/*");expect(input.capture).toBe("environment");expect(input.click).toHaveBeenCalledOnce();
   expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);expect(campo365(tela()).props.value).toBe("Rascunho mantido");
   abrirAnexos365(tela());clicarBotao(tela(),rotulo);expect(input.accept).toBe(accept);expect(input.removeAttribute).toHaveBeenCalledWith("capture");expect(input.click).toHaveBeenCalledTimes(2);
   expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();expect(p.aoNota).not.toHaveBeenCalled();

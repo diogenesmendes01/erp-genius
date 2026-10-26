@@ -1,0 +1,35 @@
+# Inbox #358 — entrega DEV B / gates focais
+
+Branch codex/inbox-e3-358-compositor-aria. Base inicial0731267815851018749badeef684a6b36b2cc0c4; carry coordenado da correção357 f34711635f77406dfce17a3e33af1d5c2b8c11f0 aplicado em1a8aaa3af4bead54046c82b79ee4cf02a6b7d91f, seis paths e WIP/pins preservados por hash. Somente358 neste delta; publicação/base nomeada dependem do integrador. Issue real358 e D3 lidas; não há decisão humana nova ou edição355.
+
+## Implementação
+
+Helper puro modo/textos nos três estados canônicos; Rodape mantém seleção única e instância estável do Compositor. Bloqueio externo conserva File/rascunho, não deixa callback/Enter retido ou upload tardio enviar. Nota interna continua sua action/idempotência, sem intenção externa. Rodapé usa nova action357 contextual e useAcaoCliente; cap/envio/GET vigentes, duploclique/erro/retry e geraçãoA→B→A. ACK solicita apenas recarga existente. Foco local exige200 posterior e lista canônica humana/null além de owner/envio/capacidade atuais; nenhum DTO ou inferência por pausada. Cabeçalho/Aba sem autofocus.
+
+Gate352 opcional respostaDisponivel defaulttrue adia conclusão quando campo indisponível sem revogar alçada/sessão; lista atrasada conserva resumo/retry pelo mesmo aoMudar. Carry357 preserva SSE próprio antesACK e exige GET posterior. Não reimplementou nem removeu hunks do A.
+
+Duas actions externas Inbox passam ao novo núcleo enfileirar-inbox db-aware: ConfigIA pré-materializa antesAtendNOKEY, depoisfreshator/escopo/destino/estadoGlobal/ConfigfindUnique/custo/handoff/sugestões e derivação canônica; criaHUMANO na mesmaTX ou recusa “Assuma a conversa para responder.”. Despacho só apóscommit. SemConfigupsert depoispai/AcaoLock/advisory/skiplocked. Configausente depoispai falhafechado. Cálculo orçamento compartilhado puro; defaultestadoOrcamento conserva upsert e agregadoUTC, corpo refatorado (não literal). Dispatcher/CRM/355/schema/deps/permissões globais intactos; posse/MIME da mídia e políticas de destinatário atuais preservadas.
+
+## TDD e recibos
+
+- Compositor97b904 EXIT1:2falhas/22 reais (Enter/callback e upload tardio enviavam); primeiro787a10 continha nativeEvent ausente em um teste, corrigido antesRED válido. GREENf0199a EXIT0:2arquivos31casos, incluindo9helperpuro e22rascunho/nota/upload. Importausente do helper foi scaffold, não prova da regra.
+- Rodape a847cc EXIT1:2/2 (Nota não abre eFile some apósremount).36bc31 falhou somente pelo rótulo de teste “Salvar nota” que não existe; botão real é Enviar. GREEN701d9d EXIT0:2arquivos5casos completos.
+- Footer790c26 EXIT1:8/8 semCTA. Primeira implementação99476 foi interrompida896671 EXIT1 por loopdeestado de503; corrigido estado idêntico, sem alegar resultado verde. GREENa7ae86 ebdde1e EXIT0:8/9; novos negativosdf72f7 EXIT1:5/14 por envio/ownerperdidos e capacidade stale com503/pending; GREEN65dac1 EXIT0:14/14. Controle posterior SSE próprio antesACK também verde no recorte63.
+- Consumidor7687db EXIT1:3falhas/9, semprecompositor nos três estados. c5d14e identificoufixture comresponsavelId undefined; corrigida para null como DTOreal. GREEN2aa511 EXIT0:9/9, mantém um controlador do cabeçalho.
+- SQLRED66641/46a7bb EXIT1:9casos6falhasCAUSAIS (ia/aprovacao/handoff ×texto/mídia aceitosSIMULADA),3positivos. ParsePapelduplicado2066fe e reversivel ausente em2fixtures1867/0af9c8 preservados como erros de fixture, não RED de produto. Patchbackend somente apósRED limpo. GREEN73408/f24d54 EXIT0:9/9,38,90s.
+- Native15407/008e5e EXIT0:16/16,75,08s. Globalreativado/Configalterada/ator/número/optout enquanto chamadaesperaAtend REAL, observado pg_blocking_pids; mutação concluída antesliberar pai. ZeroIntent/RPCnosnegativos. Tomada357 antesenvio nafila e pool1Configausente passaram.
+- Native44756/0ee1d3 EXIT0:22/22,92,21s. Turno REAL sobAtend criaSUGERIDA enquanto enfileirar espera; Agente jáDESLIGADA não esconde pendência nova, saídaHUMANOrecusada. Reconciliação real357: obterItemListaInbox handoff→humano, owneratual/painelhandoffnull/MANUAL/captrue. ControlesSHADOW/DESLIGADA/pausaglobal e posse mídia preservados. NenhumSQLmock/ACLmock; providerturnoSIMULADO e driverMotor inteiramentefake, WHATSAPP_LIVEvazio, todos7providersvazios. Não afirma RPC real/claimlive: positivos são simulação, dispatcher/ENVIANDOglobais intactos.
+- UNITreadonly5d4bd0 EXIT0:5casos (4limites de orçamento eConfigausente depoispai semupsert/agregado/localquery). RED31e1a5 era sóexport do leitor ausente; não falha de produto. Complemento nativo35438/49bf0b EXIT0: arquivo completo23casos/99,60s. DELETEConfigIA real durante espera no pai concluiu antesliberar: erro exato, Configcount0 e Intent0, sem recriação tardia. É um mutante operacional via ORM da fixture; não implementa UI de excluirConfig. Código runtime inalterado após o focal final.
+- RegressãoSQL59293/5f01e6 EXIT0:5arquivos48casos completos,197,71s: uso,pausa,Inbox,destinatárioAtual,paineisEnvio. Uma suíte por banco, configoriginal/UTC/w1heap1024/nofileparallelism; sem filtro/skips novos. Lease ci492 liberada apósterminal, fixtures permanecem atéRootrestaurar.
+- Focal8412/380213 EXIT1:104arquivos1327casos1325pass2fail: mapa retry faltante e teste*.test.tsx entrouvarredura. Teste voltou*.test.ts comcallbackref canônico; parsers/negativas intactos. Mapa nominal exato1retrysecundario/md +mutantes rótulovazio/variante/extra. GREEN39113/f2b43e EXIT0:3arquivos167casos completos.
+- Carry357 fa8e58 preservou hashes de todoWIP358/config/perfil/cliente; recibo output/inbox-358-precarry-private.json. Gate352 RED8f4fd2 EXIT1:2falhas/19 por fechar anteslista; GREEN7ab95c EXIT0:4arquivos63casos (inclui controlesA/legados352, defaulttrue, SSEpréACK e retry semtomada).
+- Lint final fcc4e3 EXIT0 --max-warnings=0. Negativos541ac3/1ace58 identificaramrefs lidos na apresentação; estado imutável retry ecallbackref resolveram sem eslintdisable/configalterada.
+- Focal final90722/f9d48b EXIT0:106arquivos e1.364casos completos,91s; Inbox inteiro, quatro arquivos Compositor, Botao/Modal, seis guardas e uso/readonly. Sem filtros/skips novos. Lint de freeze37ff57 EXIT0:19pathsSRC, --max-warnings=0, incluindo23ºcaso nativo. Nenhum executor pendente.
+
+## Escopo e pendências
+
+Sem banco de produção, HTTP/browser, servidor/build, installs ou alterações de schema/package/client/envfile; sem push/PR. SQL acima somenteleaseci-integracao492, cliente647c econfigoriginais, seteprovidersvazios noexecutor. Não iniciaroutrasfrentes. HeaderRoot/layout não foram editados. Blueprint fictício emoutput permanece readyfalse/IDsnull e semfixtureaplicada.
+
+QA independente da composição, TypeScript/global/lint originais, build e visual1440/1024/390 claro/escuro estão PENDENTES. Evidências desta fonte não são gatesglobais de outroSHA. Não encerrarissue/D3 inteira ou declarar homologação.
+
+A restauração original dbe2e3 e a reabertura de lease e4fed1 (503 originais/424 hashes) foram informadas pelo ROOT. O DEV não as reexecutou. Lease novamente liberada após35438/49bf0b; fixtures finais aguardam restore do integrador. Pins de configuração/perfil/cliente permanecem originais; fonte Header/dispatcher/CRM/355 não alterada.

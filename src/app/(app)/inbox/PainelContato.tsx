@@ -14,11 +14,11 @@ const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutE
 export type IdAbaPainel = "detalhes" | "oportunidades" | "insights" | "atividade";
 export type ContatoPainel = { id: string; nome: string; subtitulo: string; tags: readonly TagPainel[]; quadrado?: boolean };
 export type AbaPainel = { id: IdAbaPainel; rotulo: string; contagem?: number };
-export const ABAS_ENTREGUES: readonly IdAbaPainel[] = Object.freeze(["detalhes", "oportunidades"]);
+export const ABAS_ENTREGUES: readonly IdAbaPainel[] = Object.freeze(["detalhes", "oportunidades", "insights", "atividade"]);
 const ROTULOS: Record<IdAbaPainel, string> = { detalhes: "Detalhes", oportunidades: "Oportunidades", insights: "Insights", atividade: "Atividade" };
 const COMERCIAIS: readonly IdAbaPainel[] = ["oportunidades", "insights"];
-export function abasDoPainel(finalidade: string): AbaPainel[] {
-  return ABAS_ENTREGUES.filter(id => !COMERCIAIS.includes(id) || finalidade === "COMERCIAL").map(id => ({ id, rotulo: ROTULOS[id] }));
+export function abasDoPainel(finalidade: string, contagens: Partial<Record<IdAbaPainel, number>> = {}): AbaPainel[] {
+  return ABAS_ENTREGUES.filter(id => !COMERCIAIS.includes(id) || finalidade === "COMERCIAL").map(id => ({ id, rotulo: ROTULOS[id], ...((contagens[id] ?? 0) > 0 ? { contagem: contagens[id] } : {}) }));
 }
 const ativaValida = (abas: readonly AbaPainel[], ativa: IdAbaPainel) => abas.find(a => a.id === ativa)?.id ?? abas[0]?.id ?? "detalhes";
 export function AbasPainel({ abas, abaAtiva, aoTrocarAba, idBase }: { abas: readonly AbaPainel[]; abaAtiva: IdAbaPainel; aoTrocarAba(id: IdAbaPainel): void; idBase?: string }) {

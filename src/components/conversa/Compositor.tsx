@@ -1,4 +1,5 @@
 "use client";
+import type { PublicarPortaRascunhoInsight } from "./rascunho-insight";
 
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
@@ -32,6 +33,8 @@ export interface PropsCompositor {
   /** Ref local do campo Responder; null na aba Nota ou quando o campo não está disponível. */
   aoCampoResponder?: (campo: HTMLTextAreaElement | null) => void;
   modo: "responder" | "nota";
+  /** Bloqueia somente saída externa; conserva a instância e o rascunho. */
+  bloqueioExterno?: boolean;
   /** null: a permissão ainda não chegou (carregando). Só false é falta de permissão. Falha fechada: só true envia. */
   podeEnviar: boolean | null;
   /** Presente quando a permissão não pôde ser carregada: o compositor mostra o erro e este é o "Tentar de novo". */
@@ -48,6 +51,8 @@ export interface PropsCompositor {
   /** Dono acima da key do contato: evita apagar uma nova intenção após remontagem. */
   revisoesRascunhos?: RevisoesRascunhos;
   aoAgendar?: () => void;
+  /** Porta opt-in para o rascunho físico Responder; não executa envio. */
+  aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   /** O rodapé hospeda a moldura; controles e estados continuam sendo deste componente. */
   contido?: boolean;
   /** Respostas rápidas do atendente (atalho "/"); sem elas o atalho não abre. */
@@ -74,7 +79,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -90,6 +95,12 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const gravador = useRef<MediaRecorder | null>(null);
   const descartar = useRef(false);
   const nota = modo === "nota";
+  const [geracaoEnvio, setGeracaoEnvio] = useState(() => ({ bloqueada: bloqueioExterno, token: {} }));
+  if (geracaoEnvio.bloqueada !== bloqueioExterno) setGeracaoEnvio({ bloqueada: bloqueioExterno, token: {} });
+  const geracaoAtual = useRef<typeof geracaoEnvio | null>(geracaoEnvio);
+  useLayoutEffect(() => { geracaoAtual.current = geracaoEnvio; return () => { if (geracaoAtual.current === geracaoEnvio) geracaoAtual.current = null; }; }, [geracaoEnvio]);
+  const saidaPermitida = () => nota || (!bloqueioExterno && geracaoAtual.current === geracaoEnvio);
+  useEffect(() => { if (!nota && bloqueioExterno && gravador.current?.state === "recording") { descartar.current = true; gravador.current.stop(); } }, [nota, bloqueioExterno]);
   const listaMencoesId = useId();
   const [tokensMencao, setTokensMencao] = useState<TokenMencao[]>([]);
   const [consultaMencao, setConsultaMencao] = useState<ReturnType<typeof consultaMencaoNoCursor>>(null);
@@ -108,6 +119,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const contextoAtual = useRef<typeof contexto | null>(contexto);
   const emCurso = useRef(new Set<object>());
   const revisaoRascunho = useRef(0);
+  const [revisaoPonteInsight,setRevisaoPonteInsight]=useState(0);
   const selecaoMencao = useRef<{ contexto: typeof contexto; revisao: number; texto: string; indice: number } | null>(null);
   if (contexto.chave !== chave) {
     setContexto({ chave });
@@ -183,6 +195,41 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     if (consultandoMencao && opcoesMencao.length) document.getElementById?.(listaMencoesId + "-" + indiceMencao)?.scrollIntoView?.({ block: "nearest" });
   }, [consultandoMencao, opcoesMencao.length, indiceMencao, listaMencoesId]);
 
+  function registrarIntencao() {
+    revisaoRascunho.current += 1;
+    if(aoPortaRascunhoInsight)setRevisaoPonteInsight(r=>r+1);
+    revisoes.alterar(chave, contexto);
+  }
+
+  function mudar(v: string, cursor = v.length) {
+    if (!contextoVigente()) return;
+    registrarIntencao();
+    setTokensMencao(anteriores => tokensAposEdicao(texto, v, anteriores));
+    const consulta = nota && buscarMencoes ? consultaMencaoNoCursor(v, cursor) : null;
+    setConsultaMencao(consulta && consulta.busca.length >= 2 && !/\s$/.test(consulta.busca) ? consulta : null);
+    setOpcaoMencao(0);
+    setTexto(v);
+    gravarRascunho(atendimentoId, modo, v);
+  }
+
+  const editarTextoInsight=useRef<(v:string)=>void>(()=>{});
+  useLayoutEffect(()=>{editarTextoInsight.current=mudar;});
+
+  useLayoutEffect(()=>{
+    if(!aoPortaRascunhoInsight)return;
+    if(nota||bloqueioExterno||podeEnviar!==true||enviando||!entrada.current){aoPortaRascunhoInsight(null);return;}
+    let viva=true;
+    const revisao=revisaoRascunho.current,revisaoInsight=`${idAvisosAnexos}:${revisaoRascunho.current}`;
+    aoPortaRascunhoInsight({atendimentoId,textoAtual:texto,revisao:revisaoInsight,podeUsar:true,
+      async usar(pedido){
+        if(!viva||contextoAtual.current!==contexto||revisaoRascunho.current!==revisao||emCurso.current.has(contexto)
+          ||pedido.revisaoEsperada!==revisaoInsight||typeof pedido.texto!=="string"||pedido.texto.length>4000)
+          return {ok:false,erro:"O rascunho mudou. Revise a sugestão novamente."};
+        editarTextoInsight.current(pedido.texto);return {ok:true};
+      }});
+    return()=>{viva=false;aoPortaRascunhoInsight(null);};
+  },[aoPortaRascunhoInsight,atendimentoId,contexto,nota,bloqueioExterno,podeEnviar,enviando,texto,arquivo,revisaoPonteInsight,idAvisosAnexos]);
+  if (!nota && bloqueioExterno) return null;
   if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
       <div className={contido ? "flex flex-wrap items-center gap-2 text-sm" : "flex flex-wrap items-center gap-2 border-t border-gray-200 bg-surface px-4 py-3 text-sm"}>
@@ -204,22 +251,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         {MOTIVO_SEM_ENVIO}
       </div>
     );
-  }
-
-  function registrarIntencao() {
-    revisaoRascunho.current += 1;
-    revisoes.alterar(chave, contexto);
-  }
-
-  function mudar(v: string, cursor = v.length) {
-    if (!contextoVigente()) return;
-    registrarIntencao();
-    setTokensMencao(anteriores => tokensAposEdicao(texto, v, anteriores));
-    const consulta = nota && buscarMencoes ? consultaMencaoNoCursor(v, cursor) : null;
-    setConsultaMencao(consulta && consulta.busca.length >= 2 && !/\s$/.test(consulta.busca) ? consulta : null);
-    setOpcaoMencao(0);
-    setTexto(v);
-    gravarRascunho(atendimentoId, modo, v);
   }
 
   function escolherArquivo(f: File | undefined) {
@@ -245,7 +276,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
 
   async function enviar() {
     const corpo = texto.trim();
-    if (!contextoVigente() || enviando || emCurso.current.has(contexto) || (!corpo && !arquivo)) return;
+    if (!contextoVigente() || !saidaPermitida() || enviando || emCurso.current.has(contexto) || (!corpo && !arquivo)) return;
     const revisaoEnviada = revisaoRascunho.current;
     const intencaoEnviada = revisoes.capturar(chave, contexto);
     emCurso.current.add(contexto);
@@ -264,7 +295,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       }
       else if (arquivo) {
         const url = await subir(arquivo, revisaoEnviada);
-        if (!url) return;
+        if (!url || !saidaPermitida()) return;
         r = await aoEnviarMidia(url, corpo);
       } else r = await aoEnviarTexto(corpo);
       // Sucesso de A em B limpa apenas o armazenamento exato da tentativa confirmada.
@@ -321,6 +352,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   }
 
   async function iniciarGravacao() {
+    if (!saidaPermitida()) return;
     setErro("");
     const formato = formatoDeVoz();
     if (!formato || !navigator.mediaDevices?.getUserMedia) {
@@ -329,7 +361,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     }
     try {
       const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (!contextoVigente()) { fluxo.getTracks().forEach(t => t.stop()); return; }
+      if (!contextoVigente() || !saidaPermitida()) { fluxo.getTracks().forEach(t => t.stop()); return; }
       const g = new MediaRecorder(fluxo, { mimeType: formato });
       const pedacos: BlobPart[] = [];
       descartar.current = false;
@@ -354,10 +386,10 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   }
 
   function abrirSeletor(accept: string, captura?: "environment") {
-    if (!contextoVigente()) return;
+    if (!contextoVigente() || !saidaPermitida()) return;
     if (seletor.current) {
       seletor.current.accept = accept;
-      if (captura) seletor.current.setAttribute("capture", captura);
+      if (captura) seletor.current.capture = captura;
       else seletor.current.removeAttribute("capture");
       seletor.current.click();
     }
@@ -365,7 +397,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   }
 
   function selecionarAnexo(item: IdItemAnexo) {
-    if (!contextoVigente() || nota || podeEnviar !== true) return;
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
     if (item === "documento") abrirSeletor("*/*");
     else if (item === "midia") abrirSeletor("image/*,video/*");
     else if (item === "camera") abrirSeletor("image/*", "environment");

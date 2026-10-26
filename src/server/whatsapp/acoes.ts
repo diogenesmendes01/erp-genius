@@ -4,7 +4,6 @@ import { referenciaDestinoCobranca } from "./elegibilidade";
 import { revalidatePath } from "next/cache";
 import { DriverWhatsApp, Papel, StatusCobranca, type OrigemEnvio, type Prisma, type SessaoNumero } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { contentTypePorExtensao } from "@/lib/uploads";
 import {
   ErroRegra,
   executarAcao,
@@ -22,6 +21,7 @@ import { contarAlcanceRegua, type AlcanceRegua } from "./alcance-regua";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
+import { enfileirarSaidaInbox } from "./enfileirar-inbox";
 import { executarAcaoMotor } from "./motor/acoes";
 import { capacidadesDoNumero } from "./motor/capacidades";
 import { escopoConversas } from "./escopo";
@@ -31,7 +31,6 @@ import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial
 import { criarLeadDeInboundWhatsApp, resolverPessoaPorTelefone } from "@/server/comercial/captura";
 import { enfileirarIntencaoCobranca } from "./fila";
 import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
-import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import { nomeConhecidoDoContato } from "./nome-contato";
 import { driverAceitaAutomacao, MENSAGEM_META_CLOUD_SEM_ENVIO } from "./canal";
@@ -263,24 +262,7 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { conversaId, texto } = EnviarTextoInboxSchema.parse(input);
-    const conversa = await conversaVisivel(autor, conversaId, true);
-    if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
-    if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
-    if (conversa.contato.optOutEm) {
-      throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
-    }
-
-    const intencao = await prisma.intencaoMensagem.create({
-      data: {
-        numeroId: conversa.numeroId,
-        atendimentoId: conversa.id,
-        contatoId: conversa.contatoId,
-        origem: "HUMANO",
-        tipo: "TEXTO",
-        corpoRenderizado: texto,
-        autorId: autor.id,
-      },
-    });
+    const intencao = await enfileirarSaidaInbox(prisma, autor.id, conversaId, { tipo: "texto", texto });
     return despacharIntencaoInbox(intencao.id);
   });
 }
@@ -290,39 +272,7 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { conversaId, url, legenda } = EnviarMidiaInboxSchema.parse(input);
-    const conversa = await conversaVisivel(autor, conversaId, true);
-    if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
-    if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
-    if (conversa.contato.optOutEm) {
-      throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
-    }
-
-    // POSSE (review PR #51 P1-2): só anexa mídia que o PRÓPRIO autor subiu para envio
-    // (whatsapp-out/<autor>). Qualquer outra URL de /api/files — comprovante, documento de
-    // lead, mídia de outra conversa — é recusada SEM consultar o arquivo: a autorização de
-    // leitura desses objetos é de outra alçada e envio para fora seria exfiltração.
-    if (!midiaSaidaDoAutor(url, autor.id)) {
-      throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
-    }
-
-    const mime = contentTypePorExtensao(url);
-    const tipo = tipoPorMime(mime);
-    if (!mime || tipo === "TEXTO" || tipo === "OUTRO") {
-      throw new ErroRegra("Tipo de arquivo não suportado para envio.");
-    }
-
-    const intencao = await prisma.intencaoMensagem.create({
-      data: {
-        numeroId: conversa.numeroId,
-        atendimentoId: conversa.id,
-        contatoId: conversa.contatoId,
-        origem: "HUMANO",
-        tipo,
-        midiaPath: url,
-        corpoRenderizado: legenda ?? "",
-        autorId: autor.id,
-      },
-    });
+    const intencao = await enfileirarSaidaInbox(prisma, autor.id, conversaId, { tipo: "midia", url, legenda });
     return despacharIntencaoInbox(intencao.id);
   });
 }
