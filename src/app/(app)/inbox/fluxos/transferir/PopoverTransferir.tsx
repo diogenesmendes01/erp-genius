@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { Botao } from "@/components/Botao";
-import { Campo } from "@/components/Campo";
+import { Campo, ROTULO_CAMPO } from "@/components/Campo";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -12,9 +12,10 @@ import type { DestinoTransferencia } from "../../AcoesAtendimento";
 import { PopoverFluxo } from "../PopoverFluxo";
 export type AlvoTransferir = { tipo: "pessoa"; usuarioId: string } | { tipo: "setor"; setor: Setor; destinoChave: string | null } | { tipo: "fila" } | { tipo: "aria" };
 export interface EntradaConfirmacaoTransferir { alvo: AlvoTransferir; contexto: string; anexarResumoAria?: boolean }
+export interface PessoaTransferir { id:string; nome:string; carga?:number }
 export interface PropsPopoverTransferir {
   atendimentoId: string; ancora: RefObject<HTMLButtonElement | null>; opcoes: OpcoesTransferir;
-  pessoas: { id: string; nome: string }[] | null; destinos: DestinoTransferencia[];
+  pessoas: PessoaTransferir[] | null; destinos: DestinoTransferencia[];
   temResumoAria?: boolean; ocupado?: boolean; erro?: string | null; aoFechar(): void;
   aoExecutar(entrada: EntradaConfirmacaoTransferir): void;
 }
@@ -27,17 +28,22 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
   const [contexto, setContexto] = useState("");
   const [preferenciaResumo, setPreferenciaResumo] = useState<boolean | null>(null);
   const anexarResumoAria = temResumoAria && (preferenciaResumo ?? true);
-  const campoPessoa = useRef<HTMLSelectElement>(null);
+  const campoPessoa = useRef<HTMLInputElement>(null);
+  const grupoPessoas = useRef<HTMLFieldSetElement>(null);
+  const nomeGrupoPessoa = useId();
+  const carregavaPessoas = useRef(pessoas === null);
   const campoEquipe = useRef<HTMLSelectElement>(null);
   const resumoAria = useRef<HTMLParagraphElement>(null);
   const cancelar = useRef<HTMLButtonElement>(null);
   const passoAnterior = useRef(passo);
   useEffect(() => {
-    if (passoAnterior.current === passo) return;
-    passoAnterior.current = passo;
-    const alvo = passo === "pessoas" ? campoPessoa.current : passo === "equipes" ? campoEquipe.current : passo === "aria" ? resumoAria.current : cancelar.current;
+    const mudouPasso=passoAnterior.current!==passo;
+    const chegaramPessoas=carregavaPessoas.current&&pessoas!==null;
+    passoAnterior.current=passo;carregavaPessoas.current=pessoas===null;
+    if(!mudouPasso&&!(passo==="pessoas"&&chegaramPessoas))return;
+    const alvo=passo==="pessoas"?(campoPessoa.current??grupoPessoas.current):passo==="equipes"?campoEquipe.current:passo==="aria"?resumoAria.current:cancelar.current;
     alvo?.focus();
-  }, [passo]);
+  },[passo,pessoas]);
   if (!opcoes.visivel) return null;
   const exigeDestino = equipe === "FINANCEIRO" || equipe === "PEDAGOGICO";
   const destinosDisponiveis = destinos.filter(d => d.finalidade === equipe && d.disponivel !== false);
@@ -54,7 +60,15 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
         {(opcoes.setores.length > 0 || opcoes.filaDoSetor) && <Botao variante="neutro" onClick={() => setPasso("equipes")}>Equipes e filas</Botao>}
         {opcoes.aria && <Botao variante="ia" onClick={() => setPasso("aria")}>Devolver para a Aria</Botao>}
       </div> : <>
-        {passo === "pessoas" && <Campo rotulo="Pessoa" obrigatorio>{c => <select ref={campoPessoa} {...c} value={pessoa} disabled={ocupado || pessoas === null} onChange={e => setPessoa(e.target.value)} className="w-full rounded-md border border-gray-300 p-2"><option value="">{pessoas === null ? "Carregando…" : "Escolha…"}</option>{pessoas?.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>}</Campo>}
+        {passo === "pessoas" && <fieldset ref={grupoPessoas} tabIndex={-1} disabled={ocupado || pessoas === null} aria-busy={pessoas === null || undefined} className="min-w-0">
+          <legend className={ROTULO_CAMPO}>Pessoa <span aria-hidden="true">*</span></legend>
+          {pessoas === null ? <p className="text-sm text-gray-600" role="status">Carregando pessoas…</p> : <div className="max-h-56 space-y-2 overflow-y-auto overscroll-contain">
+            {pessoas.map((p,i)=><label key={p.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-surface p-3 has-checked:border-brand-500 has-checked:bg-brand-50">
+              <input ref={pessoa===p.id||(!pessoa&&i===0)?campoPessoa:undefined} type="radio" name={nomeGrupoPessoa} value={p.id} checked={pessoa===p.id} required disabled={ocupado} onChange={e=>{if(!ocupado)setPessoa(e.target.value);}} className="mt-1 h-4 w-4 shrink-0 accent-brand-600" />
+              <span className="min-w-0"><span className="block break-words text-sm font-medium text-gray-800">{p.nome}</span><span className="block text-xs text-gray-500">{p.carga===undefined?"Carga indisponível":`${p.carga} ${p.carga===1?"conversa aberta":"conversas abertas"} neste setor`}</span></span>
+            </label>)}
+          </div>}
+        </fieldset>}
         {passo === "pessoas" && pessoas?.length === 0 && <EstadoVazio>Ninguém disponível.</EstadoVazio>}
         {passo === "equipes" && <Campo rotulo="Equipe ou fila" obrigatorio>{c => <select ref={campoEquipe} {...c} value={equipe} disabled={ocupado} onChange={e => { setEquipe(e.target.value as Setor | "fila"); setDestinoChave(""); }} className="w-full rounded-md border border-gray-300 p-2"><option value="">Escolha…</option>{opcoes.filaDoSetor && <option value="fila">Fila de {rotular(SETOR_ATENDIMENTO_LABEL, opcoes.filaDoSetor)}</option>}{opcoes.setores.map(s => <option key={s} value={s}>{rotular(SETOR_ATENDIMENTO_LABEL, s)}</option>)}</select>}</Campo>}
         {passo === "equipes" && exigeDestino && <Campo rotulo="Contexto do destino" obrigatorio>{c => <select {...c} disabled={ocupado} value={destinoChave} onChange={e => setDestinoChave(e.target.value)} className="w-full rounded-md border border-gray-300 p-2"><option value="">Escolha…</option>{destinosDisponiveis.map(d => <option key={d.chave} value={d.chave}>{d.nome}</option>)}</select>}</Campo>}
