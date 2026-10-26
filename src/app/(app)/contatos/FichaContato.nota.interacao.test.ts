@@ -13,6 +13,8 @@ vi.mock("react", async (original) => {
   const g = () => m.ganchos!;
   return {
     ...real,
+    // Harness legado apenas de payload: ciclo de vida é provado no cadastro.dom.test.ts real.
+    useLayoutEffect: (()=>{}) as typeof real.useLayoutEffect,
     useState: ((i: unknown) => g().useState(i)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
     useRef: ((i: unknown) => g().useRef(i)) as unknown as typeof real.useRef,
@@ -33,22 +35,23 @@ import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/me
 import type { DetalheContato } from "@/server/crm/contatos";
 import { campos, controle, criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
 
-const detalhe: DetalheContato = {
+const detalhe: DetalheContato = { cadastroPessoa:null,informacoesCadastro:null,
   id: "p1", codigo: "P-000001", nome: "Ana Souza", email: null, cidade: null, cargo: null, linkedin: null,
   origemCanal: "INDICACAO", empresa: null, telefones: [], optOut: false, ehAluno: false, tags: [], oportunidades: [],
   criadoEm: new Date("2026-10-01T12:00:00Z"),
 };
 const classesCor = { NEUTRA: "a", MARCA: "b", INFO: "c", SUCESSO: "d", ALERTA: "e", PERIGO: "f", IA: "g" };
 
-function montar(abaInicial: "historico" | "geral") {
+function montar(abaInicial: "historico" | "geral",d:DetalheContato=detalhe) {
   m.ganchos = criarGanchos();
   // FichaContato só escolhe o corpo pelo key; o teste chama o corpo direto.
   const el = FichaContato({
-    detalhe, historico: [], campos: [], tagsDisponiveis: [], classesCor, capacidades: ["contatos.ver", "contatos.editar"],
+    detalhe:d, historico: [], campos: [], tagsDisponiveis: [], classesCor, capacidades: ["contatos.ver", "contatos.editar"],
     vendedores: [], paises: [], abaInicial,
   }) as unknown as No;
   const tela = (): ReactNode => m.ganchos!.renderizar(el.type as (p: unknown) => ReactNode, el.props);
   return {
+    escreverCampo(rotulo:string,valor:string){const c=campos(tela()).find(n=>texto(n.props.rotulo).trim()===rotulo)!;(controle(c).props.onChange as (e:unknown)=>void)({target:{value:valor}});},
     erros: () => elementos(tela()).filter((n) => n.type === FeedbackAcao).map((n) => n.props.erro).filter(Boolean),
     escrever(valor: string) {
       const c = campos(tela()).find((n) => texto(n.props.rotulo).trim() === "Nota interna")!;
@@ -100,3 +103,8 @@ describe("FichaContato — nota com chave de idempotência (#166)", () => {
     expect(t.erros()).toContain(MSG_RESULTADO_INCERTO_SEM_CHAVE);
   });
 });
+
+const detalheCadastro={...detalhe,cadastroPessoa:{documento:"DOC ORIGINAL",tipoDocumentoId:"tipo",documentoPaisEmissor:"CR",nascimento:"2000-02-29"},informacoesCadastro:{idade:26,documento:null,catalogo:[{id:"tipo",nome:"Cédula",pais:{id:"cr",nome:"Costa Rica",codigoISO:"CR"}}]}};
+it("save global somente dados antigos omite4campos cadastrais não alterados",async()=>{const t=montar("geral",detalheCadastro);await t.salvarDados();const payload=m.editar.mock.calls[0]?.[1];for(const k of ["documento","tipoDocumentoId","documentoPaisEmissor","nascimento"])expect(payload).not.toHaveProperty(k);});
+it("global clearDOB é explícito sem reenviar Doc do snapshot",async()=>{const t=montar("geral",detalheCadastro);t.escreverCampo("Nascimento","");await t.salvarDados();const payload=m.editar.mock.calls[0]?.[1];expect(payload).toHaveProperty("nascimento",null);expect(payload).not.toHaveProperty("documento");});
+it("global número não validado permanece editável semCPFonly",async()=>{const t=montar("geral",detalheCadastro);t.escreverCampo("Documento pessoal","FICTICIO LATAM");await t.salvarDados();expect(m.editar.mock.calls[0]?.[1]).toHaveProperty("documento","FICTICIO LATAM");});

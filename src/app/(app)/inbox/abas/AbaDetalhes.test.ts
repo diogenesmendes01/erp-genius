@@ -8,7 +8,7 @@ import { AbaDetalhes } from "./AbaDetalhes";
 import { BlocoB2B } from "./BlocoB2B";
 
 const capacidades: CapacidadesPainel = { veLead: true, verContato: true, editarContato: false, editarTags: false, criarTag: false, moverEtapa: false, tarefas: false, tarefasEquipe: false, desfazerAria: false, verEmpresa: false };
-const dados: DetalhesPainel = {
+const dados: DetalhesPainel = { cadastroPessoa:null, informacoesCadastro:null,
   pessoa: { id: "p 1", nome: "Mariana", email: "mariana@x.com", cidade: "Salvador", cargo: null, linkedin: null, origemCanal: "WHATSAPP", telefone: "+5500000000001", empresa: null },
   oportunidade: { id: "op 1", titulo: "Inglês", produto: "Inglês Intensivo B1", valor: "650.00", moeda: "BRL", etapa: "PROPOSTA", b2b: false }, b2b: null,
   campos: [{ id: "obj", nome: "Objetivo", tipo: "TEXTO", opcoes: [], obrigatorio: false, valor: "Trabalho", ia: true }],
@@ -67,3 +67,6 @@ it("dados são escapados e links de conversa vêm somente do contrato autorizado
 });
 
 it("com destino interno o cartão abre Oportunidades sem link global Funil",()=>{const abrir=vi.fn();const props={dados,capacidades,aoAbrirOportunidades:abrir};const arvore=AbaDetalhes(props);const card=elementos(arvore).find(n=>n.props['aria-label']==='Abrir oportunidade atual');expect(card).toBeDefined();(card!.props.onClick as()=>void)();expect(abrir).toHaveBeenCalledOnce();expect(renderToStaticMarkup(createElement(AbaDetalhes,props))).not.toContain('href="/funil?');});
+
+it("Doc/DOB/idade autorizados são apresentação civil e idade zero aparece",()=>{const h=html({cadastroPessoa:{documento:"DOC FICTICIO",tipoDocumentoId:null,documentoPaisEmissor:"CR",nascimento:"2026-10-26"},informacoesCadastro:{idade:0,documento:{tipoNome:null,paisNome:null,paisCodigoISO:null,validado:false},catalogo:null}});expect(h).toContain("DOC FICTICIO");expect(h).toContain("26/10/2026");expect(h).toContain("0 anos");expect(h).not.toContain("2026-10-26T");});
+it("blocos negados não renderizam rótulos de cadastro ou bits de existência",()=>{const h=html({cadastroPessoa:null,informacoesCadastro:null});expect(h).not.toMatch(/Nascimento|Idade|Documento pessoal|Não validado/);});
