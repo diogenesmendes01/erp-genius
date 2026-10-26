@@ -63,3 +63,11 @@ Native obrigatório: arquivo checkpoint10 completo e regressão17 completa, em s
 ### Resultado nativo DEV na fonte3dd
 
 Checkpoint completo10/10 EXIT0 (41651/272572,44,25s), depois regressão completa17/17 EXIT0 em nova sessão serial (19224/278a1c,72,19s). Configuração original, UTC/w1/1024, sete providers vazios, sem filtros/skips. Mantidos schema/SQL/client/perfil durante ambas. Não somar históricos sobrepostos nem considerar isto prova de escala/visual/CI. Banco entregue ao ROOT com fixtures e lease liberada; somente o integrador restaura. A extração fresca/metadados/newgen/CAS/ausência efeitos/pool1 e regressão são agora verificados nativamente, sem afirmar gates de composição ainda ausentes.
+
+## #452 C1 — distinguir gesto humano de reposicionamento de lista
+
+Scroll programático do VirtualList não representa atividade, mesmo se o evento scroll do browser tiver isTrusted:true. O boundary do Inbox usa wheel humano trusted junto dos pointerdown/keydown/touchstart já existentes, sempre exigindo aba visível pelo hook. Nenhuma posição, tecla ou conteúdo é enviado: apenas o marcador/seq existente, coalescido. Scroll permanece para layout; não alimenta presença. Sem listener global, fetch, setInterval ou polling novo. Sem mudança do idle10min, leaseoffline60s ou pulso25s, backend/SSE/CAS/schema.
+
+RED873ee8 reproduziu duas falhas causais no boundary+hook normal (scrolltrusted renovava e wheel ausente), com44controles passando; patch de um binding deu GREEN0dad2a mesmos46/46 e lint2c94b1e0. TSC final e QA pública/browser/composição estão qualificados no recibo de docs/qa/inbox-presenca-scroll-452-dev.md; nenhum nativoSQL neste recorte. Teste portátil à fonte pública452(CodeE2fd), sem dependência de UI361/372.
+
+Migration496 aplicada permanece imutável, inclusive comentários/checksum: explicação não exige reescrever SQL ou acrescentar IF NOT EXISTS. Cleanup existente é oportunista na abertura do próprio usuário, retenção24h, lote máximo16; backlog além de16 exige novas operações existentes, sem novo scheduler/worker/varredura global nesta correção. Limites são documentados, não ampliados. Homologação visual e CI específicos permanecem pendentes.
