@@ -7845,3 +7845,10 @@ Selecionado o delta isolado deeea09c: somente onScrollCapture passa a onWheelCap
 ### PR #453 — escopo irrestrito e abertura fora da primeira página, R28
 
 Selecionadas correções isoladas7dc0b358(ORcomercial canônico irrestrito) eec8f2cd5(ACK de conversa fora dos itens navega para rota canônica; SSR carrega item autorizado). As duas novas provas de navegação passaram no DEV, junto dos21casos Page; o recorte completo142/143 manteve uma falha447 previamente reproduzida, qualificada no QA. O teste nativo próprio de opções3/3 já passou no DEV. A seleção preserva Insights377, presença452, demais fontes públicas e não importa D9/372 ou ancestrais privados. QA independente desta composição, teclado/foco em browser e CI continuam pendentes.
+
+
+### PR #453 C1/C3 — contato e lista determinística, R29
+
+O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
+
+DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
