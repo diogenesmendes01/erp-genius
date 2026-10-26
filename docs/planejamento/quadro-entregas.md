@@ -7498,3 +7498,10 @@ Filha #333, aviso sem upgrade de PK: contraprova T75b2bc e RED A3a3818 confirmar
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 
 O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
+
+
+### #333 — correção causal de lock antes da integração443, 26/10/2026
+
+Selecionada a correção DEV2fc7aec3 sobre a candidata pública443fe23, sem trazer implementação362, schema, migrações501/502 ou ancestrais privados. O lock do atendimento passa de NO KEY UPDATE para SHARE; intenção continua FOR UPDATE e permissões/replay/CAS/eventos permanecem literais. Contraprova nativa mostrou40P01 antes e claim confirmado/recusa de domínio depois. DEV confirmou claim1, política10, cancelamento20, KEY SHARE1 e compatibilidade de notificações7+11 com código0; este último recorte pertence ao ambiente A502, não é QA pública pré502.
+
+Teste de rollback mede a baseline após o setup e mantém delta zero de avisos e Eventos. QA independente no candidato exato/T500 sem502, CI e integração ainda pendentes. A decisão de cancelamento GP sem tarefas.ver não foi aplicada. Nenhuma conclusão antecipada da333 ou362, upload ou merge. Evidência: docs/qa/inbox-333-cancelamento-share-r27.md.
