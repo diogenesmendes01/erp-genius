@@ -199,6 +199,7 @@ export const ORIGEM_CANAL_LABEL: Readonly<Record<OrigemCanal, string>> = Object.
   LINKEDIN: "Linkedin",
   IMPORTACAO: "Importação",
   OUTRO: "Outro",
+  PROSPECCAO_ATIVA: "Prospecção ativa",
 });
 
 export const TEMPERATURA_LABEL: Record<Temperatura, string> = {

@@ -5,6 +5,8 @@ import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/clien
 import { prisma } from "@/lib/prisma";
 import { apenasPortal } from "@/server/_shared/sessao";
 import { prepararMudancaPrevisao } from "./previsao-schema";
+import { criarRegistroLeadTx } from "./criar-registro-lead-tx";
+import { exigirDestinoComercial } from "./destino-comercial";
 import { gerarCodigo } from "@/lib/codigo";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { hashEntrada, marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
@@ -104,19 +106,6 @@ async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.
   return lead;
 }
 
-async function exigirDestinoComercial(usuario: UsuarioSessao, id: string | null, tx: Prisma.TransactionClient | typeof prisma = prisma) {
-  if (!id) {
-    if (!usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroRegra("Selecione um vendedor da sua equipe.");
-    return;
-  }
-  const destino = await tx.usuario.findFirst({ where: { id, ativo: true, papeis: { has: Papel.VENDEDOR } }, select: { id: true, gerenteComercialId: true } });
-  if (!destino) throw new ErroRegra("Selecione um vendedor ativo.");
-  if (!usuario.papeis.includes(Papel.ADMINISTRADOR) && destino.id !== usuario.id &&
-    !(usuario.papeis.includes(Papel.GERENTE_COMERCIAL) && destino.gerenteComercialId === usuario.id)) {
-    throw new ErroPermissao("O vendedor não pertence à sua equipe.");
-  }
-}
-
 async function exigirDocumentoPermitido(leadId: string, categoria: CategoriaDocumento, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   if (!Object.values(CategoriaDocumento).includes(categoria)) throw new ErroRegra("Categoria inválida.");
   if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return;
@@ -214,45 +203,7 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
           )
         ).pessoaId;
       }
-      const lead = await tx.oportunidade.create({
-        data: {
-          codigo,
-          nome: dados.nome,
-          telefoneE164,
-          pessoaId,
-          origemCanal: dados.origemCanal ?? null,
-          empresaId,
-          paisId: dados.paisId || null,
-          segmento: dados.segmento,
-          temperatura: dados.temperatura,
-          b2b: dados.criarEmpresa || dados.b2b,
-          vendedorDonoId: donoId,
-          origemCampanha: dados.origemCampanha || null,
-          origemConjunto: dados.origemConjunto || null,
-          origemAnuncio: dados.origemAnuncio || null,
-          origemPalavra: dados.origemPalavra || null,
-          valorPrevisto: dados.valorPrevisto ?? null,
-          planoPrevisto: dados.planoPrevisto || null,
-          comissaoPrevista: dados.comissaoPrevista ?? null,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "LeadCriado",
-        agregadoTipo: "Lead",
-        agregadoId: lead.id,
-        autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId, ...marca },
-      });
-      if (donoId) {
-        await registrarEvento(tx, {
-          tipo: "LeadAtribuido",
-          agregadoTipo: "Lead",
-          agregadoId: lead.id,
-          autorId: autor.id,
-          payload: { de: null, para: donoId },
-        });
-      }
-      return lead.id;
+      return criarRegistroLeadTx(tx, { dados, codigo, telefoneE164, pessoaId, empresaId, donoId, autorId: autor.id, marca });
     });
 
     revalidarLead();

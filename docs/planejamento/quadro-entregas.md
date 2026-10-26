@@ -7836,6 +7836,26 @@ Delta42 db441→2e41 integrado sobre f591 sem ancestrais privados/D10 parcial. C
 Suíte global b90:119333EXIT1,1077arquivos/9572casos(9571pass/1fail); guard campos detectou8entradas ausentes para quatro novos controles em cada formulário. Corrigido somente manifesto8strings, comparação exata preservada; arquivo completo28/28e1ff32EXIT0 e lint0. Nenhuma alteração produtiva/schema/config. TQA b90 independente33+73SQL e171UNIT todos0, restauradoT4993d2c95; gates da próxima fonte ainda pendentes, sem homologação visual.
 
 
+### #372 — backend interno, rascunho R27
+
+Núcleo NOVO e pré-requisitos selecionados, sem ancestrais privados. Acoes.ts conserva forecast341 e ACL atuais; schema499 recebe apenasOrigin500. TESTER independente no candidato b8d:11INT39/39,7UNIT86/86 eTSCglobal terminaram0. Factory e inbound preservam negativos/limites no relatório. BackendEXISTENTE/actions/UI, ownerAdminGC, demaisgatesglobais/CI/visual permanecem pendentes. SemCloses/merge/homologação.
+
+
+### #372 — gates globais do núcleo NOVO, R27
+
+Candidato b8d17b12: unidade global1084arquivos/9658testes0, lintglobal0(105avisos/zeroerros), TSCglobal0 e build115páginas0. TESTER independente39nativos/86unitários0. Banco TESTER500 preservado por auditoria pósbuild. Preparação pública sobre a PR454, fontes literalmente iguais ao candidato e sem ancestrais privados. EXISTENTE/actions/UI/ownerAdminGC/CI/visual ainda pendentes; rascunho parcial, sem marcar issue concluída.
+
+
+### #372 — ações públicas e conversa existente, candidato R27
+
+Selecionados nove arquivos do checkpoint DEV2a29006f, com quadro público preservado. O DEV confirmou64unitários, lint, TSC e dois arquivos nativos completos (5+4), todos com saída0. Inclui query final de ator/vínculos, preservação de carteira e responsável, replay, recusa de conflito e rollback. O banco ci-integracao foi restaurado pelo integrador. QA independente da composição pública, novos gates globais, UI, decisão de ownerAdmin/GC, CI e visual continuam pendentes; issue parcial.
+
+
+### #372 — QA pública de ações e EXISTENTE, R27
+
+Fonte 4eaa2b56: TESTER independente com 9 testes nativos, 64 unitários e TypeScript global, todos com código 0. O integrador confirmou unidade global de 1.086 arquivos e 9.722 testes, lint global com código 0 (105 avisos) e build de 115 páginas com código 0. Banco TESTER500 auditado e preservado. A publicação mantém o código testado e protege apenas o checkout LF da nova migração500. Preview e linhas da UI, decisão de responsável para Admin/Gerente Comercial, CI e aceite visual seguem pendentes. Issue parcial, sem indicação de merge.
+
+
 ## PR #420 integrada; preparação final da PR #427 — 26/10/2026
 
 PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
@@ -7870,6 +7890,11 @@ A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva
 A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head db4de2985d886096088c7804242fe1a8abd63d54. O ancestral original 3d08ab339fa742756d51cc3dd33a3071e1f6f1ab foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
 
 
+## PR #455 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 2cbef2903a52288d96f48afc0119fae79714b45b. O ancestral original db4de2985d886096088c7804242fe1a8abd63d54 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
 ### PR #432 — composição documental com a dependência #427, 26/10/2026
 
 União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
@@ -7897,6 +7922,10 @@ Incorporada a dependência 9a646570e93efc4e7d8349dbc3c27cce3f91581f usando seu a
 ## PR #454 — base empilhada atual reconciliada, 26/10/2026
 
 Incorporada a dependência e2de3b7e77e0906a52ae50ad025c06783642e39c usando seu ancestral original 2645e33b3882d30e55504bf2a61f5de76dcae99d. A composição preserva a árvore executável integral do head db4de2985d886096088c7804242fe1a8abd63d54, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #455 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência d17391f90e54a36a0e165bc4f373b70ee6217a93 usando seu ancestral original cf109b1abceb90be5e009b67b0e9a968348058c9. A composição preserva a árvore executável integral do head 2cbef2903a52288d96f48afc0119fae79714b45b, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
 
 
 ### #333 — correção causal de lock antes da integração443, 26/10/2026
@@ -7942,9 +7971,36 @@ ROOTrestore final2680d9 EXIT0/A502566 confirmado. Mig499b108/schema/client/GP362
 Usuário decidiu recusar o documento quando um validador cadastrado reprovar o valor. Tipos desconhecidos/sem validador e documento opcional nulo continuam aceitos; valor fornecido é revalidado mesmo se igual ao histórico, enquanto campo omitido preserva dados antigos. Limite comum de100caracteres no servidor e formulários, sem restringir os documentos latino-americanos aCPF. Selecionados16arquivos do checkpoint274170a6 sobre a fonte pública, mais este quadro composto; nenhum ancestral privadoGP362, schema, migration499 ou dependência importados. DEV175UNIT e38nativos/8arquivos passaram, conforme QA, com tentativa antiga pool1 explicitamente preservada e teste corrigido em lease posterior. São evidências DEV: QA independente desta composição e CI permanecem pendentes.
 
 
+## #372 — decisão de vendedor e interface por telefone, composição R28
+
+Incorporadas as correções R17/R19 de linhas/preview e abertura de cadastro existente, seguidas da interface D9 do checkpoint500f87a0. O escopo irrestrito OR e a navegação canônica B1 já são herdados da PR453; a presença452 e os testes públicos de Insights/transferência foram preservados. Nenhum ancestral privado foi importado. NOVO, inbound, schema, migration500 aplicada e dependências não mudam neste delta.
+
+Decisão humana aplicada: Admin ou gerente comercial sem papel vendedor deve escolher um vendedor ativo autorizado, sem padrão pelo dono da linha. Ator com papel vendedor usa seu próprio identificador, inclusive em papéis combinados. A consulta retorna somente id/nome autorizados e revalida a foto final de ator/equipe/candidatos. A intenção e chave de idempotência permanecem em memória por ator ao fechar e reabrir o diálogo; o servidor revalida os dados da confirmação. Saudação é manual no compositor existente, sem envio automático.
+
+DEV D9:166UNIT/9arquivos, lint e TypeScript0; oito nativos completos de opções e action passaram, com snapshot e direitos frescos. C1inbound: os dois arquivos pedidos passaram13+1 mantendo fonte01166434. A colisão adversarial do provider não é retry natural nem explica a causa histórica R7/P2028. R17/R19 e demais recortes históricos continuam qualificados em seus registros, sem somar testes sobrepostos.
+
+C3: a decisão aprovada não restringe a origemProspecção ativa ao novo fluxo; relatórios/importação/selects atuais preservados. C6: migration500 já aplicada é imutável, reserva exclusiva coordenada, sem reescrever SQL ou acrescentar IF NOT EXISTS. C4: tela e consultas agora incluídas, mas a emissão de AvisoInbox do atendimento criado está em correção separada; esta candidata ainda não cumpre esse ponto. QA independente exata, regressões públicas, browser/aceite visual e CI permanecem pendentes.
+
+
 ### PR #454 — validação independente da decisão de documentos, R28
 
 Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco descartávelT500: oito arquivos completos de integração38/38, focal6/175, TypeScript original, unidade global1078arquivos/9623testes e lint0erros/57avisos, todos com terminais0. Build original também passou com heap8GB herdado pelos workers; o OOM anterior do worker4GB foi preservado e não é resultado aprovado. Banco restaurado1445 antes dos gates globais. Nenhuma fonte/config/asserção foi alterada para obter aprovação. Este filho acrescenta somente documentação; os testes mantêm atribuição à fonte dd449ac. CI e aceite visual pertinentes à base conservam seus gates. Registro: docs/qa/inbox-454-validacao-r28-root.md.
+
+
+## PR #455 C4 — aviso de abertura, composição R28
+
+A medição independente na produção pública da455 confirmou três ausências de aviso: NOVO, EXISTENTE com criação operacional e EXISTENTE reutilizado emitiram0quando o contrato exige1; o vínculo NULLMAP já emitia1 pelo trigger. O arquivo completo8e5e3a87, com produção literalab34a73, terminou3assertions causais e1controle aprovado, sem erro de infraestrutura. Relato e payloads foram preservados; o bancoTESTER foi restaurado1445 pelo integrador. Este RED não é aprovação da correção.
+
+Selecionado o checkpoint localDEV e2ff47c4, limitado a sete arquivos. Os dois núcleos chamam um helper local antes das últimas verificações; replay sai antes da emissão. O helper publica os quatro campos IDs-only com serialização textual igual ao trigger legado, permitindo coalescência na mesma transação quando NULLMAP já notificou. Não toca PK, trigger aplicado, helper global compacto, política, UI, inbound, timeout, schema ou dependências.
+
+DEV reproduziuRED54(2falhas de chamada/52controles) e depois validou58UNIT, lint e TypeScript com código0. Oito nativos pós-fix estão autorados, incluindo falha e revogação após SQL real do aviso; ainda pendem execução. O recorte nativo próprio doDEV aguarda o banco ci-integracao reservado ao aceite432; a QA pública independente será executada em bancoTESTER. Esses papéis e fontes não são intercambiáveis. C4 ainda não é declarada concluída; QA de banco, regressões públicas, CI e visual permanecem pendentes.
+
+
+## #372 D9 e #361 C1 — contratos visuais e orientação do contato, R29
+
+A suíte global pública6cc5525 encontrou três falhas reais de contrato: controles novos fora do mapa, dois vazios sem o componente canônico e expressões antigas no mapa do Popover. Selecionados seis arquivos do checkpoint7caaad9c; os dois mapas foram compostos por blocos/hunks, preservando integralmente as sete linhas públicas de Insights/Doc. Nenhuma guarda, exceção, teto, schema ou dependência foi alterado. O fallback legado de telefone sem contato agora usa o texto aprovado, preservando o ramo novo por telefone.
+
+DEV confirmou154testes completos em cinco arquivos, lint e TypeScript com código0. C4 permaneceu congelado: seu recorte próprio oito casos passou948062 e o banco foi restaurado f3f060; na fonte pública6cc, TESTER confirmou8C4 mais18arquivos/78regressões, com restauração be0af1. O global6cc reprovado continua registrado; estes resultados não são uma aprovação global desta nova composição. A validação pública dos contratos e a repetição da suíte global ainda estão pendentes.
 
 
 ### PR #453 C1/C3 — contato e lista determinística, R29
@@ -7952,3 +8008,7 @@ Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco desca
 O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
 
 DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
+
+### #372 — C9, R30
+
+Catch restrito de colisão real selecionado do DEV a41792ca. DEV RED2+1→GREEN3 e UNIT50/lint/TSC0. TESTER na fonte pública0e3d91db: UNIT50, TSC e nativo3, todos código0; bancoT500 restaurado1445 por87cd54. Gates globais1091/9869 e build pertencem à base8a29 anterior ao catch. Medição C10 ampla, visual e integração continuam pendentes; não concluirissue nesta publicação.
