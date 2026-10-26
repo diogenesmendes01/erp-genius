@@ -18,6 +18,7 @@ import { comoErroRegra } from "./erro-regra-atendimento";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { ehLinhaComercial } from "./linha-comercial";
 import { proximoStatus } from "./status-atendimento";
+import { assumirAriaNoBanco } from "./assumir-aria";
 
 const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
 const MSG_FORA_DO_ESCOPO = "Atendimento fora do seu escopo.";
@@ -74,12 +75,23 @@ async function ultimoEventoEhDoAutor(tx: Tx, alvo: { agregadoId: string; tipos: 
   return Object.entries(alvo.payload ?? {}).every(([k, v]) => payload[k] === v);
 }
 
-/** Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional). */
 /** O atendimento já é de `u` porque `u` o assumiu por último (#166): o reenvio não grava outro Evento. */
 async function jaAssumidoPor(tx: Tx, id: string, u: { id: string }): Promise<boolean> {
   const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { responsavelId: true, encerradoEm: true } });
   if (atual?.responsavelId !== u.id || atual.encerradoEm) return false;
   return ultimoEventoEhDoAutor(tx, { agregadoId: id, tipos: TIPOS_RESPONSAVEL, tipo: "AtendimentoAssumido", autorId: u.id, payload: { para: u.id } });
+}
+
+/**
+ * D3: assume a condução da Aria com atribuição, pausa MANUAL e cancelamentos canônicos.
+ * Autorização contextual e ator são relidos na TX; replay pertence ao mesmo ciclo MANUAL.
+ */
+export async function assumirConversaDaAria(atendimentoId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const id = IdSchema.parse(atendimentoId);
+    if (await assumirAriaNoBanco(prisma, u.id, id)) revalidatePath("/inbox");
+  });
 }
 
 /**

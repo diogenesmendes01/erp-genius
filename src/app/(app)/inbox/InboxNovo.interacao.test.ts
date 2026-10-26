@@ -16,8 +16,9 @@ const m = vi.hoisted(() => ({
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
   aoVisibilidade: null as null | (() => void),
 }));
+const assumir357Inbox=vi.hoisted(()=>vi.fn(async()=>({ok:true})));
 const assumir328Inbox=vi.hoisted(()=>vi.fn(async()=>({ok:true})));
-vi.mock("@/server/whatsapp/acoes-atendimento",()=>({assumirAtendimento:assumir328Inbox,atribuirAtendimento:vi.fn(),convidarParticipante:vi.fn(),devolverParaFila:vi.fn(),revogarParticipante:vi.fn(),transferirAtendimento:vi.fn()}));
+vi.mock("@/server/whatsapp/acoes-atendimento",()=>({assumirAtendimento:assumir328Inbox,assumirConversaDaAria:assumir357Inbox,atribuirAtendimento:vi.fn(),convidarParticipante:vi.fn(),devolverParaFila:vi.fn(),revogarParticipante:vi.fn(),transferirAtendimento:vi.fn()}));
 const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -1095,7 +1096,7 @@ it.each(['ausente', 'nulo', 'presente'] as const)('R1C3 oportunidades usa capaci
 
 async function abrirAba331(){
  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:true,tarefasEquipe:false,editarContato:true,verContato:true}})}));
- const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
+ const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify(props.inicial)):url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:null,outras:[],pessoaId:null,tarefas:[],fusoEscola:"America/Sao_Paulo"})):anterior(url)));
  tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as (id:string)=>void)("oportunidades");tela();await esvaziar();return elementos(tela()).find(n=>n.type===AbaOportunidades)!;
 }
 it("331: callbacks reais abrem modal no atendimento e troca de seleção encerra sessão",async()=>{
@@ -1161,4 +1162,26 @@ it("332 pedido de nota consumido não ressuscita em A→B→A; próxima abertura
 it.each(["COMERCIAL","SECRETARIA"])("333 Atividade usa produtor da aba %s sem restringir a CRM/envio",async setor=>{
  respostaPainel=()=>new Response(JSON.stringify({setor,podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{tarefas:false}})}));const d={agendadas:[],recente:{ultimaInteracaoEm:null,conversas:2,tarefasAbertas:0,notas:[]}},anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/painel/atividade")?new Response(JSON.stringify(d)):anterior(url)));
  tela();await esvaziar();const p=elementos(tela()).find(n=>n.type===PainelContato)!;(p.props.aoTrocarAba as (id:string)=>void)("atividade");tela();await esvaziar();const aba=elementos(tela()).find(n=>n.type===AbaAtividade)!;expect(aba).toBeDefined();expect(aba.props.dados).toEqual(d);expect(aba.props.atendimentoId).toBe("a1");expect(aba.props.aoMudar).toEqual(expect.any(Function));lista(tela()).aoSelecionar("a2");expect(elementos(tela()).some(n=>n.type===AbaAtividade)).toBe(false);
+});
+
+
+async function abrirAba357(p:PropsInboxNovo,capacidade:boolean){
+ assumir328Inbox.mockClear();assumir357Inbox.mockClear();
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,cabecalho:{pessoaId:null,tagsDisponiveis:[],semNome:false,subtitulo:"Fixture357",quadrado:false,capacidades:{veLead:true,verContato:false,editarContato:false,editarTags:false,criarTag:false,moverEtapa:false,tarefas:false,tarefasEquipe:false,desfazerAria:false,verEmpresa:false}},acoes:{},aria:{pausada:false,motivo:null,podeDecidir:false,podeDevolver:false,podeAssumirAria:capacidade,cartoes:[],handoff:null}}));
+ const anterior=fetch;vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify(p.inicial)):url.endsWith("/painel/oportunidades")?new Response(JSON.stringify({atual:{id:"op357",titulo:"Fixture357",produto:null,valor:null,moeda:null,etapa:"QUALIFICADO",temperatura:"MORNO",responsavel:null,dataExperimental:null,experimentalConfirmada:false,professorExperimental:null,motivoPerda:null},outras:[],pessoaId:null,tarefas:[],fusoEscola:"UTC"})):anterior(url)));
+ tela(p);await esvaziar();const painel=elementos(tela(p)).find(n=>n.type===PainelContato)!;(painel.props.aoTrocarAba as(id:string)=>void)("oportunidades");tela(p);await esvaziar();return elementos(tela(p)).find(n=>n.type===AbaOportunidades)!;
+}
+const props357=()=>({...props,inicial:{itens:[{...item("a1"),estadoAria:"ia"},{...item("a2"),estadoAria:"ia"}],proximo:null}} as PropsInboxNovo);
+it.each([true,false])("357 consumidor da Aba escolhe action nova só com capacidade fresca %s",async capacidade=>{
+ assumir328Inbox.mockClear();assumir357Inbox.mockClear();const aba=await abrirAba357(props357(),capacidade);expect(aba.props.podeAssumir).toBe(capacidade);const r=await(aba.props.aoAssumir as()=>Promise<{ok:boolean}>)();
+ if(capacidade){expect(r.ok).toBe(true);expect(assumir357Inbox).toHaveBeenCalledExactlyOnceWith("a1");}else{expect(r.ok).toBe(false);expect(assumir357Inbox).not.toHaveBeenCalled();}expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+it("357 capacidade de assumir da Aba independe de decidir cartões e admite o responsável atual",async()=>{
+ const p=props357();p.inicial.itens[0]={...p.inicial.itens[0],responsavelId:"u1",estadoAria:"aprovacao"};const aba=await abrirAba357(p,true);expect(aba.props.podeAssumir).toBe(true);await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).toHaveBeenCalledWith("a1");expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+it("357 callback Aria retido não atravessa A-B-A",async()=>{
+ const p=props357(),aba=await abrirAba357(p,true);lista(tela(p)).aoSelecionar("a2");tela(p);await esvaziar();lista(tela(p)).aoSelecionar("a1");tela(p);await esvaziar();await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).not.toHaveBeenCalled();expect(assumir328Inbox).not.toHaveBeenCalled();
+});
+it("357 404 limpa capacidade copiada e bloqueia callback antigo sem cair no legado",async()=>{
+ const p=props357(),aba=await abrirAba357(p,true);respostaPainel=()=>new Response("",{status:404});(elementos(tela(p)).find(n=>n.type===ConversaAberta)!.props.aoMudar as()=>void)();tela(p);await esvaziar();const conversa=elementos(tela(p)).find(n=>n.type===ConversaAberta)!;expect((conversa.props.aria as{podeAssumirAria:boolean}).podeAssumirAria).toBe(false);await(aba.props.aoAssumir as()=>Promise<unknown>)();expect(assumir357Inbox).not.toHaveBeenCalled();expect(assumir328Inbox).not.toHaveBeenCalled();
 });

@@ -127,7 +127,7 @@ it("348 painel corrente mantém história no503 e revoga só capacidades Aria no
  fetcher.mockImplementation((u,o)=>String(u).endsWith("/painel")?Promise.resolve(status===200?new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true,aria,acoes:null})):new Response("",{status})):original(u,o));
  await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
  status=503;await emitir(global345);expect(m.ariaRecebida).toEqual(aria);
- status=404;await emitir(global345);expect(m.ariaRecebida).toEqual({...aria,podeDevolver:false,podeDecidir:false});
+ status=404;await emitir(global345);expect(m.ariaRecebida).toEqual({...aria,podeDevolver:false,podeDecidir:false,podeAssumirAria:false});
 });
 
 it("352 recibo da leitura existente distingue200/503 e404 revoga capacidades do handoff sem apagar resumo",async()=>{

@@ -1,3 +1,4 @@
+import { contextoAssumirAria } from "./assumir-aria";
 import { handoffDoAtendimento, type HandoffDoAtendimento } from "../aria/handoff-inbox";
 import { podeVerLeadNaThread } from "./visibilidade-lead";
 export { podeVerLeadNaThread } from "./visibilidade-lead";
@@ -241,6 +242,7 @@ export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: stri
 
 /** Estado canônico da Aria no atendimento: pausa, cartões e handoff de `AcaoAgenteIA` (fonte única). */
 export interface AriaDoAtendimento {
+  podeAssumirAria: boolean;
   handoff: HandoffDoAtendimento | null;
   podeDecidir: boolean;
   cartoes: SugestaoAriaThread[];
@@ -265,5 +267,6 @@ export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendime
     pausada,
     motivo: pausada ? a.iaPausaMotivo : null,
     podeDevolver: pausada && (await podeDevolverParaAria(prisma, usuario, a.id)),
+    podeAssumirAria: (await contextoAssumirAria(prisma, usuario, a.id)) !== null,
   };
 }
