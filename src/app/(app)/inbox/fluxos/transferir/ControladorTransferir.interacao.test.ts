@@ -1,9 +1,9 @@
-import { MensagemStatus } from "@/components/MensagemStatus";
 import { act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } from "@/test/dom-minimo";
 import { ControladorTransferir } from "./ControladorTransferir";
+import { MensagemStatus } from "@/components/MensagemStatus";
 import { Botao } from "@/components/Botao";
 let root: Root, host: Elemento, doc: Documento;
 const fechar = vi.fn();
@@ -34,8 +34,8 @@ beforeEach(async () => {
 afterEach(async () => { await act(async () => root.unmount()); desligarObservadores(); vi.unstubAllGlobals(); });
 it("integra escolha, leitura de pessoas e executor; exclui responsável atual e ACK conclui", async () => {
  await montar(); expect(carregar).not.toHaveBeenCalled(); await clicar("Abrir"); await clicar("Pessoas");
- expect(doc.body.querySelectorAll("option").map(o=>o.textContent)).toEqual(["Escolha…","Beatriz"]);
- await mudar("select","b"); await confirmar(); expect(executar).toHaveBeenCalledOnce(); expect(concluir).toHaveBeenCalledOnce(); expect(doc.body.querySelector('[role="dialog"]')).toBeNull();
+ expect(doc.body.querySelectorAll('input[type="radio"]').map(o=>(o as unknown as {value:string}).value)).toEqual(["b"]);expect(doc.body.textContent).toContain("Beatriz");
+ await mudar('input[type="radio"]',"b"); await confirmar(); expect(executar).toHaveBeenCalledOnce(); expect(concluir).toHaveBeenCalledOnce(); expect(doc.body.querySelector('[role="dialog"]')).toBeNull();
 });
 it("perda e restauração só permitem fechar; nova abertura deliberada recupera CTA", async () => {
  await montar(); await clicar("Abrir"); await montar(false); await montar(true);
@@ -51,13 +51,13 @@ it("leitura velha A→B→A não publica pessoas em outra abertura", async () =>
 it("nova abertura não reutiliza pessoas antigas antes da nova leitura", async () => {
  await montar(); await clicar("Abrir"); await clicar("Cancelar");
  let resolver!:(v:{id:string;nome:string}[])=>void; carregar.mockReturnValueOnce(new Promise(r=>resolver=r));
- await clicar("Abrir"); await clicar("Pessoas"); expect(doc.body.querySelectorAll("option").some(o=>o.textContent==="Beatriz")).toBe(false);
+ await clicar("Abrir"); await clicar("Pessoas"); expect(doc.body.textContent).not.toContain("Beatriz");
  await act(async()=>resolver([{id:"c",nome:"Carla"}])); expect(doc.body.textContent).toContain("Carla");
 });
 
 it("troca de responsável invalida ACK mesmo que gerente conserve as mesmas capacidades", async () => {
  let resolver!:(r:{ok:true})=>void; executar.mockReturnValueOnce(new Promise(r=>resolver=r));
- await montar(); await clicar("Abrir"); await clicar("Pessoas"); await mudar("select","b");
+ await montar(); await clicar("Abrir"); await clicar("Pessoas"); await mudar('input[type="radio"]',"b");
  await confirmar(); await montar(true,"a","c"); await act(async()=>resolver({ok:true}));
  expect(concluir).not.toHaveBeenCalled(); expect(doc.body.textContent).toContain("Feche e abra novamente");
 });
@@ -74,5 +74,5 @@ it("369 resposta tardia de resumo não revive checkbox de uma abertura anterior"
 
 it("447 C1 ACK setorial desmonta o controlador mas preserva aviso canônico no pai real",async()=>{
  function Tela(){const [aberta,setAberta]=useState(true),[msg,setMsg]=useState<string|null>(null);return createElement("div",null,createElement(MensagemStatus,{texto:msg,tom:"sucesso"}),aberta&&createElement(ControladorTransferir,{atendimentoId:"a",identidade:"u",responsavelAtualId:"u",opcoes:{visivel:true,pessoas:false,setores:["SECRETARIA"],filaDoSetor:null,aria:false},destinos:[],executar,carregarPessoas:carregar,aoConcluir:(texto:string)=>{setMsg(texto);setAberta(false);},renderizar:({transferir,dialogo})=>createElement("div",null,transferir&&createElement(Botao,{ref:transferir.gatilhoRef,onClick:transferir.aoEscolher},"Abrir"),dialogo)}));}
- await act(async()=>root.render(createElement(Tela)));expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");await mudar("textarea","Contexto preservado");await confirmar();expect(executar).toHaveBeenCalledOnce();expect(doc.body.querySelector('[role="dialog"]')).toBeNull();expect(botao("Abrir")).toBeUndefined();expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("Atendimento transferido para Secretaria.");expect(doc.body.textContent).toContain("Atendimento transferido para Secretaria.");
+ await act(async()=>root.render(createElement(Tela)));expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("");await clicar("Abrir");await clicar("Equipes e filas");await mudar("select","SECRETARIA");await confirmar();expect(executar).toHaveBeenCalledOnce();expect(doc.body.querySelector('[role="dialog"]')).toBeNull();expect(botao("Abrir")).toBeUndefined();expect(doc.body.querySelector('[role="status"]')?.textContent).toBe("Atendimento transferido para Secretaria.");expect(doc.body.textContent).toContain("Atendimento transferido para Secretaria.");
 });
