@@ -19,6 +19,7 @@ Estados vazios distinguem vendedor sem lead, usuário sem destinatário, destino
 ## Validação planejada
 
 RED assertivo antes da produção; helper busca/canais; DOM real com PopoverColuna/useDialogo, API mock somente fronteira servidor. Portar contratos dos testes NovoAtendimento e acrescentar busy/ACK obsoleto/troca de contexto/teclado. Testar consumidores InboxNovo/Coluna, mapas nominais e guardas pertinentes em janela coordenada, lint dos paths. Sem SQL para delta somente UI/kernel literal. Visual nova-conversa/busca/número/mobile pelo integrador posteriormente; não homologado por unit.
-# Integração ROOT R23
+
+## Integração ROOT R23
 
 O delta DEV02aab2f3 foi integrado isoladamente sobre43913c11; reversão de todo o src recupera a base exatamente. Recorte ROOT123 arquivos/1.583 testes e lint11 passaram, sem backend/schema/configurações ou ancestrais privados. As evidências e limites estão em [QA da integração](../qa/inbox-361-integracao-r23-root.md). Esse recorte não substitui os gates globais, a execução independente e o aceite visual pendentes.
