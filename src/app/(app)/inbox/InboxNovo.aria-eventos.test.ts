@@ -27,7 +27,8 @@ vi.mock("./ConversaAberta",async()=>{const {createElement}=await import("react")
 vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react"),I=()=>createElement("span");return{IconMessages:I,IconPhone:I,IconChevronLeft:I,IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
 
 const item={id:"a1",numeroId:"n1",numeroRotulo:"Fake345",finalidade:"COMERCIAL",driver:DriverWhatsApp.MOTOR,contatoId:"ct1",contatoNome:"Ana",contatoTelefone:"+50600000345",optOut:false,vinculo:null,naoLidas:0,ultimaMensagemEm:null,preview:"",linhaComercial:false,status:"EM_ATENDIMENTO",responsavelNome:null,prazoRespostaEm:null,fixada:false,silenciada:false,grupo:false,responsavelId:null,numeroDonoId:null,setoresDoNumero:["COMERCIAL"],atendimentoOrigemId:null,capacidades:[],estadoAria:null,atendidoPorVoce:false,previaAutor:null,previaRotulo:null};
-const props={inicial:{itens:[item],proximo:null},filtros:{busca:"Ana"},selecionado:"a1",usuario:{id:"u345",papeis:["VENDEDOR"]},fuso:null} as PropsInboxNovo;
+const resumo346={contagens:{todas:900,ia:3,aprovacao:2,handoff:1,humano:5,semResposta:4,naoAtribuidas:7},aria:{estado:"ATIVA" as const,pausada:false,podeGerenciar:false}};
+const props={resumo:resumo346,inicial:{itens:[item],proximo:null},filtros:{busca:"Ana"},selecionado:"a1",usuario:{id:"u345",papeis:["VENDEDOR"]},fuso:null} as PropsInboxNovo;
 const global345:AvisoInbox={tipo:"aria.global",atendimentoId:null,mensagemId:null,conversaId:""};
 const nova345:AvisoInbox={tipo:"mensagem.nova",atendimentoId:"a1",mensagemId:"m2",conversaId:"cv1"};
 let root:Root|undefined,InboxNovo:typeof Inbox;
@@ -77,4 +78,22 @@ it("resync seguido de global no mesmo act mantém recarga completa",async()=>{
 });
 it("duas invalidações globais no mesmo act coalescem sem efeito de thread",async()=>{
   await emitir(global345,{...global345});expect(m.pagina).not.toHaveBeenCalled();expect(m.marcar).not.toHaveBeenCalled();expect(paineis()).toHaveLength(1);expect(listas()).toHaveLength(1);
+});
+
+const chips346=()=>document.querySelector('[aria-label="Filtros rápidos"]')?.textContent;
+it("346 SSR inicial entrega os sete totais reais à coluna",()=>{expect(chips346()).toContain("IA atendendo3");expect(chips346()).toContain("Todas900");});
+it("346 global atualiza resumo fresco e falha preserva o último conhecido",async()=>{
+ const original=fetcher.getMockImplementation()!;
+ fetcher.mockImplementation(async(u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?new Response(JSON.stringify({...props.inicial,resumo:{...resumo346,contagens:{...resumo346.contagens,ia:0}}})):original(u,o));
+ await emitir(global345);expect(chips346()).toContain("IA atendendo0");
+ fetcher.mockImplementation(async(u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?new Response("",{status:503}):original(u,o));
+ await emitir(global345);expect(chips346()).toContain("IA atendendo0");expect(m.pagina).not.toHaveBeenCalled();
+});
+it("346 GET antigo não substitui o resumo SSR de outra navegação",async()=>{
+ const original=fetcher.getMockImplementation()!;let finish!:(r:Response)=>void;
+ fetcher.mockImplementation((u,o)=>String(u).startsWith("/api/inbox/atendimentos?")?new Promise(r=>{finish=r;}):original(u,o));
+ await emitir(global345);expect(finish).toBeTypeOf("function");
+ await act(async()=>root!.render(createElement(InboxNovo,{...props,filtros:{busca:"nova"},resumo:{...resumo346,contagens:{...resumo346.contagens,ia:12}}})));
+ await act(async()=>{finish(new Response(JSON.stringify({...props.inicial,resumo:{...resumo346,contagens:{...resumo346.contagens,ia:999}}})));await vi.advanceTimersByTimeAsync(50);});
+ expect(chips346()).toContain("IA atendendo12");expect(chips346()).not.toContain("999");
 });
