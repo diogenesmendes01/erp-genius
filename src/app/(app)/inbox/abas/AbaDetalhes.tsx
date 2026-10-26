@@ -1,3 +1,4 @@
+import {formatarDataCivil} from "@/lib/data-civil";
 import { IconBriefcase, IconBuilding, IconCheck, IconChevronRight, IconId, IconLink, IconMail, IconMapPin, IconPhone, IconSchool, IconSpeakerphone, IconUser, IconUsers } from "@tabler/icons-react";
 import { formatarMoedaOuIndefinida } from "@/lib/dinheiro";
 import { ETAPA_LABEL, ORIGEM_CANAL_LABEL } from "@/lib/labels";
@@ -38,6 +39,14 @@ export function AbaDetalhes({ dados, capacidades, aoAbrirOportunidades }: { dado
         <LinhaCampo icone={<IconMapPin size={18} />} valor={b2b ? empresa?.segmentoMercado ?? "—" : pessoa.cidade ?? "—"} rotulo={b2b ? "Segmento" : "Cidade"} />
         <LinhaCampo icone={<IconSpeakerphone size={18} />} valor={pessoa.origemCanal ? ORIGEM_CANAL_LABEL[pessoa.origemCanal] : "—"} rotulo="Origem do contato" />
       </section>
+      {dados.cadastroPessoa&&dados.informacoesCadastro&&<section aria-label="Cadastro pessoal">
+        <LinhaCampo icone={<IconId size={18}/>} rotulo="Documento pessoal" valor={dados.cadastroPessoa.documento??"—"}/>
+        <LinhaCampo icone={<IconId size={18}/>} rotulo="Tipo de documento" valor={dados.informacoesCadastro.documento?.tipoNome??"—"}/>
+        <LinhaCampo icone={<IconMapPin size={18}/>} rotulo="País emissor" valor={dados.cadastroPessoa.documentoPaisEmissor??"—"}/>
+        <LinhaCampo icone={<IconUser size={18}/>} rotulo="Nascimento" valor={formatarDataCivil(dados.cadastroPessoa.nascimento)}/>
+        <LinhaCampo icone={<IconUser size={18}/>} rotulo="Idade" valor={dados.informacoesCadastro.idade===null?"—":`${dados.informacoesCadastro.idade} anos`}/>
+        {dados.cadastroPessoa.documento&&!dados.informacoesCadastro.documento?.validado&&<p className="text-sm text-gray-600">Documento não validado. Confira o número e o tipo informado.</p>}
+      </section>}
       <section aria-label={b2b ? "Empresa" : "Perfil"} className="-mx-[18px] border-t border-gray-200 px-[18px] pt-5">
         <h3 className="text-xs font-medium text-brand-700">{b2b ? "Empresa" : "Perfil"}</h3>
         {b2b && <>

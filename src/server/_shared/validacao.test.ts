@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   validarDocumento,
+  temValidadorDocumento,
   calcularDocumentoValido,
   telefoneE164,
   paraDataLocal,
@@ -188,4 +189,8 @@ describe("validarDocumento (documentos estrangeiros)", () => {
     expect(calcularDocumentoValido(cr, "AB123456")).toBe(true);
     expect(calcularDocumentoValido(cr, "texto livre")).toBe(false);
   });
+});
+describe("454 presença de validador usa somente chaves canônicas próprias",()=>{
+ it.each(["cpf","cedula_cr","curp","dni_ar","dui_sv","passaporte"])("reconhece %s",nome=>expect(temValidadorDocumento(nome)).toBe(true));
+ it.each(["","inexistente","toString","constructor","__proto__","hasOwnProperty"])("não interpreta %s como validador",nome=>expect(temValidadorDocumento(nome)).toBe(false));
 });
