@@ -7839,3 +7839,8 @@ Suíte global b90:119333EXIT1,1077arquivos/9572casos(9571pass/1fail); guard camp
 ### #372 — backend interno, rascunho R27
 
 Núcleo NOVO e pré-requisitos selecionados, sem ancestrais privados. Acoes.ts conserva forecast341 e ACL atuais; schema499 recebe apenasOrigin500. TESTER independente no candidato b8d:11INT39/39,7UNIT86/86 eTSCglobal terminaram0. Factory e inbound preservam negativos/limites no relatório. BackendEXISTENTE/actions/UI, ownerAdminGC, demaisgatesglobais/CI/visual permanecem pendentes. SemCloses/merge/homologação.
+
+
+### #372 — gates globais do núcleo NOVO, R27
+
+Candidato b8d17b12: unidade global1084arquivos/9658testes0, lintglobal0(105avisos/zeroerros), TSCglobal0 e build115páginas0. TESTER independente39nativos/86unitários0. Banco TESTER500 preservado por auditoria pósbuild. Preparação pública sobre a PR454, fontes literalmente iguais ao candidato e sem ancestrais privados. EXISTENTE/actions/UI/ownerAdminGC/CI/visual ainda pendentes; rascunho parcial, sem marcar issue concluída.

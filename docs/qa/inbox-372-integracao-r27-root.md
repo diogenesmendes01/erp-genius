@@ -15,3 +15,18 @@ O primeiro TSC desse worktree terminou2 por117diagnósticos em34cópias históri
 Provider concorrente é colisão adversarial entre contatos distintos; não equivale a retry natural do mesmo contato. O negativo R7 porP2028 mantém sua causa não fechada, mesmo com os testes posteriores aprovados. A publicação conserva literalmente SRC/Prisma/config do candidato testado; diferenças documentais preservam o histórico da base pública.
 
 Esta qualificação cobre o núcleo NOVO e a recuperação de concorrência. EXISTENTE, actions e UI continuam em desenvolvimento. Unidade/lint/build globais da nova composição, CI e aceite visual ainda são gates. O rascunho não conclui#372 nem autoriza merge.
+
+## Gates globais do núcleo NOVO — 26/10/2026
+
+A composição exata b8d17b12 passou nos quatro gates originais, sem alterações de código ou configuração entre as execuções aprovadas:
+
+- Unidade global: 1.084 arquivos, 9.658/9.658 testes, saída 0 (sessão60305/aaa5cc).
+- Lint global: saída 0, nenhum erro e 105 avisos (sessão82191/8d8d62).
+- TypeScript global: saída 0 (sessão60976/72df70). O build também concluiu sua verificação de tipos.
+- Build de produção: saída 0, 115 páginas, BUILD_ID 1NC40mQO0Qr3trrrAieGn (sessão17546/332f99).
+
+O primeiro lint terminou2 porque os scripts privados CJS históricos não carregavam o plugin React no padrão atual do Next. A verificação de configuração reproduziu isso sem mudar pacotes. Após preservar os82scripts como texto, a execução seguinte terminou1: todos os2.957erros estavam em12itens privados antigos de QA/build, sem erros nas fontes do produto. Esses12itens foram arquivados por movimentação atômica fora do worktree; os723arquivos versionados deoutput, os relatórios atuais, as fontes e as regras/exclusões do lint foram preservados. O lint original foi repetido e terminou0; os negativos e manifestos permanecem registrados. Os105avisos incluem material local de QA, não apenas código do produto.
+
+O build usou exclusivamente o banco descartável TESTER500, com os sete provedores externos vazios. A auditoria após o término confirmou as426tabelas e1.445linhas com os mesmos hashes, sem listeners ou escritas residuais (017053). Não houve envio real nem ativação de integração externa.
+
+Esta atualização substitui a pendência de unidade/lint/build globais anotada no checkpoint anterior. A fonte publicada emSRC/Prisma/config continua literalmente igual ao candidato testado; somente evidências documentais foram acrescentadas. EXISTENTE/actions/UI seguem em desenvolvimento e fora deste recorte aprovado. CI remoto, aceite visual, decisão de ownerAdmin/GC e conclusão integral da#372 continuam pendentes. O PR permanece rascunho, sem fechamento automático da issue ou indicação de merge.
