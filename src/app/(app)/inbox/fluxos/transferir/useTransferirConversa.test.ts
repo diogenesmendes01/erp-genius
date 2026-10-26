@@ -27,7 +27,7 @@ for(const [alvo,texto] of [
  [{tipo:"fila"},"Devolvido para a fila."],
  [{tipo:"aria"},"Atendimento devolvido para a Aria."],
 ] as const) it(`447 C1 ACK atual anuncia ${alvo.tipo}`,async()=>{
- function Todos(){const c=useTransferirConversa({atendimentoId:"a",identidade:"u",opcoes:{...opcoes,setores:["SECRETARIA"],filaDoSetor:"COMERCIAL",aria:true},executar,aoConcluir:concluir});useLayoutEffect(()=>{controle=c;});return null;}
+ function Todos(){const c=useTransferirConversa({atendimentoId:"a",identidade:"u",opcoes:{...opcoes,filaDoSetor:"COMERCIAL",aria:true},executar,aoConcluir:concluir});useLayoutEffect(()=>{controle=c;});return null;}
  await act(async()=>root.render(createElement(Todos)));await act(async()=>controle.abrir());await act(async()=>controle.confirmar({alvo,contexto:""}));expect(concluir).toHaveBeenCalledExactlyOnceWith(texto);
 });
 

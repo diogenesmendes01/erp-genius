@@ -2,7 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Botao } from "@/components/Botao";
 import { PopoverFluxo } from "../PopoverFluxo";
-import { PopoverTransferir, type PropsPopoverTransferir } from "./PopoverTransferir";
+import { PopoverTransferir, type PessoaTransferir, type PropsPopoverTransferir } from "./PopoverTransferir";
 import { useTransferirConversa } from "./useTransferirConversa";
 import type { Resultado } from "@/server/_shared/resultado";
 import type { OpcoesTransferir } from "./opcoes-transferir";
@@ -13,7 +13,7 @@ interface Props {
   atendimentoId: string; identidade: string; responsavelAtualId: string | null; opcoes: OpcoesTransferir;
   destinos: PropsPopoverTransferir["destinos"];
   executar(comando: ComandoTransferirInbox): Promise<Resultado>;
-  carregarPessoas(id: string): Promise<{ id: string; nome: string }[]>;
+  carregarPessoas(id: string): Promise<PessoaTransferir[]>;
   carregarResumo?(id: string): Promise<boolean>;
   aoConcluir(mensagem: string): void;
   renderizar(controles: { transferir: AcaoConversa | null; dialogo: ReactNode }): ReactNode;
@@ -24,7 +24,7 @@ export function ControladorTransferir(props: Props) {
   const identidadeAtual = JSON.stringify([identidade, responsavelAtualId]);
   const controle = useTransferirConversa({ atendimentoId, identidade: identidadeAtual, opcoes, executar, aoConcluir });
   const chave = JSON.stringify([atendimentoId, identidadeAtual, opcoes, controle.aberturaId]);
-  const [pessoas, setPessoas] = useState<{ chave: string; lista: { id: string; nome: string }[]; erro: string | null } | null>(null);
+  const [pessoas, setPessoas] = useState<{ chave: string; lista: PessoaTransferir[]; erro: string | null } | null>(null);
   const [resumo, setResumo] = useState<{ chave: string; disponivel: boolean } | null>(null);
   const invalidada = controle.invalidada;
   const aberto = controle.aberto;
