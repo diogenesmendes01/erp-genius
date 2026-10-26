@@ -39,7 +39,6 @@ import { ColunaConversas } from "./ColunaConversas";
 import { FaixaAriaAtiva } from "./aria/FaixaAriaAtiva";
 import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
-import { PainelAria } from "./PainelAria";
 import { Botao } from "@/components/Botao";
 import { EsqueletoPainel } from "@/components/Esqueleto";
 import { PainelSetor } from "./PainelSetor";
@@ -512,9 +511,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           : <PainelSetor painel={painelSetor.dado} />
         : painelSetor?.id === atual.id ? falhaDosDetalhes(tentarPainelDeNovo)
           : <EsqueletoPainel rotulo="detalhes" />}</div>
-      {painelSetor?.id === atual.id && painelSetor.dado?.aria && <div className={secaoDetalhes}>
-        <PainelAria key={`aria:${atual.id}`} atendimentoId={atual.id} aria={painelSetor.dado.aria} fuso={fuso} aoMudar={recarregarLista} />
-      </div>}
       {painelSetor?.id === atual.id && painelSetor.dado?.acoes && <div className={secaoDetalhes}>
         <AcoesContato key={`acoes:${atual.id}`} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} optOut={atual.optOut} fuso={fuso} aoMudar={recarregarLista} />
       </div>}
