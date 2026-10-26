@@ -1,3 +1,4 @@
+import { avisarNovaConversaTx } from "./nova-conversa-aviso";
 import { Papel, type Prisma } from "@prisma/client";
 import { apenasPortal, ErroAutenticacao, ErroPermissao, ErroRegra, exigirPapel, type UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
@@ -142,6 +143,7 @@ export async function abrirRamoExistenteConversaTx(tx: Prisma.TransactionClient,
  await conferirTupla(tx, e, t);
  await registrarEvento(tx, { tipo: "AtendimentoInstitucionalAberto", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: e.autorId, payload: { finalidade: "COMERCIAL", leadId: lead.id, alunoId: null, turmaId: null, matriculaId: null } });
  await registrarEvento(tx, { tipo: "ConversaIniciadaPorNumero", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: e.autorId, payload: { criado: false, leadId: lead.id, pessoaId: lead.pessoaId, contatoId: contatoConfirmado.id, conversaId: a.conversaId, numeroId: e.numeroId, ownerId: lead.ownerId, ...marca } });
+ await avisarNovaConversaTx(tx, { id: a.id, conversaId: a.conversaId });
  await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
  await conferirTupla(tx, e, t);
  return { atendimentoId: a.id, leadId: lead.id, criado: false };

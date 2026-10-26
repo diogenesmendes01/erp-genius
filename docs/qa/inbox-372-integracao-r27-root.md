@@ -68,3 +68,12 @@ Decisão humana aplicada: Admin ou gerente comercial sem papel vendedor deve esc
 DEV D9:166UNIT/9arquivos, lint e TypeScript0; oito nativos completos de opções e action passaram, com snapshot e direitos frescos. C1inbound: os dois arquivos pedidos passaram13+1 mantendo fonte01166434. A colisão adversarial do provider não é retry natural nem explica a causa histórica R7/P2028. R17/R19 e demais recortes históricos continuam qualificados em seus registros, sem somar testes sobrepostos.
 
 C3: a decisão aprovada não restringe a origemProspecção ativa ao novo fluxo; relatórios/importação/selects atuais preservados. C6: migration500 já aplicada é imutável, reserva exclusiva coordenada, sem reescrever SQL ou acrescentar IF NOT EXISTS. C4: tela e consultas agora incluídas, mas a emissão de AvisoInbox do atendimento criado está em correção separada; esta candidata ainda não cumpre esse ponto. QA independente exata, regressões públicas, browser/aceite visual e CI permanecem pendentes.
+
+
+## PR #455 C4 — aviso de abertura, composição R28
+
+A medição independente na produção pública da455 confirmou três ausências de aviso: NOVO, EXISTENTE com criação operacional e EXISTENTE reutilizado emitiram0quando o contrato exige1; o vínculo NULLMAP já emitia1 pelo trigger. O arquivo completo8e5e3a87, com produção literalab34a73, terminou3assertions causais e1controle aprovado, sem erro de infraestrutura. Relato e payloads foram preservados; o bancoTESTER foi restaurado1445 pelo integrador. Este RED não é aprovação da correção.
+
+Selecionado o checkpoint localDEV e2ff47c4, limitado a sete arquivos. Os dois núcleos chamam um helper local antes das últimas verificações; replay sai antes da emissão. O helper publica os quatro campos IDs-only com serialização textual igual ao trigger legado, permitindo coalescência na mesma transação quando NULLMAP já notificou. Não toca PK, trigger aplicado, helper global compacto, política, UI, inbound, timeout, schema ou dependências.
+
+DEV reproduziuRED54(2falhas de chamada/52controles) e depois validou58UNIT, lint e TypeScript com código0. Oito nativos pós-fix estão autorados, incluindo falha e revogação após SQL real do aviso; ainda pendem execução. O recorte nativo próprio doDEV aguarda o banco ci-integracao reservado ao aceite432; a QA pública independente será executada em bancoTESTER. Esses papéis e fontes não são intercambiáveis. C4 ainda não é declarada concluída; QA de banco, regressões públicas, CI e visual permanecem pendentes.

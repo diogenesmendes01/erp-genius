@@ -7985,3 +7985,12 @@ C3: a decisão aprovada não restringe a origemProspecção ativa ao novo fluxo;
 ### PR #454 — validação independente da decisão de documentos, R28
 
 Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco descartávelT500: oito arquivos completos de integração38/38, focal6/175, TypeScript original, unidade global1078arquivos/9623testes e lint0erros/57avisos, todos com terminais0. Build original também passou com heap8GB herdado pelos workers; o OOM anterior do worker4GB foi preservado e não é resultado aprovado. Banco restaurado1445 antes dos gates globais. Nenhuma fonte/config/asserção foi alterada para obter aprovação. Este filho acrescenta somente documentação; os testes mantêm atribuição à fonte dd449ac. CI e aceite visual pertinentes à base conservam seus gates. Registro: docs/qa/inbox-454-validacao-r28-root.md.
+
+
+## PR #455 C4 — aviso de abertura, composição R28
+
+A medição independente na produção pública da455 confirmou três ausências de aviso: NOVO, EXISTENTE com criação operacional e EXISTENTE reutilizado emitiram0quando o contrato exige1; o vínculo NULLMAP já emitia1 pelo trigger. O arquivo completo8e5e3a87, com produção literalab34a73, terminou3assertions causais e1controle aprovado, sem erro de infraestrutura. Relato e payloads foram preservados; o bancoTESTER foi restaurado1445 pelo integrador. Este RED não é aprovação da correção.
+
+Selecionado o checkpoint localDEV e2ff47c4, limitado a sete arquivos. Os dois núcleos chamam um helper local antes das últimas verificações; replay sai antes da emissão. O helper publica os quatro campos IDs-only com serialização textual igual ao trigger legado, permitindo coalescência na mesma transação quando NULLMAP já notificou. Não toca PK, trigger aplicado, helper global compacto, política, UI, inbound, timeout, schema ou dependências.
+
+DEV reproduziuRED54(2falhas de chamada/52controles) e depois validou58UNIT, lint e TypeScript com código0. Oito nativos pós-fix estão autorados, incluindo falha e revogação após SQL real do aviso; ainda pendem execução. O recorte nativo próprio doDEV aguarda o banco ci-integracao reservado ao aceite432; a QA pública independente será executada em bancoTESTER. Esses papéis e fontes não são intercambiáveis. C4 ainda não é declarada concluída; QA de banco, regressões públicas, CI e visual permanecem pendentes.
