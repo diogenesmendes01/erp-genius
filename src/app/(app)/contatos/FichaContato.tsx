@@ -1,4 +1,5 @@
 "use client";
+import {DOCUMENTO_PESSOA_MAX} from "@/lib/pessoa-cadastro-limites";
 import {formatarDataCivil} from "@/lib/data-civil";
 
 import { useLayoutEffect,useRef,useState } from "react";
@@ -344,7 +345,7 @@ function FichaCorpo({
               <Campo rotulo="LinkedIn">{(campo) => <input {...campo} className={CONTROLE} value={linkedin} maxLength={300} onChange={(e) => setLinkedin(e.target.value)} />}</Campo>
               {podeEditarCadastro&&cadastro&&<fieldset className="space-y-3">
                 <legend className="text-sm font-medium">Cadastro pessoal</legend>
-                <Campo rotulo="Documento pessoal">{campo=><input {...campo} name="documento" className={CONTROLE} value={cadastro.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)}/>}</Campo>
+                <Campo rotulo="Documento pessoal">{campo=><input {...campo} name="documento" maxLength={DOCUMENTO_PESSOA_MAX} className={CONTROLE} value={cadastro.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)}/>}</Campo>
                 <Campo rotulo="Tipo de documento">{campo=><select {...campo} name="tipoDocumentoId" className={CONTROLE} value={cadastro.tipoDocumentoId} disabled={acao.ocupado} onChange={e=>mudarCadastro("tipoDocumentoId",e.target.value)}><option value="">Sem tipo</option>{d.informacoesCadastro?.catalogo?.map(t=><option key={t.id} value={t.id}>{t.pais.nome} · {t.nome}</option>)}</select>}</Campo>
                 <Campo rotulo="País emissor (ISO)">{campo=><input {...campo} name="documentoPaisEmissor" className={CONTROLE} value={cadastro.documentoPaisEmissor} maxLength={2} disabled={acao.ocupado} onChange={e=>mudarCadastro("documentoPaisEmissor",e.target.value)}/>}</Campo>
                 <Campo rotulo="Nascimento">{campo=><input {...campo} name="nascimento" type="date" min="0001-01-01" max="9999-12-31" className={CONTROLE} value={cadastro.nascimento} disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)}/>}</Campo>
