@@ -13,6 +13,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor } from "./respostas-rapidas";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
+import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
 
 import { useRevisoesRascunhos, type RevisoesRascunhos } from "./rascunhos-conversa";
 
@@ -56,6 +57,8 @@ export interface PropsCompositor {
   contido?: boolean;
   /** Respostas rápidas do atendente (atalho "/"); sem elas o atalho não abre. */
   respostas?: readonly RespostaDoCompositor[];
+  /** Porta de abertura local; dados e envio de propostas pertencem ao consumidor autorizado. */
+  propostas?: { oportunidadeId: string | null; aoAbrir: () => void };
   /** Valores das variáveis das respostas ({nome}, {responsavel}, {curso}). */
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
@@ -76,13 +79,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
-  { rotulo: "Contato", recurso: "cartaoContato" },
-  { rotulo: "Enquete", recurso: "enquete" },
-  { rotulo: "Localização", recurso: "localizacao" },
-];
-
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -388,12 +385,32 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     }
   }
 
-  function abrirSeletor(accept: string) {
-    if (!saidaPermitida()) return;
-    if (seletor.current) { seletor.current.accept = accept; seletor.current.click(); }
+  function abrirSeletor(accept: string, captura?: "environment") {
+    if (!contextoVigente() || !saidaPermitida()) return;
+    if (seletor.current) {
+      seletor.current.accept = accept;
+      if (captura) seletor.current.capture = captura;
+      else seletor.current.removeAttribute("capture");
+      seletor.current.click();
+    }
     setAnexos(false);
   }
 
+  function selecionarAnexo(item: IdItemAnexo) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
+    if (item === "documento") abrirSeletor("*/*");
+    else if (item === "midia") abrirSeletor("image/*,video/*");
+    else if (item === "camera") abrirSeletor("image/*", "environment");
+    else if (item === "audio") abrirSeletor("audio/*");
+    else if (item === "resposta" && respostas.length) {
+      mudar("/");
+      setAnexos(false);
+      entrada.current?.focus();
+    } else if (item === "proposta" && propostas?.oportunidadeId && typeof propostas.aoAbrir === "function") {
+      setAnexos(false);
+      propostas.aoAbrir();
+    }
+  }
   const vazio = !texto.trim() && !arquivo;
   const sugestoes = nota ? [] : respostasDoAtalho(texto, respostas);
   return (
@@ -451,19 +468,21 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
-              <div role="menu" aria-label="Anexar" className={`absolute bottom-12 left-0 z-20 ${CLASSE_PAINEL_MENU}`}>
-                <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("*/*")}>Documento</button>
-                <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("image/*,video/*")}>Fotos e vídeos</button>
-                <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("audio/*")}>Áudio</button>
-                {ITENS_MOTOR.map((i) => {
-                  const temCapacidade = capacidades.includes(i.recurso);
-                  return (
-                    <div key={i.recurso}>
-                      <button type="button" role="menuitem" disabled aria-describedby={idAvisosAnexos + "-" + i.recurso} className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>
-                      <small id={idAvisosAnexos + "-" + i.recurso} className="block px-5 pb-1 text-xs text-gray-600">{temCapacidade ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR}</small>
-                    </div>
-                  );
-                })}
+              <div role="menu" aria-label="Anexar" className={`absolute bottom-12 left-0 z-20 grid w-[340px] max-w-[calc(100vw-32px)] grid-cols-3 gap-1 ${CLASSE_PAINEL_MENU}`}>
+                {ITENS_ANEXO.filter(i => i.id !== "resposta" || respostas.length > 0)
+                  .filter(i => i.id !== "proposta" || (!!propostas?.oportunidadeId && typeof propostas.aoAbrir === "function"))
+                  .map(i => {
+                    const Icone = i.icone;
+                    const aviso = i.recurso ? (capacidades.includes(i.recurso) ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR) : null;
+                    return <div key={i.id} className="min-w-0">
+                      <button type="button" role="menuitem" aria-label={i.rotulo} disabled={!!i.recurso}
+                        aria-describedby={i.recurso ? idAvisosAnexos + "-" + i.recurso : undefined}
+                        className={`${CLASSE_ITEM_MENU} flex-col justify-center text-gray-800`} onClick={i.recurso ? undefined : () => selecionarAnexo(i.id)}>
+                        <span aria-hidden className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${i.classeIcone}`}><Icone size={20} /></span><span className="text-center">{i.rotulo}</span>
+                      </button>
+                      {i.recurso && <small id={idAvisosAnexos + "-" + i.recurso} className="block px-2 pb-1 text-center text-xs text-gray-600">{aviso}</small>}
+                    </div>;
+                  })}
               </div>
             )}
           </>

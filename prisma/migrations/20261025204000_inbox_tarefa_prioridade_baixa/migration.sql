@@ -1,0 +1,1 @@
+ALTER TYPE "PrioridadeTarefa" ADD VALUE 'BAIXA' BEFORE 'NORMAL';

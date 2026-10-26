@@ -87,8 +87,37 @@ function ancoraPinTarefaNoVirtualList(fonte:string):boolean {
  }
  visitar(sf);return correspondencias.length===1&&correspondencias[0]==="VirtualList";
 }
+const EXCECAO_DOM_TAREFA_D10: ExcecaoId = {
+ arquivo:"src/app/(app)/inbox/OpcoesTarefaD10.tsx",tipo:"prop",trecho:"aria-controls={id}",alvo:"id",vezes:1,categoria:"nao-registro",
+ motivo:"useId do React gera somente a referência DOM entre o botão Mais opções e seu painel; não vem de DTO ou registro ERP, com origem e alvo ancorados no AST",
+};
+function ancoraDomTarefaD10(fonte:string):boolean {
+ const sf=ts.createSourceFile(EXCECAO_DOM_TAREFA_D10.arquivo,fonte,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ if((sf as unknown as {parseDiagnostics?:readonly ts.Diagnostic[]}).parseDiagnostics?.length)return false;
+ const importa=sf.statements.some(n=>ts.isImportDeclaration(n)&&ts.isStringLiteral(n.moduleSpecifier)&&n.moduleSpecifier.text==="react"&&n.importClause?.namedBindings&&ts.isNamedImports(n.importClause.namedBindings)&&n.importClause.namedBindings.elements.some(e=>e.name.text==="useId"&&(!e.propertyName||e.propertyName.text==="useId")));
+ const funcoes=sf.statements.filter((n):n is ts.FunctionDeclaration=>ts.isFunctionDeclaration(n)&&n.name?.text==="OpcoesTarefaD10");
+ if(!importa||funcoes.length!==1||!funcoes[0].body)return false;
+ let declaracoes=0,origens=0,chamadas=0,alvos=0;const gatilhos:string[]=[];
+ function corpo(n:ts.Node){
+  if(ts.isVariableDeclaration(n)&&ts.isIdentifier(n.name)&&n.name.text==="id"){
+   declaracoes++;if(ts.isVariableDeclarationList(n.parent)&&(n.parent.flags&ts.NodeFlags.Const)!==0&&n.initializer&&ts.isCallExpression(n.initializer)&&ts.isIdentifier(n.initializer.expression)&&n.initializer.expression.text==="useId"&&n.initializer.arguments.length===0)origens++;
+  }
+  if(ts.isCallExpression(n)&&ts.isIdentifier(n.expression)&&n.expression.text==="useId")chamadas++;
+  ts.forEachChild(n,corpo);
+ }
+ function elementos(n:ts.Node){
+  if(ts.isJsxOpeningElement(n)||ts.isJsxSelfClosingElement(n))for(const a of n.attributes.properties){
+   if(ts.isJsxAttribute(a)&&normaliza(a.getText(sf))===EXCECAO_DOM_TAREFA_D10.trecho)gatilhos.push(n.tagName.getText(sf));
+   if(n.tagName.getText(sf)==="div"&&ts.isJsxAttribute(a)&&a.name.getText(sf)==="id"&&a.initializer&&ts.isJsxExpression(a.initializer)&&a.initializer.expression&&ts.isIdentifier(a.initializer.expression)&&a.initializer.expression.text==="id")alvos++;
+  }
+  ts.forEachChild(n,elementos);
+ }
+ corpo(funcoes[0].body);elementos(sf);
+ return declaracoes===1&&origens===1&&chamadas===1&&alvos===1&&gatilhos.length===1&&gatilhos[0]==="Botao";
+}
 export const EXCECOES_ID: ExcecaoId[] = [
   EXCECAO_PIN_TAREFA,
+  EXCECAO_DOM_TAREFA_D10,
   { arquivo: "src/app/(app)/inbox/abas/GavetaContato.tsx", tipo: "prop", trecho: "form={id}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId liga o botão submit do rodapé Drawer ao formulário da gaveta; não vem do DTO nem identifica registro ERP" },
   { arquivo: "src/app/(app)/inbox/abas/TagsContato.tsx", tipo: "prop", trecho: "aria-controls={aberto ? id : undefined}", alvo: "id", categoria: "nao-registro", motivo: "identificador DOM gerado por useId para ligar o gatilho ao popover de tags; não é ID de registro do ERP nem vem do DTO" },
   {"arquivo":"src/components/conversa/Compositor.tsx","tipo":"prop","trecho":"aria-controls={opcoesMencao.length ? listaMencoesId : undefined}","alvo":"listaMencoesId","categoria":"nao-registro","motivo":"useId gera referência DOM local entre combobox e lista; não contém ID de registro nem é apresentado como texto à pessoa"},
@@ -284,6 +313,7 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
   });
 
   it("nenhum id cru chega a texto, atributo de texto ou prop de componente — exceções ancoradas", () => {
+    expect(ancoraDomTarefaD10(readFileSync(EXCECAO_DOM_TAREFA_D10.arquivo,"utf8"))).toBe(true);
     expect(conferirExcecoesId(achados, EXCECOES_ID)).toEqual({ semExcecao: [], soltas: [] });
   });
 
@@ -294,6 +324,7 @@ describe("id cru fora da tela (docs/43 §6 item 7)", () => {
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES_ID.map((e) => `${e.arquivo} :: ${e.tipo} :: ${e.alvo} :: ${e.categoria}${e.vezes ? ` ×${e.vezes}` : ""}`)).toEqual([
       "src/app/(app)/inbox/ConversaAberta.tsx :: prop :: tarefaEmEdicaoId :: nao-registro ×1",
+      "src/app/(app)/inbox/OpcoesTarefaD10.tsx :: prop :: id :: nao-registro ×1",
       "src/app/(app)/inbox/abas/GavetaContato.tsx :: prop :: id :: nao-registro",
       "src/app/(app)/inbox/abas/TagsContato.tsx :: prop :: id :: nao-registro",
       "src/components/conversa/Compositor.tsx :: prop :: listaMencoesId :: nao-registro",
@@ -690,4 +721,13 @@ describe("#332 — exceção nominal da chave de montagem da tarefa",()=>{
   const outro="const x=<Outro "+EXCECAO_PIN_TAREFA.trecho+"/>;";
   expect(idsCrusNaTela(outro,arquivo)).toHaveLength(1);expect(ancoraPinTarefaNoVirtualList(outro)).toBe(false);
  });
+});
+describe("#338 — referência DOM nominal de Mais opções",()=>{
+ const arquivo=EXCECAO_DOM_TAREFA_D10.arquivo,fonte=readFileSync(arquivo,"utf8");
+ it("exige const id=useId React, Botao único e alvo DOM único",()=>{expect(ancoraDomTarefaD10(fonte)).toBe(true);expect(conferirExcecoesId(idsCrusNaTela(fonte,arquivo),[EXCECAO_DOM_TAREFA_D10])).toEqual({semExcecao:[],soltas:[]});});
+ it.each(["DTO","prop","outro componente"])("não autoriza a âncora quando muda para %s",caso=>{
+  const alterada=caso==="DTO"?fonte.replace("const id=useId();","const id=p.tarefaId;"):caso==="prop"?fonte.replace("aria-controls={id}","aria-controls={p.tarefaId}"):fonte.replace('<Botao variante="fantasma" tamanho="sm" aria-expanded','<Outro variante="fantasma" tamanho="sm" aria-expanded').replace('>Mais opções</Botao>','>Mais opções</Outro>');
+  expect(ancoraDomTarefaD10(alterada)).toBe(false);expect(conferirExcecoesId(idsCrusNaTela(alterada,arquivo),ancoraDomTarefaD10(alterada)?[EXCECAO_DOM_TAREFA_D10]:[]).semExcecao).not.toHaveLength(0);
+ });
+ it("prop duplicada no arquivo não recebe exceção",()=>{const alterada=fonte+'\nconst extra=<Botao aria-controls={id}/>;';expect(ancoraDomTarefaD10(alterada)).toBe(false);expect(conferirExcecoesId(idsCrusNaTela(alterada,arquivo),[EXCECAO_DOM_TAREFA_D10]).soltas).not.toHaveLength(0);});
 });

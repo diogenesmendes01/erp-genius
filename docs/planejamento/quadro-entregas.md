@@ -7661,42 +7661,20 @@ ROOT4949 TSC original70661/58b0fb terminou código2 por NodeList.find no helper 
 ROOT R18 — UNIT global d603:1057arquivos/9249casos, EXIT1 por callback opaco no feedback; 9248 controles passaram. Correção mínima mantém hook/textos e cria aviso persistente literal local em InboxNovo. Guarda original intacta; focal5/244 EXIT0 (63074/2a6a3e), lint2SRC EXIT0 (0cec09). Negativos/limites em docs/qa/inbox-447-integracao-r16-root.md. QA T d603:341 SQL19+CAS2 e UNIT12/200,3717/61,guardas4/136 EXIT0 separados; A/T495 restaurados425hashes/EXIT0. Repetir gates globais no filho, visual e publicação pendentes.
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
-<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
-=======
->>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
-<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
-=======
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
->>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
 
 Gates finais ROOT c3ba607f: TypeScript 53106/4abf1e EXIT0; unitária global original 52057/3be700 EXIT0, 1.019 arquivos/8.801 testes; lint 25049/7c6cdc EXIT0, zero erros/63 avisos; build 63477/8d5b15 EXIT0, Z9-O-_AbBHxCBkn16uRV2. OOMs do lint preservados e diagnosticados como análise dos backups gerados não rastreados; cópias movidas fisicamente para evidências externas com hashes, configurações intactas. TESTER também confirmou consumidor com ADMINISTRADOR real (2a569b EXIT0). Aceite visual de transferência e CI/revisão da publicação continuam pendentes; não homologar D5 sem #369/#370.
-<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
-=======
 
 Contador do cabeçalho separado de configuração/última ação/decisão com leitor autorizado compartilhado; limite30 após autorização, keyset100 e Pessoa/CRM preservados. Quatro fallbacks históricos no passado, sem alterar rótulos neutros ou recibo de entrega. RED nativo14776/636807 EXIT1 (2falhas/8pass); GREEN85994/89a8da EXIT0 (10/10), UNIT94717/1961c3 EXIT0 (3arquivos/161), focal finalcaf8e4 EXIT0 (11/106, sem filtros). Lint final e freeze no relatório específico. B493grant/425tabelas/client383; lease liberadaff859e0 e ROOTrestaurouf020fe0/baseline504. Isolamento370 preservado por manifesto17b68d64, stash78d35dbb e checkpoint PRIVADO76f9 de2schema paths; não publicar esse pai. Commit334 terá só deltaC3C4/fixturecarry578. QA independente/gates de composição/visualC1 pendentes, sem afirmar PR334/Aria completa por esse recorte. #370 continua bloqueada aguardando autorização humana específica; nenhum grant foi ligado ao escopo.
->>>>>>> f9ea5209bf7a9337c67fb2f6d1fd715f7f620e75
 
 Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado DTO/action com rowTXfresh; sempapéisgenéricosnovos e semalterar[]/mistos. OracleTbyte8196 RED30130/612418 EXIT1 (1ERPpass/1portalfail)→GREEN29510/3b5aa3 EXIT0 2/2; UNIT27d736 RED→728dbe GREEN2/10; regressão42600/93843a EXIT0 2arquivos32casos incluindo3ROLErastreados (não somaroracle2sobreposto); lint9dad9f0/4SRC/zeroavisos. D3TODASSUGERIDAinclusiveCRM documentada/C5JSDoclegado recolocado. QA em docs/qa/inbox-357-portal-apos-espera.md. B493grant/client383, liberação6618d60/0outros; ROOTrestaura depois, não presumir504. Commitisolado357 sobrepaisprivados334/76f9, integrar sódelta. QA/gatescompostos/visual pendentes;370continua aguardandoautorizaçãohumana específica, semgrantACLativado.
->>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
-<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
-=======
-<<<<<<< 5e2bf6961f3a8386007cc92535333b63373aea56
->>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
-=======
 
 #358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
->>>>>>> c4b5211cbe643524c8f10a042031d4d22820b27d
 ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61702/7fcd60),TSC(21151/531055),lint0erros66avisos(48032/1cc03d;únicoincrementoprivadoforaSRC),build2658/EXIT0/buildIdqa-YlX2olWnazLSFrbIYA. Fontes447/448/449 executadas independentemente em9/257,9/265,9/267+lint8EXIT0. PilhaR19 auditada semGrant, SRC/prisma/configs da folha341 literaisROOT. FilhoR20 apenasdocumental antespublicação; ver docs/qa/inbox-publicacao-r20-root.md. Visual/CI/merge main e fechamento deissues continuam pendentes.
 
 #369 / PR448 R22 ROOT — comentários C1/C2: resumo opcional adquirido separadamente da lista autorizada de pessoas; falha/espera do resumo não bloqueia transferência, falha da lista não concede acesso. RED2b6bef EXIT1(2falhas/10controles)→GREEN9arquivos90casos16356/416a4e EXIT0, lint2 ede63d EXIT0/zeroavisos. D5 índice alinhado. Sem SQL/schema/alteração da API histórica. QA independente executada/visual/CI e atualização pública da pilha pendentes.
@@ -7836,6 +7814,26 @@ Delta42 db441→2e41 integrado sobre f591 sem ancestrais privados/D10 parcial. C
 Suíte global b90:119333EXIT1,1077arquivos/9572casos(9571pass/1fail); guard campos detectou8entradas ausentes para quatro novos controles em cada formulário. Corrigido somente manifesto8strings, comparação exata preservada; arquivo completo28/28e1ff32EXIT0 e lint0. Nenhuma alteração produtiva/schema/config. TQA b90 independente33+73SQL e171UNIT todos0, restauradoT4993d2c95; gates da próxima fonte ainda pendentes, sem homologação visual.
 
 
+### #372 — backend interno, rascunho R27
+
+Núcleo NOVO e pré-requisitos selecionados, sem ancestrais privados. Acoes.ts conserva forecast341 e ACL atuais; schema499 recebe apenasOrigin500. TESTER independente no candidato b8d:11INT39/39,7UNIT86/86 eTSCglobal terminaram0. Factory e inbound preservam negativos/limites no relatório. BackendEXISTENTE/actions/UI, ownerAdminGC, demaisgatesglobais/CI/visual permanecem pendentes. SemCloses/merge/homologação.
+
+
+### #372 — gates globais do núcleo NOVO, R27
+
+Candidato b8d17b12: unidade global1084arquivos/9658testes0, lintglobal0(105avisos/zeroerros), TSCglobal0 e build115páginas0. TESTER independente39nativos/86unitários0. Banco TESTER500 preservado por auditoria pósbuild. Preparação pública sobre a PR454, fontes literalmente iguais ao candidato e sem ancestrais privados. EXISTENTE/actions/UI/ownerAdminGC/CI/visual ainda pendentes; rascunho parcial, sem marcar issue concluída.
+
+
+### #372 — ações públicas e conversa existente, candidato R27
+
+Selecionados nove arquivos do checkpoint DEV2a29006f, com quadro público preservado. O DEV confirmou64unitários, lint, TSC e dois arquivos nativos completos (5+4), todos com saída0. Inclui query final de ator/vínculos, preservação de carteira e responsável, replay, recusa de conflito e rollback. O banco ci-integracao foi restaurado pelo integrador. QA independente da composição pública, novos gates globais, UI, decisão de ownerAdmin/GC, CI e visual continuam pendentes; issue parcial.
+
+
+### #372 — QA pública de ações e EXISTENTE, R27
+
+Fonte 4eaa2b56: TESTER independente com 9 testes nativos, 64 unitários e TypeScript global, todos com código 0. O integrador confirmou unidade global de 1.086 arquivos e 9.722 testes, lint global com código 0 (105 avisos) e build de 115 páginas com código 0. Banco TESTER500 auditado e preservado. A publicação mantém o código testado e protege apenas o checkout LF da nova migração500. Preview e linhas da UI, decisão de responsável para Admin/Gerente Comercial, CI e aceite visual seguem pendentes. Issue parcial, sem indicação de merge.
+
+
 ## PR #420 integrada; preparação final da PR #427 — 26/10/2026
 
 PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
@@ -7870,6 +7868,11 @@ A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva
 A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head db4de2985d886096088c7804242fe1a8abd63d54. O ancestral original 3d08ab339fa742756d51cc3dd33a3071e1f6f1ab foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
 
 
+## PR #455 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 2cbef2903a52288d96f48afc0119fae79714b45b. O ancestral original db4de2985d886096088c7804242fe1a8abd63d54 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
 ### PR #432 — composição documental com a dependência #427, 26/10/2026
 
 União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
@@ -7897,6 +7900,10 @@ Incorporada a dependência 9a646570e93efc4e7d8349dbc3c27cce3f91581f usando seu a
 ## PR #454 — base empilhada atual reconciliada, 26/10/2026
 
 Incorporada a dependência e2de3b7e77e0906a52ae50ad025c06783642e39c usando seu ancestral original 2645e33b3882d30e55504bf2a61f5de76dcae99d. A composição preserva a árvore executável integral do head db4de2985d886096088c7804242fe1a8abd63d54, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #455 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência d17391f90e54a36a0e165bc4f373b70ee6217a93 usando seu ancestral original cf109b1abceb90be5e009b67b0e9a968348058c9. A composição preserva a árvore executável integral do head 2cbef2903a52288d96f48afc0119fae79714b45b, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
 
 
 ### #333 — correção causal de lock antes da integração443, 26/10/2026
@@ -7942,18 +7949,36 @@ ROOTrestore final2680d9 EXIT0/A502566 confirmado. Mig499b108/schema/client/GP362
 Usuário decidiu recusar o documento quando um validador cadastrado reprovar o valor. Tipos desconhecidos/sem validador e documento opcional nulo continuam aceitos; valor fornecido é revalidado mesmo se igual ao histórico, enquanto campo omitido preserva dados antigos. Limite comum de100caracteres no servidor e formulários, sem restringir os documentos latino-americanos aCPF. Selecionados16arquivos do checkpoint274170a6 sobre a fonte pública, mais este quadro composto; nenhum ancestral privadoGP362, schema, migration499 ou dependência importados. DEV175UNIT e38nativos/8arquivos passaram, conforme QA, com tentativa antiga pool1 explicitamente preservada e teste corrigido em lease posterior. São evidências DEV: QA independente desta composição e CI permanecem pendentes.
 
 
-### #362 — composição pública com cancelamento próprio do gerente pedagógico, R28
+## #372 — decisão de vendedor e interface por telefone, composição R28
 
-Selecionados o servidor de agendadas do checkpointb76c94e5 e a extensão autorizada no checkpoint546cfedd sobre a PR454dd449ac. A correção SHARE da333 já está herdada, sem reaplicar sua política antiga sobre a exceção. Sem ancestrais privados, schema Prisma ou pacotes novos. Migrações501/502 mantêm os bytes reservados/aplicados no ambiente DEV e serão aplicadas explicitamente pelo integrador no ambiente de QA.
+Incorporadas as correções R17/R19 de linhas/preview e abertura de cadastro existente, seguidas da interface D9 do checkpoint500f87a0. O escopo irrestrito OR e a navegação canônica B1 já são herdados da PR453; a presença452 e os testes públicos de Insights/transferência foram preservados. Nenhum ancestral privado foi importado. NOVO, inbound, schema, migration500 aplicada e dependências não mudam neste delta.
 
-A decisão humana permite ao gerente pedagógico ativo que criou uma intenção manual/HUMANO e continua responsável pela conversa cancelar o próprio agendamento pelo Inbox, com ACL de leitura fresca, sem exigir tarefas.ver. O CRM global conserva suas permissões. O painel e a action usam a mesma regra do núcleo, com revalidação após esperas; estado encerrado não acrescenta veto quando os critérios expressos continuam satisfeitos. IA, outro autor e perda de papel/atividade/responsável não entram na exceção.
+Decisão humana aplicada: Admin ou gerente comercial sem papel vendedor deve escolher um vendedor ativo autorizado, sem padrão pelo dono da linha. Ator com papel vendedor usa seu próprio identificador, inclusive em papéis combinados. A consulta retorna somente id/nome autorizados e revalida a foto final de ator/equipe/candidatos. A intenção e chave de idempotência permanecem em memória por ator ao fechar e reabrir o diálogo; o servidor revalida os dados da confirmação. Saudação é manual no compositor existente, sem envio automático.
 
-DEV confirmou113UNIT/7arquivos e24nativos completos no checkpoint final (aceite5,claim1,LISTEN7,ciclo11), além dos recortes históricos qualificados no QA. Os negativos reais comprovam recusa após perda de responsável/papel durante a espera pelo pai, sem Evento ou aviso da operação. Fontes, contagens e leases constam nos registros DEV; não são QA independente desta composição. BancoDEV restaurado pelo integrador. QA pública exata, regressões integradas e CI ainda pendentes; não concluirissue antecipadamente.
+DEV D9:166UNIT/9arquivos, lint e TypeScript0; oito nativos completos de opções e action passaram, com snapshot e direitos frescos. C1inbound: os dois arquivos pedidos passaram13+1 mantendo fonte01166434. A colisão adversarial do provider não é retry natural nem explica a causa histórica R7/P2028. R17/R19 e demais recortes históricos continuam qualificados em seus registros, sem somar testes sobrepostos.
+
+C3: a decisão aprovada não restringe a origemProspecção ativa ao novo fluxo; relatórios/importação/selects atuais preservados. C6: migration500 já aplicada é imutável, reserva exclusiva coordenada, sem reescrever SQL ou acrescentar IF NOT EXISTS. C4: tela e consultas agora incluídas, mas a emissão de AvisoInbox do atendimento criado está em correção separada; esta candidata ainda não cumpre esse ponto. QA independente exata, regressões públicas, browser/aceite visual e CI permanecem pendentes.
 
 
 ### PR #454 — validação independente da decisão de documentos, R28
 
 Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco descartávelT500: oito arquivos completos de integração38/38, focal6/175, TypeScript original, unidade global1078arquivos/9623testes e lint0erros/57avisos, todos com terminais0. Build original também passou com heap8GB herdado pelos workers; o OOM anterior do worker4GB foi preservado e não é resultado aprovado. Banco restaurado1445 antes dos gates globais. Nenhuma fonte/config/asserção foi alterada para obter aprovação. Este filho acrescenta somente documentação; os testes mantêm atribuição à fonte dd449ac. CI e aceite visual pertinentes à base conservam seus gates. Registro: docs/qa/inbox-454-validacao-r28-root.md.
+
+
+## PR #455 C4 — aviso de abertura, composição R28
+
+A medição independente na produção pública da455 confirmou três ausências de aviso: NOVO, EXISTENTE com criação operacional e EXISTENTE reutilizado emitiram0quando o contrato exige1; o vínculo NULLMAP já emitia1 pelo trigger. O arquivo completo8e5e3a87, com produção literalab34a73, terminou3assertions causais e1controle aprovado, sem erro de infraestrutura. Relato e payloads foram preservados; o bancoTESTER foi restaurado1445 pelo integrador. Este RED não é aprovação da correção.
+
+Selecionado o checkpoint localDEV e2ff47c4, limitado a sete arquivos. Os dois núcleos chamam um helper local antes das últimas verificações; replay sai antes da emissão. O helper publica os quatro campos IDs-only com serialização textual igual ao trigger legado, permitindo coalescência na mesma transação quando NULLMAP já notificou. Não toca PK, trigger aplicado, helper global compacto, política, UI, inbound, timeout, schema ou dependências.
+
+DEV reproduziuRED54(2falhas de chamada/52controles) e depois validou58UNIT, lint e TypeScript com código0. Oito nativos pós-fix estão autorados, incluindo falha e revogação após SQL real do aviso; ainda pendem execução. O recorte nativo próprio doDEV aguarda o banco ci-integracao reservado ao aceite432; a QA pública independente será executada em bancoTESTER. Esses papéis e fontes não são intercambiáveis. C4 ainda não é declarada concluída; QA de banco, regressões públicas, CI e visual permanecem pendentes.
+
+
+## #372 D9 e #361 C1 — contratos visuais e orientação do contato, R29
+
+A suíte global pública6cc5525 encontrou três falhas reais de contrato: controles novos fora do mapa, dois vazios sem o componente canônico e expressões antigas no mapa do Popover. Selecionados seis arquivos do checkpoint7caaad9c; os dois mapas foram compostos por blocos/hunks, preservando integralmente as sete linhas públicas de Insights/Doc. Nenhuma guarda, exceção, teto, schema ou dependência foi alterado. O fallback legado de telefone sem contato agora usa o texto aprovado, preservando o ramo novo por telefone.
+
+DEV confirmou154testes completos em cinco arquivos, lint e TypeScript com código0. C4 permaneceu congelado: seu recorte próprio oito casos passou948062 e o banco foi restaurado f3f060; na fonte pública6cc, TESTER confirmou8C4 mais18arquivos/78regressões, com restauração be0af1. O global6cc reprovado continua registrado; estes resultados não são uma aprovação global desta nova composição. A validação pública dos contratos e a repetição da suíte global ainda estão pendentes.
 
 
 ### PR #453 C1/C3 — contato e lista determinística, R29
@@ -7962,6 +7987,40 @@ O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instr
 
 DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
 
-### #362 — QA pública independente, R30
+### #338 D10 — checkpoint funcional DEV R30, seleção pública/QA pendentes
 
-Fonte5b936: dez arquivos completos/79 casos nativos em duas leases; sete UNIT focais/99; global1085 arquivos/9737 testes; TypeScript, lint e build115páginas, todos código0. Banco descartável restaurado1385 antes dos gates semSQL. ExceçãoGP autorizada coberta, CRMglobal preservado. CI apósbase e revisão remota pendentes; fluxosUIfilhos não incluídos.
+Implementação de BAIXA/lembretes15min/1dia, notificar também com ACL atual, preview/draft, writers/CAS/replay, leitor/fanout e recorrência ancorada com intenção/cron. Decisões humanas de calendário original/pular vencidas/DST automático auditado implementadas. SPEC funcional e QA nova inbox-338-d10-r30-dev.md substituem o estado WIP; Proveniência dos31puros registrada na QA DEV local.
+
+45nativos distintos/9arquivos aprovados em leases coordenadas:37legados+4recorrência+2oráculo forteUTC/SP+2races SQL. UNITRED2causal e0b80a separado de negativos instrumentais23502/7b7bdf; não houve RED nativo de inversa. Races reais8672fe: PIDs independentes, revogaçãoCOMMIT confirmada, domínio exato e rollbackclaim/avisos/Eventos. Oráculo35acef JSONscurados PG↔JS≤1ms, sem compensação; prova produtorPrisma, não rawINSERT arbitrário. ROOTrestorefinal031c9a EXIT0 A503567.
+
+GlobalUNIT65a931 EXIT1:9907pass/5fail em1102files; quatro D10 corrigidas por extensões nominais AST/freeze/negativos e paleta canônica. Focais finaisa40166 EXIT0 244/6files,lint90305c EXIT0/0avisos,TSC399757 EXIT0. Falha CamposMapDoc454 preexistente à338 mantida fora por ROOT(main já correto); não chama globalprivado aprovado nem repete sem utilidade. Lintglobal3035fd0errors/50warnings=40SRCbaseline+10outputprivados, teto40 intacto. Buildd9efd7 EXIT0 com NODE_OPTIONS8192 herdado após OOM6399f9 preservado; build anterior só aos tokens de cor/testes guard finais, qualificado emQA. SemmaisSQL/install/generate/push.
+
+Whitelist checkpoint63paths explícitos inclui produto/testes/schema/497498503/attrs/catalog/SPEC/QA/quadro+2guardsnominais; AGENTS0544/output/env/packages e deltaDoc excluídos. ROOT selecionará ainda os dois puros e QA histórica de cc039 para a fonte pública; não importar ancestry privada. Visual obrigatório, QA independente, gates públicos/CI e homologação continuam pendentes; #338 NÃO concluída.
+
+### #372 — C9, R30
+
+Catch restrito de colisão real selecionado do DEV a41792ca. DEV RED2+1→GREEN3 e UNIT50/lint/TSC0. TESTER na fonte pública0e3d91db: UNIT50, TSC e nativo3, todos código0; bancoT500 restaurado1445 por87cd54. Gates globais1091/9869 e build pertencem à base8a29 anterior ao catch. Medição C10 ampla, visual e integração continuam pendentes; não concluirissue nesta publicação.
+
+## #365 — anexos, câmera e resposta rápida (DEV em andamento)
+
+Menu/câmera/resposta rápida e porta opcional de Proposta implementados no recorte autorizado. Focal completo Compositor+guarda:148/148 EXIT0; lint4 e TSC original8192 EXIT0. Regressão conversa20arquivos/325casos EXIT1:280pass/45fail causais em três mocks de ícones incompletos, aguardando autorização TEST-ONLY antes do ajuste. SPEC em docs/specs/inbox-anexos-camera-resposta-rapida.md e evidências em docs/qa/inbox-365-anexos.md. Publicação por hunks sobre MAIN0dc1ede1, QA independente e visual pendentes; sem SQL/browser/push e sem fechamento presumido.
+
+Atualização #365: após corrigir os exports ausentes nos três mocks e adaptar somente dois arrays de ordem PR384 com autorização ROOT, o mesmo recorte de conversa+guarda passou 20 arquivos completos/325 testes, sessão9655→c311dd EXIT0; lint7 EXIT0. Negativos 280/325 e 323/325 preservados. TypeScript final sessão84768→6654cd EXIT0; QA pública e visual continuam pendentes.
+
+Apresentação #365 revisada: ícones em quadrados arredondados40px e cores por tokensERP aprovados, com aproximação de hues documentada. RED focal1/56 preservado; gates finais23arquivos355/355 EXIT0 (conversa+botões+paleta+contraste), lint7 EXIT0. Aceite visual/câmera real e QA da composição pública continuam pendentes.
+
+TSC final após apresentação sessão58824→40c80c EXIT0. Recorte DEV pronto para checkpoint local autorizado dos dez paths; ROOT fará seleção por hunks na MAIN preservando diferenças públicas. Sem fechamento ou homologação presumida.
+
+Composição pública365 sobre main a20524fc:23arquivos/349testes e lint7 código0; contagem355 mantém fonte DEV. TypeScript local8GB terminouOOM/código1 em worktree com890TSprivados em output, sem resultado de tipos. Publicação em rascunho para CI limpa, QA e visual; nenhum aceite presumido, sem schema/pacote/SQL.
+
+Integração365 com main bfb85569 preserva Aria/Insights e passa24arquivos/363testes9c8c5e+lint8d5ad47/código0. Dois novos testes retidos têm contraprova causal234b48,semguard2fail/22pass/bytesrestaurados; mock fechado Insights ganhou apenas exports faltantes. Fonte global/CI e visual ainda pendentes; PR457 continua rascunho.
+
+CI457iniciale2b6:TypeScript/build/lintpassaram,doisUNITfusosfalharam3guardas/mocks. Composição corrigida usa captureIDL nativo,mockRodapeapenasexports,exceçãoASTresponsivoúnicamenudeíconescomnegativos;27arquivos/390testesde19c5+lint10 465588/código0. Retirados22delimitadoresdeconflitopreexistentesmain,nãoohistórico.NovaCI/visualpendentes,13pathspróprios.
+
+### #362 D11 — porte local R41, revisão R3B1 ainda pendente
+
+Fonte pública original a64dbf4677980edaae082cc6032d8ce06c7240ff portada por30blobs limpos sobre MAINd95d99dca2423bd62b58bbfe8b8279fe2e26f4ba; histórico e D10 da MAIN preservados. Schema/client/perfil não mudam. SQL501/502 são bytes públicos imutáveis já aplicados no banco descartável conforme receipt ROOT; este porte não executa DDL.
+
+R3B1 permanece PENDENTE: recibo confirmado deve usar ACL canônica de leitura fresca, sem exigir responsável/Assumir e sem novo efeito; nova mutação mantém gates/claim/locks. O legado inbox-idempotencia.int.test.ts inteiro10 permanece byteexato e deverá receber RED/GREEN no novo HEAD. Os79cases históricos não incluem esse legado e não homologam este porte. C2 além da retirada de Configupsert no replay precisa medição; nenhum fix de produção foi feito aqui.
+
+Porte local sem push/retarget público; TDD, QA independente, novoCI e aceitevisual dependem do HEAD final corrigido. Não fechar362 nem reatribuir QA de338/365 a D11.

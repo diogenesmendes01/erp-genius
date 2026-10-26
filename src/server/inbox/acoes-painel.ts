@@ -1,4 +1,5 @@
 "use server";
+import {preverNotificadosTarefaInbox,type PedidoPreviaNotificadosTarefa,type PreviaNotificadosTarefa} from "./tarefas-edicao";
 
 import {cancelarAgendadaInboxTx} from "./agendadas-cancelamento";
 import {dadosTarefaModal,criarTarefaInbox,editarTarefaInbox,type DadosModalTarefa,type CriarTarefaInboxInput,type EditarTarefaInboxInput} from "./tarefas-edicao";
@@ -179,4 +180,7 @@ export async function cancelarAgendadaNoInbox(atendimentoId:string,intencaoId:st
  const r=await executarAcao(async()=>{const u=await exigirSessao();await cancelarAgendadaInboxTx(u,atendimentoId,intencaoId);});
  if(r.ok)revalidatePath("/inbox");
  return r;
+}
+export async function preverNotificadosTarefaNoInbox(atendimentoId:string,pedido:PedidoPreviaNotificadosTarefa):Promise<Resultado<PreviaNotificadosTarefa>>{
+ return executarAcao(async()=>preverNotificadosTarefaInbox(await exigirSessao(),atendimentoId,pedido));
 }

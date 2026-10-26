@@ -1,0 +1,11 @@
+# #372 — colisão de cadastro por telefone, C9
+
+Uma corrida entre a leitura e a criação de ContatoWhatsApp podia reverter a operação corretamente, mas mostrar erro genérico. O catch local agora reconhece exclusivamente P2002 da classe Prisma, modelo ContatoWhatsApp e alvo exato telefoneE164 e devolve a mensagem de cadastro/acesso alterado. Outros erros preservam sua identidade. Não há retry automático, consulta após aborto ou adoção do cadastro concorrente.
+
+Origem DEV a41792ca85e2e2a66e55889b87086bf59025d537, selecionada por quatro blobs sobre a fonte pública 8a29b27f0892c2ef94ac87435150b3407766756d, sem ancestrais privados. Preimages e hashes conferidos. C4, inbound, UI, mapas, schema e dependências permanecem iguais à base.
+
+DEV: arquivo unitário EX completo50/50, lint3 e TypeScript original código0. Três cenários nativos autorizados pelo dono reproduziram duas falhas de mensagem e um controle; o mesmo arquivo passou3/3 após a correção, sem filtros, retries ou timeout novo. Terminais RED e2f2ed, GREEN24156f. O integrador restaurou o banco descartável ao snapshot506 depois das duas fases.
+
+C10: duas amostras de colisão COMMIT medem apenas esses cenários instrumentados. Não representam carga, percentis, SLA ou garantia de conclusão em5s. O timeout permanece igual; a medição mais ampla continua pendente.
+
+QA independente da fonte pública0e3d91db concluída: UNIT EX50/50 (7a91f0), TypeScript original código0 (c738a1) e o arquivo nativo completo3/3 (sessão29096, terminal723fa7), sem filtros, retries ou mudança de timeout. Foram preservados três recibos reais com metadata e PIDs distintos. Relatório TESTER SHA2566084b2f312c44682c5890844e93ce1505fbef586699a013b9e317d82dd780f74. O banco próprio T500 foi auditado antes e restaurado1445 depois (87cd54 código0). O histórico ciint divergiu no preflight somente leitura; não houve aplicação de migração para mascarar essa divergência. O TESTER usou seu banco isolado conforme AGENTS.md, registrando a autorização original e essa coordenação sem afirmar que a pergunta humana citou tester. Os gates globais1091arquivos/9869casos, TypeScript, lint e build pertencem à base8a29, antes deste catch; não foram reatribuídos ao novo commit. Esta PR continua em rascunho, com dependências e aceite visual próprios.

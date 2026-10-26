@@ -50,15 +50,22 @@ export function ehPedidoOptOut(corpo: string | null): boolean {
   return KEYWORDS_OPT_OUT.has(corpo.trim().toLowerCase());
 }
 
+function conflitoUnicoInbound(erro: unknown, modelo: string, campos: readonly string[]): boolean {
+  if (!(erro instanceof Prisma.PrismaClientKnownRequestError) || erro.code !== "P2002" || erro.meta?.modelName !== modelo) return false;
+  const alvo = erro.meta.target;
+  return Array.isArray(alvo) && alvo.length === campos.length && alvo.every((campo, i) => campo === campos[i]);
+}
 export type ResultadoInbound = "gravada" | "duplicada" | "numero_desconhecido";
 
 export async function processarMensagemNormalizada(m: InboundNormalizado): Promise<ResultadoInbound> {
-  const numero = await acharNumero(m);
-  if (!numero) return "numero_desconhecido";
+  const numeroEncontrado = await acharNumero(m);
+  if (!numeroEncontrado) return "numero_desconhecido";
+  const numero = numeroEncontrado;
 
   const telefoneContato = telefoneDeWaId(m.contatoWaId);
 
-  try {
+  // Uma tentativa termina (incluindo rollback) antes de iniciar a recuperação.
+  async function gravarTentativa() {
     const ancoraAria: { id: string | null } = { id: null };
     const ancoraTriagem: { id: string | null } = { id: null };
     await prisma.$transaction(async (tx) => {
@@ -163,14 +170,39 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         }
       } else if (!m.fromMe) ancoraTriagem.id = mensagem.id;
     });
-    // Depois do commit: a Aria roda em segundo plano, sem atrasar nem derrubar a ingestão.
-    if (ancoraAria.id) agendarTurnoAria(ancoraAria.id);
-    // Sem setor definido (número multissetor): a Aria tenta classificar; desligada, a mensagem fica na triagem humana.
-    else if (ancoraTriagem.id) agendarTriagemAria(ancoraTriagem.id);
-    return "gravada";
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return "duplicada";
-    throw e;
+    return { ariaId: ancoraAria.id, triagemId: ancoraTriagem.id };
+  }
+
+  let confirmada: Awaited<ReturnType<typeof gravarTentativa>>;
+  try {
+    confirmada = await gravarTentativa();
+  } catch (erro) {
+    // Só a colisão da identidade de Contato permite UMA nova TX, nunca uso da TX abortada.
+    if (conflitoUnicoInbound(erro, "ContatoWhatsApp", ["telefoneE164"])) {
+      try {
+        confirmada = await gravarTentativa();
+      } catch (segundaFalha) {
+        if (await mensagemDuplicadaConfirmada(segundaFalha)) return "duplicada";
+        throw segundaFalha;
+      }
+    } else {
+      if (await mensagemDuplicadaConfirmada(erro)) return "duplicada";
+      throw erro;
+    }
+  }
+  // Apenas os anchors da TX confirmada podem agendar efeitos pós-commit.
+  if (confirmada.ariaId) agendarTurnoAria(confirmada.ariaId);
+  else if (confirmada.triagemId) agendarTriagemAria(confirmada.triagemId);
+  return "gravada";
+
+  async function mensagemDuplicadaConfirmada(erro: unknown): Promise<boolean> {
+    if (!conflitoUnicoInbound(erro, "MensagemWhatsApp", ["numeroId", "providerMessageId"])) return false;
+    // A Promise da TX já rejeitou e fez rollback; leitura independente, sem SQL na TX abortada.
+    const existente = await prisma.mensagemWhatsApp.findUnique({
+      where: { numeroId_providerMessageId: { numeroId: numero.id, providerMessageId: m.providerMessageId } },
+      select: { id: true },
+    });
+    return existente !== null;
   }
 }
 

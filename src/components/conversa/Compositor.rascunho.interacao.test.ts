@@ -8,7 +8,7 @@ import type { PropsCompositor } from "./Compositor";
 const ui = vi.hoisted(() => ({ campo: {} as Record<string, unknown>, botoes: [] as Record<string, unknown>[] }));
 vi.mock("@/components/CampoTexto", async () => { const { forwardRef } = await import("react"); return { CampoTexto: forwardRef((_p) => { ui.campo = _p as Record<string, unknown>; return null; }) }; });
 vi.mock("@/components/Botao", () => ({ Botao: (p: Record<string, unknown>) => { ui.botoes.push(p); return null; } }));
-vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash"].map(k => [k, () => null])));
+vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash", "IconBolt", "IconCamera", "IconFileCheck", "IconFileText", "IconListCheck", "IconMapPin", "IconPhoto", "IconUser"].map(k => [k, () => null])));
 vi.mock("@/components/Menu", () => ({ CLASSE_ITEM_MENU: "", CLASSE_PAINEL_MENU: "" }));
 let root: Root;
 let host: Elemento;
@@ -34,6 +34,27 @@ async function digitar(texto: string) { await act(async () => (ui.campo.onChange
 function eventos(el: Elemento) { const k = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, Record<string, (e?: unknown) => void>>)[k]; }
 async function enviar() { const b = Array.from(host.querySelectorAll("button")).find(b => b.textContent === "Enviar")!; await act(async () => eventos(b).onClick()); }
 async function anexar(nome: string) { const input = host.querySelector("input")!; await act(async () => eventos(input).onChange({ target: { files: [new File(["conteúdo"], nome)], value: nome } })); }
+
+it.each(["Resposta rápida", "Proposta"])("365 composição: callback retido de %s não atravessa o bloqueio da Aria nem uma nova geração", async rotulo => {
+  const abrirProposta = vi.fn();
+  const p = props({ aoEnviarTexto: vi.fn(async () => ({ ok: true as const })), aoEnviarMidia: vi.fn(async () => ({ ok: true as const })), respostas: [{ id: "r365", atalho: "/preco", titulo: "Preço", corpo: "Olá" }], propostas: { oportunidadeId: "op365", aoAbrir: abrirProposta } });
+  await montar(p); await digitar("Rascunho preservado");
+  const anexos = Array.from(host.querySelectorAll("button")).find(b => b.getAttribute("aria-label") === "Anexar")!;
+  await act(async () => eventos(anexos).onClick());
+  const item = Array.from(host.querySelectorAll("button")).find(b => b.getAttribute("aria-label") === rotulo)!;
+  expect(item).toBeDefined();
+  const retido = eventos(item).onClick;
+  await montar({ ...p, bloqueioExterno: true });
+  await act(async () => retido());
+  expect(storage.get("conversa-rascunho:A:responder")).toBe("Rascunho preservado");
+  expect(abrirProposta).not.toHaveBeenCalled();
+  await montar({ ...p, bloqueioExterno: false });
+  await act(async () => retido());
+  expect(storage.get("conversa-rascunho:A:responder")).toBe("Rascunho preservado");
+  expect(abrirProposta).not.toHaveBeenCalled();
+  expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+  expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+});
 
 it.each(["responder", "nota"] as const)("C3 montagem real %s: sucesso de A após trocar para B remove só o rascunho confirmado", async modo => {
   let concluir!: (r: { ok: true }) => void;
@@ -170,8 +191,8 @@ it('PR384 C3: cada anexo indisponível descreve seu motivo real, com IDs únicos
   expect(avisos.every(Boolean)).toBe(true);
   expect(avisos.map(s => s!.textContent)).toEqual([
     'Disponível quando o motor próprio da escola entrar em uso.',
-    'O envio deste tipo pelo Inbox ainda não está disponível.',
     'Disponível quando o motor próprio da escola entrar em uso.',
+    'O envio deste tipo pelo Inbox ainda não está disponível.',
     'Disponível quando o motor próprio da escola entrar em uso.',
     'Disponível quando o motor próprio da escola entrar em uso.',
     'Disponível quando o motor próprio da escola entrar em uso.',
@@ -186,7 +207,7 @@ it('PR384 C3: descrição mantém o ID ao atualizar capacidades e reabrir o menu
   expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
   await abrirAnexos(); await abrirAnexos();
   expect(itensTemporariamenteIndisponiveis().map(b => b.getAttribute('aria-describedby'))).toEqual(ids);
-  expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Contato', 'Enquete', 'Localização']);
+  expect(itensTemporariamenteIndisponiveis().map(b => b.textContent)).toEqual(['Localização', 'Contato', 'Enquete']);
 });
 
 it("358 bloqueio externo conserva arquivo e rascunho; callback retido não envia nem após desbloqueio",async()=>{
