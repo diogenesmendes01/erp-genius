@@ -67,7 +67,7 @@ it("447 C2 identidade conserva status abertos mas distingue encerramento",async(
 });
 
 function handlers447(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return(el as unknown as Record<string,{onClick():void;onChange(e:unknown):void;onSubmit(e:unknown):void}>)[k];}
-const clicar447=async(texto:string)=>act(async()=>handlers447(document.body.querySelectorAll("button").find(b=>b.textContent===texto) as unknown as Elemento).onClick());
+const clicar447=async(texto:string)=>act(async()=>handlers447(Array.from(document.body.querySelectorAll("button")).find(b=>b.textContent===texto) as unknown as Elemento).onClick());
 const mudar447=async(selector:string,value:string)=>act(async()=>handlers447(document.body.querySelector(selector) as unknown as Elemento).onChange({target:{value}}));
 const submit447=async()=>act(async()=>handlers447(document.body.querySelector("form") as unknown as Elemento).onSubmit({preventDefault(){}}));
 function props447(){const p=props();return{...p,usuario:{id:"u",papeis:["GERENTE_COMERCIAL" as const]},item:{...p.item!,finalidade:"COMERCIAL" as const,status:"AGUARDANDO_CLIENTE" as const,responsavelId:"u",numeroId:"n",contatoId:"c",setoresDoNumero:["COMERCIAL" as const,"SECRETARIA" as const]}};}
