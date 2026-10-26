@@ -7697,3 +7697,5 @@ Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97
 
 #358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
 >>>>>>> c4b5211cbe643524c8f10a042031d4d22820b27d
+ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61702/7fcd60),TSC(21151/531055),lint0erros66avisos(48032/1cc03d;únicoincrementoprivadoforaSRC),build2658/EXIT0/buildIdqa-YlX2olWnazLSFrbIYA. Fontes447/448/449 executadas independentemente em9/257,9/265,9/267+lint8EXIT0. PilhaR19 auditada semGrant, SRC/prisma/configs da folha341 literaisROOT. FilhoR20 apenasdocumental antespublicação; ver docs/qa/inbox-publicacao-r20-root.md. Visual/CI/merge main e fechamento deissues continuam pendentes.
+
