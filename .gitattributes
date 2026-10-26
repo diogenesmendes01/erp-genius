@@ -95,3 +95,6 @@ prisma/migrations/20260929130000_contato_whatsapp_nome_editado/migration.sql -te
 
 # Nova migração do Inbox: preservar o checksum aplicado em qualquer checkout.
 /prisma/migrations/20261026010000_origem_prospeccao_ativa/migration.sql text eol=lf
+/prisma/migrations/20261025204000_inbox_tarefa_prioridade_baixa/migration.sql text eol=lf
+/prisma/migrations/20261025204100_inbox_tarefa_notificados/migration.sql text eol=lf
+/prisma/migrations/20261026040000_inbox_tarefa_recorrencia_d10/migration.sql text eol=lf
