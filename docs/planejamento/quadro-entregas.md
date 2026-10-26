@@ -8011,4 +8011,4 @@ DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ti
 
 ### #372 — C9, R30
 
-Catch restrito de colisão real de telefone selecionado do checkpoint DEV a41792ca. RED2+1 e GREEN3, UNIT50/lint/TSC0; banco descartável restaurado506. QA pública exata, medição C10 ampla, visual e integração continuam pendentes. Não concluirissue nesta publicação.
+Catch restrito de colisão real selecionado do DEV a41792ca. DEV RED2+1→GREEN3 e UNIT50/lint/TSC0. TESTER na fonte pública0e3d91db: UNIT50, TSC e nativo3, todos código0; bancoT500 restaurado1445 por87cd54. Gates globais1091/9869 e build pertencem à base8a29 anterior ao catch. Medição C10 ampla, visual e integração continuam pendentes; não concluirissue nesta publicação.
