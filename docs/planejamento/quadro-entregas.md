@@ -7408,12 +7408,3 @@ O gate global original em `d2719c18` encontrou uma falha real na guarda de anún
 O texto abaixo pertence ao checkpoint de setembro, substituído pelo checkpoint datado do Inbox no início deste documento. Não representa a contagem atual da campanha.
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
-
-### Inbox #439 — C3, apresentação do ModalTarefa (25/10/2026)
-
-DEV A em branch isolada sobre a publicação bbdd7549782ff4263550dbe27278a09cba354082. Produção restrita a ModalTarefa.tsx: cinco ícones Tabler genéricos decorativos nos tipos, bloco Responsável inteiro por podeAtribuirResponsavel (sem fallback readonly ou predicado por lista) e rótulos locais de lembrete conforme issue. Seleção, valores null/0/10/30/60, estado, payload, defaults e CAS preservados; sem novos campos D10, label global, CRM/backend, mapa de exceção, parser, config ou dependência.
-
-RED 6d75f9 EXIT 1, 8 falhas/22 controles → GREEN 9cebb0 EXIT 0, 30 testes do modal. Final 85552/61c458 EXIT 0: 17 arquivos completos/662 testes, 92,39 s, original/UTC/w1/heap1024, sem filtros por nome/skips. Lint e433a8 EXIT 0, 2 arquivos/zero avisos. UI real com harness e SSR do carregamento, ícones/seleção, capacidade versus lista, responsável oculto preservado na edição e valores de todos os lembretes. SPEC inbox-modal-tarefa.md e QA inbox-439-c3-modal-tarefa.md. Nenhuma SQL/TSC/build/push; backend literal à base, visual e gates originais/QA independente coordenados pelo ROOT. Refs #334/f347 e AGENTS histórico preservados; nenhuma alteração na revisão #438.
-### Integração R7 PR439
-
-346d8098: quatro exports fechados de ícones no mock de eventos, sem copiar testes futuros. Focal R7 aprovado; aceite visual e integração em main pendentes.
