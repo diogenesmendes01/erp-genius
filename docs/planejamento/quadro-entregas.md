@@ -7147,3 +7147,8 @@ CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCES
 ### PR #432 — base main após integração da #327, R28
 
 A base lógica9bd31f13 foi integrada em main pelo squash414d932a. A diferença de suas árvores contém somente quadro e o registro do anexo327. Esta composição acrescenta esses documentos e o pai main414 à branch432, preservando integralmente a árvore executável7fc073e5 usada no ambiente de QA. A PR pode apontar para main e executar CI sem reatribuir seus gates visuais; aceite visual completo e revisão continuam obrigatórios antes do merge.
+
+
+### PR #432 / issue #328 — matriz R5 e harness R6, 26/10/2026
+
+Matriz única30/30 concluída com código0, com24APP+6PROTO, dois temas e três larguras; fonteAPP7fc preservada. Incorporados três seletores estritos do protótipo e uma rolagem nativa após preencher perda, sem confirmar. Arquivo completo179/179 e lint2 código0; TypeScript original8GB código0 (a4e7e4), sem alterar includes/excludes. Provas e limitações em docs/qa/inbox-328-visual-r5-harness-r6-bd6f.md. R1–R4 negativos preservados e não somados. QA independente comunicada favorável com ressalva do badgeNextDEV sobre o canto de Voltar nos dois temas celular, sem prova de clique na região coberta. Banco descartável auditado426tabelas/506originais,520total/2prefs,zeroLISTEN e restaurado pelo integrador. ZIPcurado30PNG+README+manifesto SHA b012e8d2 pronto localmente; sem upload desta frente. PR continua DRAFT: anexo autorizado, revisão e CIheadfinal pendentes antes de merge e fechamento328. Nenhum produto/schema/deps/config, mensagem real ou deploy alterado.
