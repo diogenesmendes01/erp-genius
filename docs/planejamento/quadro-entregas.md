@@ -7704,3 +7704,7 @@ ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61
 #377 / PR449 R22 ROOT — C1–C3: aplicabilidade de Insights explícita/padrãofalse do painel→agendamento; sem GET/CTA/aviso quando inaplicável, revogação invalida confirmação/ACK sem apagar texto. REDa3b4445falhas/9controles→GREENfinal10arquivos227casos38637/6940ff EXIT0; lint6 63f62d EXIT0/zeroavisos. TESTER RO283225cc favorável, controles adicionais executados somenteROOT. D12/reserva493 real alinhadas. Sem mudança SQL/provider; regressão global final/TSC/build/QAexecução/visual/CI/publicação pendentes.
 
 R24 — PR #449: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
