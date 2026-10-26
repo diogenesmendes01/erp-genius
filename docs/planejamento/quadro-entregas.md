@@ -8016,3 +8016,18 @@ Composição pública365 sobre main a20524fc:23arquivos/349testes e lint7 códig
 Integração365 com main bfb85569 preserva Aria/Insights e passa24arquivos/363testes9c8c5e+lint8d5ad47/código0. Dois novos testes retidos têm contraprova causal234b48,semguard2fail/22pass/bytesrestaurados; mock fechado Insights ganhou apenas exports faltantes. Fonte global/CI e visual ainda pendentes; PR457 continua rascunho.
 
 CI457iniciale2b6:TypeScript/build/lintpassaram,doisUNITfusosfalharam3guardas/mocks. Composição corrigida usa captureIDL nativo,mockRodapeapenasexports,exceçãoASTresponsivoúnicamenudeíconescomnegativos;27arquivos/390testesde19c5+lint10 465588/código0. Retirados22delimitadoresdeconflitopreexistentesmain,nãoohistórico.NovaCI/visualpendentes,13pathspróprios.
+
+
+### PR458 #338 — revisão C1/C3/C4 em andamento (DEV B)
+
+Fonteb5c6ea22 pública/ambienteROOTclient0084, sem ancestryprivada. Recorrência separada do lembrete no cron; falhas independentes porintenção/tarefa, snapshotv1inválido impede comCAS/Evento, infra propaga; claim/fanout/Evento atômicos porTask comACLúltima; Modal explica sóocorrência/calendáriooriginal. RED7/75 eREDidentidade1/20 preservados; GREEN10UNIT235/235/lint11zeroavisos, TSCfinalemobservação e nativos7+7autorados aguardam execuçãoleaseRootdevgrav. Não houve DDL/client/profile porDEV, nem SQLciint/devemail. Recibos e limites em QA; não concluir338 nem reatribuir45nativos anteriores/QAind/visual.
+
+Atualização338C1/C3/C4: TSCfinal14054→9f502aEXIT0; lint11zeroavisos e10UNIT235/235. Lease ROOTdevgravPUBLIC503:6arquivosnativoscompletos30/30(7+7+11+1+2+2), seriaisconfigoriginal/Hermes1024/UTC7blank/w1, semfilter/skip/retry/timeoutchange.14pins congelados conferidos iguais após execução. Provas reais de rollbackA/commitB, revogaçãoúltimoEvento, claim2workers, snapshot inválido isolado e calendáriooriginal alcançadas. Somente6casos novos dentro dos14focais, sem somar45históricos. SemNOTIFYnovo, semSQLciint/devemail/DDL/restauroDEV. LEASE_END enviado; ROOTrestaura1389. QAindep/seleção/globals/CI/visual pendentes; revisão funcional local não fecha338.
+
+ROOTrestore21eec6/audit2106f5EXIT0 confirmaram1389/428/502ledger/sequências/6catálogos e0atores/listeners apósLEASE_END338. Novo códigoSNAPSHOT_INVALIDO está documentado no catálogo sem novo tipo de Evento/schema. Checkpoint local15paths autorizado; globalUNIT/build pós-fix ainda aguardam coordenação com ROOT/A, QAindep/CI/visualC3 pendentes.
+
+### #338 — publicação complementar sobre main
+
+As correções C1/C3/C4 foram selecionadas do checkpoint `26595e9e` para uma branch com pai direto em main `d95d99dc`, após o merge externo da #458. Os 14 arquivos fora do quadro mantêm os blobs exatos do checkpoint, sobre preimages conferidas; o quadro da main e o histórico externo foram preservados. Não há ancestrais privados nem nova migração.
+
+235 testes offline e 30 nativos em seis arquivos completos passaram no código selecionado, assim como TypeScript e lint focal. O integrador restaurou e auditou o banco descartável em 1.389 linhas/428 tabelas. Os gates globais locais, CI pública da composição, QA independente do novo commit e aceite visual após C3 continuam pendentes; a PR complementar nasce em rascunho.

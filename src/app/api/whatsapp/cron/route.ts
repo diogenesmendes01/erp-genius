@@ -10,6 +10,7 @@ import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
 import { rodarFechamentoComissoes } from "@/server/financeiro/cron-financeiro";
 import { rodarFechamentosPendentes } from "@/server/matricula/cron-fechamento";
 import { rodarLembretesTarefas } from "@/server/crm/lembretes";
+import { rodarRecorrenciasTarefas } from "@/server/crm/tarefa-recorrencia-materializacao";
 import { rodarAlertasSla } from "@/server/whatsapp/alertas-sla";
 import { reprocessarTurnosPendentes } from "@/server/aria/turno/orquestrador";
 import { expirarSugestoesAria } from "@/server/aria/expiracao";
@@ -60,6 +61,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Eventos do motor recebidos e ainda não processados (ordem preservada, dreno serializado).
   const eventosMotor = await seguro("eventos_motor", () => drenarEventosMotor(agora));
   // Lembretes de tarefa do CRM (Fase 2): claim atômico + notificação ao responsável; sem envio externo.
+  const recorrenciasTarefas = await seguro("recorrencias_tarefas", () => rodarRecorrenciasTarefas());
   const lembretesTarefas = await seguro("lembretes_tarefas", () => rodarLembretesTarefas(agora));
   // SLA: prazo da 1ª resposta estourado vira aviso no sino (uma vez por atendimento); sem envio externo.
   const alertasSla = await seguro("alertas_sla", () => rodarAlertasSla(agora));
@@ -80,6 +82,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     fechamentosPendentes,
     linhaComercial,
     eventosMotor,
+    recorrenciasTarefas,
     lembretesTarefas,
     alertasSla,
     aria,
