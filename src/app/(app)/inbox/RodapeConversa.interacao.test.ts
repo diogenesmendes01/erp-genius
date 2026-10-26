@@ -3,7 +3,7 @@ import { beforeEach,expect,it,vi } from 'vitest';
 import { criarGanchos,elementos,identidadeNoReact } from '@/test/tela-sem-dom';
 import { criarDomMinimo } from '@/test/dom-minimo';
 const m=vi.hoisted(()=>({g:null as ReturnType<typeof criarGanchos>|null}));
-vi.mock('react',async orig=>{const r=await orig<typeof import('react')>();return {...r,useState:((i:unknown)=>m.g!.useState(i)) as typeof r.useState,useId:()=>m.g!.useId()};});
+vi.mock('react',async orig=>{const r=await orig<typeof import('react')>();return {...r,useImperativeHandle:()=>{},useState:((i:unknown)=>m.g!.useState(i)) as typeof r.useState,useId:()=>m.g!.useId()};});
 import { RodapeConversa,type PropsRodapeConversa } from './RodapeConversa';
 import { Compositor } from '@/components/conversa/Compositor';
 const base:PropsRodapeConversa={modo:'compositor',atendimentoId:'a',podeEnviar:true,capacidades:[],aoEnviarTexto:async()=>({ok:true}),aoEnviarMidia:async()=>({ok:true}),aoNota:async()=>({ok:true})};
