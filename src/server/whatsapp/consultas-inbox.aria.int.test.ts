@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { cartoesDaThread } from "../aria/sugestoes-thread";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Papel, type AcaoAgenteIATipo, type StatusAcaoAgenteIA } from "@prisma/client";
+import { Papel, type StatusAcaoAgenteIA } from "@prisma/client";
 import { expirarSugestoesAria } from "@/server/aria/expiracao";
 
 vi.mock("@/lib/auth", () => ({ auth: vi.fn() }));
@@ -27,8 +27,8 @@ async function cenario(o: { semLead?: boolean } = {}) {
     data: { atendimentoId: a.id, conversaId: conv.conversaId, numeroId: numero.id, direcao: "ENTRADA", corpo: "oi", driver: "MOTOR", status: "ENTREGUE", providerMessageId: "aria-ins-1" },
   });
   const turno = await prisma.turnoAgenteIA.create({ data: { ancoraMensagemId: ancora.id, atendimentoId: a.id, tipo: "ATENDIMENTO", resultado: "SUGERIU" } });
-  const sugerir = (o: { acao?: AcaoAgenteIATipo; status?: StatusAcaoAgenteIA; expiraEm: Date | null; texto?: string; oportunidadeId?: string; id?: string; criadoEm?: Date; decididaEm?: Date | null; decididaPorId?: string | null }) => prisma.acaoAgenteIA.create({
-    data: { id: o.id, criadoEm: o.criadoEm, decididaEm: o.decididaEm, decididaPorId: o.decididaPorId, turnoId: turno.id, atendimentoId: a.id, oportunidadeId: o.oportunidadeId ?? null, acao: o.acao ?? "RESPONDER", modoConfigurado: "SUGERIR", status: o.status ?? "SUGERIDA", confianca: 70, payload: { texto: o.texto ?? "Olá!" }, reversivel: false, expiraEm: o.expiraEm },
+  const sugerir = (o: { status?: StatusAcaoAgenteIA; expiraEm: Date | null; texto?: string; oportunidadeId?: string; id?: string; criadoEm?: Date; decididaEm?: Date | null; decididaPorId?: string | null }) => prisma.acaoAgenteIA.create({
+    data: { id: o.id, criadoEm: o.criadoEm, decididaEm: o.decididaEm, decididaPorId: o.decididaPorId, turnoId: turno.id, atendimentoId: a.id, oportunidadeId: o.oportunidadeId ?? null, acao: "RESPONDER", modoConfigurado: "SUGERIR", status: o.status ?? "SUGERIDA", confianca: 70, payload: { texto: o.texto ?? "Olá!" }, reversivel: false, expiraEm: o.expiraEm },
   });
   return { vendedor, gerente, a, lead, numero, sugerir };
 }
@@ -122,21 +122,12 @@ describe("cartoes349 autorizados e DTO", () => {
     expect(await carregarAriaDoAtendimento(outro, c.a.id, agora)).toMatchObject({ podeDecidir: false, cartoes: [], pausada: false });
     expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id, agora)).toMatchObject({ podeDecidir: false, cartoes: [] });
   });
-  it("NOTA_INTERNA preserva capacidade por cartão quando a capacidade geral é falsa", async () => {
+  it("podeDecidir usa lead do atendimento mesmo com cartao autorizado pela propria oportunidade", async () => {
     const c = await cenario({ semLead: true });
     const op = await prisma.oportunidade.create({ data: { nome: "Acao da equipe", vendedorDonoId: c.vendedor.id } });
-    const s = await c.sugerir({ acao: "NOTA_INTERNA", expiraEm: null, oportunidadeId: op.id });
+    const s = await c.sugerir({ expiraEm: null, oportunidadeId: op.id });
     const r = await carregarAriaDoAtendimento(c.gerente, c.a.id, agora);
     expect(r?.podeDecidir).toBe(false); expect(r?.cartoes.map(x => x.id)).toEqual([s.id]);
-    expect(r?.cartoes[0]).toMatchObject({acao:"NOTA_INTERNA",podeDecidir:true,podeDesfazer:false});
-  });
-  it.each(["RESPONDER","ENVIAR_DOCUMENTO"] as const)("%s sem lead efetivo atual não herda escopo só da oportunidade explícita", async acao => {
-    const c = await cenario({semLead:true});
-    const op = await prisma.oportunidade.create({data:{nome:"Alvo explícito da equipe",vendedorDonoId:c.vendedor.id}});
-    const s = await c.sugerir({acao,expiraEm:null,oportunidadeId:op.id});
-    const r = await carregarAriaDoAtendimento(c.gerente,c.a.id,agora);
-    expect(r?.podeDecidir).toBe(false);
-    expect(r?.cartoes.some(cartao=>cartao.id===s.id)).toBe(false);
   });
   it("expirar produz cartao recente EXPIRADA, sem decisor humano", async () => {
     const c = await cenario(), s = await c.sugerir({ expiraEm: new Date(agora.getTime() - 1) });
