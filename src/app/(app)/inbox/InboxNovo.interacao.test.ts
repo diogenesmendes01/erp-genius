@@ -123,7 +123,7 @@ function tela(p: PropsInboxNovo = props): ReactNode {
   if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [], closest: () => null, focus() {} };
   return t;
 }
-const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
+const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as Pick<import("./ConversaAberta").PropsConversaAberta, "podeEnviar" | "falhaPermissao" | "podeUsarInsights" | "aoMudar">;
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
 describe("InboxNovo: identidades React dos painéis", () => {
@@ -1198,6 +1198,14 @@ it("377 abaInsights exigeveLead e recebe porta física somente da seleção atua
 });
 it("377 semveLead nãoofereceabaInsights mesmoCOMERCIAL",async()=>{
  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:false,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:false}})}));tela();await esvaziar();const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as {id:string}[]).some(a=>a.id==="insights")).toBe(false);
+});
+
+it("449 C1 agendamento recebe aplicabilidade do painel atual e revogação não conserva capacidade antiga",async()=>{
+ expect(conversa(tela()).podeUsarInsights).toBe(false);
+ respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",podeEnviar:true,acoes:{},cabecalho:cabecalho326({capacidades:{veLead:true}})}));
+ (conversa(tela()).aoMudar as()=>void)();tela();await esvaziar();expect(conversa(tela()).podeUsarInsights).toBe(true);
+ respostaPainel=()=>new Response("",{status:404});(conversa(tela()).aoMudar as()=>void)();tela();await esvaziar();expect(conversa(tela()).podeUsarInsights).toBe(false);
+ const painel=elementos(tela()).find(n=>n.type===PainelContato)!;expect((painel.props.abas as{id:string}[]).some(a=>a.id==="insights")).toBe(false);
 });
 
 it.each(["Atendimento transferido para Secretaria.", "Falha externa não deve virar aviso de sucesso"])("447 C1 confirmação local persiste após remover conversa e ignora texto externo: %s",async(texto)=>{
