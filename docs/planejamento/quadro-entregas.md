@@ -7954,3 +7954,10 @@ DEV confirmou113UNIT/7arquivos e24nativos completos no checkpoint final (aceite5
 ### PR #454 — validação independente da decisão de documentos, R28
 
 Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco descartávelT500: oito arquivos completos de integração38/38, focal6/175, TypeScript original, unidade global1078arquivos/9623testes e lint0erros/57avisos, todos com terminais0. Build original também passou com heap8GB herdado pelos workers; o OOM anterior do worker4GB foi preservado e não é resultado aprovado. Banco restaurado1445 antes dos gates globais. Nenhuma fonte/config/asserção foi alterada para obter aprovação. Este filho acrescenta somente documentação; os testes mantêm atribuição à fonte dd449ac. CI e aceite visual pertinentes à base conservam seus gates. Registro: docs/qa/inbox-454-validacao-r28-root.md.
+
+
+### PR #453 C1/C3 — contato e lista determinística, R29
+
+O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
+
+DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
