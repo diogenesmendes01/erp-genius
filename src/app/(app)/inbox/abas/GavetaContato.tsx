@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { Drawer } from "@/components/Drawer";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
@@ -9,7 +9,7 @@ import { ORIGEM_CANAL_LABEL } from "@/lib/labels";
 import { editarContatoNoInbox } from "@/server/inbox/acoes-painel";
 import type { CampoPainel, DetalhesPainel } from "@/server/inbox/painel-detalhes";
 import type { ValorCampo } from "@/server/crm/campos";
-import { diffContato, formDoContato, type FormContato } from "./form-contato";
+import { diffContato, formDoContato, type FormContato,type FormCadastroContato } from "./form-contato";
 
 export type PropsGavetaContato = {
   atendimentoId: string; dados: DetalhesPainel | null; erro?: boolean; podeVerFicha?: boolean;
@@ -24,19 +24,32 @@ function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false,
   if (!snapshot && dados) { setSnapshot(dados); setForm(formDoContato(dados)); }
   const acao = useAcaoCliente({ idempotente: true }), id = useId(), vivo = useRef(false);
   useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);
+  const [cadastroInvalidado,setCadastroInvalidado]=useState(false);
+  const cadastroInvalidadoRef=useRef(false);
+  useLayoutEffect(()=>{cadastroInvalidadoRef.current=cadastroInvalidado;return()=>{cadastroInvalidadoRef.current=true;};},[cadastroInvalidado]);
+  const cadastroAtual=!!dados?.cadastroPessoa&&dados.informacoesCadastro?.catalogo!==null&&!!dados?.informacoesCadastro&&dados.pessoa?.id===snapshot?.pessoa?.id&&dados.oportunidade?.id===snapshot?.oportunidade?.id;
+  if(snapshot?.cadastroPessoa&&!cadastroAtual&&!cadastroInvalidado)setCadastroInvalidado(true);
+  const podeEditarCadastro=!!snapshot?.informacoesCadastro?.catalogo&&cadastroAtual&&!cadastroInvalidado;
   const lido = snapshot ? formDoContato(snapshot) : null;
-  const diff = lido && form ? diffContato(lido, form) : {};
+  const editado=form?{...form}:null;
+  if(editado&&!podeEditarCadastro)delete editado.cadastro;
+  const diff = lido && editado ? diffContato(lido, editado) : {};
   const mudou = Object.keys(diff).length > 0;
   function mudar<K extends keyof Omit<FormContato, "campos">>(campo: K, valor: FormContato[K]) {
     if (!acao.ocupado) setForm(f => f ? { ...f, [campo]: valor } : f);
+  }
+  function mudarCadastro<K extends keyof FormCadastroContato>(campo:K,valor:string){
+    if(!acao.ocupado&&podeEditarCadastro&&!cadastroInvalidadoRef.current)setForm(f=>f?.cadastro?{...f,cadastro:{...f.cadastro,[campo]:valor}}:f);
   }
   function mudarCampo(campoId: string, valor: ValorCampo) {
     if (!acao.ocupado) setForm(f => f ? { ...f, campos: { ...f.campos, [campoId]: valor } } : f);
   }
   async function salvar(e: { preventDefault(): void }) {
     e.preventDefault(); if (!mudou || acao.ocupado || !snapshot?.pessoa) return;
+    const enviouCadastro=!!diff.pessoa&&["documento","tipoDocumentoId","documentoPaisEmissor","nascimento"].some(k=>Object.prototype.hasOwnProperty.call(diff.pessoa,k));
+    if(enviouCadastro&&cadastroInvalidadoRef.current)return;
     const resultado = await acao.executar(() => editarContatoNoInbox(atendimentoId, { pessoaIdEsperada: snapshot.pessoa!.id, ...diff }));
-    if (resultado?.tipo === "ok" && vivo.current) { aoSalvo(); aoFechar(); }
+    if (resultado?.tipo === "ok" && vivo.current&&(!enviouCadastro||!cadastroInvalidadoRef.current)) { aoSalvo(); aoFechar(); }
   }
   function recarregarDetalhes(e: MouseEvent<HTMLButtonElement>) {
     // O Retry sai do DOM ao começar a aquisição; Fechar permanece disponível.
@@ -56,6 +69,14 @@ function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false,
         <Campo rotulo="Origem do contato">{ligacao => <select {...ligacao} name="origemCanal" value={form.origemCanal} disabled={acao.ocupado} onChange={e => mudar("origemCanal", e.target.value as FormContato["origemCanal"])} className={CONTROLE}>
           <option value="">Sem origem</option>{Object.entries(ORIGEM_CANAL_LABEL).map(([valor,rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
         </select>}</Campo>
+        {podeEditarCadastro&&form.cadastro&&<fieldset className="space-y-4">
+          <legend className="text-sm font-medium">Cadastro pessoal</legend>
+          <Campo rotulo="Documento pessoal">{ligacao=><input {...ligacao} name="documento" value={form.cadastro!.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)} className={CONTROLE}/>}</Campo>
+          <Campo rotulo="Tipo de documento">{ligacao=><select {...ligacao} name="tipoDocumentoId" value={form.cadastro!.tipoDocumentoId} disabled={acao.ocupado} onChange={e=>mudarCadastro("tipoDocumentoId",e.target.value)} className={CONTROLE}><option value="">Sem tipo</option>{snapshot.informacoesCadastro?.catalogo?.map(t=><option key={t.id} value={t.id}>{t.pais.nome} · {t.nome}</option>)}</select>}</Campo>
+          <Campo rotulo="País emissor (ISO)">{ligacao=><input {...ligacao} name="documentoPaisEmissor" value={form.cadastro!.documentoPaisEmissor} maxLength={2} disabled={acao.ocupado} onChange={e=>mudarCadastro("documentoPaisEmissor",e.target.value)} className={CONTROLE}/>}</Campo>
+          <Campo rotulo="Nascimento">{ligacao=><input {...ligacao} name="nascimento" type="date" value={form.cadastro!.nascimento} min="0001-01-01" max="9999-12-31" disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)} className={CONTROLE}/>}</Campo>
+          <p className="text-sm text-gray-600">Documento e nascimento são opcionais. Confira o tipo e o país emissor.</p>
+        </fieldset>}
         {snapshot.campos.map(campo => <CampoPersonalizado key={campo.id} campo={campo} valor={form.campos[campo.id]} ocupado={acao.ocupado} aoMudar={valor => mudarCampo(campo.id, valor)} />)}
         {snapshot.pessoa.empresa && <section className="space-y-1 text-sm"><h3 className="font-medium">Empresa</h3><p>{snapshot.pessoa.empresa.nome}</p>{podeVerFicha && <a href={"/contatos?c=" + encodeURIComponent(snapshot.pessoa.id)} className="text-brand-700 underline">Trocar a empresa na ficha completa</a>}</section>}
         <FeedbackAcao erro={acao.erro} />

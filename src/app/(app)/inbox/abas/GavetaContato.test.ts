@@ -1,4 +1,4 @@
-import { act, createElement, StrictMode } from "react";
+import { act, createElement, StrictMode, useLayoutEffect } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -8,7 +8,7 @@ import { GavetaContato, type PropsGavetaContato } from "./GavetaContato";
 const { salvar } = vi.hoisted(() => ({ salvar: vi.fn() }));
 vi.mock("@/server/inbox/acoes-painel", () => ({ editarContatoNoInbox: salvar }));
 vi.mock("@tabler/icons-react", () => ({ IconX: (p: object) => createElement("span", p) }));
-const dados: DetalhesPainel = { pessoa: { id: "p326", nome: "Pessoa fictícia326", email: "antes@example.test", cidade: "Origem", cargo: null, linkedin: null, origemCanal: "WHATSAPP", telefone: "+5500000000326", empresa: { id: "e326", nome: "Empresa fictícia326", documento: "RUC-FICTICIO", segmentoMercado: null, porte: null, site: null } }, oportunidade: null, b2b: null, campos: [
+const dados: DetalhesPainel = { cadastroPessoa:null, informacoesCadastro:null, pessoa: { id: "p326", nome: "Pessoa fictícia326", email: "antes@example.test", cidade: "Origem", cargo: null, linkedin: null, origemCanal: "WHATSAPP", telefone: "+5500000000326", empresa: { id: "e326", nome: "Empresa fictícia326", documento: "RUC-FICTICIO", segmentoMercado: null, porte: null, site: null } }, oportunidade: null, b2b: null, campos: [
   { id: "texto", nome: "Objetivo", tipo: "TEXTO", opcoes: [], obrigatorio: false, valor: "Inicial", ia: true },
   { id: "numero", nome: "Horas", tipo: "NUMERO", opcoes: [], obrigatorio: false, valor: 0, ia: false },
   { id: "bool", nome: "Disponível", tipo: "BOOLEANO", opcoes: [], obrigatorio: false, valor: false, ia: false },
@@ -23,7 +23,8 @@ const botao = (nome: string) => Array.from(host.querySelectorAll("button")).find
 async function digitar(nome: string, value: string) { await act(async () => { eventos(campo(nome)).onChange({ target: { value } }); }); }
 async function enviar() { await act(async () => { void eventos(host.querySelector("form")!).onSubmit({ preventDefault() {} }); }); }
 const base: PropsGavetaContato = { atendimentoId: "A", dados, aoFechar() {}, aoSalvo() {}, podeVerFicha: true };
-async function montar(p: Partial<PropsGavetaContato> = {}) { await act(async () => root.render(createElement(StrictMode, null, createElement(GavetaContato, { ...base, ...p })))); }
+function AncestralLayout({p,aposCommit}:{p:PropsGavetaContato;aposCommit?:()=>void}){useLayoutEffect(()=>{aposCommit?.();},[aposCommit]);return createElement(GavetaContato,p);}
+async function montar(p: Partial<PropsGavetaContato> = {},aposCommit?:()=>void) { await act(async () => root.render(createElement(StrictMode, null, createElement(AncestralLayout, {p:{...base,...p},aposCommit})))); }
 beforeEach(async () => {
   vi.resetAllMocks(); salvar.mockResolvedValue({ ok: true }); ouvintes.length = 0;
   const dom = criarDomMinimo(); doc = dom.documento;
@@ -90,3 +91,13 @@ it("retry entrega foco ao Fechar persistente antes de remover o botão e conserv
   await montar({dados,erro:false,aoRecarregar:recarregar});
   expect(campo("nome")).toBeTruthy();expect(doc.activeElement===fechar).toBe(true);expect(salvar).not.toHaveBeenCalled();
 });
+
+const dadosCadastro:DetalhesPainel={...dados,cadastroPessoa:{documento:"DOC ORIGINAL",tipoDocumentoId:"tipo-cr",documentoPaisEmissor:"CR",nascimento:"2000-02-29"},informacoesCadastro:{idade:26,documento:{tipoNome:"Cédula",paisNome:"Costa Rica",paisCodigoISO:"CR",validado:false},catalogo:[{id:"tipo-cr",nome:"Cédula",pais:{id:"cr",nome:"Costa Rica",codigoISO:"CR"}}]}};
+it("cadastro autorizado exibe4controles reais sem editar idade e envia civil sem instante",async()=>{await montar({dados:dadosCadastro});for(const nome of ["documento","tipoDocumentoId","documentoPaisEmissor","nascimento"])expect(campo(nome)).not.toBeNull();expect(host.querySelector('[name="idade"]')).toBeNull();await digitar("nascimento","2001-03-01");await enviar();expect(salvar).toHaveBeenCalledWith("A",{pessoaIdEsperada:"p326",pessoa:{nascimento:"2001-03-01"}});});
+it("refresh autorizado preserva mesmo input físico e rascunho cadastral",async()=>{await montar({dados:dadosCadastro});const input=campo("documento");await digitar("documento","RASCUNHO LOCAL");await montar({dados:{...dadosCadastro,cadastroPessoa:{...dadosCadastro.cadastroPessoa!,documento:"SERVIDOR NOVO"}}});expect(campo("documento")).toBe(input);expect((input as Elemento&{value:string}).value).toBe("RASCUNHO LOCAL");});
+it("negação nova oculta cadastro e não envia rascunho sensível com edição antiga",async()=>{await montar({dados:dadosCadastro});await digitar("documento","RASCUNHO SENSIVEL");await digitar("cidade","Cidade nova");await montar({dados});expect(host.querySelector('[name="documento"]')).toBeNull();expect(host.textContent).not.toContain("RASCUNHO SENSIVEL");await enviar();expect(salvar).toHaveBeenCalledWith("A",{pessoaIdEsperada:"p326",pessoa:{cidade:"Cidade nova"}});});
+it("ACK antigo após perda do gate não fecha nem reaproveita cadastro na mesma abertura",async()=>{let resolver!:(r:unknown)=>void;salvar.mockImplementation(()=>new Promise(r=>{resolver=r;}));const fechar=vi.fn(),salvo=vi.fn();await montar({dados:dadosCadastro,aoFechar:fechar,aoSalvo:salvo});await digitar("documento","ENVIADO");await enviar();await montar({dados,aoFechar:fechar,aoSalvo:salvo});await montar({dados:dadosCadastro,aoFechar:fechar,aoSalvo:salvo});await act(async()=>resolver({ok:true}));expect(fechar).not.toHaveBeenCalled();expect(salvo).not.toHaveBeenCalled();expect(host.querySelector('[name="documento"]')).toBeNull();});
+
+it("save antigo após refresh não restaura Doc/DOB do snapshot não editado",async()=>{await montar({dados:dadosCadastro});await digitar("nome","Nome novo");await montar({dados:{...dadosCadastro,cadastroPessoa:{...dadosCadastro.cadastroPessoa!,documento:"DOC CONCORRENTE",nascimento:"2001-03-01"}}});await enviar();expect(salvar).toHaveBeenCalledWith("A",{pessoaIdEsperada:"p326",pessoa:{nome:"Nome novo"}});});
+it("handler antigo de submit não despacha cadastro após negação vigente",async()=>{await montar({dados:dadosCadastro});await digitar("documento","RASCUNHO");const submit=eventos(host.querySelector("form")!).onSubmit;await montar({dados});await act(async()=>{await submit({preventDefault(){}});});expect(salvar).not.toHaveBeenCalled();});
+it("Gaveta veta callback retido no layout ancestral sem substituir nó físico do form",async()=>{await montar({dados:dadosCadastro});await digitar("documento","RASCUNHO ANTES COMMIT");const form=host.querySelector("form")!,submit=eventos(form).onSubmit,noLayout=vi.fn(()=>{expect(host.querySelector("form")).toBe(form);submit({preventDefault(){}});});await montar({dados},noLayout);expect(noLayout).toHaveBeenCalledOnce();expect(salvar).not.toHaveBeenCalled();expect(campo("nome")).not.toBeNull();});

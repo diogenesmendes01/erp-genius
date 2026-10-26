@@ -13,13 +13,16 @@ import { destinoDoArraste } from "@/server/crm/etapas";
 import { comOportunidadeDoInboxTx } from "./contexto-oportunidade";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
-import { ErroRegra, exigirSessao } from "@/server/_shared/sessao";
+import { ErroRegra, exigirSessao, apenasPortal } from "@/server/_shared/sessao";
 import { alterarTagNaTransacao, criarOuObterTagNaTransacao } from "@/server/crm/tags";
 import { EditarPessoaSchema, editarPessoaNaTransacao, type EditarPessoaInput } from "@/server/crm/contatos";
 import { definirValorCampoNaTransacao, validarValorCampo } from "@/server/crm/campos";
 import { capacidadesPainel } from "./permissoes";
 import { pessoaDoAtendimento } from "./painel-detalhes";
 import { avisarAtendimento } from "./aviso";
+import {temCadastroPessoa,erroSeguroCadastroPessoa} from "@/server/crm/pessoa-cadastro";
+import {capacidadesCrm} from "@/server/crm/permissoes";
+import {escopoPessoas} from "@/server/crm/pessoas";
 
 const Id = z.string().min(1, "Contato não encontrado.");
 async function executarTag(atendimentoId: string, entrada: { tipo: "atribuir" | "remover"; tagId: string } | { tipo: "criar"; nome: string }): Promise<Resultado<{ tagId: string }>> {
@@ -66,10 +69,15 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
   return executarAcao(async () => {
     const sessao = await exigirSessao();
     const dados = EdicaoContatoSchema.parse(input), id = Id.parse(atendimentoId);
+    const cadastroSolicitado=temCadastroPessoa(dados.pessoa);
     const ids = (dados.campos ?? []).map(c => c.campoId);
     if (new Set(ids).size !== ids.length) throw new ErroRegra("Não repita o mesmo campo.");
     await prisma.$transaction(async tx => {
-      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
+      if(cadastroSolicitado)await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR NO KEY UPDATE`;
+      else await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
+      const lerBindingCadastro=()=>tx.atendimentoWhatsApp.findUnique({where:{id},select:{id:true,finalidade:true,leadId:true,conversaId:true,conversa:{select:{contatoId:true,contato:{select:{id:true,pessoaId:true,leadId:true}}}}}});
+      const bindingCadastro=cadastroSolicitado?await lerBindingCadastro():null;
+      if(cadastroSolicitado&&bindingCadastro?.finalidade!=="COMERCIAL")throw new ErroRegra("Contato não encontrado.");
       // Cópia local: a sessão memoizada/congelada não é alterada. Frescura usa somente esta tx.
       const autor = { ...sessao, papeis: [...sessao.papeis] };
       const pessoa = await pessoaDoAtendimento(autor, id, tx);
@@ -78,11 +86,21 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
       if (pessoa.pessoaId !== dados.pessoaIdEsperada) throw new ErroRegra("O contato mudou. Reabra ou atualize a ficha antes de salvar.");
       const revalidar = async () => {
         const fresco = await tx.usuario.findUnique({ where: { id: autor.id }, select: { nome: true, papeis: true, permissoes: true, ativo: true } });
-        if (!fresco?.ativo) throw new ErroRegra("Sua sessão não está mais ativa.");
+        if (!fresco?.ativo || (cadastroSolicitado&&apenasPortal({...fresco,id:autor.id}))) throw new ErroRegra("Sua sessão não está mais ativa.");
         Object.assign(autor, { nome: fresco.nome, papeis: fresco.papeis, permissoes: fresco.permissoes });
         const atual = await pessoaDoAtendimento(autor, id, tx);
         if (!atual || atual.pessoaId !== pessoa.pessoaId || atual.leadId !== pessoa.leadId) throw new ErroRegra("O contato mudou enquanto você editava. Recarregue o painel e tente de novo.");
         if (!capacidadesPainel(autor, { finalidade: "COMERCIAL", veLead: atual.leadId !== null }).editarContato) throw new ErroRegra("Você não tem acesso a esta função do CRM.");
+        if(cadastroSolicitado){
+          const crm=capacidadesCrm(autor.papeis);
+          if(!crm.has("contatos.ver")||!crm.has("contatos.editar"))throw new ErroRegra("Você não tem acesso a esta função do CRM.");
+          const permitida=await tx.pessoa.findFirst({where:{AND:[{id:pessoa.pessoaId,mescladaEmId:null},await escopoPessoas(autor,tx)]},select:{id:true}});
+          if(!permitida)throw new ErroRegra("Contato não encontrado.");
+          const bindingAtual=await lerBindingCadastro();
+          if(!bindingAtual||bindingAtual.finalidade!=="COMERCIAL"||JSON.stringify(bindingAtual)!==JSON.stringify(bindingCadastro))throw new ErroRegra("O contato mudou. Recarregue o painel.");
+          const ultimo=await tx.usuario.findUnique({where:{id:autor.id},select:{nome:true,papeis:true,permissoes:true,ativo:true}});
+          if(!ultimo?.ativo||apenasPortal({...ultimo,id:autor.id})||JSON.stringify(ultimo.papeis)!==JSON.stringify(autor.papeis))throw new ErroRegra("Sua autorização mudou. Recarregue o painel.");
+        }
       };
       await revalidar();
       // Valida todos os valores antes de qualquer escrita; o núcleo também revalida o domínio vigente.
@@ -100,7 +118,8 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
         mudou = alterado || mudou;
       }
       if (mudou) await avisarAtendimento(tx, id);
-    });
+      if(cadastroSolicitado)await revalidar();
+    }).catch(e=>{if(cadastroSolicitado)erroSeguroCadastroPessoa(e);throw e;});
   });
 }
 

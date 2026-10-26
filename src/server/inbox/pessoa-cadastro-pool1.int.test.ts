@@ -1,0 +1,13 @@
+import {afterAll,beforeEach,expect,it,vi} from "vitest";
+vi.hoisted(()=>{const url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");url.searchParams.set("pool_timeout","2");process.env.DATABASE_URL=url.toString();(globalThis as {prisma?:unknown}).prisma=undefined;});
+const m=vi.hoisted(()=>({auth:vi.fn()}));vi.mock("@/lib/auth",()=>({auth:m.auth}));vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+import {prisma} from "@/lib/prisma";
+import {truncarBanco} from "@/test/integracao";
+import {cenarioCadastroPessoa,entradaCadastro} from "@/test/inbox-cadastro-pessoa";
+import {carregarCadastroPessoaAutorizado} from "@/server/crm/pessoa-cadastro";
+import {obterContato} from "@/server/crm/contatos";
+import {editarContatoNoInbox} from "./acoes-painel";
+beforeEach(truncarBanco);afterAll(()=>prisma.$disconnect());
+it("helper emTX fornecida usa único pool sem consulta global/nested",async()=>{const c=await cenarioCadastroPessoa();const d=await prisma.$transaction(tx=>carregarCadastroPessoaAutorizado(tx,c.dono.id,c.pessoa.id),{timeout:4000});expect(d?.valores).toEqual({documento:null,tipoDocumentoId:null,documentoPaisEmissor:null,nascimento:null});});
+it("wrapper e getter globalTXRC concluem sequencialmente com pool1",async()=>{const c=await cenarioCadastroPessoa();m.auth.mockResolvedValue({user:{id:c.dono.id}});expect(await editarContatoNoInbox(c.atendimento.id,entradaCadastro(c))).toMatchObject({ok:true});expect(await obterContato(c.pessoa.id,c.dono)).toMatchObject({cadastroPessoa:{documento:"FICTICIO-LATAM340",nascimento:"2000-02-29"}});});
+it("FK inválida libera conexão após rollback e tentativa explícita válida funciona",async()=>{const c=await cenarioCadastroPessoa();m.auth.mockResolvedValue({user:{id:c.dono.id}});expect(await editarContatoNoInbox(c.atendimento.id,{pessoaIdEsperada:c.pessoa.id,pessoa:{documento:"FICTICIO",tipoDocumentoId:"inexistente340"}})).toMatchObject({ok:false});expect(await editarContatoNoInbox(c.atendimento.id,entradaCadastro(c))).toMatchObject({ok:true});expect(await prisma.evento.count()).toBe(1);});
