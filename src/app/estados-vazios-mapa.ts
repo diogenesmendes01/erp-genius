@@ -666,7 +666,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
     "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
-    "compacto · Cadastre o contato em Leads para iniciar uma conversa com este número.",
+    "compacto · Este número não está nos seus contatos. Cadastre o contato antes de iniciar a conversa.",
     "compacto · Nenhuma conversa ou contato encontrado.",
   ],
   "src/app/(app)/inbox/PainelSetor.tsx": [
