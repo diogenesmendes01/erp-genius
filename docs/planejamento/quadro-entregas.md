@@ -7706,3 +7706,7 @@ ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61
 #371 / PR450 R22 ROOT — C1/C2: carga explicita "neste setor"; sucesso447C1 cobre contexto vazio e preenchido com assertpayload, sem restaurar min12 no opt-in369. SECRETARIA já presente no própriohead98205a21 do testehook (blobs literais). RED92d017 EXIT1(1falha/22controles)→GREEN8arquivos85casos88474/5f8db7 EXIT0; lint3 9ba5a0 EXIT0/zeroavisos. Sem SQL/policy/contagem nova; visual/CI e publicação da correção pendentes.
 
 R24 — PR #450: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
