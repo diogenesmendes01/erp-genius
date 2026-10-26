@@ -38,14 +38,14 @@ Enquanto uma decisão estiver aberta, vale a **regra atual do ERP** (coluna "Pad
 | D2 | Sugestão aprovada em pacote (mensagem, etapa e tarefa) e com edição? Texto editado sai como Aria ou humano? | Uma sugestão por vez, sem edição | E3 |
 | D3 | Compositor travado enquanto a IA atende? "Assumir" pausa a Aria (motivo `MANUAL`)? | Compositor livre; Aria pausa ao primeiro envio humano | E3 |
 | D4 | Interruptor "Aria ativa" no Inbox? Papéis? Motivo obrigatório? | Fora do Inbox | E3 |
-| D5 | Transferir unificado (pessoa, equipe, fila, devolver à Aria)? Vendedor → vendedor muda a carteira? Contexto opcional? | Fluxos separados atuais; contexto obrigatório (≥ 12 caracteres) | E4 |
+| D5 | Transferir unificado (pessoa, equipe, fila, devolver à Aria)? Vendedor → vendedor muda a carteira? Contexto opcional? | Respondida: fluxo unificado; contexto opcional e resumo autorizado da Aria; transferência entre colegas do mesmo setor sem mudar carteira. Decisão canônica em `docs/planejamento/inbox-decisoes-produto.md`; extensão de acesso #370 ainda tem aprovação técnica específica pendente. API histórica conserva mínimo de 12 caracteres. | E4 |
 | D6 | Presença e carga por pessoa? "Equipes" = setores ou novo cadastro? | Sem presença; equipes = setores | E4 |
 | D7 | Status manual (Aberta, Pendente, Resolvida, Arquivada) ou automático do ERP? | Automático do ERP; sem status manual | E1 (menu ⋮) |
 | D8 | Barra de etapas do Inbox segue as regras do Funil (10 etapas, um passo por vez)? | Segue o Funil (`destinoDoArraste`) | E2 |
 | D9 | Nova conversa por número: quem, em quais números, qual template? | Fluxo atual de "Abrir atendimento" | E4 |
 | D10 | Tarefa no Inbox: prioridade baixa, lembretes, recorrência, "notificar também"; excluir ou cancelar com motivo? | Campos atuais de `criarTarefa`; cancelar com motivo | E2 |
 | D11 | Agendamento: "perguntar se o contato responder", anexo, vínculo, editar, enviar agora? Exige ter assumido? | Campos atuais; não exige ter assumido | E4 |
-| D12 | Insights entram? Quando? Quais campos? | Fora | E4 |
+| D12 | Insights entram? Quando? Quais campos? | Respondida: Insights completos com IA sob demanda pelo botão Atualizar, data da geração e aviso de mensagens não analisadas. Rascunho e Escrever com Aria reutilizam o mesmo texto sugerido; responder continua sujeito a Assumir. Decisão canônica em `docs/planejamento/inbox-decisoes-produto.md`. | E4 |
 | D13 | Painel mostra telefone, e-mail e CPF em todos os setores? Criar CPF e idade na Pessoa? Abas em conversa não comercial? | Regra 5 (sem telefone no pedagógico); sem CPF/idade na Pessoa; abas comerciais só na finalidade comercial | E2 |
 | D14 | Oportunidade, contato e tarefa abrem em gaveta dentro do Inbox ou navegam para fora? | Gaveta dentro do Inbox para edição rápida; "Abrir ficha completa" navega | E2 |
 | D15 | Bloquear contato: Admin e gerentes, com motivo (doc 03)? | Doc 03 | E1 |
