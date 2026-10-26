@@ -1,3 +1,4 @@
+import type { Db } from "@/server/whatsapp/escopo";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { listarItensAgenda, type ItemAgenda, type TarefaLista } from "./mensagens-agendadas";
@@ -40,10 +41,10 @@ export async function obterTarefa(usuario: UsuarioSessao, id: string): Promise<T
 }
 
 /** Quem pode receber tarefas do usuário: a própria equipe (o administrador vê todos os ativos). */
-export async function listarResponsaveisPossiveis(usuario: UsuarioSessao): Promise<{ id: string; nome: string }[]> {
+export async function listarResponsaveisPossiveis(usuario: UsuarioSessao, db: Db = prisma): Promise<{ id: string; nome: string }[]> {
   if (!usuario?.id || !capacidadesCrm(usuario.papeis).has("tarefas.equipe")) return [];
   const admin = usuario.papeis.includes("ADMINISTRADOR");
-  return prisma.usuario.findMany({
+  return db.usuario.findMany({
     where: { ativo: true, ...(admin ? {} : { gerenteComercialId: usuario.id }) },
     select: { id: true, nome: true },
     orderBy: { nome: "asc" },
