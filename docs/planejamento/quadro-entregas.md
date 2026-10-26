@@ -7699,3 +7699,6 @@ Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97
 >>>>>>> c4b5211cbe643524c8f10a042031d4d22820b27d
 ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61702/7fcd60),TSC(21151/531055),lint0erros66avisos(48032/1cc03d;únicoincrementoprivadoforaSRC),build2658/EXIT0/buildIdqa-YlX2olWnazLSFrbIYA. Fontes447/448/449 executadas independentemente em9/257,9/265,9/267+lint8EXIT0. PilhaR19 auditada semGrant, SRC/prisma/configs da folha341 literaisROOT. FilhoR20 apenasdocumental antespublicação; ver docs/qa/inbox-publicacao-r20-root.md. Visual/CI/merge main e fechamento deissues continuam pendentes.
 
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
