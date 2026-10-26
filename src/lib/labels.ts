@@ -1,5 +1,6 @@
 import type { MotivoHandoff } from "@/server/aria/turno/tipos";
 import {
+  EstadoGeracaoInsightInbox,
   MetricaMeta,
   TipoTarefa,
   StatusTarefa,
@@ -622,6 +623,7 @@ export const STATUS_FONTE_CONHECIMENTO_LABEL: Readonly<Record<StatusFonteConheci
 });
 
 export const ORIGEM_CHAMADA_IA_LABEL: Readonly<Record<OrigemChamadaIA, string>> = Object.freeze({
+  INSIGHT: "Insights",
   ATENDIMENTO: "Atendimento",
   TRIAGEM: "Triagem de setor",
   RESUMO: "Resumo",
@@ -908,4 +910,16 @@ export const MOTIVO_HANDOFF_LABEL: Readonly<Record<MotivoHandoff, string>> = Obj
   SEM_PERMISSAO: "Sem permissão na matriz",
   ERRO_PROVEDOR: "Falha do provedor",
   TURNO_INTERROMPIDO: "Turno interrompido",
+});
+
+/** Estimativa de apresentação dos Insights; não altera o estado comercial manual. */
+export const SENTIMENTO_INSIGHT_LABEL: Readonly<Record<"POSITIVO" | "NEUTRO" | "NEGATIVO", string>> = Object.freeze({
+  POSITIVO: "Positivo",
+  NEUTRO: "Neutro",
+  NEGATIVO: "Negativo",
+});
+
+/** Estado público da tentativa; não contém motivo técnico nem contexto histórico. */
+export const ESTADO_GERACAO_INSIGHT_LABEL:Readonly<Record<EstadoGeracaoInsightInbox,string>>=Object.freeze({
+  PROCESSANDO:"Gerando análise",PRONTA:"Análise pronta",FALHOU:"Não foi possível gerar a análise",INCERTO:"Resultado inconclusivo",RECUSADA:"Análise não publicada",DESCARTADA:"Análise descartada",
 });
