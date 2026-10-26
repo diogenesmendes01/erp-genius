@@ -7661,42 +7661,20 @@ ROOT4949 TSC original70661/58b0fb terminou código2 por NodeList.find no helper 
 ROOT R18 — UNIT global d603:1057arquivos/9249casos, EXIT1 por callback opaco no feedback; 9248 controles passaram. Correção mínima mantém hook/textos e cria aviso persistente literal local em InboxNovo. Guarda original intacta; focal5/244 EXIT0 (63074/2a6a3e), lint2SRC EXIT0 (0cec09). Negativos/limites em docs/qa/inbox-447-integracao-r16-root.md. QA T d603:341 SQL19+CAS2 e UNIT12/200,3717/61,guardas4/136 EXIT0 separados; A/T495 restaurados425hashes/EXIT0. Repetir gates globais no filho, visual e publicação pendentes.
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
-<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
-=======
->>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
-<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
-=======
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
->>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
 
 Gates finais ROOT c3ba607f: TypeScript 53106/4abf1e EXIT0; unitária global original 52057/3be700 EXIT0, 1.019 arquivos/8.801 testes; lint 25049/7c6cdc EXIT0, zero erros/63 avisos; build 63477/8d5b15 EXIT0, Z9-O-_AbBHxCBkn16uRV2. OOMs do lint preservados e diagnosticados como análise dos backups gerados não rastreados; cópias movidas fisicamente para evidências externas com hashes, configurações intactas. TESTER também confirmou consumidor com ADMINISTRADOR real (2a569b EXIT0). Aceite visual de transferência e CI/revisão da publicação continuam pendentes; não homologar D5 sem #369/#370.
-<<<<<<< f894017c3be15ff8a060be9104ccd62d848f70d7
-=======
 
 Contador do cabeçalho separado de configuração/última ação/decisão com leitor autorizado compartilhado; limite30 após autorização, keyset100 e Pessoa/CRM preservados. Quatro fallbacks históricos no passado, sem alterar rótulos neutros ou recibo de entrega. RED nativo14776/636807 EXIT1 (2falhas/8pass); GREEN85994/89a8da EXIT0 (10/10), UNIT94717/1961c3 EXIT0 (3arquivos/161), focal finalcaf8e4 EXIT0 (11/106, sem filtros). Lint final e freeze no relatório específico. B493grant/425tabelas/client383; lease liberadaff859e0 e ROOTrestaurouf020fe0/baseline504. Isolamento370 preservado por manifesto17b68d64, stash78d35dbb e checkpoint PRIVADO76f9 de2schema paths; não publicar esse pai. Commit334 terá só deltaC3C4/fixturecarry578. QA independente/gates de composição/visualC1 pendentes, sem afirmar PR334/Aria completa por esse recorte. #370 continua bloqueada aguardando autorização humana específica; nenhum grant foi ligado ao escopo.
->>>>>>> f9ea5209bf7a9337c67fb2f6d1fd715f7f620e75
 
 Guard canônico apenasPortal em contextoAssumirAria antesDB/owner, compartilhado DTO/action com rowTXfresh; sempapéisgenéricosnovos e semalterar[]/mistos. OracleTbyte8196 RED30130/612418 EXIT1 (1ERPpass/1portalfail)→GREEN29510/3b5aa3 EXIT0 2/2; UNIT27d736 RED→728dbe GREEN2/10; regressão42600/93843a EXIT0 2arquivos32casos incluindo3ROLErastreados (não somaroracle2sobreposto); lint9dad9f0/4SRC/zeroavisos. D3TODASSUGERIDAinclusiveCRM documentada/C5JSDoclegado recolocado. QA em docs/qa/inbox-357-portal-apos-espera.md. B493grant/client383, liberação6618d60/0outros; ROOTrestaura depois, não presumir504. Commitisolado357 sobrepaisprivados334/76f9, integrar sódelta. QA/gatescompostos/visual pendentes;370continua aguardandoautorizaçãohumana específica, semgrantACLativado.
->>>>>>> d47b85c6f2ca03e051d236c08963fce19d0e5ee2
 
 Root une334/332/333 comf347C1, backend357e3SRCcorreção literais àcandidata. SeteconflitosSRCresolvidos poruniãodecallbacks/props/testes; painelconservatarefasNoFio+capobrigatória,fixturetipadaganhaassumirfalse. Focal20680/e3a7e2 EXIT0:14arquivos349casoscompletos,UTC/w1/2048; avisosSSRlegados,stdouttruncadopelainterfacesemlogcompleto,nãosilenciar. QAindepf347:8original/553UNIT22/10qualificados0,parecerdeac34...; nãosomarrecortes. Global6ca13588abortadoOOMworker1024,b811df EXIT1/PIDausente9557bd;nãocontaraprovado. Próximoglobal2048w2apósfreeze;TSC/lint/build/visual/CIpendentes. QA docs/qa/inbox-357-integracao-r5-root.md.
-<<<<<<< ed4d24ba6daa2972c4afebe093cc83d59ac918e7
-=======
-<<<<<<< 5e2bf6961f3a8386007cc92535333b63373aea56
->>>>>>> 9cf482f130e2fe26beb8f7aae806c4974744f193
 
 Aceite visual identificou falha adicional em1320px/CQ660: nome comprimido a22,97px; negativo preservado. ROOT substituiu limite fixo de quebra por flex-wrap com largura preferencial da identidade. Focal original4arquivos/37testes EXIT0/2ecc03. Novo build/medidas/Menu/corpus nos dois temas ainda pendentes, sem homologação presumida. Evidências: docs/qa/inbox-header-quebra-intrinseca-r8-root.md. Os15avisos adicionais de lint são seis helpers privados não rastreados; avisos de src permanecem iguais, conforme TESTER.
-<<<<<<< 733eeaaa0310761981542b9b773ccf0c8b195fe0
-=======
-=======
 
 #358 — fixture negativa C1 passa a usar o enum gerado em lugar da string literal legada, mesmo valor; guarda sem-provedores-legados original preservada. Recorte de integracao5arquivos34casos EXIT0 (3169d7), nao reexecucao dos nativosC1 anteriores; gates compostos pendentes.
->>>>>>> c4b5211cbe643524c8f10a042031d4d22820b27d
 ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61702/7fcd60),TSC(21151/531055),lint0erros66avisos(48032/1cc03d;únicoincrementoprivadoforaSRC),build2658/EXIT0/buildIdqa-YlX2olWnazLSFrbIYA. Fontes447/448/449 executadas independentemente em9/257,9/265,9/267+lint8EXIT0. PilhaR19 auditada semGrant, SRC/prisma/configs da folha341 literaisROOT. FilhoR20 apenasdocumental antespublicação; ver docs/qa/inbox-publicacao-r20-root.md. Visual/CI/merge main e fechamento deissues continuam pendentes.
 
 #369 / PR448 R22 ROOT — comentários C1/C2: resumo opcional adquirido separadamente da lista autorizada de pessoas; falha/espera do resumo não bloqueia transferência, falha da lista não concede acesso. RED2b6bef EXIT1(2falhas/10controles)→GREEN9arquivos90casos16356/416a4e EXIT0, lint2 ede63d EXIT0/zeroavisos. D5 índice alinhado. Sem SQL/schema/alteração da API histórica. QA independente executada/visual/CI e atualização pública da pilha pendentes.
@@ -8012,6 +7990,22 @@ DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ti
 ### #372 — C9, R30
 
 Catch restrito de colisão real selecionado do DEV a41792ca. DEV RED2+1→GREEN3 e UNIT50/lint/TSC0. TESTER na fonte pública0e3d91db: UNIT50, TSC e nativo3, todos código0; bancoT500 restaurado1445 por87cd54. Gates globais1091/9869 e build pertencem à base8a29 anterior ao catch. Medição C10 ampla, visual e integração continuam pendentes; não concluirissue nesta publicação.
+
+## #365 — anexos, câmera e resposta rápida (DEV em andamento)
+
+Menu/câmera/resposta rápida e porta opcional de Proposta implementados no recorte autorizado. Focal completo Compositor+guarda:148/148 EXIT0; lint4 e TSC original8192 EXIT0. Regressão conversa20arquivos/325casos EXIT1:280pass/45fail causais em três mocks de ícones incompletos, aguardando autorização TEST-ONLY antes do ajuste. SPEC em docs/specs/inbox-anexos-camera-resposta-rapida.md e evidências em docs/qa/inbox-365-anexos.md. Publicação por hunks sobre MAIN0dc1ede1, QA independente e visual pendentes; sem SQL/browser/push e sem fechamento presumido.
+
+Atualização #365: após corrigir os exports ausentes nos três mocks e adaptar somente dois arrays de ordem PR384 com autorização ROOT, o mesmo recorte de conversa+guarda passou 20 arquivos completos/325 testes, sessão9655→c311dd EXIT0; lint7 EXIT0. Negativos 280/325 e 323/325 preservados. TypeScript final sessão84768→6654cd EXIT0; QA pública e visual continuam pendentes.
+
+Apresentação #365 revisada: ícones em quadrados arredondados40px e cores por tokensERP aprovados, com aproximação de hues documentada. RED focal1/56 preservado; gates finais23arquivos355/355 EXIT0 (conversa+botões+paleta+contraste), lint7 EXIT0. Aceite visual/câmera real e QA da composição pública continuam pendentes.
+
+TSC final após apresentação sessão58824→40c80c EXIT0. Recorte DEV pronto para checkpoint local autorizado dos dez paths; ROOT fará seleção por hunks na MAIN preservando diferenças públicas. Sem fechamento ou homologação presumida.
+
+Composição pública365 sobre main a20524fc:23arquivos/349testes e lint7 código0; contagem355 mantém fonte DEV. TypeScript local8GB terminouOOM/código1 em worktree com890TSprivados em output, sem resultado de tipos. Publicação em rascunho para CI limpa, QA e visual; nenhum aceite presumido, sem schema/pacote/SQL.
+
+Integração365 com main bfb85569 preserva Aria/Insights e passa24arquivos/363testes9c8c5e+lint8d5ad47/código0. Dois novos testes retidos têm contraprova causal234b48,semguard2fail/22pass/bytesrestaurados; mock fechado Insights ganhou apenas exports faltantes. Fonte global/CI e visual ainda pendentes; PR457 continua rascunho.
+
+CI457iniciale2b6:TypeScript/build/lintpassaram,doisUNITfusosfalharam3guardas/mocks. Composição corrigida usa captureIDL nativo,mockRodapeapenasexports,exceçãoASTresponsivoúnicamenudeíconescomnegativos;27arquivos/390testesde19c5+lint10 465588/código0. Retirados22delimitadoresdeconflitopreexistentesmain,nãoohistórico.NovaCI/visualpendentes,13pathspróprios.
 
 ### #338 D10 — checkpoint funcional DEV R30, seleção pública/QA pendentes
 
