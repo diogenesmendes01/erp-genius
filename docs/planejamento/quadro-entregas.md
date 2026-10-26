@@ -8001,3 +8001,10 @@ DEV reproduziuRED54(2falhas de chamada/52controles) e depois validou58UNIT, lint
 A suíte global pública6cc5525 encontrou três falhas reais de contrato: controles novos fora do mapa, dois vazios sem o componente canônico e expressões antigas no mapa do Popover. Selecionados seis arquivos do checkpoint7caaad9c; os dois mapas foram compostos por blocos/hunks, preservando integralmente as sete linhas públicas de Insights/Doc. Nenhuma guarda, exceção, teto, schema ou dependência foi alterado. O fallback legado de telefone sem contato agora usa o texto aprovado, preservando o ramo novo por telefone.
 
 DEV confirmou154testes completos em cinco arquivos, lint e TypeScript com código0. C4 permaneceu congelado: seu recorte próprio oito casos passou948062 e o banco foi restaurado f3f060; na fonte pública6cc, TESTER confirmou8C4 mais18arquivos/78regressões, com restauração be0af1. O global6cc reprovado continua registrado; estes resultados não são uma aprovação global desta nova composição. A validação pública dos contratos e a repetição da suíte global ainda estão pendentes.
+
+
+### PR #453 C1/C3 — contato e lista determinística, R29
+
+O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instruir abertura no móduloLeads. A listagem de oportunidades usa criadoEm desc e id desc, com limite200 preservado: o modelo não possui carimbo geral de atualização. Apenas o escopo comercial canônico{} dispensa COUNT por lead; os demais papéis mantêm suas verificações, incluindo o destino acadêmico próprio. Não cria schema, permissões ou autoridade no preview.
+
+DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
