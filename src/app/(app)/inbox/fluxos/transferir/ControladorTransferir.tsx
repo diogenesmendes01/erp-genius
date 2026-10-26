@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useId, type ReactNode } from "react";
+import { observarPresencas } from "@/lib/presenca-inbox-cliente";
+import type { FotoPresenca } from "@/server/inbox/presenca-leitura";
 import { Botao } from "@/components/Botao";
 import { PopoverFluxo } from "../PopoverFluxo";
 import { PopoverTransferir, type PessoaTransferir, type PropsPopoverTransferir } from "./PopoverTransferir";
@@ -36,10 +38,18 @@ export function ControladorTransferir(props: Props) {
     }).catch(() => { if (viva) setPessoas({ chave, lista: [], temResumo: false, erro: "Não foi possível carregar os dados da transferência. Feche e tente novamente." }); });
     return () => { viva = false; };
   }, [atendimentoId, carregarPessoas, carregarResumo, chave, aberto, invalidada, opcoes.pessoas, possuiSetores]);
+  const tokenFoto = `${useId()}:${controle.aberturaId}`;
+  const [foto, setFoto] = useState<{chave:string;dado:FotoPresenca|null}|null>(null);
+  useEffect(()=>{
+    if(!aberto||invalidada||!opcoes.pessoas)return;
+    let viva=true;const sair=observarPresencas(atendimentoId,tokenFoto,dado=>{if(viva)setFoto({chave,dado});});
+    return()=>{viva=false;sair();};
+  },[aberto,invalidada,opcoes.pessoas,atendimentoId,tokenFoto,chave]);
+  const presencas = foto?.chave===chave ? foto.dado : null;
   const dados = pessoas?.chave === chave ? pessoas : null;
   const dialogo = !aberto ? null : invalidada ? <PopoverFluxo titulo="Transferir" ancora={controle.ancora} aoFechar={controle.fechar} ocupado={controle.ocupado}>
     <p className="text-sm text-gray-600">A conversa ou suas permissões mudaram. Feche e abra novamente para transferir.</p>
     <div className="mt-3 flex justify-end"><Botao variante="secundario" disabled={controle.ocupado} onClick={controle.fechar}>Fechar</Botao></div>
-  </PopoverFluxo> : <PopoverTransferir atendimentoId={atendimentoId} ancora={controle.ancora} opcoes={opcoes} pessoas={dados ? dados.lista.filter(p => p.id !== responsavelAtualId) : null} destinos={destinos} temResumoAria={dados?.temResumo === true} ocupado={controle.ocupado} erro={controle.erro ?? dados?.erro} aoFechar={controle.fechar} aoExecutar={entrada => void controle.confirmar(entrada)} />;
+  </PopoverFluxo> : <PopoverTransferir atendimentoId={atendimentoId} ancora={controle.ancora} opcoes={opcoes} pessoas={dados ? dados.lista.filter(p => p.id !== responsavelAtualId).map(p=>({...p,presenca:presencas?.pessoas.find(s=>s.usuarioId===p.id)?.status})) : null} destinos={destinos} temResumoAria={dados?.temResumo === true} ocupado={controle.ocupado} erro={controle.erro ?? dados?.erro} aoFechar={controle.fechar} aoExecutar={entrada => void controle.confirmar(entrada)} />;
   return renderizar({ transferir: opcoes.visivel ? { rotulo: "Transferir", gatilhoRef: controle.gatilhoRef, aoEscolher: controle.abrir, ocupado: controle.ocupado } : null, dialogo });
 }
