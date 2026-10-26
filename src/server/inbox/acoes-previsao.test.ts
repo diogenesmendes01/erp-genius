@@ -1,0 +1,12 @@
+import {beforeEach,expect,it,vi} from "vitest";
+const m=vi.hoisted(()=>({fase:'fora',transacao:vi.fn(),setter:vi.fn(),sessao:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{$transaction:m.transacao}}));
+vi.mock("@/server/_shared/sessao",async original=>({...await original<typeof import("@/server/_shared/sessao")>(),exigirSessao:m.sessao}));
+vi.mock("./previsao-oportunidade",async original=>({...await original<typeof import("./previsao-oportunidade")>(),definirPrevisaoNoInboxTx:m.setter}));
+import {definirPrevisaoNoInbox} from "./acoes-previsao";
+const entrada={oportunidadeIdEsperada:'l',esperado:{probabilidadePct:null,previsaoFechamento:null},alteracoes:{probabilidadePct:0}};
+beforeEach(()=>{vi.clearAllMocks();m.fase='fora';m.sessao.mockResolvedValue({id:'u',nome:'Fictício',papeis:['VENDEDOR']});m.transacao.mockImplementation(async callback=>{m.fase='dentro';try{return await callback({porta:'TX'});}finally{m.fase='rollback-terminou';}});m.setter.mockResolvedValue(undefined);});
+it("55P03 vira recusa somente após rollback e não repete TX",async()=>{m.setter.mockImplementation(()=>{throw {code:'P2010',get meta(){expect(m.fase).toBe('rollback-terminou');return {code:'55P03'};}};});const r=await definirPrevisaoNoInbox('a',entrada);expect(m.fase).toBe('rollback-terminou');expect(r).toMatchObject({ok:false,erro:expect.stringContaining('atualizada')});expect(m.transacao).toHaveBeenCalledOnce();expect(m.setter).toHaveBeenCalledOnce();});
+it("40P01 não vira recusa de lock nem retry automático",async()=>{const log=vi.spyOn(console,'error').mockImplementation(()=>{});try{m.setter.mockRejectedValue({code:'P2010',meta:{code:'40P01'}});expect(await definirPrevisaoNoInbox('a',entrada)).toEqual({ok:false,erro:'Erro inesperado. Tente novamente.'});expect(m.setter).toHaveBeenCalledOnce();expect(log).toHaveBeenCalledOnce();}finally{log.mockRestore();}});
+it("encaminha somente identidade da sessão e porta da TX ao núcleo",async()=>{expect((await definirPrevisaoNoInbox('a',entrada)).ok).toBe(true);expect(m.setter).toHaveBeenCalledWith({porta:'TX'},'u','a',entrada);});
+it("payload adicional é rejeitado antes da transação",async()=>{expect((await definirPrevisaoNoInbox('a',{...entrada,autorId:'intruso'} as typeof entrada)).ok).toBe(false);expect(m.transacao).not.toHaveBeenCalled();});
