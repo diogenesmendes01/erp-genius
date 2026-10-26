@@ -7921,3 +7921,8 @@ A correção de concorrência da PR #443 foi incorporada à cadeia #444–#455: 
 ### PR #452 C1 — atividade humana e scroll programático, composição R28
 
 Selecionado o delta isolado deeea09c: somente onScrollCapture passa a onWheelCapture, com teste portátil, SPEC e QA. Backend, relógios de presença, schema e migration496 permanecem literais. DEV reproduziu duas falhas causais e validou os mesmos46testes, lint e TypeScript com código0; esses resultados não são QA executada da nova composição. Geração de eventos trusted em browser real, QA pública e CI permanecem pendentes. A propagação preserva UI361, Insights377 e histórico público, sem importar ancestrais privados372.
+
+
+### PR #453 — escopo irrestrito e abertura fora da primeira página, R28
+
+Selecionadas correções isoladas7dc0b358(ORcomercial canônico irrestrito) eec8f2cd5(ACK de conversa fora dos itens navega para rota canônica; SSR carrega item autorizado). As duas novas provas de navegação passaram no DEV, junto dos21casos Page; o recorte completo142/143 manteve uma falha447 previamente reproduzida, qualificada no QA. O teste nativo próprio de opções3/3 já passou no DEV. A seleção preserva Insights377, presença452, demais fontes públicas e não importa D9/372 ou ancestrais privados. QA independente desta composição, teclado/foco em browser e CI continuam pendentes.
