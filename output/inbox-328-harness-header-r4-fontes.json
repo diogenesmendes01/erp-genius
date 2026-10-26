@@ -1,0 +1,149 @@
+{
+  "revisao": "328-harness-header-R4",
+  "baseGit": "41a34afdc4024e4069f594855d52fb9524141088",
+  "fonteProdutoRuntime": "f9485756a67a450a58e61607f01b99f1b1e83f6a",
+  "novoNamespaceHarness": "commit desta revisao; sem reatribuir R3/V4/DIAG/READY/PNGhistoricas",
+  "arquivos": [
+    {
+      "path": "scripts/visual/acoes-oportunidade.mjs",
+      "bytes": 32699,
+      "sha256Fisico": "bcb12e960cc3b65c0eeef671cba996e1b3d57791218976d7baa163b5bef10e02",
+      "sha256GitLF": "bcb12e960cc3b65c0eeef671cba996e1b3d57791218976d7baa163b5bef10e02",
+      "gitBlobAtual": "c3c86f57ddad6cc24ef46cda2188ff2080484bae"
+    },
+    {
+      "path": "src/test/visual-inbox-acoes-oportunidade.test.ts",
+      "bytes": 36715,
+      "sha256Fisico": "e5cb0b09265a76a4fa567ee256745fbbf792852b3d1a70b892188f6c0790b782",
+      "sha256GitLF": "e5cb0b09265a76a4fa567ee256745fbbf792852b3d1a70b892188f6c0790b782",
+      "gitBlobAtual": "14497e84b1c321005e52f29078bd63eb3d3fcc26"
+    },
+    {
+      "path": "docs/specs/inbox-acoes-oportunidade.md",
+      "bytes": 11656,
+      "sha256Fisico": "a61d259758bb9b328ceaabdd17390c4c9543b35b19661f0cd246b6b7bb70a0d6",
+      "sha256GitLF": "a61d259758bb9b328ceaabdd17390c4c9543b35b19661f0cd246b6b7bb70a0d6",
+      "gitBlobAtual": "d3d3bc21b7f8696a1c522e146baa5c675f89bd19"
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "bytes": 1158660,
+      "sha256Fisico": "8ffd8663d791048ce7673d5018b7f36544f41d6512911788e27af4fe18417e50",
+      "sha256GitLF": "af27d3f6b9c43cfe7ef179b7a4336b31f53a6d31f0f0c858816bfc692ea10aca",
+      "gitBlobAtual": "8718b2b13b3d09f21bb762a40b9c79718c08199c"
+    },
+    {
+      "path": "output/inbox-328-harness-header-r4-report.md",
+      "bytes": 3679,
+      "sha256Fisico": "de13be8faa3c35339372216f4917038ebb15160ad7c43d733538bc5c68475eb7",
+      "sha256GitLF": "de13be8faa3c35339372216f4917038ebb15160ad7c43d733538bc5c68475eb7",
+      "gitBlobAtual": "ce0e645c20d7fbbd117eed87e79125755dc387c5"
+    }
+  ],
+  "congruencia": {
+    "funcoes": 13,
+    "funcoesLiterais": 12,
+    "mudadas": [
+      "semanticaAcoes328"
+    ],
+    "reversaoDoisHunksByteIgualGitLF": true,
+    "gateNovoSomenteAPPfaseCartao": true,
+    "expressaoHeaderElseTopoDetalhesPROTOLiteral": true,
+    "expressaoLapisElseLiteral": true,
+    "SVG_R3_helpersFieldsEtapasCardFooterFocoRestanteByteIgual": true,
+    "runtimeSRCExcetoTestePrismaDepsConfigIguais": true,
+    "CLI953ColetoresDeclaracoesOriginaisIguais": true
+  },
+  "evidencias": [
+    {
+      "path": "output/inbox-328-harness-header-r4-red-private.log",
+      "bytes": 3890,
+      "sha256": "b7f5180863ce14d5c8dd1a3c8e9df21e8b5d37f3b3b52e953c8556191d5b30ca"
+    },
+    {
+      "path": "output/inbox-328-harness-header-r4-green-private.log",
+      "bytes": 482,
+      "sha256": "aeadbcacd758e86a56e2c06276f5b2ca59d61f97db11631e5b531f874acac511"
+    },
+    {
+      "path": "output/inbox-328-harness-header-r4-lint-private.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-header-r4-green-final-private.log",
+      "bytes": 482,
+      "sha256": "69b670c3842b9d8a8a885cf6181a42931f88d4c793c695cf5522b9a3b7c36c8b"
+    },
+    {
+      "path": "output/inbox-328-harness-header-r4-lint-final-private.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-acoes-41a-pre-header-r4.snapshot.txt",
+      "bytes": 31761,
+      "sha256": "841652006803c192a82ddbe51754000da93b8b070b933a4dc03d101ad9409ac6"
+    },
+    {
+      "path": "output/inbox-328-harness-svg-r3-report.md",
+      "bytes": 3970,
+      "sha256": "30b92d27ffc935a8a322af59e59446a12989dec53364fc563ec79237f4a3003b"
+    },
+    {
+      "path": "output/inbox-328-harness-svg-r3-fontes.json",
+      "bytes": 6506,
+      "sha256": "2f1ae1d9bde8b3ae3da21b59227ebc1dec680baa3237ce1576e7a66003f783b0"
+    },
+    {
+      "path": "output/inbox-328-formal-v4-attempt-private.json",
+      "bytes": 300,
+      "sha256": "da1bb8a99b595bebdd9a57a0df95576178b3e6926149bb86a7d85bfe7dbe8318"
+    },
+    {
+      "path": "output/inbox-328-formal-v4-466ed44a-826f-4ce0-9d70-f486b4908125/manifesto-private.json",
+      "bytes": 21143,
+      "sha256": "68c52e4102ef74da36558086ca22682349c67c0a8fc615547fbd41231ffd14d0"
+    },
+    {
+      "path": "output/inbox-328-diag-waits-v4-attempt-private.json",
+      "bytes": 535,
+      "sha256": "35b82cf10955aca0c684a4d2ab4328abea069751f1ecdd21d8a3e958dd68d8b0"
+    },
+    {
+      "path": "output/inbox-328-diag-waits-v4-4c57bb42-4f16-41a7-b7fc-66e86b1e3803/manifesto-private.json",
+      "bytes": 13254,
+      "sha256": "7af700f4320bf7045db0419cfe0db5626d8a96f0187e875c120410ea0817bf39"
+    }
+  ],
+  "gates": {
+    "RED": "af7f9b EXIT1:11falhas/24controles/132fora filtro",
+    "GREENinicial": "37660/b7ebf2 EXIT0:167/167+lint2; antes tipo explicito de attrs",
+    "GREENfinal": "22009/dfd846 EXIT0:167/167 completo,w1,Node22heap512,sem filtro/skips",
+    "lint": "22009/dfd846 EXIT0:2paths",
+    "TSC": "nao repetido por orientacao ROOT",
+    "globalINT": "nao executados"
+  },
+  "limites": [
+    "0novaDB/HTTP/browser/preview/acao/captura/wrapper",
+    "R4alinha contrato formal; nao bug/geometria nativa observada",
+    "PROTO e TopoDetalhes preservados",
+    "328aberta; QA/READYfutura/native/publicacao pendentes"
+  ],
+  "trackedGit": "AGENTS.md\ndocs/planejamento/quadro-entregas.md\ndocs/specs/inbox-acoes-oportunidade.md\nscripts/visual/acoes-oportunidade.mjs\nsrc/test/visual-inbox-acoes-oportunidade.test.ts",
+  "correcaoDocumental": {
+    "baseTecnica": "0d758c4ee095a42d711b5c8663c5bf2db5344f2b",
+    "escopo": "somente report/SPEC/quadro e hashes; codigo/teste/gates literais0d75",
+    "qualificacao": "ROOT decidiu explicitar o escopo; recusa condicional de header recortado; sem contradicao universal ou geometria nativa comprovada",
+    "historicos": [
+      {
+        "git": "0d758c4ee095a42d711b5c8663c5bf2db5344f2b:output/inbox-328-harness-header-r4-report.md",
+        "oid": "139210e879e5f932ba2933ad052a47774b974eb7"
+      },
+      {
+        "git": "0d758c4ee095a42d711b5c8663c5bf2db5344f2b:output/inbox-328-harness-header-r4-fontes.json",
+        "oid": "3ccb6a88d76ffec865d41e819561385eadbcd78c"
+      }
+    ]
+  }
+}

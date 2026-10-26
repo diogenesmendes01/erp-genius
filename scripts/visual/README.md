@@ -225,7 +225,7 @@ O primeiro negativo26ab1b e o diagnóstico negativo c588cb permanecem rejeitados
 
 ## #327 — extensão da CLI e coletor próprio (preparação)
 
-A CLI usa `planejarCapturas327` e `combinacoesCaptura327`, com registro combinado de **238 casos (150 APP/88 PROTO)**. O núcleo herdado de #325 continua literalmente com220; as190 combinações953 e as220 combinações325 são subconjuntos byteiguais, com hashes congelados nos testes. Os18 novos casos são `painel-oportunidades` (6APP+6PROTO) e `painel-oportunidades-leitor` (6APP). O leitor declara N/A funcional no protótipo. `--estado todos` expõe as238 tarefas; execução real exige os ambientes/fixtures próprios de cada estado. Não significa que238 fotos foram feitas.
+A API legada327 usa `planejarCapturas327` e `combinacoesCaptura327`, com registro combinado de **238 casos (150 APP/88 PROTO)**. O núcleo herdado de #325 continua literalmente com220; as190 combinações953 e as220 combinações325 são subconjuntos byteiguais, com hashes congelados nos testes. Os18 novos casos são `painel-oportunidades` (6APP+6PROTO) e `painel-oportunidades-leitor` (6APP). O leitor declara N/A funcional no protótipo. `--estado todos` expõe as238 tarefas; execução real exige os ambientes/fixtures próprios de cada estado. Não significa que238 fotos foram feitas.
 
 Após GO do integrador, os novos estados exigem `INBOX_VISUAL_OPORTUNIDADES_ATENDIMENTO`, `INBOX_VISUAL_OPORTUNIDADES_ID` e `INBOX_VISUAL_OPORTUNIDADES_PESSOA`, com os IDs exatos da fixture327 preparada. O ator deve ser explícito: `INBOX_VISUAL_OPORTUNIDADES_ADMIN_USUARIO_ID`, `_ADMIN_EMAIL`, `_ADMIN_SENHA` e as equivalentes `_LEITOR_USUARIO_ID`, `_LEITOR_EMAIL`, `_LEITOR_SENHA`. Um estado isolado pode usar `INBOX_VISUAL_USUARIO_ID`, `INBOX_VISUAL_EMAIL`, `INBOX_VISUAL_SENHA`; id/email continuam validados contra o ator fictício esperado, sem credencial canônica padrão. Fornecer senhas somente por ambiente carregado de arquivo privado. Nenhum segredo entra em descriptor, manifesto ou stdout. Estes estados não leem demo-ids nem alteram o banco.
 
@@ -242,3 +242,33 @@ Os novos estados preservam DOM/CSS/dados originais: não executam anonimização
 ## Porte R2 #327
 
 Comuns/953/coletorDetalhes325 preservados na baseMain/326;327acrescenta18combinacoes,sem alterar autenticacao/permissoes deproduto. CLI historica nao equivale ao wrapperA11:nao autoriza UI/escritas nem substitui sua API facade,allowlists,SSE/drain e QA. Corpus18 continua historico individual qualificado;sem captura nova neste porte. Gates desta composicao sao registrados separadamente no reportR2.
+
+
+## #328: adaptador aditivo,30 cenas planejadas e CLI268
+
+Fonte do produto no desenvolvimento do harness: merge87c01c49, preservado literalmente. Este delta é código/teste offline; não houve banco, fixture aplicada, preview, HTTP/browser real, captura ou ação de produto. Produto328 e corpus327 não são homologados por UNIT do harness.
+
+A entrada de terminal e as APIs novas planejarCapturas328/executarCapturas328 usam o registro268 comprovado:238herdadas +30novas, sem duplicatas. planejarCapturas327/executarCapturas327 continuam238, para consumidores legados;190/220 são subconjuntos byteiguais com hashes fixados nos testes. Não significa268fotos realizadas.
+
+| Estado | Alvos CLI | Cenas propostas |
+|---|---|---:|
+| painel-acoes-experimental | app + prototipo |12|
+| painel-acoes-perda | app |6|
+| funil-perda-referencia | app |6|
+| painel-acoes-experimental-leitor | app |6|
+
+São18InboxAPP +6PROTO original +6Funil referência funcional APP. Funil usa o mesmo ModalPerda existente, com nome explícito de referência funcional, nunca PROTO. Cada par:claro/escuro × desktop/tablet/celular. Sem fabricação de modal PROTO ou alteraçãoHTML/CSS/DOM. As30precisam de operações novas e QA próprias; fotos históricas327 não entram nessa contagem.
+
+Configuração328 é fechada nos IDs inbox-328-atendimento/inbox-328-oportunidade/inbox-328-pessoa; atores novos inbox-328-admin e inbox-328-leitor, emails fictícios inbox328.admin@genius.test/inbox328.leitor@genius.test. Prefixo INBOX_VISUAL_ACOES_, campos ATENDIMENTO/ID/PESSOA/FUSO_ESCOLA e ADMIN|LEITOR_USUARIO_ID/EMAIL/FUSO/SENHA. FUSO_ESCOLA deve ser lido/pinado pelo ROOT; ADMIN_FUSO=ORIGEM preserva null e LEITOR_FUSO=America/New_York. Senha só no ambiente privado preparado pelo ROOT, sem padrão/fallback ou registro em metadados. PROTO não requer autenticação ou fixtureAPP.
+
+Fixture ainda não aplicada:11novos/10modelos, incluindo Pais.codigoISO BR/BRL, dois atores, professor novo, MOTOR desconectado e conviteD13 somente leitura; nenhum original, Mensagem, Evento ou nota criado pelo harness. Oportunidade experimental Realizada, ISO2026-10-16T22:00:00.000Z, valor1234.56 BRL. Nomes exatos/dados são validados no preflight e deverão constar no blueprint/aplicador Root. QuatroGETpreflight (sessão/Painel/Oportunidades/Detalhes), hashesdoscorpos e aquisiçõesUI separados. AbrirFunil/Assumir são expectativas da fixture e do papel conferido, não novas capacidades retornadas pelo DTO Painel: contexto de Assumir e fusos exigem provaREADONLY ROOT na admissão futura. Nenhum endpoint é inventado.
+
+Fluxos: painel/Detalhes completo antes da transição do coletor327; topo/header/barra observados antes do scroll natural limitado; cartão/ações e campos precisam ser perceptíveis na foto inferior, sem alegar header fora do viewport na mesma imagem. Bloco327 e Cadastro legados continuam irmãos dentro da tabpanel; links novos são autorizados só dentro do bloco, legado só em slot/href/ID exatos fora dele. Geometria respeita clipping dos ancestrais; área longa pode intersectar scrollport. Status idle vazio é distinto de alerta/busy/status significativo acessível, inclusive sr-only/opacity0. Todos os callbacks são autocontidos e somente leitura.
+
+Perda: abrir pela seção328 ou controle real Funil, escolher Outro, preencher observação fictícia e Voltar; confirmação nunca é clicada. Assumir conversa, Editar, mover etapa, Save/notas/envios ficam fora dos roteiros. O callback de fechamento exige foco real perceptível/nãoBODY/nãoinert. A referênciaFunil não recebe um coletorSSEInbox fictício; o protocolo real de rede dessa superfície será admitido separadamente pelo ROOT.
+
+A CLI compartilhada continua sendo ferramenta de ligação/testes, não substitui o wrapper restritivo: sua rede genérica não constitui autorização de escrita, prova de dreno finito integral ou encerramentoSSE nativo. As futuras execuções328 exigem wrapper privado concreto com Browser.route e APIRequest fechados, exportedNames/IDs reais dos dois RPC incidentais naturais, providers vazios, assets/nonce/pins próprios, SSE real com Pageviva e auditorias depoisPNG/close. Nenhuma ação Assumir/perda/Salvar entra na allowlist. O simples comando de CLI abaixo NÃO recebeu GO operacional nesta entrega:
+
+    node scripts/visual/capturar-inbox.mjs --estado painel-acoes-experimental --alvo ambos --base http://localhost:3110
+
+Os pinsRoot LF/CRLF e a exceção consolePROTO mantêm apenas hashesraw/callsites exatos e limite estático; pageerror continua falha. Originais e coletores953/325/327 permanecem literais. Os logs UNIT que dizem Capturas/OK/FALHAS pertencem a mocks de browser e fs, não a capturas nativas. REDs e gates finais serão registrados no relatório/SPEC/quadro328, sem repetir global/67INT por rotina.

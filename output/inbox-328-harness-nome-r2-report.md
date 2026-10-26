@@ -1,0 +1,13 @@
+# #328 — R2: nome do modal por superfície
+
+Base R1 2f160b78e1de0b722c7a0e5be4c25092b9e95fba preservada. ROOT/TESTER confirmaram por FS18b6a5 dois chamadores distintos: InboxNovo.abrirPerda armazena nome=o.produto??o.titulo e passa esse nome ao ModalPerda; Funil/PainelOportunidade passa op.nome. O DTO de Oportunidades mapeia titulo=op.nome. O adapter usava d.titulo tanto no callback quanto no selector getByRole para as duas superfícies; com produto formal distinto de título, o Inbox procuraria diálogo errado.
+
+Correção mínima: somente duas expressões no MJS. Callback faseperda e selectorreal em preencherPerda usam Inbox(d.produto??d.titulo) versus Funil(d.titulo). Sem novo campo/export/declaração, sem alterar dados da fixture ou produto/owner/Modal. R1 foco, todos os outros selos, fluxo radio/observação/Voltar e recusa de confirmação continuam literais. CLI/shareds/coletores/pinos/originais também intactos.
+
+Os doubles agora refletem nomes DOM independentes e literais de cada chamador, não uma cópia de d.titulo. Testes afirmam que produto formal Ingles Ficticio328 e título Oportunidade ficticia328 continuam distintos; callbackreal/serializado aceita o nome da superfície e rejeita o da outra. Fallback sem produto passa pelo descritorreal com DTO produto:null, sem modificar o objetoformal. O selectorreal de preencherPerda é extraído por AST, executado com pagefake cujo getByRole só aceita o rótulo independente esperado; cobre InboxProduto,FunilTitulo e InboxFallbackTitulo. Somente check/fill/Voltar, sem confirmação.
+
+REDbb6776 EXIT1:4falhas/120controles124total, incluindo Marcar Titulo independente... quando o Inbox exige Marcar Produto independente.... GREEN639ae8 EXIT0:arquivo COMPLETO124/124,1.72s,w1,sem filtros internos/skips;lint2 EXIT0 semwarnings. TSC_R2: 37760/f6d472 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Não reatribuir TSC/UNITfa7 ou R1 a esta fonte. Nenhum timeout/classificador ou guarda de foco foi afrouxado.
+
+ProvaFS/AST: MJS inteiro é exatamente R1 mais duas substituições de expressão; todas as outras funções são literais. Todos nós dos testesR1 preservados exceto a construção do fixturemodal para refletir o chamador real, mais seis novos casos. Manifesto desta revisão output/inbox-328-harness-nome-r2-fontes.json contém namespaces físico/GitLF/OIDs e pacotesfa7/R1 intocados.
+
+As30cenas e CLI268 não mudam. Sem DB/HTTP/browser/captura/fixture/preview/ação/upload. Freeze com TSC original EXIT0, pronto para commitisolado e QA causal; futura admissao nativa depende de ROOT. A coleta global344 e trabalho ROOT separado, fora destes gates. Nenhuma homologação ou aceite de imagem presumido.

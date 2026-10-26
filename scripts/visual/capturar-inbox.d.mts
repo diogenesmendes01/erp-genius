@@ -29,3 +29,7 @@ export declare function planejarCapturas327(argv: string[]): {
     }[];
 };
 export declare function executarCapturas327(argv?: string[]): Promise<void>;
+
+/** Registro328 aditivo; API327 permanece com238. Nao autoriza execucao nativa. */
+export declare const planejarCapturas328: typeof planejarCapturas327;
+export declare function executarCapturas328(argv?: string[]): Promise<void>;

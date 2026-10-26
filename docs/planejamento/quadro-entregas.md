@@ -7085,6 +7085,44 @@ Todos os casos Main e o novo caso Funil da #327 são literais. Cinco casos antig
 
 UNIT: 13 arquivos/258 testes, 2939/a38ef0 EXIT0, w1/heap512, sem filtros/skips, 40,42s. As mensagens de capturas do teste CLI são doubles, sem PNG nativa. Lint dos quatro compartilhados: c694fc EXIT0, max-warnings0. Não houve TSC, INT, global, navegador, DDL ou mensagem real nesta composição. A CI do novo head continua necessária. Preparação local, sem push, merge ou encerramento de issue: aguarda a #345 na Main, a dependência #326 e as autorizações dos anexos #326/#327.
 
+
+## Inbox #328 — produto DEV congelado; QA/visual pendentes — 24/10/2026
+
+DEV A entregou cartão experimental/status/fuso institucional já lido/linkFunil autorizado e seção de ações. Perda reutiliza D8/owner/modal/CAS3 já entregues327;Assumir conversa usa ação canônica1arg e contexto completo,pending/erro/identidade/recarga existente. Não altera carteira,agendamento ou D3/#357,nem promete avisoSSE novo. Servidor/helpers/schema/deps/ConversaAberta/Compositor/harness intactos;OR420/defaults343 preservados.
+
+UNITglobal76840/115414 EXIT0:948arquivos/7799testes,303,68s,maxWorkers2,semfiltro/skips. TSCoriginal8GB19172/614085 EXIT0;lint11fontes965991+foco fc19c1 EXIT0. Única exceção enum aprovada,ancoradaCartaoExperimental/if o.etapa,classificador literal;paleta usaaliases reais. NegativosTDD/fixtures/foco/TS2339 preservados em output/inbox-328-produto-report.md e manifesto output/inbox-328-produto-fontes.json. NenhumINT/DB/preview/browser/operação/captura/upload;67backend imutável não repetido. Corpus327 não reatribuído. QA independente,admissões/visual epublicação ROOT pendentes;328 não concluída.
+
+
+### Inbox #328 — harness offline preparado; visual/operação pendentes — 24/10/2026
+
+Sobre87c01c49, novo adapter/testes328+ligaçãoCLI sem produto runtime/servidor/ACL/schema/coletores/originais alterados(deltaSRC sótestes). Enumeração real268=238+30únicas,API327continua238;190/220byteiguais.30planejadas=18InboxAPP+6PROTO+6FunilreferênciafuncionalAPP(nuncaPROTO). Código somente ler/abrir/preencher/Voltar; semAssumir/Salvar/mover/perda real. UNIT4/128 eb1a25 e lint6 EXIT0,w1,sem filtros/skips/warnings;TSC_FINAL: 73293/4bd4b8 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Negativos/identidades/limites em output/inbox-328-harness-report.md e inbox-328-harness-fontes.json. NenhumaDB/fixture/preview/browser/HTTP/captura/upload. QAdo harness,wrapperrestritivo/admissãofresh eGOoperacional continuam pendentes; corpus327 eD3/#357não reatribuídos;328não concluída.
+
+
+### Inbox #328 — R1 do oráculo de foco; QA/native pendentes
+
+Sobre fa7, perda e Funil passam a exigir foco interno conectado/nãodisabled/perceptível no instante do callback, reutilizando visivel/clipping. Nenhum focus no driver/shared/produto;CLI/declarações/originais/coletores/pinos intactos. RED72f6f9=18/100;GREENe70747=arquivo118/118+lint2 EXIT0,w1. TSC_R1: 9345/bd4aa7 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Evidências em output/inbox-328-harness-foco-r1-report.md/fontes.json. Pacotefa7 e parecer negativo são preservados;semDB/UI/HTTP/fixture/preview/ação/captura. #328segueaberta,semaceitenativo presumido.
+
+
+### Inbox #328 — R2 nome do modal por superfície; gates DEV verdes, QA/native pendentes
+
+SobreR1, callback/selectorreal passam a esperar Inbox produto??titulo e Funil titulo/op.nome, com fixture formal mantendo os nomes distintos. Sóduasexpressões noadapter+testesfiéis;focoR1/produto/CLI/declarações/shareds/coletores/pinos e artefatosfa7/R1 intactos. REDbb6776=4/120;GREEN639ae8=arquivo124/124+lint2 EXIT0,w1. TSC_R2: 37760/f6d472 EXIT0, Node22heap8192/noEmit/incrementalfalse, config original sem aux/exclusoes. Evidências em output/inbox-328-harness-nome-r2-report.md/fontes.json. SemDB/HTTP/browser/fixture/preview/ação/captura;QA/admissão evisual permanecem pendentes.
+
+### Inbox #328 — R3 do oráculo SVG Tabler; QA/native pendentes — 25/10/2026
+
+Sobre f948, somente a classe APP do cartão foi alinhada ao IconCalendarCheck real3.44.0: token `tabler-icon-calendar-check`. Fixture usa ReactDOMServer/atributos+paths vendor, sem classe positiva fabricada; fragmento PROTO, foco, geometria, produto/runtime, CLI/declarações/953/coletores/originais/Prisma/deps preservados. RED2dfd36:2falhas causais/1controle/124fora filtro; GREENfinalb5734e:134/134completos+w1/lint2 EXIT0, sem filtros/skips. c91a53 negativo de testePROTO indevido preservado; TSC/global não repetidos por coordenação. Report/fontes novos inbox-328-harness-svg-r3-* registram namespaces e proteções. NativeV4 e DIAG negativos intactos; nenhum novo browser/HTTP/DB/captura/ação/wrapper. Finding SVG é estático determinístico, não causa exclusiva nativa; cabeçalho/lápis recortados permanecem contrafactuais sem observação nativa. QA exata/READYV5/operação/visual/publicação pendentes; #328 segue aberta.
+### Inbox #328 — R4 do aceite inferior; QA/native pendentes — 25/10/2026
+
+Descendente41a, somenteAPP/cartao admite h2/subtítulo/lápis fora da viewport se únicos/corretos/conectados/acessíveis/não disabled. Topo/cabeçalhoDetalhes ePROTO preservados; sem alterar produto/CSS/fieldsdd/etapas/cartão/footer/controlesinferiores/foco. ROOT decidiu explicitar o escopo da foto inferior; o requisito anterior recusaria condicionalmente um header recortado. Não há contradição universal ou geometria nativa comprovada. REDaf7f9b11falhas/24controles/132forafiltro;GREENfinal22009/dfd846 EXIT0:167/167completos,w1,lint2. TSC/global/INT não repetidos por coordenação. SVG vendorR3literal, CLI/decls/953/coletores/originais/srcRuntime/Prisma/deps protegidos. Report/fontes novos inbox-328-harness-header-r4-* preservam R3nominal134 e negativosV4/DIAG; sem novo wrapper/Next/DB/HTTP/browser/ação/captura. #328 segue aberta, aguarda QA exata/READY/GO/visual/publicação.
+
+### #328 — R5 do harness: revelar a aba no selo inferior
+
+Produto runtimef948 preservado; sódriver/teste/documentação. DIAG1tablet identificou waitcartao e tabs-9..29 contra scrollport0..768; semafirmar causaúnica deNativeV6r3 ou defeitoproduto. Uma chamada nativa scrollIntoViewIfNeeded no tabOportunidades após os alvos inferiores,anteswaitcartao; oráculo/PROTO/Funil/Perda e guardas continuam literais. RED7cc826=2falhas1controle167fora filtro;GREENadb2d7 EXIT0=170/170arquivo completo,w1,lint2 EXIT0. SemTSC/global/INT/novoHTTP/browser/DB. R3/R4/Ready131/NativeV6r3negativa/DIAG1 e suasPNGs privados preservados; pinos novos exigem namespace/Ready/GO posteriores. Report/fontesR5 em output/inbox-328-harness-scroll-r5-{report.md,fontes.json}. QA independente/futuraoperação/visual/publicação pendentes; #328não concluída nemhomologada.
+
+
+### Inbox #328 — composição sobre dependência #427 (25/10/2026)
+
+A composição preserva a base4275d78/main345 e os objetos exclusivos3288af, com união de fusoEscola e resumo no testeSSR; quadrobase e sufixo328 integrais. QA R5 própria170/170+lint2 EXIT0. VisualV6r4 negativo após2PNG individuais positivas; página celular fechou inesperadamente, sem page_crash observado. AuditoriaRoot pós:570/pref1/orig557/424hashes+seqpreservados. Novoaceite visual depende de memória disponível; CI e QA da composição pendentes. Não conclui issue328 nem autoriza envio/deploy.
+
 ## PR #420 integrada; preparação final da PR #427 — 26/10/2026
 
 PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
@@ -7092,8 +7130,25 @@ PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4
 427fonte5d78:fd60éancestral e3074tree==fd60. Merge9708fffb preservou candidata nos7conflitos de ancestralidade, com INDEXINTEIRO==5d78 antescommit/árvoreinteira69e5503d inalterada. QA5d78 e FULL40168347724(363/3350+3/4opt-in) permanecem nominais; sem novo DB/testes/clientlocal. Registro output/pr427-qa/integracao-20261026.md. CI finalmain/anexos327 ainda gates, sem fechar327 antecipadamente.
 
 
+### PR #432 — composição documental com a dependência #427, 26/10/2026
+
+União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
+
+Permanecem pendentes o anexo visual328, a integração da dependência427, o retarget e as verificações do head final. Os registros históricos que chamam a release de privada não descrevem a visibilidade atual do repositório: a API informa repositório público e release de QA em rascunho. Nenhum upload327/328, merge ou fechamento328 foi realizado nesta preparação.
+
+
 ### #327 — C2 visual anexado com autorização específica, 26/10/2026
 
 ZIP de18capturas históricas/README/manifesto anexado à release QA DRAFT421321214, asset678657729,size1935721,SHA2e06d855...; upload387fe0 e downloadroundtrip0a21aa EXIT0, hashidêntico. Usuário autorizou explicitamente o arquivo no repositório público mantendo a release emrascunho; não alegar download público anônimo. TESTER conferiu18/18 PNGs e manifestos, preservandoA7/A9negativos/A10semPNG e fontesnominais. C2daR2 resolvido pelo anexo, sem nova homologação visual presumida.
 
 CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCESS e integração40168347724/363files3350testes+3files4optinskips mantêm suas fontes. A revisão final foi favorável após atualizar corpo/C2. Registro: docs/qa/inbox-327-anexo-r28-root.md. Este commit é sódocumentação; aguardaCIheadfinalantesdo mergeautorizado e fechamento327. Nenhuma alteração de produto, schema, pacote ou release publicada.
+
+
+### PR #432 — base main após integração da #327, R28
+
+A base lógica9bd31f13 foi integrada em main pelo squash414d932a. A diferença de suas árvores contém somente quadro e o registro do anexo327. Esta composição acrescenta esses documentos e o pai main414 à branch432, preservando integralmente a árvore executável7fc073e5 usada no ambiente de QA. A PR pode apontar para main e executar CI sem reatribuir seus gates visuais; aceite visual completo e revisão continuam obrigatórios antes do merge.
+
+
+### PR #432 / issue #328 — matriz R5 e harness R6, 26/10/2026
+
+Matriz única30/30 concluída com código0, com24APP+6PROTO, dois temas e três larguras; fonteAPP7fc preservada. Incorporados três seletores estritos do protótipo e uma rolagem nativa após preencher perda, sem confirmar. Arquivo completo179/179 e lint2 código0; TypeScript original8GB código0 (a4e7e4), sem alterar includes/excludes. Provas e limitações em docs/qa/inbox-328-visual-r5-harness-r6-bd6f.md. R1–R4 negativos preservados e não somados. QA independente comunicada favorável com ressalva do badgeNextDEV sobre o canto de Voltar nos dois temas celular, sem prova de clique na região coberta. Banco descartável auditado426tabelas/506originais,520total/2prefs,zeroLISTEN e restaurado pelo integrador. ZIPcurado30PNG+README+manifesto SHA b012e8d2 pronto localmente; sem upload desta frente. PR continua DRAFT: anexo autorizado, revisão e CIheadfinal pendentes antes de merge e fechamento328. Nenhum produto/schema/deps/config, mensagem real ou deploy alterado.

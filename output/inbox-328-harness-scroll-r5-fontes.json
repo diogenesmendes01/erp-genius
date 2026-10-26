@@ -1,0 +1,83 @@
+{
+  "revisao": "328-harness-scroll-R5",
+  "baseGit": "75ed2f8f1e94b2bad94cc556d714a502f0a52286",
+  "fonteProdutoRuntime": "f9485756a67a450a58e61607f01b99f1b1e83f6a",
+  "novoNamespaceHarness": "commit desta revisao; nenhum gate/corpus historico reatribuido",
+  "arquivos": [
+    {
+      "path": "scripts/visual/acoes-oportunidade.mjs",
+      "bytes": 32807,
+      "sha256Fisico": "86b2626cb9ef650f0e4b30f6efdce160590fb07515df3a8e23ba82ba7a85e7ff",
+      "sha256GitLF": "86b2626cb9ef650f0e4b30f6efdce160590fb07515df3a8e23ba82ba7a85e7ff",
+      "gitBlobEsperado": "aec98402b1327d203cfb874c33c29d547ca6d9c8"
+    },
+    {
+      "path": "src/test/visual-inbox-acoes-oportunidade.test.ts",
+      "bytes": 38627,
+      "sha256Fisico": "52689ba74e9408c398c75e86b3a89fec06b1beed2015e4cddc9524e08fb92286",
+      "sha256GitLF": "52689ba74e9408c398c75e86b3a89fec06b1beed2015e4cddc9524e08fb92286",
+      "gitBlobEsperado": "d8ef4b4efad4b269566bebe7ae0789d031b267ee"
+    },
+    {
+      "path": "docs/specs/inbox-acoes-oportunidade.md",
+      "bytes": 13048,
+      "sha256Fisico": "fe020ef1f98be65ab672bed99e2a2a64891f15f585a446395efc39d66169ab6b",
+      "sha256GitLF": "fe020ef1f98be65ab672bed99e2a2a64891f15f585a446395efc39d66169ab6b",
+      "gitBlobEsperado": "e2f2c1b8f9a5d8a32f88a675f60029e1f409fd5a"
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "bytes": 1159516,
+      "sha256Fisico": "4cf1e774dd3607dbae73155298318f421700d11c84a6c3b48e05f28272707b05",
+      "sha256GitLF": "48fa9d3f4b3e6d427bde987f993d8b8ae8c5d5a6ac0126f7a5eb73eaf351a445",
+      "gitBlobEsperado": "50325cd99db883ae22e59c50b89e113b17857dad"
+    },
+    {
+      "path": "output/inbox-328-harness-scroll-r5-report.md",
+      "bytes": 5809,
+      "sha256Fisico": "02bcc4bab1cb4fbb87b72cb81fc929855055a1f8c42132995414ea24e8426d05",
+      "sha256GitLF": "02bcc4bab1cb4fbb87b72cb81fc929855055a1f8c42132995414ea24e8426d05",
+      "gitBlobEsperado": "723b64897d21def7829518ae2b9c71783cc1ce4b"
+    }
+  ],
+  "provas": {
+    "insercaoUnicaReversivel": true,
+    "funcoesTotais": 13,
+    "funcoesLiterais": 12,
+    "funcoesMudadas": [
+      "abrirAcoesApp328"
+    ],
+    "callbackSemanticaLiteral": true,
+    "PROTOliteral": true,
+    "FunilPerdaDriverSemDelta": true,
+    "testes167AnterioresPrefixoLiteral": true,
+    "produtoSRCPrismaDepsConfigSemDeltaExcetoTeste": [
+      "src/test/visual-inbox-acoes-oportunidade.test.ts"
+    ],
+    "scriptsSemDeltaExcetoAdapter": [
+      "scripts/visual/acoes-oportunidade.mjs"
+    ]
+  },
+  "snapshotHistorico": {
+    "path": "output/inbox-328-r5-source75ed-snapshots-private/manifesto-private.json",
+    "bytes": 1361,
+    "sha256": "0e0ee8ab026d2dba2204de174d363b1fa6a592492277de87bcb96612d8806e8b"
+  },
+  "sdkLido": {
+    "path": "node_modules/playwright-core/lib/coreBundle.js",
+    "bytes": 3585406,
+    "sha256Fisico": "829521b67ed7be90c7d6d6098ff39f2241562d47e4ad7ccab13710924a56001d",
+    "limite": "delegacaoCDP nao comprova9px"
+  },
+  "gates": {
+    "RED": "7cc826 EXIT1 2falhas1controle167foraFiltroR5",
+    "GREEN": "adb2d7 EXIT0 1arquivo170/170 w1 semfiltro/skips",
+    "LINT": "adb2d7 EXIT0 2arquivos",
+    "TSC": "nao repetido; semnovoTSC/global/INT porcoordenacao"
+  },
+  "pendencias": [
+    "QAexataR5",
+    "novonamespacewrapper/PORT10paths/ReadyRoot/fresh/GO",
+    "validacao nativa/visual; semnovacapturaR5"
+  ]
+}

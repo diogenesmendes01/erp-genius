@@ -1,0 +1,150 @@
+{
+  "issue": 328,
+  "revisao": "R1_FOCO",
+  "estado": "R1_FOCO_DEV_CONGELADO_GATES0_QA_NATIVE_PENDENTES",
+  "baseHarness": "fa7a554c2a665acd8d3c57cc4c7098e9c3cb318d",
+  "runtimeProduto": "87c01c49bdd91fbbcf7640768d1f0a47125a2606",
+  "fontesExecutaveis": [
+    {
+      "path": "scripts/visual/acoes-oportunidade.mjs",
+      "bytes": 31572,
+      "sha256Fisico": "aa554d6f844534e99766f03f4a222e02dec5df3ce45529557eeadacce1acd7b2",
+      "sha256GitLF": "aa554d6f844534e99766f03f4a222e02dec5df3ce45529557eeadacce1acd7b2",
+      "gitOidWorking": "a94fa2058c550b7de0d12d8b8b844871a21e332b"
+    },
+    {
+      "path": "src/test/visual-inbox-acoes-oportunidade.test.ts",
+      "bytes": 27193,
+      "sha256Fisico": "d9d0822a36714302b9411d99943d949c53e0fe4320f16ecc2a6ea6dde6c65746",
+      "sha256GitLF": "d9d0822a36714302b9411d99943d949c53e0fe4320f16ecc2a6ea6dde6c65746",
+      "gitOidWorking": "59a8d311d413a2aceceb5601d95edb3cde08a860"
+    }
+  ],
+  "deltaExato": "um helperfocoValido e dois retornos do mesmo callback; visivel/acessivel/clipping e todos os demais selos literais",
+  "provas": {
+    "funcoesProtegidasLiterais": [
+      "combinacoesAcoes328",
+      "combinacoesCaptura328",
+      "configurarAcoes328",
+      "configurarAcoesCli328",
+      "descreverAcoes328",
+      "baseLocal",
+      "confirmarAcoes328",
+      "semanticaFechamento328",
+      "preencherPerda",
+      "abrirAcoesApp328",
+      "descricaoPrototipo328",
+      "abrirAcoesPrototipo328"
+    ],
+    "total": 12,
+    "driverFocusCalls": 0,
+    "testesFa7LiteraisExcetoFixtureModalEAssertPositivo": true,
+    "callbacksAutocontidosVerificadosPorVM": true,
+    "pathsProtegidos": 5839,
+    "vetorOidSha256": "4c43cb71b48719acc97da51ded1e0d75a6f061141a4c8f7d95bd07be01dacf10",
+    "CLI_Declaracoes_Originais_Coletores_Pinos_Produto_Literais": true
+  },
+  "gates": {
+    "red": {
+      "executor": "72f6f9",
+      "exit": 1,
+      "failed": 18,
+      "passed": 100,
+      "total": 118
+    },
+    "unit": {
+      "executor": "e70747",
+      "exit": 0,
+      "arquivos": 1,
+      "testes": 118,
+      "maxWorkers": 1,
+      "filtrosInternos": 0,
+      "skips": 0,
+      "segundos": 0.723
+    },
+    "lint": {
+      "executor": "e70747",
+      "exit": 0,
+      "arquivos": 2,
+      "warnings": 0
+    },
+    "TSC": {
+      "session": 9345,
+      "terminal": "bd4aa7",
+      "exit": 0,
+      "node22": true,
+      "heapMiB": 8192,
+      "noEmit": true,
+      "incremental": false,
+      "configOriginal": true,
+      "configAuxiliar": false,
+      "exclusoesExtras": false
+    }
+  },
+  "pacoteFa7NominalIntacto": [
+    {
+      "path": "output/inbox-328-harness-fontes.json",
+      "gitOid": "503eaa96fb38758db3771d1765677c02154f39d1",
+      "sha256Fisico": "d5ac26dee0bd36d9ac2ec9383bbe0c6e025ccbd2c9d8907d8a4f1a458be66529"
+    },
+    {
+      "path": "output/inbox-328-harness-report.md",
+      "gitOid": "15d7991a6131cc033d3029b10fba9b55a3244212",
+      "sha256Fisico": "27e48e24565bcc5fed9b388d81c68b19d7ce59e54b92c7f29b46e3b335fa609f"
+    }
+  ],
+  "evidencias": [
+    {
+      "path": "output/inbox-328-harness-foco-r1-red.log",
+      "bytes": 4440,
+      "sha256": "4ca7933d82a1dfd8dc4421eade9e3e0dc8dc3a8399410195db635981769d5a65"
+    },
+    {
+      "path": "output/inbox-328-harness-foco-r1-green.log",
+      "bytes": 482,
+      "sha256": "72beebfff74bb7dea9f4758ef55c20863f2767ac59eb107e11aa339eddc29d3c"
+    },
+    {
+      "path": "output/inbox-328-harness-foco-r1-lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/inbox-328-harness-foco-r1-tsc.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "operacaoReal": {
+    "DB": 0,
+    "HTTP": 0,
+    "browser": 0,
+    "captura": 0,
+    "fixture": 0,
+    "preview": 0,
+    "acao": 0
+  },
+  "documentos": [
+    {
+      "path": "docs/specs/inbox-acoes-oportunidade.md",
+      "bytes": 7402,
+      "sha256Fisico": "0165b8f6dfdc2939148ab8d6cf8daee6b57a0e50022fcf7ed40f3b6c301cb3c6",
+      "sha256GitLF": "0165b8f6dfdc2939148ab8d6cf8daee6b57a0e50022fcf7ed40f3b6c301cb3c6",
+      "gitOidWorking": "9b585d23a0a0b4cc30bf5976ac0b3ca8c5fa9eef"
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "bytes": 1155969,
+      "sha256Fisico": "fb9137b32112812467bcb477f733a209bc74ea65a80d8c512d7435f34a259309",
+      "sha256GitLF": "1cfb8d5c5873cc128e3cda0964c2c3a7593dfeb0b6efb2ed8a4f5cd17211a4ca",
+      "gitOidWorking": "8bcbcef7d9e16c70a1ebd8754f46ebab915b432e"
+    },
+    {
+      "path": "output/inbox-328-harness-foco-r1-report.md",
+      "bytes": 2478,
+      "sha256Fisico": "22d28bd06264cd0a1d27be4289c0c6ffcc9043d47dd10819a960a19c9eba2ec6",
+      "sha256GitLF": "22d28bd06264cd0a1d27be4289c0c6ffcc9043d47dd10819a960a19c9eba2ec6",
+      "gitOidWorking": "b1b10dbf487221c279e5b42fc31c829603dab971"
+    }
+  ]
+}
