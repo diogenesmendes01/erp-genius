@@ -1,0 +1,5 @@
+import {expect,it,vi} from "vitest";
+vi.mock("@/lib/prisma",()=>({prisma:{}}));
+import {CamposTarefaSchema} from "./tarefas";
+it("campos CRM aditivos aceitam BAIXA/15/1440 e normalizam seleção sem defaults",()=>{expect(CamposTarefaSchema.parse({titulo:"Título",tipo:"OUTRO",prioridade:"BAIXA",lembreteAntecedenciaMin:15,notificarUsuarioIds:[" b ","a","b"]})).toMatchObject({prioridade:"BAIXA",lembreteAntecedenciaMin:15,notificarUsuarioIds:["a","b"]});expect(CamposTarefaSchema.partial().parse({lembreteAntecedenciaMin:1440})).toEqual({lembreteAntecedenciaMin:1440});expect(CamposTarefaSchema.partial().parse({})).toEqual({});expect(CamposTarefaSchema.partial().parse({notificarUsuarioIds:[]})).toEqual({notificarUsuarioIds:[]});});
+it("limites são rejeitados no schema usado pelos writers",()=>{expect(CamposTarefaSchema.partial().safeParse({notificarUsuarioIds:Array.from({length:201},(_,i)=>`u${i}`)}).success).toBe(false);expect(CamposTarefaSchema.partial().safeParse({lembreteAntecedenciaMin:90}).success).toBe(false);});

@@ -1,0 +1,14 @@
+import { expect, it } from "vitest";
+import { ErroRegra } from "@/server/_shared/sessao";
+import { configurarRecorrenciaTarefa, type AncoraConfiguradaTarefa } from "./tarefa-recorrencia-configuracao";
+import { CamposTarefaSchema } from "./tarefas";
+const agenda={dataCivil:"2026-01-31",hora:"09:00",fusoOrigem:"UTC"};
+const atual:AncoraConfiguradaTarefa={recorrencia:"MENSAL",recorrenciaAncoraDataCivil:"2026-01-31",recorrenciaAncoraHora:"09:00",recorrenciaAncoraFuso:"UTC",recorrenciaPoliticaVersao:1,recorrenciaIndice:1};
+it("criação legada omitida não altera defaults",()=>expect(configurarRecorrenciaTarefa(undefined,agenda)).toEqual({}));
+it("ativa grava a âncora original e índicezero",()=>expect(configurarRecorrenciaTarefa("MENSAL",agenda)).toEqual({...atual,recorrenciaIndice:0}));
+it("ativa exige data e não inventa hoje",()=>expect(()=>configurarRecorrenciaTarefa("DIARIA",{...agenda,dataCivil:null,hora:null})).toThrow(ErroRegra));
+it("sódata mantém hora da âncora nula",()=>expect(configurarRecorrenciaTarefa("DIARIA",{...agenda,hora:null})).toMatchObject({recorrenciaAncoraHora:null}));
+it("edição omitida ou mesma opção não deriva âncora da datafevereiro",()=>{expect(configurarRecorrenciaTarefa(undefined,{...agenda,dataCivil:"2026-02-28"},atual)).toEqual({});expect(configurarRecorrenciaTarefa("MENSAL",{...agenda,dataCivil:"2026-02-28"},atual)).toEqual({});});
+it("desativar só a ocorrência limpa configuração sem tocar predecessor",()=>{const r=configurarRecorrenciaTarefa("NAO_REPETE",agenda,atual);expect(r).toEqual({recorrencia:"NAO_REPETE",recorrenciaAncoraDataCivil:null,recorrenciaAncoraHora:null,recorrenciaAncoraFuso:null,recorrenciaPoliticaVersao:null,recorrenciaIndice:0});expect(r).not.toHaveProperty("recorrenciaAnteriorId");});
+it("mudar período começa âncora da ocorrência atual sem editar outros filhos",()=>expect(configurarRecorrenciaTarefa("SEMANAL",{...agenda,dataCivil:"2026-02-28"},atual)).toMatchObject({recorrencia:"SEMANAL",recorrenciaAncoraDataCivil:"2026-02-28",recorrenciaIndice:0}));
+it("schema público preserva recorrência e recusa valor inventado",()=>{expect(CamposTarefaSchema.partial().parse({recorrencia:"MENSAL"})).toEqual({recorrencia:"MENSAL"});expect(CamposTarefaSchema.partial().safeParse({recorrencia:"ANUAL"}).success).toBe(false);});

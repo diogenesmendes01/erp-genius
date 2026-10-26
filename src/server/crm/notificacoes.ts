@@ -1,4 +1,5 @@
-import { escopoAtendimentos } from "@/server/whatsapp/escopo";
+import type { Db } from "@/server/whatsapp/escopo";
+import { lerNotificacoesNaDb } from "./notificacoes-leitura";
 import type { TipoNotificacao } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -11,53 +12,12 @@ export type NotificacaoItem = { id: string; tipo: TipoNotificacao; titulo: strin
 /** Agregado auditado ao marcar como lida: o do item referenciado (SLA → AtendimentoWhatsApp; lembrete → Tarefa). */
 const agregadoDaNotificacao = (refTipo: string): AgregadoTipo => (refTipo === "AtendimentoWhatsApp" ? "AtendimentoWhatsApp" : "Tarefa");
 
-/** As 20 ultimas notificacoes visiveis do proprio usuario, na ordem definida pelo banco.
- * Memoria e consultas sao limitadas por pagina; o custo total depende das paginas revogadas.
- */
-export async function listarNotificacoes(usuario: UsuarioSessao): Promise<NotificacaoItem[]> {
+/** As 20 últimas autorizadas. A Db fornecida é usada diretamente; default sem memo global em ReadCommitted. */
+export async function listarNotificacoes(usuario: UsuarioSessao, db: Db = prisma): Promise<NotificacaoItem[]> {
   if (!usuario?.id) return [];
-  // Memo local: nenhuma consulta de escopo sem referencia de mencao valida.
-  let escopo: ReturnType<typeof escopoAtendimentos> | undefined;
-  const visiveis: NotificacaoItem[] = [];
-  let cursor: { criadaEm: Date; id: string } | undefined;
-  const tamanhoLote = 100;
-  while (visiveis.length < 20) {
-    const linhas = await prisma.notificacaoUsuario.findMany({
-      where: {
-        usuarioId: usuario.id,
-        ...(cursor ? { OR: [
-          { criadaEm: { lt: cursor.criadaEm } },
-          { criadaEm: cursor.criadaEm, id: { lt: cursor.id } },
-        ] } : {}),
-      },
-      orderBy: [{ criadaEm: "desc" }, { id: "desc" }],
-      take: tamanhoLote,
-      select: { id: true, tipo: true, titulo: true, refTipo: true, refId: true, criadaEm: true, lidaEm: true },
-    });
-    if (!linhas.length) break;
-    const ids = [...new Set(linhas
-      .filter(n => n.tipo === "MENCAO_NOTA" && n.refTipo === "AtendimentoWhatsApp")
-      .map(n => n.refId))];
-    const permitidos = new Set(ids.length ? (await prisma.atendimentoWhatsApp.findMany({
-      where: { AND: [
-        { id: { in: ids } },
-        await (escopo ??= escopoAtendimentos(usuario)),
-        { conversa: { contatoId: { not: null }, grupoId: null } },
-      ] },
-      select: { id: true },
-    })).map(a => a.id) : []);
-    for (const n of linhas) {
-      if (n.tipo === "MENCAO_NOTA" && (n.refTipo !== "AtendimentoWhatsApp" || !permitidos.has(n.refId))) continue;
-      visiveis.push({ id: n.id, tipo: n.tipo, titulo: n.titulo, refTipo: n.refTipo, refId: n.refId, criadaEm: n.criadaEm, lida: n.lidaEm !== null });
-      if (visiveis.length === 20) break;
-    }
-    if (linhas.length < tamanhoLote) break;
-    const ultima = linhas[linhas.length - 1];
-    cursor = { criadaEm: ultima.criadaEm, id: ultima.id };
-  }
-  return visiveis;
+  if (db === prisma) return prisma.$transaction(tx => lerNotificacoesNaDb(tx, usuario.id), { isolationLevel: "ReadCommitted", timeout: 5000 });
+  return lerNotificacoesNaDb(db, usuario.id);
 }
-
 /** Marca como lida uma notificação do próprio usuário (idempotente). */
 export async function marcarNotificacaoLida(id: string): Promise<Resultado> {
   return executarAcao(async () => {

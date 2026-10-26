@@ -1,0 +1,18 @@
+import {beforeEach,expect,it,vi} from "vitest";
+import {Papel} from "@prisma/client";
+const m=vi.hoisted(()=>({catalogo:vi.fn(),resolver:vi.fn(),usuario:vi.fn(),atendimento:vi.fn(),pessoa:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{$transaction:async(f:(tx:unknown)=>unknown)=>f({usuario:{findUnique:m.usuario}})}}));
+vi.mock("@/server/crm/tarefa-notificados-consulta",()=>({listarCandidatosNotificadosTarefaD10:m.catalogo}));
+vi.mock("@/server/crm/tarefas-escrita",()=>({resolverResponsavel:m.resolver}));
+vi.mock("@/server/crm/tarefas",async()=>({...await vi.importActual<typeof import("@/server/crm/tarefas")>("@/server/crm/tarefas"),escopoTarefas:vi.fn(async()=>({}))}));
+vi.mock("@/server/whatsapp/atendimentos",()=>({atendimentoVisivel:m.atendimento}));
+vi.mock("./painel-detalhes",()=>({pessoaDoAtendimento:m.pessoa}));
+import {preverNotificadosTarefaInbox} from "./tarefas-edicao";
+import {hashEntrada} from "@/server/_shared/idempotencia";
+const autor={id:"u",nome:"Autor",ativo:true,papeis:[Papel.VENDEDOR],permissoes:[]};
+const a={id:"a",conversaId:"c",contatoId:"ct",leadId:null,finalidade:"COMERCIAL",contato:{pessoaId:null}};
+const identidade=hashEntrada({atendimentoId:a.id,conversaId:a.conversaId,contatoId:a.contatoId,leadId:null,pessoaContatoId:null});
+const contextoEsperado=hashEntrada({contextoIdentidadeEsperada:identidade,oportunidadeVisivelId:null,pessoaId:null});
+beforeEach(()=>{vi.clearAllMocks();m.usuario.mockResolvedValue(autor);m.atendimento.mockResolvedValue(a);m.pessoa.mockResolvedValue(null);m.resolver.mockResolvedValue({responsavelId:"u",setor:"COMERCIAL"});m.catalogo.mockResolvedValue([{id:"u",nome:"Autor"}]);});
+it("preview estável retorna DTO mínimo depois da conferência atual da tupla",async()=>{expect(await preverNotificadosTarefaInbox(autor,"a",{modo:"nova",contextoEsperado})).toMatchObject({candidatos:[{id:"u",nome:"Autor"}],responsavelId:"u",setor:"COMERCIAL"});});
+it("preview recusa catálogo revogado após I/O de contexto sem devolver lista antiga",async()=>{m.catalogo.mockResolvedValueOnce([{id:"u",nome:"Autor"}]).mockResolvedValue([]);await expect(preverNotificadosTarefaInbox(autor,"a",{modo:"nova",contextoEsperado})).rejects.toThrow("A prévia mudou. Atualize os colegas disponíveis.");});

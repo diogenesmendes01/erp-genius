@@ -453,3 +453,7 @@ Agregado `Matricula`. `UsoSaldoServicoPermutaProposto`: propostaId, saldoId, cob
 ### Troca de moeda por aditivo (Q173)
 
 Agregado `Matricula`, cada um na transação do próprio registro imutável. `MoedaAditivoProposta`: propostaId, de, para, fuso (da escola, gravado na proposta) e fotografiaHash. `MoedaAditivoDecidida`: propostaId, decisaoId e aprovada; o motivo fica na decisão. `MoedaAditivoAplicada`: propostaId, aplicacaoId, de, para e fotografiaHash; na mesma transação, o trigger troca `Matricula.moeda` (única escrita aceita nessa coluna). A repetição idêntica devolve o registro existente sem novo evento. Nada é convertido: cobranças, créditos e compras de horas ficam na moeda em que nasceram, e a troca só passa com a matrícula sem pendências na moeda anterior.
+
+### Recorrência de tarefa D10 (#338, runtime em validação)
+
+Agregado Tarefa, autorId null para a materialização automática. RecorrenciaTarefaMaterializada: intencaoId, filhoId, indice, corteOriginal, agoraTentativa, corteEfetivo, ajuste (NENHUM/GAP_AVANCADO/FOLD_PRIMEIRO), solicitado/resolvido (data e hora civil), fuso e politicaVersao. Evento e filho compartilham a TX; replay pelo predecessor não emite outro evento. RecorrenciaTarefaImpedida: intencaoId e codigo fechado VINCULO_INDISPONIVEL/VINCULO_ALTERADO/RESPONSAVEL_INDISPONIVEL/VERSAO_ALTERADA. Erros de infraestrutura não são classificados como impedimento. Payload não copia título/descrição, documento, telefone ou papéis do snapshot. Provas nativas/QA independente deste runtime ainda pendentes.
