@@ -219,6 +219,7 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Certificado (só Costa Rica) · opcional · CampoMoeda · erro: errosPasso2.certificado",
     "Justificativa da exceção (sem tabela de preço) · obrigatório · CampoTexto",
   ],
+  "src/app/(app)/inbox/abas/BarraEtapas.tsx": ["Etapa da oportunidade · opcional · select"],
   "src/app/(app)/inbox/abas/GavetaContato.tsx": [
     '{rotulo} · obrigatório se nome === "nome" · input',
     "Origem do contato · opcional · select",

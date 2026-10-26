@@ -1,0 +1,727 @@
+{
+  "versao": 1,
+  "issue": 327,
+  "tipo": "HANDOFF_DOCUMENTAL_NAO_APLICADO",
+  "baseComparacaoPR420": "179b6919a08cc70fdd078488a0c531395501d1b8",
+  "fonteProdutoRuntime": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+  "fonteSRC327Harness": "cfa243291d154b445e1dec83f52604589f42a58e",
+  "dependencia326": "PR420 obrigatoria para compositor existente:editor/Gaveta/CAS Pessoa/focoRetry/hookR1 e respectivos testes;nao reimportar326 antigo nem publicar historia agregadaA.",
+  "dependencia328": "Somente nucleo de perda+wrapperCAS+propModal,explicitamente parcial e necessario para acaoPERDIDO327;nao fecha328.",
+  "mainAtual": "REF NAO INFERIDA de main localA (stale). Integrador parte de Main atual com337/418/349/491 e aplica hunks sobre420,sem checkout/reset/blobs inteiros A.",
+  "ordem": [
+    "Main atual preservado,comPR420HEAD179b integrado/composto pelo ROOT",
+    "Fundacao minima328 separada e helper327 mutacao",
+    "Consulta/movimento327+dispatcher",
+    "UI327 por hunks com hook326preservado",
+    "Guardas/testes/harness327 por deltas",
+    "SPEC/report/quadro por blocos327,sem substituir quadroMain",
+    "Gates na fonte integrada/preparacao integrador;nao reatribuir gates487 ao Main491"
+  ],
+  "paths": [
+    {
+      "path": "src/server/inbox/painel-oportunidades.ts",
+      "grupo": "327_RUNTIME_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "cd3d428af7b08af7c7902dc666c4ddf191ce8ff3",
+      "deltaGitLFsha256": "ab40fe4fed1ec734666b0c297f8c169889e1233a7f06af7272590eda004e15ad",
+      "hunks": [
+        "@@ -0,0 +1,49 @@"
+      ],
+      "obrigatorio": "Novo DTO/consulta contextual autorizada atual/outras,Db injetavel,sem locks de leitura.",
+      "protecao": "Novo path somente se ausente; caso exista no destino comparar contrato antes de compor."
+    },
+    {
+      "path": "src/server/inbox/contexto-oportunidade.ts",
+      "grupo": "327_RUNTIME_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "a033c0e7d642b338366f9be00dc28f5479442554",
+      "deltaGitLFsha256": "9d902b4575d142925280cfefd8a0b33c6a2eb348aa77799a4eca48aac8d20b83",
+      "hunks": [
+        "@@ -0,0 +1,36 @@"
+      ],
+      "obrigatorio": "Helper interno MUTACAO327/328 sem use server:Atendimento→Lead,ator/escopo/CAS frescos,callback resolvido.",
+      "protecao": "Novo path somente se ausente; caso exista no destino comparar contrato antes de compor."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaOportunidades.tsx",
+      "grupo": "327_RUNTIME_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "7d25acb197f5c159075247f53ae65ede7dfd2be7",
+      "deltaGitLFsha256": "348d0f16b318dd87677667ff39a6f790b454f9c856185ac1af0c9b5e19f6ec23",
+      "hunks": [
+        "@@ -0,0 +1,54 @@"
+      ],
+      "obrigatorio": "Novo bloco327,maquina de etapas,capacidades mover/abrir independentes,delegacao perda existente,sem cartao experimental.",
+      "protecao": "Novo path somente se ausente; caso exista no destino comparar contrato antes de compor."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/BarraEtapas.tsx",
+      "grupo": "327_RUNTIME_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "2b1c554704ae6ff06030f756fcbc41c4f4401816",
+      "deltaGitLFsha256": "35517935784a55f5f631c3a6e09bfbb7103df97ef44325190ef3622909cd9b73",
+      "hunks": [
+        "@@ -0,0 +1,31 @@"
+      ],
+      "obrigatorio": "Barra8segmentos/select10estados e recusas da maquina real.",
+      "protecao": "Novo path somente se ausente; caso exista no destino comparar contrato antes de compor."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/etapas-painel.ts",
+      "grupo": "327_RUNTIME_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "feaf98984df60cd11b531f5e270544becb8bc664",
+      "deltaGitLFsha256": "521b32d7ccf1d9f694fc60494a51fe198c17f8a30045d0b4acffeb5e29c08c29",
+      "hunks": [
+        "@@ -0,0 +1,20 @@"
+      ],
+      "obrigatorio": "Modelo puro/rótulos ETAPA_LABEL e tokensCSS fechados.",
+      "protecao": "Novo path somente se ausente; caso exista no destino comparar contrato antes de compor."
+    },
+    {
+      "path": "src/server/inbox/acoes-painel.ts",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "a02e300e611fbb17743cde77599908c5170d37d7",
+      "fonteCfaOID": "625842ae8455a9544fbd3b0b972099127d25b6c9",
+      "deltaGitLFsha256": "890df651d263954d9db843d8bfc2ce5bb9a585d0b81cb522002ec5dfaa46216f",
+      "hunks": [
+        "@@ -3,0 +4,7 @@ import { z } from \"zod\";",
+        "@@ -95,0 +103,29 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC"
+      ],
+      "obrigatorio": "Adicionar imports EtapaLead/moverEtapaTx/revalidatePath/contexto e moverEtapaNoInbox3args. Outro hunk marcarPerdidoNoInbox e importsPerda pertence FUNDACAO328 explicita. Preservar todas as acoes326/tag e CAS Pessoa.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/server/inbox/painel-abas.ts",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "77d604d96903f580984f9ddcb0f2d050e2ce2333",
+      "fonteCfaOID": "0246453d6e94a1aca06a8f658c1bad30f72596ac",
+      "deltaGitLFsha256": "7e230df9604872a160fa159a1e3d4fd0b4bcbe6dd50be7b75fb00a5691955733",
+      "hunks": [
+        "@@ -1,0 +2 @@ import type { UsuarioSessao } from \"@/server/_shared/sessao\";",
+        "@@ -6 +7 @@ export type AbaDados = \"detalhes\" | \"oportunidades\" | \"atividade\";",
+        "@@ -8 +9 @@ export async function carregarAbaPainel(u: UsuarioSessao, atendimentoId: string,"
+      ],
+      "obrigatorio": "Import e dispatch carregarOportunidadesPainel na aba oportunidades; preservar Detalhes325/326 e Atividade.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "e71edfb2a7b0098ee6dd84edb271e986f98f703b",
+      "fonteCfaOID": "f9d31f6dc0936702ba1f11fa12999aaf62e728fd",
+      "deltaGitLFsha256": "938b7df036de424d54efb03f676f04cde48623fc572e1dd057c72694b57d5141",
+      "hunks": [
+        "@@ -12,0 +13,4 @@ import { AbaDetalhes } from \"./abas/AbaDetalhes\";",
+        "@@ -50,0 +55 @@ export interface PropsInboxNovo {",
+        "@@ -138 +143 @@ const COLUNA_CONVERSA = \"min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1",
+        "@@ -392,3 +397,21 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -396,3 +419,3 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -406 +429,2 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -433 +457 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -435 +459 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -450,3 +474,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -509 +537 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -516 +544 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u",
+        "@@ -517,0 +546,4 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u"
+      ],
+      "obrigatorio": "Adicionar imports327/ModalPerda/tipos,prop podeAbrirFunil defaultfalse,hook Oportunidades sob demanda e sessaoPerda CAS/owner/ACK. Acrescentar branch AbaOportunidades/loader/retry,callback no cartaoDetalhes e suspensao do painel/modal. PRESERVAR a linha420 detalhesAtivos=(detalhesComerciais && abaAtiva===detalhes)||editorAberto; NAO portar a troca antiga para detalhesComerciais&&(abaAtiva===detalhes||editorAberto). Ref de foco326 amplia para dialogoAberto,sem duplicar hook/useSSE.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.tsx",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "13ce8b442dd671fd5470cb9a911acaf28e9d618e",
+      "fonteCfaOID": "f997b9c5d33ccee9b90188eb78e06cdb0b228207",
+      "deltaGitLFsha256": "7a809676123a30c33563b5b46b2a8b892c0449a27bf4e9f82247fdfc1e706787",
+      "hunks": [
+        "@@ -17 +17 @@ export type AbaPainel = { id: IdAbaPainel; rotulo: string; contagem?: number };"
+      ],
+      "obrigatorio": "Somente ABAS_ENTREGUES acrescenta oportunidades; preservar props/editor326,ARIA/tab/roles/slots/Drawer.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaDetalhes.tsx",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "b223bee232c724be2c834935e7c8c8c094e0039e",
+      "fonteCfaOID": "155d33b6db635bd1b917435edda9af833288a3ca",
+      "deltaGitLFsha256": "969eac6229ac53a6f35d1966f535b37c8f49d8e3bb0539f246cc779a76080319",
+      "hunks": [
+        "@@ -5,0 +6 @@ import type { CapacidadesPainel } from \"@/server/inbox/permissoes\";",
+        "@@ -18 +19 @@ function valorDoCampo(campo: CampoPainel): string {",
+        "@@ -31 +32 @@ export function AbaDetalhes({ dados, capacidades }: { dados: DetalhesPainel; cap"
+      ],
+      "obrigatorio": "Prop aoAbrirOportunidades opcional e Botao para card contextual quando callback existir; fallback link e B2B325/hrefs336 continuam.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/page.tsx",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "5b9630977dad2df6d9bd5de080e9e7f26da742d8",
+      "fonteCfaOID": "574998b3c4cf4cc07d80538947486a06048b6858",
+      "deltaGitLFsha256": "08820e71d58b07a521356f6af96a71e8212140d0f809bda91dacaca51932ad82",
+      "hunks": [
+        "@@ -13,0 +14 @@ import { resolverFusoExibicao } from \"@/server/operacao/fuso-exibicao\";",
+        "@@ -67 +68 @@ export default async function InboxPage({"
+      ],
+      "obrigatorio": "Import capacidadesCrm e prop podeAbrirFunil com funil.ver no servidor;sem nova sessao cliente ou duplicacao de papeis.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/botoes-mapa.ts",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "dbbbf1752a4b01c5fa717ee138d9dcb47a628cfd",
+      "fonteCfaOID": "8dd4e3c37bff4c5ac6c6ce9eb66b746f979d1377",
+      "deltaGitLFsha256": "3ea9452eb164f34ffd57966b32e2d4e9734a311fa469851de488a6a2e91fcdf1",
+      "hunks": [
+        "@@ -1131,0 +1132,2 @@ export const MAPA_BOTOES: Record<string, string[]> = {"
+      ],
+      "obrigatorio": "Acrescentar APENAS dois registros AbaDetalhes/Barras; preservar todos326/337/Main.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/campos-mapa.ts",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "f2bcc1ccc7b0ccbb63a45a012b4988882dce0537",
+      "fonteCfaOID": "4718148c41b6e3d1fdd10482c043a22b6600d4b0",
+      "deltaGitLFsha256": "c809cdfe43662345058bd6936d8bcf535f907065efd923cb24ac8016ea700c62",
+      "hunks": [
+        "@@ -221,0 +222 @@ export const MAPA_CAMPOS: Record<string, string[]> = {"
+      ],
+      "obrigatorio": "Acrescentar APENAS registro select BarraEtapas; preservar campos326.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/enums-rotulos.test.ts",
+      "grupo": "327_HUNK_COMPARTILHADO",
+      "baseline420OID": "0b86299711a44af739a45acfc7535fc62c0690f2",
+      "fonteCfaOID": "5e16d38c8eeca0a478c02ce9f85ce2831f11454d",
+      "deltaGitLFsha256": "e4cb72683a5b363f4cf359e9090e9d6d16d847041e79b7cc56ad1e2f443a1cc6",
+      "hunks": [
+        "@@ -1824,0 +1825 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = ["
+      ],
+      "obrigatorio": "Acrescentar APENAS excecao tecnica exata etapas-painel/ternario atual; preservar guarda HTMLinput.type de326 e todos negativos/Main.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/server/inbox/painel-oportunidades.int.test.ts",
+      "grupo": "327_TESTE_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "195c9451a3d6628db67ddc352d5233bd4f5e0a7b",
+      "deltaGitLFsha256": "9f4030d9a6b956c5512debc9f804480f9062d95181afc4914428dd6de812cf80",
+      "hunks": [
+        "@@ -0,0 +1,16 @@"
+      ],
+      "obrigatorio": "Arquivo novo327 completo,sem importar cenarios ou schema491;adaptar somente ao ambiente preparado pelo integrador.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/server/inbox/painel-oportunidades-pool1.int.test.ts",
+      "grupo": "327_TESTE_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "e24a92766472eebfc489b54b1c61f290745fdf7e",
+      "deltaGitLFsha256": "4266a060cb17cfe9c56253b8e9f62624e01392805992a7061c1ed82e9c7c4f1d",
+      "hunks": [
+        "@@ -0,0 +1,10 @@"
+      ],
+      "obrigatorio": "Arquivo novo327 completo,sem importar cenarios ou schema491;adaptar somente ao ambiente preparado pelo integrador.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-etapa.int.test.ts",
+      "grupo": "327_TESTE_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "42cfa810385e2ebc33fbda0a92ac796967310819",
+      "deltaGitLFsha256": "6c59232be5516a840f96de5f002cc27e398402b095051ca28fc71f64fa7726ce",
+      "hunks": [
+        "@@ -0,0 +1,24 @@"
+      ],
+      "obrigatorio": "Arquivo novo327 completo,sem importar cenarios ou schema491;adaptar somente ao ambiente preparado pelo integrador.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaOportunidades.test.ts",
+      "grupo": "327_TESTE_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "0a0842bdc83cb9a8e4427da11033769a02144be3",
+      "deltaGitLFsha256": "4c60db225bff5b18271236554c73094e6d3edbaaa18a70419c4017a7f36a86fc",
+      "hunks": [
+        "@@ -0,0 +1,40 @@"
+      ],
+      "obrigatorio": "Arquivo novo327 completo,sem importar cenarios ou schema491;adaptar somente ao ambiente preparado pelo integrador.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/etapas-painel.test.ts",
+      "grupo": "327_TESTE_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "04950b9449babfd89a3781e5e98f9c888a123826",
+      "deltaGitLFsha256": "9532a32ba02bf4f662782932a8b50a362d20a722f2df4e40c6484153b83e6d2f",
+      "hunks": [
+        "@@ -0,0 +1,14 @@"
+      ],
+      "obrigatorio": "Arquivo novo327 completo,sem importar cenarios ou schema491;adaptar somente ao ambiente preparado pelo integrador.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/server/inbox/painel-abas.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "7459aeba1a80a723ce4770c22956c6cfdd9c2110",
+      "fonteCfaOID": "a653aa1e0c2de6564c1b485e5ffd327e8813c98e",
+      "deltaGitLFsha256": "05cd0e127fcb86a82e4bff3b8164fecf6cbcaa75ca0abd5465a154a48d0833bd",
+      "hunks": [
+        "@@ -2 +2 @@ import { beforeEach, describe, expect, it, vi } from \"vitest\";",
+        "@@ -3,0 +4 @@ vi.mock(\"./painel-detalhes\", () => ({ carregarDetalhesPainel: detalhes }));",
+        "@@ -15 +16 @@ describe(\"dispatcher das abas entregues\", () => {",
+        "@@ -19,0 +21,2 @@ describe(\"dispatcher das abas entregues\", () => {"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.detalhes.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "afcf6a68887dc16c516513ef1c19ccebc485cd22",
+      "fonteCfaOID": "9717c78319aa8f30ded52bfc96ca9b5c1ff9a8f8",
+      "deltaGitLFsha256": "26f1f34ebe86c747fb15bcc71f49170d35facf796b0e44bafc61da92a0bd49f6",
+      "hunks": [
+        "@@ -46 +46 @@ it(\"comercial consome DTO uma vez, apresenta cabeçalho B2B e somente o destino"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.foco.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "652f262a8fb44555752cdd75c724b5eb31fe37f8",
+      "fonteCfaOID": "4b307f2d53af8a48a1ebde30f9fd3d469e13599b",
+      "deltaGitLFsha256": "14da22508ad73f3fc72dba6c7a39e412aa41fcb917be928d423c55da2ec8fcc8",
+      "hunks": [
+        "@@ -9 +9,2 @@ vi.mock(\"next/navigation\",()=>({useRouter:()=>({replace:vi.fn(),push:vi.fn()}),u",
+        "@@ -16 +17,4 @@ vi.mock(\"./ConversaAberta\",async()=>{const {createElement}=await import(\"react\")",
+        "@@ -23 +27 @@ const props={inicial:{itens:[item],proximo:null},filtros:{},selecionado:null,usu",
+        "@@ -81,0 +86,42 @@ it(\"326: fechar semresize mantém foco já restaurado pelo painel, sem roubar pa"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "6b994c437d4157848eea1181d4ddfffb4d6de85c",
+      "fonteCfaOID": "c09cf533729e0a0a5c593f67ec142ab8547c8b8c",
+      "deltaGitLFsha256": "a566c0e2d3ff4ed22dff3d01f51d78d1d071929ca1a745f9814178cc11216c6d",
+      "hunks": [
+        "@@ -707 +707 @@ describe(\"composição318: Detalhes do contato selecionado\", () => {",
+        "@@ -711 +711 @@ describe(\"composição318: Detalhes do contato selecionado\", () => {",
+        "@@ -998 +998 @@ const painel326 = (t: ReactNode) => elementos(t).find(n => n.type === PainelCont",
+        "@@ -1000,2 +1000 @@ it(\"325+326: lápis reutiliza aquisição/DTO de Detalhes, fecha na troca e não"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/PainelContato.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "c785ef289aa164faa0cfe8b81f337febe83d2e63",
+      "fonteCfaOID": "cb84d8a205788dfd210e1292c61f809a60063b55",
+      "deltaGitLFsha256": "3a7909d9d05fbf27206d60c17b0219b86ee483187a9eb0f5daef1702aa680b5f",
+      "hunks": [
+        "@@ -12,6 +12,2 @@ it(\"cabeçalho enriquecido tem avatar132, identidade, tags só leitura e marca s"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/AbaDetalhes.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "639a57267b92755c1ec1a8df38ba0b14028110d2",
+      "fonteCfaOID": "986a6842bcef0f0f7f912c80be6422bb62731848",
+      "deltaGitLFsha256": "4beebd3cb918909cc93d187e9366b275d0c59c0cd9426a9043878584781b5b22",
+      "hunks": [
+        "@@ -0,0 +1 @@",
+        "@@ -3 +4 @@ import { renderToStaticMarkup } from \"react-dom/server\";",
+        "@@ -66,0 +68,2 @@ it(\"dados são escapados e links de conversa vêm somente do contrato autorizado"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/app/(app)/inbox/page.test.ts",
+      "grupo": "327_TESTE_HUNKS",
+      "baseline420OID": "1015c694570ebb1bb1b643cfcffb90b12a5e4b70",
+      "fonteCfaOID": "588ec3f72e141200407ad8e0150ac51d4d4c9dba",
+      "deltaGitLFsha256": "e10cebae80a094f9f7f2bb4bb156b08366a869b25974874c452378500cf13d72",
+      "hunks": [
+        "@@ -13 +13 @@ vi.mock(\"@/server/inbox/opcoes-filtro\", () => ({ opcoesFiltroInbox: mocks.filtro",
+        "@@ -175,0 +176,2 @@ it(\"encaminha instante epoch único da renderização de servidor para hidrataç"
+      ],
+      "obrigatorio": "Somente oraculos327 (duasabas/callback/readonly/globalFunil/sessaoPerda/ACK/identidade/loading) e doubles necessarios; preservar testes326 mais novos e todos contratos337.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/server/crm/marcar-perdido.ts",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": null,
+      "fonteCfaOID": "71322250bdb823979460c95281c10cfc4741a53f",
+      "deltaGitLFsha256": "1ea7a92f43d0a4feee34b2532e92072e1be02cd3a0f33edca015090ad492f542",
+      "hunks": [
+        "@@ -0,0 +1,22 @@"
+      ],
+      "obrigatorio": "Nucleo interno marcarPerdidoTx retornando mudou; sem use server/tx propria; preserva regra/idempotencia Funil.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "src/server/comercial/acoes.ts",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": "33283b596a4c0b11ccf4ac83358f965b855bb79e",
+      "fonteCfaOID": "c04f8d3c81e46539cdd50304611e37291988f715",
+      "deltaGitLFsha256": "e0891b2e0e588302e3363e2f0f5e565212cf053e1b3a235bcea3ac35138a4999",
+      "hunks": [
+        "@@ -61 +61 @@ import { fusoDaEscola } from \"@/server/relatorios/atendimento\";",
+        "@@ -578,22 +578 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu"
+      ],
+      "obrigatorio": "Somente import nucleo e substituir corpo transacional marcarPerdido pela chamada interna;preservar API publica/revalidacao e quaisquer alteracoesMain.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "src/app/(app)/funil/ModalPerda.tsx",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": "b0205b506b1384f0c44664cfe0c78bc235dd9b4c",
+      "fonteCfaOID": "997fc86b5fee429fc7682b88309ccb68dc36698a",
+      "deltaGitLFsha256": "c7bc0410f112a7a641d68610cfb4aec4053e63f46de612ef6504b0a626d202ae",
+      "hunks": [
+        "@@ -13 +13,2 @@ import { marcarPerdido } from \"@/server/comercial/acoes\";",
+        "@@ -27 +28 @@ export function validarPerda(v: ValoresPerda): { erro: string | null; input: { m",
+        "@@ -31,0 +33 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir }: {",
+        "@@ -49 +51 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir }: {",
+        "@@ -51 +53 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir }: {"
+      ],
+      "obrigatorio": "Prop acao opcional backwardcompatible,usa callbackquando fornecido e nao router.refresh nesse caminho;defaultFunil preservado.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "src/app/(app)/funil/ModalPerda.acao.test.ts",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": null,
+      "fonteCfaOID": "93cf1fef4d7d7fec998fb47d79b4e8b73d620c21",
+      "deltaGitLFsha256": "8c7fe1c82a07876f5016034f523b8c8c698b06fcc82406d7585bb649d9e4613f",
+      "hunks": [
+        "@@ -0,0 +1,17 @@"
+      ],
+      "obrigatorio": "Regressao da prop opcional/defaultFunil.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-perda.int.test.ts",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": null,
+      "fonteCfaOID": "3cb35e6f13f45600ec84e4bce8d5b96894b0f073",
+      "deltaGitLFsha256": "a2273f178b3a35fc623df5e638014ef060c8a33f5dc171848cb3fdbf55f30653",
+      "hunks": [
+        "@@ -0,0 +1,27 @@"
+      ],
+      "obrigatorio": "17casos wrapper minimo328,tx/ACL/CAS/rollback/noop;dependencia da opcaoPERDIDO327.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "src/server/inbox/acoes-painel-perda-pool1.int.test.ts",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": null,
+      "fonteCfaOID": "96646894c2a6f389672e579997687ba870ef67ce",
+      "deltaGitLFsha256": "95f6bde3f237c0819247ab4d7a0185090133001352231ffd69cf2a05bec6c4a0",
+      "hunks": [
+        "@@ -0,0 +1,9 @@"
+      ],
+      "obrigatorio": "Pool1 real do wrapper328 na mesmaTx.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "src/test/inbox-perda.ts",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": null,
+      "fonteCfaOID": "0e2ef9201c41eec25f3b8779b9fd2b54b1ce3e23",
+      "deltaGitLFsha256": "5b129d5c6e12d54e3a658094bed577ffe2b8d4cf4b4b62aa67666e0a5896c7c2",
+      "hunks": [
+        "@@ -0,0 +1,5 @@"
+      ],
+      "obrigatorio": "FixtureINTprivada dos testes328 reutilizados327,sem UI/seed real.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "docs/specs/inbox-perda-produtor.md",
+      "grupo": "328_FUNDACAO_MINIMA_EXPLICITA",
+      "baseline420OID": null,
+      "fonteCfaOID": "375bd40525900b8739b9cdecb9f4c92768cb89d6",
+      "deltaGitLFsha256": "f10e5e91e04acd2d7acf071906d1eff1ce1a56984c2fff0f5873e392d32c1866",
+      "hunks": [
+        "@@ -0,0 +1,40 @@"
+      ],
+      "obrigatorio": "Contrato PRODUTOR PARCIAL328;restante328UI/visual permanecependente.",
+      "protecao": "Dependencia tecnica do caminho PERDIDO327,nao entrega328UI;nao portar CartaoExperimental/Assumir/agendar/enviar/confirmar/transferir ou endpoints328 adicionais."
+    },
+    {
+      "path": "scripts/visual/oportunidades-inbox.mjs",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "3de1a17839d6923a6f66f435829a0430e853a82b",
+      "deltaGitLFsha256": "83b7742abcbd5da6b06c4b694b078988f729a999fd937f3d1bdae4d723a15b97",
+      "hunks": [
+        "@@ -0,0 +1,315 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "scripts/visual/oportunidades-inbox.d.mts",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "a451ee5fdd4fdaa0a3d6c3dfdbb2991012d36bfa",
+      "deltaGitLFsha256": "41f024670d9e7129e388132423685490a399b0e48ece5c55cf4e27587e36c177",
+      "hunks": [
+        "@@ -0,0 +1,105 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "scripts/visual/coletor-oportunidades.mjs",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "4ee9eff19f0159224e6ab85cc44721a06b8d9b4b",
+      "deltaGitLFsha256": "b01acf239540d3a17d1df2db7d05a02914c2b9b80f07a24027169380c3aab28c",
+      "hunks": [
+        "@@ -0,0 +1,167 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "scripts/visual/coletor-oportunidades.d.mts",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "57f4669680b0432a094d81cb241798e596e53d45",
+      "deltaGitLFsha256": "b2160c5fd55067946b5737750bb200c0bd98a0febfea366d225e24a0f2538ba0",
+      "hunks": [
+        "@@ -0,0 +1,75 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/test/visual-inbox-oportunidades.test.ts",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "ebee4a3f7be37f7df9ef922113bce81d49945329",
+      "deltaGitLFsha256": "e7337eed2f0f5a479e4307edc8ac5a728e818ae73692cbfcfe8351a6082adb56",
+      "hunks": [
+        "@@ -0,0 +1,450 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/test/visual-inbox-coletor-oportunidades.test.ts",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "7ca4f9ed181d9710e3c62c9ab8969c548ce40fe4",
+      "deltaGitLFsha256": "869ebb34a18f2378e1c2fc6b5859b5fdb18301cd2640c0fd8e807caa3ad98b94",
+      "hunks": [
+        "@@ -0,0 +1,122 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/test/visual-inbox-integracao-oportunidades.test.ts",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "56ffdd8501e8db945304ed74e7ff498a74c755b5",
+      "deltaGitLFsha256": "0cc02c5fc26b20252aeab960d5c914861c7421be22023c8f34d64ae49db45b00",
+      "hunks": [
+        "@@ -0,0 +1,68 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "src/test/visual-inbox-cli-oportunidades.test.ts",
+      "grupo": "327_HARNESS_NOVO",
+      "baseline420OID": null,
+      "fonteCfaOID": "d479a5cc12e4e90aff089627304f2ac9267022f3",
+      "deltaGitLFsha256": "6fe570a8c3fd33becdf94bc8a19a169089c2eb0d36283d17cc77617322ca99b2",
+      "hunks": [
+        "@@ -0,0 +1,138 @@"
+      ],
+      "obrigatorio": "Path327 especifico completo no estado cfa,com notas de fonte APP EBF vsHARNESScfa;nao importar executor privado ou credenciais.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "scripts/visual/capturar-inbox.mjs",
+      "grupo": "327_HARNESS_HUNKS",
+      "baseline420OID": "0602ddaa49c5fb107f26d44e1b2d5404c61417c1",
+      "fonteCfaOID": "b9e361883d6dd89c1d5f6c907b7af578efcb0cd0",
+      "deltaGitLFsha256": "91fd7d51f6cd459003b64e7bf655f4b3f349f0417b6ca8f2ec62df183971c5b9",
+      "hunks": [
+        "@@ -8 +8 @@ import { resolverBancoTeste } from \"../test-profile.mjs\";",
+        "@@ -12,0 +13,2 @@ import { instalarColetorDetalhes325, finalizarCapturasDetalhes325 } from \"./cole",
+        "@@ -36,0 +39,6 @@ function argumentos(argv) {",
+        "@@ -68 +76,8 @@ async function prepararRede(contexto, alvo, base, falhas) {",
+        "@@ -132,0 +148 @@ export async function abrirPrototipo(pagina, estado) {",
+        "@@ -197,2 +213,2 @@ export async function abrirPrototipo(pagina, estado) {",
+        "@@ -200,4 +216,2 @@ async function main() {",
+        "@@ -206,0 +221,3 @@ async function main() {",
+        "@@ -208 +225 @@ async function main() {",
+        "@@ -210 +227 @@ async function main() {",
+        "@@ -220 +237,14 @@ async function main() {",
+        "@@ -230 +260 @@ async function main() {",
+        "@@ -235,0 +266,5 @@ async function main() {",
+        "@@ -238 +273,6 @@ async function main() {",
+        "@@ -247,2 +287,2 @@ async function main() {",
+        "@@ -250 +290 @@ async function main() {",
+        "@@ -256,0 +297,4 @@ async function main() {",
+        "@@ -258 +302 @@ async function main() {",
+        "@@ -263 +307 @@ async function main() {",
+        "@@ -264,0 +309,2 @@ async function main() {",
+        "@@ -272 +318 @@ async function main() {",
+        "@@ -274,4 +320,4 @@ async function main() {",
+        "@@ -279,0 +326,2 @@ async function main() {",
+        "@@ -285 +333 @@ async function main() {",
+        "@@ -290,0 +339,2 @@ async function main() {",
+        "@@ -292 +342,3 @@ async function main() {",
+        "@@ -299 +351 @@ async function main() {"
+      ],
+      "obrigatorio": "Compor imports/planejador/dispatch/coletor327 e18estados novos;preservar todos estados alvo (base220nominal e326seexistentes),guardas953 e coletorDetalhes325. A CLI sozinha NAO autoriza browser/escritas; wrappers privados naturais separados.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "scripts/visual/capturar-inbox.d.mts",
+      "grupo": "327_HARNESS_HUNKS",
+      "baseline420OID": "2ccaa876987601872967ec6eb69d0e71a596d10b",
+      "fonteCfaOID": "b5083a9335a365f5c9572678ee830948897323d7",
+      "deltaGitLFsha256": "a8c1125cd922c710b31f6211527581fa08e75bfc690c2f443aa6067496e3ba54",
+      "hunks": [
+        "@@ -1,3 +1,31 @@"
+      ],
+      "obrigatorio": "Compor imports/planejador/dispatch/coletor327 e18estados novos;preservar todos estados alvo (base220nominal e326seexistentes),guardas953 e coletorDetalhes325. A CLI sozinha NAO autoriza browser/escritas; wrappers privados naturais separados.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    },
+    {
+      "path": "scripts/visual/README.md",
+      "grupo": "327_HARNESS_HUNKS",
+      "baseline420OID": "2b0f26882455a179e39bd7880d070cc1b2cdf729",
+      "fonteCfaOID": "dc7aa9c4184e7daf217e4785527f04b976f1fd6c",
+      "deltaGitLFsha256": "d4bde69a72a2e8b7c7b945e9f2c312880d4fdb530a1a9e2059cdbd5e89db2e83",
+      "hunks": [
+        "@@ -224,0 +225,16 @@ O primeiro negativo26ab1b e o diagnóstico negativo c588cb permanecem rejeitados"
+      ],
+      "obrigatorio": "Compor imports/planejador/dispatch/coletor327 e18estados novos;preservar todos estados alvo (base220nominal e326seexistentes),guardas953 e coletorDetalhes325. A CLI sozinha NAO autoriza browser/escritas; wrappers privados naturais separados.",
+      "protecao": "Compor sobre destino atual; nunca substituir arquivo compartilhado inteiro ou reverter alteracoes de Main."
+    }
+  ],
+  "naoPortar": [
+    "prisma",
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "src/components/conversa/Compositor.tsx",
+    "src/components/conversa/Compositor.test.ts",
+    "src/app/(app)/inbox/ConversaAberta.tsx",
+    "src/app/(app)/tarefas/SinoNotificacoes.tsx",
+    "src/server/crm/notificacoes.ts",
+    "src/server/inbox/mencoes.ts",
+    "src/server/inbox/consultas-mencoes.ts",
+    "src/server/inbox/usuarios-mencoes.ts",
+    "src/lib/mencoes-nota.ts",
+    "src/lib/labels.ts",
+    "src/server/whatsapp/acoes.ts",
+    "src/server/whatsapp/acoes-conversa.ts",
+    "src/server/whatsapp/sessao.ts",
+    "src/app/botoes.test.ts",
+    "src/app/identificacao-registro.test.ts",
+    "src/app/estados-vazios-mapa.ts"
+  ],
+  "semDelta420Preservar": [
+    {
+      "path": "src/server/inbox/painel-detalhes.ts",
+      "baseline420OID": "42d70b5184f8d0899f9cf342f66da446fc73079f",
+      "cfaOID": "42d70b5184f8d0899f9cf342f66da446fc73079f",
+      "portar": false
+    },
+    {
+      "path": "src/server/inbox/permissoes.ts",
+      "baseline420OID": "e434f7cbf6682fb94e997301f554f6362722dcf8",
+      "cfaOID": "e434f7cbf6682fb94e997301f554f6362722dcf8",
+      "portar": false
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/useAbaPainel.ts",
+      "baseline420OID": "bd4d947069016e0cebd8895dfad3b02df4190c8c",
+      "cfaOID": "bd4d947069016e0cebd8895dfad3b02df4190c8c",
+      "portar": false
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/useAbaPainel.test.ts",
+      "baseline420OID": "c4b0cbefff6a23a51405582b3721d1b77e102f02",
+      "cfaOID": "c4b0cbefff6a23a51405582b3721d1b77e102f02",
+      "portar": false
+    },
+    {
+      "path": "src/app/(app)/inbox/abas/GavetaContato.tsx",
+      "baseline420OID": "dcbf91ab45987af71063ab5c87830b243d052b40",
+      "cfaOID": "dcbf91ab45987af71063ab5c87830b243d052b40",
+      "portar": false
+    },
+    {
+      "path": "src/server/crm/etapas.ts",
+      "baseline420OID": "d282549dbc3a33eb69e7c6565600393937d68660",
+      "cfaOID": "d282549dbc3a33eb69e7c6565600393937d68660",
+      "portar": false
+    },
+    {
+      "path": "src/server/comercial/experimental-perda-idempotencia.int.test.ts",
+      "baseline420OID": "1945f79b20204571bb1ecca0758e834af69f6213",
+      "cfaOID": "1945f79b20204571bb1ecca0758e834af69f6213",
+      "portar": false
+    },
+    {
+      "path": "src/server/comercial/leads.int.test.ts",
+      "baseline420OID": "eca5bb07d6271cc285ad2372446d41d251011d65",
+      "cfaOID": "eca5bb07d6271cc285ad2372446d41d251011d65",
+      "portar": false
+    }
+  ],
+  "gatesIntegracaoPendentes": true,
+  "nenhumaAplicacaoTecnica": true,
+  "documentacaoDesteHandoff": [
+    {
+      "path": "docs/specs/inbox-oportunidades.md",
+      "porte": "Bloco atual/corpus e contratos327,sem substituir SPEC325/326/337."
+    },
+    {
+      "path": "docs/planejamento/quadro-entregas.md",
+      "porte": "Somente bloco327curadoria/handoff;preservar integralmente quadroMain."
+    },
+    {
+      "path": "output/inbox-327-entrega-curadoria-handoff.md",
+      "porte": "Novo reportnominal com qualificacoes e pendencias."
+    },
+    {
+      "path": "output/inbox-327-fonte-handoff.json",
+      "porte": "Manifesto de deltas/hunks,nao patch global aplicavel."
+    }
+  ],
+  "anexosPropostos": {
+    "ZIP": {
+      "path": "output/inbox-327-evidencias-selecionadas-v1.zip",
+      "bytes": 1935721,
+      "sha256": "2e06d8551647a73f4e8760c31c09b5767cc5de15e4d6b5a7a739c2f33fd53994"
+    },
+    "PNG": {
+      "path": "output/inbox-327-representativa-v1.png",
+      "bytes": 164617,
+      "sha256": "09f69eb67ab4326b7db8f4e2b1bc0fcaa4c3341e54d5b88f2f028ddd7a548224"
+    },
+    "publicado": false
+  }
+}

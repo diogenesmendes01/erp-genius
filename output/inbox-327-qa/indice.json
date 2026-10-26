@@ -1,0 +1,158 @@
+{
+  "estadoAtual": "REVISAO_R1_MANIFESTO_5PATHS",
+  "fonteExecutavelHistorica": "9a8ebc81fe59eb978a219443485952d56ab83bbe",
+  "composicaoHistorica": "c9016471ee2393ee0645e8d333d5cba6591e370a",
+  "issue": 327,
+  "docsDev": "346ec2e7e687db74f23febf64ac25c53e3205bf4",
+  "dependencia326": {
+    "pr": 420,
+    "base": "ecac425dbfaa59e8438e6afc094bed044fa67579",
+    "mergeada": false
+  },
+  "fundacao328": {
+    "parcial": true,
+    "motivo": "PERDIDO da327 precisa do núcleoTx/CAS e callbackModal; restanteUI328nãoimplementado"
+  },
+  "pareceres": [
+    {
+      "path": "a11-operacional-visual.md",
+      "bytes": 10927,
+      "sha256": "afd86c4a81fa30bbed390d3f89bc0b8912d45846a8a78629a32044fb095f3ac8"
+    },
+    {
+      "path": "curadoria-fd6.md",
+      "bytes": 11380,
+      "sha256": "fedea5c671a5d57000e4bf6feff9844704cf197b07285cc4b9ff6c8ca2bc3165"
+    },
+    {
+      "path": "porte-estatica-9a8.md",
+      "bytes": 7855,
+      "sha256": "ec29a5a011718b4a53449a8f07d252380ef2bedf983ebf987168b37238277a09"
+    },
+    {
+      "path": "porte-dinamica-9a8.md",
+      "bytes": 10762,
+      "sha256": "8346bddc711841d25420f67ee538725ff288ac7a56e647bf883578f4114c3cb9"
+    }
+  ],
+  "gatesDev": {
+    "UNITglobal": {
+      "sessao": 44258,
+      "terminal": "56df77",
+      "exit": 0,
+      "arquivos": 947,
+      "testes": 7742,
+      "segundos": 438.64,
+      "workers": 2,
+      "INTexcluida": true
+    },
+    "typeScriptOriginal": {
+      "sessao": 5350,
+      "terminal": "2c07e3",
+      "exit": 0,
+      "heapMB": 8192,
+      "incremental": false,
+      "exclusoesExtras": false
+    },
+    "lint": {
+      "sessao": 17924,
+      "terminal": "1bebe7",
+      "exit": 0,
+      "paths": 43
+    },
+    "INT": {
+      "sessao": 84101,
+      "terminal": "84d73d",
+      "exit": 0,
+      "arquivos": 7,
+      "testes": 67,
+      "segundos": 243.42,
+      "workers": 1,
+      "filtros": 0,
+      "skips": 0
+    }
+  },
+  "gatesTester": {
+    "UNIT": {
+      "sessao": 92260,
+      "terminal": "aaa8b4",
+      "exit": 0,
+      "arquivos": 17,
+      "testes": 460,
+      "segundos": 9.22,
+      "workers": 2
+    },
+    "INT": {
+      "sessao": 9809,
+      "terminal": "f90840",
+      "exit": 0,
+      "arquivos": 7,
+      "testes": 67,
+      "segundos": 263.04,
+      "workers": 1,
+      "filtros": 0,
+      "skips": 0
+    }
+  },
+  "restaurosRoot": {
+    "devA491": {
+      "executor": "5369da/EXIT0",
+      "tabelas": 424,
+      "registros": 557,
+      "snapshotSha256": "fc12cc64f42cb4dbb48c8e4ac49f58be2e930d8d70c1c9d8b0b6a4a0ddba6660"
+    },
+    "tester491": {
+      "executor": "7dd18a/EXIT0",
+      "tabelas": 424,
+      "registros": 1392,
+      "mensagens": 9,
+      "notas": 4,
+      "snapshotSha256": "f1d15dff3df9ddfab63b8c2e238c0e3d89122c47471d27c8724e20ffd7c291c5"
+    }
+  },
+  "corpusVisual": {
+    "manifesto": "manifesto-visual.json",
+    "imagens": 18,
+    "grupos": [
+      "6APPadminA7nominais9480",
+      "6PROTOA9nominaisbe45",
+      "6APPleitorA11nominaiscfa"
+    ],
+    "APP": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+    "zip": {
+      "arquivo": "inbox-327-evidencias-selecionadas-v1.zip",
+      "bytes": 1935721,
+      "sha256": "2e06d8551647a73f4e8760c31c09b5767cc5de15e4d6b5a7a739c2f33fd53994",
+      "publicado": false,
+      "autorizacao": "PENDENTE"
+    },
+    "representativa": {
+      "arquivo": "inbox-327-representativa-v1.png",
+      "bytes": 164617,
+      "sha256": "09f69eb67ab4326b7db8f4e2b1bc0fcaa4c3341e54d5b88f2f028ddd7a548224",
+      "publicada": false
+    }
+  },
+  "limites": [
+    "Recortes sobrepostos não são somados;seteINT/67érecorte,nãoglobal.",
+    "Corpus misto nominalEBF,sem atribuição de captura ao porte9a8/Main491.A7/A9agregadosEXIT1preservados;A10zeroPNG.Checksnovoshref/slot/fronteiranãoretroaplicadosàA7,badgeNextmobilequalificado.PROTOreferênciaestática.",
+    "CLIhistórica não equivale ao wrapper A11 e não autoriza novaUI/escrita.",
+    "Dependência326/anexos/CI/full/revisão final e merge327 pendentes;328UIparcialpermaneceaberta."
+  ],
+  "revisaoR1": {
+    "prova": "revisao-r1.json",
+    "fonteAnterior": "668abe6576c1834ddb94d2e3f0a547d25b4f1a15",
+    "estado": "CORRECOES_TESTES_LINT_TSC_APROVADOS_QA_FINAL_PENDENTE",
+    "escopo": "Cinco paths: doisMJS de guarda, CLItest, fallbackInboxNovo e testeinteracao. Manifeste original44objetos permanece nominal à fonte anterior9a8/c901/668; não é identidade da revisãoR1."
+  },
+  "integracaoCompleta668": {
+    "prova": "ci-full-668.json",
+    "run": 40146868322,
+    "arquivos": 357,
+    "testes": 3185,
+    "arquivosIgnorados": 3,
+    "testesIgnorados": 4,
+    "fonte": "668abe6576c1834ddb94d2e3f0a547d25b4f1a15",
+    "conclusao": "success"
+  }
+}

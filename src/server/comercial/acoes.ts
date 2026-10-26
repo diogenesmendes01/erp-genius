@@ -58,7 +58,7 @@ import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
 import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { VALOR_CAMPO_LOCAL } from "@/server/operacao/fuso-entrada";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
-import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
+import { marcarPerdidoTx } from "@/server/crm/marcar-perdido";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -575,28 +575,7 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = PerdaSchema.parse(input);
-    await prisma.$transaction(async (tx) => {
-      // Idempotência por natureza (#166, 5º lote): a mesma perda, já registrada por quem repete, com o mesmo motivo
-      // e a mesma observação, devolve ok sem outro `LeadPerdido` (antes, cada reenvio gravava um). A trava do lead
-      // serializa o clique duplo. Qualquer outro caso segue como antes.
-      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
-      const atual = await tx.oportunidade.findUnique({ where: { id }, select: { etapa: true } });
-      if (atual?.etapa === EtapaLead.PERDIDO) {
-        const p = await ultimoEventoDoAutor(tx, { tipo: "LeadPerdido", agregadoTipo: "Lead", agregadoId: id, autorId: autor.id });
-        if (p && p.motivoPerda === dados.motivoPerda && p.observacao === (dados.observacao || null)) return;
-      }
-      await tx.oportunidade.update({
-        where: { id },
-        data: { etapa: EtapaLead.PERDIDO, motivoPerda: dados.motivoPerda },
-      });
-      await registrarEvento(tx, {
-        tipo: "LeadPerdido",
-        agregadoTipo: "Lead",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { motivoPerda: dados.motivoPerda, observacao: dados.observacao || null },
-      });
-    });
+    await prisma.$transaction(tx => marcarPerdidoTx(tx, autor, id, dados).then(() => undefined));
     revalidarLead();
   });
 }

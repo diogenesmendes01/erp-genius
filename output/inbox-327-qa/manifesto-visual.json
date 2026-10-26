@@ -1,0 +1,442 @@
+{
+  "versao": 1,
+  "issue": 327,
+  "composicao": "18 originais selecionados individualmente:6APPadminA7+6PROTOA9+6APPleitorA11; nao e um run18 novo",
+  "publicacao": "PENDENTE autorizacao e integracao ROOT",
+  "produtoRuntime": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+  "fonteHarnessNova": "cfa243291d154b445e1dec83f52604589f42a58e",
+  "mutacoesNegocioExecutadasNesteCorpus": {
+    "Save": 0,
+    "etapa": 0,
+    "perda": 0,
+    "nota": 0,
+    "envio": 0
+  },
+  "escopo": "Somente leitura/navegacao; autenticacao e incidentais naturais autorizados ocorreram no APP.",
+  "negativosPreservados": [
+    "A7 agregadoEXIT1",
+    "A8 agregadoEXIT1",
+    "A9 agregadoEXIT1",
+    "A10EXIT1/0PNG",
+    "diagnosticos sem aceite"
+  ],
+  "qualificacaoA7": "Checks novos href/slot/fronteira nao foram medidos nativamente nas fotos A7. Reuso por congruencia codigo/produtor/fixture; badge Next limita parte do link mobile.",
+  "limitesReferencia": "PROTO original representa fixture e funcionalidades diferentes; sem homologar todas as funcoes desenhadas ou328UI. Nao houve edicao de DOM/CSS/imagem para equivalencia.",
+  "auditoriaLeitor": {
+    "UI": {
+      "detalhes": 17,
+      "oportunidades": 6,
+      "total": 23
+    },
+    "APIpreparatoria": 42,
+    "registrosRede": 290,
+    "naoSSE": 284,
+    "SSE": 6,
+    "incidentaisPOST": 18,
+    "observacao": "7chamadasAPIpreparatorias porPage e3incidentais porPage;0mutaçao de negocio nao significa0POST total."
+  },
+  "pareceresT": {
+    "A7selecao": "831f8678bb6af4a2e9f132633d3fcc159f3a12edf33d257711c3363134769a4b",
+    "congruenciaCfa": "f5bdcacb75bdb51808cfdd39ee57c92bfb0ebb60432cba578bacd7a268f0bec7",
+    "A11": "afd86c4a81fa30bbed390d3f89bc0b8912d45846a8a78629a32044fb095f3ac8",
+    "allowlistA11": "a869150df34f015b313c4ea0263803df6358030c47fc9461e0d17d7c632daa4a"
+  },
+  "arquivos": [
+    {
+      "arquivo": "app-admin/app-escuro-desktop-painel-oportunidades.png",
+      "bytes": 164733,
+      "sha256": "58e0cee5212b908cba617bc0c0179e45b8df3388d5ca7c3e57e8886adb1181e8",
+      "largura": 1440,
+      "altura": 900,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "ator": "admin",
+      "loteOrigem": "A7",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "9480f4336833c7cee29dab50551313a96712878c",
+      "executorSha256": "35edd606a527b9addc19d172c8987f82e54e33ce3ebc7903a1c41099e8fd5070",
+      "manifestoOrigemSha256": "ec002d1459ca6ed4505762daaacb8228b78785b5c1b75b66daf5e4a75599e9fc",
+      "qualificacao": "Selecao individual por congruencia; novos checks href/slot/fronteira nao medidos retroativamente. Badge Next cobre parte do link mobile.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-admin/app-escuro-tablet-painel-oportunidades.png",
+      "bytes": 127142,
+      "sha256": "072de04e16e030b53c0959f17b9d61feaf529ccba385dd1458a940c1473444e1",
+      "largura": 1024,
+      "altura": 768,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "ator": "admin",
+      "loteOrigem": "A7",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "9480f4336833c7cee29dab50551313a96712878c",
+      "executorSha256": "35edd606a527b9addc19d172c8987f82e54e33ce3ebc7903a1c41099e8fd5070",
+      "manifestoOrigemSha256": "ec002d1459ca6ed4505762daaacb8228b78785b5c1b75b66daf5e4a75599e9fc",
+      "qualificacao": "Selecao individual por congruencia; novos checks href/slot/fronteira nao medidos retroativamente. Badge Next cobre parte do link mobile.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-admin/app-escuro-celular-painel-oportunidades.png",
+      "bytes": 39312,
+      "sha256": "2f4f0888e0d7a606e8f107d89a47e09745a52ccb429ffdc8f273e7a073e00f37",
+      "largura": 390,
+      "altura": 844,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "ator": "admin",
+      "loteOrigem": "A7",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "9480f4336833c7cee29dab50551313a96712878c",
+      "executorSha256": "35edd606a527b9addc19d172c8987f82e54e33ce3ebc7903a1c41099e8fd5070",
+      "manifestoOrigemSha256": "ec002d1459ca6ed4505762daaacb8228b78785b5c1b75b66daf5e4a75599e9fc",
+      "qualificacao": "Selecao individual por congruencia; novos checks href/slot/fronteira nao medidos retroativamente. Badge Next cobre parte do link mobile.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-admin/app-claro-desktop-painel-oportunidades.png",
+      "bytes": 164617,
+      "sha256": "09f69eb67ab4326b7db8f4e2b1bc0fcaa4c3341e54d5b88f2f028ddd7a548224",
+      "largura": 1440,
+      "altura": 900,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "ator": "admin",
+      "loteOrigem": "A7",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "9480f4336833c7cee29dab50551313a96712878c",
+      "executorSha256": "35edd606a527b9addc19d172c8987f82e54e33ce3ebc7903a1c41099e8fd5070",
+      "manifestoOrigemSha256": "ec002d1459ca6ed4505762daaacb8228b78785b5c1b75b66daf5e4a75599e9fc",
+      "qualificacao": "Selecao individual por congruencia; novos checks href/slot/fronteira nao medidos retroativamente. Badge Next cobre parte do link mobile.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-admin/app-claro-tablet-painel-oportunidades.png",
+      "bytes": 128782,
+      "sha256": "6a48b2f4aeafd27b804b7dec21a2449f2b3a42a4a4f147142c69d95fd4a30228",
+      "largura": 1024,
+      "altura": 768,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "ator": "admin",
+      "loteOrigem": "A7",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "9480f4336833c7cee29dab50551313a96712878c",
+      "executorSha256": "35edd606a527b9addc19d172c8987f82e54e33ce3ebc7903a1c41099e8fd5070",
+      "manifestoOrigemSha256": "ec002d1459ca6ed4505762daaacb8228b78785b5c1b75b66daf5e4a75599e9fc",
+      "qualificacao": "Selecao individual por congruencia; novos checks href/slot/fronteira nao medidos retroativamente. Badge Next cobre parte do link mobile.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-admin/app-claro-celular-painel-oportunidades.png",
+      "bytes": 39647,
+      "sha256": "f108f2302c637acdb5fa977fab88f24a335040f81cbbf78cf61c52caae5f448e",
+      "largura": 390,
+      "altura": 844,
+      "tema": "claro",
+      "tamanho": "celular",
+      "ator": "admin",
+      "loteOrigem": "A7",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "9480f4336833c7cee29dab50551313a96712878c",
+      "executorSha256": "35edd606a527b9addc19d172c8987f82e54e33ce3ebc7903a1c41099e8fd5070",
+      "manifestoOrigemSha256": "ec002d1459ca6ed4505762daaacb8228b78785b5c1b75b66daf5e4a75599e9fc",
+      "qualificacao": "Selecao individual por congruencia; novos checks href/slot/fronteira nao medidos retroativamente. Badge Next cobre parte do link mobile.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "referencia-prototipo/prototipo-escuro-desktop-painel-oportunidades.png",
+      "bytes": 208097,
+      "sha256": "afb5d91f5d43e74a5830b20b8f2e144d3710a58b86c41945c1f78cbcee2f2061",
+      "largura": 1440,
+      "altura": 900,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "ator": "referencia-estatica",
+      "loteOrigem": "A9",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "be45af52e8fe3700942f2c754802292fdaf5fa54",
+      "executorSha256": "a4b945b76d1f8bd8e19419afd80c2f5ed34b29c92739ceff85e37e125b20107e",
+      "manifestoOrigemSha256": "f58f4e13927a0f1d3d776258892b2a9edd74de9a0894f62569513b1a5179b4a4",
+      "qualificacao": "Referencia estatica original; sem prova de foco/autoscroll/selecao; fixture distinta de APP.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "referencia-prototipo/prototipo-escuro-tablet-painel-oportunidades.png",
+      "bytes": 150419,
+      "sha256": "fc2e3e7c131e16853f7b7ef4dcff1445c491225ec05abbdf51d633c9a5986ccf",
+      "largura": 1024,
+      "altura": 768,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "ator": "referencia-estatica",
+      "loteOrigem": "A9",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "be45af52e8fe3700942f2c754802292fdaf5fa54",
+      "executorSha256": "a4b945b76d1f8bd8e19419afd80c2f5ed34b29c92739ceff85e37e125b20107e",
+      "manifestoOrigemSha256": "f58f4e13927a0f1d3d776258892b2a9edd74de9a0894f62569513b1a5179b4a4",
+      "qualificacao": "Referencia estatica original; sem prova de foco/autoscroll/selecao; fixture distinta de APP.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "referencia-prototipo/prototipo-escuro-celular-painel-oportunidades.png",
+      "bytes": 44929,
+      "sha256": "29bd0b80aefb26565881bd24d31cbd82318a059ba9c553e0b551c86948820141",
+      "largura": 390,
+      "altura": 844,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "ator": "referencia-estatica",
+      "loteOrigem": "A9",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "be45af52e8fe3700942f2c754802292fdaf5fa54",
+      "executorSha256": "a4b945b76d1f8bd8e19419afd80c2f5ed34b29c92739ceff85e37e125b20107e",
+      "manifestoOrigemSha256": "f58f4e13927a0f1d3d776258892b2a9edd74de9a0894f62569513b1a5179b4a4",
+      "qualificacao": "Referencia estatica original; sem prova de foco/autoscroll/selecao; fixture distinta de APP.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "referencia-prototipo/prototipo-claro-desktop-painel-oportunidades.png",
+      "bytes": 209290,
+      "sha256": "c80e528346f25de6ea29d565c47cce65c25d5d5c6e262fbe831b9a2f9289b23d",
+      "largura": 1440,
+      "altura": 900,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "ator": "referencia-estatica",
+      "loteOrigem": "A9",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "be45af52e8fe3700942f2c754802292fdaf5fa54",
+      "executorSha256": "a4b945b76d1f8bd8e19419afd80c2f5ed34b29c92739ceff85e37e125b20107e",
+      "manifestoOrigemSha256": "f58f4e13927a0f1d3d776258892b2a9edd74de9a0894f62569513b1a5179b4a4",
+      "qualificacao": "Referencia estatica original; sem prova de foco/autoscroll/selecao; fixture distinta de APP.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "referencia-prototipo/prototipo-claro-tablet-painel-oportunidades.png",
+      "bytes": 152678,
+      "sha256": "53a79899c0a65849475b04b5d11afc5e049da0562d4b3f023b78f7fdd65ceb1f",
+      "largura": 1024,
+      "altura": 768,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "ator": "referencia-estatica",
+      "loteOrigem": "A9",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "be45af52e8fe3700942f2c754802292fdaf5fa54",
+      "executorSha256": "a4b945b76d1f8bd8e19419afd80c2f5ed34b29c92739ceff85e37e125b20107e",
+      "manifestoOrigemSha256": "f58f4e13927a0f1d3d776258892b2a9edd74de9a0894f62569513b1a5179b4a4",
+      "qualificacao": "Referencia estatica original; sem prova de foco/autoscroll/selecao; fixture distinta de APP.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "referencia-prototipo/prototipo-claro-celular-painel-oportunidades.png",
+      "bytes": 44693,
+      "sha256": "5d0b03a2d0af154895634182267f331f1fefdb2773f880b2f48a68431424ff0f",
+      "largura": 390,
+      "altura": 844,
+      "tema": "claro",
+      "tamanho": "celular",
+      "ator": "referencia-estatica",
+      "loteOrigem": "A9",
+      "resultadoAgregadoOrigem": "EXIT1 preservado; selecao individual",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "be45af52e8fe3700942f2c754802292fdaf5fa54",
+      "executorSha256": "a4b945b76d1f8bd8e19419afd80c2f5ed34b29c92739ceff85e37e125b20107e",
+      "manifestoOrigemSha256": "f58f4e13927a0f1d3d776258892b2a9edd74de9a0894f62569513b1a5179b4a4",
+      "qualificacao": "Referencia estatica original; sem prova de foco/autoscroll/selecao; fixture distinta de APP.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-leitor/app-escuro-desktop-painel-oportunidades-leitor.png",
+      "bytes": 95477,
+      "sha256": "27c159b4505426a465584df2447cf6f96edd61af37e0964a5ba881d142807df6",
+      "largura": 1440,
+      "altura": 900,
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "ator": "leitor",
+      "loteOrigem": "A11",
+      "resultadoAgregadoOrigem": "EXIT0",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "cfa243291d154b445e1dec83f52604589f42a58e",
+      "executorSha256": "6ad3b51a4f3ac42ad9612e92f0aadedbc7f4f976f7f276fa9f425d129892941b",
+      "manifestoOrigemSha256": "8c2972fd1d1fb7ef943ea663d16d583dc3cc28a5e5c72130217fe6927f250d8f",
+      "qualificacao": "Novo candidato completo; QA operacional/visual individual favoravel.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-leitor/app-escuro-tablet-painel-oportunidades-leitor.png",
+      "bytes": 83374,
+      "sha256": "3f54288cec56a4810909090bb96aa0a83be92f9b786ffec491f7194abf124109",
+      "largura": 1024,
+      "altura": 768,
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "ator": "leitor",
+      "loteOrigem": "A11",
+      "resultadoAgregadoOrigem": "EXIT0",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "cfa243291d154b445e1dec83f52604589f42a58e",
+      "executorSha256": "6ad3b51a4f3ac42ad9612e92f0aadedbc7f4f976f7f276fa9f425d129892941b",
+      "manifestoOrigemSha256": "8c2972fd1d1fb7ef943ea663d16d583dc3cc28a5e5c72130217fe6927f250d8f",
+      "qualificacao": "Novo candidato completo; QA operacional/visual individual favoravel.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-leitor/app-escuro-celular-painel-oportunidades-leitor.png",
+      "bytes": 38498,
+      "sha256": "5cd04f2070aee504e52925facb56848da6a0d4adb9ef937ea3a2ff27dba07d16",
+      "largura": 390,
+      "altura": 844,
+      "tema": "escuro",
+      "tamanho": "celular",
+      "ator": "leitor",
+      "loteOrigem": "A11",
+      "resultadoAgregadoOrigem": "EXIT0",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "cfa243291d154b445e1dec83f52604589f42a58e",
+      "executorSha256": "6ad3b51a4f3ac42ad9612e92f0aadedbc7f4f976f7f276fa9f425d129892941b",
+      "manifestoOrigemSha256": "8c2972fd1d1fb7ef943ea663d16d583dc3cc28a5e5c72130217fe6927f250d8f",
+      "qualificacao": "Novo candidato completo; QA operacional/visual individual favoravel.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-leitor/app-claro-desktop-painel-oportunidades-leitor.png",
+      "bytes": 94985,
+      "sha256": "e95b3e3df1b76dd9e64c72513267a4101c02953b5987252c6fd8da896324ee77",
+      "largura": 1440,
+      "altura": 900,
+      "tema": "claro",
+      "tamanho": "desktop",
+      "ator": "leitor",
+      "loteOrigem": "A11",
+      "resultadoAgregadoOrigem": "EXIT0",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "cfa243291d154b445e1dec83f52604589f42a58e",
+      "executorSha256": "6ad3b51a4f3ac42ad9612e92f0aadedbc7f4f976f7f276fa9f425d129892941b",
+      "manifestoOrigemSha256": "8c2972fd1d1fb7ef943ea663d16d583dc3cc28a5e5c72130217fe6927f250d8f",
+      "qualificacao": "Novo candidato completo; QA operacional/visual individual favoravel.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-leitor/app-claro-tablet-painel-oportunidades-leitor.png",
+      "bytes": 85500,
+      "sha256": "f0f1759e30548492c26a419a3728c5849a9396eebf3565f10aadbb32bd947fff",
+      "largura": 1024,
+      "altura": 768,
+      "tema": "claro",
+      "tamanho": "tablet",
+      "ator": "leitor",
+      "loteOrigem": "A11",
+      "resultadoAgregadoOrigem": "EXIT0",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "cfa243291d154b445e1dec83f52604589f42a58e",
+      "executorSha256": "6ad3b51a4f3ac42ad9612e92f0aadedbc7f4f976f7f276fa9f425d129892941b",
+      "manifestoOrigemSha256": "8c2972fd1d1fb7ef943ea663d16d583dc3cc28a5e5c72130217fe6927f250d8f",
+      "qualificacao": "Novo candidato completo; QA operacional/visual individual favoravel.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "arquivo": "app-leitor/app-claro-celular-painel-oportunidades-leitor.png",
+      "bytes": 38988,
+      "sha256": "57a200947b288cd3a1d0243058fca9d4fbf464da478a27eb7492aa9bb1f04691",
+      "largura": 390,
+      "altura": 844,
+      "tema": "claro",
+      "tamanho": "celular",
+      "ator": "leitor",
+      "loteOrigem": "A11",
+      "resultadoAgregadoOrigem": "EXIT0",
+      "fonteApp": "ebf7675d5c7c0397fb9de1a988f78a99c873e37a",
+      "fonteHarness": "cfa243291d154b445e1dec83f52604589f42a58e",
+      "executorSha256": "6ad3b51a4f3ac42ad9612e92f0aadedbc7f4f976f7f276fa9f425d129892941b",
+      "manifestoOrigemSha256": "8c2972fd1d1fb7ef943ea663d16d583dc3cc28a5e5c72130217fe6927f250d8f",
+      "qualificacao": "Novo candidato completo; QA operacional/visual individual favoravel.",
+      "chunksPNG": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    }
+  ]
+}

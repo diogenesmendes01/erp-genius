@@ -7040,3 +7040,60 @@ Fonte0342e776/mainfabf7add;17SRC byteiguaisecac e guarda com só3linhasMain351. 
 ### Composição local com #344/#345 — preparação em 25/10/2026
 
 Candidato local incorpora61f6795b aoD01f da #326:17objetosSRC exclusivos326 literais,3.588objetosMain protegidos e delta do InboxNovo idêntico ao original326 (linhas de edição, sem confundir deslocamento de contexto). Quadro preserva prefixo integral61f e sufixo integral326. UNIT9arquivos/178testes15792/928771EXIT0,w1heap512semfiltros/skips; lintdoInboxNovo70221/f321d3EXIT0. Não houve INT/TSC/global/browser/novoSave nesta composição. A FULL61f ainda precisa terminar e345entrar emmain; nenhumCI nominal anterior é reatribuídoàcomposição. Autorização de anexos326R9/R10 continua pendente. PreparaçãoLOCAL, sempush/merge/fechamento; não substitui gates da publicação.
+
+
+
+
+## Inbox327/328 — fundacao minima portada R2, gates pendentes — 24/10/2026
+
+Base74d4=PR420179b+Main170edbad;DEV A portou somente nucleoPerdaTx/propModal/wrapperCAS/helpercontexto e testes existentes da fundacao minima328. APIsFunil,corpos326 e contratosMain preservados. Sem328UI/CartaoExperimental/Assumir e sem homologacao. Gates487 anteriores nominais;fonteR2 aguarda freeze+UNIT/TSC e GOINT especifico ROOT A491. Nenhum DB/teste/preview iniciado neste checkpoint;AGENTSgerado fora do commit.
+
+## Inbox327 — produto composto R2, antes dos gates — 24/10/2026
+
+Consulta/movimento/UI327 portados por hunks sobre74d4,OR420(abaDetalhesOUeditor) e4defaultsMain343 preservados. Somente paths autorizados,acoes326 preservadas e caminhosMain337/342/343/423 nao selecionados intactos;fundacao328checkpoint ca208d9c parcial. SPEC327historica mantem corpus18/qualificacoes;nao reatribui captura/gates487 ao novoMain. GatesR2 UNIT/TSC aguardamfreeze,INTaguardaGOespecificoROOTA491. SemnovaUI/DB.
+
+## Inbox327 — harness e curadoria portados R2, gates pendentes — 24/10/2026
+
+11paths harness327(compostos porpatchcheck) preservam base325/953/coletorDetalhes e adicionam18casos;nao tornamCLIequivalente ao wrapperA11 nem autorizamUI/escritas. Relatorio/manifesto dehandofffd6preservam corpus18misto,qualificacoes e negativos;ZIP/PNGs/raw privados intocados. Antesgates novo manifesto comparaOIDs45paths comcfa e protecao integral3530OIDsBase74d4,com excecoes justificadasOR420/defaultsMain/imports/docs. Nenhum DB/UI/UNIT/TSC iniciado;ROOTrevermanifestoantesGOINTA491.
+
+## Inbox327 — gates R2 verdes, banco liberado — 24/10/2026
+
+Fonte executável9a8ebc81/Base74d4(PR420+Main):UNITglobal947/7742(44258/56df77)EXIT0,lint43(17924/1bebe7)EXIT0,TSC8GBconfigoriginal(5350/2c07e3)EXIT0. INTUMAvez7arquivosCOMPLETOS/67(84101/84d73d)EXIT0,243,42s,maxWorkers1,semfiltro/skips,GOespecROOT/A491. DB explicitamente liberado;semnovoDB e sem presumir restauro(sóhelperROOTA491).
+
+45paths40OIDs literaiscfa/5exceções justificadas;3509OIDsBasenão-selecionados exatos/0divergência. OR420/editor326,4defaultsMain343,337/Compositor/Sino/whatsapp/labels/schema/deps/953 preservados. Report output/inbox-327-port-r2-report.md e manifesto output/inbox-327-port-r2-fontes.json documentam checkpoints separados328mínima/327produto/harness. Corpus18ZIP/raw permanecemnominaisEBF/privados/qualificados,nãorecapturados/semupload;nenhumruntime pósfreeze. QAfinal/CI/composição/publicaçãoROOT e328UI ainda pendentes;semhomologaçãofinalpresumida.
+
+RestauroROOTA4915369daEXIT0 posterior aos67INT confirmado:424hashes/557registros/sequencias/snapshotfc12preservados. DEVsemnovoDB/UI;fonte9a8congelada,947/7742UNITexatos,67INT e43lint/TSC0. Anexosexistentes aguardamusuario,semSVG/recaptura,328UIparcialaberta.
+
+
+## #327 — QA independente e composição de publicação
+
+
+### Publicação e QA independente da composição327
+Composiçãoc9016471 sobrePR420/ecac preserva43executáveis+README byteiguais9a8 e oquadro420integral. TESTERindependente aprovou17UNIT/460(aaa8b4) e7INTcompletos/67(f90840,263,04s,w1),semfiltros/skips. RootrestaurouTESTER491em7dd18aEXIT0:424hashes/1392registros/sequências/9mensagens4notas;A4915369da557registros. [QA e limites](../../output/inbox-327-qa/indice.json). Corpus18históricoEBF permanece qualificado,sem nova captura;ZIP/PNGaguardamautorização/publicação. Dependência326,CI/full/revisãofinal/merge327pendentes;328UIparcialaberta.
+
+
+### Inbox327 — revisão R1 e integração nominal668
+
+B1 confirmado: gate de originais WindowsCRLF versus blobsLF; guarda/exceção admitem somente os dois rawhashes exatos conhecidos. C3 fallback de capacidades negadas cobre cabeçalho ausente/nulo. B1 RED15/16→GREEN2files24; C3 RED89/91→GREEN3files132; lint5zero;TSCoriginal9539/74fac3 EXIT0;QA final pendente. Full40146868322 nominal668 anteriorpatch:357/3185+3files4optinskips. Backend/schema intocados; corpus histórico não recapturado/relabelado, anexos326/327 e merge continuam pendentes. Fontes em output/inbox-327-qa/revisao-r1.json e ci-full-668.json.
+
+
+### #327 — composição local com editor 326 e base 344/345 (25/10/2026)
+
+A preparação local une F7bc à composição 326/fd60. O quadro preserva o prefixo de 1.171.150 bytes do pai, um LF e o sufixo inteiro de 4.089 bytes da #327. Dos 44 objetos da origem, 40 permanecem literais (39 de código e um README); quatro compartilhados foram compostos. Outros 3.585 objetos do pai estão protegidos. Os helpers das #344/#345 e a aquisição de Detalhes OU editor da #326 continuam literais. A página recompõe o pai ao remover somente o import e a prop de alçada do Funil; o teste de enums recompõe o pai ao remover somente a linha da #327.
+
+Todos os casos Main e o novo caso Funil da #327 são literais. Cinco casos antigos já atualizados pela #344 seguem a Main. O primeiro comparador (73449/b2fc7b, EXIT1) exigia indevidamente esses cinco casos F7 literais; a V2 (25425/85b005, EXIT0) qualifica a origem e preserva o negativo administrativo.
+
+UNIT: 13 arquivos/258 testes, 2939/a38ef0 EXIT0, w1/heap512, sem filtros/skips, 40,42s. As mensagens de capturas do teste CLI são doubles, sem PNG nativa. Lint dos quatro compartilhados: c694fc EXIT0, max-warnings0. Não houve TSC, INT, global, navegador, DDL ou mensagem real nesta composição. A CI do novo head continua necessária. Preparação local, sem push, merge ou encerramento de issue: aguarda a #345 na Main, a dependência #326 e as autorizações dos anexos #326/#327.
+
+## PR #420 integrada; preparação final da PR #427 — 26/10/2026
+
+PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
+
+427fonte5d78:fd60éancestral e3074tree==fd60. Merge9708fffb preservou candidata nos7conflitos de ancestralidade, com INDEXINTEIRO==5d78 antescommit/árvoreinteira69e5503d inalterada. QA5d78 e FULL40168347724(363/3350+3/4opt-in) permanecem nominais; sem novo DB/testes/clientlocal. Registro output/pr427-qa/integracao-20261026.md. CI finalmain/anexos327 ainda gates, sem fechar327 antecipadamente.
+
+
+### #327 — C2 visual anexado com autorização específica, 26/10/2026
+
+ZIP de18capturas históricas/README/manifesto anexado à release QA DRAFT421321214, asset678657729,size1935721,SHA2e06d855...; upload387fe0 e downloadroundtrip0a21aa EXIT0, hashidêntico. Usuário autorizou explicitamente o arquivo no repositório público mantendo a release emrascunho; não alegar download público anônimo. TESTER conferiu18/18 PNGs e manifestos, preservandoA7/A9negativos/A10semPNG e fontesnominais. C2daR2 resolvido pelo anexo, sem nova homologação visual presumida.
+
+CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCESS e integração40168347724/363files3350testes+3files4optinskips mantêm suas fontes. A revisão final foi favorável após atualizar corpo/C2. Registro: docs/qa/inbox-327-anexo-r28-root.md. Este commit é sódocumentação; aguardaCIheadfinalantesdo mergeautorizado e fechamento327. Nenhuma alteração de produto, schema, pacote ou release publicada.

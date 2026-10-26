@@ -1,0 +1,78 @@
+{
+  "base": "668abe6576c1834ddb94d2e3f0a547d25b4f1a15",
+  "referencias": [
+    {
+      "path": "docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html",
+      "gitLF": {
+        "bytes": 183685,
+        "sha256": "d798650956fba7ccee3b4efb22d56e81fb6504d89909c23178b9691d3515db50"
+      },
+      "checkoutWindowsCRLF": {
+        "bytes": 184889,
+        "sha256": "7698a34bad041c95f45710cfe3ed6f79a97ba5f49bf5d941751c37324233d8cf"
+      },
+      "unicaDiferenca": "finais de linha LF/CRLF; conversões exatas verificadas nos dois sentidos"
+    },
+    {
+      "path": "docs/planejamento/inbox-prototipo/prototipo/support.js",
+      "gitLF": {
+        "bytes": 69150,
+        "sha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe"
+      },
+      "checkoutWindowsCRLF": {
+        "bytes": 71061,
+        "sha256": "d6bb6dd3aadb9ff722d5d6db2193572ece476b915899575a571de7a0717f001f"
+      },
+      "unicaDiferenca": "finais de linha LF/CRLF; conversões exatas verificadas nos dois sentidos"
+    }
+  ],
+  "fontes": [
+    {
+      "path": "scripts/visual/capturar-inbox.mjs",
+      "bytesGitLF": 28615,
+      "sha256GitLF": "e56a256d365b6ea1afb04ed35f4710e39bb40f5f3c3e96b457dfabe82ab2d6d3"
+    },
+    {
+      "path": "scripts/visual/oportunidades-inbox.mjs",
+      "bytesGitLF": 28099,
+      "sha256GitLF": "c155a2ff323fc6a020aae457d2c1685fc08179fe62d4465b96d7948a7c20924d"
+    },
+    {
+      "path": "src/test/visual-inbox-cli-oportunidades.test.ts",
+      "bytesGitLF": 12137,
+      "sha256GitLF": "bd57e97cf9d357f7cce9bf4c7fe6c28d8a8ae175d7d21cac9ef0c600760083e6"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.tsx",
+      "bytesGitLF": 38453,
+      "sha256GitLF": "02490ab73c10492e18eac1aa05b25ee059cb85ca4f7ca4f84a4c57d599844c9c"
+    },
+    {
+      "path": "src/app/(app)/inbox/InboxNovo.interacao.test.ts",
+      "bytesGitLF": 76399,
+      "sha256GitLF": "897b101e4a136bce62317f2429f8d21126d9753ebe2900629e0920ab081e2975"
+    }
+  ],
+  "capturasNativasNovas": false,
+  "bancoUsado": false,
+  "limite": "Guarda aceita apenas variantes raw exatas conhecidas; não normaliza arquivos servidos, não modifica originais, manifesto continua com raw real. Corpus histórico continua nominal à fonte física original.",
+  "gates": {
+    "B1": {
+      "red": "22925/7132d0/EXIT1/15passes-1falha-LF-em16",
+      "green": "149e79/EXIT0/2arquivos-24testes/3.41s/w2"
+    },
+    "C3": {
+      "red": "c85b93/EXIT1/89passes-2falhas-em91",
+      "green": "f3748c/EXIT0/3arquivos-132testes/3.45s/w2"
+    },
+    "lint": "e5ddff/EXIT0/5arquivos/maxWarnings0",
+    "tscOriginal": "9539/74fac3/EXIT0/Node22heap8192/noEmit/incrementalfalse/semaux-exclusoesextras"
+  },
+  "limitesAdicionais": [
+    "A primeira tentativa B1 9923/0a4241 terminou por EPERM no cache, sem coletar testes; o RED causal é a repetição escalada.",
+    "Global DEV anterior foi Windows; o finding Linux é real e não foi detectado pela QA estática de identidade anterior.",
+    "Full668 é nominal anterior ao patch: backend, schema e contratos de transação permanecem intocados; nenhum full novo é presumido.",
+    "C4: outras é contrato explícito da issue327 com escopo e limite10; interface deste recorte mostra oportunidade atual.",
+    "Sem nova captura: os únicos logs Capturas/OK/FALHAS desses gates são doubles de UNIT; originais físicos, PNG/ZIP e manifestos históricos ficam intocados."
+  ]
+}

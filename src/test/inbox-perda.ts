@@ -1,0 +1,5 @@
+import {Papel} from "@prisma/client";
+import {prisma} from "@/lib/prisma";
+import {criarUsuario} from "@/test/integracao";
+let seq=0;
+export async function cenarioPerda328(){const dono=await criarUsuario([Papel.VENDEDOR]),n=++seq;const op=await prisma.oportunidade.create({data:{nome:"Curso fictício328",vendedorDonoId:dono.id,etapa:"QUALIFICADO"}});const contato=await prisma.contatoWhatsApp.create({data:{telefoneE164:"+5500000328"+n}});const numero=await prisma.numeroWhatsApp.create({data:{telefoneE164:"+5500001328"+n,rotulo:"Linha fictícia328",driver:"MOTOR",finalidade:"VENDAS",donoId:dono.id}});const conversa=await prisma.conversaWhatsApp.create({data:{numeroId:numero.id,contatoId:contato.id}});const a=await prisma.atendimentoWhatsApp.create({data:{conversaId:conversa.id,contextoChave:"COMERCIAL::328:"+n,finalidade:"COMERCIAL",leadId:op.id}});return{dono,op,contato,numero,conversa,a};}
