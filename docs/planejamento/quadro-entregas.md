@@ -7702,3 +7702,7 @@ ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61
 #369 / PR448 R22 ROOT — comentários C1/C2: resumo opcional adquirido separadamente da lista autorizada de pessoas; falha/espera do resumo não bloqueia transferência, falha da lista não concede acesso. RED2b6bef EXIT1(2falhas/10controles)→GREEN9arquivos90casos16356/416a4e EXIT0, lint2 ede63d EXIT0/zeroavisos. D5 índice alinhado. Sem SQL/schema/alteração da API histórica. QA independente executada/visual/CI e atualização pública da pilha pendentes.
 
 R24 — PR #448: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
+
+### PR #443 C5 — evidência em diretório temporário (propagação R26)
+
+O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
