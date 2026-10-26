@@ -44,6 +44,7 @@ import {
 
 const op: DetalheOportunidade = {
   id: "op1", codigo: "L-000001", nome: "Maria Souza", b2b: false, etapa: "EM_ATENDIMENTO", temperatura: "QUENTE",
+  probabilidadePct: null, previsaoFechamento: null,
   valorPrevisto: "1500.50", moeda: "BRL", pais: "Brasil", dono: { id: "v1", nome: "Ana" },
   proximaAcao: "Ligar", proximoFollowUp: new Date("2026-10-20T15:00:00Z"), dataExperimental: null, motivoPerda: null,
   criadoEm: new Date("2026-10-01T12:00:00Z"), pessoaId: "p1", interesse: "Inglês", objetivo: null,
