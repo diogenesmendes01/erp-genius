@@ -7834,3 +7834,8 @@ Delta42 db441→2e41 integrado sobre f591 sem ancestrais privados/D10 parcial. C
 ### #340 — manifesto de campos após global negativo
 
 Suíte global b90:119333EXIT1,1077arquivos/9572casos(9571pass/1fail); guard campos detectou8entradas ausentes para quatro novos controles em cada formulário. Corrigido somente manifesto8strings, comparação exata preservada; arquivo completo28/28e1ff32EXIT0 e lint0. Nenhuma alteração produtiva/schema/config. TQA b90 independente33+73SQL e171UNIT todos0, restauradoT4993d2c95; gates da próxima fonte ainda pendentes, sem homologação visual.
+
+
+### #372 — backend interno, rascunho R27
+
+Núcleo NOVO e pré-requisitos selecionados, sem ancestrais privados. Acoes.ts conserva forecast341 e ACL atuais; schema499 recebe apenasOrigin500. TESTER independente no candidato b8d:11INT39/39,7UNIT86/86 eTSCglobal terminaram0. Factory e inbound preservam negativos/limites no relatório. BackendEXISTENTE/actions/UI, ownerAdminGC, demaisgatesglobais/CI/visual permanecem pendentes. SemCloses/merge/homologação.
