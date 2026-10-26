@@ -199,6 +199,7 @@ export const ORIGEM_CANAL_LABEL: Readonly<Record<OrigemCanal, string>> = Object.
   LINKEDIN: "Linkedin",
   IMPORTACAO: "Importação",
   OUTRO: "Outro",
+  PROSPECCAO_ATIVA: "Prospecção ativa",
 });
 
 export const TEMPERATURA_LABEL: Record<Temperatura, string> = {
@@ -878,6 +879,7 @@ export const STATUS_TAREFA_LABEL: Readonly<Record<StatusTarefa, string>> = Objec
 });
 
 export const PRIORIDADE_TAREFA_LABEL: Readonly<Record<PrioridadeTarefa, string>> = Object.freeze({
+  BAIXA: "Baixa",
   NORMAL: "Normal",
   ALTA: "Alta",
 });
@@ -923,3 +925,4 @@ export const SENTIMENTO_INSIGHT_LABEL: Readonly<Record<"POSITIVO" | "NEUTRO" | "
 export const ESTADO_GERACAO_INSIGHT_LABEL:Readonly<Record<EstadoGeracaoInsightInbox,string>>=Object.freeze({
   PROCESSANDO:"Gerando análise",PRONTA:"Análise pronta",FALHOU:"Não foi possível gerar a análise",INCERTO:"Resultado inconclusivo",RECUSADA:"Análise não publicada",DESCARTADA:"Análise descartada",
 });
+export const RECORRENCIA_TAREFA_LABEL: Readonly<Record<import("@prisma/client").RecorrenciaTarefa,string>>=Object.freeze({NAO_REPETE:"Não repetir",DIARIA:"Diariamente",SEMANAL:"Semanalmente",MENSAL:"Mensalmente"});

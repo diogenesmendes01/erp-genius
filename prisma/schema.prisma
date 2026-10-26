@@ -520,6 +520,7 @@ enum Papel {
 }
 
 model Usuario {
+  tarefasNotificadas TarefaNotificado[]
   inscricoesPresencaInbox PresencaInbox[]
   geracoesInsightCriadas GeracaoInsightInbox[] @relation("AutorGeracaoInsightInbox")
   geracoesInsightDescartadas GeracaoInsightInbox[] @relation("DescarteGeracaoInsightInbox")
@@ -9420,6 +9421,7 @@ enum OrigemCanal {
   LINKEDIN
   IMPORTACAO
   OUTRO
+  PROSPECCAO_ATIVA
 }
 
 model Pessoa {
@@ -9598,6 +9600,7 @@ enum StatusTarefa {
 }
 
 enum PrioridadeTarefa {
+  BAIXA
   NORMAL
   ALTA
 }
@@ -9616,6 +9619,17 @@ enum TipoNotificacao {
 }
 
 model Tarefa {
+  notificados TarefaNotificado[]
+  recorrencia RecorrenciaTarefa @default(NAO_REPETE)
+  recorrenciaAncoraDataCivil String?
+  recorrenciaAncoraHora String?
+  recorrenciaAncoraFuso String?
+  recorrenciaPoliticaVersao Int?
+  recorrenciaIndice Int @default(0)
+  recorrenciaAnteriorId String? @unique
+  recorrenciaAnterior Tarefa? @relation("RecorrenciaTarefaAnterior", fields: [recorrenciaAnteriorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recorrenciaSeguinte Tarefa? @relation("RecorrenciaTarefaAnterior")
+  intencoesRecorrencia IntencaoRecorrenciaTarefa[]
   id         String                        @id @default(cuid())
   titulo     String
   descricao  String?
@@ -9827,4 +9841,44 @@ model PresencaInbox {
   @@unique([usuarioId,abaId])
   @@index([usuarioId,desconectadaEm,ultimoContatoEm])
   @@index([ultimoContatoEm])
+}
+
+enum RecorrenciaTarefa {
+  NAO_REPETE
+  DIARIA
+  SEMANAL
+  MENSAL
+}
+
+enum EstadoIntencaoRecorrenciaTarefa {
+  PENDENTE
+  MATERIALIZADA
+  CANCELADA_REABERTURA
+  IMPEDIDA_CONTEXTO
+}
+
+model TarefaNotificado {
+  tarefaId String
+  usuarioId String
+  tarefa Tarefa @relation(fields: [tarefaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([tarefaId, usuarioId])
+  @@index([usuarioId])
+}
+
+model IntencaoRecorrenciaTarefa {
+  id String @id @default(cuid())
+  tarefaId String
+  tarefa Tarefa @relation(fields: [tarefaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  conclusaoVersao Int
+  estado EstadoIntencaoRecorrenciaTarefa @default(PENDENTE)
+  versao Int @default(0)
+  corteEm DateTime
+  snapshot Json
+  criadaEm DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  @@unique([tarefaId, conclusaoVersao])
+  @@index([estado, criadaEm, id])
 }

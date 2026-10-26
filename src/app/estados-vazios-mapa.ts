@@ -129,6 +129,7 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
 ];
 
 export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
+  "src/app/(app)/inbox/OpcoesTarefaD10.tsx": ["compacto · Nenhum colega autorizado para esta tarefa."],
   "src/app/(app)/inbox/insights/PainelInsights.tsx": ["compacto · Nenhum Insight gerado ainda.", "compacto · Nenhum sinal de compra identificado.", "compacto · Nenhuma objeção ou risco identificado."],
   "src/app/(app)/inbox/abas/AlteracoesAria.tsx": ["compacto · Aria ainda não alterou nada neste contato."],
   "src/app/(app)/inbox/abas/AbaAtividade.tsx": ["compacto · Nenhuma nota interna ainda."],
@@ -662,11 +663,15 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/abas/TagsContato.tsx": [
     "compacto · Nenhuma tag encontrada.",
   ],
+  "src/app/(app)/inbox/fluxos/nova-conversa/NovaConversaPorNumero.tsx": [
+    "compacto · Nenhuma linha comercial ativa autorizada. Peça à administração para conferir seu canal.",
+    "compacto · Nenhum vendedor ativo autorizado. Confira sua equipe com a administração.",
+  ],
   "src/app/(app)/inbox/fluxos/nova-conversa/PopoverNovaConversa.tsx": [
-    "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
+    "compacto · {opcoes.comercial ? (numeroPermitido ? \"Nenhum contato já cadastrado na sua carteira. Use Conversar ",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
     "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
-    "compacto · Este número não está nos seus contatos. Cadastre o contato antes de iniciar a conversa.",
+    "compacto · {numeroPermitido ? \"Use Conversar por telefone para conferir este número e o canal.\" : \"Este número ",
     "compacto · Nenhuma conversa ou contato encontrado.",
   ],
   "src/app/(app)/inbox/PainelSetor.tsx": [

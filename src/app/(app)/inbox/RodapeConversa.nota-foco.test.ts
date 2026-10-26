@@ -2,7 +2,7 @@ import {act,createElement,StrictMode} from "react";
 import type {Root} from "react-dom/client";
 import {beforeEach,afterEach,expect,it,vi} from "vitest";
 import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
-vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconCalendarEvent","IconMicrophone","IconMoodSmile","IconPaperclip","IconPlayerStop","IconSend","IconTrash","IconLock","IconNote","IconSparkles","IconListCheck"].map(k=>[k,()=>null])));
+vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconCalendarEvent","IconMicrophone","IconMoodSmile","IconPaperclip","IconPlayerStop","IconSend","IconTrash","IconLock","IconNote","IconSparkles","IconListCheck","IconBolt","IconCamera","IconFileCheck","IconFileText","IconMapPin","IconPhoto","IconUser"].map(k=>[k,()=>null])));
 import {RodapeConversa,type PropsRodapeConversa} from "./RodapeConversa";
 let root:Root,host:Elemento,pagina:Elemento;const storage=new Map<string,string>(),criar=vi.fn();
 function prop(e:Elemento,n:string,arg?:unknown){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"))!;return (e as unknown as Record<string,Record<string,(a?:unknown)=>unknown>>)[k][n](arg);}

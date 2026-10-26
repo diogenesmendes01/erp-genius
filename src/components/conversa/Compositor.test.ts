@@ -315,7 +315,7 @@ describe("Compositor", () => {
     (elementos(tela()).find((n) => n.props["aria-label"] === "Anexar")!.props.onClick as () => void)();
     const h = renderToStaticMarkup(createElement("div", null, tela() as ReactNode));
     expect(h).toContain(AVISO_RECURSO_MOTOR);
-    for (const r of ["Contato", "Enquete", "Localização"]) expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
+    for (const r of ["Contato", "Enquete", "Localização"]) esperarAnexoInativo365(tela(), r, AVISO_RECURSO_MOTOR);
   });
 
   it("com capacidade do motor, os três anexos seguem desabilitados com motivo do Inbox", () => {
@@ -327,7 +327,7 @@ describe("Compositor", () => {
     expect(h).toContain("O envio deste tipo pelo Inbox ainda não está disponível.");
     expect(h).toContain(AVISO_ANEXO_EM_BREVE);
     expect(h).not.toContain(AVISO_RECURSO_MOTOR);
-    for (const r of ["Contato", "Enquete", "Localização"]) expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
+    for (const r of ["Contato", "Enquete", "Localização"]) esperarAnexoInativo365(tela(), r, AVISO_ANEXO_EM_BREVE);
   });
 
   it("capacidades parciais mostram o motivo correspondente em cada anexo, sempre desabilitado", () => {
@@ -341,8 +341,8 @@ describe("Compositor", () => {
       ["Enquete", "O envio deste tipo pelo Inbox ainda não está disponível."],
       ["Localização", AVISO_RECURSO_MOTOR],
     ]) {
-      expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${rotulo}</button>`));
-      expect(h.match(new RegExp(`>${rotulo}</button><small[^>]*>([^<]+)</small>`))?.[1]).toBe(aviso);
+      esperarAnexoInativo365(tela(), rotulo, aviso);
+      expect(h).toContain(aviso);
     }
   });
 
@@ -477,4 +477,75 @@ describe("SeletorEmoji", () => {
     expect(buscarEmoji(dados, "", "People & Body").map((e) => e.emoji)).toEqual(["👋"]);
     expect(buscarEmoji(dados, "", "Flags")).toEqual([]);
   });
+});
+
+// #365: cliques locais e atributos nativos; nenhuma câmera, browser ou envio real.
+import { ITENS_ANEXO } from "./itens-anexo";
+function abrirAnexos365(raiz: ReactNode) {
+ const b=elementos(raiz).find(n=>n.type==="button"&&n.props["aria-label"]==="Anexar");
+ expect(b).toBeDefined(); (b!.props.onClick as ()=>void)();
+}
+function campo365(raiz:ReactNode){return elementos(raiz).find(n=>n.type===CampoTexto)!;}
+function ref365(el:unknown){return (el as {ref:unknown}).ref;}
+function focarRef365(raiz:ReactNode,foco:()=>void){const ref=ref365(campo365(raiz));if(typeof ref==="function")ref({focus:foco});else(ref as {current:unknown}).current={focus:foco};}
+function esperarAnexoInativo365(raiz: ReactNode, rotulo: string, aviso: string) {
+ const botoes=elementos(raiz).filter(n=>n.type==="button"&&n.props.role==="menuitem"&&(n.props["aria-label"]===rotulo||n.props.children===rotulo));
+ expect(botoes).toHaveLength(1);expect(botoes[0].props.disabled).toBe(true);expect(botoes[0].props.onClick).toBeUndefined();
+ const id=botoes[0].props["aria-describedby"];expect(typeof id).toBe("string");
+ const descricoes=elementos(raiz).filter(n=>n.type==="small"&&n.props.id===id);expect(descricoes).toHaveLength(1);expect(descricoes[0].props.children).toBe(aviso);
+}
+const RESPOSTA365={id:"r365",atalho:"/preco",titulo:"Preço",corpo:"Olá {nome}"};
+describe("Compositor: itens de anexo (#365 E4.6)",()=>{
+ it("ordem do protótipo com Enquete e sem Catálogo",()=>{
+  expect(ITENS_ANEXO.map(i=>i.rotulo)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Resposta rápida"]);
+ });
+ it("apresenta nove ícones em quadrados arredondados de 40px com tokens por categoria",()=>{
+  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",aoAbrir:vi.fn()}}),tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
+  const quadrados=elementos(tela()).filter(n=>n.type==="span"&&String(n.props.className).includes("h-10"));
+  expect(quadrados).toHaveLength(9);
+  const cores=["bg-blue-100 text-blue-700","bg-ai-100 text-ai-700","bg-red-100 text-red-700","bg-red-100 text-red-700","bg-green-100 text-green-700","bg-blue-100 text-blue-700","bg-orange-100 text-orange-700","bg-green-100 text-green-700","bg-ai-100 text-ai-700"];
+  quadrados.forEach((n,i)=>{expect(n.props.className).toContain("h-10 w-10 shrink-0 items-center justify-center rounded-lg");expect(n.props.className).toContain(cores[i]);expect(n.props["aria-hidden"]).toBe(true);});
+ });
+ it("ordem renderizada preserva Motor e inclui somente portas disponíveis",()=>{
+  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",aoAbrir:vi.fn()}}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirAnexos365(tela());
+  expect(elementos(tela()).filter(n=>n.props.role==="menuitem").map(n=>n.props["aria-label"]??n.props.children)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Resposta rápida"]);
+ });
+ it.each([["Documento","*/*"],["Fotos e vídeos","image/*,video/*"],["Áudio","audio/*"]])("Câmera captura imagem; %s remove capture e preserva rascunho",(rotulo,accept)=>{
+  m.g=criarGanchos();const p=props(),tela=()=>m.g!.renderizar(Compositor,p),input={accept:"",capture:"",removeAttribute:vi.fn(),click:vi.fn()};
+  const seletor=elementos(tela()).find(n=>n.type==="input"&&n.props["aria-label"]==="Escolher arquivo")!;
+  (ref365(seletor) as {current:unknown}).current=input;digitar(tela(),"Rascunho mantido");
+  abrirAnexos365(tela());clicarBotao(tela(),"Câmera");
+  expect(input.accept).toBe("image/*");expect(input.capture).toBe("environment");expect(input.click).toHaveBeenCalledOnce();
+  expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);expect(campo365(tela()).props.value).toBe("Rascunho mantido");
+  abrirAnexos365(tela());clicarBotao(tela(),rotulo);expect(input.accept).toBe(accept);expect(input.removeAttribute).toHaveBeenCalledWith("capture");expect(input.click).toHaveBeenCalledTimes(2);
+  expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();expect(p.aoNota).not.toHaveBeenCalled();
+ });
+ it("Resposta rápida prepara '/' e foca; escolher mantém variáveis sem enviar",()=>{
+  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],variaveisResposta:{nome:"Ana"}}),tela=()=>m.g!.renderizar(Compositor,p),focus=vi.fn();
+  focarRef365(tela(),focus);abrirAnexos365(tela());clicarBotao(tela(),"Resposta rápida");
+  expect(campo365(tela()).props.value).toBe("/");expect(focus).toHaveBeenCalledOnce();expect(localStorage.getItem("conversa-rascunho:at1:responder")).toBe("/");
+  expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);expect(elementos(tela()).some(n=>n.type==="ul"&&n.props["aria-label"]==="Respostas rápidas")).toBe(true);
+  clicarBotao(tela(),"/preco Preço");expect(campo365(tela()).props.value).toBe("Olá Ana");expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();expect(p.aoNota).not.toHaveBeenCalled();
+ });
+ it("sem respostas e sem porta de Proposta não há itens mortos",()=>{
+  m.g=criarGanchos();const p=props(),tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
+  const itens=elementos(tela()).filter(n=>n.props.role==="menuitem");expect(itens.some(n=>n.props["aria-label"]==="Resposta rápida"||n.props.children==="Resposta rápida")).toBe(false);expect(itens.some(n=>n.props["aria-label"]==="Proposta"||n.props.children==="Proposta")).toBe(false);
+ });
+ it("Proposta exige oportunidade e callback pronto; clique só abre uma vez",()=>{
+  m.g=criarGanchos();const abrir=vi.fn();let p=props({propostas:{oportunidadeId:null,aoAbrir:abrir}});const tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
+  expect(elementos(tela()).some(n=>n.props.role==="menuitem"&&n.props["aria-label"]==="Proposta")).toBe(false);
+  p=props({propostas:{oportunidadeId:"op365",aoAbrir:abrir}});clicarBotao(tela(),"Proposta");expect(abrir).toHaveBeenCalledOnce();expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+  expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);
+ });
+ it("callback de resposta retido não altera nem foca outra conversa",()=>{
+  m.g=criarGanchos();let p=props({respostas:[RESPOSTA365]});const tela=()=>m.g!.renderizar(Compositor,p),focus=vi.fn();focarRef365(tela(),focus);abrirAnexos365(tela());
+  const retido=elementos(tela()).find(n=>n.props.role==="menuitem"&&(n.props["aria-label"]==="Resposta rápida"||n.props.children==="Resposta rápida"));expect(retido).toBeDefined();
+  p={...p,atendimentoId:"at2"};tela();digitar(tela(),"Rascunho B");(retido!.props.onClick as ()=>void)();expect(campo365(tela()).props.value).toBe("Rascunho B");expect(focus).not.toHaveBeenCalled();
+ });
+ it("confirmação antiga não apaga nova intenção preparada por Resposta rápida",async()=>{
+  m.g=criarGanchos();let resolver!:(r:{ok:true})=>void;const pendente=new Promise<{ok:true}>(r=>{resolver=r;}),p=props({respostas:[RESPOSTA365],aoEnviarTexto:()=>pendente}),tela=()=>m.g!.renderizar(Compositor,p);
+  digitar(tela(),"Tentativa anterior");const enviando=clicarBotao(tela(),"Enviar");abrirAnexos365(tela());clicarBotao(tela(),"Resposta rápida");resolver({ok:true});await enviando;
+  expect(campo365(tela()).props.value).toBe("/");expect(localStorage.getItem("conversa-rascunho:at1:responder")).toBe("/");
+ });
 });
