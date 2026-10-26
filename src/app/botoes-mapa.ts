@@ -1130,8 +1130,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Carregar anteriores → fantasma/sm",
   ],
   "inbox/RodapeConversa.tsx": ["<Botao> Nota interna → neutro/md", "<Botao> Assumir para responder → primario/md"],
-  "inbox/aria/FaixaHandoff.tsx": ["<Botao> Ver resumo e assumir · Ver resumo → perigo/sm"],
-  "inbox/aria/ModalResumoHandoff.tsx": ["<Botao> Cancelar · Fechar → fantasma/md", "<Botao> Tentar de novo → secundario/md", "<Botao> Assumir e responder → primario/md", "<Botao> Responder → primario/md"],
   "inbox/aria/BotaoDevolverAria.tsx": ["<Botao> Devolver · Devolver para Aria → ia/sm"],
   "inbox/CabecalhoConversa.tsx": ["<Botao> Transferir → neutro/md", "<Botao> Assumir · Assumir conversa → primario/md"],
   "inbox/ConversaAberta.tsx": ["<Botao> Mensagens anteriores → fantasma/sm", "<Botao> Tentar de novo → fantasma/sm"],
