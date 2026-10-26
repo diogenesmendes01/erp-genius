@@ -1,5 +1,5 @@
 "use client";
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { abrirAtendimentoInstitucional, type OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -9,7 +9,13 @@ import { Avatar } from "@/components/Avatar";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { buscarNovaConversa, canaisDoDestino } from "./busca-nova-conversa";
-export function PopoverNovaConversa({ opcoes, itens, aoSelecionar, aoFechar }: { opcoes: OpcoesAtendimento; itens: ItemListaInbox[]; aoSelecionar(id: string): void; aoFechar(): void }) {
+import { Papel } from "@prisma/client";
+import { NovaConversaPorNumero } from "./NovaConversaPorNumero";
+import type { IntencaoNovaConversa } from "./intencao-nova-conversa";
+const assinarVazio = () => () => {}; const lerVazio = () => false;
+export function PopoverNovaConversa({ opcoes, itens, aoSelecionar, aoFechar, usuario, intencao }: { usuario?: {id:string;papeis:Papel[]}; intencao?: IntencaoNovaConversa; opcoes: OpcoesAtendimento; itens: ItemListaInbox[]; aoSelecionar(id: string): void; aoFechar(): void }) {
+ const bloqueado = useSyncExternalStore(intencao?.assinar ?? assinarVazio, () => !!intencao?.ler().comando, lerVazio);
+ const numeroPermitido = !!usuario?.papeis.some(p => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL || p === Papel.ADMINISTRADOR);
  const [busca, setBusca] = useState(""); const [destino, setDestino] = useState(""); const [numero, setNumero] = useState("");
  const acao = useAcaoCliente({ idempotente: true }); const tentativas = useChavesPorAlvo(); const campoId = useId();
  const ocupada = useRef(false);
@@ -17,7 +23,7 @@ export function PopoverNovaConversa({ opcoes, itens, aoSelecionar, aoFechar }: {
  const token = useMemo(() => Symbol(contexto), [contexto]);
  const atual = useRef<symbol | null>(null);
  useLayoutEffect(() => { atual.current = token; return () => { atual.current = null; }; }, [token]);
- const vigente = () => atual.current === token;
+ const vigente = () => atual.current === token && !intencao?.ler().comando;
  const r = buscarNovaConversa(busca, itens, opcoes.destinos); const selecionado = opcoes.destinos.find(d => d.chave === destino);
  const canais = canaisDoDestino(selecionado, opcoes.numeros);
  async function abrir(chave: string, canalId: string) {
@@ -32,7 +38,7 @@ export function PopoverNovaConversa({ opcoes, itens, aoSelecionar, aoFechar }: {
   if (!vigente() || ocupada.current) return; const d = opcoes.destinos.find(d => d.chave === chave); if (!d || d.disponivel === false) return;
   setDestino(chave); setNumero(""); const ns = canaisDoDestino(d, opcoes.numeros); if (ns.length === 1) await abrir(chave, ns[0].id);
  }
- return <div className="space-y-3">
+ return <div className="space-y-3"><fieldset disabled={bloqueado} className="space-y-3 min-w-0">
   <label htmlFor={campoId} className="grid min-w-0 gap-1 text-sm">Nome ou número com DDD
    <input id={campoId} type="search" value={busca} onChange={e => { if (vigente() && !ocupada.current) { setBusca(e.target.value); setDestino(""); setNumero(""); } }} disabled={acao.ocupado} className="w-full rounded-md border border-gray-300 px-3 py-2" />
   </label>
@@ -42,7 +48,9 @@ export function PopoverNovaConversa({ opcoes, itens, aoSelecionar, aoFechar }: {
    <label className="grid min-w-0 gap-1 text-sm">Canal da escola<select required disabled={acao.ocupado} value={numero} onChange={e => { if (vigente() && !ocupada.current) setNumero(e.target.value); }} className="w-full rounded-md border border-gray-300 px-3 py-2"><option value="">Selecione o canal</option>{canais.map(n => <option key={n.id} value={n.id}>{n.nome}</option>)}</select></label>
    <Botao type="submit" disabled={acao.ocupado || !numero}>Abrir atendimento</Botao>
   </form>}
-  {!opcoes.destinos.length ? <EstadoVazio>{opcoes.comercial ? "Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads; as conversas recebidas continuam na lista." : "Nenhum destinatário no seu escopo para abrir um atendimento agora."}</EstadoVazio> : !opcoes.numeros.length ? <EstadoVazio>A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</EstadoVazio> : selecionado?.finalidade === "COMERCIAL" && !canais.length ? <EstadoVazio>Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a você.</EstadoVazio> : r.numeroSemContato ? <EstadoVazio>Este número não está nos seus contatos. Cadastre o contato antes de iniciar a conversa.</EstadoVazio> : !r.conversas.length && !r.destinos.length && <EstadoVazio>Nenhuma conversa ou contato encontrado.</EstadoVazio>}
+  {!opcoes.destinos.length ? <EstadoVazio>{opcoes.comercial ? (numeroPermitido ? "Nenhum contato já cadastrado na sua carteira. Use Conversar por telefone para conferir um número." : "Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads; as conversas recebidas continuam na lista.") : "Nenhum destinatário no seu escopo para abrir um atendimento agora."}</EstadoVazio> : !opcoes.numeros.length ? <EstadoVazio>A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</EstadoVazio> : selecionado?.finalidade === "COMERCIAL" && !canais.length ? <EstadoVazio>Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a você.</EstadoVazio> : r.numeroSemContato ? <EstadoVazio>{numeroPermitido ? "Use Conversar por telefone para conferir este número e o canal." : "Este número não está nos seus contatos. Cadastre o contato antes de iniciar a conversa."}</EstadoVazio> : !r.conversas.length && !r.destinos.length && <EstadoVazio>Nenhuma conversa ou contato encontrado.</EstadoVazio>}
   <FeedbackAcao erro={acao.erro} />
+ </fieldset>
+ {numeroPermitido && usuario && intencao && <NovaConversaPorNumero key={JSON.stringify(usuario)} usuario={usuario} intencao={intencao} aoSelecionar={aoSelecionar} aoFechar={aoFechar} />}
  </div>;
 }

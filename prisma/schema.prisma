@@ -9420,6 +9420,7 @@ enum OrigemCanal {
   LINKEDIN
   IMPORTACAO
   OUTRO
+  PROSPECCAO_ATIVA
 }
 
 model Pessoa {
