@@ -7752,3 +7752,27 @@ R24 — issue #376: revisão/delta isolado preparado. Gates completos da composi
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 
 O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
+
+
+## PR #420 integrada; preparação final da PR #427 — 26/10/2026
+
+PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
+
+427fonte5d78:fd60éancestral e3074tree==fd60. Merge9708fffb preservou candidata nos7conflitos de ancestralidade, com INDEXINTEIRO==5d78 antescommit/árvoreinteira69e5503d inalterada. QA5d78 e FULL40168347724(363/3350+3/4opt-in) permanecem nominais; sem novo DB/testes/clientlocal. Registro output/pr427-qa/integracao-20261026.md. CI finalmain/anexos327 ainda gates, sem fechar327 antecipadamente.
+
+
+### #327 — C2 visual anexado com autorização específica, 26/10/2026
+
+ZIP de18capturas históricas/README/manifesto anexado à release QA DRAFT421321214, asset678657729,size1935721,SHA2e06d855...; upload387fe0 e downloadroundtrip0a21aa EXIT0, hashidêntico. Usuário autorizou explicitamente o arquivo no repositório público mantendo a release emrascunho; não alegar download público anônimo. TESTER conferiu18/18 PNGs e manifestos, preservandoA7/A9negativos/A10semPNG e fontesnominais. C2daR2 resolvido pelo anexo, sem nova homologação visual presumida.
+
+CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCESS e integração40168347724/363files3350testes+3files4optinskips mantêm suas fontes. A revisão final foi favorável após atualizar corpo/C2. Registro: docs/qa/inbox-327-anexo-r28-root.md. Este commit é sódocumentação; aguardaCIheadfinalantesdo mergeautorizado e fechamento327. Nenhuma alteração de produto, schema, pacote ou release publicada.
+
+
+## PR #430 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 5764ddb6afb5e1eef0c3c826b73d0191900eeb58. O ancestral original 5d78ded3c63822d7a9ff8d40987e9c71cd79fce0 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
+## PR #452 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head e2fd0880aaa99f13500b8d7c9104ddd54909219b. O ancestral original 5764ddb6afb5e1eef0c3c826b73d0191900eeb58 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
