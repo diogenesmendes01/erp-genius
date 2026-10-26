@@ -1,4 +1,7 @@
 "use client";
+import {intercalarFio,instanteDoItemFio} from "@/components/conversa/intercalar-fio";
+import {CartaoTarefaDoInbox} from "./CartaoTarefaDoInbox";
+import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
@@ -43,13 +46,18 @@ import type { CandidatoMencao } from "@/lib/mencoes-nota";
 
 export interface PropsConversaAberta {
   item: ItemListaInbox | null;
+  tarefasNoFio?: TarefaPainel[];
+  aoCriarTarefa?: () => void;
+  aoEditarTarefa?: (t:TarefaPainel) => void;
+  pedidoNota?: number;
+  tarefaEmEdicaoId?: string | null;
   /** DTO autorizado do painel da seleção corrente; não é o resumo global. */
   aria?: AriaDoAtendimento | null;
   /** Recibo do GET de painel já existente; não cria aquisição paralela. */
   leituraPainel?: LeituraPainelHandoff;
   /** Bloqueio cliente após404; não substitui a autorização por lead de cada cartão. */
   bloquearDecisoesAria?: boolean;
-  usuario: { id: string; papeis: Papel[] };
+  usuario: { id: string; papeis: Papel[]; nome?: string | null };
   fuso: string | null;
   /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
   agoraInicial?: number;
@@ -108,7 +116,8 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria, leituraPainel, bloquearDecisoesAria = false }: PropsConversaAberta) {
+const TAREFAS_FIO_VAZIAS:TarefaPainel[]=[];
+export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarTarefa, aoEditarTarefa, pedidoNota, tarefaEmEdicaoId, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, agoraInicial, aria, leituraPainel, bloquearDecisoesAria = false }: PropsConversaAberta) {
   const tentativasNota = useChavesPorAlvo();
   const revisoesRascunhos = useRevisoesRascunhos();
   const rolagem = useRef<HTMLDivElement>(null);
@@ -119,7 +128,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     if (!r.ok) throw new Error("Não foi possível buscar pessoas.");
     return r.json();
   }, [atendimentoId]);
-  const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial);
+  const agora = useAgoraDaThread(conversa.mensagens, conversa.notas, item?.id ?? null, agoraInicial, tarefasNoFio);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
   useEffect(() => {
@@ -129,7 +138,11 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     return () => { ativo = false; };
   }, [origemId]);
   const transferidoDe = origemId && origem.de === origemId && origem.setor ? rotular(SETOR_ATENDIMENTO_LABEL, origem.setor) : null;
-  const itens = useMemo(() => decorarThread(intercalarSugestoes(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes, conversa.temMaisDepois), i => i.tipo === "mensagem" ? i.m.criadoEm : i.n.criadoEm, aria?.cartoes ?? [], { inicioJanela: conversa.temMaisAntes ? conversa.mensagens[0]?.criadoEm ?? null : null, fimJanela: conversa.temMaisDepois ? conversa.mensagens[conversa.mensagens.length - 1]?.criadoEm ?? null : null }), { fuso, agora: new Date(agora), transferidoDe }), [conversa.mensagens, conversa.notas, conversa.temMaisAntes, conversa.temMaisDepois, fuso, agora, transferidoDe, aria?.cartoes]);
+  const janelaDesconhecida=!!(conversa.carregando||conversa.erro)&&!conversa.mensagens.length&&!(conversa.notas?.length);
+  const itens=useMemo(()=>decorarThread(intercalarSugestoes(
+    intercalarFio(itensDaThread(conversa.mensagens,conversa.notas??[],conversa.temMaisAntes,conversa.temMaisDepois),janelaDesconhecida?TAREFAS_FIO_VAZIAS:tarefasNoFio,{temMaisAntes:conversa.temMaisAntes,temMaisDepois:conversa.temMaisDepois}),
+    instanteDoItemFio,aria?.cartoes??[],{inicioJanela:conversa.temMaisAntes?conversa.mensagens[0]?.criadoEm??null:null,fimJanela:conversa.temMaisDepois?conversa.mensagens.at(-1)?.criadoEm??null:null}),
+    {fuso,agora:new Date(agora),transferidoDe}),[conversa.mensagens,conversa.notas,conversa.temMaisAntes,conversa.temMaisDepois,janelaDesconhecida,tarefasNoFio,aria?.cartoes,fuso,agora,transferidoDe]);
   const { aberta: buscaAberta, termo, atual: achadoAtual, achados, posicao, campoRef, abrir: abrirBusca, fechar: fecharBusca, aoMudar: mudarBusca, navegar: navegarBusca } = useBuscaConversa(item?.id ?? null, conversa.mensagens, rolagem, itens);
   // A origem (atendimento e número) fica guardada no clique: o encaminhar não muda de conversa se a seleção mudar.
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread; atendimentoId: string; numeroId: string } | null>(null);
@@ -188,15 +201,16 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         {cargaInicial && <EsqueletoThread rotulo="mensagens" />}
         <VirtualList stableMount
           items={itens}
-          pinKeys={achadoAtual ? [achadoAtual] : []}
+          pinKeys={[...(achadoAtual?[achadoAtual]:[]),...(tarefaEmEdicaoId?["tarefa:"+tarefaEmEdicaoId]:[])]}
           getKey={(i) => i.id}
-          isItemFocusable={(i) => i.tipo === "mensagem" || i.tipo === "sugestao-aria"}
+          isItemFocusable={(i) => i.tipo === "mensagem" || i.tipo === "sugestao-aria" || i.tipo === "tarefa"}
           estimatedHeight={72}
           scrollRef={rolagem}
           renderItem={(i) => {
             if (i.tipo === "dia") return <SeparadorDia rotulo={i.rotulo} />;
             if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
+            if (i.tipo === "tarefa") return <CartaoTarefaDoInbox atendimentoId={item?.id??""} t={i.t} bloqueado={bloquearDecisoesAria} fuso={fuso} usuarioNome={usuario.nome??null} aoEditar={aoEditarTarefa} aoMudar={aoMudar}/>;
             if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             const m = i.m;
             return (
@@ -215,6 +229,8 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           aoCampoResponder={handoff?.aoCampoResponder}
           atendimentoId={item.id}
           modo="compositor"
+          aoCriarTarefa={aoCriarTarefa}
+          pedidoNota={pedidoNota}
           podeAnotar={!item.grupo}
           tentativasNota={tentativasNota}
           revisoesRascunhos={revisoesRascunhos}
@@ -238,16 +254,16 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       )}
     </>
   );
-  return item ? <CoordenadorAcoesConversa key={item.id} item={item} aria={aria} leituraPainel={leituraPainel} podeEnviar={envioLiberado} agora={new Date(agora)} linhaAria={linhaAria} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca}>{renderizarConversa}</CoordenadorAcoesConversa> : renderizarConversa(null);
+  return item ? <CoordenadorAcoesConversa key={item.id} item={item} aoCriarTarefa={aoCriarTarefa} aria={aria} leituraPainel={leituraPainel} podeEnviar={envioLiberado} agora={new Date(agora)} linhaAria={linhaAria} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoBuscar={abrirBusca}>{renderizarConversa}</CoordenadorAcoesConversa> : renderizarConversa(null);
 }
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
-function CoordenadorAcoesConversa({ item, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; children(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar">) {
+function CoordenadorAcoesConversa({ item, aoCriarTarefa, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos, aoMudar, aoBuscar, children }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; children(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoCriarTarefa">) {
   const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
   const acoes = useAcoesAtendimento({
     atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
     usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
-    linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar,
+    linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId, destinos, aoMudar, fuso, aoBuscar, aoCriarTarefa,
   });
   return <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => children(acoes, devolver, handoff)}</ControladorDevolverAria>;
 }

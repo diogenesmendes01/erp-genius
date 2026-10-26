@@ -79,13 +79,13 @@ describe("painel lateral por setor", () => {
     const m = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-S" } });
     const n = await numero("COBRANCA");
     const a = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: m.id, responsavelId: sec.id });
-    expect(await carregarPainel(sess(sec), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "SECRETARIA", matriculaCodigo: "MAT-S", matriculaId: m.id, documentosPendentes: 2, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null }, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
+    expect(await carregarPainel(sess(sec), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], tarefasNoFio: [], setor: "SECRETARIA", matriculaCodigo: "MAT-S", matriculaId: m.id, documentosPendentes: 2, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null }, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "c", url: "u" } });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "COMPROVANTE", nome: "x", url: "u", arquivado: true } });
     expect(await carregarPainel(sess(sec), a.id)).toMatchObject({ documentosPendentes: 1 });
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, sec);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null, documentosPendentes: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null }, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], tarefasNoFio: [], setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null, documentosPendentes: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null }, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
   });
 
   it("professor no pedagógico vê turma e frequência; sem telefone", async () => {
@@ -104,12 +104,12 @@ describe("painel lateral por setor", () => {
     const n = await numero("VENDAS");
     const a = await atendimento(n.id, (await contato({ alunoId: aluno.id, telefoneE164: "+50680001111" })).id, { finalidade: "PEDAGOGICO", alunoId: aluno.id, matriculaId: m.id, turmaId: turma.id });
     const painel = await carregarPainel(sess(prof), a.id);
-    expect(painel).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75, podeEnviar: true, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null },
+    expect(painel).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], tarefasNoFio: [], setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75, podeEnviar: true, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null },
       acoes: expect.objectContaining({ nomeSalvo: null, nomePerfil: null, podeCriarLead: false, podeVincular: false, podeEditarNome: false, cobranca: null }) });
     expect(JSON.stringify(painel)).not.toMatch(/\+\d{6,}/);
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, prof);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], setor: "PEDAGOGICO", turma: null, frequenciaPct: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null },
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], tarefasNoFio: [], setor: "PEDAGOGICO", turma: null, frequenciaPct: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeDecidir: false, cartoes: [], handoff: null },
       acoes: expect.objectContaining({ podeVincular: false, podeEditarNome: false }) });
   });
   // C6 do #217: o compositor do Inbox novo decide pelo podeEnviar da thread (atendimentoVisivel com envio), não
@@ -247,4 +247,21 @@ it("335: id de matrícula segue os gates atuais do código, nunca a mera partici
   for (const a of [aFin, aSec]) expect(await carregarPainel(sess(fora), a.id)).toBeNull();
   const sem = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", responsavelId: sec.id });
   expect(await carregarPainel(sess(sec), sem.id)).toMatchObject({ setor: "SECRETARIA", matriculaCodigo: null, matriculaId: null });
+});
+
+it("332 tarefas do fio: só vínculo direto e ACL própria, com todos estados e sem exigir envio",async()=>{
+ const dono=await criarUsuario([Papel.VENDEDOR]),fora=await criarUsuario([Papel.VENDEDOR]),op=await prisma.oportunidade.create({data:{nome:"Lead332",vendedorDonoId:dono.id}});
+ const a=await atendimento((await numero("VENDAS",dono.id)).id,(await contato()).id,{finalidade:"COMERCIAL",leadId:op.id});
+ const outra=await atendimento((await numero("VENDAS",dono.id)).id,(await contato()).id,{finalidade:"COMERCIAL",leadId:op.id});
+ const base={titulo:"Tarefa332",tipo:"OUTRO" as const,setor:"COMERCIAL" as const,responsavelId:dono.id,criadorId:dono.id,fusoOrigem:"UTC",leadId:op.id};
+ const ids:string[]=[];for(const [n,status] of (["ABERTA","CONCLUIDA","CANCELADA"] as const).entries()){const t=await prisma.tarefa.create({data:{...base,status,atendimentoId:a.id,criadoEm:new Date(Date.UTC(2026,9,25,10,n)),...(status==="CONCLUIDA"?{concluidaEm:new Date(),concluidaPorId:dono.id}:status==="CANCELADA"?{canceladaEm:new Date(),motivoCancelamento:"Teste332"}:{})}});ids.push(t.id);}
+ await prisma.tarefa.create({data:{...base,atendimentoId:outra.id}});await prisma.tarefa.create({data:base});await prisma.tarefa.create({data:{...base,atendimentoId:a.id,responsavelId:fora.id}});
+ const r=await carregarPainel(sess(dono),a.id);expect(r?.tarefasNoFio?.map(t=>[t.id,t.status])).toEqual(ids.map((id,n)=>[id,["ABERTA","CONCLUIDA","CANCELADA"][n]]));
+ const professor=await criarUsuario([Papel.PROFESSOR]);await participar(a.id,professor,dono);expect((await carregarPainel(sess(professor),a.id))?.tarefasNoFio).toEqual([]);expect(await carregarPainel(sess(fora),a.id)).toBeNull();
+});
+it("332 tarefa direta de Secretaria sem lead não concede envio nem CRM comercial",async()=>{
+ const sec=await criarUsuario([Papel.SECRETARIA_ACADEMICA]);const a=await atendimento((await numero("COBRANCA")).id,(await contato()).id,{finalidade:"SECRETARIA",responsavelId:sec.id});
+ await prisma.atendimentoWhatsApp.update({where:{id:a.id},data:{status:"ENCERRADO",encerradoEm:new Date()}});
+ const t=await prisma.tarefa.create({data:{titulo:"Documento332",tipo:"EMAIL",setor:"SECRETARIA",responsavelId:sec.id,criadorId:sec.id,fusoOrigem:"UTC",atendimentoId:a.id}});
+ const r=await carregarPainel(sess(sec),a.id);expect(r).toMatchObject({setor:"SECRETARIA",podeEnviar:false,cabecalho:{capacidades:{tarefas:true,veLead:false,moverEtapa:false}}});expect(r?.tarefasNoFio?.map(x=>x.id)).toEqual([t.id]);
 });
