@@ -1,0 +1,14 @@
+import {beforeEach,expect,it,vi} from "vitest";
+import {Papel} from "@prisma/client";
+const {sessao,tx}=vi.hoisted(()=>({sessao:vi.fn(),tx:{usuario:{findUnique:vi.fn()},tarefa:{findFirst:vi.fn()}}}));
+vi.mock("@/lib/prisma",()=>({prisma:{$transaction:vi.fn(async(f:(db:typeof tx)=>unknown)=>f(tx))}}));
+vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+vi.mock("@/server/_shared/sessao",async()=>({...await vi.importActual<typeof import("@/server/_shared/sessao")>("@/server/_shared/sessao"),exigirSessao:sessao}));
+vi.mock("@/server/_shared/idempotencia",async()=>({...await vi.importActual<typeof import("@/server/_shared/idempotencia")>("@/server/_shared/idempotencia"),repeticaoIdempotente:vi.fn(async()=>({agregadoId:"t"}))}));
+import {criarTarefa} from "./tarefas";
+const autor={id:"u",nome:"Autor",ativo:true,papeis:[Papel.VENDEDOR],permissoes:[]};
+const entrada={titulo:"Retorno",tipo:"OUTRO" as const,chaveIdempotencia:"d10-replay-338",notificarUsuarioIds:[]};
+beforeEach(()=>{vi.clearAllMocks();sessao.mockResolvedValue(autor);tx.usuario.findUnique.mockResolvedValue(autor);tx.tarefa.findFirst.mockResolvedValue({id:"t"});});
+it("replayD10 valida ator e escopo fresh antes de devolver identidade da Task",async()=>{expect(await criarTarefa(entrada)).toMatchObject({ok:true,dado:{id:"t"}});expect(tx.usuario.findUnique).toHaveBeenCalledOnce();expect(tx.tarefa.findFirst).toHaveBeenCalledOnce();});
+it("papelPortal ou Task fora de escopo não recebe id no replay",async()=>{tx.usuario.findUnique.mockResolvedValueOnce({...autor,papeis:[Papel.ALUNO]});expect((await criarTarefa(entrada)).ok).toBe(false);tx.tarefa.findFirst.mockResolvedValueOnce(null);expect((await criarTarefa(entrada)).ok).toBe(false);});
+it("payload legado omitido conserva replay histórico sem consultas novas",async()=>{const {notificarUsuarioIds,...legado}=entrada;void notificarUsuarioIds;expect(await criarTarefa(legado)).toMatchObject({ok:true,dado:{id:"t"}});expect(tx.usuario.findUnique).not.toHaveBeenCalled();});

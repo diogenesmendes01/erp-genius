@@ -1,14 +1,16 @@
+import {listarCandidatosNotificadosTarefaD10} from "@/server/crm/tarefa-notificados-consulta";
+import {erroContencaoNotificadosTarefaD10} from "@/server/crm/tarefa-notificados";
 import {z} from "zod";
 import type {Prisma,Tarefa} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
-import {ErroRegra,type UsuarioSessao} from "@/server/_shared/sessao";
+import {ErroRegra,apenasPortal,type UsuarioSessao} from "@/server/_shared/sessao";
 import {hashEntrada,marcaIdempotencia,repeticaoIdempotente} from "@/server/_shared/idempotencia";
 import {ChaveIdempotenciaSchema} from "@/server/_shared/validacao";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {nomeDoContato} from "@/server/whatsapp/nome-contato";
 import {podeVerLeadNaThread} from "@/server/whatsapp/consultas-inbox";
 import {CamposTarefaSchema,escopoTarefas} from "@/server/crm/tarefas";
-import {criarTarefaTx,editarTarefaTx,type OpcoesEdicaoTarefaTx} from "@/server/crm/tarefas-escrita";
+import {criarTarefaTx,editarTarefaTx,resolverResponsavel,type OpcoesEdicaoTarefaTx} from "@/server/crm/tarefas-escrita";
 import {concluirTarefaTx} from "@/server/crm/tarefas-transicoes";
 import {listarResponsaveisPossiveis} from "@/server/crm/tarefas-consulta";
 import {capacidadesCrm,exigirCapacidadeCrm} from "@/server/crm/permissoes";
@@ -23,11 +25,11 @@ const Criar=Campos.merge(Contexto).extend({vincularOportunidade:z.boolean(),jaFe
 const Editar=Campos.partial().merge(Contexto).extend({vinculo:z.enum(["manter","vincularAtual","remover"])}).strict();
 export type CriarTarefaInboxInput=z.input<typeof Criar>;
 export type EditarTarefaInboxInput=z.input<typeof Editar>;
-export type TarefaModalSnapshot={id:string;versao:number;titulo:string;tipo:Tarefa["tipo"];descricao:string;prioridade:Tarefa["prioridade"];dataCivil:string|null;hora:string|null;inicioEm:string|null;duracaoMin:15|30|45|60|90;fusoOrigem:string;lembreteAntecedenciaMin:0|10|30|60|null;responsavelId:string|null;leadId:string|null;pessoaId:string|null;podeAlterarVinculo:boolean;vinculadaAtual:boolean};
-export type DadosModalTarefa={contatoNome:string;oportunidade:{id:string;titulo:string}|null;responsaveis:{id:string;nome:string}[];podeAtribuirResponsavel:boolean;fusoEscola:string;usuarioId:string;contextoEsperado:string;contextoIdentidadeEsperada:string;tarefa:TarefaModalSnapshot|null};
+export type TarefaModalSnapshot={id:string;versao:number;titulo:string;tipo:Tarefa["tipo"];descricao:string;prioridade:Tarefa["prioridade"];recorrencia:Tarefa["recorrencia"];dataCivil:string|null;hora:string|null;inicioEm:string|null;duracaoMin:15|30|45|60|90;fusoOrigem:string;lembreteAntecedenciaMin:0|10|15|30|60|1440|null;responsavelId:string|null;notificarUsuarioIds:string[];leadId:string|null;pessoaId:string|null;podeAlterarVinculo:boolean;vinculadaAtual:boolean};
+export type DadosModalTarefa={contatoNome:string;oportunidade:{id:string;titulo:string}|null;responsaveis:{id:string;nome:string}[];notificadosPossiveis:{id:string;nome:string}[];podeAtribuirResponsavel:boolean;fusoEscola:string;usuarioId:string;contextoEsperado:string;contextoIdentidadeEsperada:string;tarefa:TarefaModalSnapshot|null};
 async function contexto(tx:Prisma.TransactionClient,sessao:UsuarioSessao,id:string){
  const autor=await tx.usuario.findUnique({where:{id:sessao.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
- if(!autor?.ativo)throw new ErroRegra("Sua sessão não está mais ativa.");
+ if(!autor?.ativo||apenasPortal(autor))throw new ErroRegra("Sua sessão não está mais ativa.");
  exigirCapacidadeCrm(autor,"tarefas.ver");
  const a=await atendimentoVisivel(autor,id,false,tx);if(!a)throw new ErroRegra("Atendimento não encontrado.");
  const visivel=a.finalidade==="COMERCIAL"&&!!a.leadId&&await podeVerLeadNaThread(autor,id,a.leadId,Date.now(),tx);
@@ -48,8 +50,12 @@ export async function dadosTarefaModal(sessao:UsuarioSessao,atendimentoId:string
   const c=await contexto(tx,sessao,id),t=tarefaId?await tarefaVisivel(tx,Id.parse(tarefaId),c.filtro):null;
   if(t&&t.status!=="ABERTA")throw new ErroRegra("Só tarefas abertas podem ser editadas.");
   const local=t?.inicioEm?valorCampoLocal(t.inicioEm,fuso):null;
-  return {contatoNome:nomeDoContato(c.a.contato),oportunidade:c.op?{id:c.op.id,titulo:c.op.nome}:null,responsaveis:await listarResponsaveisPossiveis(c.autor,tx),podeAtribuirResponsavel:capacidadesCrm(c.autor.papeis).has("tarefas.equipe"),fusoEscola:fuso,usuarioId:c.autor.id,contextoEsperado:c.contextoEsperado,contextoIdentidadeEsperada:c.contextoIdentidadeEsperada,
-   tarefa:t?{id:t.id,versao:t.versao,titulo:t.titulo,tipo:t.tipo,descricao:t.descricao??"",prioridade:t.prioridade,dataCivil:local?.slice(0,10)??t.dataCivil,hora:local?.slice(11,16)??null,inicioEm:t.inicioEm?.toISOString()??null,duracaoMin:CamposTarefaSchema.shape.duracaoMin.parse(t.duracaoMin)!,fusoOrigem:t.fusoOrigem,lembreteAntecedenciaMin:CamposTarefaSchema.shape.lembreteAntecedenciaMin.parse(t.lembreteAntecedenciaMin)??null,responsavelId:t.responsavelId,leadId:t.leadId,pessoaId:t.pessoaId,podeAlterarVinculo:!!c.op&&(!t.leadId||t.leadId===c.op.id),vinculadaAtual:!!c.op&&t.leadId===c.op.id}:null};
+  const dono=t?{responsavelId:t.responsavelId,setor:t.setor}:await resolverResponsavel(tx,c.autor,undefined);
+  const notificadosPossiveis=await listarCandidatosNotificadosTarefaD10(tx,c.autor,{...dono,gerenteDoResponsavelId:null});
+  const notificarUsuarioIds=t?(await tx.tarefaNotificado.findMany({where:{tarefaId:t.id},select:{usuarioId:true}})).map(n=>n.usuarioId).sort():[];
+  const final=await contexto(tx,sessao,id);conferir(final,c.contextoEsperado);if(t)await tarefaVisivel(tx,t.id,final.filtro);
+  return {contatoNome:nomeDoContato(c.a.contato),oportunidade:c.op?{id:c.op.id,titulo:c.op.nome}:null,responsaveis:await listarResponsaveisPossiveis(c.autor,tx),notificadosPossiveis,podeAtribuirResponsavel:capacidadesCrm(c.autor.papeis).has("tarefas.equipe"),fusoEscola:fuso,usuarioId:c.autor.id,contextoEsperado:c.contextoEsperado,contextoIdentidadeEsperada:c.contextoIdentidadeEsperada,
+   tarefa:t?{id:t.id,versao:t.versao,titulo:t.titulo,tipo:t.tipo,descricao:t.descricao??"",prioridade:t.prioridade,recorrencia:t.recorrencia,dataCivil:local?.slice(0,10)??t.dataCivil,hora:local?.slice(11,16)??null,inicioEm:t.inicioEm?.toISOString()??null,duracaoMin:CamposTarefaSchema.shape.duracaoMin.parse(t.duracaoMin)!,fusoOrigem:t.fusoOrigem,lembreteAntecedenciaMin:CamposTarefaSchema.shape.lembreteAntecedenciaMin.parse(t.lembreteAntecedenciaMin)??null,responsavelId:t.responsavelId,notificarUsuarioIds,leadId:t.leadId,pessoaId:t.pessoaId,podeAlterarVinculo:!!c.op&&(!t.leadId||t.leadId===c.op.id),vinculadaAtual:!!c.op&&t.leadId===c.op.id}:null};
  });
 }
 export async function criarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string,input:CriarTarefaInboxInput):Promise<{id:string}>{
@@ -66,8 +72,9 @@ export async function criarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string
   if(vincularOportunidade&&!c.op)throw new ErroRegra("A oportunidade atual não está disponível para vínculo.");
   const t=await criarTarefaTx(tx,c.autor,{...campos,atendimentoId:id,leadId:vincularOportunidade?c.op!.id:undefined,pessoaId:c.pessoa?.pessoaId},fuso,marca);
   if(jaFeita)await concluirTarefaTx({tx,autor:c.autor,tarefa:t,versao:t.versao,filtro:c.filtro},null);
+  {const final=await contexto(tx,sessao,id);conferir(final,contextoEsperado);}
   await avisarAtendimento(tx,id);return {id:t.id};
- });
+ }).catch(erroContencaoNotificadosTarefaD10);
 }
 export async function editarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string,tarefaId:string,versao:number,input:EditarTarefaInboxInput):Promise<void>{
  const id=Id.parse(atendimentoId),tid=Id.parse(tarefaId),v=z.number().int().positive().parse(versao),i=Editar.parse(input);
@@ -93,6 +100,40 @@ export async function editarTarefaInbox(sessao:UsuarioSessao,atendimentoId:strin
    opcoes.agendamento={dataCivil:inicioEm?valorCampoLocal(inicioEm,t.fusoOrigem).slice(0,10):data,inicioEm,lembreteAntecedenciaMin:antecedencia,lembrarEm:inicioEm&&antecedencia!==null?new Date(inicioEm.getTime()-antecedencia*60000):null};
    delete d.dataCivil;delete d.hora;delete d.lembreteAntecedenciaMin;
   }
-  await editarTarefaTx(tx,c.autor,t,v,d,opcoes);await avisarAtendimento(tx,id);
- });
+  await editarTarefaTx(tx,c.autor,t,v,d,opcoes);
+  {const final=await contexto(tx,sessao,id);conferir({contextoEsperado:i.vinculo==="manter"?final.contextoIdentidadeEsperada:final.contextoEsperado},i.contextoEsperado);}
+  await avisarAtendimento(tx,id);
+ }).catch(erroContencaoNotificadosTarefaD10);
+}
+
+const PedidoPreviaNotificados=z.discriminatedUnion("modo",[
+ z.object({modo:z.literal("nova"),responsavelPretendidoId:Id.nullish(),contextoEsperado:Id}).strict(),
+ z.object({modo:z.literal("editar"),tarefaId:Id,versao:z.number().int().positive(),responsavelPretendidoId:Id.nullish(),contextoEsperado:Id}).strict(),
+]);
+export type PedidoPreviaNotificadosTarefa=z.input<typeof PedidoPreviaNotificados>;
+export type PreviaNotificadosTarefa={candidatos:{id:string;nome:string}[];responsavelId:string|null;setor:Tarefa["setor"];previaHash:string};
+/** Readonly: nenhuma nova autorização é derivada de uma seleção do browser. */
+export async function preverNotificadosTarefaInbox(sessao:UsuarioSessao,atendimentoId:string,pedido:PedidoPreviaNotificadosTarefa):Promise<PreviaNotificadosTarefa>{
+ const id=Id.parse(atendimentoId),p=PedidoPreviaNotificados.parse(pedido);
+ return prisma.$transaction(async tx=>{
+  const c=await contexto(tx,sessao,id);conferir({contextoEsperado:p.modo==="editar"?c.contextoIdentidadeEsperada:c.contextoEsperado},p.contextoEsperado);
+  const t=p.modo==="editar"?await tarefaVisivel(tx,p.tarefaId,c.filtro):null;
+  if(t&&(t.status!=="ABERTA"||p.modo!=="editar"||t.versao!==p.versao))throw new ErroRegra("Esta tarefa foi alterada. Reabra o formulário.");
+  const solicitado=p.responsavelPretendidoId===undefined&&t?t.responsavelId:p.responsavelPretendidoId;
+  const dono=await resolverResponsavel(tx,c.autor,solicitado);
+  const candidatos=await listarCandidatosNotificadosTarefaD10(tx,c.autor,{...dono,gerenteDoResponsavelId:null});
+  const final=await contexto(tx,sessao,id);conferir({contextoEsperado:p.modo==="editar"?final.contextoIdentidadeEsperada:final.contextoEsperado},p.contextoEsperado);
+  if(t){const atual=await tarefaVisivel(tx,t.id,final.filtro);if(atual.versao!==t.versao||atual.status!=="ABERTA")throw new ErroRegra("Esta tarefa foi alterada. Reabra o formulário.");}
+  const ultimo=await resolverResponsavel(tx,final.autor,solicitado);
+  if(ultimo.responsavelId!==dono.responsavelId||ultimo.setor!==dono.setor)throw new ErroRegra("A atribuição mudou. Atualize os colegas disponíveis.");
+  // Reconciliar a tupla após os I/Os de contexto/atribuição: uma mudança recusa,
+  // sem trocar silenciosamente a seleção que o formulário está editando.
+  const candidatosFinais=await listarCandidatosNotificadosTarefaD10(tx,final.autor,{...ultimo,gerenteDoResponsavelId:null});
+  const contextoFinal=await contexto(tx,sessao,id);
+  conferir({contextoEsperado:p.modo==="editar"?contextoFinal.contextoIdentidadeEsperada:contextoFinal.contextoEsperado},p.contextoEsperado);
+  const tarefaFinal=t?await tarefaVisivel(tx,t.id,contextoFinal.filtro):null;
+  const donoFinal=await resolverResponsavel(tx,contextoFinal.autor,solicitado);
+  if(JSON.stringify(candidatosFinais)!==JSON.stringify(candidatos)||JSON.stringify(donoFinal)!==JSON.stringify(dono)||t&&(!tarefaFinal||tarefaFinal.versao!==t.versao||tarefaFinal.status!=="ABERTA"||tarefaFinal.responsavelId!==t.responsavelId||tarefaFinal.setor!==t.setor))throw new ErroRegra("A prévia mudou. Atualize os colegas disponíveis.");
+  return {candidatos:candidatosFinais,...donoFinal,previaHash:hashEntrada({atendimentoId:id,contextoEsperado:p.contextoEsperado,tarefaId:tarefaFinal?.id??null,versao:tarefaFinal?.versao??null,...donoFinal,candidatos:candidatosFinais.map(u=>u.id)})};
+ },{timeout:5000});
 }

@@ -7987,6 +7987,16 @@ O fallback legado do número sem cadastro passa ao texto pedido na D9, sem instr
 
 DEV confirmou14UNIT, lint e TypeScript0; quatro nativos completos com207leads/ties/top200, repetição, zeroCOUNT{} e escoposVEN/equipe/misto passaram c8bd74. BancoA502 restaurado566 por5bc44b. A seleção pública usa somente o deltaC3 sobre o OR já aprovado, sem ancestry privadaGP/Doc. QA independente pública e gates globais pertinentes ainda pendentes. O limite200 é explícito; não se promete ordenação por última edição nem busca global de todos os nomes.
 
+### #338 D10 — checkpoint funcional DEV R30, seleção pública/QA pendentes
+
+Implementação de BAIXA/lembretes15min/1dia, notificar também com ACL atual, preview/draft, writers/CAS/replay, leitor/fanout e recorrência ancorada com intenção/cron. Decisões humanas de calendário original/pular vencidas/DST automático auditado implementadas. SPEC funcional e QA nova inbox-338-d10-r30-dev.md substituem o estado WIP; Proveniência dos31puros registrada na QA DEV local.
+
+45nativos distintos/9arquivos aprovados em leases coordenadas:37legados+4recorrência+2oráculo forteUTC/SP+2races SQL. UNITRED2causal e0b80a separado de negativos instrumentais23502/7b7bdf; não houve RED nativo de inversa. Races reais8672fe: PIDs independentes, revogaçãoCOMMIT confirmada, domínio exato e rollbackclaim/avisos/Eventos. Oráculo35acef JSONscurados PG↔JS≤1ms, sem compensação; prova produtorPrisma, não rawINSERT arbitrário. ROOTrestorefinal031c9a EXIT0 A503567.
+
+GlobalUNIT65a931 EXIT1:9907pass/5fail em1102files; quatro D10 corrigidas por extensões nominais AST/freeze/negativos e paleta canônica. Focais finaisa40166 EXIT0 244/6files,lint90305c EXIT0/0avisos,TSC399757 EXIT0. Falha CamposMapDoc454 preexistente à338 mantida fora por ROOT(main já correto); não chama globalprivado aprovado nem repete sem utilidade. Lintglobal3035fd0errors/50warnings=40SRCbaseline+10outputprivados, teto40 intacto. Buildd9efd7 EXIT0 com NODE_OPTIONS8192 herdado após OOM6399f9 preservado; build anterior só aos tokens de cor/testes guard finais, qualificado emQA. SemmaisSQL/install/generate/push.
+
+Whitelist checkpoint63paths explícitos inclui produto/testes/schema/497498503/attrs/catalog/SPEC/QA/quadro+2guardsnominais; AGENTS0544/output/env/packages e deltaDoc excluídos. ROOT selecionará ainda os dois puros e QA histórica de cc039 para a fonte pública; não importar ancestry privada. Visual obrigatório, QA independente, gates públicos/CI e homologação continuam pendentes; #338 NÃO concluída.
+
 ### #372 — C9, R30
 
 Catch restrito de colisão real selecionado do DEV a41792ca. DEV RED2+1→GREEN3 e UNIT50/lint/TSC0. TESTER na fonte pública0e3d91db: UNIT50, TSC e nativo3, todos código0; bancoT500 restaurado1445 por87cd54. Gates globais1091/9869 e build pertencem à base8a29 anterior ao catch. Medição C10 ampla, visual e integração continuam pendentes; não concluirissue nesta publicação.

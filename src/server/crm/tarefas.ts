@@ -1,3 +1,7 @@
+import { RecorrenciaTarefaSchema } from "./tarefa-recorrencia-configuracao";
+import type { RecorrenciaTarefa } from "@prisma/client";
+import {erroContencaoNotificadosTarefaD10} from "./tarefa-notificados";
+import {CamposAdicionaisTarefaD10Schema,LembreteTarefaD10Schema,PrioridadeTarefaD10Schema} from "./tarefa-d10-schema";
 import { criarTarefaTx, editarTarefaTx, agendamentoTarefa } from "./tarefas-escrita";
 import { concluirTarefaTx, reabrirTarefaTx, reagendarTarefaTx, cancelarTarefaTx } from "./tarefas-transicoes";
 import { revalidatePath } from "next/cache";
@@ -9,7 +13,7 @@ import { registrarEvento } from "@/server/_shared/evento";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
-import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
+import { ErroRegra, exigirSessao, apenasPortal, type UsuarioSessao } from "@/server/_shared/sessao";
 
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { capacidadesCrm, exigirCapacidadeCrm, setoresDoUsuario } from "./permissoes";
@@ -23,7 +27,9 @@ export type TarefaInput = {
   hora?: string | null;
   duracaoMin?: 15 | 30 | 45 | 60 | 90;
   prioridade?: PrioridadeTarefa;
-  lembreteAntecedenciaMin?: 0 | 10 | 30 | 60 | null;
+  lembreteAntecedenciaMin?: 0 | 10 | 15 | 30 | 60 | 1440 | null;
+  notificarUsuarioIds?: string[];
+  recorrencia?: RecorrenciaTarefa;
   responsavelId?: string | null;
   leadId?: string;
   pessoaId?: string;
@@ -52,8 +58,10 @@ export const CamposTarefaSchema = z.object({
   dataCivil: DataCivilSchema.nullish(),
   hora: HoraSchema.nullish(),
   duracaoMin: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(90)], { errorMap: () => ({ message: "Escolha uma duração válida." }) }).optional(),
-  prioridade: z.enum(["NORMAL", "ALTA"]).optional(),
-  lembreteAntecedenciaMin: z.union([z.literal(0), z.literal(10), z.literal(30), z.literal(60)], { errorMap: () => ({ message: "Escolha um lembrete válido." }) }).nullish(),
+  prioridade: PrioridadeTarefaD10Schema.optional(),
+  lembreteAntecedenciaMin: LembreteTarefaD10Schema.nullish(),
+  notificarUsuarioIds: CamposAdicionaisTarefaD10Schema.shape.notificarUsuarioIds,
+  recorrencia: RecorrenciaTarefaSchema.optional(),
   responsavelId: z.string().min(1).nullish(),
   leadId: z.string().min(1).optional(),
   pessoaId: z.string().min(1).optional(),
@@ -111,12 +119,20 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
           tipo: "TarefaCriada", agregadoTipo: "Tarefa", autorId: autor.id, marca,
           mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se a tarefa já aparece antes de repetir.",
         });
-        if (repetido) return repetido.agregadoId;
+        if (repetido){
+          if(d.recorrencia!==undefined||d.notificarUsuarioIds!==undefined||d.prioridade==="BAIXA"||d.lembreteAntecedenciaMin===15||d.lembreteAntecedenciaMin===1440){
+            const atual=await tx.usuario.findUnique({where:{id:autor.id}});
+            if(!atual?.ativo||apenasPortal(atual))throw new ErroRegra("Sua sessão não está mais ativa.");
+            exigirCapacidadeCrm(atual,"tarefas.ver");
+            await carregarVisivel(tx,atual,repetido.agregadoId);
+          }
+          return repetido.agregadoId;
+        }
       }
       const fuso = await carregarFusoInstitucionalTx(tx);
       if (!fuso) throw new ErroRegra("Configure o fuso institucional da escola antes de criar tarefas.");
       return (await criarTarefaTx(tx, autor, d, fuso, marca)).id;
-    });
+    }).catch(erroContencaoNotificadosTarefaD10);
     revalidar();
     return { id };
   });
@@ -130,7 +146,7 @@ export async function editarTarefa(id: string, versao: number, i: Partial<Tarefa
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
       await editarTarefaTx(tx, autor, t, versao, d);
-    });
+    }).catch(erroContencaoNotificadosTarefaD10);
     revalidar();
   });
 }
