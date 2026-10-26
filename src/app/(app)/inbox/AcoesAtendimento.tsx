@@ -37,6 +37,8 @@ export interface PropsAcoesAtendimento {
   contextoAria?: boolean;
   /** Revalida somente o GET de sugestão enquanto o scheduler estiver aberto. */
   versaoInsights?: number;
+  /** Aplicabilidade do DTO autorizado da conversa; não concede permissão no servidor. */
+  podeUsarInsights?: boolean;
   podeAssumirAria?: boolean;
   grupo?: boolean;
   /** Callback autorizado pelo painel: tarefas não dependem da permissão de envio. */
@@ -80,7 +82,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function useAcoesAtendimento({ versaoInsights=0, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
+export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   // Fixar alterna o estado: o reenvio desfaria o primeiro clique, então fica sem garantia de repetição.
@@ -142,7 +144,7 @@ export function useAcoesAtendimento({ versaoInsights=0, contextoAria = false, po
       {dialogo === "convidar" && <DialogoPessoa atendimentoId={atendimento.id} modo="convidar" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Convite enviado.")} />}
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
-      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} versaoInsights={versaoInsights} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
+      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} versaoInsights={versaoInsights} insightsAplicaveis={podeUsarInsights && atendimento.finalidade === "COMERCIAL" && !grupo} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
       {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} fuso={fuso} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
@@ -319,7 +321,7 @@ function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { a
 }
 
 /** `fuso`: o de exibição do Inbox (pessoal; sem preferência, o da escola), escrito ao lado do campo. */
-function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir,versaoInsights=0 }: PropsDialogo & { atendimentoId: string; fuso: string;versaoInsights?:number }) {
+function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir,versaoInsights=0, insightsAplicaveis=false }: PropsDialogo & { atendimentoId: string; fuso: string;versaoInsights?:number;insightsAplicaveis?:boolean }) {
   const [revisaoTexto,setRevisaoTexto]=useState(0);
   // agendarMensagemNoAtendimento recebe chave de idempotência (#166): o reenvio não agenda um segundo envio ao contato.
   const acao = useAcaoCliente({ idempotente: true });
@@ -327,7 +329,7 @@ function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir,versaoInsigh
   const [texto, setTexto] = useState("");
   const [quando, setQuando] = useState("");
   const [erroQuando, setErroQuando] = useState<string | null>(null);
-  const sugestao=useSugestaoAgendamento({atendimentoId,versao:versaoInsights,texto,revisao:revisaoTexto,ocupado:acao.ocupado,aoTexto(t){setTexto(t);setRevisaoTexto(r=>r+1);}});
+  const sugestao=useSugestaoAgendamento({atendimentoId,ativo:insightsAplicaveis,versao:versaoInsights,texto,revisao:revisaoTexto,ocupado:acao.ocupado,aoTexto(t){setTexto(t);setRevisaoTexto(r=>r+1);}});
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     const erro = validarQuando(quando, fuso);
@@ -343,10 +345,10 @@ function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir,versaoInsigh
         <Campo rotulo="Mensagem" obrigatorio>
           {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={4} maxLength={4000} value={texto} onChange={(e) => {setTexto(e.target.value);setRevisaoTexto(r=>r+1);}} />}
         </Campo>
-        <Botao variante="iaFantasma" tamanho="sm" disabled={!sugestao.disponivel} ocupado={sugestao.ocupado} onClick={sugestao.pedirUso}>Escrever com Aria</Botao>
+        {insightsAplicaveis && <><Botao variante="iaFantasma" tamanho="sm" disabled={!sugestao.disponivel} ocupado={sugestao.ocupado} onClick={sugestao.pedirUso}>Escrever com Aria</Botao>
         <MensagemStatus texto={sugestao.aviso} progresso={sugestao.carregando?"Carregando sugestão…":null}/>
         <FeedbackAcao erro={sugestao.erro} sucesso={sugestao.sucesso}/>
-        {sugestao.confirmacao}
+        {sugestao.confirmacao}</>}
         <Campo rotulo="Enviar em" obrigatorio erro={erroQuando}>
           {(c) => <CampoDataHoraLocal {...c} fuso={fuso} className={CLASSE_CONTROLE} value={quando} onChange={(e) => { setQuando(e.target.value); setErroQuando(null); }} />}
         </Campo>
