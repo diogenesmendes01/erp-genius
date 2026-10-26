@@ -7940,3 +7940,8 @@ ROOTrestore final2680d9 EXIT0/A502566 confirmado. Mig499b108/schema/client/GP362
 ### PR #454 C1/C2 — decisão humana e composição pública R28
 
 Usuário decidiu recusar o documento quando um validador cadastrado reprovar o valor. Tipos desconhecidos/sem validador e documento opcional nulo continuam aceitos; valor fornecido é revalidado mesmo se igual ao histórico, enquanto campo omitido preserva dados antigos. Limite comum de100caracteres no servidor e formulários, sem restringir os documentos latino-americanos aCPF. Selecionados16arquivos do checkpoint274170a6 sobre a fonte pública, mais este quadro composto; nenhum ancestral privadoGP362, schema, migration499 ou dependência importados. DEV175UNIT e38nativos/8arquivos passaram, conforme QA, com tentativa antiga pool1 explicitamente preservada e teste corrigido em lease posterior. São evidências DEV: QA independente desta composição e CI permanecem pendentes.
+
+
+### PR #454 — validação independente da decisão de documentos, R28
+
+Fonte pública dd449ac executada no TESTER com cliente próprio499 e banco descartávelT500: oito arquivos completos de integração38/38, focal6/175, TypeScript original, unidade global1078arquivos/9623testes e lint0erros/57avisos, todos com terminais0. Build original também passou com heap8GB herdado pelos workers; o OOM anterior do worker4GB foi preservado e não é resultado aprovado. Banco restaurado1445 antes dos gates globais. Nenhuma fonte/config/asserção foi alterada para obter aprovação. Este filho acrescenta somente documentação; os testes mantêm atribuição à fonte dd449ac. CI e aceite visual pertinentes à base conservam seus gates. Registro: docs/qa/inbox-454-validacao-r28-root.md.
