@@ -520,6 +520,7 @@ enum Papel {
 }
 
 model Usuario {
+  inscricoesPresencaInbox PresencaInbox[]
   geracoesInsightCriadas GeracaoInsightInbox[] @relation("AutorGeracaoInsightInbox")
   geracoesInsightDescartadas GeracaoInsightInbox[] @relation("DescarteGeracaoInsightInbox")
   metasComerciais MetaComercial[] @relation("MetaDoUsuario")
@@ -9798,4 +9799,25 @@ model GeracaoInsightInbox {
 
   @@index([atendimentoId, solicitadoEm, id])
   // UNIQUE parcial por atendimento nos estados PROCESSANDO/INCERTO em SQL na493.
+}
+
+// D6: inscrição efêmera explícita da aba Inbox; não representa login ERP, carteira ou permissão.
+model PresencaInbox {
+  id String @id @default(cuid())
+  usuarioId String
+  usuario Usuario @relation(fields:[usuarioId], references:[id], onDelete:Cascade, onUpdate:Restrict)
+  abaId String @db.Uuid
+  aberturaId String @db.Uuid
+  geracao BigInt @default(1)
+  sequencia BigInt @default(0)
+  confirmadaEm DateTime?
+  ultimoContatoEm DateTime
+  ultimaInteracaoEm DateTime?
+  desconectadaEm DateTime?
+  criadaEm DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  @@unique([usuarioId,abaId])
+  @@index([usuarioId,desconectadaEm,ultimoContatoEm])
+  @@index([ultimoContatoEm])
 }

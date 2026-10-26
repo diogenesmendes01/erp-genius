@@ -7707,11 +7707,96 @@ ROOT R20 — fonte4d8 passou nos quatro gates originais:1057arquivos/9250UNIT(61
 
 #341 / PR451 R22 ROOT — C1/C3: SPEC explicita controles de previsão/probabilidade na abaOportunidadesInbox e ausência de envio desses inputs no formulárioFunil, cujo writer preservaomissão. Comentário Prisma devalor reposicionado juntoavalorPrevisto semmudar declarações/ordem/SQL. Visualpainel-oportunidades/CI e publicação do esclarecimento pendentes; nãohomologada.
 
-R24 — PR #451: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
+### #376 — presença automática D6, freeze DEV antes SQL (26/10/2026)
+
+Implementação em validação: inscrição explícitaInbox, heartbeatPOST25s/atividadeUTCserver, onlineconfirmado/ausente600/offline60, close não renova. UserNOKEY→Presenca→atorfresh/clockpóswait; CASid+geração/seq, limite8/ret24hcleanup16; readerbatch sócandidatosatuaisTransferir, zero370/distribuição/SSEnovo. UIstatusopcional e2timersnominaiscom mutantes. Focal98663/5f75e2 EXIT0 17/192; consumidores14110d EXIT0 5/75, lint27SRC626d46 EXIT0; sobrepostos/nãoglobais. CausalcloseREDcb1c0f→GREEN27/ROOT394d74 preservados. Native17planejados AINDA NÃOEXECUTADOS/leaseNONE. ROOTinfra496READY real494migs426tables/client3bafe/snapshot505; semDDL/generateDEV. SPEC inbox-presenca-automatica, QA inbox-376-presenca-dev. Pendingnative/QAexact/gatescompostos/visual; sourcebase447/371 e370stashpreservados, integrar sódelta.
+
+### #376 — hardening selfbound/atividade, antesnative
+
+Filha4cb: lookupfindFirstid+usuarioId evita ler rowalheia; atividadecoalescida drena apósinteração pendente semtimerextra. RED561c0d2falhas/27pass→GREEN00e2f0 EXIT0 4/41 e lint4d8232b EXIT0. Schema/SSE/ACL/testenativo17 literais4cb; native/gates/QA/visual pendentes. Scope370inativo preservado.
+
+### #376 — revogação completa e404modal tipado (antes native)
+
+Filhadff: encerraciclo/foto/observador em401/403/404self, ACKantigos não restauram.404modal sóErroFotoPresenca, preservabatimento próprio; checkpointCAS≠lease sópara futuraentrada deliberada/authfresh. REDbroker9falhas/16pass e API3falhas/14pass→GREEN44545/0bb02f EXIT0 5/61, lint5SRC8336df EXIT0. Schema/writer/SSE/native17 intocadosdff, SQLaindaSEMLEASE, QA/gates/visual pendentes.
+
+### #376 — preflight nativo tipado, ainda sem SQL
+
+Filhatest-onlyd8e preserva17casos, exigeerrocausalErroPermissao/ErroAutenticacao/ErroFotoPresenca/ErroPresenca emvezcatchfalse/broad. Pin798históricopreservado, sematribuirREDnãoexecutado. Runtime/schema/clientinalterados. LeaseaindapendenteROOT.
+
+### #376 — RED nativo timezone e ajuste de tipo rawclock
+
+Primeiranativa59147/6462a4 EXIT1 17/12pass/5fail (76,95s), causareal casttimestamp descartafuso. ROOTRO4926e8 comprova delta-10800000ms; ajuste mínimo::timestamptz(3) nos2helpers+holder, semschema/env/TimeZonechange. ROOTrestoreB496 baseline505/426, semlease. Replay17aindapendente: NÃOchamarGREEN, manternegativo eQA/visualabertos.
+
+### #376 — nativeGREEN434 e fixpending-open somente cliente
+
+Replay81001/6f2203 EXIT0 17/17 (73,03s); ROOTrestore476af1 baseline505/426, semlease. PendingopenRED98bb87/1c83d4 confirma gen1fechada→brokercompartilha promessauser+aba/CASsemherdarvida. CheckpointabaREDb721a8→chaveuser+aba. Final39c2fd EXIT0 10/100, lint2SRC243a44 EXIT0, server/schemaSQLliteral434 (native17qualificado semrepetir). RecuperaçãoentradaDELIBERADA apósACKperdido segueROtécnico; QA/gatescompostos/visual pendentes, nãoencerrar376.
+
+### #376 — resolverSELF para entrada deliberada, freeze pré-native
+
+NovoPOSTresolverabaUUID retorna sócheckpoint|null apósUserNOKEY/fresh/ownrow/fresh, zeroescritas/lease/dadosnegócio. SóabrirDeliberadoCAS409 pode1resolver+1CAScomum; racefalhafechado, nuncaheartbeat/upsert/retryauth. TDDAPI/brokerRED5falhas49pass→focala25c14 EXIT0 7/114 e lint12SRC4bdeba EXIT0. Helperfreshwriterextraído literal; schema/SSE/ACL370intocados. NativeNOVO10 +reg17completos AINDANÃOEXECUTADOS aguardandoROOTleaseB496; source43417verde éhistórico. QA/gates/visual pendentes.
+
+### #376 — entrega DEV funcional, natives finais3dd EXIT0
+
+Checkpoint10/10 41651/272572 EXIT0 (44,25s), seguido porregressão17/17 emNOVA sessãoSERIAL19224/278a1c EXIT0 (72,19s), fonte3dd congelada/configoriginal/UTCw1heap1024/7blank/semfiltros/skips. Focal114/lint12SRC0 járegistrados, não soma histórica/global. LeaseSQL+Node liberados, ROOTrestaurará fixtures (não presumir505). Helpersfresh/CAS/ROmetadata/races/zeroeffects/pool1 verificados. Docsfilha mantémruntime3dd literal; QAindependente, gatescompostos/TSC/build/CI/visual/perf pendentes.376emvalidação,370grantinativo.
+
+#376 R21 ROOT — delta36de2770→b37 aplicado sempaisGrant;31SRC limpos, somente schema/quadro resolvidos com reversão literal e união histórica. DEV3dd10+17SQL/EXIT0 separados. Rootbuild4d8 arquivado234assets(99e156), nãoébuild376. Focais/client/DDL/QA/gates/visual/publicação pendentes, não homologada; ver docs/qa/inbox-376-integracao-r21-root.md.
+
+#376 R21 ROOT — integração focal21/369 EXIT0(97885/2600d8),lint31SRC EXIT0(60455/a17138),reversãoSRCexacta64b1ff. Rootvalidate0;generate1writeUNKNOWNpreservado→retry1024 56403/1147d3 EXIT0. DDL209a49/snapshot68355b EXIT0:ROOT495migraçõesreais/426tabelas/1382linhas,client990efce2,semGrant/dados/históricoantigospreservados. RestauradorsomenteROOT496. NativosRoot/QA/gatesglobais/visual/publicação376pendentes;docQAinbox-376-integracao-r21-root.md.
+
+#376 R22 ROOT — nativos checkpoint10 + presença17 completos/seriais EXIT0, sessão32640/5c22ed; snapshotROOT496 restaurado0. TESTER RO bce favorável, sem execução própria. Global original17923/0e062e EXIT1:1.067files/9.418casos,25falhas em2fixtures useId não ligado. Ajuste somente mocks useId→criarGanchos existente;2arquivos25/25 terminal6429fd EXIT0, sem remover asserções nem mudar produção. Regressão global não aprovada; TSC/lint/build/QAexecução/visual/CI/publicação376 ainda pendentes.
+
+#376 R22 ROOT — global na fonte73d:1.067arquivos9.431casos35084/46d24d EXIT0. TSC67803/37bdba CLI2 encontrouapenasTS2345 na tabela deheaders da fixtureAPI. TabelaagoraexplicitamenteRecord<string,string>[], mesmos8cenários/asserções, produçãoinalterada;focal19/1994f3fe0+lint1e5ab120. TypeScriptcompleto/lintglobal/build/QAindependente/visual/CIpendentes; global9431continuaatribuídoa73d, semreatribuiçãoaoajustedetipo.
+
+R24 — issue #376: revisão/delta isolado preparado. Gates completos da composição fa1c9fb5 e limites no QA inbox-publicacao-r24-root.md. Fonte intermediária não recebe homologação global presumida; QA/visual/CI e integração das bases continuam separados.
 
 ### PR #443 C5 — evidência em diretório temporário (propagação R26)
 
 O JSON por execução do teste KEY SHARE passa para pasta exclusiva em os.tmpdir, preservando asserções e produção. ROOT validou o arquivo completo1/1 e lint, terminais a2a8b5/4e6aeb, código0, na fonte f591 sobre ROOT496. Contagens e gates anteriores conservam suas fontes; visual e CI específicos pendentes. Ver docs/qa/inbox-443-evidencia-temporaria-r25-root.md.
+
+
+## PR #420 integrada; preparação final da PR #427 — 26/10/2026
+
+PR420 squash3074ff8cebb6a84294447b1a63182081ffccff54/expectedfd60, CI5rápidos+4INTSUCCESS, QAexata e0threads. R9/R10publicados no rascunho privado autorizado, assets677653621/677653622, SHAa3606fe1/d5f4dd2a e roundtrip25e810EXIT0; fontes6f/negativospreservados. Comentário6412661834 e corpo individualizam C1–C5;326CLOSEDAPI,38/81fechadas. Sem deploy.
+
+427fonte5d78:fd60éancestral e3074tree==fd60. Merge9708fffb preservou candidata nos7conflitos de ancestralidade, com INDEXINTEIRO==5d78 antescommit/árvoreinteira69e5503d inalterada. QA5d78 e FULL40168347724(363/3350+3/4opt-in) permanecem nominais; sem novo DB/testes/clientlocal. Registro output/pr427-qa/integracao-20261026.md. CI finalmain/anexos327 ainda gates, sem fechar327 antecipadamente.
+
+
+### #327 — C2 visual anexado com autorização específica, 26/10/2026
+
+ZIP de18capturas históricas/README/manifesto anexado à release QA DRAFT421321214, asset678657729,size1935721,SHA2e06d855...; upload387fe0 e downloadroundtrip0a21aa EXIT0, hashidêntico. Usuário autorizou explicitamente o arquivo no repositório público mantendo a release emrascunho; não alegar download público anônimo. TESTER conferiu18/18 PNGs e manifestos, preservandoA7/A9negativos/A10semPNG e fontesnominais. C2daR2 resolvido pelo anexo, sem nova homologação visual presumida.
+
+CodeSource9bd31f13 permanece literal5d78 foraMarkdown; CI40327192895/5jobsSUCCESS e integração40168347724/363files3350testes+3files4optinskips mantêm suas fontes. A revisão final foi favorável após atualizar corpo/C2. Registro: docs/qa/inbox-327-anexo-r28-root.md. Este commit é sódocumentação; aguardaCIheadfinalantesdo mergeautorizado e fechamento327. Nenhuma alteração de produto, schema, pacote ou release publicada.
+
+
+## PR #430 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head 5764ddb6afb5e1eef0c3c826b73d0191900eeb58. O ancestral original 5d78ded3c63822d7a9ff8d40987e9c71cd79fce0 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
+## PR #452 — composição de ancestralidade com main, 26/10/2026
+
+A candidata incorpora a main 414d932a54e244fff08d0bf5c2888b7e05d14024 e preserva integralmente o código do head e2fd0880aaa99f13500b8d7c9104ddd54909219b. O ancestral original 5764ddb6afb5e1eef0c3c826b73d0191900eeb58 foi conferido antes da composição; o delta da dependência integrada contém somente Markdown. Os registros do quadro dos dois lados e os três documentos da integração #427 foram preservados. Esta prova resolve a ancestralidade, sem declarar resolvidos os demais comentários, aceite visual ou CI final. Nenhum teste de produto foi reexecutado nesta composição documental.
+
+
+### PR #432 — composição documental com a dependência #427, 26/10/2026
+
+União dos dois sufixos do quadro, sem descartar seus registros históricos. A árvore executável permanece integralmente igual ao head83ad189a; incorporado somente o registro Markdown da integração427 e a ancestralidade9bd31f13. Não houve nova execução de testes desta composição documental. A CI da dependência427 no head9bd31f13 passou nos cinco jobs; isso não substitui a CI do futuro head432 contra main.
+
+Permanecem pendentes o anexo visual328, a integração da dependência427, o retarget e as verificações do head final. Os registros históricos que chamam a release de privada não descrevem a visibilidade atual do repositório: a API informa repositório público e release de QA em rascunho. Nenhum upload327/328, merge ou fechamento328 foi realizado nesta preparação.
+
+### PR #435 — composição documental com a dependência #432, 26/10/2026
+
+Preservados integralmente o prefixo comum e os sufixos329 e432/427 do quadro. O head desta composição incorpora7fc073e5, com toda a árvore executável idêntica ao a82d76ff. A única diferença está em dois Markdown: quadro e registro da integração427, este literal à dependência. Sem nova execução de testes nesta preparação documental.
+
+Continuam pendentes o anexo visual Cliente voltou, as integrações427 e432, o retarget e a CI do head final. Os pareceres e testes anteriores mantêm suas fontes nominais; esta composição não os transforma em execução nova, aprovação formal GitHub ou aceite visual. Nenhum upload, merge ou fechamento329 nesta preparação.
+
+## PR #430 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência 464d542c03653fadfe82e1c29ab65a57217027ec usando seu ancestral original a82d76ff0b7659bff6ec3d395ac8a572f256bc96. A composição preserva a árvore executável integral do head 5764ddb6afb5e1eef0c3c826b73d0191900eeb58, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
+
+## PR #452 — base empilhada atual reconciliada, 26/10/2026
+
+Incorporada a dependência f0dac539e0ae1497c5693755318d2a49f2d8bff5 usando seu ancestral original 479ca9f92a2e34993ee2cbd96ec829f551c1615f. A composição preserva a árvore executável integral do head e2fd0880aaa99f13500b8d7c9104ddd54909219b, o quadro anterior completo e os registros documentais da main414 e da base435/432 atual. Nenhum comentário funcional, teste, CI ou aceite visual é declarado resolvido por esta atualização de ancestralidade.
 
 
 ### #333 — correção causal de lock antes da integração443, 26/10/2026
@@ -7731,3 +7816,8 @@ O filho documental só registra esses resultados, sem alterar a árvore executá
 ### Dependência #333 — propagação coordenada R28
 
 A correção de concorrência da PR #443 foi incorporada à cadeia #444–#455: seis arquivos literais da fonte6bfe7b40 e os registros acima, preservando o histórico de cada branch. O núcleo usa FOR SHARE antes da intenção FOR UPDATE, sem ampliar permissões. QA997/8633UNIT e25nativos pertence à fonte pública8345, conforme seu registro; esta propagação não equivale a novas execuções nestes heads. A exceção de cancelamento próprio do gerente pedagógico já foi autorizada pelo usuário e está implementada no checkpoint DEV da #362, ainda fora desta composição. Migrações501/502, schema, dependências e fontes privadas não foram importados. Permanecem os gates específicos e CI de cada PR.
+
+
+### PR #452 C1 — atividade humana e scroll programático, composição R28
+
+Selecionado o delta isolado deeea09c: somente onScrollCapture passa a onWheelCapture, com teste portátil, SPEC e QA. Backend, relógios de presença, schema e migration496 permanecem literais. DEV reproduziu duas falhas causais e validou os mesmos46testes, lint e TypeScript com código0; esses resultados não são QA executada da nova composição. Geração de eventos trusted em browser real, QA pública e CI permanecem pendentes. A propagação preserva UI361, Insights377 e histórico público, sem importar ancestrais privados372.

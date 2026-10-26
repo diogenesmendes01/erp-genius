@@ -1,0 +1,11 @@
+import{beforeEach,expect,it,vi}from"vitest";
+import type{Prisma}from"@prisma/client";
+import{resolverCheckpointPresenca}from"./presenca-checkpoint";
+import{ErroAutenticacao,ErroPermissao}from"@/server/_shared/sessao";
+const ordem:string[]=[];const db={$queryRaw:vi.fn(),usuario:{findUnique:vi.fn()},presencaInbox:{findUnique:vi.fn(),update:vi.fn(),create:vi.fn()}};const tx=db as unknown as Prisma.TransactionClient;
+beforeEach(()=>{vi.resetAllMocks();ordem.length=0;db.$queryRaw.mockImplementation(async()=>{ordem.push("UserNOKEY");return[{id:"u"}];});db.usuario.findUnique.mockImplementation(async()=>{ordem.push("fresh");return{id:"u",ativo:true,nome:"User",papeis:["VENDEDOR"],permissoes:[]};});db.presencaInbox.findUnique.mockImplementation(async()=>{ordem.push("rowself");return{id:"row",geracao:1n};});});
+it("checkpoint sóid/gen apósUserNOKEY/fresh/ownrow/fresh, semwrites",async()=>{expect(await resolverCheckpointPresenca(tx,"u","aba")).toEqual({id:"row",geracao:"1"});expect(ordem).toEqual(["UserNOKEY","fresh","rowself","fresh"]);expect(db.presencaInbox.findUnique).toHaveBeenCalledExactlyOnceWith({where:{usuarioId_abaId:{usuarioId:"u",abaId:"aba"}},select:{id:true,geracao:true}});expect(db.presencaInbox.create).not.toHaveBeenCalled();expect(db.presencaInbox.update).not.toHaveBeenCalled();});
+it("ausência própria énull somente comatorválido",async()=>{db.presencaInbox.findUnique.mockResolvedValue(null);expect(await resolverCheckpointPresenca(tx,"u","aba")).toBeNull();});
+it("Userausente não énullcheckpoint",async()=>{db.$queryRaw.mockResolvedValue([]);await expect(resolverCheckpointPresenca(tx,"u","aba")).rejects.toBeInstanceOf(ErroAutenticacao);expect(db.presencaInbox.findUnique).not.toHaveBeenCalled();});
+it("atorinativo recusaantesrow",async()=>{db.usuario.findUnique.mockResolvedValue(null);await expect(resolverCheckpointPresenca(tx,"u","aba")).rejects.toBeInstanceOf(ErroAutenticacao);expect(db.presencaInbox.findUnique).not.toHaveBeenCalled();});
+it("Portalrevogadoapósespera/leitura não retornaponteiro",async()=>{db.usuario.findUnique.mockResolvedValueOnce({id:"u",ativo:true,papeis:["VENDEDOR"]}).mockResolvedValueOnce({id:"u",ativo:true,papeis:["ALUNO"]});await expect(resolverCheckpointPresenca(tx,"u","aba")).rejects.toBeInstanceOf(ErroPermissao);});
