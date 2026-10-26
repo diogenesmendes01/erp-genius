@@ -1,5 +1,6 @@
 "use server";
 
+import {cancelarAgendadaInboxTx} from "./agendadas-cancelamento";
 import {dadosTarefaModal,criarTarefaInbox,editarTarefaInbox,type DadosModalTarefa,type CriarTarefaInboxInput,type EditarTarefaInboxInput} from "./tarefas-edicao";
 import { z } from "zod";
 import { executarTarefaInboxTx, type ReagendamentoInbox } from "./tarefas-transicoes";
@@ -153,4 +154,10 @@ export async function criarTarefaNoInbox(atendimentoId:string,input:CriarTarefaI
 }
 export async function editarTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number,input:EditarTarefaInboxInput):Promise<Resultado>{
  return executarAcao(async()=>{await editarTarefaInbox(await exigirSessao(),atendimentoId,tarefaId,versao,input);revalidatePath("/tarefas");revalidatePath("/inicio");});
+}
+
+export async function cancelarAgendadaNoInbox(atendimentoId:string,intencaoId:string):Promise<Resultado>{
+ const r=await executarAcao(async()=>{const u=await exigirSessao();await cancelarAgendadaInboxTx(u,atendimentoId,intencaoId);});
+ if(r.ok)revalidatePath("/inbox");
+ return r;
 }
