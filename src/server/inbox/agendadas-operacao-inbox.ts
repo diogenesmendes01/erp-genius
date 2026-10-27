@@ -18,7 +18,7 @@ export type ComandoAgendadaInbox=
 export type BancoAgendadaInbox=Pick<PrismaClient,"$transaction">;
 type Tx=Prisma.TransactionClient;
 type Atendimento=NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>;
-type Alvo=Pick<IntencaoMensagem,"id"|"atendimentoId"|"numeroId"|"contatoId"|"origem"|"autorId"|"status"|"agendadaPara"|"validaAte"|"passo"|"passoComercial"|"corpoRenderizado">;
+type Alvo=Pick<IntencaoMensagem,"id"|"atendimentoId"|"numeroId"|"contatoId"|"origem"|"autorId"|"status"|"agendadaPara"|"validaAte"|"passo"|"passoComercial"|"corpoRenderizado"|"tipo"|"templateId"|"midiaPath"|"conteudo">;
 const semAlvo=()=>new ErroRegra("Mensagem não encontrada ou mudou de situação.");
 const assumir=(tipo:ComandoAgendadaInbox["tipo"])=>new ErroRegra(tipo==="CRIAR"?"Assuma a conversa para agendar a mensagem.":"Assuma a conversa para alterar a mensagem agendada.");
 function binding(a:Atendimento){const c=a.conversa.contato;return JSON.stringify([
@@ -99,10 +99,15 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} AND "atendimentoId"=${c.atendimentoId}
     AND origem='HUMANO' AND "agendadaPara" IS NOT NULL AND passo IS NULL AND "passoComercial" IS NULL FOR UPDATE`;
    m=await tx.intencaoMensagem.findFirst({where:{id,atendimentoId:c.atendimentoId,origem:"HUMANO",agendadaPara:{not:null},passo:null,passoComercial:null}});
-   if(c.tipo==="EDITAR"&&(m?.status==="DESPACHADA"||m?.status==="SIMULADA"))throw new ErroRegra("A mensagem já foi enviada.");
+   if(m&&c.tipo==="EDITAR"&&m.status!=="PENDENTE"&&m.status!=="ADIADA"){
+    await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,{...m,status:"PENDENTE"});
+    if(m.status==="ENVIANDO")throw new ErroRegra("A mensagem já está sendo enviada.");
+    if(m.status==="DESPACHADA"||m.status==="SIMULADA")throw new ErroRegra("A mensagem já foi enviada.");
+   }
    if(!m||(m.status!=="PENDENTE"&&m.status!=="ADIADA")||(c.tipo==="CRIAR"&&m.autorId!==autorId))throw semAlvo();
   }
   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
+  if(c.tipo==="EDITAR"&&(m?.tipo!=="TEXTO"||m.templateId!=null||m.midiaPath!=null||m.conteudo!=null))throw new ErroRegra("Só mensagens de texto podem ter o texto editado.");
   const quando=c.tipo==="ENVIAR_AGORA"?new Date():futuro(c.agendadaPara);
   const validaAte=c.tipo==="CRIAR"?(c.validaAte?new Date(c.validaAte):null):m?.validaAte??null;
   if(c.tipo==="CRIAR"){if(validaAte&&validaAte.getTime()<=quando.getTime())throw new ErroRegra("A validade deve ser depois do horário agendado.");}

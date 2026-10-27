@@ -71,13 +71,13 @@ export function useControladorAgendar(props:PropsControladorAgendar){
  const dtoExibido=dto??(edicao?.geracao===abertura?.geracao?edicao?.dto:undefined);
  const incerto=abertura?.intencao.ler().incerto===true;
  const faltouAlvo=!!abertura&&abertura.alvo.tipo==="EDITAR"&&!!lerAgora&&!lerAgora.erro&&!dto&&!incerto;
- const motivo=carregando?"Carregando agendamentos…":lerAgora?.erro??(faltouAlvo?"Agendamento não encontrado ou mudou de situação.":"Assuma a conversa para agendar a mensagem.");
+ const motivo=carregando?"Carregando agendamentos…":lerAgora?.erro??(faltouAlvo?"Agendamento não encontrado ou mudou de situação.":abertura?.alvo.tipo==="EDITAR"?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem.");
  let dialogo:ReactNode=null;
  if(abertura&&props.intencoes&&props.podeLer&&abertura.atorId===props.usuarioId&&abertura.dono===props.intencoes){const capturada=abertura;
   const fecharCapturada=()=>{if(abertaRef.current===capturada)fechar();};
   const executar=async(c:ComandoAgendamento):Promise<Resultado<{id:string}>>=>{const p=atual.current,e=capturada.intencao.ler();
    if(!viva.current||abertaRef.current!==capturada||p.usuarioId!==capturada.atorId||p.intencoes!==capturada.dono||p.atendimentoId!==c.atendimentoId||!p.podeLer)return {ok:false,erro:"Você não pode acessar este atendimento."};
-   if(!e.incerto&&!podeMutar(p))return {ok:false,erro:"Assuma a conversa para agendar a mensagem."};
+   if(!e.incerto&&!podeMutar(p))return {ok:false,erro:c.tipo==="EDITAR"?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem."};
    return c.tipo==="CRIAR"?agendarMensagemNoAtendimentoLocal({atendimentoId:c.atendimentoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,chaveIdempotencia:c.chaveIdempotencia}):editarAgendamentoDoAtendimento({atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,chaveIdempotencia:c.chaveIdempotencia});
   };
   if(capturada.alvo.tipo==="EDITAR"&&!dtoExibido&&!incerto)dialogo=<PopoverFluxo titulo="Editar agendamento" ancora={ancora} aoFechar={fecharCapturada}><MensagemStatus texto={carregando?"Carregando agendamentos…":null}/><FeedbackAcao erro={lerAgora?.erro??(faltouAlvo?"Agendamento não encontrado ou mudou de situação.":null)}/>{lerAgora?.erro&&<Botao variante="neutro" onClick={()=>setTentativa(t=>t+1)}>Tentar de novo</Botao>}<Botao variante="neutro" onClick={fecharCapturada}>Cancelar</Botao></PopoverFluxo>;

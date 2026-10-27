@@ -193,6 +193,7 @@ async function alterar(
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} FOR UPDATE`;
       const m = await tx.intencaoMensagem.findFirst({
         where: { AND: [{ id }, baseAgendada, escopoAutores(autor, true)] },
         select: { status: true, tarefaId: true, leadId: true, atendimentoId: true, validaAte: true, corpoRenderizado: true, contato: { select: { pessoaId: true } } },

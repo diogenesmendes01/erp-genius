@@ -51,7 +51,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
   const atual=intencao.ler(),recuperar=atual.incerto&&atual.comando!==null;
   if(recuperar&&!podeRecuperar){setErroLocal("Você não pode acessar este atendimento.");return;}
   if(!recuperar){const instante=relogio();setAgoraAtual(instante);const erro=validarQuando(quando,fusoEfetivo,instante);
-   if(podeAgendar!==true||estadoLeitura!=="ok"||editar&&!editar.podeAlterar){setErroLocal(motivoBloqueio??"Assuma a conversa para agendar a mensagem.");return;}
+   if(podeAgendar!==true||estadoLeitura!=="ok"||editar&&!editar.podeAlterar){setErroLocal(motivoBloqueio??(modoEditar?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem."));return;}
    if(erro||!texto.trim()||texto.length>4000){setErroLocal(erro??"Escreva uma mensagem de até 4000 caracteres.");return;}
   }
   const entrada:EntradaAgendamento=recuperar&&atual.comando?atual.comando:editar?{tipo:"EDITAR",atendimentoId,intencaoId:editar.id,texto,quandoLocal:quando,fuso:fusoEfetivo}:{tipo:"CRIAR",atendimentoId,texto,quandoLocal:quando,fuso:fusoEfetivo};
@@ -68,7 +68,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
     <Campo rotulo="Data e hora" obrigatorio erro={quando?validacao:null}>{c=><CampoDataHoraLocal {...c} name="quandoLocal" fuso={fusoEfetivo} className="w-full rounded-lg border border-border-soft bg-surface p-2" value={quando} disabled={bloqueado} onChange={e=>mudarQuando(e.target.value)}/>}</Campo>
    </fieldset>
    {conflito&&<p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-700">Já existe uma mensagem agendada para {nomeContato} {quandoAgendada(conflito.agendadaPara,fusoEfetivo,agoraAtual)}, perto desse horário.</p>}
-   {!recuperando&&podeAgendar!==true&&<p role="status" className="text-sm text-gray-600">{motivoBloqueio??"Assuma a conversa para agendar a mensagem."}</p>}
+   {!recuperando&&podeAgendar!==true&&<p role="status" className="text-sm text-gray-600">{motivoBloqueio??(modoEditar?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem.")}</p>}
    <FeedbackAcao erro={erroLocal??estado.erro??erroLeitura}/>{estadoLeitura==="erro"&&aoTentarLeitura&&<Botao variante="neutro" onClick={aoTentarLeitura}>Tentar de novo</Botao>}
    <div className="flex flex-wrap justify-end gap-2 border-t border-border-soft pt-3">{!modoEditar&&podeSalvarRascunho&&<Botao variante="fantasma" disabled={bloqueado||!podeRecuperar} onClick={salvar}>Salvar rascunho</Botao>}<Botao variante="neutro" disabled={estado.ocupado} onClick={aoFechar}>{estado.incerto?"Fechar":"Cancelar"}</Botao><Botao type="submit" ocupado={estado.ocupado} disabled={!permitido}>{recuperando?"Recuperar resultado":modoEditar?"Salvar":"Agendar"}</Botao></div>
   </form>
