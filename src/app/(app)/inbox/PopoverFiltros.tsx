@@ -7,7 +7,6 @@ import type { FiltrosInbox } from "@/server/inbox/filtros";
 import type { Setor } from "@/server/whatsapp/setor";
 import { PopoverColuna } from "./PopoverColuna";
 import { chipAtivo as chipAriaAtivo } from "./chips-inbox";
-/** Só a dimensão do chip ativo fica fora das etiquetas/selo; combinações de URL continuam válidas. */
 export function contarFiltrosAplicados(f: FiltrosInbox, incluirPessoais = false): number {
  const ativo=chipAriaAtivo(f);
  return Number(!!f.setor)+Number(!!f.status)+(incluirPessoais?Number(!!f.responsavel&&(f.responsavel!=="fila"||ativo!=="fila"))+Number(!!f.naoLidas)+Number(!!f.prazoEstourado&&ativo!=="sem-resposta"):0);

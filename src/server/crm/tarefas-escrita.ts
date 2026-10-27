@@ -41,7 +41,6 @@ async function validarVinculos(tx: Prisma.TransactionClient, autor: UsuarioSessa
   if (i.matriculaId && !(await tx.matricula.findUnique({ where: { id: i.matriculaId }, select: { id: true } }))) throw new ErroRegra("Matrícula não encontrada.");
 }
 
-/** Define quem fica com a tarefa e o setor. Sem `tarefas.equipe`, é sempre o próprio usuário. */
 export async function resolverResponsavel(
   tx: Prisma.TransactionClient,
   autor: UsuarioSessao,
@@ -65,7 +64,6 @@ export async function resolverResponsavel(
   return { responsavelId: alvo.id, setor: setoresAlvo[0] };
 }
 
-/** Escrita com versão otimista: 0 linhas = alguém alterou antes; senão incrementa a versão. */
 async function gravar(tx: Prisma.TransactionClient, t: Tarefa, versao: number, status: "ABERTA" | "CONCLUIDA", data: Prisma.TarefaUncheckedUpdateManyInput, filtro?:Prisma.TarefaWhereInput) {
   const r = await tx.tarefa.updateMany({ where: filtro ? {AND:[{id:t.id,versao,status},filtro]} : { id: t.id, versao, status }, data: { ...data, versao: { increment: 1 } } });
   if (r.count === 0) throw new ErroRegra(MSG_VERSAO);
@@ -171,7 +169,6 @@ export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSe
         const dataCivil = d.dataCivil !== undefined ? d.dataCivil : t.dataCivil;
         const hora = d.hora !== undefined ? d.hora : t.inicioEm ? horaLocal(t.inicioEm, t.fusoOrigem) : null;
         const antecedencia = opcoes.agendamento ? opcoes.agendamento.lembreteAntecedenciaMin : d.lembreteAntecedenciaMin !== undefined ? d.lembreteAntecedenciaMin : t.lembreteAntecedenciaMin;
-        // No Inbox, a agenda já foi resolvida pelo wrapper; a anterior não decide sua validade.
         const temHorario = opcoes.agendamento ? !!(opcoes.agendamento.dataCivil && opcoes.agendamento.inicioEm) : !!(dataCivil && hora);
         if (antecedencia !== null && !temHorario) throw new ErroRegra("O lembrete exige data e horário.");
         const q = opcoes.agendamento ?? agendamentoTarefa(dataCivil, hora, t.fusoOrigem, antecedencia);
@@ -179,7 +176,6 @@ export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSe
         if (q.dataCivil !== t.dataCivil) set("dataCivil", q.dataCivil, t.dataCivil);
         if (!mesmoInstante(q.inicioEm, t.inicioEm)) set("inicioEm", q.inicioEm, t.inicioEm);
         if (antecedencia !== t.lembreteAntecedenciaMin) set("lembreteAntecedenciaMin", antecedencia, t.lembreteAntecedenciaMin);
-        // Só um lembrete novo rearma o disparo: reenviar o mesmo agendamento não notifica de novo.
         if (!mesmoInstante(q.lembrarEm, t.lembrarEm)) {
           set("lembrarEm", q.lembrarEm, t.lembrarEm);
           data.lembreteDisparadoEm = null;

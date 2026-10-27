@@ -8,7 +8,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function PreparacaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ofertaId?: string; ofertas?: string; cadastros?: string; turmas?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, f = await searchParams;
-  // /funil só aceita ADMINISTRADOR, GERENTE_COMERCIAL e VENDEDOR; a Secretaria volta para a lista de matrículas.
   const temFunil = usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR);
   const [identidades, ofertas] = await Promise.all([consultarCadastrosPreparacao({ leadId: id, pagina: Number(f.cadastros ?? 1) }), consultarOfertasPreparacao({ leadId: id, ofertaId: f.ofertaId, pagina: Number(f.ofertas ?? 1), paginaTurmas: Number(f.turmas ?? 1) })]);
   if (!identidades.ok || !identidades.dado) return <p role="alert">{identidades.ok ? "Consulta indisponível." : identidades.erro}</p>;
@@ -28,9 +27,6 @@ export default async function PreparacaoPage({ params, searchParams }: { params:
       <p>Prazo inicial de reserva: {o.prazoMinutos ?? "Não configurado"} minutos. A disponibilidade será conferida novamente no envio.</p>
       {!o.selecionada.formaAgenda?.startsWith("PARTICULAR_") && <><h3 className="font-medium">Turmas compatíveis nesta página</h3>{o.turmas.map((t) => <p key={t.id}>{t.nome} · {t.vagas ?? "A conferir"} vaga(s) · {t.elegivel ? "Disponível para conferência final" : "Indisponível: conferir janela, agenda e capacidade com a Secretaria"}</p>)}
       <nav className="flex gap-4" aria-label="Páginas das turmas">{o.paginaTurmas > 1 && <Link scroll={false} href={url("turmas", String(o.paginaTurmas - 1))}>Turmas anteriores</Link>}{o.possuiMaisTurmas && <Link scroll={false} href={url("turmas", String(o.paginaTurmas + 1))}>Mais turmas</Link>}</nav></>}
-      {/* key só com a oferta (docs/43 §6 item 3; docs/42 L2217): mudar a página de cadastros ou de turmas, ou a
-          versão da oferta, não remonta o formulário — taxa, valor, motivo e agenda conferida ficam. Outra oferta é
-          outra contratação (moeda e regime próprios) e começa do zero. */}
       {!!o.prazoMinutos && o.selecionada.moedaCoerente && <PreparacaoFormulario key={o.selecionada.id} leadId={id} novaPessoa={c.podeCadastrarNovo} paises={c.paisesCadastro} oferta={o.selecionada} candidatos={c.candidatos} turmas={o.turmas.filter((t) => t.elegivel)} />}
     </>}
   </div>;

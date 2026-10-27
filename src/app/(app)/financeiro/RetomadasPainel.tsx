@@ -22,8 +22,6 @@ type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const principal = botaoClasses({ tamanho: "lg" });
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
-// Mensagem da proposta pelo status devolvido (#282, C3): o reenvio da mesma tentativa devolve a proposta original,
-// que pode já ter sido decidida por outra pessoa no intervalo; aí nada foi gravado e a tela não anuncia uma nova.
 function mensagemProposta(dado: { status: string } | undefined): string {
   if (!dado || dado.status === "PENDENTE") return "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.";
   return `Esta proposta já foi decidida: ${dado.status === "APROVADA" ? "aprovada" : "rejeitada"}. Para uma nova retomada, faça uma nova proposta.`;
@@ -36,12 +34,8 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
   const [motivo, setMotivo] = useState("");
   const [datas, setDatas] = useState<Record<string, string>>({});
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  // Proposta com chave de idempotência (#166, N3 da R1 do #274): o reenvio da mesma tentativa devolve a proposta
-  // original mesmo se outra pessoa a rejeitou no intervalo; a chave só muda depois do sucesso. A mesma decisão, do
-  // mesmo aprovador e com o mesmo motivo, é devolvida por natureza (server/retomada/acoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  // O resultado aparece junto da proposta nova ("proposta") ou da proposta decidida (id).
   const [alvo, setAlvo] = useState<string | null>(null);
   const ocupado = acao.ocupado;
   const hoje = contexto?.dataMinimaReprogramacao;
@@ -62,7 +56,6 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
     }), mensagemProposta);
     tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
-    // Já decidida: os dados ficam no formulário para uma nova proposta deliberada (a chave já é outra).
     if (d.dado?.status === "PENDENTE" || !d.dado) { setOpcao(""); setMotivo(""); setDatas({}); }
     router.refresh();
   }
@@ -105,7 +98,6 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       </label>
       <button className={principal} type="submit" disabled={ocupado || !opcao || motivo.trim().length < 5}>Enviar proposta para aprovação</button>
     </form>}
-    {/* Fora do formulário: no sucesso ele some (proposta pendente), e a confirmação continua visível. */}
     <FeedbackAcao erro={alvo === "proposta" ? acao.erro : null} sucesso={alvo === "proposta" ? acao.sucesso : undefined} />
 
     {propostas.length === 0 && !podePropor && !erroConsulta && <EstadoVazio>Nenhuma proposta de retomada.</EstadoVazio>}

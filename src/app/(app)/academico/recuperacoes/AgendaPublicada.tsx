@@ -19,7 +19,7 @@ export function AgendaPublicada({ agenda, preferenciaFusoExibicao }: { agenda: A
         fim: formatarInstanteExibicao(agenda.fim, resolverFusoExibicao(fuso.trim(), agenda.fusoOrigem), agenda.fusoOrigem).texto,
       };
     }
-  } catch { /* A preferência inválida não altera os horários registrados. */ }
+  } catch {  }
   return <div className="space-y-2 rounded border p-3">
     <h3 className="font-medium">Horário publicado da recuperação</h3>
     <p>{agenda.status === "CANCELADO" ? "Encontro cancelado" : agenda.status === "MINISTRADO" ? "Realização registrada" : "Encontro previsto"}. Avaliador: {agenda.avaliador}.</p>

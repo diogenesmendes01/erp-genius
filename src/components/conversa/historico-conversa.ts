@@ -1,7 +1,6 @@
 import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consultas-inbox";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 
-/** Página da thread: `antes`/`depois` são os cursores da primeira/última mensagem; `temMais` vale no sentido pedido. */
 export interface PaginaHistorico { mensagens: MensagemThread[]; notas?: NotaInternaThread[] | null; antes: string | null; depois: string | null; temMais: boolean }
 export interface FonteHistorico {
   pagina(atendimentoId: string, o: { antes?: string; depois?: string }, signal?: AbortSignal): Promise<PaginaHistorico>;
@@ -22,7 +21,6 @@ export const historicoVazio: EstadoHistorico = {
 const comparar = (a: MensagemThread, b: MensagemThread) =>
   a.criadoEm < b.criadoEm ? -1 : a.criadoEm > b.criadoEm ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 
-/** Janela montada limitada a LIMITE_HISTORICO; o que sai da janela volta do banco pelos cursores, nunca de cache. */
 export class HistoricoConversa {
   state: EstadoHistorico = historicoVazio;
   private ouvintes = new Set<() => void>();
@@ -30,7 +28,6 @@ export class HistoricoConversa {
   private geracao = 0;
   private id = "";
   private pendenteNovas = false;
-  // Só as bordas de página cujas linhas continuam na janela: id da primeira → cursor "antes"; id da última → "depois".
   private antesDe = new Map<string, string>();
   private depoisDe = new Map<string, string>();
   constructor(private fonte: FonteHistorico) {}
@@ -82,11 +79,6 @@ export class HistoricoConversa {
     } catch (e) { this.falhou(e, g); }
   }
 
-  /**
-   * Recarrega as mais recentes (por exemplo após `resync`, quando avisos podem ter sido perdidos). Diferente de
-   * `abrir`: aborta o que estava em voo e troca a geração, mas não publica `historicoVazio` — a janela atual fica
-   * na tela até a página nova chegar (sem piscar vazia na reconexão do LISTEN); falha comum mantém a janela com erro.
-   */
   recarregar = async () => {
     if (!this.id) return;
     this.controller.abort(); this.controller = new AbortController(); this.geracao++; this.pendenteNovas = false;
@@ -119,7 +111,6 @@ export class HistoricoConversa {
       this.bordas(p);
       let todas = this.mesclar(p.mensagens), cortou = false;
       if (todas.length > LIMITE_HISTORICO) {
-        // Corta o fim (mais novas), terminando numa mensagem cujo cursor "depois" ainda conhecemos.
         let fim = LIMITE_HISTORICO - 1;
         while (fim >= 0 && !this.depoisDe.has(todas[fim].id)) fim--;
         if (fim < 0) { await this.abrir(this.id); return; }
@@ -133,7 +124,6 @@ export class HistoricoConversa {
     } catch (e) { this.falhou(e, g); }
   };
 
-  /** Só o que veio depois do último cursor; sem cursor, reconcilia mantendo notas já exibidas. */
   maisNovas = async () => {
     if (!this.id) return;
     if (this.ocupado()) { this.pendenteNovas = true; return; }
@@ -164,14 +154,7 @@ export class HistoricoConversa {
   };
 }
 
-/**
- * Todo aviso individual do SSE (de qualquer tipo ou atendimento) reconcilia a janela aberta com `maisNovas`. O SSE e global ao
- * usuario e o React agrupa avisos no mesmo render, entao o hook so enxerga o ultimo; filtrar por tipo/atendimento
- * perderia a `mensagem.nova` do atendimento aberto agrupada com outro aviso. `maisNovas` e idempotente e barato
- * (consulta `depois` do cursor da ultima; sem novidade volta vazio); `resync` recarrega.
- */
 export function reagirAoAviso(h: HistoricoConversa, _atendimentoId: string, aviso: AvisoInbox): Promise<void> {
-  // Invalidação global é só da lista/painel e não busca mensagens.
   if (aviso.tipo === "aria.global") return Promise.resolve();
   if (aviso.tipo === "resync") return h.recarregar();
   return h.maisNovas();

@@ -41,7 +41,6 @@ async function operar(autorId:string,i:Operacao,db:BancoInsight) {
     return {geracaoId:g.id,estado,versao:g.versao+1};
   });
 }
-/** Operacional: usa contexto ATUAL autorizado, jamais retargeta o claim ou publica sua análise. */
 export function reconciliarInsightInconclusivo(autorId:string,entrada:unknown,db:BancoInsight=prisma) {
   return operar(autorId,ReconciliarInsightSchema.parse(entrada),db);
 }

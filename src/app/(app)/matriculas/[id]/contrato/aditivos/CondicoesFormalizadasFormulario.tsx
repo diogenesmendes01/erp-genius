@@ -7,7 +7,6 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export function CondicoesFormalizadasFormulario({ matriculaId, propostaId, conclusaoId, revisaoHash, formalizada = false }: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string; formalizada?: boolean }) {
-  // Chave estável pela vida do formulário: na falha de transporte, reenviar confere a mesma aplicação.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), [chave] = useState(() => crypto.randomUUID());
   const titulo = formalizada ? "Regularizar aplicação das condições" : "Formalizar e aplicar condições";
   const explicar = formalizada ? "Esta versão já foi formalizada, mas ainda não vale para novos cálculos. A regularização confere novamente os documentos, aprovações, assinaturas e conferência final; não cria fatos retroativos." : "A ação registra a formalização e a aplicação das condições. Ela não cria cobrança, acerto, matrícula nem agenda.";

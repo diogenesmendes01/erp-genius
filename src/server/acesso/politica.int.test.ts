@@ -143,7 +143,6 @@ describe("equipe e cobertura temporária (AC02/AC07/AC08)", () => {
     expect((await atribuirDono(lead.id, alheio.id, "Destino fora da equipe")).ok).toBe(false);
     expect((await atribuirDono(lead.id, substituto.id, "Redistribuição autorizada")).ok).toBe(true);
     expect(atendimento.status).toBe("ABERTO_SEM_RESPONSAVEL");
-    // Responsável preenchido conta como assumido: sai de "Na fila" junto com a reatribuição.
     expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimento.id } })).toMatchObject({ responsavelId: substituto.id, status: "EM_ATENDIMENTO" });
     const depois = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } });
     expect(depois.status).toBe("CANCELADA"); expect(depois.autorId).toBe(titular.id);

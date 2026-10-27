@@ -4,8 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, Elemento, type Documento } from "@/test/dom-minimo";
 import type { BalaoMensagem as Balao } from "./BalaoMensagem";
 
-// React DOM/hooks reais. Ícones decorativos viram spans porque o DOM mínimo é HTML;
-// geometria e entrega de eventos são locais a este teste, sem alterar o utilitário compartilhado.
 vi.mock("@tabler/icons-react", async (original) => {
   const real = await original<typeof import("@tabler/icons-react")>();
   const icone = () => createElement("span", { "aria-hidden": true });
@@ -81,14 +79,12 @@ beforeEach(async () => {
     if (this.getAttribute("role") === "menu") {
       medido.push(String(this.style.visibility));
       const natural = this.querySelectorAll("small").length ? 400 : 200;
-      // Geometria controlada representa a restrição CSS; a captura no navegador valida layout real.
       const height = this.style.maxHeight === "calc(100dvh - 16px)" ? Math.min(natural, Number(janela.innerHeight) - 16) : natural;
       const top = parseFloat(String(this.style.top)) || 0, left = parseFloat(String(this.style.left)) || 0;
       return { top, bottom: top + height, left, right: left + 220, width: 220, height };
     }
     return { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 };
   } });
-  // O seletor nativo :disabled equivale ao atributo nos buttons deste teste.
   const consultar = Elemento.prototype.querySelectorAll;
   vi.spyOn(Elemento.prototype, "querySelectorAll").mockImplementation(function (this: Elemento, seletor: string) {
     return consultar.call(this, seletor.replace(/:disabled/g, "[disabled]"));

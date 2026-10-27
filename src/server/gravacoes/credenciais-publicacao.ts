@@ -13,8 +13,6 @@ type Opcoes = {
 };
 let cache: { email: string; chavePrivada: string; cliente: ClienteTokenDrive } | undefined;
 
-/** Token de escrita exclusivo da retenção de revisão. O player continua usando
- * obterTokenDrive readonly; credenciais de publicação devem ser configuradas explicitamente. */
 export async function obterTokenPublicacaoDrive(opcoes: Opcoes = {}): Promise<string> {
   try {
     const ambiente = opcoes.ambiente ?? process.env as AmbientePublicacao;

@@ -25,7 +25,7 @@ export async function reservarHorasCompradasParaEncontro(input: z.input<typeof E
       }
       await tx.$queryRaw`SELECT id FROM "CompraHorasAntecipadas" WHERE id = ${d.compraId} FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM "EncontroAgenda" WHERE id = ${d.encontroId} FOR UPDATE`;
-      const compra = await tx.compraHorasAntecipadas.findUniqueOrThrow({ where: { id: d.compraId }, include: { liquidacaoAcerto: true, matricula: { select: { status: true } }, // Q175: consumo estornado devolve os minutos, como a liberação para remarcação.
+      const compra = await tx.compraHorasAntecipadas.findUniqueOrThrow({ where: { id: d.compraId }, include: { liquidacaoAcerto: true, matricula: { select: { status: true } },
         reservas: { where: { decisoesLiberacao: { none: { aprovada: true, proposta: { destino: "REMARCACAO" } } }, NOT: { consumo: { estorno: { isNot: null } } } } } } });
       if (compra.liquidacaoAcerto) throw new ErroRegra("Compra liquidada no encerramento não permite nova reserva.");
       const e = await tx.encontroAgenda.findUnique({ where: { id: d.encontroId } });

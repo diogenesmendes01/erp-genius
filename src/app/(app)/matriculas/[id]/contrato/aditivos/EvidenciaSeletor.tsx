@@ -3,7 +3,6 @@ import { CATEGORIA_DOCUMENTO_LABEL, rotular } from "@/lib/labels";
 
 export type EvidenciaDisponivel = { id: string; nome: string; categoria: string };
 
-/** A seleção fica no formulário mesmo ao consultar outra página de documentos. */
 export function EvidenciaSeletor({ nome, titulo, documentos, selecionada, onChange, disabled }: {
   nome: string;
   titulo: string;

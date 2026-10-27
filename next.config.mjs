@@ -1,11 +1,8 @@
-﻿/** @type {import('next').NextConfig} */
+﻿
 const nextConfig = {
   reactStrictMode: true,
-  // Build standalone p/ o Docker de producao (doc 31): copia so o necessario p/ rodar
-  // (server.js + node_modules podados) — imagem final sem devDependencies.
   output: "standalone",
   serverExternalPackages: ["pdfkit", "fontkit"],
-  // Saída de /leads (Fase 2, bloco J; C2 da R1 do #216): favoritos e links antigos caem no CRM novo.
   async redirects() {
     return [
       { source: "/leads", destination: "/funil", permanent: true },

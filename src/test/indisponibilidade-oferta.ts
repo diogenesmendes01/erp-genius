@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario } from "./integracao";
 import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
 
-/** Fonte sintética para testes de fluxos financeiros já existentes. */
 export async function seedRelatoOfertaConfirmado(matriculaId: string, inicio: string, fim: string | null) {
   const autor = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);

@@ -12,13 +12,10 @@ type Pausa = { id: string; inicio: string; fim: string | null };
 
 const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
 
-/** Q57/Q58: o aluno vê só seus relatos e as interrupções do material da sua
- * própria reposição; a ação de escrita volta a confirmar o mesmo vínculo. */
 export function RelatarIndisponibilidadePortalAluno({
   reposicaoId, podeRelatar, motivoSemRelato = null, relatos, pausas, fusoExibicao,
 }: {
   reposicaoId: string; podeRelatar: boolean;
-  /** No lugar do formulário quando não dá para relatar: por quê e o que fazer (docs/42 L2676). */
   motivoSemRelato?: string | null;
   relatos: Relato[]; pausas: Pausa[]; fusoExibicao: string;
 }) {

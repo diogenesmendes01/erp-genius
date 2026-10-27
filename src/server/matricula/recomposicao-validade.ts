@@ -8,7 +8,6 @@ import { EntradaRecomposicao } from "./recomposicao-schema";
 import { carregarRecomposicaoTx } from "./recomposicao-tx";
 import { ErroRecomposicao } from "./recomposicao-cobertura";
 
-/** Diagnóstico em leitura. A aprovação deverá repetir a conferência sob bloqueio. */
 export async function conferirValidadeRascunhoRecomposicao(input: { alunoId: string; matriculaId: string; rascunhoId: string }) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.FINANCEIRO);

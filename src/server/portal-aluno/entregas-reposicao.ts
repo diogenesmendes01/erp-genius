@@ -27,36 +27,24 @@ type JanelaEntrega = {
   liberadaAte: Date | null;
 };
 
-/** A autorização é o marco a partir do qual a prorrogação passa a valer.
- * Pausas fechadas antes dela já foram consideradas ao gestor escolher o novo
- * prazo; as posteriores ainda precisam ser acrescidas. */
 export type ProrrogacaoPrazoEtapa = {
   novoPrazo: Date;
   autorizadaEm: Date;
   versao: number;
 };
 
-/** A indisponibilidade em curso suspende a entrega; intervalos encerrados
- * somam tempo ao prazo originalmente publicado. */
 export function prazoEntregaVigente(
   prazoInicialAte: Date | null,
   interrupcoesEncerradas: Array<{ inicio: Date; fim: Date | null }>,
   prorrogacoes: ProrrogacaoPrazoEtapa[] = [],
 ): Date | null {
   if (!prazoInicialAte) return null;
-  // Uma nova prorrogação é um retrato autorizado do prazo vigente. Portanto
-  // pausas anteriores à última autorização não podem ser somadas outra vez.
-  // Uma pausa que a atravessa conta apenas pelo trecho posterior ao marco.
   const ultimaProrrogacao = [...prorrogacoes]
     .filter((item) => item.novoPrazo instanceof Date && item.autorizadaEm instanceof Date)
     .sort((a, b) => a.autorizadaEm.getTime() - b.autorizadaEm.getTime() || a.versao - b.versao)
     .at(-1);
   const marco = ultimaProrrogacao?.autorizadaEm ?? null;
   let retomado = new Date(ultimaProrrogacao?.novoPrazo ?? prazoInicialAte);
-  // Converte intervalos fechados em união cronológica. Assim, duas
-  // confirmações sobrepostas não contam o mesmo minuto duas vezes. Um relato
-  // confirmado após o prazo já vencido continua histórico, mas não ressuscita
-  // a possibilidade de entrega.
   const intervalos = interrupcoesEncerradas
     .filter((item): item is { inicio: Date; fim: Date } => !!item.fim && item.fim > item.inicio && (!marco || item.fim > marco))
     .map((item) => ({ inicio: marco && item.inicio < marco ? marco : item.inicio, fim: item.fim }))
@@ -128,8 +116,6 @@ async function janelaEntregaTx(tx: Prisma.TransactionClient, reposicaoId: string
 
 const entregaInput = z.object({ reposicaoId: z.string().min(1), resumo: texto, atividade: texto, evidencia: texto }).strict();
 
-/** Q13/Q33/Q35/Q36/Q52: somente a conta do aluno da matrícula cria a fonte de
- * entrega. A validação docente e a oficialização continuam em outra ação. */
 export async function registrarEntregaReposicaoPortalAluno(input: unknown) {
   const sessao = await exigirSessaoPortalAluno();
   const entrada = entregaInput.parse(input);
@@ -191,8 +177,6 @@ async function fonteDaAulaOriginalTx(tx: Prisma.TransactionClient, reposicaoId: 
 
 type PublicacaoConferida = { matriculaId: string; prazo: number };
 
-/** A primeira conferência não retém lock enquanto o Drive é consultado. A
- * segunda, dentro da transação de escrita, repete integralmente o predicado. */
 async function conferirPublicacaoMaterialTx(
   tx: Prisma.TransactionClient,
   autorId: string,
@@ -223,14 +207,10 @@ async function conferirPublicacaoMaterialTx(
   return { matriculaId: r.matriculaId, prazo };
 }
 
-/** Registra a fonte oficial; a transmissão autenticada do Drive será um
- * adaptador separado e nunca recebe/expõe uma URL pública neste fluxo. */
 export async function publicarMaterialReposicaoGravacao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
     const entrada = publicarMaterial.parse(input);
-    // Sem lock e sem escrita: não prolongar uma transação enquanto o provedor
-    // externo autentica, consulta metadata e entrega seu primeiro byte.
     const fonte = await prisma.$transaction(async tx => {
       await conferirPublicacaoMaterialTx(tx, autor.id, entrada.reposicaoId, false);
       return entrada.usarGravacaoAulaOriginal ? fonteDaAulaOriginalTx(tx, entrada.reposicaoId) : { publicacaoAulaId: null, fonte: null, arquivoOficialId: entrada.arquivoOficialId! };
@@ -264,8 +244,6 @@ export async function publicarMaterialReposicaoGravacao(input: unknown) {
 
 const relatoInput = z.object({ reposicaoId: z.string().min(1), descricao: texto }).strict();
 
-/** Q57: o aluno pode relatar falha apenas do próprio material autorizado. O
- * relato não pausa o prazo antes da confirmação da gestão. */
 export async function relatarIndisponibilidadeMaterialPortalAluno(input: unknown) {
   const sessao = await exigirSessaoPortalAluno();
   const entrada = relatoInput.parse(input);

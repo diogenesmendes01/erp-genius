@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { OrigemCampoSchema } from "./campos";
 
-// Texto institucional, sem HTML ou execução de expressões. A geração resolverá
-// os campos declarados; não infere cláusulas ou participantes pelo texto.
 const Campo = z.string().regex(/^[a-z][a-z0-9_]{0,59}$/);
 export const RegraAssinaturaSchema = z.object({
   papel: z.enum(["ALUNO", "REPRESENTANTE_LEGAL", "RESPONSAVEL_FINANCEIRO", "REPRESENTANTE_EMPRESA", "REPRESENTANTE_ESCOLA"]),

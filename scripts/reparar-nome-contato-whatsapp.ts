@@ -1,18 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { registrarEvento } from "../src/server/_shared/evento";
 
-// REPARO — nome de contato WhatsApp contaminado pelo perfil da própria linha (bug 29/09/2026).
-// A mensagem enviada pelo celular da linha (fromMe) trazia no pushName o perfil de quem ENVIOU,
-// e ele virava o nome do contato. Rodar DEPOIS da migração 20260929120000 (que separa o nome
-// do ERP do nome de perfil). O script limpa o nome contaminado nas duas colunas; a inbox passa a
-// mostrar o cadastro ou o número e, na próxima mensagem do contato, o nome de perfil real dele.
-//
-// Uso (DATABASE_URL do banco alvo):
-//   tsx scripts/reparar-nome-contato-whatsapp.ts --nome "Diogenes Mendes"            # só lista
-//   tsx scripts/reparar-nome-contato-whatsapp.ts --nome "Diogenes Mendes" --aplicar  # grava
-// `--nome` pode repetir (um por perfil de linha); `--manter 0554` exclui do reparo o telefone que
-// termina nesses dígitos (os mesmos que aparecem na lista mascarada).
-
 function argumentos(argv: string[]) {
   const nomes: string[] = [], manter: string[] = [];
   let aplicar = false;
@@ -26,7 +14,6 @@ function argumentos(argv: string[]) {
   return { nomes, manter, aplicar };
 }
 
-/** LGPD: o relatório não imprime o telefone inteiro. */
 const mascarar = (t: string) => `${t.slice(0, 5)}…${t.slice(-4)}`;
 
 async function main() {
@@ -43,7 +30,6 @@ async function main() {
     const mantido = (t: string) => manter.some((d) => !!d && t.replace(/\D/g, "").endsWith(d));
     const reparar = candidatos.filter((c) => !linhas.has(c.telefoneE164) && !mantido(c.telefoneE164));
     console.log(`Candidatos: ${candidatos.length} · a reparar: ${reparar.length} · modo: ${aplicar ? "APLICAR" : "somente leitura"}`);
-    // Os mantidos aparecem: um final de telefone curto pode pegar mais de um contato.
     for (const d of manter) {
       const pegos = candidatos.filter((c) => !linhas.has(c.telefoneE164) && c.telefoneE164.replace(/\D/g, "").endsWith(d));
       console.log(`  --manter ${d}: ${pegos.length ? pegos.map((c) => mascarar(c.telefoneE164)).join(", ") : "nenhum candidato"}${pegos.length > 1 ? "  ⚠ mais de um — use mais dígitos" : ""}`);
@@ -62,7 +48,6 @@ async function main() {
       console.log(`  ${mascarar(c.telefoneE164)} · ${vinculo} · nome em: ${campos} · 1ª mensagem: ${inicio} · recebidas: ${total("ENTRADA")} · enviadas: ${total("SAIDA")}`);
     }
 
-    // Lead com o nome do perfil da linha: não é reparado aqui (o nome do lead é cadastro) — só listado.
     const leads = await prisma.oportunidade.findMany({
       where: { OR: nomes.map((nome) => ({ nome: { equals: nome, mode: "insensitive" as const } })) },
       select: { id: true, codigo: true, nome: true, telefoneE164: true },
@@ -73,13 +58,10 @@ async function main() {
     }
 
     if (!aplicar) return;
-    // Uma transação por contato: lote grande não estoura o timeout da transação interativa, e uma
-    // falha no meio não desfaz os contatos já reparados (reexecutar é seguro — só pega o que sobrou).
     let reparados = 0;
     for (const c of reparar) {
       const data = { ...(igual(c.nomeExibicao) ? { nomeExibicao: null } : {}), ...(igual(c.nomePerfil) ? { nomePerfil: null } : {}) };
       reparados += await prisma.$transaction(async (tx) => {
-        // Condicional: se o nome mudou desde a leitura (mensagem nova do contato), não sobrescreve.
         const r = await tx.contatoWhatsApp.updateMany({ where: { id: c.id, nomeExibicao: c.nomeExibicao, nomePerfil: c.nomePerfil }, data });
         if (!r.count) return 0;
         await registrarEvento(tx, { tipo: "NomeContatoReparado", agregadoTipo: "ContatoWhatsApp", agregadoId: c.id, autorId: null,

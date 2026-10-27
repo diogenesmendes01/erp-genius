@@ -1,13 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 /portal-aluno/entrar #2 (#172): antes, toda falha virava "Não foi possível entrar com essas
-// credenciais" — inclusive queda de rede e erro do servidor, e o aluno ficava redigitando a senha. Agora a
-// credencial recusada (401), o serviço fora e a falha de rede têm mensagens próprias. Sem DOM e sem rede.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   fetch: vi.fn(), replace: vi.fn(), refresh: vi.fn(),
-  // useTransition simulado: iniciar a transição liga `pendente` (como o React faz) e roda a função; o teste
-  // desliga `pendente` para simular a navegação terminando.
   pendente: false,
 }));
 vi.mock("react", async (original) => {
@@ -88,14 +83,12 @@ describe("entrar no portal do aluno — mensagens de falha", () => {
   });
 
   it("aceito: se a navegação terminar na própria tela de login, o botão volta a ficar ativo", async () => {
-    // Cookie não gravado/enviado → a área do aluno redireciona para /portal-aluno/entrar e o React preserva
-    // a instância desta página. Terminada a transição, o botão não pode ficar preso em "Entrando…".
     m.fetch.mockResolvedValueOnce({ ok: true, status: 200 });
     await entrar();
     expect(m.replace).toHaveBeenCalledWith("/portal-aluno");
     expect(botaoEntrar()?.props.disabled).toBe(true);
     expect(texto(botaoEntrar()?.props.children)).toBe("Entrando…");
-    m.pendente = false; // navegação terminou (de volta nesta tela)
+    m.pendente = false;
     expect(botaoEntrar()?.props.disabled).toBe(false);
     expect(texto(botaoEntrar()?.props.children)).toBe("Entrar");
   });

@@ -9,7 +9,6 @@ import { exigirCapacidadeCrm } from "./permissoes";
 import { escopoPessoas } from "./pessoas";
 import { comUnicidade } from "./unicidade";
 
-/** Classes do mapa de cores do Tailwind (fundo suave + texto), sem hex. */
 export const CLASSES_COR_TAG: Record<CorTag, string> = {
   NEUTRA: "bg-gray-100 text-gray-700",
   MARCA: "bg-brand-bg text-brand-800",
@@ -65,7 +64,6 @@ const AlvoSchema = z.object({
   empresaId: z.string().min(1).optional(),
 });
 
-/** Empresa visível: tem oportunidade no escopo comercial do usuário ou uma pessoa dentro de `escopoPessoas`. */
 export async function escopoEmpresas(usuario: UsuarioSessao, tx: Prisma.TransactionClient): Promise<Prisma.EmpresaWhereInput> {
   return {
     OR: [
@@ -77,12 +75,10 @@ export async function escopoEmpresas(usuario: UsuarioSessao, tx: Prisma.Transact
 
 type Modo = "atribuir" | "remover";
 
-/** Nome exato já validado: mesma chave em CRM e Inbox, sempre antes do vínculo. */
 async function travarNomeDaTag(tx: Prisma.TransactionClient, nome: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${JSON.stringify(["crm-tag-nome", nome])}, 0))`;
 }
 
-/** Interno de servidor: usa a transação do chamador, sem abrir outra conexão. */
 export async function criarOuObterTagNaTransacao(tx: Prisma.TransactionClient, autor: UsuarioSessao, input: { nome: string; cor: CorTag; grupo?: string }): Promise<{ id: string }> {
   exigirCapacidadeCrm(autor, "carteira.equipe");
   exigirCapacidadeCrm(autor, "contatos.editar");
@@ -95,14 +91,11 @@ export async function criarOuObterTagNaTransacao(tx: Prisma.TransactionClient, a
   return { id: tag.id };
 }
 
-/** Reutiliza as regras CRM atuais. true somente quando houve vínculo/Evento novo. */
 export async function alterarTagNaTransacao(tx: Prisma.TransactionClient, autor: UsuarioSessao, input: AlvoTag, modo: Modo, revalidarAlvo?: () => Promise<void>): Promise<boolean> {
   exigirCapacidadeCrm(autor, "contatos.editar");
   const dados = AlvoSchema.parse(input);
   if (!!dados.pessoaId === !!dados.empresaId) throw new ErroRegra("Informe a pessoa ou a empresa, e não as duas.");
-  // Mesma ordem em todos os consumidores; o nome, quando necessário, já foi travado.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${JSON.stringify(["crm-tag-vinculo", dados.pessoaId ? "Pessoa" : "Empresa", dados.pessoaId ?? dados.empresaId, dados.tagId])}, 0))`;
-  // O chamador pode ter aguardado outra transação: revalida contexto antes da escrita.
   await revalidarAlvo?.();
   const tag = await tx.tag.findUnique({ where: { id: dados.tagId } });
   if (!tag) throw new ErroRegra("Tag não encontrada.");

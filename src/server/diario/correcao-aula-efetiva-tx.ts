@@ -9,8 +9,6 @@ export type CorrecaoAulaEfetiva = {
   snapshot: SnapshotCorrecaoAula;
 };
 
-/** Leitor interno: o chamador delimita os encontros pelo seu escopo autorizado.
- * Propostas sem aprovação e rejeições nunca substituem o diário original. */
 export async function carregarCorrecoesAulaEfetivasTx(tx: Prisma.TransactionClient, encontroIds: string[]) {
   const resultado = new Map<string, CorrecaoAulaEfetiva>();
   if (!encontroIds.length) return resultado;

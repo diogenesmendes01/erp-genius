@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados no ensaio/aplicação
-// de cadastros e no ensaio de vínculo da migração — erro em role="alert", sucesso em role="status",
-// falha de rede como resultado incerto e os botões saindo do ocupado. Sem DOM: src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(),
@@ -38,7 +35,6 @@ describe("AplicarCadastroMigracao", () => {
   const tela = () => m.ganchos!.renderizar(AplicarCadastroMigracao, { loteId: "lote" });
   const explicacao = "Apenas cadastros completos foram ensaiados ou aplicados; demais entidades permanecem em conferência.";
   const ensaio = { ok: true, dado: { aplicadas: 0, ensaiadas: 1, bloqueadas: 0, divergencias: 0, resultados: [], confirmacaoHash: "h".repeat(64), explicacao } };
-  /** Os dois botões passam a "Processando…" e ficam travados enquanto a action roda. */
   const ocupado = () => elementos(tela()).filter((n) => n.type === "button" && texto(n.props.children) === "Processando…" && n.props.disabled === true).length === 2;
   contratoFeedbackSeparado({
     nome: "ensaiar cadastros", tela, action: m.aplicarCadastro, respostaOk: ensaio,
@@ -55,7 +51,6 @@ describe("AplicarCadastroMigracao", () => {
     await clicar(tela(), "Aplicar cadastros confirmados");
     expect(m.aplicarCadastro).toHaveBeenLastCalledWith({ loteId: "lote", modo: "APLICAR", confirmacaoHash: "h".repeat(64) });
     expect(m.refresh).toHaveBeenCalledTimes(1);
-    // O erro não descarta a confirmação: o operador pode repetir a aplicação do mesmo ensaio.
     expect(botao(tela(), "Aplicar cadastros confirmados").props.disabled).toBe(false);
   });
 
@@ -82,8 +77,6 @@ describe("EnsaioVinculoMigracao", () => {
     sucesso: "Ensaio registrado. O histórico abaixo foi atualizado.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE, ocupado,
   });
 
-  // O bloco de produto é um componente filho (não é chamado sem DOM): dispara-se pela função que a tela lhe
-  // entrega, como o botão "Salvar correspondência" faria (ativa = true).
   type Executar = (acao: () => Promise<unknown>, ativa: boolean) => Promise<void>;
   const revisarProduto = () => {
     const bloco = elementos(tela()).find((n) => typeof n.type === "function" && "produtoOrigemId" in n.props && "executar" in n.props);

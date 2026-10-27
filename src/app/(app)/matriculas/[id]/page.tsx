@@ -4,9 +4,6 @@ import { carregarCabecalho } from "./carregar-cabecalho";
 import { secoesParaPapeis } from "./secoes";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
-// Hub da matrícula (E2): antes /matriculas/[id] dava 404 — encurtar a URL de qualquer uma das 33
-// telas caía na página padrão do Next. Código, aluno, estado e produto já estão no cabeçalho do
-// layout; aqui fica só a escolha da seção.
 export default async function MatriculaHubPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { usuario, cabecalho } = await carregarCabecalho(id);

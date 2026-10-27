@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { listarLinhasNovaConversa, consultarTelefoneNovaConversa } from "./nova-conversa-consultas";
 
-// AUTORADO/NÃO EXECUTADO: aguarda RO/pins/lease ROOT ciint/B500. Queries/helpers sempre reais.
 type Usuario=Awaited<ReturnType<typeof criarUsuario>>;
 let vendedor:Usuario,equipe:Usuario,fora:Usuario,gc:Usuario,admin:Usuario,misto:Usuario;
 let propria:string,daEquipe:string,alheia:string,doGc:string,doMisto:string,seq=0,fetchGuard:{mock:{calls:unknown[][]}};

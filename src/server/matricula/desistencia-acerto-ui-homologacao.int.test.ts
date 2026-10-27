@@ -13,8 +13,6 @@ import { prepararFixtureSubstituicaoContratual } from "@/test/substituicao-contr
 const arquivo = "node_modules/.implementation/q165-ui-homologacao-fixture.json";
 const senha = "Homologacao-Q165-Local";
 
-/** Executado só sob demanda antes da homologação visual. A fonte de assinatura
- * é simulada pelo helper; nenhum fornecedor ou mensagem externa é acionado. */
 it.runIf(process.env.HOMOLOGACAO_UI_Q165 === "true")("prepara fixture local para a homologação operacional Q165", async () => {
   await truncarBanco();
   const base = await prepararFixtureSubstituicaoContratual(authMock, {

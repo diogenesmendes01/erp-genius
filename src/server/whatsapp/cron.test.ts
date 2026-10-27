@@ -3,12 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ModoDegrau } from "@prisma/client";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 
-// O cron da régua decide quem recebe com decidirEnvioCron (alcance-regua.ts, fatia B da #169) — a mesma regra
-// que conta o alcance na ativação. Aqui a regra é REAL e todo o resto é mock (Prisma, política, carga das
-// cobranças, contato, fila, despachante, render): o teste fixa que o cron só enfileira o degrau AUTOMATICO com
-// destino, conta os não automáticos (manual, lote, bloqueio) e os sem destino, e não enfileira nada fora do
-// driver oficial. Complementa o cron.int.test.ts (banco), que não roda no CI (issue #162).
-
 const m = vi.hoisted(() => ({
   ErroCobrancaAlterada: class extends Error {},
   politica: vi.fn(), numero: vi.fn(), templates: vi.fn(), carregar: vi.fn(), enfileirar: vi.fn(), despachar: vi.fn(), contato: vi.fn(),

@@ -26,9 +26,6 @@ import { carregarReposicoesFrequenciaTx } from "@/server/avaliacoes/frequencia-r
 import { aprovarCorrecaoAula, proporCorrecaoAula, revisarCorrecaoAula, revisarImpactosCorrecaoAula } from "./correcao-aula";
 
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
-// O banco (CURRENT_DATE nos triggers de vigência e de agenda) usa o relógio
-// real, que não segue vi.setSystemTime. As agendas futuras ficam nos meses
-// seguintes ao mês real, e as datas passadas derivam do dia real.
 const AGORA_REAL = new Date();
 const mesCivil = (deslocamento: number) => new Date(Date.UTC(AGORA_REAL.getUTCFullYear(), AGORA_REAL.getUTCMonth() + deslocamento, 1)).toISOString().slice(0, 7);
 const diaCivil = (deslocamento: number) => new Date(Date.UTC(AGORA_REAL.getUTCFullYear(), AGORA_REAL.getUTCMonth(), AGORA_REAL.getUTCDate() + deslocamento)).toISOString().slice(0, 10);
@@ -413,11 +410,6 @@ it("remarcação não troca agenda quando a cota do período novo já foi ocupad
 });
 
 it("remarcação normal consome benefício ao registrar diário, conclui uma única fonte e não usa o encontro cancelado", async () => {
-  // A conclusão SQL usa o relógio real: agendar e remarcar no passado simulado,
-  // mas realizar em data já transcorrida também no banco. Por isso as datas
-  // derivam do relógio real, e o benefício usa um único período civil longo:
-  // o trigger de vigência calcula "hoje" pelo banco, não pelo relógio simulado,
-  // e um período mensal divergiria nos primeiros dias de cada mês.
   const D0 = diaCivil(-3), D1 = diaCivil(-2), D2 = diaCivil(-1);
   vi.setSystemTime(new Date(`${D0}T12:00:00.000Z`));
   await regraESnapshot("regra-remarca-consumo", 2, { unidade: "DIAS", duracaoPeriodo: 36500 });

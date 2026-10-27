@@ -11,9 +11,7 @@ describe("CampoTexto: o mínimo aparece antes do envio", () => {
     expect(html).toContain("Mínimo 5 caracteres · 0/2000");
     const describedby = /<textarea[^>]*aria-describedby="([^"]+)"/.exec(html)?.[1];
     expect(describedby).toBeTruthy();
-    // O id descrito é o da dica, e a dica é aria-hidden (não entra no nome "Motivo").
     expect(html).toMatch(new RegExp(`<span id="${describedby}" aria-hidden="true"`));
-    // Os atributos do <textarea> original passam adiante.
     const textarea = /<textarea[^>]*>/.exec(html)?.[0] ?? "";
     for (const attr of ['name="motivo"', 'required=""', 'minLength="5"', 'maxLength="2000"']) expect(textarea, attr).toContain(attr);
   });

@@ -39,7 +39,6 @@ const data = (valor: string | null, fuso: string) => {
 
 type Resultado = { ok: boolean; erro?: string };
 
-/** Gestão operacional da gravação. O painel não abre Drive nem revela a conta do aluno. */
 export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao: OperacaoEntrega; fusoExibicao: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");

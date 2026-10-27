@@ -3,17 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { numero, numeroOuNull, exigirSessaoComPapel, ErroPermissao, type UsuarioSessao } from "@/server/_shared";
 import { nomeCompleto } from "@/lib/nome";
 
-// ACADÊMICO — consultas (Fase 3, doc 03): diário/avaliações da turma, boletim do aluno,
-// progressão SUGERIDA (o sistema calcula; um humano aprova) e o PORTAL DO ALUNO (projeção
-// restrita aos próprios dados, resolvida pelo vínculo Aluno.usuarioId).
-
 async function conferirTurma(turmaId: string) {
   const autor = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   if (autor.papeis.includes(Papel.ADMINISTRADOR) || autor.papeis.includes(Papel.GERENTE_PEDAGOGICO)) return;
   if (!await prisma.turma.count({ where: { id: turmaId, professorId: autor.id } })) throw new ErroPermissao("Turma fora da atribuição vigente.");
 }
 
-/** Critérios de aprovação da progressão (média ponderada 0–100 e frequência %). */
 export const MEDIA_MINIMA = 70;
 export const FREQUENCIA_MINIMA_PCT = 75;
 
@@ -76,17 +71,12 @@ export async function diarioDaTurma(turmaId: string): Promise<DiarioTurma> {
 export interface ProgressaoAluno {
   alunoId: string;
   nome: string;
-  frequenciaPct: number | null; // null = sem aulas registradas
-  media: number | null; // média ponderada 0–100; null = sem notas
+  frequenciaPct: number | null;
+  media: number | null;
   aprovadoSugerido: boolean;
   certificado: { codigoValidacao: string; emitidoEmISO: string } | null;
 }
 
-/**
- * PROGRESSÃO SUGERIDA da turma: frequência % + média ponderada por aluno, com o corte
- * (média ≥ 70 e frequência ≥ 75%). O sistema SUGERE; aprovar é ação humana
- * (`aprovarNivelAluno`) — filosofia híbrida (doc 08/C4).
- */
 export async function progressaoDaTurma(turmaId: string): Promise<ProgressaoAluno[]> {
   await conferirTurma(turmaId);
   const turma = await prisma.turma.findUnique({ where: { id: turmaId } });
@@ -104,13 +94,11 @@ export async function progressaoDaTurma(turmaId: string): Promise<ProgressaoAlun
 
   return alocacoes.map((aloc) => {
     const alunoId = aloc.aluno.id;
-    // Frequência: presenças do aluno / aulas em que ele foi chamado.
     const chamadas = aulas.flatMap((a) => a.presencas.filter((p) => p.alunoId === alunoId));
     const frequenciaPct =
       chamadas.length > 0
         ? Math.round((chamadas.filter((p) => p.presente).length / chamadas.length) * 100)
         : null;
-    // Média ponderada pelas avaliações COM nota lançada para o aluno.
     let somaPesos = 0;
     let somaNotas = 0;
     for (const av of avaliacoes) {
@@ -137,10 +125,6 @@ export async function progressaoDaTurma(turmaId: string): Promise<ProgressaoAlun
   });
 }
 
-// ---------------------------------------------------------------------------
-// PORTAL DO ALUNO (papel ALUNO): projeção dos PRÓPRIOS dados via Aluno.usuarioId.
-// ---------------------------------------------------------------------------
-
 export interface DadosPortal {
   aluno: { id: string; nome: string; codigo: string | null };
   turma: { label: string; diasHorario: string | null; professor: string | null } | null;
@@ -161,7 +145,6 @@ export interface DadosPortal {
   testesNivel: { nivel: string; pontuacao: number | null; dataISO: string }[];
 }
 
-/** Resolve o aluno do usuário logado no portal (null = usuário sem vínculo). */
 export async function dadosPortalDoUsuario(usuario: UsuarioSessao): Promise<DadosPortal | null> {
   const { exigirSessaoPagina } = await import("@/server/_shared");
   const atual = await exigirSessaoPagina(Papel.ALUNO);
@@ -193,7 +176,6 @@ export async function dadosPortalDoUsuario(usuario: UsuarioSessao): Promise<Dado
 
   const turmaAtual = aluno.alocacoes[0]?.turma ?? null;
 
-  // Frequência + boletim da turma atual.
   let presentes = 0;
   let total = 0;
   const boletim: DadosPortal["boletim"] = [];
@@ -261,7 +243,6 @@ export async function dadosPortalDoUsuario(usuario: UsuarioSessao): Promise<Dado
   };
 }
 
-/** Validação pública de certificado (portal/terceiros) pelo código. */
 export async function validarCertificado(codigo: string) {
   if (!/^[0-9A-F]{8,16}$/.test(codigo)) return null;
   const cert = await prisma.certificado.findUnique({

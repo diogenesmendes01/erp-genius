@@ -3,15 +3,12 @@ import { ETAPA_LABEL, ORIGEM_CANAL_LABEL, rotular } from "@/lib/labels";
 import { exigirCapacidadeCrm } from "./permissoes";
 import { listarContatos, type FiltrosContatos } from "./contatos";
 
-/** Colunas da exportação de contatos: nunca telefone nem e-mail (LGPD, minimização). */
 export const COLUNAS_EXPORTACAO_CONTATOS = ["Código", "Nome", "Tipo", "Cidade", "Origem", "Tags", "Etapa", "Responsável"] as const;
 
-/** Neutraliza injeção de fórmula em planilha: valor que começa com = + - @, tab ou CR ganha o prefixo `'`. */
 export function celulaSegura(v: string): string {
   return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
 }
 
-/** Todas as linhas do recorte (sem paginação), no escopo do usuário, já como texto seguro. */
 export async function linhasExportacaoContatos(
   usuario: UsuarioSessao,
   filtros: FiltrosContatos,

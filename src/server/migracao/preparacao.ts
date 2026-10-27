@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 const Texto = z.string().trim().min(1).max(300);
-// Planilhas reais fornecem células numéricas e nulas. Elas são preservadas na
-// fotografia; apenas a regra que precisa de texto usa a representação textual.
 const Celula = z.union([z.string().max(2000), z.number().finite(), z.null()]).optional();
 export function textoDaCelula(valor: string | number | null | undefined) {
   if (typeof valor === "string") return valor.trim() || undefined;
@@ -44,10 +42,6 @@ export const EntradaPrepararLoteMigracao = z.object({
 export type LinhaPreparacaoEntrada = z.output<typeof LinhaPreparacaoSchema>;
 export type PendenciaPreparacao = { campo: string; codigo: string; detalhe: string };
 
-/**
- * Valida somente o que a fonte declarou. Pendência não cria estado no ERP: ela
- * torna visível o dado que ainda precisa de conferência humana.
- */
 export function pendenciasDaLinha(linha: LinhaPreparacaoEntrada): PendenciaPreparacao[] {
   const pendencias: PendenciaPreparacao[] = [];
   const adicionar = (campo: string, codigo: string, detalhe: string) => pendencias.push({ campo, codigo, detalhe });

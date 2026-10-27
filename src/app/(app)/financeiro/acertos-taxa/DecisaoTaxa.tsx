@@ -9,7 +9,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalidar = false }: { propostaId: string; podeDecidir: boolean; podeAplicar: boolean; podeInvalidar?: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
-  // As três actions recebem chave de idempotência estável: na falha de transporte, reenviar a mesma operação confere o resultado.
   const acao = useAcaoCliente({ idempotente: true });
   const enviando = useRef(false);
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);

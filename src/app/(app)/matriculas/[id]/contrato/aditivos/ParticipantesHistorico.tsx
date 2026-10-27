@@ -7,7 +7,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { Paginacao } from "@/components/Paginacao";
 import { hrefLista } from "@/lib/pagina-url";
 
-export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, paginaOriginais, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; pagina: number; /** Página dos originais da mesma tela: os links daqui a preservam. */ paginaOriginais: number; preferenciaFusoExibicao?: string | null }) {
+export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, paginaOriginais, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; pagina: number;  paginaOriginais: number; preferenciaFusoExibicao?: string | null }) {
   const r = await consultarConferenciasParticipantesAditivo({ matriculaId, propostaId, pagina });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Histórico indisponível." : r.erro}</p>;
   const d = r.dado, href = (p: number) => hrefLista(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(propostaId)}`, { paginaConferencias: p, paginaOriginais });

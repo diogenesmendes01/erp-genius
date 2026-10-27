@@ -3,8 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PreviaConversao, textoPreviaConversao } from "./PreviaConversao";
 
-// docs/43 §6 item 6: nenhuma tela mostrava a conversão antes do envio ("isso será 14:00 em São Paulo"). O fuso
-// sai como o identificador completo, como nas outras telas ("horário exibido em America/Sao_Paulo").
 describe("PreviaConversao", () => {
   it("mostra em que horário o que foi digitado aparece no fuso de exibição", () => {
     expect(textoPreviaConversao("2026-09-22T11:00", "America/Costa_Rica", "America/Sao_Paulo"))

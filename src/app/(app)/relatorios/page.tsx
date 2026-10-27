@@ -38,7 +38,6 @@ function rotuloDetalhe(chave: string): string {
   return "Oportunidades";
 }
 
-/** Monta a query da exportação a partir do período efetivo; só leva `de`/`ate` no personalizado válido. */
 function linkExportacao(aba: string, tipo: string, de: string, ate: string, extras: Record<string, string | undefined>): string {
   const q = new URLSearchParams({ aba, periodo: tipo });
   if (tipo === "PERSONALIZADO") { q.set("de", de); q.set("ate", ate); }
@@ -56,7 +55,6 @@ export default async function RelatoriosPage({ searchParams }: { searchParams?: 
   const escopo = await escopoRelatorio(usuario);
   const fuso = await fusoDaEscola();
 
-  // Parâmetros da URL, validados. Vendedor não filtra por responsável nem por autor.
   const tipo = lerOpcao(sp, "periodo", TIPOS_PERIODO) ?? "30D";
   const de = lerTexto(sp, "de", 10);
   const ate = lerTexto(sp, "ate", 10);
@@ -69,7 +67,6 @@ export default async function RelatoriosPage({ searchParams }: { searchParams?: 
     periodo = periodoDoFiltro({ tipo: "30D" }, fuso);
   }
 
-  // Período que a tela de fato mostra: com período personalizado inválido, cai em 30D (sem `de`/`ate`).
   const tipoEfetivo = erroPeriodo ? "30D" : tipo;
 
   const pessoas = ehGestao ? await listarResponsaveis(escopo) : [];

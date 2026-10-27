@@ -17,7 +17,6 @@ import type { FiltrosInbox } from "./filtros";
 let c:Cenario344;
 beforeEach(async()=>{await truncarBanco();c=await cenarioContagens344();await prisma.acaoAgenteIA.updateMany({where:{atendimentoId:c.C.id},data:{expiraEm:null}});});
 const op=(u=c.admin)=>criarOperacaoListaInbox(u,{agora:AGORA344});
-// Referência Prisma do contrato legado; não chama o tradutor ou filtro SQL novo.
 async function baseOracle(u:Cenario344["admin"],f:FiltrosInbox) {
   const w:Prisma.AtendimentoWhatsAppWhereInput[]=[await escopoAtendimentos(u,{agora:AGORA344})];
   if(f.setor)w.push({finalidade:f.setor});if(f.numeroId)w.push({conversa:{numeroId:f.numeroId}});

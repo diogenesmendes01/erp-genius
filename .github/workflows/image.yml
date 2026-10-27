@@ -1,7 +1,3 @@
-# Build, validação e publicação das imagens Docker no GHCR.
-# Roda em push na main e em tags v* (manual em outras branches apenas constrói, sem publicar).
-# As imagens validadas são publicadas no GHCR e o Coolify apenas puxa — o build não compete mais
-# pelos recursos da VPS (app uuid thpvwxk6figfp347ajznvzhl).
 name: Build e publicação de imagem
 
 on:
@@ -10,9 +6,6 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
-# Concurrency: builds de tags/main mais recentes não podem ser sobrescritos por builds antigos.
-# Push na main com merges seguidos: o run pendente é cancelado (só o último commit importa).
-# Tag: um grupo por ref, builds concorrentes são serializados (cancel-in-progress: false).
 concurrency:
   group: image-${{ github.ref }}
   cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
@@ -25,7 +18,6 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Typecheck, lint e testes devem passar ANTES de buildar a imagem.
   typecheck:
     name: typecheck
     runs-on: ubuntu-latest
@@ -111,8 +103,6 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=5120
         run: npm run build
 
-  # Build e publicação das imagens Docker — roda SEMPRE, publica só em main/tags.
-  # Publica duas imagens: runner (app) e builder (migrate).
   publish:
     name: build e publicar imagens
     runs-on: ubuntu-latest

@@ -9,7 +9,6 @@ export interface EntradaTransferir {
   grupo?: boolean;
 }
 export interface OpcoesTransferir { visivel: boolean; pessoas: boolean; setores: Setor[]; filaDoSetor: Setor | null; aria: boolean }
-/** Projeção das capacidades atuais; a exceção contextual D5 depende de #370. */
 export function opcoesTransferir(e: EntradaTransferir): OpcoesTransferir {
   if (e.grupo || e.atendimento.encerrado) return { visivel: false, pessoas: false, setores: [], filaDoSetor: null, aria: false };
   const ctx = { setor: e.atendimento.finalidade, responsavelId: e.atendimento.responsavelId, linhaComercial: e.atendimento.linhaComercial, donoLinhaId: e.atendimento.donoLinhaId };

@@ -112,8 +112,6 @@ describe("painel lateral por setor", () => {
     expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ cabecalho: expect.objectContaining({ pessoaId: null, subtitulo: null, quadrado: false }), tags: [], tarefasNoFio: [], setor: "PEDAGOGICO", turma: null, frequenciaPct: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, podeAssumirAria: false, podeDecidir: false, cartoes: [], handoff: null },
       acoes: expect.objectContaining({ podeVincular: false, podeEditarNome: false }) });
   });
-  // C6 do #217: o compositor do Inbox novo decide pelo podeEnviar da thread (atendimentoVisivel com envio), não
-  // por podeExecutar("enviar"), que libera todo mundo. O painel devolve esse podeEnviar.
   it("podeEnviar: responsável envia; convidado só de leitura não; convidado com envio sim", async () => {
     const dono = await criarUsuario([Papel.VENDEDOR], "Dono da linha");
     const linha = await numero("VENDAS", dono.id);
@@ -132,7 +130,6 @@ describe("painel lateral por setor", () => {
     expect(await carregarPainel(sess(comEnvio), a.id)).toMatchObject({ podeEnviar: true });
   });
 
-  // C2 da R1 do #217 (decisão do dono): as ações do Inbox antigo voltam no painel, com as mesmas regras da thread antiga.
   describe("ações de cadastro e cobrança (as do Inbox antigo)", () => {
     it("linha comercial sem oportunidade: vendedor cria; com oportunidade visível, o id vem para o link do funil", async () => {
       const dono = await criarUsuario([Papel.VENDEDOR], "Dono");
@@ -175,7 +172,6 @@ describe("painel lateral por setor", () => {
       await participar(aFin.id, vendedorParticipante, fin);
       expect((await carregarPainel(sess(vendedorParticipante), aFin.id))?.acoes).toMatchObject({ cobranca: null, podeVincular: true });
       expect((await carregarPainel(sess(vendedorParticipante), aFin.id))?.acoes?.podeEditarNome).toBe(true);
-      // Com outro atendimento do contato fora do escopo do vendedor, ele não edita o nome salvo.
       const outroNumero = await numero("COBRANCA");
       await atendimento(outroNumero.id, ct.id, { finalidade: "SECRETARIA" });
       expect((await carregarPainel(sess(vendedorParticipante), aFin.id))?.acoes?.podeEditarNome).toBe(false);

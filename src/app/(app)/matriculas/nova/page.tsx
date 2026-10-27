@@ -17,13 +17,9 @@ export default async function NovaMatriculaPage({
 }: {
   searchParams: Promise<{ lead?: string }>;
 }) {
-  // Criar matrícula (doc 07 / acoes.criarMatricula): Vendedor e Gerente Comercial.
-  // Vendedor recebe escopo: só pré-preenche a partir dos próprios leads.
-  // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
   const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
 
   const { lead: leadId } = await searchParams;
-  // O aceite do contrato é registrado após a criação, no atendimento da secretaria.
   const podeCriar = podeCriarMatricula(usuario.papeis);
   const [leadRaw, produtos, turmas, precos, paises, niveis] = await Promise.all([
     leadId ? obterLeadParaMatricula(leadId, usuario) : Promise.resolve(null),

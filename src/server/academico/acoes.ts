@@ -18,9 +18,7 @@ function revalidar(alunoId: string) {
   revalidatePath("/alunos", "layout"); revalidatePath(`/alunos/${alunoId}`); revalidatePath("/configuracao/turmas");
 }
 
-/** A pré-leitura só determina os locks; o pedido e a autorização são relidos depois. */
 async function bloquearSolicitacao(tx: Prisma.TransactionClient, id: string) {
-  // Correções e revisões de progressão adquirem calendário antes dos vínculos.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const referencia = await tx.solicitacaoMudancaAcademica.findUnique({ where: { id }, select: { alunoId: true, turmaDestinoId: true } });
   if (!referencia) throw new ErroRegra("Solicitação acadêmica não encontrada.");
@@ -67,8 +65,6 @@ export async function solicitarMudancaAcademica(alunoId: string, input: Solicita
       const impedimento = impedimentoEstadoAcademico(estado, true, agora);
       if (impedimento) throw new ErroRegra(impedimento);
       if (dados.alocacaoOrigemId && estado.origem?.id !== dados.alocacaoOrigemId) throw new ErroRegra("A alocação mudou desde a consulta. Confira novamente antes de solicitar.");
-      // Preparações novas capturam somente o contrato da origem inequívoca.
-      // A leitura global continua necessária para recusar origens ambíguas.
       if (!dados.matriculaId && estado.origem?.matriculaId) {
         estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, estado.origem.matriculaId, agora);
       }
@@ -76,8 +72,6 @@ export async function solicitarMudancaAcademica(alunoId: string, input: Solicita
       const aberta = await tx.solicitacaoMudancaAcademica.findFirst({ where: { alunoId, matriculaId: estado.origem!.matriculaId, status: { in: ["PENDENTE", "APROVADA"] } } });
       if (aberta) {
         if (aberta.solicitanteId === autor.id && aberta.turmaDestinoId === dados.turmaDestinoId && aberta.motivo === dados.motivo && aberta.horarioCompativel === dados.horarioCompativel) {
-          // Repetir uma proposta anterior conserva seu escopo original, inclusive
-          // quando ainda dependia do cadastro inteiro; não reescrever sua memória.
           const anterior = lerSnapshotMudancaAcademica(aberta.snapshot);
           const estadoAnterior = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, anterior.escopoMatriculaId ?? undefined, agora);
           const impedimentoAnterior = impedimentoEstadoAcademico(estadoAnterior, true, agora);

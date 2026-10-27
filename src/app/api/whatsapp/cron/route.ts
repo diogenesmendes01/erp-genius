@@ -15,15 +15,6 @@ import { rodarAlertasSla } from "@/server/whatsapp/alertas-sla";
 import { reprocessarTurnosPendentes } from "@/server/aria/turno/orquestrador";
 import { expirarSugestoesAria } from "@/server/aria/expiracao";
 
-// CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
-// autenticação por SEGREDO (header x-cron-secret), nunca por sessão. Agendamento externo
-// chama POST — a idempotência por degrau torna chamadas repetidas inofensivas.
-// CADÊNCIA: tick a cada 5 min (serviço `cron` do compose).
-//
-// UM tick, N enfileiradores ISOLADOS (decisão de arquitetura — doc 27 §Tese): cada cenário
-// (cobrança, lead-novo, e amanhã no-show/proposta) grava intenções na FILA ÚNICA; o
-// despachante compartilhado envia/simula. Uma falha num enfileirador não derruba os outros.
-
 export const runtime = "nodejs";
 
 async function seguro<T>(rotulo: string, fn: () => Promise<T>): Promise<T | { erro: string }> {
@@ -43,33 +34,20 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const agora = new Date();
-  // Controle acadêmico executa mesmo com WhatsApp desligado, sem gerar mensagens.
   const reservasParticulares = await seguro("reservas_particulares", () => rodarVencimentoParticulares());
   const inicioTurmas = await seguro("inicio_turmas", () => iniciarTurmasDaAgenda(agora));
   const acessoVencimentos = await seguro("acesso_vencimentos", () => rodarReconciliacaoAcessoVencimento());
   const acessoAulas = await seguro("acesso_aulas", () => rodarControleAcessoAulas(agora));
-  // Cobrança: enfileira + drena (o rodarCronRegua já chama o despachante no fim).
   const cobranca = await seguro("cobranca", () => rodarCronRegua(agora));
-  // Fase 2 (doc 03): fechamento mensal automático de comissões (1x por mês, se ligado).
   const comissoes = await seguro("fechamento_comissoes", () => rodarFechamentoComissoes(agora));
-  // C4 backfill (review PR #60): matrículas que ficaram completas com a automação
-  // desligada ativam no primeiro tick após ligar (idempotente).
   const fechamentosPendentes = await seguro("fechamentos_pendentes", () => rodarFechamentosPendentes());
-  // SPEC-ERP-005 (LC-15): mensagens de linha comercial paradas na triagem vão para o atendimento
-  // da linha — backfill idempotente e em lote, sem migração de dados.
   const linhaComercial = await seguro("linha_comercial_orfas", () => adotarMensagensOrfasDaLinha());
-  // Eventos do motor recebidos e ainda não processados (ordem preservada, dreno serializado).
   const eventosMotor = await seguro("eventos_motor", () => drenarEventosMotor(agora));
-  // Lembretes de tarefa do CRM (Fase 2): claim atômico + notificação ao responsável; sem envio externo.
   const recorrenciasTarefas = await seguro("recorrencias_tarefas", () => rodarRecorrenciasTarefas());
   const lembretesTarefas = await seguro("lembretes_tarefas", () => rodarLembretesTarefas(agora));
-  // SLA: prazo da 1ª resposta estourado vira aviso no sino (uma vez por atendimento); sem envio externo.
   const alertasSla = await seguro("alertas_sla", () => rodarAlertasSla(agora));
-  // Aria: âncoras sem turno há mais de 2 min (inbound perdido); só gera intenções, o despacho abaixo as drena.
   const aria = await seguro("aria", () => reprocessarTurnosPendentes(agora));
-  // Aria: sugestões vencidas viram EXPIRADA e, se a configuração mandar, o atendimento passa a uma pessoa.
   const ariaExpiracao = await seguro("aria-expiracao", () => expirarSugestoesAria(agora));
-  // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
   return NextResponse.json({

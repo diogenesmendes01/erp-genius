@@ -8,8 +8,6 @@ import { APROVADORES_PAUSA, estadoHashPausa, exigirUsuarioPausa, hashPausa } fro
 import { carregarPreviaRetomadaTx } from "./retomada-estado";
 import { PreviaRetomadaMatriculasSchema } from "./retomada-schema";
 
-/** Núcleo da aplicação contratual. Relógio e data civil institucional vêm do servidor.
- */
 export async function aplicarRetomadaMatriculasTx(tx: Prisma.TransactionClient, propostaId: string, autorId: string, agora: Date) {
   await tx.$queryRaw`SELECT id FROM "PropostaRetomadaMatriculas" WHERE id = ${propostaId} FOR UPDATE`;
   const p = await tx.propostaRetomadaMatriculas.findUnique({ where: { id: propostaId }, include: { itens: { orderBy: { matriculaId: "asc" } } } });

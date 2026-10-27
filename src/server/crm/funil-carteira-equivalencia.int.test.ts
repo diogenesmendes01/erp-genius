@@ -7,15 +7,9 @@ import { TIPOS_MUDAM_ETAPA } from "@/server/comercial/schema";
 import { carregarFunil, lerFiltrosFunil, CARTOES_POR_COLUNA, type FiltrosFunil } from "./funil";
 import { carregarCarteira, EVENTOS_DE_CONTATO_SEM_INTERACAO, type FiltrosCarteira } from "./carteira";
 
-// B19 (#196 C3, #198 C2): o funil e a carteira passaram a ordenar, filtrar e cortar no banco. Esta suíte monta
-// uma base de ~200 oportunidades (etapas, donos, datas e empates variados) e confere, filtro a filtro, que o
-// resultado novo é IGUAL ao da implementação anterior em memória (copiada em src/test/legado-funil-carteira.ts),
-// inclusive a ordem e os cortes. Também trava o escopo de visibilidade de cada papel.
-
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 const sessaoDe = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id, nome: u.nome, papeis: u.papeis });
 
-// PRNG determinístico: a mesma base em toda execução.
 function gerador(semente: number) {
   let s = semente >>> 0;
   const prox = () => {
@@ -38,7 +32,6 @@ async function montarBase() {
   await truncarBanco();
   await configurarFusoDaEscola("America/Sao_Paulo");
   const r = gerador(19);
-  // Instante fixo da semeadura; os horários ficam longe dos cortes de 30/90 dias e da virada do dia.
   const agora = Date.now();
   const antes = (dias: number, horas = 0) => new Date(agora - dias * DIA - horas * HORA - 17 * 60_000);
 
@@ -52,7 +45,6 @@ async function montarBase() {
   financeiro = await criarUsuario([Papel.FINANCEIRO], "Financeiro");
   await prisma.usuario.updateMany({ where: { id: { in: [v1.id, v2.id] } }, data: { gerenteComercialId: g1.id } });
   await prisma.usuario.update({ where: { id: v3.id }, data: { gerenteComercialId: g2.id } });
-  // V3 cobre V1 agora; a cobertura de V2 por V4 já venceu.
   await prisma.coberturaCarteira.create({
     data: { titularId: v1.id, substitutoId: v3.id, inicio: new Date(agora - DIA), fim: new Date(agora + 10 * DIA), motivo: "Férias de V1", concedenteId: g1.id },
   });
@@ -84,7 +76,6 @@ async function montarBase() {
   ];
   const nomes = ["Ana Silva", "Bruno Costa", "Carla Souza", "Diego Lima", "Ana Paula", "Eva_Lima", "Fábio Silva", "Gabi 50%"];
   const valores = [null, null, "100.00", "250.50", "250.50", "1000.00", "85000.00"];
-  // Poucos instantes distintos de criação: muitos empates, para travar o desempate por id.
   const criacoes = Array.from({ length: 12 }, (_, i) => antes(i * 11, i % 5));
   const followUps = [null, null, antes(-3), antes(-3), antes(2), antes(-10, 4)];
   const ids: { id: string; etapa: EtapaLead }[] = [];
@@ -109,7 +100,6 @@ async function montarBase() {
     ids.push({ id: o.id, etapa });
   }
 
-  // Eventos: mudanças de etapa, contatos reais e administrativos, com instantes repetidos entre oportunidades.
   const tipos = [...TIPOS_MUDAM_ETAPA, ...EVENTOS_DE_CONTATO_SEM_INTERACAO, "NotaInterna", "LeadAtribuido", "TagAtribuida"];
   const instantes = Array.from({ length: 15 }, (_, i) => antes(i * 9 + (i % 3), i % 7));
   const eventos = [];
@@ -120,7 +110,6 @@ async function montarBase() {
   }
   await prisma.evento.createMany({ data: eventos });
 
-  // Mensagens: só entrada e saída humana entregue contam para a carteira.
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955559001", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS" } });
   for (let i = 0; i < 40; i += 1) {
     const leadId = ids[i * 5].id;
@@ -141,7 +130,6 @@ async function montarBase() {
     }
   }
 
-  // Turmas ativas (e uma alocação encerrada) para o filtro "em turma".
   const nivel = await prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo: "A1", ordem: 1 } });
   const turma = await prisma.turma.create({ data: { nome: "Turma Norte", modalidadeId: cat.modalidade.id, nivelId: nivel.id } });
   const abertas = ids.filter((x) => x.etapa !== EtapaLead.PERDIDO);

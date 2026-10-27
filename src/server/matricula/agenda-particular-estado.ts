@@ -17,9 +17,6 @@ export const AgendaParticularSchema = z.object({
   }).strict()).min(1).max(1000),
 }).strict();
 
-/** Interna. O chamador autoriza o acesso à oferta/contratação.
- * A leitura não reserva horários. O futuro executor deve revalidar na mesma
- * transação que persistir a reserva, usando o bloqueio compartilhado da agenda. */
 export async function conferirAgendaParticularTx(tx: Prisma.TransactionClient, input: z.input<typeof AgendaParticularSchema>) {
   const d = AgendaParticularSchema.parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

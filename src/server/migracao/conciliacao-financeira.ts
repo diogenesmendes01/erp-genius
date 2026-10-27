@@ -1,7 +1,5 @@
 "use server";
 
-/* Destination: src/server/migracao/conciliacao-financeira.ts
- * The transaction deliberately does not call any emitter/transport. */
 import { FormaPagamento, Papel, Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { z } from "zod";
@@ -49,7 +47,6 @@ export async function proporConciliacaoFinanceiraMigracao(input:unknown) { retur
 
 export async function decidirConciliacaoFinanceiraMigracao(input:unknown) { return executarAcao(async()=>{const decisor=await exigirSessaoComPapel(Papel.ADMINISTRADOR,Papel.FINANCEIRO); const d=decisaoEntrada.parse(input); return prisma.$transaction(async tx=>{
  await financeiroFresco(tx,decisor.id); const [bloqueada]=await tx.$queryRaw<{id:string}[]>(Prisma.sql`SELECT id FROM "PropostaConciliacaoFinanceiraMigracao" WHERE id=${d.propostaId} FOR UPDATE`); if(!bloqueada) throw new ErroRegra("Proposta não encontrada."); const atual=await tx.propostaConciliacaoFinanceiraMigracao.findUniqueOrThrow({where:{id:d.propostaId},include:{cobranca:true,pagador:true,recebimentoExistente:true}}); if(atual.preparadorId===decisor.id)throw new ErroPermissao("A decisão exige outro usuário financeiro."); if(atual.status!=="PENDENTE") { if(atual.decisorId===decisor.id&&atual.chaveDecisao===d.chaveIdempotencia&&atual.motivoDecisao===d.motivo&&((d.aprovada&&atual.status==="APLICADA")||(!d.aprovada&&atual.status==="REJEITADA"))) return {id:atual.id,repetida:true}; throw new ErroRegra("A proposta já recebeu uma decisão diferente."); } if(!d.aprovada){await tx.propostaConciliacaoFinanceiraMigracao.update({where:{id:atual.id},data:{status:"REJEITADA",decisorId:decisor.id,chaveDecisao:d.chaveIdempotencia,motivoDecisao:d.motivo,decididoEm:new Date()}});return{id:atual.id,rejeitada:true};}
- // Revalidação só na aprovação. Nunca se usa a data corrente como data de pagamento.
  const fresca=await fotografiaConciliacaoFinanceiraTx(tx,{linhaId:atual.linhaId,matriculaId:atual.matriculaId,cobrancaId:atual.cobrancaId,pagadorId:atual.pagadorId,recebimentoId:atual.recebimentoExistenteId}); if(fresca.hash!==atual.estadoHash) throw new ErroRegra("A fotografia da fonte, contrato, cobrança, pagador ou recebimento mudou; crie nova proposta.");
  const entradaPersistida=atual.entrada as Record<string,unknown>; const entradaOriginal=propostaEntrada.parse({...entradaPersistida,dataPagamento:entradaPersistida.dataPagamento??undefined}); validarFonteConciliacaoFinanceira({ modalidade:entradaOriginal.modalidade, valor:entradaOriginal.valor, moeda:entradaOriginal.moeda, dataPagamento:entradaOriginal.dataPagamento, forma:entradaOriginal.forma, pagadorId:entradaOriginal.pagadorId, tipoCobranca:fresca.cobranca.tipo, dadosOrigem:fresca.linha.dadosOrigem, complemento:entradaOriginal.complemento }); const agora=fresca.cobranca;
  let recebimentoId:string|null=null, destinacaoRecebimentoId:string|null=null;

@@ -45,7 +45,6 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
   const total = colunas.reduce((soma, c) => soma + c.total, 0);
   const filtrando = Object.entries(filtros).some(([k, v]) => v && !(k === "perdidosDias" && v === "todos") && !(k === "ordem" && v === "recentes"));
 
-  // Exportação: só os filtros que a planilha de leads entende (rota valida de novo e exige a capacidade).
   const q = new URLSearchParams();
   if (filtros.busca) q.set("busca", filtros.busca);
   if (filtros.tipo) q.set("tipo", filtros.tipo);

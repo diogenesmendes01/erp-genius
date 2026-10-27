@@ -36,8 +36,6 @@ describe("InformesPagamento", () => {
     expect(html).toContain("horário exibido em UTC; origem UTC");
   });
 
-  // Fuso pessoal nas telas (pendência da Q176): a data do pagamento é dia civil da escola, sem fuso pessoal nem do
-  // processo. A gravação legada à meia-noite UTC dava 14/01 com o servidor em São Paulo.
   it("data do pagamento é o dia civil da escola, para qualquer preferência", () => {
     for (const preferenciaFusoExibicao of ["Asia/Tokyo", "America/Costa_Rica", null]) {
       const html = renderToStaticMarkup(createElement(InformesPagamento, {

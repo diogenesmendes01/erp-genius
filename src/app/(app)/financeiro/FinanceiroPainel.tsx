@@ -23,11 +23,9 @@ import type { OrdemComissoes } from "@/server/financeiro/ordem-comissoes";
 export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
 
-/** Ordem da lista de comissões (vinda da URL, no servidor) e onde os links dos cabeçalhos apontam. */
 export interface OrdenacaoComissoes {
   atual: Ordenacao<OrdemComissoes>;
   rota: string;
-  /** Filtros atuais preservados nos links (ex.: situação). */
   parametros: Record<string, string>;
 }
 
@@ -64,15 +62,9 @@ export interface AprovacaoRow {
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
-// Abas do /financeiro como componentes independentes (E8 — uma rota por aba). Cada rota monta só a
-// sua aba; as que executam ações carregam o próprio executor (useAcaoCliente) e o próprio retorno.
-// Câmbio, configuração e aprovações: nenhuma action recebe chave de idempotência — resultado incerto manda
-// conferir antes de repetir. O fechamento de comissões recebe chave (#166, 5º lote).
-
 function useExecutorFinanceiro() {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
-  // Recebe uma fábrica, não a promise já criada: com a trava do executor fechada, a action nem começa.
   async function run<T>(disparar: () => Promise<Resultado<T>>) {
     const d = await acao.executar(disparar);
     if (d?.tipo === "ok") router.refresh();
@@ -80,16 +72,11 @@ function useExecutorFinanceiro() {
   return { acao, run, router };
 }
 
-/** Total a pagar de uma moeda, com quantas comissões aprovadas o compõem (servidor, todo o escopo). */
 export type TotalAPagar = ValorMoeda & { quantidade: number };
 
 export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico, vazio, ordenacao }: { comissoes: ComissaoRow[]; aPagar: (ValorMoeda | TotalAPagar)[]; podePagar: boolean; fechamentoAutomatico: boolean; vazio?: ReactNode; ordenacao?: OrdenacaoComissoes }) {
   const { acao, run, router } = useExecutorFinanceiro();
-  // "Fechar mês e marcar pagas" paga TODAS as aprovadas e não tem desfazer (docs/42 L2016): o botão só
-  // abre a confirmação, que repete quantas comissões e quanto, por moeda.
   const [confirmarFechamento, setConfirmarFechamento] = useState(false);
-  // Chave da tentativa (#166, 5º lote): o reenvio depois de um resultado incerto devolve o fechamento já feito, sem
-  // pagar as comissões aprovadas no intervalo. Só muda depois do sucesso.
   const tentativaFechamento = useChaveIdempotencia();
   const quantidade = aPagar.reduce((n: number, v: ValorMoeda | TotalAPagar) => n + ("quantidade" in v ? v.quantidade : 0), 0);
   return (
@@ -164,9 +151,7 @@ export function CambioAba({ cotacoes, preferenciaFusoExibicao = null }: { cotaco
   );
 }
 
-/** Visão geral com o seletor de moeda de consolidação (Fase B): preferência salva no navegador. */
 export function GeralAba({ kpis, cotacoes }: { kpis: Kpis; cotacoes: CotacaoVigente[] }) {
-  // `taxas` = moeda→unidadesPorUsd para o pivô USD em `consolidar`.
   const taxas = useMemo(() => {
     const r: Record<string, number> = {};
     for (const c of cotacoes) if (c.unidadesPorUsd != null) r[c.moeda] = c.unidadesPorUsd;
@@ -178,11 +163,11 @@ export function GeralAba({ kpis, cotacoes }: { kpis: Kpis; cotacoes: CotacaoVige
     try {
       const saved = window.localStorage.getItem(MOEDA_CONS_KEY);
       if (saved && cotacoes.some((c) => c.moeda === saved)) setMoedaCons(saved);
-    } catch { /* storage indisponível */ }
+    } catch {  }
   }, [cotacoes]);
   function escolherMoeda(m: string) {
     setMoedaCons(m);
-    try { window.localStorage.setItem(MOEDA_CONS_KEY, m); } catch { /* storage indisponível */ }
+    try { window.localStorage.setItem(MOEDA_CONS_KEY, m); } catch {  }
   }
   return <VisaoGeral kpis={kpis} opcoes={opcoesMoeda} taxas={taxas} moedaCons={moedaCons} onMoeda={escolherMoeda} />;
 }
@@ -199,16 +184,13 @@ export function Comissoes({
   ordenacao,
 }: {
   comissoes: ComissaoRow[];
-  /** Total das aprovadas em TODO o escopo (servidor) — a lista é paginada. */
   aPagar: ValorMoeda[];
   podePagar: boolean;
   onFechar: () => void;
   fechamentoAutomatico: boolean;
   onToggleAutomatico: (ligado: boolean) => void;
   isPending: boolean;
-  /** Texto da lista vazia — com filtro ativo, a página diz que não há nesta situação e oferece ver todas. */
   vazio?: ReactNode;
-  /** Ordem atual da lista paginada (E1): cabeçalhos ordenáveis por link; sem ela, cabeçalhos simples. */
   ordenacao?: OrdenacaoComissoes;
 }) {
   const coluna = ordenacao ? { ordenacao: ordenacao.atual, rota: ordenacao.rota, parametros: ordenacao.parametros } : null;
@@ -219,7 +201,6 @@ export function Comissoes({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></p>
         {podePagar && <span className="flex items-center gap-3">
-          {/* Fase 2 (doc 03): fechamento MENSAL automático — 1x por mês, no 1º tick do cron. */}
           <label className="flex items-center gap-1.5 text-xs text-gray-600">
             <input
               type="checkbox"
@@ -230,9 +211,6 @@ export function Comissoes({
             />
             Fechamento mensal automático
           </label>
-          {/* `isPending` também fica true durante o toggle de fechamento automático (mesma
-              trava de `run`) — texto fixo, não "Fechando…", para não afirmar uma operação que
-              pode não ser esta. */}
           <button className={btnPri} disabled={isPending} onClick={onFechar}>
             Fechar mês e marcar pagas
           </button>
@@ -420,8 +398,6 @@ export function CambioPainel({
   const [salvando, setSalvando] = useState(false);
   const [auto, setAuto] = useState(false);
 
-  // Após salvar/atualizar, o pai dá router.refresh() com novas cotações → resincroniza os inputs
-  // com o valor canônico (senão o campo ficaria com o texto antigo digitado).
   useEffect(() => {
     setVals(Object.fromEntries(editaveis.map((c) => [c.moeda, c.unidadesPorUsd != null ? String(c.unidadesPorUsd) : ""])));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -540,7 +516,6 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
       </section>
 
       <section>
-        {/* Fase 2 (doc 03 §Comissão): apuração POR VENDEDOR (moeda × status). */}
         <h2 className="mb-2 text-sm font-medium text-gray-700">Comissão por vendedor</h2>
         {comissoesPorVendedor.length === 0 ? (
           <EstadoVazio>Sem comissões.</EstadoVazio>

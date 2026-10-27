@@ -15,11 +15,8 @@ const MOTIVOS: { valor: MotivoEstorno; rotulo: string }[] = [
   { valor: "OUTRO", rotulo: "Outro motivo" },
 ];
 
-// Idempotente por natureza (#166, 5º lote): o mesmo estorno, do mesmo autor e com o mesmo motivo, devolve ok sem
-// gravar de novo (server/crm/comissoes-estorno.ts), então a falha de rede pode ser repetida.
 const FALHA_DE_REDE = { ok: false as const, erro: "Não foi possível confirmar o estorno. Confira a conexão e tente de novo: o mesmo estorno não é gravado duas vezes." };
 
-/** Botão "Estornar" de uma linha do painel: pede o motivo e confirma; a tela só muda depois do `ok` do servidor. */
 export function EstornarComissao({ id, aluno, valor }: { id: string; aluno: string; valor: string }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);

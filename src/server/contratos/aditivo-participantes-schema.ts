@@ -23,7 +23,6 @@ type Identidade = z.infer<typeof IdentidadeSignatarioSchema>;
 const igual = (a: Identidade, b: Identidade) => a.nome === b.nome && a.email === b.email && a.documento === b.documento;
 function falhar(mensagem: string): never { throw new Error(mensagem); }
 
-/** Confere apenas fatos já resolvidos pelo serviço. Não herda assinaturas do original. */
 export function conferirParticipantesAditivo(input: {
   regras: readonly z.input<typeof RegraAssinaturaSchema>[];
   contexto: Contexto;

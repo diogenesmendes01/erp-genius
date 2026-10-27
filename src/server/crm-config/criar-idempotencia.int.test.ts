@@ -1,12 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (3º lote): criar tag, campo personalizado e resposta rápida pela configuração do CRM. Com chave, o
-// reenvio da mesma tentativa devolve o registro criado (em vez de "Já existe…"), e o envio simultâneo não
-// passa pela checagem de nome duas vezes. A edição (com `id`) continua sem chave.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -97,8 +91,6 @@ describe("salvarRespostaRapida (criação) com chave (#166)", () => {
   });
 });
 
-// PR #267 B4: a edição (com `id`) roda no executor `idempotente: true`; o reenvio de uma edição que já
-// foi aplicada não grava update nem Evento.
 describe("edição sem mudança não grava (#166, PR #267 B4)", () => {
   const conta = (tipo: string) => prisma.evento.count({ where: { tipo } });
   const idCriado = (r: { ok: true; dado?: { id: string } } | { ok: false; erro: string }) => {

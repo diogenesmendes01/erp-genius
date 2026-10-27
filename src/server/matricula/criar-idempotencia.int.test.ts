@@ -1,13 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (1º lote): `criarMatricula` com chave de idempotência. Um reenvio (duplo clique, retry de rede,
-// F5 no POST) com a mesma chave não cria segunda matrícula, aluno, cobrança ou Evento: devolve o mesmo
-// resultado. Chave repetida com outra entrada é recusada sem gravar nada.
-
-// Sessão: só `exigirSessao` é trocada, e os papéis continuam lidos do banco (`carregarUsuarioFresco`).
-// O mock de `@/lib/auth` usado nas outras suítes não serve aqui: dois `import("@/lib/auth")` simultâneos
-// (o teste de envio concorrente) escapam do vi.mock no Vitest e carregam o NextAuth real.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

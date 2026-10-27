@@ -3,17 +3,12 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 
 export const OPCOES_RETOMADA = ["MANTER_VENCIMENTOS", "REPROGRAMAR_PARCELAS"] as const;
 
-/** Data de calendário AAAA-MM-DD real, sem aceitar normalização de 31/02 ou strings com horário. */
 function dataCivilReal(valor: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
   const [ano, mes, dia] = valor.split("-").map(Number);
   return new Date(Date.UTC(ano, mes - 1, dia)).toISOString().slice(0, 10) === valor;
 }
 
-/**
- * Instante gravado para a data digitada: o meio-dia da escola (ref. #247), não o do relógio do servidor.
- * Propostas antigas guardam o meio-dia do servidor; `diaCivilGravado` lê as duas no mesmo dia civil.
- */
 export function dataRetomada(valor: string, fuso: string): Date | null {
   return dataCivilReal(valor) ? instanteDaGrade(valor, "12:00", fuso) : null;
 }

@@ -22,7 +22,6 @@ type Props = {
   supervisao: boolean;
   podeMudarEstado: boolean;
   podePausar: boolean;
-  /** Só quem vê o provedor ganha o atalho para ele. */
   verProvedor: boolean;
 };
 

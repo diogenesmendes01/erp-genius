@@ -68,7 +68,6 @@ describe("ordenação de empresas (E1 — ColunaOrdenavel)", () => {
     expect(orderByEmpresas({ campo: "nome", dir: "desc" })).toEqual([{ nomeOrdenacao: "desc" }, { id: "desc" }]);
     expect(orderByEmpresas({ campo: "codigo", dir: "asc" })).toEqual([{ codigo: { sort: "asc", nulls: "last" } }, { id: "asc" }]);
     expect(orderByEmpresas({ campo: "colaboradores", dir: "desc" })).toEqual([{ matriculas: { _count: "desc" } }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
-    // Crescente pelo rótulo exibido: "Ativa" antes de "Inativa".
     expect(orderByEmpresas({ campo: "situacao", dir: "asc" })).toEqual([{ ativo: "desc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
     expect(orderByEmpresas({ campo: "situacao", dir: "desc" })).toEqual([{ ativo: "asc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
   });
@@ -91,7 +90,6 @@ describe("teto da busca de empresas", () => {
   });
 });
 
-// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão.
 describe("ordem de /empresas: chave herdada de Object", () => {
   it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
     expect(lerFiltrosEmpresas({ ordem, dir: "desc" }).ordem).toEqual(lerFiltrosEmpresas({}).ordem);

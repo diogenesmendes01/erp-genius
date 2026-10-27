@@ -16,7 +16,6 @@ function valorDoCampo(campo: CampoPainel): string {
   return String(v);
 }
 
-/** Apresentação do DTO contextual autorizado; nenhuma leitura ou autorização no navegador. */
 export function AbaDetalhes({ dados, capacidades, aoAbrirOportunidades }: { dados: DetalhesPainel; capacidades: Pick<CapacidadesPainel, "verContato" | "verEmpresa">; aoAbrirOportunidades?(): void }) {
   const { pessoa, oportunidade, b2b, campos } = dados;
   const empresa = pessoa?.empresa;

@@ -6,7 +6,6 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 export const PeriodoFechamentoHorasSchema = z.object({ referencia: RegraCoberturaSchema, dataNoPeriodo: DataCivilSchema,
   fuso: FusoInstitucionalSchema, vencimento: DataCivilSchema, clausula: z.string().trim().min(5).max(2000) }).strict();
 
-/** Referência proposta deve ser conferida contra o contrato antes da emissão. */
 export function resolverPeriodoFechamentoHoras(input: z.input<typeof PeriodoFechamentoHorasSchema>) {
   const d = PeriodoFechamentoHorasSchema.parse(input), civil = periodoMensalNaData(d.referencia, d.dataNoPeriodo);
   const proximo = new Date(Date.parse(`${civil.fim}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);

@@ -21,8 +21,6 @@ const substituicao = z.object({ reposicaoId: id, professorId: id, motivo: texto,
 
 type ContextoOperacional = { reposicaoId: string; matriculaId: string; modalidade: string; statusMatricula: string; contaAtiva: boolean };
 
-/** A operação sempre parte da reposição e da matrícula já conferidas; IDs de
- * conta do portal nunca atravessam o cliente da equipe. */
 async function contextoGestaoTx(tx: Prisma.TransactionClient, reposicaoId: string, matriculaId?: string): Promise<ContextoOperacional> {
   const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
   const [fresco] = await tx.$queryRaw<Array<{ ativo: boolean; papeis: Papel[] }>>(Prisma.sql`
@@ -42,8 +40,6 @@ async function contextoGestaoTx(tx: Prisma.TransactionClient, reposicaoId: strin
 
 const consulta = z.object({ reposicaoId: id, matriculaId: id }).strict();
 
-/** Q35/Q36/Q52/Q57: projeção administrativa mínima de uma reposição gravada.
- * Não retorna conta, URL/ID Drive, entrega, contato ou dados de outro portal. */
 export async function consultarOperacaoEntregaReposicao(input: unknown) {
   return executarAcao(async () => {
     const d = consulta.parse(input);
@@ -119,8 +115,6 @@ export async function consultarOperacaoEntregaReposicao(input: unknown) {
   });
 }
 
-/** Q40: troca atômica e auditável do avaliador da reposição gravada. A data
- * vem da transação; o cliente não consegue retroagir acesso ou autoria. */
 export async function substituirAvaliadorReposicaoOperacional(input: unknown) {
   return executarAcao(async () => {
     const d = substituicao.parse(input);
@@ -196,9 +190,6 @@ async function conferirAlvoDaReposicao(reposicaoId: string, alvoId: string, tipo
   });
 }
 
-/** As ações de domínio já retornam Resultado. O wrapper mantém o mesmo
- * contrato, sem devolver Resultado dentro de Resultado, e inclui a conferência
- * do alvo no tratamento esperado pelo cliente. */
 function exigirResultado<T>(resultado: Resultado<T>): T {
   if (!resultado.ok) throw new ErroRegra(resultado.erro);
   return resultado.dado as T;

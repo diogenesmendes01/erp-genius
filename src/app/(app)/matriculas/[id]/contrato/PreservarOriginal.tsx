@@ -8,8 +8,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 
 export function PreservarOriginal({ previaId, conferenciaId }: { previaId: string; conferenciaId: string }) {
   const router = useRouter();
-  // Sem chaveIdempotencia, mas a própria conferenciaId (estável, única em ArtefatoContratual) faz esse
-  // papel: repetida, o servidor devolve o original já preservado (server/contratos/originais.ts:27-28).
   const acao = useAcaoCliente({ idempotente: true });
   const pendente = acao.ocupado;
   return <form className="space-y-3 rounded border p-4" onSubmit={async (e) => {

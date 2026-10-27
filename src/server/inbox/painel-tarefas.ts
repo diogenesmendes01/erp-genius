@@ -13,7 +13,6 @@ export type TarefaPainel = {
  criadoEm:string;criadorNome:string|null;podeAgir:boolean;
 };
 const select={id:true,versao:true,titulo:true,descricao:true,tipo:true,status:true,prioridade:true,dataCivil:true,inicioEm:true,fusoOrigem:true,lembreteAntecedenciaMin:true,responsavel:{select:{id:true,nome:true}},origem:true,leadId:true,atendimentoId:true,criadoEm:true,criador:{select:{nome:true}}} satisfies Prisma.TarefaSelect;
-/** `a` vem exclusivamente de resolução autorizada no servidor; não é payload de uma action. */
 export async function carregarTarefasDoAtendimento(u:UsuarioSessao,a:{id:string;leadId:string|null},o:{soDaConversa:boolean;agora?:Date},db:Db=prisma):Promise<TarefaPainel[]>{
  const cap=capacidadesCrm(u.papeis);if(!u.id||!cap.has("tarefas.ver"))return [];
  const pertence:Prisma.TarefaWhereInput=o.soDaConversa?{atendimentoId:a.id}:{OR:[{atendimentoId:a.id},...(a.leadId?[{leadId:a.leadId}]:[])]};

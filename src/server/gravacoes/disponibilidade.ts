@@ -1,8 +1,3 @@
-/**
- * Preflight do arquivo oficial antes de uma publicação ou retomada. A leitura é curta e
- * descartada: ela prova que o vídeo institucional continua acessível sem
- * transformar o stream em um download no servidor.
- */
 import { obterDriveOrganizacaoId, obterTokenDrive } from "./credenciais";
 import { abrirVideoDriveOrganizacional, ErroVideoDrive, type EntradaVideoDrive, type VideoDrive } from "./drive";
 
@@ -50,11 +45,6 @@ async function cancelarLeitor(leitor: ReadableStreamDefaultReader<Uint8Array>) {
   }
 }
 
-/**
- * Confere metadata, pertencimento ao Drive institucional e a leitura de um
- * único byte. O prazo limita token, metadata, mídia e primeiro chunk. Caso a
- * abertura termine depois do timeout, o stream tardio também é descartado.
- */
 export async function verificarDisponibilidadeGravacaoDrive(
   arquivoOficialId: string,
   dependencias: DependenciasDisponibilidadeGravacao = {},
@@ -73,8 +63,6 @@ export async function verificarDisponibilidadeGravacaoDrive(
       range: "bytes=0-0",
       signal: controlador.signal,
     });
-    // Alguns clientes de token não obedecem AbortSignal. Se ainda assim
-    // devolverem uma resposta tardia, não deixamos o corpo aberto.
     void abertura.then((video) => {
       if (controlador.signal.aborted) void video.body.cancel().catch(() => undefined);
     }).catch(() => undefined);
@@ -83,7 +71,6 @@ export async function verificarDisponibilidadeGravacaoDrive(
     const chunk = await corridaComAbort(leitor.read(), controlador.signal);
     if (chunk.done || !chunk.value || chunk.value.byteLength < 1) falhaDisponibilidade();
   } catch {
-    // Credenciais, metadados, acesso e timeout têm a mesma superfície segura.
     falhaDisponibilidade();
   } finally {
     clearTimeout(timeout);

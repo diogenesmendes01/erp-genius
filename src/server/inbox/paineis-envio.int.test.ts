@@ -6,14 +6,7 @@ import { seedCanal } from "@/test/integracao-whatsapp";
 import { enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { carregarPainel } from "./paineis";
 
-// C6 do #217 (follow-up da revisão): o podeEnviar do painel decide o compositor, então precisa ser EXATAMENTE o
-// critério do envio de verdade (`enviarTextoInbox` → `conversaVisivel(autor, id, true)`, alias de
-// `atendimentoVisivel`). A secretaria responsável só envia ao destinatário atual do atendimento
-// (`destinatarioAtualDoAtendimento`): com aluno, o telefone do contato tem de ser o do aluno (ou do responsável
-// pedagógico); sem aluno (triagem por setor), envia.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
-// Nada sai de verdade: sem WHATSAPP_LIVE e com o driver do motor falso.
 vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: vi.fn(), enviarTemplate: vi.fn(), enviarMidia: vi.fn() } }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

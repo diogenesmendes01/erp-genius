@@ -6,7 +6,6 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { depoisDoCursorEmSql } from "./consulta-sql";
 import { codificarCursor, decodificarCursor } from "./cursor";
 
-// Somente VALUES em transações READ ONLY: não depende de fixture nem altera tabelas.
 const linhas = [
   { id: "a-before", em: "2026-10-01T10:00:00.000Z" },
   { id: "m-a", em: "2026-10-01T12:00:00.000Z" },
@@ -23,7 +22,7 @@ const instantes = [
   "2026-10-01T15:00:00.000Z",
   "2026-10-01T09:00:00.000Z",
   null,
-  "0", // Entrada aceita pelo decoder legado e normalizada por new Date no caminho anterior.
+  "0",
 ];
 const casos = ["UTC", "America/Sao_Paulo", "Asia/Tokyo"]
   .flatMap(zona => instantes.map(em => ({ zona, em })));

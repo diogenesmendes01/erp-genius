@@ -4,8 +4,6 @@ import {createHash} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {createRequire} from "node:module";
 import type {UsuarioSessao} from "@/server/_shared/sessao";
-// Cache REAL do React embarcado no Next instalado; dispatcher por request é instrumentação.
-// Não é renderização RSC, browser ou SQL. Não alteramos condições/configuração/dependências.
 type ReactServidor={cache:unknown;__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE:{A:unknown}};
 const m=vi.hoisted(()=>({revogado:false,revogarNoCatalogo:false,pessoa:vi.fn(),cobertura:vi.fn(),equipe:vi.fn(),usuario:vi.fn(),catalogo:vi.fn(),config:vi.fn(),ops:vi.fn(),transaction:vi.fn(),react:null as ReactServidor|null,prisma:{} as Record<string,unknown>,tx:{} as Record<string,unknown>}));
 vi.mock("react",async original=>{const real=await original<typeof import("react")>();const {createRequire}=await import("node:module");const require=createRequire(import.meta.url);m.react=require("next/dist/compiled/react/cjs/react.react-server.development.js") as ReactServidor;return {...real,cache:m.react.cache};});

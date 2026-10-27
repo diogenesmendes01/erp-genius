@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-/** Consulta compartilhada pela apresentação e pela proteção das ações legadas. */
 export async function impedimentoFluxoGlobal(tx: Pick<Prisma.TransactionClient, "matricula">, alunoId: string): Promise<string | null> {
   const totalContratos = await tx.matricula.count({ where: { alunoId } });
   if (totalContratos > 1) return "Este aluno possui mais de uma matrícula. Use o fluxo contratual e selecione os contratos que deseja alterar.";
@@ -19,7 +18,6 @@ export async function impedimentoFluxoGlobal(tx: Pick<Prisma.TransactionClient, 
   return null;
 }
 
-/** Chamar sob os locks do aluno/contratos antes de uma alteração global legada. */
 export async function exigirFluxoGlobalSemMovimentacaoContratual(tx: Pick<Prisma.TransactionClient, "matricula">, alunoId: string) {
   const impedimento = await impedimentoFluxoGlobal(tx, alunoId);
   if (impedimento) throw new ErroRegra(impedimento);

@@ -11,7 +11,6 @@ export async function conferirTurmaParaReserva(tx: Prisma.TransactionClient, tur
   const publicada = !!encontros.length && await tx.propostaGradeTurma.count({ where: { turmaId: turma.id, decisao: { aprovada: true }, calendario: { decisao: { aprovada: true } } } }) > 0;
   const recursos = await conferirConflitosReplanejamento(tx, encontros.map((e) => ({ encontroId: e.id, turmaId: turma.id, professorId: e.professorId, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })));
   const ocupacoes = await tx.alocacaoTurma.count({ where: { turmaId: turma.id, ativa: true } });
-  // Prazo vencido não libera vaga por inferência: a rotina de expiração deve conferir avanço formal.
   const reservas = await tx.reservaVagaMatricula.count({ where: { turmaId: turma.id, ...(reservaDaContratacao ? { id: { not: reservaDaContratacao } } : {}), status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } });
   const conferencia = conferirNovaAdmissaoTurma({ agora, fusoAdmissao: janela.fusoAdmissao, limiteEntrada: janela.limiteEntrada, status: turma.status,
     agendaPublicada: publicada, professorApto: !!encontros.length && !recursos.semDocenteApto.length,

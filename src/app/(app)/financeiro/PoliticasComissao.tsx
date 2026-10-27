@@ -13,27 +13,16 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 
-/**
- * `fusoEscola`: sem preferência pessoal, as vigências saem e a nova vigência é digitada no fuso da escola (antes, a
- * lista caía em UTC e o campo no fuso do navegador). O fuso do campo é escrito ao lado dele.
- */
 export function PoliticasComissao({ dados, preferenciaFusoExibicao = null, fusoEscola }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const fusoCampo = fusoDoCampoLocal(preferenciaFusoExibicao, fusoEscola);
   const router = useRouter();
-  // Idempotente por natureza (#166): se a última versão já é exatamente esta, publicada por quem repete, o
-  // servidor devolve ok sem abrir outra versão nem gravar outro Evento (publicarPoliticaComissao).
   const acao = useAcaoCliente({ idempotente: true });
   const [tipo, setTipo] = useState<"PERCENTUAL" | "VALOR_FIXO">("PERCENTUAL");
-  // Precisa virar estado (não FormData) pra CampoMoeda, que só existe no ramo VALOR_FIXO —
-  // e pra resolver a moeda do país selecionado, também precisa virar estado.
   const [paisId, setPaisId] = useState("");
   const [percentual, setPercentual] = useState("");
   const [valorFixo, setValorFixo] = useState("");
   const moedaSelecionada = dados.paises.find((p) => p.id === paisId)?.moedaLocal ?? "";
   async function publicar(form: FormData) {
-    // Percentual usa Number (não é dinheiro, é 0–100); valor fixo usa parseMoeda — "1.234"
-    // digitado não pode virar 1234 por acidente (ver docs/42-auditoria-frontend-ux.md,
-    // ganho rápido 13).
     const valor = tipo === "PERCENTUAL" ? Number(percentual) : parseMoeda(valorFixo);
     if (valor === null || !Number.isFinite(valor)) {
       acao.setErro(tipo === "PERCENTUAL" ? "Informe um percentual válido." : "Informe um valor válido, com no máximo duas casas decimais.");

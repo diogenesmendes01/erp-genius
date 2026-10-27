@@ -2,8 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 L279 (docs/43 §6 item 7): quem aprova a utilização ou a devolução de um crédito decidia sem ver de quem
-// era o crédito, e a origem aparecia como "Cobrança de origem: <id>", "Aplicação: <id> · Decisão: <id>".
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), cabecalho: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/financeiro/uso-credito-proposta", () => ({ consultarPropostasUsoCredito: mocks.consultar, proporUtilizacaoCredito: vi.fn() }));
@@ -51,7 +49,6 @@ describe("proposta de utilização de crédito", () => {
     expect(html).toContain(">Cobrança sem código · vencimento 10/10/2026 · saldo R$ 20,00</option>");
     expect(html).toContain(">C-000099 · vencimento 10/11/2026 · saldo R$ 15,00</option>");
     expect(html).toContain("<p>Cobrança: Cobrança que não está mais em aberto</p>");
-    // Ids só em atributos (href, value): nenhum como texto.
     const texto = html.replace(/(?:href|value)="[^"]*"/g, "");
     for (const id of ["credito-interno", "matricula-interna", "cobranca-origem-interna", "aplicacao-interna", "decisao-interna", "cobranca-aberta-interna", "cobranca-quitada-interna", "aluno-interno"]) expect(texto, id).not.toContain(id);
   });

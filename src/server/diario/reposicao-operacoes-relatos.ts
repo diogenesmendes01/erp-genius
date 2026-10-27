@@ -39,8 +39,6 @@ async function materialDisponivelTx(tx: Prisma.TransactionClient, reposicaoId: s
   return material;
 }
 
-/** Q57: equipe autorizada ou professor atualmente designado registra apenas o
- * relato. A pausa só existe depois de uma confirmação explícita da gestão. */
 export async function registrarRelatoIndisponibilidadeEquipe(input: unknown) {
   return executarAcao(async () => {
     const entrada = relatar.parse(input);
@@ -75,8 +73,6 @@ export async function registrarRelatoIndisponibilidadeEquipe(input: unknown) {
   });
 }
 
-/** Q57: descartar conserva o relato e a razão no Evento. Não cria
- * indisponibilidade, não pausa prazo e só aceita a transição ABERTO→DESCARTADO. */
 export async function descartarRelatoIndisponibilidadeEquipe(input: unknown) {
   return executarAcao(async () => {
     const entrada = descartar.parse(input);

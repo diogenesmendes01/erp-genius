@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na conferência da
-// regra histórica — Propor, Revisar e Decidir. A decisão tinha `try/finally` sem `catch` (achado do
-// doc 43): a falha de transporte deixava a tela sem resposta. Agora todos os fluxos mostram resultado
-// incerto em role="alert" e saem do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   revisar: vi.fn(), propor: vi.fn(), decidir: vi.fn(), validar: vi.fn(), refresh: vi.fn(),
@@ -21,7 +17,6 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push
 vi.mock("@/server/avaliacoes/conferencia-regra-historica", () => ({
   revisarConferenciaRegraHistorica: m.revisar, proporConferenciaRegraHistorica: m.propor, decidirConferenciaRegraHistorica: m.decidir,
 }));
-// O conteúdo da regra é validado pelo schema real na tela; aqui o teste decide o resultado da validação.
 vi.mock("@/server/avaliacoes/regra-schema", () => ({ ConteudoRegraAvaliacaoSchema: { safeParse: m.validar } }));
 vi.mock("../../../[nivelId]/ResumoRegra", () => ({ ResumoRegra: () => null }));
 
@@ -36,7 +31,6 @@ beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal
 afterEach(() => { vi.unstubAllGlobals(); });
 
 const fieldsetTravado = (t: ReactNode) => elementos(t).find((n) => n.type === "fieldset")?.props.disabled === true;
-// O "Revisar" é o <Botao> do design system (C33 da #170): conta o nativo e o <Botao>.
 const rotuloDoBotao = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button" || n.type === Botao)?.props.children);
 
 const revisao = {

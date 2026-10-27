@@ -76,8 +76,6 @@ async function criarTurma(nivelId: string, extra: Partial<Prisma.TurmaUncheckedC
   const turma = await prisma.turma.create({ data: {
     modalidadeId: catalogo.modalidade.id, nivelId, professorId: pro.id,
     status: "ABERTA", capacidade: 10, diasSemana: [1, 3], horarioInicio: "18:00", horarioFim: "19:00",
-    // A regra é vinculada somente quando a turma nasce futura e aberta; depois
-    // esta fixture a coloca no mesmo estado histórico usado pelos cenários.
     dataInicio: new Date("2099-01-01T00:00:00.000Z"), dataFim: dataFimFinal, ...dados,
   } });
   return prisma.turma.update({ where: { id: turma.id }, data: { status: statusFinal, dataInicio: dataInicioFinal, dataFim: dataFimFinal } });
@@ -177,7 +175,7 @@ const memorizarContrato = () => Promise.all([
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   sec = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria acadêmica");
   gp = await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gestão pedagógica");
   adm = await criarUsuario([Papel.ADMINISTRADOR], "Direção");
@@ -274,8 +272,6 @@ async function registrarFrequenciaSuficiente(alocacao: { id: string; matriculaId
     turmaId: alocacao.turmaId, finalidade: "AULA", status: "MINISTRADO", fim: { lt: new Date() }, diario: { isNot: null },
   }, orderBy: [{ inicio: "asc" }, { id: "asc" }], select: { diario: { select: { id: true } } } });
   if (anterior?.diario) {
-    // A chamada foi preenchida integralmente antes da conclusão; não reescrever
-    // a fonte depois que o fechamento do primeiro aluno já foi conferido.
     const registro = await prisma.registroAulaAluno.findUniqueOrThrow({
       where: { aulaId_alunoId: { aulaId: anterior.diario.id, alunoId: alocacao.alunoId } },
     });
@@ -403,7 +399,6 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { matriculaId } });
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId })).solicitacoes.map(s => s.id)).toEqual([id]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId })).solicitacoes).toEqual([]);
-    // A página é contada no escopo do contrato: nenhuma página dele traz o pedido legado.
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId, pagina: 2 })).solicitacoes).toEqual([]);
     expect(sucesso(await listarContextoMudancaAcademica(alunoId, matriculaId)).pedidoAbertoId).toBeNull();
     expect((await pedido(id)).matriculaId).toBeNull();
@@ -414,7 +409,6 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     sucesso(await cancelarMudancaAcademica(primeira, { motivo: "Aluno desistiu desta mudança" }));
     await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { ativa: false, encerradaEm: new Date() } });
     const outra = await prisma.matricula.create({ data: { alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
-    // Regularizar a referência da alocação antiga não transfere o pedido histórico.
     await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { matriculaId: outra.id } });
     const vinculo = await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId: outra.id, turmaId: origem.id } });
     const segunda = sucesso(await solicitarMudancaAcademica(alunoId, { matriculaId: outra.id, alocacaoOrigemId: vinculo.id, turmaDestinoId: destino.id, motivo, horarioCompativel: true })).solicitacaoId;
@@ -468,8 +462,6 @@ describe("solicitação, parecer, decisão e execução separados", () => {
   it.each([1, 2])("conserva memória de proposta existente sem escopo contratual na versão %s", async (versao) => {
     const outra = await prisma.matricula.create({ data: { alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
     const estadoAntigo = await carregarEstadoAcademico(prisma, alunoId, destino.id);
-    // V1/V2 não registravam agendaDestino: o replay lê a memória imutável sem
-    // promovê-la à V3, mas aprovação e execução continuam exigindo a foto nova.
     const { agendaDestino: _agendaDestino, ...baseLegada } = montarSnapshotMudancaAcademica(estadoAntigo);
     const memoriaAntiga = { ...baseLegada, versao, statusAluno: versao === 1 ? "ATIVO" : null };
     const id = await solicitar();
@@ -632,7 +624,6 @@ describe("papéis, vínculos e projeções acadêmicas", () => {
   it.each(["papel revogado", "usuário desativado"])("parecer histórico de professor com %s exige dispensa para nova aprovação", async (alteracao) => {
     const id = await solicitar();
     await opinar(id);
-    // A avaliação e o fechamento pertencem ao momento em que o docente ainda está ativo.
     await garantirFechamentoSuficiente(id);
     const historico = await pareceres(id);
     await prisma.usuario.update({ where: { id: pro.id }, data: alteracao === "papel revogado" ? { papeis: [Papel.VENDEDOR] } : { ativo: false } });
@@ -820,8 +811,6 @@ describe("decisão não pode ser aplicada sobre um estado diferente", () => {
   });
 
   it("pausa e retomada legadas preservam o bloqueio de progressão sem matrícula", async () => {
-    // O caminho global só atende o vínculo legado ainda sem matrícula atribuída.
-    // A progressão não pode aprovar nem executar sem o fechamento contratual identificável.
     await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { matriculaId: null } });
     const id = await solicitar();
     await opinar(id);

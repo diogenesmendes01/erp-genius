@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 import { conferirAutor } from "./modelos-tx";
 
-/** Devolve os bytes preservados. Consulta não regenera nem atualiza um original. */
 export async function carregarOriginalAditivo(input: { matriculaId: string; propostaId: string; artefatoId: string }) {
   const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), id = z.string().trim().min(1).max(100);
   const d = z.object({ matriculaId: id, propostaId: id, artefatoId: id }).strict().parse(input);

@@ -9,7 +9,6 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
 export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoId: string; matriculaId: string; rascunhoId: string }) {
-  // A decisão não leva chave de idempotência; na falha de transporte vale a orientação própria (MSG_DECISAO_INCERTA).
   const router = useRouter(), acao = useAcaoCliente({ idempotente: false }), [decisao, setDecisao] = useState("");
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);

@@ -1,10 +1,5 @@
 import type { Prisma } from "@prisma/client";
 
-/**
- * Roda `passo` dentro de um SAVEPOINT da transação interativa. Se ele falhar (inclusive erro de banco,
- * que deixaria a transação do Postgres abortada), volta ao savepoint e devolve `aoFalhar(erro)`: a
- * transação segue utilizável. O nome é fixo por chamador (identificador SQL, sem entrada externa).
- */
 export async function comSavepoint<T>(
   tx: Prisma.TransactionClient,
   nome: "abrir_setor" | "atribuir_setor",
@@ -22,10 +17,6 @@ export async function comSavepoint<T>(
   }
 }
 
-/**
- * Resumo do erro para log, sem dados pessoais: só o nome e os códigos (Prisma e Postgres). A mensagem
- * fica de fora porque o Prisma pode citar valores da consulta (telefone, texto da mensagem).
- */
 export function resumoDoErro(e: unknown): { nome: string; codigo: string | null; codigoBanco: string | null } {
   if (!(e instanceof Error)) return { nome: typeof e, codigo: null, codigoBanco: null };
   const x = e as Error & { code?: unknown; meta?: { code?: unknown } };

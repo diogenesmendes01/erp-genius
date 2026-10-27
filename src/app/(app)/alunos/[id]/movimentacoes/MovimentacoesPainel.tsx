@@ -70,7 +70,6 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         if (r.dado?.status !== estado) { setErro("A situação mudou. Consulte novamente a proposta."); return; }
         setMotivoDecisao("");
         setDetalhe((atual) => atual?.id === id ? { ...atual, status: estado } : atual);
-        // Remove a possibilidade de decidir de novo sem depender do recarregamento.
         setLista((atual) => atual ? { ...atual, propostas: atual.propostas.map((p) => p.id === id ? { ...p, status: estado, podeDecidir: false } : p) } : atual);
         setAviso(aprovar ? "Aprovação registrada. A aplicação da movimentação permanece pendente." : "Proposta rejeitada. Os contratos e cobranças foram preservados.");
       } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }

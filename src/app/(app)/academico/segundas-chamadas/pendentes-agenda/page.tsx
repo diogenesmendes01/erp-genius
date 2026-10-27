@@ -42,10 +42,6 @@ export default async function PendentesAgenda({ searchParams }: { searchParams: 
   </section>;
 }
 
-// "Preparar agenda inicial" aparecia em todo item, também nos que a própria fila diz que não dão (docs/42 L1722;
-// docs/43 §6 item 7): a Secretaria preenchia professor e horário para só descobrir na prévia. O link fica onde a
-// prévia pode seguir (disponível, ou "a prévia confirmará"); nos demais, o motivo e o que fazer, na mesma ordem
-// de `situacao`.
 function Preparo({ item }: { item: { propostaSegundaChamadaId: string; situacao: Parameters<typeof situacao>[0] } }) {
   const href = `/academico/segundas-chamadas/propostas/${encodeURIComponent(item.propostaSegundaChamadaId)}/agenda`;
   const s = item.situacao;

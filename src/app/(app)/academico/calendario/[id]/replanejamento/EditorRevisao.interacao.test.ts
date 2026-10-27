@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L1081): o bloco "Guardar esta revisão" fica sempre montado — com ajustes não
-// conferidos o botão fica desabilitado e diz por quê, em vez de sumir — e nem ele nem o editor têm key de
-// estado/versão: uma nova conferência ou um refresh não apaga o motivo nem os ajustes digitados.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, prever: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

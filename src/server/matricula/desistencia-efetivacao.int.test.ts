@@ -393,7 +393,7 @@ describe("efetivação da desistência em preparação", () => {
           chaveIdempotencia: "reserva-direta-concorrente",
           entradaHash: origem.entradaHash,
         },
-      }).then(resultado => resultado); // PrismaPromise só inicia ao ser consumida.
+      }).then(resultado => resultado);
 
       await vi.waitFor(async () => {
         const [atividade] = await prisma.$queryRaw<{ aguardando: boolean }[]>`

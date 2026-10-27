@@ -10,7 +10,6 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   return <div className="flex justify-between gap-3 py-[9px] text-sm"><dt className="text-[12.5px] text-gray-600">{rotulo}</dt><dd className="text-right">{children}</dd></div>;
 }
 
-/** Painel lateral por setor. Só apresenta o que o servidor já filtrou; nenhum telefone passa por aqui. */
 export function PainelSetor({ painel }: { painel: Painel | null }) {
   if (!painel) return <p className="text-[12.5px] text-gray-400">Sem detalhes para este atendimento.</p>;
   return (

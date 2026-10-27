@@ -19,9 +19,6 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
   </>;
   if (!leitura.ok) return <div className="space-y-4">{cabecalho}<p role="alert">{leitura.erro}</p></div>;
   const nav = leitura.nav;
-  // Fila de trabalho (E4, decisão de 10/10/2026): as propostas pendentes saem da lista quando alguém decide. Cursor nos dois
-  // sentidos em ordem estável (criadoEm desc, id desc); a âncora é lida sem o filtro de pendentes, então decidir a proposta
-  // âncora não a perde e a próxima continua de onde a pessoa parou sem pular ninguém.
   const where = todas ? {} : { decisao: null };
   const ler = async (l: NavegacaoFila, take: number) => {
     const cursor = cursorDaLeitura(l);

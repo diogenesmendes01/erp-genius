@@ -20,7 +20,6 @@ export interface PropsPopoverTransferir {
   temResumoAria?: boolean; ocupado?: boolean; erro?: string | null; aoFechar(): void;
   aoExecutar(entrada: EntradaConfirmacaoTransferir): void;
 }
-/** Apresentação apenas: autorização e ACK pertencem ao controlador da abertura. */
 export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumoAria = false, ocupado = false, erro, aoFechar, aoExecutar }: PropsPopoverTransferir) {
   const [passo, setPasso] = useState<"inicio" | "pessoas" | "equipes" | "aria">("inicio");
   const [pessoa, setPessoa] = useState("");

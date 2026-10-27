@@ -1,8 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 6 (docs/42 L1126): o "Fuso de origem da turma" começava vazio, num <input> com <datalist> de
-// três sugestões. PrepararGrade (servidor) resolve o fuso inicial e o formulário usa o CampoFuso.
 const m = vi.hoisted(() => ({ fuso: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: m.fuso }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: m.preferencia }));

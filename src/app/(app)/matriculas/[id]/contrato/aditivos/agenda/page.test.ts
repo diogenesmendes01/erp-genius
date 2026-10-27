@@ -17,7 +17,6 @@ it("renderiza controles somente leitura da conferência sem acesso financeiro", 
   expect(html).not.toContain("contrato legado");
 });
 
-// R2 da #285 (C6): sobre a origem histórica, o limite do B1 aparece antes da conferência.
 it("avisa antes da conferência que o aditivo sobre contrato legado não segue para assinatura", async () => {
   mocks.opcoes.mockResolvedValue({ ok: true, dado: { matricula: { id: "m", aluno: "Ana" }, fonteOrigemHistorica: true, encontros: [], professores: [] } });
   const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));

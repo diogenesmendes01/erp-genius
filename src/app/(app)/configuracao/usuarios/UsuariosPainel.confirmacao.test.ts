@@ -2,8 +2,6 @@ import type { ReactNode } from "react";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Desativar usuário (docs/42 L2413; fatia B, issue #169): o botão só abre o ConfirmarAcao, que nomeia a pessoa;
-// só a confirmação chama a action; erro e incerto ficam no diálogo. Ativar continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   alternar: vi.fn(), refresh: vi.fn(),
@@ -57,7 +55,7 @@ describe("UsuariosPainel — desativar passa pela confirmação", () => {
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Ana Paula (ana@example.test) perde o acesso ao sistema na hora.");
     expect(consequencia).toContain(PAPEL_LABEL[Papel.SECRETARIA_ACADEMICA]);
-    expect(m.alternar).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.alternar).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.alternar).toHaveBeenCalledTimes(1);
     expect(m.alternar).toHaveBeenCalledWith("u-ana", false);

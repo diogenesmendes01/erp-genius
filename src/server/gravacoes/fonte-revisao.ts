@@ -35,7 +35,6 @@ function tamanhoSeguro(valor: bigint | string | null): bigint {
   return tamanho;
 }
 
-/** Normaliza somente uma revisão binária já fixada; legado não cai para a cabeça atual. */
 export function normalizarFonteRevisaoDrive(fonte: FonteRevisaoPersistida): RevisaoDriveFixada {
   const arquivoOficialId = idSeguro(fonte.arquivoOficialId);
   const driveOrganizacaoId = idSeguro(fonte.driveOrganizacaoId);
@@ -52,7 +51,6 @@ export function normalizarFonteRevisaoDrive(fonte: FonteRevisaoPersistida): Revi
   };
 }
 
-/** Compara a identidade completa; fontes legadas/inválidas falham, sem fallback por fileId. */
 export function mesmaFonteRevisaoDrive(a: FonteRevisaoPersistida, b: FonteRevisaoPersistida): boolean {
   const esquerda = normalizarFonteRevisaoDrive(a);
   const direita = normalizarFonteRevisaoDrive(b);

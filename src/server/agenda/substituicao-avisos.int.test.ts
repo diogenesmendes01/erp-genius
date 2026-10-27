@@ -4,7 +4,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const { authMock, enviarEmailMock, enviarTemplateMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarEmailMock: vi.fn(), enviarTemplateMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("@/server/email/resend", () => ({ enviarEmailResend: enviarEmailMock }));
-// Driver do motor FALSO: desde a Fase 4 (Tarefa 5) só o motor envia; nada sai de verdade.
 vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: vi.fn(), enviarMidia: vi.fn(), enviarTemplate: enviarTemplateMock } }));
 
 import { prisma } from "@/lib/prisma";
@@ -55,8 +54,6 @@ async function avisosPreparados() {
 
 beforeEach(async () => {
   await truncarBanco();
-  // Estes cenários verificam identidade, despacho e resultado do provedor simulado.
-  // A janela explícita evita depender do horário/dia em que a suíte é executada.
   await prisma.politicaRegua.create({ data: {
     nome: "Janela dos testes de avisos", janelaInicio: 0, janelaFim: 24,
     diasSemana: [0, 1, 2, 3, 4, 5, 6],
@@ -90,8 +87,6 @@ beforeEach(async () => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-// O número da agenda é MOTOR (D38). Driver legado só para exercitar a configuração inválida
-// (driver sem envio), que barra o aviso antes do despachante.
 async function configurarCanalAgenda(driver: DriverWhatsApp = DriverWhatsApp.MOTOR) {
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver, finalidade: "AGENDA", providerRef: driver === "MOTOR" ? "n-agenda" : "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
@@ -311,8 +306,6 @@ it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
   vi.stubEnv("WHATSAPP_LIVE", "1");
   enviarTemplateMock.mockImplementation(async () => ({ providerMessageId: `3EB0-agenda-${enviarTemplateMock.mock.calls.length}` }));
-  // Sem configuração não há claim, tentativa ou envio; a pendência pode ser
-  // resolvida pelo admin sem deixar o worker preso em reprocessamento.
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
   expect(enviarTemplateMock).not.toHaveBeenCalled();
   expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "PREPARADO" } })).toBe(3);
@@ -351,8 +344,6 @@ it("opt-out depois da preparação cancela antes do driver", async () => {
   expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "opt_out" });
 });
 
-// Revisão R1 do #208 (C2): o cron geral (`despacharFila` sem `somenteAvisosAgenda`) drena a
-// mesma fila do worker de agenda e precisa respeitar o envio de agenda desligado.
 it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia ao religar", async () => {
   await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
   expect(await decidir(true)).toMatchObject({ ok: true });
@@ -362,12 +353,10 @@ it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia 
   enviarTemplateMock.mockResolvedValue({ providerMessageId: "3EB0-agenda-religada" });
   const retido = await despacharFila();
   expect(enviarTemplateMock).not.toHaveBeenCalled();
-  // R1 do #209 (C2): contada à parte do kill switch e com motivo próprio, sem mudar o status.
   expect(retido).toMatchObject({ retidasAgenda: 1, pendentes: 0, simuladas: 0, despachadas: 0 });
   expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "PENDENTE", despachadaEm: null, motivoFalha: "envio_agenda_desligado" });
   const saude = await medirSaudeCanal();
   expect(saude.fila).toMatchObject({ retidasAgendaDesligada: 1, envioAgendaHabilitado: false, pendenteHaMin: null });
-  // O tick seguinte não reescreve a intenção já marcada.
   const marcada = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } });
   expect(await despacharFila()).toMatchObject({ retidasAgenda: 1 });
   expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).atualizadoEm).toEqual(marcada.atualizadoEm);

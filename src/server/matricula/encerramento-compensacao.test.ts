@@ -26,6 +26,6 @@ it("rejeita duplicação, destinações conflitantes e datas sem origem", () => 
 });
 it("arredonda o conjunto de dias uma vez, sem somar diárias arredondadas", () => {
   const r = calcularCompensacaoPendenteEncerramento({ ...entrada(), valorCoberturaOriginalConferido: "10" });
-  expect(r.valorAjusteApurado).toBe("0.69"); // Duas diárias arredondadas isoladamente dariam 0,68.
+  expect(r.valorAjusteApurado).toBe("0.69");
   expect(r.memoria.valorCoberturaOriginal).toBe("10.00");
 });

@@ -14,7 +14,6 @@ export const RegistrarOcorrenciaSegundaChamadaSchema = z.object({
   evidencia: z.string().trim().min(5).max(4000),
 }).strict();
 
-/** Núcleo transacional; a action e testes compartilham as mesmas invariantes. */
 export async function registrarOcorrenciaSegundaChamadaTx(tx: PrismaTypes.TransactionClient, autorId: string, input: z.input<typeof RegistrarOcorrenciaSegundaChamadaSchema>) {
   const d = RegistrarOcorrenciaSegundaChamadaSchema.parse(input);
   if (d.tipo === "CANCELAMENTO_ESCOLA" || d.tipo === "CANCELAMENTO_ALUNO") throw new ErroRegra("Cancelamento exige proposta e aprovação independente da agenda.");

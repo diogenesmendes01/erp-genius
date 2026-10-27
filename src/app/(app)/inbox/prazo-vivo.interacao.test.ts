@@ -5,10 +5,6 @@ import { criarDomMinimo, desligarObservadores, type Elemento } from "@/test/dom-
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { ListaAtendimentos as Lista } from "./ListaAtendimentos";
 
-// React DOM e efeitos reais, sem simular hooks. O DOM mínimo não mede layout;
-// listas abaixo do limiar de virtualização permitem verificar texto e timers reais.
-// DOM mínimo não implementa namespaces SVG; só os ícones decorativos viram spans.
-// React, ListaAtendimentos, ItemConversa, relógio e assinaturas continuam reais.
 vi.mock("@tabler/icons-react", async () => {
   const { createElement } = await import("react");
   const Icone = () => createElement("span");

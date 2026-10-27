@@ -26,10 +26,6 @@ function validarDataCivil(data: Date): void {
   }
 }
 
-/**
- * Consulta relatos pendentes e decisões. SEM_RELATO não prova que a oferta esteve
- * disponível; efeitos financeiros e de cobertura pertencem a outro fluxo.
- */
 export async function conferirIndisponibilidadeOfertaTx(
   tx: Prisma.TransactionClient,
   input: z.input<typeof EntradaEstadoSchema>,
@@ -58,8 +54,6 @@ export async function conferirIndisponibilidadeOfertaTx(
       { fim: null, propostasTermino: { some: { fim: { gte: dados.inicio }, decisao: { is: { aprovada: true } } } } },
     ],
   };
-  // A existência é consultada separadamente da projeção limitada: registros
-  // antigos jamais podem ocultar uma confirmação positiva posterior.
   const [positivo, pendente, projetados] = await Promise.all([
     tx.registroIndisponibilidadeOfertaMatricula.findFirst({
       where: { ...sobreposicao, confirmacao: { is: { confirmada: true } } },

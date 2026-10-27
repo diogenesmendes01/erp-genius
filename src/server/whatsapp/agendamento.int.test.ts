@@ -16,7 +16,6 @@ import { diaUtilAs } from "@/test/janela-envio";
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 const comoUsuario = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 const emMinutos = (n: number) => new Date(Date.now() + n * 60_000).toISOString();
-// D12: só dentro da janela de envio (fábrica: 9h–20h, segunda a sexta) no fuso da escola (padrão America/Sao_Paulo).
 const util = (hora: number) => diaUtilAs(hora);
 
 async function cenario() {
@@ -47,8 +46,6 @@ describe("agendar mensagem pelo atendimento", () => {
     expect(await prisma.evento.count({ where: { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id } })).toBe(1);
   });
 
-  // Lote 3 do fuso pessoal nas telas: o Inbox manda o texto do datetime-local e o fuso escrito ao lado do campo; o
-  // servidor converte. O mesmo horário digitado em São Paulo e em San José são instantes diferentes.
   it("horário digitado é convertido no servidor, no fuso informado; fuso inválido é recusado sem agendar", async () => {
     const { vend, a } = await cenario();
     comoUsuario(vend);

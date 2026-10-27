@@ -10,8 +10,6 @@ export function ProporSubstituicao({ itemReservaId, substitutoId, estadoConferid
     const d = { itemReservaId, substitutoId, estadoConferido, versaoEsperada, motivo: String(dados.get("motivo") ?? "") }, entrada = JSON.stringify(d);
     if (chave.current?.entrada !== entrada) chave.current = { entrada, id: crypto.randomUUID() };
     const chaveIdempotencia = chave.current.id;
-    // O <Formulario> compartilhado guarda ocupado/erro e só entende { ok, erro }; executarAcaoCliente decide a mensagem de resultado incerto.
-    // Chave estável por entrada; o servidor devolve a proposta já criada com a mesma chave (server/avaliacoes/recuperacao-substituicao-proposta.ts:34-37).
     const r = await executarAcaoCliente(() => proporSubstituicaoRecuperacao({ ...d, chaveIdempotencia }), { idempotente: true });
     return r.tipo === "ok" ? { ok: true } : { ok: false, erro: r.mensagem };
   }}>

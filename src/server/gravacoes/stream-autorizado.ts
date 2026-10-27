@@ -1,7 +1,3 @@
-/**
- * Envolve o corpo de vídeo para que a autorização seja conferida antes de
- * buscar cada parte e novamente antes de entregá-la ao consumidor.
- */
 export class ErroStreamAutorizado extends Error {
   constructor() {
     super("Fluxo de vídeo indisponível.");
@@ -15,10 +11,6 @@ export type OpcoesStreamAutorizado = {
   signal?: AbortSignal;
 };
 
-/**
- * Não acumula o conteúdo em memória. Qualquer falha de autorização, origem ou
- * cancelamento tem a mesma superfície pública e encerra o leitor de origem.
- */
 export function criarStreamAutorizado({ origem, revalidar, signal }: OpcoesStreamAutorizado): ReadableStream<Uint8Array> {
   const leitor = origem.getReader();
   let controlador: ReadableStreamDefaultController<Uint8Array> | null = null;
@@ -31,7 +23,6 @@ export function criarStreamAutorizado({ origem, revalidar, signal }: OpcoesStrea
     try {
       leitor.releaseLock();
     } catch {
-      // O leitor pode já ter sido liberado depois de uma falha da origem.
     }
   };
 
@@ -39,7 +30,6 @@ export function criarStreamAutorizado({ origem, revalidar, signal }: OpcoesStrea
     try {
       await leitor.cancel(motivo);
     } catch {
-      // A origem não define a mensagem exposta ao cliente.
     } finally {
       liberarLock();
     }

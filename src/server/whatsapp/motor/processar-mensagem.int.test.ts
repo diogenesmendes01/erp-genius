@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { resolverCaminhoUpload } from "@/lib/uploads";
 
-// Nenhum HTTP real: config falsa + fetch stubado (o cliente real roda por cima).
 vi.mock("./config", () => ({ lerConfigMotor: () => ({ url: "http://motor.teste", apiKey: "k".repeat(32), segredoWebhook: "s".repeat(32) }) }));
 const baixar = vi.fn();
 const respostaPng = (extra: Record<string, string> = {}) =>
@@ -102,7 +101,6 @@ describe("mensagem.recebida (1:1)", () => {
   });
 
   it("não sobra arquivo órfão quando a gravação resulta em duplicada", async () => {
-    // Corrida: a mensagem aparece entre a checagem e a gravação.
     baixar.mockImplementation(async () => {
       const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777" } });
       const conv = await prisma.conversaWhatsApp.create({ data: { numeroId, contatoId: contato.id } });
@@ -137,7 +135,6 @@ describe("mensagem.enviada (eco)", () => {
   }
 
   it("origem celular grava SAIDA CELULAR e marca primeiraRespostaEm", async () => {
-    // Um inbound abre o atendimento; a resposta do celular fecha a primeira resposta.
     await processar(env({ providerMessageId: "IN1", mensagemId: "50688887777@s.whatsapp.net:IN1" }));
     expect(await processarEnviada(envEnviada({ origem: "celular", providerMessageId: "CEL1", mensagemId: "50688887777@s.whatsapp.net:CEL1" }))).toBe("ok");
     expect(await msg("CEL1")).toMatchObject({ direcao: "SAIDA", origem: "CELULAR", autorId: null, driver: "MOTOR" });

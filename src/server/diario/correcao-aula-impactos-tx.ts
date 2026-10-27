@@ -11,10 +11,6 @@ import { carregarCorrecaoAulaTx } from "./correcao-aula-tx";
 import { carregarReposicoesCorrecaoAulaTx } from "./correcao-aula-reposicoes-tx";
 import { carregarReposicoesFrequenciaTx } from "@/server/avaliacoes/frequencia-reposicoes-tx";
 
-/**
- * Conferência interna da proposta Q23. O chamador já autenticou o ator; esta
- * função recompõe autorização fresca, fonte e impactos sob a mesma transação.
- */
 export async function carregarImpactosCorrecaoAulaTx(
   tx: Prisma.TransactionClient,
   usuarioId: string,
@@ -60,7 +56,6 @@ export async function carregarImpactosCorrecaoAulaTx(
     const { apuradaEm: _antesEm, ...antes } = await carregarFrequenciaNivelTx(tx, parametros);
     const { apuradaEm: _depoisEm, ...depois } = await simularFrequenciaCorrecaoAulaTx(tx, parametros, { encontroId: proposta.encontroId,
       registroId: registro.registroId, matriculaId: fonte.matriculaId, participacao: registro.depois.participacao });
-    // O instante da consulta não torna obsoleta uma conferência sem mudança de fontes.
     void _antesEm;
     void _depoisEm;
     let fechamento;
@@ -78,14 +73,12 @@ export async function carregarImpactosCorrecaoAulaTx(
   }
   const dependenciasFinanceiras = await carregarDependenciasFinanceirasAulaTx(tx, proposta.encontroId, matriculas);
   const ultimaRevisaoFinanceira = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { tipo: true, decisao: { select: { id: true, aprovada: true } } } });
-  // Q175: declarada a aula não cobrável (e não rejeitada), a publicação só acontece vinculada a essa revisão, mesmo sem mudança de presença.
   const naoCobravelDeclarada = ultimaRevisaoFinanceira?.tipo === "AULA_NAO_COBRAVEL" && ultimaRevisaoFinanceira.decisao?.aprovada !== false;
   const financeiro = { ...dependenciasFinanceiras,
     possuiDependenciasFinanceiras: dependenciasFinanceiras.exigeConferenciaFinanceira,
     exigeConferenciaFinanceira: dependenciasFinanceiras.exigeConferenciaFinanceira && (naoCobravelDeclarada || comparacao.registros.some(r => r.participacaoAlterada)),
     revisaoFinanceira: ultimaRevisaoFinanceira?.decisao?.aprovada ? { decisaoAprovadaId: ultimaRevisaoFinanceira.decisao.id } : null,
   };
-  // Preservar uma conclusão exige sua prova efetiva, não apenas a flag do histórico.
   const reposicoesPreservaveisIds: string[] = [];
   for (const matriculaId of matriculas) {
     const efetivas = await carregarReposicoesFrequenciaTx(tx, { matriculaId, aulaOriginalIds: [proposta.encontroId], apuradaEm: agora });

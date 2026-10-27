@@ -11,7 +11,6 @@ vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({
   consultarPreferenciaFusoEquipe: vi.fn().mockResolvedValue({ ok: true, dado: { fusoExibicao: null } }),
 }));
-// A página resolve o fuso inicial da remarcação (docs/43 §6 item 6): teste unitário nunca vai ao banco.
 vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: vi.fn().mockResolvedValue(null) }));
 vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) =>
@@ -166,9 +165,6 @@ it("mantém a rejeição e oculta aprovação quando o vínculo da proposta foi 
   expect(html).not.toContain("Aprovar e remarcar / Rejeitar");
 });
 
-// Lote 3 do fuso pessoal nas telas: o "prazo vigente" sai no fuso que o servidor manda (o da agenda; sem ela, o da
-// escola — fusoDoPrazoSegundaChamada), com o fuso e a origem escritos; fuso inválido não derruba a página.
-// Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 it("prazo vigente no fuso da agenda ou da escola, escrito; fuso inválido cai em UTC sem quebrar", async () => {
   const conferencia = (fusoExibicao: string, origemFusoExibicao?: "AGENDA" | "ESCOLA") => ({ ok: true, dado: {
     identificacao: { aluno: "Ana", matriculaCodigo: "M1", turma: "T1", nivel: "N1" },

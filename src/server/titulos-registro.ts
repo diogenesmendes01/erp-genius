@@ -4,11 +4,6 @@ import { nomeCompleto } from "@/lib/nome";
 import { exigirSessao, type UsuarioSessao } from "@/server/_shared";
 import { escopoAlunos } from "@/server/alunos/consultas";
 
-// Título de aba das fichas (docs/42-auditoria-frontend-ux.md, E2): todas as abas se chamavam
-// "ERP Genius" — com três fichas abertas, não dava para saber qual era qual. Consultas mínimas (só o
-// nome) e com o MESMO escopo da página: quem não pode abrir a ficha não lê o nome pelo título.
-// Qualquer falha (sem sessão, sem acesso, inexistente) cai no título genérico — a página decide.
-
 async function usuarioOuNull(): Promise<UsuarioSessao | null> {
   try {
     return await exigirSessao();

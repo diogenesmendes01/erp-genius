@@ -16,8 +16,6 @@ type Impacto = { cobrancaId: string; cobranca: { id: string; codigo: string | nu
 type Acerto = { id: string; cobrancaId: string; codigo: string; moeda: string; valorNovo: string; vencimentoNovo: string; status: string };
 type Conjunto = { id: string; status: string; podeVincular: boolean; podeDecidir: boolean; podeConcluir: boolean; podeObsoletar: boolean; pendencias: { afetadasSemVinculo: number; afetadasSemAplicacao: number }; impactos: Impacto[] };
 export function ImpactosTaxaOperacao({ conjunto, acertos, reprepararHref }: { conjunto: Conjunto | null; acertos: Acerto[]; reprepararHref: string }) {
-  // Decidir e obsoletar levam chave de idempotência estável; vincular e concluir devolvem o registro existente quando repetidos.
-  // Na falha de transporte, reenviar a mesma operação confere o resultado.
   const router = useRouter(); const [motivo, setMotivo] = useState(""); const [selecoes, setSelecoes] = useState<Record<string, string>>({}); const acao = useAcaoCliente({ idempotente: true }); const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const ocupado = acao.ocupado;
   async function executar(operacao: "aprovar" | "rejeitar" | "concluir" | "vincular" | "obsoletar", cobrancaId?: string) {

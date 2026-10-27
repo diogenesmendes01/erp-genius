@@ -10,7 +10,6 @@ type Foto = z.infer<typeof EncontroFoto>;
 type Alvo = { turmaId: string; id?: string; chave?: string; antes?: Foto; depois: Foto };
 const igual = (a: Foto, b: Foto) => a.inicio === b.inicio && a.fim === b.fim && a.status === b.status;
 
-/** Confere a materialização exata da fotografia aprovada; edição posterior torna o aviso obsoleto. */
 export async function validarFonteQuantidadeAulasTx(db: Prisma.TransactionClient | typeof prisma, entrada: { eventoId: string; encontrosIds?: readonly string[] }) {
   const evento = await db.evento.findUnique({ where: { id: entrada.eventoId }, select: { tipo: true, agregadoTipo: true, agregadoId: true, autorId: true, payload: true } });
   const payload = Payload.safeParse(evento?.payload);
@@ -28,7 +27,7 @@ export async function validarFonteQuantidadeAulasTx(db: Prisma.TransactionClient
     if (!impacto.publicada) continue;
     for (const [id, antesItem] of antes) {
       const depoisItem = depois.get(id);
-      if (!depoisItem) return null; // o aplicador cancela encontro publicado, não o apaga
+      if (!depoisItem) return null;
       if (!igual(antesItem, depoisItem)) alvos.push({ turmaId: impacto.turmaId, id, antes: antesItem, depois: depoisItem });
     }
     for (const id of depois.keys()) if (!antes.has(id)) return null;

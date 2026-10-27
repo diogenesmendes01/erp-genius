@@ -14,9 +14,7 @@ export default async function ResolucaoPage({ params, searchParams }: { params: 
   const [resultado, preferencia] = await Promise.all([consultarResolucoesReserva({ reservaId: id, pagina: Number(filtros.pagina ?? 1) }), consultarPreferenciaFusoEquipe()]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const r = resultado.dado, fuso = r.reserva.janela.fusoAdmissao;
-  // Prazo e horários são publicados no fuso da reserva (a proposta de novo prazo é digitada nele): mantêm esse fuso.
   const data = (d: Date) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(d);
-  // Registro da proposta e decisão são instantes: fuso pessoal de exibição; sem preferência, o da reserva.
   const preferido = preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null;
   const instante = (d: Date) => { const e = formatarInstanteExibicao(d, preferido, fuso); return `${e.texto} (${e.fuso})`; };
   return <div className="space-y-4"><VoltarPara href="/secretaria/reservas" /><h1 className="text-2xl font-medium">Resolução da reserva</h1>

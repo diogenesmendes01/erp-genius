@@ -30,7 +30,6 @@ async function executarTag(atendimentoId: string, entrada: { tipo: "atribuir" | 
   return executarAcao(async () => {
     const usuario = await exigirSessao(); const id = Id.parse(atendimentoId);
     return prisma.$transaction(async tx => {
-      // Serializa mudanças do contexto do atendimento antes de resolver identidade/autorização.
       await tx.$executeRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
       const pessoa = await pessoaDoAtendimento(usuario, id, tx);
       if (!pessoa) throw new ErroRegra("Contato não encontrado.");
@@ -65,7 +64,6 @@ const EdicaoContatoSchema = z.object({
 }).strict();
 export type EditarContatoInbox = { pessoaIdEsperada: string; pessoa?: Omit<EditarPessoaInput, "empresaId">; campos?: { campoId: string; valor: unknown }[] };
 
-/** Pessoa + campos + Eventos + aviso no mesmo commit; o cliente nunca escolhe a identidade alvo. */
 export async function editarContatoNoInbox(atendimentoId: string, input: EditarContatoInbox): Promise<Resultado> {
   return executarAcao(async () => {
     const sessao = await exigirSessao();
@@ -79,11 +77,9 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
       const lerBindingCadastro=()=>tx.atendimentoWhatsApp.findUnique({where:{id},select:{id:true,finalidade:true,leadId:true,conversaId:true,conversa:{select:{contatoId:true,contato:{select:{id:true,pessoaId:true,leadId:true}}}}}});
       const bindingCadastro=cadastroSolicitado?await lerBindingCadastro():null;
       if(cadastroSolicitado&&bindingCadastro?.finalidade!=="COMERCIAL")throw new ErroRegra("Contato não encontrado.");
-      // Cópia local: a sessão memoizada/congelada não é alterada. Frescura usa somente esta tx.
       const autor = { ...sessao, papeis: [...sessao.papeis] };
       const pessoa = await pessoaDoAtendimento(autor, id, tx);
       if (!pessoa) throw new ErroRegra("Contato não encontrado.");
-      // Precondição da ficha, nunca alvo da escrita: a identidade veio do contexto autorizado.
       if (pessoa.pessoaId !== dados.pessoaIdEsperada) throw new ErroRegra("O contato mudou. Reabra ou atualize a ficha antes de salvar.");
       const revalidar = async () => {
         const fresco = await tx.usuario.findUnique({ where: { id: autor.id }, select: { nome: true, papeis: true, permissoes: true, ativo: true } });
@@ -104,7 +100,6 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
         }
       };
       await revalidar();
-      // Valida todos os valores antes de qualquer escrita; o núcleo também revalida o domínio vigente.
       const campos = await tx.campoPersonalizado.findMany({ where: { id: { in: ids } } });
       for (const valor of dados.campos ?? []) {
         const campo = campos.find(c => c.id === valor.campoId);
@@ -112,7 +107,6 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
         const validado = validarValorCampo(campo, valor.valor);
         if (!validado.ok) throw new ErroRegra(validado.erro);
       }
-      // Mesmo input apenas de campos participa da serialização/identidade da Pessoa.
       let mudou = await editarPessoaNaTransacao(tx, autor, pessoa.pessoaId, dados.pessoa ?? {}, revalidar);
       for (const valor of [...(dados.campos ?? [])].sort((a,b) => a.campoId.localeCompare(b.campoId))) {
         const alterado = await definirValorCampoNaTransacao(tx, autor, { campoId: valor.campoId, valor: valor.valor, pessoaId: pessoa.pessoaId }, revalidar);
@@ -124,7 +118,6 @@ export async function editarContatoNoInbox(atendimentoId: string, input: EditarC
   });
 }
 
-/** CAS compara a oportunidade resolvida na thread; nunca é usado como alvo de escrita. */
 export async function marcarPerdidoNoInbox(atendimentoId:string,input:PerdaInput,oportunidadeIdEsperada:string):Promise<Resultado>{
   return executarAcao(async()=>{
     const sessao=await exigirSessao(),id=Id.parse(atendimentoId),esperada=Id.parse(oportunidadeIdEsperada),dados=PerdaSchema.parse(input);
@@ -140,7 +133,6 @@ export async function marcarPerdidoNoInbox(atendimentoId:string,input:PerdaInput
   });
 }
 
-/** Movimento manual pelo contexto autorizado; oportunidadeIdEsperada nunca escolhe o alvo. */
 export async function moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead, oportunidadeIdEsperada: string): Promise<Resultado> {
   return executarAcao(async () => {
     const sessao = await exigirSessao(), id = Id.parse(atendimentoId), esperada = Id.parse(oportunidadeIdEsperada);
@@ -153,7 +145,6 @@ export async function moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead,
     revalidatePath("/funil");
   });
 }
-/** Fronteiras autenticadas; transição, Evento e aviso pertencem à mesma transação. */
 export async function concluirTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number):Promise<Resultado>{
  return executarAcao(async()=>{await executarTarefaInboxTx(await exigirSessao(),atendimentoId,tarefaId,versao,{tipo:"concluir"});revalidatePath("/tarefas");revalidatePath("/inicio");});
 }

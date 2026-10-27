@@ -62,7 +62,6 @@ export async function criarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string
  const id=Id.parse(atendimentoId),i=Criar.parse(input),{chaveIdempotencia,jaFeita=false,vincularOportunidade,contextoEsperado,fusoEscolaEsperado,...campos}=i;
  const marca=marcaIdempotencia(chaveIdempotencia,{operacao:"criarTarefaNoInbox",atendimentoId:id,campos,jaFeita,vincularOportunidade,contextoEsperado,fusoEscolaEsperado})!;
  return prisma.$transaction(async tx=>{
-  // Mesma chave/autor do CRM: advisory sempre antes de Config/Atendimento/FKs.
   const repetido=await repeticaoIdempotente(tx,{tipo:"TarefaCriada",agregadoTipo:"Tarefa",autorId:sessao.id,marca,mensagemConflito:"Esta tentativa já foi usada com outros dados. Reabra o formulário."});
   const fuso=await carregarFusoInstitucionalTx(tx);
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR UPDATE`;
@@ -112,7 +111,6 @@ const PedidoPreviaNotificados=z.discriminatedUnion("modo",[
 ]);
 export type PedidoPreviaNotificadosTarefa=z.input<typeof PedidoPreviaNotificados>;
 export type PreviaNotificadosTarefa={candidatos:{id:string;nome:string}[];responsavelId:string|null;setor:Tarefa["setor"];previaHash:string};
-/** Readonly: nenhuma nova autorização é derivada de uma seleção do browser. */
 export async function preverNotificadosTarefaInbox(sessao:UsuarioSessao,atendimentoId:string,pedido:PedidoPreviaNotificadosTarefa):Promise<PreviaNotificadosTarefa>{
  const id=Id.parse(atendimentoId),p=PedidoPreviaNotificados.parse(pedido);
  return prisma.$transaction(async tx=>{
@@ -126,8 +124,6 @@ export async function preverNotificadosTarefaInbox(sessao:UsuarioSessao,atendime
   if(t){const atual=await tarefaVisivel(tx,t.id,final.filtro);if(atual.versao!==t.versao||atual.status!=="ABERTA")throw new ErroRegra("Esta tarefa foi alterada. Reabra o formulário.");}
   const ultimo=await resolverResponsavel(tx,final.autor,solicitado);
   if(ultimo.responsavelId!==dono.responsavelId||ultimo.setor!==dono.setor)throw new ErroRegra("A atribuição mudou. Atualize os colegas disponíveis.");
-  // Reconciliar a tupla após os I/Os de contexto/atribuição: uma mudança recusa,
-  // sem trocar silenciosamente a seleção que o formulário está editando.
   const candidatosFinais=await listarCandidatosNotificadosTarefaD10(tx,final.autor,{...ultimo,gerenteDoResponsavelId:null});
   const contextoFinal=await contexto(tx,sessao,id);
   conferir({contextoEsperado:p.modo==="editar"?contextoFinal.contextoIdentidadeEsperada:contextoFinal.contextoEsperado},p.contextoEsperado);

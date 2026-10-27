@@ -16,13 +16,8 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
   const { id } = await params, resultado = await consultarPreparacaoContratacao({ matriculaId: id });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const { matricula: m, preparacao: p } = resultado.dado;
-  // Secretaria e Administração veem o diagnóstico de prontidão. A consulta dele vinha encadeada depois da
-  // principal e segurava a página inteira (docs/42 /matriculas/[id] #3: "/preparacao faz 2 consultas
-  // encadeadas"); agora a proposta aparece primeiro e o quadro de pendências chega no <Suspense> abaixo.
   const secretaria = usuario.papeis.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR);
   const tipos: Record<string, string> = { MATRICULA: "Taxa de matrícula", MENSALIDADE: "Mensalidade", HORA_PARTICULAR: "Hora particular (60 minutos)" };
-  // Um fuso só, sempre impresso ao lado da hora (docs/42 L530): antes o UTC entrava calado quando a reserva não
-  // tinha fuso, e a linha da preparação repetia a expressão sem o fallback, deixando um "·" órfão.
   const fuso = p?.reserva?.janela.fusoAdmissao ?? p?.reservaParticular?.horarios[0]?.fusoOrigem ?? "UTC";
   const data = (d: Date, origem = fuso) => { const x = formatarInstanteExibicao(d, null, origem); return `${x.texto} (${x.fuso})`; };
   return <div className="space-y-4"><VoltarPara href={`/secretaria?matriculaId=${id}`} para="Contratação" /><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
@@ -61,7 +56,6 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
   </div>;
 }
 
-/** Moldura do quadro de pendências: o título não depende da consulta, por isso sai junto com o esqueleto. */
 function QuadroPendencias({ children }: { children: React.ReactNode }) {
   return <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Pendências para conferência da Secretaria</h2>{children}</section>;
 }

@@ -4,7 +4,6 @@ import { acharNumero, processarStatusNormalizado } from "../inbound";
 import type { EnvelopeMotor } from "./eventos";
 import { PROCESSADORES, type ResultadoProcessamento } from "./receber";
 
-/** `dados` de `mensagem.status`. */
 export const DadosStatusSchema = z.object({
   providerMessageId: z.string().min(1),
   clientMessageId: z.string().nullish(),
@@ -44,7 +43,6 @@ export async function processarStatusMotor(env: EnvelopeMotor): Promise<Resultad
         },
   );
   if (r === "sem_mensagem") {
-    // Número desconhecido não adia (nunca existirá); só falta a mensagem.
     return { adiar: "status_sem_mensagem" };
   }
   if (r === "ignorado") return { ignorado: (await acharNumero({ numeroProviderRef: env.numeroId, driver: "MOTOR" })) ? "sem_progresso" : "numero_desconhecido" };

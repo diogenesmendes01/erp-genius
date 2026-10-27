@@ -59,11 +59,6 @@ async function cenario(comEncontro = false) {
   return { professor, sucessor, secretaria, gestao, turma, destino, aluno, inicio, ocorridaEm, entrada, aulaId: registro.dado.id };
 }
 
-/**
- * Este é um retrato histórico, não uma transferência exercida pelo teste. A
- * transferência operacional passa pela equivalência acadêmica; os cenários de
- * diário só precisam de vínculos já encerrados para conferir leitura e chamada.
- */
 async function registrarTransferenciaHistorica(c: Awaited<ReturnType<typeof cenario>>, turmaDestinoId: string, quando: Date) {
   const origem = await prisma.alocacaoTurma.findFirstOrThrow({
     where: { alunoId: c.aluno.id, ativa: true },
@@ -111,8 +106,6 @@ describe("D08 — diário persistido, transferência e revogação", () => {
       pid = conexao.pid;
       anunciar();
       await verificar;
-      // Se o diário segurasse a turma antes de esperar calendário, NOWAIT
-      // falharia e provaria a inversão em vez de aguardar um deadlock.
       await tx.$queryRaw`SELECT id FROM "Turma" WHERE id = ${c.turma.id} FOR UPDATE NOWAIT`;
     }, { timeout: 10000 });
     await Promise.race([pronto, bloqueador]);
@@ -167,8 +160,6 @@ describe("D08 — diário persistido, transferência e revogação", () => {
     expect(await listarExcecoesGravacao()).toMatchObject({ ok: true, dado: { itens: [{ id: p.dado.id, podeDecidir: false, decisao: null, diarioParaRevisao: null }] } });
     como(c.sucessor);
     expect(await listarExcecoesGravacao()).toMatchObject({ ok: true, dado: { itens: [] } });
-    // A âncora do cursor é lida no escopo de quem consulta: a exceção de outro professor não serve de cursor e
-    // nenhuma leitura a mostra.
     expect(await listarExcecoesGravacao({ depois: p.dado.id })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false, temAnterior: false } });
     expect(await listarExcecoesGravacao({ antes: p.dado.id })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false, temAnterior: false } });
     como(c.professor);
@@ -317,7 +308,6 @@ describe("D08 — diário persistido, transferência e revogação", () => {
     const salvo = await salvarAulaDiario({ ...c.entrada, encontroId: e.id, ocorridaEm: inicio.toISOString() });
     expect(salvo).toMatchObject({ ok: false, erro: expect.stringContaining("histórico incompleto") });
     expect(await prisma.aulaDiario.count()).toBe(antes);
-    // A pendência não autoriza concluir um diário legado que omitiu esse aluno.
     const diario = await prisma.aulaDiario.create({ data: { turmaId: c.turma.id, professorId: c.professor.id,
       encontroId: e.id, ocorridaEm: inicio, conteudo: "Registro anterior incompleto" } });
     expect((await solicitarConclusaoSemGravacao({ encontroId: e.id, motivo: "Gravação indisponível para este encontro",
@@ -357,7 +347,6 @@ describe("D08 — diário persistido, transferência e revogação", () => {
     expect(lista).toMatchObject({ ok: true, dado: { alunos: [{ alunoId: c.aluno.id, nomeAluno: "Ana Santos" }], exigeConferencia: false } });
     expect(JSON.stringify(lista)).not.toMatch(/DOCUMENTO_PRIVADO|privado@example|telefone|valor|snapshot/);
     expect(await listarAlunosParaChamada({ turmaId: c.turma.id, ocorridaEm: new Date().toISOString() })).toMatchObject({ ok: true, dado: { alunos: [] } });
-    // A hora adicional podia atravessar meia-noite e alcançar o dia efetivo da pausa.
     const anterior = await salvarAulaDiario({ ...c.entrada, ocorridaEm: new Date(c.ocorridaEm.getTime() - 3600000).toISOString() });
     expect(anterior.ok, anterior.ok ? undefined : anterior.erro).toBe(true);
     expect((await salvarAulaDiario({ ...c.entrada, ocorridaEm: new Date().toISOString() })).ok).toBe(false);

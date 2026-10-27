@@ -21,15 +21,6 @@ async function usuarioFinanceiroFresco(tx: Prisma.TransactionClient, usuarioId: 
 const decimal = (valor: { toString(): string } | null) => valor?.toString() ?? null;
 const data = (valor: Date | null) => valor?.toISOString() ?? null;
 
-/**
- * Consulta restrita ao contrato que já possui mapa M01 para a linha financeira.
- * IDs são retornados apenas para opções controladas da interface; a ação revalida
- * toda associação no servidor antes de propor ou decidir.
- *
- * Cada coleção tem a própria página numerada (E4): a ordem termina no id, então a
- * mesma página lida na ida e na volta traz os mesmos registros, e a página de uma
- * coleção não muda as outras.
- */
 export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: string; pagina?: number; paginaRecebimentos?: number; paginaPagadores?: number; paginaPropostas?: number }) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.FINANCEIRO);
@@ -112,7 +103,6 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
     });
   });
 }
-/** Fila financeira própria: não concede acesso aos lotes administrativos completos. Paginada por número (E4), em ordem de id. */
 export async function listarLinhasConciliacaoFinanceira(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.FINANCEIRO);

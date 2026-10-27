@@ -55,8 +55,6 @@ export type ConsultaDecisaoAdministrativaDesistencia = {
   pedidos: PedidoDecisaoAdministrativaDesistenciaView[];
 };
 
-/** Consulta administrativa somente de leitura. Não expõe valores, saldos ou a
- * fotografia financeira que fundamenta a pendência. */
 export async function consultarDecisaoAdministrativaDesistencia(input: { matriculaId: string }): Promise<Resultado<ConsultaDecisaoAdministrativaDesistencia>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
@@ -98,14 +96,11 @@ export async function consultarDecisaoAdministrativaDesistencia(input: { matricu
   });
 }
 
-/** Registra a decisão independente. Mesmo uma aprovação permanece deliberativa:
- * ela não efetiva desistência, não baixa recebimentos e não cancela assinatura. */
 export async function decidirDesistenciaAdministrativa(input: z.input<typeof decidirSchema>): Promise<Resultado<{ id: string; aprovada: boolean; estadoHash: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = decidirSchema.parse(input);
     return prisma.$transaction(async (tx) => {
-      // Ordem global: calendário, lead/matrícula, usuário e somente então o pedido.
       const referencia = await tx.pedidoDesistenciaPreparacao.findUnique({ where: { id: dados.pedidoId }, select: { matriculaId: true } });
       if (!referencia) throw new ErroRegra("Pedido de desistência não encontrado.");
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -126,8 +121,6 @@ export async function decidirDesistenciaAdministrativa(input: z.input<typeof dec
       if (pedido.registradorId === autor.id) throw new ErroPermissao("A decisão deve ser registrada por outra pessoa da Administração.");
       const efetivacao = await tx.efetivacaoPedidoDesistenciaPreparacao.findUnique({ where: { matriculaId: pedido.matriculaId }, select: { id: true } });
       if (efetivacao) throw new ErroRegra("A desistência já foi efetivada e não admite decisão administrativa.");
-      // Rejeição documenta qualquer pedido histórico com o hash que ele tinha;
-      // aprovação só vale para o último pedido ainda em preparação e conferido.
       if (dados.estadoHash !== pedido.estadoHash) throw new ErroRegra("O hash informado não corresponde ao pedido de desistência.");
       if (dados.aprovada) {
         const ultima = await tx.pedidoDesistenciaPreparacao.findFirst({ where: { matriculaId: pedido.matriculaId }, orderBy: [{ versao: "desc" }, { id: "desc" }], select: { id: true } });

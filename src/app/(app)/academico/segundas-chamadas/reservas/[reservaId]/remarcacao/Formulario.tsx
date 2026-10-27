@@ -12,7 +12,6 @@ type Props = {
  reservaId: string;
  estadoConferido: string;
  proposta?: { id: string; hash: string; podeAprovar: boolean; impedimentoAprovacao: string | null; periodosNaoLetivos: string[] };
- /** Fuso da escola ou da preferência (fusoInicialDeEntrada); "" deixa o campo vazio e obrigatório. */
  fusoInicial?: string;
 };
 export function Formulario({ reservaId, estadoConferido, proposta, fusoInicial = "" }: Props) {

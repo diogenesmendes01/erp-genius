@@ -59,7 +59,6 @@ describe("versões da Aria", () => {
     const msg = { ok: false, erro: "O rascunho foi alterado por outra pessoa desde que você abriu. Recarregue para ver a versão atual." };
     logado(admin);
     const pub = await publicarComPadrao();
-    // Admin e gerente abrem a tela sem rascunho; o gerente salva primeiro.
     const abertoAdmin = await rascunhoAtual();
     expect(abertoAdmin).toBeNull();
     logado(gerente);
@@ -68,7 +67,6 @@ describe("versões da Aria", () => {
     logado(admin);
     expect(await salvarRascunho({ config: comNome("Bia"), baseVersaoId: pub.id, rascunho: abertoAdmin })).toEqual(msg);
     expect(await restaurarVersao(pub.id, abertoAdmin)).toEqual(msg);
-    // Quem abriu o rascunho do gerente salva; o token antigo desse rascunho deixa de valer.
     const aberto = await rascunhoAtual();
     expect(aberto?.id).toBe(doGerente.ok ? doGerente.dado!.versaoId : "");
     const salvo = await salvarRascunho({ config: comNome("Bia"), baseVersaoId: pub.id, rascunho: aberto });
@@ -79,7 +77,6 @@ describe("versões da Aria", () => {
     expect(await restaurarVersao(pub.id, aberto)).toEqual(msg);
     const final = await prisma.versaoAgenteIA.findFirstOrThrow({ where: { status: "RASCUNHO" } });
     expect((final.config as { nome: string }).nome).toBe("Bia");
-    // O token devolvido pelo salvamento serve para o próximo salvamento de quem salvou.
     logado(admin);
     const r = await restaurarVersao(pub.id, salvo.ok ? { id: salvo.dado!.versaoId, atualizadoEm: salvo.dado!.atualizadoEm } : null);
     expect(r.ok).toBe(true);
@@ -101,26 +98,21 @@ describe("versões da Aria", () => {
     logado(admin);
     const pub = await publicarComPadrao();
     await salvarRascunho({ config: comNome("Lia"), baseVersaoId: pub.id, rascunho: null });
-    // O admin abre a tela com o rascunho "Lia"; o gerente salva por cima antes do admin publicar.
     const abertoAdmin = await rascunhoAtual();
     logado(gerente);
     expect((await salvarRascunho({ config: comNome("Bia"), baseVersaoId: pub.id, rascunho: abertoAdmin })).ok).toBe(true);
     logado(admin);
     expect(await publicarRascunho({ rascunho: abertoAdmin })).toEqual(msg);
     expect(await descartarRascunho(abertoAdmin)).toEqual(msg);
-    // Sem token (a tela abriu sem rascunho) também não publica nem descarta o rascunho de outra pessoa.
     expect(await publicarRascunho({ rascunho: null })).toEqual(msg);
     expect(await descartarRascunho(null)).toEqual(msg);
-    // Token como string (vindo da tela) e token de rascunho que já não existe.
     const atual = await rascunhoAtual();
     expect(await descartarRascunho({ id: "outro", atualizadoEm: atual!.atualizadoEm.toISOString() })).toEqual(msg);
     const final = await prisma.versaoAgenteIA.findFirstOrThrow({ where: { status: "RASCUNHO" } });
     expect((final.config as { nome: string }).nome).toBe("Bia");
     expect((await versaoPublicada())!.id).toBe(pub.id);
     expect(await prisma.evento.count({ where: { tipo: { in: ["AgenteIARascunhoDescartado"] } } })).toBe(0);
-    // Com o token atual (inclusive serializado como string) publica.
     expect(await publicarRascunho({ rascunho: { id: atual!.id, atualizadoEm: atual!.atualizadoEm.toISOString() } })).toEqual({ ok: true, dado: { numero: 2 } });
-    // Rascunho já publicado: o token antigo não descarta nada.
     expect(await descartarRascunho(atual)).toEqual(msg);
   });
 

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-/** A fonte contém só o ID da reposição. A rota revalida a sessão e o estado
- * acadêmico a cada requisição Range; nenhum identificador do Drive chega aqui. */
 export function VideoGravacaoPortalAluno({ reposicaoId }: { reposicaoId: string }) {
   const [erro, setErro] = useState(false);
   const fonte = `/api/portal-aluno/reposicoes/${encodeURIComponent(reposicaoId)}/video`;

@@ -31,7 +31,6 @@ type Icone = React.ComponentType<IconProps>;
 
 const ICONS: Record<string, Icone> = {
   Home: IconHome,
-  // Chave "Mail" (antes `IconMail` solto virava a chave "IconMail" e "Envios do portal" caía no ícone de Home).
   Mail: IconMail,
   KanbanSquare: IconLayoutKanban,
   Briefcase: IconBriefcase,
@@ -46,12 +45,6 @@ const ICONS: Record<string, Icone> = {
   Sparkles: IconSparkles,
 };
 
-/**
- * Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque.
- * O estado é um só (src/lib/tema.ts): as duas instâncias leem a classe `dark` do <html> e são avisadas na
- * troca, então a Sidebar nunca fica com o ícone velho depois de trocar no celular (C21 da #170).
- * aria-pressed diz ao leitor de tela se o tema escuro está ligado — o ícone sozinho não dizia.
- */
 export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700", classeIcone = "h-4 w-4" }: { className?: string; classeIcone?: string }) {
   const dark = useSyncExternalStore(acompanharTema, temaEscuroAplicado, temaEscuroNoServidor);
 
@@ -69,11 +62,6 @@ export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700", c
   );
 }
 
-/**
- * Links da navegação principal por papel, com o ativo pelo prefixo mais longo (aria-current) e a
- * contagem de não lidas da inbox. Uma fonte só para a Sidebar (md+) e a gaveta da barra mobile —
- * as duas não podem divergir. `aoNavegar` fecha a gaveta ao escolher um item.
- */
 export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Navegação principal" }: {
   papeis: string[];
   naoLidasInbox?: number;
@@ -118,11 +106,8 @@ export function Sidebar({
 }: {
   papeis: string[];
   nome: string;
-  /** Notificação básica da inbox (doc 30 E3): conversas não lidas pessoais no escopo do usuário. */
   naoLidasInbox?: number;
 }) {
-  // Só a partir de md; abaixo disso a navegação fica na barra mobile (BarraMobile), que abre a
-  // mesma lista numa gaveta — antes a Sidebar de 224px fixos deixava ~87px de conteúdo em 375px.
   return (
     <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col overflow-y-auto border-e border-gray-200 bg-surface-muted p-3 md:flex">
       <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">

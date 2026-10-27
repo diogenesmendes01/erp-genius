@@ -33,14 +33,6 @@ type EncontroDaAgenda = {
   status: string;
 };
 
-/**
- * Uma grade continua sendo a fonte histórica dos encontros depois de um
- * replanejamento: a aplicação move os encontros, mas não a reescreve para o
- * calendário novo. A cadeia só é aceita quando a revisão aplicada contém a
- * turma e cada encontro atual da grade corresponde ao resultado conferido,
- * diretamente ou seguido de alterações de quantidade aprovadas e aplicadas
- * (mesma cadeia da comprovação de oferta Q161).
- */
 function cadeiaReplanejamentoDaAgenda(
   revisoes: Array<{
     id: string;
@@ -96,12 +88,6 @@ export type OfertaAgendaDestino = {
   fotografia: FotografiaAgendaDestino | null;
 };
 
-/**
- * A data manual da turma é somente uma previsão legada. A disponibilidade
- * para um novo vínculo vem da grade aprovada no calendário vigente e da
- * existência de aula regular futura. O relógio não entra na fotografia:
- * passar do tempo só torna a oferta indisponível quando não resta aula futura.
- */
 export async function carregarOfertasAgendaDestinoTx(
   tx: ClienteAgendaDestino,
   turmaIds: readonly string[],

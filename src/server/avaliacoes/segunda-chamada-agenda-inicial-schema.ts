@@ -5,7 +5,6 @@ import { ProporRemarcacaoSegundaChamadaSchema } from "./segunda-chamada-remarcac
 const id = z.string().trim().min(1).max(100);
 const motivo = z.string().trim().min(5).max(2000);
 
-/** A fonte é a avaliação autorizada; não existe reserva antes da aplicação inicial. */
 export const ProporAgendaInicialSegundaChamadaSchema = ProporRemarcacaoSegundaChamadaSchema
   .omit({ reservaId: true })
   .extend({ propostaSegundaChamadaId: id, professorId: id })
@@ -26,7 +25,6 @@ export const DecidirAgendaInicialSegundaChamadaSchema = z.object({
 
 export type EntradaAgendaInicialSegundaChamada = z.input<typeof ProporAgendaInicialSegundaChamadaSchema>;
 
-/** Sem relógio: reenvio histórico deve ser reconhecido antes de conferir nova criação. */
 export function canonicalizarAgendaInicialSegundaChamada(input: EntradaAgendaInicialSegundaChamada) {
   const entrada = ProporAgendaInicialSegundaChamadaSchema.parse(input);
   const inicio = new Date(entrada.inicio), fim = new Date(entrada.fim);

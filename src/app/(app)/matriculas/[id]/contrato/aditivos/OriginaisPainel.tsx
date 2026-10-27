@@ -3,7 +3,7 @@ import { consultarOriginaisAditivo } from "@/server/contratos/aditivo-originais"
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { OriginalFormulario } from "./OriginalFormulario";
 import { EstadoVazio } from "@/components/EstadoVazio";
-export async function OriginaisPainel({ matriculaId, propostaId, podeGerar, pagina, paginaConferencias, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; podeGerar: boolean; pagina: number; /** Página do histórico de conferências da mesma tela: os links daqui a preservam. */ paginaConferencias: number; preferenciaFusoExibicao?: string | null }) {
+export async function OriginaisPainel({ matriculaId, propostaId, podeGerar, pagina, paginaConferencias, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; podeGerar: boolean; pagina: number;  paginaConferencias: number; preferenciaFusoExibicao?: string | null }) {
   const r = await consultarOriginaisAditivo({ matriculaId, propostaId, pagina });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Originais indisponíveis." : r.erro}</p>;
   const d = r.dado, base = `/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(propostaId)}`;

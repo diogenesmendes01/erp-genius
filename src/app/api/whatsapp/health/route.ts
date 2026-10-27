@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { medirSaudeCanal } from "@/server/whatsapp/saude";
 
-// SAÚDE DO CANAL (doc 30 E5 · gap A7 do doc 28): endpoint para monitor externo
-// (UptimeRobot/Better Stack/cron de alerta). Mesmo modelo machine-to-machine do cron:
-// segredo no header, nunca sessão. Contrato HTTP:
-//   200 = canal saudável · 503 = há alerta (corpo lista os motivos) · 401 = sem segredo.
-// O monitor só precisa tratar "status != 200" como incidente e mostrar o corpo.
-
 export const runtime = "nodejs";
 
 export async function GET(req: Request): Promise<NextResponse> {

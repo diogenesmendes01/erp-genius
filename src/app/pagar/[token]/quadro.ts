@@ -2,24 +2,15 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { tokenPagamentoBemFormado } from "@/lib/token-pagamento";
 import type { CobrancaPublica } from "@/server/financeiro/gateway";
 
-// O que a página pública de pagamento diz em cada situação do link e da cobrança (docs/42 /pagar #2 e #3;
-// docs/43 §6 item 8). Antes só havia "pago" ou "aberto": cancelada e vencida apareciam como em aberto, e o link
-// inválido era uma linha vermelha sem saída. Cada caso tem título, explicação e o que fazer agora; só a cobrança
-// pendente ou vencida mantém o caminho de pagamento, e só a que ainda está a pagar mostra o valor.
-
 export type TomQuadro = "neutro" | "sucesso" | "aviso" | "erro";
 
 export type QuadroPagamento = {
-  /** Identifica o caso para a página e os testes (nunca vai para a tela). */
   caso: "link-invalido" | "link-expirado" | "paga" | "cancelada" | "vencida" | "pendente";
   tom: TomQuadro;
   titulo: string;
   texto: string;
-  /** O que a pessoa faz agora. */
   saida: string;
-  /** Mostra descrição, valor e vencimento (só quando ainda há algo a pagar). */
   mostraValor: boolean;
-  /** Mantém o caminho de pagamento (botão no ambiente de teste, orientação fora dele). */
   podePagar: boolean;
 };
 
@@ -60,7 +51,6 @@ const PENDENTE: QuadroPagamento = {
   saida: "Dúvidas sobre esta cobrança? Fale com a Secretaria da escola.",
 };
 
-/** O quadro da página para o token pedido e a cobrança que ele encontrou (null: nenhuma). */
 export function quadroDoPagamento(token: string, cobranca: CobrancaPublica | null): QuadroPagamento {
   if (!cobranca) return tokenPagamentoBemFormado(token) ? LINK_EXPIRADO : LINK_INVALIDO;
   if (cobranca.status === "PAGO") return PAGA;

@@ -25,7 +25,6 @@ const TOM_PELE = /[\u{1f3fb}-\u{1f3ff}]/u;
 
 const normal = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-/** Busca por termos (sem acento) no rótulo e nas palavras-chave; variantes de tom de pele ficam de fora. */
 export function buscarEmoji(dados: EntradaEmoji[], consulta: string, grupo: string): EntradaEmoji[] {
   const termos = normal(consulta).split(/\s+/).filter(Boolean);
   return dados.filter((e) => !TOM_PELE.test(e.emoji)
@@ -39,9 +38,8 @@ function lerRecentes(): string[] {
     return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 40) : [];
   } catch { return []; }
 }
-function gravarRecentes(v: string[]) { try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(v)); } catch { /* sem armazenamento: segue sem recentes */ } }
+function gravarRecentes(v: string[]) { try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(v)); } catch {  } }
 
-/** `gif`/`figurinha`: o canal executa o recurso (quem compõe decide com `capacidades` da thread); sem ele, a aba fica desabilitada com aviso. */
 export function SeletorEmoji({ gif, figurinha, aoEmoji, aoFechar }: { gif: boolean; figurinha: boolean; aoEmoji: (e: string) => void; aoFechar: () => void }) {
   const [consulta, setConsulta] = useState("");
   const [grupo, setGrupo] = useState("Smileys & Emotion");

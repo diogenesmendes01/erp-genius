@@ -22,7 +22,6 @@ const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string
     origens: z.array(z.object({ encontroId: z.string(), inicio: z.string().optional(), fim: z.string().optional() })).optional(),
     preservados: z.array(z.object({ encontroId: z.string(), destinacao: z.discriminatedUnion("tipo", [
       z.object({ tipo: z.literal("FATURADA"), cobrancaId: z.string() }), z.object({ tipo: z.literal("ANTECIPACAO_CONFERIDA"), registroId: z.string() }),
-      // Q175: aula declarada não cobrável na revisão financeira da correção; fica fora da cobrança.
       z.object({ tipo: z.literal("NAO_COBRAVEL_CORRECAO"), aplicacaoId: z.string() })]) })),
     semCobranca: z.array(z.object({ encontroId: z.string(), desfecho: z.string(), origem: z.object({ inicio: z.string() }) })) }) });
 const ROTULO_PRESERVADO = { FATURADA: "Já faturado em cobrança anterior", ANTECIPACAO_CONFERIDA: "Destinação das horas antecipadas já conferida",
@@ -35,8 +34,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   searchParams: Promise<{ aluno?: string; cursor?: string; versao?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.FINANCEIRO);
   const { id } = await params, q = await searchParams;
-  // Sem ?aluno= (favorito, histórico, URL digitada) a página era um beco (docs/42 L905): o aluno sai da própria
-  // matrícula, com o alcance do cabeçalho de /matriculas/[id]. Fora do alcance, o motivo e uma saída.
   const alunoId = q.aluno || (await consultarCabecalhoMatricula(usuario, id))?.alunoId;
   if (!alunoId) return <section className="space-y-3"><p role="alert">Matrícula não encontrada no seu alcance; não há fechamentos por hora para consultar.</p><Link href="/financeiro" className="underline">Ir para o Financeiro</Link></section>;
   const [r, preferencia, fusoInstitucional] = await Promise.all([

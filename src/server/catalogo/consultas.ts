@@ -3,8 +3,6 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoComPapel } from "@/server/_shared";
 import { semDecimais } from "@/server/_shared/decimal";
 
-// Consultas (leitura) do Catálogo — chamadas por Server Components.
-
 export async function listarIdiomas() {
   await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
   return prisma.idioma.findMany({
@@ -38,8 +36,6 @@ export async function listarProdutos() {
 
 export async function listarPrecos() {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-  // Ordem determinística: ativos primeiro, mais recente antes; `id` desempata
-  // quando há `criadoEm` idêntico (evita ordem instável entre execuções).
   const precos = await prisma.precoReferencia.findMany({
     orderBy: [{ ativo: "desc" }, { criadoEm: "desc" }, { id: "desc" }],
     include: {
@@ -48,7 +44,7 @@ export async function listarPrecos() {
       produto: { include: { idioma: true, modalidade: true } },
     },
   });
-  return semDecimais(precos); // valor: Decimal → number (borda Server → Client)
+  return semDecimais(precos);
 }
 
 export type IdiomaListado = Awaited<ReturnType<typeof listarIdiomas>>[number];

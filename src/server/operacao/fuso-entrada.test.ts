@@ -3,8 +3,6 @@ import { fusoDoCampoLocal, instanteDoCampoLocal, valorCampoLocal } from "./fuso-
 import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { ErroRegra } from "@/server/_shared/sessao";
 
-// Lote 3 do fuso pessoal nas telas: campo de ENTRADA datetime-local. Expectativas fixas (instantes ISO absolutos):
-// a suíte roda em TZ=UTC e TZ=America/Sao_Paulo no CI e o resultado não pode depender do fuso do processo.
 const ok = (local: string, fuso: string) => {
   const r = instanteDoCampoLocal(local, fuso);
   if (!r.ok) throw new Error(r.erro);

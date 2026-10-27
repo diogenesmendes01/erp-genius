@@ -19,8 +19,6 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [codigo, setCodigo] = useState("");
   const [ordem, setOrdem] = useState("");
-  // criarNivel recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
-  // nível já criado, em vez de duplicar a opção no formulário de matrícula.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
 

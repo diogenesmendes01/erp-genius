@@ -3,10 +3,6 @@ import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "../_shared";
 import { escopoComercialAtual } from "../_shared/escopo-comercial";
 
-// Quem pode decidir (aprovar/rejeitar/desfazer) uma ação da Aria. Um só critério para o Histórico
-// e para as sugestões do Inbox: o lead da ação (a oportunidade da ação ou, sem ela, o lead do
-// atendimento) tem de estar no escopo comercial atual; ação sem lead é só do Administrador.
-
 type Db = Prisma.TransactionClient | typeof prisma;
 
 export interface AlvoDecisaoAria {
@@ -20,7 +16,6 @@ export async function leadDaAcaoAria(db: Db, alvo: AlvoDecisaoAria): Promise<str
   return (await db.atendimentoWhatsApp.findUnique({ where: { id: alvo.atendimentoId }, select: { leadId: true } }))?.leadId ?? null;
 }
 
-/** Devolve, entre os leads informados (null = ação sem lead), os que o usuário pode decidir. */
 export async function leadsDecidiveis(db: Db, u: UsuarioSessao, leadIds: (string | null)[]): Promise<Set<string | null>> {
   const ok = new Set<string | null>();
   if (leadIds.includes(null) && u.papeis.includes(Papel.ADMINISTRADOR)) ok.add(null);

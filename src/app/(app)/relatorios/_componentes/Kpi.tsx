@@ -1,14 +1,11 @@
 import Link from "next/link";
 
-/** Indicador com a variação em relação ao período anterior. Sem base de comparação, o traço "—" (nunca Infinity/NaN). */
 export function Kpi({ rotulo, valor, variacao, anterior, complemento, href }: {
   rotulo: string;
   valor: string;
   variacao: string;
-  /** Valor do período anterior, já formatado. */
   anterior?: string;
   complemento?: string;
-  /** Abre o painel de oportunidades por trás do número. */
   href?: string;
 }) {
   return (

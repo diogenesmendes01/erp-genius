@@ -7,7 +7,6 @@ import { hashSubstituicao } from "./substituicao-estado";
 
 const GeradorSchema = z.object({ versao: z.literal("aditivo-original-1"), fontes: z.array(z.object({ nome: z.string(), sha256: z.string().regex(/^[a-f0-9]{64}$/) })).min(1) }).passthrough();
 
-/** Estado que a equipe confere internamente; não qualifica alçadas e não envia o documento. */
 export async function consultarEstadoAssinaturaAditivoTx(tx: Prisma.TransactionClient, entrada: { matriculaId: string; propostaId: string; artefatoId: string }) {
   const artefatoInicial = await tx.artefatoAditivoContratual.findFirst({ where: { id: entrada.artefatoId, propostaId: entrada.propostaId, proposta: { matriculaId: entrada.matriculaId } }, include: { conferencia: true } });
   if (!artefatoInicial) throw new ErroRegra("Original de aditivo indisponível nesta matrícula e proposta.");

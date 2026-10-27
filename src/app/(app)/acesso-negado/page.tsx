@@ -2,8 +2,6 @@ import Link from "next/link";
 import { IconLock } from "@tabler/icons-react";
 import { botaoClasses } from "@/components/Botao";
 
-// Destino dos guards de página quando o usuário está autenticado mas sem o papel
-// exigido. Nenhum dado sensível é consultado aqui (ver docs/07-papeis-permissoes).
 export default function AcessoNegadoPage() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">

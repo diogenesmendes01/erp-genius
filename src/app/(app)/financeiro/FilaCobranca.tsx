@@ -46,14 +46,12 @@ function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string |
   return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
 }
 
-/** Cartão-indicador com papel de botão (alternância com aria-pressed): Espaço também aciona, como num <button>. */
 function espacoAciona(e: KeyboardEvent<HTMLAnchorElement>) {
   if (e.key !== " ") return;
   e.preventDefault();
   e.currentTarget.click();
 }
 
-// Cor do chip do degrau por tipo de ação (lembrar=preventivo, cobrar=atraso, bloquear=crítico).
 function chipCls(item: FilaCobrancaItem): string {
   if (item.estado === "em_conferencia") return "bg-blue-100 text-blue-700";
   if (item.precisaBloqueio) return "bg-red-100 text-red-700";
@@ -66,7 +64,6 @@ function chipCls(item: FilaCobrancaItem): string {
   return "bg-gray-100 text-gray-600";
 }
 
-// Rótulo curto da próxima ação na linha (ex.: "D+7 · cobrar · há 7d").
 function rotuloAcaoCurto(item: FilaCobrancaItem, fusoEscola: string): string {
   if (item.estado === "em_conferencia") return "comprovante a conferir";
   if (item.precisaBloqueio) return `bloqueio pendente · há ${item.diasAtraso}d`;
@@ -83,19 +80,10 @@ function rotuloAcaoCurto(item: FilaCobrancaItem, fusoEscola: string): string {
   return `${item.passo} · ${verbo} · ${quando}`;
 }
 
-// Os textos dos templates saíram do client (doc 29 regra 4): a mensagem sugerida chega
-// RENDERIZADA do servidor (item.mensagemSugerida) — fonte única entre wa.me, API e cron.
-
 function valorDevido(item: FilaCobrancaItem): number {
   return item.saldo > 0 ? item.saldo : item.valorNegociado;
 }
 
-// Filtros na URL (E4): o servidor lê e valida (filtros-fila.ts) e entrega `itens` já filtrados e
-// ordenados — e, desde o item 9 (docs/43 §6), só o TRECHO exibido, com cursor nos dois sentidos. Trocar de
-// filtro ou de trecho navega para a mesma rota: o componente não é recriado, então os avisos sobrevivem.
-// O lote, não: ele só leva o que está NA TELA (marcado e visível no trecho atual). Uma cobrança marcada que
-// saiu da tela pelo filtro ou pela navegação não entra na revisão nem no envio — a paginação não pode mandar
-// mensagem para quem o operador não está vendo.
 export function FilaCobranca({
   itens,
   totalFila,
@@ -110,25 +98,18 @@ export function FilaCobranca({
   preferenciaFusoExibicao = null,
   fusoEscola,
 }: {
-  /** Cobranças do trecho exibido da visão atual (filtradas, ordenadas e recortadas no servidor). */
   itens: FilaCobrancaItem[];
-  /** Cobranças da fila inteira, sem filtro. */
   totalFila: number;
-  /** Cobranças da visão filtrada, somando todos os trechos (padrão: as do trecho). */
   totalVisao?: number;
   filtros: FiltrosFila;
-  /** Opções dos selects, da fila inteira. */
   opcoes: { paises: string[]; turmas: string[] };
   dashs: DashsCobranca;
   regua: DegrauFila[];
-  /** Cursores do trecho (chave de ordem do primeiro e do último item), quando há para onde ir. */
   navegacao?: { anterior: string | null; proxima: string | null };
-  /** Link do início da fila com o mesmo recorte, quando a leitura partiu de um cursor (null no início). */
   inicioDaFila?: string | null;
   podeOperar: boolean;
   podeBloquear: boolean;
   preferenciaFusoExibicao?: string | null;
-  /** Promessa é data civil gravada (meio-dia da escola): sai no dia da escola, sem fuso pessoal. */
   fusoEscola: string;
 }) {
   const router = useRouter();
@@ -136,14 +117,10 @@ export function FilaCobranca({
   const [pagar, setPagar] = useState<FilaCobrancaItem | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
-  // Seleção do lote, por id. A revisão e o envio levam só o que está na tela (loteNaTela, abaixo).
   const [selecao, setSelecao] = useState<Map<string, FilaCobrancaItem>>(new Map());
-  // Lote cujo envio espera confirmação: a seleção congelada no clique (docs/42 L2018; docs/43 §7.5 item 1).
   const [confirmarLote, setConfirmarLote] = useState<FilaCobrancaItem[] | null>(null);
-  // Cobrança cujo envio via API espera confirmação (linha da fila ou gaveta do detalhe).
   const [confirmarEnvio, setConfirmarEnvio] = useState<FilaCobrancaItem | null>(null);
 
-  // O indicador escolhido não é campo do formulário: buscar/filtrar/limpar a busca o mantém.
   const lista = useFiltrosUrl({ campos: camposDosFiltrosFila(filtros), hrefDosCampos: (c) => hrefDosCamposFila(c, filtros.indicador) });
   const semIndicador = hrefSemIndicador(filtros);
   const semBusca = hrefSemBusca(filtros);
@@ -163,12 +140,6 @@ export function FilaCobranca({
     }
   }
 
-  // BRAÇO API (doc 30 E2): enfileira e despacha na hora — passa pelos mesmos guard-rails
-  // do cron. Mensagem REAL ao cliente, sem desfazer: o "Cobrar"/"Lembrar" da linha e o "Enviar via
-  // WhatsApp (API)" do detalhe só abrem a confirmação (docs/42 L2014; docs/43 §6 item 1), que mostra
-  // para quem vai, por qual número e com qual degrau. A action roda no ConfirmarAcao, que mostra a
-  // falha dentro dele; aqui chega só o resultado do despacho, que diz o que aconteceu (enviada,
-  // simulada em ensaio, adiada, falhou).
   function pedirEnvioViaApi(item: FilaCobrancaItem) {
     setErro(null);
     setNota(null);
@@ -187,7 +158,6 @@ export function FilaCobranca({
     router.refresh();
   }
 
-  /** Preparar o link não é prova de envio: a action só devolve a URL após revalidar a cobrança. */
   async function prepararEnvioManual(item: FilaCobrancaItem, texto: string) {
     setErro(null);
     setNota(null);
@@ -222,7 +192,6 @@ export function FilaCobranca({
     }
   }
 
-  /** A auditoria registra somente a declaração humana posterior ao envio efetivo. */
   async function confirmarEnvioManual(item: FilaCobrancaItem) {
     if (!item.passo || !item.template) return false;
     setErro(null);
@@ -242,7 +211,6 @@ export function FilaCobranca({
     }
   }
 
-  // Marcar ou desmarcar também descarta o que ficou marcado fora da tela (outro trecho, outro filtro).
   function alternarSelecao(item: FilaCobrancaItem) {
     const naTela = new Set(itens.map((i) => i.id));
     setSelecao((s) => {
@@ -253,9 +221,6 @@ export function FilaCobranca({
     });
   }
 
-  // "Aprovar e enviar lote" manda N mensagens reais de uma vez, sem desfazer: o botão só abre a revisão do lote
-  // (nome, valor e degrau de cada cobrança) e a confirmação diz quantas mensagens saem. A action roda no
-  // ConfirmarAcao, que mostra o erro e o resultado incerto dentro dele; voltar preserva a seleção.
   function pedirEnvioLote() {
     setErro(null);
     setNota(null);
@@ -277,12 +242,10 @@ export function FilaCobranca({
       d.puladas.length ? `${d.puladas.length} pulada(s): ${d.puladas[0].motivo}` : null,
     ].filter(Boolean);
     setNota(`Lote: ${partes.join(" · ")}.`);
-    // Falha parcial é erro (docs/43 §6 item 2): sai em role="alert", não somada à nota de sucesso.
     if (d.falhas) setErro(d.falhas === 1 ? "1 envio do lote falhou; o item continua na fila manual." : `${d.falhas} envios do lote falharam; os itens continuam na fila manual.`);
   }
 
   const elegivelLote = (i: FilaCobrancaItem) => i.estado === "acao_devida" && !!i.passo && !!i.destino;
-  // O lote é o que está marcado E na tela, com os dados do trecho atual (o degrau pode ter mudado desde a marcação).
   const loteNaTela = itens.filter((i) => selecao.has(i.id) && elegivelLote(i));
 
   const DASHS: { chave: IndicadorFila; label: string; valor: string; cls: string }[] = [
@@ -297,8 +260,6 @@ export function FilaCobranca({
       {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
-      {/* Mini-dashs = filtros da régua. Cada cartão é um link real (F5, voltar, nova aba e link
-          compartilhado mantêm o recorte) com papel de botão de alternância: aria-pressed diz qual está ativo. */}
       <div role="group" aria-label="Filtrar a fila pelos indicadores" className="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {DASHS.map((d) => (
           <Link
@@ -322,7 +283,6 @@ export function FilaCobranca({
           <div className="text-xs text-gray-500">Recebido hoje</div>
         </div>
       </div>
-      {/* C33 da #170: o botão de limpar fica ao lado do texto de apoio, não dentro do <p>. */}
       <div className="mb-3 flex flex-wrap items-center gap-x-2 text-xs text-gray-400">
         <p>Cartões filtram a fila ·{filtros.indicador ? "" : " ordenada por prioridade"}</p>
         {filtros.indicador && (
@@ -332,8 +292,6 @@ export function FilaCobranca({
         )}
       </div>
 
-      {/* Busca + filtros de navegação (volume), na URL. Sem JavaScript, o formulário GET também leva o
-          indicador escolhido. */}
       <form
         action={ROTA_FILA}
         onSubmit={(e) => { e.preventDefault(); lista.aplicar(lista.campos); }}
@@ -378,7 +336,6 @@ export function FilaCobranca({
         <span className="text-xs text-gray-400" aria-live="polite">{lista.buscando ? "Buscando…" : `${totalVisao} de ${totalFila}`}</span>
       </form>
 
-      {/* Barra de lote-com-aprovação (doc 26 §Camada 1): humano seleciona → aprova → a fila dispara */}
       {podeOperar && loteNaTela.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-brand-200 bg-brand-50 px-3 py-2">
           <span className="text-sm text-gray-700">{loteNaTela.length} selecionada(s) para envio em lote</span>
@@ -389,7 +346,6 @@ export function FilaCobranca({
         </div>
       )}
 
-      {/* Lista magra */}
       {itens.length === 0 ? (
         inicioDaFila ? (
           <EstadoVazio
@@ -405,10 +361,6 @@ export function FilaCobranca({
       ) : (
         <div aria-busy={lista.buscando} className={"overflow-hidden rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
           {itens.map((item) => (
-            // Linha acessível por teclado (docs/42 E7): a ação principal é um <button> de verdade, com o
-            // `::after` esticado sobre a linha inteira — clicar em qualquer ponto continua abrindo o
-            // detalhe. Checkbox do lote e ações rápidas ficam FORA do botão (controle dentro de botão é
-            // HTML inválido) e acima da camada esticada (relative z-10), então não abrem a linha.
             <div
               key={item.id}
               className="relative border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-gray-50 has-[button:focus-visible]:bg-gray-50"
@@ -434,7 +386,6 @@ export function FilaCobranca({
                   </span>
                 </button>
               </div>
-              {/* Quebra no celular: com o chip e a ação ao lado, turma · país sobrava em "Re…" (DS-C). */}
               <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                 <span className="min-w-0 truncate text-xs text-gray-500">
                   {item.turma ?? "sem turma"} · {item.pais}
@@ -464,7 +415,6 @@ export function FilaCobranca({
         </div>
       )}
 
-      {/* Trechos da fila por cursor (item 9): sem número de página — pagar ou cobrar um item não desloca o seguinte. */}
       <PaginacaoFila
         anterior={navegacao.anterior}
         proxima={navegacao.proxima}
@@ -491,7 +441,6 @@ export function FilaCobranca({
         />
       )}
 
-      {/* Depois do detalhe no DOM: abre por cima da gaveta, que não responde ao teclado enquanto isso. */}
       {confirmarEnvio && (
         <ConfirmarAcao
           titulo={`Enviar ${confirmarEnvio.tipoAcao === "lembrar" ? "o lembrete" : "a cobrança"} ${confirmarEnvio.passo ?? ""} para ${confirmarEnvio.aluno.nome} pelo WhatsApp?`}
@@ -538,7 +487,6 @@ function primeiroNome(nome: string): string {
   return nome.trim().split(/\s+/)[0] || nome;
 }
 
-/** O que a confirmação do envio via API diz: destino, valor, degrau e que a mensagem não volta atrás. */
 function ResumoEnvioApi({ item }: { item: FilaCobrancaItem }) {
   return (
     <>
@@ -560,7 +508,6 @@ function ResumoEnvioApi({ item }: { item: FilaCobrancaItem }) {
   );
 }
 
-/** A revisão do lote: cada cobrança com o nome, o valor e o degrau, e que as mensagens não voltam atrás. */
 function ResumoLote({ itens }: { itens: FilaCobrancaItem[] }) {
   return (
     <>
@@ -594,7 +541,6 @@ export function AcaoRapida({
   onEnviar: () => void;
   onAcesso: () => void;
 }) {
-  // Bloqueio pendente vence o resto: independe do passo da régua (review §1).
   if (item.acessoBloqueado) return <span className="text-[11px] text-gray-400">bloqueado</span>;
   if (item.precisaBloqueio) {
     if (!podeOperar) return <span className="text-[11px] text-gray-400">restrição devida</span>;
@@ -667,9 +613,6 @@ export function DetalheCobranca({
     }
   }
 
-  // Diálogo acessível (docs/42 E7): Escape fecha, foco entra e fica preso no painel e volta à linha
-  // que o abriu. Enquanto o envio manual está sendo preparado/confirmado, nem Escape, nem clique no
-  // fundo, nem ✕ fecham — o resultado da ação precisa chegar ao operador.
   const painel = useRef<HTMLDivElement>(null);
   const tituloId = useId();
   useDialogo(painel, { aberto: true, aoFechar: onClose, bloquearFechamento: manualOcupado });
@@ -709,7 +652,6 @@ export function DetalheCobranca({
           </div>
         </div>
 
-        {/* Ação de hoje — bloqueio pendente tem precedência (review §1) */}
         {item.precisaBloqueio ? (
           <div className="mx-5 mb-4 rounded-md bg-red-50 p-3">
             <div className="mb-2 text-xs font-medium text-red-700">
@@ -782,7 +724,6 @@ export function DetalheCobranca({
           </div>
         )}
 
-        {/* Régua (linha do tempo) */}
         <div className="px-5 pb-4">
           <div className="mb-2 text-xs font-medium text-gray-600">Régua de cobrança</div>
           <ol className="relative ml-1 border-l border-gray-200 pl-4">
@@ -807,7 +748,6 @@ export function DetalheCobranca({
 
         {podeOperar && <div className="px-5 pb-4"><AcessoAulasPainel matriculaId={item.matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
 
-        {/* Ações secundárias */}
         <div className="border-t border-gray-200 px-5 py-3">
           <div className="flex flex-wrap gap-2">
             {podeOperar && <button className={btnSec} onClick={onPagar}>Registrar pagamento</button>}

@@ -6,7 +6,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { conferirAutor } from "./modelos-tx";
 
 const entrada = z.object({ matriculaId: z.string().trim().min(1).max(100), propostaId: z.string().trim().min(1).max(100) }).strict();
-/** Metadados privados; os bytes preservados só saem pela rota de arquivo. */
 export async function consultarConclusaoAssinaturaAditivo(input: z.input<typeof entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR), d = entrada.parse(input);

@@ -17,7 +17,6 @@ import { recusarPreInicioInsight } from "./preinicio";
 import { resumoGeracaoInsight,travarAtendimentoInsight,travarGeracaoInsight,type BancoInsight } from "./persistencia";
 const indisponivel=()=>new ErroRegra("A geração de Insights está indisponível.");
 
-/** Claim sem rede. Uma unicidade perdida sai da TX abortada antes da releitura autorizada. */
 export async function prepararNovoInsight(autorId:string,entrada:unknown,opcoes:{disponivel:boolean;demo?:boolean;db?:BancoInsight}) {
   const i=NovoInsightSchema.parse(entrada),db=opcoes.db??prisma;
   async function transacao(somenteReleitura=false) {

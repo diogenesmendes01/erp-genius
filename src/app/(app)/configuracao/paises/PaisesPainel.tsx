@@ -33,8 +33,6 @@ const STATUS_INFO: Record<StatusPais, { label: string; cls: string }> = {
   ENCERRADO: { label: "Encerrado", cls: "bg-red-100 text-red-700" },
 };
 
-// Transições oferecidas por status (ciclo de vida do mercado, doc 04).
-// A variante vive na tabela, junto do rótulo: encerrar é terminal (ENCERRADO não tem volta) e é perigo.
 const ACOES_STATUS: Record<StatusPais, { label: string; alvo: StatusPais; variante: "perigo" | "fantasma" }[]> = {
   RASCUNHO: [{ label: "Ativar", alvo: StatusPais.ATIVO, variante: "fantasma" }],
   ATIVO: [
@@ -48,7 +46,6 @@ const ACOES_STATUS: Record<StatusPais, { label: string; alvo: StatusPais; varian
   ENCERRADO: [],
 };
 
-/** Confirmação curta por status de destino, anunciada na linha do país. */
 const CONFIRMACAO_STATUS: Record<StatusPais, string> = {
   RASCUNHO: "País voltou a rascunho.",
   ATIVO: "País ativado.",
@@ -64,17 +61,11 @@ export function PaisesPainel({
   produtos: { id: string; label: string }[];
 }) {
   const router = useRouter();
-  // Sem chave de idempotência: alternarProdutoPais inverte o estado atual (repetir desfaz) e
-  // alterarStatusPais não recebe chave — a falha de rede manda conferir a página antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
   const [form, setForm] = useState<"none" | "novo" | { editar: PaisParaEditar }>("none");
-  // Onde mostrar o resultado: nas ações de status da linha ("status:id") ou no catálogo do país ("catalogo:id").
   const [origem, setOrigem] = useState<string | null>(null);
   const [catalogo, setCatalogo] = useState<string | null>(null);
 
-  // Encerrar é terminal: ENCERRADO não tem transição de volta pela tela (docs/42 L2428). O botão só abre a
-  // confirmação, que repete produtos, preços e alunos do país e pede o nome digitado; a action roda no
-  // ConfirmarAcao. Ativar, pausar e reativar têm volta pela própria linha e continuam diretos.
   const [encerrando, setEncerrando] = useState<PaisRow | null>(null);
 
   async function mudarStatus(id: string, alvo: StatusPais) {
@@ -186,8 +177,6 @@ export function PaisesPainel({
                               ddi: p.ddi,
                               fuso: p.fuso,
                               idioma: p.idioma,
-                              // O id vai junto (C13 da #170): o servidor preserva o tipo por ele, e
-                              // renomear um tipo em uso não vira "remover + criar".
                               tiposDocumento: p.tiposDocumento.map((d) => ({
                                 id: d.id,
                                 nome: d.nome,
@@ -268,7 +257,6 @@ export function PaisesPainel({
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
-/** O que o encerramento atinge: produtos habilitados, preços e alunos do país — e que não há volta. */
 function ResumoEncerramento({ pais }: { pais: PaisRow }) {
   return (
     <>

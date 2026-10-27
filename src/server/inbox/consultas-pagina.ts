@@ -23,9 +23,7 @@ export interface ItemListaInbox extends ConversaResumo {
   estadoAria: EstadoAria | null; atendidoPorVoce: boolean; previaAutor: AutorPrevia | null; previaRotulo: string | null;
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
   fixada: boolean; silenciada: boolean; naoLidas: number; grupo: boolean;
-  /** Para decidir as ações do cabeçalho (podeExecutar): responsável, dono da linha, setores do número e origem da transferência. */
   responsavelId: string | null; numeroDonoId: string | null; setoresDoNumero: Setor[]; atendimentoOrigemId: string | null;
-  /** Recursos do motor que o número executa agora (`capacidadesDoNumero`: MOTOR ativo e sessão CONECTADO), como `ThreadConversa.capacidades`. */
   capacidades: RecursoMotor[];
 }
 
@@ -33,13 +31,11 @@ const LIMITE_LISTA = 50;
 const LIMITE_THREAD = 60;
 const LIMITE_THREAD_MAX = 100;
 
-/** Cinco chips legados: mesma base histórica, agora em um agregado SQL. */
 export async function contarChipsInbox(u:UsuarioSessao,f:FiltrosInbox,o:OpcoesOperacaoInbox={}):Promise<ContagensChipsInbox> {
   const op=resolverOperacaoListaInbox(u,o);
   const ctx=f.aria?await op.global():{db:op.db,usuarioId:op.usuarioId,agora:op.agora,escopo:await op.escopo()};
   return contarLegadosComContexto(ctx,f);
 }
-/** SQL seleciona antes do limite; a hidratação reaplica escopo e filtros atuais sem conceder acesso por ID. */
 export async function listarAtendimentosPagina(u:UsuarioSessao,f:FiltrosInbox,cursor:string|null,limite=LIMITE_LISTA,o:OpcoesOperacaoInbox={}):Promise<{itens:ItemListaInbox[];proximo:string|null}> {
   const op=resolverOperacaoListaInbox(u,o),tamanho=Math.min(Math.max(Math.trunc(limite)||LIMITE_LISTA,1),200);
   const pos=cursor?decodificarCursor(cursor):null;
@@ -85,7 +81,6 @@ async function montarItens(op:OperacaoListaInbox, todas:LinhaLista[]):Promise<It
   });
 }
 
-/** Um atendimento como linha da lista, só se estiver no escopo do usuário (deep link `?c=` fora da primeira página). */
 export async function obterItemListaInbox(u:UsuarioSessao,atendimentoId:string,o:OpcoesOperacaoInbox={}):Promise<ItemListaInbox|null> {
   const op=resolverOperacaoListaInbox(u,o);
   const a=await op.db.atendimentoWhatsApp.findFirst({where:{AND:[{id:atendimentoId},await op.escopo()]},include:includeLista});
@@ -94,13 +89,6 @@ export async function obterItemListaInbox(u:UsuarioSessao,atendimentoId:string,o
 
 const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: m.criadoEm.toISOString(), id: m.id });
 
-/**
- * Página da thread, ordem (criadoEm, id). Sem `antes`/`depois`: as mais recentes. `antes`: as anteriores
- * ao cursor. `depois`: as posteriores. Devolve em ordem cronológica; `antes`/`depois` são sempre os cursores da
- * primeira/última mensagem da página e `temMais` indica se há mais no sentido pedido.
- * 404 (null) fora do escopo. Cursor de thread com `em: null` (só existe na lista) é inválido: null, nunca
- * a página mais recente em silêncio (o cliente duplicaria mensagens).
- */
 export async function listarMensagensPagina(
   u: UsuarioSessao, atendimentoId: string, o: { antes?: string; depois?: string; limite?: number } = {},
 ): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[] | null; antes: string | null; depois: string | null; temMais: boolean } | null> {
@@ -134,8 +122,6 @@ export async function listarMensagensPagina(
     participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
     propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
-  // `antes` só acrescenta mensagens antigas: null informa ao cliente que as notas não mudaram.
-  // A rota já conferiu escopo do atendimento; notas do lead exigem escopo comercial separado (LC-L02).
   const verNotasLead = !cAntes && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId
     && await podeVerLeadNaThread(u, atendimento.id, atendimento.leadId, Date.now());
   const notas = cAntes ? null : [
@@ -144,9 +130,6 @@ export async function listarMensagensPagina(
   ].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm) || a.id.localeCompare(b.id));
   return {
     mensagens, notas,
-    // Sempre os dois cursores da página (null só se vazia): `antes` pede as anteriores à primeira mensagem e
-    // `depois` as posteriores à última, para o cliente buscar "mais novas" após `mensagem.nova` (C2).
-    // `temMais` diz se há mais no sentido pedido (desc: mais antigas; asc: mais novas).
     antes: primeira ? dataCursor(primeira) : null,
     depois: ultima ? dataCursor(ultima) : null,
     temMais,

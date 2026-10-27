@@ -1,8 +1,5 @@
 "use server";
 
-// Fronteira de server actions da tela /tarefas. Os módulos de domínio (tarefas, mensagens-agendadas,
-// notificacoes) exportam também funções internas que recebem o usuário como parâmetro; marcá-los com
-// "use server" as tornaria chamáveis pelo navegador. Aqui só entram as ações, que leem a sessão sozinhas.
 import type { Resultado } from "@/server/_shared/resultado";
 import { reagendarMensagem as reagendarMensagemDominio } from "./mensagens-agendadas";
 import { marcarNotificacaoLida as marcarNotificacaoLidaDominio } from "./notificacoes";

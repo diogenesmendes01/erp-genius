@@ -2,37 +2,17 @@ import { z } from "zod";
 import { CODIGOS_ISO } from "@/lib/paises-iso";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
-// Validação compartilhada frontend ↔ backend (ver docs/04 §3 e docs/13).
-// Política de rigor (doc 04): TELEFONE e E-MAIL bloqueiam; DOCUMENTO avisa mas salva
-// (marcado como "não validado"), porque há exceções legítimas e base a migrar.
-
-/** Telefone em formato internacional E.164 (ex.: +5511999998888). Bloqueia se inválido. */
 export const telefoneE164 = z
   .string()
   .regex(/^\+[1-9]\d{1,14}$/, "Telefone deve estar em formato internacional (E.164), ex.: +5511999998888");
 
 export const emailSchema = z.string().email("E-mail inválido");
 
-// ------------------------------------------------------------
-// Datas "date-only" (doc 13). <input type="date"> envia "YYYY-MM-DD".
-// z.coerce.date() interpretaria isso como MEIA-NOITE UTC; ao renderizar num fuso
-// negativo (ex.: America/Sao_Paulo -03), o dia exibido recuaria 1. Para o dia
-// digitado bater com o exibido, ancoramos a data no MEIO-DIA DA ESCOLA (ref. #247):
-// antes era o meio-dia do relógio do servidor, que em produção roda em UTC (09h em
-// Brasília). Os dados antigos continuam legíveis: `diaCivilGravado` recupera o dia
-// civil nas duas convenções.
-// ------------------------------------------------------------
 const SOMENTE_DATA = /^\d{4}-\d{2}-\d{2}$/;
-// <input type="datetime-local"> envia "YYYY-MM-DDTHH:mm" (sem fuso) — hora LOCAL.
 const DATA_HORA_LOCAL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
 
-/** Fuso da escola em vigor durante `comDatasDaEscola`; fora dele, nenhum. */
 let fusoDasDatasDigitadas: string | null = null;
 
-/**
- * Executa `analisar` com as datas digitadas (AAAA-MM-DD) convertidas para o meio-dia da escola em `fuso`. Só
- * aceita trabalho síncrono, como o parse do Zod: o fuso vale só durante esta chamada e não alcança outra requisição.
- */
 export function comDatasDaEscola<T>(fuso: string, analisar: () => T): T {
   const anterior = fusoDasDatasDigitadas;
   fusoDasDatasDigitadas = fuso;
@@ -45,17 +25,10 @@ export function comDatasDaEscola<T>(fuso: string, analisar: () => T): T {
   }
 }
 
-/** Valida `entrada` com `schema`, com as datas digitadas no meio-dia da escola (ver {@link comDatasDaEscola}). */
 export function analisarComDatasDaEscola<S extends z.ZodTypeAny>(schema: S, entrada: unknown, fuso: string): z.output<S> {
   return comDatasDaEscola(fuso, () => schema.parse(entrada));
 }
 
-/**
- * Converte uma string "YYYY-MM-DD" (date-only) em Date ancorada no meio-dia do fuso da escola
- * (`instanteDaGrade(data, "12:00", fuso)`). Sem fuso, recusa em vez de cair no relógio do servidor.
- * Um dia inexistente mantém a normalização de antes (31/02 → 03/03). Qualquer outro valor (Date,
- * datetime ISO etc.) passa inalterado para o coerce seguinte.
- */
 export function paraDataLocal(v: unknown, fuso: string | null = fusoDasDatasDigitadas): unknown {
   if (typeof v === "string" && SOMENTE_DATA.test(v)) {
     if (!fuso) throw new Error("Data digitada sem o fuso da escola: valide a entrada com analisarComDatasDaEscola.");
@@ -65,24 +38,11 @@ export function paraDataLocal(v: unknown, fuso: string | null = fusoDasDatasDigi
   return v;
 }
 
-/**
- * Campo de data opcional compartilhado por todos os schemas (turma, matrícula,
- * aluno, lead, financeiro, ajustes). Vazio/null/undefined → undefined; string
- * date-only → meio-dia da escola (ver {@link paraDataLocal} e {@link analisarComDatasDaEscola}).
- */
 export const dataOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
   z.coerce.date().optional(),
 );
 
-/**
- * Valor de data COM hora. O texto de um <input type="datetime-local"> ("YYYY-MM-DDTHH:mm", sem fuso) é RECUSADO aqui:
- * antes virava `new Date(ano, mes, …)`, no fuso do PROCESSO (UTC em produção), e a hora digitada em São Paulo
- * gravava 3 horas adiantada. A conversão é explícita, no fuso que a tela escreveu ao lado do campo, ANTES do schema
- * (`exigirInstanteDoCampoLocal`, src/server/_shared/campo-local.ts; lote 3 do fuso pessoal nas telas). Date-only
- * ("YYYY-MM-DD") cai no meio-dia da escola via {@link paraDataLocal}; instante ISO e Date passam inalterados.
- */
-/** Mensagem de data e hora digitadas sem fuso (texto do datetime-local que chegou ao schema sem ser convertido). */
 export const MSG_DATA_HORA_SEM_FUSO = "Data e hora digitadas sem fuso ou inválidas: confira o horário e informe o fuso.";
 
 export function paraDataHoraLocal(v: unknown): unknown {
@@ -92,15 +52,9 @@ export function paraDataHoraLocal(v: unknown): unknown {
   return paraDataLocal(v);
 }
 
-/**
- * Campo opcional de data COM hora: instante (ISO/Date, já convertido do datetime-local no fuso explícito); aceita
- * também date-only (ancorado no meio-dia da escola). Vazio → undefined. Texto de datetime-local sem fuso é recusado.
- */
 export const dataHoraOpcional = z.preprocess(
   (v, ctx) => {
     if (v === "" || v === null || v === undefined) return undefined;
-    // Texto de datetime-local sem fuso (inclusive malformado, como segundos ":60"): erro de validação legível na
-    // tela, não "erro inesperado" (menor 7 da review do #290). A conversão certa vem antes, com o fuso explícito.
     if (typeof v === "string" && DATA_HORA_LOCAL.test(v)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: MSG_DATA_HORA_SEM_FUSO });
       return z.NEVER;
@@ -110,32 +64,17 @@ export const dataHoraOpcional = z.preprocess(
   z.coerce.date().optional(),
 );
 
-/** Data OBRIGATÓRIA "date-only" (ex.: nascimento) — ancorada no meio-dia da escola. */
 export const dataObrigatoria = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
   z.coerce.date({ required_error: "Informe a data" }),
 );
 
-// ------------------------------------------------------------
-// Código de país ISO 3166 (nacionalidade, residência, país emissor). Ver
-// `lib/paises-iso.ts`. É DIFERENTE do `Pais` (mercado) — aceita qualquer país.
-// ------------------------------------------------------------
 export const codigoISO = z.string().refine((c) => CODIGOS_ISO.has(c), "Selecione um país válido");
 export const codigoISOOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
   codigoISO.optional(),
 );
 
-/**
- * Normaliza um telefone "cru" (qualquer máscara) para E.164, com o DDI embutido.
- * Regra (decisão do usuário): salvamos SEMPRE em E.164 (ex.: +50688887777); o DDI
- * não é coluna separada — fica embutido no próprio número. A máscara vive só na UI.
- *
- * `ddiPais` é o DDI do país do aluno (ex.: "+506"). Se o número cru já vier com o
- * código do país, não duplicamos; se vier só o número local, prefixamos o DDI.
- * Tamanhos variam por país (CR 8, BR 10-11, MX 10…), por isso não fixamos comprimento.
- * Retorna null quando não há dígito algum.
- */
 export function normalizarTelefoneE164(
   cru: string | null | undefined,
   ddiPais: string,
@@ -143,22 +82,15 @@ export function normalizarTelefoneE164(
   if (cru == null) return null;
   const digitos = String(cru).replace(/\D/g, "");
   if (!digitos) return null;
-  const ddi = ddiPais.replace(/\D/g, ""); // ex.: "506"
+  const ddi = ddiPais.replace(/\D/g, "");
   const completo = digitos.startsWith(ddi) ? digitos : ddi + digitos;
   return "+" + completo;
 }
 
-// ------------------------------------------------------------
-// Validadores de documento NOMEADOS (doc 04 §2).
-// Cada TipoDocumento.validador aponta para uma chave aqui.
-// Documento é "avisa, não bloqueia": o resultado vira a flag `documentoValido`,
-// nunca impede salvar. Validador desconhecido → trata como NÃO validado (false).
-// ------------------------------------------------------------
 type ValidadorDocumento = (valor: string) => boolean;
 
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
-/** CPF (Brasil) — dígito verificador módulo 11. */
 function validarCPF(valor: string): boolean {
   const cpf = soDigitos(valor);
   if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
@@ -171,28 +103,17 @@ function validarCPF(valor: string): boolean {
   return calc(9) === Number(cpf[9]) && calc(10) === Number(cpf[10]);
 }
 
-/**
- * Cédula (Costa Rica): física com 9 dígitos (X-XXXX-XXXX, primeiro dígito 1–9) ou
- * DIMEX de estrangeiro residente com 11–12 dígitos. Não há dígito verificador público:
- * a conferência é só de formato.
- */
 function validarCedulaCR(valor: string): boolean {
   const limpo = valor.replace(/[\s-]/g, "");
   return /^[1-9]\d{8}$/.test(limpo) || /^[1-9]\d{10,11}$/.test(limpo);
 }
 
-/** Entidades federativas do RENAPO (NE = nascido no exterior). */
 const ENTIDADES_CURP = new Set([
   "AS", "BC", "BS", "CC", "CL", "CM", "CS", "CH", "DF", "DG", "GT", "GR", "HG", "JC", "MC", "MN",
   "MS", "NT", "NL", "OC", "PL", "QT", "QR", "SP", "SL", "SR", "TC", "TS", "TL", "VZ", "YN", "ZS", "NE",
 ]);
 const ALFABETO_CURP = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
 
-/**
- * CURP (México), 18 posições: iniciais, data AAMMDD, sexo, entidade, consoantes internas,
- * homoclave (dígito para nascidos até 1999, letra a partir de 2000) e dígito verificador do
- * RENAPO: soma dos valores no alfabeto oficial com pesos 18…2, verificador = (10 − soma mod 10) mod 10.
- */
 function validarCURP(valor: string): boolean {
   const curp = valor.trim().toUpperCase();
   const m = /^[A-Z][AEIOUX][A-Z]{2}(\d{2})(\d{2})(\d{2})[HMX]([A-Z]{2})[B-DF-HJ-NP-TV-Z]{3}([A-Z\d])\d$/.exec(curp);
@@ -207,13 +128,11 @@ function validarCURP(valor: string): boolean {
   return (10 - (soma % 10)) % 10 === Number(curp[17]);
 }
 
-/** DNI (Argentina): 7 ou 8 dígitos (com ou sem pontos). Não há dígito verificador. */
 function validarDNIAR(valor: string): boolean {
   const limpo = valor.replace(/[\s.]/g, "");
   return /^[1-9]\d{6,7}$/.test(limpo);
 }
 
-/** DUI (El Salvador): 8 dígitos + verificador; soma com pesos 9…2, verificador = (10 − soma mod 10) mod 10. */
 function validarDUISV(valor: string): boolean {
   const limpo = valor.replace(/[\s-]/g, "");
   if (!/^\d{9}$/.test(limpo) || /^0{9}$/.test(limpo)) return false;
@@ -222,11 +141,6 @@ function validarDUISV(valor: string): boolean {
   return (10 - (soma % 10)) % 10 === Number(limpo[8]);
 }
 
-/**
- * Passaporte: só o formato genérico do número de documento ICAO 9303 (6–9 alfanuméricos,
- * com ao menos um dígito). Não há verificador universal nem regra por país emissor
- * (decisão da #62); o dígito da MRZ não é digitado no cadastro.
- */
 function validarPassaporte(valor: string): boolean {
   const limpo = valor.replace(/[\s-]/g, "").toUpperCase();
   return /^[A-Z0-9]{6,9}$/.test(limpo) && /\d/.test(limpo);
@@ -241,31 +155,16 @@ const VALIDADORES: Record<string, ValidadorDocumento> = {
   passaporte: validarPassaporte,
 };
 
-/** Só chaves próprias do catálogo canônico, sem reconhecer propriedades do protótipo. */
 export function temValidadorDocumento(validador: string): boolean {
   return Object.prototype.hasOwnProperty.call(VALIDADORES, validador);
 }
 
-/**
- * Valida um documento por validador nomeado. Retorna se está válido.
- * NUNCA lança/bloqueia — o chamador salva sempre, gravando esta flag em
- * `Aluno.documentoValido`.
- */
 export function validarDocumento(validador: string, valor: string): boolean {
   const fn = VALIDADORES[validador];
   if (!fn) return false;
   return fn(valor);
 }
 
-/**
- * Calcula a flag `Aluno.documentoValido` a partir do documento informado e dos
- * tipos de documento do país do aluno. Cada país pode ter 1+ {@link TipoDocumento};
- * o documento é considerado VÁLIDO se passar em QUALQUER um dos validadores do país
- * (ex.: Cédula OU Passaporte). Ausência de documento → false (não há o que validar).
- *
- * NUNCA bloqueia (doc 04): o resultado é só a flag persistida; o salvamento ocorre
- * de qualquer forma. Usado na criação (via matrícula) e na edição de aluno.
- */
 export function calcularDocumentoValido(
   tiposDocumento: { validador: string }[],
   documento: string | null | undefined,
@@ -275,8 +174,4 @@ export function calcularDocumentoValido(
   return tiposDocumento.some((t) => validarDocumento(t.validador, valor));
 }
 
-/**
- * Chave de idempotência de uma tentativa, gerada pela tela (`crypto.randomUUID()`) e reenviada igual até o
- * sucesso (#166). Mesmo limite das ações que já têm coluna própria (`contratos/modelo-schema.ts`).
- */
 export const ChaveIdempotenciaSchema = z.string().trim().min(8, "Chave de idempotência inválida.").max(100, "Chave de idempotência inválida.");

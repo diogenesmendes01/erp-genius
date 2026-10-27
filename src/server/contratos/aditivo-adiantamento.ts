@@ -5,16 +5,11 @@ import { validarValorAlteracaoAditivo } from "./aditivo-valores";
 
 export const CAMPOS_ADIANTAMENTO = ["ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO"] as const;
 
-/** Minutos vigentes: última aplicação de aditivo; sem ela, os da emissão inicial. Espelha minutos_adiantamento_vigentes_172. */
 export async function minutosAdiantamentoVigentesTx(tx: Prisma.TransactionClient, matriculaId: string, cobrancaId: string) {
   const [linha] = await tx.$queryRaw<Array<{ minutos: number | null }>>`SELECT minutos_adiantamento_vigentes_172(${matriculaId},${cobrancaId}) AS minutos`;
   return linha?.minutos ?? null;
 }
 
-/**
- * Q172: identifica o adiantamento pela emissão inicial e só o declara aplicável enquanto não
- * pago nem utilizado. Condição formalizada define o novo valor; condição ausente preserva o atual.
- */
 export async function consultarAlvoAdiantamentoTx(tx: Prisma.TransactionClient, matriculaId: string, condicoes: unknown) {
   const c = z.record(z.unknown()).parse(condicoes);
   const valor = c.ADIANTAMENTO_VALOR === undefined ? null : validarValorAlteracaoAditivo("ADIANTAMENTO_VALOR", c.ADIANTAMENTO_VALOR);
@@ -45,8 +40,6 @@ export async function consultarAlvoAdiantamentoTx(tx: Prisma.TransactionClient, 
   const minutosAtuais = await minutosAdiantamentoVigentesTx(tx, matriculaId, cobranca.id);
   const base = { proposto, cobranca: { id: cobranca.id, versao: cobranca.versao, moeda: cobranca.moeda, valorAtual: cobranca.valorNegociado.toFixed(2), vencimentoAtual: cobranca.vencimento, minutosAtuais } };
   const recusa = (pendencia: string) => ({ ...base, podePreparar: false, pendencia });
-  // Consumo e compra registrada vêm antes do pagamento: a compra só existe sobre cobrança paga, e a
-  // orientação mais específica diz à operação por que o aditivo não alcança o adiantamento.
   if (consumos) return recusa("As horas deste adiantamento já foram utilizadas em aulas. O aditivo não alcança adiantamento utilizado; trate a diferença em nova contratação de horas.");
   if (cobranca._count.comprasHoras) return recusa("As horas deste adiantamento já foram registradas como saldo de horas. O aditivo não alcança adiantamento utilizado; trate a diferença em nova contratação de horas.");
   if (!["PENDENTE", "ATRASADO"].includes(cobranca.status) || !new Prisma.Decimal(cobranca.valorRecebido ?? 0).isZero() || !cobranca.valorLiquidadoCredito.isZero() || cobranca.pagoEm || cobranca._count.destinacoesRecebimento || usosCredito)

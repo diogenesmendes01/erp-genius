@@ -11,8 +11,6 @@ async function conferirAtor(tx: Prisma.TransactionClient, autorId: string, decid
   await conferirAutor(tx, autorId, decidir);
 }
 
-/** Primitivas internas. O autor vem da sessão conferida pelo chamador; não há
- * envio/cancelamento externo nem efeito financeiro em nenhuma destas operações. */
 export async function prepararSubstituicaoContratualTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = PrepararSubstituicaoContratualSchema.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -42,7 +40,6 @@ export async function decidirSubstituicaoContratualTx(tx: Prisma.TransactionClie
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const proposta = await tx.propostaSubstituicaoContratual.findUnique({ where: { id: d.propostaId }, include: { decisao: true } });
   if (!proposta) throw new ErroRegra("Proposta de substituição não encontrada.");
-  // Mesma ordem dos triggers: calendário, matrícula, processo, usuário.
   await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${proposta.matriculaId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "ProcessoAssinaturaContratual" WHERE id = ${proposta.processoFonteId} FOR UPDATE`;
   await conferirAtor(tx, autorId, true);
@@ -61,7 +58,6 @@ export async function decidirSubstituicaoContratualTx(tx: Prisma.TransactionClie
     const esperado = json({ ...contexto, versao: proposta.versao, preparadaPorId: proposta.preparadaPorId, motivo: proposta.motivo, entrada: snapshot.entrada });
     if (hashSubstituicao(esperado as Prisma.JsonObject) !== proposta.entradaHash) throw new ErroRegra("As condições da proposta mudaram. Prepare e confira uma nova versão.");
   }
-  // A rejeição conserva o parecer mesmo se as condições deixaram de ser atuais.
   const decisao = await tx.decisaoSubstituicaoContratual.create({ data: { propostaId: proposta.id, decisorId: autorId, aprovada: d.aprovada, motivo: d.motivo, propostaHash: proposta.entradaHash } });
   await registrarEvento(tx, { tipo: "SubstituicaoContratualDecidida", agregadoTipo: "Matricula", agregadoId: proposta.matriculaId, autorId,
     payload: { propostaId: proposta.id, decisaoId: decisao.id, aprovada: d.aprovada, propostaHash: proposta.entradaHash, motivo: d.motivo } });

@@ -47,10 +47,8 @@ describe("detalhe da preparação de migração", () => {
 
   it("item 9 (docs/42 L2483): o JSON da origem e o da tentativa divergente ficam em <details> fechado; a linha mostra os identificadores", async () => {
     const html = renderToStaticMarkup(await Pagina({ params: Promise.resolve({ loteId: "lote-1" }) }));
-    // Nenhum <pre> fora de um <details>, e nenhum <details> aberto por padrão.
     const semDetalhes = html.replace(/<details[\s\S]*?<\/details>/g, "");
     expect(semDetalhes).not.toContain("<pre");
-    // Uma por linha (3) e uma por tentativa divergente (1); o AplicarVinculoMigracao já tinha a sua.
     expect((html.match(/<summary[^>]*>Fotografia de origem/g) ?? []).length).toBe(3);
     expect((html.match(/<summary[^>]*>Dados da tentativa divergente/g) ?? []).length).toBe(1);
     expect(html).not.toMatch(/<details[^>]*\sopen/);
@@ -68,7 +66,6 @@ describe("detalhe da preparação de migração", () => {
     expect(html).toContain('aria-label="Páginas de linhas do lote"');
     expect(html).toContain('href="/configuracao/migracao/lote-1">← Anterior');
     expect(html).toContain('href="/configuracao/migracao/lote-1?pagina=3">Próxima →');
-    // Sem parâmetro (ou com página inválida), a primeira.
     await Pagina({ params: Promise.resolve({ loteId: "lote-1" }), searchParams: Promise.resolve({ pagina: "abc" }) });
     expect(mocks.consultar).toHaveBeenLastCalledWith("lote-1", { pagina: 1 });
   });

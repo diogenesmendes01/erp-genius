@@ -11,10 +11,6 @@ const Entrada = z.object({
   reservasOcupando: z.number().int().nonnegative().nullable(),
 }).strict();
 
-/** Q103/Q107/Q109: somente nova reserva. Q110 exige fluxo próprio e não amplia esta janela.
- * Os dados devem ser reconsultados pelo servidor sob os locks da futura operação de reserva.
- * Esta função não confirma disponibilidade, não reserva e não libera cobrança/assinatura.
- */
 export function conferirNovaAdmissaoTurma(input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const hoje = dataCivilInstitucional(d.agora, d.fusoAdmissao);

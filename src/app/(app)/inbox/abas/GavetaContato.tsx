@@ -16,7 +16,6 @@ export type PropsGavetaContato = {
   atendimentoId: string; dados: DetalhesPainel | null; erro?: boolean; podeVerFicha?: boolean;
   aoFechar(): void; aoSalvo(): void; aoRecarregar?(): void;
 };
-/** Cada abertura/atendimento é uma sessão; a ficha lida não muda sob a intenção em edição. */
 export function GavetaContato(props: PropsGavetaContato) { return <EdicaoDoAtendimento key={props.atendimentoId} {...props} />; }
 const CONTROLE = "min-h-11 w-full rounded border border-gray-300 bg-surface px-3 py-2 text-sm disabled:text-disabled";
 function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false, aoFechar, aoSalvo, aoRecarregar }: PropsGavetaContato) {
@@ -53,7 +52,6 @@ function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false,
     if (resultado?.tipo === "ok" && vivo.current&&(!enviouCadastro||!cadastroInvalidadoRef.current)) { aoSalvo(); aoFechar(); }
   }
   function recarregarDetalhes(e: MouseEvent<HTMLButtonElement>) {
-    // O Retry sai do DOM ao começar a aquisição; Fechar permanece disponível.
     e.currentTarget.closest('[role="dialog"]')?.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.focus();
     aoRecarregar?.();
   }

@@ -47,10 +47,9 @@ it("aprova correção independente: relato, estado e apuração passam ao perío
   if (!p.ok || !p.dado) throw new Error(JSON.stringify(p));
   expect(await proporCorrecaoRelatoIndisponibilidadeOferta(entrada)).toEqual(p);
   expect(p.dado).toMatchObject({ versao: 1, anterior: { inicio: "2026-10-01", fim: "2026-10-10" }, novo: { inicio: "2026-10-03", fim: "2026-10-12" }, decisao: null });
-  // Proposta pendente não muda nada.
   expect(await estado("2026-10-01")).toMatchObject({ estado: "INDISPONIVEL" });
   expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ ...entrada, chaveIdempotencia: "correcao-concorrente" })).toMatchObject({ ok: false });
-  expect(await decidir(p.dado.id)).toMatchObject({ ok: false }); // secretaria não decide
+  expect(await decidir(p.dado.id)).toMatchObject({ ok: false });
 
   comoGestor();
   const d = await decidir(p.dado.id);
@@ -65,7 +64,6 @@ it("aprova correção independente: relato, estado e apuração passam ao perío
   expect(apuracao.diasConfirmados[0]).toBe("2026-10-03");
   expect(await prisma.cobranca.count()).toBe(0);
 
-  // Segunda versão parte do período já corrigido; o histórico mantém as duas.
   comoSecretaria();
   const p2 = await proporCorrecaoRelatoIndisponibilidadeOferta({ ...entrada, inicio: "2026-10-02", chaveIdempotencia: "correcao-segunda" });
   expect(p2).toMatchObject({ ok: true, dado: { versao: 2, anterior: { inicio: "2026-10-03", fim: "2026-10-12" } } });
@@ -92,7 +90,6 @@ it("o banco só aceita mudar o período do relato com correção aprovada corres
   await expect(prisma.registroIndisponibilidadeOfertaMatricula.update({ where: { id: registroId }, data: { inicio: new Date("2026-10-02") } })).rejects.toThrow();
   const p = await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-02", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-guard-01" });
   if (!p.ok || !p.dado) throw new Error(JSON.stringify(p));
-  // Pendente não respalda; aprovada só respalda exatamente o período proposto e nunca outros campos.
   await expect(prisma.registroIndisponibilidadeOfertaMatricula.update({ where: { id: registroId }, data: { inicio: new Date("2026-10-02") } })).rejects.toThrow();
   comoGestor();
   expect(await decidir(p.dado.id)).toMatchObject({ ok: true });
@@ -136,13 +133,10 @@ it("recusa retirar dias que já sustentam compensação aprovada, na ação e no
 
   expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-retira-compensado" }))
     .toMatchObject({ ok: false, erro: expect.stringContaining("compensação aprovada") });
-  // C3 da #265: a recusa nomeia o dia e aponta o caminho.
   expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-retira-compensado-2" }))
     .toMatchObject({ ok: false, erro: expect.stringMatching(/01\/10\/2026.*cobertura de 01\/10\/2026 a 31\/10\/2026.*não é desfeita por esta tela.*mantenha esse dia.*gestão financeira \(Compensações por falta de oferta da escola, em Pausa, retomada e encerramento do aluno\)/) });
-  // B1 da #268: nada de tela inexistente, de "tratar" a compensação aprovada nem de vínculo com o relato.
   expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-retira-compensado-3" }))
     .not.toMatchObject({ erro: expect.stringMatching(/Compensações da cobrança|trate|com este relato/) });
-  // Escrita direta da proposta não contorna: a decisão aprovada é recusada pelo banco.
   const direta = await prisma.propostaCorrecaoRelatoIndisponibilidadeOferta.create({ data: {
     registroId, versao: 1, inicioAnterior: new Date("2026-10-01"), fimAnterior: new Date("2026-10-10"), inicioNovo: new Date("2026-10-03"), fimNovo: new Date("2026-10-10"),
     ...textos, autorId: secretariaId, chaveIdempotencia: "correcao-sql-direta", entradaHash: "b".repeat(64),

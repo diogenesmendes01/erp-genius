@@ -2,10 +2,6 @@ import Link from "next/link";
 import { botaoClasses } from "@/components/Botao";
 import { SairPortal } from "../SairPortal";
 
-// Endereço legado (C4 da #170; docs/42, /portal #1). O guard da equipe manda para cá quem só tem o papel ALUNO,
-// e alunos com links antigos também chegam aqui. Antes, um redirect calado para /portal-aluno, que pede OUTRO
-// login, era percebido como "fiz login e ele me pediu login de novo". Agora a tela explica que a área do aluno
-// tem acesso próprio e leva à entrada dela. Nada é consultado aqui; o "Sair" encerra a sessão da equipe.
 export default function PortalLegado() {
   return (
     <section className="mx-auto flex min-h-screen max-w-md items-center px-5">

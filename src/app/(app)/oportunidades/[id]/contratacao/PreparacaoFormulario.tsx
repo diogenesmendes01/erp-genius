@@ -15,12 +15,9 @@ export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaP
   const [regime, setRegime] = useState("");
   const [taxa, setTaxa] = useState(""); const [servico, setServico] = useState("");
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition();
-  // Cadastro e turma escolhidos ficam no estado (docs/43 §6 item 3; docs/42 L2217): as listas mudam com a
-  // página de cadastros ou de turmas e o formulário não remonta; a opção escolhida continua na lista.
   const [aluno, setAluno] = useState<{ id: string; nome: string } | null>(null);
   const [turma, setTurma] = useState<{ id: string; nome: string } | null>(null);
   const nomeDoCandidato = (a: { primeiroNome: string; sobrenome: string | null }) => `${a.primeiroNome} ${a.sobrenome ?? ""}`.trim();
-  // Agenda conferida para outra versão da oferta não vale mais (o servidor recusaria): precisa conferir de novo.
   const agendaValida = agendaParticular && agendaParticular.versaoOferta === oferta.versaoEntrada ? agendaParticular : null;
   return <form className="space-y-4 rounded border p-4" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget);
     if (f.get("confirmacao") !== "on") { setErro("Confirme a identidade do cadastro selecionado."); return; }

@@ -5,9 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const m = vi.hoisted(() => ({ errors: {} as Record<string, { message: string }> }));
 vi.mock("next-auth/react", () => ({ signIn: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
-// Erros do react-hook-form só existem após um submit real, que o render estático não faz.
-// `register` devolve um `id` conflitante de propósito: prova que os overrides de a11y vêm
-// DEPOIS do spread e não são sobrescritos por ele.
 vi.mock("react-hook-form", () => ({
   useForm: () => ({
     register: (nome: string) => ({ name: nome, id: "id-do-register", onChange: () => {}, onBlur: () => {}, ref: () => {} }),
@@ -44,9 +41,7 @@ describe("LoginPage — acessibilidade", () => {
     const html = renderToStaticMarkup(createElement(LoginPage));
     expect(html).toMatch(/<input(?=[^>]*id="login-email")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="login-email-erro")[^>]*>/);
     expect(html).toMatch(/<p(?=[^>]*id="login-email-erro")(?=[^>]*aria-live="polite")[^>]*>E-mail inválido<\/p>/);
-    // Erro de campo não interrompe o leitor de tela (alert é reservado à falha de autenticação).
     expect(html).not.toContain('role="alert"');
-    // O outro campo segue válido.
     expect(html).not.toMatch(/<input(?=[^>]*id="login-senha")(?=[^>]*aria-invalid)[^>]*>/);
   });
 

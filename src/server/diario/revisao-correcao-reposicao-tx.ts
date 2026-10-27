@@ -2,8 +2,6 @@ import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { carregarImpactosCorrecaoReposicaoTx } from "@/server/avaliacoes/impactos-reposicao-tx";
 
-/** Chamador mantém calendário/reposição bloqueados e autorização conferida.
- * O token vincula a proposta às dependências e à fonte efetiva conferidas. */
 export async function revisarImpactosCorrecaoReposicaoTx(tx: Prisma.TransactionClient, correcao: {
   id: string; conclusaoId: string; entradaHash: string; conclusao: { reposicaoId: string };
 }) {

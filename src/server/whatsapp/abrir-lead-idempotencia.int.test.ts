@@ -1,14 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DriverWhatsApp, Papel } from "@prisma/client";
 
-// #166 (4º lote), Inbox:
-// - Abrir atendimento institucional: o atendimento é por upsert, mas cada abertura gravava outro
-//   AtendimentoInstitucionalAberto. Com chave, o reenvio devolve o mesmo atendimento sem Evento novo.
-// - Criar oportunidade pela conversa: o reenvio (inclusive simultâneo) devolve a mesma oportunidade, com o mesmo
-//   `criado`, em vez de "Esta conversa já tem lead.", e não grava outro ContatoVinculado.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

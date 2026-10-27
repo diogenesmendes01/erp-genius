@@ -6,7 +6,6 @@ const Fonte = z.object({ matriculaId: z.string(), alocacaoId: z.string(), regraI
   propostaHash: z.string(), decisaoId: z.string(), disponibilizacaoId: z.string(), reservaId: z.string(),
   itemReservaId: z.string(), habilidade: z.string(), statusMatricula: z.enum(["PAUSADA", "ENCERRADA"]) }).strict();
 
-/** Resolve exclusivamente uma autorização persistida para a pendência e data informadas. */
 export async function carregarAutorizacaoEspecialRecuperacaoTx(tx: Prisma.TransactionClient, itemReservaId: string, realizadaEm: Date) {
   const item = await tx.itemReservaTentativaRecuperacao.findUnique({ where: { id: itemReservaId }, include: {
     reserva: { include: { cancelamento: true, proposta: { include: { decisao: true, disponibilizacao: true, alocacao: true } } } },

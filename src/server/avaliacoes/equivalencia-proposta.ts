@@ -22,7 +22,6 @@ async function conferirAutor(tx: Prisma.TransactionClient, autorId: string) {
   await exigirUsuarioAcademicoAtual(tx, autorId, APROVADORES_ACADEMICOS);
 }
 
-/** Prévia reservada à gestão; não cria proposta, reserva ou transferência. */
 export async function revisarEquivalenciaTransferencia(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -41,8 +40,6 @@ export async function revisarEquivalenciaTransferencia(input: unknown) {
   });
 }
 
-/** Q153: somente a gestão prepara o aproveitamento. A Secretaria executará a
- * transferência depois da decisão independente; esta ação não a efetiva. */
 export async function proporEquivalenciaTransferencia(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

@@ -14,7 +14,6 @@ const privados = {
   "Referrer-Policy": "no-referrer",
 };
 
-/** A URL contém apenas a reposição. O acesso é revalidado também durante o stream. */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const site = request.headers.get("sec-fetch-site");
   if ((site && site !== "same-origin" && site !== "none") ||
@@ -40,7 +39,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     headers.set("Content-Disposition", "inline");
     return new Response(criarStreamAutorizado({ origem: video.body, revalidar, signal: request.signal }), { status: video.status, headers });
   } catch {
-    // Não distinguir IDs alheios, restrições, credenciais ou erros do provedor.
     return new Response("Reprodução indisponível para esta matrícula.", { status: 403, headers: privados });
   }
 }

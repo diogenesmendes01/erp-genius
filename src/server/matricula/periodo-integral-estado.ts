@@ -7,7 +7,6 @@ import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
 
 const Entrada = z.object({ matriculaId: z.string().min(1), cobrancaId: z.string().min(1), escolha: z.enum(["CREDITO", "COBERTURA_FUTURA"]) }).strict();
 
-/** Fonte transacional da proposta Q67. Não autoriza ajuste ou escolha em nome do aluno. */
 export async function carregarPeriodoIntegralTx(tx: Prisma.TransactionClient, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const c = await tx.cobranca.findFirst({ where: { id: d.cobrancaId, matriculaId: d.matriculaId }, include: {

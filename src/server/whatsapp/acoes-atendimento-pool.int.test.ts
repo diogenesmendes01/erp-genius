@@ -1,9 +1,6 @@
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// #207 (C4 da R1 e C2 da R2): as ações que tomam `FOR UPDATE` numa transação interativa conferem o escopo NELA.
-// Com o pool de UMA conexão, qualquer checagem que pedisse outra conexão ficaria esperando a da própria transação e
-// cairia no pool_timeout. Este arquivo cria o cliente com connection_limit=1 (antes de importar o prisma).
 const { authMock, motor } = vi.hoisted(() => {
   const url = new URL(process.env.DATABASE_URL!);
   url.searchParams.set("connection_limit", "1");
@@ -73,7 +70,6 @@ describe("ações do atendimento com pool de uma conexão", () => {
     expect(r.ok).toBe(true);
   });
 
-  // #166 (R1 do #291): os caminhos de repetição também leem na transação.
   it("transferir com chave e o reenvio da mesma tentativa", async () => {
     const { v1, a } = await cenario();
     como(v1);

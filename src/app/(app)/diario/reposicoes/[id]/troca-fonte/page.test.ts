@@ -50,7 +50,6 @@ it("identifica o aluno, a matrícula e a aula de origem da reposição (docs/42 
   expect(html).toContain(">Bruna Lima</a>");
   expect(html).toContain("Matrícula: M-000777 · Inglês · Regular");
   expect(html).toContain("Reposição por gravação da aula de 10/09/2026, 09:00 (America/Costa_Rica) · turma T-000042");
-  // Nenhum id interno vira texto: só aparece dentro de href.
   expect(html.replace(/href="[^"]*"/g, "")).not.toMatch(/interna|aluno-interno/);
 });
 

@@ -15,18 +15,11 @@ export interface DesempenhoUsuario {
   primeiraRespostaMediaMin: number | null;
   tarefasConcluidas: number;
   comissao: ValorPorMoeda[];
-  /**
-   * Realização da meta do vendedor (matrículas, ou valor ganho se só houver essa); null sem meta. Metas são
-   * mensais: com o período tocando mais de um mês, soma as metas e o realizado dos meses INTEIROS tocados (não
-   * recorta pelos dias do filtro). VALOR_GANHO compara com a soma de `valorPrevisto` das oportunidades que
-   * entraram em Matriculado (ver metas.ts).
-   */
   meta: { pct: number | null };
 }
 
 const arred = (n: number) => Math.round(n * 100) / 100;
 
-/** Competências (AAAA-MM, fuso da escola) tocadas pelo período. */
 function competenciasDoPeriodo(ini: Date, fim: Date, fuso: string): string[] {
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit" });
   const mes = (d: Date) => {
@@ -40,13 +33,6 @@ function competenciasDoPeriodo(ini: Date, fim: Date, fuso: string): string[] {
   return [...out].sort();
 }
 
-/**
- * Desempenho por vendedor/gerente ativo dentro do escopo (vendedor vê só a própria linha).
- * - oportunidades: criadas no período com o usuário como dono; ganhas: entraram em MATRICULADO no período
- *   (evento de etapa) com o usuário como dono; conversão = das criadas no período, as hoje MATRICULADO.
- * - comissão: `aprovadaEm` no período, status diferente de ESTORNADA (a comissão não tem CANCELADA), por moeda.
- * - primeira resposta: média dos atendimentos comerciais do período em que o usuário é o responsável.
- */
 export async function desempenhoEquipe(f: FiltrosRelatorio, e: EscopoRelatorio): Promise<DesempenhoUsuario[]> {
   const ini = instanteUtc(f.periodo.inicio);
   const fim = instanteUtc(f.periodo.fim);

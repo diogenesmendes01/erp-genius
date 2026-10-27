@@ -3,10 +3,6 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { EstadoRota } from "@/components/EstadoRota";
 
-// Boundary de erro do shell da equipe (ver docs/42-auditoria-frontend-ux.md, ganho rápido 1).
-// Qualquer throw de uma página dentro de (app) cai aqui — dentro da Sidebar, não na tela
-// genérica do Next. Não renderiza error.message nem digest: mensagem só teria valor de
-// depuração e pode vazar detalhe interno (ver achado N1 do relatório).
 export default function ErrorApp({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <EstadoRota

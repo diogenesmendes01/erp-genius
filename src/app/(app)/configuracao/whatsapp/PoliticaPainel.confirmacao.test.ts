@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DriverWhatsApp } from "@prisma/client";
 import type { NumeroConfig, PoliticaConfig, TemplateConfig } from "@/server/whatsapp/consultas";
 
-// Kill switch e ativação da régua de cobrança (docs/42 L2516/L2517): o kill switch pede confirmação nos
-// dois sentidos; o Salvar que passa a régua para ATIVA só abre a confirmação (remetente, janela, teto,
-// degraus armados e QUANTAS PESSOAS vão receber, estimado no servidor com a regra do cron — L2517, fatia B,
-// issue #169); salvar sem ativar continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   kill: vi.fn(), salvar: vi.fn(), estimar: vi.fn(), refresh: vi.fn(),
@@ -23,7 +19,6 @@ vi.mock("react", async (original) => {
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: m.kill, estimarAlcanceRegua: m.estimar, salvarPoliticaRegua: m.salvar }));
-// O aviso ao sair (C32 da #170) é conferido em avisos-ao-sair.test.ts; aqui os ganchos não têm useEffect.
 vi.mock("@/lib/aviso-ao-sair", () => ({ useAvisoAoSair: () => undefined }));
 
 import { PoliticaPainel } from "./PoliticaPainel";
@@ -64,7 +59,6 @@ beforeEach(() => {
   m.estimar.mockResolvedValue({ ok: true, dado: { pessoas: 37, cobrancas: 41, semDestino: 2, emLote: 5 } });
 });
 
-/** O texto do alcance na confirmação aberta (o componente TextoAlcance chamado com as props que a tela deu). */
 function textoDoAlcance(c: No): string {
   const filhos = (Array.isArray(c.props.children) ? c.props.children : [c.props.children]) as unknown[];
   const no = filhos.find((f: unknown) => !!f && typeof f === "object" && "props" in (f as object) && "alcance" in ((f as No).props)) as No;
@@ -78,9 +72,9 @@ describe("PoliticaPainel \u2014 kill switch", () => {
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe("Congelar toda a automação de cobrança?");
     expect(texto(c.props.children)).toContain("Nenhuma mensagem automática de cobrança sai");
-    expect(m.kill).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.kill).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.kill).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.kill).toHaveBeenCalledTimes(1);
     expect(m.kill).toHaveBeenCalledWith(true);
     (c.props.aoConcluir as () => void)();
     const t = tela();
@@ -97,9 +91,9 @@ describe("PoliticaPainel \u2014 kill switch", () => {
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Mensagens reais voltam a sair para os clientes");
     expect(consequencia).toContain("9h às 20h, seg, ter, qua, qui, sex");
-    expect(m.kill).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.kill).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.kill).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.kill).toHaveBeenCalledTimes(1);
     expect(m.kill).toHaveBeenCalledWith(false);
   });
 
@@ -119,18 +113,17 @@ describe("PoliticaPainel \u2014 ativar a régua", () => {
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe("Ativar a régua de cobrança e enviar mensagens reais?");
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
-    expect(consequencia).toContain("Remetente: Cobrança CR (Motor WhatsApp)"); // rótulo do driver (Fase 4, Tarefa 1)
+    expect(consequencia).toContain("Remetente: Cobrança CR (Motor WhatsApp)");
     expect(consequencia).toContain("Janela: 9h às 20h, seg, ter, qua, qui, sex");
     expect(consequencia).toContain("Teto: 2 mensagens automáticas por contato/dia");
     expect(consequencia).toContain("Automáticos (saem sozinhos): D-3 (cobranca_vencida)");
-    // Lote armado entra com o nome (R1 da #154, B7); o inativo (D0) e o manual (D+7) não.
     expect(consequencia).toContain("Em lote (saem quando alguém aprova o lote): D+3 (texto de fábrica)");
     expect(consequencia).not.toContain("D0");
-    expect(consequencia).not.toContain("D+7"); // manual não dispara sozinho
+    expect(consequencia).not.toContain("D+7");
     expect(consequencia).not.toContain("D+15");
-    expect(m.salvar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.salvar).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.salvar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.salvar).toHaveBeenCalledTimes(1);
     expect(m.salvar).toHaveBeenCalledTimes(1);
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ estado: "ATIVA", numeroRemetenteId: "n1" });
   });
@@ -155,7 +148,7 @@ describe("PoliticaPainel — alcance da ativação (docs/42 L2517)", () => {
     await clicar(tela(), "Salvar política");
     expect(m.estimar).toHaveBeenCalledTimes(1);
     expect(m.estimar.mock.calls[0][0]).toMatchObject({ estado: "ATIVA", numeroRemetenteId: "n1", tetoPorContatoDia: 2 });
-    expect(m.salvar).not.toHaveBeenCalled(); // estimar não salva nada
+    expect(m.salvar).not.toHaveBeenCalled();
     const [c] = doTipo(tela(), ConfirmarAcao);
     const alcance = textoDoAlcance(c);
     expect(alcance).toContain("37 pessoas vão receber mensagem automática de cobrança");

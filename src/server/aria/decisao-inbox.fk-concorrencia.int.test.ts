@@ -15,7 +15,6 @@ type Espera={pid:number;state:string;wait_event_type:string|null;wait_event:stri
 const snapshots:{rotulo:string;rows:Espera[]}[]=[],erros:{name:string;code:string|null;sqlState:string|null}[]=[];
 const barreira=deferred(),liberar=deferred();let ativada=false;
 const LOCKS_EXATOS=new Set(['SELECT id FROM "AtendimentoWhatsApp" WHERE id=$1 FOR UPDATE','SELECT id FROM "AtendimentoWhatsApp" WHERE id=$1 FOR NO KEY UPDATE']);
-// Observação somente: SQL e retorno são SEMPRE os de next(params). A barreira começa APÓS o lock real.
 prisma.$use(async(params,next)=>{
  try{
   const r=await next(params),a=params.args;
@@ -47,15 +46,12 @@ it("354: criarTarefa global com Lead+Atendimento e decisão Inbox concluem uma v
   await Promise.race([barreira.promise,new Promise((_,reject)=>setTimeout(()=>reject(Error("Barreira pós-lock não atingida")),2000))]);
   const pidWrapper=await esperar<number>(rows=>rows.find(r=>r.state==="idle in transaction"&&r.wait_event_type==="Client")?.pid,"wrapper após lock real");
   crm=criarTarefa({titulo:"Causal FK354",tipo:"OUTRO",leadId:lead.id,pessoaId:pessoa.id,atendimentoId:at.id}).finally(()=>{crmConcluiu=true;});
-  // Corrigido: FK compatível permite CRM concluir enquanto a decisão está na barreira.
-  // Antes: CRM bloqueia no Atendimento; liberamos só após OBSERVAR uma dessas condições reais.
   await esperar(rows=>crmConcluiu||rows.some(r=>r.wait_event_type==="Lock"&&r.blockers.includes(pidWrapper)),"CRM concluiu ou bloqueou no Atendimento");
   liberar.resolve();
   while(!crmConcluiu||!wrapperConcluiu){const rows=await snapshot();if(rows.some(w=>w.pid===pidWrapper&&w.wait_event_type==="Lock"&&rows.some(g=>g.pid!==pidWrapper&&g.blockers.includes(pidWrapper)&&w.blockers.includes(g.pid)))){snapshots.push({rotulo:"ciclo bilateral oportunístico",rows});break;}await new Promise<void>(r=>setImmediate(r));}
   const [rw,rc]=await Promise.all([wrapper,crm]);
   const persistido={tarefas:await prisma.tarefa.count({where:{titulo:"Causal FK354"}}),tarefaEventos:await prisma.evento.count({where:{tipo:"TarefaCriada",agregadoTipo:"Tarefa"}}),tags:await prisma.pessoaTag.count({where:{pessoaId:pessoa.id}}),aprovacaoEventos:await prisma.evento.count({where:{tipo:"AcaoAriaAprovada",agregadoId:acao.id}}),status:(await prisma.acaoAgenteIA.findUniqueOrThrow({where:{id:acao.id}})).status};
   console.info("354-fk-native",JSON.stringify({snapshots,erros,resultados:{wrapper:rw,crm:rc},persistido}));
-  // Antes do assert de sucesso, o perdedor deve ter rollback de TODOS os efeitos/eventos.
   expect(persistido.tarefas).toBe(rc.ok?1:0);expect(persistido.tarefaEventos).toBe(rc.ok?1:0);expect(persistido.tags).toBe(rw.ok?1:0);expect(persistido.aprovacaoEventos).toBe(rw.ok?1:0);
   expect(rw.ok&&rc.ok).toBe(true);
   expect(erros.some(e=>e.sqlState==="40P01"||e.code==="P2034")).toBe(false);

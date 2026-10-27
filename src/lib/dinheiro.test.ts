@@ -4,7 +4,7 @@ import { formatarMoeda, simboloMoeda, somarPorMoeda, formatarValores, consolidar
 describe("dinheiro — formatação por moeda", () => {
   it("usa símbolo e casas decimais corretos por moeda", () => {
     expect(formatarMoeda(3000, "USD")).toBe("US$ 3.000,00");
-    expect(formatarMoeda(2500000, "CRC")).toBe("₡ 2.500.000"); // colón circula sem centavos
+    expect(formatarMoeda(2500000, "CRC")).toBe("₡ 2.500.000");
     expect(formatarMoeda(1234.5, "BRL")).toBe("R$ 1.234,50");
   });
 
@@ -29,7 +29,7 @@ describe("dinheiro — formatação por moeda", () => {
     expect(formatarMoeda(undefined as unknown as string, "USD")).toBe("—");
     expect(formatarMoeda(null as unknown as string, "USD")).toBe("—");
     expect(formatarMoeda(Infinity, "USD")).toBe("—");
-    expect(formatarMoeda("0", "CRC")).toBe("₡ 0"); // zero de verdade continua zero
+    expect(formatarMoeda("0", "CRC")).toBe("₡ 0");
   });
 
   it("moeda sem centavos nunca esconde uma fração existente", () => {
@@ -56,7 +56,7 @@ describe("dinheiro — parseMoeda (entrada do operador, ganho rápido 13 da audi
   });
 
   it("C5 (issue #167): REJEITA ponto ambíguo — 1 a 3 dígitos antes do ponto tem o formato do começo de um milhar", () => {
-    expect(parseMoeda("1.23")).toBeNull(); // "1.230" com um dígito a menos, ou "123" com um ponto a mais
+    expect(parseMoeda("1.23")).toBeNull();
     expect(parseMoeda("1.2")).toBeNull();
     expect(parseMoeda("12.5")).toBeNull();
     expect(parseMoeda("100.50")).toBeNull();
@@ -126,11 +126,10 @@ describe("dinheiro — formatarMoedaParaCampo (normalização ao perder o foco)"
   });
 
   it("C6 (issue #167): moeda sem centavos com fração NUNCA é arredondada — sai com duas casas, como formatarMoeda", () => {
-    expect(formatarMoedaParaCampo(100.5, "CRC")).toBe("100,50"); // antes: "101"
+    expect(formatarMoedaParaCampo(100.5, "CRC")).toBe("100,50");
     expect(formatarMoedaParaCampo(100.5, "CLP")).toBe("100,50");
-    expect(formatarMoedaParaCampo(1234.5, "CLP")).toBe("1234,50"); // antes: "1235"
+    expect(formatarMoedaParaCampo(1234.5, "CLP")).toBe("1234,50");
     expect(formatarMoedaParaCampo(100.5, "BRL")).toBe("100,50");
-    // O que sai, parseMoeda entende de volta, sem perder a fração.
     expect(parseMoeda(formatarMoedaParaCampo(100.5, "CRC"))).toBe(100.5);
   });
 
@@ -162,7 +161,7 @@ describe("dinheiro — avisoSemCentavos (C6, issue #167)", () => {
   it("R1 da #173, B1: pré-preenchimento fracionado em CRC (saldo 1250,50) sai 1250,50 e recebe só o aviso neutro", () => {
     const prefill = formatarMoedaParaCampo(1250.5, "CRC");
     expect(prefill).toBe("1250,50");
-    expect(parseMoeda(prefill)).toBe(1250.5); // o valor exato do saldo é o que vai para o servidor
+    expect(parseMoeda(prefill)).toBe(1250.5);
     expect(avisoSemCentavos(prefill, "CRC")).toBe("CRC normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.");
   });
 
@@ -174,7 +173,7 @@ describe("dinheiro — avisoSemCentavos (C6, issue #167)", () => {
     expect(avisoSemCentavos("100,50", undefined)).toBeNull();
     expect(avisoSemCentavos("100,50", null)).toBeNull();
     expect(avisoSemCentavos("", "CRC")).toBeNull();
-    expect(avisoSemCentavos("1.234,56", "CRC")).toBeNull(); // inválido é erro de quem valida, não aviso de centavos
+    expect(avisoSemCentavos("1.234,56", "CRC")).toBeNull();
   });
 });
 
@@ -221,10 +220,10 @@ describe("dinheiro — casasDecimais", () => {
   it("0 para moedas sem centavos, 2 para as demais", () => {
     expect(casasDecimais("CRC")).toBe(0);
     expect(casasDecimais("CLP")).toBe(0);
-    expect(casasDecimais("crc")).toBe(0); // normaliza caixa, igual simboloMoeda
+    expect(casasDecimais("crc")).toBe(0);
     expect(casasDecimais("USD")).toBe(2);
     expect(casasDecimais("BRL")).toBe(2);
-    expect(casasDecimais("XYZ")).toBe(2); // desconhecida cai no padrão de 2 casas
+    expect(casasDecimais("XYZ")).toBe(2);
   });
 });
 
@@ -265,7 +264,6 @@ describe("dinheiro — agregação por moeda", () => {
 });
 
 describe("dinheiro — consolidação multi-moeda (pivô USD, reporting-only)", () => {
-  // 1 US$ = 512 CRC = 5.40 BRL
   const taxas = { CRC: 512, BRL: 5.4 };
   const valores = [
     { moeda: "CRC", valor: 2500000 },
@@ -274,21 +272,20 @@ describe("dinheiro — consolidação multi-moeda (pivô USD, reporting-only)", 
 
   it("consolida em USD (pivô): CRC→USD + USD", () => {
     const r = consolidar(valores, "USD", taxas);
-    expect(Math.round(r.valor)).toBe(7883); // 2.500.000/512 + 3000
+    expect(Math.round(r.valor)).toBe(7883);
     expect(r.faltando).toEqual([]);
   });
 
   it("consolida em outra moeda via pivô (USD→alvo)", () => {
-    // totalUsd = 2.500.000/512 + 3000 = 7882,8125
     const emCrc = consolidar(valores, "CRC", taxas);
-    expect(Math.round(emCrc.valor)).toBe(4036000); // 7882,8125 * 512
+    expect(Math.round(emCrc.valor)).toBe(4036000);
     const emBrl = consolidar(valores, "BRL", taxas);
-    expect(Math.round(emBrl.valor)).toBe(42567); // 7882,8125 * 5,40
+    expect(Math.round(emBrl.valor)).toBe(42567);
   });
 
   it("moeda sem taxa é ignorada e reportada em faltando (total honesto)", () => {
     const r = consolidar([{ moeda: "CRC", valor: 512 }, { moeda: "MXN", valor: 100 }], "USD", taxas);
-    expect(r.valor).toBe(1); // só o CRC entrou (512/512)
+    expect(r.valor).toBe(1);
     expect(r.faltando).toEqual(["MXN"]);
   });
 

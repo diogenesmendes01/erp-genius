@@ -11,12 +11,6 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 type Professor = { id: string; nome: string };
 const normal = (t: string) => t.trim().toLocaleLowerCase("pt-BR");
 
-/**
- * A lista que a tela mostra para o termo digitado. Sem `refinarBusca` o servidor mandou todos os professores
- * que contêm `buscaServidor`; um termo que contém o do servidor só estreita essa lista e é filtrado aqui, sem
- * ir ao servidor. Fora disso (lista cortada em 50, ou termo que não refina) vale a lista do servidor até o
- * "Buscar" trazer a nova.
- */
 export function professoresDaBusca(professores: Professor[], buscaServidor: string, refinarBusca: boolean, termo: string): { lista: Professor[]; local: boolean } {
   const local = !refinarBusca && normal(termo).includes(normal(buscaServidor));
   return { local, lista: local ? professores.filter(p => normal(p.nome).includes(normal(termo))) : professores };
@@ -24,30 +18,22 @@ export function professoresDaBusca(professores: Professor[], buscaServidor: stri
 
 export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEsperada, atualId, professores, busca = "", refinarBusca = false }: {
   alocacaoId: string; codigoAvaliacao: string; versaoEsperada: number; atualId: string | null; professores: Professor[];
-  /** Termo com que o servidor montou `professores` (vem da URL). */
   busca?: string;
-  /** O servidor cortou a lista em 50: refinar exige nova busca no servidor. */
   refinarBusca?: boolean;
 }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [professor, setProfessor] = useState(""), [motivo, setMotivo] = useState("");
-  // O professor escolhido continua na lista mesmo quando outra busca não o traz.
   const [escolhido, setEscolhido] = useState<Professor | null>(null);
-  // A busca é estado do formulário (docs/42 L1327): o motivo digitado sobrevive a qualquer busca.
   const [termo, setTermo] = useState(busca);
-  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar sem alterar (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   const { lista, local } = professoresDaBusca(professores, busca, refinarBusca, termo);
   const opcoes = lista.filter(p => p.id !== atualId);
   const manter = escolhido && escolhido.id === professor && !opcoes.some(p => p.id === escolhido.id) ? escolhido : null;
-  // Busca no servidor sem sair da tela: só a lista muda; o formulário não tem key e continua montado.
   const buscar = () => router.replace(`?busca=${encodeURIComponent(termo.trim())}`, { scroll: false });
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => {
     e.preventDefault(); if (!professor) return;
     const chaveIdempotencia = (chave.current ??= crypto.randomUUID());
     const d = await acao.executar(() => designarAvaliador({ alocacaoId, codigoAvaliacao, versaoEsperada, professorId: professor === "revogar" ? null : professor, motivo, chaveIdempotencia }), "Designação registrada.");
-    // Registrada: a próxima designação é outra tentativa (chave nova) e começa limpa (R1 da #155, C1); a tela
-    // recebe a versão nova sem remontar — a busca digitada fica.
     if (d?.tipo === "ok") { chave.current = null; setProfessor(""); setMotivo(""); setEscolhido(null); router.refresh(); }
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-3">

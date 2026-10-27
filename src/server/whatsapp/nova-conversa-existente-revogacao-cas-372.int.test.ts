@@ -6,7 +6,6 @@ vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { iniciarConversaPorNumero } from "./nova-conversa-acoes";
-// AUTORADO/NÃO EXECUTADO. Pausas apenas ao redor de chamadas reais; nenhuma consulta/helper substituído.
 let vendedor:Awaited<ReturnType<typeof criarUsuario>>,fora:Awaited<ReturnType<typeof criarUsuario>>,numeroId:string,seq=0;
 const tel=(n:number)=>`+5068555${String(n).padStart(4,"0")}`;
 const gate=()=>{let liberar!:()=>void;const promessa=new Promise<void>(r=>{liberar=r;});return{promessa,liberar};};

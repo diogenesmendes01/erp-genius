@@ -16,14 +16,8 @@ export type AcaoMotor =
   | "profile.picture"
   | "privacy.update";
 
-/** Ações que geram mensagem passam pelo ritmo do motor (podem esperar até esperaMaxMs): timeout de mídia. */
 const ACOES_QUE_GERAM_MENSAGEM = new Set<AcaoMotor>(["message.edit", "message.delete", "message.react", "message.forward"]);
 
-/**
- * Executa uma ação do Inbox no motor e devolve o `resultado` da resposta.
- * `origem: "HUMANO"` envia `X-Origem: HUMANO` (prioridade no ritmo do motor).
- * 409 limite_ritmo chega como ErroMotor("LIMITE_RITMO").
- */
 export async function executarAcaoMotor<T>(
   numeroRef: string,
   acao: AcaoMotor,

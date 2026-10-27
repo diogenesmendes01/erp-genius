@@ -9,10 +9,6 @@ import { consultarAlvoAdiantamentoTx } from "./aditivo-adiantamento";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
-// Q172 — mesmo protocolo do vencimento da primeira mensalidade (225/228): Financeiro prepara,
-// outro aprovador financeiro decide e aplica; o trigger do banco reconfere a fotografia e altera a cobrança.
-// Mesmo contrato do vencimento: recusa conhecida (regra, permissão, sessão, entrada) libera corrigir os dados;
-// falha desconhecida preserva a tentativa e a chave de idempotência na tela.
 async function executarMutacaoAdiantamento<T>(acao: () => Promise<T>) {
   let podeRevisar = false;
   const resultado = await executarAcao(async () => {
@@ -75,7 +71,6 @@ export async function proporAdiantamentoAditivo(input: unknown) {
       const [foto] = await tx.$queryRaw<Array<{ fotografia: Prisma.JsonValue }>>`
         SELECT fotografia_adiantamento_aditivo_172(${v.id},${c.id},${fuso},${valorNovo}::numeric(12,2),(${vencimentoNovo}::timestamptz AT TIME ZONE 'UTC'),${minutosNovos}::integer) AS fotografia`;
       if (!foto?.fotografia) throw new ErroRegra("Fotografia do acerto indisponível.");
-      // Fotografia e hash usam o mesmo JSONB no INSERT, sem nova conversão numérica pelo ORM.
       const [p] = await tx.$queryRaw<Array<{ id: string; fotografiaHash: string }>>`
         WITH foto AS (SELECT fotografia_adiantamento_aditivo_172(${v.id},${c.id},${fuso},${valorNovo}::numeric(12,2),(${vencimentoNovo}::timestamptz AT TIME ZONE 'UTC'),${minutosNovos}::integer) AS dados)
         INSERT INTO "PropostaAdiantamentoAditivo" (id,"matriculaId","propostaAditivoId","versaoCondicoesId","cobrancaId","preparadorId","versaoCobranca","valorAnterior","valorNovo","vencimentoAnterior","vencimentoNovo","minutosAnteriores","minutosNovos",fuso,fotografia,"fotografiaHash",motivo,evidencia,"chaveIdempotencia")
@@ -128,8 +123,6 @@ export async function aplicarAdiantamentoAditivo(input: unknown) {
       if (versao.vigenciaInicio > new Date()) throw new ErroRegra("Aguarde a vigência aprovada antes de aplicar o adiantamento.");
       const alvo = await consultarAlvoAdiantamentoTx(tx, p.matriculaId, versao.condicoes);
       if (!alvo.podePreparar) throw new ErroRegra(alvo.pendencia);
-      // A trigger reconfere a fotografia e altera a cobrança na mesma transação. A comissão não é
-      // recalculada (decisão de 21/09/2026, reconfirmada em 20/10/2026): nenhuma Comissao é tocada aqui.
       const aplicacao = await tx.aplicacaoAdiantamentoAditivo.create({ data: {
         decisaoId: p.decisao.id, executorId: autor.id, chaveIdempotencia: d.chaveIdempotencia, fotografiaHash: p.fotografiaHash,
         versaoCobrancaAntes: p.versaoCobranca, versaoCobrancaDepois: p.versaoCobranca + 1, valorAnterior: p.valorAnterior, valorNovo: p.valorNovo,
@@ -142,7 +135,6 @@ export async function aplicarAdiantamentoAditivo(input: unknown) {
   });
 }
 
-/** Histórico financeiro restrito à matrícula e à versão solicitadas. */
 export async function consultarAdiantamentosAditivo(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);

@@ -89,15 +89,6 @@ import {
 } from "@prisma/client";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 
-// Rótulos legíveis (pt-BR) dos enums do domínio. Fonte única para a UI.
-
-/**
- * Rótulo de um valor de enum pelo mapa do domínio (E5, docs/42-auditoria-frontend-ux.md). Valor sem
- * rótulo devolve o PRÓPRIO valor — nunca uma frase de negócio inventada (o antigo `?? "Em
- * conferência"` mostrava um estado que ninguém registrou). Em desenvolvimento, avisa no console.
- * Mapas tipados como Record<Enum, string> já fazem o build falhar quando falta um valor; este
- * helper cobre dados que chegam como texto (snapshots, JSON) e podem trazer um valor antigo.
- */
 export function rotular<K extends string>(mapa: Record<K, string>, valor: K | string | null | undefined): string {
   if (valor == null || valor === "") return "—";
   const rotulo = (mapa as Record<string, string>)[valor];
@@ -119,13 +110,11 @@ export const ETAPA_LABEL: Record<EtapaLead, string> = {
   PERDIDO: "Perdido",
 };
 
-/** Situação encerrada na frase de retorno do cliente, sem depender de DTO do servidor. */
 export const SITUACAO_CLIENTE_VOLTOU_LABEL: Readonly<Record<"ganha" | "perdida", string>> = Object.freeze({
   ganha: "Ganha",
   perdida: "Perdida",
 });
 
-/** Situação das outras oportunidades, separada da etapa da oportunidade atual. */
 export const SITUACAO_OUTRA_OPORTUNIDADE_LABEL: Readonly<Record<EtapaLead, string>> = Object.freeze({
   NOVO: "Novo · em aberto",
   EM_ATENDIMENTO: "Primeiro contato · em aberto",
@@ -138,7 +127,6 @@ export const SITUACAO_OUTRA_OPORTUNIDADE_LABEL: Readonly<Record<EtapaLead, strin
   NO_SHOW: "No-show · em aberto",
   PERDIDO: "Perdida",
 });
-// Rótulos legíveis dos papéis (ver docs/07; ALUNO = portal — Fase 3). Vieram de lib/roles.ts, que os reexporta.
 export const METRICA_META_LABEL: Readonly<Record<MetricaMeta, string>> = Object.freeze({
   MATRICULAS: "Matrículas",
   VALOR_GANHO: "Valor ganho",
@@ -156,7 +144,6 @@ export const PAPEL_LABEL: Readonly<Record<Papel, string>> = Object.freeze({
   ALUNO: "Aluno (portal)",
 });
 
-/** Etapa do lead por extenso, para mensagens (a gestão recebe no WhatsApp); o kanban usa a forma curta de ETAPA_LABEL. */
 export const ETAPA_EXTENSO_LABEL: Readonly<Record<EtapaLead, string>> = Object.freeze({
   NOVO: "Novo",
   EM_ATENDIMENTO: "Em atendimento",
@@ -280,14 +267,12 @@ export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
   BOLETO: "Boleto",
 };
 
-// Gênero (doc 09 §Identificação) — lista curta. NAO_INFORMADO = "Prefiro não informar".
 export const GENERO_LABEL: Record<Genero, string> = {
   MASCULINO: "Masculino",
   FEMININO: "Feminino",
   NAO_INFORMADO: "Prefiro não informar",
 };
 
-// Escolaridade (doc 09 §Acadêmico) — lista fechada, ordem crescente.
 export const ESCOLARIDADE_LABEL: Record<Escolaridade, string> = {
   FUNDAMENTAL_INCOMPLETO: "Ensino fundamental incompleto",
   FUNDAMENTAL_COMPLETO: "Ensino fundamental completo",
@@ -301,21 +286,12 @@ export const ESCOLARIDADE_LABEL: Record<Escolaridade, string> = {
   DOUTORADO: "Doutorado",
 };
 
-// Relato de indisponibilidade do material de reposição (Q57/Q58) — exibido ao ALUNO no portal.
-// ABERTO: aguarda a conferência da escola; CONFIRMADO: a escola confirmou a indisponibilidade
-// (server/portal-aluno/entregas-reposicao.ts); DESCARTADO: a gestão não confirmou o relato
-// (server/diario/reposicao-operacoes-relatos.ts), sem pausa de prazo.
 export const SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL: Record<SituacaoRelatoMaterialReposicao, string> = {
   ABERTO: "Aguardando conferência da escola",
   CONFIRMADO: "Confirmado pela escola",
   DESCARTADO: "Não confirmado pela escola",
 };
 
-/**
- * Status do encontro da agenda. Concorda com "encontro" (masculino) em todas as telas — o diário
- * dizia "Prevista/Ministrada/Cancelada" (aula) e o acadêmico "Previsto/…"; decisão do responsável
- * em 25/09/2026: masculino.
- */
 export const STATUS_ENCONTRO_LABEL: Readonly<Record<StatusEncontroAgenda, string>> = Object.freeze({
   RASCUNHO: "Rascunho",
   PREVISTO: "Previsto",
@@ -325,15 +301,6 @@ export const STATUS_ENCONTRO_LABEL: Readonly<Record<StatusEncontroAgenda, string
   IMPEDIDO_ESCOLA: "Impedido pela escola",
 });
 
-// ---------------------------------------------------------------------------------------------------
-// E5 (docs/42-auditoria-frontend-ux.md §5.7): mapas que viviam soltos nas telas, ou que faltavam e
-// deixavam o enum cru na tela ("Estado: PREVISTO", "COMPREENSAO ORAL", "PENDENTE_DECISAO"). Todos
-// tipados por Record<Enum, string> — falta de valor quebra o build — e congelados. Texto em sentence
-// case; quando a tela já usava um texto, ele foi mantido (src/app/enums-rotulos.test.ts trava).
-// ---------------------------------------------------------------------------------------------------
-
-/** Habilidade avaliada (server/avaliacoes/calculo.ts#HABILIDADES) — não é enum do schema, mas é o enum
- * de domínio mais repetido nas telas (13 cópias locais e 20 `replaceAll("_", " ")`). */
 export type Habilidade = (typeof HABILIDADES)[number];
 export const HABILIDADE_LABEL: Readonly<Record<Habilidade, string>> = Object.freeze({
   FALA: "Fala",
@@ -367,8 +334,6 @@ export const STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL: Readonly<Record<StatusReserva
   PENDENCIA_ESCOLA: "Pendência da escola",
 });
 
-/** Situação da nota original da segunda chamada (server/avaliacoes/segunda-chamada-docente.ts) — os
- * mesmos textos da nota de recuperação (server/avaliacoes/recuperacao-consulta.ts). */
 export type SituacaoNotaSegundaChamada = "OFICIALIZADA" | "REJEITADA" | "SUBMETIDA" | "RASCUNHO";
 export const SITUACAO_NOTA_SEGUNDA_CHAMADA_LABEL: Readonly<Record<SituacaoNotaSegundaChamada, string>> = Object.freeze({
   OFICIALIZADA: "Oficializada",
@@ -384,7 +349,6 @@ export const SITUACAO_PROPOSTA_QUANTIDADE_AULAS_LABEL: Readonly<Record<SituacaoP
   APLICADA: "Aplicada",
 });
 
-/** Alcance da nova quantidade de aulas sobre cada turma (server/agenda/modalidade-quantidade-preview.ts). */
 export const ALCANCE_IMPACTO_QUANTIDADE_AULAS_LABEL: Readonly<Record<AlcanceImpactoQuantidadeAulas, string>> = Object.freeze({
   FINALIZADA_PRESERVADA: "Turma concluída: meta preservada",
   REDUCAO_INICIADA_PRESERVADA: "Redução não alcança turma iniciada",
@@ -401,7 +365,6 @@ export const PARTICIPACAO_AULA_LABEL: Readonly<Record<ParticipacaoAula, string>>
   IMPEDIDO_POR_RESTRICAO: "Impedido por restrição",
 });
 
-// Portal do aluno e avisos (Secretaria).
 export const FINALIDADE_TOKEN_PORTAL_ALUNO_LABEL: Readonly<Record<FinalidadeTokenPortalAluno, string>> = Object.freeze({
   CONVITE: "Convite de acesso",
   RECUPERACAO: "Recuperação de senha",
@@ -443,9 +406,6 @@ export const MOTIVO_PENDENCIA_AVISO_AGENDA_LABEL: Readonly<Record<MotivoPendenci
   CONTATO_INDISPONIVEL: "Contato acadêmico indisponível",
 });
 
-// Matrícula e Secretaria.
-/** Reserva de vaga (turma) ou de horários (particular). As telas tinham quatro redações ("Reserva
- * ativa", "Vaga liberada", "Horários liberados"…); vale a curta, que serve aos dois casos. */
 export const STATUS_RESERVA_VAGA_LABEL: Readonly<Record<StatusReservaVaga, string>> = Object.freeze({
   ATIVA: "Ativa",
   MANTIDA_PENDENCIA: "Mantida por pendência",
@@ -460,7 +420,6 @@ export const STATUS_CORRECAO_CADASTRO_LABEL: Readonly<Record<StatusCorrecaoCadas
   REJEITADA: "Rejeitada",
 });
 
-/** Tipo do pagador da contratação (server/matricula/schema.ts — z.enum, não é enum do schema). */
 export type TipoPagador = "ALUNO" | "RESPONSAVEL" | "EMPRESA";
 export const TIPO_PAGADOR_LABEL: Readonly<Record<TipoPagador, string>> = Object.freeze({
   ALUNO: "Próprio aluno",
@@ -516,15 +475,12 @@ export const SITUACAO_APLICACAO_CADASTRO_MIGRACAO_LABEL: Readonly<Record<Situaca
   DIVERGENCIA_DESTINO: "Divergência no destino",
 });
 
-// Comercial e atendimento.
-/** Finalidade de um número de WhatsApp da escola. */
 export const FINALIDADE_NUMERO_LABEL: Readonly<Record<FinalidadeNumero, string>> = Object.freeze({
   COBRANCA: "Cobrança",
   VENDAS: "Vendas",
   AGENDA: "Agenda",
 });
 
-/** Setor de atendimento do WhatsApp (finalidade do atendimento). */
 export const SETOR_ATENDIMENTO_LABEL: Readonly<Record<FinalidadeAtendimentoWhatsApp, string>> = Object.freeze({
   COMERCIAL: "Comercial",
   FINANCEIRO: "Financeiro",
@@ -532,7 +488,6 @@ export const SETOR_ATENDIMENTO_LABEL: Readonly<Record<FinalidadeAtendimentoWhats
   PEDAGOGICO: "Pedagógico",
 });
 
-/** Status do atendimento do WhatsApp no Inbox. */
 export const STATUS_ATENDIMENTO_LABEL: Readonly<Record<StatusAtendimentoWhatsApp, string>> = Object.freeze({
   ABERTO_SEM_RESPONSAVEL: "Na fila",
   EM_ATENDIMENTO: "Em atendimento",
@@ -570,7 +525,6 @@ export const ACAO_AGENTE_IA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = 
   CLASSIFICAR_SETOR: "Classificar setor",
 });
 
-/** Frases de histórico da Atividade; preparar intenção não significa entrega externa. */
 export const ALTERACAO_ARIA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = Object.freeze({
   RESPONDER: "Preparou uma resposta",
   ENVIAR_DOCUMENTO: "Preparou o envio de documento",
@@ -658,15 +612,12 @@ export const TIPO_MENSAGEM_LABEL: Readonly<Record<TipoMensagem, string>> = Objec
   CHAMADA: "Chamada",
 });
 
-/** Driver de envio de um número de WhatsApp. Meta e Evolution ficam só como legado. */
 export const DRIVER_WHATSAPP_LABEL: Readonly<Record<DriverWhatsApp, string>> = Object.freeze({
   MOTOR: "Motor WhatsApp",
   META_CLOUD: "Meta cloud (legado)",
   BAILEYS: "Evolution (legado)",
 });
 
-/** Envio pela API do WhatsApp (intenção da régua). Era "na fila de envio"… em minúscula na fila de
- * cobrança e o código cru ("Estado: ADIADA.") na inbox. */
 export const STATUS_INTENCAO_LABEL: Readonly<Record<StatusIntencao, string>> = Object.freeze({
   PENDENTE: "Na fila de envio",
   ENVIANDO: "Enviando",
@@ -677,7 +628,6 @@ export const STATUS_INTENCAO_LABEL: Readonly<Record<StatusIntencao, string>> = O
   SIMULADA: "Simulada (ensaio)",
 });
 
-/** Status da mensagem agendada na tela de tarefas: o que o despachante realmente fez, sem prometer envio. */
 export const STATUS_MENSAGEM_AGENDADA_LABEL: Readonly<Record<StatusIntencao, string>> = Object.freeze({
   PENDENTE: "Agendada",
   ENVIANDO: "Enviando",
@@ -688,7 +638,6 @@ export const STATUS_MENSAGEM_AGENDADA_LABEL: Readonly<Record<StatusIntencao, str
   SIMULADA: "Simulada",
 });
 
-// Financeiro.
 export const TIPO_APROVACAO_LABEL: Readonly<Record<TipoAprovacao, string>> = Object.freeze({
   DESCONTO: "Desconto",
   BOLSA: "Bolsa",
@@ -716,20 +665,17 @@ export const TIPO_DESTINACAO_RECEBIMENTO_LABEL: Readonly<Record<TipoDestinacaoRe
   CREDITO_SEM_DESTINO: "Crédito sem destino",
 });
 
-/** Referência da cobertura de uma mensalidade (o que conta como "um mês"). */
 export const REFERENCIA_COBERTURA_MENSAL_LABEL: Readonly<Record<ReferenciaCoberturaMensal, string>> = Object.freeze({
   MES_CIVIL: "Mês civil",
   CICLO_MATRICULA: "Ciclo mensal da matrícula",
 });
 
-/** Forma de agenda da oferta registrada na preparação da matrícula. */
 export const FORMA_AGENDA_OFERTA_LABEL: Readonly<Record<FormaAgendaOferta, string>> = Object.freeze({
   TURMA: "Turma",
   PARTICULAR_GRADE_FIXA: "Particular com grade fixa",
   PARTICULAR_FLEXIVEL: "Particular com agenda flexível",
 });
 
-/** Parcela da cobrança de entrada da matrícula (prévia das condições, emissão e entrada particular). */
 export type TipoCobrancaEntrada = Extract<TipoCobranca, "MATRICULA" | "MENSALIDADE" | "HORA_PARTICULAR">;
 export const TIPO_COBRANCA_ENTRADA_LABEL: Readonly<Record<TipoCobrancaEntrada, string>> = Object.freeze({
   MATRICULA: "Taxa de matrícula",
@@ -743,14 +689,12 @@ export const STATUS_PAGAMENTO_INFORMADO_LABEL: Readonly<Record<StatusPagamentoIn
   REJEITADO: "Rejeitado",
 });
 
-/** Ambiente do serviço de assinatura do processo (o de teste não comprova assinatura em produção). */
 export type AmbienteAssinatura = "SANDBOX" | "PRODUCAO";
 export const AMBIENTE_ASSINATURA_LABEL: Readonly<Record<AmbienteAssinatura, string>> = Object.freeze({
   SANDBOX: "Teste",
   PRODUCAO: "Produção",
 });
 
-/** Ocorrência de aula particular informada pelo professor (server/matricula/ocorrencia-horas.ts). */
 export type TipoOcorrenciaHoras = "REALIZADA" | "FALTA_ALUNO" | "CANCELAMENTO_ALUNO" | "CANCELAMENTO_ESCOLA";
 export const TIPO_OCORRENCIA_HORAS_LABEL: Readonly<Record<TipoOcorrenciaHoras, string>> = Object.freeze({
   REALIZADA: "Aula realizada",
@@ -759,7 +703,6 @@ export const TIPO_OCORRENCIA_HORAS_LABEL: Readonly<Record<TipoOcorrenciaHoras, s
   CANCELAMENTO_ESCOLA: "Cancelamento da escola",
 });
 
-/** Desfecho financeiro da conferência dessa ocorrência (classificarOcorrenciaHoras). */
 export type DesfechoOcorrenciaHoras = "REALIZADA" | "FALTA_COBRAVEL" | "CANCELAMENTO_ESCOLA" | "CANCELAMENTO_NO_PRAZO" | "CANCELAMENTO_TARDIO";
 export const DESFECHO_OCORRENCIA_HORAS_LABEL: Readonly<Record<DesfechoOcorrenciaHoras, string>> = Object.freeze({
   REALIZADA: "Aula realizada",
@@ -769,10 +712,7 @@ export const DESFECHO_OCORRENCIA_HORAS_LABEL: Readonly<Record<DesfechoOcorrencia
   CANCELAMENTO_TARDIO: "Cancelamento do aluno fora do prazo",
 });
 
-/** Situação de uma proposta que outra pessoa decide e depois se aplica — a mesma redação para os
- * fluxos que compartilham PENDENTE/APROVADA/REJEITADA/APLICADA. */
 const PROPOSTA_DECIDIDA = { PENDENTE: "Aguardando decisão", APROVADA: "Aprovada", REJEITADA: "Rejeitada", APLICADA: "Aplicada" } as const;
-/** A mesma situação quando o servidor a calcula sem enum próprio (ex.: acerto de vencimento do aditivo). */
 export type EstadoPropostaDecidida = keyof typeof PROPOSTA_DECIDIDA;
 export const ESTADO_PROPOSTA_DECIDIDA_LABEL: Readonly<Record<EstadoPropostaDecidida, string>> = Object.freeze({ ...PROPOSTA_DECIDIDA });
 
@@ -790,7 +730,6 @@ export const STATUS_PROPOSTA_PRESENCA_HISTORICA_MIGRACAO_LABEL: Readonly<Record<
   PENDENCIA_CORRECAO: "Pendência de correção",
 });
 
-/** Conjunto de impactos do aditivo (taxa e cobertura têm enums distintos com os mesmos valores). */
 const CONJUNTO_IMPACTOS = { PENDENTE: "Aguardando decisão", APROVADO: "Aprovado", REJEITADO: "Rejeitado", COMPLETO: "Aplicado", OBSOLETO: "Substituído" } as const;
 export const STATUS_CONJUNTO_IMPACTOS_TAXA_ADITIVO_LABEL: Readonly<Record<StatusConjuntoImpactosTaxaAditivo, string>> = Object.freeze({ ...CONJUNTO_IMPACTOS });
 export const STATUS_CONJUNTO_IMPACTOS_COBERTURA_ADITIVO_LABEL: Readonly<Record<StatusConjuntoImpactosCoberturaAditivo, string>> = Object.freeze({ ...CONJUNTO_IMPACTOS });
@@ -804,7 +743,6 @@ export const CLASSIFICACAO_IMPACTO_COBERTURA_ADITIVO_LABEL: Readonly<Record<Clas
   PRESERVADA: "Preservada",
 });
 
-/** Tratamento da linha financeira migrada — os textos das opções do formulário de conciliação. */
 export const MODALIDADE_CONCILIACAO_FINANCEIRA_MIGRACAO_LABEL: Readonly<Record<ModalidadeConciliacaoFinanceiraMigracao, string>> = Object.freeze({
   PENDENCIA: "Registrar pendência",
   VINCULAR_RECEBIMENTO: "Vincular recebimento ERP existente",
@@ -824,14 +762,12 @@ export const ESTADO_RECONFERENCIA_DELTA_DESISTENCIA_LABEL: Readonly<Record<Estad
   APLICADA: "Aplicada",
 });
 
-/** Unidade da permuta, no singular (a tela imprime "quantidade · unidade"). */
 export const UNIDADE_PERMUTA_SERVICO_LABEL: Readonly<Record<UnidadePermutaServico, string>> = Object.freeze({
   HORA: "Hora",
   AULA: "Aula",
   UNIDADE: "Unidade",
 });
 
-// Fase 2 CRM (2.M3): tags, campos personalizados e filtros salvos.
 export const COR_TAG_LABEL: Readonly<Record<CorTag, string>> = Object.freeze({
   NEUTRA: "Neutra",
   MARCA: "Marca",
@@ -863,7 +799,6 @@ export const TELA_FILTRO_SALVO_LABEL: Readonly<Record<TelaFiltroSalvo, string>> 
   COMISSOES: "Comissões",
 });
 
-// Fase 2 CRM (2.M4): tarefas e notificações.
 export const TIPO_TAREFA_LABEL: Readonly<Record<TipoTarefa, string>> = Object.freeze({
   WHATSAPP: "WhatsApp",
   LIGACAO: "Ligação",
@@ -914,14 +849,12 @@ export const MOTIVO_HANDOFF_LABEL: Readonly<Record<MotivoHandoff, string>> = Obj
   TURNO_INTERROMPIDO: "Turno interrompido",
 });
 
-/** Estimativa de apresentação dos Insights; não altera o estado comercial manual. */
 export const SENTIMENTO_INSIGHT_LABEL: Readonly<Record<"POSITIVO" | "NEUTRO" | "NEGATIVO", string>> = Object.freeze({
   POSITIVO: "Positivo",
   NEUTRO: "Neutro",
   NEGATIVO: "Negativo",
 });
 
-/** Estado público da tentativa; não contém motivo técnico nem contexto histórico. */
 export const ESTADO_GERACAO_INSIGHT_LABEL:Readonly<Record<EstadoGeracaoInsightInbox,string>>=Object.freeze({
   PROCESSANDO:"Gerando análise",PRONTA:"Análise pronta",FALHOU:"Não foi possível gerar a análise",INCERTO:"Resultado inconclusivo",RECUSADA:"Análise não publicada",DESCARTADA:"Análise descartada",
 });

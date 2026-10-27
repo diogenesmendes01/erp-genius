@@ -8,7 +8,6 @@ import { EntradaNovaConversaSchema } from "./nova-conversa-entrada";
 import { criarRamoNovoConversaTx } from "./nova-conversa-novo";
 import { abrirRamoExistenteConversaTx } from "./nova-conversa-existente";
 
-/** Uma intenção, uma TX. Nenhum dado de autoridade ou identidade vem do preview. */
 export async function iniciarConversaPorNumero(input: unknown): Promise<Resultado<{ atendimentoId: string; criado: boolean }>> {
  return executarAcao(async () => {
   const autor = await exigirSessao();

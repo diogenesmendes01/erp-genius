@@ -11,14 +11,12 @@ export const GradeEncontrosSchema = z.object({
   fusoOrigem: FusoInstitucionalSchema, fusoEscola: FusoInstitucionalSchema, periodos: PeriodosCalendarioSchema,
 }).strict();
 
-/** Resolve horário local sem escolher silenciosamente um dos instantes de uma dobra DST. */
 export function instanteDaGrade(data: string, hora: string, fuso: string) {
   const candidatos = candidatosDaGrade(data, hora, fuso);
   if (candidatos.length !== 1) throw new Error(`Horário ${data} ${hora} em ${fuso} ${candidatos.length ? "ambíguo" : "inexistente"}; requer revisão da grade.`);
   return candidatos[0];
 }
 
-/** Instantes (em ordem) em que a hora civil `data hora` acontece no fuso: 0 (pulada pelo horário de verão), 1 ou 2 (dobra). */
 export function candidatosDaGrade(data: string, hora: string, fuso: string): Date[] {
   DataCivilSchema.parse(data); horario.parse(hora); FusoInstitucionalSchema.parse(fuso);
   const nominal = Date.parse(`${data}T${hora}:00Z`);
@@ -37,7 +35,6 @@ export function candidatosDaGrade(data: string, hora: string, fuso: string): Dat
     .sort((a, b) => a - b).map((instante) => new Date(instante));
 }
 
-/** Prévia de grade: não publica nem presume disponibilidade do professor. */
 export function gerarGradeEncontros(input: z.input<typeof GradeEncontrosSchema>) {
   const d = GradeEncontrosSchema.parse(input), inicio = Date.parse(`${d.dataInicial}T00:00:00Z`);
   const periodos = d.periodos.map((p) => ({ id: p.id, inicio: p.inicio, fim: p.fim }));

@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Encerrar país (docs/42 L2428; fatia B, issue #169): "Encerrar" é terminal — o botão só abre o
-// ConfirmarAcao, que repete produtos, preços e alunos e pede o nome do país digitado; só a confirmação
-// chama a action. Pausar/ativar/reativar têm volta na própria linha e continuam diretos.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   status: vi.fn(), produto: vi.fn(), refresh: vi.fn(),
@@ -69,7 +66,7 @@ describe("PaisesPainel — encerrar passa pela confirmação com o nome digitado
     expect(consequencia).toContain("12 preços cadastrados");
     expect(consequencia).toContain("37 alunos cadastrados");
     expect(consequencia).toContain("Encerrar não tem volta pela tela");
-    expect(m.status).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.status).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.status).toHaveBeenCalledTimes(1);
     expect(m.status).toHaveBeenCalledWith("cr", "ENCERRADO");
@@ -90,11 +87,10 @@ describe("PaisesPainel — encerrar passa pela confirmação com o nome digitado
   it("erro e falha de rede aparecem dentro do diálogo (com o nome já digitado), que continua aberto", async () => {
     clicar(tela(), "Encerrar");
     const [c] = confirmacoes(tela());
-    // O diálogo de verdade exige o nome: sem digitar, o clique não executa.
     const semNome = await confirmarNoDialogo(c, usar);
     expect(semNome.erro).toBeNull();
     expect(m.status).not.toHaveBeenCalled();
-    const comNome = { ...c, props: { ...c.props, digitacao: undefined } } as No; // a digitação é coberta em ConfirmarAcao.interacao.test.ts
+    const comNome = { ...c, props: { ...c.props, digitacao: undefined } } as No;
     m.status.mockResolvedValueOnce({ ok: false, erro: "País não encontrado." });
     expect(await confirmarNoDialogo(comNome, usar)).toEqual({ erro: "País não encontrado.", confirmarDisponivel: true });
     m.status.mockRejectedValueOnce(new TypeError("Failed to fetch"));

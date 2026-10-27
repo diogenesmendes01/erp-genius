@@ -2,10 +2,6 @@ import { z } from "zod";
 import { Segmento, TipoCobranca } from "@prisma/client";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 
-// Schemas compartilhados do Catálogo (form ↔ ação). Ver docs/06 e docs/11.
-
-// Criações pela tela (#166): a mesma chave até o sucesso; o reenvio devolve o registro já criado. Opcional:
-// sem ela, cria como antes. Fica fora de `ModalidadeSchema`, que também serve a `editarModalidade`.
 const comChave = { chaveIdempotencia: ChaveIdempotenciaSchema.optional() };
 
 export const IdiomaSchema = z.object({
@@ -47,7 +43,6 @@ export const ProdutoSchema = z.object({
 });
 export type ProdutoInput = z.input<typeof ProdutoSchema>;
 
-// Preço: a modalidade vem do produto e a moeda vem do país (derivadas no servidor).
 export const PrecoSchema = z.object({
   paisId: z.string().min(1, "Selecione o país"),
   produtoId: z.string().min(1, "Selecione o produto"),

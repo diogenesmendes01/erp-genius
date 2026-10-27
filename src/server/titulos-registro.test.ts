@@ -7,7 +7,6 @@ const m = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: m.aluno }, empresa: { findUnique: m.empresa } } }));
 vi.mock("@/server/_shared", () => ({ exigirSessao: m.sessao }));
-// Espelha o fail-closed real: professor vê as suas turmas; visão ampla vê tudo; resto, nada.
 vi.mock("@/server/alunos/consultas", () => ({
   escopoAlunos: (u: { papeis: string[] }) =>
     u.papeis.includes("SECRETARIA_ACADEMICA") || u.papeis.includes("ADMINISTRADOR") ? {}

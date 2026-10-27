@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import type { calcularPreviaMensalConferida } from "./encerramento-previa-calculo";
 import type { carregarHorasEncerramentoTx } from "./encerramento-horas-tx";
 
-/** Soma componentes sem utilizar créditos disponíveis nem executar ajustes. */
 export function consolidarPreviaEncerramento(mensal: ReturnType<typeof calcularPreviaMensalConferida>, horas: Awaited<ReturnType<typeof carregarHorasEncerramentoTx>>) {
   const pendencias = [...mensal.compensacaoFinanceira.pendencias, ...mensal.outrasCobrancasConferidas.pendencias, ...horas.pendencias];
   const componenteMensal = mensal.compensacaoFinanceira.consolidado;

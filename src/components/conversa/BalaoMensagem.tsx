@@ -16,7 +16,6 @@ import { MidiaMensagem, temMidia, VisualizadorMidia } from "./VisualizadorMidia"
 
 export type ComandoMensagem = "favoritar" | "encaminhar" | "copiar" | "editar" | "apagar" | "reagir" | "responder";
 
-/** Quem escreveu: o celular, a Aria, a pessoa da equipe, o sistema ou o participante (entrada em grupo). */
 export function autorDaMensagem(m: Pick<MensagemThread, "direcao" | "origem" | "autorNome" | "participanteNome">): string | null {
   if (m.direcao === "ENTRADA") return m.participanteNome;
   if (m.origem === "CELULAR" || m.origem === "IA") return ORIGEM_ENVIO_LABEL[m.origem];
@@ -40,11 +39,8 @@ interface ItemAcao { cmd: ComandoMensagem; rotulo: string; recurso?: RecursoMoto
 
 export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAberto = false, enquete, pix, autor: autorVisual, emSequencia = false, destacada = false, nota }: {
   m: MensagemThread; fuso: string | null; aoComando: (c: ComandoMensagem) => void; recursos: (r: RecursoMotor) => boolean;
-  /** Comandos que quem usa o balão trata; os demais não aparecem no menu. Sem a lista, o menu vem completo. */
   comandos?: readonly ComandoMensagem[];
-  /** Estado inicial do menu (testes de marcação). */
   menuAberto?: boolean;
-  /** Dados estruturados quando a thread os traz; sem eles, a mensagem aparece só como texto. */
   enquete?: EnqueteDados; pix?: PixDados;
   autor?: AutorBalao; emSequencia?: boolean; destacada?: boolean; nota?: NotaInternaThread;
 }) {
@@ -79,7 +75,6 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
   ];
   const itens = ehNota ? [] : comandos ? todos.filter((i) => comandos.includes(i.cmd)) : todos;
   const menuAtivo = menu && itens.length > 0;
-  // Texto, ordem e disponibilidade alteram a altura do menu, inclusive após atualização da thread.
   const medidasDoMenu = itens.map((i) => `${i.cmd}:${i.rotulo}:${!!i.recurso && !recursos(i.recurso)}`).join("|");
   useLayoutEffect(() => {
     if (!menuAtivo || !gatilhoRef.current || !painelRef.current) return;
@@ -93,7 +88,6 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
     setPos({ topo, esquerda });
   }, [menuAtivo, medidasDoMenu]);
   useEffect(() => {
-    // Hidden não recebe foco; preventScroll evita fechar o menu por rolagem ao focar.
     if (menuAtivo && pos) habilitados()[0]?.focus({ preventScroll: true });
   }, [menuAtivo, pos, habilitados]);
   useEffect(() => {

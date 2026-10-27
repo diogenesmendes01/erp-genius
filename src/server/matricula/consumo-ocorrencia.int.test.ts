@@ -48,8 +48,6 @@ async function prepararReserva(tipo: "FALTA_ALUNO" | "CANCELAMENTO_ALUNO" | "CAN
   const compra = await registrarCompraHorasAntecipadas({ alunoId, matriculaId, cobrancaId: cobranca.id, versaoCobranca: cobrancaAtual.versao, minutosComprados: 180, evidenciaCondicoes: "Compra quitada antes do encontro", chaveIdempotencia: `q92-compra-${chave}` });
   if (!compra.ok || !compra.dado) throw new Error(compra.ok ? "Compra ausente" : compra.erro);
   const professor = await criarUsuario(["PROFESSOR"]);
-  // Os três cenários são preparados antes deste horário comum. A espera
-  // seguinte simula a passagem real do encontro, sem alterar fonte ou relógio.
   const inicio = new Date(Date.now() + 20_000), fim = new Date(inicio.getTime() + 60_000);
   const encontro = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: professor.id, preparadorId: adminId, inicio, fim, fusoOrigem: "UTC", status: "PREVISTO", motivo: "Encontro reservado para ocorrência", chaveIdempotencia: `q92-encontro-${chave}`, entradaHash: "fixture" } });
   const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.dado.id, encontroId: encontro.id, motivo: "Reserva da compra quitada", chaveIdempotencia: `q92-reserva-${chave}` });
@@ -132,8 +130,6 @@ it("consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita
   const outra = await reservarOutraMatricula("vinculo-cruzado");
   await expect(prisma.consumoHorasCompradas.create({ data: { reservaId: outra.reservaId, conferenciaOcorrenciaId: conferenciaFalta.id, autorId: financeiroId, motivo: "Tentativa de usar conferência de outra matrícula" } })).rejects.toThrow(/reserva, compra e agenda compatíveis|conferência cobrável da reserva vigente/);
   expect(await prisma.consumoHorasCompradas.count({ where: { reservaId: outra.reservaId } })).toBe(0);
-  // Os encontros acontecem no relógio real (alguns segundos à frente): o período
-  // apurado é o mês civil desses encontros, não um mês fixo do calendário.
   const base = agendadas[0].encontro.inicio;
   const mes = (deslocamento: number) => new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + deslocamento, 1)).toISOString().slice(0, 10);
   const apuracao = await prisma.$transaction(tx => carregarApuracaoHorasTx(tx, { alunoId, matriculaId, periodo: { referencia: "q92-mes-dos-encontros", inicio: `${mes(0)}T00:00:00Z`, fimExclusivo: `${mes(1)}T00:00:00Z` }, vencimento: `${mes(1).slice(0, 8)}10`, escolha: "AGUARDAR" }));

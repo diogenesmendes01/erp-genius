@@ -9,7 +9,6 @@ import { contextoInsightAutorizado } from "./contexto-autorizado";
 import { planejarFinalizacaoInsight } from "./finalizacao-plano";
 import { resumoGeracaoInsight,travarAtendimentoInsight,travarGeracaoInsight,type BancoInsight } from "./persistencia";
 
-/** Porta técnica interna. Nenhuma action pública aceita envelope/custo fornecido pelo browser. */
 export async function finalizarInsight(input:{atendimentoId:string;geracaoId:string;envelope:EnvelopeInsight;recebidoEm:Date},db:BancoInsight=prisma) {
   const recebidoEm=z.date().parse(input.recebidoEm);
   return db.$transaction(async tx=>{
@@ -19,7 +18,6 @@ export async function finalizarInsight(input:{atendimentoId:string;geracaoId:str
     const autorizado=!!c,contextoConfere=!!c&&c.contextoHash===g.contextoHash;
     const plano=planejarFinalizacaoInsight(g.estado,input.envelope,g.precosSnapshotJson,autorizado,contextoConfere);
     const usoNovo=!g.chamadaIAId&&plano.registroUso;
-    // ACL negativa é resultado de publicação, não throw que apagaria uso já conhecido.
     const chamada=usoNovo?await tx.chamadaIA.create({data:{origem:"INSIGHT",...usoNovo,criadoEm:recebidoEm}}):null;
     if(!chamada&&!plano.proximoEstado)return {...resumoGeracaoInsight(g),autorizado,contextoConfere};
     const data:Prisma.GeracaoInsightInboxUpdateManyMutationInput={versao:{increment:1},

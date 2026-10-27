@@ -2,10 +2,6 @@ import { randomUUID } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CategoriaDocumento, Papel } from "@prisma/client";
 
-// #166 (4º lote): documentos da oportunidade são idempotentes por natureza. O mesmo upload (a URL é única por
-// envio) não vira um segundo documento nem um segundo Evento; arquivar o já arquivado não grava de novo.
-
-// Sessão: só `exigirSessao` é trocada (mesmo motivo de criar-lead-idempotencia.int.test.ts).
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

@@ -11,7 +11,6 @@ export type FormContato = {
 };
 export type AlteracoesContato = Omit<EditarContatoInbox, "pessoaIdEsperada">;
 
-/** A identidade da ficha fica fora do formulário e é enviada separadamente como precondição. */
 export function formDoContato(d: DetalhesPainel): FormContato | null {
   const p = d.pessoa;
   if (!p) return null;
@@ -21,7 +20,6 @@ const opcional = (v: string) => v.trim() || null;
 function normalizar(f: FormContato) {
   return { nome: f.nome.trim(), email: opcional(f.email)?.toLowerCase() ?? null, cidade: opcional(f.cidade), cargo: opcional(f.cargo), linkedin: opcional(f.linkedin), origemCanal: f.origemCanal || null };
 }
-/** Somente campos da leitura original; zero/false e o nome vazio não são omitidos. */
 export function diffContato(lido: FormContato, editado: FormContato): AlteracoesContato {
   const antes = normalizar(lido), depois = normalizar(editado);
   const pessoa = Object.fromEntries(Object.keys(antes).filter(k => antes[k as keyof typeof antes] !== depois[k as keyof typeof depois]).map(k => [k, depois[k as keyof typeof depois]]));

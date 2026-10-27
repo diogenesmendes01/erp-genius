@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// #172 (pendência declarada): o envio da entrega usava um <button> montado à mão. Passa a ser o <Botao> do
-// design system, com `type="submit"` declarado e o estado ocupado (aria-busy) enquanto envia.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

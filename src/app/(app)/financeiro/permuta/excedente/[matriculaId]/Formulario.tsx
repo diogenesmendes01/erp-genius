@@ -20,10 +20,8 @@ type Props =
 
 const ORIGEM_LABEL: Record<string, string> = { CAIXA: "Caixa", CREDITO: "Crédito", PERMUTA: "Serviço (permuta)" };
 const texto = (form: FormData, campo: string) => String(form.get(campo) ?? "").trim();
-/** O servidor recebe o valor com ponto decimal; o operador digita com vírgula (o ponto ambíguo é recusado pelo servidor). */
 const valor = (form: FormData, campo: string) => { const bruto = texto(form, campo), n = parseMoeda(bruto); return n === null ? bruto : n.toFixed(2); };
 
-/** Q171/Q167C. A chave de idempotência é mantida entre repetições da mesma tentativa; só a recusa conhecida libera corrigir os dados. */
 export function ExcedenteFormulario(props: Props) {
  const router = useRouter();
  const acao = useAcaoCliente({ idempotente: true });

@@ -5,7 +5,7 @@ const DADOS = {
   nome: "María",
   valor: 85000,
   moeda: "CRC",
-  vencimento: new Date(Date.UTC(2026, 6, 15)), // 2026-07-15
+  vencimento: new Date(Date.UTC(2026, 6, 15)),
 };
 
 describe("whatsapp/render — renderizarTemplate", () => {
@@ -14,9 +14,9 @@ describe("whatsapp/render — renderizarTemplate", () => {
     expect(r.corpo).not.toMatch(/\{(nome|valor|vencimento|link)\}/);
     expect(r.corpo).toContain("María");
     expect(r.variaveis).toHaveLength(3);
-    expect(r.variaveis[0]).toBe("María"); // ordem de aparição = posicionais {{1}}..{{n}} da Meta
-    expect(r.variaveis[1]).toContain("85"); // valor formatado na moeda
-    expect(r.corpo).toContain(r.variaveis[2]); // vencimento formatado presente no corpo
+    expect(r.variaveis[0]).toBe("María");
+    expect(r.variaveis[1]).toContain("85");
+    expect(r.corpo).toContain(r.variaveis[2]);
   });
 
   it("variável repetida entra duas vezes nas posicionais (fidelidade ao corpo)", () => {

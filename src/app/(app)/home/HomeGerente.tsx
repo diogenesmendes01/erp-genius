@@ -25,8 +25,6 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi titulo="Leads hoje" valor={String(kpis.leadsHoje)} />
         <Kpi titulo="Conversão" valor={`${kpis.conversao}%`} />
-        {/* O número grande conta matrículas ativadas no mês; a meta (Q9) mede outra coisa — leads que entraram
-            em Matriculado no funil, no mês da escola — e por isso fica num subtexto com o critério escrito. */}
         <Kpi
           titulo="Matrículas ativadas no mês"
           valor={String(kpis.matriculasMes)}
@@ -43,8 +41,6 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       )}
 
       {kpis.checkInsVencidos > 0 && (
-        // B9 (doc 32): experimental já ocorrida sem check-in do professor — sem ele a
-        // recuperação de no-show (C2) não dispara; o gerente cobra o registro.
         <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           <IconAlertTriangle className="h-4 w-4 shrink-0" />
           <span>

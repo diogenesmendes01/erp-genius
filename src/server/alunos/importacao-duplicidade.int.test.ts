@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { LOTE_CANDIDATOS_DUPLICIDADE, carregarCadastradosParaDuplicidade, chavesDeIdentidade, type IdentidadeAluno } from "./importacao-duplicidade";
 
-// #180 C2 contra o Postgres real: acento no primeiro nome, leitura sem teto e país nas chaves de nome.
-
 beforeEach(async () => { await truncarBanco(); });
 
 const pais = (codigoISO: string, nome: string) =>

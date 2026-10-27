@@ -31,7 +31,6 @@ export type ResumoFechamentoPortalAluno = {
   };
 };
 
-/** Projeção explícita: nunca serializar o snapshot de gestão para o portal. */
 function resumirFechamento(atual: Awaited<ReturnType<typeof coletarEstadoFechamentoTx>>): ResumoFechamentoPortalAluno {
   const notas = atual.snapshot.consolidado.resultado;
   const frequencia = atual.snapshot.frequencia;
@@ -56,11 +55,6 @@ type ParMatriculaNivel = {
 
 const instanteUtc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
 
-/**
- * A sessão já foi validada para chegar aqui, mas é conferida novamente depois
- * dos locks acadêmicos. Não bloquear Conta/Sessao antes deles: fluxos de
- * identidade não podem inverter essa ordem e criar um deadlock.
- */
 async function revalidarSessaoPortalAlunoTx(tx: Prisma.TransactionClient, sessao: {
   sessaoId: string;
   contaId: string;
@@ -110,20 +104,10 @@ function selecionarUltimosVinculos(
     .map(({ matriculaId, nivelId, alocacaoId, turmaId }) => ({ matriculaId, nivelId, alocacaoId, turmaId }));
 }
 
-/**
- * Projeção exclusiva da conta do aluno autenticado. Não aceita matrícula,
- * vínculo ou sessão do navegador: a cookie de portal determina todo o escopo.
- */
 export async function consultarFechamentosPortalAluno(): Promise<FechamentoPortalAluno[]> {
   const sessao = await exigirSessaoPortalAluno();
   return prisma.$transaction(async (tx) => {
-    // Adquirir antes da primeira leitura: em RepeatableRead, uma consulta feita
-    // antes de aguardar o lock poderia conservar snapshot anterior a uma
-    // correção que acabou de ser confirmada. Os demais coletores acadêmicos
-    // usam este mesmo lock; ReadCommitted mantém a revisão ancorada após ele.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
-    // Esta é a conferência de dono antes dos locks. A confirmação equivalente
-    // depois de cada lock impede reutilizar um vínculo trocado durante a leitura.
     const candidatas = await tx.alocacaoTurma.findMany({
       where: {
         alunoId: sessao.alunoId,

@@ -12,7 +12,6 @@ export type PeriodoComissao = "mes" | "mes_anterior" | "trimestre" | "ano";
 export type LinhaComissao = {
   id: string; nome: string; produto: string; vendedor: string; base: string; percentual: string | null;
   valor: string; moeda: string; status: StatusComissao; competencia: Date;
-  /** D11: data civil (AAAA-MM-DD) prevista para o pagamento; null quando já paga ou estornada. */
   previsaoPagamento: string | null;
 };
 
@@ -24,14 +23,12 @@ export type PainelComissoes = {
   matriculadasSemComissao: { oportunidadeId: string; nome: string }[];
   linhas: LinhaComissao[];
   possuiMais: boolean;
-  /** D11: dia do mês seguinte à competência usado na previsão (ConfigFinanceiro). */
   diaPrevisaoPagamento: number;
 };
 
 export const LINHAS_POR_PAGINA_COMISSOES = 50;
 const FUSO_PADRAO = "America/Sao_Paulo";
 
-/** Instante em que a data civil (AAAA-MM-DD) começa no fuso informado. */
 function inicioDoDia(dataCivil: string, fuso: string): Date {
   const alvo = Date.parse(`${dataCivil}T00:00:00Z`);
   let t = alvo;
@@ -44,7 +41,6 @@ function inicioDoDia(dataCivil: string, fuso: string): Date {
   return new Date(t);
 }
 
-/** Intervalo [de, ate) do período, em meses civis do fuso institucional. */
 export function intervaloDoPeriodo(periodo: PeriodoComissao, agora: Date, fuso: string): { de: Date; ate: Date } {
   const [ano, mes] = dataCivilInstitucional(agora, fuso).split("-").map(Number);
   const dia1 = (a: number, m: number) => { const d = new Date(Date.UTC(a, m - 1, 1)); return d.toISOString().slice(0, 10); };
@@ -60,17 +56,10 @@ const dinheiro = (v: Prisma.Decimal | null | undefined) => (v ?? new Prisma.Deci
 const porMoedaEStatus = (a: { moeda: string; status?: string }, b: { moeda: string; status?: string }) =>
   a.moeda.localeCompare(b.moeda) || (a.status ?? "").localeCompare(b.status ?? "");
 
-/**
- * Pendências de comissão: segue o filtro de vendedor do painel (dentro do escopo, em AND), mas não o
- * período, porque uma matrícula sem comissão continua pendente até ser resolvida; a tela avisa isso.
- */
 async function matriculadasSemComissao(usuario: UsuarioSessao, vendedorId?: string) {
   const todos = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO);
   if (!todos && !usuario.papeis.includes(Papel.GERENTE_COMERCIAL)) return [];
-  // Escopo comercial padrão (coberturas vigentes + equipe de gerenteComercialId); FINANCEIRO vê tudo, mas
-  // escopoComercialAtual o trataria como sem acesso, por isso o {} explícito.
   const donos: Prisma.OportunidadeWhereInput = todos ? {} : await escopoComercialAtual(usuario);
-  // Matrícula cancelada ou encerrada não gera comissão a cobrar: não entra como pendência.
   const vigente: Prisma.MatriculaWhereInput = { status: { notIn: ["CANCELADA", "ENCERRADA"] }, comissoes: { none: {} } };
   const ops = await prisma.oportunidade.findMany({
     where: { AND: [donos, { etapa: "MATRICULADO", matricula: { is: vigente } }, ...(vendedorId ? [{ vendedorDonoId: vendedorId }] : [])] },
@@ -85,11 +74,9 @@ export async function carregarPainelComissoes(
 ): Promise<PainelComissoes> {
   const config = await prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
   const fuso = config?.fusoInstitucional ?? FUSO_PADRAO;
-  // D11: a previsão é calculada na leitura (ver previsao-comissao.ts), com o dia configurado no financeiro.
   const configFinanceiro = await prisma.configFinanceiro.findUnique({ where: { id: "financeiro" }, select: { diaPrevisaoPagamentoComissao: true } });
   const diaPrevisao = configFinanceiro?.diaPrevisaoPagamentoComissao ?? DIA_PREVISAO_COMISSAO_PADRAO;
   const { de, ate } = intervaloDoPeriodo(f.periodo, new Date(), fuso);
-  // Q7: base TAXA_MATRICULA e competência na aprovação; com base mensalidade/ganho, mudar a fonte de LinhaComissao.base.
   const where: Prisma.ComissaoWhereInput = { AND: [
     escopoComissoes(usuario),
     { OR: [{ aprovadaEm: { gte: de, lt: ate } }, { aprovadaEm: null, criadoEm: { gte: de, lt: ate } }] },

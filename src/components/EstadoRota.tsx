@@ -3,17 +3,12 @@ import type { IconProps } from "@tabler/icons-react";
 import { Aviso } from "./Aviso";
 import { botaoClasses } from "./Botao";
 
-// Peça compartilhada para error.tsx / not-found.tsx (ver docs/42-auditoria-frontend-ux.md,
-// ganho rápido 1). Sem "use client": quem precisa de client boundary (error.tsx) importa
-// daqui normalmente — o boundary fica só no arquivo da rota.
 type Props = {
   icone: React.ComponentType<IconProps>;
   titulo: string;
   texto: string;
   acao: { href?: string; onClick?: () => void; rotulo: string };
-  /** 2 quando o layout do segmento já tem o h1 da área (ex.: /configuracao): o erro não abre um segundo h1. */
   nivel?: 1 | 2;
-  /** "erro": o texto sai dentro de um <Aviso> de erro (error.tsx de área). */
   aviso?: "erro";
 };
 

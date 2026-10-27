@@ -33,14 +33,12 @@ function converterHorario<T extends z.infer<typeof horarioLocal>>(entrada: T) {
   };
 }
 
-/** Converte horários declarados no formulário antes da prévia sem depender do fuso do navegador. */
 export async function consultarPreviaAgendaInicialSegundaChamadaLocal(input: z.input<typeof previaSchema>) {
   const r = await executarAcao(async () => converterHorario(previaSchema.parse(input)));
   if (!r.ok) return r;
   return consultarPreviaAgendaInicialSegundaChamada(r.dado!);
 }
 
-/** A proposta recebe exatamente os instantes revisados na prévia. */
 export async function proporAgendaInicialSegundaChamadaLocal(input: z.input<typeof propostaSchema>) {
   const r = await executarAcao(async () => converterHorario(propostaSchema.parse(input)));
   if (!r.ok) return r;

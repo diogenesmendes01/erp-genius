@@ -23,7 +23,6 @@ const JANELA_EDICAO_MS = 15 * 60_000;
 const EditarSchema = z.object({ mensagemId: z.string().min(1), texto: z.string().trim().min(1, "Escreva o texto.").max(4096, "O texto pode ter no máximo 4096 caracteres.") });
 const ApagarSchema = z.object({ mensagemId: z.string().min(1) });
 
-/** Carrega a mensagem própria, de saída pelo motor, dentro do escopo de envio; qualquer falha é ErroRegra sem tocar o motor. */
 async function mensagemPropria(mensagemId: string, verbo: "editar" | "apagar") {
   const u = await exigirSessao();
   const m = await prisma.mensagemWhatsApp.findUnique({
@@ -38,7 +37,6 @@ async function mensagemPropria(mensagemId: string, verbo: "editar" | "apagar") {
   return { u, m, numeroRef: m.numero.providerRef ?? m.numero.id, mensagemIdMotor: m.mensagemIdMotor };
 }
 
-/** A mensagem própria, no escopo de envio, já foi apagada por este autor pelo ERP? (#166) */
 async function apagadaPeloAutor(mensagemId: string): Promise<boolean> {
   const u = await exigirSessao();
   const m = await prisma.mensagemWhatsApp.findUnique({ where: { id: mensagemId }, select: { atendimentoId: true, apagadaEm: true, autorId: true, direcao: true } });
@@ -55,14 +53,9 @@ async function eventoDeApagarDoAutor(db: Prisma.TransactionClient, atendimentoId
   return !!evento;
 }
 
-/** Respostas em que o motor afirma que NÃO executou: só elas autorizam dizer "tente de novo". */
 const MOTOR_NAO_EXECUTOU = new Set<CodigoErroMotor>(["SEM_CONFIG", "NAO_ENVIADO", "LIMITE_RITMO", "NAO_AUTORIZADO", "NUMERO_INEXISTENTE", "ACAO_NAO_DISPONIVEL"]);
 const MSG_ACAO_NAO_CONFIRMADA = "O WhatsApp não confirmou a ação, e ela pode já ter sido feita. Confira a conversa antes de repetir.";
 
-/**
- * Erro do motor para a tela. Só a recusa explícita (o motor não executou) diz "tente de novo"; timeout, rede,
- * `RESULTADO_INCERTO` e respostas não reconhecidas dizem que a ação pode já ter acontecido (B2 da R2 do #291).
- */
 function traduzir(e: unknown): never {
   if (e instanceof ErroMotor) {
     if (e.codigo === "LIMITE_RITMO") throw new ErroRegra(MENSAGEM_LIMITE_RITMO);
@@ -72,7 +65,6 @@ function traduzir(e: unknown): never {
   throw e;
 }
 
-/** A última edição desta mensagem é de `autorId` e deixou exatamente `texto`? (#166) */
 async function ultimaEdicaoIgual(db: Prisma.TransactionClient, mensagemId: string, atendimentoId: string, autorId: string, texto: string): Promise<boolean> {
   const ultima = await db.evento.findFirst({
     where: { tipo: "MensagemWhatsAppEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, payload: { path: ["mensagemId"], equals: mensagemId } },
@@ -81,9 +73,6 @@ async function ultimaEdicaoIgual(db: Prisma.TransactionClient, mensagemId: strin
   return ultima?.autorId === autorId && (ultima.payload as { depois?: unknown }).depois === texto;
 }
 
-// Tentativa de editar ou apagar (B3 da R2 do #291): a TX1 trava a mensagem e o verbo, reconhece o que já foi feito e
-// grava `MensagemWhatsAppAcaoIniciada` antes do motor; a TX2 grava o desfecho. Um pedido que encontra a tentativa
-// sem desfecho (o primeiro ainda no motor, ou caiu entre o motor e a TX2) é recusado sem chamar o motor.
 const TIPO_ACAO_INICIADA = "MensagemWhatsAppAcaoIniciada";
 const TIPO_ACAO_INCERTA = "MensagemWhatsAppAcaoIncerta";
 const TIPO_ACAO_NAO_EXECUTADA = "MensagemWhatsAppAcaoNaoExecutada";
@@ -101,8 +90,6 @@ async function abrirTentativaAcao(
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true },
   });
   if (ultima) {
-    // Edição e apagamento não duplicam nada para o contato: depois de um desfecho (feito, incerto ou recusado),
-    // um pedido novo pode chamar o motor de novo. Sem desfecho, não.
     const desfecho = await tx.evento.findFirst({
       where: { tipo: { in: [alvo.tipoFeito, TIPO_ACAO_INCERTA, TIPO_ACAO_NAO_EXECUTADA] }, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId,
         payload: { path: ["tentativaId"], equals: ultima.id } },
@@ -122,7 +109,6 @@ async function travarAcaoMensagem(tx: Prisma.TransactionClient, mensagemId: stri
   return tx.mensagemWhatsApp.findUniqueOrThrow({ where: { id: mensagemId }, select: { corpo: true, editadaEm: true, apagadaEm: true } });
 }
 
-/** Falha do motor depois da tentativa gravada: registra o desfecho e devolve a mensagem certa à tela. */
 async function fecharTentativaComFalha(alvo: { mensagemId: string; atendimentoId: string; autorId: string; tentativaId: string }, e: unknown): Promise<never> {
   const naoExecutou = e instanceof ErroMotor && MOTOR_NAO_EXECUTOU.has(e.codigo);
   await prisma.$transaction((tx) => registrarEvento(tx, {
@@ -132,12 +118,6 @@ async function fecharTentativaComFalha(alvo: { mensagemId: string; atendimentoId
   return traduzir(e instanceof ErroMotor ? e : new ErroMotor("RESULTADO_INCERTO", 0));
 }
 
-/**
- * Edita a própria mensagem de texto até 15 min depois do envio (message.edit no motor).
- * Idempotente por natureza (#166): se a última edição já deixou o mesmo texto, devolve ok sem chamar o motor nem
- * gravar outro Evento (antes das checagens de tipo e de janela, para o reenvio tardio também). Dois pedidos
- * simultâneos geram uma chamada ao motor: a tentativa é gravada antes dela, sob a trava da mensagem.
- */
 export async function editarMensagemWhatsApp(input: { mensagemId: string; texto: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = EditarSchema.parse(input);
@@ -168,12 +148,6 @@ export async function editarMensagemWhatsApp(input: { mensagemId: string; texto:
   });
 }
 
-/**
- * Apaga para todos a própria mensagem (message.delete no motor); o corpo fica guardado, só `apagadaEm` marca.
- * Idempotente por natureza (#166): se quem repete já a apagou pelo ERP, devolve ok sem chamar o motor nem gravar
- * outro Evento. Apagada fora do ERP (pelo celular), segue "já foi apagada". Dois pedidos simultâneos geram uma
- * chamada ao motor: a tentativa é gravada antes dela, sob a trava da mensagem.
- */
 export async function apagarMensagemWhatsApp(input: { mensagemId: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = ApagarSchema.parse(input);
@@ -207,7 +181,6 @@ export async function apagarMensagemWhatsApp(input: { mensagemId: string }): Pro
 const ReagirSchema = z.object({ mensagemId: z.string().min(1), emoji: z.string().max(32, "A reação pode ter no máximo 32 caracteres.") });
 const EncaminharSchema = z.object({ mensagemId: z.string().min(1), atendimentoDestinoId: z.string().min(1), chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
 
-/** Reação do atendente: `autorJid` provisório até o eco do motor (que reaproveita a linha `deMim`). `""` remove. */
 export async function reagirMensagemWhatsApp(input: { mensagemId: string; emoji: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = ReagirSchema.parse(input);
@@ -246,7 +219,6 @@ const MSG_ENCAMINHAMENTO_INCERTO = "O WhatsApp não confirmou o encaminhamento, 
 
 type Sessao = Awaited<ReturnType<typeof exigirSessao>>;
 
-/** Origem própria e visível, destino no escopo de envio, mesmo número e motor conectado; lê tudo em `db`. */
 async function conferirEncaminhamento(u: Sessao, dados: { mensagemId: string; atendimentoDestinoId: string }, db: Prisma.TransactionClient) {
   const m = await db.mensagemWhatsApp.findUnique({
     where: { id: dados.mensagemId },
@@ -271,7 +243,6 @@ function chamarMotorEncaminhar(c: Encaminhamento): Promise<RespostaEncaminhar> {
   return executarAcaoMotor(c.numeroRef, "message.forward", { messageId: c.m.mensagemIdMotor, chatId: c.chatId }, { origem: "HUMANO" });
 }
 
-/** Grava a mensagem no destino (o eco do celular pode ter chegado antes: o upsert não duplica) e o Evento. */
 async function gravarEncaminhada(tx: Prisma.TransactionClient, u: Sessao, c: Encaminhamento, resp: RespostaEncaminhar, tentativaId: string | null) {
   const { m, d, chatId } = c;
   const providerMessageId = resp?.key?.id ?? null;
@@ -296,10 +267,6 @@ async function gravarEncaminhada(tx: Prisma.TransactionClient, u: Sessao, c: Enc
   });
 }
 
-/**
- * Desfecho da última tentativa desta chave (#166): `null` libera nova tentativa (o motor afirmou que não executou);
- * "ok" é o encaminhamento já feito; os demais casos são recusados sem chamar o motor.
- */
 async function desfechoDaChave(tx: Prisma.TransactionClient, primeira: { agregadoId: string }, autorId: string, chave: string): Promise<"ok" | null> {
   const ultima = await tx.evento.findFirst({
     where: { tipo: TIPO_TENTATIVA_ENCAMINHAR, agregadoTipo: AGREGADO_ATENDIMENTO, agregadoId: primeira.agregadoId, autorId, payload: { path: ["chaveIdempotencia"], equals: chave } },
@@ -315,15 +282,6 @@ async function desfechoDaChave(tx: Prisma.TransactionClient, primeira: { agregad
   return null;
 }
 
-/**
- * Encaminha pelo motor (message.forward) para outra conversa do MESMO número e registra a mensagem como HUMANO.
- * Com `chaveIdempotencia` (#166), no padrão do envio de assinatura (#288): a TX1 confere tudo e grava a tentativa
- * (`MensagemWhatsAppEncaminhamentoIniciado`, com a marca) sob a trava da chave; o motor é chamado FORA de transação; a
- * TX2 grava o resultado. Falha de rede, timeout ou resposta ambígua do motor viram `...EncaminhamentoIncerto`; a
- * recusa explícita do motor (não executou), `...EncaminhamentoNaoEnviado`. O reenvio da mesma chave devolve ok se já
- * encaminhou, recusa com "em andamento" ou "incerto" sem chamar o motor, e só tenta de novo depois de "não enviado".
- * A busca roda antes das validações: o reenvio tardio, com a origem já apagada, também recebe ok.
- */
 export async function encaminharMensagemWhatsApp(input: { mensagemId: string; atendimentoDestinoId: string; chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const { chaveIdempotencia, ...dados } = EncaminharSchema.parse(input);
@@ -389,10 +347,6 @@ const ConteudoSchema = z.discriminatedUnion("tipo", [
 ]);
 const EnviarConteudoSchema = z.object({ atendimentoId: z.string().min(1), conteudo: ConteudoSchema, midiaUrl: z.string().min(1).optional() });
 
-/**
- * Enquete, figurinha, GIF, localização ou contato pela inbox. Vira intenção HUMANO e passa pelo despachante
- * (opt-out, kill switch, claim). Figurinha exige webp e GIF exige mp4, ambos subidos pelo próprio autor.
- */
 export async function enviarConteudoInbox(input: { atendimentoId: string; conteudo: ConteudoEspecial; midiaUrl?: string }): Promise<Resultado<EnvioInboxResultado>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -410,7 +364,6 @@ export async function enviarConteudoInbox(input: { atendimentoId: string; conteu
 const INTERVALO_DIGITANDO_MS = 10_000;
 const digitandoEm = new Map<string, number>();
 
-/** "Digitando…" no WhatsApp: no máximo uma vez a cada 10 s por usuário e atendimento. Tabela operacional, sem Evento. */
 export async function avisarDigitando(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -434,10 +387,6 @@ export async function avisarDigitando(atendimentoId: string): Promise<Resultado>
 
 const EnviarGrupoSchema = z.object({ conversaId: z.string().min(1), texto: z.string().trim().min(1, "Escreva o texto.").max(4096, "O texto pode ter no máximo 4096 caracteres.") });
 
-/**
- * Texto humano para um grupo do WhatsApp (E3.5), dentro do `escopoGrupos` da Fase 3. Grupo não tem atendimento nem
- * automação: cria a `MensagemWhatsApp` SAIDA `NA_FILA` (origem HUMANO, `clientMessageId` novo) e o despachante envia.
- */
 export async function enviarMensagemGrupo(input: { conversaId: string; texto: string }): Promise<Resultado<{ status: string }>> {
   return executarAcao(async () => {
     const dados = EnviarGrupoSchema.parse(input);
@@ -475,7 +424,6 @@ const BloquearSchema = z.object({
   desbloquear: z.boolean().optional(),
 });
 
-/** Bloqueia (ou desbloqueia) o contato no WhatsApp (contact.block). Só ADMINISTRADOR e gerentes; o motivo vai no Evento. */
 export async function bloquearContatoWhatsApp(input: { atendimentoId: string; motivo: string; desbloquear?: boolean }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -508,7 +456,6 @@ const CriarGrupoSchema = z.object({
 });
 const MSG_SEM_GRUPO = "Sem permissão para gerir grupos.";
 
-/** Cria um grupo no WhatsApp (group.create) e grava `GrupoWhatsApp`, opcionalmente ligado à turma. */
 export async function criarGrupoWhatsApp(input: { numeroId: string; nome: string; participantesE164: string[]; turmaId?: string }): Promise<Resultado<{ grupoId: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -519,7 +466,6 @@ export async function criarGrupoWhatsApp(input: { numeroId: string; nome: string
     if (numero.driver !== "MOTOR") throw new ErroRegra("Este canal não cria grupos.");
     exigirMotorConectado(numero);
     if (dados.turmaId && !(await prisma.turma.findUnique({ where: { id: dados.turmaId }, select: { id: true } }))) throw new ErroRegra("Turma não encontrada.");
-    // Mesmo critério do escopoGrupos (o de alterarParticipantesGrupo): o grupo criado tem de ficar no escopo de quem cria.
     if (!(await grupoNovoNoEscopo(u, { numeroId: numero.id, turmaId: dados.turmaId ?? null }))) throw new ErroRegra("Número ou turma fora do seu escopo.");
     let criado: { id?: string; subject?: string } | undefined;
     try {
@@ -528,7 +474,6 @@ export async function criarGrupoWhatsApp(input: { numeroId: string; nome: string
     if (!criado?.id) throw new ErroRegra("O motor não confirmou a criação do grupo.");
     const grupoJid = criado.id;
     const grupo = await prisma.$transaction(async (tx) => {
-      // O evento de grupo do motor pode ter criado a linha antes desta resposta: o upsert não duplica.
       const g = await tx.grupoWhatsApp.upsert({
         where: { numeroId_grupoJid: { numeroId: numero.id, grupoJid } },
         create: { numeroId: numero.id, grupoJid, nome: dados.nome, turmaId: dados.turmaId ?? null },
@@ -552,7 +497,6 @@ const AlterarParticipantesSchema = z.object({
   participantesE164: ParticipantesSchema,
 });
 
-/** Adiciona, remove, promove ou rebaixa participantes (group.participants), dentro do `escopoGrupos`. */
 export async function alterarParticipantesGrupo(input: { grupoId: string; acao: "adicionar" | "remover" | "promover" | "rebaixar"; participantesE164: string[] }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();

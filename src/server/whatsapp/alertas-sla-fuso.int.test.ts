@@ -26,7 +26,6 @@ async function criarAtendimento(prazoRespostaEm: Date) {
   } });
 }
 
-/** Envolve a transacao real, sem substituir o callback, SQL ou resultados do produtor. */
 async function noFuso<T>(fuso: string, executar: (conexoes: Conexao[], gravados: Gravado[]) => Promise<T>) {
   const original = prisma.$transaction.bind(prisma);
   const conexoes: Conexao[] = [];

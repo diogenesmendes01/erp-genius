@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L1761): a prévia conferida só é descartada quando muda um campo de que ela depende
-// (professor, início, término, fuso) — e, quando é, a tela diz por quê. Antes, digitar uma letra no motivo ou na
-// evidência apagava a prévia e o botão "Enviar proposta para decisão". Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   previa: vi.fn(), propor: vi.fn(), decidir: vi.fn(), refresh: vi.fn(),
@@ -66,7 +63,6 @@ describe("Formulario da agenda inicial — a prévia só cai pelo que ela usa", 
     mudou("fimLocal");
     await conferir();
     expect(anuncios(tela()).status).not.toContain(AVISO_PREVIA_DESCARTADA);
-    // A região polite fica sempre montada (MensagemStatus) e volta a ficar vazia.
     expect(elementos(tela()).find((n) => n.type === MensagemStatus)!.props.texto).toBeNull();
   });
 });

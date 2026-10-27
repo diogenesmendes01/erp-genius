@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ERRO_PAGAMENTO, pagarCobrancaSimulada } from "./requisicao";
 
-// docs/42 /pagar #5 (docs/43 §6 item 8): a recusa do webhook simulado vira uma mensagem estável (o texto cru do
-// servidor não chega ao cliente final); falha de transporte lança. `fetch` é um mock: nenhuma baixa real.
 const fetchFalso = vi.fn();
 const resposta = (status: number, corpo?: unknown) => ({
   status, ok: status >= 200 && status < 300,

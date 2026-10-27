@@ -2,8 +2,6 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
-// O teste concorrente exercita as transações reais. Resolve a identidade sem
-// imports dinâmicos simultâneos do NextAuth pelo runner; preserva papel/ativo.
 vi.mock("@/server/_shared", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/server/_shared")>();
   return { ...real, exigirSessaoComPapel: async (...papeis: import("@prisma/client").Papel[]) => {

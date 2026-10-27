@@ -16,8 +16,6 @@ async function criarConviteConsumido(destinatario: string) {
       expiraEm: new Date("2099-01-01T00:00:00.000Z"),
     },
   });
-  // Usa o mesmo relógio/precisão do criadoEm do banco, evitando que Date
-  // truncado em milissegundos anteceda a criação por microssegundos.
   await prisma.$executeRaw`UPDATE "TokenPortalAluno"
     SET "consumidoEm" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC' WHERE id = ${token.id}`;
 }

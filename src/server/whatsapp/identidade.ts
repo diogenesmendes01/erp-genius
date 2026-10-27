@@ -2,25 +2,17 @@ import type { Prisma } from "@prisma/client";
 export { INCLUDE_DESTINO, INCLUDE_MATRICULA_DESTINO, resolverDestinoCobranca, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 export type { CobrancaComDestino, DestinoFinanceiro as DestinoCobranca, MatriculaComDestino, OrigemDestinoFinanceiro, TipoPagadorDestino } from "./destinatario-financeiro";
 
-// IDENTIDADE (doc 26 §Camada 0): a costura telefone/wa_id → responsável/aluno/lead.
-// ContatoWhatsApp.telefoneE164 é a primeira unicidade de telefone do sistema (doc 29) —
-// FK sempre, nunca telefone copiado como string em intenção/mensagem.
-
-/** wa_id da Meta/Baileys = E.164 sem o "+" — normaliza para o formato canônico do banco. */
 export function telefoneDeWaId(waId: string): string {
   const digitos = waId.replace(/\D/g, "");
   return `+${digitos}`;
 }
 
-/** Garante o ContatoWhatsApp do telefone (upsert), preservando vínculos já existentes. */
 export async function garantirContato(
   tx: Prisma.TransactionClient,
   dados: {
     telefoneE164: string;
     waId?: string | null;
-    /** Nome dado pelo ERP (cadastro): só preenche vazio — e nunca depois de a equipe editar o nome. */
     nomeExibicao?: string | null;
-    /** pushName de mensagem RECEBIDA do contato (nunca de fromMe): o mais recente vale. */
     nomePerfil?: string | null;
     alunoId?: string | null;
     responsavelId?: string | null;

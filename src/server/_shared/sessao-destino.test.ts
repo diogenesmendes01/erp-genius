@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// docs/42 /login #2 e docs/43 §6 item 8: sem sessão, o guard da página manda para o login levando o caminho
-// pedido em `callbackUrl` — só quando ele é interno. Banco e NextAuth são mocks (nenhuma consulta real).
 const m = vi.hoisted(() => ({ auth: vi.fn(), usuario: vi.fn(), cabecalhos: new Map<string, string>(), headersFalha: false, headersSinal: null as Error | null }));
 vi.mock("@/lib/auth", () => ({ auth: m.auth }));
 vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUnique: m.usuario } } }));
@@ -20,7 +18,6 @@ vi.mock("next/headers", () => ({
 import { CABECALHO_CAMINHO } from "@/lib/destino-interno";
 import { exigirSessaoPagina } from "./sessao";
 
-/** A URL do redirect que o guard pediu. */
 async function redirecionaPara(): Promise<string> {
   try {
     await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);

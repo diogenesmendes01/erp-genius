@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados no lançamento e na
-// conferência das notas — erro em role="alert", sucesso em role="status", falha de rede como resultado
-// incerto e o formulário saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   salvar: vi.fn(), oficializar: vi.fn(), refresh: vi.fn(),
@@ -29,7 +26,6 @@ import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto, t
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** "Registrando…" no botão e o fieldset travado: os dois sinais do ocupado destes formulários. */
 const ocupadoEm = (t: ReactNode) => {
   const botao = elementos(t).find((n) => n.type === "button");
   const fieldset = elementos(t).find((n) => n.type === "fieldset");
@@ -97,8 +93,6 @@ describe("ConferirNotas", () => {
   });
 });
 
-// docs/43 §6 item 3 (docs/42 L1314): o fuso de entrada é estado do formulário. Antes, "Aplicar fuso" era um
-// <form method="get"> que recarregava a página e remontava o LancarNotas (key com o fuso): as notas sumiam.
 describe("LancarNotas — fuso no próprio formulário (sem navegar)", () => {
   const props = {
     alocacaoId: "alocacao", codigoAvaliacao: "final", versaoEsperada: 1, habilidades: ["FALA" as const],
@@ -108,7 +102,6 @@ describe("LancarNotas — fuso no próprio formulário (sem navegar)", () => {
   const tela = () => m.ganchos!.renderizar(LancarNotas, props);
   const campo = (nome: string): No => elementos(tela()).find((n) => n.type === "input" && n.props.name === nome)!;
   const digitar = (nome: string, valor: string) => (campo(nome).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
-  // O fuso é o CampoFuso controlado (docs/43 §6 item 6): `valor` + `onChange(texto)`.
   const fuso = (): No => elementos(tela()).find((n) => n.type === CampoFuso)!;
   const trocarFuso = (valor: string) => (fuso().props.onChange as (v: string) => void)(valor);
 

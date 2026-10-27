@@ -11,11 +11,9 @@ import { CampoTexto } from "@/components/CampoTexto";
 export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    // A explicação do servidor é o resultado da reconferência (resolvida ou não): sai como status.
     const d = await acao.executar(() => reconferirPendenciaAvisoAgenda({ pendenciaId, motivo }), (dado) => dado?.explicacao ?? null);
     if (d?.tipo !== "ok") return;
     if (!d.dado) { acao.setErro("Não foi possível reconferir a pendência."); return; }

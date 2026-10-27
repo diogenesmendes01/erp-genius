@@ -7,9 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { definirIdiomaAtivo, definirPrecoAtivo } from "./acoes";
 
-// B4 (#175 C2): os alternadores de idioma e preço recebem o estado-alvo. Dois operadores com a mesma tela velha
-// não desfazem um ao outro: quem confirma o estado em que o registro já está não muda nada nem grava evento.
-
 beforeEach(async () => { await truncarBanco(); });
 
 const eventos = (agregadoId: string) => prisma.evento.findMany({ where: { agregadoId }, orderBy: { criadoEm: "asc" } });
@@ -71,7 +68,6 @@ describe("definirPrecoAtivo — estado-alvo explícito", () => {
     const { precoMensalidade } = await seedCatalogoMinimo();
     const adm = await criarUsuario([Papel.ADMINISTRADOR]);
     authMock.mockResolvedValue({ user: { id: adm.id } });
-    // A tela velha mostra o preço inativo, mas ele já está ativo: confirmar "reativar" é no-op.
     const irmao = await prisma.precoReferencia.create({
       data: { paisId: precoMensalidade.paisId, produtoId: precoMensalidade.produtoId, modalidadeId: precoMensalidade.modalidadeId, tipoCobranca: TipoCobranca.MENSALIDADE, valor: 1, moeda: precoMensalidade.moeda, ativo: false },
     });

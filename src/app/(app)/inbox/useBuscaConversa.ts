@@ -7,7 +7,6 @@ type EstadoBusca = { atendimentoId: string | null; aberta: boolean; termo: strin
 const vazia = (atendimentoId: string | null): EstadoBusca => ({atendimentoId, aberta: false, termo: "", achado: null});
 export function useBuscaConversa(atendimentoId: string | null, mensagens: readonly Pick<MensagemThread, "id" | "corpo" | "criadoEm" | "apagada">[], rolagemRef: RefObject<HTMLDivElement | null>, revisaoVisual?: unknown) {
  const [estado, setEstado] = useState<EstadoBusca>(() => vazia(atendimentoId));
- // Ajuste guardado de estado derivado: limpa na troca sem efeito, remount da thread ou pintura com contexto antigo.
  if (estado.atendimentoId !== atendimentoId) setEstado(vazia(atendimentoId));
  const campoRef = useRef<HTMLInputElement>(null), retorno = useRef<HTMLElement | null>(null);
  const centralizacao = useRef<{ area: HTMLDivElement; id: string; topo: number } | null>(null);
@@ -15,7 +14,6 @@ export function useBuscaConversa(atendimentoId: string | null, mensagens: readon
  const termo = aberta ? estado.termo : "";
  const achados = useMemo(() => encontrarMensagens(mensagens, termo), [mensagens, termo]);
  const atual = aberta ? (estado.achado && achados.includes(estado.achado) ? estado.achado : achados[0] ?? null) : null;
- // Grava também o primeiro fallback: páginas/SSE posteriores preservam seu ID, não seu índice.
  if (aberta && estado.achado !== atual) setEstado(s => ({...s, achado: atual}));
  const abrir = useCallback((atalho = false) => {
   if (!atendimentoId) return;
@@ -52,8 +50,6 @@ export function useBuscaConversa(atendimentoId: string | null, mensagens: readon
   const area = rolagemRef.current;
   if (!atual || !area) { centralizacao.current = null; return; }
   const anterior = centralizacao.current;
-  // Mudanças da thread podem recompor a geometria, mas não tomar a rolagem que
-  // o usuário moveu desde o último centro. Outro achado volta a ser explícito.
   if (anterior?.area === area && anterior.id === atual && Math.abs(area.scrollTop - anterior.topo) > 1) return;
   const centralizar = () => {
    rolarAteMensagem(area, atual);
@@ -61,7 +57,6 @@ export function useBuscaConversa(atendimentoId: string | null, mensagens: readon
   };
   centralizar();
   const pedido = centralizacao.current!;
-  // Uma nova medição da row pinada pode ajustar seu offset; um único frame recompõe a geometria real.
   const frame = requestAnimationFrame(() => {
    if (rolagemRef.current === area && centralizacao.current === pedido && Math.abs(area.scrollTop - pedido.topo) <= 1) centralizar();
   });

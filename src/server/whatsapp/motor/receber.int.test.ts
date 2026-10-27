@@ -60,10 +60,8 @@ describe("drenarEventosMotor", () => {
     expect(a.tentativas).toBe(1);
     expect(a.processadoEm).toBeNull();
     expect(a.proximaTentativaEm!.getTime()).toBe(agora.getTime() + 5_000);
-    // antes do backoff: não reprocessa
     const r2 = await drenarEventosMotor(new Date(agora.getTime() + 1_000));
     expect(r2.adiados).toBe(0);
-    // depois do backoff: tenta de novo
     const r3 = await drenarEventosMotor(new Date(agora.getTime() + 6_000));
     expect(r3.adiados).toBe(1);
     const a2 = await prisma.eventoMotorRecebido.findFirstOrThrow({ where: { tipo: "t.a" } });
@@ -123,7 +121,7 @@ describe("drenarEventosMotor", () => {
     const vistos: string[] = [];
     PROCESSADORES["t.a"] = async (e) => {
       vistos.push((e.dados as { k: string }).k);
-      t += 40_000; // processador lento (ex.: download de mídia)
+      t += 40_000;
       return "ok";
     };
     for (const k of ["e1", "e2", "e3", "e4"]) await registrarEventoMotor(env("t.a", { k }));

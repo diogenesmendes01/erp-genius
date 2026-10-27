@@ -12,17 +12,14 @@ import type { Resultado } from "@/server/_shared/resultado";
 const texto = (form: FormData, campo: string) => String(form.get(campo) ?? "").trim();
 const campo = "ml-2 rounded border p-2";
 
-/** POST multipart da rota privada; a resposta já vem no formato `{ ok, dado | erro }` das actions. Falha de rede lança e vira "incerto". */
 async function enviarOrigem(matriculaId: string, envio: FormData): Promise<Resultado<{ id: string }>> {
  const resposta = await fetch(`/api/matriculas/${encodeURIComponent(matriculaId)}/origem-historica`, { method: "POST", body: envio });
  const r = await resposta.json() as { ok?: boolean; dado?: { id: string }; erro?: string };
  return r.ok ? { ok: true, dado: r.dado } : { ok: false, erro: r.erro ?? "Não foi possível registrar a origem histórica." };
 }
 
-/** Transcrição do contrato legado: só o que for declarado fica estruturado. O PDF assinado vai junto, por multipart. */
 export function RegistrarOrigemHistorica({ matriculaId, moeda, regime }: { matriculaId: string; moeda: string; regime: "MENSALIDADE" | "HORA_PARTICULAR" | null }) {
  const router = useRouter();
- // Chave de idempotência estável entre tentativas: reenviar os mesmos dados devolve o registro já gravado.
  const acao = useAcaoCliente({ idempotente: true });
  const [concluido, setConcluido] = useState(false);
  const [regimeEscolhido, setRegime] = useState<"MENSALIDADE" | "HORA_PARTICULAR">(regime ?? "MENSALIDADE");
@@ -43,7 +40,6 @@ export function RegistrarOrigemHistorica({ matriculaId, moeda, regime }: { matri
   envio.set("referencia", texto(form, "referencia")); envio.set("assinadoEm", texto(form, "assinadoEm")); envio.set("motivo", texto(form, "motivo"));
   envio.set("transcricao", JSON.stringify(transcricao)); envio.set("chaveIdempotencia", chave.current);
   const d = await acao.executar(() => enviarOrigem(matriculaId, envio), "Origem histórica registrada. Outro administrador precisa conferir o PDF e a transcrição.");
-  // Recusa de negócio: os dados podem ser corrigidos, e a próxima tentativa leva chave nova.
   if (d?.tipo === "erro") chave.current = null;
   if (d?.tipo === "ok") { setConcluido(true); router.refresh(); }
  }}>
@@ -88,9 +84,7 @@ export function RegistrarOrigemHistorica({ matriculaId, moeda, regime }: { matri
  </form>;
 }
 
-/** Conferência dupla: quem decide digita os hashes que conferiu (copiados da tela após abrir o PDF e reler a transcrição). */
 export function DecidirOrigemHistorica({ propostaId }: { propostaId: string }) {
- // A decisão não leva chave; repetir a mesma decisão devolve a já registrada (MSG_DECISAO_INCERTA na falha de transporte).
  const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
  const [concluido, setConcluido] = useState(false);
  return <form className="space-y-3 rounded border p-3" onSubmit={async evento => {

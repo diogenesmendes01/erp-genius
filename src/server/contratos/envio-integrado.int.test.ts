@@ -66,7 +66,6 @@ it("driver simulado envia uma única vez como SIMULADO/SANDBOX, com Evento e ide
   expect(envelope).toMatchObject({ pdfHash: artefato.pdfHash, situacao: "EM_ASSINATURA" });
   expect(envelope.signatarios).toEqual([expect.objectContaining({ papel: "ALUNO", etapa: 1, email: "aluno@example.test" })]);
 
-  // Mesma chave: devolve o resultado sem nova tentativa nem nova chamada; chave nova não repete o envio.
   expect(await enviarContratoParaAssinatura({ ...alvo(), chaveIdempotencia: "envio-contrato-1" })).toMatchObject({ ok: true, dado: { processoId: processo.id, tentativa: 1, estado: "ENVIADO", repetido: true } });
   expect(await enviarContratoParaAssinatura({ ...alvo(), chaveIdempotencia: "envio-contrato-2" })).toMatchObject({ ok: false, erro: expect.stringContaining("Não repetir") });
   expect(await enviarContratoParaAssinatura({ ...alvo(), conferenciaId: "outra", chaveIdempotencia: "envio-contrato-1" })).toMatchObject({ ok: false, erro: expect.stringContaining("outros dados") });
@@ -78,7 +77,6 @@ it("driver simulado envia uma única vez como SIMULADO/SANDBOX, com Evento e ide
   expect(eventos.map(e => e.tipo)).toEqual(["ProcessoAssinaturaPreparado", "TentativaAssinaturaIniciada", "EnvelopeSimuladoCriado", "ResultadoEnvioAssinaturaRegistrado"]);
   expect(eventos[1]).toMatchObject({ autorId: base.secretariaId, payload: expect.objectContaining({ chaveIdempotencia: "envio-contrato-1" }) });
 
-  // O banco recusa SIMULADO fora de SANDBOX e referência que não seja do simulado, mesmo sem os triggers.
   const semTriggers = (sql: string) => prisma.$transaction(async tx => { await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica"); await tx.$executeRawUnsafe(sql, processo.id); });
   await expect(semTriggers(`UPDATE "ProcessoAssinaturaContratual" SET ambiente = 'PRODUCAO' WHERE id = $1`)).rejects.toThrow(/simulado_sandbox_check/);
   await expect(semTriggers(`UPDATE "ProcessoAssinaturaContratual" SET "referenciaExterna" = 'externo-real' WHERE id = $1`)).rejects.toThrow(/referencia_simulada_check/);
@@ -100,7 +98,6 @@ it("resposta perdida vira ENVIO_INCERTO; só a conciliação pela chave da tenta
   try {
     expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id })).toMatchObject({ ok: true, dado: { estado: "ENVIO_INCERTO" } });
   } finally { simulado.consultarPorChave = consultar; }
-  // R1 C2: envelope cancelado ou recusado no serviço não confirma o envio; o processo segue incerto.
   for (const situacao of ["CANCELADO", "RECUSADO"] as const) {
     simulado.consultarPorChave = async (chave) => { const r = await consultar(chave); return r.resultado === "ENCONTRADO" ? { ...r, situacao } : r; };
     try {
@@ -150,7 +147,6 @@ it("corrida (B-1): conciliação durante a criação em voo é recusada sem grav
 it("ENVIANDO vencido e AUSENTE no serviço volta a PREPARADO; ENVIANDO recente é recusado sem gravar", async () => {
   process.env.ASSINATURA_DRIVER = "simulado";
   const { prepararProcessoEnvioTx, iniciarTentativaAssinaturaTx } = await import("./envio-tx");
-  // Queda entre a transação da tentativa e a chamada externa: ENVIANDO sem envelope no serviço.
   const processo = await prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { ...alvo(), executorId: base.secretariaId, fornecedor: "SIMULADO", ambiente: "SANDBOX" }));
   const tentativa = await prisma.$transaction(tx => iniciarTentativaAssinaturaTx(tx, { processoId: processo.id, executorId: base.secretariaId }));
   const pedido = { matriculaId: base.matriculaId, processoId: processo.id };
@@ -162,7 +158,6 @@ it("ENVIANDO vencido e AUSENTE no serviço volta a PREPARADO; ENVIANDO recente �
   });
   expect(await conciliarEnvioAssinatura(pedido)).toMatchObject({ ok: true, dado: { estado: "PREPARADO" } });
   expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: processo.id } })).toMatchObject({ estado: "PREPARADO", referenciaExterna: null });
-  // Com a ausência provada, o envio pode seguir numa tentativa nova.
   expect(await enviarContratoParaAssinatura({ ...alvo(), chaveIdempotencia: "depois-da-ausencia" })).toMatchObject({ ok: true, dado: { tentativa: 2, estado: "ENVIADO" } });
   expect(await prisma.envelopeAssinaturaSimulado.count()).toBe(1);
 });

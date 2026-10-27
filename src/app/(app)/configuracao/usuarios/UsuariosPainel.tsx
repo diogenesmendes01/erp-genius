@@ -24,7 +24,7 @@ export interface UsuarioRow {
   limiteDescontoMensalidadePct: number | null;
   permissoes: string[];
   gerenteComercialId: string | null;
-  ultimoAcesso: string | null; // ISO ou null
+  ultimoAcesso: string | null;
 }
 
 function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | null): string {
@@ -35,10 +35,7 @@ function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | nu
 
 export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { usuarios: UsuarioRow[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  // Ativar/desativar manda o estado-alvo (B4, #175 C2): repetir depois de uma falha de rede, ou confirmar com a
-  // tela velha o que um colega já aplicou, não desfaz nada — o servidor trata o mesmo estado como no-op.
   const acao = useAcaoCliente({ idempotente: true });
-  // O erro aparece na linha do usuário cujo botão disparou a ação, não no topo da lista.
   const [alvo, setAlvo] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
 
@@ -48,8 +45,6 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
     if (desfecho?.tipo === "ok") router.refresh();
   }
 
-  // Desativar tira a pessoa do sistema na hora (docs/42 L2413): o botão só abre a confirmação, que nomeia a
-  // pessoa; a action roda no ConfirmarAcao, que mostra a falha dentro dele. Ativar continua direto.
   const [desativando, setDesativando] = useState<UsuarioRow | null>(null);
   function pedirDesativacao(u: UsuarioRow) {
     setAlvo(u.id);

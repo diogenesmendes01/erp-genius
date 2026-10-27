@@ -18,8 +18,6 @@ describe("etapas do funil", () => {
     "NOVO","EM_ATENDIMENTO","QUALIFICADO","EXPERIMENTAL_AGENDADA","EXPERIMENTAL_REALIZADA","NO_SHOW","PROPOSTA","AGUARDANDO_MATRICULA","MATRICULADO","PERDIDO",
   ])("soltar na mesma coluna (%s) não faz nada", (e) =>
     expect(destinoDoArraste(e as EtapaLead, e as EtapaLead)).toEqual({ tipo: "nenhum" }));
-  // Proposta e contratação aceitam arraste de QUALQUER etapa aberta: a ação só
-  // abre o diálogo; quem valida a transição é o servidor ao confirmar.
   const ABERTAS = ["NOVO","EM_ATENDIMENTO","QUALIFICADO","EXPERIMENTAL_AGENDADA","EXPERIMENTAL_REALIZADA","NO_SHOW","PROPOSTA","AGUARDANDO_MATRICULA"] as const;
   it("NOVO → PROPOSTA e AGUARDANDO_MATRICULA → PROPOSTA abrem enviarProposta", () => {
     expect(destinoDoArraste("NOVO", "PROPOSTA")).toEqual({ tipo: "acao", acao: "enviarProposta" });

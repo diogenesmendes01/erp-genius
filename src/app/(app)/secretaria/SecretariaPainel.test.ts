@@ -2,16 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it, vi } from "vitest";
 
-// Resíduo N2 da revisão da #111: a trava de datas civis (src/app/datas-civis.test.ts) só reconhece
-// inicio/fim sob cobertura/compensação/período — as datas desta tela escapavam. Prova por renderização:
-// texto em dd/mm/aaaa, nenhuma data ISO fora dos campos de data, e os <input type="date"> com ISO
-// (o navegador descarta outro formato e o campo abre vazio).
-//
-// Fuso negativo fixo: `new Date("2026-03-01").toLocaleDateString()` vira 28/02 só a oeste de UTC — sem
-// isto o teste pegaria esse bug ou não conforme a máquina (revisão R1 da #137, B1).
 const tzAnterior = process.env.TZ;
 process.env.TZ = "America/Sao_Paulo";
-// Sem TZ antes, restaurar com a string "undefined" deixaria um fuso inválido (tratado como UTC).
 afterAll(() => { if (tzAnterior === undefined) delete process.env.TZ; else process.env.TZ = tzAnterior; });
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
@@ -36,14 +28,9 @@ const render = (mensalidades: Mensalidade[], cobertura: Matricula["cobertura"] =
   }] }));
 const mensalidade = (inicio: string | null, fim: string | null): Mensalidade => ({ id: "c1", versao: 1, valor: "350.00", moeda: "BRL", inicio, fim, vencimento: "2026-03-10" });
 const ISO = /\d{4}-\d{2}-\d{2}/;
-/** O HTML sem o valor dos <input type="date"> (lá a ISO é obrigatória). */
 const foraDosCamposDeData = (html: string) => html.replace(/(<input[^>]*type="date"[^>]*?)\svalue="[^"]*"/g, "$1");
 
 describe("SecretariaPainel — datas civis da tela inteira", () => {
-  // A atribuição de TZ só reconfigura o fuso quando o arquivo roda num processo próprio (pool "forks",
-  // o padrão); em worker threads vira no-op. Sem fuso negativo em vigor, a prova contra
-  // `new Date(...).toLocaleDateString()` não vale — então falha alto aqui, em vez de passar em silêncio
-  // (revisão R2 da #137, B1).
   it("o fuso negativo está mesmo em vigor (senão a prova contra new Date não vale)", () => {
     expect(new Date("2026-03-01").getDate()).toBe(28);
   });

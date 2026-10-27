@@ -394,7 +394,6 @@ it("publica grade inteira após aprovação independente e revalidação de disp
   const gradeOfertaId = p.dado.id;
   const rollbackOferta = new Error("Rollback fixture Q161");
   await expect(prisma.$transaction(async tx => {
-  // Q161: fonte publicada real, vinculada ao contrato, sem emissão.
   const { carregarComprovacaoOfertaContinuidadeAgendaTx } = await import("@/server/matricula/oferta-continuidade-agenda-tx");
   const consultarOferta = (id: string) => carregarComprovacaoOfertaContinuidadeAgendaTx(tx, {
     matriculaId: id, inicio: new Date("2099-10-02T00:00:00Z"), fim: new Date("2099-10-06T00:00:00Z"),

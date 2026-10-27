@@ -14,7 +14,6 @@ const Preparar = PreviaMensalPedidoEncerramentoSchema.extend({
   versaoAnterior: z.number().int().nonnegative(),
 });
 
-/** Versão de trabalho preservada; não é uma proposta completa autorizada para execução. */
 export async function salvarRascunhoAcertoEncerramento(input: z.input<typeof Preparar>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);

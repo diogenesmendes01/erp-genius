@@ -111,7 +111,6 @@ describe("resultados do portal do aluno", () => {
     const { ErroAutenticacao } = await import("@/server/_shared");
     mocks.resultados.mockRejectedValue(new ErroAutenticacao("Sessão do aluno inválida ou expirada."));
 
-    // redirect() do Next lança um erro com digest NEXT_REDIRECT — é assim que ele "navega".
     await expect(Page()).rejects.toMatchObject({ digest: expect.stringContaining("NEXT_REDIRECT") });
     expect(mocks.fechamentos).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();

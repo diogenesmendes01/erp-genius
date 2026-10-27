@@ -3,9 +3,6 @@ import { Papel, Prisma } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
-// O carregamento dinâmico do next-auth não é estável entre duas actions
-// concorrentes no runner. A identidade continua vindo do mock de sessão,
-// enquanto atividade e papéis são relidos do PostgreSQL real.
 vi.mock("@/server/_shared/sessao", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/server/_shared/sessao")>();
   const sessao = async () => {
@@ -78,8 +75,6 @@ function entrada(dado: Awaited<ReturnType<typeof conferenciaAtual>>, chaveIdempo
   };
 }
 
-// Exercita a persistência interna inclusive com dependências cuja resolução
-// ainda não está disponível na publicação pública.
 async function persistirPublicacaoTeste(propostaId: string, decisorId: string) {
   return prisma.$transaction(async tx => {
     const impactos = await carregarImpactosCorrecaoAulaTx(tx, decisorId, propostaId);
@@ -93,7 +88,7 @@ async function persistirPublicacaoTeste(propostaId: string, decisorId: string) {
 
 beforeEach(async () => {
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR])).id;
   secretariaId = (await criarUsuario([Papel.SECRETARIA_ACADEMICA])).id;
@@ -338,7 +333,6 @@ it("publicação interna projeta frequência e encadeia novas correções sem ed
   const segunda = await proporCorrecaoAula(segundaEntrada);
   assertOk(segunda);
   expect((await prisma.propostaCorrecaoAula.findUniqueOrThrow({ where: { id: segunda.dado.id } })).snapshotAnterior).toEqual(vigente.snapshot);
-  // Uma proposta mais recente ainda não aprovada não altera a fonte efetiva.
   expect((await conferenciaAtual()).snapshot).toEqual(vigente.snapshot);
   const decisao2 = await persistirPublicacaoTeste(segunda.dado.id, gestor.id);
   const efetivas = await prisma.$transaction(tx => carregarCorrecoesAulaEfetivasTx(tx, [encontroId]));

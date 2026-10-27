@@ -37,7 +37,6 @@ export function ColunaConversas({ filtros, opcoesFiltro, contagens, resumo, faix
  function abrir(outro: "filtros" | "numero", gatilho = document.activeElement as HTMLElement | null) { focoRetorno.current = gatilho; aoFecharNovaConversa?.(); setPopover(outro); }
  function abrirNova(gatilho: HTMLButtonElement) { focoRetorno.current = gatilho; setPopover(novaConversaAberta === undefined ? "nova" : null); aoNovaConversa(); }
  function aplicar(f: FiltrosInbox) { router.replace(hrefDosFiltros(caminho, f)); }
- // O alvo explícito do cleanup evita devolver ao gatilho depois de Ctrl/MetaK.
  useEffect(() => {
   function atalho(e: KeyboardEvent) {
    if (!ehAtalhoBusca(e)) return;

@@ -66,7 +66,6 @@ describe("convidar e revogar participante", () => {
     const p = await prisma.participanteAtendimentoWhatsApp.findUniqueOrThrow({ where: { id: participanteId } });
     expect(p.revogadoEm).not.toBeNull();
     expect(await prisma.evento.count({ where: { tipo: "ParticipanteRevogado", agregadoId: a.id } })).toBe(1);
-    // #166: o reenvio de quem revogou devolve ok sem outro Evento (atendimento-idempotencia.int.test.ts).
     expect((await revogarParticipante(participanteId)).ok).toBe(true);
     expect(await prisma.evento.count({ where: { tipo: "ParticipanteRevogado", agregadoId: a.id } })).toBe(1);
   });
@@ -81,7 +80,6 @@ describe("convidar e revogar participante", () => {
     expect((await revogarParticipante(r.ok ? r.dado!.participanteId : "")).ok).toBe(true);
     const st = async (id: string) => (await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } })).status;
     expect([await st(pend.id), await st(adi.id), await st(env.id)]).toEqual(["CANCELADA", "CANCELADA", "DESPACHADA"]);
-    // O gerente comercial convidado continua enviando pelo setor: nada dele é cancelado.
     const r2 = await convidar(a, gc, { podeEnviar: true });
     const doGerente = await nova(gc.id, "PENDENTE");
     expect((await revogarParticipante(r2.ok ? r2.dado!.participanteId : "")).ok).toBe(true);

@@ -12,9 +12,6 @@ const Criar = z.object({ ...CamposDestinoAssinatura, matriculaId: z.string().min
   .refine(destinoAssinaturaCoerente, MENSAGEM_DESTINO_SIMULADO);
 const Marca = z.object({ chaveIdempotencia: z.string().min(1), entradaHash: z.string().min(1) }).strict();
 
-/** Primitivas internas: nenhuma é Server Action ou faz chamada externa.
- * A integração escolhida deve fornecer configuração validada, confirmar permissão
- * de envio e persistir a tentativa antes de chamar o fornecedor fora da transação. */
 export async function prepararProcessoEnvioTx(tx: Prisma.TransactionClient, input: z.input<typeof Criar>) {
   const d = Criar.parse(input);
   if (d.substituicao) return aplicarSubstituicaoContratualTx(tx, d.executorId, { ...d.substituicao, matriculaId: d.matriculaId, artefatoId: d.artefatoId, conferenciaId: d.conferenciaId, fornecedor: d.fornecedor, ambiente: d.ambiente });
@@ -35,7 +32,6 @@ export async function prepararProcessoEnvioTx(tx: Prisma.TransactionClient, inpu
   return { id: p.id };
 }
 
-/** `marca` (opcional): idempotência da ação de envio integrado, gravada no Evento da tentativa. */
 export async function iniciarTentativaAssinaturaTx(tx: Prisma.TransactionClient, input: { processoId: string; executorId: string; marca?: MarcaIdempotencia }) {
   const d = z.object({ processoId: z.string().min(1), executorId: z.string().min(1), marca: Marca.optional() }).strict().parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -57,11 +53,8 @@ export async function iniciarTentativaAssinaturaTx(tx: Prisma.TransactionClient,
 
 const Resultado = z.object({ processoId: z.string().min(1), tentativaId: z.string().min(1), chave: z.string().min(8).max(200),
   resultado: z.enum(["INCERTO", "REGISTRADO", "NAO_CRIADO"]), referenciaExterna: z.string().trim().min(1).max(200).nullable(), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/),
-  /** Quem pediu a conciliação (o envio em si é do sistema) e a marca de idempotência dessa ação. */
   autorId: z.string().min(1).optional(), marca: Marca.optional() }).strict();
 
-/** Somente o adaptador autenticado/conciliador deve chamar. NAO_CRIADO exige prova
- * positiva do fornecedor: timeout/erro de rede por si só sempre é INCERTO. */
 export async function registrarResultadoEnvioTx(tx: Prisma.TransactionClient, input: z.input<typeof Resultado>) {
   const d = Resultado.parse(input);
   if ((d.resultado === "REGISTRADO") !== (d.referenciaExterna !== null)) throw new ErroRegra("Resultado incompatível com a referência externa.");

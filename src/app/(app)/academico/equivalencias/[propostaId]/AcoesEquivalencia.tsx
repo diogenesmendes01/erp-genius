@@ -23,12 +23,8 @@ export function AcoesEquivalencia({
   podeExecutar: boolean;
 }) {
   const router = useRouter();
-  // Dois grupos de ação, cada um com o próprio feedback junto do botão. Nenhuma das actions recebe
-  // chave de idempotência: a decisão incerta mantém o texto próprio (reenviar a mesma decisão) e a
-  // execução incerta manda conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const decisao = useAcaoCliente({ idempotente: false });
   const execucao = useAcaoCliente({ idempotente: false });
-  // Como antes (uma transição só), uma ação em curso trava os dois formulários.
   const pendente = decisao.ocupado || execucao.ocupado;
 
   async function decidir(evento: React.FormEvent<HTMLFormElement>) {
@@ -77,8 +73,6 @@ export function AcoesEquivalencia({
       <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o mapeamento e seus efeitos antes de registrar a decisão.</label>
       <button disabled={pendente} className={botaoClasses({ tamanho: "lg" })}>{decisao.ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </form>}
-    {/* Logo abaixo do formulário, mas fora da condição: depois do refresh a decisão registrada some
-        (podeDecidir passa a false) e o resultado continua visível, como na mensagem única de antes. */}
     <FeedbackAcao erro={decisao.erro} sucesso={decisao.sucesso} />
 
     {podeExecutar && decisaoId && <form className="space-y-3 rounded border p-4" onSubmit={executar}>

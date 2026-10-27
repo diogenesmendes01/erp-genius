@@ -268,9 +268,6 @@ it("fila pagina fontes sem duplicar itens quando chega uma autorização nova", 
   if (!primeira.ok || !primeira.dado) throw new Error(JSON.stringify(primeira));
   expect(primeira.dado.itens).toHaveLength(20);
   expect(primeira.dado.temProxima).toBe(true);
-  // A última fonte da primeira página — a âncora do cursor — sai da fila (agendada) e chega uma autorização
-  // nova (à frente, na ordem criadaEm desc) antes da leitura seguinte: o cursor continua da âncora, que ainda
-  // existe fora da fila, sem pular nem repetir fonte (fila por cursor, decisão de 10/10/2026).
   await prepararCalendario();
   const horario = { propostaSegundaChamadaId: primeira.dado.itens[19]!.propostaSegundaChamadaId, professorId: professor,
     inicio: new Date(Date.now() + 60 * 60_000).toISOString(), fim: new Date(Date.now() + 90 * 60_000).toISOString(), fusoOrigem: "UTC" };
@@ -296,8 +293,6 @@ it("fila pagina fontes sem duplicar itens quando chega uma autorização nova", 
 });
 
 it("fila volta pelo cursor antes sem pular nem repetir, com a âncora já agendada e fonte nova à frente", async () => {
-  // Revisão da #249, C2: o sentido `antes` da âncora (C38) só tinha o unitário que lê o SQL.
-  // Proposta ainda sem decisão, mais antiga que todas as fontes: fora do universo da fila, não pode servir de âncora.
   const semDecisao = await proporSegundaChamada(proposta("fila-volta-sem-decisao"));
   if (!semDecisao.ok || !semDecisao.dado) throw new Error(JSON.stringify(semDecisao));
   const origem = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
@@ -319,9 +314,6 @@ it("fila volta pelo cursor antes sem pular nem repetir, com a âncora já agenda
   expect(segunda.dado.temAnterior).toBe(true);
   expect(segunda.dado.anterior).toBe(segunda.dado.itens[0]!.propostaSegundaChamadaId);
 
-  // A âncora do `antes` (primeira fonte da segunda página) é agendada e sai da fila, e chega uma autorização
-  // nova (à frente, na ordem criadaEm desc). A volta continua da âncora, que segue no universo da fila
-  // (aprovada e disponibilizada): devolve a primeira página como era, sem a fonte nova e sem a agendada.
   await prepararCalendario();
   const horario = { propostaSegundaChamadaId: segunda.dado.anterior!, professorId: professor,
     inicio: new Date(Date.now() + 60 * 60_000).toISOString(), fim: new Date(Date.now() + 90 * 60_000).toISOString(), fusoOrigem: "UTC" };
@@ -339,13 +331,12 @@ it("fila volta pelo cursor antes sem pular nem repetir, com a âncora já agenda
   const volta = await listarSegundasChamadasSemAgenda({ antes: segunda.dado.anterior! });
   if (!volta.ok || !volta.dado) throw new Error(JSON.stringify(volta));
   const ids = (r: { propostaSegundaChamadaId: string }[]) => r.map(item => item.propostaSegundaChamadaId);
-  expect(ids(volta.dado.itens)).toEqual(ids(primeira.dado.itens)); // mesma ordem (criadaEm desc), já desvirada
+  expect(ids(volta.dado.itens)).toEqual(ids(primeira.dado.itens));
   expect(volta.dado.temProxima).toBe(true);
   expect(volta.dado.proxima).toBe(primeira.dado.proxima);
-  expect(volta.dado.temAnterior).toBe(true); // a fonte nova está antes da primeira página
+  expect(volta.dado.temAnterior).toBe(true);
   expect(volta.dado.anterior).toBe(primeira.dado.itens[0]!.propostaSegundaChamadaId);
 
-  // Ao chegar ao começo, a volta devolve a primeira página lida do início, cheia e sem "Anterior" (lerPaginaDaFila).
   const topo = await listarSegundasChamadasSemAgenda({ antes: volta.dado.anterior! });
   if (!topo.ok || !topo.dado) throw new Error(JSON.stringify(topo));
   const inicio = await listarSegundasChamadasSemAgenda({});
@@ -356,8 +347,6 @@ it("fila volta pelo cursor antes sem pular nem repetir, com a âncora já agenda
   expect(topo.dado.temAnterior).toBe(false);
   expect(topo.dado.temProxima).toBe(true);
 
-  // Âncora fora do universo da fila (proposta sem decisão, mais antiga que as fontes) vale o mesmo que id
-  // inexistente: não posiciona a leitura — se posicionasse, viriam as 20 fontes mais antigas. A volta cai no início.
   for (const antes of [semDecisao.dado.id, "proposta-inexistente"]) {
     expect(await listarSegundasChamadasSemAgenda({ antes })).toEqual(inicio);
   }

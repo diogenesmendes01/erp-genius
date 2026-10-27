@@ -5,18 +5,10 @@ import { botaoClasses } from "@/components/Botao";
 
 export type Maioridade = "MAIOR" | "MENOR";
 
-/** Endereço da tela para a classificação escolhida (o histórico volta ao início: os papéis exigidos mudam). */
 export function hrefMaioridade(maioridade: Maioridade | null) {
   return maioridade ? `?maioridade=${maioridade}` : "?";
 }
 
-/**
- * Classificação de maioridade conferida (docs/43 §6 item 3; docs/42 L629). Era um <form method="get"> com
- * botão que recarregava a página, e o formulário de participantes tinha a maioridade no `key`: trocar a
- * classificação apagava nome, e-mail, documento, critério, representação e evidência de cada signatário.
- * Agora a troca é client-side (router.replace, sem rolar a tela) e o formulário — sem key — continua montado
- * com o que foi digitado; só os papéis exigidos se atualizam.
- */
 export function SeletorMaioridade({ maioridade }: { maioridade: Maioridade | null }) {
   const router = useRouter();
   const [escolha, setEscolha] = useState<string>(maioridade ?? "");

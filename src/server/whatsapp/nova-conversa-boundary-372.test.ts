@@ -7,7 +7,6 @@ vi.mock("@/server/_shared/sessao",async original=>({...await original<typeof imp
 vi.mock("next/cache",()=>({revalidatePath:m.revalidate}));
 vi.mock("./nova-conversa-novo",()=>({criarRamoNovoConversaTx:m.novo}));
 vi.mock("./nova-conversa-existente",()=>({abrirRamoExistenteConversaTx:m.existente}));
-// R14: três módulos novos e teste admitidos pelo ROOT; scaffolds failclosed precedem RED.
 import { EntradaNovaConversaSchema } from "./nova-conversa-entrada";
 import { iniciarConversaPorNumero } from "./nova-conversa-acoes";
 const telefoneE164="+50688889999",chaveIdempotencia="tentativa-boundary-372";

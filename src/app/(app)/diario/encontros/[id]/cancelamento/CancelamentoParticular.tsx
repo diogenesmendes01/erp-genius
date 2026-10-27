@@ -12,13 +12,8 @@ import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 type Resposta = Awaited<ReturnType<typeof consultarCancelamentoParticular>>;
 type Dados = Extract<Resposta, { ok: true }>["dado"];
 export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { encontroId: string; dados: NonNullable<Dados>; fusoExibicao: string }) {
-  // A chave só é trocada quando o motivo/origem mudam, e o servidor devolve a solicitação existente
-  // quando ela se repete (server/agenda/cancelamento-particular.ts:46-49): reenviar é seguro.
   const proposta = useAcaoCliente({ idempotente: true });
-  // A decisão não recebe chave (cancelamento-particular.ts:60); só a repetição idêntica pelo mesmo
-  // decisor é reconhecida (:71-73). Conferir antes de repetir.
   const decisao = useAcaoCliente({ idempotente: false });
-  // O erro da decisão aparece na solicitação cujo formulário a disparou.
   const [alvo, setAlvo] = useState<string | null>(null);
   const pendente = proposta.ocupado || decisao.ocupado;
   const chave = useRef<string | null>(null);

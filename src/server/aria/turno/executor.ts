@@ -30,7 +30,6 @@ export interface EntradaResposta {
   confianca: number;
   fontes: SaidaModelo["fontes"];
   nomeAria: string;
-  /** Política publicada; sem ela vale o padrão da configuração. */
   politicas?: ConfigAria["politicas"];
 }
 
@@ -41,20 +40,8 @@ export const POLITICAS_PADRAO: ConfigAria["politicas"] = {
   validadePropostaDias: 7,
 };
 
-/**
- * O que as respostas rápidas liberadas autorizam na guarda de valores. Decisão provisória (C1 da R1 do
- * #238): só os valores monetários. A guarda compara só o número, sem contexto ("multa de 2%" liberaria
- * "2% de desconto"), e quem salva resposta inclui o Gerente Comercial, que passaria de `parcelasMax`.
- * Percentuais e parcelas vêm só da política da Aria. Para liberar também essas categorias, acrescente
- * "percentuais" e/ou "parcelas" aqui.
- */
 export const CATEGORIAS_DAS_RESPOSTAS: readonly (keyof ValoresPermitidos)[] = ["valores"];
 
-/**
- * Lista da guarda de valores: preços do país, faixas de desconto e parcelas da política e, além deles,
- * as categorias de `CATEGORIAS_DAS_RESPOSTAS` citadas nas respostas rápidas liberadas para o setor
- * (texto aprovado pela equipe; ver contexto.ts).
- */
 export function permitidos(ctx: Pick<ContextoTurno, "precos" | "respostasRapidas">, politicas: ConfigAria["politicas"]): ValoresPermitidos {
   const citados = ctx.respostasRapidas.map((r) => valoresCitados(r.corpo));
   const dasRespostas = (c: keyof ValoresPermitidos) => (CATEGORIAS_DAS_RESPOSTAS.includes(c) ? citados.flatMap((v) => v[c]) : []);
@@ -71,7 +58,6 @@ export function permitidos(ctx: Pick<ContextoTurno, "precos" | "respostasRapidas
   };
 }
 
-/** URL interna do documento da base se ele ainda pode ser enviado ao lead; senão null. */
 async function urlDocumentoEnviavel(tx: Tx, documentoId: string): Promise<string | null> {
   const fonte = await tx.fonteConhecimento.findUnique({
     where: { id: documentoId },
@@ -97,9 +83,7 @@ async function urlDocumentoEnviavel(tx: Tx, documentoId: string): Promise<string
   return enviavel ? url : null;
 }
 
-/** Responde (ou sugere resposta) como IntencaoMensagem reativa de origem IA, dentro da transação recebida. */
 export async function executarResposta(tx: Tx, i: EntradaResposta): Promise<{ acao: AcaoAgenteIA } | { bloqueada: BloqueioResposta }> {
-  // Corrida com humano: trava o atendimento e relê a pausa já com o bloqueio.
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${i.ctx.atendimentoId} FOR UPDATE`;
   const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({
     where: { id: i.ctx.atendimentoId },
@@ -167,10 +151,6 @@ export async function executarResposta(tx: Tx, i: EntradaResposta): Promise<{ ac
   return { acao: ligada };
 }
 
-/**
- * Aprovação de uma resposta SUGERIDA (Task 24): revalida pausa, valores e documento no momento da
- * decisão e cria a IntencaoMensagem reativa de origem IA ligada à ação já gravada.
- */
 export async function efetivarRespostaSugerida(tx: Tx, acao: AcaoAgenteIA, politicas?: ConfigAria["politicas"]): Promise<{ eventoId: string }> {
   if (!acao.atendimentoId) throw new ErroRegra("A ação não tem atendimento.");
   const atendimentoId = acao.atendimentoId;
@@ -216,10 +196,6 @@ export async function efetivarRespostaSugerida(tx: Tx, acao: AcaoAgenteIA, polit
   return { eventoId: evento.id };
 }
 
-// ---------------------------------------------------------------------------------------------
-// Ações no CRM (Task 20)
-// ---------------------------------------------------------------------------------------------
-
 type Json = Prisma.InputJsonValue;
 type Payload = Record<string, Json | null>;
 
@@ -248,7 +224,6 @@ export interface EntradaAcaoCrm {
   modo: ModoAcao | "SEMPRE";
   simulado: boolean;
   confianca: number;
-  /** Configuração publicada; sem ela vale a versão publicada e, na falta dela, o padrão. */
   config?: ConfigAria;
 }
 
@@ -269,7 +244,6 @@ async function planejar(tx: Tx, ctx: ContextoTurno, p: AcaoProposta, config: Con
     case "AGENDAR_MENSAGEM": {
       const quando = new Date(p.enviarEmISO);
       if (Number.isNaN(quando.getTime()) || quando.getTime() <= Date.now()) return bloqueio("DATA_INVALIDA");
-      // D12 (#202 C4): a mesma recusa do agendamento humano, no fuso da escola.
       const foraDaJanela = await recusaForaDaJanela(quando, tx);
       if (foraDaJanela) return bloqueio("FORA_DA_JANELA", { mensagem: foraDaJanela });
       const contato = await tx.contatoWhatsApp.findUnique({ where: { id: ctx.contatoId }, select: { optOutEm: true } });
@@ -344,15 +318,9 @@ function dataCivilNoFuso(instante: Date, fuso: string): string {
   }
 }
 
-/**
- * Aplica a ação gravada (payload já validado no momento do planejamento). Revalida o estado atual,
- * grava a mutação e o Evento da Aria na transação recebida, e devolve o id do Evento. Reusada na
- * aprovação de uma ação SUGERIDA. Lança ErroRegra se o estado mudou e a ação não vale mais.
- */
 export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: ConfigAria["politicas"], opcoes?: { fusoTarefa: string | null }): Promise<{ eventoId: string }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload gravado pelo próprio planejar
   const payload = (acao.payload ?? {}) as Record<string, any>;
-  // Só a CLASSIFICAR_SETOR SIMULADA (triagem em SHADOW) não tem atendimento, e nunca é aplicada.
   const atendimentoId = acao.atendimentoId;
   if (!atendimentoId) throw new ErroRegra("A ação não tem atendimento.");
   const opId = acao.oportunidadeId;
@@ -445,7 +413,6 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
       break;
     }
     case "AGENDAR_MENSAGEM": {
-      // Fala da Aria: como em efetivarRespostaSugerida, trava o atendimento e revalida pausa e valores.
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${atendimentoId} FOR UPDATE`;
       const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({
         where: { id: atendimentoId },
@@ -457,7 +424,6 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
       if (!contatoId || !contato || contato.optOutEm || at.encerradoEm) throw new ErroRegra("O contato não pode receber mensagens.");
       const quando = new Date(payload.agendadaPara);
       if (quando.getTime() <= Date.now()) throw new ErroRegra("O horário agendado já passou.");
-      // Sugestão aprovada depois: a janela pode ter mudado desde o planejamento (D12).
       await exigirAgendamentoNaJanela(quando, tx);
       const pol = politicas ?? (await versaoPublicada(tx))?.config.politicas ?? POLITICAS_PADRAO;
       const precos = opId ? await precosDaOportunidade(opId, tx) : [];
@@ -536,10 +502,6 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
   return { eventoId: evento.id };
 }
 
-/**
- * Decide e (quando permitido) executa uma ação proposta no CRM, tudo na transação recebida.
- * NEGAR/inválida -> BLOQUEADA; simulado (SHADOW, vale mesmo com SUGERIR) -> SIMULADA; SUGERIR -> SUGERIDA com expiração; senão EXECUTADA.
- */
 export async function executarAcaoCrm(tx: Tx, i: EntradaAcaoCrm): Promise<AcaoAgenteIA> {
   const config = i.config ?? (await versaoPublicada(tx))?.config ?? configPadrao();
   const base = {
@@ -574,7 +536,6 @@ export async function executarAcaoCrm(tx: Tx, i: EntradaAcaoCrm): Promise<AcaoAg
     reversivel: plano.reversivel,
     motivoIrreversivel: plano.motivoIrreversivel,
   };
-  // SHADOW vence a matriz: nada sai e nada muda, nem como sugestão aprovável depois.
   if (i.simulado) return tx.acaoAgenteIA.create({ data: { ...dados, status: "SIMULADA" } });
   if (i.destino === "SUGERIR") {
     const expiraEm = new Date(Date.now() + config.confianca.expiracaoSugestaoMin * 60_000);

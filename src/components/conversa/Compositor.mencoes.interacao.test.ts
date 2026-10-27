@@ -131,9 +131,6 @@ it("ACK tardio A→B→A não apaga escolha nova e comando pendente fica congela
 });
 
 type CampoComSelecao = Elemento & Pick<HTMLTextAreaElement, "value" | "selectionStart" | "selectionEnd" | "setSelectionRange">;
-/** Limite DOM local ao teste: o textarea limita indices ao value atual e move o cursor ao trocar value.
- * ReactDOM continua real; o RED de Chromium confirmou esta mesma ordem antes do commit.
- */
 function campoComSelecao() {
   const campo = entrada() as CampoComSelecao;
   let valor = String(campo.value ?? ""), inicio = valor.length, fim = valor.length;

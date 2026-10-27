@@ -37,7 +37,6 @@ describe("filtros da fila de cobrança na URL (E4)", () => {
     for (const indicador of ["todos", "EMATRASO", "constructor", "__proto__", "toString"]) expect(lerFiltrosFila({ indicador }).indicador).toBeNull();
     const longo = lerFiltrosFila({ busca: "x".repeat(300), pais: "p".repeat(300), turma: "t".repeat(300) });
     expect([longo.busca.length, longo.pais?.length, longo.turma?.length]).toEqual([100, 100, 100]);
-    // Também de URLSearchParams e de parâmetro repetido (vale o primeiro).
     expect(lerFiltrosFila(new URLSearchParams("indicador=bloquear&busca=bia")).indicador).toBe("bloquear");
     expect(lerFiltrosFila({ indicador: ["promessas", "aVencer"] }).indicador).toBe("promessas");
   });
@@ -69,7 +68,6 @@ describe("filtrarFila", () => {
   const fila = [
     item("vence", { diasAtraso: -2 }),
     item("vence2", { diasAtraso: -9 }),
-    // Fronteira: vence hoje (diasAtraso 0, fora de promessa) — o contador o põe em "A vencer".
     item("hoje", { diasAtraso: 0 }),
     item("atraso", { diasAtraso: 5 }),
     item("bloqueio", { diasAtraso: 20, precisaBloqueio: true }),
@@ -94,14 +92,12 @@ describe("filtrarFila", () => {
     expect(filtrarFila(ontem, lerFiltrosFila({ indicador: "aVencer" }))).toEqual([]);
     expect(ids(filtrarFila(ontem, lerFiltrosFila({ indicador: "emAtraso" })))).toEqual(["ontem"]);
     expect(contarIndicadoresFila(ontem)).toEqual({ aVencer: 0, emAtraso: 1, bloquear: 0, promessas: 0 });
-    // Promessa que vence hoje não é "A vencer": está em "Promessas".
     expect(contarIndicadoresFila([item("p", { estado: "promessa", diasAtraso: 0 })])).toEqual({ aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 1 });
   });
 
   it("o número de cada cartão (contador de listarFilaCobranca) é o tamanho da lista filtrada por ele", () => {
     const contador = contarIndicadoresFila(fila);
     expect(contador).toEqual({ aVencer: 3, emAtraso: 2, bloquear: 1, promessas: 1 });
-    // Cópia literal das chaves (não itera INDICADORES_FILA): um indicador novo exige rever este teste.
     expect([...INDICADORES_FILA]).toEqual(["aVencer", "emAtraso", "bloquear", "promessas"]);
     for (const indicador of ["aVencer", "emAtraso", "bloquear", "promessas"] as const) {
       expect(filtrarFila(fila, lerFiltrosFila({ indicador })), indicador).toHaveLength(contador[indicador]);
@@ -155,7 +151,6 @@ describe("cursor da fila de cobrança (docs/43 §6 item 9)", () => {
     const xs = [k("b", 2, 5), k("a", 2, 5), k("c", 1, 0), k("d", 2, 9)];
     expect([...xs].sort(compararFila).map((x) => x.id)).toEqual(["c", "d", "a", "b"]);
     expect(compararFila(k("a", 2, 5), k("a", 2, 5))).toBe(0);
-    // Na fila filtrada, o empate de prioridade e atraso também termina no id (ordem estável entre leituras).
     expect(filtrarFila([item("z", { prioridade: 1, diasAtraso: 3 }), item("y", { prioridade: 1, diasAtraso: 3 })], lerFiltrosFila({})).map((x) => x.id)).toEqual(["y", "z"]);
   });
 
@@ -178,10 +173,8 @@ describe("cursor da fila de cobrança (docs/43 §6 item 9)", () => {
     expect(ids(trechoDaFila(fila, {}, 2))).toEqual(["a", "b"]);
     expect(ids(trechoDaFila(fila, { depois: cursorDoItemFila(fila[1]) }, 2))).toEqual(["c", "d"]);
     expect(ids(trechoDaFila(fila, { antes: cursorDoItemFila(fila[3]) }, 2))).toEqual(["c", "b"]);
-    // O item do cursor saiu da fila (pago): a chave continua sendo a fronteira, ninguém é pulado.
     const semB = fila.filter((x) => x.id !== "b");
     expect(ids(trechoDaFila(semB, { depois: cursorDoItemFila(fila[1]) }, 2))).toEqual(["c", "d"]);
-    // Cursor fora do formato: nada.
     expect(trechoDaFila(fila, { depois: "b" }, 2)).toEqual([]);
   });
 
@@ -189,7 +182,6 @@ describe("cursor da fila de cobrança (docs/43 §6 item 9)", () => {
     const f = lerFiltrosFila({ indicador: "emAtraso", busca: "ana" });
     expect(hrefFilaNoCursor(f, { depois: "1_2_x" })).toBe(`${ROTA_FILA}?indicador=emAtraso&busca=ana&depois=1_2_x`);
     expect(hrefFilaNoCursor(lerFiltrosFila({}), { antes: "1_2_x" })).toBe(`${ROTA_FILA}?antes=1_2_x`);
-    // Os links de filtro voltam ao início (sem cursor): trocar o recorte reinicia a leitura.
     expect(hrefIndicador(f, "bloquear")).not.toMatch(/antes=|depois=/);
   });
 });

@@ -42,7 +42,6 @@ export function AbasPainel({ abas, abaAtiva, aoTrocarAba, idBase }: { abas: read
   </div>;
 }
 
-/** Uma montagem para coluna, sobreposição e vista própria: não perde campos ao redimensionar. */
 export function PainelContato({ visivel, sobreposto, className, aoFechar, children, focarAoAbrir = false, contato, slotTags, slotAviso, aoEditar, abas = abasDoPainel(""), abaAtiva = "detalhes", aoTrocarAba }: {
   visivel: boolean | null; sobreposto: boolean; className: string; aoFechar(): void; children?: ReactNode; focarAoAbrir?: boolean;
   contato?: ContatoPainel; aoEditar?(): void; slotTags?: ReactNode; slotAviso?: ReactNode; abas?: readonly AbaPainel[]; abaAtiva?: IdAbaPainel; aoTrocarAba?(id: IdAbaPainel): void;
@@ -62,12 +61,10 @@ export function PainelContato({ visivel, sobreposto, className, aoFechar, childr
   }, [visivel, focarAoAbrir, sobreposto]);
   useDialogo(painel, { aberto: sobreposto, aoFechar, focoInicial: fechar });
   const soltarFundo = useRef<(() => void) | undefined>(undefined);
-  // Layout solta antes do cleanup passivo de useDialogo tentar devolver o foco.
   useEfeitoDeLayout(() => {
     if (!sobreposto) return;
     return () => { soltarFundo.current?.(); };
   }, [sobreposto]);
-  // Registrado depois de useDialogo: primeiro captura o gatilho e foca; só então isola.
   useEffect(() => {
     if (!sobreposto || !painel.current) return;
     const soltar = isolarFundoDoPainel(painel.current);
@@ -86,14 +83,12 @@ export function PainelContato({ visivel, sobreposto, className, aoFechar, childr
       className={className} onKeyDown={(e) => {
         if (sobreposto || e.defaultPrevented || e.key !== "Escape") return;
         const alvo = e.target as Element;
-        // Portais propagam pelo pai React: a confirmação filha deve consumir seu próprio Escape.
         if (!e.currentTarget.contains(alvo) || alvo.closest('[role="dialog"], [role="alertdialog"]')) return;
         e.stopPropagation(); aoFechar();
       }}>
       {!contato && <header className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200 p-3">
         <h2 className="font-medium">Painel do contato</h2>{botaoFechar}
       </header>}
-      {/* Uma rolagem local inclui cabeçalho/abas: tags extensas nunca expulsam o conteúdo em tela baixa. */}
       <div className="relative min-h-0 flex-1 overflow-y-auto">
         {contato && <header data-cabecalho-contato className="relative flex flex-col items-center gap-3.5 border-b border-gray-200 px-6 pb-[26px] pt-9">
           {botaoFechar}

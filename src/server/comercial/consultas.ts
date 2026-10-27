@@ -6,7 +6,6 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
 import { whereFiltrosLead, type FiltrosLead } from "./filtros";
 
-/** Vendedores ativos (para atribuir como dono do lead). */
 export async function listarVendedores() {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   return prisma.usuario.findMany({
@@ -19,7 +18,6 @@ export async function listarVendedores() {
   });
 }
 
-/** Compatibilidade para consumidores antigos; equipe e cobertura são relidas no servidor. */
 export async function escopoLeads(usuario: UsuarioSessao): Promise<Prisma.OportunidadeWhereInput> {
   return escopoComercialAtual(usuario);
 }
@@ -29,7 +27,6 @@ export type { FiltrosLead };
 const podeListarLeads = (usuario: UsuarioSessao) =>
   !!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR);
 
-/** Escopo comercial do usuário E os filtros (interseção — um filtro nunca amplia a carteira). */
 async function whereListaLeads(usuario: UsuarioSessao, filtros: FiltrosLead): Promise<Prisma.OportunidadeWhereInput> {
   return { AND: [await escopoComercialAtual(usuario), whereFiltrosLead(filtros)] };
 }
@@ -38,7 +35,6 @@ export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead =
   if (!podeListarLeads(usuario)) return [];
   const leads = await prisma.oportunidade.findMany({
     where: await whereListaLeads(usuario, filtros),
-    // id como desempate: sem ele, leads criados no mesmo instante podiam trocar de página entre consultas.
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
     ...(pagina ?? {}),
     include: {
@@ -47,7 +43,6 @@ export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead =
     },
   });
 
-  // Projeções de eventos: última ação (qualquer evento) e desde quando está na etapa atual.
   const ids = leads.map((l) => l.id);
   const [ultimas, mudancasEtapa] = ids.length
     ? await Promise.all([
@@ -90,7 +85,6 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
           codigo: true,
           status: true,
           secretariaAssumiuEm: true,
-          // C4 (fechamento): estado do contrato + taxa (link de pagamento) para a ficha.
           contratoOk: true,
           contratoEnviadoEm: true,
           cobrancas: {

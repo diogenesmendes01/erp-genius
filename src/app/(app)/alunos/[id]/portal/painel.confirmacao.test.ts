@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Decidir a troca de e-mail do portal (docs/42 L325; #175): "Aprovar e aplicar" troca o e-mail, apaga a senha e
-// revoga as sessões e os links do aluno. Agora só abre o ConfirmarAcao, que diz isso com o novo endereço; só a
-// confirmação chama a action. Rejeitar não mexe na conta e continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),
@@ -36,7 +33,6 @@ const tela = (): ReactNode => m.ganchos!.renderizar(PainelAcessoPortalAluno, {
 });
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
-/** Formulário da decisão: o segundo da tela (o primeiro prepara a troca). */
 const aprovar = () => submeter(tela(), { motivo: MOTIVO }, 1);
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 
@@ -56,7 +52,6 @@ describe("Painel do portal — decidir a troca de e-mail", () => {
     const [c] = confirmacoes(tela());
     expect(c.props.titulo).toBe("Aplicar a troca do e-mail do portal para novo@example.test?");
     expect(c.props.confirmacao).toBe("troca de e-mail");
-    // Idempotente por natureza (#166): a mesma decisão repetida devolve a já tomada, sem aplicar de novo.
     expect(c.props.idempotente).toBe(true);
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("antigo@example.test para novo@example.test");

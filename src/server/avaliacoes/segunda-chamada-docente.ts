@@ -75,7 +75,6 @@ const selecionarReserva = Prisma.sql`
     FROM "VersaoLancamentoAvaliacao" l LEFT JOIN "DecisaoLancamentoAvaliacao" d ON d."lancamentoId"=l.id
     WHERE l."segundaChamadaRealizacaoId"=realizada.id ORDER BY l.versao DESC LIMIT 1) lancamento ON true`;
 
-/** Fila paginada por número (E4), em ordem de id: ida e volta trazem as mesmas reservas. */
 export async function listarSegundasChamadasDocente(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR), d = filaSchema.parse(input), janela = janelaDaPagina(d.pagina, 20);

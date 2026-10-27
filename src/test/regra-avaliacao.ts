@@ -1,7 +1,6 @@
 import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
 
-/** Parâmetros exclusivamente fictícios de teste; não são padrões institucionais. */
 export function regraAvaliacaoTeste() {
   return ConteudoRegraAvaliacaoSchema.parse({
     titulo: "Regra fictícia de avaliação", aplicacao: "Aplicável somente aos testes automatizados.",

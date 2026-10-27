@@ -9,7 +9,6 @@ export const PAPEIS_PAUSA: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.FINANCEI
 const PAPEIS = PAPEIS_PAUSA;
 export async function carregarPreviaPausaTx(tx: Prisma.TransactionClient, alunoId: string, dados: PreviaPausaMatriculasInput, usuarioId: string) {
   const ids = [...dados.matriculaIds].sort();
-  // Conferir pertença antes de carregar conteúdo ou travar contratos de outra pessoa.
   const encontrados = await tx.matricula.count({ where: { id: { in: ids }, alunoId } });
   if (encontrados !== ids.length) throw new ErroRegra("Seleção de matrículas inválida para este aluno.");
   await bloquearMatriculas(tx, ids);

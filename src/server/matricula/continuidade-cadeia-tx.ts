@@ -9,7 +9,6 @@ type UltimaCoberturaContinuidade = {
   vencimento: Date;
 };
 
-/** Fonte transacional da âncora de continuidade; propostas sem aplicação não alteram a cadeia. */
 export async function carregarUltimaCoberturaContinuidadeTx(
   tx: Prisma.TransactionClient,
   matriculaId: string,

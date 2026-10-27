@@ -15,8 +15,6 @@ type Opcoes = {
   fetch?: (url: string, init: RequestInit) => Promise<Response>;
 };
 
-/** Entrada interna do worker; não é Server Action nem endpoint público.
- * A rotina de identidade faz claim/revalidação antes de fornecer o token. */
 export async function despacharAcessoPortalResend(solicitacaoId: string, opcoes: Opcoes = {}) {
   const ambiente = opcoes.ambiente ?? process.env as AmbienteEnvioPortal;
   if (ambiente.EMAIL_PORTAL_ENVIO_ENABLED !== "true") throw new ErroConfiguracaoEmail();
@@ -30,7 +28,6 @@ export async function despacharAcessoPortalResend(solicitacaoId: string, opcoes:
   return despacharSolicitacaoPortalAlunoInterna(solicitacaoId, async mensagem => {
     const titulo = mensagem.finalidade === "CONVITE" ? "Seu acesso ao portal da escola"
       : mensagem.finalidade === "RECUPERACAO" ? "Recuperação de acesso ao portal" : "Confirmação de endereço do portal";
-    // O caminho é reconstruído da fonte interna, nunca de host da requisição.
     const link = new URL(caminhoAtivacaoPortalAluno(mensagem.token), base).href;
     const resultado = await enviarEmailResend({
       destinatario: mensagem.destinatario, assunto: titulo, chaveIdempotencia,

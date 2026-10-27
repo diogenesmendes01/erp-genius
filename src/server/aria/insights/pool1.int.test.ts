@@ -13,7 +13,6 @@ beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
 async function comPool1(rodar:(db:PrismaClient,c:Awaited<ReturnType<typeof cenarioInsight377>>)=>Promise<void>){
   const c=await cenarioInsight377(),url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");url.searchParams.set("pool_timeout","3");
   const db=new PrismaClient({datasources:{db:{url:url.toString()}}});
-  // Fronteira de instrumentação: só proíbe abrir TX global; todas queries reais usam db/tx.
   const global=vi.spyOn(prisma,"$transaction").mockRejectedValue(new Error("Cliente global proibido377 dentro do recorte pool1"));
   try{await rodar(db,c);}finally{global.mockRestore();await db.$disconnect();}
 }

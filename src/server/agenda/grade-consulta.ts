@@ -7,7 +7,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao } from "@/
 import { carregarGradeInicialTx } from "./grade-turma-tx";
 import { conferirDisponibilidadeGrade } from "./grade-disponibilidade";
 
-/** Conferência para revisão; não concede aprovação nem reserva disponibilidade. */
 export async function consultarPropostaGradeTurma(input: { propostaId: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);

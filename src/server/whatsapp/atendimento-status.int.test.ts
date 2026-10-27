@@ -28,8 +28,6 @@ describe("status, prazos e origem do atendimento (M2)", () => {
   it("novo atendimento nasce ABERTO_SEM_RESPONSAVEL; migration semeia prazos provisórios", async () => {
     const { a } = await cenario();
     expect(a.status).toBe("ABERTO_SEM_RESPONSAVEL");
-    // truncarBanco apaga o seed; a migration é a fonte dos prazos provisórios (Q3).
-    // Localiza pela parte fixa do nome: o integrador pode renomear o ID da pasta (Global Constraints).
     const pasta = readdirSync("prisma/migrations").find((d) => d.endsWith("_atendimento_status_prazos"));
     expect(pasta).toBeDefined();
     const sql = readFileSync(`prisma/migrations/${pasta}/migration.sql`, "utf8");

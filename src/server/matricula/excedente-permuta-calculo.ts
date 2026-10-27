@@ -36,10 +36,6 @@ function centavos(valor: Prisma.Decimal.Value, campo: string) {
 
 const exibir = (valor: bigint) => new Prisma.Decimal(valor.toString()).div(100).toFixed(2);
 
-/**
- * Q167: separa a aritmética da escolha de destino. Nenhum excedente é
- * convertido em crédito, devolução ou nova compensação neste cálculo.
- */
 export function calcularExcedentePermuta(entrada: EntradaExcedentePermuta) {
   if (!entrada.cobrancaId) throw new ErroRegra("Informe a cobrança do acerto.");
   if (!Number.isInteger(entrada.versaoCobranca) || entrada.versaoCobranca < 0) throw new ErroRegra("Versão da cobrança inválida.");

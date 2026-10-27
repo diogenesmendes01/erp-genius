@@ -1,16 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { anonimizarBuscaExportacoes, CORTE_PADRAO, LOTE_PADRAO } from "../src/server/lgpd/anonimizar-busca-exportacoes";
 
-// LGPD (#165, decisão D5): anonimiza o texto da busca guardado nos eventos `DadosExportados` anteriores
-// à #119 (25/09/2026). `payload.filtros.busca` em texto vira `{ aplicada: true, caracteres: n }`, o mesmo
-// formato que o código grava desde a #119. Nenhum outro campo muda. Idempotente.
-//
-// Uso (DATABASE_URL do banco alvo; em produção, SÓ depois do backup — scripts/backup-producao.sh):
-//   tsx scripts/anonimizar-busca-exportacoes.ts                    # simulação: só conta, não grava
-//   tsx scripts/anonimizar-busca-exportacoes.ts --aplicar          # grava, em lotes, e registra o Evento
-// Opções: `--corte 2026-09-26T03:00:00Z` (padrão: fim de 25/09 em Brasília) e `--lote 500`.
-// A saída mostra só contagens e datas, nunca o texto da busca.
-
 function argumentos(argv: string[]) {
   let aplicar = false, corte = CORTE_PADRAO, lote = LOTE_PADRAO;
   for (let i = 0; i < argv.length; i++) {

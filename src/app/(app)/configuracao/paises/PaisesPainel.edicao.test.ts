@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// C13 da #170: o servidor preserva o tipo de documento pelo `id` (server/paises/tipos-documento.ts).
-// A tela precisa repassar esse `id` ao abrir a edição; sem ele, renomear um tipo em uso vira
-// "remover o antigo + criar um novo", e a remoção de um tipo com alunos é recusada.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
 }));

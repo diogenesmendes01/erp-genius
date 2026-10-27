@@ -496,7 +496,6 @@ it.each([true, false])("confirmação e ativação respeitam decisão de preço 
   expect((await decidirPrecoPreparacao({ preparacaoId: r.id, aprovar, motivo: "Decisão administrativa independente" })).ok).toBe(true);
   if (aprovar) {
     await expect(conferir()).resolves.toBeUndefined();
-    // Preço autorizado não substitui evidência de aceite.
     await expect(prisma.$transaction((tx) => exigirContratoAceito(tx, m))).rejects.toThrow("contrato precisa estar aceito");
   } else {
     await expect(conferir()).rejects.toThrow("rejeitada");
@@ -556,7 +555,6 @@ it.each(["MENSALIDADE", "HORA_PARTICULAR"] as const)("ativação não inventa co
   const vendedor = await criarUsuario(["VENDEDOR"]);
   const lead = await prisma.oportunidade.create({ data: { nome: "Entrada incompleta", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime, taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparação ainda pendente", chaveIdempotencia: "entrada-pendente" }));
-  // Editar a oferta depois não completa o snapshot da negociação.
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const resultado = await concluirMatricula(r.matriculaId);
   expect(resultado.ok).toBe(false);
@@ -846,7 +844,6 @@ it.each([
   expect((await preservarOriginalContratual({ ...gerarOriginal, previaId: "outra-previa" })).ok).toBe(false);
   expect((await preservarOriginalContratual({ ...gerarOriginal, conferenciaId: "outra-conferencia" })).ok).toBe(false);
   expect((await preservarOriginalContratual({ ...gerarOriginal, conteudoConferido: false } as unknown as typeof gerarOriginal)).ok).toBe(false);
-  // O e-mail não é campo do modelo: mesmo com texto inalterado, identidade nova exige conferência.
   await prisma.aluno.update({ where: { id: base.alunoId }, data: { email: "mudou@example.test" } });
   expect(await preservarOriginalContratual(gerarOriginal)).toMatchObject({ ok: false, erro: expect.stringContaining("signatários mudou") });
   await prisma.aluno.update({ where: { id: base.alunoId }, data: { email: "aluno@example.test" } });
@@ -923,7 +920,6 @@ it.each([
   if (!revisaoEmissao.ok || !revisaoEmissao.dado) throw new Error("Revisão de emissão ausente");
   expect((await conferirEEmitirEntrada({ matriculaId: r.matriculaId, revisaoHash: revisaoEmissao.dado.hash, cadastroDocumentosConferidos: true, condicoesConferidas: true, motivo: "Conferência anterior à assinatura", chaveIdempotencia: "emitir-para-assinatura" })).ok).toBe(true);
   const taxaAssinatura = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: r.matriculaId, tipo: "MATRICULA" } });
-  // Alterar a oferta atual não modifica a regra de assinatura capturada na matrícula.
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: !taxaPreviaAssinatura } });
   if (taxaPreviaAssinatura) {
     await prisma.pagamentoInformado.create({ data: { cobrancaId: taxaAssinatura.id, autorId, chaveIdempotencia: "informe-taxa-assinatura", valor: taxaAssinatura.valorNegociado, moeda: taxaAssinatura.moeda, forma: "TRANSFERENCIA", dataPagamento: new Date() } });
@@ -960,7 +956,6 @@ it.each([
   expect((await registrarConferenciaAssinatura({ ...solicitarConferencia, motivo: "Outro motivo para a mesma chave" })).ok).toBe(false);
   expect(await prisma.conferenciaAssinaturaContratual.count()).toBe(1);
   if (!conferidaAssinatura.ok || !conferidaAssinatura.dado) throw new Error("Conferência não registrada");
-  // Fornecedor e ambiente abaixo são fixtures: nenhuma configuração operacional ou chamada externa.
   const entradaProcesso = { matriculaId: r.matriculaId, artefatoId: a.id, conferenciaId: conferidaAssinatura.dado.id, executorId: autorId, fornecedor: "ZAPSIGN" as const, ambiente };
   const processoEnvio = await prisma.$transaction((tx) => prepararProcessoEnvioTx(tx, entradaProcesso));
   expect(await prisma.$transaction((tx) => prepararProcessoEnvioTx(tx, entradaProcesso))).toEqual(processoEnvio);
@@ -982,7 +977,6 @@ it.each([
   const confirmadoEnvio = await prisma.$transaction((tx) => registrarResultadoEnvioTx(tx, registroExterno));
   expect(confirmadoEnvio.estado).toBe("ENVIADO");
   expect(await prisma.$transaction((tx) => registrarResultadoEnvioTx(tx, registroExterno))).toEqual(confirmadoEnvio);
-  // Mesmo uma inconsistência de estado não pode reenviar processo já vinculado ao fornecedor.
   await prisma.processoAssinaturaContratual.update({ where: { id: processoEnvio.id }, data: { estado: "PREPARADO" } });
   await expect(prisma.$transaction((tx) => iniciarTentativaAssinaturaTx(tx, { processoId: processoEnvio.id, executorId: autorId }))).rejects.toThrow("Não repetir");
   await prisma.processoAssinaturaContratual.update({ where: { id: processoEnvio.id }, data: { estado: "ENVIADO" } });
@@ -1030,7 +1024,6 @@ it.each([
   await prisma.usuario.update({ where: { id: autorId }, data: { ativo: false } });
   expect((await abrirConclusao("pdf")).status).toBe(401);
   await prisma.usuario.update({ where: { id: autorId }, data: { ativo: true } });
-  // Nem PDF de teste preservado nem flags do caminho antigo autorizam o novo aceite.
   const contratoAnexado = await prisma.documento.create({ data: { matriculaId: processoConcluido.matriculaId, categoria: "CONTRATO", nome: "Anexo sem aceite integrado", url: "/api/assinaturas/anexo" } });
   expect(await confirmarContratoMatricula(processoConcluido.matriculaId, contratoAnexado.id, [])).toMatchObject({ ok: false, erro: expect.stringContaining("fluxo integrado") });
   const antesAceite = await prisma.matricula.findUniqueOrThrow({ where: { id: processoConcluido.matriculaId } });
@@ -1045,7 +1038,6 @@ it.each([
     expect(await confirmarAceiteOriginal(confirmarBase)).toMatchObject({ ok: false, erro: expect.stringContaining("teste") });
     expect(await prisma.aceiteOriginalContratual.count()).toBe(0);
   } else {
-    // PRODUCAO é somente uma fixture neste banco descartável, sem fornecedor ou envio real.
     if (!consultaAceite.ok || !consultaAceite.dado?.revisao) throw new Error(`Revisão final ausente: ${JSON.stringify(consultaAceite)}`);
     expect(await confirmarAceiteOriginal(confirmarBase)).toMatchObject({ ok: false, erro: expect.stringContaining("mudaram") });
     const pedidoAceite = { ...confirmarBase, revisaoHash: consultaAceite.dado.revisao.hash };
@@ -1081,7 +1073,6 @@ it.each([
     await expect(prisma.documento.update({ where: { id: aceito.dado.documentoId }, data: { url: "/outro-pdf" } })).rejects.toThrow("preservado");
     expect(await prisma.documento.count({ where: { categoria: "CONTRATO" } })).toBe(2);
     expect(await confirmarAceiteOriginal(pedidoAceite)).toEqual(aceito);
-    // A mesma matrícula preparada é concluída pelo caminho público, sem criar recebimentos.
     const financeiroAtivacao = await criarUsuario(["FINANCEIRO"]);
     expect(await concluirMatricula(alvoAceite.matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("pagamentos exigidos") });
     for (const cobranca of await prisma.cobranca.findMany({ where: { matriculaId: alvoAceite.matriculaId } })) {
@@ -1309,7 +1300,6 @@ it("ausência docente preserva reservas afetadas e acompanha pendências sem lib
   expect((await consultarIndisponibilidadesDocentes({ professorId: t.professorId! })).ok).toBe(false);
   authMock.mockResolvedValue({ user: { id: t.professorId! } });
   expect(await consultarIndisponibilidadesDocentes()).toMatchObject({ ok: true, dado: { itens: [{ reservasPendentes: [{ reservaId: reserva.id }] }] } });
-  // Simula solução concluída em fixture; o executor de liberação ainda não existe.
   await prisma.reservaAgendaParticular.update({ where: { id: reserva.id }, data: { status: "EXPIRADA" } });
   expect(await consultarIndisponibilidadesDocentes()).toMatchObject({ ok: true, dado: { itens: [{ reservasPendentes: [], decisao: { reservasNaDecisao: [{ reservaId: reserva.id }] } }] } });
   const decisao = await prisma.decisaoIndisponibilidadeDocente.findUniqueOrThrow({ where: { indisponibilidadeId: pedido.dado.id } });
@@ -1464,15 +1454,12 @@ it.each([
   expect(await conferirReservaParticularSecretaria({ reservaId: r.reservaId })).toMatchObject({ ok: true, dado: { resultado: "PRAZO_VIGENTE" } });
   if (ativar) {
     if (!conferida.ok || !conferida.dado) throw new Error("Conferência ausente");
-    // Protocolo de produção simulado somente no banco descartável; nenhum envio real.
     const processo = await prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { ...alvo, conferenciaId: conferida.dado!.id, executorId: autorId, fornecedor: "ZAPSIGN", ambiente: "PRODUCAO" }));
     const tentativa = await prisma.$transaction(tx => iniciarTentativaAssinaturaTx(tx, { processoId: processo.id, executorId: autorId }));
     await prisma.$transaction(tx => registrarResultadoEnvioTx(tx, { processoId: processo.id, tentativaId: tentativa.tentativaId, chave: "envio-particular", resultado: "REGISTRADO", referenciaExterna: "particular-fixture", evidenciaHash: "c".repeat(64) }));
     const fonte = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: processo.id }, include: { artefato: { include: { conferencia: true } } } });
     const pessoas = ConferirParticipantesSchema.innerType().shape.participantes.element.strip().array().parse((fonte.artefato.conferencia.snapshot as { participantes: unknown }).participantes);
     const envioRegistrado = await prisma.tentativaEnvioAssinatura.findUniqueOrThrow({ where: { id: tentativa.tentativaId }, select: { iniciadaEm: true } });
-    // O envio usa o relógio do PostgreSQL; a assinatura simulada só pode ocorrer depois dele.
-    // Não alterar timestamps persistidos nem flexibilizar a validação de produção.
     const esperaEnvio = envioRegistrado.iniciadaEm.getTime() - Date.now();
     if (esperaEnvio > 5000) throw new Error("Sincronize os relógios do banco descartável e do executor de testes.");
     if (esperaEnvio >= 0) await new Promise(resolve => setTimeout(resolve, esperaEnvio + 2));
@@ -1495,7 +1482,6 @@ it.each([
     }
     const adminComissao = await criarUsuario(["ADMINISTRADOR"]);
     await prisma.politicaComissao.create({ data: { paisId: base.paisId, produtoId: base.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: base.moeda, vigenteEm: new Date("2020-01-01"), criadaPorId: adminComissao.id } });
-    // Outro contrato do mesmo aluno permanece ativo e sua alocação não é substituída.
     await prisma.matricula.update({ where: { id: base.id }, data: { status: "ATIVA" } });
     const vinculoAnterior = await prisma.alocacaoTurma.create({ data: { alunoId: base.alunoId, matriculaId: base.id, turmaId } });
     await prisma.usuario.update({ where: { id: t.professorId! }, data: { ativo: false } });
@@ -1554,7 +1540,6 @@ it.each([
   }
   if (regime === "HORA_PARTICULAR" && formaAgenda === "PARTICULAR_GRADE_FIXA") {
     if (!conferida.ok || !conferida.dado) throw new Error("Conferência ausente");
-    // Provedor somente de fixture, sem chamada externa ou configuração operacional.
     await prisma.$transaction((tx) => prepararProcessoEnvioTx(tx, { ...alvo, conferenciaId: conferida.dado!.id, executorId: autorId, fornecedor: "ZAPSIGN", ambiente: "SANDBOX" }));
   }
   const reservaFinal = await prisma.reservaAgendaParticular.findUniqueOrThrow({ where: { id: r.reservaId } });

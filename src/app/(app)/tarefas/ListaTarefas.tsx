@@ -18,11 +18,9 @@ import {
 
 type Props = {
   itens: ItemAgenda[];
-  /** Instante de referência (ISO) para atrasada/hoje; o servidor decide. */
   agora: string;
   fusoEscola: string;
   fusoExibicao: string;
-  /** Parâmetros atuais da URL, preservados nos links de abrir. */
   params?: ParamsTarefas;
 };
 

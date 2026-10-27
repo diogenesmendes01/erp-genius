@@ -31,7 +31,6 @@ export const DecidirSubstituicaoAgendaSegundaChamadaSchema = z.object({
 
 export type EntradaSubstituicaoAgendaSegundaChamada = z.input<typeof ProporSubstituicaoAgendaSegundaChamadaSchema>;
 
-/** Canonicalização sem relógio preserva a semântica de reenvio idempotente. */
 export function canonicalizarSubstituicaoAgendaSegundaChamada(input: EntradaSubstituicaoAgendaSegundaChamada) {
   return ProporSubstituicaoAgendaSegundaChamadaSchema.parse(input);
 }

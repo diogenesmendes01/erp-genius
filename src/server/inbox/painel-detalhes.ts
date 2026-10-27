@@ -34,7 +34,6 @@ export function subtituloContato(i: { b2b: boolean; produto: string | null; carg
   return [i.cargo, i.empresa].filter(Boolean).join(" · ");
 }
 
-/** Eventos já ordenados do mais recente ao mais antigo, com desempate estável na consulta. */
 export function autoriaDosCampos(eventos: readonly { campoId: string; autorId: string | null }[]): Map<string, boolean> {
   const autoria = new Map<string, boolean>();
   for (const e of eventos) if (!autoria.has(e.campoId)) autoria.set(e.campoId, e.autorId === null);
@@ -47,7 +46,6 @@ const pessoaSelect = {
   empresa: { select: { id: true, nome: true, documento: true, segmentoMercado: true, porte: true, site: true } },
 } satisfies Prisma.PessoaSelect;
 
-/** Uma resolução de identidade para cabeçalho, Detalhes e tags. Escopo vem ANTES dos dados de Pessoa. */
 async function contextoPainel(u: UsuarioSessao, atendimentoId: string, db: Db) {
   const achado = await db.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { db })] },
@@ -70,20 +68,17 @@ async function contextoPainel(u: UsuarioSessao, atendimentoId: string, db: Db) {
       participantes: { orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { pessoaId: true, papel: true, pessoa: { select: { nome: true, cargo: true } } } },
     },
   }) : null;
-  // Não há fallback se existe lead, ainda que negado, sem Pessoa ou com responsável legal.
   const pessoa = op ? (op.pessoa?.responsavel ? null : op.pessoa) : comercial && !a.leadId && a.conversa.contato.pessoaId
     ? await db.pessoa.findFirst({ where: { AND: [{ id: a.conversa.contato.pessoaId, responsavel: null }, await escopoPessoas(u, db)] }, select: pessoaSelect }) : null;
   const interlocutor = op?.participantes.find(p => p.pessoaId === a.conversa.contato.pessoaId) ?? null;
   return { a, op, pessoa, interlocutor };
 }
 
-/** Db opcional inclui TODA a autorização; nenhuma conexão global é pedida em uma tx. */
 export async function pessoaDoAtendimento(u: UsuarioSessao, atendimentoId: string, db: Db = prisma): Promise<{ pessoaId: string; leadId: string | null } | null> {
   const c = await contextoPainel(u, atendimentoId, db);
   return c?.pessoa ? { pessoaId: c.pessoa.id, leadId: c.op?.id ?? null } : null;
 }
 
-/** Leitura de retorno escolhe a oportunidade antes de avaliar telefone; nenhum fallback por telefone. */
 async function retornoDoCliente(u: UsuarioSessao, c: NonNullable<Awaited<ReturnType<typeof contextoPainel>>>, db: Db): Promise<ClienteVoltouPainel | null> {
   const { a, pessoa } = c;
   if (a.finalidade !== "COMERCIAL" || a.leadId || !pessoa) return null;
@@ -102,7 +97,6 @@ async function retornoDoCliente(u: UsuarioSessao, c: NonNullable<Awaited<ReturnT
     if (alcance?.contatoId === contato.id && alcance.finalidade === "COMERCIAL" &&
         alcance.contato.pessoaId === pessoa.id && alcance.contato.telefoneE164 === op.telefoneE164 &&
         (!alcance.contato.leadId || alcance.contato.leadId === op.id)) {
-      // Mesma preferência de garantirAtendimento: não oferecer vínculo que selecionaria outra identidade.
       const abertos = await db.atendimentoWhatsApp.findMany({
         where: { conversaId: a.conversa.id, finalidade: "COMERCIAL", encerradoEm: null },
         orderBy: [{ ultimaMensagemEm: { sort: "desc", nulls: "last" } }, { criadoEm: "desc" }],
@@ -132,7 +126,6 @@ export async function carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: s
   };
 }
 
-/** Os blocos novos têm gate próprio; a projeção antiga Pessoa409 permanece literal. */
 async function cadastroDoContexto(u:UsuarioSessao,c:NonNullable<Awaited<ReturnType<typeof contextoPainel>>>) {
  if(c.a.finalidade!=="COMERCIAL"||!c.pessoa)return null;
  const row=await prisma.usuario.findUnique({where:{id:u.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
@@ -162,7 +155,6 @@ export async function carregarDetalhesPainel(u: UsuarioSessao, atendimentoId: st
         ORDER BY payload ->> 'campoId', "criadoEm" DESC, id DESC
       `,
     ]);
-    // A projeção SQL traz só campoId/autorId do último evento. Não carrega o JSON sensível.
     const autoria = autoriaDosCampos(eventos);
     campos = ficha.map(campo => ({ ...campo, ia: autoria.get(campo.id) ?? false }));
   }

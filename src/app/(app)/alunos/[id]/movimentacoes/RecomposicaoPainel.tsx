@@ -27,10 +27,7 @@ function Resumo({ dados }: { dados: unknown }) {
 }
 
 export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizarContexto }: { contexto: Contexto; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void> }) {
-  // Um grupo de ação por bloco da tela, cada um com o resultado junto dos próprios botões. Todos como
-  // sem chave na falha de transporte (MSG_RESULTADO_INCERTO_SEM_CHAVE), como antes: conferir antes de repetir.
   const consulta = useAcaoCliente({ idempotente: false });
-  // Conferir atualidade, aplicar a programação e decidir: as ações sobre o rascunho exibido.
   const conferencia = useAcaoCliente({ idempotente: false });
   const preparacao = useAcaoCliente({ idempotente: false });
   const salvamento = useAcaoCliente({ idempotente: false });
@@ -78,7 +75,6 @@ export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizar
       <label className="grid">Motivo da recomposição<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><label className="grid">Evidência das condições<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!direitos.length}>Conferir proposta de recomposição</button>
     </fieldset><FeedbackAcao erro={preparacao.erro} /></form>}
     {previa != null && entrada && <div className="space-y-2"><Resumo dados={previa} /><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => salvamento.executar(async (): Promise<Resultado> => { chave.current ||= crypto.randomUUID(); const r = await salvarRascunhoRecomposicao({ ...entrada, versaoAnterior: rascunho?.versao ?? 0, chaveIdempotencia: chave.current }); if (!r.ok) return r; setEntrada(null); setPrevia(null); chave.current = ""; return carregar(); }, "Nova versão salva para decisão independente.")}>Salvar versão da recomposição</button></div>}
-    {/* Fora do bloco da prévia: depois de salvar, a prévia some e a confirmação continua visível. */}
     <FeedbackAcao erro={salvamento.erro} sucesso={salvamento.sucesso} />
   </section>;
 }

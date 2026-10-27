@@ -14,8 +14,6 @@ export type AvisoReplanejamento = { matriculaId: string; encontrosIds: string[];
 
 const cobre = (alocacao: Alocacao, instante: string) => alocacaoCobreAula(alocacao, new Date(instante));
 
-/** A mudança alcança quem estava alocado no horário que existia OU no proposto.
- * A origem é derivada da fotografia canônica e mantém a razão da projeção. */
 export function agruparAvisosReplanejamento(horarios: readonly Horario[], encontros: readonly Encontro[], alocacoes: readonly Alocacao[]): AvisoReplanejamento[] {
   const porEncontro = new Map(encontros.map((encontro) => [encontro.id, encontro]));
   const grupos = new Map<string, { encontrosIds: Set<string>; original: boolean; proposto: boolean }>();
@@ -33,8 +31,6 @@ export function agruparAvisosReplanejamento(horarios: readonly Horario[], encont
   return [...grupos.entries()].map(([matriculaId, grupo]): AvisoReplanejamento => ({ matriculaId, encontrosIds: [...grupo.encontrosIds].sort(), origem: grupo.original && grupo.proposto ? "AMBOS" : grupo.original ? "HORARIO_ORIGINAL" : "HORARIO_PROPOSTO" })).sort((a, b) => a.matriculaId.localeCompare(b.matriculaId));
 }
 
-/** Cria apenas intenções PREPARADO no mesmo TX da aplicação; canais, consentimento e
- * transporte são revalidados pelo helper N01 após o commit. */
 export async function criarAvisosReplanejamentoConjuntoTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; rascunhoId: string }) {
   const evento = await tx.evento.findUnique({ where: { id: entrada.eventoId }, select: { agregadoTipo: true, agregadoId: true, tipo: true, payload: true } });
   const payload = EventoSchema.safeParse(evento?.payload);

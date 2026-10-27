@@ -14,7 +14,6 @@ import { hashCorrecaoAula } from "./correcao-aula-schema";
 const entradaSchema = z.object({ encontroId: z.string().min(1), arquivoOficialId: z.string().regex(/^[A-Za-z0-9_-]{3,500}$/),
   chaveIdempotencia: z.string().trim().min(8).max(100) }).strict();
 
-/** Publica a fonte e conclui a aula com chamada e disponibilidade conferidas. */
 export async function registrarGravacaoAula(input: z.input<typeof entradaSchema>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);

@@ -24,8 +24,6 @@ describe("Esqueleto", () => {
   });
 
   it("todo esqueleto exportado passa pelo anúncio — um esqueleto novo sem ele não entra pela porta do loading.tsx", () => {
-    // A trava estática (src/app/borda-rota.test.ts) aceita um loading.tsx que só renderiza um Esqueleto*:
-    // o anúncio fica garantido aqui, para cada export, sem lista fixa.
     const exportados = Object.entries(Esqueletos).filter(([nome]) => nome.startsWith("Esqueleto"));
     expect(exportados.length).toBeGreaterThanOrEqual(8);
     for (const [nome, Componente] of exportados) {
@@ -53,7 +51,7 @@ describe("Esqueleto", () => {
     expect([...tabela.matchAll(/class="animate-pulse rounded-md bg-gray-100 h-20"/g)]).toHaveLength(4);
     expect(renderToStaticMarkup(createElement(EsqueletoTabela, { rotulo: "x" }))).not.toContain("h-20");
     const acesso = renderToStaticMarkup(createElement(EsqueletoAcesso, { rotulo: "x" }));
-    expect([...acesso.matchAll(/class="animate-pulse rounded-md bg-gray-100 h-9"/g)]).toHaveLength(3); // 2 campos + botão
+    expect([...acesso.matchAll(/class="animate-pulse rounded-md bg-gray-100 h-9"/g)]).toHaveLength(3);
   });
 
   it("esqueleto de formato específico fica no grupo da página-índice, não na raiz — senão as rotas filhas herdariam o formato errado", () => {

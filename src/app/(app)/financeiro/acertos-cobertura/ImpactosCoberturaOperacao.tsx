@@ -20,7 +20,6 @@ function descreverPolitica(politica: Politica) {
 }
 
 export function ImpactosCoberturaOperacao({ conjunto, reprepararHref }: { conjunto: Conjunto | null; reprepararHref: string }) {
-  // As três actions recebem chave de idempotência estável: na falha de transporte, reenviar a mesma operação confere o resultado.
   const router = useRouter(); const [motivo, setMotivo] = useState(""); const acao = useAcaoCliente({ idempotente: true }); const tentativa = useRef<{ operacao: string; motivo: string; chave: string } | null>(null);
   const ocupado = acao.ocupado;
   async function executar(operacao: "aprovar" | "rejeitar" | "aplicar" | "obsoletar") {

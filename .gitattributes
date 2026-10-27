@@ -1,16 +1,10 @@
-# Artefatos que rodam em Linux (VPS) saem SEMPRE com LF, mesmo em checkout no Windows —
-# bash com CRLF quebra com "bad interpreter" (doc 31 §deploy).
 *.sh text eol=lf
 Dockerfile text eol=lf
 deploy/** text eol=lf
 
-# Fontes lidas pelas guardas AST/textuais têm checkout igual em Windows e Linux.
 /src/**/*.ts text eol=lf
 /src/**/*.tsx text eol=lf
 /.github/workflows/ci.yml text eol=lf
-
-# A CLI também é importada nos testes Vite: CRLF no shebang falha no runner Windows.
-/scripts/visual/capturar-inbox.mjs text eol=lf
 
 prisma/migrations/20260916185000_aplicacao_vinculos_historicos_migracao/migration.sql -text
 prisma/migrations/20260916190000_situacao_contratual_migrada/migration.sql -text
@@ -93,7 +87,6 @@ prisma/migrations/20260921000000_reconciliar_competencia_spec/migration.sql -tex
 prisma/migrations/20260929120000_contato_whatsapp_nome_perfil/migration.sql -text
 prisma/migrations/20260929130000_contato_whatsapp_nome_editado/migration.sql -text
 
-# Nova migração do Inbox: preservar o checksum aplicado em qualquer checkout.
 /prisma/migrations/20261026010000_origem_prospeccao_ativa/migration.sql text eol=lf
 /prisma/migrations/20261025204000_inbox_tarefa_prioridade_baixa/migration.sql text eol=lf
 /prisma/migrations/20261025204100_inbox_tarefa_notificados/migration.sql text eol=lf

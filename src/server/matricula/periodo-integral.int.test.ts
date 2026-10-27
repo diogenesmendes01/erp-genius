@@ -220,7 +220,6 @@ it("reverte toda a aplicação se a origem de crédito não for criada na mesma 
 it("duas execuções simultâneas retornam a mesma aplicação e um único crédito", async () => {
   expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-concorrencia", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const { decisaoId } = await aprovarCredito();
-  // Evita corrida do import dinâmico NextAuth no runner; autorização transacional e locks continuam reais.
   const autenticacao = vi.spyOn(sessao, "exigirSessaoComPapel").mockResolvedValue({ id: autorId, nome: "Financeiro sintético", papeis: ["FINANCEIRO"] });
   try {
     const resultados = await Promise.all([aplicarRegularizacaoPeriodoIntegral({ decisaoId }), aplicarRegularizacaoPeriodoIntegral({ decisaoId })]);

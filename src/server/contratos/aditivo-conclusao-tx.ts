@@ -6,7 +6,6 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { ConclusaoAssinaturaSchema, validarConclusaoAssinatura } from "./conclusao-assinatura-schema";
 import { hashSubstituicao } from "./substituicao-estado";
 
-/** Primitiva do adaptador autenticado futuro. Não é Server Action e não ativa condições. */
 export async function preservarConclusaoAssinaturaAditivoTx(tx: Prisma.TransactionClient, input: z.input<typeof ConclusaoAssinaturaSchema>) {
   const d = ConclusaoAssinaturaSchema.parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -21,7 +20,6 @@ export async function preservarConclusaoAssinaturaAditivoTx(tx: Prisma.Transacti
     throw new ErroRegra("Conclusão incompatível com o envio confirmado e seu original de aditivo.");
   if (createHash("sha256").update(p.artefato.pdf).digest("hex") !== p.artefato.pdfHash) throw new ErroRegra("Integridade do original de aditivo divergente.");
   if (hashSubstituicao(p.artefato.conferencia.snapshot) !== p.artefato.conferencia.revisaoHash) throw new ErroRegra("A conferência preservada do aditivo perdeu integridade.");
-  // Não recarrega contexto atual: assinaturas validam a conferência preservada do artefato.
   const v = validarConclusaoAssinatura(d, p.artefato.conferencia.snapshot, envio.iniciadaEm);
   if (p.conclusao) {
     if (p.conclusao.entradaHash !== v.entradaHash) throw new ErroRegra("Conclusão de aditivo já preservada com outro conteúdo.");

@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// #166 (2º lote): "Nova tarefa" manda chave de idempotência a `criarTarefa`. A chave é a mesma enquanto a
-// tentativa não foi confirmada e muda depois do sucesso. A edição continua sem chave (usa a `versao`).
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   criarTarefa: vi.fn(), editarTarefa: vi.fn(),
@@ -35,7 +33,6 @@ const PADRAO: Props = { tarefa: null, responsaveis: [], fusoEscola: "America/Sao
 
 function montar(extra: Partial<Props> = {}) {
   m.ganchos = criarGanchos();
-  // PainelTarefa só escolhe o formulário pelo key; o teste chama o formulário direto.
   const el = PainelTarefa({ ...PADRAO, ...extra }) as unknown as No;
   const tela = (): ReactNode => m.ganchos!.renderizar(el.type as (p: unknown) => ReactNode, el.props);
   return {

@@ -12,7 +12,6 @@ import { emitirEntradaTx } from "./emissao-entrada-tx";
 import { carregarAgendaParticularContratual } from "@/server/contratos/agenda-particular";
 import { hashPrevia } from "@/server/contratos/previa-estado";
 
-/** Ativação da contratação preparada. Recebimentos são confirmados pelo fluxo financeiro. */
 export async function ativarPreparacaoTx(tx: Prisma.TransactionClient, matriculaId: string, autorId: string) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await bloquearMatriculas(tx, [matriculaId]);
@@ -49,7 +48,6 @@ export async function ativarPreparacaoTx(tx: Prisma.TransactionClient, matricula
     if (await tx.alocacaoTurma.count({ where: { matriculaId: m.id, ativa: true } })) throw new ErroRegra("A preparação particular já possui alocação de turma. Confira o vínculo antes de ativar.");
     const docentes = [...new Set(particular.snapshot.horarios.map(h => h.professorId))].sort();
     await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id IN (${Prisma.join(docentes)}) ORDER BY id FOR SHARE`;
-    // A inativação pode ter ocorrido entre a leitura inicial e a aquisição do bloqueio.
     await carregarAgendaParticularContratual(tx, m.id, p.reservaParticularId!);
     if (await tx.encontroAgenda.count({ where: { matriculaId: m.id } })) throw new ErroRegra("Confira os encontros já registrados nesta preparação.");
   }
@@ -64,10 +62,8 @@ export async function ativarPreparacaoTx(tx: Prisma.TransactionClient, matricula
   if (await tx.comissao.count({ where: { matriculaId: m.id } })) throw new ErroRegra("Confira a comissão já registrada nesta preparação antes de ativar.");
   const responsavel = z.object({ vendedorResponsavelId: z.string().min(1) }).parse(p.referencias).vendedorResponsavelId;
   const taxa = cobrancas.find(c => c.tipo === "MATRICULA")!;
-  // A política é da data da contratação, preservando sua vigência; não usa uma tabela nova por conveniência.
   const comissao = await resolverComissao(tx, { paisId: m.paisId, produtoId: m.produtoId, taxa: taxa.valorNegociado.toNumber(), moeda: m.moeda, agora: m.criadoEm });
   const agora = new Date();
-  // A reserva deixa a contagem e o vínculo entra sob o mesmo bloqueio da turma e transação.
   let alocacaoId: string | null = null;
   const encontros: { horarioReservaId: string; encontroId: string }[] = [];
   if (particular) {

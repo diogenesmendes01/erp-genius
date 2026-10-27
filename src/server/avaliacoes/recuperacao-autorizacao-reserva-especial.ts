@@ -11,7 +11,6 @@ import { conferirGestorAvaliacao } from "./regras-tx";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
 import { AutorizarReservaEspecialRecuperacaoSchema } from "./recuperacao-autorizacao-reserva-schema";
 
-/** Autoriza uma reserva delimitada. Não cria oportunidade extra nem realiza avaliação. */
 export async function autorizarReservaEspecialRecuperacao(input: z.input<typeof AutorizarReservaEspecialRecuperacaoSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

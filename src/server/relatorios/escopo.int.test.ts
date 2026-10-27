@@ -34,7 +34,6 @@ describe("escopo dos relatórios", () => {
   });
   it("vendedor_so_ele", async () => expect(await escopoRelatorio(vend1)).toEqual({ tipo: "USUARIOS", ids: [vend1.id] }));
   it("vendedor_cobrindo_carteira_continua_so_ele_nos_relatorios", async () => {
-    // DF5-11: a cobertura amplia o acesso operacional (escopoComercialAtual), mas não entra nos relatórios na v1.
     await prisma.coberturaCarteira.create({
       data: { titularId: vend2.id, substitutoId: vend1.id, concedenteId: gerente.id, inicio: new Date(Date.now() - 86_400_000), fim: new Date(Date.now() + 86_400_000), motivo: "Férias" },
     });
@@ -43,7 +42,6 @@ describe("escopo dos relatórios", () => {
   });
   it("financeiro_sem_acesso", async () => await expect(escopoRelatorio(financeiro)).rejects.toThrow(ErroPermissao));
   it("papeis_sao_lidos_frescos_do_banco_e_inativo_e_negado", async () => {
-    // o objeto da sessão diz ADMINISTRADOR, mas o banco já rebaixou o usuário
     await prisma.usuario.update({ where: { id: admin.id }, data: { papeis: [Papel.FINANCEIRO] } });
     await expect(escopoRelatorio(admin)).rejects.toThrow(ErroPermissao);
     await prisma.usuario.update({ where: { id: vend1.id }, data: { ativo: false } });

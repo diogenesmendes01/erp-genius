@@ -14,7 +14,6 @@ export async function salvarConfiguracaoOperacional(input: z.input<typeof Schema
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = Schema.parse(input);
     await prisma.$transaction(async (tx) => {
-      // Serializa a criação inicial e alterações concorrentes do singleton.
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(739204)::text`;
       const usuarioAtual = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
       if (!usuarioAtual?.ativo || !usuarioAtual.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao();

@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Travas UNITÁRIAS de listarOpcoesAtendimento no `npm test` comum (Prisma mockado): o sinal
-// `comercial` segue o papel do usuário, e sem destinatário no escopo os canais não são listados
-// (a tela explica o motivo em vez de acusar falta de canal).
-
 const m = vi.hoisted(() => ({
   sessao: vi.fn(),
   escopo: vi.fn(),
@@ -21,7 +17,6 @@ vi.mock("@/lib/prisma", () => ({ prisma: m.db }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/_shared", () => ({
   exigirSessao: m.sessao,
-  // Mesma regra de src/server/_shared/sessao.ts: administrador tem todo papel.
   temPapel: (u: { papeis: Papel[] }, ...alvo: Papel[]) => u.papeis.includes(Papel.ADMINISTRADOR) || u.papeis.some((p) => alvo.includes(p)),
   ErroRegra: class extends Error {},
   executarAcao: vi.fn(),
@@ -45,7 +40,6 @@ beforeEach(() => {
   m.escopo.mockImplementation(async (u: { id: string; papeis: Papel[] }) => u.papeis.includes(Papel.ADMINISTRADOR) ? {} : { vendedorDonoId: u.id });
   for (const f of [m.db.oportunidade.findMany, m.db.turma.findMany, m.db.aluno.findMany, m.db.matricula.findMany, m.db.usuario.findMany]) f.mockResolvedValue([]);
   m.db.oportunidade.count.mockResolvedValue(1);
-  // Canais ativos EXISTEM: se a checagem de "sem destino" cair, eles vazariam para a tela.
   m.db.numeroWhatsApp.findMany.mockResolvedValue([LINHA_DE_V1, COBRANCA]);
 });
 

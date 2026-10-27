@@ -19,8 +19,6 @@ const alvoPublicacao = "PUBLICACAO_AULA" as const;
 type Alvo = typeof alvoPublicacao | "MATERIAL_REPOSICAO";
 
 async function exigirPreparadorFresco(tx: Prisma.TransactionClient, usuarioId: string, alvo: Alvo, alvoId: string) {
-  // A correção da aula ordena calendário, encontro e usuário. A proposta de
-  // fonte segue a mesma ordem quando um professor é o preparador.
   if (alvo === alvoPublicacao) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
     await tx.$queryRaw`SELECT e.id FROM "PublicacaoGravacaoAula" p JOIN "EncontroAgenda" e ON e.id = p."encontroId" WHERE p.id = ${alvoId} FOR UPDATE OF e`;
@@ -32,8 +30,6 @@ async function exigirPreparadorFresco(tx: Prisma.TransactionClient, usuarioId: s
     if (!gestao || !await tx.materialReposicaoGravacao.findUnique({ where: { id: alvoId }, select: { id: true } })) throw new ErroPermissao();
     return;
   }
-  // A gestão mantém o percurso legado: só confirma que a publicação existe.
-  // As provas de aula corrigível pertencem exclusivamente ao preparo docente.
   if (gestao) {
     if (!await tx.publicacaoGravacaoAula.findUnique({ where: { id: alvoId }, select: { id: true } })) {
       throw new ErroRegra("Fonte de gravação não encontrada.");
@@ -69,7 +65,6 @@ function mesmaEntrada(proposta: { alvo: string; publicacaoAulaId: string | null;
   return proposta.alvo === dados.alvo && (dados.alvo === "PUBLICACAO_AULA" ? proposta.publicacaoAulaId === dados.alvoId : proposta.materialReposicaoId === dados.alvoId) && proposta.arquivoOficialId === dados.arquivoOficialId && proposta.motivo === dados.motivo;
 }
 
-/** Prepara uma fonte fixa; a decisão independente é quem a torna reproduzível. */
 export async function proporRegularizacaoFonteGravacao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -83,9 +78,6 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
       return { id: anterior.id };
     }
     const fixa = await fixarRevisaoDriveOrganizacional({ fileId: dados.arquivoOficialId, driveIdOrganizacao: obterDriveOrganizacaoId(), token: obterTokenPublicacaoDrive });
-    // Em SERIALIZABLE o snapshot precede a espera pelo lock do calendário. O preparo
-    // concorrente perdedor é repetido (sem repetir o Drive, já fixado acima) e cai no replay
-    // da chave de idempotência ou recalcula a versão esperada.
     return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
       await exigirPreparadorFresco(tx, autor.id, dados.alvo, dados.alvoId);
       const anterior = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia } } });
@@ -105,7 +97,6 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
   });
 }
 
-/** A aprovação cria uma nova versão append-only; rejeição preserva a fonte vigente. */
 export async function decidirRegularizacaoFonteGravacao(input: unknown) {
   return executarAcao(async () => {
     const decisor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -118,9 +109,6 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
       return proposta;
     });
     if (dados.aprovar) await consultarRevisaoDriveFixada({ fonte: { fileId: preflight.arquivoOficialId, driveId: preflight.driveOrganizacaoId, revisionId: preflight.driveRevisionId, md5Checksum: preflight.driveRevisionMd5, size: preflight.driveRevisionSize.toString(), mimeType: preflight.mimeType }, token: obterTokenDrive });
-    // A decisão concorrente perdedora em SERIALIZABLE termina com 40001/P2034. Não há replay,
-    // mas a nova tentativa enxerga a decisão já confirmada e devolve o ErroRegra claro abaixo,
-    // em vez de "Erro inesperado". A consulta ao Drive fica fora da função repetida.
     return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
       await exigirGestaoFresca(tx, decisor.id);
       const proposta = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { id: dados.propostaId }, include: { decisao: true } });
@@ -145,9 +133,6 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
   });
 }
 
-/** Dados operacionais mínimos para a tela de regularização; não incluem URL ou token do Drive.
- * Paginada por número (E4): a mesma página de cada lista (10 fontes de aula, 10 de reposição, 20
- * propostas), em ordem de id; há próxima se qualquer uma das três continua. */
 const Consulta = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1), busca: z.string().trim().max(120).optional() }).strict();
 export async function consultarRegularizacoesFonteGravacao(entrada: unknown = {}) {
   const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);

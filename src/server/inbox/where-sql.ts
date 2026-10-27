@@ -1,7 +1,5 @@
 import { EtapaLead, FinalidadeAtendimentoWhatsApp, FinalidadeNumero, Prisma, StatusAtendimentoWhatsApp } from "@prisma/client";
 
-// Tradutor de formatos, não de papéis. A autorização é produzida por escopoAtendimentos.
-// Registry privado/fechado: nenhum identificador SQL vem do chamador.
 type Coluna = { tipo: "texto" | "booleano" | "inteiro" | "data"; nulo?: boolean; busca?: boolean; enum?: { nome: string; valores: readonly string[] } };
 type Relacao = { modelo: Modelo; local: string; remoto: string; muitos?: boolean; nulo?: boolean };
 type Tabela = { tabela: string; colunas: Record<string, Coluna>; relacoes: Record<string, Relacao> };
@@ -83,15 +81,12 @@ function escalar(alias: string, campo: string, c: Coluna, filtro: unknown): Pris
   return partes.length ? juntar(partes, "AND") : null;
 }
 
-// Prisma elimina grupos estruturalmente vazios dentro de AND/OR/NOT; OR vazio no topo continua FALSE.
-// Validar o filho ANTES de podar: formato desconhecido nunca vira grupo vazio permitido.
 function grupoVazio(v: unknown): boolean {
   if (!objeto(v)) return false;
   return Object.entries(v).every(([k, x]) => (k === "AND" || k === "OR" || k === "NOT")
     && (Array.isArray(x) ? x : [x]).every(grupoVazio));
 }
 
-/** Equivalente apenas às formas fechadas da ACL e filtros Inbox; não acessa banco nem conhece papéis. */
 export function whereAtendimentoEmSql(where: Prisma.AtendimentoWhatsAppWhereInput): Prisma.Sql {
   let sequencia = 0;
   function condicao(modelo: Modelo, alias: string, filtro: unknown): Prisma.Sql | null {

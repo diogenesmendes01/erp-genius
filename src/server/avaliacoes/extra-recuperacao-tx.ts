@@ -8,7 +8,6 @@ export const EstadoExtraSchema = z.object({
   limiteBase: z.number().int().nonnegative().safe(), extrasAprovados: z.number().int().nonnegative().safe(), ocupadas: z.number().int().nonnegative().safe(),
 });
 
-/** Sob os mesmos locks do vínculo usados pelas reservas. */
 export async function estadoExtraRecuperacaoTx(tx: Prisma.TransactionClient, alocacaoId: string, habilidade: string) {
   const [r] = await tx.$queryRaw<{ estado: unknown }[]>`SELECT estado_extra_recuperacao(${alocacaoId}, ${habilidade}) AS estado`;
   return EstadoExtraSchema.parse(r.estado);

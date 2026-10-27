@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Aprovar replanejamento (docs/42 L1102; fatia B, issue #169): "Aprovar e aplicar conjunto" reescreve as datas
-// dos encontros previstos. O botão só abre o ConfirmarAcao, que repete turmas, encontros e exceções
-// autorizadas e exige "Conferi…"; só a confirmação chama a action. Rejeitar continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),
@@ -38,7 +35,6 @@ const tela = (): ReactNode => m.ganchos!.renderizar(DecidirReplanejamento, {
 });
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
-/** Envia o formulário pelo botão `acao` ("aprovar" ou "rejeitar"), como o React faz com `<form action>`. */
 const enviar = (acao: string) => {
   const form = elementos(tela()).find((n: No) => n.type === "form")!;
   return (form.props.action as (f: FormDataFalso) => unknown)(new FormDataFalso(formularioFalso({ acao })));
@@ -75,7 +71,7 @@ describe("DecidirReplanejamento — aprovar passa pela confirmação", () => {
     expect(consequencia).not.toContain("T-01");
     expect(consequencia).toContain("Motivo registrado: Calendário revisto com a coordenação");
     expect(consequencia).toContain("Não há desfazer pela tela");
-    expect(m.decidir).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.decidir).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.decidir).toHaveBeenCalledTimes(1);
     expect(m.decidir).toHaveBeenCalledWith({ calendarioId: "cal", revisaoId: "rev", aprovar: true, motivo: "Calendário revisto com a coordenação", excecoesAutorizadas: ["enc-2"] });
@@ -99,7 +95,6 @@ describe("DecidirReplanejamento — aprovar passa pela confirmação", () => {
   it("erro e falha de rede aparecem dentro do diálogo (depois da conferência), que continua aberto", async () => {
     enviar("aprovar");
     const [c] = confirmacoes(tela());
-    // A conferência é exigida pelo diálogo (coberta em ConfirmarAcao.interacao.test.ts): sem ela o clique não executa.
     expect((await confirmarNoDialogo(c, usar)).erro).toBeNull();
     expect(m.decidir).not.toHaveBeenCalled();
     const conferido = { ...c, props: { ...c.props, conferencia: undefined } } as No;

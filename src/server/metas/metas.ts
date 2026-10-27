@@ -7,9 +7,6 @@ import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { instanteUtc } from "@/server/relatorios/pipeline";
 import { periodoDoFiltro } from "@/server/relatorios/periodo";
 
-// Metas comerciais mensais (Q9). `usuarioId = null` é a meta geral/de equipe: compara com a soma de todos
-// os vendedores dentro do escopo de quem consulta. Meses sempre no fuso institucional.
-
 const COMPETENCIA = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const METRICAS = Object.values(MetricaMeta) as string[];
 
@@ -30,7 +27,6 @@ export interface ProgressoMeta {
   moeda: string | null;
 }
 
-/** Define (ou regrava) a meta do mês. Administrador: qualquer um; gerente: ele mesmo e a equipe; vendedor: nunca. */
 export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
@@ -65,22 +61,12 @@ export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
         payload: { ...chave, de: atual ? numero(atual.valor) : null, para: valor },
       });
     }).catch((e: unknown) => {
-      // Corrida no índice único parcial: outra pessoa criou a mesma meta entre o findFirst e o create.
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new ErroRegra("Esta meta acabou de ser salva por outra pessoa. Confira a tabela e salve de novo se quiser mudar o valor.");
       throw e;
     });
   });
 }
 
-/**
- * Eventos do agregado Lead que marcam a entrada de cada métrica; o realizado é a PRIMEIRA ocorrência por
- * oportunidade, contada no mês (fuso institucional) em que aconteceu.
- * - MATRICULAS / VALOR_GANHO: `EtapaAlterada` para MATRICULADO. VALOR_GANHO soma `valorPrevisto` da
- *   oportunidade (não há valor fechado por matrícula na v1), na moeda local do país.
- * - EXPERIMENTAIS_REALIZADAS: o check-in do professor grava `ExperimentalRealizada` (comercial/acoes.ts);
- *   aceita também `EtapaAlterada` para EXPERIMENTAL_REALIZADA, se existir no histórico. Mesmo critério de
- *   entrada da etapa do funil (relatorios/funil.ts), sem contar etapas puladas.
- */
 const ENTRADA_REALIZADO: Record<MetricaMeta, { chave: string; etapa: string; tipoProprio: string | null }> = {
   MATRICULAS: { chave: "MATRICULADO", etapa: "MATRICULADO", tipoProprio: null },
   VALOR_GANHO: { chave: "MATRICULADO", etapa: "MATRICULADO", tipoProprio: null },
@@ -123,10 +109,6 @@ async function realizadoDe(entrada: { etapa: string; tipoProprio: string | null 
   return linhas.map((x) => ({ dono: x.dono, moeda: x.moeda, n: Number(x.n), valor: Number(x.valor) }));
 }
 
-/**
- * Meta × realizado nas competências (somadas). Só entram metas do escopo: administrador vê tudo (inclusive a
- * geral); os demais, só as dos vendedores listados. Meta de equipe (sem vendedor) compara com a soma do escopo.
- */
 export async function progressoMetas(i: { competencias: string[]; escopo: EscopoRelatorio }): Promise<ProgressoMeta[]> {
   const competencias = [...new Set(i.competencias)].filter((c) => COMPETENCIA.test(c));
   if (!competencias.length) return [];

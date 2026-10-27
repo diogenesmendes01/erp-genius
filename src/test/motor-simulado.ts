@@ -3,10 +3,6 @@ import { createServer, type IncomingMessage } from "node:http";
 import type { AddressInfo } from "node:net";
 import { POST as webhookMotor } from "@/app/api/whatsapp/webhook/motor/route";
 
-// Motor WhatsApp SIMULADO, em processo (Fase 4, Task 27). Imita o contrato /v1 do modo serviço
-// (MODO-SERVICO.md) sem rede externa: sobe um node:http em porta 0 e entrega os eventos assinados
-// chamando o `POST` da rota do webhook diretamente. Nunca fala com um WhatsApp de verdade.
-
 export type FalhaEnvio = "NAO_ENVIADO" | "RESULTADO_INCERTO";
 
 export interface RecebidoMotor {
@@ -24,24 +20,14 @@ export interface EnviadaMotor {
 export interface MotorSimulado {
   url: string;
   recebidos: RecebidoMotor[];
-  /** Mensagens que o simulado "entregou" ao WhatsApp, uma por clientMessageId (reenvio idempotente não soma). */
   enviadas: EnviadaMotor[];
-  /**
-   * Falha atual do envio (null = envia normalmente). Pode ser trocada no meio do teste.
-   * `NAO_ENVIADO` (409): nada saiu. `RESULTADO_INCERTO` (502): a mensagem SAIU, só a confirmação
-   * se perdeu; um reenvio com o mesmo clientMessageId devolve a mesma mensagem, sem duplicar.
-   */
   falharEnvio: FalhaEnvio | null;
-  /** Bytes devolvidos por `GET /v1/numeros/:id/midia/:mensagemId`. */
   midia: { bytes: Buffer; mime: string };
-  /** Assina (HMAC do `outbox.ts`) e entrega o evento à rota do webhook. `idEvento` repete um evento. */
   emitir(tipo: string, numeroId: string, dados: unknown, opcoes?: { idEvento?: string }): Promise<Response>;
-  /** Volta ao estado inicial: limpa recebidos/enviadas, zera o contador de ids e a idempotência, sem falha e com a mídia padrão. */
   reiniciar(): void;
   fechar(): Promise<void>;
 }
 
-// PNG 1x1 transparente.
 const PNG_1X1 = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
   "base64",
@@ -112,7 +98,6 @@ export async function iniciarMotorSimulado(): Promise<MotorSimulado> {
       try {
         corpo = JSON.parse(bruto.toString("utf8"));
       } catch {
-        /* corpo cru */
       }
     }
     sim.recebidos.push({ rota, corpo, cabecalhos });
@@ -131,7 +116,6 @@ export async function iniciarMotorSimulado(): Promise<MotorSimulado> {
       return res.end(sim.midia.bytes);
     }
     if (sub === "mensagens" && req.method === "POST") {
-      // multipart: o `payload` JSON viaja como texto dentro do corpo; só o clientMessageId interessa.
       const clientMessageId =
         corpo && typeof corpo === "object"
           ? (corpo as { clientMessageId?: string }).clientMessageId

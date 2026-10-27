@@ -35,7 +35,6 @@ async function gate(tx:Tx,autorId:string,id:string,numeroId:string,tipo:ComandoA
  if(a.contato.optOutEm)throw new ErroRegra("Contato pediu para não receber mensagens.");
  const estado=derivarEstadoAria(linhaEstadoDe(a),ctx,sugestao);
  if(a.responsavelId!==autorId||estado==="ia"||estado==="aprovacao"||estado==="handoff")throw assumir(tipo);
- // Batch final depois de contexto/ACL/destino. Sem await após a conferência.
  const usuarios=await tx.usuario.findMany({where:{id:{in:[...new Set([autorId,...(m?.autorId?[m.autorId]:[])])]}},select:selecionarAtor});
  const ultimo=usuarios.find(x=>x.id===autorId);
  const perfil=(x:typeof u)=>JSON.stringify([x.id,[...x.papeis].sort(),[...x.permissoes].sort()]);
@@ -47,7 +46,6 @@ async function gate(tx:Tx,autorId:string,id:string,numeroId:string,tipo:ComandoA
  }
  return a;
 }
-/** Recibo confirma leitura atual; não reautoriza o envio que já foi confirmado. */
 async function conferirLeituraRecibo(tx:Tx,autorId:string,atendimentoId:string){
  const u=await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor});
  if(!u?.ativo||apenasPortal(u))throw new ErroRegra("Sua sessão não está mais ativa.");
@@ -58,7 +56,6 @@ async function conferirLeituraRecibo(tx:Tx,autorId:string,atendimentoId:string){
  const ultimo=usuarios.find(x=>x.id===autorId);
  if(!ultimo?.ativo||apenasPortal(ultimo)||perfil(ultimo)!==antes)throw new ErroRegra("Sua sessão ou acesso mudou. Atualize o atendimento.");
 }
-/** Um núcleo para criação/alteração. Confirma últimas leituras READ COMMITTED, sem linearização global de ACL. */
 export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string,comando:ComandoAgendadaInbox):Promise<{id:string}>{
  z.string().min(1).parse(autorId);z.string().min(1).parse(comando.atendimentoId);
  ChaveIdempotenciaSchema.optional().parse(comando.chaveIdempotencia);
@@ -66,7 +63,6 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
  if(c.tipo!=="CRIAR")z.string().min(1).parse(c.intencaoId);
  if(c.tipo==="REAGENDAR")InstanteSchema.parse(c.agendadaPara);
  return db.$transaction(async tx=>{
-  // Resolver dentro da mesma TX antes da marca/advisory; nunca rehash após retarget.
   const resolvido=await tx.atendimentoWhatsApp.findUnique({where:{id:c.atendimentoId},select:{conversa:{select:{numeroId:true}}}});
   if(!resolvido)throw new ErroRegra("Atendimento não encontrado.");
   const numeroId=resolvido.conversa.numeroId;
@@ -80,7 +76,6 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    if(replay.tipo!==tipoEvento||replay.agregadoTipo!=="AtendimentoWhatsApp"||replay.agregadoId!==c.atendimentoId||replay.autorId!==autorId||typeof recibo.intencaoId!=="string")throw semAlvo();
    if(recibo.atendimentoId!==undefined&&recibo.atendimentoId!==c.atendimentoId)throw semAlvo();
    if(c.tipo!=="CRIAR"&&(recibo.contexto!=="inbox362"||recibo.operacao!==c.tipo||recibo.intencaoId!==c.intencaoId))throw semAlvo();
-   // Recibos CRIAR legados não tinham contexto/operacao. Tipo+hash continuam os originais.
    if(c.tipo==="CRIAR"&&((recibo.contexto!==undefined&&recibo.contexto!=="inbox362")||(recibo.operacao!==undefined&&recibo.operacao!=="CRIAR")))throw semAlvo();
    await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.atendimentoId} FOR SHARE`;
    const id=recibo.intencaoId;
@@ -88,7 +83,6 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    const confirmada=await tx.intencaoMensagem.findFirst({where:{id,atendimentoId:c.atendimentoId}});
    if(!confirmada||confirmada.id!==id||confirmada.atendimentoId!==c.atendimentoId||confirmada.origem!=="HUMANO"||confirmada.passo!==null||confirmada.passoComercial!==null)throw semAlvo();
    if(recibo.numeroId!==undefined&&recibo.numeroId!==confirmada.numeroId)throw semAlvo();
-   // Depois das esperas, ACL canônica DE LEITURA + ator fresco. Nenhum write/clock/gate de envio.
    await conferirLeituraRecibo(tx,autorId,c.atendimentoId);
    return {id:confirmada.id};
   }

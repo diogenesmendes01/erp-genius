@@ -45,22 +45,14 @@ type Props = {
   historico: ItemHistorico[];
   capacidades: CapacidadeCrm[];
   vendedores: { id: string; nome: string }[];
-  /** Países operacionais, para editar os dados da oportunidade. */
   paises?: { id: string; nome: string }[];
   aoFechar: () => void;
-  /** Fuso institucional: regras e datas civis (follow-up); o padrão é o do CartaoOportunidade. */
   fuso?: string;
-  /** Fuso pessoal de exibição dos instantes; sem ele (ou inválido), o institucional. */
   preferenciaFusoExibicao?: string | null;
   abaInicial?: Aba;
 };
 
-/** Instante (criação, histórico, experimental): fuso pessoal de exibição; sem ele, o da escola. */
 const dataHora = (d: Date | string, preferencia: string | null, fuso: string) => formatarInstanteExibicao(d, preferencia, fuso).texto;
-/**
- * O follow-up é data civil gravada no fuso da escola: sai como dia, sem hora e sem fuso pessoal (como no cartão).
- * Fuso inválido não derruba o painel: cai no dia UTC, como os instantes caem no fallback do helper.
- */
 const diaCivil = (d: Date | string, fuso: string) => formatarDiaDaEscola(d, fuso);
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
@@ -76,18 +68,12 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
-  // A nota interna recebe chave de idempotência (#166): o reenvio depois de um resultado incerto não grava uma
-  // segunda nota. Por isso ela tem executor próprio; as outras ações do painel seguem sem chave.
   const acaoNota = useAcaoCliente({ idempotente: true });
   const tentativaNota = useChaveIdempotencia();
-  // O link de pagamento também recebe chave (#166): o reenvio não grava outro LinkPagamentoEnviado nem move a
-  // âncora da régua "link sem pagamento". Executor próprio, como a nota.
   const acaoLink = useAcaoCliente({ idempotente: true });
   const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
-  // A experimental é digitada no fuso pessoal (sem preferência, o da escola), escrito ao lado do campo; o servidor
-  // converte (antes: `new Date(valor)` no fuso do navegador).
   const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");

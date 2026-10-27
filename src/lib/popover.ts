@@ -1,6 +1,3 @@
-// Posição de um painel flutuante (menu, popover) e navegação por teclado do menu.
-// Funções puras: o componente só liga eventos e mede o DOM.
-
 export type DOMRectLike = { top: number; bottom: number; left: number; right: number };
 
 export function posicaoPopover(i: {
@@ -32,7 +29,6 @@ export function proximoIndiceMenu(atual: number, tecla: "ArrowDown" | "ArrowUp" 
   if (total <= 0) return -1;
   if (tecla === "Home") return 0;
   if (tecla === "End") return total - 1;
-  // Foco fora dos itens (gatilho ou padding do painel): seta para baixo vai ao primeiro, para cima ao último.
   if (atual < 0) return tecla === "ArrowUp" ? total - 1 : 0;
   if (tecla === "ArrowDown") return (atual + 1) % total;
   return (atual - 1 + total) % total;
@@ -43,8 +39,6 @@ export type AcaoTecladoMenu =
   | { tipo: "focar"; indice: number }
   | { tipo: "nenhuma" };
 
-// Decisão de teclado do menu (pura): Escape fecha e devolve o foco ao gatilho; Tab fecha sem devolver;
-// setas/Home/End movem o foco entre os itens habilitados (atual = índice focado, -1 se nenhum).
 export function acaoTecladoMenu(tecla: string, atual: number, total: number): AcaoTecladoMenu {
   if (tecla === "Escape") return { tipo: "fechar", devolverFoco: true };
   if (tecla === "Tab") return { tipo: "fechar", devolverFoco: false };

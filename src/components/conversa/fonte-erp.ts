@@ -4,7 +4,6 @@ export class ErroFonte extends Error {
   constructor(public status: number, mensagem: string) { super(mensagem); this.name = "ErroFonte"; }
 }
 
-/** Páginas da thread pelas rotas do ERP (`GET /api/inbox/atendimentos/:id/mensagens`); o navegador nunca fala com o motor. */
 export const fonteErp: FonteHistorico = {
   async pagina(atendimentoId, o, signal) {
     const q = new URLSearchParams();

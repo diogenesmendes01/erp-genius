@@ -10,18 +10,13 @@ export type VersaoAplicacaoCampos = {
   alteracoes: { origem: string; valorEstruturado: unknown }[];
   aplicacaoGeralId: string | null;
   aplicacaoVencimentoId: string | null;
-  /** Q172: aplicação financeira própria do adiantamento desta versão. */
   aplicacaoAdiantamentoId?: string | null;
-  /** Q173: aplicação financeira própria da moeda desta versão. */
   aplicacaoMoedaId?: string | null;
-  /** Conjunto Q170 completo, nunca uma aplicação isolada de cobrança. */
   conjuntoTaxaCompletoId?: string | null;
-  /** Conjunto Q168 completo da própria versão; uma aplicação isolada não basta. */
   conjuntoCoberturaCompletoId?: string | null;
 };
 const proprios = new Set(["TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA", "REGIME"]);
 
-/** Projeta fatos existentes; não fabrica uma aplicação geral nem reescreve história. */
 export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampos[]) {
   const campos = new Map<string, { origemVersaoId: string; valorHash: string; aplicacaoId: string | null }>();
   let anterior: VersaoAplicacaoCampos | undefined;
@@ -35,11 +30,8 @@ export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampo
       validarValorAlteracaoAditivo(OrigemCampoSchema.parse(alteracao.origem), alteracao.valorEstruturado);
       nomes.add(alteracao.origem);
       acumuladas[alteracao.origem] = alteracao.valorEstruturado as Prisma.JsonValue;
-      // Mesmo valor reiterado em nova proposta é nova decisão, não mera herança.
       campos.set(alteracao.origem, {
         origemVersaoId: versao.id, valorHash: hashSubstituicao(alteracao.valorEstruturado),
-        // Q173: a moeda e os valores que o aditivo de moeda obriga a reexpressar (taxa e adiantamento já vividos)
-        // ficam provados pela aplicação de moeda da própria versão: preservados, sem efeito retroativo.
         aplicacaoId: (alteracao.origem === "MOEDA" || ((alteracao.origem === "TAXA_VALOR" || alteracao.origem === "ADIANTAMENTO_VALOR") && versao.alteracoes.some(a => a.origem === "MOEDA")))
           ? versao.aplicacaoMoedaId ?? null
           : alteracao.origem === "PRIMEIRA_MENSALIDADE_VENCIMENTO"
@@ -59,7 +51,6 @@ export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampo
   return Object.fromEntries(campos);
 }
 
-/** Campos diretos desta proposta serão aplicados agora; toda herança exige prova. */
 export function conferirAplicacaoDireta(cadeia: readonly VersaoAplicacaoCampos[], versaoId: string) {
  const atual = cadeia.find(v => v.id === versaoId);
  if (!atual || cadeia.some(v => v.versao > atual.versao)) throw new ErroRegra("Aplique a última cadeia formalizada de condições.");

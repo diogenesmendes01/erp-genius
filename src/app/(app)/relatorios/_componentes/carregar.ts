@@ -10,7 +10,6 @@ export type IdAba = "visao" | "funil" | "equipe" | "aria" | "conversas" | "ativi
 
 export type Carga = { aba: IdAba; dados: unknown; anterior: unknown };
 
-/** Cada métrica é chamada duas vezes: com o período e com o período imediatamente anterior (para a variação). */
 export async function carregar(aba: IdAba, f: FiltrosRelatorio, fa: FiltrosRelatorio, e: EscopoRelatorio): Promise<Carga> {
   const duas = async <T,>(fn: (f: FiltrosRelatorio, e: EscopoRelatorio) => Promise<T>) => {
     const [dados, anterior] = await Promise.all([fn(f, e), fn(fa, e)]);

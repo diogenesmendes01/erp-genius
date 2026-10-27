@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Desativar idioma e preço (docs/42 L2340; fatia B, issue #169): os botões só abrem o ConfirmarAcao, que nomeia
-// o impacto (produtos do idioma; combinação sem preço de referência); só a confirmação chama a action; erro e
-// incerto ficam no diálogo. Ativar o idioma e reativar o preço continuam diretos.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   idioma: vi.fn(), preco: vi.fn(), refresh: vi.fn(),
@@ -58,7 +55,7 @@ describe("IdiomasPainel — desativar passa pela confirmação", () => {
     expect(c.props.confirmacao).toBe("desativação do idioma");
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("4 produtos usam este idioma (2 níveis).");
-    expect(m.idioma).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.idioma).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.idioma).toHaveBeenCalledTimes(1);
     expect(m.idioma).toHaveBeenCalledWith("ing", false);
@@ -122,7 +119,7 @@ describe("PrecosPainel — desativar passa pela confirmação", () => {
     expect(consequencia).toContain("passa ao histórico");
     expect(consequencia).toContain("Não resta outro preço ativo para Brasil × Inglês · Regular");
     expect(consequencia).toContain("novas matrículas desse produto ficam sem preço de referência");
-    expect(m.preco).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.preco).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.preco).toHaveBeenCalledTimes(1);
     expect(m.preco).toHaveBeenCalledWith("p-ativo", false);

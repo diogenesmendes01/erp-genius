@@ -1,8 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 L1399 (docs/43 §6 item 7): o decisor atestava "Conferi … impactos apresentados" vendo só
-// "Solicitação <uuid> — Executada". Agora cada mudança impactada sai pela turma de destino.
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), revisar: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/avaliacoes/correcao", () => ({ revisarCorrecaoNota: mocks.revisar }));

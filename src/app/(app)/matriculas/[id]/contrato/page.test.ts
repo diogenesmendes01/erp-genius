@@ -10,8 +10,6 @@ vi.mock("./RegistrarPrevia", () => ({ RegistrarPrevia: () => null }));
 
 import ContratoPage from "./page";
 
-// Revisão R1 da #134 (B5): duas listas na mesma tela (modelos e prévias) — página 1 afirma ausência;
-// a página seguinte de uma volta ao início sem perder a página da outra.
 describe("prévia contratual — vazios paginados", () => {
   beforeEach(() => {
     vi.resetAllMocks();

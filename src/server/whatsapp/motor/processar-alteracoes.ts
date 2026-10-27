@@ -35,7 +35,6 @@ const DadosChamadaSchema = z.object({
   quando: z.number().nullish(),
 });
 
-/** A busca é sempre por (numeroId, providerMessageId). */
 async function acharMensagem(env: EnvelopeMotor, providerMessageId: string) {
   const numero = await acharNumero({ numeroProviderRef: env.numeroId, driver: "MOTOR" });
   if (!numero) return { erro: { ignorado: "numero_desconhecido" } as ResultadoProcessamento };
@@ -51,7 +50,6 @@ export async function processarMensagemEditada(env: EnvelopeMotor): Promise<Resu
   const parsed = DadosEdicaoSchema.safeParse(env.dados);
   if (!parsed.success) return { ignorado: "dados_invalidos" };
   const d = parsed.data;
-  // Sem texto não há o que gravar: nunca apagar o corpo original.
   if (d.texto == null) return { ignorado: "dados_invalidos" };
   const texto = d.texto;
   const r = await acharMensagem(env, d.providerMessageId);
@@ -78,7 +76,6 @@ export async function processarMensagemApagada(env: EnvelopeMotor): Promise<Resu
   if (r.mensagem.apagadaEm) return { ignorado: "ja_apagada" };
   const quando = new Date(env.ocorridoEm);
   await prisma.$transaction(async (tx) => {
-    // O corpo fica para auditoria; a interface decide como esconder.
     await tx.mensagemWhatsApp.update({ where: { id: r.mensagem.id }, data: { apagadaEm: quando } });
     await registrarEvento(tx, {
       tipo: "MensagemWhatsAppApagada",
@@ -133,7 +130,6 @@ export async function processarChamadaRecebida(env: EnvelopeMotor): Promise<Resu
       select: { id: true, corpo: true },
     });
     if (existente) {
-      // Atendida depois do toque: completa a mesma linha, sem duplicar.
       if (d.status === "accept" && existente.corpo !== corpo) {
         await tx.mensagemWhatsApp.update({ where: { id: existente.id }, data: { corpo } });
         return "ok";
@@ -161,7 +157,6 @@ export async function processarChamadaRecebida(env: EnvelopeMotor): Promise<Resu
         criadoEm: quando,
       },
     });
-    // Aparece na conversa, mas não soma não lidas nem cancela automação.
     await tx.conversaWhatsApp.update({ where: { id: conversa.id }, data: { ultimaMensagemEm: quando } });
     const atendimentoId = await atendimentoDoInbound(tx, conversa.id, { atribuir: false });
     if (atendimentoId) {

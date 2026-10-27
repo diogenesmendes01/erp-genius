@@ -29,7 +29,6 @@ it("guarda antes da consulta e seleciona apenas a turma planejada retornada pelo
 
 it("paginação nos dois sentidos: janela numerada, Anterior na página certa e a busca mantida", async () => {
   const turma = (i: number) => ({ id: `turma-${String(i).padStart(2, "0")}`, codigo: `T-${i}`, dataInicio: null, horarioInicio: "22:00", diasSemana: [1], professor: null, modalidade: { aulasPorNivel: 1, horasAula: 1, frequencia: "1x/semana" }, propostasGrade: [] });
-  // 31 lidas = 30 da página + a que só diz que há próxima.
   mocks.turmas.mockResolvedValue(Array.from({ length: 31 }, (_, i) => turma(i)));
   const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "T" }) }));
   expect(mocks.turmas).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 0, take: 31, orderBy: [{ codigo: "asc" }, { id: "asc" }] }));

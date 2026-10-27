@@ -26,7 +26,6 @@ const MENSAGEM_ENCERRADA: StatusIntencao[] = ["DESPACHADA", "CANCELADA", "SIMULA
 
 export const chaveItem = (i: ItemAgenda) => (i.tipo === "tarefa" ? `t${i.tarefa.id}` : `m${i.id}`);
 
-/** Concluir em lote vale só para tarefas (chave "t…"); mensagens ficam de fora e são contadas. */
 export function acoesLote(chaves: string[]): { concluir: string[]; ignoradas: number } {
   const concluir = chaves.filter((c) => c.startsWith("t"));
   return { concluir, ignoradas: chaves.length - concluir.length };
@@ -53,7 +52,6 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/;
 export const dataValida = (v: string) => DATA.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
 const diaSemana = (d: string) => new Date(`${d}T00:00:00Z`).getUTCDay();
 
-/** Segunda-feira da semana da data. */
 export function inicioDaSemana(d: string): string {
   return somarDiasDataCivil(d, -((diaSemana(d) + 6) % 7));
 }
@@ -61,7 +59,6 @@ export function diasDaSemana(d: string): string[] {
   const ini = inicioDaSemana(d);
   return Array.from({ length: 7 }, (_, i) => somarDiasDataCivil(ini, i));
 }
-/** Grade do mês: semanas completas (segunda a domingo) que cobrem o mês da data. */
 export function diasDoMes(d: string): string[] {
   const primeiro = `${d.slice(0, 7)}-01`;
   const proximo = new Date(Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 1)).toISOString().slice(0, 10);
@@ -105,12 +102,10 @@ export const rotuloDiaCurto = (d: string) => `${DIAS[diaSemana(d)].slice(0, 3)} 
 export const rotuloMes = (d: string) => `${MESES[Number(d.slice(5, 7)) - 1]} de ${d.slice(0, 4)}`;
 export const dataCurta = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`;
 
-/** Hora (HH:MM) do instante num fuso. */
 export function horaNoFuso(instante: Date | string, fuso: string): string {
   return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: fuso }).format(new Date(instante));
 }
 
-/** Hora no fuso do usuário; quando ele difere da escola, devolve também a hora no fuso da escola (a dica). */
 export function textoHora(instante: Date | string, fusoExibicao: string, fusoEscola: string): { hora: string; dica: string | null } {
   const hora = horaNoFuso(instante, fusoExibicao);
   if (fusoExibicao === fusoEscola) return { hora, dica: null };

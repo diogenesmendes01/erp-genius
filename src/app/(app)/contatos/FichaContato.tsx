@@ -53,19 +53,14 @@ type Props = {
   historico: ItemHistorico[];
   campos: CampoDaFicha[];
   tagsDisponiveis: { id: string; nome: string; cor: CorTag }[];
-  /** Classes de cor de cada tag (mapa do servidor; o módulo das tags não vai para o cliente). */
   classesCor: Record<CorTag, string>;
   capacidades: CapacidadeCrm[];
   vendedores: { id: string; nome: string }[];
   paises: { id: string; nome: string }[];
   filtroHistorico?: FiltroHistoricoPessoa;
-  /** Link "‹ Contatos" (volta à lista com os filtros atuais). */
   hrefVoltar?: string;
-  /** Links do filtro do histórico (mantêm a lista e a pessoa abertas). */
   hrefsHistorico?: Record<FiltroHistoricoPessoa, string>;
-  /** Fuso da escola: origem da exibição quando não há preferência pessoal. */
   fuso?: string;
-  /** Fuso pessoal de exibição (cadastro, histórico); inválido ou ausente, vale o da escola. */
   preferenciaFusoExibicao?: string | null;
   abaInicial?: Aba;
 };
@@ -81,8 +76,6 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-/** Valor do campo como o controle mostra: texto, ou "true"/"false" para o booleano. */
-/** Erro de "Salvar campos" quando parte dos campos já foi gravada antes da falha. */
 export function mensagemFalhaParcialCampos(salvos: number, total: number, campo: string, erro: string): string {
   const feitos = salvos === 1 ? "1 campo salvo" : `${salvos} campos salvos`;
   return `${feitos} de ${total}. ${campo} não foi salvo: ${erro}`;
@@ -113,8 +106,6 @@ function FichaCorpo({
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
-  // A nota recebe chave de idempotência (#166): o reenvio depois de um resultado incerto não grava uma
-  // segunda nota. Por isso ela tem executor próprio; as outras ações da ficha seguem sem chave.
   const acaoNota = useAcaoCliente({ idempotente: true });
   const tentativaNota = useChaveIdempotencia();
   const pode = (c: CapacidadeCrm) => capacidades.includes(c);
@@ -200,7 +191,6 @@ function FichaCorpo({
     for (const [i, c] of mudados.entries()) {
       const r = await acao.executar(() => definirCampoDaFicha({ campoId: c.id, pessoaId: d.id, valor: valores[c.id] ?? "" }));
       if (r?.tipo === "ok") continue;
-      // Falha no meio: os anteriores já estão gravados. A tela recarrega e diz o que ficou salvo.
       if (r && i > 0) {
         acao.setErro(mensagemFalhaParcialCampos(i, mudados.length, c.nome, r.mensagem));
         router.refresh();
@@ -520,7 +510,6 @@ function FichaCorpo({
   );
 }
 
-/** A ficha remonta ao trocar de pessoa: os campos de edição nascem dos dados da pessoa aberta. */
 export function FichaContato(props: Props) {
   return <FichaCorpo key={props.detalhe.id} {...props} />;
 }

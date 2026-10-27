@@ -1,6 +1,5 @@
 import { validarProjecaoCorrecaoAula } from "./correcao-aula-projecao";
 
-/** Compara a chamada, sem simular frequência global ou alterar cotas/financeiro. */
 export function compararCorrecaoAula(anteriorJson: unknown, novoJson: unknown,
   reposicoes: { id: string; matriculaId: string; concluida: boolean; decisao?: { id: string; aprovada: boolean } | null }[]) {
   const { anterior, novo } = validarProjecaoCorrecaoAula(anteriorJson, novoJson);

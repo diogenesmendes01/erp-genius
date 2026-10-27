@@ -5,7 +5,6 @@ import {prisma} from "@/lib/prisma";
 import {configurarFusoDaEscola,criarUsuario} from "./integracao";
 import {CANAL_INBOX} from "@/server/inbox/barramento";
 let seq=0;
-/** Fixtures fictícias #340; só executar sob lease/perfil original de integração. */
 export async function cenarioCadastroPessoa(){
  const dono=await criarUsuario([Papel.VENDEDOR],"Vendedor fictício340");
  const outro=await criarUsuario([Papel.VENDEDOR],"Outro fictício340");
@@ -27,6 +26,5 @@ export const entradaCadastro=(c:CenarioCadastroPessoa)=>({pessoaIdEsperada:c.pes
 export function barreiraCadastro(){let liberar!:()=>void;const promessa=new Promise<void>(r=>{liberar=r;});return {promessa,liberar};}
 export async function conectarCadastro(){const c=new Client({connectionString:process.env.DATABASE_URL});await c.connect();return c;}
 export async function bloquearPessoaCadastro(pessoaId:string){const c=await conectarCadastro();await c.query("BEGIN");await c.query('SELECT id FROM "Pessoa" WHERE id=$1 FOR UPDATE',[pessoaId]);const r=await c.query<{pid:number}>("SELECT pg_backend_pid() pid");return {client:c,pid:r.rows[0]!.pid,async sair(){await c.query("ROLLBACK");await c.end();}};}
-/** Observa espera SQL real; a barreira é instrumental, não substitui ACL/SQL. */
 export async function esperarPessoaBloqueada(observer:Client,holder:number){let pid:number|undefined;await vi.waitFor(async()=>{await observer.query("SELECT pg_stat_clear_snapshot()");const r=await observer.query<{pid:number;query:string;bloqueadores:number[]}>('SELECT pid,query,pg_blocking_pids(pid) bloqueadores FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()');const w=r.rows.find(x=>x.bloqueadores.includes(holder)&&x.query.includes('FROM "Pessoa"'));expect(w).toBeDefined();pid=w?.pid;},{timeout:5000,interval:20});return pid;}
 export async function escutarCadastro(){const c=await conectarCadastro(),quadros:Record<string,unknown>[]=[];c.on("notification",n=>{if(n.channel===CANAL_INBOX&&n.payload)quadros.push(JSON.parse(n.payload));});await c.query("LISTEN "+CANAL_INBOX);return {client:c,quadros,sair:()=>c.end()};}

@@ -1,20 +1,3 @@
-# Deploy do ERP Genius no Coolify (v4.3.23+)
-# Build pack: Docker Compose · repo Git · imagem pré-construída no GHCR.
-# O build acontece no GitHub Actions (.github/workflows/image.yml), não na VPS.
-# O Coolify APENAS puxa a imagem validada (variável APP_IMAGE com digest).
-#
-# Coolify cuida do domínio e TLS via Traefik (porta 80/443 ocupadas por ele), portanto
-# o Caddy é OMITIDO. Nenhum serviço publica porta no host — o Traefik roteia o app na
-# porta interna 3000 usando a variável mágica SERVICE_FQDN_APP_3000 (doc oficial Coolify).
-#
-# Uso no Coolify:
-#   1. Criar "Resource" → Docker Compose (Git) → apontar este repo + branch main.
-#   2. Arquivo: docker-compose.coolify.yml
-#   3. Preencher variáveis de ambiente (veja lista no SETUP.md §Coolify).
-#   4. Domínio do app: https://erp.geniusidiomas.com:3000 (campo "Domains for app").
-#   5. DNS: criar registro A apontando erp.geniusidiomas.com para o IP da VPS.
-#   6. Deploy — o Traefik emite TLS automático e roteia https://erp.geniusidiomas.com → app:3000.
-
 name: erp-genius
 
 services:
@@ -23,7 +6,6 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?defina no Coolify}
-      # ATENÇÃO: senha URL-safe (openssl rand -hex 32), sem / + = (base64 quebra URLs).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
       POSTGRES_DB: erp
     volumes:
@@ -33,10 +15,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-    # SEM ports: banco na rede interna, nunca internet pública.
 
-  # Migrações ANTES do app (prisma migrate deploy — aditivo e idempotente).
-  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
     image: ${APP_MIGRATE_IMAGE:?defina no Coolify}
     command: npx prisma migrate deploy
@@ -51,61 +30,32 @@ services:
     image: ${APP_IMAGE:?defina no Coolify}
     restart: unless-stopped
     environment:
-      # Coolify gera SERVICE_FQDN_APP_3000 a partir do domínio configurado no painel.
-      # Quando você preenche o campo "Domains for app" com https://erp.geniusidiomas.com:3000,
-      # o Coolify gera SERVICE_FQDN_APP_3000=erp.geniusidiomas.com (apenas hostname).
-      # O Traefik roteia HTTPS público → app:3000 internamente (porta NÃO publicada no host).
       SERVICE_FQDN_APP_3000: /
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
       AUTH_SECRET: ${AUTH_SECRET:?defina no Coolify}
-      # NEXTAUTH_URL: usar a variável DOMINIO_APP preenchida manualmente (ex.: erp.geniusidiomas.com).
-      # Ou usar ${SERVICE_FQDN_APP_3000} se o Coolify gerar corretamente.
       NEXTAUTH_URL: https://${DOMINIO_APP:?defina no Coolify}
       AUTH_TRUST_HOST: "true"
       CRON_SECRET: ${CRON_SECRET:?defina no Coolify}
-      # Go-live: só ativar após piloto (doc 31 §rollout).
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
-      # Aria (ADR-F5-01): vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a
-      # API da Anthropic e, quando ATIVA, pode enviar mensagens. Modelos em Configurações › CRM › IA.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
-      # Assinatura eletrônica (Q155): vazio = registro manual do assinado. "simulado" SÓ em UAT/demo: envio e
-      # cancelamento usam o driver SIMULADO (nada é enviado ao cliente; processos ficam SIMULADO/SANDBOX e as
-      # telas avisam). Não existe driver de fornecedor real ainda.
       ASSINATURA_DRIVER: ${ASSINATURA_DRIVER:-}
-      # Motor WhatsApp na rede interna do compose (nunca a internet).
       MOTOR_URL: http://motor:4317
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no Coolify}
       MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no Coolify}
-      # --- Variáveis opcionais lidas pelo app (sem repasse aqui, o valor do painel/.env NÃO chega ao container).
-      # E-mail institucional (Resend): portal do aluno e avisos de agenda por e-mail. Vazio = sem envio de e-mail.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_INSTITUCIONAL_REMETENTE: ${EMAIL_INSTITUCIONAL_REMETENTE:-}
-      # Portal do aluno: envio dos e-mails de acesso (POST /api/portal-aluno/envios/cron) só com "true".
       EMAIL_PORTAL_ENVIO_ENABLED: ${EMAIL_PORTAL_ENVIO_ENABLED:-false}
-      # Origem HTTPS pública do portal, sem caminho (ex.: https://erp.exemplo.com); base dos links nos e-mails.
       PORTAL_ALUNO_URL_PUBLICA: ${PORTAL_ALUNO_URL_PUBLICA:-}
-      # Google Drive de gravações — leitura (player): conta de serviço + drive compartilhado.
-      # Chave privada em uma linha só, com \n literais (o app converte).
       GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL:-}
       GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY:-}
       DRIVE_ORGANIZACAO_ID: ${DRIVE_ORGANIZACAO_ID:-}
-      # Google Drive de gravações — publicação/fixação de revisão (credencial separada, com escrita).
       GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL:-}
       GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY:-}
-      # Habilitações operacionais (só "true" liga; padrão seguro "false").
-      # Emissão mensal recorrente (POST /api/financeiro/continuidade/cron).
       CONTINUIDADE_MENSAL_EMISSAO_ENABLED: ${CONTINUIDADE_MENSAL_EMISSAO_ENABLED:-false}
-      # Avisos de alteração de agenda (POST /api/agenda/avisos/cron e o despachante do WhatsApp).
       COMUNICACOES_AGENDA_ENVIO_ENABLED: ${COMUNICACOES_AGENDA_ENVIO_ENABLED:-false}
-      # Avisos de quantidade de aulas (Q38) alcançarem provedores.
       COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED: ${COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED:-false}
-      # Agendadores: cron-portal-envios (60 s) e cron-avisos-agenda (5 min) estão abaixo. ATENÇÃO: este
-      # compose NÃO agenda /api/financeiro/continuidade/cron — ligar CONTINUIDADE_MENSAL_EMISSAO_ENABLED exige
-      # um agendador externo (POST com header x-cron-secret).
     volumes:
-      # Mídia WhatsApp + comprovantes (entra no backup).
       - uploads:/app/data/uploads
     depends_on:
       db:
@@ -113,19 +63,12 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      # Readiness check: valida que o app está pronto (DB acessível, Prisma funcional).
-      # Endpoint /api/ready faz SELECT 1 via Prisma — falha se engine errado ou DB down.
-      # node:22-alpine tem wget; curl não vem instalado por padrão.
-      # 127.0.0.1, NUNCA localhost: o wget do BusyBox resolve localhost para ::1 (IPv6) e não tenta o
-      # IPv4; o Next com HOSTNAME=0.0.0.0 escuta só IPv4 → "connection refused" sempre (visto na VPS).
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-    # SEM ports: só o Traefik do Coolify fala com o app.
 
-  # Motor WhatsApp (whatsapp-web-baileys em modo serviço) — FORA da internet pública (rede interna).
   motor:
     image: ${MOTOR_IMAGE:?defina no Coolify}
     restart: unless-stopped
@@ -143,12 +86,8 @@ services:
       DATABASE_URL: ${MOTOR_DATABASE_URL:?defina no Coolify}
       MASTER_KEY: ${MOTOR_MASTER_KEY:?defina no Coolify}
     volumes:
-      # Mídia WhatsApp, credenciais e chave do cofre (entra no backup). PGlite foi substituído
-      # por Postgres dedicado (DATABASE_URL aponta para banco criado no Coolify).
       - motor_data:/data
     healthcheck:
-      # node:24.22.1-bookworm-slim não tem curl/wget; usar node -e com fetch nativo.
-      # 127.0.0.1 (não localhost): evita IPv6 → bind só em IPv4 (HOST=0.0.0.0).
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4317/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 10s
@@ -157,17 +96,12 @@ services:
     deploy:
       resources:
         limits:
-          # Baileys: 512MB–1GB para sessões, mídia temporária, PGlite e heaps.
-          # CPU: 0.5–1 core (picos em QR/pareamento, idle baixo).
           memory: 768M
           cpus: "0.75"
-    # SEM ports: o motor não sai para a internet.
 
-  # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min.
   cron:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    # Comando em uma linha só (sem quebras) — o bloco >- mantém \n nas linhas indentadas.
     command:
       - sh
       - -c
@@ -177,7 +111,6 @@ services:
     depends_on:
       - app
 
-  # DESPACHO A CADA MINUTO: mensagens agendadas pelo atendimento saem na hora marcada.
   cron-despacho:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
@@ -190,8 +123,6 @@ services:
     depends_on:
       - app
 
-  # E-MAILS DO PORTAL DO ALUNO a cada minuto (convite/recuperação/troca de e-mail). Com
-  # EMAIL_PORTAL_ENVIO_ENABLED diferente de "true" a rota responde {executou:false} sem tocar o banco.
   cron-portal-envios:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
@@ -204,8 +135,6 @@ services:
     depends_on:
       - app
 
-  # AVISOS DE ALTERAÇÃO DE AGENDA a cada 5 min (mesma cadência da régua). Com
-  # COMUNICACOES_AGENDA_ENVIO_ENABLED diferente de "true" a rota responde {executou:false} sem tocar o banco.
   cron-avisos-agenda:
     image: curlimages/curl:8.10.1
     restart: unless-stopped

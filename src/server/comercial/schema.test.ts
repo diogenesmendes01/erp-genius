@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { TIPOS_MUDAM_ETAPA, ETAPAS_MANUAIS, DatasSchema as DatasSchemaBase } from "./schema";
 import { comDatasDaEscola } from "@/server/_shared/validacao";
 
-// As datas digitadas viram o meio-dia da escola (ref. #247); nas ações, o parse roda dentro de `comDatasDaEscola`.
 const FUSO = "America/Sao_Paulo";
 const DatasSchema = { parse: (v: unknown) => comDatasDaEscola(FUSO, () => DatasSchemaBase.parse(v)) };
 
@@ -12,8 +11,6 @@ describe("TIPOS_MUDAM_ETAPA", () => {
   });
 
   it("inclui as ações que avançam o funil sem 'EtapaAlterada' explícito", () => {
-    // Estes eventos mudam a etapa do lead diretamente (ver acoes.ts) e por isso
-    // precisam contar para o `etapaDesde` (issue #15).
     for (const tipo of [
       "ExperimentalAgendada",
       "ExperimentalRealizada",
@@ -39,8 +36,6 @@ describe("ETAPAS_MANUAIS", () => {
 });
 
 describe("DatasSchema — dataExperimental preserva horário (issue #16)", () => {
-  // Lote 3 do fuso pessoal: o texto do datetime-local é convertido ANTES do schema, no fuso informado pela tela
-  // (atualizarDatas → exigirInstanteDoCampoLocal). O schema recebe o instante e recusa o texto sem fuso.
   it("aceita o instante da experimental (hora preservada) e recusa o texto do datetime-local sem fuso", () => {
     const r = DatasSchema.parse({ dataExperimental: "2026-06-22T17:30:00.000Z" });
     expect(r.dataExperimental).toEqual(new Date("2026-06-22T17:30:00.000Z"));

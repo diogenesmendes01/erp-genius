@@ -4,7 +4,6 @@ import { hashCorrecaoAula, snapshotCorrecaoAulaSchema, type SnapshotCorrecaoAula
 import { carregarCorrecoesAulaEfetivasTx } from "./correcao-aula-efetiva-tx";
 import { validarProjecaoCorrecaoAula } from "./correcao-aula-projecao";
 
-/** Mesma ordem institucional usada para a agenda e suas correções. */
 export async function carregarCorrecaoAulaTx(tx: Prisma.TransactionClient, usuarioId: string, encontroId: string,
   consulta?: { somenteLeitura: true; antesDaVersao?: number }) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

@@ -4,10 +4,6 @@ import { exigirSessaoComPapel } from "@/server/_shared";
 
 const PAPEIS_CONSULTA: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.FINANCEIRO];
 
-// Consultas (leitura) de País — chamadas por Server Components.
-// Mutações ficam em ./acoes.ts.
-
-/** Lista enxuta (id + nome) para selects. */
 export async function listarPaisesSimples() {
   await exigirSessaoComPapel(...PAPEIS_CONSULTA);
   return prisma.pais.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } });
@@ -25,7 +21,6 @@ export async function listarPaises() {
   });
 }
 
-/** Produtos do catálogo (idioma × modalidade) para habilitar por país. */
 export async function listarProdutosCatalogo() {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const produtos = await prisma.produto.findMany({
@@ -45,7 +40,6 @@ export async function obterPais(id: string) {
 
 export type PaisListado = Awaited<ReturnType<typeof listarPaises>>[number];
 
-/** Opções cadastrais: sem contagens de alunos, preços internos ou ofertas por país. */
 export async function listarPaisesOperacionais() {
   await exigirSessaoComPapel(...PAPEIS_CONSULTA);
   return prisma.pais.findMany({

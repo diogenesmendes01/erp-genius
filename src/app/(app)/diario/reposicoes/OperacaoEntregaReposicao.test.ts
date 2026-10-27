@@ -92,10 +92,6 @@ it("mostra liberação, relato e pausa no fuso pessoal, sem esconder a origem", 
 });
 
 
-// Integração da #151 (B3): a trava do retry vem do estado `temTentativa` (antes, de ref.current no render).
-// Com a tentativa pendente, professor e motivo ficam travados e o botão vira "Repetir substituição" — senão a
-// pessoa editaria os campos e o retry reenviaria a entrada congelada sem avisar.
-/** Elemento com a prop `name` dada, de qualquer tipo (o CampoTexto vem embrulhado e não é expandido por `todos`). */
 function comNome(no: unknown, nome: string): No | undefined {
   if (Array.isArray(no)) { for (const n of no) { const r = comNome(n, nome); if (r) return r; } return undefined; }
   if (!no || typeof no !== "object") return undefined;
@@ -139,9 +135,6 @@ it("envio liga a tentativa pendente; só o sucesso a desliga", async () => {
   expect(setTemTentativa.mock.calls).toEqual([[true], [true], [false]]);
 });
 
-// B1 da review do #290: o novo prazo da etapa e o "Expira em" da liberação vão como o texto digitado e o fuso escrito
-// ao lado do campo (o `fusoExibicao` da página: pessoal; sem preferência, o da ESCOLA). A conversão é do servidor:
-// 25/10 23:59 em America/Sao_Paulo → 2026-10-26T02:59:00.000Z (src/server/operacao/acoes-campo-local.test.ts).
 it("prorrogação e liberação mandam o texto digitado e o fuso do campo, sem converter no navegador", async () => {
   preparar();
   mocks.prorrogarLocal.mockResolvedValue({ ok: true }); mocks.liberarLocal.mockResolvedValue({ ok: true });

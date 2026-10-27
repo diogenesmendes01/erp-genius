@@ -2,15 +2,12 @@ import Link from "next/link";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
-// Resumo de leitura na ficha. Os lançamentos acadêmicos e o acesso ao portal usam
-// os fluxos consolidados, que preservam matrícula, permissões e auditoria.
 export function AcademicoAluno({ alunoId, testes, certificados, podeEditar, preferenciaFusoExibicao = null, fusoEscola }: {
   alunoId: string;
   niveis: { id: string; label: string }[];
   testes: { id: string; nivel: string; pontuacao: number | null; dataISO: string }[];
   certificados: { nivel: string; codigoValidacao: string; emitidoEmISO: string }[];
   podeEditar: boolean;
-  /** Data do teste e da emissão são instantes: fuso pessoal de exibição; sem ele, o da escola. */
   preferenciaFusoExibicao?: string | null;
   fusoEscola: string;
 }) {

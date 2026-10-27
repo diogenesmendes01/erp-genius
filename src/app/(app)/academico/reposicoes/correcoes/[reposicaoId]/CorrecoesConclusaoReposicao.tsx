@@ -66,8 +66,7 @@ function FonteResumo({ fonte, titulo, fusoExibicao }: { fonte: Fonte; titulo: st
   </div>;
 }
 
-/** `antesVersao`: o histórico de correções está numa página seguinte (cursor da página). Sem ele, é a primeira. */
-export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao, antesVersao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string; /** Obrigatória: esquecer o repasse faria a página antiga afirmar que não há correção. */ antesVersao: number | undefined }) {
+export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao, antesVersao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string;  antesVersao: number | undefined }) {
   return <div className="space-y-5">
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">{dados.consultaHistorica ? "Conclusão e fonte históricas" : "Conclusão e fonte vigentes"}</h2>
@@ -99,7 +98,6 @@ function ImpactosAprovados({ correcao }: { correcao: Dados["correcoes"][number] 
   return <div className="space-y-2 rounded bg-gray-100 p-3"><p className="font-medium">Dependências acadêmicas em acompanhamento</p><p>A correção não desfaz movimentações já registradas.</p>{correcao.impactos.map((impacto) => <p key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}. {impacto.casoId ? <a className="underline" href={`/academico/correcoes/revisoes/${encodeURIComponent(impacto.casoId)}`}>Ver revisão</a> : "A revisão está sendo preparada pela gestão."}</p>)}</div>;
 }
 
-/** `fusoExibicao`: o horário da validação é digitado nele (escrito ao lado do campo) e convertido no servidor. */
 function ProporCorrecao({ dados, fusoExibicao }: { dados: Dados; fusoExibicao: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
@@ -110,8 +108,6 @@ function ProporCorrecao({ dados, fusoExibicao }: { dados: Dados; fusoExibicao: s
     evento.preventDefault(); const formulario = new FormData(evento.currentTarget);
     const escolha = String(formulario.get("fonte") ?? "");
     const comum = { reposicaoId: dados.reposicao.id, conclusaoId: dados.conclusao.id, versaoAnterior: dados.versaoEsperada, motivo: String(formulario.get("motivo") ?? ""), evidencia: String(formulario.get("evidencia") ?? "") };
-    // A validação da gravação é digitada no fuso de exibição da tela (escrito ao lado do campo) e convertida no
-    // servidor (proporCorrecaoGravadaLocal); antes, o navegador a lia como UTC.
     let fonte: { concluida: false } | { concluida: true; encontroReposicaoId: string; realizadaEm: string } | { concluida: true; entregaId: string; validadaLocal: string; fuso: string };
     if (escolha === "RETIRAR") fonte = { concluida: false };
     else if (modalidade === "PARTICULAR") {

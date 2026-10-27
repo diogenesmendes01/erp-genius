@@ -11,16 +11,9 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao, type FalhaConfirmacao } from "@/components/ConfirmarAcao";
 import { formatarValores, somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
 
-/**
- * Chave de idempotência ESTÁVEL entre tentativas das ações do acerto. Todas as actions recebem a chave e
- * devolvem o registro existente quando ela se repete: o resultado incerto manda reenviar sem alterar, e só o
- * sucesso troca a chave (a próxima é outra tentativa). O resultado de cada ação sai pelo executor único
- * (useAcaoCliente + FeedbackAcao: erro em role="alert", sucesso em role="status"; docs/43 §6 item 2).
- */
 function useChaveEstavel() {
   const router = useRouter();
   const chave = useRef(crypto.randomUUID());
-  /** Depois do sucesso (no formulário ou no ConfirmarAcao): chave nova e a página relida. */
   function depoisDoSucesso() {
     chave.current = crypto.randomUUID();
     router.refresh();
@@ -28,10 +21,8 @@ function useChaveEstavel() {
   return { chave, depoisDoSucesso };
 }
 
-/** Item da memória contratual, como a página o recebe (valores em texto decimal). */
 export type ItemMemoriaAcerto = { cobrancaId: string; moeda: string; devido: string; saldoDevido: string; creditoApurado: string };
 
-/** O que a aplicação do acerto faz, em números: cobranças ajustadas e crédito criado, por moeda. */
 export function resumoAplicacaoAcerto(itens: ItemMemoriaAcerto[]) {
   const credito = somarPorMoeda(itens.map((i: ItemMemoriaAcerto): ValorMoeda => ({ moeda: i.moeda, valor: Number(i.creditoApurado) }))).filter((v: ValorMoeda) => v.valor > 0);
   return { cobrancas: itens.length, credito };
@@ -70,12 +61,8 @@ export function DecidirAcertoContratualFormulario({ propostaId, fotografiaHash }
 export function AplicarAcertoContratualFormulario({ decisaoId, itens }: { decisaoId: string; itens: ItemMemoriaAcerto[] }) {
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveEstavel();
-  // Ajusta valores de cobrança e cria crédito — a ação mais irreversível da área (docs/42 L799). O botão
-  // só revela o resumo; a aplicação exige marcar "Confirmo os valores acima" no diálogo.
   const [confirmando, setConfirmando] = useState(false);
   const resumo = resumoAplicacaoAcerto(itens);
-  // Resultado incerto: a chave fica (reenviar confere a mesma tentativa) e o aviso fica também fora do
-  // diálogo, como erro (role="alert"), para quem fechar a confirmação sem reenviar.
   function avisarIncerto(falha: FalhaConfirmacao) {
     if (falha.tipo === "incerto") acao.setErro(falha.mensagem);
   }

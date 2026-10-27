@@ -3,7 +3,6 @@ import { Prisma } from "@prisma/client";
 
 type JsonCanonico = null | boolean | number | string | JsonCanonico[] | { [chave: string]: JsonCanonico };
 
-/** Ordena todas as chaves sem alterar o valor de origem; arrays preservam ordem semântica. */
 export function canonizarFotografiaFinanceira(valor: unknown): JsonCanonico {
   if (valor === null || typeof valor === "boolean" || typeof valor === "string") return valor as null | boolean | string;
   if (typeof valor === "number") {

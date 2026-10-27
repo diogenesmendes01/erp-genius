@@ -22,7 +22,6 @@ import { inicioDoMesInstitucional, vencimentoEmAtraso } from "@/server/operacao/
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { DIA_PREVISAO_COMISSAO_PADRAO } from "./previsao-comissao";
 
-/** Escopo das comissões: financeiro/admin tudo; gerente as suas e as da equipe; vendedor as suas. */
 export function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.ComissaoWhereInput {
   return usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO) ? {} :
     usuario.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: usuario.id }, { vendedor: { gerenteComercialId: usuario.id } }] } : { vendedorId: usuario.id };
@@ -30,21 +29,11 @@ export function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prism
 
 export const COMISSOES_POR_PAGINA = 50;
 
-/**
- * Busca de /financeiro/comissoes (E4, §5.6 A9): por palavras no nome do beneficiário — a coluna que a tabela
- * mostra —, cada uma precisa aparecer ("ana silva" acha "Ana Maria Silva"). No máximo 6 palavras
- * (limita o tamanho da consulta, como nas outras listas). Sem busca, nenhuma condição.
- */
 export function condicoesBuscaComissoes(busca: string): Prisma.ComissaoWhereInput[] {
   return busca.trim().split(/\s+/).filter(Boolean).slice(0, 6)
     .map((palavra) => ({ vendedor: { nome: { contains: palavra, mode: "insensitive" as const } } }));
 }
 
-/**
- * Lista de /financeiro/comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
- * página. Filtro por situação e busca (em AND com o escopo), 50 por página, total filtrado. Ordem pelo
- * cabeçalho (E1) feita no banco, antes da página, com desempate por id; sem ordem, beneficiário crescente.
- */
 export async function listarComissoesPagina({ status, busca = "", pagina, ordem }: { status: StatusComissao | null; busca?: string; pagina: number; ordem?: Ordenacao<OrdemComissoes> }) {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
   const where: Prisma.ComissaoWhereInput = { AND: [escopoComissoes(usuario), status ? { status } : {}, ...condicoesBuscaComissoes(busca)] };
@@ -58,11 +47,6 @@ export async function listarComissoesPagina({ status, busca = "", pagina, ordem 
   return { itens: comissoes.map(resumirComissao), total };
 }
 
-/**
- * "A pagar (aprovadas)" da aba de comissões do /financeiro, agregado no banco por moeda sobre TODO o
- * escopo — com a lista paginada, somar só a página exibida daria um total errado. A quantidade por moeda
- * vai para a confirmação do "Fechar mês e marcar pagas" ("N comissões, total X"; docs/42 L2016).
- */
 export async function totaisComissoesAPagar() {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
   const grupos = await prisma.comissao.groupBy({
@@ -90,7 +74,6 @@ function resumirComissao(c: Prisma.ComissaoGetPayload<{ include: { vendedor: { s
 
 export async function kpisFinanceiro() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
-  // Q176 (#164): o mês dos KPIs é o mês civil da escola, nunca o do servidor (UTC em produção).
   const agora = new Date(); const fuso = await fusoDaEscola(); const ini = inicioDoMesInstitucional(agora, fuso);
   const [recebimentos, eventosLegados, abertas, comissoesAprovadas, novasMatriculas] = await Promise.all([
     prisma.recebimento.findMany({ where: { dataPagamento: { gte: ini, lte: agora } }, select: { valor: true, moeda: true } }),
@@ -99,8 +82,6 @@ export async function kpisFinanceiro() {
     prisma.comissao.findMany({ where: { status: StatusComissao.APROVADA }, select: { valor: true, moeda: true } }),
     prisma.matricula.count({ where: { status: StatusMatricula.ATIVA, ativadaEm: { gte: ini } } }),
   ]);
-  // Antes do ledger tipado, cada pagamento parcial era um evento. Preserva o histórico
-  // sem contar duas vezes eventos já associados a um Recebimento.
   const legados = eventosLegados.filter((e) => { const p = e.payload as Record<string, unknown> | null; return p && !p.recebimentoId && typeof p.valorRecebido === "number"; });
   const moedas = await prisma.cobranca.findMany({ where: { id: { in: legados.map((e) => e.agregadoId) } }, select: { id: true, moeda: true } });
   const porId = new Map(moedas.map((c) => [c.id, c.moeda]));
@@ -115,17 +96,11 @@ export async function kpisFinanceiro() {
 
 export interface CotacaoVigente {
   moeda: string;
-  /** Unidades da moeda por 1 USD; null = sem cotação cadastrada. USD (pivô) é sempre 1. */
   unidadesPorUsd: number | null;
   vigenteEm: string | null;
   pivo: boolean;
 }
 
-/**
- * Moedas oferecidas para consolidação + sua cotação vigente (a mais recente por moeda).
- * Conjunto = USD (pivô) + real (matriz BR) + todas as moedas em uso nos países cadastrados.
- * Alimenta tanto o seletor de consolidação quanto a tela de manutenção de câmbio (Fase B).
- */
 export async function dadosCambio(): Promise<CotacaoVigente[]> {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const [paises, taxas] = await Promise.all([
@@ -151,11 +126,6 @@ export async function dadosCambio(): Promise<CotacaoVigente[]> {
   });
 }
 
-/**
- * Relatório gerencial (Fase C) — desconto concedido e comissão, sempre AGRUPADOS POR MOEDA
- * (nunca somando moedas distintas). Reaproveita os campos já denormalizados em AjusteFinanceiro
- * (moeda/vendedor) — antes esse dado existia no banco mas não era exposto em lugar nenhum.
- */
 export async function relatorioDescontosComissoes() {
   const usuario = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
   const global = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO);
@@ -170,7 +140,6 @@ export async function relatorioDescontosComissoes() {
       _count: { _all: true },
     }),
     prisma.comissao.groupBy({ where: filtro, by: ["moeda", "status"], _sum: { valor: true }, _count: { _all: true } }),
-    // Fase 2 (doc 03 §Comissão): relatório POR VENDEDOR (apuração por moeda × status).
     prisma.comissao.groupBy({
       where: filtro,
       by: ["vendedorId", "moeda", "status"],
@@ -208,14 +177,8 @@ const INCLUDE_INFORME = {
 } satisfies Prisma.PagamentoInformadoInclude;
 type InformeLido = Prisma.PagamentoInformadoGetPayload<{ include: typeof INCLUDE_INFORME }>;
 
-/** Informes a conferir por trecho da fila do /financeiro/informes. */
 export const INFORMES_POR_TRECHO = 30;
 
-/**
- * Informes de um aluno (ficha financeira: histórico do atendimento, todos os estados). Sem aluno, o
- * primeiro trecho da fila a conferir — a aba do /financeiro lê a fila inteira por cursor
- * (listarFilaInformesPagamento); a consulta sem `take` sobre todos os informes saiu (docs/43 §6 item 9).
- */
 export async function listarInformesPagamento(alunoId?: string) {
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
   if (!alunoId && !usuario.papeis.some((papel) => papel === Papel.ADMINISTRADOR || papel === Papel.FINANCEIRO)) {
@@ -230,11 +193,6 @@ export async function listarInformesPagamento(alunoId?: string) {
   return projetarInformes(informes, usuario);
 }
 
-/**
- * Fila de informes a conferir (aba "A conferir" do /financeiro): cursor nos dois sentidos (decisão de
- * 10/10/2026 para filas de trabalho), mais antigo primeiro. Conferir um informe tira-o da fila; o cursor é o
- * id do informe de fronteira, e a âncora continua existindo depois de conferida (só o status muda).
- */
 export async function listarFilaInformesPagamento(input: NavegacaoFila = {}) {
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
   const nav = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS).parse(input);
@@ -256,7 +214,6 @@ export async function listarFilaInformesPagamento(input: NavegacaoFila = {}) {
   return { itens: projetarInformes(registros, usuario), ...navegacao };
 }
 
-/** Quantos informes esperam conferência (o número da aba "A conferir"), sem ler os informes. */
 export async function contarInformesAConferir() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   return prisma.pagamentoInformado.count({ where: { status: "A_CONFERIR" } });
@@ -273,12 +230,9 @@ function projetarInformes(informes: InformeLido[], usuario: { id: string; papeis
   })));
 }
 
-/** Contextos operacionais para repartir um único fato de caixa FIN-04. */
 export async function listarContextosRecebimentoDestinado() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const matriculas = await prisma.matricula.findMany({
-    // A antecipação documentada pode ocorrer antes da ativação. Rascunhos e
-    // matrículas encerradas/canceladas continuam fora do caixa operacional.
     where: { status: { in: [StatusMatricula.AGUARDANDO, StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: [{ aluno: { nomeOrdenacao: "asc" } }, { id: "asc" }],
     include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } }, ...incluirFonteVencimentoCivil } } },
   });
@@ -291,16 +245,12 @@ export async function listarContextosRecebimentoDestinado() {
     return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: referenciaVencimentoCivil({ ...cobranca, aplicacoesAditivoVencimento: vencimentosPorCobranca.get(cobranca.id), aplicacoesM01: m01PorCobranca.get(cobranca.id), retomadasReprogramadas }), saldo }] : [];
     });
     const identificacaoMatricula = matricula.codigo?.trim() || `ID ${matricula.id}`;
-    // Q173: o rótulo usa a moeda da matrícula porque só entram cobranças em aberto, e a troca de moeda exige a
-    // matrícula sem cobrança em aberto na moeda anterior (pendencias_moeda_antiga_173). Se isso mudar, rotular por cobrança.
     return { matriculaId: matricula.id, identificacaoMatricula, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
   });
 }
 
-/** Quem configura a política de comissão: Administrador ou permissão `comissao.configurar`. Sem carregar a política. */
 export async function podeConfigurarComissoes() {
   const usuario = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
-  // O usuário da sessão já vem com `permissoes` (carregarUsuarioFresco): sem segunda leitura (C11 da #170).
   return usuario.papeis.includes(Papel.ADMINISTRADOR) || temPermissao(usuario, "comissao.configurar");
 }
 
@@ -316,7 +266,6 @@ export async function configuracaoComissoes() {
     paises, produtos: produtos.map((p) => ({ id: p.id, nome: `${p.idioma.nome} · ${p.modalidade.nome}` })) });
 }
 
-/** Config do financeiro automatizado (Fase 2) — defaults de fábrica quando sem registro. */
 export async function carregarConfigFinanceiro() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const c = await prisma.configFinanceiro.findUnique({ where: { id: "financeiro" } });

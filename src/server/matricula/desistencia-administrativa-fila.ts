@@ -13,12 +13,9 @@ export type ItemFilaAdministrativaDesistencia = {
   id: string;
   codigo: string | null;
   pedido: { id: string; versao: number; motivo: string; registradorNome: string };
-  /** A fotografia do pedido ainda é a fotografia corrente da preparação. */
   atual: boolean;
-  /** Indicação para a tela; a ação de decisão continua sendo a autoridade. */
   podeAprovar: boolean;
   podeDecidir: boolean;
-  /** Há fonte financeira ou documental que exige nova conferência. */
   exigeConferencia: boolean;
 };
 
@@ -38,22 +35,6 @@ async function exigirLeitorAtual(usuarioId: string) {
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 }
 
-/**
- * Fila operacional de pedidos que merecem apreciação administrativa.
- *
- * A seleção primária usa somente ids e sinais de avanço formal. O `snapshotJson`
- * do pedido participa deliberadamente: se a fonte que exigia a decisão mudou
- * depois do pedido, a pendência continua visível para revisão. Depois da página
- * de 21 ids, a consulta de cada matrícula recalcula os indicadores e a alçada
- * atuais; no máximo vinte consultas são feitas e nenhuma fotografia/URL/valor é
- * devolvido. Uma alteração concorrente pode, portanto, reduzir uma página, mas
- * nunca transforma esta lista em autorização para decidir.
- *
- * Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026): a
- * ordem por `m.id` é estável e a leitura continua do último candidato visto
- * (`m.id > depois`) ou volta a partir do primeiro (`m.id < antes`, lida ao contrário).
- * Decidir um pedido da página não desloca os seguintes, e a próxima não pula ninguém.
- */
 export async function listarPendenciasAdministrativasDesistencia(
   input: NavegacaoFila = {},
 ): Promise<Resultado<FilaAdministrativaDesistencia>> {
@@ -62,11 +43,6 @@ export async function listarPendenciasAdministrativasDesistencia(
     const nav = entradaSchema.parse(input);
     await exigirLeitorAtual(sessao.id);
 
-    // O LATERAL fixa somente o pedido mais recente da matrícula. Assim, uma
-    // decisão no pedido atual não faz um pedido antigo sem decisão reaparecer.
-    // Os jsonpaths cobrem a fotografia produzida por carregarConferencia…;
-    // os EXISTS cobrem as mesmas fontes no estado corrente, sem carregar dados
-    // financeiros para a fila.
     const ler = (leitura: NavegacaoFila, take: number) => prisma.$queryRaw<Candidato[]>(Prisma.sql`
       SELECT m.id AS "matriculaId", ultimo.id AS "pedidoId"
       FROM "Matricula" m
@@ -111,17 +87,10 @@ export async function listarPendenciasAdministrativasDesistencia(
     const { registros: daPagina, ...navegacao } = await lerPaginaDaFila(nav, 20, ler, (c) => c.matriculaId);
     const itens: ItemFilaAdministrativaDesistencia[] = [];
     for (const candidato of daPagina) {
-      // Esta consulta repete a autorização fresca e a revalidação da fotografia
-      // por matrícula. A página já foi limitada acima, evitando uma varredura
-      // que adquira locks de todas as pendências.
       const consulta = await consultarDecisaoAdministrativaDesistencia({ matriculaId: candidato.matriculaId });
-      // Falha de autorização ou de leitura não se converte em uma fila parcial.
-      // A chamada já revalida o papel no banco, depois da seleção dos ids.
       if (!consulta.ok) throw new ErroPermissao();
       const dado = consulta.dado;
       if (!dado) throw new ErroPermissao();
-      // Se surgiu nova versão entre o SQL e a revalidação, o candidato deixou
-      // de ser o pedido atual; ele não pode aparecer como histórico pendente.
       if (dado.pedidos[0]?.id !== candidato.pedidoId) continue;
       const pedido = dado.pedidos.find((p) => p.id === candidato.pedidoId);
       if (!pedido || pedido.decisao) continue;

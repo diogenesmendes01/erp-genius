@@ -64,7 +64,6 @@ describe("exportação de contatos", () => {
   });
 
   it("exporta todas as páginas, com pessoas e empresas na mesma página", async () => {
-    // 1 + 54 pessoas e 3 empresas no escopo: 58 linhas, 2 páginas de 50; a 2ª mistura 5 pessoas e 3 empresas.
     for (let i = 0; i < 54; i++) {
       const p = await prisma.pessoa.create({ data: { nome: `Pessoa ${String(i).padStart(2, "0")}` } });
       await prisma.oportunidade.create({ data: { nome: p.nome, vendedorDonoId: vendedor.id, pessoaId: p.id } });

@@ -3,11 +3,6 @@ import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoMatriculaComercial } from "@/server/financeiro/acesso";
 
-// Cabeçalho de registro das telas /matriculas/[id]/* (E2): código · aluno · estado · produto.
-// Consulta leve (um findFirst com select), feita uma vez pelo layout. Mesmo alcance das páginas:
-// Secretaria, Financeiro e Gerência pedagógica leem sem filtro de carteira (como já fazem as
-// seções delas); Vendedor e Gerente comercial só dentro da própria carteira; demais papéis, nada.
-
 export type CabecalhoMatricula = {
   id: string;
   codigo: string | null;

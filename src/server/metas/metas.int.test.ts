@@ -116,7 +116,6 @@ describe("progressoMetas", () => {
     await metas([["2026-11", 10]]);
     await matriculasDe(vend1, 2, "2026-10");
     const l = await prisma.oportunidade.create({ data: { nome: "L", etapa: "MATRICULADO", vendedorDonoId: vend1.id } });
-    // 01/12 01:00Z = 30/11 22:00 em São Paulo: ainda é novembro.
     await prisma.evento.create({ data: { tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId: l.id, criadoEm: new Date("2026-12-01T01:00:00Z"), payload: { para: "MATRICULADO" } } });
     expect((await progressoMetas({ competencias: ["2026-11"], escopo: tudo }))[0]).toMatchObject({ meta: 10, realizado: 1 });
   });
@@ -145,7 +144,6 @@ describe("progressoMetas", () => {
     logado(professor);
     expect((await checkinExperimental(l.id, true)).ok).toBe(true);
     const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "ExperimentalRealizada", agregadoId: l.id } });
-    // Competência do check-in no fuso institucional (o evento é gravado agora).
     const p = new Intl.DateTimeFormat("en-CA", { timeZone: await fusoDaEscola(), year: "numeric", month: "2-digit" }).formatToParts(evento.criadoEm);
     const competencia = `${p.find((x) => x.type === "year")!.value}-${p.find((x) => x.type === "month")!.value}`;
     await prisma.metaComercial.create({ data: { competencia, usuarioId: vend1.id, metrica: "EXPERIMENTAIS_REALIZADAS", valor: 4, criadaPorId: admin.id } });
@@ -155,25 +153,19 @@ describe("progressoMetas", () => {
     await prisma.metaComercial.create({ data: { competencia: "2026-11", usuarioId: null, metrica: "EXPERIMENTAIS_REALIZADAS", valor: 10, criadaPorId: admin.id } });
     const ev = (agregadoId: string, tipo: string, criadoEm: string, payload: object = {}) =>
       prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId, criadoEm: new Date(criadoEm), payload } });
-    // Duas realizadas da mesma oportunidade: conta uma só.
     const a = await prisma.oportunidade.create({ data: { nome: "A", etapa: "EXPERIMENTAL_REALIZADA", vendedorDonoId: vend1.id } });
     await ev(a.id, "ExperimentalRealizada", "2026-11-05T15:00:00Z");
     await ev(a.id, "ExperimentalRealizada", "2026-11-20T15:00:00Z");
-    // Histórico antigo por EtapaAlterada também vale.
     const b = await prisma.oportunidade.create({ data: { nome: "B", etapa: "EXPERIMENTAL_REALIZADA", vendedorDonoId: vendOutraEquipe.id } });
     await ev(b.id, "EtapaAlterada", "2026-11-06T15:00:00Z", { para: "EXPERIMENTAL_REALIZADA" });
-    // Primeira realizada em outubro: não conta em novembro.
     const c = await prisma.oportunidade.create({ data: { nome: "C", etapa: "EXPERIMENTAL_REALIZADA", vendedorDonoId: vend1.id } });
     await ev(c.id, "ExperimentalRealizada", "2026-10-20T15:00:00Z");
     await ev(c.id, "ExperimentalRealizada", "2026-11-20T15:00:00Z");
-    // 01/12 01:00Z = 30/11 em São Paulo: ainda é novembro.
     const d = await prisma.oportunidade.create({ data: { nome: "D", etapa: "EXPERIMENTAL_REALIZADA", vendedorDonoId: vend1.id } });
     await ev(d.id, "ExperimentalRealizada", "2026-12-01T01:00:00Z");
-    // No-show não conta.
     const e = await prisma.oportunidade.create({ data: { nome: "E", etapa: "NO_SHOW", vendedorDonoId: vend1.id } });
     await ev(e.id, "NoShow", "2026-11-07T15:00:00Z");
     expect((await progressoMetas({ competencias: ["2026-11"], escopo: tudo }))[0]).toMatchObject({ usuarioId: null, realizado: 3 });
-    // Escopo da equipe do gerente: só as de vend1 (A e D).
     await prisma.metaComercial.create({ data: { competencia: "2026-11", usuarioId: vend1.id, metrica: "EXPERIMENTAIS_REALIZADAS", valor: 4, criadaPorId: admin.id } });
     const equipe = await progressoMetas({ competencias: ["2026-11"], escopo: { tipo: "USUARIOS", ids: [gerente.id, vend1.id] } });
     expect(equipe).toEqual([expect.objectContaining({ usuarioId: vend1.id, realizado: 2, pct: 0.5 })]);

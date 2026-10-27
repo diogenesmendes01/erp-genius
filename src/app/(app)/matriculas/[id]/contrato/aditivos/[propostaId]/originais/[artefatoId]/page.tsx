@@ -43,7 +43,6 @@ export default async function ConferenciaOriginalAditivoPage({ params, searchPar
   const processo = processoResultado.dado as Processo | null, conferenciaAtual = d.revisao && d.historico.find(c => c.revisaoHash === d.revisao?.hash), ambienteFonte = d.revisao?.dados.ambiente;
   const integracaoResultado = await consultarIntegracaoAssinatura();
   const integracao = integracaoResultado.ok ? integracaoResultado.dado : null;
-  // O envio integrado só aparece quando o driver ativo é o mesmo serviço/ambiente do processo preparado.
   const integrado = !!integracao && !!processo && integracao.fornecedor === processo.fornecedor && integracao.ambiente === processo.ambiente;
   const conclusaoResultado = await consultarConclusaoAssinaturaAditivo({ matriculaId: id, propostaId });
   if (!conclusaoResultado.ok) return <p role="alert">{conclusaoResultado.erro}</p>;
@@ -59,7 +58,6 @@ export default async function ConferenciaOriginalAditivoPage({ params, searchPar
   if (!aplicacaoHistoricoResultado.ok) return <p role="alert">{aplicacaoHistoricoResultado.erro}</p>;
   const aplicacaoHistorica = aplicacaoHistoricoResultado.dado?.aplicacao ?? null;
   const atual = `${base}/originais/${encodeURIComponent(artefatoId)}`;
-  // Paginação das conferências: preserva a página das tentativas e das observações (mesma tela).
   const hrefConferencias = (p: number) => `${atual}?${new URLSearchParams({ pagina: String(p), paginaTentativas: String(paginaTentativas), ...(tentativaObservacoes ? { tentativaObservacoes: String(tentativaObservacoes), paginaObservacoes: String(paginaObservacoes) } : {}) })}`;
   return <div className="space-y-4"><VoltarPara href={base} para="Aditivo" />
     <h1 className="text-2xl">Conferência do original para assinatura</h1>

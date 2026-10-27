@@ -2,7 +2,6 @@ import type { ConfigAria, ModoAcao } from "../config-schema";
 
 export type DestinoAcao = "EXECUTAR" | "SUGERIR" | "NEGAR";
 
-/** Decide o que fazer com uma ação proposta: a matriz manda, a confiança e a supervisão rebaixam. */
 export function destinoDaAcao(i: {
   modo: ModoAcao | "SEMPRE";
   confianca: number;

@@ -2,9 +2,6 @@ import { describe, it, expect } from "vitest";
 import { ErroDriver } from "./canal";
 import { lerMidiaParaEnvio, midiaSaidaDoAutor, tipoPorMime } from "./midia";
 
-// Posse do anexo de saída (review PR #51 P1-2): a checagem é canônica por segmentos —
-// prefixo de string aceitaria traversal que resolve para arquivo de outro usuário/pasta.
-
 describe("midiaSaidaDoAutor", () => {
   const u1 = "user-aaa";
   const u2 = "user-bbb";

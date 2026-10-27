@@ -45,7 +45,6 @@ describe("encaminhar mensagem como cópia", () => {
     const ev = await prisma.evento.findMany({ where: { tipo: "MensagemEncaminhada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: origem.a.id } });
     expect(ev).toHaveLength(1);
     expect(ev[0].payload).toMatchObject({ mensagemId: m.id, destinoAtendimentoIds: [meu2.a.id] });
-    // origem fora do escopo
     comoUsuario(v2);
     const r2 = await encaminharMensagem({ mensagemId: m.id, destinoAtendimentoIds: [deOutro.a.id] });
     expect(r2.ok).toBe(false);

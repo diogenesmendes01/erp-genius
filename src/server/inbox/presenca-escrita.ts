@@ -5,7 +5,6 @@ import type {EntradaPresenca} from "./presenca-schema";
 export class ErroPresenca extends Error { constructor(public status:number){super("Presença indisponível. Tente novamente.");} }
 const LIMITE=8,RETENCAO=24*60*60_000,TTL=60_000;
 const viva=(r:PresencaInbox,agora:Date)=>r.desconectadaEm===null&&agora.getTime()-r.ultimoContatoEm.getTime()<TTL;
-/** User→Presenca conserva a ordem FK/CASCADE; nunca toca locks de negócio. */
 export async function escreverPresenca(tx:Prisma.TransactionClient,usuarioId:string,entrada:EntradaPresenca,expiraEm:number|null=null):Promise<{id:string;geracao:string}> {
  if(entrada.modo==="ler"||entrada.modo==="resolver")throw new ErroPresenca(400);
  const users=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Usuario" WHERE id=${usuarioId} FOR NO KEY UPDATE`;

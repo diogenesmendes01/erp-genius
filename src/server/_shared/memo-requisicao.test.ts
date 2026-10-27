@@ -1,9 +1,6 @@
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// No Vitest o `react` 18.3 não exporta `cache`; aqui ele é simulado (memo por argumentos) para
-// provar o que importa no App Router: fora de transação o escopo é lido uma vez por requisição;
-// dentro de uma transação, sempre na própria transação.
 const mocks = vi.hoisted(() => {
   const coberturas = vi.fn(async () => [] as { titularId: string }[]);
   const equipe = vi.fn(async () => [{ id: "v2" }]);
@@ -32,7 +29,7 @@ describe("escopoComercialAtual com memo por requisição", () => {
 
   it("fora de transação: várias chamadas na mesma requisição leem a equipe uma vez só", async () => {
     const a = await escopoComercialAtual(gerente);
-    const b = await escopoComercialAtual({ ...gerente }); // outro objeto, mesmo usuário
+    const b = await escopoComercialAtual({ ...gerente });
     expect(a).toEqual({ vendedorDonoId: { in: ["v2"] } });
     expect(b).toEqual(a);
     expect(mocks.equipe).toHaveBeenCalledTimes(1);
@@ -52,7 +49,7 @@ describe("escopoComercialAtual com memo por requisição", () => {
     const vendedor = { id: "g2", nome: "", papeis: [Papel.VENDEDOR] };
     await escopoComercialAtual({ ...vendedor, papeis: [Papel.GERENTE_COMERCIAL] });
     await escopoComercialAtual(vendedor);
-    expect(mocks.equipe).toHaveBeenCalledTimes(1);   // só o de gerente lê a equipe
-    expect(mocks.coberturas).toHaveBeenCalledTimes(1); // só o de vendedor lê coberturas
+    expect(mocks.equipe).toHaveBeenCalledTimes(1);
+    expect(mocks.coberturas).toHaveBeenCalledTimes(1);
   });
 });

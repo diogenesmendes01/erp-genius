@@ -11,7 +11,6 @@ const msg = (i: number): MensagemThread => ({
   participanteNome: null, favorita: false, clientMessageId: null,
 });
 
-/** Fonte falsa em memória por atendimento: cursor = "c<indice>" (exclusivo), mesmo contrato da rota. */
 function fonteFalsa(total: Record<string, number>) {
   const dados: Record<string, MensagemThread[]> = {};
   for (const [id, n] of Object.entries(total)) dados[id] = Array.from({ length: n }, (_, i) => msg(i));
@@ -142,7 +141,7 @@ describe("HistoricoConversa", () => {
     expect(h.getState().temMaisAntes).toBe(false);
     expect(new Set(ids(h)).size).toBe(150);
     expect(ids(h)).toEqual(f.dados.a.map((m) => m.id));
-    await h.maisAntigas(); // sem mais: não chama a fonte de novo
+    await h.maisAntigas();
     expect(f.chamadas).toHaveLength(3);
   });
 
@@ -162,7 +161,6 @@ describe("HistoricoConversa", () => {
     const f = fonteFalsa({ a: 70 }), h = new HistoricoConversa(f);
     await h.abrir("a");
     f.dados.a.push(msg(70));
-    // o render só viu o último aviso, de outro atendimento
     await reagirAoAviso(h, "a", { tipo: "mensagem.nova", atendimentoId: "b", mensagemId: "x", conversaId: "cv" });
     expect(ids(h).slice(-1)).toEqual(["m00070"]);
     f.dados.a.push(msg(71));
@@ -183,7 +181,7 @@ describe("HistoricoConversa", () => {
     let soltar!: () => void;
     f.atraso = () => new Promise<void>((ok) => { soltar = ok; });
     const abrindo = h.abrir("a");
-    void h.maisNovas(); // ocupado: fica pendente
+    void h.maisNovas();
     f.dados.a.push(msg(10));
     f.atraso = undefined; soltar();
     await abrindo;
@@ -209,7 +207,6 @@ describe("HistoricoConversa", () => {
     f.atraso = () => new Promise<void>((ok) => { soltar = ok; });
     f.dados.a.push(msg(150));
     const recarregando = reagirAoAviso(h, "a", { tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
-    // em voo: a janela anterior continua montada, do mesmo atendimento, só marcada como carregando
     expect(h.getState().mensagens).toHaveLength(120);
     expect(h.getState().atendimentoId).toBe("a");
     expect(h.getState().carregando).toBe(true);
@@ -253,13 +250,11 @@ describe("HistoricoConversa", () => {
     for (let i = 0; i < 17; i++) { await h.maisAntigas(); expect(h.getState().mensagens.length).toBeLessThanOrEqual(LIMITE_HISTORICO); }
     expect(h.getState().temMaisDepois).toBe(true);
     expect(h.getState().mensagens[0].id).toBe("m00000");
-    // volta para a frente com o cursor do que sobrou na janela
     for (let i = 0; i < 17; i++) { await h.maisNovas(); expect(h.getState().mensagens.length).toBeLessThanOrEqual(LIMITE_HISTORICO); }
     expect(h.getState().mensagens.at(-1)!.id).toBe("m00999");
     expect(h.getState().temMaisDepois).toBe(false);
     expect(h.getState().temMaisAntes).toBe(true);
     const a = ids(h); expect(new Set(a).size).toBe(a.length);
-    // continuidade: sem buracos na janela final
     const n0 = Number(a[0].slice(1)); expect(a).toEqual(a.map((_, i) => `m${String(n0 + i).padStart(5, "0")}`));
   });
 

@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (achado Alta L2457): erro e sucesso separados nos prazos
-// e nos avisos do diário — erro em role="alert", sucesso em role="status", falha de rede como resultado
-// incerto e o botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   prazosPortal: vi.fn(), prazosEntrega: vi.fn(), avisos: vi.fn(),
@@ -30,7 +27,6 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** "Salvando…" no botão e o fieldset travado: os dois sinais do ocupado destas telas. */
 const ocupadoEm = (t: ReactNode) => {
   const botao = elementos(t).find((n) => n.type === "button");
   const fieldset = elementos(t).find((n) => n.type === "fieldset");

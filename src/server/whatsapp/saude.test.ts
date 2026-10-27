@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Saúde do canal com Prisma mockado (complementa o saude.int.test.ts, que não roda no CI —
-// issue #162). Fixa o filtro da PENDENTE mais velha: uma mensagem agendada pelo atendente
-// para o futuro (`agendadaPara > agora`) fica PENDENTE desde a criação, mas o despachante
-// só a pega a partir de `agendadaPara` — ela não pode disparar "o cron está rodando?".
-
 const m = vi.hoisted(() => ({
   groupBy: vi.fn(), findFirst: vi.fn(), count: vi.fn(), numeros: vi.fn(), inbound: vi.fn(), politica: vi.fn(),
 }));
@@ -13,7 +8,6 @@ vi.mock("@/lib/prisma", () => ({
     intencaoMensagem: { groupBy: m.groupBy, findFirst: m.findFirst, count: m.count },
     numeroWhatsApp: { findMany: m.numeros },
     mensagemWhatsApp: { findFirst: m.inbound },
-    // Fase 4C: eventos do motor (sem número MOTOR ativo nestes cenários, fila de eventos vazia).
     eventoMotorRecebido: { count: async () => 0, findFirst: async () => null },
   },
 }));
@@ -31,7 +25,6 @@ type Linha = { criadaEm: Date; agendadaPara: Date | null; agenda?: boolean };
 const casaFiltro = (v: Date | null, f: Filtro | { not: null } | undefined) =>
   f === undefined ? true : f === null ? v === null : "not" in f ? v !== null : v !== null && v <= f.lte;
 
-/** Banco fake de intenções PENDENTE: aplica o `where`/`orderBy` que o código pedir, como o Postgres faria. */
 function pendentes(linhas: Linha[]) {
   m.findFirst.mockImplementation(
     async ({ where, orderBy }: { where: Where; orderBy: Partial<Record<"criadaEm" | "agendadaPara", "asc">> }) => {
@@ -99,9 +92,6 @@ describe("medirSaudeCanal — PENDENTE agendada para o futuro", () => {
   });
 });
 
-// Revisão R1 do #209 (C2): com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado o despachante retém o
-// aviso de agenda (PENDENTE/ADIADA, motivo `envio_agenda_desligado`). A saúde mostra quantos estão
-// retidos e não confunde a retenção intencional com cron parado.
 describe("medirSaudeCanal — aviso de agenda retido com o envio de agenda desligado", () => {
   const retidas = (n: number) =>
     m.count.mockImplementation(async ({ where }: { where: { motivoFalha?: string } }) =>
@@ -139,8 +129,6 @@ describe("medirSaudeCanal — aviso de agenda retido com o envio de agenda desli
     vi.unstubAllEnvs();
   });
 
-  // C1 do #212: o motivo `envio_agenda_desligado` só é limpo quando o despachante pega a intenção.
-  // Entre religar o envio e o próximo tick, a contagem não pode seguir mostrando avisos retidos.
   it("com o envio de agenda ligado, nada conta como retido (motivo antigo até o próximo tick)", async () => {
     vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
     retidas(3);

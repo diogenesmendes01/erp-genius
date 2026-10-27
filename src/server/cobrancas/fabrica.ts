@@ -2,14 +2,8 @@ import type { ModoDegrau } from "@prisma/client";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import type { PassoRegua } from "./regua";
 
-// DEFAULTS DE FÁBRICA do canal de cobrança (docs 26/30) — arquivo PURO (só constantes,
-// zero import de runtime) para poder ser consumido pelo seed (tsx) e pelos módulos do app
-// sem puxar prisma/env. FONTE ÚNICA (doc 29 regra 4): o seed grava estes textos na
-// entidade TemplateWhatsApp; render.ts os usa como fallback; o client migra na E2.
-
 export const POLITICA_COBRANCA_NOME = "Régua de cobrança (padrão)";
 
-/** Modos de fábrica (doc 26): preventivos automáticos · D+3/D+7 em lote · D+15 manual. */
 export const MODOS_FABRICA: Record<PassoRegua, ModoDegrau> = {
   "D-7": "AUTOMATICO",
   "D-3": "AUTOMATICO",

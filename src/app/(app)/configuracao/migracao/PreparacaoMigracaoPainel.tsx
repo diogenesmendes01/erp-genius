@@ -12,9 +12,7 @@ const ROTULO: Record<CampoMigracao, string> = { "aluno.id": "ID aluno", "aluno.n
 
 export function PreparacaoMigracaoPainel() {
   const router = useRouter(); const [arquivo, setArquivo] = useState<File | null>(null); const [abas, setAbas] = useState<AbaPlanilha[]>([]); const [aba, setAba] = useState(0); const [origem, setOrigem] = useState("OPERACIONAL_LETICIA"); const [chaveLote, setChaveLote] = useState(""); const [tipoEntrada, setTipoEntrada] = useState<"CADASTRO" | "VINCULO_MATRICULA" | "FINANCEIRO_HISTORICO" | "HISTORICO_PRESENCA">("CADASTRO"); const [delimitador, setDelimitador] = useState<"AUTO" | "," | ";">("AUTO"); const [mapeamento, setMapeamento] = useState<MapeamentoMigracao>({});
-  // Ler o arquivo só faz a prévia, sem gravar nada (planilha-acoes.ts, preverArquivoPreparacaoMigracao): repetir é inofensivo.
   const leitura = useAcaoCliente({ idempotente: true });
-  // Preparar usa origem + chave estável do lote; repetida com o mesmo arquivo, o servidor devolve o lote existente (migracao/acoes.ts, prepararLoteMigracao).
   const preparo = useAcaoCliente({ idempotente: true });
   const ocupado = leitura.ocupado || preparo.ocupado;
   const selecionada = abas[aba];

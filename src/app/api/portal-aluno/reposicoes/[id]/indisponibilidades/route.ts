@@ -5,8 +5,6 @@ import { origemPortalAlunoPermitida } from "@/server/portal-aluno/politica";
 
 export const runtime = "nodejs";
 
-/** O identificador da reposição vem exclusivamente da rota; a ação revalida a
- * sessão opaca e o vínculo conta → aluno → matrícula antes de persistir. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!origemPortalAlunoPermitida(request)) {
     return NextResponse.json({ erro: "Origem não permitida." }, { status: 403, headers: { "Cache-Control": "no-store" } });
@@ -18,8 +16,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const relato = await relatarIndisponibilidadeMaterialPortalAluno({ ...corpo, reposicaoId: id });
     return NextResponse.json({ ok: true, relato }, { headers: { "Cache-Control": "no-store" } });
   } catch {
-    // Não revela se o identificador pertence a outra matrícula ou se há
-    // material publicado; a interface pode orientar o aluno sem enumerar dados.
     return NextResponse.json({ erro: "Não foi possível registrar o relato de indisponibilidade." }, { status: 422, headers: { "Cache-Control": "no-store" } });
   }
 }

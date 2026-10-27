@@ -6,7 +6,6 @@ const TurmaEntrada = z.object({
   status: z.enum(["PLANEJADA", "ABERTA", "EM_ANDAMENTO", "CONCLUIDA"]),
   publicada: z.boolean(),
   primeiroEncontroOficial: z.string().datetime().nullable(),
-  // O diário pode ser lançado tardiamente; não serve para redefinir início.
   diarioMaisRecente: z.string().datetime().nullable().optional(),
   excecoesQ37: z.array(z.string().min(1)).default([]),
 }).strict();
@@ -23,10 +22,6 @@ const Entrada = z.object({
 
 export type PreviaQuantidadeAulas = ReturnType<typeof preverImpactoQuantidadeAulas>;
 
-/**
- * Classifica o alcance Q41–Q43 sem gravar ou publicar agenda. O início efetivo
- * vem do primeiro encontro oficial não cancelado, e não de status derivado.
- */
 export function preverImpactoQuantidadeAulas(input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const agora = Date.parse(d.agora);

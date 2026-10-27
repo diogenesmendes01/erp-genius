@@ -91,9 +91,6 @@ function fonteAproveitada(args: {
     contexto.nivelDestinoId, contexto.regraDestinoId,
     codigoAvaliacaoDestino, habilidadeDestino,
   ])).digest("hex");
-  // O código da avaliação admite 100 caracteres; não o concatene ao ID, que
-  // também aceita 100. A referência é curta, determinística e os campos da
-  // tupla continuam armazenados separadamente para auditoria.
   const referenciaId = "aproveitamento:" + createHash("sha256").update(JSON.stringify([
     aplicacao.id, codigoAvaliacaoDestino, habilidadeDestino,
   ])).digest("hex");
@@ -185,9 +182,6 @@ export function projetarAproveitamentoAplicado(entrada: {
   const itens: ItemAproveitamentoAplicado[] = [];
   for (const [itemChave, requisito] of requisitoPorChave) {
     const mapeamento = mapaPorRequisito.get(itemChave);
-    // Um lançamento oficial do vínculo de destino sempre prevalece. A fonte
-    // aplicada pode até estar ausente ou superada, mas não cria pendência nem
-    // uma segunda fonte para esse requisito localmente resolvido.
     if (entrada.chavesLocais.has(itemChave)) {
       itens.push({ ...requisito, situacao: "LOCAL_OFICIAL_PREVALECE", notaParaConsolidado: null, fonte: null,
         referenciaFonteAplicadaId: mapeamento?.referenciaFonteId ?? null });
@@ -226,12 +220,6 @@ export function projetarAproveitamentoAplicado(entrada: {
   };
 }
 
-/**
- * Lê o fato imutável de uma equivalência já aplicada. A cadeia da fonte é
- * recarregada pelo callback; qualquer divergência vira pendência explícita.
- * Não escolhe entre aproveitamento e lançamento local: o local tem precedência
- * e aparece em `conflitosLocais` para o consolidado registrar a situação.
- */
 export async function carregarAproveitamentoAplicadoTx(
   tx: Prisma.TransactionClient,
   contexto: ContextoAproveitamentoAplicado,

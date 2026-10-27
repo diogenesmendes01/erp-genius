@@ -2,10 +2,6 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// C14 (#170): no navegador, o Modal vai para um portal no <body> e pede ao useDialogo o isolamento do fundo
-// (inert). Sem DOM: o useSyncExternalStore responde "cliente" (como depois da hidratação), o createPortal
-// vira um marcador que registra o destino e o useDialogo é espionado. O isolamento em si (quem fica inert e
-// em que ordem o foco volta) está em src/lib/dialogo.test.ts e dialogo.interacao.test.ts.
 const m = vi.hoisted(() => ({ useDialogo: vi.fn(), destinos: [] as unknown[], cliente: true }));
 vi.mock("@/lib/dialogo", () => ({ useDialogo: m.useDialogo }));
 vi.mock("react", async (original) => {

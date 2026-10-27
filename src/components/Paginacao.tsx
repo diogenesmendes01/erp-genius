@@ -2,18 +2,11 @@ import Link from "next/link";
 
 type AoClicar = (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => void;
 
-/**
- * Paginação nos dois sentidos (E4): "← Anterior · Página N · Próxima →", com links reais (abrem em
- * nova aba, podem ser copiados). `aoClicar` opcional faz o clique simples navegar numa transição.
- * Não aparece quando há uma página só.
- */
 export function Paginacao({ pagina, temProxima, href, aoClicar, rotulo }: {
   pagina: number;
   temProxima: boolean;
-  /** Link da mesma lista, com os filtros atuais, na página indicada. */
   href: (pagina: number) => string;
   aoClicar?: AoClicar;
-  /** Nome da navegação para leitor de tela ("Páginas de empresas"). */
   rotulo: string;
 }) {
   if (pagina <= 1 && !temProxima) return null;

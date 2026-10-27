@@ -18,21 +18,10 @@ async function conferirFilaAgendaTx(tx: PrismaTypes.TransactionClient, usuarioId
   }
 }
 
-/**
- * `(criadaEm, id)` da proposta âncora do cursor, lida no universo da fila (C38, #170; C1 da R1 da #161): proposta
- * aprovada e disponibilizada — o recorte dos JOINs da consulta, sem o filtro "ainda sem agenda". Um id fora dele
- * (proposta não aprovada ou não disponibilizada) não posiciona a fila: vale o mesmo que âncora inexistente. Se a
- * fila ganhar escopo por usuário, ele precisa entrar aqui também, como nas outras filas.
- */
 const ancora = (id: string) => Prisma.sql`(SELECT ancora."criadaEm",ancora.id FROM "PropostaSegundaChamada" ancora WHERE ancora.id=${id}
   AND EXISTS(SELECT 1 FROM "DecisaoSegundaChamada" d WHERE d."propostaId"=ancora.id AND d.aprovada)
   AND EXISTS(SELECT 1 FROM "DisponibilizacaoSegundaChamada" dd WHERE dd."propostaId"=ancora.id))`;
 
-/** Fila administrativa: sinaliza pendência e saldo atuais, mas a prévia continua obrigatória para agenda.
- * Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026), em ordem estável (criadaEm desc, id desc):
- * a leitura continua da linha do cursor — `(criadaEm, id)` da proposta âncora, lida sem o filtro "sem agenda", então agendar
- * a âncora não a perde. Agendar uma segunda chamada a tira da fila sem fazer a próxima pular outra. Âncora que não
- * existe (id inventado) não leva a nada: a fila vem vazia daquele ponto e a tela oferece a volta ao início. */
 export async function listarSegundasChamadasSemAgenda(input: z.input<typeof schema> = {}) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);

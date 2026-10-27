@@ -8,10 +8,6 @@ import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
-// D11 (decisão do dono, 20/10/2026): o dia X da previsão de pagamento das comissões (dia X do mês seguinte à
-// competência). Fica na aba "Política de comissão" do financeiro, com a mesma alçada de publicar política.
-// O valor enviado é o estado-alvo: repetir o mesmo dia não grava nada, então o envio é idempotente.
-
 export const MSG_DIA_INVALIDO = `Informe um dia entre ${DIA_PREVISAO_COMISSAO_MIN} e ${DIA_PREVISAO_COMISSAO_MAX}.`;
 
 export function DiaPrevisaoComissao({ dia }: { dia: number }) {

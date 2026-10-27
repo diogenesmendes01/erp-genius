@@ -16,7 +16,6 @@ export const ParcelaEncerramentoSchema = z.object({
 const DIA = 86_400_000;
 const data = (civil: string) => new Date(`${civil}T00:00:00.000Z`).getTime();
 
-/** Q15/Q28/Q63: uma parcela do acerto, sem executar ajuste, crédito ou devolução. */
 export function calcularParcelaEncerramento(input: z.input<typeof ParcelaEncerramentoSchema>) {
   const d = ParcelaEncerramentoSchema.parse(input);
   const inicio = data(d.coberturaInicio), fim = data(d.coberturaFim);

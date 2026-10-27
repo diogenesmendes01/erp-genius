@@ -12,7 +12,6 @@ const id = z.string().trim().min(1).max(100);
 const Preparar = z.object({ ...CamposDestinoAssinatura, matriculaId: id, propostaId: id, artefatoId: id, conferenciaId: id }).strict().refine(destinoAssinaturaCoerente, MENSAGEM_DESTINO_SIMULADO);
 export async function prepararProcessoAssinaturaAditivo(input: z.input<typeof Preparar>) { return executarAcao(async () => {
   const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), d = Preparar.parse(input);
-  // O simulado só pode ser escolhido com o driver simulado ligado: fora dele, um processo SIMULADO nunca seria enviado.
   if (d.fornecedor === "SIMULADO" && provedorAssinaturaAtivo()?.fornecedor !== "SIMULADO") throw new ErroRegra("O serviço simulado só está disponível com a integração simulada ligada (ASSINATURA_DRIVER=simulado).");
   return prisma.$transaction(tx => prepararProcessoAditivoTx(tx, ator.id, d), { timeout: 30000 });
 }); }
@@ -80,7 +79,6 @@ function provedorDoProcesso(processo: { fornecedor: string; ambiente: string }) 
   return provedor;
 }
 
-/** Mesmo protocolo do contrato (`envio.ts`): tentativa confirmada antes da chamada externa, resultado em outra transação. */
 export async function enviarAditivoParaAssinatura(input: z.input<typeof AlvoProcesso>) {
   return executarAcao<{ processoId: string; tentativa: number; estado: string; repetido: boolean }>(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), { chaveIdempotencia, ...d } = AlvoProcesso.parse(input);
@@ -103,7 +101,6 @@ export async function enviarAditivoParaAssinatura(input: z.input<typeof AlvoProc
     }, { timeout: 30000 });
     if (aberto.repetido) return { processoId: aberto.processoId, tentativa: aberto.numero, estado: aberto.estado, repetido: true };
     const criado = await criarEnvelopeSemPresumir(aberto.provedor, { chave: chaveTentativaAditivo(aberto.tentativaId), nome: `Aditivo ${aberto.codigo ?? d.matriculaId}`, pdf: new Uint8Array(aberto.pdf), pdfHash: aberto.pdfHash,
-      // Q122: cliente/responsáveis assinam antes da escola.
       signatarios: aberto.signatarios.map(p => ({ papel: p.papel, etapa: p.etapa === "CLIENTE" ? 1 : 2, nome: p.identidade.nome, email: p.identidade.email })).sort((a, b) => a.etapa - b.etapa) });
     const registrado = await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: aberto.processoId, tentativaId: aberto.tentativaId, chave: `criacao:${aberto.tentativaId}`, resultado: criado.resultado,
       referenciaExterna: criado.resultado === "REGISTRADO" ? criado.referenciaExterna : null, evidenciaHash: hashEvidenciaAssinatura(criado.evidencia) }), { timeout: 30000 });
@@ -111,7 +108,6 @@ export async function enviarAditivoParaAssinatura(input: z.input<typeof AlvoProc
   });
 }
 
-/** Conciliação de ENVIANDO/ENVIO_INCERTO pela chave da tentativa atual; só resposta conclusiva muda o estado. */
 export async function conciliarEnvioAditivo(input: z.input<typeof AlvoProcesso>) {
   return executarAcao<{ processoId: string; estado: string; repetido: boolean }>(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), { chaveIdempotencia, ...d } = AlvoProcesso.parse(input);
@@ -133,7 +129,6 @@ export async function conciliarEnvioAditivo(input: z.input<typeof AlvoProcesso>)
       return { repetido: false as const, provedor: provedorDoProcesso(p), processoId: p.id, tentativaId: tentativa.id, sequencia: tentativa._count.observacoes + 1 };
     });
     if (pendente.repetido) return { processoId: pendente.processoId, estado: pendente.estado, repetido: true };
-    // Envelope cancelado/recusado no serviço não confirma o envio: fica INCERTO com o motivo (resultadoConciliacaoEnvio).
     const conciliado = resultadoConciliacaoEnvio(await consultarEnvelopeSemPresumir(pendente.provedor, chaveTentativaAditivo(pendente.tentativaId)));
     const registrado = await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: pendente.processoId, tentativaId: pendente.tentativaId, chave: `conciliacao:${pendente.tentativaId}:${pendente.sequencia}`,
       resultado: conciliado.resultado, referenciaExterna: conciliado.referenciaExterna, evidenciaHash: hashEvidenciaAssinatura(conciliado.evidencia),

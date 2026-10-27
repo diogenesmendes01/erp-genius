@@ -17,7 +17,6 @@ import {
 import { vencimentoEmAtraso } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// Papéis com visão GLOBAL de alunos (doc 07 / nav): veem todos os registros.
 const PAPEIS_AMPLO_ALUNOS: Papel[] = [
   Papel.ADMINISTRADOR,
   Papel.SECRETARIA_ACADEMICA,
@@ -29,50 +28,31 @@ function temVisaoAmpla(usuario: UsuarioSessao): boolean {
   return usuario.papeis.some((p) => PAPEIS_AMPLO_ALUNOS.includes(p));
 }
 
-// Papéis que executam movimentação acadêmica (editar/trocar/pausar/encerrar) — espelha
-// `PAPEIS` em `acoes.ts`. Professor NÃO movimenta (doc 10): visão somente leitura.
 const PAPEIS_MOVIMENTACAO_ALUNO: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
 
-/**
- * O usuário pode ver dados financeiros do aluno (resumo + ficha financeira)?
- * A amplitude de registros do pedagógico não concede campos financeiros.
- */
 export function podeVerFinanceiroAluno(usuario?: UsuarioSessao): boolean {
   return !!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA || p === Papel.FINANCEIRO);
 }
 
-/** Cadastro administrativo é uma capacidade distinta de movimentação acadêmica. */
 export function podeEditarCadastroAluno(usuario?: UsuarioSessao): boolean {
   return !!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
 }
 
-/**
- * O usuário pode executar movimentação acadêmica (editar/trocar turma/pausar/encerrar)?
- * Espelha o guard das server actions; controla apenas a exibição dos botões na UI
- * (a segurança real está nas próprias actions). Professor → somente leitura.
- */
 export function podeMovimentarAluno(usuario?: UsuarioSessao): boolean {
   if (!usuario) return false;
   if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return true;
   return usuario.papeis.some((p) => PAPEIS_MOVIMENTACAO_ALUNO.includes(p));
 }
 
-// Visibilidade row-level (doc 07): Professor enxerga apenas alunos das SUAS turmas;
-// demais papéis amplos veem todos. Professor → restringe via alocação ativa.
-// FAIL-CLOSED (review PR #48): usuário presente SEM papel amplo e SEM professor (ex.:
-// papéis revogados com sessão viva) não vê NADA — nunca "todos" por omissão.
-// Ausência de identidade também nega: chamada interna não é capacidade implícita.
 export function escopoAlunos(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
   if (!usuario) return { id: { in: [] } };
   if (temVisaoAmpla(usuario)) return {};
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     return { alocacoes: { some: { ativa: true, turma: escopoTurmasDocente(usuario.id) } } };
   }
-  return { id: { in: [] } }; // filtro impossível: sem papel adequado → lista vazia
+  return { id: { in: [] } };
 }
 
-/** O usuário pode ver este aluno? (Professor: só se aluno está em turma sua.)
- *  FAIL-CLOSED (review PR #48): sem papel amplo e sem professor → não vê. */
 function professorVeAluno(
   usuario: UsuarioSessao | undefined,
   alocacoes: { turma: Parameters<typeof docenteAtual>[1] | null }[],
@@ -85,17 +65,10 @@ function professorVeAluno(
   return false;
 }
 
-/**
- * Vagas de uma turma = capacidade − ocupação. `ocupacaoAtiva` deve vir de um `_count`
- * filtrado por `{ ativa: true }`: alocações inativas (aluno transferido/removido) ficam no
- * histórico mas NÃO ocupam vaga. Nunca retorna negativo.
- */
 export function vagasTurma(capacidade: number, ocupacaoAtiva: number) {
   return Math.max(0, capacidade - ocupacaoAtiva);
 }
 
-// Situação financeira resumida a partir das cobranças. `emAberto` é por moeda (uma matrícula
-// pode ter trocado de moeda entre anos — doc 04) e nunca soma moedas diferentes.
 type CobrancaResumo = {
   status: StatusCobranca;
   vencimento: Date;
@@ -105,7 +78,6 @@ type CobrancaResumo = {
   moeda: string;
 };
 
-// Ref. #247: o vencimento é um dia civil; a cobrança só entra em atraso quando o dia da escola passa dele.
 function proximaCobranca<T extends CobrancaResumo>(cobrancas: T[], agora: Date, fuso: string) {
   return cobrancas
     .filter((c) => c.status === StatusCobranca.PENDENTE && !vencimentoEmAtraso(c.vencimento, agora, fuso))
@@ -132,13 +104,6 @@ function resumoFinanceiro(cobrancas: CobrancaResumo[], agora: Date, fuso: string
 
 type CobrancaResumoDaFicha = CobrancaResumo & { id: string; matriculaId: string };
 
-/**
- * A coluna de vencimento é um instante, mas a data da obrigação é civil e só
- * pode ser exibida quando a emissão ou aplicação preserva a sua referência.
- * A consulta é deliberadamente restrita à cobrança que o resumo já escolheu:
- * não altera o critério de próximo vencimento, nem carrega trilhas para a
- * projeção pedagógica.
- */
 async function resumoFinanceiroDaFicha(cobrancas: CobrancaResumoDaFicha[]) {
   const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, new Date(), await fusoDaEscola());
   const resumo = { atrasado, emAberto };
@@ -171,18 +136,12 @@ async function resumoFinanceiroDaFicha(cobrancas: CobrancaResumoDaFicha[]) {
   };
 }
 
-/** Escopo do usuário E filtros da URL — os filtros só estreitam, nunca alargam o que o papel vê. */
 export function whereListaAlunos(usuario: UsuarioSessao, filtros?: FiltrosAlunos): Prisma.AlunoWhereInput {
   const escopo = escopoAlunos(usuario);
   if (!filtros) return escopo;
   return { AND: [escopo, whereFiltrosAlunos(filtros, temVisaoAmpla(usuario) ? undefined : escopoTurmasDocente(usuario.id))] };
 }
 
-/**
- * Lista da tela /alunos (E4): filtros aplicados no servidor e uma página de ALUNOS_POR_PAGINA.
- * `total` (com filtros) e `totalBase` (só o escopo) alimentam o "N de M alunos" e o estado vazio
- * duplo (base vazia × filtro sem resultado).
- */
 export async function listarAlunosPagina(usuario: UsuarioSessao | undefined, filtros: FiltrosAlunos) {
   if (!usuario) return { itens: [], total: 0, totalBase: 0 };
   const [itens, total, totalBase] = await Promise.all([
@@ -193,7 +152,6 @@ export async function listarAlunosPagina(usuario: UsuarioSessao | undefined, fil
   return { itens, total, totalBase };
 }
 
-/** Opções dos filtros: países e turmas que o usuário enxerga — não mais tiradas da página carregada. */
 export async function opcoesFiltroAlunos(usuario?: UsuarioSessao) {
   if (!usuario) return { paises: [], turmas: [] };
   const [paises, turmas] = await Promise.all([
@@ -204,8 +162,6 @@ export async function opcoesFiltroAlunos(usuario?: UsuarioSessao) {
       select: { id: true, codigo: true, nome: true, modalidade: { select: { nome: true } }, nivel: { select: { codigo: true, idioma: { select: { nome: true } } } } },
     }),
   ]);
-  // Rótulo com código e nome da turma: "Inglês B1" sozinho repetia entre turmas diferentes, e quem
-  // escolhia uma via só metade dos alunos sem saber por quê.
   return { paises, turmas: turmas.map((t) => ({ id: t.id, label: rotuloTurmaAcademica(t) })) };
 }
 
@@ -214,7 +170,6 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
   const verFinanceiro = podeVerFinanceiroAluno(usuario);
   const alunos = await prisma.aluno.findMany({
     where: whereListaAlunos(usuario, filtros),
-    // Ordem da URL (E1): no banco, antes da página — com desempate por id. Sem filtros: nome crescente.
     orderBy: orderByAlunos(filtros?.ordem),
     ...(pagina ?? {}),
     include: {
@@ -224,8 +179,6 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
         orderBy: { id: "asc" },
         include: { turma: { include: { modalidade: true, nivel: { include: { idioma: true } }, vinculosDocentes: true } } },
       },
-      // Cobranças só para quem vê financeiro: antes vinham para todo papel (inclusive Professor) e
-      // eram descartadas — agora o filtro impossível evita a leitura.
       matriculas: {
         where: verFinanceiro ? {} : { id: { in: [] } },
         select: { cobrancas: { select: { status: true, vencimento: true, valorNegociado: true, saldo: true, valorRecebido: true, moeda: true } } },
@@ -245,7 +198,6 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
       status: a.status,
       pais: a.pais.nome,
       criadoEm: a.criadoEm.toISOString(),
-      // Mesmo rótulo do filtro (C17, #170): "Regular B1" sozinho repetia entre turmas diferentes na célula e na planilha.
       turmas: alocacoes.map(({ turma }) => ({ id: turma.id, label: rotuloTurmaAcademica(turma) })),
       financeiro: fuso ? resumoFinanceiro(cobrancas, agora, fuso) : null,
     };
@@ -275,12 +227,9 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
     },
   });
   if (!aluno) return null;
-  // Row-level: professor só vê a ficha de alunos das suas turmas (doc 07).
   if (!professorVeAluno(usuario, aluno.alocacoes)) return null;
   const cadastro = podeEditarCadastroAluno(usuario);
   const financeiro = podeVerFinanceiroAluno(usuario);
-  // Projeção explícita: campos novos do Prisma não são publicados automaticamente.
-  // Texto livre legado não tem classificação de finalidade e fica no cadastro administrativo.
   const alunoPlano = semDecimais({
     id: aluno.id, codigo: aluno.codigo, primeiroNome: aluno.primeiroNome,
     sobrenome: aluno.sobrenome, nomePreferido: aluno.nomePreferido,
@@ -333,14 +282,11 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
 export async function listarTurmasAbertasComVaga(usuario?: UsuarioSessao) {
   if (!podeMovimentarAluno(usuario)) return [];
   const agora = new Date();
-  // Destinos em andamento podem receber transferência, desde que a agenda oficial ainda
-  // tenha aula futura. dataFim é previsão legada e não prova nem veda a oferta.
   const turmas = await prisma.turma.findMany({
     where: { status: { in: ["ABERTA", "EM_ANDAMENTO"] } },
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      // Conta alocações ativas e reservas ocupantes; histórico liberado não ocupa vaga.
       _count: { select: { alocacoes: { where: { ativa: true } }, reservasMatricula: { where: { status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } } } },
     },
   });
@@ -369,7 +315,6 @@ export async function obterTurma(id: string, usuario?: UsuarioSessao) {
     },
   });
   if (!turma) return null;
-  // Row-level: professor só vê turmas que leciona (doc 07).
   if (
     usuario &&
     !temVisaoAmpla(usuario) &&
@@ -378,6 +323,5 @@ export async function obterTurma(id: string, usuario?: UsuarioSessao) {
   ) {
     return null;
   }
-  // Cronograma é texto livre legado e não faz parte da projeção de consulta da turma.
   return { ...turma, cronograma: null, vinculosDocentes: [] };
 }

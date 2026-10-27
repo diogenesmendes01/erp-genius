@@ -6,7 +6,6 @@ import { instanteUtc, type FiltrosRelatorio } from "./pipeline";
 
 export interface MetricasAtividades {
   tarefasCriadas: number;
-  /** Concluídas / criadas no período (cancelada conta como não concluída); null sem tarefas. */
   tarefasConcluidasPct: number | null;
   mensagensAgendadas: number;
   porDia: { dia: string; criadas: number; concluidas: number }[];
@@ -15,10 +14,6 @@ export interface MetricasAtividades {
 
 const ORIGENS_ARIA = ["IA", "IA_SUGERIDA"];
 
-/**
- * Condição SQL sobre `"Tarefa" t` e `"Lead" l` (LEFT JOIN): escopo do papel (responsável da tarefa OU dono da
- * oportunidade ligada) + filtros. `autor` separa o que a Aria criou do que a equipe criou.
- */
 function condicoesTarefa(f: FiltrosRelatorio, e: EscopoRelatorio): Prisma.Sql {
   const partes: Prisma.Sql[] = [];
   if (e.tipo === "USUARIOS") {
@@ -38,11 +33,6 @@ function condicoesTarefa(f: FiltrosRelatorio, e: EscopoRelatorio): Prisma.Sql {
   return partes.length ? Prisma.join(partes, " AND ") : Prisma.sql`TRUE`;
 }
 
-/**
- * Atividades do período (fuso da escola nos dias): tarefas criadas, % concluída (coorte das criadas no
- * período), mensagens agendadas (`IntencaoMensagem.agendadaPara`) e a divisão Aria × equipe. Origem de
- * tarefa `IA`/`IA_SUGERIDA` = Aria; `HUMANO`/`AUTOMACAO` = equipe. Mensagem agendada de origem `IA` = Aria.
- */
 export async function metricasAtividades(f: FiltrosRelatorio, e: EscopoRelatorio): Promise<MetricasAtividades> {
   const fuso = await fusoDaEscola();
   const cond = condicoesTarefa(f, e);
@@ -78,7 +68,6 @@ export async function metricasAtividades(f: FiltrosRelatorio, e: EscopoRelatorio
     dias.set(r.dia, d);
   }
 
-  // Mensagens agendadas no período, no mesmo escopo (autor, responsável/dono da tarefa ou dono da oportunidade).
   const condMsg: Prisma.Sql[] = [Prisma.sql`i."agendadaPara" IS NOT NULL`, Prisma.sql`i."criadaEm" >= ${ini}`, Prisma.sql`i."criadaEm" < ${fim}`];
   if (e.tipo === "USUARIOS") {
     condMsg.push(

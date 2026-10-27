@@ -13,7 +13,6 @@ const MAX_TENTATIVAS = 3;
 class SugestaoSurgiuDuranteEspera extends Error {}
 type Tx = Prisma.TransactionClient;
 
-/** Autorização contextual única, também usada pelo DTO; não concede alçada global CRM. */
 export async function contextoAssumirAria(db: Db, u: UsuarioSessao, id: string) {
   if (apenasPortal(u)) return null;
   const individual = await db.atendimentoWhatsApp.findFirst({ where: { id, conversa: { grupoId: null } }, select: { id: true } });
@@ -43,12 +42,10 @@ async function repeticao(tx: Tx, id: string, autorId: string, a: { responsavelId
   return ultimo?.tipo === "AtendimentoAssumido" && ultimo.autorId === autorId && p?.daAria === true && p.para === autorId && p.pausaEm === a.iaPausadaEm.toISOString();
 }
 
-/** Interna/db-aware: o cliente de pool1 usa a mesma TX em toda a cadeia de autorização. */
 export async function assumirAriaNoBanco(db: Pick<PrismaClient, "$transaction">, autorId: string, id: string): Promise<boolean> {
   for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
     try {
       return await db.$transaction(async tx => {
-        // Ordem compartilhada com decisões354 e futura355: TODAS as ações antes do pai.
         const travadas = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "AcaoAgenteIA" WHERE "atendimentoId"=${id} AND status='SUGERIDA' ORDER BY id ASC FOR UPDATE`;
         await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR NO KEY UPDATE`;
         const { u, a } = await conferir(tx, autorId, id);
@@ -66,10 +63,8 @@ export async function assumirAriaNoBanco(db: Pick<PrismaClient, "$transaction">,
           await tx.atendimentoWhatsApp.update({ where: { id }, data: { iaPausaMotivo: "MANUAL", iaPausadaEm: new Date() } });
           await registrarEvento(tx, { tipo: "AriaPausadaNoAtendimento", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: u.id, payload: { motivo: "MANUAL", origem: "ASSUMIR", anterior } });
         }
-        // O cancelamento de intenções pode esperar outro writer: autorização deve continuar fresca.
         const fresco = await conferir(tx, autorId, id);
         await tx.atendimentoWhatsApp.update({ where: { id }, data: { responsavelId: u.id, status: proximoStatus(fresco.a.status, "ASSUMIDO", true) } });
-        // Ser responsável não cria acesso em linha VENDAS: a política é relida após a atribuição.
         await conferir(tx, autorId, id);
         for (const s of atuais) await rejeitarAcaoAriaTx(tx, s, u, MOTIVO);
         const pausa = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id }, select: { iaPausadaEm: true } });

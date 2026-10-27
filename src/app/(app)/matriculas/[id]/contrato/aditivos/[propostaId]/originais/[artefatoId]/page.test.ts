@@ -92,7 +92,6 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(html).toContain("Simulado (nenhum documento sai do ERP)");
     mocks.processo.mockResolvedValue(processo("ENVIO_INCERTO"));
     expect(await render()).toContain("[CONCILIAR:proc]");
-    // ENVIANDO recente: a criação pode estar em voo, sem conciliação; vencido, com conciliação.
     const enviando = (iniciadaEm: Date) => ({ ok: true, dado: { ...processo("ENVIANDO").dado, tentativaAtual: 1, tentativas: [{ numero: 1, iniciadaEm, temMaisObservacoes: false, paginaObservacoes: 1, observacoes: [] }] } });
     mocks.processo.mockResolvedValue(enviando(new Date()));
     expect(await render()).not.toContain("[CONCILIAR");
@@ -109,7 +108,6 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(await render()).not.toContain('<option value="SIMULADO">');
   });
 
-  // Revisão R1 da #134 (B2/B5): a volta ao início das conferências preserva tentativas e observações.
   it("conferências vazias numa página seguinte: a volta ao início preserva tentativas e observações", async () => {
     mocks.sessao.mockResolvedValue({});
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });

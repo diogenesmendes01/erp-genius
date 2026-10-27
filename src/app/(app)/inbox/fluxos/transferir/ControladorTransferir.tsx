@@ -20,7 +20,6 @@ interface Props {
   aoConcluir(mensagem: string): void;
   renderizar(controles: { transferir: AcaoConversa | null; dialogo: ReactNode }): ReactNode;
 }
-/** Fronteira local; o coordenador da conversa fornece actions autorizadas, sem política paralela. */
 export function ControladorTransferir(props: Props) {
   const { atendimentoId, identidade, responsavelAtualId, opcoes, destinos, executar, carregarPessoas, carregarResumo = semResumo, aoConcluir, renderizar } = props;
   const identidadeAtual = JSON.stringify([identidade, responsavelAtualId]);

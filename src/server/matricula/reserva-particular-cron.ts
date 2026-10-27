@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { conferirVencimentoParticularTx } from "./reserva-particular-vencimento-tx";
 import { proximaReservaParticularVencida } from "./reserva-particular-cursor";
 
-/** Um lote por chamada autenticada; cada reserva é revalidada na própria transação.
- * Falha individual mantém a reserva ocupante e não interrompe as demais. */
 export async function rodarVencimentoParticulares() {
   const inicio = performance.now();
   const resultado = { avaliadas: 0, expiradas: 0, mantidas: 0, semTransicao: 0, falhas: 0, loteCheio: false, limiteTempo: false };

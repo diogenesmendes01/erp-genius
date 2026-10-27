@@ -12,15 +12,8 @@ import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "./acoes";
 
-// Integração E2 (doc 30): braço humano/lote via fila + regra S6 no replay da régua.
-
 let financeiro: Awaited<ReturnType<typeof criarUsuario>>;
 
-// Relógio fixo ao meio-dia da escola do dia corrente: `agoraAs`/`diasDepois` montam o dia no fuso da
-// MÁQUINA, e a régua conta no dia civil da ESCOLA (Q176, #239). Com TZ=UTC entre 00h e 03h UTC
-// (21h–24h em Brasília) a máquina já está no dia seguinte, o vencimento "hoje + 7" vira D-8 na
-// escola e a ação devida some. Ao meio-dia de Brasília (15h UTC) os dois calendários coincidem em qualquer
-// TZ de −11h a +11h. O dia é o de hoje, não uma data literal, para não se afastar do `now()` do banco.
 beforeEach(async () => {
   await truncarBanco();
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -40,9 +33,8 @@ describe("enfileirarCobrancaWhatsApp (origem HUMANO)", () => {
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
     const dado = r.ok ? r.dado! : null;
     expect(dado?.passo).toBe("D-7");
-    expect(dado?.status).toBe("SIMULADA"); // ambiente sem WHATSAPP_LIVE=1 nunca envia
+    expect(dado?.status).toBe("SIMULADA");
 
-    // Simulada NÃO cumpre o degrau (evento só no despacho real).
     expect(await eventosDo("Cobranca", cobranca.id)).toHaveLength(0);
     const intencao = await prisma.intencaoMensagem.findFirst();
     expect(intencao?.origem).toBe("HUMANO");
@@ -89,7 +81,7 @@ describe("aprovarLoteCobranca (origem LOTE)", () => {
     expect(dado?.puladas).toHaveLength(1);
     expect(dado?.puladas[0].cobrancaId).toBe(b.cobranca.id);
     expect(dado?.puladas[0].motivo).toContain("Sem destino");
-    expect(dado?.simuladas).toBe(1); // ambiente sem live
+    expect(dado?.simuladas).toBe(1);
 
     const intencao = await prisma.intencaoMensagem.findFirst();
     expect(intencao?.origem).toBe("LOTE");
@@ -102,7 +94,6 @@ describe("regra S6 — vencimento renegociado reseta os passos no replay", () =>
     await seedCanal();
     const { cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
 
-    // Histórico: D-7 cumprido na data ANTIGA; depois renegociou o vencimento.
     const ontem = new Date(agora.getTime() - 24 * 3600_000);
     await prisma.evento.create({
       data: {
@@ -132,7 +123,7 @@ describe("regra S6 — vencimento renegociado reseta os passos no replay", () =>
     );
     const calc = regua.get(cobranca.id)!;
     expect(calc.estado).toBe("acao_devida");
-    expect(calc.passo).toBe("D-7"); // voltou a dever o D-7 da NOVA data
+    expect(calc.passo).toBe("D-7");
     expect(calc.passosFeitos).toHaveLength(0);
   });
 

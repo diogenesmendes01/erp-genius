@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario } from "@/test/integracao";
 import type { EnvelopeInsight } from "@/server/aria/insights/envelope";
 
-/** Dados exclusivos377; nunca usa provider/telefone real. Requer lease do perfil isolado. */
 export async function cenarioInsight377() {
   const dono=await criarUsuario(["VENDEDOR"],"Vendedor fictício377");
   const op=await prisma.oportunidade.create({data:{nome:"Oportunidade fictícia377",vendedorDonoId:dono.id,etapa:"QUALIFICADO"}});

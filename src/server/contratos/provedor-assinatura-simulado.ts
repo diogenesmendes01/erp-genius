@@ -4,30 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared";
 import type { ProvedorAssinatura, SignatarioEnvelope, SituacaoEnvelope } from "./provedor-assinatura";
 
-// DRIVER SIMULADO de assinatura eletrônica. Nenhuma chamada externa e nenhum e-mail: o "serviço" é a
-// tabela `EnvelopeAssinaturaSimulado` (durável entre reinícios e instâncias, para a conciliação e o
-// cancelamento continuarem possíveis depois de um deploy). Os processos criados por ele ficam com
-// fornecedor SIMULADO e ambiente SANDBOX — o banco recusa SIMULADO fora de SANDBOX, e os guards de efeito
-// contratual exigem PRODUCAO. Só é usado com `ASSINATURA_DRIVER=simulado` (`provedor-assinatura-ativo.ts`).
-
 type EnvelopeSimulado = { referenciaExterna: string; pdfHash: string; pdf: Uint8Array; situacao: SituacaoEnvelope };
 type NovoEnvelope = EnvelopeSimulado & { chave: string; nome: string; signatarios: SignatarioEnvelope[] };
 
-/** Onde o simulado guarda os envelopes. `criarSeAusente` devolve o já existente quando a chave se repete. */
 export interface ArmazemEnvelopeSimulado {
   criarSeAusente(novo: NovoEnvelope): Promise<{ envelope: EnvelopeSimulado; criado: boolean }>;
   porChave(chave: string): Promise<EnvelopeSimulado | null>;
   porReferencia(referenciaExterna: string): Promise<EnvelopeSimulado | null>;
-  /** Transição condicional: só muda se a situação atual for `de`. Devolve a situação resultante. */
   mudarSituacao(referenciaExterna: string, de: SituacaoEnvelope, para: SituacaoEnvelope): Promise<SituacaoEnvelope | null>;
 }
 
-/** Referência determinística pela chave: a mesma tentativa sempre aponta para o mesmo envelope. */
 export const referenciaSimulada = (chave: string) => `sim_${createHash("sha256").update(chave).digest("hex").slice(0, 24)}`;
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
 export type ProvedorAssinaturaSimulado = ProvedorAssinatura & {
-  /** Só para teste/demonstração: marca todas as assinaturas como feitas. */
   simularAssinatura(referenciaExterna: string): Promise<void>;
 };
 
@@ -51,7 +41,6 @@ export function criarProvedorSimulado(armazem: ArmazemEnvelopeSimulado): Provedo
     async cancelarEnvelope(referenciaExterna) {
       const e = await armazem.porReferencia(referenciaExterna);
       if (!e) return { resultado: "INCERTO", evidencia: { simulado: true, motivo: "REFERENCIA_DESCONHECIDA" } };
-      // Mesma evidência do primeiro cancelamento: repetições simultâneas gravam o mesmo evidenciaHash.
       if (e.situacao === "CANCELADO") return { resultado: "CANCELADO", evidencia: { simulado: true } };
       if (e.situacao !== "EM_ASSINATURA") return { resultado: "NAO_CANCELAVEL", evidencia: { simulado: true, situacao: e.situacao } };
       const situacao = await armazem.mudarSituacao(referenciaExterna, "EM_ASSINATURA", "CANCELADO");
@@ -68,7 +57,6 @@ export function criarProvedorSimulado(armazem: ArmazemEnvelopeSimulado): Provedo
   };
 }
 
-/** Armazém em memória: só para testes unitários. */
 export function armazemSimuladoEmMemoria(): ArmazemEnvelopeSimulado {
   const porChave = new Map<string, NovoEnvelope>();
   const porReferencia = (ref: string) => [...porChave.values()].find(e => e.referenciaExterna === ref) ?? null;
@@ -97,7 +85,6 @@ const deLinha = (l: { referenciaExterna: string; pdfHash: string; pdf: Uint8Arra
 };
 const selecao = { id: true, referenciaExterna: true, pdfHash: true, pdf: true, situacao: true } as const;
 
-/** Armazém durável. Cada escrita grava Evento na mesma transação (docs/13). */
 export function armazemSimuladoPrisma(): ArmazemEnvelopeSimulado {
   return {
     async criarSeAusente(novo) {

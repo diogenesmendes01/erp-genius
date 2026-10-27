@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166, 5º lote: ações do funil e da Home do professor, idempotentes por natureza.
-// - Check-in da experimental (compareceu ou faltou): o mesmo check-in, já registrado por quem repete, devolve ok sem
-//   outro Evento. Antes o reenvio dava erro, e o clique duplo gravava dois Eventos.
-// - Marcar como perdida: a mesma perda, do mesmo autor e com o mesmo motivo, devolve ok sem outro `LeadPerdido`.
-//   Antes, cada reenvio gravava um.
-// - Abrir turma: a solicitação ganha chave; o reenvio da mesma tentativa não grava outro `AberturaTurmaSolicitada`.
-
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

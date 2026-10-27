@@ -4,7 +4,6 @@ import {ErroPermissao,apenasPortal,type UsuarioSessao} from "@/server/_shared/se
 import {capacidadesCrm} from "./permissoes";
 import {candidatoPodeLerTarefaD10,type TarefaParaCandidatoD10} from "./tarefa-notificados-regras";
 
-/** Catálogo readonly. A seleção não concede acesso; o writer revalida tudo na TX. */
 export async function listarCandidatosNotificadosTarefaD10(db:Db,autor:UsuarioSessao,tarefa:TarefaParaCandidatoD10):Promise<{id:string;nome:string}[]>{
  const ids=new Set<string>();let cursor:string|undefined;
  for(;;){

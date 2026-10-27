@@ -43,7 +43,6 @@ const ev = (leadId: string, tipo: string, dias: number, payload?: object) =>
   prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: leadId, criadoEm: em(dias), payload } });
 const etapa = (leadId: string, de: string, para: string, dias: number) => ev(leadId, "EtapaAlterada", dias, { de, para });
 
-/** "NOVO>QUALIFICADO" → eventos de etapa, um dia depois do outro. */
 async function opComEventos(passos: string[]) {
   const o = await op({ etapa: passos.at(-1)!.split(">")[1] as EtapaLead });
   for (const [i, p] of passos.entries()) {
@@ -86,7 +85,7 @@ describe("funil por eventos de etapa", () => {
     await opComEventosEm([["NOVO>EM_ATENDIMENTO", 0], ["EM_ATENDIMENTO>QUALIFICADO", 2], ["QUALIFICADO>EM_ATENDIMENTO", 3], ["EM_ATENDIMENTO>QUALIFICADO", 4]]);
     const r = await metricasFunil(f, tudo);
     expect(tempo(r, "EM_ATENDIMENTO")).toBe(3);
-    expect(chegaram(r, "EM_ATENDIMENTO")).toBe(1); // a volta não conta como nova chegada
+    expect(chegaram(r, "EM_ATENDIMENTO")).toBe(1);
   });
   it("fora_do_periodo_nao_conta_e_eventos_de_acao_especifica_contam", async () => {
     const o = await op({ etapa: "PROPOSTA" });
@@ -129,7 +128,7 @@ describe("pipeline", () => {
     await op({ valor: 85000, moeda: "CRC" });
     await op({ valor: 300, moeda: "BRL" });
     await op({ valor: null });
-    await op({ valor: 999, moeda: "BRL", etapa: "PERDIDO" }); // fechada não entra
+    await op({ valor: 999, moeda: "BRL", etapa: "PERDIDO" });
     expect(await metricasPipeline(f, tudo)).toMatchObject({
       valorPipeline: [{ moeda: "BRL", valor: 1000 }, { moeda: "CRC", valor: 85000 }],
       semValor: 1,

@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 
-/** Paginada por número (E4), em ordem estável (criadoEm, id): a volta à página traz as mesmas solicitações. */
 const Filtro = z.object({
   professorId: z.string().min(1).optional(),
   situacao: z.enum(["TODAS", "PENDENTE", "APROVADA", "REJEITADA"]).default("TODAS"),

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Ganchos sem DOM (src/test/tela-sem-dom.ts): o estado vive entre renders, como no React — o motivo é
-// digitado no campo e a tela é renderizada de novo antes do clique.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), concluir: vi.fn(), vincular: vi.fn(), obsoletar: vi.fn(), refresh: vi.fn(),

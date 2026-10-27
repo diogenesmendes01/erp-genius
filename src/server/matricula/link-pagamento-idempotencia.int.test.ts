@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EtapaLead, FormaPagamento, Papel, StatusMatricula, TipoCobranca } from "@prisma/client";
 
-// #166 (6º lote): registrar o link de pagamento recebe chave. Antes, cada reenvio gravava outro
-// LinkPagamentoEnviado e movia a âncora da régua "link sem pagamento" (linkEnviadoEm). Agora o reenvio da mesma
-// tentativa devolve ok sem gravar nada, mesmo depois de a cobrança ser paga. Chave nova é um reenvio deliberado.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// empresas/empresa-idempotencia.int.test.ts: dois `import()` simultâneos do NextAuth mockado falham no vitest e o
-// envio simultâneo é o que o teste mede); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -70,7 +63,6 @@ describe("registrarLinkPagamento com chave (#166)", () => {
     await prisma.$transaction((tx) => receberTx(tx, { cobrancaId: t.id, autorId: admin.id, chaveIdempotencia: `teste:${t.id}`, valorRecebido: TAXA, forma: FormaPagamento.PIX, dataPagamento: new Date(), evidencia: "Comprovante conferido no teste" }));
     expect((await registrarLinkPagamento(t.id, "https://pagar.exemplo/abc", opcoes)).ok).toBe(true);
     expect(await contar(t.id)).toBe(1);
-    // Chave nova: a cobrança paga recusa, como antes.
     expect(await registrarLinkPagamento(t.id, "https://pagar.exemplo/abc", { chaveIdempotencia: "chave-link-03" }))
       .toEqual({ ok: false, erro: "Esta cobrança não está aberta para pagamento." });
   });

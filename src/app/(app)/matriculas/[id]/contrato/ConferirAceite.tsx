@@ -8,7 +8,6 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
 export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matriculaId: string; conclusaoId: string; revisaoHash: string }) {
-  // Chave estável pela vida do formulário: na falha de transporte, reenviar confere o mesmo aceite.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   const [chave] = useState(() => crypto.randomUUID());
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => {

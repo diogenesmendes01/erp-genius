@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MSG_FUSO_PAIS_INVALIDO, MSG_FUSO_PAIS_VAZIO, PaisSchema } from "./schema";
 
-// docs/43 §6 item 6 (docs/42 L2429): o fuso do país era `z.string().min(1)` — "America/SaoPaulo" gravava e
-// quebrava em silêncio as datas de todo o país. Agora é IANA, no servidor, com a mesma regra do CampoFuso.
 const base = { nome: "Costa Rica", codigoISO: "cr", moedaLocal: "crc", ddi: "+506", idioma: "es", tiposDocumento: [] };
 const mensagens = (fuso: unknown) => {
   const r = PaisSchema.safeParse({ ...base, fuso });

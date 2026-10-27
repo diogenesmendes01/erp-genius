@@ -5,10 +5,6 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { Db } from "./escopo";
 
 
-/**
- * Quem já via o lead antes da SPEC-ERP-005 continua vendo: administração, carteira/equipe/cobertura
- * atual e participante vigente do atendimento. Só o acesso "pela linha" não mostra o painel.
- */
 export async function podeVerLeadNaThread(usuario: UsuarioSessao, atendimentoId: string, leadId: string, agora: number, db: Db = prisma): Promise<boolean> {
   if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
   if (temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)

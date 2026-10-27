@@ -8,10 +8,6 @@ export function professorSelecionado(professorId: string | null, professores: { 
   return professorId && professores.some(professor => professor.id === professorId) ? professorId : "";
 }
 
-/**
- * Alterações escolhidas, com o texto digitado e o fuso do <CampoFuso> ao lado. Não converte: a conversão em instante
- * é do servidor (consultarConferenciaAgendaAditivoLocal), no fuso informado. Campo faltando lança.
- */
 export function montarAlteracoesAgenda(selecionados: string[], valores: Record<string, ValoresAlteracao>) {
   return selecionados.map(encontroId => {
     const valor = valores[encontroId];

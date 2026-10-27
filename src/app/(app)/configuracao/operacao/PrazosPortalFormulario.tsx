@@ -13,7 +13,6 @@ const campos = {
 };
 type Prazos = { [K in keyof typeof campos]: number | null };
 export function PrazosPortalFormulario({ valores }: { valores: Prazos }) {
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
   async function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

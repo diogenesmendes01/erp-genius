@@ -16,7 +16,6 @@ export default async function TurmasPage() {
     listarNiveis(),
     listarProfessores(),
   ]);
-  // Importar turmas em lote é exclusivo do Administrador (doc 12).
   const podeImportar = usuario.papeis.includes(Papel.ADMINISTRADOR);
 
   const rows: TurmaRow[] = turmas.map((t) => ({

@@ -22,12 +22,6 @@ export interface MetricasAriaEquipe {
 const arred = (n: number, casas = 2) => Math.round(n * 10 ** casas) / 10 ** casas;
 const vazio = (): LadoComparacao => ({ atendimentos: 0, conversao: null, primeiraRespostaMediaMin: null, perdidosSemResposta: 0 });
 
-/**
- * Aria × equipe. Cada atendimento comercial do período pertence ao lado de sua PRIMEIRA saída
- * (`IA` = Aria; `HUMANO` e `CELULAR` = equipe); atendimento sem saída não entra em nenhum lado.
- * `conversao`: das oportunidades do lado, a fração hoje MATRICULADO. Escopo igual ao de `metricasAtendimento`,
- * então o vendedor só vê o lado da equipe dos próprios atendimentos.
- */
 export async function metricasAriaEquipe(f: FiltrosRelatorio, e: EscopoRelatorio): Promise<MetricasAriaEquipe> {
   const cond = atendimentosComerciais(f, e);
   const origens = Prisma.join([...ORIGENS_ATENDIMENTO]);

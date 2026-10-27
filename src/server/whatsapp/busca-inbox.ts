@@ -1,21 +1,12 @@
 import type { Prisma } from "@prisma/client";
 
-// Busca da inbox (docs/42-auditoria-frontend-ux.md, E4): vai ao servidor (?busca=) e entra como condição da
-// consulta paginada (`inbox/consultas-pagina.ts`). Módulo puro: sem Prisma client, testável.
-
 type Parametros = Record<string, string | string[] | undefined>;
 
-/** Busca da URL: até 100 caracteres, sem espaços nas pontas. */
 export function lerBuscaInbox(p: Parametros): string {
   const v = p.busca;
   return (Array.isArray(v) ? v[0] : v ?? "").trim().slice(0, 100);
 }
 
-/**
- * Condição da busca: cada palavra (até 6) precisa aparecer num nome que a inbox mostra (cadastro ou
- * perfil do contato, aluno, lead, responsável fora do comercial — ver nomeDoAtendimento) — ou, com 3+
- * dígitos, no telefone (guardado em E.164: compara só os dígitos).
- */
 export function whereBuscaConversas(busca: string): Prisma.AtendimentoWhatsAppWhereInput {
   const palavras = busca.split(/\s+/).filter(Boolean).slice(0, 6);
   if (!palavras.length) return {};

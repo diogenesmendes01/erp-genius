@@ -18,7 +18,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
-/** Q175: consumo estornado (aula declarada não cobrável) devolveu os minutos à compra. */
 export function situacaoReserva(r: { convertidaCredito: boolean; liberada: boolean; consumo: { conferenciaOcorrencia: { desfecho: string } | null; estorno?: { id: string } | null } | null }) {
   return r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação"
     : r.consumo?.estorno ? "aula declarada não cobrável: minutos devolvidos ao saldo"
@@ -30,10 +29,6 @@ export function resumoMinutosCompra(c: { minutosReservados: number; minutosConsu
   return `${c.minutosReservados} minutos reservados · ${c.minutosConsumidos} consumidos · ${c.minutosEstornados ? `${c.minutosEstornados} devolvidos por aula não cobrável · ` : ""}${c.minutosConvertidosCredito} convertidos em crédito · ${c.minutosDisponiveis} ainda não reservados.`;
 }
 
-/**
- * Registro da compra é instante (lote 3 do fuso pessoal nas telas): fuso pessoal; sem preferência, o da escola
- * (antes, UTC); escola sem fuso válido, UTC — sempre escrito.
- */
 export function RegistroCompraHoras({ nome, criadoEm, preferenciaFusoExibicao, fusoEscola }: { nome: string; criadoEm: string; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const exibicao = formatarInstanteExibicao(criadoEm, preferenciaFusoExibicao, fusoEscola);
   return <p>Registrado por {nome} em {exibicao.texto} (horário exibido em {exibicao.fuso}).</p>;

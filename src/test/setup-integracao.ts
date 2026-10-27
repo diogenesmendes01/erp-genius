@@ -3,9 +3,6 @@ import { resolve } from "node:path";
 import { DATABASE_URL_TESTE } from "../../vitest.integration.config";
 import { conferirDependenciasInstaladas } from "./dependencias";
 
-// O integrador aplica migrações explicitamente antes de liberar a suíte.
-// Testes apenas conferem o estado: um arquivo ainda em revisão não pode ser
-// aplicado implicitamente ao iniciar Vitest em um worktree de desenvolvimento.
 export default function setup() {
   conferirDependenciasInstaladas();
   if (!DATABASE_URL_TESTE.includes("localhost:54329")) {

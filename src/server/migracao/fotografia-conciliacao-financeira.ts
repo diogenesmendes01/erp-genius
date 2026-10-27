@@ -5,7 +5,6 @@ import { canonizarFotografiaFinanceira, hashFotografiaFinanceira } from "./fotog
 
 export type FotoConciliacaoFinanceira = ReturnType<typeof canonizarFotografiaFinanceira>;
 
-/** Locks and reads are deliberately shared by proposal and approval. */
 export async function fotografiaConciliacaoFinanceiraTx(tx: Prisma.TransactionClient, ids: { linhaId:string; matriculaId:string; cobrancaId:string; pagadorId:string; recebimentoId?:string|null }) {
   const [linha] = await tx.$queryRaw<{id:string;origem:string;financeiroOrigemId:string|null;matriculaOrigemId:string|null;entradaHash:string;dadosOrigem:Prisma.JsonValue;loteId:string}[]>(Prisma.sql`
     SELECT l.id,lo.origem,l."financeiroOrigemId",l."matriculaOrigemId",l."entradaHash",l."dadosOrigem",l."loteId"
@@ -18,7 +17,6 @@ export async function fotografiaConciliacaoFinanceiraTx(tx: Prisma.TransactionCl
   await bloquearMatriculas(tx,[ids.matriculaId]);
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${ids.cobrancaId} FOR UPDATE`;
   const cobrancaAtual=await tx.cobranca.findUnique({where:{id:ids.cobrancaId},select:{id:true,matriculaId:true,tipo:true,status:true,moeda:true,valorOriginal:true,valorNegociado:true,valorRecebido:true,saldo:true,valorLiquidadoCredito:true,valorCompensadoPermuta:true,versao:true,pagoEm:true,formaPagamento:true,comprovanteUrl:true,comprovanteNome:true,comentario:true,vencimento:true}});
-  // Não introduzir zero no hash das conferências anteriores à permuta.
   const cobranca = cobrancaAtual && (() => {
     const { valorCompensadoPermuta, ...anterior } = cobrancaAtual;
     return valorCompensadoPermuta.gt(0) ? { ...anterior, valorCompensadoPermuta } : anterior;
@@ -30,8 +28,6 @@ export async function fotografiaConciliacaoFinanceiraTx(tx: Prisma.TransactionCl
   if(!pagador||pagador.matriculaId!==ids.matriculaId) throw new ErroRegra("O pagador não pertence ao contrato explícito.");
   await tx.$queryRaw`SELECT id FROM "PagadorPreparacaoMatricula" WHERE id=${ids.pagadorId} FOR SHARE`;
   if(ids.recebimentoId)await tx.$queryRaw`SELECT id FROM "Recebimento" WHERE id=${ids.recebimentoId} FOR SHARE`;
-  // A fotografia nova vincula a parcela material, nunca o valor bruto do fato
-  // de caixa. Fotografias pré-Q87 continuam com cobrancaId no recebimento.
   const recebimento=ids.recebimentoId ? await tx.recebimento.findUnique({where:{id:ids.recebimentoId},select:{id:true,cobrancaId:true,titularMatriculaId:true,pagadorId:true,valor:true,moeda:true,forma:true,dataPagamento:true,hashDados:true,chaveIdempotencia:true,autorId:true,destinacoes:{where:{cobrancaId:ids.cobrancaId},select:{id:true,cobrancaId:true,tipo:true,valor:true,evidencia:true,chaveIdempotencia:true}}}}):null;
   if(ids.recebimentoId&&!recebimento)throw new ErroRegra("Recebimento ERP não encontrado.");
   if(ids.recebimentoId)await tx.$queryRaw`SELECT id FROM "Recebimento" WHERE id=${ids.recebimentoId} FOR SHARE`;

@@ -50,8 +50,6 @@ export type ConsultaDesistenciaPreparacao = {
   efetivacao: { pedidoId: string; motivo: string; executorNome: string; aplicadaEmISO: string; tratamentoFinanceiro: boolean } | null;
 };
 
-/** Mostra apenas a conferência atual e os vinte pedidos mais recentes. O
- * histórico completo/paginado e qualquer decisão pertencem a etapas futuras. */
 export async function consultarDesistenciaPreparacao(input: { matriculaId: string }): Promise<Resultado<ConsultaDesistenciaPreparacao>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -102,8 +100,6 @@ export async function consultarDesistenciaPreparacao(input: { matriculaId: strin
   });
 }
 
-/** Registra a intenção conferida. Não executa desistência, não libera reserva e
- * não altera matrícula, cobrança, contrato, documento ou alocação. */
 export async function registrarPedidoDesistenciaPreparacao(input: z.input<typeof entradaSchema>): Promise<Resultado<{ id: string; versao: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);

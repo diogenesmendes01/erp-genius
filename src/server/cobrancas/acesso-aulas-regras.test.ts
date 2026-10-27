@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { acessoEfetivoBloqueado, cobrancaGeraRestricaoAutomatica, type CobrancaParaRestricao } from "./acesso-aulas-regras";
 
 const FUSO = "America/Sao_Paulo";
-// Meio-dia de Brasília (15h UTC): o mesmo dia civil com TZ=UTC e America/Sao_Paulo.
 const agora = new Date(Date.UTC(2026, 8, 8, 15));
 const cobranca = (dias: number, extra: Partial<CobrancaParaRestricao> = {}): CobrancaParaRestricao => ({
   status: "ATRASADO", vencimento: new Date(Date.UTC(2026, 8, 8 - dias, 15)), saldo: 40, valorNegociado: 100, valorRecebido: 60, ...extra,
@@ -28,12 +27,12 @@ describe("restrição de aulas por dívida elegível", () => {
 });
 
 describe("Q176 — D+30 vira à meia-noite da escola, não do servidor", () => {
-  const vencida = cobranca(0, { vencimento: new Date("2026-06-23T15:00:00Z") }); // vence 23/06
+  const vencida = cobranca(0, { vencimento: new Date("2026-06-23T15:00:00Z") });
   it("às 23h30 de Brasília do 29º dia (02h30 UTC do dia seguinte) ainda não restringe", () => {
-    expect(cobrancaGeraRestricaoAutomatica(vencida, new Date("2026-07-23T02:30:00Z"), FUSO)).toBe(false); // 22/07, 23h30
+    expect(cobrancaGeraRestricaoAutomatica(vencida, new Date("2026-07-23T02:30:00Z"), FUSO)).toBe(false);
   });
   it("à 00h30 de Brasília do 30º dia restringe", () => {
-    expect(cobrancaGeraRestricaoAutomatica(vencida, new Date("2026-07-23T03:30:00Z"), FUSO)).toBe(true); // 23/07, 00h30
+    expect(cobrancaGeraRestricaoAutomatica(vencida, new Date("2026-07-23T03:30:00Z"), FUSO)).toBe(true);
   });
   it("vencimento legado gravado à meia-noite UTC conta pelo próprio dia", () => {
     const legado = cobranca(0, { vencimento: new Date("2026-06-23T00:00:00Z") });

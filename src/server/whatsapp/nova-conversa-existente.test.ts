@@ -14,7 +14,6 @@ vi.mock("@/server/_shared/idempotencia",async original=>({...await original<type
 vi.mock("./nova-conversa-pessoa",()=>({criarPessoaDoContatoNovoTx:m.pessoa}));
 vi.mock("@/server/comercial/criar-registro-lead-tx",()=>({criarRegistroLeadTx:m.lead}));
 vi.mock("@/lib/codigo",()=>({gerarCodigo:m.codigo}));
-// R14: core Tx do servidor; primeira admissão com scaffold failclosed.
 import { abrirRamoExistenteConversaTx } from "./nova-conversa-existente";
 const telefoneE164="+50688889999",e={autorId:"vendedor",numeroId:"linha",telefoneE164,chaveIdempotencia:"tentativa-existente-372"};
 const db={usuario:{findUnique:vi.fn()},numeroWhatsApp:{findUnique:vi.fn()},oportunidade:{findFirst:vi.fn(),update:vi.fn(),updateMany:vi.fn(),create:vi.fn()},pessoa:{create:vi.fn(),update:vi.fn()},contatoWhatsApp:{findUnique:vi.fn(),create:vi.fn(),update:vi.fn(),updateMany:vi.fn()},conversaWhatsApp:{findUnique:vi.fn(),update:vi.fn()},atendimentoWhatsApp:{update:vi.fn()},mensagemWhatsApp:{create:vi.fn()},intencaoMensagem:{create:vi.fn()},$executeRaw:vi.fn(),$queryRaw:vi.fn()};
@@ -78,7 +77,6 @@ it("C4 revogação durante aviso EX é relida antes de retornar", async () => {
  await expect(abrirRamoExistenteConversaTx(tx, e)).rejects.toBeInstanceOf(ErroAutenticacao);
  expect(avisoC4.publicar).toHaveBeenCalledOnce();
 });
-// C9 UNIT: metadata simulada testa somente o filtro futuro; não é prova de Prisma nativo.
 function semContatoC9() {
  db.contatoWhatsApp.findUnique.mockResolvedValue(null);
  m.leitura.mockResolvedValue({oportunidadesAutorizadas:[{id:"lead",telefoneE164}],pessoaIdentificada:true,contatoIdentificado:false,alunoIdentificado:false,responsavelIdentificado:false,oportunidadeOcultaIdentificada:false});

@@ -1,10 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Importar alunos por planilha (docs/42 L224; docs/43 §6 item 9): depois do resultado, o mesmo arquivo não volta a
-// ser enviado por um segundo clique — o botão vira "Importar outra planilha", que limpa o arquivo e o resultado, e
-// "Importar" só habilita com um arquivo escolhido. As linhas que o servidor ignorou por duplicidade aparecem com o
-// motivo. Sem DOM (src/test/tela-sem-dom.ts): a tela é chamada como função; o fetch é trocado.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, refresh: vi.fn(), fetch: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -25,14 +21,12 @@ import { botao, criarGanchos, elementos, texto, type No } from "@/test/tela-sem-
 
 const tela = (): ReactNode => m.ganchos!.renderizar(ImportarAlunosModal, {});
 const campoArquivo = (t: ReactNode) => elementos(t).find((n: No) => n.type === "input" && n.props.type === "file")!;
-/** O ref do campo de arquivo (React 18: no elemento; React 19: nas props). */
 const refDoArquivo = (t: ReactNode) => {
   const n = campoArquivo(t) as No & { ref?: { current: unknown } };
   return (n.props.ref as { current: unknown } | undefined) ?? n.ref!;
 };
 const temBotao = (t: ReactNode, rotulo: string) => elementos(t).some((n: No) => n.type === "button" && texto(n.props.children).trim() === rotulo);
 
-/** Abre o modal e escolhe um arquivo (o input avisa a escolha; o ref guarda o arquivo, como o DOM). */
 function abrirEEscolher() {
   (botao(tela(), "Cadastrar por lote").props.onClick as () => void)();
   const t = tela();

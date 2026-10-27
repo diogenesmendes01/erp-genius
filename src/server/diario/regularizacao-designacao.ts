@@ -10,7 +10,6 @@ const motivoSchema = z.string().trim().min(5).max(2000);
 const designacaoSchema = z.object({ encontroId: z.string().min(1), responsavelId: z.string().min(1),
   motivo: motivoSchema, chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 
-/** Q24: atribui a pendência, preservando o docente original e o vínculo da turma. */
 export async function designarRegularizacaoAula(input: z.input<typeof designacaoSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

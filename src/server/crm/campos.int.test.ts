@@ -88,7 +88,6 @@ describe("definirValorCampo", () => {
     });
     await definirValorCampo({ campoId, pessoaId: pessoaDaCarteira, valor: "B2" });
     expect((await eventosDo("Pessoa", pessoaDaCarteira)).at(-1)).toMatchObject({ payload: { campoId, de: "A1", para: "B2" } });
-    // mesmo valor: sem novo Evento
     await definirValorCampo({ campoId, pessoaId: pessoaDaCarteira, valor: "B2" });
     expect((await eventosDo("Pessoa", pessoaDaCarteira)).filter((e) => e.tipo === "CampoPersonalizadoAlterado")).toHaveLength(2);
     expect(await prisma.valorCampoPersonalizado.count({ where: { campoId } })).toBe(1);

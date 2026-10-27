@@ -1,6 +1,5 @@
 import ts from "typescript";
 
-/** Literais de TSX, sem comentários; templates com interpolação contam como um literal. */
 export function literaisDeString(fonte: string): string[] {
   const arquivo = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
   const literais: string[] = [];

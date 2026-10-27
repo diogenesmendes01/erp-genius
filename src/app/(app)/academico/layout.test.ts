@@ -27,7 +27,7 @@ describe("layout de /academico", () => {
       "/academico", "/academico/avaliacoes", "/academico/recuperacoes", "/academico/recuperacoes/designadas",
       "/academico/segundas-chamadas/minhas", "/academico/indisponibilidades",
     ]);
-    expect(html).not.toContain('href="/academico/regras"'); // Professor não abre Regras de avaliação
+    expect(html).not.toContain('href="/academico/regras"');
     expect(html.indexOf("Seções do acadêmico")).toBeLessThan(html.indexOf("<main>conteúdo</main>"));
   });
 
@@ -54,7 +54,6 @@ describe("layout de /academico", () => {
     const raiz = ativas(await renderizar([Papel.GERENTE_PEDAGOGICO], "/academico"));
     expect(raiz).toHaveLength(1);
     expect(raiz[0]).toContain('href="/academico"');
-    // Segunda chamada de uma avaliação: nenhuma aba é dela — a barra fica sem marca, não mente "Mudanças acadêmicas".
     expect(ativas(await renderizar([Papel.GERENTE_PEDAGOGICO], "/academico/segundas-chamadas/a1/P1"))).toEqual([]);
   });
 

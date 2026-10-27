@@ -13,8 +13,6 @@ import { iniciarConversaPorNumero } from "./nova-conversa-acoes";
 import { CANAL_INBOX, avisarAtendimentoAtualizado, type AvisoInbox } from "@/server/inbox/barramento";
 import { ErroRegra } from "@/server/_shared/sessao";
 
-// Baseline C4: AUTORADO, SQL NÃO EXECUTADO. Transportável sem ancestrais privados.
-// Oráculo final é um aviso. Baseline previsto 0/0/0/1 não é aceito como produto GREEN.
 type Caso = "NOVO" | "EX_CREATE" | "EX_REUSE" | "EX_NULL_MAP";
 let ator: Awaited<ReturnType<typeof criarUsuario>>, numeroId: string, sequencia = 0;
 let fetchGuard: ReturnType<typeof vi.spyOn>;
@@ -80,8 +78,6 @@ function observar(rollback: boolean | "FALHA" | "REVOGACAO" = false) {
    } }) as Prisma.TransactionClient;
    const r = await Reflect.apply(operacao, undefined, [observado]);
    if (rollback === true) {
-    // Controle de transporte: aviso REAL na mesma TX, depois do core, seguido de rollback.
-    // Não conta como emissão da produção e não mascara baseline ausente do core.
     const a = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: r.atendimentoId } });
     await avisarAtendimentoAtualizado(tx, a);
     throw new ErroRegra("Rollback instrumental C4 após aviso real.");
@@ -110,7 +106,6 @@ it.each(["NOVO", "EX_CREATE", "EX_REUSE", "EX_NULL_MAP"] as const)("C4 %s: medir
   try { expect(await iniciarConversaPorNumero(rollbackEntrada)).toEqual({ ok: false, erro: "Rollback instrumental C4 após aviso real." }); expect(rb.pids).toHaveLength(1); } finally { rb.parar(); }
   await e.cerca(); expect(e.quadros).toHaveLength(quantidadeAntes); expect(await foto()).toEqual(antesRollback);
   expect(await prisma.mensagemWhatsApp.count()).toBe(0); expect(await prisma.intencaoMensagem.count()).toBe(0);
-  // Gate de produto após toda medição: ausência ou duplicação NÃO é GREEN.
   expect(primeira, `C4 ${caso}: esperado um aviso pós-commit`).toHaveLength(1);
   const [literalTrigger] = await prisma.$queryRaw<{ bruto: string }[]>`SELECT json_build_object('tipo', 'atendimento.atualizado', 'atendimentoId', ${a.id}::text, 'mensagemId', NULL, 'conversaId', ${a.conversaId}::text)::text AS bruto`;
   expect(primeira[0].bruto).toBe(literalTrigger.bruto);

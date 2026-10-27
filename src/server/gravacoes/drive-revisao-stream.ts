@@ -10,7 +10,6 @@ export type EntradaStreamRevisao = {
   timeoutMs?: number;
 };
 
-/** Nunca usa files.get alt=media: todos os bytes pertencem à revisão persistida. */
 export async function abrirVideoRevisaoDrive(entrada: EntradaStreamRevisao): Promise<VideoDrive> {
   let resposta: Response | undefined;
   const prazo = sinalComPrazo(entrada.signal, entrada.timeoutMs ?? 10_000);
@@ -38,7 +37,7 @@ export async function abrirVideoRevisaoDrive(entrada: EntradaStreamRevisao): Pro
     }
     return { status: resposta.status as 200 | 206, body: resposta.body, headers: seguros };
   } catch {
-    try { await resposta?.body?.cancel(); } catch { /* Não expor erro do provedor. */ }
+    try { await resposta?.body?.cancel(); } catch {  }
     throw new ErroVideoDrive();
   } finally {
     prazo.encerrar();

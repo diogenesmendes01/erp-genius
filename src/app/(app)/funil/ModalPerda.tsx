@@ -13,11 +13,8 @@ import { marcarPerdido } from "@/server/comercial/acoes";
 import { PerdaSchema, type PerdaInput } from "@/server/comercial/schema";
 import type { Resultado } from "@/server/_shared/resultado";
 
-// Q8: motivos de perda fixos (MotivoPerda); alternativa configurável em Configurações (Fase 5).
-
 export type ValoresPerda = { motivoPerda: MotivoPerda | ""; observacao: string };
 
-/** Mesma regra do servidor (PerdaSchema): sem motivo não envia; "Outro" exige observação. */
 export function validarPerda(v: ValoresPerda): { erro: string | null; input: { motivoPerda: MotivoPerda; observacao?: string } | null } {
   if (!v.motivoPerda) return { erro: "Escolha o motivo da perda", input: null };
   const r = PerdaSchema.safeParse({ motivoPerda: v.motivoPerda, observacao: v.observacao.trim() || undefined });
@@ -33,8 +30,6 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir, acao: a
   acao?: (input: PerdaInput) => Promise<Resultado>;
 }) {
   const router = useRouter();
-  // Idempotente por natureza (#166, 5º lote): a mesma perda, do mesmo autor e com o mesmo motivo e observação,
-  // devolve ok sem outro `LeadPerdido` (server/comercial/acoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
   const [motivo, setMotivo] = useState<MotivoPerda | "">("");
   const [observacao, setObservacao] = useState("");

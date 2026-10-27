@@ -125,7 +125,6 @@ describe("transferir e encerrar", () => {
     const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-P" } });
     await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: turma.id, matriculaId: matricula.id } });
     comoUsuario(v1);
-    // O contato da conversa (+50688880001) não é o telefone do aluno: o banco recusa o destino direto.
     const r = await transferirAtendimento({ atendimentoId: a.id, destino: "PEDAGOGICO", destinoChave: `PEDAGOGICO:${aluno.id}:${turma.id}:${matricula.id}:ALUNO`, contexto: ctx12 });
     expect(r.ok).toBe(false);
     expect(r).toEqual({ ok: false, erro: "Contato pedagógico não corresponde ao aluno ou responsável autorizado." });

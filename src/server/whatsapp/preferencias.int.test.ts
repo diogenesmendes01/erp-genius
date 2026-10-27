@@ -22,7 +22,6 @@ async function cenario() {
   const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: v1.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
-  // v2 também vê a conversa (participante), para provar que a preferência é por usuário.
   await prisma.participanteAtendimentoWhatsApp.create({ data: { atendimentoId: a.id, usuarioId: v2.id, concedenteId: v1.id, inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 600000), motivo: "Apoio" } });
   let n = 0;
   const chegaInbound = async (corpo: string, criadoEm = new Date(Date.now() + 5 + n++)) => prisma.mensagemWhatsApp.create({ data: {

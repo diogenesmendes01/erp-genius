@@ -16,7 +16,6 @@ export default async function NovaGradePage({ searchParams }: { searchParams: Pr
   const turmaIdBruto = q.turmaId;
   if (Array.isArray(turmaIdBruto)) return <div className="space-y-4"><VoltarPara href="/academico/grades/nova" /><p role="alert">Seleção de turma inválida.</p></div>;
   const turmaId = (turmaIdBruto ?? "").trim().slice(0, 100);
-  // Página numerada (E4): código e id dão a ordem estável — a volta à página traz as mesmas turmas.
   const lidas = await prisma.turma.findMany({
     where: { status: "PLANEJADA", ...(turmaId ? { id: turmaId } : busca ? { codigo: { contains: busca, mode: "insensitive" as const } } : {}), aulasDiario: { none: {} }, encontrosAgenda: { none: { status: { not: "RASCUNHO" } } } },
     orderBy: [{ codigo: "asc" }, { id: "asc" }], ...janelaDaPagina(pagina, 30),

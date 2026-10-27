@@ -10,7 +10,6 @@ type PropsDevolverAria = { atendimentoId: string; dica: string | null; aoMudar()
 export type ControlesDevolverAria = { botao: ReactNode; feedback: ReactNode };
 type PropsControlador = PropsDevolverAria & { permitido?: boolean; children(controles: ControlesDevolverAria): ReactNode };
 
-/** A key encerra a tentativa na seleção; mudar a capacidade preserva a conversa e invalida o ACK. */
 export function ControladorDevolverAria(props: PropsControlador) {
   return <AcaoDevolverAria key={props.atendimentoId} {...props} />;
 }
@@ -41,7 +40,6 @@ function AcaoDevolverAria({ atendimentoId, dica, aoMudar, children, permitido = 
 
   return children({ botao: permitido ? botao : null, feedback: permitido ? feedback : null });
 }
-/** Uso autônomo mantém feedback junto do botão; no cabeçalho o controlador separa os slots. */
 export function BotaoDevolverAria(props: PropsDevolverAria) {
   return <ControladorDevolverAria {...props}>{({ botao, feedback }) => <>{botao}{feedback}</>}</ControladorDevolverAria>;
 }

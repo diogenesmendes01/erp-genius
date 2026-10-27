@@ -43,7 +43,6 @@ describe("FilaDesistenciasFinanceirasPage", () => {
     expect(meio).toContain('href="/financeiro/desistencias?antes=m-primeira">← Anterior');
     expect(meio).toContain('href="/financeiro/desistencias?depois=m-ultima">Próxima');
 
-    // Voltando (antes=…), o cursor chega intacto à consulta; sem próxima, só Anterior.
     mocks.listar.mockResolvedValue(resposta({ temAnterior: true, temProxima: false, anterior: "m-primeira", proxima: null }));
     const fim = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ antes: "m-depois" }) }));
     expect(mocks.listar).toHaveBeenLastCalledWith({ antes: "m-depois" });

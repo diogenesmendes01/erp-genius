@@ -15,8 +15,6 @@ export default async function SegundaChamadaPage({ params, searchParams }: { par
   const gestao = temPapel(usuario, Papel.GERENTE_PEDAGOGICO);
   const autorizacoes = `/academico/segundas-chamadas/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(codigoAvaliacao)}/autorizacoes`;
   const podePropor = estado.ativa && estado.statusMatricula === "ATIVA";
-  // O formulário "Propor segunda chamada" sumia sem explicar quando a matrícula não estava ativa (docs/42 L1670;
-  // docs/43 §6 item 7). No lugar dele: o motivo e o caminho — a autorização específica, que é da Gestão Pedagógica.
   const bloqueio = podePropor ? null : <div className="space-y-1 rounded border p-4">
     <h2 className="font-medium">Nova proposta indisponível</h2>
     <p>{!estado.ativa ? "O vínculo com a turma está inativo." : `A matrícula está ${rotular(STATUS_MATRICULA_LABEL, estado.statusMatricula).toLowerCase()}.`} Uma nova realização exige autorização específica.</p>

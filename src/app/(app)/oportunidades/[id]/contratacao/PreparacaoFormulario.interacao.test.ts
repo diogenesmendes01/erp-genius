@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L2217): mudar a página de cadastros ou de turmas não remonta o formulário (a key é
-// só a oferta). Aqui, o que o formulário faz com as listas novas: o cadastro e a turma escolhidos continuam
-// escolhidos (e na lista) mesmo quando a página nova não os traz; e a agenda conferida para outra versão da
-// oferta deixa de valer. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   preparar: vi.fn(), prepararNova: vi.fn(), push: vi.fn(),
@@ -15,7 +11,6 @@ vi.mock("react", async (original) => {
     useState: ((inicial: unknown) => m.ganchos!.useState(inicial)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
     useRef: ((inicial: unknown) => m.ganchos!.useRef(inicial)) as unknown as typeof real.useRef,
-    // A transição roda a função na hora (o ocupado não é o assunto aqui).
     useTransition: (() => [false, (f: () => unknown) => { void f(); }]) as unknown as typeof real.useTransition,
   };
 });
@@ -80,7 +75,6 @@ describe("PreparacaoFormulario — trocar de página nas listas não apaga a esc
     (filho.props.onChange as (a: AgendaConferida | null) => void)(agenda);
     escolher(tela(particular(1)), "aluno", "aluno-1");
     expect(botaoEnviar(tela(particular(1))).props.disabled).toBe(false);
-    // A oferta mudou de versão (refresh): o formulário continua, mas a agenda conferida não vale mais.
     expect(botaoEnviar(tela(particular(2))).props.disabled).toBe(true);
     preencherValores(particular(2));
     await submeter(tela(particular(2)), { confirmacao: "on", regime: "MENSALIDADE", motivo: "Condições combinadas." });

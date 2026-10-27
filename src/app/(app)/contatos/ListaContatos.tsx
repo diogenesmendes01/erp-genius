@@ -24,15 +24,12 @@ type Props = {
   filtros: FiltrosContatos;
   abertoId: string;
   tags: { id: string; nome: string }[];
-  /** Vendedores para o filtro de responsável e a importação; vazio fora do comercial. */
   vendedores: { id: string; nome: string }[];
-  /** Filtros de funil (responsável, etapa) só existem para quem é do comercial. */
   comercial: boolean;
   podeImportar: boolean;
   podeMesclar: boolean;
   podeExportar: boolean;
   pares: ParDuplicado[];
-  /** Dados de mesclagem das pessoas da página (vazio sem a capacidade). */
   mesclaveis: Record<string, PessoaMesclavel>;
   filtrando: boolean;
 };

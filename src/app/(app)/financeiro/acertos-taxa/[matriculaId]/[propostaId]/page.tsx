@@ -16,7 +16,6 @@ export default async function AcertoTaxaDetalhe({ params }: { params: Promise<{ 
   const [previa, historico, impactos, cabecalho] = await Promise.all([consultarAcertoTaxaPorProposta(d), listarHistoricoAcertosTaxa(d), consultarImpactosTaxaAditivo(d), consultarCabecalhoMatricula(usuario, d.matriculaId)]);
   const podePreparar = impactos.ok && (!impactos.dado || ["REJEITADO", "OBSOLETO"].includes(impactos.dado.status));
   return <main className="space-y-5"><VoltarPara href="/financeiro/acertos-taxa" /><h1 className="text-2xl">Acerto da taxa</h1>
-    {/* De quem é o acerto: aluno e matrícula pelo código, não o id da URL (docs/43 §6 item 7). */}
     {cabecalho && <IdentificacaoRegistro rotulo="Aluno e matrícula deste acerto" dados={{ aluno: cabecalho.aluno, alunoHref: `/alunos/${encodeURIComponent(cabecalho.alunoId)}`, matriculaCodigo: cabecalho.codigo, matriculaComplemento: cabecalho.produto }} />}
     {!previa.ok ? <p role="alert">{previa.erro}</p> : previa.dado?.estado === "PRONTA_PARA_SELECAO" ? <>{podePreparar && <section id="preparar-impactos"><ImpactosTaxaFormulario matriculaId={d.matriculaId} propostaId={d.propostaId} conclusaoId={previa.dado.conclusaoId} revisaoHash={previa.dado.revisaoHash} cobrancas={previa.dado.cobrancas} /></section>}<AcertoTaxaFormulario matriculaId={d.matriculaId} propostaAditivoId={d.propostaId} conclusaoId={previa.dado.conclusaoId} revisaoHash={previa.dado.revisaoHash} cobrancas={previa.dado.cobrancas} /></> : <p>{previa.dado?.mensagem}</p>}
     {!impactos.ok && <p role="alert">{impactos.erro}</p>}

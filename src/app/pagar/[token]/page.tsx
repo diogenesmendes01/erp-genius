@@ -6,15 +6,6 @@ import { cobrancaPorToken, pagamentoSimuladoHabilitado } from "@/server/financei
 import { PagarCliente } from "./PagarCliente";
 import { quadroDoPagamento, type TomQuadro } from "./quadro";
 
-// PÁGINA PÚBLICA de pagamento (Fase 2, driver simulado): o cliente abre o link enviado
-// pelo vendedor. Projeção MÍNIMA (primeiro nome + valor — nada de dados pessoais).
-// O botão de pagar só aparece com PAGAMENTO_SIMULADO=1 (dev/demo); com um gateway real,
-// esta página nem existe — o link aponta para o checkout do provedor.
-//
-// Cada situação do link e da cobrança tem texto e saída próprios (./quadro.ts; docs/43 §6 item 8): link
-// inválido, expirado, cobrança paga, cancelada, vencida e pendente.
-
-// Link de cobrança circula por mensagem: não pode ser indexado (docs/42 /pagar #7).
 export const metadata: Metadata = { title: "Pagamento | Escola Genius", robots: { index: false, follow: false } };
 
 const TONS: Record<TomQuadro, string> = {

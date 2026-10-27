@@ -1,10 +1,6 @@
 import ExcelJS from "exceljs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Importação de alunos com deduplicação (docs/42 L224; docs/43 §6 item 9). Sem banco: auth e Prisma mockados; a
-// planilha é um XLSX de verdade, montado com o exceljs. Confere que a linha repetida — de um aluno já cadastrado ou
-// de uma linha anterior da mesma planilha — não é criada e volta em `ignorados` com o motivo.
-
 const m = vi.hoisted(() => ({
   auth: vi.fn(),
   usuario: vi.fn(),
@@ -119,7 +115,6 @@ describe("POST /api/alunos/importar — deduplicação", () => {
       ["", "SemNome", "Costa Rica", "", "", "", ""],
       ["Ana", "Rojas", "Costa Rica", "123456789", "", "", ""],
     ]);
-    // A linha 2 falhou ao gravar; a 4 (mesma pessoa) é criada — não é "repetida" de algo que não existe.
     expect(corpo.erros).toEqual([{ linha: 2, motivo: "Falha ao gravar a linha no banco." }, { linha: 3, motivo: "Nome (obrigatório) está vazio." }]);
     expect(corpo.ignorados).toEqual([]);
     expect(corpo.criados).toBe(1);

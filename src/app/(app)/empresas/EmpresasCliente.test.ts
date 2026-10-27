@@ -4,27 +4,21 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/server/empresas/acoes", () => ({ salvarEmpresa: vi.fn() }));
-// useTransition simulado: `pendente.valor` decide se a navegação está em andamento no render.
 const pendente = vi.hoisted(() => ({ valor: false }));
 vi.mock("react", async (original) => {
   const react = await original<typeof import("react")>();
   return { ...react, useTransition: () => [pendente.valor, (f: () => void) => f()] as const };
 });
 
-// Captura as opções passadas a useFiltrosUrl (o caminho com JavaScript: buscar/filtrar navega pelo
-// hrefDosCampos da tela) — revisão R1 da #136, B5.
 const capturado = vi.hoisted(() => ({ opcoes: [] as { campos: Record<string, string>; hrefDosCampos: (c: Record<string, string>) => string }[] }));
 vi.mock("@/lib/filtros-url", async (original) => {
   const real = await original<typeof import("@/lib/filtros-url")>();
-  // O handler de clique sai marcado com o href que o gerou (R3 da #136, B10).
   return { ...real, useFiltrosUrl: (o: Parameters<typeof real.useFiltrosUrl>[0]) => {
     capturado.opcoes.push(o as never);
     const r = real.useFiltrosUrl(o);
     return { ...r, aoClicar: (href: string) => Object.assign(r.aoClicar(href), { navegaPara: href }) };
   } };
 });
-// Cada <Link> renderizado: o href do link e o handler do clique (com JavaScript, o clique simples segue o
-// handler, não o href) — R3 da #136, B10.
 const links = vi.hoisted(() => ({ lista: [] as { href: string; texto: string; onClick?: { navegaPara?: string } }[] }));
 vi.mock("next/link", async () => {
   const { createElement: h } = await import("react");
@@ -64,7 +58,6 @@ describe("EmpresasCliente (filtros na URL)", () => {
     const html = render({ empresas, total: 120, totalBase: 300, filtros: lerFiltrosEmpresas({ situacao: "ativas", pagina: "2" }) });
     expect(html).toContain("51–100 de 120 empresas encontradas (de 300 no total)");
     expect(html).toContain('aria-label="Páginas de empresas"');
-    // Faturas FECHADAS (emitidas, aguardando pagamento): "a receber", não "em aberto" (que sugere ABERTA).
     expect(html).toContain(">Faturas a receber</th>");
     expect(html).toContain('href="/empresas?situacao=ativas"');
     expect(html).toContain('href="/empresas?situacao=ativas&amp;pagina=3"');
@@ -72,13 +65,11 @@ describe("EmpresasCliente (filtros na URL)", () => {
 
   it("cabeçalhos ordenáveis (E1): sem ordem na URL nenhum marcado; links levam os filtros e voltam à página 1", () => {
     const html = render({ empresas: [empresa(1)], total: 60, totalBase: 60, filtros: lerFiltrosEmpresas({ situacao: "ativas", pagina: "2" }) });
-    expect(html).not.toContain("aria-sort"); // nenhuma coluna ordenada: a ordem padrão é "mais recentes primeiro"
+    expect(html).not.toContain("aria-sort");
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=codigo&amp;dir=asc"[^>]*>Código</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=nome&amp;dir=asc"[^>]*>Empresa</);
-    // Contagem começa do maior no primeiro clique.
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=colaboradores&amp;dir=desc"[^>]*>Colaboradores</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=situacao&amp;dir=asc"[^>]*>Status</);
-    // País (sem relação para ordenar) e faturas a receber (contagem filtrada) não ordenam.
     expect(html).toContain('<th class="px-4 py-2 font-medium">País</th>');
     expect(html).not.toContain('type="hidden"');
   });
@@ -99,7 +90,6 @@ describe("EmpresasCliente (filtros na URL)", () => {
       const html = render({ empresas: [empresa(1)], total: 1, totalBase: 1 });
       expect(html).toMatch(/<button type="submit" disabled=""[^>]*>Buscando…<\/button>/);
       expect(html).toContain('aria-busy="true"');
-      // Também no estado vazio: o leitor de tela ouve que a região está carregando.
       expect(render({ totalBase: 5, filtros: lerFiltrosEmpresas({ situacao: "inativas" }) })).toMatch(/<div[^>]*aria-busy="true"[^>]*><p>Nenhuma empresa com esses filtros/);
     } finally {
       pendente.valor = false;
@@ -124,7 +114,6 @@ describe("EmpresasCliente: a ordem escolhida sobrevive à busca, ao formulário 
 
   it("página além do fim: \"Ir para a primeira página\" mantém a ordem", () => {
     const html = render({ empresas: [], total: 5, totalBase: 5, filtros: lerFiltrosEmpresas({ ordem: "nome", dir: "desc", pagina: "3" }) });
-    // Exatamente a página 1 (sem `pagina`), mantendo a ordem — R2 da #136, B8.
     expect(html).toMatch(new RegExp('<a[^>]*href="/empresas[?]ordem=nome&amp;dir=desc"[^>]*>Ir para a primeira página</a>'));
   });
 });
@@ -143,7 +132,6 @@ describe("EmpresasCliente: com JavaScript, o clique de cada link vai para o MESM
   for (const [nome, props, esperados] of CASOS) {
     it(nome, () => {
       const lista = cliques(props);
-      // Todo link da lista navega pelo handler da transição, e o handler vai para o href do próprio link.
       const daLista = lista.filter((l) => l.href === "/empresas" || l.href.startsWith("/empresas?"));
       expect(daLista.filter((l) => !l.onClick).map((l) => `${l.texto} ${l.href}`), "link da lista sem clique na transição").toEqual([]);
       expect(daLista.filter((l) => l.onClick?.navegaPara !== l.href).map((l) => `${l.texto}: href ${l.href} · clique ${l.onClick?.navegaPara}`)).toEqual([]);

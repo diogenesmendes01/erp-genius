@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L2395): o formulário de turma avisa o diálogo quando há algo preenchido e não
-// salvo (para o fundo/Escape pedirem confirmação). Efeitos rodam a cada render aqui (o aviso é por efeito).
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

@@ -3,7 +3,6 @@ import { useCallback,useEffect,useRef,useState } from "react";
 import type { lerInsightAutorizado } from "@/server/aria/insights/leitura";
 export type DadosInsights=NonNullable<Awaited<ReturnType<typeof lerInsightAutorizado>>>;
 
-/** GET isolado: sequência explícita identifica leitura pedida depois do ACK, não o SSE anterior. */
 export function useLeituraInsights({atendimentoId,ativo,versao}:{atendimentoId:string|null;ativo:boolean;versao:number}) {
   const identidade=ativo&&atendimentoId?atendimentoId:null;
   const [ciclo,setCiclo]=useState(()=>({identidade,token:{},numero:0,geracaoId:null as string|null}));

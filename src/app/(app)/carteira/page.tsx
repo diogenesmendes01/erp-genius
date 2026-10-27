@@ -34,7 +34,6 @@ export default async function CarteiraPage({ searchParams }: { searchParams?: Pr
   const usuario = await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR);
   const params = (await searchParams) ?? {};
   const gestao = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
-  // Só a gestão tem a aba Coberturas; ?aba=coberturas de vendedor cai na carteira.
   const aba = gestao && um(params.aba) === "coberturas" ? "coberturas" : "carteira";
   const filtros = lerFiltrosCarteira(params);
   const [cob, carteira] = await Promise.all([

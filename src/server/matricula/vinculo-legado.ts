@@ -35,7 +35,6 @@ export async function consultarVinculosLegados(alunoId: string) {
   });
 }
 
-/** Conferência explícita do legado: não escolhe contrato pelo primeiro resultado. */
 export async function vincularAlocacaoLegada(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...papeis);

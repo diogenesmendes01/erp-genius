@@ -10,7 +10,6 @@ import { VoltarPara } from "@/components/VoltarPara";
 import { Paginacao } from "@/components/Paginacao";
 import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-/** Cada coleção da conciliação tem a própria página; o link de uma mantém as páginas das outras. */
 type Chave = "pagina" | "paginaRecebimentos" | "paginaPagadores" | "paginaPropostas";
 
 export default async function ConciliacaoFinanceiraPage({ params, searchParams }: { params: Promise<{ linhaId: string }>; searchParams: Promise<ParametrosUrl> }) {

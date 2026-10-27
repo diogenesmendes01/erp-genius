@@ -26,7 +26,6 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
   erroConsulta?: string | null;
   podeExecutarEquivalencia?: boolean;
   fusoExibicao?: string;
-  /** Fila de /academico lida a partir de um cursor: link do início, para o vazio daquele ponto. Null no início (vazio = filtro sem solicitações). */
   inicioDaFila?: string | null;
 }) {
   const router = useRouter();

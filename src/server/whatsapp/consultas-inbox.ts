@@ -23,24 +23,18 @@ import { podeDevolverParaAria } from "@/server/aria/pausa";
 import { podeExecutar, TIPOS_DESVINCULAVEIS, type TipoVinculoContato } from "@/server/inbox/permissoes";
 
 export interface ConversaResumo {
-  /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
   id: string; numeroId: string; numeroRotulo: string; finalidade: string; driver: string;
   contatoId: string; contatoNome: string; contatoTelefone: string; optOut: boolean;
   vinculo: string | null; naoLidas: number; ultimaMensagemEm: string | null; preview: string | null;
-  /** Conversa de linha comercial (SPEC-ERP-005): espelho do WhatsApp do vendedor. */
   linhaComercial: boolean;
 }
 export interface MensagemThread {
   id: string; direcao: "ENTRADA" | "SAIDA"; tipo: string; corpo: string | null; midiaPath: string | null;
   status: string; origem: string | null; autorNome: string | null; templateNome: string | null; criadoEm: string;
-  /** Remetente em conversa de grupo (nulo em conversa individual). */
   participanteNome: string | null;
-  /** Favorita do usuário da sessão (tabela pessoal). */
   favorita: boolean;
   clientMessageId: string | null;
-  /** Saída escrita pelo usuário da sessão (editar/apagar só valem para as próprias); ausente conta como falso. */
   propria?: boolean;
-  /** Apagada para todos pelo motor (`apagadaEm`); o corpo fica guardado. Ausente conta como falso. */
   apagada?: boolean;
 }
 export interface CobrancaAtivaThread {
@@ -79,7 +73,6 @@ export function resumirConversa(atendimento: AtendimentoDaLista): ConversaResumo
     linhaComercial: a.finalidade === "COMERCIAL" && ehLinhaComercial(a.conversa.numero) };
 }
 
-/** Botões de cadastro da conversa: criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */
 export function regrasCadastroDoAtendimento(
   usuario: UsuarioSessao, a: { finalidade: string; leadId: string | null; encerradoEm: Date | null }, linhaComercial: boolean,
 ): { podeCriarLead: boolean; podeVincular: boolean } {
@@ -90,7 +83,6 @@ export function regrasCadastroDoAtendimento(
   };
 }
 
-/** Silêncio da régua depois de uma resposta do contato (S4) que ninguém tratou. */
 export function silencioPosInbound(
   a: { ultimoInboundEm: Date | null; inboundTratadoEm: Date | null }, horas: number | null, agora: number,
 ): { ativo: boolean; ate: string | null } {
@@ -99,26 +91,18 @@ export function silencioPosInbound(
   return { ativo, ate: ativo ? ate!.toISOString() : null };
 }
 
-/** Ações de cadastro e de cobrança do painel lateral do Inbox. Sem telefone (regra 5). */
 export interface AcoesContatoInbox {
   contatoId: string; contatoNome: string;
   nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
   alunoId: string | null;
-  /** Oportunidade do atendimento, só para quem a vê (LC-L02); o link é /funil?o=<id>. */
   leadId: string | null;
   podeCriarLead: boolean; podeVincular: boolean; podeEditarNome: boolean;
-  /** Vínculos atuais do contato que esta pessoa pode desfazer (D8): vazio para quem não é administrador nem gerente do setor. */
   vinculos: VinculoContatoInbox[];
-  /** Só no FINANCEIRO e para FINANCEIRO/SECRETARIA_ACADEMICA (as alçadas de marcarConversaTratada). */
   cobranca: { silencio: { ativo: boolean; ate: string | null }; ativa: CobrancaAtivaThread | null } | null;
 }
 
 export interface VinculoContatoInbox { tipo: TipoVinculoContato; id: string; nome: string }
 
-/**
- * "Desvincular contato" (D8, #175): os vínculos do contato que o setor do atendimento desfaz, só para o Administrador
- * e o gerente do setor (a mesma regra de `desvincularContatoWhatsApp`). Oportunidade que a pessoa não vê aparece sem o nome.
- */
 async function vinculosDesvinculaveis(
   usuario: UsuarioSessao,
   a: { id: string; finalidade: FinalidadeAtendimentoWhatsApp; responsavelId: string | null },
@@ -143,7 +127,6 @@ async function vinculosDesvinculaveis(
   return vinculos;
 }
 
-/** null fora do escopo do usuário e em conversa de grupo (sem contato individual). */
 export async function carregarAcoesContatoInbox(usuario: UsuarioSessao, atendimentoId: string): Promise<AcoesContatoInbox | null> {
   const achado = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] }, include: contextoInclude,
@@ -174,7 +157,6 @@ export async function carregarAcoesContatoInbox(usuario: UsuarioSessao, atendime
 }
 
 
-/** Linhas comerciais de que o usuário é dono — estado da sessão em leitura (LC §5.5, doc 37). */
 export interface LinhaDoUsuario { id: string; rotulo: string; telefoneE164: string; driver: string; sessao: string }
 
 export async function listarLinhasDoUsuario(usuario: UsuarioSessao): Promise<LinhaDoUsuario[]> {
@@ -186,7 +168,6 @@ export async function listarLinhasDoUsuario(usuario: UsuarioSessao): Promise<Lin
   });
 }
 
-/** Notas internas do lead (Evento NotaInterna), mais recentes primeiro. */
 export async function notasDoLead(leadId: string): Promise<NotaInternaThread[]> {
   const notas = await prisma.evento.findMany({ where: { agregadoTipo: "Lead", agregadoId: leadId, tipo: "NotaInterna" },
     orderBy: { criadoEm: "desc" }, take: 20, include: { autor: { select: { nome: true } } } });
@@ -209,7 +190,6 @@ export async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: s
     saldo: Number(c.saldo ?? c.valorNegociado.minus(c.valorRecebido ?? 0)), status: c.status };
 }
 
-/** O contexto é obrigatório: busca comercial não vira diretório de alunos/responsáveis. */
 export async function buscarPessoasVinculo(usuario: UsuarioSessao, q: string, atendimentoId?: string): Promise<PessoasVinculo> {
   const vazio: PessoasVinculo = { alunos: [], responsaveis: [], leads: [] };
   const a = atendimentoId ? await atendimentoVisivel(usuario, atendimentoId, true) : null;
@@ -221,7 +201,6 @@ export async function buscarPessoasVinculo(usuario: UsuarioSessao, q: string, at
   if (temPapel(usuario, Papel.SECRETARIA_ACADEMICA) && (a.finalidade === "SECRETARIA" || a.finalidade === "FINANCEIRO")) {
     const alunos = await prisma.aluno.findMany({ where: { OR: [{ primeiroNome: contem }, { sobrenome: contem }] }, take: 5, select: { id: true, primeiroNome: true, sobrenome: true } });
     vazio.alunos = alunos.map((x) => ({ id: x.id, nome: nomeCompleto(x) }));
-    // Não lista responsáveis de irmãos sem o aluno específico do atendimento.
     if (a.alunoId) vazio.responsaveis = await prisma.responsavel.findMany({ where: { nome: contem, alunos: { some: { alunoId: a.alunoId,
       ...(a.finalidade === "FINANCEIRO" ? { papel: "FINANCEIRO" as const } : {}) } } }, take: 5, select: { id: true, nome: true } });
   }
@@ -230,17 +209,12 @@ export async function buscarPessoasVinculo(usuario: UsuarioSessao, q: string, at
 
 export const conversaVisivel = atendimentoVisivel;
 
-/**
- * O contato é compartilhado entre linhas e finalidades: alterá-lo (ex.: o nome salvo) só cabe a quem
- * enxerga TODOS os atendimentos dele — senão a mudança apareceria na área de outra equipe.
- */
 export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: string): Promise<boolean> {
   if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
   const fora = await prisma.atendimentoWhatsApp.count({ where: { conversa: { contatoId }, NOT: await escopoAtendimentos(usuario) } });
   return fora === 0;
 }
 
-/** Estado canônico da Aria no atendimento: pausa, cartões e handoff de `AcaoAgenteIA` (fonte única). */
 export interface AriaDoAtendimento {
   podeAssumirAria: boolean;
   handoff: HandoffDoAtendimento | null;
@@ -248,11 +222,9 @@ export interface AriaDoAtendimento {
   cartoes: SugestaoAriaThread[];
   pausada: boolean;
   motivo: MotivoPausaAtendimentoIA | null;
-  /** Mostra "Devolver para Aria": Aria pausada e o usuário com escopo de envio (a regra de `devolverParaAria`). */
   podeDevolver: boolean;
 }
 
-/** null fora do escopo do usuário. Cartões e handoff mantêm seus produtores e escopos canônicos. */
 export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendimentoId: string, agora: Date = new Date()): Promise<AriaDoAtendimento | null> {
   const a = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },

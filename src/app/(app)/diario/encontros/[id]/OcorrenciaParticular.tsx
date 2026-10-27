@@ -14,8 +14,6 @@ type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasP
 const nomes: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Aluno faltou", CANCELAMENTO_ALUNO: "Cancelada pelo aluno", CANCELAMENTO_ESCOLA: "Cancelada pela escola" };
 export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fusoExibicao: string }) {
   const router = useRouter();
-  // A chave só muda quando a entrada muda, e o servidor devolve o informe existente quando ela se repete:
-  // na falha de transporte, reenviar sem alterar é seguro (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   const ocupado = acao.ocupado;
   const chave = useRef({ entrada: "", valor: "" });
@@ -27,7 +25,6 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
       event.preventDefault(); const f = new FormData(event.currentTarget);
       const tipo = String(f.get("tipo")) as Parameters<typeof registrarOcorrenciaParticular>[0]["tipo"];
       let comunicadoEm: string | undefined;
-      // Data/hora da comunicação conferidas aqui, antes da action: horário inexistente ou ambíguo no fuso é erro de preenchimento.
       try { comunicadoEm = dados.podeInformarCancelamento ? instanteDaGrade(String(f.get("data")), String(f.get("hora")), dados.fuso).toISOString() : undefined; }
       catch (erro) { acao.limpar(); acao.setErro(erro instanceof Error ? erro.message : "Confira a data e a hora da comunicação."); return; }
       const entrada = { encontroId: dados.encontroId, versaoAnterior: dados.versaoAtual, tipo, comunicadoEm, evidencia: String(f.get("evidencia")) };
@@ -46,7 +43,6 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
       <label className="block">Evidência ou motivo da atualização<CampoTexto name="evidencia" required minLength={5} maxLength={2000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
       <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : dados.versaoAtual ? "Registrar nova versão" : "Registrar ocorrência"}</button>
     </form> : <p>{dados.conferidaFinanceiramente ? "Informe conferido pelo Financeiro. Alterações exigem revisão dos efeitos financeiros." : "O informe fica disponível após o término da aula ou a aprovação do cancelamento."}</p>}
-    {/* Logo abaixo do botão, fora do <form>: a confirmação continua visível se o informe deixar de ser editável depois do refresh. */}
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
     <h3 className="font-medium">Histórico de informes</h3>
     {!dados.historico.length && <EstadoVazio>Nenhum informe registrado.</EstadoVazio>}

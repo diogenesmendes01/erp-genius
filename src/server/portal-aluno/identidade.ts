@@ -119,15 +119,6 @@ async function criarEnvioPendenteTx(
 
 type SituacaoEnvioPortalAluno = "PREPARADO" | "CANCELADO" | "ENVIADO" | "FALHOU" | "INCERTO";
 
-/**
- * Q72/Q73. Só prepara uma intenção rastreável: não retorna token, senha ou
- * link. O despachante interno é o único componente que materializa o token
- * quando Resend, domínio e remetente estiverem efetivamente configurados.
- *
- * `chaveIdempotencia` (#166, B1 da R1 do #274): a marca vai no `ConvitePortalAlunoPreparado`, na mesma transação do
- * envio. O reenvio da mesma tentativa devolve o convite original mesmo depois que o cron o despachou (sem outro
- * envio, outro e-mail nem a revogação do primeiro link); a reemissão deliberada é outra tentativa, com chave nova.
- */
 export async function prepararConvitePortalAluno(input: { alunoId: string; chaveIdempotencia?: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
@@ -136,7 +127,6 @@ export async function prepararConvitePortalAluno(input: { alunoId: string; chave
     return prisma.$transaction(async (tx) => {
       await exigirFuncionarioAtualTx(tx, autor.id, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
       if (marca) {
-        // Antes das validações de estado: a conta pode ter sido ativada (ou o envio despachado) desde a tentativa.
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "ConvitePortalAlunoPreparado", agregadoTipo: "Aluno", autorId: autor.id, marca,
           mensagemConflito: "Esta tentativa já foi usada para o convite de outro aluno. Recarregue a ficha e confira o acesso antes de repetir.",
@@ -150,9 +140,6 @@ export async function prepararConvitePortalAluno(input: { alunoId: string; chave
       const conta = await obterOuCriarContaTx(tx, dados.alunoId);
       if (!conta.ativa) throw new ErroRegra("A conta do aluno está bloqueada.");
       if (conta.senhaHash) throw new ErroRegra("O aluno já possui credencial; use recuperação de acesso quando necessário.");
-      // Idempotência por natureza (#166): o reenvio não grava Evento de novo quando nada mudou. A pendência de
-      // e-mail só é registrada se a última anotação de convite do aluno não for ela mesma; o convite ainda não
-      // despachado é reaproveitado por `criarEnvioPendenteTx` (um envio só) e não ganha outro Evento.
       if (!conta.emailAluno) {
         const ultima = await tx.evento.findFirst({
           where: { agregadoTipo: "Aluno", agregadoId: conta.alunoId, tipo: { in: ["PendenciaAcessoPortalAlunoEmailAusente", "ConvitePortalAlunoPreparado"] } },
@@ -168,8 +155,6 @@ export async function prepararConvitePortalAluno(input: { alunoId: string; chave
       }
       const destinatario = normalizarEmailPortalAluno(conta.emailAluno);
       const envio = await criarEnvioPendenteTx(tx, { contaId: conta.id, finalidade: "CONVITE", destinatario });
-      // Com chave, o reaproveitamento também grava o Evento (com `reaproveitado`): sem a marca, o reenvio desta
-      // tentativa depois do despacho não a reconheceria e prepararia outro convite.
       if (!envio.reaproveitado || marca) {
         await registrarEvento(tx, {
           tipo: "ConvitePortalAlunoPreparado", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
@@ -181,7 +166,6 @@ export async function prepararConvitePortalAluno(input: { alunoId: string; chave
   });
 }
 
-/** Resposta indistinguível para não revelar se há uma credencial nesse e-mail. */
 export async function solicitarRecuperacaoPortalAluno(input: unknown) {
   const dados = z.object({ email: z.string().trim().max(320) }).strict().parse(input);
   let email: string;
@@ -230,7 +214,6 @@ export async function entrarPortalAluno(input: unknown) {
   return { autenticado: true as const, sessaoCookie: resultado.sessao.segredo, expiraEm: resultado.sessao.expiraEm };
 }
 
-/** Link recebido pelo aluno. O token bruto entra, mas nunca sai deste servidor. */
 export async function consumirTokenPortalAluno(input: unknown) {
   const dados = z.object({ token: z.string().min(32).max(200), senha: senha.optional() }).strict().parse(input);
   const agora = new Date();
@@ -281,8 +264,6 @@ export async function consumirTokenPortalAluno(input: unknown) {
     const prazos = await prazosPortalAlunoTx(tx);
     const senhaHash = await bcrypt.hash(dados.senha, 12);
     const versaoNova = token.versaoSessao + 1;
-    // Consome primeiro para que o guard SQL da conta aceite a ativação apenas
-    // quando há convite consumido para este mesmo destinatário.
     await tx.$executeRaw(Prisma.sql`UPDATE "TokenPortalAluno" SET "consumidoEm" = ${instanteUtc(agora)} WHERE id = ${token.id}`);
     await tx.$executeRaw(Prisma.sql`
       UPDATE "ContaPortalAluno"
@@ -306,14 +287,8 @@ export async function consumirTokenPortalAluno(input: unknown) {
   });
 }
 
-/** Solicitação devolvida pela preparação: a nova, a pendente idêntica ou, no reenvio com chave, a original na situação atual. */
 export type TrocaEmailPreparada = { solicitacaoId: string; solicitacaoEnvioId: string; situacao: SituacaoTrocaEmailPortalAluno };
 
-/**
- * `chaveIdempotencia` (#166, N3 da R1 do #274): a marca vai no `TrocaEmailPortalAlunoPreparada`, na mesma transação
- * da solicitação. O reenvio da mesma tentativa devolve a solicitação original mesmo depois que outra pessoa a
- * decidiu (sem nova solicitação nem novo e-mail de validação); uma nova solicitação deliberada usa chave nova.
- */
 export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; novoEmail: string; motivo: string; evidencia: string; chaveIdempotencia?: string }) {
   return executarAcao(async (): Promise<TrocaEmailPreparada> => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
@@ -325,8 +300,6 @@ export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; no
     return prisma.$transaction(async (tx) => {
       await exigirFuncionarioAtualTx(tx, autor.id, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
       if (marca) {
-        // Antes do aluno e das validações de estado: a solicitação pode ter sido decidida desde a tentativa, e a
-        // chave reaproveitada com outro aluno (existente ou não) recebe a mesma recusa.
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "TrocaEmailPortalAlunoPreparada", agregadoTipo: "Aluno", autorId: autor.id, marca,
           mensagemConflito: "Esta tentativa já foi usada para outra troca de e-mail. Recarregue a ficha e confira as solicitações antes de repetir.",
@@ -334,15 +307,10 @@ export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; no
         if (repetido) {
           const p = repetido.payload as { solicitacaoId?: unknown; solicitacaoEnvioId?: unknown };
           const solicitacao = await tx.solicitacaoTrocaEmailPortalAluno.findUniqueOrThrow({ where: { id: String(p.solicitacaoId) }, select: { id: true, situacao: true } });
-          // A situação real (#282, C3): pode já ter sido decidida (rejeitada, aplicada ou cancelada) por outra
-          // pessoa desde a tentativa; a tela avisa em vez de anunciar uma validação nova.
           return { solicitacaoId: solicitacao.id, solicitacaoEnvioId: String(p.solicitacaoEnvioId), situacao: solicitacao.situacao };
         }
       }
       const conta = await obterOuCriarContaTx(tx, dados.alunoId);
-      // Idempotência por natureza (#166): a conta só admite uma troca pendente (índice parcial único). A mesma
-      // troca, preparada por este autor com o mesmo endereço, motivo e evidência, é devolvida sem novo registro,
-      // novo envio ou novo Evento; antes o reenvio caía na violação do índice.
       const [pendente] = await tx.$queryRaw<{ id: string; situacao: "PENDENTE_VALIDACAO" | "PENDENTE_DECISAO"; novoEmail: string; motivo: string; evidencia: string; preparadorId: string }[]>(Prisma.sql`
         SELECT id, situacao::text AS situacao, "novoEmail" AS "novoEmail", motivo, evidencia, "preparadorId" AS "preparadorId"
         FROM "SolicitacaoTrocaEmailPortalAluno"
@@ -402,11 +370,8 @@ export async function decidirTrocaEmailPortalAluno(input: { solicitacaoId: strin
         SELECT id, "decisorId" AS "decisorId", aprovada, motivo FROM "DecisaoTrocaEmailPortalAluno" WHERE "solicitacaoId" = ${solicitacao.id} FOR UPDATE
       `);
       if (anterior) {
-        // Idempotência por natureza (#166): a mesma decisão, do mesmo decisor e com o mesmo motivo, é devolvida sem
-        // gravar nada; outra decisão continua recusada. Vem antes da situação, que a própria decisão já mudou.
         if (anterior.decisorId !== decisor.id || anterior.aprovada !== dados.aprovar || anterior.motivo !== dados.motivo) throw new ErroRegra("A solicitação já recebeu uma decisão.");
         if (!anterior.aprovada) return { decisaoId: anterior.id, aprovada: false as const };
-        // N2/C3 da R1 do #274: o Evento desta decisão (não o mais recente do aluno, que pode ser de outra troca).
         const aplicada = await tx.evento.findFirst({
           where: { tipo: "TrocaEmailPortalAlunoAplicada", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, payload: { path: ["decisaoId"], equals: anterior.id } },
           select: { payload: true },
@@ -454,10 +419,6 @@ export async function decidirTrocaEmailPortalAluno(input: { solicitacaoId: strin
   });
 }
 
-/**
- * Despacho interno com confirmação durável. Recebe o token bruto apenas
- * dentro do callback de entrega; actions e respostas HTTP nunca o retornam.
- */
 export type ReciboEnvioPortalAluno = { provedor: "RESEND"; provedorId: string };
 
 const ReciboEnvioPortalAlunoSchema = z.object({
@@ -511,8 +472,6 @@ export async function despacharSolicitacaoPortalAlunoInterna(
     const agora = new Date();
     const tokenBruto = gerarSegredoPortalAluno();
     const tokenId = randomUUID();
-    // Um único link ainda utilizável por finalidade evita que uma reemissão
-    // deliberada deixe dois caminhos de redefinição abertos.
     await tx.$executeRaw(Prisma.sql`
       UPDATE "TokenPortalAluno" SET "revogadoEm" = ${instanteUtc(agora)}
       WHERE "contaId" = ${solicitacao.contaId} AND finalidade = ${solicitacao.finalidade}::"FinalidadeTokenPortalAluno"
@@ -523,9 +482,6 @@ export async function despacharSolicitacaoPortalAlunoInterna(
       VALUES (${tokenId}, ${solicitacao.contaId}, ${solicitacao.finalidade}::"FinalidadeTokenPortalAluno", ${digestSegredoPortalAluno(tokenBruto)},
         ${solicitacao.destinatario}, ${solicitacao.trocaEmailId}, ${instanteUtc(new Date(agora.getTime() + minutos * 60_000))})
     `);
-    // A transação termina ANTES de qualquer I/O externo. INCERTO é a claim
-    // durável: se o processo cair depois daqui, ninguém tenta reenviar sem
-    // conciliação humana/provedor e o segredo já não está recuperável do DB.
     await tx.$executeRaw(Prisma.sql`
       UPDATE "SolicitacaoEnvioPortalAluno" SET situacao = 'INCERTO', "atualizadoEm" = ${instanteUtc(agora)}
       WHERE id = ${solicitacao.id} AND situacao = 'PREPARADO'
@@ -534,8 +490,6 @@ export async function despacharSolicitacaoPortalAlunoInterna(
   });
   let retorno: void | ReciboEnvioPortalAluno;
   try {
-    // Este é o único ponto onde o token bruto cruza a fronteira interna para
-    // a fila/provedor institucional. Recibo malformado é resultado incerto.
     retorno = await entregar({ finalidade: preparado.finalidade, destinatario: preparado.destinatario, token: preparado.token, caminho: caminhoAtivacaoPortalAluno(preparado.token) });
     if (retorno !== undefined) retorno = ReciboEnvioPortalAlunoSchema.parse(retorno);
   } catch {
@@ -556,7 +510,6 @@ export async function despacharSolicitacaoPortalAlunoInterna(
       }
       return true;
     });
-    // ENVIADO significa aceito pelo provedor, não confirmação de entrega.
     return { solicitacaoId: preparado.solicitacaoId, situacao: confirmado ? "ENVIADO" as const : "INCERTO" as const };
   } catch {
     return { solicitacaoId: preparado.solicitacaoId, situacao: "INCERTO" as const };

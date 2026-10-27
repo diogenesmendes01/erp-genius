@@ -66,7 +66,6 @@ it("chamada usa a vigência migrada mesmo quando a importação ocorre depois da
   expect(aplicadaA.ok, aplicadaA.ok ? undefined : aplicadaA.erro).toBe(true);
   const aplicadaB = await aplicarVinculoMigracao({ ...base, linhaId: linhaB.id, ensaioId: eB.id, entradaHash: linhaB.entradaHash, contextoHash: eB.contextoHash, inicioAlocacao: "2025-04-01", fimAlocacao: null, fatos });
   expect(aplicadaB.ok, aplicadaB.ok ? undefined : aplicadaB.erro).toBe(true);
-  // criadoEm é 2026; as leituras de 2025 devem usar inicio/fimVigencia da migração.
   const chamada = (turmaId: string, dia: string) => prisma.$transaction((tx) => carregarChamadaTx(tx, turmaId, new Date(`${dia}T12:00:00Z`)));
   expect(await chamada(turmaA.id, "2025-01-15")).toMatchObject({ alunos: [{ alunoId: aluno.id }], exigeConferencia: false });
   expect(await chamada(turmaA.id, "2025-02-15")).toMatchObject({ alunos: [], exigeConferencia: false });

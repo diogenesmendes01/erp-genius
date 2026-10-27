@@ -1,7 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-/** Projeção operacional interna. A autorização e o vínculo matrícula/proposta
- * devem ser conferidos pelo chamador antes de consultar este histórico. */
 export async function carregarAndamentoSubstituicao(tx: Prisma.TransactionClient, proposta: { id: string; processoFonteId: string; aprovada: boolean | null; superada: boolean }, pagina = 1) {
   const intencao = await tx.intencaoCancelamentoAssinatura.findUnique({ where: { propostaId: proposta.id }, select: {
     id: true, criadaEm: true, executor: { select: { nome: true } },

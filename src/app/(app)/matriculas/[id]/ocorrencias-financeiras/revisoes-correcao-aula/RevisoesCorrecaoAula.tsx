@@ -26,7 +26,6 @@ const Foto = z.object({
   cobranca: z.object({ id: z.string(), status: z.string(), valorNegociado: dinheiro, valorRecebido: dinheiro.nullable(), saldo: dinheiro.nullable(), moeda: z.string(), valorLiquidadoCredito: dinheiro, valorCompensadoPermuta: dinheiro }).nullable(),
   informesPagamento: z.array(z.object({ id: z.string(), status: z.string() })), recebimentos: z.array(z.object({ id: z.string(), valor: dinheiro, moeda: z.string() })), destinacoes: z.array(z.object({ id: z.string(), tipo: z.string(), valor: dinheiro })),
 }).passthrough();
-// Q175: o efeito é calculado pelo banco (q23_fotografia_nao_cobravel_175); a tela só o descreve.
 const Efeito = z.object({ tipo: z.enum(["SEM_ITEM", "REDUZ_COBRANCA_ABERTA", "GERA_CREDITO", "DEVOLVE_MINUTOS"]), minutos: z.number().optional(), valorAula: dinheiro, moeda: z.string(), valorNegociadoAnterior: dinheiro.optional(), valorNegociadoNovo: dinheiro.optional(), creditoValor: dinheiro.optional() });
 const FotoNaoCobravel = z.object({ efeito: Efeito }).passthrough();
 const descreverEfeito = (bruto: unknown) => {
@@ -39,28 +38,20 @@ const descreverEfeito = (bruto: unknown) => {
 };
 
 export function RevisoesCorrecaoAula({ dados }: { matriculaId: string; dados: Dados }) {
-  // executarAcaoCliente (e não useAcaoCliente): o teste de callbacks chama o componente fora do React,
-  // com useState/useRef/useTransition simulados — um hook a mais (useCallback) quebraria a montagem.
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [erro, setErro] = useState(""), [sucesso, setSucesso] = useState("");
-  // Origem do resultado ("preparar:<id>" ou "decidir:<id>"): o erro aparece junto do formulário que o disparou.
   const [alvo, setAlvo] = useState("");
   const chaves = useRef(new Map<string, { payload: string; chave: string }>());
   const preparar = (propostaCorrecaoAulaId: string, form: HTMLFormElement) => iniciar(async () => {
     const formulario = new FormData(form), motivo = String(formulario.get("motivo") ?? "");
-    // Q175: o tipo é sempre escolha explícita; sem a declaração, a entrada continua a de antes (mesmo hash).
     const tipo = formulario.get("tipo") === "AULA_NAO_COBRAVEL" ? "AULA_NAO_COBRAVEL" as const : null, payload = JSON.stringify({ propostaCorrecaoAulaId, motivo, tipo });
     const anterior = chaves.current.get(propostaCorrecaoAulaId), chave = anterior?.payload === payload ? anterior.chave : crypto.randomUUID(); chaves.current.set(propostaCorrecaoAulaId, { payload, chave });
     setAlvo(`preparar:${propostaCorrecaoAulaId}`); setErro(""); setSucesso("");
-    // Chave estável por entrada (acima) e o servidor devolve a revisão existente quando ela se repete
-    // (server/financeiro/revisao-correcao-aula.ts:36-39): reenviar os mesmos dados é seguro.
     const d = await executarAcaoCliente(() => proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId, motivo, chaveIdempotencia: chave, ...(tipo ? { tipo } : {}) }), { idempotente: true });
     if (d.tipo !== "ok") { setErro(d.mensagem); return; }
     setSucesso("Revisão preparada. Outra pessoa do Financeiro ou Administração deve decidir."); chaves.current.delete(propostaCorrecaoAulaId); router.refresh();
   });
   const decidir = (propostaId: string, aprovada: boolean, form: HTMLFormElement) => iniciar(async () => {
     setAlvo(`decidir:${propostaId}`); setErro(""); setSucesso("");
-    // Decisão sem chave de idempotência (revisao-correcao-aula.ts:62); só a repetição idêntica pelo mesmo
-    // decisor é reconhecida (:68-70). Conferir antes de repetir.
     const d = await executarAcaoCliente(() => decidirRevisaoFinanceiraCorrecaoAula({ propostaId, aprovada, motivo: String(new FormData(form).get("motivo") ?? "") }), { idempotente: false });
     if (d.tipo !== "ok") { setErro(d.mensagem); return; }
     setSucesso(aprovada ? "Revisão aprovada; a gestão ainda precisa publicar a correção. Se houver acerto financeiro, ele só acontece nessa publicação." : "Revisão rejeitada; o histórico foi preservado."); router.refresh();
@@ -71,10 +62,8 @@ export function RevisoesCorrecaoAula({ dados }: { matriculaId: string; dados: Da
       {p.podePreparar
         ? <form onSubmit={e => { e.preventDefault(); preparar(p.id, e.currentTarget); }} className="space-y-2"><fieldset className="space-y-1"><legend>Tipo da revisão</legend>{p.tiposDisponiveis.map((t, i) => <label key={t.tipo} className="block"><input type="radio" name="tipo" value={t.tipo} defaultChecked={i === 0} disabled={ocupado} /> {t.tipo === "AULA_NAO_COBRAVEL" ? `Aula não devia ser cobrada. ${descreverEfeito(t.efeito) ?? ""}` : "Sem alteração de valores (falta e presença equivalentes)."}</label>)}</fieldset><label className="block">Justificativa financeira<CampoTexto name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar revisão financeira</button></form>
         : <p>{p.preparoBloqueadoPor}</p>}
-      {/* Montado só com erro: o FeedbackAcao usa efeito, e o teste de callbacks percorre a árvore fora do React. */}
       {alvo === `preparar:${p.id}` && erro && <FeedbackAcao erro={erro} />}
     </article>)}
-    {/* A candidata some da lista depois do preparo; a confirmação fica logo abaixo dela. */}
     <MensagemStatus texto={alvo.startsWith("preparar:") ? sucesso : null} />
     {!dados.candidatas.length && <EstadoVazio>Nenhuma correção de presença pendente nesta matrícula.</EstadoVazio>}
     <h2 className="text-xl">Histórico imutável</h2>

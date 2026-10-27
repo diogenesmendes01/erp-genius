@@ -17,16 +17,10 @@ const EntradaSchema = z.object({ origem: ContextoCoerenciaValoresAditivoSchema, 
 
 export const MENSAGEM_REGIME_NOVA_CONTRATACAO = "A mudança de regime (mensalidade ↔ particular por hora) não é feita por aditivo. Encerre este contrato com o acerto correspondente e abra uma nova negociação para o aluno no regime desejado.";
 
-/**
- * Q174 (decisão de 21/09/2026): mudança de regime é nova contratação. Recusar na proposta evita
- * um aditivo assinado que travaria a emissão da cobrança. Vale só na preparação: propostas de
- * REGIME anteriores à regra continuam podendo ser decididas (inclusive rejeitadas).
- */
 export function recusarAditivoDeRegime(alteracoes: readonly { origem: string }[]): void {
   if (alteracoes.some(a => a.origem === "REGIME")) throw new ErroRegra(MENSAGEM_REGIME_NOVA_CONTRATACAO);
 }
 
-/** Confere relações entre valores tipados e fatos da origem; não aplica as condições. */
 export function validarCoerenciaValoresAditivo(entrada: unknown): void {
   const d = EntradaSchema.parse(entrada);
   if (new Set(d.alteracoes.map(a => a.origem)).size !== d.alteracoes.length) throw new Error("Alteração tipada repetida.");

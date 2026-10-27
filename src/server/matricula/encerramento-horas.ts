@@ -29,7 +29,6 @@ export const SaldoHorasEncerramentoSchema = z.object({
   }
 });
 
-/** Q97: apuração por compra original. Não cria crédito nem retém multa. */
 export function calcularSaldoHorasEncerramento(input: z.input<typeof SaldoHorasEncerramentoSchema>) {
   const d = SaldoHorasEncerramentoSchema.parse(input);
   const compras = d.compras.map((c) => {
@@ -38,7 +37,6 @@ export function calcularSaldoHorasEncerramento(input: z.input<typeof SaldoHorasE
     const pendentes = c.minutosComprados - consumidos - liquidados;
     const pago = new Prisma.Decimal(c.valorPagoAlocado);
     const creditoAnterior = c.liquidacoesAnteriores.reduce((s, m) => s.plus(m.valor), new Prisma.Decimal(0));
-    // Arredonda o direito financeiro acumulado uma vez e desconta o já liquidado.
     const direitoTotal = pago.mul(c.minutosComprados - consumidos).div(c.minutosComprados).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
     const credito = direitoTotal.minus(creditoAnterior);
     if (credito.isNegative() || (pendentes === 0 && !credito.isZero())) throw new Error("Liquidações anteriores divergem do saldo da compra; concilie antes do encerramento.");

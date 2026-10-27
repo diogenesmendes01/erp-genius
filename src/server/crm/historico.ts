@@ -6,15 +6,12 @@ import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_LABEL } from "@/lib/labels
 import { capacidadesCrm } from "./permissoes";
 import { escopoPessoas } from "./pessoas";
 
-// Q8: motivos de perda fixos (MotivoPerda); alternativa configurável em Configurações (Fase 5).
-
 export type ItemHistorico = {
   id: string;
   tipo: string;
   rotulo: string;
   autor: string | null;
   em: Date;
-  /** Texto da nota interna (só em NotaInterna); o resto do payload nunca sai. */
   texto?: string | null;
 };
 
@@ -42,7 +39,6 @@ export type DetalheOportunidade = {
   urgencia: string | null;
   orcamento: string | null;
   objecao: string | null;
-  /** Campos editados no painel (B1 da R1 do #216: o que só a ficha antiga de /leads editava). */
   telefoneE164: string | null;
   paisId: string | null;
   segmento: Segmento;
@@ -53,10 +49,7 @@ export type DetalheOportunidade = {
   planoPrevisto: string | null;
   comissaoPrevista: string | null;
   dataProposta: Date | null;
-  /** Documentos ativos, com o mesmo filtro da ficha antiga (obterLead): fora do cadastro administrativo,
-   * some OUTRO e, depois que a secretaria assume a matrícula, só fica PROPOSTA. */
   documentos: { id: string; categoria: CategoriaDocumento; nome: string; url: string }[];
-  /** Taxa de matrícula (cobrança tipo MATRICULA) da matrícula da oportunidade, quando existe. */
   taxaMatricula: {
     cobrancaId: string;
     status: StatusCobranca;
@@ -69,7 +62,6 @@ type Payload = Record<string, unknown> | null;
 
 const texto = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
 
-/** "Exp. Agendada" -> "Exp. agendada"; "1º Contato" -> "1º contato" (só a primeira letra maiúscula). */
 function frase(s: string): string {
   const baixa = s.toLocaleLowerCase("pt-BR");
   return baixa.charAt(0).toLocaleUpperCase("pt-BR") + baixa.slice(1);
@@ -80,7 +72,6 @@ const etapa = (v: unknown): string | null => {
   return k ? frase(ETAPA_LABEL[k as EtapaLead] ?? k) : null;
 };
 
-/** Rótulo legível por tipo de evento do agregado "Lead". Nunca devolve o payload cru. */
 export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
   LeadCriado: () => "Oportunidade criada",
   EtapaAlterada: (p) => {
@@ -110,7 +101,6 @@ export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
   DatasAtualizadas: () => "Datas atualizadas",
   InteracaoRegistrada: () => "Interação registrada",
   NotaInterna: () => "Nota interna",
-  // Agregado "Pessoa" (ficha do contato).
   PessoaCriada: () => "Contato criado",
   PessoaEditada: () => "Dados do contato editados",
   TagAtribuida: () => "Tag atribuída",
@@ -139,7 +129,6 @@ async function visivel(id: string, usuario: UsuarioSessao): Promise<boolean> {
   return !!achada;
 }
 
-/** Histórico rotulado (mais antigo primeiro). `null` = fora do escopo do usuário. */
 export async function historicoOportunidade(id: string, usuario: UsuarioSessao): Promise<ItemHistorico[] | null> {
   if (!(await visivel(id, usuario))) return null;
   const eventos = await prisma.evento.findMany({
@@ -156,7 +145,6 @@ export async function historicoOportunidade(id: string, usuario: UsuarioSessao):
   }));
 }
 
-/** Detalhe da oportunidade para o painel. `null` = fora do escopo do usuário. */
 export async function obterOportunidade(id: string, usuario: UsuarioSessao): Promise<DetalheOportunidade | null> {
   if (!usuario?.id || !capacidadesCrm(usuario.papeis).has("funil.ver")) return null;
   const l = await prisma.oportunidade.findFirst({
@@ -236,11 +224,6 @@ const TIPOS_POR_FILTRO: Record<Exclude<FiltroHistoricoPessoa, "tudo">, string[]>
 
 const LIMITE_HISTORICO_PESSOA = 500;
 
-/**
- * Histórico unificado da pessoa (mais antigo primeiro): eventos da Pessoa e dos "Lead" das oportunidades dela
- * que o usuário enxerga; eventos do "Aluno" ligado só para Secretaria e Administrador.
- * `null` = fora do escopo do usuário.
- */
 export async function historicoPessoa(
   id: string,
   usuario: UsuarioSessao,
@@ -253,7 +236,6 @@ export async function historicoPessoa(
   });
   if (!pessoa) return null;
 
-  // Lápides mescladas nesta pessoa (de forma transitiva): as notas e o histórico delas passaram para cá.
   const ids = [id];
   for (let fronteira = [id]; fronteira.length; ) {
     const lapides = await prisma.pessoa.findMany({
@@ -282,7 +264,6 @@ export async function historicoPessoa(
     take: LIMITE_HISTORICO_PESSOA,
     include: { autor: { select: { nome: true } } },
   });
-  // A mescla grava o mesmo PessoasMescladas na principal e na lápide; fica só o da principal daquela mescla.
   const unicos = eventos.filter((e) => {
     if (e.tipo !== "PessoasMescladas" || e.agregadoTipo !== "Pessoa") return true;
     const p = e.payload && typeof e.payload === "object" && !Array.isArray(e.payload) ? (e.payload as Record<string, unknown>) : null;

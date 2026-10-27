@@ -173,7 +173,6 @@ async function bloquearContextoRegistro(
   await tx.$queryRaw`SELECT id FROM "PropostaTerminoIndisponibilidadeOferta" WHERE "registroId" = ${registroId} FOR UPDATE`;
 }
 
-/** Propõe um término para relato positivo aberto; não altera o relato nem qualquer cobrança. */
 export async function proporTerminoIndisponibilidadeOferta(
   input: z.input<typeof ProporTerminoSchema>,
 ) {
@@ -264,7 +263,6 @@ export async function proporTerminoIndisponibilidadeOferta(
   });
 }
 
-/** Decide uma proposta de término. A aprovação continua sendo somente um fato, sem alterar o relato. */
 export async function decidirTerminoIndisponibilidadeOferta(
   input: z.input<typeof DecidirTerminoSchema>,
 ) {
@@ -361,7 +359,6 @@ export async function decidirTerminoIndisponibilidadeOferta(
   });
 }
 
-/** Lista propostas de término sem transformar aprovação em mudança do relato ou do financeiro. */
 export async function consultarTerminosIndisponibilidadeOferta(
   input: z.input<typeof ConsultarTerminosSchema>,
 ) {

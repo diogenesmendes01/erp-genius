@@ -47,7 +47,6 @@ export async function executarTarefaInboxTx(sessao:UsuarioSessao,atendimentoId:s
    let inicioEm:Date|null=null;
    if(q!.dataCivil&&q!.hora){const r=instanteDoCampoLocal(q!.dataCivil+"T"+q!.hora,fuso!);if(!r.ok)throw new ErroRegra(r.erro);inicioEm=r.instante;}
    const antecedencia=inicioEm?c.tarefa.lembreteAntecedenciaMin:null;
-   // Instante é autoridade. A projeção civil na origem não volta a ser interpretada (dobra DST).
    const dataCivil=inicioEm?valorCampoLocal(inicioEm,c.tarefa.fusoOrigem).slice(0,10):q!.dataCivil;
    mudou=await reagendarTarefaTx(c,{dataCivil,inicioEm,lembreteAntecedenciaMin:antecedencia,lembrarEm:inicioEm&&antecedencia!==null?new Date(inicioEm.getTime()-antecedencia*60000):null});
   }

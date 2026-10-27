@@ -4,9 +4,6 @@ import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { elementos, primeiraPintura } from "@/test/tela-sem-dom";
 
-// E10 (docs/43 §6 item 10; docs/42 /matriculas/[id] #3: "/preparacao faz 2 consultas encadeadas"): o
-// diagnóstico de prontidão da Secretaria, a segunda consulta, sai num <Suspense> — a proposta aparece
-// sem esperar por ele. O guard continua sendo a primeira coisa a rodar.
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), preparacao: vi.fn(), pendencias: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/preparacao-consulta", () => ({ consultarPreparacaoContratacao: mocks.preparacao }));
@@ -43,7 +40,6 @@ describe("/matriculas/[id]/preparacao: a prontidão da Secretaria não segura a 
     const primeira = renderToStaticMarkup(primeiraPintura(arvore) as ReactElement);
     expect(primeira).toContain("Proposta da contratação · M-000123");
     expect(primeira).toContain('href="/matriculas/m1/desistencia"');
-    // O título do quadro não depende da consulta: sai já, uma vez só, com o corpo em espera anunciado.
     expect(primeira.split("Pendências para conferência da Secretaria</h2>").length - 1).toBe(1);
     expect(primeira).toMatch(/<p class="sr-only" role="status">Carregando pendências para conferência da Secretaria<\/p>/);
     expect(primeira).toContain('aria-busy="true"');

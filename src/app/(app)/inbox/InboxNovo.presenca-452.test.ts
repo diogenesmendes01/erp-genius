@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const m=vi.hoisted(()=>({g:null as null|import("@/test/tela-sem-dom").Ganchos,atividade:vi.fn(),montar:vi.fn()}));
 vi.mock("@/lib/presenca-inbox-cliente",()=>({interagirPresencaInbox:m.atividade,montarPresencaInbox:m.montar}));
-// Somente efeitos/I/O de montagem são suspensos; binding do Inbox e hook de atividade são reais.
 vi.mock("react",async original=>{const real=await original<typeof import("react")>();return{...real,useState:((i:unknown)=>m.g!.useState(i)) as typeof real.useState,useRef:((i:unknown)=>m.g!.useRef(i)) as typeof real.useRef,useCallback:((fn:unknown)=>fn) as typeof real.useCallback,useMemo:((fn:()=>unknown)=>fn()) as typeof real.useMemo,useEffect:()=>{},useLayoutEffect:()=>{},useSyncExternalStore:()=>null};});
 vi.mock("next/navigation",()=>({useRouter:()=>({push:vi.fn(),replace:vi.fn()}),useSearchParams:()=>null,usePathname:()=>"/inbox"}));
 vi.mock("./useEventosInbox",()=>({useEventosInbox:()=>({conectado:true})}));

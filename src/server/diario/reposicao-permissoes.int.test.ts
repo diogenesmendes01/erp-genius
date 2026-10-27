@@ -286,7 +286,6 @@ it("bloqueia conclusão após pausa e gravação sem avaliador designado", async
   entrar(professorId);
   expect((await concluirReposicaoIndividual({ reposicaoId: "r-pausada", versaoAnterior: 0, encontroReposicaoId: encontroReposicao.encontroId, evidencia: "Diário da reposição realizada" })).ok).toBe(false);
 
-  // A tabela deve recusar a fonte gravada enquanto não houver designação vigente.
   await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "ATIVA" } });
   await inserirReposicao("r-gravacao", gestorId, "GRAVACAO", await outraOrigem());
   await autorizarReposicao("r-gravacao", adminId);

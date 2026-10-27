@@ -8,7 +8,6 @@ let render: (visivel: boolean, sobreposto: boolean, enriquecido?: boolean, consu
 vi.mock("@tabler/icons-react", () => ({
   IconChevronLeft: (p: object) => createElement("span", p), IconX: (p: object) => createElement("span", p), IconSparkles: (p: object) => createElement("span", p),
 }));
-// O DOM mínimo não implementa namespaces SVG; mock apenas dos três ícones decorativos.
 const ouvintes: { alvo: object; tipo: string; f: (e: Event) => void; captura: boolean }[] = [];
 function eventos(alvo: object) { return {
   addEventListener(tipo: string, f: (e: Event) => void, captura = false) { ouvintes.push({ alvo, tipo, f, captura }); },

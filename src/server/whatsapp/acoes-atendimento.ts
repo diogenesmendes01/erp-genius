@@ -31,20 +31,14 @@ type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 const IdSchema = z.string().min(1);
 const AtribuirSchema = z.object({ atendimentoId: z.string().min(1), usuarioId: z.string().min(1) });
 
-/** Eventos que mudam o responsável do atendimento: o último deles diz quem deixou o estado atual. */
 const TIPOS_RESPONSAVEL = ["AtendimentoAssumido", "AtendimentoDevolvido", "AtendimentoAtribuido"];
 
-/** O atendimento já é de `u` porque `u` o assumiu por último (#166): o reenvio não grava outro Evento. */
 async function jaAssumidoPor(tx: Tx, id: string, u: { id: string }): Promise<boolean> {
   const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { responsavelId: true, encerradoEm: true } });
   if (atual?.responsavelId !== u.id || atual.encerradoEm) return false;
   return ultimoEventoEhDoAutor(tx, { agregadoId: id, tipos: TIPOS_RESPONSAVEL, tipo: "AtendimentoAssumido", autorId: u.id, payload: { para: u.id } });
 }
 
-/**
- * D3: assume a condução da Aria com atribuição, pausa MANUAL e cancelamentos canônicos.
- * Autorização contextual e ator são relidos na TX; replay pertence ao mesmo ciclo MANUAL.
- */
 export async function assumirConversaDaAria(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -53,11 +47,6 @@ export async function assumirConversaDaAria(atendimentoId: string): Promise<Resu
   });
 }
 
-/**
- * Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional).
- * Idempotente por natureza (#166): o reenvio de quem já o assumiu devolve ok sem outro Evento. Se o atendimento
- * chegou a quem repete por atribuição de outra pessoa, ou está com outro, segue "já assumiu".
- */
 export async function assumirAtendimento(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -71,7 +60,6 @@ export async function assumirAtendimento(atendimentoId: string): Promise<Resulta
     const repetido = await prisma.$transaction(async (tx) => {
       const status = proximoStatus(a.status, "ASSUMIDO", true);
       const r = await tx.atendimentoWhatsApp.updateMany({ where: { id, responsavelId: null, encerradoEm: null }, data: { responsavelId: u.id, status } });
-      // Clique duplo: o UPDATE do segundo espera o primeiro confirmar e não acha mais a fila.
       if (r.count !== 1) {
         if (await jaAssumidoPor(tx, id, u)) return true;
         throw new ErroRegra(MSG_JA_ASSUMIDO);
@@ -84,10 +72,6 @@ export async function assumirAtendimento(atendimentoId: string): Promise<Resulta
   });
 }
 
-/**
- * Devolve à fila: zera o responsável, volta a ABERTO_SEM_RESPONSAVEL e cancela as intenções humanas pendentes dele.
- * Idempotente por natureza (#166): se quem repete foi quem devolveu por último, devolve ok sem outro Evento.
- */
 export async function devolverParaFila(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -112,7 +96,6 @@ export async function devolverParaFila(atendimentoId: string): Promise<Resultado
   });
 }
 
-/** Gerente do setor entrega o atendimento a alguém que atende o setor. */
 export async function atribuirAtendimento(input: { atendimentoId: string; usuarioId: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -130,11 +113,6 @@ const TransferirSchema = z.object({
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
-/**
- * Transferir = encerrar a origem e abrir outro atendimento no setor de destino (E3.3); o contexto da origem nunca muda.
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve o atendimento novo já aberto. A busca roda
- * antes das validações de estado: com a origem já encerrada, o reenvio tardio recebe o mesmo atendimento.
- */
 export async function transferirAtendimento(input: { atendimentoId: string; destino: Setor; destinoChave: string | null; contexto: string; chaveIdempotencia?: string }): Promise<Resultado<{ novoAtendimentoId: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -155,10 +133,6 @@ const ConvidarSchema = z.object({
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
-/**
- * Convida alguém (de qualquer setor) a ver o atendimento, por prazo de até 30 dias (E3.4). Início = agora; concedente = quem convida.
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve o convite já criado em vez de "já participa".
- */
 export async function convidarParticipante(input: { atendimentoId: string; usuarioId: string; podeEnviar: boolean; fim: string; motivo: string; chaveIdempotencia?: string }): Promise<Resultado<{ participanteId: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -168,7 +142,6 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
     const fim = new Date(dados.fim);
     const participanteId = await prisma.$transaction(async (tx) => {
       if (marca) {
-        // Antes das validações de prazo: o reenvio de um convite já criado devolve o mesmo, mesmo perto do fim.
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "ParticipanteConvidado", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
           mensagemConflito: "Esta tentativa já foi usada com outro convite. Confira os participantes do atendimento antes de repetir.",
@@ -199,30 +172,15 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
   });
 }
 
-/**
- * Convite e revogação só gravam em ParticipanteAtendimentoWhatsApp, que não tem o trigger `notificar_inbox`. Um
- * UPDATE sem mudança no AtendimentoWhatsApp, na mesma transação, dispara o `atendimento.atualizado` (o trigger é
- * FOR EACH ROW sem WHEN; o NOTIFY só sai no commit): o convidado vê o compositor liberar (ou travar) sem reabrir.
- */
 async function avisarMudancaDeEscopo(tx: Prisma.TransactionClient, atendimentoId: string): Promise<void> {
   await avisarAtendimento(tx, atendimentoId);
 }
 
-/**
- * Depois da revogação o ex-convidado está fora do escopo, e o filtro do SSE descartaria o `atendimento.atualizado`
- * comum: este aviso direcionado (só ids, nenhum conteúdo da conversa) passa só para ele, o painel recarrega com 404
- * e o compositor trava sem reabrir (C1 da revisão do #223). O NOTIFY, como o do trigger, só sai no commit.
- */
 async function avisarRevogado(tx: Prisma.TransactionClient, atendimento: { id: string; conversaId: string }, usuarioId: string): Promise<void> {
   const aviso: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: atendimento.id, mensagemId: null, conversaId: atendimento.conversaId, paraUsuarioId: usuarioId };
   await tx.$executeRaw`SELECT pg_notify(${CANAL_INBOX}, ${JSON.stringify(aviso)})`;
 }
 
-/**
- * Revoga na hora (revogadoEm = agora, sem delete). Quem revoga: o concedente, o gerente do setor ou o administrador.
- * Idempotente por natureza (#166): o reenvio de quem revogou devolve ok sem outro Evento; revogado por outra pessoa,
- * segue recusado.
- */
 export async function revogarParticipante(participanteId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -235,7 +193,6 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
       const agora = new Date();
       const r = await tx.participanteAtendimentoWhatsApp.updateMany({ where: { id, revogadoEm: null }, data: { revogadoEm: agora } });
       if (r.count !== 1) {
-        // #166: o reenvio de quem revogou devolve ok sem outro Evento (o UPDATE do clique duplo espera o primeiro).
         const revogacao = await tx.evento.findFirst({
           where: { tipo: "ParticipanteRevogado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: p.atendimento.id, payload: { path: ["participanteId"], equals: id } },
           select: { autorId: true },
@@ -245,8 +202,6 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
       }
       await avisarMudancaDeEscopo(tx, p.atendimento.id);
       await avisarRevogado(tx, p.atendimento, p.usuarioId);
-      // Como devolver/atribuir: o que o revogado deixou pendente ou agendado fica CANCELADA, a menos que ele
-      // ainda possa enviar neste atendimento por outro vínculo (responsável, gerente, outro convite).
       const aindaEnvia = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: p.atendimento.id }, await escopoAtendimentos(p.usuario, { enviar: true, agora, db: tx })] } });
       if (aindaEnvia === 0) {
         await tx.intencaoMensagem.updateMany({

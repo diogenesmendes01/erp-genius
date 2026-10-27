@@ -24,7 +24,6 @@ describe("escolherResponsavel", () => {
   });
 });
 
-// Regra do rodízio no npm test (prisma mockado); o caminho com banco real fica em distribuicao.int.test.ts.
 describe("atribuirAutomaticamente (tx mockada)", () => {
   type Atendimento = { finalidade: "COMERCIAL"; status: string; responsavelId: string | null; primeiroInboundEm: Date | null; encerradoEm: Date | null; leadId: string | null; conversa: { grupoId: string | null; contato: { leadId: string | null } } };
   const novo = (over: Partial<Atendimento> = {}): Atendimento => ({

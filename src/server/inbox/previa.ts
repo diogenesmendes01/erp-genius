@@ -3,7 +3,6 @@ import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 
 export type AutorPrevia = "aria" | "voce" | "pessoa" | "sugestao";
 
-/** Sugestao vigente recebe apenas rotulo: seu texto/payload nao pertence a esta interface. */
 export function autorDaPrevia(
   m: { direcao: "ENTRADA" | "SAIDA"; origem: OrigemEnvio | null; autorId: string | null; autorNome: string | null; criadoEm: Date } | null,
   sugestao: { acao: AcaoAgenteIATipo; criadoEm: Date } | null,

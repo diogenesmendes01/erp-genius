@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): a reconferência da pendência guardava erro e
-// explicação no mesmo estado `resultado`. Agora: erro em role="alert", explicação do servidor em
-// role="status", falha de rede como resultado incerto e o formulário saindo do ocupado.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(), reconferir: vi.fn(),
@@ -30,7 +27,6 @@ afterEach(() => { vi.unstubAllGlobals(); });
 
 const tela = () => m.ganchos!.renderizar(ReconferirPendencia, { pendenciaId: "pendencia" });
 const botaoEnvio = () => elementos(tela()).find((n) => n.type === "button");
-/** Digita o motivo no campo controlado (o <CampoTexto> não é chamado sem DOM: usa-se o onChange que a tela lhe passa). */
 const digitar = (valor: string) => {
   const campo = elementos(tela()).find((n) => n.type === CampoTexto);
   (campo!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
@@ -52,7 +48,6 @@ describe("ReconferirPendencia", () => {
     const antes = anuncios(tela());
     await submeter(tela());
     expect(m.reconferir).toHaveBeenCalledWith({ pendenciaId: "pendencia", motivo: "Matrícula reativada pela secretaria." });
-    // Pendência não resolvida é o resultado da reconferência, não falha da ação: continua como status.
     expect(novosAnuncios(antes, anuncios(tela()))).toEqual({ alerta: [], status: ["A matrícula não está ativa para reconferir o aviso."] });
     expect(m.refresh).not.toHaveBeenCalled();
     m.reconferir.mockResolvedValueOnce({ ok: true, dado: { resolvida: true, explicacao } });

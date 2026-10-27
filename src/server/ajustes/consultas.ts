@@ -12,7 +12,6 @@ import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referencia
 import { vencimentoEmAtraso } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-/** Ausência de identidade e vínculo nunca concede acesso global. */
 export function escopoFichaFinanceira(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
   return usuario && financeiroOperacional(usuario) ? {} : { id: { in: [] } };
 }
@@ -55,8 +54,6 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   });
   if (!aluno) return null;
 
-  // Borda Server → Client: Decimal (dinheiro no banco) vira number aqui, antes de
-  // qualquer soma/serialização — ver `_shared/decimal`.
   const alunoPlano = semDecimais(aluno);
   const cobrancas = alunoPlano.matriculas.flatMap((m) => m.cobrancas);
   const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), alunoPlano.matriculas.map((m) => m.id));
@@ -68,10 +65,8 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   })]));
   const ajustes = alunoPlano.matriculas.flatMap((m) => m.ajustes);
   const comissoes = alunoPlano.matriculas.flatMap((m) => m.comissoes);
-  // Ref. #247: o vencimento é um dia civil; a cobrança só entra em atraso quando o dia da escola passa dele.
   const agora = new Date(), fuso = await fusoDaEscola();
 
-  // Por moeda (nunca soma moedas diferentes) — o aluno pode ter matrículas em moedas distintas.
   const emAtraso = somarPorMoeda(
     cobrancas
       .filter((c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && vencimentoEmAtraso(c.vencimento, agora, fuso)))
@@ -92,8 +87,6 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   const responsavelFinanceiro =
     aluno.responsaveis.find((r) => r.papel === "FINANCEIRO")?.responsavel.nome ?? "O próprio aluno";
 
-  // Régua (read-only) por cobrança ABERTA + histórico financeiro: a ficha passa a contar a
-  // MESMA história da fila de cobrança, via o cérebro compartilhado, sem ganhar ações (doc 24).
   const reguaPorCobranca = await montarReguaPorCobranca(
     alunoPlano.matriculas.flatMap((m) =>
       m.cobrancas
@@ -134,8 +127,6 @@ export async function listarAprovacoesPendentes() {
   const matriculas = adm ? [] : await prisma.matricula.findMany({
     where: await escopoMatriculaAprovacao(usuario), select: { id: true, cobrancas: { select: { id: true } } },
   });
-  // A carteira pode mudar depois do pedido. O solicitante histórico sozinho não
-  // autoriza ler valores de um objeto que saiu da equipe supervisionada.
   const objetos: Prisma.AprovacaoWhereInput = adm ? {} : { OR: [
     { alvoTipo: "Matricula", alvoId: { in: matriculas.map((m) => m.id) } },
     { alvoTipo: "Cobranca", alvoId: { in: matriculas.flatMap((m) => m.cobrancas.map((c) => c.id)) } },
@@ -149,10 +140,9 @@ export async function listarAprovacoesPendentes() {
     orderBy: { criadoEm: "asc" },
     include: { solicitante: { select: { nome: true } } },
   });
-  return semDecimais(aprovacoes); // impactoMensal: Decimal → number (borda Server → Client)
+  return semDecimais(aprovacoes);
 }
 
-/** Contexto da negociação: não contém saldo, inadimplência, comprovantes ou extrato. */
 export async function obterResumoComercialFinanceiro(alunoId: string, usuario: UsuarioSessao) {
   const atual = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   if (atual.id !== usuario.id) return null;
@@ -176,7 +166,6 @@ export async function obterResumoComercialFinanceiro(alunoId: string, usuario: U
     pagamentoInicialConfirmado: m.cobrancas.find((c) => c.tipo === "MATRICULA")?.status === "PAGO",
     precos: (["MATRICULA", "MENSALIDADE"] as const).flatMap((tipo) => {
       const c = m.cobrancas.find((c) => c.tipo === tipo);
-      // Q173: a primeira cobrança pode estar na moeda anterior a uma troca; o rótulo segue a moeda da própria cobrança.
       return c ? [{ id: c.id, tipo, moeda: c.moeda, referencia: c.valorOriginal, valor: c.valorNegociado }] : [];
     }), comissoes: m.comissoes,
   })) });

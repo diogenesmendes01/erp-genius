@@ -20,8 +20,6 @@ const contextoAcademico = z.object({
 
 const filaDocente = z.object({ antesId: z.string().min(1).optional(), limite: z.number().int().min(1).max(50).default(20) }).strict();
 
-/** Entrada docente para Q54: conclusão existente e atribuição atual, sem
- * exigir que a matrícula siga ativa nem abrir a ficha do aluno. */
 export async function listarReposicoesConcluidasDesignadas(input: z.input<typeof filaDocente> = {}) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR);
@@ -82,8 +80,6 @@ function fonteConclusao(conclusao: {
   };
 }
 
-/** Q54: leitura restrita à Gestão/Admin ou ao docente atualmente designado.
- * Não reutiliza a consulta ampla de equipe, que também atende Secretaria. */
 export async function consultarCorrecoesConclusaoReposicao(input: z.input<typeof filtro>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -188,7 +184,6 @@ export async function consultarCorrecoesConclusaoReposicao(input: z.input<typeof
           } catch (erro) {
             if (!(erro instanceof ErroRegra) && !(erro instanceof ErroPermissao)) throw erro;
             impedimentoAprovacao = erro.message;
-            // A ação sempre repete a prova. Esta flag só evita prometer aprovação inviável.
           }
         }
         if (correcao.decisao?.aprovada && correcao.decisao.contextoAcademico) {

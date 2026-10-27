@@ -9,7 +9,6 @@ export type ItemMenuConversa = { id: string; rotulo: string; icone: ReactNode; d
 export type AcaoConversa = { gatilhoRef?: RefCallback<HTMLButtonElement>; rotulo: string; aoEscolher(): void; ocupado?: boolean };
 export type AcoesCabecalho = { assumir: AcaoConversa | null; transferir: AcaoConversa | null; menu: ItemMenuConversa[]; dialogos: ReactNode; feedback: ReactNode; abrirAgendar: (() => void) | null };
 
-/** Capacidades do ERP: não são IDs visuais do menu (notaInterna, convidar/agendar). */
 export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: boolean; silenciada: boolean; acoes: Record<string, () => void> }): ItemMenuConversa[] {
  const item = (id: string, rotulo: string, Icone: typeof IconMail, extra: Partial<ItemMenuConversa> = {}): ItemMenuConversa => ({ id, rotulo, icone: <Icone size={16} />, aoEscolher: o.acoes[id], ...extra });
  return [

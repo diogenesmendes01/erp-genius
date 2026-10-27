@@ -41,12 +41,9 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
   const aceite = consultaAceite?.ok ? consultaAceite.dado : null;
   const consultaIntegracao = await consultarIntegracaoAssinatura();
   const integracao = consultaIntegracao.ok ? consultaIntegracao.dado : null;
-  // Só a conferência registrada para a revisão atual autoriza o envio, e só pelo mesmo serviço/ambiente do
-  // processo já existente; a ação revalida tudo na transação.
   const conferenciaAtual = atual ? d.historico.find((h) => h.revisaoHash === atual.hash) ?? null : null;
   const mesmoServico = !!integracao && (!processo || (processo.fornecedor === integracao.fornecedor && processo.ambiente === integracao.ambiente));
   const podeEnviar = mesmoServico && !!conferenciaAtual && (!processo || processo.estadoEnvio === "PREPARADO");
-  // ENVIANDO recente pode ter a criação em voo: só ENVIO_INCERTO ou ENVIANDO vencido (B-1 da revisão rigorosa do #288).
   const podeConciliar = mesmoServico && !!processo && conciliacaoLiberada(processo.estadoEnvio, processo.tentativaAtualIniciadaEm).liberada;
   return <div className="space-y-4">
     <VoltarPara href={`/matriculas/${id}/contrato`} para="Documentos da matrícula" />

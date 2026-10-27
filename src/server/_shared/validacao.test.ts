@@ -62,8 +62,6 @@ describe("telefoneE164 (bloqueia)", () => {
   });
 });
 
-// Ref. #247: a data digitada é um dia civil da ESCOLA. Vira o meio-dia do fuso da escola, nunca o do relógio do
-// servidor (UTC em produção). Instantes fixos; verde com TZ=UTC e TZ=America/Sao_Paulo.
 describe("paraDataLocal (date-only → meio-dia da escola, sem recuar 1 dia)", () => {
   it("ancora 'YYYY-MM-DD' no meio-dia do fuso da escola", () => {
     expect(paraDataLocal("2026-01-01", "America/Sao_Paulo")).toEqual(new Date("2026-01-01T15:00:00.000Z"));
@@ -125,7 +123,6 @@ describe("dataHoraOpcional (schema datetime-local)", () => {
   it("aceita o instante já convertido e recusa o texto do datetime-local sem fuso", () => {
     expect(dataHoraOpcional.parse("2026-06-22T12:15:00.000Z")).toEqual(new Date("2026-06-22T12:15:00.000Z"));
     expect(dataHoraOpcional.safeParse("2026-06-22T09:15").error?.issues[0]?.message).toMatch(/sem fuso/);
-    // Malformado (segundos :60): também erro de validação legível, não exceção solta.
     expect(dataHoraOpcional.safeParse("2026-06-22T09:15:60").error?.issues[0]?.message).toMatch(/sem fuso/);
   });
   it("trata vazio/null/undefined como undefined", () => {
@@ -135,7 +132,6 @@ describe("dataHoraOpcional (schema datetime-local)", () => {
   });
 });
 
-// Port da #62 (d379bbc3), lote 1 da #164. Documento continua "avisa, não bloqueia".
 describe("validarDocumento (documentos estrangeiros)", () => {
   it("cédula CR: física de 9 dígitos ou DIMEX de 11–12, com máscara", () => {
     expect(validarDocumento("cedula_cr", "1-0234-0567")).toBe(true);
@@ -155,13 +151,12 @@ describe("validarDocumento (documentos estrangeiros)", () => {
     expect(validarDocumento("curp", "MAAR790213HMNRLF03")).toBe(true);
   });
   it("CURP: recusa entidade federativa inexistente e data impossível", () => {
-    // Mesmo dígito verificador recalculado: só a regra de formato pode recusar.
     expect(validarDocumento("curp", "HEGG560427MXXRRL02")).toBe(false);
     expect(validarDocumento("curp", "HEGG560231MVZRRL00")).toBe(false);
   });
   it("CURP: nascido no exterior (NE) e homoclave com letra para 2000 em diante", () => {
     expect(validarDocumento("curp", "PEGJ000101HNEXXXA4")).toBe(true);
-    expect(validarDocumento("curp", "PEGJ000229HNEXXXA1")).toBe(true); // 29/02/2000 existe
+    expect(validarDocumento("curp", "PEGJ000229HNEXXXA1")).toBe(true);
   });
   it("DNI AR: 7 ou 8 dígitos com pontos", () => {
     expect(validarDocumento("dni_ar", "12.345.678")).toBe(true);

@@ -47,7 +47,6 @@ describe("/tarefas (página)", () => {
   });
 
   it("guard dos papéis com tarefas", () =>
-    // O helper devolve os papéis em ordem alfabética.
     expect(papeisDoGuardArquivo("src/app/(app)/tarefas/page.tsx")).toEqual(["ADMINISTRADOR", "FINANCEIRO", "GERENTE_COMERCIAL", "SECRETARIA_ACADEMICA", "VENDEDOR"]));
 
   it("deep link ?t= abre o painel; vendedor não vê Equipe", async () => {

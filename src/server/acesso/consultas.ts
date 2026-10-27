@@ -4,7 +4,6 @@ import { exigirSessaoComPapel } from "@/server/_shared";
 import { Papel, type Prisma } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 
-// Consultas (leitura) de Usuários — Server Components.
 export async function listarUsuarios() {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const usuarios = await prisma.usuario.findMany({
@@ -23,7 +22,6 @@ export async function listarUsuarios() {
       ultimoAcesso: true,
     },
   });
-  // limiteDescontoPct: Decimal → number (borda Server → Client)
   return usuarios.map((u) => ({ ...u, limiteDescontoPct: numeroOuNull(u.limiteDescontoPct), limiteDescontoTaxaPct: numeroOuNull(u.limiteDescontoTaxaPct), limiteDescontoMensalidadePct: numeroOuNull(u.limiteDescontoMensalidadePct) }));
 }
 
@@ -31,10 +29,6 @@ export type UsuarioListado = Awaited<ReturnType<typeof listarUsuarios>>[number];
 
 const COBERTURAS_POR_PAGINA = 50;
 
-/**
- * Coberturas da carteira (aba Coberturas de /carteira): o administrador vê todas; o gerente, só as da equipe
- * (titular e substituto sob a gerência dele); os demais papéis não têm a lista. 50 por página, mais recentes primeiro.
- */
 export async function listarCoberturas(
   usuario: UsuarioSessao,
   pagina: number,

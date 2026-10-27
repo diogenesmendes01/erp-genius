@@ -6,7 +6,6 @@ export const APROVADORES_PAUSA: Papel[] = [Papel.FINANCEIRO, Papel.ADMINISTRADOR
 export const hashPausa = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 
 export async function estadoHashPausa(tx: Prisma.TransactionClient, ids: string[]) {
-  // O conteúdo financeiro participa da conferência, mas não da projeção da Secretaria.
   return hashPausa(await tx.matricula.findMany({ where: { id: { in: ids } }, orderBy: { id: "asc" }, include: {
     cobrancas: { orderBy: { id: "asc" }, include: { destinacoesRecebimento: { orderBy: { id: "asc" }, include: { recebimento: true } }, informes: { orderBy: { id: "asc" } } } },
     alocacoes: { orderBy: { id: "asc" } },

@@ -77,9 +77,6 @@ it("calcula totais em centavos e confirma múltipla destinação com crédito", 
   }));
 });
 
-// Item A da review do #289 (lote 3 do fuso pessoal): a data do pagamento ia como o meio-dia do NAVEGADOR
-// (`new Date("2026-10-05T12:00:00")`); em Sydney isso é 2026-10-05T01:00Z, que a escola em São Paulo lê como 04/10.
-// Agora vai o texto digitado (AAAA-MM-DD), qualquer que seja o fuso do navegador; o servidor grava o meio-dia da escola.
 it("envia a data digitada como AAAA-MM-DD, sem converter no fuso do navegador (Sydney, São Paulo, UTC)", async () => {
   const anterior = process.env.TZ;
   try {

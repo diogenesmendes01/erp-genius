@@ -9,7 +9,6 @@ import { conferirGestorAvaliacao } from "./regras-tx";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
 import { AutorizarPreparacaoRecuperacaoSchema } from "./recuperacao-autorizacao-preparacao-schema";
 
-/** Liberação da preparação de uma pendência acadêmica. Não aprova nem executa seu plano. */
 export async function autorizarPreparacaoEspecialRecuperacao(input: z.input<typeof AutorizarPreparacaoRecuperacaoSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

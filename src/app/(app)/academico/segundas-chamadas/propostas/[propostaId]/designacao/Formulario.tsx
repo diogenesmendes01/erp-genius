@@ -16,7 +16,6 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
   fusoInstitucional: string | null;
 }) {
   const router = useRouter();
-  // Chave de idempotência estável entre tentativas com a mesma entrada: na falha de transporte, reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const periodo = useInicioDoPeriodo();
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);

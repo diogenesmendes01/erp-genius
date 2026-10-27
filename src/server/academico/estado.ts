@@ -8,7 +8,6 @@ export const APROVADORES_ACADEMICOS: Papel[] = [Papel.GERENTE_PEDAGOGICO, Papel.
 export const EXECUTORES_ACADEMICOS: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR];
 export const STATUS_ABERTOS_ACADEMICOS = ["PENDENTE", "APROVADA"] as const;
 
-/** Projeção acadêmica explícita: não carrega contato, documento, preços ou cobranças. */
 export const turmaAcademicaSelect = {
   id: true, codigo: true, nome: true, nivelId: true, modalidadeId: true, professorId: true,
   status: true, online: true, diasSemana: true, horarioInicio: true, horarioFim: true, diasHorario: true,
@@ -21,7 +20,6 @@ export const turmaAcademicaSelect = {
 
 export type TurmaAcademica = Prisma.TurmaGetPayload<{ select: typeof turmaAcademicaSelect }>;
 
-/** Sempre reler depois dos locks: autorização anterior à espera não autoriza a escrita. */
 export async function exigirUsuarioAcademicoAtual(tx: Prisma.TransactionClient, id: string, papeis: Papel[]) {
   const usuario = await tx.usuario.findUnique({ where: { id }, select: { id: true, nome: true, ativo: true, papeis: true } });
   if (!usuario?.ativo || !usuario.papeis.some((p) => papeis.includes(p))) {
@@ -30,10 +28,7 @@ export async function exigirUsuarioAcademicoAtual(tx: Prisma.TransactionClient, 
   return usuario;
 }
 
-/** Mesma ordem da pausa/retomada; Turma serializa ocupação com a alocação da matrícula. */
 export async function bloquearEstadoAcademico(tx: Prisma.TransactionClient, alunoId: string, turmaDestinoId?: string) {
-  // Grade, calendário, encontros e ausências usam esta trava antes das turmas.
-  // A disponibilidade fotografada para a transferência precisa da mesma ordem.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await bloquearCalendarioAluno(tx, alunoId);
   const origens = await tx.alocacaoTurma.findMany({ where: { alunoId, ativa: true }, select: { turmaId: true } });
@@ -66,7 +61,6 @@ alunoId: string, turmaDestinoId?: string, matriculaId?: string, agora = new Date
   const matriculas = await tx.matricula.findMany({ where: { alunoId, ...(matriculaId ? { id: matriculaId } : {}) }, orderBy: { id: "asc" }, select: {
     id: true, status: true, produtoId: true, produto: { select: { idiomaId: true, modalidadeId: true } },
   } });
-  // Movimentos sem contrato ainda podem afetar o cadastro inteiro e exigem conferência.
   const escopoMovimentos: Prisma.MovimentacaoAlunoWhereInput = { alunoId, ...(matriculaId ? { OR: [{ matriculaId }, { matriculaId: null }] } : {}) };
   const ultimaMovimentacao = await tx.movimentacaoAluno.findFirst({ where: escopoMovimentos, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true, tipo: true, criadoEm: true } });
   const totalMovimentacoes = await tx.movimentacaoAluno.count({ where: escopoMovimentos });

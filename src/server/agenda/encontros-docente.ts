@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
-/** Atribuição por encontro não concede acesso ao cadastro, financeiro ou restante da turma. */
 export async function consultarEncontrosDocente(input: { encontroId?: string; cursor?: string; limite?: number } = {}) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);

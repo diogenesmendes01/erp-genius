@@ -32,7 +32,6 @@ export function AbaFunil({ dados, anterior, params }: { dados: Dados; anterior: 
               {dados.etapas.map((e) => (
                 <tr key={e.etapa}>
                   <th scope="row" className="p-2 text-left font-normal">
-                    {/* O painel da etapa é o retrato atual (coluna "Agora"), não as que chegaram no período. */}
                     <Link
                       href={hrefRelatorio(params, { detalhe: "etapa:" + e.etapa, busca: null })}
                       className={link}

@@ -19,11 +19,6 @@ const decisaoSchema = z.object({
 }).strict();
 const snapshotSchema = z.object({ estadoHash: hash }).passthrough();
 
-/**
- * A proposta é imutável, mas a decisão precisa serializar com uma nova versão
- * do mesmo contexto. O lock acadêmico vem antes da releitura da proposta para
- * não autorizar uma decisão com o aluno, matrícula ou turma já alterados.
- */
 async function bloquearPropostaEquivalencia(tx: Prisma.TransactionClient, propostaId: string) {
   const referencia = await tx.propostaEquivalenciaAvaliacao.findUnique({
     where: { id: propostaId },
@@ -57,11 +52,6 @@ function estadoHashDaProposta(snapshot: Prisma.JsonValue) {
   return resultado.data.estadoHash;
 }
 
-/**
- * Q153: decisão independente da gestão. Aprovação só sobrevive com fontes,
- * regras e alocação ainda atuais; rejeição preserva a proposta histórica mesmo
- * quando o estado operacional posterior já não permite aplicá-la.
- */
 export async function decidirEquivalenciaTransferencia(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -82,9 +72,6 @@ export async function decidirEquivalenciaTransferencia(input: unknown) {
       }
 
       if (dados.aprovar) {
-        // A aprovação faz o proponente voltar a passar pela autorização atual.
-        // A rejeição continua possível para encerrar a proposta histórica mesmo
-        // se ele já não estiver ativo ou se o contexto tiver sido superado.
         await exigirUsuarioAcademicoAtual(tx, p.preparadorId, APROVADORES_ACADEMICOS);
         const mapeamentos = EntradaEquivalenciaTransferenciaSchema.shape.mapeamentos.safeParse(p.mapeamentos);
         if (!mapeamentos.success) throw new ErroRegra("Os mapeamentos preservados na proposta não são válidos. Prepare nova versão.");

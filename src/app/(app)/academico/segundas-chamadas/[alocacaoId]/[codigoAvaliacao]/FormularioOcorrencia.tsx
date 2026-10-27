@@ -15,7 +15,6 @@ const tipos = [
 
 export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; fuso: string }) {
   const router = useRouter();
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
 
   return <form className="space-y-3 rounded border p-3" onSubmit={async evento => {

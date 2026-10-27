@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 8 (docs/42 /pagar #5 e #6): o pagamento no ambiente de teste anuncia erro e sucesso em regiões
-// separadas, troca o rótulo para "Tentar de novo" depois da recusa e some com o botão depois do sucesso. Sem DOM
-// e sem rede: ganchos de src/test/tela-sem-dom.ts; a chamada ao webhook (./requisicao) é um mock.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, pagar: vi.fn(), refresh: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push: vi.fn() }) }));
 vi.mock("react", async (original) => {
@@ -29,7 +26,6 @@ const clicarPagar = () => (botaoDePagar()!.props.onClick as () => unknown)();
 beforeEach(() => {
   vi.clearAllMocks();
   m.ganchos = criarGanchos();
-  // Rede de segurança: nenhuma chamada real ao webhook.
   vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("fetch real não pode ser chamado no teste"); }));
 });
 afterEach(() => { vi.unstubAllGlobals(); });

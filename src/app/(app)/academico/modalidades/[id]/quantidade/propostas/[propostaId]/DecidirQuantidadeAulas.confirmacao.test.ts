@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Aprovar a quantidade de aulas (docs/42 L1218; fatia B, issue #169): "Aprovar e aplicar" muda a quantidade de
-// todas as turmas impactadas. O botão só abre o ConfirmarAcao, que repete a mudança e o número de turmas e exige
-// "Conferi as {n} turmas impactadas"; só a confirmação chama a action.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),
@@ -58,7 +55,7 @@ describe("DecidirQuantidadeAulas — aprovar passa pela confirmação", () => {
     expect(consequencia).toContain("A quantidade de aulas passa de 40 para 44 em 6 turmas impactadas de uma vez");
     expect(consequencia).toContain(`Motivo registrado: ${MOTIVO}`);
     expect(consequencia).toContain("Não há desfazer pela tela");
-    expect(m.decidir).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.decidir).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.decidir).toHaveBeenCalledTimes(1);
     expect(m.decidir).toHaveBeenCalledWith({ propostaId: "proposta-1", aprovar: true, motivo: MOTIVO });
@@ -89,7 +86,7 @@ describe("DecidirQuantidadeAulas — aprovar passa pela confirmação", () => {
     preencherMotivo();
     clicar(tela(), "Aprovar e aplicar");
     const [c] = confirmacoes(tela());
-    expect((await confirmarNoDialogo(c, usar)).erro).toBeNull(); // sem a conferência marcada, nada executa
+    expect((await confirmarNoDialogo(c, usar)).erro).toBeNull();
     expect(m.decidir).not.toHaveBeenCalled();
     const conferido = { ...c, props: { ...c.props, conferencia: undefined } } as No;
     m.decidir.mockResolvedValueOnce({ ok: false, erro: "Proposta desatualizada." });

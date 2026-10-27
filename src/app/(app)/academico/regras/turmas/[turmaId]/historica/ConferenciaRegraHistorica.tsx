@@ -18,13 +18,8 @@ type Revisao = {
   encontros: number; diarios: number; alocacoes: number;
 };
 
-// Erro e sucesso separados (docs/42 E3; docs/43 §6 item 2): cada fluxo (Propor, Revisar, Decidir) tem o
-// próprio useAcaoCliente — falha de transporte vira resultado incerto em role="alert" e o ocupado é
-// liberado em qualquer desfecho. A trava de duplo envio é a do executor (executar devolve null).
-
 export function ProporConferenciaRegraHistorica({ turmaId, revisao }: { turmaId: string; revisao: Revisao }) {
   const r = useRouter(), chave = useRef<string | null>(null);
-  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar sem alterar (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   return <form className="space-y-3" onChange={() => { chave.current = null; acao.limpar(); }} onSubmit={async e => {
     e.preventDefault();
@@ -48,7 +43,6 @@ export function ProporConferenciaRegraHistorica({ turmaId, revisao }: { turmaId:
 
 export function PrepararConferenciaRegraHistorica({ turmaId, destinos }: { turmaId: string; destinos: Destino[] }) {
   const [destinoId, setDestinoId] = useState(""), [revisao, setRevisao] = useState<Revisao | null>(null);
-  // Só leitura (revisão da fotografia): repetir é seguro; a falha mantém o texto próprio desta tela.
   const acao = useAcaoCliente({ idempotente: true });
   return <section className="space-y-3">
     <h2 className="text-xl font-medium">Conferência inicial da regra histórica</h2>
@@ -91,8 +85,6 @@ export function PrepararConferenciaRegraHistorica({ turmaId, destinos }: { turma
 }
 
 export function DecidirConferenciaRegraHistorica({ propostaId, estadoHash, podeAprovar }: { propostaId: string; estadoHash: string; podeAprovar: boolean }) {
-  // Antes não havia catch (docs/43): a falha de transporte deixava a tela sem resposta. Sem chave de
-  // idempotência; a decisão incerta usa o texto das demais decisões (reenviar a mesma decisão).
   const r = useRouter(), acao = useAcaoCliente({ idempotente: false });
   return <form onSubmit={async e => {
     e.preventDefault();

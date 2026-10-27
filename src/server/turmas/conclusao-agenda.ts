@@ -2,7 +2,6 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 
-/** A decisão usa a meta aprovada da turma, nunca uma edição posterior do catálogo. */
 export async function conferirConclusaoTurma(tx: Prisma.TransactionClient, turmaId: string) {
   const proposta = await tx.propostaGradeTurma.findFirst({ where: { turmaId, decisao: { aprovada: true } }, orderBy: { versao: "desc" }, select: { id: true, snapshot: true } });
   const meta = z.object({ origem: z.object({ quantidadeAulas: z.number().int().positive() }) }).safeParse(proposta?.snapshot);

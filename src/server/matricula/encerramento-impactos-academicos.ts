@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-/** Origens acadêmicas da contratação revisada; não encerra vínculo nem cancela encontro. */
 export async function carregarImpactosAcademicosEncerramentoTx(tx: Prisma.TransactionClient, alunoId: string, matriculaId: string) {
   const m = await tx.matricula.findFirst({ where: { id: matriculaId, alunoId }, select: {
     status: true, ativadaEm: true, acessoVersao: true,

@@ -32,8 +32,6 @@ async function exigirExecutorTx(tx: Prisma.TransactionClient, usuarioId: string)
   }
 }
 
-/** Materializa os valores aprovados antes de a Secretaria efetivar a desistência.
- * A migration Q241 confirma no commit cada cobrança, origem e crédito criados. */
 export async function aplicarAcertoDesistenciaContratual(input: z.input<typeof entradaSchema>): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
@@ -45,8 +43,6 @@ export async function aplicarAcertoDesistenciaContratual(input: z.input<typeof e
       });
       if (!decisao?.aprovada) throw new ErroRegra("A decisão contratual aprovada não foi encontrada.");
       await bloquearMatriculas(tx, [decisao.proposta.pedido.matriculaId]);
-      // A guarda SQL toma a matrícula antes de reler a proposta. Mantemos a
-      // mesma ordem para não inverter locks com uma inserção direta.
       await tx.$queryRaw`SELECT id FROM "PropostaAcertoDesistenciaContratual" WHERE id=${decisao.proposta.id} FOR UPDATE`;
       await exigirExecutorTx(tx, sessao.id);
       if (decisao.decisorId !== sessao.id) throw new ErroRegra("A aplicação deve ser executada pela pessoa que aprovou o acerto.");

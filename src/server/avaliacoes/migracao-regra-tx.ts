@@ -27,7 +27,6 @@ export async function bloquearMigracaoRegra(tx: Prisma.TransactionClient, turmaI
   if (atual.nivelId !== t.nivelId) throw new ErroRegra("O nível da turma mudou. Atualize a conferência.");
 }
 
-/** Chamador precisa manter os locks do calendário, nível e turma. */
 export async function contextoMigracaoRegra(tx: Prisma.TransactionClient, turmaId: string, destinoId: string) {
   if (await tx.registroAvaliacaoMatricula.count({ where: { turmaId } })) throw new ErroRegra("A turma possui registros de avaliação. Preserve as regras e confira o histórico antes de qualquer migração.");
   const t = await tx.turma.findUniqueOrThrow({ where: { id: turmaId }, select: {
@@ -62,7 +61,6 @@ export async function contextoMigracaoRegra(tx: Prisma.TransactionClient, turmaI
 
 export async function proporMigracaoRegraTx(tx: Prisma.TransactionClient, autorId: string, input: z.input<typeof ProporMigracaoSchema>) {
   const d = ProporMigracaoSchema.parse(input);
-  // Calendário serializa também chaves entre turmas; conferir autoridade antes de replay.
   await bloquearMigracaoRegra(tx, d.turmaId, autorId);
   const anterior = await tx.propostaMigracaoRegraTurma.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autorId, chaveIdempotencia: d.chaveIdempotencia } } });
   if (anterior) {
@@ -98,7 +96,6 @@ export async function decidirMigracaoRegraTx(tx: Prisma.TransactionClient, autor
     const c = await contextoMigracaoRegra(tx, p.turmaId, p.destinoId);
     if (c.estadoHash !== p.estadoHash) throw new ErroRegra("Os impactos mudaram. Prepare outra proposta.");
   }
-  // Trigger aplica a referência na mesma transação; não existe aprovação sem aplicação.
   const decisao = await tx.decisaoMigracaoRegraTurma.create({ data: { propostaId: p.id, decisorId: autorId, aprovada: d.aprovada, motivo: d.motivo } });
   await registrarEvento(tx, { tipo: d.aprovada ? "MigracaoRegraTurmaAplicada" : "MigracaoRegraTurmaRejeitada", agregadoTipo: "Turma", agregadoId: p.turmaId, autorId,
     payload: { propostaId: p.id, decisaoId: decisao.id, origemId: p.origemId, destinoId: p.destinoId, estadoHash: p.estadoHash, motivo: d.motivo } });

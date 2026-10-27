@@ -20,7 +20,6 @@ async function leadAutorizado(tx: Prisma.TransactionClient, autorId: string, lea
 }
 function contatoValido(contato: string | null): contato is string { return !!contato && /^\+[1-9]\d{7,14}$/.test(contato); }
 
-/** Correspondência de contato oferece candidatos; não identifica automaticamente uma pessoa. */
 export async function consultarCadastrosPreparacao(input: { leadId: string; pagina?: number }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
@@ -128,7 +127,6 @@ export async function revisarAgendaParticularComercial(input: z.input<typeof Rev
       const lead = await leadAutorizado(tx, autor.id, leadId);
       if (lead.matricula) throw new ErroRegra("Negociação já possui contratação.");
       const r = await conferirAgendaParticularTx(tx, agenda);
-      // Não expor os identificadores de outras matrículas, reservas ou aulas à carteira comercial.
       return { estadoHash: r.estadoHash, conferidoEm: r.conferidoEm, formaAgenda: r.snapshot.formaAgenda, impedimentos: r.snapshot.impedimentos,
         encontros: r.snapshot.encontros.map((e) => ({ indice: e.indice, inicio: e.inicio, fim: e.fim,
           conflito: r.snapshot.conflitos.some((c) => c.indice === e.indice) || r.snapshot.reservasConflitantes.some((c) => c.indice === e.indice),

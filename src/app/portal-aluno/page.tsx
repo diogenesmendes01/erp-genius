@@ -9,10 +9,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 export const dynamic = "force-dynamic";
 
 export default async function InicioPortalAlunoPage() {
-  // Guard sequenciado ANTES do Promise.all: listarReposicoesDoPortalAluno chama o guard
-  // que lança (exigirSessaoPortalAluno) internamente — rodar em paralelo criaria uma
-  // corrida entre o redirect daqui e o throw de lá (quem resolve primeiro decide o
-  // resultado do Promise.all). Aqui a sessão já está confirmada antes de prosseguir.
   const sessao = await exigirSessaoPortalAlunoPagina();
   const [reposicoes, preferencia] = await Promise.all([listarReposicoesDoPortalAluno(), consultarPreferenciaFusoPortalAluno()]);
   const fusoExibicao = resolverFusoExibicao(preferencia.fusoExibicao, "UTC");

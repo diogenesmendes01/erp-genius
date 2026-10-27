@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): na nova reserva particular, consulta de
-// professores, revisão e confirmação dividiam um só estado de mensagem. Agora cada grupo tem o seu
-// feedback junto do próprio botão: erros (do servidor, de consulta/revisão indisponível e de transporte)
-// em role="alert"; a confirmação anuncia o sucesso em role="status" antes de abrir a preparação.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   consultar: vi.fn(), revisar: vi.fn(), confirmar: vi.fn(), refresh: vi.fn(), push: vi.fn(),
@@ -49,11 +45,9 @@ const revisaoOk = {
   },
 };
 const tela = () => m.ganchos!.renderizar(NovaReservaFormulario, { base });
-/** O fieldset externo travado é o sinal do ocupado desta tela (os botões não trocam de rótulo). */
 const ocupado = (t: ReactNode) => elementos(t).find((n) => n.type === "fieldset")?.props.disabled === true;
 const chamarOnChange = (no: { props: Record<string, unknown> } | undefined, evento: unknown) => (no!.props.onChange as (e: unknown) => void)(evento);
 
-/** Revisa com sucesso, marca a conferência e escreve o motivo: o botão "Confirmar nova reserva" fica pronto. */
 async function revisarEConferir() {
   m.revisar.mockResolvedValueOnce(revisaoOk);
   await clicar(tela(), "Revisar horários e condições");

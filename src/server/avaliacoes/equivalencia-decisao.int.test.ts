@@ -40,7 +40,7 @@ async function prepararProposta(chave: string) {
 let lancamentoId: string;
 beforeEach(async () => {
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   await prisma.modalidade.update({ where: { id: catalogo.modalidade.id }, data: { aulasPorNivel: 4 } });
   professorId = (await criarUsuario(["PROFESSOR"])).id;

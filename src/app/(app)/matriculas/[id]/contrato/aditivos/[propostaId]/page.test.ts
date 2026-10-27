@@ -18,9 +18,6 @@ vi.mock("../OriginaisPainel", () => ({ OriginaisPainel: (props: unknown) => { mo
 
 import PropostaAditivoPage from "./page";
 
-// Revisão R2 da #134 (B4): os dois painéis paginados dividem a URL. Cada um recebe a SUA página em
-// `pagina` e a do outro na prop que preserva a outra lista; trocar a fiação faria um link de um painel
-// mudar a página do outro.
 describe("proposta de aditivo — fiação das páginas dos painéis", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -45,7 +42,6 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
     expect(await props({})).toEqual({ historico: { pagina: 1, paginaOriginais: 1 }, originais: { pagina: 1, paginaConferencias: 1 } });
   });
 
-  // docs/42 L691 (docs/43 §6 item 7): a mensagem das taxas não tinha link, e os acertos são telas do Financeiro.
   describe("acertos do Financeiro: link só para quem abre, motivo para a Secretaria", () => {
     const comAcertos = () => {
       mocks.efeitos.mockResolvedValue({ ok: true, dado: { vigenciaInicio: "2026-11-01T00:00:00.000Z", acertosTaxaAplicados: 0, efeitos: [], aplicacoesCampos: [], pendencias: [], aplicado: false,
@@ -73,7 +69,6 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
       expect(tela).not.toContain("Avise o Financeiro");
     });
 
-    // Q172 (port da #62): adiantamento formalizado leva ao acerto próprio; a orientação do servidor aparece sempre.
     const comAdiantamento = (formalizado: boolean) => mocks.efeitos.mockResolvedValue({ ok: true, dado: { vigenciaInicio: "2026-11-01T00:00:00.000Z", acertosTaxaAplicados: 0, efeitos: [], aplicacoesCampos: [], pendencias: [], aplicado: false,
       primeiraMensalidade: null, adiantamento: { formalizado, aplicacao: null, pendencia: "O adiantamento já recebeu pagamento ou crédito." } } });
     it("adiantamento: link do acerto para o Financeiro, orientação para a Secretaria", async () => {
@@ -96,14 +91,12 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
     });
   });
 
-  // Revisão R1 da #285 (B1): proposta sobre a origem histórica avisa que não segue para assinatura.
   it("origem histórica: aviso de que o aditivo sobre contrato legado não segue para assinatura", async () => {
     mocks.proposta.mockResolvedValue({ ok: true, dado: { id: "p1", versao: 1, preparadaPor: "Ana", criadaEm: "2026-10-01T10:00:00.000Z", motivo: "Ajuste", ambiente: "HISTORICO", artefatoOriginalId: null, conclusaoOriginalId: null, origemHistoricaId: "o1", documento: { titulo: "Aditivo", secoes: [] }, impactos: [], vigenciaInicio: "2026-11-01T00:00:00.000Z", alteracoes: [], superada: false, decisao: null, podeDecidir: true, propostaHash: "h" } });
     const tela = renderToStaticMarkup(await PropostaAditivoPage({ params: Promise.resolve({ id: "m1", propostaId: "p1" }), searchParams: Promise.resolve({}) }));
     expect(tela).toContain("Aditivo sobre contrato legado ainda não segue para assinatura; aguarda decisão.");
     expect(tela).toContain('href="/matriculas/m1/contrato/origem-historica"');
     expect(tela).not.toContain("Abrir documento assinado e preservado");
-    // R2 da #285 (C5): a decisão sobre a origem só oferece rejeitar, como numa versão superada.
     expect(mocks.decidir).toHaveBeenLastCalledWith(expect.objectContaining({ propostaId: "p1", superada: true }));
   });
 });

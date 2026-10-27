@@ -1,4 +1,3 @@
-// #350: reprodução versionada da prova TESTER84bc7e; os comentários de RED/privado no bloco original abaixo são históricos.
 import { act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,14 +5,11 @@ import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } f
 import type { Resultado } from "@/server/_shared/resultado";
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 
-// Privado TESTER: candidato RED ainda NÃO executado. Fonte nominal b0be613d.
-// ReactDOM, cartão, Botao, useAcaoCliente e FeedbackAcao são reais.
 const acoes = vi.hoisted(() => ({
   aprovar: vi.fn<() => Promise<Resultado>>(),
   rejeitar: vi.fn<() => Promise<Resultado>>(),
 }));
 vi.mock("@/server/aria/acoes", () => ({ aprovarSugestaoNoInbox: acoes.aprovar, rejeitarSugestaoNoInbox: acoes.rejeitar }));
-// Apenas glifos: o DOM mínimo compartilhado não implementa namespace SVG.
 vi.mock("@tabler/icons-react", async () => {
   const { createElement: el } = await import("react");
   const Icone = () => el("span", { "aria-hidden": true });
@@ -55,14 +51,12 @@ function acessivel(no: Elemento): boolean {
 function focoSignificativoDentro(cartao: Elemento): boolean {
   const ativo = doc.activeElement;
   if (!ativo || !ativo.isConnected || !cartao.contains(ativo) || !acessivel(ativo) || ativo.hasAttribute("disabled")) return false;
-  // Não escolhe heading, article, botão ou live-region como destino obrigatório.
   return !!(ativo.textContent.trim() || ativo.getAttribute("aria-label")?.trim() || ativo.getAttribute("aria-labelledby")?.trim());
 }
 const regioes = () => host.querySelectorAll('[role="status"],[role="alert"],[aria-live="polite"],[aria-live="assertive"]');
 function anuncioDecisao(status: "APROVADA" | "REJEITADA", anteriores: Set<Elemento>): boolean {
   const esperado = status === "APROVADA" ? /aprovad[oa]/i : /rejeitad[oa]/i;
   return regioes().some(no => no.isConnected && acessivel(no) && esperado.test(no.textContent)
-    // Status/polite precisa existir antes do texto; alert tem semântica assertiva própria.
     && (anteriores.has(no) || no.getAttribute("role") === "alert"));
 }
 function conferir(cartao: Elemento, status: "APROVADA" | "REJEITADA", anteriores: Set<Elemento>, fase: string) {
@@ -108,7 +102,6 @@ describe("350: retorno autoritativo do pai no mesmo ID", () => {
     expect(callback).not.toHaveBeenCalled();
     if (via === "SSE antes do ACK") {
       await act(async () => emitirStatus());
-      // Emulação apenas do dado autoritativo do mesmo GET/painel, sem simular o algoritmo do cartão.
       conferir(card, status, liveAntes, "SSE antes do ACK");
     }
     await act(async () => fim.resolve({ ok: true }));
@@ -128,7 +121,6 @@ it("controle: erro mantém decisão pendente, alert real e foco conectado no con
   expect(botao("Aprovar e enviar").hasAttribute("disabled")).toBe(false);
   expect(botao("Rejeitar").isConnected).toBe(true); expect(callback).not.toHaveBeenCalled();
   expect(doc.activeElement?.isConnected).toBe(true); expect(card.contains(doc.activeElement)).toBe(true);
-  // Preserva erro/alert real; aceita foco no disparador ou no próprio feedback, sem impor novo destino.
   expect(doc.activeElement === alvo || alert.contains(doc.activeElement)).toBe(true);
 });
 
@@ -147,7 +139,6 @@ it("controle: ACK antigo desmontado não chama callback nem rouba foco do cartã
   expect(callback).not.toHaveBeenCalled(); expect(doc.activeElement).toBe(novo);
   expect(novo.isConnected).toBe(true); expect(novo.hasAttribute("disabled")).toBe(false);
 });
-// DEV: controles adicionais sem substituir os quatro oráculos causais independentes acima.
 it.each(["APROVADA","REJEITADA"] as const)("SSE %s sem nossa ação/ACK também restaura foco e anuncia",async status=>{
  let emitir!:()=>void;function Pai(){const [s,setS]=useState(()=>sugestao());emitir=()=>setS(a=>({...a,status,decididaEm:"2026-10-23T13:50Z",decididaPorId:"u"}));return createElement(Cartao,{atendimentoId:"thread",s,usuarioId:"u",fuso:"UTC",aoDecidir:callback});}
  await act(async()=>root.render(createElement(Pai)));const card=host.querySelector("article")!,antes=new Set(regioes());botao("Aprovar e enviar").focus();await act(async()=>emitir());conferir(card,status,antes,"SSE remoto sem ACK");expect(acoes.aprovar).not.toHaveBeenCalled();expect(acoes.rejeitar).not.toHaveBeenCalled();expect(callback).not.toHaveBeenCalled();

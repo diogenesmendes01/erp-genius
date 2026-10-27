@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na proposta e na
-// decisão de correção de nota — erro em role="alert", sucesso em role="status", falha de rede como
-// resultado incerto e o formulário saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   propor: vi.fn(), decidir: vi.fn(), refresh: vi.fn(),
@@ -28,7 +25,6 @@ import { FormDataFalso, criarGanchos, elementos, formularioFalso, formularios, s
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** "Registrando…" no botão e o fieldset travado: os dois sinais do ocupado destes formulários. */
 const ocupadoEm = (t: ReactNode) => {
   const botao = elementos(t).find((n) => n.type === "button");
   const fieldset = elementos(t).find((n) => n.type === "fieldset");
@@ -64,8 +60,6 @@ describe("ProporCorrecao", () => {
     expect(m.refresh).toHaveBeenCalledTimes(1);
   });
 
-  // docs/43 §6 item 3: sem a versão na key, o formulário não remonta depois de registrar — a chave de
-  // idempotência é trocada à mão no sucesso (a próxima proposta é outra tentativa) e a versão nova vem por prop.
   it("depois de registrar, a próxima proposta usa chave nova e a versão nova, sem remontar", async () => {
     m.propor.mockResolvedValue({ ok: true });
     await enviar();
@@ -75,8 +69,6 @@ describe("ProporCorrecao", () => {
     expect([a.versaoEsperada, b.versaoEsperada]).toEqual([2, 3]);
   });
 
-  // R1 da #155, C1: sem remontar, o formulário ficaria com as notas e o motivo digitados — um segundo clique criaria
-  // outra proposta pendente idêntica. No sucesso ele volta às notas vigentes e ao motivo vazio (reset); na falha, não.
   it("registrada a proposta, o formulário volta ao vigente (reset); recusada, o digitado fica", async () => {
     const enviarCom = (form: ReturnType<typeof formularioFalso>) =>
       (formularios(tela())[0].props.onSubmit as (e: { preventDefault(): void; currentTarget: unknown }) => Promise<void>)({ preventDefault() {}, currentTarget: form });

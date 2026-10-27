@@ -19,7 +19,6 @@ describe("importação de turmas — parsers", () => {
   });
 
   it("reimporta o próprio modelo: cabeçalho com sufixo obrigatório ' *' casa", () => {
-    // O modelo gera "Modalidade *", "Data de início (AAAA-MM-DD) *" etc.
     expect(chaveDoCabecalhoTurma("Modalidade *")).toBe("modalidade");
     expect(chaveDoCabecalhoTurma("Nível *")).toBe("nivel");
     expect(chaveDoCabecalhoTurma("Dias da semana (ex.: Seg, Qua, Sex) *")).toBe("diasSemana");
@@ -33,11 +32,11 @@ describe("importação de turmas — parsers", () => {
     expect(resolverDiasSemana("Seg-Qua-Sex")).toEqual([1, 3, 5]);
     expect(resolverDiasSemana("Seg.Qua.Sex")).toEqual([1, 3, 5]);
     expect(resolverDiasSemana("Terça e Quinta")).toEqual([2, 4]);
-    expect(resolverDiasSemana("2ª, 4ª, 6ª")).toEqual([1, 3, 5]); // ordinal BR
+    expect(resolverDiasSemana("2ª, 4ª, 6ª")).toEqual([1, 3, 5]);
     expect(resolverDiasSemana("Sáb, Dom")).toEqual([0, 6]);
-    expect(resolverDiasSemana("Seg, Seg")).toEqual([1]); // sem duplicados
+    expect(resolverDiasSemana("Seg, Seg")).toEqual([1]);
     expect(resolverDiasSemana("")).toEqual([]);
-    expect(resolverDiasSemana("1,3,5")).toEqual([]); // dígito cru NÃO é aceito (ambíguo)
+    expect(resolverDiasSemana("1,3,5")).toEqual([]);
   });
 
   it("expande faixas (Segunda a Sexta)", () => {
@@ -57,13 +56,13 @@ describe("importação de turmas — parsers", () => {
     const mods = [{ id: "m1", nome: "Intensiva" }, { id: "m2", nome: "Semi-intensiva" }];
     expect(resolverModalidade("intensiva", mods)?.id).toBe("m1");
     expect(resolverModalidade("Semi-intensiva", mods)?.id).toBe("m2");
-    expect(resolverModalidade("Semi intensiva", mods)?.id).toBe("m2"); // tolera espaço × hífen
+    expect(resolverModalidade("Semi intensiva", mods)?.id).toBe("m2");
     expect(resolverModalidade("inexistente", mods)).toBeNull();
   });
 
   it("resolve nível por código ou rótulo completo", () => {
     const niveis = [{ id: "n1", codigo: "A1", idioma: { nome: "Português" } }];
-    expect(resolverNivel("A1", niveis)?.id).toBe("n1"); // código nu OK quando único
+    expect(resolverNivel("A1", niveis)?.id).toBe("n1");
     expect(resolverNivel("Português A1", niveis)?.id).toBe("n1");
     expect(resolverNivel("B2", niveis)).toBeNull();
   });
@@ -73,7 +72,7 @@ describe("importação de turmas — parsers", () => {
       { id: "pt", codigo: "A1", idioma: { nome: "Português" } },
       { id: "en", codigo: "A1", idioma: { nome: "Inglês" } },
     ];
-    expect(resolverNivel("A1", niveis)).toBeNull(); // ambíguo → não casa o primeiro
+    expect(resolverNivel("A1", niveis)).toBeNull();
     expect(resolverNivel("Português A1", niveis)?.id).toBe("pt");
     expect(resolverNivel("Inglês A1", niveis)?.id).toBe("en");
   });

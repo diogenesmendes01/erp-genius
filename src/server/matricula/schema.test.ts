@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { AtivacaoSchema as AtivacaoSchemaBase, MatriculaSchema as MatriculaSchemaBase } from "./schema";
 import { comDatasDaEscola } from "@/server/_shared/validacao";
 
-// As datas digitadas viram o meio-dia da escola (ref. #247); nas ações, o parse roda dentro de `comDatasDaEscola`.
 const FUSO = "America/Sao_Paulo";
 const naEscola = <S extends { parse: (v: unknown) => unknown; safeParse: (v: unknown) => unknown }>(schema: S) => ({
   parse: (v: unknown) => comDatasDaEscola(FUSO, () => schema.parse(v)) as ReturnType<S["parse"]>,
@@ -26,7 +25,6 @@ describe("AtivacaoSchema — evidência do recebimento", () => {
   });
 });
 
-// Base mínima válida para focar nos campos da exceção de preço (Issue #7).
 function base(over: Record<string, unknown> = {}) {
   return {
     alunoPrimeiroNome: "Aluno",
@@ -66,11 +64,8 @@ describe("MatriculaSchema — exceção de preço", () => {
   });
 
   it('a string "false" NÃO é coagida para true (bug do z.coerce.boolean)', () => {
-    // justificativaSemPreco é texto puro: "false" permanece a string "false",
-    // jamais um boolean true que pularia o bloqueio de preço.
     const dados = MatriculaSchema.parse(base({ justificativaSemPreco: "false" }));
     expect(dados.justificativaSemPreco).toBe("false");
-    // Sanidade: o tipo é string, não boolean.
     expect(typeof dados.justificativaSemPreco).toBe("string");
   });
 

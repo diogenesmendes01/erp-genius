@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-/** Crédito do encontro pago pela proporção original; diferenças de centavos ficam no acumulado da compra. */
 export async function calcularCreditoHorasTx(tx: Prisma.TransactionClient, reservaId: string) {
   const r = await tx.reservaHorasCompradas.findUniqueOrThrow({ where: { id: reservaId }, include: { compra: true } });
   const anteriores = await tx.creditoMatricula.findMany({ where: { origemLiberacao: { reserva: { compraId: r.compraId } } },

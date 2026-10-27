@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import type { carregarAcertoAprovadoParaEfetivacaoTx } from "./encerramento-efetivacao-estado";
 
-/** Etapa interna: mesma transação da guarda e dos demais efeitos do encerramento. */
 export async function aplicarAjustesCobrancaAcertoTx(tx: Prisma.TransactionClient, acerto: Awaited<ReturnType<typeof carregarAcertoAprovadoParaEfetivacaoTx>>, executorId: string) {
   const ajustes = [];
   for (const contrato of acerto.previa.contratos) {

@@ -71,7 +71,6 @@ afterEach(async()=>{
 });
 async function emitir(...avisos:AvisoInbox[]){await act(async()=>{for(const a of avisos)m.receber!(a);});await act(async()=>{await vi.advanceTimersByTimeAsync(50);});}
 
-// ReactDOM/useConversa/Historico são reais. Só a fonte de dados/ações e geometria DOM são fakes; não é prova visual/browser.
 it("global isolado invalida lista/painel sem tocar aviso/thread ou leitura",async()=>{
   await emitir(global345);expect(m.observado).toBeNull();expect(m.pagina).not.toHaveBeenCalled();expect(m.marcar).not.toHaveBeenCalled();expect(paineis()).toHaveLength(1);expect(listas()).toHaveLength(1);expect(String(listas()[0][0])).toContain("contagens=1");expect(String(listas()[0][0])).toContain("busca=Ana");
 });

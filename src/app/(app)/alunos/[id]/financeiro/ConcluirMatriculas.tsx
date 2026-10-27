@@ -10,12 +10,8 @@ import { botaoClasses } from "@/components/Botao";
 
 export function ConcluirMatriculas({ matriculas }: { matriculas: { id: string; nome: string }[] }) {
   const router = useRouter();
-  // Sem chave de idempotência: repetir uma conclusão já aplicada é recusado pelo servidor, então
-  // a falha de rede manda conferir a página antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
   const [alvo, setAlvo] = useState<string | null>(null);
-  // A linha concluída sai da lista no refresh; por isso o sucesso é anunciado na seção, não na linha,
-  // e a seção continua montada enquanto houver uma confirmação a mostrar.
   if (!matriculas.length && !acao.sucesso) return null;
   return <section className="space-y-3 rounded-lg border p-4">
     <h2 className="font-medium">Conclusão da matrícula</h2>

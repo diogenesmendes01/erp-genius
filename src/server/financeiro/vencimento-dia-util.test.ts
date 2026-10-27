@@ -33,7 +33,7 @@ describe("ajustarVencimentoDiaUtil", () => {
   });
   it("avança por fim de semana e feriados consecutivos, mantendo a referência aplicada", () => {
     const resultado = ajustarVencimentoDiaUtil({
-      dataCalculada: "2026-04-04", // sábado
+      dataCalculada: "2026-04-04",
       regra: {
         regra: "PROXIMO_DIA_UTIL",
         calendario: { ...calendario, feriados: ["2026-04-06", "2026-04-07"] },
@@ -95,13 +95,13 @@ describe("ajustarVencimentoDiaUtil", () => {
 
   it("não presume sábado e domingo como a semana financeira", () => {
     const resultado = ajustarVencimentoDiaUtil({
-      dataCalculada: "2026-04-03", // sexta-feira
+      dataCalculada: "2026-04-03",
       regra: {
         regra: "PROXIMO_DIA_UTIL",
         calendario: { ...calendario, diasSemanaUteis: [0, 1, 2, 3, 4] },
       },
     });
-    expect(resultado.dataAjustada).toBe("2026-04-05"); // domingo
+    expect(resultado.dataAjustada).toBe("2026-04-05");
   });
 
   it("valida datas reais persistíveis, vigência, feriados e dias úteis sem repetição", () => {

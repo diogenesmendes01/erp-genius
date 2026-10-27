@@ -12,20 +12,16 @@ const PERIODO_ROTULO: Record<PeriodoComissao, string> = {
 };
 const BASE_ROTULO: Record<string, string> = { TAXA_MATRICULA: "taxa de matrícula" };
 
-/** Valor sempre com o código da moeda ao lado (nunca "R$" fixo) e duas casas, como o fechamento do mês. */
 const moeda = (valor: string, codigo: string) =>
   `${codigo} ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(valor))}`;
 
-/** "5% da taxa de matrícula" ou "Valor fixo". */
 function calculo(l: Painel["linhas"][number]) {
   if (l.percentual === null) return "Valor fixo";
   return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(Number(l.percentual))}% da ${BASE_ROTULO[l.base] ?? "base da política"}`;
 }
 
-/** Só PENDENTE/APROVADA estornam; a paga exigiria desconto no fechamento (fora da fase). */
 const estornavel = (status: string) => status === "PENDENTE" || status === "APROVADA";
 
-/** "10/11/2026" a partir da data civil "2026-11-10"; "—" quando não há previsão (comissão paga ou estornada). */
 function diaCivil(data: string | null) {
   if (!data) return "—";
   const [a, m, d] = data.split("-");

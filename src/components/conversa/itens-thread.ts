@@ -5,7 +5,6 @@ import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consul
 
 export type ItemThread = { tipo: "mensagem"; id: string; m: MensagemThread } | { tipo: "nota"; id: string; n: NotaInternaThread };
 
-/** Notas não mudam cursores nem o limite das mensagens; aparecem somente dentro da janela carregada. */
 export function itensDaThread(mensagens: MensagemThread[], notas: NotaInternaThread[], temMaisAntes: boolean, temMaisDepois: boolean): ItemThread[] {
   const primeira = mensagens.length ? mensagens.reduce((min, m) => m.criadoEm < min ? m.criadoEm : min, mensagens[0].criadoEm) : null;
   const ultima = mensagens.length ? mensagens.reduce((max, m) => m.criadoEm > max ? m.criadoEm : max, mensagens[0].criadoEm) : null;
@@ -21,7 +20,6 @@ export function itensDaThread(mensagens: MensagemThread[], notas: NotaInternaThr
   });
 }
 
-/** Variante visual autorizada pelo painel; não é mensagem/nota do transporte. */
 export type ItemSugestaoThread = { tipo: "sugestao-aria"; id: string; s: SugestaoAriaThread };
 
 export type ItemTarefaThread = { tipo: "tarefa"; id: string; t: TarefaPainel };
@@ -48,7 +46,6 @@ function chaveDoDia(iso: string | Date, formatador: Intl.DateTimeFormat): string
   return `${parte("year")}-${parte("month")}-${parte("day")}`;
 }
 
-/** Véspera da DATA LOCAL; subtrair24h do instante falha no início do horário de verão. */
 function rotuloParaChaves(iso: string, fuso: string | null, dia: string | null, hoje: string | null): string {
   if (dia && hoje) {
     if (dia === hoje) return "Hoje";
@@ -64,7 +61,6 @@ export function rotuloDia(iso: string, fuso: string | null, agora: Date): string
   return rotuloParaChaves(iso, fuso, chaveDoDia(iso, formatador), chaveDoDia(agora, formatador));
 }
 
-/** Sem id público do autor, desconhecidos nunca suprimem uma identificação potencialmente diferente. */
 function identidade(i: ItemThread): string | null {
   if (i.tipo === "nota") return i.n.autorNome?.trim() ? JSON.stringify(["nota", i.n.origem, i.n.autorNome]) : null;
   const m = i.m, autor = autorDoItem(i);
@@ -74,10 +70,8 @@ function identidade(i: ItemThread): string | null {
   return m.autorNome?.trim() ? JSON.stringify([autor, m.origem, m.autorNome]) : null;
 }
 
-/** Apenas decora a janela existente: não altera cursor, ordenação, limites ou as keys dos itens E0. */
 export function decorarThread(itens: (ItemThread | ItemSugestaoThread | ItemTarefaThread)[], { fuso, agora, transferidoDe }: { fuso: string | null; agora: Date; transferidoDe?: string | null }): ItemThreadVisual[] {
   const visual: ItemThreadVisual[] = [];
-  // Um formatador por decoração, não por mensagem de um histórico virtualizado.
   const formatador = formatadorDoDia(fuso), hoje = chaveDoDia(agora, formatador);
   if (transferidoDe) visual.push({ tipo: "evento", id: "evento:transferencia", tom: "neutro", icone: "transferencia", texto: `Transferido de ${transferidoDe}`, hora: null });
   let diaAnterior: string | null = null, autorAnterior: string | null = null;
@@ -93,7 +87,6 @@ export function decorarThread(itens: (ItemThread | ItemSugestaoThread | ItemTare
   return visual;
 }
 
-/** Adaptação estritamente visual; nota nunca deve entrar nos comandos ou status do transporte. */
 export function notaComoMensagem(n: NotaInternaThread): MensagemThread {
   return { id: `nota:${n.id}`, direcao: "SAIDA", tipo: "TEXTO", corpo: n.nota, midiaPath: null, status: "INTERNA", origem: null,
     autorNome: n.autorNome, templateNome: null, criadoEm: n.criadoEm, participanteNome: null, favorita: false, clientMessageId: null };

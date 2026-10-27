@@ -17,10 +17,7 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   const router = useRouter();
   const [numeroAvisosAgendaId, setNumero] = useState(config.numeroAvisosAgendaId ?? "");
   const [templateAvisosAgendaId, setTemplate] = useState(config.templateAvisosAgendaId ?? "");
-  // Sem chave de idempotência, mas idempotente por natureza (#166): número e template vão por upsert na
-  // configuração única da escola, e o servidor não grava nada (nem Evento) quando já são esses. Reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
-  // C32 da #170: marca e aviso ao sair enquanto a escolha difere da salva (o refresh traz a salva nova).
   const sujo = avisosAgendaAlterados(numeroAvisosAgendaId, templateAvisosAgendaId, config);
   useAvisoAoSair(sujo);
   const numeros = config.numeros.filter((n) => n.ativo && n.driver === "MOTOR");

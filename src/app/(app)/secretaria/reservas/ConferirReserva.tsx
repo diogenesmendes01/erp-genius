@@ -10,13 +10,10 @@ const RESULTADOS = { PRAZO_VIGENTE: "O prazo da reserva ainda está vigente.", S
   PENDENCIA_REGISTRADA: "Reserva mantida por pendência da contratação.", HORARIOS_LIBERADOS: "Reserva expirada; horários liberados. A preparação permanece pendente de nova reserva.", CONFERIR_ASSINATURA_EXTERNA: "É necessário conferir o processo de assinatura externa antes de liberar a vaga. Esta conferência não liberou a reserva." } as const;
 export function ConferirReserva({ reservaId, particular = false }: { reservaId: string; particular?: boolean }) {
   const router = useRouter();
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
   async function conferir() {
     const d = await acao.executar(async (): Promise<Resultado<{ resultado: keyof typeof RESULTADOS } | null>> => (particular ? conferirReservaParticularSecretaria : conferirReservaSecretaria)({ reservaId }), (dado) => dado ? RESULTADOS[dado.resultado] : null);
     if (d?.tipo !== "ok") return;
-    // Resposta sem resultado: o desfecho da conferência é desconhecido — vai como erro, não como confirmação,
-    // com a mesma instrução da falha de transporte (a conferência não leva chave: conferir antes de repetir).
     if (!d.dado) { acao.setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); return; }
     router.refresh();
   }

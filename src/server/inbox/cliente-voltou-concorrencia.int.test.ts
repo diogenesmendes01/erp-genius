@@ -35,7 +35,6 @@ async function cenario(finalidade: FinalidadeNumero) {
 }
 const eventos = (contatoId: string) => prisma.evento.findMany({ where: { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId } });
 
-/** Espera observável no Postgres: não basta esperar uma duração arbitrária. */
 async function aguardarBloqueadoPor(pid: number) {
   for (let i = 0; i < 150; i++) {
     const [r] = await prisma.$queryRaw<{ bloqueados: bigint }[]>`SELECT count(*) AS bloqueados FROM pg_stat_activity WHERE ${pid} = ANY(pg_blocking_pids(pid))`;

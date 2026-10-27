@@ -33,7 +33,7 @@ describe("AgendaTarefas", () => {
   });
 
   it("tarefa com hora cai no slot de 30 min da hora da escola e tem alça e menu Reagendar", () => {
-    const html = renderAgenda({ visao: "dia", itens: [tarefa("t1", "2026-10-17", "2026-10-17T16:45:00Z")] }); // 10:45 na escola
+    const html = renderAgenda({ visao: "dia", itens: [tarefa("t1", "2026-10-17", "2026-10-17T16:45:00Z")] });
     expect(html).toContain("Arrastar tarefa Tarefa t1");
     expect(html).toContain("10:45");
     expect(slotDaHora("10:45")).toBe("10:30");

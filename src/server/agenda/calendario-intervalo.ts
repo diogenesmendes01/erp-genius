@@ -9,7 +9,6 @@ const Entrada = z.object({ inicio: z.string().datetime({ offset: true }), fim: z
   if (d.periodos.some((p) => p.fim < p.inicio)) ctx.addIssue({ code: "custom", message: "Período não letivo invertido." });
 });
 
-/** Intervalo [início, fim): terminar exatamente à meia-noite não ocupa o dia seguinte. */
 export function conferirDiasNaoLetivos(input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const primeiroDia = dataCivilInstitucional(new Date(d.inicio), d.fusoEscola);

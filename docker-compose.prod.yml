@@ -1,14 +1,3 @@
-# Produção do ERP + canal WhatsApp (doc 31 — E5, gaps A1/A5 do doc 28).
-# Sobe: Postgres (banco do app) · migrações · app Next standalone ·
-# motor WhatsApp (whatsapp-web-baileys, modo serviço) SÓ na rede interna · Caddy (TLS automático) como única borda.
-#
-# O build acontece no GitHub Actions (.github/workflows/image.yml), não na VPS.
-# Este compose APENAS puxa a imagem validada do GHCR (variável APP_IMAGE com digest).
-#
-# Uso (VPS):   cp deploy/env.production.example .env   →   preencher APP_IMAGE e demais vars   →
-#              docker compose -f docker-compose.prod.yml up -d
-# As variáveis ${...} vêm do .env ao lado deste arquivo (compose lê sozinho).
-
 name: erp-genius
 
 services:
@@ -17,8 +6,6 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?defina no .env}
-      # ATENÇÃO: a senha entra CRUA nas connection URLs abaixo — use `openssl rand -hex 32`
-      # (URL-safe). Base64 pode conter / + = e quebrar migrations/app (PR #52).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env}
       POSTGRES_DB: erp
     volumes:
@@ -28,11 +15,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-    # SEM ports: o banco não escuta na internet. Acesso administrativo via `docker exec`
-    # ou túnel SSH — nunca porta pública (o banco atual em porta pública é o que a E5 aposenta).
 
-  # Migrações ANTES do app (prisma migrate deploy é aditivo e idempotente — nunca reset).
-  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
     image: ${APP_MIGRATE_IMAGE:?defina no .env}
     command: npx prisma migrate deploy
@@ -52,58 +35,33 @@ services:
       NEXTAUTH_URL: https://${DOMINIO_APP:?defina no .env}
       AUTH_TRUST_HOST: "true" # atrás do Caddy, o Auth.js confia no Host encaminhado
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
-      # Chave-mestra do envio real: só vira "1" no go-live, depois do piloto (doc 31 §rollout).
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
-      # Aria (ADR-F5-01): vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a
-      # API da Anthropic e, quando ATIVA, pode enviar mensagens. Modelos em Configurações › CRM › IA.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção real.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
-      # Assinatura eletrônica (Q155): vazio = registro manual. "simulado" SÓ em UAT/demo (driver SIMULADO, nada
-      # é enviado ao cliente; processos ficam SIMULADO/SANDBOX). Não existe driver de fornecedor real ainda.
       ASSINATURA_DRIVER: ${ASSINATURA_DRIVER:-}
-      # Motor WhatsApp na rede interna do compose (nunca a internet).
       MOTOR_URL: http://motor:4317
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no .env}
       MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no .env}
-      # --- Variáveis opcionais lidas pelo app (sem repasse aqui, o valor do painel/.env NÃO chega ao container).
-      # E-mail institucional (Resend): portal do aluno e avisos de agenda por e-mail. Vazio = sem envio de e-mail.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_INSTITUCIONAL_REMETENTE: ${EMAIL_INSTITUCIONAL_REMETENTE:-}
-      # Portal do aluno: envio dos e-mails de acesso (POST /api/portal-aluno/envios/cron) só com "true".
       EMAIL_PORTAL_ENVIO_ENABLED: ${EMAIL_PORTAL_ENVIO_ENABLED:-false}
-      # Origem HTTPS pública do portal, sem caminho (ex.: https://erp.exemplo.com); base dos links nos e-mails.
       PORTAL_ALUNO_URL_PUBLICA: ${PORTAL_ALUNO_URL_PUBLICA:-}
-      # Google Drive de gravações — leitura (player): conta de serviço + drive compartilhado.
-      # Chave privada em uma linha só, com \n literais (o app converte).
       GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL:-}
       GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY:-}
       DRIVE_ORGANIZACAO_ID: ${DRIVE_ORGANIZACAO_ID:-}
-      # Google Drive de gravações — publicação/fixação de revisão (credencial separada, com escrita).
       GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL:-}
       GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY:-}
-      # Habilitações operacionais (só "true" liga; padrão seguro "false").
-      # Emissão mensal recorrente (POST /api/financeiro/continuidade/cron).
       CONTINUIDADE_MENSAL_EMISSAO_ENABLED: ${CONTINUIDADE_MENSAL_EMISSAO_ENABLED:-false}
-      # Avisos de alteração de agenda (POST /api/agenda/avisos/cron e o despachante do WhatsApp).
       COMUNICACOES_AGENDA_ENVIO_ENABLED: ${COMUNICACOES_AGENDA_ENVIO_ENABLED:-false}
-      # Avisos de quantidade de aulas (Q38) alcançarem provedores.
       COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED: ${COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED:-false}
-      # Agendadores: cron-portal-envios (60 s) e cron-avisos-agenda (5 min) estão abaixo. ATENÇÃO: este
-      # compose NÃO agenda /api/financeiro/continuidade/cron — ligar CONTINUIDADE_MENSAL_EMISSAO_ENABLED exige
-      # um agendador externo (POST com header x-cron-secret).
     volumes:
-      # Mídia do WhatsApp + comprovantes/documentos (entra no backup — doc 31 §backup).
       - uploads:/app/data/uploads
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    # SEM ports: só o Caddy fala com o app.
 
-  # Motor WhatsApp (whatsapp-web-baileys em modo serviço): FORA da internet pública —
-  # nenhuma porta publicada; app e motor se falam pela rede interna do compose.
   motor:
     image: ${MOTOR_IMAGE:?defina no .env}
     restart: unless-stopped
@@ -116,11 +74,8 @@ services:
       PORT: "4317"
       WA_DATA_DIR: /data
     volumes:
-      # PGlite, chave do cofre, credenciais e mídia do motor (entra no backup).
       - motor_data:/data
     healthcheck:
-      # node:24.22.1-bookworm-slim não tem curl/wget; usar node -e com fetch nativo.
-      # 127.0.0.1 (não localhost): evita IPv6 → bind só em IPv4 (HOST=0.0.0.0).
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4317/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 10s
@@ -129,18 +84,12 @@ services:
     deploy:
       resources:
         limits:
-          # Baileys: 512MB–1GB para sessões, mídia temporária, PGlite e heaps.
-          # CPU: 0.5–1 core (picos em QR/pareamento, idle baixo).
           memory: 768M
           cpus: "0.75"
 
-  # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min — degraus de
-  # "+30min" (C1/C2) não sobrevivem a um tick horário (virariam ~"+90min" e estourariam a
-  # tolerância/validade dos degraus). Idempotente: chamadas repetidas são inofensivas.
   cron:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
     command:
       - sh
       - -c
@@ -150,12 +99,9 @@ services:
     depends_on:
       - app
 
-  # DESPACHO A CADA MINUTO: mensagens agendadas pelo atendimento saem na hora marcada
-  # (o tick de 5 min acima continua). Idempotente: só drena a fila.
   cron-despacho:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
     command:
       - sh
       - -c
@@ -165,12 +111,9 @@ services:
     depends_on:
       - app
 
-  # E-MAILS DO PORTAL DO ALUNO a cada minuto (convite/recuperação/troca de e-mail). Com
-  # EMAIL_PORTAL_ENVIO_ENABLED diferente de "true" a rota responde {executou:false} sem tocar o banco.
   cron-portal-envios:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
     command:
       - sh
       - -c
@@ -180,12 +123,9 @@ services:
     depends_on:
       - app
 
-  # AVISOS DE ALTERAÇÃO DE AGENDA a cada 5 min (mesma cadência da régua). Com
-  # COMUNICACOES_AGENDA_ENVIO_ENABLED diferente de "true" a rota responde {executou:false} sem tocar o banco.
   cron-avisos-agenda:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
     command:
       - sh
       - -c
@@ -195,7 +135,6 @@ services:
     depends_on:
       - app
 
-  # Única borda pública: TLS automático (Let's Encrypt) para o app — o motor NÃO passa por aqui.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped

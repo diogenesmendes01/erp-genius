@@ -16,7 +16,6 @@ type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 
 export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reservaId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
 
   return <form className="space-y-3 rounded border p-4" onSubmit={async evento => {
@@ -39,7 +38,6 @@ export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reserva
 
 export function FormularioNota({ realizacaoId, alocacaoId, codigoAvaliacao, realizadaEm, escala, habilidades, versaoEsperada, regularizacao, preferenciaFusoExibicao = null }: { realizacaoId: string; alocacaoId: string; codigoAvaliacao: string; realizadaEm: string; escala: { minimo: string; maximo: string }; habilidades: string[]; versaoEsperada: number; regularizacao: boolean; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  // Chave de idempotência estável entre tentativas com a mesma entrada: na falha de transporte, reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const habilidadesValidas = habilidades as Habilidade[];

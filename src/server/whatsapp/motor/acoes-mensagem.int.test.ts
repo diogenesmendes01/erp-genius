@@ -110,7 +110,6 @@ describe("reagir e encaminhar pelo motor", () => {
     expect(acao).toHaveBeenCalledWith(numero.id, "message.forward", { messageId: "c:3EB0X", chatId: "50688880002@s.whatsapp.net" }, { origem: "HUMANO" });
     const fwd = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "FWD0" } });
     expect(fwd).toMatchObject({ origem: "HUMANO", autorId: autor.id, atendimentoId: dest.id, corpo: "oi", direcao: "SAIDA", status: "ENVIADA" });
-    // Nasce ENVIADA: o momento do envio (D6 do SLA) precisa estar gravado.
     expect(fwd.enviadaEm).toEqual(fwd.statusEm);
     expect(fwd.enviadaEm).not.toBeNull();
     expect(await evento("MensagemWhatsAppEncaminhada")).not.toBeNull();

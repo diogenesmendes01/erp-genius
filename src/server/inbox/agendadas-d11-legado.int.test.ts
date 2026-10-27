@@ -8,7 +8,6 @@ import {cenarioCadastroPessoa} from "@/test/inbox-cadastro-pessoa";
 import {diaUtilAs} from "@/test/janela-envio";
 import {agendarMensagem} from "@/server/crm/mensagens-agendadas";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
-/** Autoria nativa para futura lease: nenhuma execução/RED observado nesta faseFS. */
 beforeEach(async()=>{await truncarBanco();m.auth.mockReset();});
 afterAll(()=>prisma.$disconnect());
 async function cenario(){const c=await cenarioCadastroPessoa();await prisma.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});await prisma.oportunidade.update({where:{id:c.op.id},data:{telefoneE164:c.contato.telefoneE164}});m.auth.mockResolvedValue({user:{id:c.dono.id}});return c;}

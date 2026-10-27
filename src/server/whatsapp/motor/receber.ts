@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { EnvelopeMotor } from "./eventos";
 
-/** Grava o evento na tabela de entrada. Dedupe por idEvento: repetido → "duplicado". */
 export async function registrarEventoMotor(env: EnvelopeMotor): Promise<"novo" | "duplicado"> {
   try {
     await prisma.eventoMotorRecebido.create({
@@ -24,18 +23,11 @@ export async function registrarEventoMotor(env: EnvelopeMotor): Promise<"novo" |
 export type ResultadoProcessamento = "ok" | { ignorado: string } | { adiar: string };
 export type ProcessadorEvento = (env: EnvelopeMotor) => Promise<ResultadoProcessamento>;
 
-/** Preenchido pelas tasks 12–17. Tipo sem processador → `{ ignorado: "tipo_desconhecido" }`. */
 export const PROCESSADORES: Record<string, ProcessadorEvento> = {};
 
 export const MAX_TENTATIVAS_EVENTO = 12;
 export const RETENCAO_EVENTO_MS = 7 * 86_400_000;
 
-/**
- * Prazo do dreno: depois dele não pega evento novo; o resto fica para o próximo dreno.
- * Um evento sozinho pode levar até 60 s (download de mídia), então o timeout da transação
- * que segura o lock precisa cobrir prazo + 1 evento lento + folga. Se a transação expirasse,
- * o lock seria liberado com o laço ainda rodando e um segundo dreno processaria os mesmos eventos.
- */
 export const PRAZO_DRENO_MS = 60_000;
 const TIMEOUT_TX_DRENO_MS = 180_000;
 
@@ -64,10 +56,6 @@ async function executar(ev: {
   }
 }
 
-/**
- * Drena a tabela de entrada em ordem de `seq`, um dreno por vez (advisory lock de transação).
- * O processamento usa o `prisma` normal (outras conexões); a transação só segura o lock.
- */
 export async function drenarEventosMotor(
   agora: Date = new Date(),
   opcoes: { prazoMs?: number; relogio?: () => number } = {},
@@ -131,7 +119,6 @@ export async function drenarEventosMotor(
           }
         }
       }
-      // Retenção: dados operacionais, não de negócio.
       await prisma.eventoMotorRecebido.deleteMany({
         where: { processadoEm: { not: null }, recebidoEm: { lt: new Date(agora.getTime() - RETENCAO_EVENTO_MS) } },
       });

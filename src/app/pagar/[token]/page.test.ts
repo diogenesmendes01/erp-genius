@@ -1,11 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 /pagar #2, #3, #4, #6 e #7 (docs/43 §6 item 8): a página trata cada situação do link e da cobrança com
-// texto e saída; só pendente e vencida têm caminho de pagamento. A consulta é mock (nenhum banco).
 const m = vi.hoisted(() => ({ cobranca: vi.fn(), simulado: vi.fn() }));
 vi.mock("@/server/financeiro/gateway", () => ({ cobrancaPorToken: m.cobranca, pagamentoSimuladoHabilitado: m.simulado }));
-// O PagarCliente usa o router do App Router para renderizar a página de novo depois do pagamento.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 
 import PagarPage, { metadata } from "./page";

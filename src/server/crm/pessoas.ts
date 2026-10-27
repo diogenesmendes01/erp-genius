@@ -17,18 +17,10 @@ export type EntradaPessoa = {
 
 const SEM_ACESSO: Prisma.PessoaWhereInput = { id: "__sem_acesso__" };
 
-/** "Maria  Álvaro" -> "maria alvaro" (sem acento, minúsculo, espaços colapsados). */
 export function normalizarNome(nome: string): string {
   return nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-/**
- * Escopo de leitura de Pessoa por papel (regras da Tarefa 19). Lápides (`mescladaEmId`) ficam sempre fora.
- * - ADMIN e GC: pessoas da equipe, mais as sem oportunidade, mais as sem dono;
- * - VEN: as que têm oportunidade em `escopoComercialAtual`;
- * - SEC: as que têm aluno ou responsável;
- * - demais: nada.
- */
 export async function escopoPessoas(
   usuario: UsuarioSessao,
   tx: Tx | typeof prisma = prisma,
@@ -61,42 +53,25 @@ async function criarPessoa(tx: Tx, e: EntradaPessoa, autorId: string | null, vin
     agregadoTipo: "Pessoa",
     agregadoId: pessoa.id,
     autorId,
-    // Sem telefone nem e-mail: o payload do evento não carrega dado de contato.
     payload: { nome: pessoa.nome, origemCanal: e.origemCanal ?? null, vinculo },
   });
   return pessoa.id;
 }
 
-/** Chave do advisory lock por telefone normalizado. Exportada para o teste conferir o lock. */
 export function chaveLockPessoaTelefone(telefoneE164: string): string {
   return `pessoa:${telefoneE164}`;
 }
 
 async function travarTelefoneTx(tx: Tx, telefoneE164: string): Promise<void> {
-  // $executeRaw: pg_advisory_xact_lock devolve `void`, que o $queryRaw não desserializa.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chaveLockPessoaTelefone(telefoneE164)}, 0))`;
 }
 
-/**
- * Garante a Pessoa de uma identidade, sem duplicar. Precedência:
- * 1. `ContatoWhatsApp.pessoaId` do telefone;
- * 2. aluno/responsável (explícito ou com o mesmo telefone). Se o telefone casar com mais de um,
- *    cria pessoa nova e não liga a nenhum: telefone compartilhado não identifica a pessoa;
- * 3. criar.
- * `ContatoWhatsApp` é upserted e só recebe `pessoaId` quando estava nulo.
- * O `email` só é gravado quando a Pessoa é criada aqui; Pessoa achada não é atualizada (intencional
- * nesta fase; R1 do PR #194, C2).
- */
 export async function garantirPessoaTx(
   tx: Tx,
   e: EntradaPessoa,
   autorId: string | null,
 ): Promise<{ pessoaId: string; criada: boolean }> {
   const telefone = e.telefoneE164 || null;
-  // Serializa criações simultâneas do mesmo telefone (R1 do PR #194, C3): sem o lock, duas transações
-  // leem `contato = null`, criam duas Pessoas e a segunda oportunidade aponta para uma órfã. O lock é
-  // da transação (solto no commit/rollback) e vem ANTES da busca, para a segunda ler o contato já gravado.
-  // `telefone` já chega normalizado em E.164 (quem chama normaliza).
   if (telefone) await travarTelefoneTx(tx, telefone);
   const contato = telefone ? await tx.contatoWhatsApp.findUnique({ where: { telefoneE164: telefone } }) : null;
 
@@ -151,10 +126,6 @@ export async function garantirPessoaTx(
 
 export type PossivelDuplicado = { pessoaId: string | null; nome: string | null; motivo: "telefone" | "email" | "nome" };
 
-/**
- * Candidatas a duplicata por telefone, e-mail (minúsculo) e nome (sem acento), no máximo 5.
- * Pessoa fora do escopo do usuário volta com `pessoaId` e `nome` nulos ("Já existe no CRM").
- */
 export async function possiveisDuplicados(
   e: { nome?: string; telefoneE164?: string | null; email?: string | null },
   usuario: UsuarioSessao,

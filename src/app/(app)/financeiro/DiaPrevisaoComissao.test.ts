@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// D11: o dia X da previsão de pagamento é configurável na aba de política de comissão. Fora de 1 a 28, a tela
-// recusa sem chamar o servidor; dentro, envia o dia (estado-alvo) e atualiza a página.
-
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   salvar: vi.fn(), refresh: vi.fn(),

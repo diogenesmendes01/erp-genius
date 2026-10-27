@@ -5,7 +5,6 @@ import type {Root} from "react-dom/client";
 import {afterEach,beforeEach,expect,it,vi} from "vitest";
 import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
 import type {OportunidadesPainel} from "@/server/inbox/painel-oportunidades";
-// O DOM mínimo não implementa namespaces SVG; apresentação dos ícones reais é coberta no SSR do cartão.
 vi.mock("@tabler/icons-react",()=>({IconCalendarTime:()=>createElement('span'),IconPencil:()=>createElement('span'),IconTrash:()=>createElement('span'),IconBriefcase:()=>createElement('span'),IconPlus:()=>createElement('span'),IconHandStop:()=>createElement('span'),IconThumbDown:()=>createElement('span'),IconCalendarCheck:()=>createElement('span')}));
 const {mover}=vi.hoisted(()=>({mover:vi.fn()}));vi.mock("@/server/inbox/acoes-painel",()=>({moverEtapaNoInbox:mover}));
 import {AbaOportunidades} from "./AbaOportunidades";

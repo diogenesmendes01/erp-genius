@@ -25,7 +25,7 @@ async function cenario() {
   await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: v1.id, status: "EM_ATENDIMENTO" } });
   return { v1, v2, gc, a };
 }
-const amanha = () => diaUtilAs(10).toISOString(); // D12: dentro da janela de envio
+const amanha = () => diaUtilAs(10).toISOString();
 
 describe("convites e agendamentos do atendimento (Task 31)", () => {
   it("lista o convite ativo para quem concedeu e para o gerente, e não para um terceiro; revogar o tira da lista", async () => {

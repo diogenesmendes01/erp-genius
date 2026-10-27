@@ -57,10 +57,6 @@ async function prepararIntencao() {
   return prisma.intencaoMensagem.findFirstOrThrow({ where: { cobrancaId: contexto.cobranca.id } });
 }
 
-// Relógio fixo ao meio-dia da escola do dia corrente: `diasDepois` monta o dia no fuso da máquina e a
-// régua conta no dia da escola (Q176, #239). Com TZ=UTC entre 00h e 03h UTC o "hoje + 7" virava
-// D-8 na escola e a outra parcela saía de `acao_devida`. O dia é o de hoje, não uma data literal, para
-// não se afastar do `now()` do banco. O CT08 troca o relógio por conta própria.
 beforeEach(async () => {
   await truncarBanco();
   vi.useFakeTimers({ toFake: ["Date"] });

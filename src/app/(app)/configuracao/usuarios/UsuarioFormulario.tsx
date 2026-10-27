@@ -43,8 +43,6 @@ export function UsuarioFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  // Sem chave de idempotência: repetir a criação esbarra no e-mail já cadastrado e a edição reaplica
-  // os dados; a falha de rede manda conferir a lista antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
 
   const {

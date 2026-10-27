@@ -26,14 +26,10 @@ const contextoSchema = z.object({
 const fonteComumSchema = z.object({
   referenciaId: id, matriculaId: id, nivelId: id, alocacaoId: id, turmaId: id, regraId: id,
   habilidade,
-  // Só impede que ausência seja apresentada como aproveitamento. A projeção
-  // retornada não replica a nota: ela mantém a referência da fonte oficial.
   nota: decimal, oficial: z.literal(true),
   fonteHash: z.string().regex(/^[a-f0-9]{64}$/),
 }).strict();
 
-// Regular continua aceitando a forma antiga sem tipoFonte. Isso preserva os
-// mapeamentos já guardados e os consumidores que só conhecem lançamentos.
 const fonteRegularSchema = fonteComumSchema.extend({
   tipoFonte: z.literal("REGULAR").default("REGULAR"),
   codigoAvaliacao: id, registroId: id, lancamentoId: id, decisaoLancamentoId: id,
@@ -46,9 +42,6 @@ const fonteRegularSchema = fonteComumSchema.extend({
   }
 });
 
-// Recuperação é resultado por habilidade, não uma avaliação regular disfarçada.
-// A ausência deliberada de codigoAvaliacao obriga o mapa aprovado a declarar
-// qual requisito de destino será suprido.
 const fonteRecuperacaoSchema = fonteComumSchema.extend({
   tipoFonte: z.literal("RECUPERACAO"), escopoFonte: z.literal("HABILIDADE"),
   codigoAvaliacao: z.null(),
@@ -64,8 +57,6 @@ const fonteRecuperacaoSchema = fonteComumSchema.extend({
   }
 });
 
-// Uma aplicação anterior conserva a fonte de que depende. Ela não transforma
-// o aproveitamento em lançamento local nem perde a cadeia que o sustenta.
 const fonteAproveitamentoSchema = fonteComumSchema.extend({
   tipoFonte: z.literal("APROVEITAMENTO"), escopoFonte: z.literal("REQUISITO_DESTINO"),
   codigoAvaliacao: id,
@@ -145,10 +136,6 @@ function referenciaProjetada(fonte: FonteOficialEquivalencia): ReferenciaFontePr
 
 const chaveRequisito = (codigoAvaliacao: string, habilidadeDestino: string) => codigoAvaliacao + "\u0000" + habilidadeDestino;
 
-/**
- * Projeta os requisitos da regra de destino que têm fonte oficial
- * aproveitável. Não cria lançamento, converte nota nem calcula média.
- */
 export function projetarEquivalenciaTransferencia(entrada: unknown) {
   const dados = EntradaEquivalenciaTransferenciaSchema.parse(entrada);
   const { contexto } = dados;
@@ -205,8 +192,6 @@ export function projetarEquivalenciaTransferencia(entrada: unknown) {
     return { ...requisito, situacao: "APROVEITADO" as const, fonte: referenciaProjetada(fonte) };
   });
 
-  // Reutilização entre requisitos distintos é visível e depende da decisão
-  // pedagógica; o consolidado conta cada requisito de destino uma única vez.
   const fontesReutilizadas = [...usosPorFonte.entries()].filter(([, chaves]) => chaves.length > 1)
     .map(([referenciaFonteId, chaves]) => ({
       referenciaFonteId,

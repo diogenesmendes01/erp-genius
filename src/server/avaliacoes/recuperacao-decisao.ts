@@ -14,7 +14,6 @@ import { preparacaoRecuperacaoVigenteTx } from "./recuperacao-preparacao-vigenci
 
 const schema = z.object({ propostaId: z.string().min(1).max(100), propostaHash: z.string().regex(/^[a-f0-9]{64}$/), aprovada: z.boolean(), motivo: z.string().trim().min(5).max(2000) }).strict();
 
-/** Aprovação pedagógica do plano; liberação de tentativas depende de reserva própria. */
 export async function decidirPlanoRecuperacao(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = schema.parse(input);

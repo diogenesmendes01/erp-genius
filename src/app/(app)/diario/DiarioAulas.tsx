@@ -17,14 +17,8 @@ const campo = "rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = botaoClasses({ tamanho: "lg" });
 type RegistroForm = { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string; podeEditar: boolean };
 type AlunoChamada = { alunoId: string; nomeAluno: string };
-/** Troca de data que tiraria da chamada alunos com presença ou observação preenchida: espera a decisão. */
 type TrocaPendente = { registros: RegistroForm[]; descartados: string[]; exigeConferencia: boolean; dataAnterior: string; conferenciaAnterior: boolean };
 
-/**
- * Chamada da nova data mesclada com a já preenchida (docs/43 §6 item 3; docs/42 L1835): quem continua na lista
- * mantém presença e observação; quem entra começa vazio. `descartados` são os nomes de quem sai da lista com
- * algo preenchido — esses só saem depois que a pessoa confirma.
- */
 export function mesclarChamada(atuais: RegistroForm[], alunos: AlunoChamada[]): { registros: RegistroForm[]; descartados: string[] } {
   const porAluno = new Map(atuais.map((r) => [r.alunoId, r] as const));
   const ficam = new Set(alunos.map((a) => a.alunoId));
@@ -37,13 +31,7 @@ export function mesclarChamada(atuais: RegistroForm[], alunos: AlunoChamada[]): 
   };
 }
 
-/**
- * `fusoEntrada`: fuso em que a data e hora da aula são digitadas (pessoal; sem preferência, o da escola — ver
- * fusoDoCampoLocal), escrito ao lado do campo. O valor inicial e o `max` saem nele; a conversão é do servidor
- * (diario-local.ts). Antes, tudo no fuso do navegador.
- */
-export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[]; /** Estado vazio de uma busca (a página diz o termo). */ mensagemVazio?: string; fusoEntrada: string }) {
-  /** Valor do campo para o instante (agora, por padrão) no fuso de entrada. */
+export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[];  mensagemVazio?: string; fusoEntrada: string }) {
   const dataLocal = (iso: string | Date = new Date()) => valorCampoLocal(iso, fusoEntrada);
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -59,11 +47,6 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aul
   const [conferencia, setConferencia] = useState(false);
   const [troca, setTroca] = useState<TrocaPendente | null>(null);
 
-  /**
-   * Carrega a chamada da turma na data. Trocar de turma começa do zero; trocar a DATA (`preenchidos`) não apaga
-   * o que foi digitado: a lista nova é mesclada com a atual e, se alguém com dados preenchidos sair, a troca
-   * espera a confirmação (aplicarTroca/manterData).
-   */
   async function escolherTurma(id: string, instante = data, preenchidos?: { registros: RegistroForm[]; dataAnterior: string; conferenciaAnterior: boolean }) {
     setTurmaId(id);
     const versao = ++consulta.current;
@@ -88,10 +71,6 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aul
       if (versao === consulta.current) setCarregando(false);
     }
   }
-  /**
-   * A chamada da nova data não carregou (R1 da #155, C2): a tela volta à data anterior, para a lista mostrada e a
-   * data do registro continuarem coerentes — salvar não pode juntar a lista antiga com a data nova.
-   */
   function voltarDataSeFalhou(preenchidos?: { dataAnterior: string; conferenciaAnterior: boolean }) {
     if (!preenchidos) return;
     setData(preenchidos.dataAnterior); setConferencia(preenchidos.conferenciaAnterior);
@@ -116,7 +95,6 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aul
   function salvar() {
     iniciar(async () => {
       const registrosEnvio = registros.map((r) => ({ alunoId: r.alunoId, presente: r.presente, observacao: r.observacao }));
-      // Edição mantém o instante gravado (o campo fica travado); aula nova manda o texto e o fuso ao servidor.
       const resposta = edicao
         ? await salvarAulaDiario({ aulaId: edicao.id, turmaId, ocorridaEm: edicao.ocorridaEm, conteudo, registros: registrosEnvio })
         : await salvarAulaDiarioLocal({ turmaId, ocorridaLocal: data, fuso: fusoEntrada, conteudo, registros: registrosEnvio });

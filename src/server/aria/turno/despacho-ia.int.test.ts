@@ -22,9 +22,6 @@ import { provedorSimulado } from "../provedor/simulado";
 import type { PedidoIA, ProvedorIA, RespostaIA } from "../provedor/tipos";
 import { processarTurnoAria } from "./orquestrador";
 
-// Revisão final da Fase 5C (achado 1): a resposta da Aria ATIVA passa pelo despachante de verdade.
-// O ensaio dela é o estado da própria Aria (a saudação reativa do CRM antigo, que só simula, não a afeta).
-
 let seq = 0;
 beforeEach(async () => {
   await truncarBanco();
@@ -37,7 +34,6 @@ afterEach(() => vi.unstubAllEnvs());
 const provedor: ProvedorIA = {
   nome: "simulado",
   async gerar(p: PedidoIA): Promise<RespostaIA> {
-    // Parte da resposta do provedor simulado real: herda campos novos de RespostaIA (ex.: tokensEscritaCache).
     return {
       ...(await provedorSimulado.gerar(p)),
       texto: JSON.stringify({ resposta: "Temos turmas à noite, quer conhecer?", documentoId: null, acoes: [], confianca: 95, handoff: null, fontes: [], humor: null }),
@@ -75,10 +71,8 @@ describe("despacho da resposta da Aria", () => {
     const intencao1 = await prisma.intencaoMensagem.findFirstOrThrow({ orderBy: { criadaEm: "asc" } });
     expect(intencao1).toMatchObject({ origem: "IA", status: "DESPACHADA" });
     expect(await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: intencao1.mensagemId! } })).toMatchObject({ direcao: "SAIDA", origem: "IA" });
-    // A Aria não se pausa com a própria fala.
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).iaPausadaEm).toBeNull();
 
-    // Já apresentada: a resposta seguinte não repete a apresentação.
     const m2 = await c.inbound("E aos sábados?");
     expect(await processarTurnoAria(m2.id, { provedor })).toMatchObject({ resultado: "RESPONDEU" });
     expect(await despacharFila()).toMatchObject({ despachadas: 1 });
@@ -89,7 +83,6 @@ describe("despacho da resposta da Aria", () => {
     const c = await cenario("ATIVA");
     const m = await c.inbound("Quero saber das turmas de inglês");
     expect(await processarTurnoAria(m.id, { provedor })).toMatchObject({ resultado: "RESPONDEU" });
-    // A atendente responde pelo celular antes do despachante rodar.
     await processarMensagemNormalizada({
       numeroTelefoneE164: c.numero.telefoneE164, contatoWaId: "50688888888", providerMessageId: `eco-${++seq}`, corpo: "Oi, aqui é a Camila",
       tipo: "TEXTO", driver: "MOTOR", fromMe: true, quando: new Date(),
@@ -105,7 +98,6 @@ describe("despacho da resposta da Aria", () => {
     expect(await processarTurnoAria(m.id, { provedor })).toMatchObject({ resultado: "RESPONDEU" });
     authMock.mockResolvedValue({ user: { id: c.dono.id } });
     expect((await enviarTextoInbox({ conversaId: c.at.id, texto: "Oi, aqui é a Camila" })).ok).toBe(true);
-    // O envio pelo ERP sai na hora; o despachante seguinte não tem mais nada da Aria a mandar.
     expect(await despacharFila()).toMatchObject({ despachadas: 0 });
     expect(enviarTextoMock).toHaveBeenCalledTimes(1);
     expect(enviarTextoMock.mock.calls[0][2]).toBe("Oi, aqui é a Camila");
@@ -116,7 +108,6 @@ describe("despacho da resposta da Aria", () => {
     const c = await cenario("ATIVA");
     const m = await c.inbound("Quero saber das turmas de inglês");
     expect(await processarTurnoAria(m.id, { provedor })).toMatchObject({ resultado: "RESPONDEU" });
-    // Pausa gravada por fora (sem passar por pausarAriaNoAtendimento): só a defesa do despachante segura.
     await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "MANUAL" } });
     expect(await despacharFila()).toMatchObject({ despachadas: 0, canceladas: 1 });
     expect(enviarTextoMock).not.toHaveBeenCalled();
@@ -158,10 +149,8 @@ describe("despacho da resposta da Aria", () => {
   });
 });
 
-// Vindo da 5D (antes da revisão final da 5C): a mensagem agendada pela Aria antes do handoff não sai,
-// e o aviso do próprio handoff sai. Ajustado à regra final (motivo MOTIVO_ARIA_PAUSADA, sem Evento próprio).
 describe("mensagem agendada da Aria e o handoff", () => {
-  const amanha = () => diaUtilAs(10); // D12: dentro da janela de envio
+  const amanha = () => diaUtilAs(10);
   const comAgendamento: ProvedorIA = {
     nome: "simulado",
     async gerar(p: PedidoIA): Promise<RespostaIA> {

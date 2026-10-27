@@ -1,6 +1,3 @@
-// Validador de valores: o modelo só pode citar preço, desconto e parcelas que o servidor autorizou.
-// Números soltos sem marcador (horários, datas, quantidades) são ignorados.
-
 export interface ValoresPermitidos {
   valores: number[];
   percentuais: number[];
@@ -75,17 +72,12 @@ function coletar(texto: string): Achado[] {
   return achados.sort((a, b) => a.inicio - b.inicio);
 }
 
-/** Trechos monetários, percentuais ou de parcelas cujo número não está na lista permitida da categoria. */
 export function valoresNaoAutorizados(texto: string, permitidos: ValoresPermitidos): string[] {
   return coletar(texto)
     .filter((a) => !igual(a.numero, permitidos[a.categoria]))
     .map((a) => a.trecho);
 }
 
-/**
- * Valores, percentuais e parcelas que um texto cita, lidos pelos mesmos padrões da guarda. Usado para
- * autorizar o que está nas respostas rápidas liberadas: um texto aprovado pela equipe passa na guarda.
- */
 export function valoresCitados(texto: string): ValoresPermitidos {
   const r: ValoresPermitidos = { valores: [], percentuais: [], parcelas: [] };
   for (const a of coletar(texto)) if (!igual(a.numero, r[a.categoria])) r[a.categoria].push(a.numero);

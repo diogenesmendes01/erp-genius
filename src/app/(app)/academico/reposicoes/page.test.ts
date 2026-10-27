@@ -3,8 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 L1244 (docs/43 §6 item 7): sem ?matriculaId= a tela mostrava só "Abra esta tela pelo contexto da
-// matrícula" — sem busca, sem lista, sem link. Agora tem a busca, a lista e a saída para a ficha do aluno.
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), preferencia: vi.fn(), buscar: vi.fn(), consultar: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
@@ -65,8 +63,6 @@ describe("/academico/reposicoes sem matrícula na URL", () => {
   });
 });
 
-// E10 (docs/42 /academico/reposicoes #2; docs/43 §6 item 10): Conteudo — a consulta da matrícula e uma por
-// gravação autorizada — não segura mais a página inteira: fica num <Suspense> com esqueleto.
 describe("/academico/reposicoes com matrícula: a consulta pesada fica num <Suspense>", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -85,7 +81,7 @@ describe("/academico/reposicoes com matrícula: a consulta pesada fica num <Susp
     const primeira = renderToStaticMarkup(primeiraPintura(arvore) as ReactElement);
     expect(primeira).toContain('href="/academico"');
     expect(primeira).toMatch(/<p class="sr-only" role="status">Carregando reposições da matrícula<\/p>/);
-    expect(primeira.split('data-esqueleto="titulo"').length - 1).toBe(1); // o h1 está dentro do Conteudo
+    expect(primeira.split('data-esqueleto="titulo"').length - 1).toBe(1);
   });
 
   it("o conteúdo, quando chega, é o mesmo de antes: consulta com matrícula e cursores, erro em alerta", async () => {
@@ -107,8 +103,6 @@ describe("/academico/reposicoes com matrícula: a consulta pesada fica num <Susp
     expect(await chave({ matriculaId: "m1", origemCursor: "o2" })).toBe(base);
   });
 
-  // B1 da review do #290: sem preferência, a operação da entrega (prazo e "Expira em") é digitada no fuso da ESCOLA,
-  // não em UTC; com preferência, no pessoal.
   it("o fuso que chega ao conteúdo (e aos campos de entrada): sem preferência, o da escola; com preferência, o pessoal", async () => {
     const fusoDoConteudo = async () => (limites(await abrir({ matriculaId: "m1" }))[0].props.children.props as { fusoExibicao: string }).fusoExibicao;
     expect(await fusoDoConteudo()).toBe("America/Sao_Paulo");

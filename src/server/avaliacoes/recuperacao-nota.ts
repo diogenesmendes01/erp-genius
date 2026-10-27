@@ -44,7 +44,6 @@ export async function salvarNotaRecuperacao(input: z.input<typeof salvarSchema>)
       const regra = ConteudoRegraAvaliacaoSchema.parse(r.itemReserva.reserva.proposta.regra.conteudo);
       if (d.submetida && d.nota === null) throw new ErroRegra("Informe a nota antes de submeter.");
       if (d.nota !== null && (new Prisma.Decimal(d.nota).lt(regra.escala.minimo) || new Prisma.Decimal(d.nota).gt(regra.escala.maximo))) throw new ErroRegra("Nota fora da escala configurada.");
-      // A realização é preservada mesmo se outras habilidades da reserva foram canceladas.
       const n = await tx.notaRecuperacao.create({ data: { realizacaoId: r.id, autorId: u.id, versao: d.versaoEsperada + 1, nota: d.nota, comentarioAluno: d.comentarioAluno, submetida: d.submetida, chaveIdempotencia: d.chaveIdempotencia, entradaHash } });
       await registrarEvento(tx, { tipo: d.submetida ? "NotaRecuperacaoSubmetida" : "NotaRecuperacaoRascunhada", agregadoTipo: "Matricula", agregadoId: a.matriculaId, autorId: u.id, payload: { realizacaoId: r.id, notaId: n.id, versao: n.versao } });
       return { id: n.id, versao: n.versao };

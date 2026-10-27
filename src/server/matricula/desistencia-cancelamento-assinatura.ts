@@ -20,9 +20,6 @@ const iniciarSchema = z.object({
 
 type Inicio = { id: string; nova: boolean; referenciaExterna: string; fornecedor: string; ambiente: string };
 
-/** Registra a intenção Q121 de cancelar um envio já aberto. Esta ação não
- * chama nem aceita uma resposta do fornecedor. O resultado pertence ao
- * adaptador autenticado/conciliador server-side. */
 export async function iniciarCancelamentoAssinaturaDesistencia(input: z.input<typeof iniciarSchema>): Promise<Resultado<Inicio>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -37,12 +34,6 @@ export async function iniciarCancelamentoAssinaturaDesistencia(input: z.input<ty
 const executarSchema = iniciarSchema.extend({ chaveIdempotencia: z.string().trim().min(8).max(200).optional() }).strict();
 type Execucao = { intencaoId: string; cancelamentoConfirmado: boolean; repetido: boolean };
 
-/**
- * Cancelamento integrado (Q165): a intenção é confirmada no banco antes da chamada ao serviço de
- * assinatura e o resultado entra em outra transação. Só a confirmação do serviço encerra o processo
- * (CANCELADO); recusa, erro ou dúvida ficam como observação INCERTO, e a mesma ação, com nova chave,
- * concilia a intenção já registrada (nunca abre outra). Cancelar o envio não efetiva a desistência.
- */
 export async function executarCancelamentoAssinaturaDesistencia(input: z.input<typeof executarSchema>): Promise<Resultado<Execucao>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -58,7 +49,6 @@ export async function executarCancelamentoAssinaturaDesistencia(input: z.input<t
       }
       const inicio = await iniciarCancelamentoAssinaturaDesistenciaTx(tx, sessao.id, dados);
       if (inicio.fornecedor !== provedor.fornecedor || inicio.ambiente !== provedor.ambiente) throw new ErroRegra("O processo pertence a outro serviço ou ambiente de assinatura. Cancele pela integração correspondente.");
-      // Já confirmado: nada a pedir de novo ao serviço.
       if (!inicio.nova && await tx.observacaoCancelamentoAssinatura.count({ where: { intencaoId: inicio.id, resultado: "CONFIRMADO" } })) {
         return { repetido: true as const, intencaoId: inicio.id, cancelamentoConfirmado: true };
       }

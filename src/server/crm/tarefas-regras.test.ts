@@ -5,7 +5,7 @@ const CR = "America/Costa_Rica";
 
 describe("grupoDaTarefa", () => {
   it("usa a data civil do fuso institucional perto da meia-noite", () => {
-    const agora = new Date("2026-10-16T05:00:00Z"); // 23:00 de 15/10 em CR
+    const agora = new Date("2026-10-16T05:00:00Z");
     expect(grupoDaTarefa({ dataCivil: "2026-10-15", inicioEm: new Date("2026-10-16T05:30:00Z"), status: "ABERTA" }, agora, CR)).toBe("HOJE");
     expect(grupoDaTarefa({ dataCivil: "2026-10-16", inicioEm: null, status: "ABERTA" }, agora, CR)).toBe("AMANHA");
   });

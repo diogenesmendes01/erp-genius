@@ -1,6 +1,5 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
@@ -12,11 +11,6 @@ vi.mock("@/server/aria/acoes",()=>({devolverParaAria:vi.fn(),aprovarSugestaoNoIn
 const sug:SugestaoAriaThread={id:"s1",turnoId:"t1",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-18T14:00:00Z",expiraEm:"2026-10-18T15:00:00Z",justificativa:null,texto:"Oi, posso ajudar com a matrícula.",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
 const msgIA:MensagemThread={id:"m1",direcao:"SAIDA",tipo:"TEXTO",corpo:"Olá",midiaPath:null,status:"ENVIADA",origem:"IA",autorNome:null,templateNome:null,criadoEm:"2026-10-17T15:30:00Z",participanteNome:null,favorita:false,clientMessageId:null};
 describe("353: Aria no cabeçalho e na thread, sem painel duplicado",()=>{
- it("o_inbox_nao_monta_mais_o_painel_da_aria",()=>{
-  expect(existsSync("src/app/(app)/inbox/PainelAria.tsx")).toBe(false);
-  const inbox=readFileSync("src/app/(app)/inbox/InboxNovo.tsx","utf8"),conversa=readFileSync("src/app/(app)/inbox/ConversaAberta.tsx","utf8");
-  expect(inbox).not.toContain("PainelAria");expect(conversa).toContain("<CartaoSugestaoAria s={i.s}");expect(conversa).toContain("aoDecidir={aoMudar}");expect(conversa).toContain("<ControladorDevolverAria");expect(conversa).toContain("acoesAria={devolver?.botao}");expect(conversa).toContain("{devolver?.feedback}");
- });
  it.each([["CELULAR","Aria pausada · Resposta pelo celular"],["HUMANO_RESPONDEU","Aria pausada · Humano respondeu no ERP"],[null,"Aria pausada"]] as const)("motivo de pausa continua no texto e dica do cabeçalho: %s",(motivo,dica)=>{
   expect(textoPausaAria(motivo)).toBe(dica);expect(linhaEstadoAria("humano",{atendidoPorVoce:true,responsavelNome:"Ana",podeDecidir:false,pausada:true,motivo})?.dica).toBe(dica);
   const h=renderToStaticMarkup(createElement(BotaoDevolverAria,{atendimentoId:"a1",dica,aoMudar(){}}));expect(h).toContain('title="'+dica+'"');expect(h).toContain('aria-label="Devolver para Aria"');

@@ -1,8 +1,6 @@
 import { EtapaLead } from "@prisma/client";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 
-// Q8: com funis configuráveis, este mapa passa a ler EtapaFunil.tipoSemantico.
-
 export const COLUNAS_FUNIL: readonly EtapaLead[] = [
   EtapaLead.NOVO,
   EtapaLead.EM_ATENDIMENTO,
@@ -18,8 +16,6 @@ export const COLUNAS_FUNIL: readonly EtapaLead[] = [
 
 export const COLUNAS_RECOLHIDAS: readonly EtapaLead[] = [EtapaLead.MATRICULADO, EtapaLead.PERDIDO];
 
-// "nenhum": o card voltou para a própria coluna. A UI não abre diálogo nem
-// chama o servidor, e o servidor não grava Evento de etapa sem mudança.
 export type DestinoArraste =
   | { tipo: "nenhum" }
   | { tipo: "mover" }

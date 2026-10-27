@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import type { carregarAcertoAprovadoParaEfetivacaoTx } from "./encerramento-efetivacao-estado";
 
-/** Destinação interna na mesma transação do ajuste. Não emite crédito adicional. */
 export async function aplicarCompensacoesAcertoTx(tx: Prisma.TransactionClient, acerto: Awaited<ReturnType<typeof carregarAcertoAprovadoParaEfetivacaoTx>>) {
   const ids: string[] = [];
   for (const contrato of acerto.previa.contratos) {

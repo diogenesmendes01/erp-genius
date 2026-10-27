@@ -27,20 +27,8 @@ import {
   type MatriculasLoteB2BInput,
 } from "./schema";
 
-// B2B — FASE 2 (doc 03): contrato corporativo (Empresa) · matrículas em LOTE ·
-// fatura ÚNICA por competência · baixa em lote. Toda mutação grava Evento (doc 13).
-//
-// Compatibilidade histórica da main. Q88 limita novas contratações a contratos
-// individuais; criarMatriculasLoteB2B recusa a antiga ativação sem preparação.
-
 const PAPEIS_B2B: Papel[] = [Papel.FINANCEIRO];
 
-/**
- * D9 (decisão do dono, 19/10/2026): a escola não usa a cobrança de empresas. Fechar e pagar fatura recusam com
- * mensagem clara enquanto a chave `COBRANCA_B2B_ATIVA` estiver desligada — depois da sessão e da alçada, antes de
- * qualquer leitura ou escrita. Cancelar NÃO passa por aqui (R1 do #251, B1): desfaz o agrupamento de uma fatura
- * FECHADA antiga, que de outro modo travaria pausa do aluno, ajuste e baixa das cobranças dela.
- */
 function exigirCobrancaB2BAtiva(): void {
   if (!COBRANCA_B2B_ATIVA) throw new ErroRegra(MSG_COBRANCA_B2B_DESLIGADA);
 }
@@ -51,10 +39,6 @@ function revalidar() {
   revalidatePath("/alunos");
 }
 
-/**
- * Cria (sem `id`) ou edita a empresa. Na criação, `chaveIdempotencia` (#166) faz o reenvio da mesma tentativa
- * devolver a empresa já criada (a marca vai no `EmpresaCriada`); na edição, o mesmo cadastro não grava nada.
- */
 export async function salvarEmpresa(
   input: EmpresaInput & { id?: string; chaveIdempotencia?: string },
 ): Promise<Resultado<{ id: string }>> {
@@ -72,7 +56,6 @@ export async function salvarEmpresa(
       if (input.id) {
         const antes = await tx.empresa.findUnique({ where: { id: input.id } });
         if (!antes) throw new ErroRegra("Empresa não encontrada.");
-        // Estado-alvo: o reenvio do mesmo cadastro não grava outro `EmpresaEditada`.
         if ((Object.keys(dados) as (keyof typeof dados)[]).every((k) => (antes[k] ?? null) === (dados[k] ?? null))) return input.id;
         await tx.empresa.update({ where: { id: input.id }, data: dados });
         await registrarEvento(tx, {
@@ -107,12 +90,6 @@ export async function salvarEmpresa(
   });
 }
 
-/**
- * Inativar ou reativar a empresa pela ficha (docs/42 L2281; fatia B do ConfirmarAcao, issue #169). Grava só a
- * situação, com o estado-alvo explícito: repetir não inverte nada (a mesma situação é um no-op) e não reenvia o
- * cadastro inteiro — reenviar por `salvarEmpresa` sobrescreveria uma edição feita no meio do caminho. Mesma alçada
- * e mesmo evento de `salvarEmpresa`.
- */
 export async function definirSituacaoEmpresa(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -136,11 +113,6 @@ export async function definirSituacaoEmpresa(id: string, ativo: boolean): Promis
   });
 }
 
-/**
- * MATRÍCULAS EM LOTE (doc 03 §B2B): cria aluno + matrícula ATIVA + cronograma de
- * mensalidades para CADA colaborador, numa única transação (falha no meio = nada gravado).
- * Vencimentos no dia da EMPRESA; moeda = moeda local do país da empresa.
- */
 export async function criarMatriculasLoteB2B(
   input: MatriculasLoteB2BInput,
 ): Promise<Resultado<{ criadas: number }>> {
@@ -189,10 +161,6 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
       const moedas = new Set(cobrancas.map((c) => c.moeda));
       if (moedas.size > 1) throw new ErroRegra("Cobranças em moedas diferentes não entram na mesma fatura.");
 
-      // A fatura leva o SALDO ABERTO de cada item, não o valor integral (review PR #60):
-      // uma cobrança de 100 com 40 já recebidos entra por 60 — documento e recebimento
-      // fecham. O saldo entra como SNAPSHOT (`valorFaturado`) por cobrança: mudanças
-      // posteriores não alteram a composição do documento fechado.
       const aberto = (c: (typeof cobrancas)[number]) =>
         numeroOuNull(c.saldo) ?? Math.max(0, numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0) - numero(c.valorLiquidadoCredito) - numero(c.valorCompensadoPermuta));
       const total = cobrancas.reduce((soma, c) => soma + aberto(c), 0);
@@ -201,8 +169,6 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
       const [ano, mes] = dados.competencia.split("-").map(Number);
       const vencimento = new Date(ano, mes - 1, empresa.diaVencimento);
 
-      // Fatura CANCELADA da mesma competência é REABERTA na mesma linha (review PR #60):
-      // o @@unique(empresaId, competencia) tornaria um novo create um P2002 eterno.
       const fatura = existente
         ? await tx.faturaB2B.update({
             where: { id: existente.id },
@@ -251,7 +217,6 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
   });
 }
 
-/** Paga a fatura única: baixa EM LOTE todas as cobranças (miolo compartilhado — Fase 2). */
 export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baixadas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -272,12 +237,6 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
       if (!fatura) throw new ErroRegra("Fatura não encontrada.");
       if (fatura.status !== StatusFaturaB2B.FECHADA) throw new ErroRegra("Só fatura FECHADA recebe pagamento.");
 
-      // RECONCILIAÇÃO ESTRITA (review PR #60 rodada 2): a fatura só vira PAGA se a
-      // liquidação COBRIR o documento — cada item vivo é baixado exatamente pelo snapshot
-      // `valorFaturado` e a soma precisa fechar com `valorTotal`. Item cancelado/baixado
-      // fora da fatura (mutações agora bloqueadas na origem; estado legado/fora de banda)
-      // NÃO é pulado em silêncio: o caminho formal é cancelar a fatura e fechá-la de novo
-      // (reemissão), que recompõe o documento sem o item.
       const divergente = (motivo: string) =>
         new ErroRegra(
           `${motivo} — a fatura diverge do documento fechado. Cancele a fatura e feche-a novamente (reemissão).`,
@@ -329,7 +288,6 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
   });
 }
 
-/** Cancela uma fatura FECHADA (desfaz o agrupamento — as cobranças voltam a ficar soltas). */
 export async function cancelarFaturaB2B(faturaId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();

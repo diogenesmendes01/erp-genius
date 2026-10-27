@@ -15,10 +15,7 @@ function competenciaAtual(fuso: string): string {
   return `${p.find((x) => x.type === "year")?.value}-${p.find((x) => x.type === "month")?.value}`;
 }
 
-// Metas comerciais do mês (Q9): administrador define para qualquer um e para o geral; gerente, para a equipe.
 export default async function MetasPage({ searchParams }: { searchParams?: Promise<ParametrosUrl> } = {}) {
-  // Seção de Configurações › CRM (Fase 5F): o layout do CRM mostra o acesso negado; aqui o guard único repete
-  // os papéis de secoes.ts (secoes.test.ts trava a igualdade).
   const usuario = await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
   const ehAdmin = usuario.papeis.includes(Papel.ADMINISTRADOR);
   const escopo = await escopoRelatorio(usuario);
@@ -26,8 +23,6 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
   const [progresso, vendedores] = await Promise.all([
     progressoMetas({ competencias: [competencia], escopo }),
     prisma.usuario.findMany({
-      // Quem pode receber meta: o admin vê vendedores e gerentes; o gerente, a equipe e ele mesmo (a meta dele
-      // também aparece na tabela e precisa do nome).
       where: ehAdmin
         ? { ativo: true, papeis: { hasSome: [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL] } }
         : { ativo: true, OR: [{ id: usuario.id }, { gerenteComercialId: usuario.id, papeis: { has: Papel.VENDEDOR } }] },

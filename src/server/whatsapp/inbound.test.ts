@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ehPedidoOptOut } from "./inbound";
 
-// Captura de opt-out por keyword (S10) — match EXATO e conservador: frase que contém a
-// palavra NÃO conta (falso positivo mataria a régua de quem disse "vou parar de atrasar").
-
 describe("ehPedidoOptOut", () => {
   it("aceita as keywords exatas, com espaços e caixa variados", () => {
     expect(ehPedidoOptOut("SAIR")).toBe(true);

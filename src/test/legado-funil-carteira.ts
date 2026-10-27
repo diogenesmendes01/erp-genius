@@ -9,10 +9,6 @@ import { COLUNAS_FUNIL } from "@/server/crm/etapas";
 import { CARTOES_POR_COLUNA, type CartaoFunil, type ColunaFunil, type FiltrosFunil } from "@/server/crm/funil";
 import { EVENTOS_DE_CONTATO_SEM_INTERACAO, MAX_LINHAS_CARTEIRA, type FiltrosCarteira, type LinhaCarteira } from "@/server/crm/carteira";
 
-// Implementação ANTERIOR (em memória) do funil e da carteira, copiada do main antes do B19 (#196 C3, #198 C2).
-// Só serve de referência para os testes de equivalência: a versão nova ordena, filtra e corta no banco e
-// tem de devolver exatamente o mesmo resultado, na mesma ordem. Não usar fora de teste.
-
 function whereDosFiltros(f: FiltrosFunil): Prisma.OportunidadeWhereInput {
   const palavras = palavrasDaBuscaLeads(f.busca);
   return {
@@ -32,8 +28,6 @@ function whereDosFiltros(f: FiltrosFunil): Prisma.OportunidadeWhereInput {
   };
 }
 
-// "tempo": a coluna não guarda desde quando a oportunidade está na etapa (isso vem de Evento);
-// carregarFunil resolve essa ordem em memória por etapaDesde; aqui só o desempate estável.
 function ordenacao(ordem: FiltrosFunil["ordem"]): Prisma.OportunidadeOrderByWithRelationInput[] {
   switch (ordem) {
     case "valor":
@@ -51,7 +45,6 @@ const ordemMoeda = (m: string) => (m === "USD" ? 0 : 1);
 export async function carregarFunilLegado(usuario: UsuarioSessao, f: FiltrosFunil): Promise<ColunaFunil[]> {
   const base: Prisma.OportunidadeWhereInput = { AND: [await escopoComercialAtual(usuario), whereDosFiltros(f)] };
 
-  // Perdidos: o período vale pela última ação (Evento), não pela criação.
   let wherePerdido: Prisma.OportunidadeWhereInput = { AND: [base, { etapa: EtapaLead.PERDIDO }] };
   if (f.perdidosDias !== "todos") {
     const corte = new Date(Date.now() - Number(f.perdidosDias) * 86_400_000);
@@ -73,7 +66,6 @@ export async function carregarFunilLegado(usuario: UsuarioSessao, f: FiltrosFuni
   return Promise.all(
     COLUNAS_FUNIL.map(async (etapa): Promise<ColunaFunil> => {
       const where = whereDa(etapa);
-      // "tempo": ordena pela data do último evento de mudança de etapa (etapaDesde), a mais antiga primeiro.
       let idsTempo: string[] | null = null;
       if (f.ordem === "tempo") {
         const todas = await prisma.oportunidade.findMany({ where, select: { id: true, criadoEm: true } });
@@ -188,7 +180,6 @@ const maisRecente = (a: Date | null | undefined, b: Date | null | undefined): Da
 const diasCivis = (de: string, ate: string) =>
   Math.round((Date.parse(`${ate}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86_400_000);
 
-/** Linhas e total de `carregarCarteira` como eram calculados antes do B19 (tudo em memória). */
 export async function carregarCarteiraLegado(
   usuario: UsuarioSessao,
   f: FiltrosCarteira,

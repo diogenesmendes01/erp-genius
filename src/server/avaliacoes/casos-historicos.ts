@@ -13,8 +13,6 @@ const impactosSchema = z.array(z.object({ id: z.string().min(1), status: z.enum(
   turmaDestinoId: z.string().min(1), decididoEm: z.string().nullable(), executadoEm: z.string().nullable(),
 }).strict()).refine(itens => new Set(itens.map(i => i.id)).size === itens.length);
 
-/** Prepara o registro de trabalho para decisões anteriores à persistência de
- * casos. Não recalcula impactos nem altera a decisão histórica. */
 export async function materializarCasosHistoricosCorrecao(entrada: z.input<typeof entradaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

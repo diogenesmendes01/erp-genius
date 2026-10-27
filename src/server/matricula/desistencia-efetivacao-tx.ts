@@ -2,9 +2,6 @@ import { Papel, Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { carregarConferenciaDesistenciaTx } from "./desistencia-conferencia-tx";
 
-/** Confere a única modalidade que esta aplicação pode encerrar: preparação sem
- * qualquer avanço formal. Casos mais ricos permanecem no pedido preparatório
- * até receberem o fluxo de acerto próprio. */
 export async function conferirEfetivacaoDesistenciaPreparacaoTx(
   tx: Prisma.TransactionClient,
   pedidoId: string,
@@ -44,11 +41,6 @@ export async function conferirEfetivacaoDesistenciaPreparacaoTx(
   return { pedido, conferencia, reservasColetivas, reservasParticulares };
 }
 
-/** Confere o ramo contratual depois de a aplicação Q165 ter alterado as
- * cobranças. Não reaproveita a conferência simples, cuja fotografia financeira
- * é propositalmente anterior à aplicação. A decisão administrativa continua
- * ligada ao pedido original e as solicitações de assinatura devem estar
- * concluídas antes da efetivação. */
 export async function conferirEfetivacaoDesistenciaAcertoContratualTx(
   tx: Prisma.TransactionClient,
   aplicacaoId: string,

@@ -30,7 +30,7 @@ const STATUS_CLS: Record<StatusAluno, string> = {
 export interface AlunoFicha {
   id: string;
   codigo: string | null;
-  nome: string; // nome completo (exibição)
+  nome: string;
   primeiroNome: string;
   sobrenome: string | null;
   nomePreferido: string | null;
@@ -62,7 +62,6 @@ export interface AlunoFicha {
   fuso: string | null;
   observacoes: string | null;
   turmasAtuais: { id: string; matriculaCodigo: string | null; label: string; professor: string | null; diasHorario: string | null }[];
-  // null na projeção pedagógica (professor não vê nada financeiro — doc 10).
   financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: ReferenciaVencimentoCivil | null } | null;
   movimentacoes: {
     matriculaId: string | null;
@@ -86,7 +85,6 @@ const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
   CONTROLE_INVALIDO;
 
-/** Obrigatórios da edição (EditarAlunoSchema), na ordem do painel: o foco vai ao primeiro pendente. */
 const IDS_EDICAO = {
   primeiroNome: "ficha-primeiroNome",
   sobrenome: "ficha-sobrenome",
@@ -94,11 +92,6 @@ const IDS_EDICAO = {
   motivo: "ficha-motivo",
 } as const;
 
-/**
- * Mesmas exigências do EditarAlunoSchema (o servidor revalida). Aluno importado por lote costuma chegar
- * sem sobrenome: a edição mostra isso no campo em vez de deixar "Salvar" desabilitado sem motivo.
- * Função pura (fora do componente) para o teste conferir cada regra sem simular o clique.
- */
 export function errosDaEdicaoAluno(ed: { primeiroNome: string; sobrenome: string; paisId: string; motivo: string }): ErrosDeCampos<keyof typeof IDS_EDICAO> {
   const erros: ErrosDeCampos<keyof typeof IDS_EDICAO> = {};
   if (!ed.primeiroNome.trim()) erros.primeiroNome = "Informe o nome.";
@@ -122,35 +115,27 @@ export function FichaAluno({
 }: {
   aluno: AlunoFicha;
   paises: PaisOpt[];
-  // Professor tem visão somente leitura: oculta editar/trocar/pausar/encerrar (doc 10).
   podeMovimentar?: boolean;
   podeMovimentarGlobal?: boolean;
   podeEditarCadastro?: boolean;
   podeConsultarAcademico?: boolean;
   preferenciaFusoExibicao?: string | null;
-  /** C4 (auto-alocação híbrida): turma SUGERIDA na ativação — o consultor confirma aqui. */
   turmaSugerida?: { turmaId: string; label: string; diasHorario: string | null } | null;
 }) {
   const router = useRouter();
-  // Editar, pausar e encerrar não recebem chave de idempotência (server/alunos/acoes.ts:49, :182, :226):
-  // conferir a ficha antes de repetir. Um só executor — só um painel fica aberto por vez (`modal`).
   const acao = useAcaoCliente({ idempotente: false });
   const [modal, setModal] = useState<"none" | "pausar" | "encerrar" | "editar">("none");
 
-  // estados dos modais
   const [motivoPausa, setMotivoPausa] = useState("");
   const [retorno, setRetorno] = useState("");
   const [motivoEnc, setMotivoEnc] = useState<(typeof MOTIVOS_ENCERRAMENTO)[number]>("Concluiu");
   const [obsEnc, setObsEnc] = useState("");
-  // O painel aberto já tentou confirmar? Só então os campos pendentes aparecem marcados (e acompanham
-  // a digitação). Volta a false a cada painel aberto.
   const [tentou, setTentou] = useState(false);
   const instanteAdministrativo = (valor: string) => {
     const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
     return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
   };
 
-  // edição de dados cadastrais (prefill com TODOS os valores atuais — edição lenient).
   const valoresEd = () => ({
     primeiroNome: aluno.primeiroNome,
     sobrenome: aluno.sobrenome ?? "",
@@ -196,11 +181,10 @@ export function FichaAluno({
     .join(", ");
 
   function abrirEdicao() {
-    setEd(valoresEd()); // recarrega valores atuais a cada abertura
+    setEd(valoresEd());
     abrir("editar");
   }
 
-  // O erro é exibido dentro do painel aberto; trocar de painel não pode herdar o erro do anterior.
   function abrir(m: typeof modal) {
     acao.limpar();
     setTentou(false);
@@ -230,7 +214,6 @@ export function FichaAluno({
         </p>
       </header>
 
-      {/* Ações (apenas papéis que movimentam — professor tem visão somente leitura, doc 10) */}
       {podeMovimentar && (
         <div className="flex flex-wrap gap-2">
           {podeEditarCadastro && <button className={btnSec} onClick={abrirEdicao}>
@@ -261,12 +244,9 @@ export function FichaAluno({
         title="Editar dados do aluno"
         footer={
           <>
-            {/* Dentro do painel, acima dos botões: no topo da página ficaria atrás do overlay. */}
             <FeedbackAcao erro={modal === "editar" ? acao.erro : null} className="mb-3" />
             <div className="flex justify-end gap-2">
               <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
-              {/* Habilitado mesmo com obrigatório vazio: ao clicar, cada campo pendente é marcado e o foco
-                  vai ao primeiro (antes, o botão ficava desabilitado sem dizer o que faltava). */}
               <button
                 className={btnPri}
                 disabled={acao.ocupado}
@@ -289,7 +269,6 @@ export function FichaAluno({
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* Identificação */}
           <Campo id={IDS_EDICAO.primeiroNome} rotulo="Nome" obrigatorio erro={errosEdicao.primeiroNome}>
             {(campo) => <input {...campo} className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />}
           </Campo>
@@ -313,7 +292,6 @@ export function FichaAluno({
             )}
           </Campo>
 
-          {/* Documentação */}
           <Campo id={IDS_EDICAO.paisId} rotulo="País" obrigatorio erro={errosEdicao.paisId}>
             {(campo) => (
               <select
@@ -358,7 +336,6 @@ export function FichaAluno({
             {(campo) => <SelectISO {...campo} value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />}
           </Campo>
 
-          {/* Contato */}
           <Campo id="ficha-email" rotulo="E-mail">
             {(campo) => <input {...campo} type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />}
           </Campo>
@@ -376,7 +353,6 @@ export function FichaAluno({
             </label>
           </div>
 
-          {/* Residência */}
           <Campo id="ficha-paisResidencia" rotulo="País de residência">
             {(campo) => <SelectISO {...campo} value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />}
           </Campo>
@@ -402,7 +378,6 @@ export function FichaAluno({
             {(campo) => <input {...campo} className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />}
           </Campo>
 
-          {/* Acadêmico / operacional */}
           <Campo id="ficha-escolaridade" rotulo="Escolaridade">
             {(campo) => (
               <select {...campo} className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
@@ -423,7 +398,6 @@ export function FichaAluno({
             {(campo) => <CampoTexto {...campo} className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />}
           </Campo>
 
-          {/* Auditoria */}
           <Campo
             id={IDS_EDICAO.motivo}
             rotulo="Motivo da edição"
@@ -526,8 +500,6 @@ export function FichaAluno({
           )) : (
             <EstadoVazio
               acao={turmaSugerida && podeMovimentar ? (
-                // C4 (doc 08 §auto-alocação híbrida): o sistema SUGERIU na ativação;
-                // alocar de verdade é decisão do consultor — 1 clique aqui.
                 <div className="rounded-md border border-blue-200 bg-blue-50 p-2">
                   <div className="text-xs font-medium text-blue-700">Turma sugerida na ativação</div>
                   <div className="mt-0.5 text-gray-700">{turmaSugerida.label}</div>
@@ -578,7 +550,6 @@ export function FichaAluno({
           </>}
         </section>
 
-        {/* Financeiro: oculto na projeção pedagógica (professor — doc 10). */}
         {aluno.financeiro && (
           <section className="rounded-lg border border-gray-200 bg-surface p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -638,7 +609,6 @@ function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   );
 }
 
-/** Select de país ISO 3166. Recebe as ligações do <Campo>. */
 function SelectISO({
   id,
   value,

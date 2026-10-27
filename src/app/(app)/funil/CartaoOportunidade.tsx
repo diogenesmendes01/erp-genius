@@ -18,7 +18,6 @@ const diaUtc = (civil: string) => {
   return Date.UTC(a!, m! - 1, d!) / 86_400_000;
 };
 
-/** Dias civis (fuso institucional) entre `de` e `agora`; nunca negativo. */
 export function diasCivis(de: Date, agora: Date, fuso: string): number {
   return Math.max(0, diaUtc(dataCivilInstitucional(agora, fuso)) - diaUtc(dataCivilInstitucional(de, fuso)));
 }
@@ -41,7 +40,6 @@ export function proximaAcaoDoCartao(c: Pick<CartaoFunil, "proximaAcao" | "proxim
   return { texto: `${rotulo} · ${d}/${m}`, vencida: false };
 }
 
-/** Valor com o código da moeda (nunca "R$" fixo), sempre com duas casas. */
 export function valorComMoeda(valor: string | number, moeda: string): string {
   const n = Number(valor);
   if (!Number.isFinite(n)) return "—";

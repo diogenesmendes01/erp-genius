@@ -20,7 +20,6 @@ type Props = {
   itens: ItemHistoricoAria[];
   proximo: string | null;
   podeDecidir: boolean;
-  /** Fuso de exibição já resolvido pela página: o pessoal; sem ele, o da escola. */
   fuso: string;
   filtros: { busca: string; acao: string; etapa: string; resultado: string };
 };

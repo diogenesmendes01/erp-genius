@@ -29,8 +29,6 @@ export async function bloquearLancamento(tx: Prisma.TransactionClient, alocacaoI
   return { ...atual, matriculaId: a.matriculaId };
 }
 
-/** Contextos internos, construídos por actions que já bloquearam e conferiram a origem.
- * Eles não fazem parte de `SalvarLancamentoSchema`, portanto o cliente nunca escolhe uma realização. */
 export type ContextoInternoLancamento = {
   segundaChamada?: { realizacaoId: string; realizadaEm: Date; realizadaPorId: string };
 };

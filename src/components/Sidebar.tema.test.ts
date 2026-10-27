@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// C21 da #170: a Sidebar e a BarraMobile tinham cada uma o seu useState do tema, lido uma vez no efeito.
-// Aqui o componente é chamado como função, com useSyncExternalStore trocado por uma leitura direta do
-// cliente (a hidratação já leu o tema), para provar que as duas instâncias leem a MESMA fonte.
 const m = vi.hoisted(() => ({ inscricoes: [] as unknown[] }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -49,7 +46,6 @@ describe("ThemeToggle: um estado só para a Sidebar e a barra mobile", () => {
   it("trocar numa instância muda a outra: aria-pressed e título acompanham o tema aplicado", () => {
     htmlFalso(false);
     expect(daSidebar().props).toMatchObject({ "aria-pressed": false, title: "Tema escuro", "aria-label": "Alternar tema" });
-    // Troca pela barra mobile; a Sidebar, no próximo render, já sai com o tema novo.
     (daBarraMobile().props.onClick as () => void)();
     expect(daSidebar().props).toMatchObject({ "aria-pressed": true, title: "Tema claro", "aria-label": "Alternar tema" });
     expect(daBarraMobile().props).toMatchObject({ "aria-pressed": true, className: "min-h-10 min-w-10" });

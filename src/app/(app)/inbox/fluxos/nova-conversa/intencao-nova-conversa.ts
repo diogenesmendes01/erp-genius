@@ -4,7 +4,6 @@ export type EntradaTelefone = {telefone:string;numeroId:string} & ({modo:"EXISTE
 export type ComandoTelefone = EntradaTelefone & {chaveIdempotencia:string};
 type Ack={atendimentoId:string;criado:boolean};
 type Estado={comando:ComandoTelefone|null;ocupado:boolean;erro:string|null;incerto:boolean};
-/** Vive no Inbox, não no Popover. Só memória da página; nenhum storage ou autoridade. */
 export function criarIntencaoNovaConversa(gerar:()=>string=()=>crypto.randomUUID()){
  let estado:Estado={comando:null,ocupado:false,erro:null,incerto:false};const ouvintes=new Set<()=>void>();
  const publicar=(e:Estado)=>{estado=e;for(const ouvir of ouvintes)ouvir();};

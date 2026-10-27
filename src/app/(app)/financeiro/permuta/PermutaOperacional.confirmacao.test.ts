@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Decidir a compensação de permuta (docs/42 L2142; #175): a decisão nasce vazia (antes vinha em "Aprovar e
-// compensar"), o botão diz a ação escolhida e aprovar só abre o ConfirmarAcao, que diz quanto sai de cada
-// mensalidade; só a confirmação chama a action. Rejeitar não abate nada e continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),

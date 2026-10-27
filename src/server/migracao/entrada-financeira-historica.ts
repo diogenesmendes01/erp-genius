@@ -17,7 +17,6 @@ async function financeiroFresco(tx: Prisma.TransactionClient, id: string) {
   if (!u?.ativo || !u.papeis.some((p) => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR)) throw new ErroPermissao("Exige perfil financeiro ativo.");
 }
 
-/** Registra uma proposta imutável sem exigir os destinos ainda inexistentes. */
 export async function proporEntradaFinanceiraHistoricaMigracao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR); const d = EntradaFinanceiraHistoricaSchema.parse(input);
@@ -46,7 +45,6 @@ export async function proporEntradaFinanceiraHistoricaMigracao(input: unknown) {
   });
 }
 
-/** Aprovação por outra pessoa aplica somente pagador e obrigação pendente. */
 export async function decidirEntradaFinanceiraHistoricaMigracao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR); const d = DecisaoEntradaFinanceiraHistoricaSchema.parse(input); const decisaoHash = hash({ propostaId: d.propostaId, aprovada: d.aprovada, motivo: d.motivo });

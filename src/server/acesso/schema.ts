@@ -2,7 +2,6 @@ import { z } from "zod";
 import { Papel } from "@prisma/client";
 import { CAPACIDADES_LISTA } from "@/lib/capacidades";
 
-// Limite ausente não concede autonomia; o campo antigo permanece para compatibilidade.
 const limite = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
   z.number().min(0).max(100, "Limite em % (0–100)").nullable(),
@@ -27,7 +26,6 @@ export type CriarUsuarioInput = z.input<typeof CriarUsuarioSchema>;
 
 export const EditarUsuarioSchema = z.object({
   ...base,
-  // vazio = mantém a senha atual
   senha: z.union([z.string().min(6, "Senha de no mínimo 6 caracteres"), z.literal("")]).optional(),
 });
 export type EditarUsuarioInput = z.input<typeof EditarUsuarioSchema>;

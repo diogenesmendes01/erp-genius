@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados no pedido e na
-// efetivação da desistência — erro em role="alert", sucesso em role="status", falha de rede como
-// resultado incerto e o botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   pedido: vi.fn(), efetivar: vi.fn(), refresh: vi.fn(),
@@ -30,7 +27,6 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** O rótulo de progresso do botão de envio (o fieldset também trava depois do sucesso, por isso não serve aqui). */
 const rotuloDoBotao = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button")?.props.children);
 
 describe("PedidoFormulario", () => {
@@ -63,7 +59,6 @@ describe("EfetivacaoFormulario", () => {
     nome: "efetivar desistência", tela, action: m.efetivar,
     acionar: () => submeter(tela(), valores),
     respostaOk: { ok: true, dado: { id: "pedido-1", matriculaId: "matricula-1", status: "CANCELADA" } },
-    // #166: a efetivação é idempotente por natureza; na falha de rede, reenviar sem alterar.
     sucesso: "Desistência efetivada. As reservas disponíveis desta contratação foram liberadas.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => rotuloDoBotao(tela()) === "Efetivando…",
   });

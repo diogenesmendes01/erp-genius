@@ -33,11 +33,10 @@ describe("portabilidade dos caminhos rastreados", () => {
   });
 
   it("entrega LF no checkout para fontes TypeScript lidas pelas guardas", () => {
-    const saida = execFileSync("git", ["check-attr", "-z", "eol", "--", "src/app/paleta.test.ts", "src/components/Avatar.tsx", "scripts/visual/capturar-inbox.mjs", ".github/workflows/ci.yml"], { encoding: "utf8" }).split("\0").filter(Boolean);
+    const saida = execFileSync("git", ["check-attr", "-z", "eol", "--", "src/app/paleta.test.ts", "src/components/Avatar.tsx", ".github/workflows/ci.yml"], { encoding: "utf8" }).split("\0").filter(Boolean);
     expect(saida).toEqual([
       "src/app/paleta.test.ts", "eol", "lf",
       "src/components/Avatar.tsx", "eol", "lf",
-      "scripts/visual/capturar-inbox.mjs", "eol", "lf",
       ".github/workflows/ci.yml", "eol", "lf",
     ]);
   });

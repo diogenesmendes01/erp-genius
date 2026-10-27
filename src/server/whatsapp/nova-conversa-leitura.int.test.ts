@@ -63,7 +63,6 @@ it("uma projeção raw por reader, custo transitive separado e nenhuma escrita",
  const operacoes: { model?: string; operation: string }[] = [];
  const antes = { pessoas: await prisma.pessoa.count(), contatos: await prisma.contatoWhatsApp.count(), leads: await prisma.oportunidade.count(), eventos: await prisma.evento.count() };
  await prisma.$transaction(async tx => {
-  // Observação callthrough do tx REAL: não muda SQL/args e não usa outro cliente ou $extends.
   const observado = new Proxy(tx, { get(alvo, propriedade, receptor) {
    const valor = Reflect.get(alvo, propriedade, receptor);
    if ((propriedade === "$queryRaw" || propriedade === "$executeRaw") && typeof valor === "function") return (...args: unknown[]) => {
@@ -78,12 +77,10 @@ it("uma projeção raw por reader, custo transitive separado e nenhuma escrita",
   } });
   expect(await observado.$queryRaw<{ canario: number }[]>(Prisma.sql`SELECT 1::int AS "canario"`)).toEqual([{ canario: 1 }]);
   expect(operacoes).toEqual([{ operation: "$queryRaw" }]);
-  operacoes.length = 0; // Canary não pertence ao custo do reader.
+  operacoes.length = 0;
   expect(await lerCadastroNovaConversaTx(observado, { autorId: vendedor.id, telefoneE164: tel(9) })).toEqual(vazio);
   expect(operacoes.filter(o => o.operation === "$queryRaw")).toHaveLength(1);
   expect(operacoes).toEqual([{ model: "usuario", operation: "findUnique" }, { model: "coberturaCarteira", operation: "findMany" }, { operation: "$queryRaw" }]);
-  // Três leituras deste caminho vendedor: actor + scope + projeção. Não é um SELECT total.
-  // BEGIN/COMMIT e SET CONSTRAINTS do wrapper fora do callback observado não são contados.
  });
  expect({ pessoas: await prisma.pessoa.count(), contatos: await prisma.contatoWhatsApp.count(), leads: await prisma.oportunidade.count(), eventos: await prisma.evento.count() }).toEqual(antes);
 });

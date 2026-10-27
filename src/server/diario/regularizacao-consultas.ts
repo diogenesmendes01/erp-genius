@@ -6,9 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoFila } from "@/lib/cursor-fila";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 
-/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026), no escopo de quem consulta e em ordem de
- * id: regularizar uma aula a tira da fila de pendentes sem deslocar as seguintes, e a próxima continua da última vista.
- * O histórico (`modo: "HISTORICO"`) usa o mesmo cursor. */
 export async function listarRegularizacoesAula(input: NavegacaoFila & { modo?: "PENDENTES" | "HISTORICO" } = {}) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);

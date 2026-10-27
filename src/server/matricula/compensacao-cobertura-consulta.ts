@@ -18,7 +18,6 @@ function dataCivil(data: Date) {
   return data.toISOString().slice(0, 10);
 }
 
-/** Consulta os direitos de compensação sem preparar, aprovar ou recompor qualquer cobertura. */
 export async function consultarCompensacoesCobertura(input: z.input<typeof ConsultaSchema>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);

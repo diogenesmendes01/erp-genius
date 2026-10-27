@@ -4,7 +4,6 @@ import type { InsightPainel } from "@/server/aria/insights/dto";
 import { useLeituraInsights } from "./useLeituraInsights";
 import { useRascunhoInsight } from "./useRascunhoInsight";
 const vazio:InsightPainel={podeAtualizar:false,podeDescartarIncerta:false,estado:"vazio",geracaoEmCursoId:null,ultima:null,novasMensagens:0,contextoAlterado:false};
-/** Só é montado pelo modal aberto. GET não preenche campo nem gera análise. */
 export function useSugestaoAgendamento({atendimentoId,texto,revisao,ocupado,aoTexto,versao=0,ativo=false}:{atendimentoId:string;texto:string;revisao:number;ocupado:boolean;aoTexto(t:string):void;versao?:number;ativo?:boolean}){
   const abertura=useId(),leitura=useLeituraInsights({atendimentoId,ativo,versao});
   const dados=leitura.dado?.painel??vazio;

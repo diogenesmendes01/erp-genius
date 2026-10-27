@@ -4,7 +4,6 @@ import { Papel } from "@prisma/client";
 const { authMock, enviarConteudo, lerMidia } = vi.hoisted(() => ({ authMock: vi.fn(), enviarConteudo: vi.fn(), lerMidia: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Driver FALSO: nenhuma mensagem real sai.
 vi.mock("../drivers/motor", () => ({ driverMotor: { enviarTexto: vi.fn(), enviarTemplate: vi.fn(), enviarMidia: vi.fn(), enviarConteudo } }));
 vi.mock("../midia", async (orig) => ({ ...(await orig<typeof import("../midia")>()), lerMidiaParaEnvio: lerMidia }));
 
@@ -98,7 +97,6 @@ describe("conteúdo especial pelo motor", () => {
 
   it("Aria (origem IA) não envia figurinha nem GIF", async () => {
     const { at, numero, contato, autor } = await cenario();
-    // motivoIntencaoInvalida hoje trata IA como origem com autor; a Aria real é tarefa posterior.
     const i = await prisma.intencaoMensagem.create({ data: {
       numeroId: numero.id, atendimentoId: at.id, contatoId: contato.id, autorId: autor.id, origem: "IA", tipo: "FIGURINHA", reativa: true,
       conteudo: { tipo: "FIGURINHA" }, midiaPath: "/api/files/whatsapp-out/x/a.webp", corpoRenderizado: "",

@@ -11,7 +11,6 @@ import { SnapshotInsightSchema,jsonInsight } from "./snapshot";
 import { recusarPreInicioInsight,falharPreInicioInsight } from "./preinicio";
 import { resumoGeracaoInsight,travarAtendimentoInsight,travarGeracaoInsight,type BancoInsight } from "./persistencia";
 
-/** Só o vencedor entrega um pedido ao executor externo. Não há provider nesta transação. */
 export async function iniciarInsight(autorId:string,entrada:unknown,db:BancoInsight=prisma) {
   const i=RetomarInsightSchema.parse(entrada);
   return db.$transaction(async tx=>{

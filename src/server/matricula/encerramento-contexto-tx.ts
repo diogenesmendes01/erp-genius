@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { RegrasEncerramentoSchema } from "./condicoes-encerramento-schema";
 
-/** Consulta interna; o chamador autentica e delimita a transação. */
 export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClient, d: { alunoId: string; matriculaId: string }) {
       const m = await tx.matricula.findFirst({ where: { id: d.matriculaId, alunoId: d.alunoId }, select: {
         id: true, alunoId: true, moeda: true, status: true, contratoOk: true, contratoDocumentoId: true,
@@ -59,12 +58,8 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
               : null,
           })),
       );
-      // Q173: cobrança liquidada (ou cancelada) na moeda anterior a uma troca aplicada é histórico do contrato.
-      // A troca só é aplicada com a matrícula "limpa" e depois do fim da cobertura paga, então ela não entra no acerto.
       const trocasMoeda = await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId: m.id } } }, select: { moedaAnterior: true } });
       const moedasAnteriores = new Set(trocasMoeda.map((troca) => troca.moedaAnterior));
-      // R2 do #284 (B1): adiantamento de horas pago sem compra registrada não é histórico. Fica visível no acerto, com a
-      // conferência de moeda divergente, em vez de sumir.
       const adiantamentoSemCompra = (c: { tipo: string; status: string; comprasHoras: unknown[]; emissaoFechamentoHoras: unknown }) =>
         c.tipo === "HORA_PARTICULAR" && c.status === "PAGO" && !c.comprasHoras.length && !c.emissaoFechamentoHoras;
       const historicaEmMoedaAnterior = (c: { moeda: string; status: string; tipo: string; comprasHoras: unknown[]; emissaoFechamentoHoras: unknown }) =>

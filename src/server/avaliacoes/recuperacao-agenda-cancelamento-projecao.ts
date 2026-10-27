@@ -18,22 +18,15 @@ export type EstadoCancelamentoAgenda = {
 
 export type EstadoCancelamentoAgendaApresentacao = Omit<EstadoCancelamentoAgenda, "itens"> & {
   itens: Array<EstadoCancelamentoAgenda["itens"][number] & {
-    /** Fuso da agenda publicada vinculada ao item; não integra o snapshot. */
     fusoOrigem: string | null;
   }>;
 };
 
-/**
- * `estado_cancelamento_agenda_recuperacao` foi criado sobre TIMESTAMP sem
- * fuso. A projeção o torna explicitamente UTC apenas para a leitura, sem
- * reescrever o JSONB histórico que participa do hash da proposta.
- */
 export function normalizarInstanteLegadoUtc(valor: string | null): string | null {
   if (!valor || /(?:Z|[+-]\d{2}:\d{2})$/i.test(valor)) return valor;
   return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(valor) ? `${valor}Z` : valor;
 }
 
-/** Acrescenta referências de leitura sem alterar o snapshot nem seu hash. */
 export function apresentarEstadoCancelamentoComFusos(
   estado: EstadoCancelamentoAgenda,
   fusosPorEncontro: ReadonlyMap<string, string>,
@@ -49,11 +42,6 @@ export function apresentarEstadoCancelamentoComFusos(
   };
 }
 
-/**
- * Só agendas já publicadas por proposta de recuperação podem emprestar a
- * referência de fuso ao snapshot. O identificador do encontro vem do estado
- * conferido e não é substituído por outra agenda da matrícula.
- */
 export async function carregarFusosDosEstados(
   tx: Pick<Prisma.TransactionClient, "encontroAgenda">,
   estados: readonly EstadoCancelamentoAgenda[],

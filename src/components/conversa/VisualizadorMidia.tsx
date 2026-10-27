@@ -4,12 +4,10 @@ import { IconDownload, IconFile, IconMicrophone, IconPlayerPlay } from "@tabler/
 import { Modal } from "@/components/Modal";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 
-/** A mídia vem de `midiaPath` em `/api/files` (rota autenticada); nunca de API do motor. */
 export const nomeArquivo = (path: string) => decodeURIComponent(path.split("?")[0].split("/").pop() || "arquivo");
 const ehMidiaVisual = (tipo: string) => tipo === "IMAGEM" || tipo === "VIDEO" || tipo === "DOCUMENTO";
 export const temMidia = (m: Pick<MensagemThread, "tipo" | "midiaPath">) => !!m.midiaPath && ["IMAGEM", "VIDEO", "AUDIO", "DOCUMENTO"].includes(m.tipo);
 
-/** Pré-visualização dentro do balão. */
 export function MidiaMensagem({ m, aoAbrir }: { m: Pick<MensagemThread, "tipo" | "midiaPath" | "corpo">; aoAbrir?: () => void }) {
   const url = m.midiaPath;
   if (!url) return null;
@@ -47,12 +45,6 @@ export function MidiaMensagem({ m, aoAbrir }: { m: Pick<MensagemThread, "tipo" |
 
 const ehPdf = (url: string) => /\.pdf$/i.test(url.split("?")[0]);
 
-/**
- * Documento no visualizador. PDF vai num iframe SEM `sandbox`: o visualizador de PDF embutido do Chrome e do Firefox
- * não roda em iframe com sandbox sem `allow-scripts`, e o quadro sairia em branco. Sem sandbox é seguro aqui: a origem
- * é a mesma, `/api/files` já autoriza o arquivo e só serve tipos da lista fechada (`contentTypePorExtensao`: como
- * documento, só `application/pdf`; nada de HTML/SVG). Sempre há "Abrir em nova aba" para quando o navegador não embute PDF.
- */
 export function QuadroDocumento({ url, nome }: { url: string; nome: string }) {
   return (
     <>
@@ -62,7 +54,6 @@ export function QuadroDocumento({ url, nome }: { url: string; nome: string }) {
   );
 }
 
-/** Visualizador em diálogo (imagem, vídeo, documento): Escape/fundo fecham e o foco volta (Modal/useDialogo). */
 export function VisualizadorMidia({ m, aoFechar }: { m: Pick<MensagemThread, "tipo" | "midiaPath" | "corpo" | "criadoEm" | "autorNome">; aoFechar: () => void }) {
   const url = m.midiaPath;
   if (!url || !ehMidiaVisual(m.tipo)) return null;

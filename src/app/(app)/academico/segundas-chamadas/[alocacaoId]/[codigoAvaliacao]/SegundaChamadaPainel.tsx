@@ -40,22 +40,17 @@ export function SegundaChamadaPainel({
   codigoAvaliacao: string;
   itens: Item[];
   ativa: boolean;
-  /** No lugar do formulário quando `ativa` é falso: o motivo e o que fazer (docs/42 L1670). */
   bloqueio?: ReactNode;
   fuso: string;
   fusoEntrada: string;
 }) {
   const router = useRouter();
-  // Uma ação por vez no painel (a trava do executor vale para os três formulários). Mensagem de falha sem
-  // reenvio cego, como antes (MSG_RESULTADO_INCERTO_SEM_CHAVE): a decisão não leva chave de idempotência.
   const acao = useAcaoCliente({ idempotente: false });
-  // Grupo que disparou a última ação: o resultado aparece junto dos botões dele, não no topo da página.
   const [origem, setOrigem] = useState<string | null>(null);
   const proposta = useRef<{ entrada: string; chave: string } | null>(null);
   const disponibilizacoes = useRef(new Map<string, { entrada: string; instante: string }>());
 
   async function executar<T>(grupo: string, chamada: () => Promise<Resultado<T>>, sucesso: string) {
-    // A origem só muda quando a ação de fato roda (o executor ignora o clique durante outra execução).
     const d = await acao.executar(() => { setOrigem(grupo); return chamada(); }, sucesso);
     if (d?.tipo === "ok") router.refresh();
     return d;
@@ -78,7 +73,6 @@ export function SegundaChamadaPainel({
       if (proposta.current?.entrada !== identificador) proposta.current = { entrada: identificador, chave: crypto.randomUUID() };
       const chaveIdempotencia = proposta.current.chave;
       const d = await executar("proposta", () => proporSegundaChamada({ ...entrada, chaveIdempotencia }), "Proposta de segunda chamada enviada.");
-      // Proposta registrada: o formulário volta vazio e a próxima proposta ganha chave nova.
       if (d?.tipo === "ok") { proposta.current = null; elemento.reset(); }
     }}>
       <h2 className="font-medium">Propor segunda chamada</h2>
@@ -142,8 +136,6 @@ export function SegundaChamadaPainel({
           <label className="block">Evidência da comunicação<CampoTexto required minLength={5} maxLength={4000} name="evidencia" className="block w-full border" /></label>
           <button disabled={acao.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Disponibilizar e iniciar prazo</button>
         </form>}
-        {/* Fora dos formulários de decisão/disponibilização: depois do refresh eles somem, e o resultado fica.
-            Só nos itens com ação (ou que acabaram de ter uma): os demais não ganham uma região vazia. */}
         {((item.podeDecidir && item.propostaHash) || (item.podeOperar && item.decisao?.aprovada && !item.disponibilizacao) || origem === `item:${item.id}`) && feedback(`item:${item.id}`)}
         {item.disponibilizacao && <p role="status">Disponibilizada. Prazo atual: {data(item.disponibilizacao.prazoAte, fuso)} ({fuso}).</p>}
         {item.podeOperar && item.disponibilizacao && !item.reserva && <Link className="block underline" href={`/academico/segundas-chamadas/propostas/${encodeURIComponent(item.id)}/agenda`}>Preparar e revisar agenda inicial</Link>}

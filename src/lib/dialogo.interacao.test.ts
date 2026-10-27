@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-// O useDialogo LIGADO (R1 da #154, B3): o efeito roda de verdade, com `document` falso (ouvintes de teclado
-// e foco espionados). Cobre o que a parte pura (criarPilhaDialogos, em dialogo.test.ts) não alcança:
-// a pilha é aberta e fechada pelo efeito, só o diálogo de cima responde ao teclado e o foco inicial vai
-// para `focoInicial`. Sem DOM: useRef vira um objeto e useEffect roda na hora, guardando a limpeza.
 const m = vi.hoisted(() => ({ limpezas: [] as (() => void)[] }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -29,21 +25,14 @@ function elemento(nome: string): Elemento {
   const el: Elemento = { nome, focus: vi.fn(() => { documento.activeElement = el; }), closest: () => null };
   return el;
 }
-/** Caixa do diálogo com os focáveis dados, na ordem. */
 const caixa = (...focaveis: Elemento[]) => ({ querySelectorAll: () => focaveis, focus: vi.fn() });
 function teclar(key: string, shiftKey = false): Evento {
   const e: Evento = { key, shiftKey, stopPropagation: vi.fn(), preventDefault: vi.fn() };
   for (const f of [...ouvintes]) f(e);
   return e;
 }
-/**
- * Abre um diálogo (chama o gancho como um componente montado) e devolve o fechamento: as duas limpezas, na
- * ordem do React — a do commit (efeito de layout, que solta o fundo; sem `window` ele cai no useEffect
- * mockado) e depois a do efeito principal (pilha, teclado, foco). `soltarNoCommit` roda só a primeira.
- */
 function abrirComCommit(ref: { current: unknown }, opcoes: Parameters<typeof useDialogo>[1]) {
   const antes = m.limpezas.length;
-  // O gancho roda fora de componente de propósito: useEffect está mockado e o teste dispara o efeito à mão.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useDialogo(ref as Parameters<typeof useDialogo>[0], opcoes);
   const [noCommit, principal] = m.limpezas.slice(antes);
@@ -69,7 +58,6 @@ beforeEach(() => {
   vi.stubGlobal("document", documento);
 });
 afterEach(() => {
-  // Fecha o que ficou aberto: a pilha é do módulo e não pode vazar para o próximo teste.
   for (const limpeza of m.limpezas.splice(0).reverse()) limpeza();
   vi.unstubAllGlobals();
 });
@@ -123,7 +111,6 @@ describe("useDialogo \u2014 pilha ligada ao efeito", () => {
     teclar("Escape");
     expect(aoFecharConfirmacao).toHaveBeenCalledTimes(1);
     expect(aoFecharGaveta).not.toHaveBeenCalled();
-    // Tab no último da confirmação volta ao primeiro DELA; a gaveta não mexe no foco.
     confirmar.focus();
     g1.focus.mockClear(); g2.focus.mockClear(); voltar.focus.mockClear();
     const e = teclar("Tab");
@@ -137,11 +124,11 @@ describe("useDialogo \u2014 pilha ligada ao efeito", () => {
     const aoFecharGaveta = vi.fn(), aoFecharConfirmacao = vi.fn();
     const botaoDaGaveta = elemento("enviar-via-api");
     abrir({ current: caixa(botaoDaGaveta) }, { aberto: true, aoFechar: aoFecharGaveta });
-    botaoDaGaveta.focus(); // quem abre a confirmação
+    botaoDaGaveta.focus();
     botaoDaGaveta.focus.mockClear();
     const fecharConfirmacao = abrir({ current: caixa(elemento("voltar")) }, { aberto: true, aoFechar: aoFecharConfirmacao });
     fecharConfirmacao();
-    expect(botaoDaGaveta.focus).toHaveBeenCalledTimes(1); // foco devolvido
+    expect(botaoDaGaveta.focus).toHaveBeenCalledTimes(1);
     teclar("Escape");
     expect(aoFecharGaveta).toHaveBeenCalledTimes(1);
     expect(aoFecharConfirmacao).not.toHaveBeenCalled();
@@ -158,7 +145,6 @@ describe("useDialogo \u2014 pilha ligada ao efeito", () => {
 });
 
 describe("useDialogo \u2014 isolamento do fundo (C14, #170)", () => {
-  /** A camada do modal no <body>, ao lado do resto da página. */
   function paginaComCamada() {
     const app = { tagName: "MAIN", inert: false };
     const body: { children: unknown[] } = { children: [app] };
@@ -190,7 +176,6 @@ describe("useDialogo \u2014 isolamento do fundo (C14, #170)", () => {
   });
 
   it("a limpeza do commit solta o fundo sem mexer no foco; a passiva, depois, só devolve o foco (#249 C1)", () => {
-    // Fecha e publica o resultado no mesmo commit: a região da página não pode receber o texto ainda inert.
     const { app, camada } = paginaComCamada();
     const quemAbriu = elemento("abrir-modal");
     documento.activeElement = quemAbriu;
@@ -200,8 +185,7 @@ describe("useDialogo \u2014 isolamento do fundo (C14, #170)", () => {
     soltarNoCommit();
     expect(app.inert).toBe(false);
     expect(quemAbriu.focus).not.toHaveBeenCalled();
-    // Soltar de novo na limpeza passiva não desfaz o que outro marcou depois.
-    app.inert = true; // ex.: outro modal isolou o fundo nesse meio-tempo
+    app.inert = true;
     fechar();
     expect(app.inert, "a limpeza passiva não solta de novo").toBe(true);
     expect(quemAbriu.focus).toHaveBeenCalledTimes(1);

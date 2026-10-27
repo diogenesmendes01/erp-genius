@@ -21,9 +21,6 @@ export type ItemFilaContinuidadeMensal = {
 };
 export type FilaContinuidadeMensal = NavegacaoDaPagina & { itens: ItemFilaContinuidadeMensal[] };
 
-/** Incremento 608: visão financeira e sem efeitos; a emissão revalida tudo no comando próprio. Fila de trabalho com
- * cursor nos dois sentidos (E4, decisão de 10/10/2026), em ordem de id: uma matrícula que entra ou sai da fila (ativação,
- * encerramento) não desloca as páginas, e a próxima continua do último item visto. */
 export async function consultarFilaContinuidadeMensal(input: NavegacaoFila = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);

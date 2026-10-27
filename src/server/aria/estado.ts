@@ -13,9 +13,6 @@ import { capacidadesAria, type CapacidadeAria } from "./permissoes-tela";
 import { versaoPublicada } from "./versoes";
 import { ultimoEventoDoAutor } from "../_shared/idempotencia";
 
-// Estado operacional da Aria: DESLIGADA/SHADOW/ATIVA, pausa global com motivo e supervisão
-// (revisão humana obrigatória até uma data; "até eu desligar" = 9999-12-31T00:00:00Z).
-
 const ID_AGENTE = "aria";
 type Tx = Prisma.TransactionClient;
 
@@ -147,7 +144,6 @@ export async function definirSupervisao(input: { ate: Date | null }): Promise<Re
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
       const atual = await tx.agenteIA.findUniqueOrThrow({ where: { id: ID_AGENTE } });
-      // Encurtar uma supervisão vigente equivale a desligá-la (DF5-13): só quem pode desligar.
       if (
         input.ate !== null &&
         atual.supervisaoAte !== null &&
@@ -156,7 +152,6 @@ export async function definirSupervisao(input: { ate: Date | null }): Promise<Re
       ) {
         await exigir(u, "desligarSupervisao", "Só o Administrador encurta a supervisão em vigor.");
       }
-      // Já está no estado-alvo (ex.: reenvio após resultado incerto): nada a gravar, sem Evento.
       if ((atual.supervisaoAte?.getTime() ?? null) === (input.ate?.getTime() ?? null)) return;
       await tx.agenteIA.update({ where: { id: ID_AGENTE }, data: { supervisaoAte: input.ate } });
       await registrarEvento(tx, {

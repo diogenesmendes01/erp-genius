@@ -12,7 +12,6 @@ const STATUS: readonly StatusAtendimentoWhatsApp[] = ["ABERTO_SEM_RESPONSAVEL", 
 
 const um = (v: string | string[] | undefined): string => (Array.isArray(v) ? v[0] : v ?? "").trim();
 
-/** Lê os filtros da URL; valor desconhecido é ignorado (nunca vira erro nem filtro vazio). */
 export function lerFiltrosInbox(p: Record<string, string | string[] | undefined>): FiltrosInbox {
   const f: FiltrosInbox = {};
   const setor = um(p.setor);

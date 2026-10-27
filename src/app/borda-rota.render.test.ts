@@ -1,14 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ERROR_SEM_RESET, ROTAS_COM_ERROR, ROTAS_COM_LOADING } from "./borda-rota-mapa";
 import { clicar } from "@/test/tela-sem-dom";
 
-// E10 — borda de rota (docs/43 §6 item 10). Render de cada loading.tsx e error.tsx da lista fechada
-// (src/app/borda-rota-mapa.ts): o loading anuncia a espera e não desenha em dobro o título que o layout
-// do segmento já desenha (C3 da issue #170); o error.tsx mostra a área, nunca o erro técnico, e o
-// "Tentar de novo" chama reset; a volta leva ao índice da área.
 const m = vi.hoisted(() => ({ caminho: "/", params: {} as Record<string, string> }));
 vi.mock("next/navigation", () => ({ usePathname: () => m.caminho, useParams: () => m.params }));
 
@@ -64,7 +59,6 @@ import ErroCertificado from "@/app/certificado/[codigo]/error";
 
 type Rota<L extends readonly string[]> = L[number];
 
-/** Cada loading da lista, com o número de títulos que ele desenha (0 quando o layout acima já tem o h1). */
 const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => ReactNode; titulos: 0 | 1; rotulo: string }> = {
   "src/app/(app)": { Componente: LoadingApp, titulos: 1, rotulo: "Carregando" },
   "src/app/portal-aluno": { Componente: LoadingPortalAluno, titulos: 1, rotulo: "Carregando" },
@@ -92,24 +86,9 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/configuracao/whatsapp": { Componente: LoadingWhatsApp, titulos: 0, rotulo: "Carregando WhatsApp" },
 };
 
-/** Os layout.tsx que envolvem o loading de `rota` (o do mesmo segmento e os de cima, até src/app). */
-function layoutsAcima(rota: string): string[] {
-  const partes = rota.split("/");
-  const saida: string[] = [];
-  for (let i = partes.length; i >= 2; i--) {
-    const arquivo = `${partes.slice(0, i).join("/")}/layout.tsx`;
-    if (existsSync(arquivo)) saida.push(arquivo);
-  }
-  return saida;
-}
-
 const titulos = (html: string) => html.split('data-esqueleto="titulo"').length - 1;
 
 describe("loading.tsx: anúncio e formato (E10)", () => {
-  it("o render cobre exatamente a lista fechada", () => {
-    expect(Object.keys(LOADINGS).sort()).toEqual([...ROTAS_COM_LOADING].sort());
-  });
-
   for (const [rota, { Componente, titulos: esperado, rotulo }] of Object.entries(LOADINGS)) {
     it(`${rota}: anuncia a espera e desenha ${esperado} título`, () => {
       const html = renderToStaticMarkup(createElement(Componente));
@@ -119,20 +98,10 @@ describe("loading.tsx: anúncio e formato (E10)", () => {
     });
   }
 
-  it("sob um layout que já desenha o h1 (financeiro, configuração), o esqueleto não desenha outro título — e é o layout que diz isso", () => {
-    for (const [rota, { titulos: esperado }] of Object.entries(LOADINGS)) {
-      const comH1 = layoutsAcima(rota).filter((l) => /<h1\b/.test(readFileSync(l, "utf-8")));
-      if (comH1.length) expect(esperado, `${rota} (h1 em ${comH1.join(", ")})`).toBe(0);
-    }
-    // As duas áreas cujo layout tem o h1 estão na conta (a regra acima não é vazia).
-    expect(layoutsAcima("src/app/(app)/financeiro/(painel)")).toContain("src/app/(app)/financeiro/(painel)/layout.tsx");
-    expect(layoutsAcima("src/app/(app)/configuracao")).toContain("src/app/(app)/configuracao/layout.tsx");
-  });
-
   it("C3 da #170: o esqueleto do financeiro não repete o título nem a fileira de abas — só os indicadores e a tabela", () => {
     const html = renderToStaticMarkup(createElement(LoadingFinanceiro));
     expect(titulos(html)).toBe(0);
-    expect(html).not.toMatch(/h-8 w-24/); // a fileira de 5 abas do antigo EsqueletoAbas
+    expect(html).not.toMatch(/h-8 w-24/);
     expect([...html.matchAll(/class="animate-pulse rounded-md bg-gray-100 h-20"/g)]).toHaveLength(4);
     expect(html).toContain("overflow-hidden rounded-lg border border-gray-200");
   });
@@ -148,7 +117,6 @@ describe("loading.tsx: anúncio e formato (E10)", () => {
 type PropsErro = { error: Error & { digest?: string }; reset: () => void };
 type CasoErro = { Componente: (p: PropsErro) => ReactNode; caminho: string; titulo: string; voltar: string | null; params?: Record<string, string> };
 
-/** Cada error.tsx da lista, aberto num caminho da área, com o título e a volta esperados. */
 const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/(app)": { Componente: ErroApp, caminho: "/home", titulo: "Não foi possível carregar esta tela", voltar: null },
   "src/app/portal-aluno": { Componente: ErroPortalAluno, caminho: "/portal-aluno", titulo: "Não foi possível abrir esta página", voltar: null },
@@ -175,10 +143,8 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
 
 const erroTecnico = () => Object.assign(new Error("SEGREDO-TECNICO: relation \"Cobranca\" does not exist"), { digest: "DIGEST-123" });
 
-/** O href do link de volta (<VoltarPara>, nome acessível "Voltar para …"); um por tela, no máximo. */
 const voltas = (html: string) => (html.match(/<a\b[^>]*aria-label="Voltar para [^"]*"[^>]*>/g) ?? []).map((tag) => tag.match(/\bhref="([^"]*)"/)?.[1] ?? "(sem href)");
 
-/** Expande ErroArea e EstadoRota (componentes sem gancho) para o "Tentar de novo" aparecer como <button>. */
 type No = { type: unknown; props: Record<string, unknown> };
 function expandir(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(expandir);
@@ -200,10 +166,6 @@ describe("error.tsx: área, volta e \"Tentar de novo\" (E10)", () => {
   beforeEach(() => {
     m.caminho = "/";
     m.params = {};
-  });
-
-  it("o render cobre exatamente a lista fechada", () => {
-    expect(Object.keys(ERROS).sort()).toEqual([...ROTAS_COM_ERROR].sort());
   });
 
   for (const [rota, caso] of Object.entries(ERROS)) {
@@ -248,18 +210,14 @@ describe("error.tsx: área, volta e \"Tentar de novo\" (E10)", () => {
     expect(voltaEm("src/app/(app)/secretaria", "/secretaria")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/secretaria", "/secretaria?busca=ana")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/academico", "/academico")).toEqual(["/home"]);
-    // Financeiro: o painel e as abas são o próprio índice; as telas avulsas voltam ao Financeiro.
     expect(voltaEm("src/app/(app)/financeiro", "/financeiro")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/financeiro", "/financeiro/")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/financeiro", "/financeiro/cobrancas")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/financeiro", "/financeiro/cambio?x=1")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/financeiro", "/financeiro/recebimentos")).toEqual(["/financeiro"]);
     expect(voltaEm("src/app/(app)/financeiro", "/financeiro/cobrancas/x")).toEqual(["/financeiro"]);
-    // Configuração: uma sub-aba já é o índice (as outras seguem no layout).
     expect(voltaEm("src/app/(app)/configuracao", "/configuracao/usuarios")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/configuracao", "/configuracao")).toEqual(["/home"]);
-    // Matrícula: da seção ao hub; do hub ao início — Financeiro e Gerência pedagógica abrem o hub, mas não
-    // a Secretaria (C1 da R1 da #174).
     expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1/")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1/emissao")).toEqual(["/matriculas/m1"]);

@@ -11,9 +11,7 @@ type Props = {
   aoAbrir: (id: string) => void;
   selecionados: string[];
   aoSelecionar: (ids: string[]) => void;
-  /** Ordem atual (valor de `ordem` na URL: "valor", "proxima" ou "tempo"); null: ordem padrão. */
   ordem?: Ordenacao | null;
-  /** Filtros atuais, preservados nos links de ordenação. */
   parametros?: Record<string, string>;
   rota?: string;
   agora?: Date;

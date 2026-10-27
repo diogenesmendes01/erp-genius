@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3; achado L1219): a decisão da alteração de
-// quantidade de aulas anuncia o sucesso em role="status" e atualiza a tela com router.refresh — nunca
-// window.location.reload —, com o erro em role="alert", a falha de rede como resultado incerto e os botões
-// saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
-// Aprovar passa pelo ConfirmarAcao (docs/42 L1218; fatia B, issue #169): o erro e o incerto da aprovação
-// ficam DENTRO do diálogo (DecidirQuantidadeAulas.confirmacao.test.ts); aqui fica o anúncio do sucesso na
-// tela depois da confirmação, e o contrato inteiro do rejeitar, que continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(), reload: vi.fn(),
@@ -33,7 +26,6 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 beforeEach(() => {
   vi.clearAllMocks();
   m.ganchos = criarGanchos();
-  // Rede de segurança: se a tela voltasse a recarregar a página, o teste veria a chamada.
   vi.stubGlobal("window", { location: { reload: m.reload } });
 });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -42,7 +34,6 @@ const RESUMO = { nomeModalidade: "Inglês regular", quantidadeAnterior: 40, quan
 const tela = () => m.ganchos!.renderizar(DecidirQuantidadeAulas, { propostaId: "proposta-1", resumo: RESUMO });
 const confirmacao = (): No | undefined => elementos(tela()).find((n: No) => n.type === ConfirmarAcao);
 const MOTIVO = "Conferi o impacto nas turmas";
-/** Preenche o motivo (campo controlado): os botões só habilitam com 5 caracteres ou mais. */
 const preencherMotivo = () => {
   const campo = elementos(tela()).find((n) => n.type === "input");
   (campo!.props.onChange as (e: unknown) => void)({ target: { value: MOTIVO } });

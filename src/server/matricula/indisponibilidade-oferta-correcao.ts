@@ -56,10 +56,6 @@ async function carregarRelatoTx(tx: Prisma.TransactionClient, registroId: string
 
 const dataBr = (data: Date) => formatarDataCivil(dataCivil(data));
 
-/**
- * Outro relato confirmado da matrícula que também cobre o dia (fim do relato ou, aberto, o do término aprovado).
- * Só informa a recusa: a regra continua conservadora, como o guard SQL de 20261020210000 (C3 da #265).
- */
 async function outroRelatoConfirmadoCobrindoTx(tx: Prisma.TransactionClient, matriculaId: string, relatoId: string, dia: Date) {
   const termino = { decisao: { is: { aprovada: true } } };
   return tx.registroIndisponibilidadeOfertaMatricula.findFirst({
@@ -73,14 +69,6 @@ async function outroRelatoConfirmadoCobrindoTx(tx: Prisma.TransactionClient, mat
   });
 }
 
-/**
- * Dias que deixam de ser cobertos não podem já sustentar compensação ou período integral aprovados.
- * A recusa é conservadora mesmo quando outro relato confirmado também cobre o dia (C3 da #265): o guard
- * SQL já aplicado recusa igual, e a compensação aprovada não se desfaz pela tela (só há PENDENTE → APROVADA
- * ou REJEITADA). Por isso a mensagem nomeia o dia e só afirma o que o modelo guarda: o dia compensado, a
- * cobertura da cobrança e o outro relato confirmado que cobre o dia (a compensação não registra qual relato
- * a sustentou). Os caminhos são manter o dia ou levar o caso à gestão financeira, no painel real.
- */
 async function conferirEfeitosJaAprovadosTx(tx: Prisma.TransactionClient, matriculaId: string, relatoId: string, removidos: Array<{ inicio: string; fim: string }>) {
   for (const intervalo of removidos) {
     const inicio = dataUtc(intervalo.inicio), fim = dataUtc(intervalo.fim);
@@ -109,7 +97,6 @@ function projetarProposta(p: PropostaComDecisao | (Omit<PropostaComDecisao, "dec
   };
 }
 
-/** Propõe novo período para relato confirmado. Não altera o relato, cobranças nem compensações. */
 export async function proporCorrecaoRelatoIndisponibilidadeOferta(input: z.input<typeof ProporCorrecaoSchema>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -141,7 +128,6 @@ export async function proporCorrecaoRelatoIndisponibilidadeOferta(input: z.input
   });
 }
 
-/** Decide a correção. Aprovada, o relato passa a refletir o novo período na mesma transação. */
 export async function decidirCorrecaoRelatoIndisponibilidadeOferta(input: z.input<typeof DecidirCorrecaoSchema>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -165,7 +151,6 @@ export async function decidirCorrecaoRelatoIndisponibilidadeOferta(input: z.inpu
         await conferirEfeitosJaAprovadosTx(tx, relato.matriculaId, relato.id, diasRemovidosPelaCorrecao(relato.periodo, novo, relato.termino));
       }
       const decisao = await tx.decisaoCorrecaoRelatoIndisponibilidadeOferta.create({ data: { propostaId: proposta.id, decisorId: sessao.id, aprovada: dados.aprovada, motivo: dados.motivo, evidenciaTexto: dados.evidenciaTexto, entradaHash } });
-      // O trigger do relato só aceita este UPDATE porque a decisão aprovada acima o respalda.
       if (dados.aprovada) await tx.registroIndisponibilidadeOfertaMatricula.update({ where: { id: relato.id }, data: { inicio: proposta.inicioNovo, fim: proposta.fimNovo } });
       await registrarEvento(tx, { tipo: "CorrecaoRelatoIndisponibilidadeOfertaDecidida", agregadoTipo: "Matricula", agregadoId: relato.matriculaId, autorId: sessao.id,
         payload: { relatoId: relato.id, propostaId: proposta.id, decisaoId: decisao.id, aprovada: dados.aprovada, anterior: relato.periodo, novo } });
@@ -174,7 +159,6 @@ export async function decidirCorrecaoRelatoIndisponibilidadeOferta(input: z.inpu
   });
 }
 
-/** Histórico versionado das correções, com o período vigente do relato. */
 export async function consultarCorrecoesRelatoIndisponibilidadeOferta(input: z.input<typeof ConsultarCorrecoesSchema>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.FINANCEIRO, Papel.ADMINISTRADOR);
@@ -186,7 +170,6 @@ export async function consultarCorrecoesRelatoIndisponibilidadeOferta(input: z.i
       if (!relato) throw new ErroRegra("Relato de indisponibilidade não encontrado.");
       const propostas = await tx.propostaCorrecaoRelatoIndisponibilidadeOferta.findMany({ where: { registroId: relato.id }, orderBy: { versao: "desc" }, skip: (dados.pagina - 1) * 20, take: 21, include: { decisao: true, autor: { select: { nome: true } } } });
       const pendente = propostas.find((p) => !p.decisao) ?? (dados.pagina > 1 ? await tx.propostaCorrecaoRelatoIndisponibilidadeOferta.findFirst({ where: { registroId: relato.id, decisao: null }, include: { decisao: true, autor: { select: { nome: true } } } }) : null);
-      // Instantes do histórico na referência da escola (a preferência pessoal é aplicada na tela).
       const config = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
       return {
         fusoInstitucional: config?.fusoInstitucional ?? null,

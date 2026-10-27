@@ -16,7 +16,6 @@ export interface ReciboGeracaoInsight {
 }
 export interface PortaGeracaoInsight {
   atendimentoId:string;contexto:string;ativo:boolean;
-  /** Audiência ainda autorizada; PROCESSANDO só impede novo clique. */
   autorizado:boolean;podeAtualizar:boolean;
   podeRetomar?:boolean;
   retomarGeracao?:(entrada:RetomadaInsight)=>Promise<Resultado<ReciboGeracaoInsight>>;
@@ -28,7 +27,6 @@ export interface PortaGeracaoInsight {
 type Feedback=Exclude<DesfechoAcao<unknown>,{tipo:"ok"}>|null;
 type Pendente={geracaoId:string|null;solicitacao:number;versaoMinima:number};
 const mensagemPersistencia="Não foi possível confirmar a gravação da análise. Verifique o estado atualizado antes de continuar.";
-/** Clique explícito inicia; SSE/GET nunca chamam a porta de geração. */
 export function useGeracaoInsight({atendimentoId,contexto,ativo,autorizado,podeAtualizar,podeRetomar=false,gerar=entrada=>atualizarInsightNoInbox({tipo:"NOVO",...entrada}),retomarGeracao=entrada=>atualizarInsightNoInbox({tipo:"RETOMAR",...entrada}),aoSolicitarLeitura,leitura,novaChave=()=>crypto.randomUUID()}:PortaGeracaoInsight){
   const identidade=ativo&&autorizado?JSON.stringify([atendimentoId,contexto]):null;
   const [ciclo,setCiclo]=useState<{identidade:string|null;token:object;feedback:Feedback;pendente:Pendente|null}>(()=>({identidade,token:{},feedback:null,pendente:null}));
@@ -49,7 +47,6 @@ export function useGeracaoInsight({atendimentoId,contexto,ativo,autorizado,podeA
     const recibo=d.tipo==="ok"?d.dado:undefined;
     const naoConfirmada=recibo?.statusPersistencia==="NAO_CONFIRMADA";
     const feedback:Feedback=recibo?.mensagem?{tipo:"erro",mensagem:recibo.mensagem}:naoConfirmada?{tipo:"incerto",mensagem:mensagemPersistencia}:d.tipo==="ok"?null:d;
-    // O ACK solicita GET NOVO mesmo que o SSE próprio já tenha chegado. Não concede foco/inserção.
     const numero=d.tipo==="ok"||d.tipo==="incerto"?aoSolicitarLeitura(recibo?.geracaoId):undefined;
     const pendente=typeof numero==="number"?{geracaoId:recibo?.geracaoId??null,solicitacao:numero,versaoMinima:recibo?.versaoConhecidaAntesFinalizacao??0}:null;
     setCiclo(anterior=>anterior.token===token?{...anterior,feedback,pendente}:anterior);

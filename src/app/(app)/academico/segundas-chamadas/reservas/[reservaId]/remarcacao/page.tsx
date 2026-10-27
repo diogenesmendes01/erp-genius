@@ -16,14 +16,9 @@ function periodo(inicio: string, fim: string, fuso: string) {
   }).format(new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`));
   return `${formatar(inicio)} até ${formatar(fim)} (${fuso})`;
 }
-/**
- * Prazo vigente: publicado para a agenda, sai no fuso que o servidor manda — o da agenda; sem ela, o da escola
- * (fusoDoPrazoSegundaChamada), nunca o do servidor —, com o fuso e a origem escritos. Não lança com fuso inválido.
- */
 function prazo(valor: string, fuso: string, origem: "AGENDA" | "ESCOLA" | undefined) {
   const e = formatarInstanteExibicao(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`, null, fuso);
   const rotulo = origem === "ESCOLA" ? "fuso da escola" : origem === "AGENDA" ? "fuso da agenda" : "fuso";
-  // Fuso não reconhecido (defensivo: o servidor não manda): diz que saiu em UTC, como na substituição.
   if (e.fuso !== fuso) return `${e.texto} (UTC; ${rotulo} não reconhecido: ${fuso})`;
   return `${e.texto} (${e.fuso}${origem ? `, ${rotulo}` : ""})`;
 }

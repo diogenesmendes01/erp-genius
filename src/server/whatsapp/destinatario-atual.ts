@@ -2,12 +2,6 @@ import { type FinalidadeAtendimentoWhatsApp, type Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula, type DestinoFinanceiro } from "./destinatario-financeiro";
 
-/**
- * A fotografia de pagador explícita governa aquele contrato, inclusive quando
- * o telefone já existe em um contato associado a outro aluno. No legado, o
- * responsável financeiro continua sendo a identidade estável; o aluno não é,
- * pois irmãos podem compartilhar o mesmo responsável.
- */
 export function contatoCorrespondeDestinoFinanceiro(
   contato: { telefoneE164: string; responsavelId: string | null },
   destino: DestinoFinanceiro,
@@ -17,7 +11,6 @@ export function contatoCorrespondeDestinoFinanceiro(
   return contato.responsavelId === destino.responsavelId;
 }
 
-/** O histórico fica no contato original; novo envio exige o destinatário atual da finalidade. */
 export async function destinatarioAtualDoAtendimento(a: {
   finalidade: FinalidadeAtendimentoWhatsApp; leadId: string | null; alunoId: string | null; matriculaId: string | null;
   autorizacaoComunicacaoAcademicaId?: string | null;
@@ -28,9 +21,6 @@ export async function destinatarioAtualDoAtendimento(a: {
     if (!a.matriculaId || !a.alunoId) return false;
     const matricula = await db.matricula.findFirst({ where: { id: a.matriculaId, alunoId: a.alunoId }, include: INCLUDE_MATRICULA_DESTINO });
     const destino = matricula && resolverDestinoFinanceiroDaMatricula(matricula);
-    // A origem do pagador também determina quais vínculos globais são lícitos
-    // no Contato. Empresa/responsável explícitos nunca herdam aluno/responsável
-    // do cadastro geral só porque usam o mesmo telefone.
     return !!destino && contatoCorrespondeDestinoFinanceiro(contato, destino);
   }
   if (a.leadId) {
@@ -60,8 +50,6 @@ export async function destinatarioAtualDoAtendimento(a: {
       where: { id: a.matriculaId, alunoId: a.alunoId },
       select: { aluno: { select: { telefoneE164: true, whatsapp: true } } },
     });
-    // O histórico continua no contato original, mas uma nova mensagem direta só
-    // pode seguir para o telefone que o aluno mantém como WhatsApp atual.
     return !!matricula?.aluno.whatsapp
       && !!matricula.aluno.telefoneE164
       && matricula.aluno.telefoneE164 === contato.telefoneE164;
@@ -74,7 +62,5 @@ export async function destinatarioAtualDoAtendimento(a: {
     if (aluno.responsaveis.length) return aluno.responsaveis.some((r) => r.responsavelId === contato.responsavelId && r.responsavel.telefoneE164 === contato.telefoneE164);
     return !contato.responsavelId && !!aluno.telefoneE164 && aluno.telefoneE164 === contato.telefoneE164;
   }
-  // Um atendimento comercial de triagem pode existir antes de virar lead, e o
-  // roteamento por setor abre SECRETARIA para contato ainda não identificado.
   return a.finalidade === "COMERCIAL" || a.finalidade === "SECRETARIA";
 }

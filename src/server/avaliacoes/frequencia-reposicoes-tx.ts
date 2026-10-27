@@ -1,15 +1,5 @@
 import { Prisma, type Prisma as PrismaTypes } from "@prisma/client";
 
-/**
- * Fonte de regularização de frequência. As tabelas são deliberadamente
- * consultadas por SQL enquanto a migração de F07.6 não é aplicada: o leitor
- * não pode confundir a particular contratada (`OcorrenciaParticular`) nem a
- * recuperação de nota com uma reposição individual.
- *
- * O contrato completo das tabelas, estados e chaves está em
- * docs/planejamento/reposicao-modelos.prisma. Depois de `prisma generate`,
- * esta consulta pode ser migrada para delegates tipados sem mudar a regra.
- */
 type LinhaReposicao = {
   reposicaoId: string;
   aulaOriginalId: string;
@@ -30,14 +20,6 @@ export type ReposicaoFrequencia = {
 
 const instanteUtc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
 
-/**
- * Lê apenas reposições individuais efetivas. Uma correção rejeitada não muda
- * a conclusão anterior; uma aprovada a substitui. A consulta também confere:
- * matrícula/aluno, aula original coletiva ministrada, autorização aprovada,
- * encontro de reposição próprio e presença real na particular, ou entrega,
- * resumo, atividade, designação vigente na validação e validação na gravação.
- * A inativação posterior do avaliador não apaga uma regularização histórica.
- */
 export async function carregarReposicoesFrequenciaTx(
   tx: PrismaTypes.TransactionClient,
   entrada: { matriculaId: string; aulaOriginalIds: string[]; apuradaEm: Date },
@@ -128,8 +110,6 @@ export async function carregarReposicoesFrequenciaTx(
   const porAula = new Map<string, ReposicaoFrequencia[]>();
   for (const linha of linhas) {
     const validadaEm = linha.modalidade === "PARTICULAR" ? linha.realizadaEm : linha.validadaEm;
-    // O WHERE já exige a data. Esta guarda conserva o leitor seguro em caso
-    // de esquema incompleto ou de uma fonte manipulada fora do fluxo.
     if (!validadaEm || validadaEm > entrada.apuradaEm) continue;
     const reposicao = {
       id: linha.fonteId,

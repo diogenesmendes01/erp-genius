@@ -50,8 +50,6 @@ describe("designação de avaliador", () => {
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
 
-  // docs/43 §6 item 3 (docs/42 L1327): a key do formulário tinha a versão e a busca — buscar outro professor ou
-  // receber a versão nova remontava o formulário e apagava o motivo digitado.
   it("o formulário tem a mesma identidade no React com outra busca, outra página do histórico e outra versão", async () => {
     const base = identidadeNoReact(await renderizar(), FormularioDesignacao);
     expect(base).not.toBeNull();

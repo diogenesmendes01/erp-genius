@@ -1,8 +1,6 @@
 export type TipoAcerto = "" | "VALOR_FIXO" | "PERCENTUAL_VALOR_NEGOCIADO";
 export type AlcanceAcerto = "TODAS_COBRANCAS_MATRICULA" | "TIPOS_COBRANCA" | "COBRANCAS_IDENTIFICADAS" | "TOTAL_CONTRATACAO";
 
-/** Converte escolhas visíveis em regra estruturada. A validação de limites e
- * consistência final permanece no schema compartilhado. */
 export function montarAcertoDesistenciaPreparacao(formulario: FormData, tipo: TipoAcerto, alcance: AlcanceAcerto) {
   if (!tipo) return undefined;
   const valor = String(formulario.get("valorAcerto") ?? "");

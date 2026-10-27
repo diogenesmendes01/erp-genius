@@ -1,9 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 L2676 (docs/43 §6 item 7): "Problema com o material" aparecia sem campo e sem explicar — o formulário de
-// relato some quando a gravação não está liberada (o servidor exige a mesma autorização da reprodução). Agora, no
-// lugar dele, o aluno lê por quê e o que fazer.
 const mocks = vi.hoisted(() => ({ reposicao: vi.fn(), detalhe: vi.fn(), estado: vi.fn(), autorizar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/portal-aluno/reposicoes", () => ({
   exigirReposicaoDoPortalAluno: mocks.reposicao, consultarEntregaGravacaoPortalAluno: mocks.detalhe, estadoEntregaPortalAluno: mocks.estado,

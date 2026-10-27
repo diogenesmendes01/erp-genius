@@ -25,12 +25,6 @@ const CONFLITO = "Esta solicitação já foi usada com outros dados. Atualize a 
 
 type Envio = { processoId: string; tentativa: number; estado: string; repetido: boolean };
 
-/**
- * Envio integrado do original do contrato. A tentativa é confirmada no banco ANTES da chamada externa
- * e o resultado entra em outra transação: falha entre as duas deixa ENVIANDO, nunca um envelope sem
- * registro. Timeout/erro viram ENVIO_INCERTO e só a conciliação libera nova criação. A mesma chave de
- * idempotência devolve o estado atual sem chamar o serviço de novo.
- */
 export async function enviarContratoParaAssinatura(input: z.input<typeof Enviar>) {
   return executarAcao<Envio>(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), { chaveIdempotencia, ...d } = Enviar.parse(input), provedor = exigirProvedor();
@@ -55,7 +49,6 @@ export async function enviarContratoParaAssinatura(input: z.input<typeof Enviar>
     if (aberto.repetido) return { processoId: aberto.processoId, tentativa: aberto.numero, estado: aberto.estado, repetido: true };
     const criado = await criarEnvelopeSemPresumir(provedor, {
       chave: chaveTentativa(aberto.tentativaId), nome: `Contrato ${aberto.codigo ?? d.matriculaId}`, pdf: new Uint8Array(aberto.pdf), pdfHash: aberto.pdfHash,
-      // Q122: cliente/responsáveis assinam antes da escola.
       signatarios: aberto.signatarios.map((p) => ({ ...p, etapa: p.etapa === "CLIENTE" ? 1 : 2 })).sort((a, b) => a.etapa - b.etapa),
     });
     const registrado = await prisma.$transaction((tx) => registrarResultadoEnvioTx(tx, {
@@ -66,10 +59,6 @@ export async function enviarContratoParaAssinatura(input: z.input<typeof Enviar>
   });
 }
 
-/**
- * Conciliação de ENVIANDO/ENVIO_INCERTO pela chave da tentativa atual. Só a resposta positiva do
- * serviço (encontrado ou ausente) muda o estado; dúvida mantém incerto.
- */
 export async function conciliarEnvioAssinatura(input: z.input<typeof Conciliar>) {
   return executarAcao<{ processoId: string; estado: string; repetido: boolean }>(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), { chaveIdempotencia, ...d } = Conciliar.parse(input), provedor = exigirProvedor();
@@ -92,7 +81,6 @@ export async function conciliarEnvioAssinatura(input: z.input<typeof Conciliar>)
       return { repetido: false as const, processoId: p.id, tentativaId: tentativa.id, sequencia: tentativa._count.observacoes + 1 };
     });
     if (pendente.repetido) return { processoId: pendente.processoId, estado: pendente.estado, repetido: true };
-    // Envelope cancelado/recusado no serviço não confirma o envio: fica INCERTO com o motivo (resultadoConciliacaoEnvio).
     const conciliado = resultadoConciliacaoEnvio(await consultarEnvelopeSemPresumir(provedor, chaveTentativa(pendente.tentativaId)));
     const registrado = await prisma.$transaction((tx) => registrarResultadoEnvioTx(tx, {
       processoId: pendente.processoId, tentativaId: pendente.tentativaId, chave: `conciliacao:${pendente.tentativaId}:${pendente.sequencia}`, resultado: conciliado.resultado,
@@ -103,7 +91,6 @@ export async function conciliarEnvioAssinatura(input: z.input<typeof Conciliar>)
   });
 }
 
-/** A tela só oferece envio/cancelamento integrados quando há driver; sem ele permanece o registro manual. */
 export async function consultarIntegracaoAssinatura() {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);

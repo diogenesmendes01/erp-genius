@@ -4,24 +4,9 @@ import * as path from "path";
 import { spawnSync } from "child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-// Trava a correção Prisma/OpenSSL do Dockerfile (review #127 B1/B2): Alpine 3.24 vem sem o binário
-// `openssl`, o Prisma 5.22 detecta a libssl errada e carrega o engine errado (migrate exit 1, queries
-// quebradas com /api/health verde). A garantia de produção é: openssl instalado no estágio `base`
-// herdado por deps/builder/runner + checagens que CARREGAM os engines no build (engine errado quebra
-// o build, não a produção). O Dockerfile é lido como o Docker lê: sem comentários e com as
-// continuações `\` juntadas, então comentar uma linha conta como removê-la. Mutações cobradas:
-// - Remover ou comentar o `RUN apk add --no-cache openssl` → DEVE FALHAR
-// - Trocar por `RUN echo apk add --no-cache openssl` (spoof) → DEVE FALHAR
-// - Algum estágio deixar de herdar de `base` / despinar a imagem → DEVE FALHAR
-// - Remover/esvaziar a checagem do schema engine no builder → DEVE FALHAR
-// - Trocar a checagem do runner por algo que não exija P1001 (ex.: `process.exit(0)`) → DEVE FALHAR
-// - Remover ENV HOSTNAME=0.0.0.0 do runner → DEVE FALHAR
-// - Healthcheck do Coolify voltar para /api/health → DEVE FALHAR
-
 type Instrucao = { op: string; args: string };
 type Estagio = { imagem: string; nome: string | null; instrucoes: Instrucao[] };
 
-// Porta sem banco: as checagens nunca podem apontar para um banco real.
 const URL_SEM_BANCO = /^DATABASE_URL="postgresql:\/\/[^"@]*@127\.0\.0\.1:1\/[^"]*"/;
 
 function lerDockerfile(texto: string): Estagio[] {
@@ -54,7 +39,6 @@ function lerDockerfile(texto: string): Estagio[] {
   return estagios;
 }
 
-// Comandos simples de um RUN (separados por && e ;). `echo apk add ...` não vira `apk add`.
 function comandos(run: string): string[] {
   return run.split(/&&|;/).map((c) => c.trim());
 }
@@ -116,7 +100,6 @@ describe("Dockerfile: Prisma/OpenSSL em Alpine", () => {
     let js: string;
     let dir: string;
 
-    // Executa o JS REAL da checagem contra um @prisma/client falso, controlado por env.
     const rodar = (modo: "p1001" | "engine-quebrado" | "conectou") =>
       spawnSync(process.execPath, ["-e", js], {
         cwd: dir,
@@ -182,7 +165,6 @@ describe("Dockerfile: Prisma/OpenSSL em Alpine", () => {
 
 describe("docker-compose.coolify.yml: healthcheck do app", () => {
   it("usa /api/ready (readiness com banco), não /api/health (liveness)", () => {
-    // CRLF normalizado: com core.autocrlf=true o checkout no Windows traz o compose em CRLF.
     const compose = fs
       .readFileSync(path.resolve(process.cwd(), "docker-compose.coolify.yml"), "utf8")
       .replace(/\r\n/g, "\n");
@@ -202,8 +184,6 @@ describe("docker-compose.coolify.yml: healthcheck do app", () => {
   });
 });
 
-// SHA do build (#165): o Dockerfile recebe o commit pelo build-arg GIT_SHA (passado no CI) e o expõe como
-// variável de ambiente no runner (lida pelo /api/health).
 describe("SHA do build chega ao runner", () => {
   const dockerfile = fs.readFileSync(path.join(__dirname, "../../Dockerfile"), "utf-8");
   const runner = dockerfile.slice(dockerfile.indexOf("AS runner"));

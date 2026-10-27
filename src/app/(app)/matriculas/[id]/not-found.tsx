@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-// Matrícula inexistente ou fora do alcance da função (E2): em português e dentro do shell, com
-// caminhos de volta — em vez da página 404 padrão do Next.
 export default function MatriculaNaoEncontrada() {
   return (
     <div className="space-y-3">

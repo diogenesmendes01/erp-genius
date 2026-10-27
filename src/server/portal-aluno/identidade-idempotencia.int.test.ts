@@ -2,15 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { Papel } from "@prisma/client";
 
-// #166 (4º lote): ações do portal do aluno na ficha da equipe são idempotentes por natureza. Nenhum reenvio grava
-// Evento de novo nem prepara outro e-mail:
-// - convite ainda não despachado: reaproveita o envio e não grava outro ConvitePortalAlunoPreparado;
-// - pendência de e-mail: registrada uma vez enquanto nada muda;
-// - troca de e-mail pendente idêntica, do mesmo autor: devolvida (antes caía no índice de troca pendente única);
-// - a mesma decisão, do mesmo decisor e com o mesmo motivo: devolvida.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -73,10 +64,6 @@ describe("convite do portal repetido (#166)", () => {
   });
 });
 
-// B1 da R1 do #274: sem chave, o servidor só reconhecia o reenvio do convite enquanto o envio estava PREPARADO.
-// Se o cron despachasse no intervalo, o reenvio preparava outro convite, e o despacho seguinte revogava o link do
-// primeiro. Com a chave da tentativa (marca no `ConvitePortalAlunoPreparado`), o reenvio devolve o convite
-// original mesmo já despachado; a reemissão deliberada usa chave nova.
 describe("convite do portal com chave, depois do despacho pelo cron (B1 da R1 do #274)", () => {
   const ambiente = {
     EMAIL_PORTAL_ENVIO_ENABLED: "true", RESEND_API_KEY: "chave-ficticia-idem",
@@ -213,7 +200,6 @@ describe("troca de e-mail repetida (#166)", () => {
     const decisao = { solicitacaoId: preparada.dado.solicitacaoId, aprovar: true, motivo: "Identidade e endereço conferidos por outra pessoa" };
     const a = await decidirTrocaEmailPortalAluno(decisao);
     if (!a.ok || !a.dado?.aprovada) throw new Error(JSON.stringify(a));
-    // Uma segunda troca é aplicada depois: o `TrocaEmailPortalAlunoAplicada` mais recente passa a ser o dela.
     sessao.usuarioId = secretariaId;
     const segunda = await prepararTrocaEmailPortalAluno({ alunoId, ...troca, novoEmail: "terceiro.portal@example.com" });
     if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
@@ -226,9 +212,6 @@ describe("troca de e-mail repetida (#166)", () => {
   });
 });
 
-// N3 da R1 do #274 (5º lote): se outra pessoa rejeitar a troca entre a tentativa e o reenvio, sem chave o reenvio
-// abria uma nova solicitação, com novo e-mail de validação. Com a chave da tentativa (marca no
-// `TrocaEmailPortalAlunoPreparada`), o reenvio devolve a solicitação original; chave nova é nova solicitação.
 describe("troca de e-mail com chave, depois da rejeição (N3 da R1 do #274)", () => {
   const troca = { novoEmail: "Novo.Portal@Example.com ", motivo: "Aluna perdeu o endereço verificado", evidencia: "Identidade e vínculo conferidos presencialmente" };
 
@@ -268,7 +251,6 @@ describe("troca de e-mail com chave, depois da rejeição (N3 da R1 do #274)", (
     expect(b.ok, b.ok ? undefined : b.erro).toBe(true);
     expect(b.ok && b.dado?.solicitacaoId).toBe(a.dado.solicitacaoId);
     expect(b.ok && b.dado?.solicitacaoEnvioId).toBe(a.dado.solicitacaoEnvioId);
-    // A situação real, não a de uma solicitação nova (#282, C3): a tela avisa que já foi decidida.
     expect(b.ok && b.dado?.situacao).toBe("REJEITADA");
     expect(await prisma.solicitacaoTrocaEmailPortalAluno.count()).toBe(1);
     expect(await prisma.solicitacaoEnvioPortalAluno.count({ where: { finalidade: "VALIDAR_TROCA_EMAIL" } })).toBe(1);

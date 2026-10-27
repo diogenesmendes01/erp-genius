@@ -40,7 +40,6 @@ it("333 NOTIFY nativo só no commit, replay e rollback não publicam",async()=>{
   expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(true);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);
   expect((await cancelarAgendadaNoInbox(c.a.id,c.m.id)).ok).toBe(true);await listener.query("SELECT 1");await pausa333(30);expect(avisos).toHaveLength(1);
   await prisma.intencaoMensagem.update({where:{id:c.m.id},data:{status:"PENDENTE",motivoFalha:null}});
-  // O setup pode avisar quando o ciclo genérico502 está instalado; pré502 continua válido.
   await listener.query("SELECT 1");await pausa333(30);
   const baselineAntesRollback=avisos.length;
   const eventosAntesRollback=await prisma.evento.count({where:{agregadoId:c.a.id,tipo:"MensagemAgendadaCancelada"}});

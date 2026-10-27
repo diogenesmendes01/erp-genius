@@ -3,7 +3,6 @@ import type { RecursoMotor } from "./recursos-canal";
 
 export type IdItemAnexo = "documento" | "midia" | "camera" | "audio" | "localizacao" | "contato" | "enquete" | "proposta" | "resposta";
 export interface ItemAnexo { readonly id: IdItemAnexo; readonly rotulo: string; readonly icone: TablerIcon; readonly classeIcone: string; readonly recurso?: RecursoMotor }
-/** Ordem do menu; capacidades continuam sendo decididas pela thread, não por estes metadados. */
 export const ITENS_ANEXO: readonly ItemAnexo[] = Object.freeze([
  { id: "documento", rotulo: "Documento", icone: IconFileText, classeIcone: "bg-blue-100 text-blue-700" },
  { id: "midia", rotulo: "Fotos e vídeos", icone: IconPhoto, classeIcone: "bg-ai-100 text-ai-700" },

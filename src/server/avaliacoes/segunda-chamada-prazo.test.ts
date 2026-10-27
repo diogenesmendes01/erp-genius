@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fusoDoPrazoSegundaChamada } from "./segunda-chamada-prazo";
 
-// Lote 3 do fuso pessoal nas telas: de onde vem o fuso do "prazo vigente" da remarcação. Antes:
-// `estado.encontro?.fusoOrigem ?? "UTC"` — sem encontro, UTC; com fuso gravado inválido, a página lançava.
 describe("fusoDoPrazoSegundaChamada", () => {
   it("o fuso da agenda (encontro) quando válido", () => {
     expect(fusoDoPrazoSegundaChamada("America/Costa_Rica", "America/Sao_Paulo")).toEqual({ fuso: "America/Costa_Rica", origem: "AGENDA" });

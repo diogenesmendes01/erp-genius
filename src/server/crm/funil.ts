@@ -100,9 +100,6 @@ function whereDosFiltros(f: FiltrosFunil): Prisma.OportunidadeWhereInput {
   };
 }
 
-// Ordem de cada coluna. "tempo" (desde quando está na etapa, que vem de Evento) e o período dos perdidos (última
-// ação, também de Evento) não cabem no `orderBy`/`where` do Prisma: essas colunas vão por `colunaPorSql`, que
-// ordena e corta no banco com a MESMA ordem (B19, #196 C3).
 function ordenacao(ordem: Exclude<FiltrosFunil["ordem"], "tempo">): Prisma.OportunidadeOrderByWithRelationInput[] {
   switch (ordem) {
     case "valor":
@@ -114,22 +111,12 @@ function ordenacao(ordem: Exclude<FiltrosFunil["ordem"], "tempo">): Prisma.Oport
   }
 }
 
-/**
- * Junção lateral com o último Evento do Lead (alias `o`), de qualquer tipo ou só dos `tipos` dados, exposto como
- * `<apelido>."em"`. Lateral, e não subconsulta no WHERE/ORDER BY: o planejador estima o custo pelas linhas que
- * passaram nos filtros baratos (escopo, etapa) e não pela tabela inteira, o que evita compilar JIT à toa.
- */
 const ultimoEventoSql = (apelido: "ua" | "ue", tipos?: readonly string[]) => Prisma.sql`
   LEFT JOIN LATERAL (
     SELECT MAX(e."criadoEm") AS "em" FROM "Evento" e
     WHERE e."agregadoTipo" = 'Lead' AND e."agregadoId" = o."id"${tipos ? Prisma.sql` AND e."tipo" IN (${Prisma.join([...tipos])})` : Prisma.empty}
   ) ${Prisma.raw(apelido)} ON TRUE`;
 
-/**
- * O mesmo `ordenacao` em SQL. Em "tempo", a data é a da última mudança de etapa (`ue`, ou a criação), a mais antiga
- * primeiro, com desempate pelo id em ordem binária (`COLLATE "C"`, a do `<` do JS da versão em memória). Nas outras,
- * o desempate pelo id usa a collation da coluna, como o `orderBy` do Prisma.
- */
 function ordenacaoSql(ordem: FiltrosFunil["ordem"]): Prisma.Sql {
   switch (ordem) {
     case "valor":
@@ -145,10 +132,6 @@ function ordenacaoSql(ordem: FiltrosFunil["ordem"]): Prisma.Sql {
 
 type GrupoPais = { paisId: string | null; _count: { _all: number }; _sum: { valorPrevisto: Prisma.Decimal | null } };
 
-/**
- * Totais por país e ids da página de uma coluna, filtrados, ordenados e cortados no banco. `corte`: só entram as
- * que tiveram a última ação (Evento de qualquer tipo, ou a criação) a partir dele (período dos perdidos).
- */
 async function colunaPorSql(
   condicao: Prisma.Sql,
   ordem: FiltrosFunil["ordem"],
@@ -180,7 +163,6 @@ const ordemMoeda = (m: string) => (m === "USD" ? 0 : 1);
 
 export async function carregarFunil(usuario: UsuarioSessao, f: FiltrosFunil): Promise<ColunaFunil[]> {
   const base: Prisma.OportunidadeWhereInput = { AND: [await escopoComercialAtual(usuario), whereDosFiltros(f)] };
-  // Perdidos: o período vale pela última ação (Evento de qualquer tipo), não pela criação.
   const corte = f.perdidosDias !== "todos" ? new Date(Date.now() - Number(f.perdidosDias) * 86_400_000) : null;
   let baseSql: Prisma.Sql | null = null;
 

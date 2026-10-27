@@ -21,19 +21,12 @@ import {
   type IdentidadeAluno,
 } from "@/server/alunos/importacao-duplicidade";
 
-// Importação de alunos por planilha XLSX (recurso ADMIN — doc 22, evento `AlunoImportado`).
-// Lenient: só Nome + País obrigatórios; documento avisa-não-bloqueia. Cada aluno é criado
-// em sua própria transação → uma linha ruim não derruba as demais (relatório por linha).
-// Deduplicação (docs/42 L224; docs/43 §6 item 9): a linha que repete um aluno já cadastrado, ou uma linha
-// anterior da mesma planilha, é IGNORADA e volta em `ignorados` com o motivo — reenviar a planilha não
-// recadastra ninguém. Critérios em src/server/alunos/importacao-duplicidade.ts.
 export const runtime = "nodejs";
 const MAX_BYTES = 5 * 1024 * 1024;
-const MAX_LINHAS = 1000; // teto de linhas por importação (evita criação em massa acidental)
+const MAX_LINHAS = 1000;
 
 type PaisComDocs = Prisma.PaisGetPayload<{ include: { tiposDocumento: true } }>;
 
-/** Coage qualquer tipo de célula do exceljs para texto. */
 function cellTexto(v: ExcelJS.CellValue): string {
   if (v == null) return "";
   if (v instanceof Date) return v.toISOString().slice(0, 10);
@@ -59,9 +52,6 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
-  // Autorização por papéis FRESCOS do banco (não do JWT — _shared/sessao): admin revogado/
-  // desativado perde o acesso na hora. De quebra cobre a sessão órfã (o autorId do Evento é
-  // FK de Usuario — id inexistente falharia com FK críptica; aqui orienta o re-login).
   const autor = await prisma.usuario.findUnique({
     where: { id: session.user.id },
     select: { id: true, papeis: true, ativo: true },
@@ -73,7 +63,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "Apenas administrador pode importar alunos." }, { status: 403 });
   }
 
-  // Rejeita cedo, antes de bufferizar o multipart inteiro em memória.
   const tamanho = Number(req.headers.get("content-length") ?? 0);
   if (tamanho > MAX_BYTES) {
     return NextResponse.json({ erro: "Arquivo acima de 5MB." }, { status: 413 });
@@ -105,7 +94,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Cabeçalho (linha 1) → coluna → chave interna.
   const colKey = new Map<number, string>();
   ws.getRow(1).eachCell((cell, col) => {
     const k = chaveDoCabecalho(cellTexto(cell.value));
@@ -126,7 +114,6 @@ export async function POST(req: Request) {
   let total = 0;
   let criados = 0;
 
-  // 1ª passada: lê e valida cada linha (nada é gravado ainda), para conhecer as identidades da planilha.
   type LinhaPreparada = {
     linha: number;
     raw: Record<string, string>;
@@ -146,7 +133,7 @@ export async function POST(req: Request) {
       if (t) vazia = false;
       raw[key] = t;
     });
-    if (vazia) continue; // ignora linhas em branco
+    if (vazia) continue;
     total++;
 
     const primeiroNome = raw.primeiroNome?.trim();
@@ -179,10 +166,8 @@ export async function POST(req: Request) {
     });
   }
 
-  // Os já cadastrados que podem repetir alguma linha (uma consulta, com teto).
   const indice = await carregarCadastradosParaDuplicidade(preparadas.map((p) => p.identidade));
 
-  // 2ª passada: ignora a repetida (cadastro ou linha anterior desta planilha) e cria as demais.
   for (const { linha: r, raw, primeiroNome, pais, tipoDoc, documentoValido, identidade } of preparadas) {
     const chaves = chavesDeIdentidade(identidade);
     const repetida = indice.procurar(chaves);
@@ -236,7 +221,6 @@ export async function POST(req: Request) {
         });
       });
       criados++;
-      // Só a linha criada vira referência para as seguintes (a que falhou não existe no cadastro).
       indice.registrar(chaves, { tipo: "planilha", linha: r });
     } catch {
       erros.push({ linha: r, motivo: "Falha ao gravar a linha no banco." });

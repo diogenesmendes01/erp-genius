@@ -4,24 +4,18 @@ import { exigirSessao, ErroPermissao, type UsuarioSessao } from "../_shared";
 import { escopoComercialAtual } from "../_shared/escopo-comercial";
 import { capacidadesAria } from "./permissoes-tela";
 
-// Consultas de leitura da tela da Aria (Task 26): visão geral e histórico.
-
 const POR_PAGINA = 50;
 const DIA_MS = 86_400_000;
 
 export type VisaoGeralAria = {
   conversas: number;
-  /** handoffs / conversas; null sem conversas. */
   taxaHandoff: number | null;
   etapasAvancadas: number;
   tarefasCriadas: number;
   camposPreenchidos: number;
   tempoMedioAteHandoffMin: number | null;
-  /** aprovadas / (aprovadas + rejeitadas); null sem decisões. */
   aprovadasSemEdicao: number | null;
-  /** desfeitas / (executadas + aprovadas + desfeitas); null sem ações aplicadas. */
   desfeitas: number | null;
-  /** Só para quem tem `verProvedor`. */
   custoUsd: number | null;
   volume: { dia: string; resolvidas: number; comHandoff: number }[];
 };
@@ -46,8 +40,6 @@ async function exigirVer(): Promise<UsuarioSessao> {
   return u;
 }
 
-// ---- fuso institucional -------------------------------------------------------------------
-
 function partes(d: Date, fuso: string) {
   const f = new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
   const o: Record<string, number> = {};
@@ -60,7 +52,6 @@ const diaDe = (d: Date, fuso: string) => {
   return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
 };
 
-/** Instante UTC da meia-noite local de `y-m-d` no fuso. */
 function meiaNoite(y: number, m: number, d: number, fuso: string): Date {
   const alvo = Date.UTC(y, m - 1, d);
   let t = alvo;
@@ -83,9 +74,6 @@ async function fusoInstitucional(): Promise<string> {
   }
 }
 
-// ---- escopo -------------------------------------------------------------------------------
-
-/** null = sem restrição (Administrador); senão, ids das oportunidades visíveis. */
 async function leadsVisiveis(u: UsuarioSessao): Promise<string[] | null> {
   if (u.papeis.includes(Papel.ADMINISTRADOR)) return null;
   const ops = await prisma.oportunidade.findMany({ where: await escopoComercialAtual(u), select: { id: true } });
@@ -94,8 +82,6 @@ async function leadsVisiveis(u: UsuarioSessao): Promise<string[] | null> {
 
 const MOVIDAS: StatusAcaoAgenteIA[] = ["EXECUTADA", "APROVADA"];
 
-// ---- visão geral --------------------------------------------------------------------------
-
 export async function visaoGeralAria(i: { dias: 1 | 7 | 30; agora?: Date }): Promise<VisaoGeralAria> {
   const u = await exigirVer();
   const agora = i.agora ?? new Date();
@@ -103,7 +89,6 @@ export async function visaoGeralAria(i: { dias: 1 | 7 | 30; agora?: Date }): Pro
   const hoje = partes(agora, fuso);
   const inicio = meiaNoite(hoje.year, hoje.month, hoje.day, fuso);
   const desde = new Date(inicio.getTime() - (i.dias - 1) * DIA_MS);
-  // Mudança de horário de verão pode deslocar 1h: recalcula a meia-noite do primeiro dia.
   const pd = partes(new Date(desde.getTime() + 12 * 3_600_000), fuso);
   const de = meiaNoite(pd.year, pd.month, pd.day, fuso);
   const periodo = { gte: de, lte: agora };
@@ -143,7 +128,6 @@ export async function visaoGeralAria(i: { dias: 1 | 7 | 30; agora?: Date }): Pro
     else v.resolvidas++;
   }
 
-  // Tempo até o handoff: do primeiro turno do atendimento (no período) até o turno de handoff.
   const primeiro = new Map<string, number>();
   const duracoes: number[] = [];
   for (const t of turnos) {
@@ -176,8 +160,6 @@ export async function visaoGeralAria(i: { dias: 1 | 7 | 30; agora?: Date }): Pro
     volume: [...volumeMap].map(([dia, v]) => ({ dia, ...v })),
   };
 }
-
-// ---- histórico ----------------------------------------------------------------------------
 
 const RESULTADOS: Record<"PENDENTES" | "EXECUTADAS" | "REJEITADAS" | "DESFEITAS", StatusAcaoAgenteIA[]> = {
   PENDENTES: ["SUGERIDA"],

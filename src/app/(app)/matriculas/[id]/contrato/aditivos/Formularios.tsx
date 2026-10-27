@@ -17,12 +17,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 type Fonte = { tipo: "CONCLUSAO" | "ORIGEM_HISTORICA"; conclusaoId: string | null; conclusaoHash: string | null; origemHistoricaId: string | null; origemHash: string | null; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
 
-/**
- * `fusoVigencia`: fuso em que o início da vigência é digitado (fusoDoCampoLocal: pessoal; sem preferência, o da
- * escola), escrito ao lado do campo; o servidor converte (prepararAditivoContratualLocal). Antes: fuso do navegador.
- */
 export function PrepararAditivo({ matriculaId, fonte, modelos, agenda, fusoVigencia }: { matriculaId: string; fonte: Fonte; modelos: Modelo[]; agenda?: { id: string; texto: string; pendencias: string[] } | null; fusoVigencia: string }) {
-  // Chave estável enquanto o conteúdo não muda: na falha de transporte, reenviar confere a mesma proposta.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), [chave, setChave] = useState(() => crypto.randomUUID()), [tentativa, setTentativa] = useState<string | null>(null);
   const pendente = acao.ocupado;
   const id = useId();
@@ -53,7 +48,6 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda, fusoVigen
     const conteudo = JSON.stringify({ modeloId: modelo.id, vigenciaLocal, fusoVigencia, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? "") });
     const chaveAtual = tentativa && tentativa !== conteudo ? crypto.randomUUID() : chave;
     if (chaveAtual !== chave) setChave(chaveAtual); if (tentativa !== conteudo) setTentativa(conteudo);
-    // Sem mensagem de sucesso: o sucesso navega para a proposta registrada.
     const d = await acao.executar(() => prepararAditivoContratualLocal({ matriculaId, ...(fonte.tipo === "ORIGEM_HISTORICA" ? { origemHistoricaId: fonte.origemHistoricaId!, origemHashEsperado: fonte.origemHash! } : { conclusaoOriginalId: fonte.conclusaoId!, conclusaoHashEsperado: fonte.conclusaoHash! }),
       modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaLocal, fusoVigencia, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual }));
     if (d?.tipo === "ok" && d.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(d.dado.id)}`);
@@ -79,7 +73,6 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda, fusoVigen
 }
 
 export function DecidirAditivo({ propostaId, propostaHash, superada }: { propostaId: string; propostaHash: string; superada: boolean }) {
-  // A decisão não leva chave; na falha de transporte vale a mensagem própria de decisão (MSG_DECISAO_INCERTA).
   const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
   const pendente = acao.ocupado;
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => { e.preventDefault(); const dados = new FormData(e.currentTarget), decisao = dados.get("decisao"); if (decisao !== "aprovar" && decisao !== "rejeitar") { acao.limpar(); acao.setErro("Escolha uma decisão."); return; }

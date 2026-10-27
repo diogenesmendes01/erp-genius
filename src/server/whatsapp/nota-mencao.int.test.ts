@@ -1,7 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
-// Mesmo padrão de inbox-idempotencia: mock só da fronteira auth evita import dinâmico
-// concorrente do NextAuth real; usuário/papéis/ativo continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async original => {
   const real = await original<typeof import("@/server/_shared/sessao")>();
@@ -96,7 +94,6 @@ it("duas notas reais aceitam criadaEm igual na fixture sem colisão; mesma PK co
     }
   });
   const linhas = await avisos(destino.id, a.id); expect(linhas).toHaveLength(2);
-  // Borda de constraint, não relógio do produtor: a fixture alinha explicitamente dois registros reais.
   await prisma.notificacaoUsuario.update({ where: { id: linhas[1].id }, data: { criadaEm: linhas[0].criadaEm } });
   const simultaneas = await avisos(destino.id, a.id);
   expect(simultaneas[0].criadaEm.getTime()).toBe(simultaneas[1].criadaEm.getTime()); expect(linhas[0].id).not.toBe(linhas[1].id);

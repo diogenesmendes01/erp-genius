@@ -7,7 +7,6 @@ import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { pausarAria, reativarAria } from "@/server/aria/acoes";
 
-/** A faixa dá uma key por estado/capacidade: nenhum ACK atravessa uma geração global. */
 export function InterruptorAria({ pausada, aoMudar }: { pausada: boolean; aoMudar?: () => void }) {
   const acao = useAcaoCliente({ idempotente: true });
   const [aberto, setAberto] = useState(false);

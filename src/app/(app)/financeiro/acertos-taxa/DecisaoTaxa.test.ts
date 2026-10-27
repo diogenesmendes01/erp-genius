@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Ganchos sem DOM (src/test/tela-sem-dom.ts): estado e refs vivem entre renders, como no React. O clique
-// concorrente usa os botões do MESMO render (antes de o ocupado chegar à tela), como um duplo clique real.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), aplicar: vi.fn(), invalidar: vi.fn(), refresh: vi.fn(),
@@ -37,7 +35,6 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-/** Monta a tela, digita o motivo (quando há campo) e devolve os botões do render seguinte. */
 function mount(podeDecidir = true, podeAplicar = false, motivo = "Evidência conferida", podeInvalidar = false) {
   props = { propostaId: "p", podeDecidir, podeAplicar, podeInvalidar };
   const campo = camposDeMotivo(tela())[0];

@@ -20,13 +20,8 @@ import { escolherProvedor, type ProvedorIA } from "../provedor";
 import { registrarChamadaIA } from "../uso";
 import { dividirEmTrechos, EXTENSOES_ACEITAS } from "./trechos";
 
-// Base de conhecimento da Aria: fontes (texto digitado ou arquivo enviado) divididas em trechos
-// pesquisáveis por busca textual (tsvector 'portuguese'). Arquivar não apaga (arquivadaEm).
-
 const PREFIXO_UPLOAD = "/api/files/";
 const MAX_TOKENS_EXTRACAO = 16000;
-// Tetos (C6): texto da fonte, PDF enviado ao provedor e trechos gravados por fonte. Com 200 mil
-// caracteres o divisor gera no máximo ~340 trechos; o teto de trechos é a defesa final.
 export const MAX_CARACTERES_FONTE = 200_000;
 export const MAX_BYTES_PDF = 10 * 1024 * 1024;
 export const MAX_TRECHOS_FONTE = 400;
@@ -62,7 +57,6 @@ interface Gravacao {
   enviavelAoLead: boolean;
   validoAte?: Date;
   criadoPorId: string;
-  /** Só na fonte de texto (#166): a marca vai no `FonteConhecimentoCriada`; o reenvio devolve a fonte já criada. */
   marca?: MarcaIdempotencia | null;
 }
 
@@ -128,7 +122,6 @@ export async function criarFonteTexto(input: {
   texto: string;
   enviavelAoLead: boolean;
   validoAte?: Date;
-  /** A mesma chave até o sucesso (#166): o reenvio devolve a fonte já criada, sem segunda fonte nem trechos. */
   chaveIdempotencia?: string;
 }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
@@ -205,8 +198,6 @@ export async function criarFonteArquivo(
   return executarAcao(async () => {
     const u = await exigirEdicao();
     exigirValidadeFutura(input.validoAte);
-    // Autorização por objeto (B1): o texto vira trecho (até enviável ao lead), então só serve upload do
-    // próprio autor, sem vínculo nem finalidade. Arquivo de outro objeto responde como inexistente.
     const upload = await uploadLivreDoAutor({ id: u.id, papeis: u.papeis }, input.registroUploadId);
     if (!upload) throw new ErroRegra("Arquivo não encontrado.");
     const ext = path.extname(upload.nome).toLowerCase();
@@ -250,8 +241,6 @@ export async function arquivarFonte(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirEdicao();
     await prisma.$transaction(async (tx) => {
-      // Idempotência por natureza (#166, 5º lote): a linha travada serializa o clique duplo, e a fonte já arquivada
-      // por quem repete devolve ok sem outro Evento. Arquivada por outra pessoa, segue recusada.
       await tx.$queryRaw`SELECT id FROM "FonteConhecimento" WHERE id = ${id} FOR UPDATE`;
       const fonte = await tx.fonteConhecimento.findUnique({ where: { id } });
       if (!fonte) throw new ErroRegra("Fonte não encontrada.");

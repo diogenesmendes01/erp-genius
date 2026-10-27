@@ -14,7 +14,6 @@ export const DefinirPrevisaoInboxSchema=z.object({
  alteracoes:PrevisaoOportunidadeSchema,
 }).strict();
 export type DefinirPrevisaoInboxInput=z.input<typeof DefinirPrevisaoInboxSchema>;
-/** Mesma conexão do caller. NOWAIT interrompe o ciclo potencial com atribuirDono (Lead→Atendimento). */
 export async function definirPrevisaoNoInboxTx(tx:Prisma.TransactionClient,autorId:string,atendimentoId:string,entrada:unknown){
  const d=DefinirPrevisaoInboxSchema.parse(entrada);
  const atendimentoTravado=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR NO KEY UPDATE`;
@@ -34,21 +33,18 @@ export async function definirPrevisaoNoInboxTx(tx:Prisma.TransactionClient,autor
  await contexto();
  const leadTravado=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Lead" WHERE id=${d.oportunidadeIdEsperada} FOR UPDATE NOWAIT`;
  if(leadTravado.length!==1)throw new ErroRegra("A oportunidade mudou. Atualize o painel antes de editar.");
- // Antecipa a FK do autor do Evento; a autorização final ocorre depois desta espera.
  const autorTravado=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Usuario" WHERE id=${autorId} FOR KEY SHARE`;
  if(autorTravado.length!==1)throw new ErroPermissao("Sua sessão não está mais ativa.");
  const {u,a}=await contexto();
  const op=await tx.oportunidade.findFirst({where:{AND:[{id:d.oportunidadeIdEsperada},await escopoComercialAtual(u,tx)]},select:{id:true,probabilidadePct:true,previsaoFechamento:true}});
  if(!op)throw new ErroPermissao("Você não tem acesso à edição desta oportunidade.");
  const mudanca=prepararMudancaPrevisao(op,d.alteracoes);
- // Valor já desejado é reconciliação, nunca novo efeito/auditoria atribuída ao clique repetido.
  if(!mudanca.alterado)return;
  if((mudanca.dados.probabilidadePct!==undefined&&op.probabilidadePct!==d.esperado.probabilidadePct)||(mudanca.dados.previsaoFechamento!==undefined&&op.previsaoFechamento!==d.esperado.previsaoFechamento))throw new ErroRegra("A previsão mudou. Atualize o painel antes de salvar novamente.");
  await tx.oportunidade.update({where:{id:op.id},data:mudanca.dados});
  await registrarEvento(tx,{tipo:"LeadEditado",agregadoTipo:"Lead",agregadoId:op.id,autorId:u.id,payload:{previsoes:mudanca.mudancas}});
  await avisarAtendimentoAtualizado(tx,{id:a.id,conversaId:a.conversaId});
 }
-/** Inspeção limitada do SQLSTATE. O caller executa isto apenas FORA da transação abortada. */
 export function leadOcupadoParaPrevisao(erro:unknown):boolean{
  if(typeof erro!=="object"||erro===null)return false;
  if("code" in erro&&erro.code==="55P03")return true;

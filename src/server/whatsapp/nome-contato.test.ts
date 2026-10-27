@@ -12,11 +12,6 @@ import { garantirContato } from "./identidade";
 import { processarMensagemNormalizada } from "./inbound";
 import { nomeConhecidoDoContato, nomeDoAtendimento, nomeDoContato } from "./nome-contato";
 
-// Nome do contato (bug de produção 29/09/2026): a mensagem enviada pelo celular da linha (fromMe)
-// traz no pushName o perfil de QUEM ENVIOU. Gravado como nome do contato, todas as conversas
-// iniciadas pelo celular apareciam com o nome do dono da linha. Agora o nome dado pelo ERP
-// (`nomeExibicao`) e o perfil do contato (`nomePerfil`) moram em colunas separadas.
-
 type ContatoGravado = { id: string; telefoneE164: string; waId: string | null; nomeExibicao: string | null;
   nomePerfil: string | null; nomeEditadoEm?: Date | null; alunoId: string | null; responsavelId: string | null; leadId: string | null };
 const contaminado: ContatoGravado = { id: "contato", telefoneE164: "+5511911600554", waId: "5511911600554", nomeExibicao: null,
@@ -55,8 +50,6 @@ describe("garantirContato — nome limpo pela equipe", () => {
 });
 
 describe("processarMensagemNormalizada — pushName", () => {
-  // O recorte termina logo depois do contato (upsert da conversa rejeita): o resto da ingestão
-  // tem cobertura própria; aqui só interessa o que foi gravado no contato.
   const parar = new Error("fim do recorte");
   const preparar = (existente: ContatoGravado | null) => {
     m.tx = { contatoWhatsApp: txContato(existente), conversaWhatsApp: { upsert: vi.fn().mockRejectedValue(parar) } };

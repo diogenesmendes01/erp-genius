@@ -15,21 +15,16 @@ export interface SetorPainelProps {
   regra: "RODIZIO" | "MENOR_CARGA" | "MANUAL";
   participantesIds: string[];
   candidatos: { id: string; nome: string }[];
-  /** Prazo gravado, em minutos; um valor fora da lista padrão aparece como opção e é preservado. */
   prazo: number;
   alertarResponsavel: boolean;
   alertarGerente: boolean;
   contarSoNoHorario: boolean;
-  /** Horário gravado do setor (null = sem horário: contagem corrida). */
   horario: HorarioAtendimento | null;
-  /** Fuso da escola: os horários são hora civil nele. */
   fuso: string;
-  /** Horários de outros setores, para "Copiar de outro setor" (D1). */
   outrosHorarios: { finalidade: string; rotulo: string; horario: HorarioAtendimento }[];
 }
 
 type Intervalo = HorarioAtendimento["intervalos"][number];
-/** Uma linha por dia da semana; `originais` guarda os vários intervalos de um dia até ele ser editado. */
 export type LinhaHorario = { dia: number; atende: boolean; inicio: string; fim: string; originais: Intervalo[] | null };
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -43,7 +38,6 @@ export function linhasDoHorario(h: HorarioAtendimento | null): LinhaHorario[] {
   });
 }
 
-/** Linhas da tela → horário gravável; nenhum dia marcado = null (sem horário). Feriados vêm do gravado (sem tela na v1, D2). */
 export function horarioDasLinhas(linhas: LinhaHorario[], feriados: string[]): HorarioAtendimento | null {
   const intervalos = linhas.filter((l) => l.atende)
     .flatMap((l) => l.originais ?? [{ dia: l.dia, inicio: l.inicio, fim: l.fim }])
@@ -86,7 +80,6 @@ export function SetorPainel(p: SetorPainelProps) {
   const [contar, setContar] = useState(p.contarSoNoHorario);
   const [linhas, setLinhas] = useState(() => linhasDoHorario(p.horario));
   const [copiarDe, setCopiarDe] = useState(p.outrosHorarios[0]?.finalidade ?? "");
-  // Idempotente por natureza (#166): distribuição e SLA do setor são gravados por upsert na finalidade (estado-alvo).
   const acao = useAcaoCliente({ idempotente: true });
   const erroHorario = erroDasLinhas(linhas);
   const semHorario = !linhas.some((l) => l.atende);

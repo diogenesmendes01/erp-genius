@@ -1,9 +1,6 @@
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// #204 C1 (B17 da triagem): o filtro de vendedor da lista "Matriculadas sem comissão" só tinha prova na
-// integração (comissoes-painel.int.test.ts), que fica fora do CI. Aqui o Prisma é mockado e o teste lê o
-// `where` montado: `vendedorDonoId` entra no mesmo AND do escopo, nunca no lugar dele.
 const m = vi.hoisted(() => ({
   oportunidades: vi.fn(),
   escopoComercial: vi.fn(),

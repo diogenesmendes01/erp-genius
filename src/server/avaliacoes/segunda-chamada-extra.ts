@@ -12,7 +12,6 @@ const id = z.string().min(1).max(100), texto = z.string().trim().min(5).max(4000
 const proporSchema = z.object({ alocacaoId: id, codigoAvaliacao: id, quantidade: z.number().int().positive().max(100), motivo: texto, evidencias: texto, chaveIdempotencia: z.string().min(8).max(100) }).strict();
 const decidirSchema = z.object({ propostaId: id, propostaHash: z.string().regex(/^[a-f0-9]{64}$/), aprovada: z.boolean(), motivo: texto }).strict();
 
-/** Q150: concede somente saldo excepcional para esta avaliação pendente; não altera a regra nem libera recuperação. */
 export async function proporExtraSegundaChamada(input: z.input<typeof proporSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO), d = proporSchema.parse(input);

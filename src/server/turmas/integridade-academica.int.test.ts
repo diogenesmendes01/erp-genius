@@ -48,7 +48,6 @@ function sinal() {
   return { promessa, liberar };
 }
 
-/** A mutação só ocorre depois de observar a ação esperando no lock real do PostgreSQL. */
 async function duranteEspera<T>(turmaId: string, acao: () => Promise<T>, mudar: (tx: Prisma.TransactionClient) => Promise<unknown>) {
   const pronto = sinal();
   const liberar = sinal();

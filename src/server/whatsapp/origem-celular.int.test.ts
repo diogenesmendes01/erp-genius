@@ -11,7 +11,6 @@ const { authMock, enviarTextoMock } = vi.hoisted(() => ({
   authMock: vi.fn(),
   enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-texto", mensagemIdMotor: "c:3EB0-texto" }),
 }));
-// Driver do motor FALSO: WHATSAPP_LIVE=1 só para o despachante gravar a mensagem; nada sai de verdade.
 vi.mock("./drivers/motor", () => ({ driverMotor: { enviarTexto: enviarTextoMock, enviarTemplate: vi.fn(), enviarMidia: vi.fn() } }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -67,7 +66,6 @@ describe("origem CELULAR e clientMessageId (M4)", () => {
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
     await enviarTextoInbox({ conversaId: a.id, texto: "Olá" });
     const i = await prisma.intencaoMensagem.findFirstOrThrow({ include: { mensagem: true } });
-    // O despachante do motor (Fase 4, Tarefa 5) gera o id no claim, entrega ao driver e copia para a mensagem.
     expect(i.status).toBe("DESPACHADA");
     expect(i.clientMessageId).toMatch(/^[A-Za-z0-9._:-]{8,128}$/);
     expect(i.mensagem).toMatchObject({ driver: "MOTOR", clientMessageId: i.clientMessageId, mensagemIdMotor: "c:3EB0-texto" });

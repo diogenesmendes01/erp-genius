@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared/sessao";
 
-/** Matrícula bloqueada pelo chamador; não infere condições de snapshots incompletos. */
 export async function exigirEntradaMensalRegistrada(tx: Prisma.TransactionClient, matriculaId: string) {
   const p = await tx.preparacaoComercialMatricula.findUnique({ where: { matriculaId }, select: { regime: true, referencias: true, reservaParticularId: true } });
   if (!p) {

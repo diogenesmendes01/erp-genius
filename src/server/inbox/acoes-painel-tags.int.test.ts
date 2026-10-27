@@ -175,7 +175,6 @@ it("núcleos em duas conexões/pessoas reutilizam nome sem perder vínculos; ses
   await prisma.oportunidade.create({ data: { nome: "Outro curso fictício324", pessoaId: pessoa2.id, vendedorDonoId: c.dono.id } });
   const autor = await carregarUsuarioFresco(c.gerente.id);
   if (!autor) throw new Error("Ator real não encontrado.");
-  // Ator fresco do banco; os núcleos revalidam capacidade e escopo. Sessão concorrente fica fora deste caso.
   const atribuicoes = (db: typeof prisma | PrismaClient, pessoaId: string) => db.$transaction(async tx => {
     const tag = await criarOuObterTagNaTransacao(tx, autor, { nome: "Compartilhada324", cor: "NEUTRA" });
     await alterarTagNaTransacao(tx, autor, { pessoaId, tagId: tag.id }, "atribuir"); return tag.id;

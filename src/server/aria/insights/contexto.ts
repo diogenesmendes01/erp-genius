@@ -19,11 +19,9 @@ export interface ContextoInsight {
 const ENVIADAS: ReadonlySet<StatusMensagem> = new Set(["ENVIADA", "ENTREGUE", "LIDA"]);
 function cortar(texto: string, limite: number): string {
   const parte = texto.slice(0, limite);
-  // Não envia metade de um par UTF-16 quando o teto corta um emoji.
   return /[\uD800-\uDBFF]$/.test(parte) ? parte.slice(0, -1) : parte;
 }
 
-/** Recebe somente mensagens do atendimento já autorizado; não consulta banco nem autoriza. */
 export function prepararContextoInsight(
   entrada: readonly MensagemParaInsight[],
   ocultar: (texto: string) => string,

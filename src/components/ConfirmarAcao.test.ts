@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { ConfirmarAcao, type PropsConfirmarAcao } from "./ConfirmarAcao";
 import { VARIANTES_BOTAO } from "./Botao";
 
-// Marcação do ConfirmarAcao (E1): alertdialog nomeado pelo título e descrito pela consequência; botão
-// seguro antes do destrutivo; destrutivo em `perigo`; conferência obrigatória desabilita a confirmação.
-// A interação (clique, ocupado, erro, Escape) está em ConfirmarAcao.interacao.test.ts.
-
 function html(extra: Partial<PropsConfirmarAcao<unknown>> = {}) {
   const props: PropsConfirmarAcao<unknown> = {
     titulo: "Cancelar a fatura FAT-0031?",
@@ -46,7 +42,6 @@ describe("ConfirmarAcao \u2014 marcação", () => {
     expect(confirmar.texto.replace(/<!-- -->/g, "")).toBe("Confirmar cancelamento da fatura");
     expect(confirmar.atributos).toContain('type="button"');
     expect(confirmar.atributos).toContain(VARIANTES_BOTAO.perigo);
-    // `disabled:` das classes do Tailwind não conta: só o atributo.
     expect(confirmar.atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
   });
 

@@ -42,7 +42,6 @@ export async function decidirRegraAvaliacaoTx(tx: Prisma.TransactionClient, auto
   await conferirGestorAvaliacao(tx, autorId);
   const r = await tx.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: d.regraId }, include: { decisao: true } });
   if (r.preparadorId === autorId) throw new ErroRegra("Outra pessoa da Gestão Pedagógica/Administração precisa decidir.");
-  // JSONB não preserva ordem de chaves: conferir conteúdo normalizado pelo schema.
   if (r.conteudoHash !== d.conteudoHash || hash(ConteudoRegraAvaliacaoSchema.parse(r.conteudo)) !== r.conteudoHash) throw new ErroRegra("Confira o conteúdo exato antes de decidir.");
   if (r.decisao) {
     if (r.decisao.decisorId === autorId && r.decisao.aprovada === d.aprovada && r.decisao.motivo === d.motivo) return { id: r.decisao.id };

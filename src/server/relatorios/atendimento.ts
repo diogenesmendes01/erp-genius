@@ -4,32 +4,24 @@ import type { EscopoRelatorio } from "./escopo";
 import { instanteUtc, type FiltrosRelatorio } from "./pipeline";
 
 const FUSO_PADRAO = "America/Sao_Paulo";
-/** Origens de saída que contam como atendimento: a Aria (IA) e a equipe (ERP ou celular). */
 export const ORIGENS_ATENDIMENTO = ["IA", "HUMANO", "CELULAR"] as const;
 const HORA_INICIAL_CALOR = 7;
-const HORAS_CALOR = 15; // 7h–21h
+const HORAS_CALOR = 15;
 
 export interface MetricasAtendimento {
   conversas: number;
   primeiraRespostaMediaMin: number | null;
   prazoEstourado: number;
-  /** Pendência: a Fase 3 não tem horário de funcionamento por setor; enquanto não houver, fica null. */
   foraDoHorarioPct: number | null;
   volume: { dia: string; aria: number; equipe: number }[];
-  /** 7 dias (0 = domingo … 6 = sábado) × 15 horas (7h–21h), mensagens recebidas no fuso da escola. */
   calor: number[][];
 }
 
-/** Fuso institucional da escola (padrão America/Sao_Paulo). Aceita a transação de quem já está dentro de uma. */
 export async function fusoDaEscola(cliente: Pick<Prisma.TransactionClient, "configuracaoOperacional"> = prisma): Promise<string> {
   const c = await cliente.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
   return c?.fusoInstitucional ?? FUSO_PADRAO;
 }
 
-/**
- * Atendimentos COMERCIAIS do período (entrada = 1º inbound, ou criação) dentro do escopo:
- * `responsavelId` do atendimento OU `vendedorDonoId` da oportunidade ligada. Alias `a` e `l` (Lead).
- */
 export function atendimentosComerciais(f: FiltrosRelatorio, e: EscopoRelatorio): Prisma.Sql {
   const partes: Prisma.Sql[] = [
     Prisma.sql`a.finalidade::text = 'COMERCIAL'`,
@@ -51,11 +43,6 @@ export function atendimentosComerciais(f: FiltrosRelatorio, e: EscopoRelatorio):
 
 const arred = (n: number) => Math.round(n * 100) / 100;
 
-/**
- * Atendimento comercial: conversas, primeira resposta (coluna `primeiraRespostaEm` da Fase 3, só resposta
- * humana — ERP ou celular), prazo estourado, volume por dia (Aria × equipe) e calor de entrada por dia da
- * semana × hora, tudo no fuso da escola. `foraDoHorarioPct` é null (sem horário por setor na Fase 3).
- */
 export async function metricasAtendimento(f: FiltrosRelatorio, e: EscopoRelatorio): Promise<MetricasAtendimento> {
   const fuso = await fusoDaEscola();
   const cond = atendimentosComerciais(f, e);

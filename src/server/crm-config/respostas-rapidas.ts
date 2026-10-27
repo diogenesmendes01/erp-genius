@@ -16,7 +16,6 @@ const Schema = z.object({
   corpo: z.string().trim().min(1, "Informe o texto.").max(2000),
   setor: SETOR_DO_ESQUEMA.nullable(),
   ariaPodeUsar: z.boolean(),
-  /** Só na criação (#166): a chave vai no `RespostaRapidaSalva`; na edição (com `id`) ela é ignorada. */
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
@@ -29,7 +28,6 @@ function validarVariaveis(corpo: string) {
   }
 }
 
-/** Setores em que o autor cria respostas: Admin todos; Gerente Comercial só COMERCIAL (e geral). */
 function setoresDoAutor(papeis: Papel[]): FinalidadeAtendimentoWhatsApp[] {
   return papeis.includes(Papel.ADMINISTRADOR) ? [...SETORES] : ["COMERCIAL"];
 }
@@ -63,7 +61,6 @@ export async function salvarRespostaRapida(i: { id?: string; atalho: string; tit
       });
       if (dup) throw new ErroRegra("Já existe uma resposta com este atalho (inclusive arquivada).");
       const dados = { nome: "rr:" + d.atalho, atalho: d.atalho, titulo: d.titulo, corpo: d.corpo, setor: d.setor, ariaPodeUsar: d.ariaPodeUsar };
-      // Edição sem mudança (ex.: reenvio após resultado incerto): sem update nem Evento.
       if (antes && antes.nome === dados.nome && JSON.stringify(resumo(antes)) === JSON.stringify(resumo(dados))) return { id: antes.id };
       const t = antes
         ? await tx.templateWhatsApp.update({ where: { id: antes.id }, data: dados })
@@ -84,7 +81,6 @@ export async function arquivarRespostaRapida(id: string): Promise<Resultado> {
       const t = await tx.templateWhatsApp.findFirst({ where: { id, tipo: "RESPOSTA_RAPIDA" } });
       if (!t) throw new ErroRegra("Resposta rápida não encontrada.");
       if (t.setor && !setoresDoAutor(autor.papeis).includes(t.setor)) throw new ErroRegra("Você só pode arquivar respostas do seu setor ou gerais.");
-      // Já arquivada (ex.: reenvio após resultado incerto): o estado-alvo já vale; ok, sem update nem Evento.
       if (t.arquivadoEm) return;
       const agora = new Date();
       await tx.templateWhatsApp.update({ where: { id }, data: { arquivadoEm: agora } });
@@ -97,7 +93,6 @@ export async function arquivarRespostaRapida(id: string): Promise<Resultado> {
   });
 }
 
-/** Respostas ativas do(s) setor(es) do usuário e as gerais (sem setor). */
 export async function listarRespostasRapidas(u: UsuarioSessao): Promise<{ id: string; atalho: string; titulo: string; corpo: string; setor: FinalidadeAtendimentoWhatsApp | null }[]> {
   const setores = setoresDoUsuario(u.papeis);
   const ts = await prisma.templateWhatsApp.findMany({
@@ -107,16 +102,8 @@ export async function listarRespostasRapidas(u: UsuarioSessao): Promise<{ id: st
   return ts.map((t) => ({ id: t.id, atalho: t.atalho ?? "", titulo: t.titulo ?? t.atalho ?? "", corpo: t.corpo, setor: t.setor }));
 }
 
-/**
- * Teto de respostas no prompt da Aria, o mesmo da FAQ (`config-schema`: até 100 itens de até 2000
- * caracteres). O corpo já é limitado a 2000 no Schema acima; a ordem por atalho torna o corte estável.
- */
 export const LIMITE_RESPOSTAS_ARIA = 100;
 
-/**
- * Respostas que a Aria pode usar no atendimento do setor informado: ativas, marcadas "Aria pode usar",
- * do próprio setor ou gerais (sem setor). Lidas pelo contexto do turno no `db` recebido (tx do turno).
- */
 export async function respostasParaAria(
   setor: FinalidadeAtendimentoWhatsApp,
   db: Prisma.TransactionClient = prisma,

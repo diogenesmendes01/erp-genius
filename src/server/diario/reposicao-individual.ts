@@ -36,9 +36,6 @@ async function reposicaoTx(tx: Prisma.TransactionClient, id: string) {
   return r;
 }
 
-/** A fonte da reposição é sempre a chamada original. A função do banco aplica
- * somente a última correção de AULA publicada e devolve a chamada bruta para
- * qualquer outro tipo de encontro. */
 async function participacaoAulaOriginalEfetivaTx(tx: Prisma.TransactionClient, registroId: string) {
   const [registro] = await tx.$queryRaw<{ participacao: string | null }[]>(Prisma.sql`
     SELECT participacao_aula_efetiva(${registroId})::text AS participacao
@@ -46,13 +43,11 @@ async function participacaoAulaOriginalEfetivaTx(tx: Prisma.TransactionClient, r
   return registro?.participacao ?? null;
 }
 
-/** Q10/Q11: cria pedido ligado à ausência já classificada; não regulariza frequência. */
 export async function solicitarReposicaoIndividual(input: z.input<typeof base>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
     const d = base.parse(input), entradaHash = hash(d), id = randomUUID();
     return prisma.$transaction(async tx => {
-      // Correções Q23 publicadas tomam este mesmo lock antes da matrícula.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${d.matriculaId} FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
@@ -66,9 +61,6 @@ export async function solicitarReposicaoIndividual(input: z.input<typeof base>) 
         if (existente[0].entradaHash !== entradaHash) throw new ErroRegra("Chave utilizada para outra solicitação.");
         return { id: existente[0].id };
       }
-      // Q51 só abre nova tentativa depois de uma decisão rejeitada ou de uma
-      // particular efetivamente consumida por falta. Pedido pendente,
-      // autorizado, agendado ou concluído conserva a mesma origem/M.
       const [emAberto] = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
         SELECT anterior.id FROM "ReposicaoIndividual" anterior
         LEFT JOIN "DecisaoReposicaoIndividual" decisao ON decisao."reposicaoId"=anterior.id
@@ -105,13 +97,11 @@ export async function solicitarReposicaoIndividual(input: z.input<typeof base>) 
   });
 }
 
-/** Q11: só gestão decide e quem solicitou não aprova o próprio pedido. */
 export async function decidirReposicaoIndividual(input: { reposicaoId: string; aprovar: boolean; motivo: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const d = z.object({ reposicaoId: z.string().min(1), aprovar: z.boolean(), motivo: texto }).strict().parse(input);
     return prisma.$transaction(async tx => {
-      // Mantém a ordem calendário -> reposição -> matrícula usada pelos guards.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       const r = await reposicaoTx(tx, d.reposicaoId);
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${r.matriculaId} FOR UPDATE`;
@@ -126,8 +116,6 @@ export async function decidirReposicaoIndividual(input: { reposicaoId: string; a
         throw new ErroRegra("A aula original ou a matrícula mudou; confira a reposição antes de decidir.");
       const registro = original.diario?.registros.find(x => x.alunoId === matricula.alunoId);
       const participacao = registro && await participacaoAulaOriginalEfetivaTx(tx, registro.id);
-      // A rejeição continua disponível para encerrar um pedido que se tornou
-      // indevido depois de uma correção da chamada original.
       if (d.aprovar && !["FALTA", "IMPEDIDO_POR_RESTRICAO"].includes(participacao ?? ""))
         throw new ErroRegra("A falta original foi corrigida; a reposição não pode ser aprovada.");
       if (r.solicitanteId === autor.id) throw new ErroRegra("Outra pessoa deve decidir a reposição.");
@@ -150,7 +138,6 @@ export async function decidirReposicaoIndividual(input: { reposicaoId: string; a
   });
 }
 
-/** Registra a única chamada permitida para o encontro acadêmico REPOSICAO. */
 export async function registrarDiarioReposicaoIndividual(input: { reposicaoId: string; encontroReposicaoId: string; conteudo: string; participacao?: "PRESENTE" | "FALTA" }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.PROFESSOR);
@@ -175,7 +162,6 @@ export async function registrarDiarioReposicaoIndividual(input: { reposicaoId: s
   });
 }
 
-/** Q13: gravação só é confirmada pelo professor designado; particular exige seu encontro REPOSICAO. */
 export async function concluirReposicaoIndividual(input: z.input<typeof conclusao>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.PROFESSOR);
@@ -186,10 +172,6 @@ export async function concluirReposicaoIndividual(input: z.input<typeof conclusa
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${r.matriculaId} FOR UPDATE`;
       const matricula = await tx.matricula.findUnique({ where: { id: r.matriculaId }, select: { status: true, alunoId: true } });
       if (!matricula) throw new ErroRegra("A matrícula da reposição não existe.");
-      // Q36/Q52: pausa ou encerramento bloqueiam novas entregas, não a
-      // avaliação docente de uma gravação que já foi registrada pelo aluno.
-      // A particular continua exigindo matrícula ativa porque cria/usa um
-      // encontro acadêmico individual, não uma fonte já entregue.
       if (r.modalidade === "PARTICULAR" && matricula.status !== "ATIVA") throw new ErroRegra("A conclusão particular exige matrícula ativa.");
       if (r.modalidade === "GRAVACAO" && !["ATIVA", "PAUSADA", "ENCERRADA"].includes(matricula.status)) throw new ErroRegra("A gravação só pode ser concluída em matrícula ativa, pausada ou encerrada.");
       const original = await tx.encontroAgenda.findUnique({ where: { id: r.aulaOriginalId }, select: { diario: { select: { registros: { where: { matriculaId: r.matriculaId }, select: { id: true, alunoId: true } } } } } });

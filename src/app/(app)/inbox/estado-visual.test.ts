@@ -60,7 +60,6 @@ it("tempoDeEspera", () => {
   expect([1, 59, 60, 125].map(tempoDeEspera)).toEqual(["1 min", "59 min", "1 h", "2 h 5 min"]); expect(tempoDeEspera(0)).toBe("1 min");
 });
 
-// #346: projeção aditiva; os casos E1 acima continuam com estadoAria:null.
 it.each([["ia","ia","IA atendendo"],["aprovacao","aprovacao","Aguardando aprovação"],["handoff","handoff","Handoff pendente"]] as const)("estado %s vem primeiro, sem badge humano duplicado, com selo",(estadoAria,tom,texto)=>{
  const original=Object.freeze(item({estadoAria,responsavelId:"u2",responsavelNome:"Camila Souza"}));
  const v=estadoVisualItem(original,agora,"u1");expect(v.badges[0]).toEqual({tom,texto});expect(v.badges.filter(b=>b.tom==="humano")).toHaveLength(0);expect(v.seloIa).toBe(true);

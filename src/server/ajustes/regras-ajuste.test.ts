@@ -26,9 +26,9 @@ describe("ehAumento / aumentoPermitido", () => {
 
 describe("validarDirecaoAjuste", () => {
   it("desconto deve ter valorPara <= valorDe", () => {
-    expect(validarDirecaoAjuste(TipoAjuste.DESCONTO, 100, 80)).toBeNull(); // desconto válido
-    expect(validarDirecaoAjuste(TipoAjuste.DESCONTO, 100, 100)).toBeNull(); // sem mudança
-    expect(validarDirecaoAjuste(TipoAjuste.DESCONTO, 100, 0)).toBeNull(); // desconto total
+    expect(validarDirecaoAjuste(TipoAjuste.DESCONTO, 100, 80)).toBeNull();
+    expect(validarDirecaoAjuste(TipoAjuste.DESCONTO, 100, 100)).toBeNull();
+    expect(validarDirecaoAjuste(TipoAjuste.DESCONTO, 100, 0)).toBeNull();
   });
 
   it("recusa aumento disfarçado de desconto", () => {
@@ -47,11 +47,11 @@ describe("descontoPercentual", () => {
   it("calcula o percentual de redução", () => {
     expect(descontoPercentual(100, 80)).toBeCloseTo(20);
     expect(descontoPercentual(200, 50)).toBeCloseTo(75);
-    expect(descontoPercentual(100, 0)).toBeCloseTo(100); // desconto total
+    expect(descontoPercentual(100, 0)).toBeCloseTo(100);
   });
 
   it("é 0 para aumento ou base zero", () => {
-    expect(descontoPercentual(100, 120)).toBe(0); // aumento não é desconto
+    expect(descontoPercentual(100, 120)).toBe(0);
     expect(descontoPercentual(0, 0)).toBe(0);
   });
 });
@@ -69,7 +69,7 @@ describe("precisaAprovacaoDesconto", () => {
     ).toBe(false);
     expect(
       precisaAprovacaoDesconto({ podeAplicarSemLimite: false, limiteDescontoPct: 15, descontoPct: 15 }),
-    ).toBe(false); // exatamente no limite
+    ).toBe(false);
   });
 
   it("Vendedor: desconto acima do limite vai para aprovação", () => {

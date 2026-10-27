@@ -27,7 +27,6 @@ async function contextoFresco(tx:Prisma.TransactionClient,e:EntradaRamoNovoConve
  const autor={id:e.autorId,nome:u.nome,papeis:u.papeis,permissoes:u.permissoes};
  if(apenasPortal(autor))throw new ErroPermissao();exigirPapel(autor,Papel.VENDEDOR,Papel.GERENTE_COMERCIAL);
  if(!e.ownerId)throw new ErroRegra("Selecione um vendedor ativo.");
- // O helper consulta papeis.has VENDEDOR do OWNER, sem temPapel(Admin) ou fallback.
  await exigirDestinoComercial(autor,e.ownerId,tx);
  const numero=await tx.numeroWhatsApp.findUnique({where:{id:e.numeroId},select:{id:true,ativo:true,finalidade:true,donoId:true}});
  if(!numero?.ativo||numero.finalidade!=="VENDAS")throw mudou();
@@ -50,7 +49,6 @@ function replayValido(payload:Prisma.JsonValue,atendimentoId:string,e:EntradaRam
 function uniqueTelefone(e:unknown):boolean {
  return e instanceof Prisma.PrismaClientKnownRequestError&&e.code==="P2002"&&e.meta?.modelName==="ContatoWhatsApp"&&Array.isArray(e.meta.target)&&e.meta.target.length===1&&e.meta.target[0]==="telefoneE164";
 }
-/** Interno, NOVO-only. O caller é dono da única TX; não é endpoint ou resolução de owner. */
 export async function criarRamoNovoConversaTx(tx:Prisma.TransactionClient,e:EntradaRamoNovoConversa):Promise<Criada> {
  if(normalizarNumeroNovaConversa(e.telefoneE164)!==e.telefoneE164)throw new ErroRegra("Informe o telefone internacional válido.");
  const chave=ChaveIdempotenciaSchema.parse(e.chaveIdempotencia);
@@ -84,7 +82,6 @@ export async function criarRamoNovoConversaTx(tx:Prisma.TransactionClient,e:Entr
  await registrarEvento(tx,{tipo:"AtendimentoInstitucionalAberto",agregadoTipo:"AtendimentoWhatsApp",agregadoId:atendimento.id,autorId:e.autorId,payload:{finalidade:"COMERCIAL",leadId,alunoId:null,turmaId:null,matriculaId:null}});await revalidarNovo();
  const tupla:TuplaCriada={atendimentoId:atendimento.id,leadId,pessoaId:pessoa.pessoaId,contatoId:contato.id,conversaId:conversa.id,numeroId:e.numeroId,ownerId:e.ownerId,criado:true};
  await registrarEvento(tx,{tipo:"ConversaIniciadaPorNumero",agregadoTipo:"AtendimentoWhatsApp",agregadoId:atendimento.id,autorId:e.autorId,payload:{leadId,pessoaId:pessoa.pessoaId,contatoId:contato.id,conversaId:conversa.id,numeroId:e.numeroId,ownerId:e.ownerId,criado:true,...marca}});
- // Confirma inclusive restrições deferred/FKs ANTES da última leitura; nenhum write depois.
  await avisarNovaConversaTx(tx, { id: atendimento.id, conversaId: conversa.id });
  await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
  await revalidarNovo();await conferirTupla(tx,e,tupla);

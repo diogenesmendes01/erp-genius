@@ -13,9 +13,6 @@ import { carregarPoliticaConfig } from "./consultas";
 import { acionarKillSwitchRegua, salvarConfiguracaoAvisosAgenda, salvarPoliticaRegua } from "./acoes";
 import type { PoliticaReguaInput } from "./schema";
 
-// Integração E4 (doc 30): política como dado — salvar/armar com as LEIS (D+15 manual,
-// trava S1) e a prontidão S15 (número oficial exige template aprovado nos degraus armados).
-
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
 
 beforeEach(async () => {
@@ -65,7 +62,7 @@ describe("salvarPoliticaRegua", () => {
     const eventos = await eventosDo("PoliticaRegua", politica.id);
     expect(eventos.map((e) => e.tipo)).toContain("PoliticaReguaAlterada");
     const payload = eventos[0].payload as { antes: unknown };
-    expect(payload.antes).toBeNull(); // primeira materialização
+    expect(payload.antes).toBeNull();
   });
 
   it("LEI: D+15 (bloquear) vira MANUAL mesmo que a UI mande AUTOMATICO", async () => {
@@ -108,7 +105,6 @@ describe("salvarPoliticaRegua", () => {
     expect((recusado as { erro?: string }).erro).toContain("Meta Cloud ainda não tem envio disponível");
     expect(await prisma.politicaRegua.count()).toBe(0);
 
-    // Desligada continua salvando livre (nada é armado).
     const desligada = await salvarPoliticaRegua(inputFabrica({ numeroRemetenteId: oficial.id }));
     expect(desligada.ok).toBe(true);
   });

@@ -1,9 +1,8 @@
-/** Junta avisos da mesma conversa enquanto a leitura no servidor está em voo. */
 export function criarMarcadorDeLeitura(marcar: (id: string) => Promise<unknown>, podeRepetir: (id: string) => boolean = () => true): (id: string) => void {
   const voos = new Map<string, { pendente: boolean }>();
 
   const executar = async (id: string): Promise<void> => {
-    try { await marcar(id); } catch { /* o próximo aviso ou abertura tenta novamente */ }
+    try { await marcar(id); } catch {  }
     const voo = voos.get(id);
     if (!voo) return;
     if (voo.pendente && podeRepetir(id)) {

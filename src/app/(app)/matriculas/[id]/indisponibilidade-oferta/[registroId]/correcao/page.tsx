@@ -12,7 +12,6 @@ import { DecidirCorrecaoRelato, ProporCorrecaoRelato } from "./CorrecaoRelatoOfe
 const civil = (data: string) => { const [ano, mes, dia] = data.split("-"); return `${dia}/${mes}/${ano}`; };
 const periodo = (p: { inicio: string; fim: string | null }) => `${civil(p.inicio)}${p.fim ? ` a ${civil(p.fim)}` : " em aberto"}`;
 
-/** Q157: correção versionada do período de um relato confirmado de falta de oferta. */
 export default async function CorrecaoRelatoPage({ params, searchParams }: { params: Promise<{ id: string; registroId: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.FINANCEIRO, Papel.ADMINISTRADOR);
   const { id: matriculaId, registroId } = await params;

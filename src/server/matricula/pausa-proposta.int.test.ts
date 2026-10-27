@@ -7,7 +7,6 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/_shared", async (original) => {
   const real = await original<typeof import("@/server/_shared")>();
   return { ...real, exigirSessaoComPapel: async (...papeis: Papel[]) => {
-    // Sessão simulada; permissões continuam sendo lidas do banco real em cada chamada.
     const session = await authMock();
     const u = await prisma.usuario.findUniqueOrThrow({ where: { id: session.user.id }, select: { id: true, nome: true, papeis: true, ativo: true } });
     if (!u.ativo) throw new real.ErroPermissao();
@@ -41,11 +40,6 @@ const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const input = () => ({ matriculaIds: [matriculaId], dataEfetiva: "2026-09-15", motivo: "Pausa solicitada pelo aluno", chaveIdempotencia: "pausa-selecao-001" });
 const decisao = { aprovar: true, motivo: "Condições e períodos conferidos" };
 
-/**
- * A fonte civil dos quatro cenários de retomada é uma obrigação M01 real:
- * vínculo conferido, mapa de origem criado pela aplicação e decisão financeira
- * independente. Os demais testes preservam a fixture enxuta original.
- */
 async function prepararMatriculaM01ComMensalidade(dataCivil: string, cobertura: { inicio: string; fim: string }, valor = "100") {
   const catalogo = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId }, include: { produto: true } });
   const origem = `M01-RETOMADA-${randomUUID()}`;
@@ -565,8 +559,6 @@ describe("núcleo transacional de execução de pausa", () => {
     expect(referenciaVencimentoCivil({ ...cobranca, aplicacoesAditivoVencimento: trilhas.vencimentosPorCobranca.get(cobranca.id), aplicacoesM01: trilhas.m01PorCobranca.get(cobranca.id), retomadasReprogramadas: trilhas.retomadasReprogramadas })).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-03-01", fuso: null, origem: "RETOMADA_REPROGRAMADA" });
   });
   it("recupera a data civil UTC+14 da emissão real sem inferir o fuso atual", async () => {
-    // Esta fixture percorre contratação, condições e emissão pública. Ela grava
-    // 2099-10-05T12:00 Pacific/Kiritimati como 2099-10-04T22Z.
     await truncarBanco();
     const fixture = await prepararFixtureSubstituicaoContratual(authMock, { semSubstituicao: true, primeiraMensalidadeExigida: true, ambiente: "PRODUCAO", fusoInstitucional: "Pacific/Kiritimati" });
     const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: fixture.processoId }, include: { artefato: { include: { conferencia: true } }, tentativas: { orderBy: { numero: "desc" }, take: 1 } } });

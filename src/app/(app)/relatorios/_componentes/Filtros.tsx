@@ -15,13 +15,9 @@ export function Filtros({ valores, aba, pessoas, mostrarResponsavel, mostrarAuto
   valores: Record<string, string>;
   aba: string;
   pessoas: { id: string; nome: string }[];
-  /** Vendedor não filtra por responsável: só enxerga os próprios números. */
   mostrarResponsavel: boolean;
-  /** Separar Aria × equipe só faz sentido para quem vê a Aria. */
   mostrarAutor: boolean;
-  /** Filtro de funil: só existe se a Fase 2 criou funis; hoje fica oculto. */
   mostrarFunil: boolean;
-  /** Só com a capacidade de exportar; null esconde o botão. */
   exportarHref: string | null;
 }) {
   const filtrando = ["periodo", "de", "ate", "responsavel", "origem", "temperatura", "autor"].some((k) => valores[k]);

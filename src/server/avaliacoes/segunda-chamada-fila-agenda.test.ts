@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// C38 (#170; C1 da R1 da #161): a âncora do cursor da fila de agenda de 2ª chamada é lida no universo da fila
-// (proposta aprovada e disponibilizada), não em qualquer PropostaSegundaChamada. Sem banco: o $queryRaw guarda o
-// SQL montado e o teste lê o subselect da âncora. A paginação nos dois sentidos está em src/server/filas-cursor.test.ts.
 const m = vi.hoisted(() => ({ sqls: [] as { texto: string; valores: unknown[] }[] }));
 vi.mock("@/lib/prisma", () => {
   const tx = {
@@ -27,7 +24,6 @@ vi.mock("./segunda-chamada-tx", () => ({ estadoSegundaChamadaTx: vi.fn() }));
 import { listarSegundasChamadasSemAgenda } from "./segunda-chamada-fila-agenda";
 
 const ANCORA = "c0000000000000000000000a";
-/** O subselect da âncora no SQL lido (do "(SELECT ancora." até o parêntese que o fecha). */
 function subselectDaAncora(texto: string) {
   const inicio = texto.indexOf("(SELECT ancora.");
   expect(inicio, "o SQL lê a âncora").toBeGreaterThan(-1);
@@ -50,7 +46,6 @@ describe("fila de agenda de 2ª chamada — âncora no universo da fila (C38)", 
     expect(sub).toContain('FROM "PropostaSegundaChamada" ancora WHERE ancora.id=?');
     expect(sub).toContain('EXISTS(SELECT 1 FROM "DecisaoSegundaChamada" d WHERE d."propostaId"=ancora.id AND d.aprovada)');
     expect(sub).toContain('EXISTS(SELECT 1 FROM "DisponibilizacaoSegundaChamada" dd WHERE dd."propostaId"=ancora.id)');
-    // O universo da âncora não traz o filtro "sem agenda": agendar a âncora não a perde.
     expect(sub).not.toContain("ReservaSegundaChamada");
     expect(texto).toContain(`(p."criadaEm",p.id) ${op} (SELECT ancora.`);
     expect(valores).toContain(ANCORA);

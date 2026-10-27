@@ -6,7 +6,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { PeriodosCalendarioSchema } from "./calendario-schema";
 import { conferirDiasNaoLetivos } from "./calendario-intervalo";
 
-/** Foto de revisão, sem remarcação/publicação; deve ser revalidada ao aplicar. */
 export async function preverImpactosCalendario(input: { calendarioId: string }) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -35,7 +34,6 @@ export async function preverImpactosCalendario(input: { calendarioId: string }) 
           ...(proposta.decisao ? ["Esta versão já possui decisão; consulte o histórico antes de preparar alterações."] : []),
           ...(revisao.some((e) => !e.preservarRegistro) ? ["Revisar conjuntamente os cronogramas futuros, incluindo oportunidades criadas por remoção de dias não letivos."] : []),
         ],
-        // Não basta ausência de colisão: tirar um recesso pode antecipar encontros futuros.
         revisaoCompleta: false as const, aplicada: false as const, conferidoEm: agora.toISOString() };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });

@@ -7,11 +7,6 @@ function assertConjuntoUnico(valores: string[], campo: string) {
   }
 }
 
-/**
- * Confere que a proposta preserva a fonte e as identidades da chamada.
- * A ordem recebida para o novo snapshot não integra a identidade: ela é
- * normalizada pela ordem original para produzir uma projeção determinística.
- */
 export function validarProjecaoCorrecaoAula(anteriorJson: unknown, novoJson: unknown): {
   anterior: SnapshotCorrecaoAula;
   novo: SnapshotCorrecaoAula;
@@ -52,7 +47,6 @@ export function validarProjecaoCorrecaoAula(anteriorJson: unknown, novoJson: unk
   return { anterior, novo };
 }
 
-/** Projeta somente a classificação solicitada, sem alterar o registro recebido. */
 export function projetarParticipacaoCorrecaoAula<T extends {
   id: string;
   matriculaId: string | null;

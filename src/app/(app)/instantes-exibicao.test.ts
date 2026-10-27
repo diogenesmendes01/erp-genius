@@ -1,9 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 6: os instantes impressos com toISOString() — a frase de auditoria da emissão, o histórico do
-// pagador, as propostas de exceção de ingresso e o histórico dos modelos contratuais — saem no fuso de exibição
-// de quem lê, com a origem dita, como as telas já migradas: "22/09/2026, 10:41 (America/Sao_Paulo; origem UTC)".
 const m = vi.hoisted(() => ({
   sessao: vi.fn(), preferencia: vi.fn(), emissao: vi.fn(), telaPagador: vi.fn(), historicoPagador: vi.fn(), excecoes: vi.fn(), modelos: vi.fn(),
 }));

@@ -3,9 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Espelho do caso "barra de uma aba só some" do /diario (R1 da #143, C1). Com o SECOES_ACADEMICO
-// real nenhum papel abre exatamente uma aba, então o caso fica sem prova; aqui as seções são
-// substituídas por duas — uma da Secretaria e da Gerência, outra só da Gerência.
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pathname: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("next/navigation", () => ({ usePathname: mocks.pathname }));

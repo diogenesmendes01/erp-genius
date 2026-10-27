@@ -10,7 +10,6 @@ import {cenarioCadastroPessoa} from "@/test/inbox-cadastro-pessoa";
 import {diaUtilAs} from "@/test/janela-envio";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {CANAL_INBOX} from "./barramento";
-/** Cobertura genérica pós501: escrita direta de intenção, nenhum Evento/núcleo/provider. */
 beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
 async function fixture(){const c=await cenarioCadastroPessoa();await prisma.oportunidade.update({where:{id:c.op.id},data:{telefoneE164:c.contato.telefoneE164}});await prisma.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{responsavelId:c.dono.id,iaPausadaEm:new Date()}});const a=await atendimentoVisivel(c.dono,c.atendimento.id,true,prisma);expect(a?.responsavelId).toBe(c.dono.id);expect(a?.contato.telefoneE164).toBe(c.contato.telefoneE164);return c;}
 type Cenario=Awaited<ReturnType<typeof fixture>>;

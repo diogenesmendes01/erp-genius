@@ -6,7 +6,6 @@ import type { consultarContextoEncerramento } from "./encerramento-contexto";
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 import { OutrasCobrancasEncerramentoSchema } from "./encerramento-outras-cobrancas-schema";
 
-/** Confere somente cobranças já emitidas; não converte saldo de horas nem executa crédito. */
 export function conferirOutrasCobrancasEncerramento(contexto: Contexto, input?: z.input<typeof OutrasCobrancasEncerramentoSchema>) {
   const origens = contexto.cobrancas.filter((c) => c.tipo !== "MENSALIDADE");
   if (input === undefined && origens.length) return { pendencias: ["Confira as demais cobranças emitidas antes de consolidar o acerto."], parcelas: [], consolidado: null };

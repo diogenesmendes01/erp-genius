@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/42 L268–269 (docs/43 §6 item 7): a agenda não dizia de quem era, e em erro a tela virava um parágrafo solto.
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), listar: vi.fn(), identificacao: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/contratos/agenda-aditivo", () => ({ listarMatriculasConferenciaAgendaAditivo: mocks.listar }));

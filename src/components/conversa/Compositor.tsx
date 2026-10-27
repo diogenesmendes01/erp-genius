@@ -28,38 +28,24 @@ const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
   atendimentoId: string;
-  /** Pedido explícito novo para focar a Nota; ausente mantém os consumidores anteriores. */
   pedidoFoco?: number;
-  /** Ref local do campo Responder; null na aba Nota ou quando o campo não está disponível. */
   aoCampoResponder?: (campo: HTMLTextAreaElement | null) => void;
   modo: "responder" | "nota";
-  /** Bloqueia somente saída externa; conserva a instância e o rascunho. */
   bloqueioExterno?: boolean;
-  /** null: a permissão ainda não chegou (carregando). Só false é falta de permissão. Falha fechada: só true envia. */
   podeEnviar: boolean | null;
-  /** Presente quando a permissão não pôde ser carregada: o compositor mostra o erro e este é o "Tentar de novo". */
   falhaPermissao?: () => void;
-  /** `ThreadConversa.capacidades`: recursos que o número executa agora (motor ativo e sessão CONECTADO). */
   capacidades: readonly RecursoMotor[];
   aoEnviarTexto(t: string): Promise<Resultado<unknown>>;
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
   aoNota(t: string, chaveIdempotencia?: string, mencoes?: readonly TokenMencao[]): Promise<Resultado>;
-  /** Opcional: só o Inbox oferece candidatos já autorizados, sem alterar outros consumidores. */
   buscarMencoes?: (busca: string, signal?: AbortSignal) => Promise<CandidatoMencao[]>;
-  /** Compartilhado pelo dono da conversa para conservar tentativa incerta mesmo ao alternar contatos. */
   tentativasNota?: ChavesPorAlvo;
-  /** Dono acima da key do contato: evita apagar uma nova intenção após remontagem. */
   revisoesRascunhos?: RevisoesRascunhos;
   aoAgendar?: () => void;
-  /** Porta opt-in para o rascunho físico Responder; não executa envio. */
   aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
-  /** O rodapé hospeda a moldura; controles e estados continuam sendo deste componente. */
   contido?: boolean;
-  /** Respostas rápidas do atendente (atalho "/"); sem elas o atalho não abre. */
   respostas?: readonly RespostaDoCompositor[];
-  /** Porta de abertura local; dados e envio de propostas pertencem ao consumidor autorizado. */
   propostas?: { oportunidadeId: string | null; aoAbrir: () => void };
-  /** Valores das variáveis das respostas ({nome}, {responsavel}, {curso}). */
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
 
@@ -68,12 +54,11 @@ function lerRascunho(id: string, modo: string): string {
   try { return localStorage.getItem(chaveRascunho(id, modo)) ?? ""; } catch { return ""; }
 }
 function gravarRascunho(id: string, modo: string, v: string) {
-  try { if (v) localStorage.setItem(chaveRascunho(id, modo), v); else localStorage.removeItem(chaveRascunho(id, modo)); } catch { /* sem armazenamento: o rascunho não persiste */ }
+  try { if (v) localStorage.setItem(chaveRascunho(id, modo), v); else localStorage.removeItem(chaveRascunho(id, modo)); } catch {  }
 }
 
 const tamanho = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
 
-/** Primeiro formato de gravação que o navegador suporta e que o envio de voz aceita; null quando nenhum. */
 function formatoDeVoz(): string | null {
   if (typeof MediaRecorder === "undefined") return null;
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
@@ -111,9 +96,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const revisoesLocais = useRevisoesRascunhos();
   const revisoes = revisoesRascunhos ?? revisoesLocais;
 
-  // Troca de atendimento ou de modo: o estado é ajustado no próprio render (estado derivado da prop, com a chave
-  // anterior guardada), sem setState dentro de effect (react-hooks/set-state-in-effect). O React descarta este render
-  // e refaz com o rascunho da conversa nova; o anexo e o erro da anterior não passam para ela.
   const chave = chaveRascunho(atendimentoId, modo);
   const [contexto, setContexto] = useState(() => ({ chave }));
   const contextoAtual = useRef<typeof contexto | null>(contexto);
@@ -151,7 +133,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     if(focoAtendido.current?.atendimentoId===atendimentoId&&focoAtendido.current.pedido===pedidoFoco)return;
     focoAtendido.current={atendimentoId,pedido:pedidoFoco};entrada.current.focus({preventScroll:true});
   },[atendimentoId,modo,pedidoFoco,contexto]);
-  // O value controlado precisa estar no DOM antes de aplicar indices UTF16.
   useLayoutEffect(() => {
     const selecao = selecaoMencao.current;
     if (!selecao) return;
@@ -162,8 +143,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     campo.focus();
     campo.setSelectionRange?.(selecao.indice, selecao.indice);
   });
-  // O placeholder pode ocupar mais linhas que o campo vazio apos um ACK.
-  // Reconciliar somente a rolagem do value ja commitado, sem mover foco/cursor.
   useLayoutEffect(() => {
     const campo = entrada.current;
     if (texto === "" && campo?.value === "") campo.scrollTop = 0;
@@ -289,7 +268,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         const tokens = comando.mencoes === undefined ? undefined : Object.freeze(comando.mencoes.map(t => Object.freeze({ ...t })));
         const tentativa = tentativas.para(JSON.stringify(tokens === undefined ? [atendimentoId, comando.nota] : [atendimentoId, comando.nota, tokens]));
         const desfecho = await executarAcaoCliente(() => tokens === undefined ? aoNota(comando.nota, tentativa.atual) : aoNota(comando.nota, tentativa.atual, tokens), { idempotente: true });
-        // Confirma a tentativa de A mesmo se a pessoa já estiver em B; só o estado visual exige contexto vigente.
         tentativa.depoisDo(desfecho);
         r = desfecho.tipo === "ok" ? { ok: true } : { ok: false, erro: desfecho.mensagem };
       }
@@ -298,21 +276,17 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         if (!url || !saidaPermitida()) return;
         r = await aoEnviarMidia(url, corpo);
       } else r = await aoEnviarTexto(corpo);
-      // Sucesso de A em B limpa apenas o armazenamento exato da tentativa confirmada.
-      // A→B→A sem editar conserva a intenção; texto/emoji/arquivo novos revogam a limpeza antiga.
       if (r.ok && intencaoEnviada && revisoes.confere(chave, intencaoEnviada)) {
         let corresponde = false;
         try {
           const persistido = localStorage.getItem(chave);
           corresponde = persistido === texto || (persistido === null && texto === "");
           if (corresponde) localStorage.removeItem(chave);
-        } catch { corresponde = true; /* Sem persistência, ainda reconciliamos a intenção visual confirmada. */ }
+        } catch { corresponde = true;  }
         if (corresponde) revisoes.confirmar(chave, intencaoEnviada);
       }
-      // A tentativa conclui sua chave, mas não substitui uma intenção editada durante o envio.
       if (!contextoVigente() || revisaoRascunho.current !== revisaoEnviada) return;
       if (!r.ok) { setErro(r.erro); return; }
-      // A confirmação reconciliou somente o owner atual da mesma intenção.
     } catch (e) {
       if (contextoVigente() && revisaoRascunho.current === revisaoEnviada) setErro(e instanceof Error ? e.message : "Falha ao enviar.");
     } finally {
@@ -331,7 +305,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     mudar(novo);
     setTokensMencao([...tokensAposEdicao(texto, novo, tokensMencao).filter(t => t.fim <= inicio || t.inicio >= inicio + trecho.length), { usuarioId: p.id, inicio, fim: inicio + trecho.length }]);
     setConsultaMencao(null);
-    // Pular um espaco do sufixo existente ou o separador que acabamos de inserir.
     selecaoMencao.current = { contexto, revisao: revisaoRascunho.current, texto: novo, indice: inicio + trecho.length + 1 };
   }
   function aoTeclar(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -434,7 +407,6 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         </div>
       )}
       {sugestoes.length > 0 && (
-        // Lista simples de botões (Tab chega a cada um): listbox exigiria foco gerenciado e setas.
         <ul aria-label="Respostas rápidas" className={`mb-2 ${CLASSE_PAINEL_MENU}`}>
           {sugestoes.map((s) => (
             <li key={s.id}>

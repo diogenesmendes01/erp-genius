@@ -61,10 +61,6 @@ function totalDias(inicio: string, fim: string): number {
   return (fimData.getTime() - inicioData.getTime()) / 86_400_000 + 1;
 }
 
-/**
- * Monta a memória de tratamento de um período integralmente indisponível. O
- * resultado não cria crédito, não cancela cobrança e não transfere datas.
- */
 export function apurarRegularizacaoPeriodoIntegral(
   input: EntradaApuracaoPeriodoIntegral,
 ) {

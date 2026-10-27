@@ -14,7 +14,6 @@ import { botaoClasses } from "@/components/Botao";
 export default async function SecretariaPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const autor = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   const secretaria = autor.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
-  // Busca e página na URL (E4): antes, só as 40 matrículas mais recentes, sem como chegar às demais.
   const parametros = await searchParams;
   const matriculaId = lerTexto(parametros, "matriculaId", 64) || undefined;
   const busca = lerTexto(parametros, "busca");

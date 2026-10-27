@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// B9 (#201 C6): o SSE do Inbox precisa do prazo do JWT com que a conexão abriu, para fechar o stream quando a
-// sessão expira. O `exp` do token (segundos) chega à sessão como `expiraEm` (milissegundos).
-
 const m = vi.hoisted(() => ({ auth: vi.fn(), usuario: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: m.auth }));
 vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUnique: m.usuario } } }));

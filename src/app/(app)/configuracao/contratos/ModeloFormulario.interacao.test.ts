@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L2367 e L2368): o modelo contratual (até 100 seções de 20.000 caracteres) é
-// protegido pelo aviso de saída — ligado só com alteração não salva, desligado depois de salvar — e uma tentativa
-// não confirmada não trava mais a proposta sem saída: a tela oferece reenviar a anterior ou descartá-la.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   aviso: vi.fn(), preparar: vi.fn(), push: vi.fn(), refresh: vi.fn(),
@@ -35,11 +32,6 @@ type Mudanca = (e: { target: { value: string } }) => void;
 const titulo = (t: ReactNode) => elementos(t).find((n) => n.type === "input" && n.props.required === true && n.props.maxLength === 200 && n.props.name === undefined)!;
 const alertas = (t: ReactNode) => elementos(t).filter((n) => n.props.role === "alert").map((n) => texto(n.props.children));
 
-/**
- * Preenche o mínimo válido do conteúdo: título, regime, aplicação, uma seção (título e texto) e uma regra de
- * assinatura. Os campos de até 200 caracteres sem `name` são, na ordem, o título do modelo e o da seção; os
- * campos de texto longo sem `name`, a aplicação e o texto da seção (o motivo tem `name`).
- */
 function preencher(tituloDoModelo: string) {
   const de200 = () => elementos(tela()).filter((n) => n.type === "input" && n.props.maxLength === 200 && n.props.name === undefined);
   const textos = () => elementos(tela()).filter((n) => n.type === CampoTexto && n.props.name === undefined);
@@ -60,7 +52,7 @@ describe("ModeloFormulario — aviso ao sair", () => {
     tela();
     expect(sujo()).toBe(true);
     m.ganchos!.reiniciar();
-    (formularios(tela())[0].props.onChange as () => void)(); // código ou motivo (campos não controlados)
+    (formularios(tela())[0].props.onChange as () => void)();
     tela();
     expect(sujo()).toBe(true);
   });

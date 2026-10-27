@@ -43,11 +43,9 @@ export const FiltrosSolicitacoesAcademicasSchema = z.object({
   alunoId: z.string().trim().min(1).optional(),
   matriculaId: z.string().trim().min(1).optional(),
   apenasAbertas: z.boolean().optional(),
-  /** Página numerada (E4), 50 por página; a ordem (criadoEm, id) é estável na ida e na volta. */
   pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional(),
 });
 
-/** Fila de /academico (E4, decisão de 10/10/2026): abertas (ou todas, com `historico`), por cursor nos dois sentidos. */
 export const FilaSolicitacoesAcademicasSchema = z.object({ ...camposNavegacaoFila, historico: z.boolean().optional() })
   .strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 

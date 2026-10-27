@@ -5,7 +5,6 @@ import { PAPEIS_PAUSA } from "./pausa-estado";
 import { carregarPreviaRetomadaTx } from "./retomada-estado";
 import { PreviaRetomadaMatriculasSchema, type PreviaRetomadaMatriculasInput } from "./retomada-schema";
 
-/** Consulta operacional sem mutação. */
 export async function preverRetomadaMatriculas(alunoId: string, input: PreviaRetomadaMatriculasInput) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_PAUSA);

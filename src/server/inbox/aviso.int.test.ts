@@ -19,7 +19,6 @@ async function cenario() {
   return { alvo: await criar("+5500000001321"), sentinela: await criar("+5500000002321") };
 }
 
-/** Escuta o payload REAL do trigger, antes da normalização do barramento: conteúdo extra também falha. */
 async function escutar() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   const quadros: unknown[] = [];
@@ -45,7 +44,6 @@ describe("aviso transacional do atendimento pelo trigger existente", () => {
     try {
       await prisma.$transaction(async tx => {
         await avisarAtendimento(tx, alvo.id);
-        // Outra linha confirma enquanto a primeira permanece aberta: a escuta está comprovadamente ativa.
         await avisarAtendimento(prisma, sentinela.id);
         await escuta.esperar(sentinela.id);
         expect(escuta.doAtendimento(alvo.id)).toEqual([]);

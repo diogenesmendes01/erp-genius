@@ -21,7 +21,6 @@ const SnapshotConferenciaSchema = z.object({
   assinaturasHerdadas: z.array(z.unknown()).length(0), identificacoesConferidas: z.literal(true),
 }).passthrough();
 
-/** Revalida a conferência preservada contra a fonte e os documentos ainda ativos. */
 export async function carregarEstadoOriginalAditivoTx(tx: Prisma.TransactionClient, entrada: { propostaId: string; conferenciaId: string; conferenciaHash: string }) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const contexto = await carregarContextoParticipantesAditivoTx(tx, entrada.propostaId);

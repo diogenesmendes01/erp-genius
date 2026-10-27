@@ -66,7 +66,6 @@ describe("FilaContinuidadeMensalPage", () => {
   it("distingue fila zerada (início), ponto da fila sem matrículas e falha de consulta", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.ADMINISTRADOR] });
     mocks.consultar.mockResolvedValue(resposta({ itens: [], temProxima: false, proxima: null }));
-    // Início sem itens: a fila está zerada — nada de "nesta página" nem link para si (docs/42, vazio paginado).
     const vazio = await render({});
     expect(mocks.consultar).toHaveBeenCalledWith({});
     expect(vazio).toContain("Nenhuma matrícula precisa de acompanhamento na continuidade mensal.");
@@ -75,7 +74,6 @@ describe("FilaContinuidadeMensalPage", () => {
     expect(vazio).not.toContain("Anterior");
     expect(vazio).not.toContain('href="/financeiro/continuidade"');
 
-    // Cursor que não leva a nada: o vazio diz isso e leva de volta ao início.
     const alem = await render({ depois: "m-sumida" });
     expect(alem).toContain("Nenhuma matrícula a partir deste ponto da fila");
     expect(alem).not.toContain("na continuidade mensal.");

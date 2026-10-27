@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// FASE 3 (doc 03): diário/frequência, notas, progressão sugerida + certificado e o
-// PORTAL DO ALUNO (row-level pelo vínculo usuário↔aluno). Sessão mockada; papéis do banco.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -44,8 +41,6 @@ async function seedTurmaComAluno() {
 }
 
 
-// A Fase 3 simplificada foi substituída pela SPEC: os endpoints antigos não
-// podem contornar diário histórico, oficialização ou convite individual.
 describe("compatibilidade acadêmica após integração da main", () => {
   it("impede escrita pelo diário/notas antigos sem criar dados paralelos", async () => {
     const { turma, aluno } = await seedTurmaComAluno();

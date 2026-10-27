@@ -7,9 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { despacharFila } from "./despachante";
 
-// BLOQUEADORES DO PILOTO (doc 32 §0) — B3 validade no despacho. O B7 (revalidação da cadência comercial no
-// despacho) saiu com a régua comercial do CRM antigo; a validade vale para toda intenção (ex.: agendada com prazo).
-
 beforeEach(async () => {
   await truncarBanco();
 });
@@ -21,7 +18,6 @@ describe("B3 — validade do disparo (validaAte)", () => {
     });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50690001111" } });
 
-    // Intenção ADIADA (ex.: janela/kill switch) cuja validade JÁ passou.
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,

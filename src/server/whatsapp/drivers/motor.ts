@@ -10,9 +10,6 @@ import {
 } from "../canal";
 import { chamarMotor, ErroMotor, TIMEOUT_MIDIA_MS, TIMEOUT_TEXTO_MS } from "../motor/cliente";
 
-// Driver do motor próprio (whatsapp-web-baileys, modo serviço). O motor é só transporte:
-// o ERP gera o clientMessageId e o motor devolve providerMessageId + mensagemIdMotor.
-
 const MOTIVOS_REPROCESSAVEIS = new Set(["numero_desconectado", "motor_encerrando", "limite_ritmo"]);
 const ADIAR_PADRAO_MS = 60_000;
 const ADIAR_EM_ANDAMENTO_MS = 120_000;
@@ -150,7 +147,6 @@ export const driverMotor: CanalWhatsApp = {
     return enviarJson(numero, destino, { tipo: "texto", texto: corpo }, opcoes);
   },
 
-  // O motor não tem ciclo de template: envia o corpo já renderizado como texto.
   enviarTemplate(numero: NumeroCanal, destino: string, t: EnvioTemplate, opcoes: OpcoesEnvio) {
     return enviarJson(numero, destino, { tipo: "texto", texto: t.corpoRenderizado }, opcoes);
   },

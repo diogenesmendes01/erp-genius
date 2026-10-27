@@ -1,14 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (6º lote): ações do atendimento no Inbox.
-// - Transferir recebe chave: o reenvio da mesma tentativa devolve o atendimento novo, sem encerrar nem abrir outro.
-// - Assumir, devolver, encerrar, revogar convite e cancelar agendamento são idempotentes por natureza: o reenvio
-//   de quem já fez a ação devolve ok sem gravar outro Evento. Se o estado veio de outra pessoa, segue recusado.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// empresas/empresa-idempotencia.int.test.ts: dois `import()` simultâneos do NextAuth mockado falham no vitest e o
-// envio simultâneo é o que o teste mede); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -38,7 +30,6 @@ async function como<T>(u: U, f: () => Promise<T>): Promise<T> { comoUsuario(u); 
 const contar = (tipo: string, agregadoId?: string) => prisma.evento.count({ where: { tipo, ...(agregadoId ? { agregadoId } : {}) } });
 const ctx = "Pediu histórico escolar";
 
-/** Número institucional que atende COMERCIAL e SECRETARIA fora de linha de vendas (o responsável dá acesso). */
 async function cenario(responsavel: "v1" | null = "v1") {
   const v1 = await criarUsuario([Papel.VENDEDOR], "Vend Um");
   const v2 = await criarUsuario([Papel.VENDEDOR], "Vend Dois");
@@ -59,10 +50,9 @@ describe("transferirAtendimento com chave (#166)", () => {
     const [r1, r2] = await Promise.all([transferirAtendimento(entrada), transferirAtendimento(entrada)]);
     expect(r1.ok && r2.ok, JSON.stringify([r1, r2])).toBe(true);
     expect(r2).toEqual(r1);
-    // Reenvio tardio, com a origem já encerrada: devolve o mesmo, sem "Atendimento encerrado".
     expect(await transferirAtendimento(entrada)).toEqual(r1);
     expect(await prisma.atendimentoWhatsApp.count({ where: { finalidade: "SECRETARIA" } })).toBe(1);
-    expect(await contar("AtendimentoTransferido")).toBe(2); // origem e novo, uma vez cada
+    expect(await contar("AtendimentoTransferido")).toBe(2);
     expect(await contar("AtendimentoEncerrado", a.id)).toBe(1);
     expect(await contar("NotaInterna")).toBe(1);
   });

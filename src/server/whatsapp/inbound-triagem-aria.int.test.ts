@@ -10,8 +10,6 @@ import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { truncarBanco } from "@/test/integracao";
 import { processarMensagemNormalizada, type InboundNormalizado } from "./inbound";
 
-// Gancho pós-commit da triagem da Aria: só quando a mensagem não ganhou atendimento e não é fromMe.
-
 beforeEach(async () => {
   await truncarBanco();
   agendarTriagemAria.mockReset();

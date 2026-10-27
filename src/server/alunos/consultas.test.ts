@@ -33,9 +33,8 @@ describe("escopoAlunos (visibilidade row-level, doc 07)", () => {
   });
 
   it("FAIL-CLOSED: usuário sem papel amplo nem professor não vê NADA (review PR #48)", () => {
-    // ex.: papéis revogados no banco com sessão ainda viva, ou papel fora do domínio (Vendedor)
     const impossivel = { id: { in: [] } };
-    expect(escopoAlunos(u("x"))).toEqual(impossivel); // papéis vazios (revogado)
+    expect(escopoAlunos(u("x"))).toEqual(impossivel);
     expect(escopoAlunos(u("x", Papel.VENDEDOR))).toEqual(impossivel);
   });
 });
@@ -81,14 +80,9 @@ describe("podeMovimentarAluno (visão somente leitura do professor, doc 10)", ()
   });
 });
 
-/**
- * Capacidade/vagas devem considerar SOMENTE alocações ativas. Alocações inativas
- * (aluno transferido/removido) permanecem no histórico mas não ocupam vaga.
- */
 describe("vagasTurma", () => {
   it("usa só a ocupação ativa (ignora histórico inativo)", () => {
-    // Turma capacidade 10: 3 ativas + 4 inativas no histórico → ocupação ativa = 3.
-    const ocupacaoAtiva = 3; // _count filtrado por { ativa: true }
+    const ocupacaoAtiva = 3;
     expect(vagasTurma(10, ocupacaoAtiva)).toBe(7);
   });
 
@@ -97,7 +91,6 @@ describe("vagasTurma", () => {
   });
 
   it("turma só com alocações inativas volta a ter todas as vagas", () => {
-    // Todas as alocações foram desativadas → ocupação ativa = 0.
     expect(vagasTurma(6, 0)).toBe(6);
   });
 

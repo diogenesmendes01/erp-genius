@@ -2,7 +2,6 @@ import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { BotaoIcone } from "./BotaoIcone";
-// createElement recebe children no terceiro argumento; a assinatura de props do React18 não o deduz.
 const html=(props:Omit<ComponentProps<typeof BotaoIcone>,"children">)=>renderToStaticMarkup(createElement(BotaoIcone,props as ComponentProps<typeof BotaoIcone>,"x"));
 it("controle acessível circular preserva atributos nativos e estado ativo", () => {
  const h=html({rotulo:"Filtros",ativo:true,tamanho:34,disabled:true,"aria-expanded":true});

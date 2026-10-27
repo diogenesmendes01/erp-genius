@@ -10,7 +10,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 type Props = { modo: "preparar" | "decidir" | "aplicar"; propostaId?: string; matriculaId?: string; versaoCondicoesId?: string; revisaoHash?: string };
 export function AdiantamentoFormulario(props: Props) {
  const router = useRouter();
- // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar confere a mesma operação.
  const acao = useAcaoCliente({ idempotente: true });
  const [concluido,setConcluido] = useState(false);
  const [temTentativa,setTemTentativa] = useState(false);
@@ -26,7 +25,6 @@ export function AdiantamentoFormulario(props: Props) {
   emEnvio.current = true;
   try {
    const entrada = { ...tentativa.current.entrada, chaveIdempotencia: tentativa.current.chave };
-   // O servidor diz se a recusa admite corrigir os dados (nova tentativa) ou se a tentativa fica preservada.
    const resposta: { podeRevisar?: boolean } = {};
    const d = await acao.executar<unknown>(async () => {
     const r = await (props.modo === "preparar" ? proporAdiantamentoAditivo(entrada) : props.modo === "decidir" ? decidirAdiantamentoAditivo(entrada) : aplicarAdiantamentoAditivo(entrada));

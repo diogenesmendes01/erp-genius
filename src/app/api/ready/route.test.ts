@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { GET, HEAD } from "./route";
 
-// Mock do Prisma client antes de importar o route
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     $queryRaw: vi.fn(),
@@ -10,15 +9,6 @@ vi.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 
-// Trava o contrato de readiness (/api/ready): usado pelo healthcheck do Docker/Coolify
-// (sem autenticação, valida conectividade com DB e Prisma). Mutações cobradas:
-// - Alterar status 200 → 503 quando DB funciona → deve falhar
-// - Remover a query SELECT 1 → deve falhar
-// - Remover HEAD exportado → deve falhar
-// - Devolver a mensagem do erro na resposta pública → deve falhar
-// - Não limpar o timer do timeout → deve falhar
-
-// Erro no formato do Prisma: a mensagem carrega host/porta do banco.
 const ERRO_BANCO = new Error("Can't reach database server at `db:5432`");
 
 describe("GET /api/ready", () => {
@@ -60,14 +50,13 @@ describe("GET /api/ready", () => {
 
     const body = await res.json();
     expect(body).toEqual({ ready: false });
-    // O detalhe vai para o log do servidor, não para a resposta pública.
     expect(console.error).toHaveBeenCalledWith(expect.any(String), ERRO_BANCO);
   });
 
   it("responde 503 em timeout (banco lento)", async () => {
     vi.useFakeTimers();
     vi.mocked(prisma.$queryRaw).mockImplementationOnce(
-      () => new Promise(() => {}) as never // nunca resolve
+      () => new Promise(() => {}) as never
     );
 
     const pendente = GET();

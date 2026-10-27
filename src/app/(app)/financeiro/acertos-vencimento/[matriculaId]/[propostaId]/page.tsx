@@ -31,15 +31,12 @@ export default async function Pagina({ params, searchParams }: {
  const r = await consultarVencimentosAditivo({ matriculaId, versaoCondicoesId: versao.id, pagina });
  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível" : r.erro}</p>;
  const d = r.dado;
- // Lote 3 do fuso pessoal: registro, aplicação e vigência são instantes — fuso pessoal; sem preferência, o da escola
- // (antes, UTC), com o fuso escrito. Vencimentos são datas civis gravadas: o dia no fuso em que o acerto foi preparado.
  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEscola);
  const data = (valor: string, fuso: string) => formatarDiaCivilGravado(valor, fuso);
  const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, fusoExibicao, fusoEscola); return `${exibicao.texto} (horário exibido em ${exibicao.fuso})`; };
  const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, fusoEscola);
  return <main className="space-y-5"><VoltarPara href="/financeiro" />
  <h1 className="text-2xl">Acerto do vencimento da primeira mensalidade</h1>
- {/* De quem é o acerto: aluno e matrícula pelo código, não o id da URL (docs/43 §6 item 7). */}
  {cabecalho && <IdentificacaoRegistro rotulo="Aluno e matrícula deste acerto" dados={{ aluno: cabecalho.aluno, alunoHref: `/alunos/${encodeURIComponent(cabecalho.alunoId)}`, matriculaCodigo: cabecalho.codigo, matriculaComplemento: cabecalho.produto }} />}
  <p>Versão contratual {d.versao}</p>
  <p>Vigência aprovada: {vigencia.texto} (horário exibido em {vigencia.fuso}; referência contratual preservada). A aplicação fica disponível a partir desse momento.</p>

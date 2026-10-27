@@ -14,23 +14,17 @@ import { lerAgendadasDoAtendimento, type AgendadaNoFio } from "@/server/inbox/ag
 
 const IdSchema = z.string().min(1);
 
-/** Agendadas do fio: DTO e capacidade atuais são calculados pelo leitor canônico. */
 export async function agendadasDoAtendimento(atendimentoId: string): Promise<AgendadaNoFio[]> {
   const u = await exigirSessao();
   const id = IdSchema.parse(atendimentoId);
   return lerAgendadasDoAtendimento(prisma, u.id, id);
 }
 
-/**
- * Pessoas para os diálogos do cabeçalho (Task 31). `atribuir`: quem atende o setor do atendimento; `convidar`: qualquer
- * pessoa ativa do Inbox. Só nome e id, só para quem tem a alçada da ação sobre um atendimento que enxerga; senão, vazio.
- */
 export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"):Promise<{id:string;nome:string}[]>{
   const u=await exigirSessao(),id=IdSchema.parse(atendimentoId);
   return(await contextoPessoas(u,id,para))?.pessoas??[];
 }
 const CargaIdsSchema=z.array(IdSchema).max(200);
-/** Carga informativa no mesmo setor; só as pessoas oferecidas pela policy atual, sem nova alçada D5. */
 export async function cargaDasPessoas(atendimentoId:string,usuarioIds:string[]):Promise<Record<string,number>>{
   const u=await exigirSessao(),id=IdSchema.parse(atendimentoId);
   const pedidos=[...new Set(CargaIdsSchema.parse(usuarioIds))];if(!pedidos.length)return{};
@@ -42,7 +36,6 @@ export async function cargaDasPessoas(atendimentoId:string,usuarioIds:string[]):
     finalidade:c.a.finalidade,encerradoEm:null,status:{not:"ENCERRADO"},responsavelId:{in:ids},
     responsavel:{is:{ativo:true,papeis:{hasSome:papeis}}},
   }});
-  // A resposta não usa o ator inicial como prova após as leituras; nenhuma sessão memoizada aqui.
   const fresco=await prisma.usuario.findUnique({where:{id:u.id},select:{id:true,nome:true,papeis:true,ativo:true}});
   if(!fresco?.ativo||apenasPortal(fresco))return{};
   const atual=await atendimentoVisivel(fresco,id);
@@ -52,7 +45,6 @@ export async function cargaDasPessoas(atendimentoId:string,usuarioIds:string[]):
   const autorizados=new Set(ids);
   return Object.fromEntries(validos.filter(p=>autorizados.has(p.id)).map(p=>[p.id,porPessoa.get(p.id)??0]));
 }
-/** Setor do atendimento de origem de uma transferência, só se o usuário também o enxerga (escopo); senão null. */
 export async function origemVisivelDaTransferencia(origemId: string): Promise<{ setor: Setor } | null> {
   const u = await exigirSessao();
   const o = await atendimentoVisivel(u, IdSchema.parse(origemId));
@@ -62,11 +54,6 @@ export async function origemVisivelDaTransferencia(origemId: string): Promise<{ 
 export interface ConviteAtivo { id: string; nome: string; fim: string; podeEnviar: boolean }
 export interface AgendamentoAtivo { id: string; texto: string; agendadaPara: string }
 
-/**
- * Convites ativos e mensagens agendadas pendentes do atendimento, só o que a pessoa pode desfazer (Task 31):
- * convite — concedente, gerente do setor ou administrador (a mesma regra de `revogarParticipante`); agendamento —
- * o autor ou o administrador (a mesma de `cancelarMensagemAgendada`). Sem acesso ao atendimento, listas vazias.
- */
 export async function listarConvitesEAgendamentos(atendimentoId: string): Promise<{ convites: ConviteAtivo[]; agendamentos: AgendamentoAtivo[] }> {
   const u = await exigirSessao();
   const id = IdSchema.parse(atendimentoId);
@@ -90,7 +77,6 @@ export async function listarConvitesEAgendamentos(atendimentoId: string): Promis
     agendamentos: agendadas.map((m) => ({ id: m.id, texto: m.corpoRenderizado, agendadaPara: m.agendadaPara!.toISOString() })),
   };
 }
-/** Só metadado booleano de um atendimento visível em que o ator pode transferir; nenhum payload exposto. */
 export async function temResumoDaAria(atendimentoId: string): Promise<boolean> {
   const u = await exigirSessao();
   const id = IdSchema.parse(atendimentoId);

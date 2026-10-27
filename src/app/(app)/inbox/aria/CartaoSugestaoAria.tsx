@@ -12,7 +12,6 @@ import { visualSugestao } from "./sugestao-visual";
 
 type Props={atendimentoId:string;s:SugestaoAriaThread;usuarioId:string;fuso:string|null;aoDecidir():void;bloqueado?:boolean};
 const ICONES={enviar:IconSend,agendar:IconClock,etapa:IconArrowRight,tarefa:IconListCheck,tag:IconTag,campo:IconForms,perdido:IconX,nota:IconNote,condicao:IconPercentage};
-/** A identidade da ação monta uma sessão própria: um ACK antigo não afeta outro cartão. */
 export function CartaoSugestaoAria(props:Props){return <SessaoCartao key={props.atendimentoId+":"+props.s.id} {...props}/>;}
 function SessaoCartao({atendimentoId,s,usuarioId,fuso,aoDecidir,bloqueado=false}:Props){
  const tituloId=useId(),acao=useAcaoCliente({idempotente:true}),ciclo=useRef({ativa:false,chave:""});
@@ -24,7 +23,6 @@ function SessaoCartao({atendimentoId,s,usuarioId,fuso,aoDecidir,bloqueado=false}
  const resultado=useRef<HTMLParagraphElement|null>(null),gatilhoDesfazer=useRef<HTMLButtonElement|null>(null),focoDesfazer=useRef<Element|null>(null);
  const limpar=acao.limpar;
  useLayoutEffect(()=>{const atual={ativa:!bloqueado,chave};ciclo.current=atual;limpar();if(bloqueado){origem.current=null;retorno.current=null;focoDesfazer.current=null;}return()=>{atual.ativa=false;};},[bloqueado,chave,limpar]);
- // Ref estável: o detach precede a remoção do grupo, inclusive em decisão recebida por SSE sem nosso ACK.
  const ligarGrupo=useCallback((no:HTMLDivElement|null)=>{
   const anterior=grupo.current;
   if(!no&&anterior){
@@ -40,12 +38,10 @@ function SessaoCartao({atendimentoId,s,usuarioId,fuso,aoDecidir,bloqueado=false}
   origem.current=null;
   const alvo=resultado.current;if(!alvo?.isConnected)return;
   const documento=alvo.ownerDocument,ativo=documento.activeElement;
-  // Quem saiu para outro controle conserva seu foco; não há foco genérico a cada recarga.
   if(ativo!==pedido&&ativo!==documento.body&&ativo?.isConnected)return;
   if(alvo.closest('[hidden],[inert],[aria-hidden="true"]'))return;
   alvo.focus({preventScroll:true});
  },[v.pendente]);
- // A confirmação libera o fundo no cleanup passivo; só depois o resultado pode receber foco.
  useEffect(()=>{
   if(s.status!=="DESFEITA"||bloqueado||!focoDesfazer.current)return;
   const pedido=focoDesfazer.current;focoDesfazer.current=null;
@@ -56,7 +52,6 @@ function SessaoCartao({atendimentoId,s,usuarioId,fuso,aoDecidir,bloqueado=false}
  },[s.status,bloqueado]);
  async function decidir(aprovar:boolean){
   const atual=ciclo.current;if(bloqueado||!podeDecidir||!atual.ativa||!v.pendente)return;
-  // Botao ocupado pode perder foco antes do ACK; guardar a origem enquanto ainda está habilitado.
   const controles=grupo.current,ativo=controles?.ownerDocument.activeElement;
   origem.current=ativo&&controles?.contains(ativo)?ativo:null;
   const d=await acao.executar(async()=>{try{const r=await(aprovar?aprovarAcaoAria(atendimentoId,s.id):rejeitarAcaoAria(atendimentoId,s.id));return atual.ativa?r:{ok:true as const};}catch(e){if(!atual.ativa)return {ok:true as const};throw e;}});
@@ -88,7 +83,6 @@ function SessaoCartao({atendimentoId,s,usuarioId,fuso,aoDecidir,bloqueado=false}
     aoCancelar={()=>setConfirmacao(null)}>
     A Aria tentará reverter esta ação. Alterações posteriores de uma pessoa e mensagens já enviadas serão preservadas.
    </ConfirmarAcao>}
-   {/* Região permanece montada vazia antes da decisão; status anuncia mudança de texto real. */}
    <p ref={resultado} role="status" tabIndex={-1} className={v.decidido?"text-xs font-semibold "+(v.decidido.tom==="brand"?"text-brand-700":"text-gray-600"):"sr-only"}>{v.decidido?.texto}</p>
    <FeedbackAcao erro={acao.erro}/>
   </div>

@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// D11: mudar o dia X da previsão de pagamento grava o evento auditado `{ de, para }`, na alçada de configurar
-// comissão; repetir o mesmo dia não grava nada; fora de 1 a 28 é recusado (também no banco, por CHECK).
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

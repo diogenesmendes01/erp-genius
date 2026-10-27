@@ -15,8 +15,6 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
   const [erro, setErro] = useState("");
   const [ocupado, iniciar] = useTransition();
   const tentativa = useRef<{ assinatura: string; chave: string } | null>(null);
-  // Aviso ao sair (docs/43 §6 item 3; docs/42 L1059): preencher 20 períodos e sair perdia tudo em silêncio.
-  // Sujo = os períodos diferem dos iniciais (por conteúdo: o refresh traz outro array igual) ou há motivo.
   const [salvo, setSalvo] = useState(false);
   useAvisoAoSair(!salvo && (motivo.trim() !== "" || JSON.stringify(periodos) !== JSON.stringify(periodosIniciais)));
   function alterar(id: string, valores: Partial<Periodo>) { setPeriodos((anteriores) => anteriores.map((p) => p.id === id ? { ...p, ...valores } : p)); }

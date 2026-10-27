@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const HABILIDADES = ["FALA", "COMPREENSAO_ORAL", "LEITURA", "ESCRITA"] as const;
 type Habilidade = typeof HABILIDADES[number];
-// Decimais textuais preservam o valor informado, sem conversão por ponto flutuante.
 const decimal = z.string().regex(/^-?\d+(\.\d+)?$/).max(100);
 const habilidade = z.enum(HABILIDADES);
 const esquema = z.object({
@@ -51,11 +50,6 @@ function unicos(valores: string[]) {
   if (new Set(valores).size !== valores.length) throw new Error("Identificadores duplicados na regra de avaliação.");
 }
 
-/** Núcleo interno puro: o chamador deve carregar a versão e as notas do contexto autorizado.
- * Recuperações recebidas devem pertencer a planos aprovados e ser ordenadas pelo
- * histórico persistido. IDs declarados aqui não comprovam autorização.
- * Não oficializa notas, fecha resultado, calcula frequência ou autoriza progressão.
- */
 export function calcularNotasNivel(entrada: unknown) {
   const dados = esquema.parse(entrada);
   const minimo = numero(dados.escala.minimo);

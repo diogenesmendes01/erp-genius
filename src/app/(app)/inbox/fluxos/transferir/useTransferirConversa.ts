@@ -8,7 +8,6 @@ import { SETOR_ATENDIMENTO_LABEL } from "@/lib/labels";
 import type { OpcoesTransferir } from "./opcoes-transferir";
 export interface ComandoTransferirInbox extends EntradaConfirmacaoTransferir { atendimentoId: string; chaveIdempotencia: string }
 interface Props { atendimentoId: string; identidade: string; opcoes: OpcoesTransferir; executar(comando: ComandoTransferirInbox): Promise<Resultado>; aoConcluir(mensagem: string): void }
-/** Apresentação imutável e token imperativo separados; capacidade restaurada exige nova abertura. */
 export function useTransferirConversa({ atendimentoId, identidade, opcoes, executar, aoConcluir }: Props) {
   const ancora = useRef<HTMLButtonElement | null>(null);
   const gatilhoRef = useCallback((node: HTMLButtonElement | null) => { ancora.current = node; }, []);

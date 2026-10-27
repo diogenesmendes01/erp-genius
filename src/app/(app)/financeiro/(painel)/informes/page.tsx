@@ -10,10 +10,6 @@ import { contextoDaAba } from "../../contexto";
 
 const ROTA = "/financeiro/informes";
 
-// Aba "informes" do /financeiro (E8: uma rota por aba). Guard da própria aba ANTES das consultas — o
-// layout só decide a barra; uma rota pedida direto por quem não enxerga a aba não consulta nada.
-// Item 9 (docs/43 §6): os informes a conferir são uma fila de trabalho — lida por cursor nos dois sentidos
-// (`depois`/`antes`), em trechos, em vez de todos de uma vez. O número da aba vem de um count no layout.
 export default async function InformesFinanceiroPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const ctx = await contextoDaAba("informes");
   if (!ctx) return <AcessoNegado recurso="esta seção do financeiro" />;

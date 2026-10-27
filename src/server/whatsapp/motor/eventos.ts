@@ -16,7 +16,6 @@ const PessoaMotorSchema = z.object({
   nomePerfil: z.string().nullish(),
 });
 
-/** `dados` de `mensagem.recebida` (MODO-SERVICO.md §Eventos). */
 export const DadosMensagemSchema = z.object({
   mensagemId: z.string().min(1),
   providerMessageId: z.string().min(1),
@@ -37,7 +36,6 @@ export const DadosMensagemSchema = z.object({
       gif: z.boolean().nullish(),
     })
     .nullish(),
-  /** `mensagem.enviada`: quem originou o eco (`erp` = envio pelo motor; `celular` = app do telefone). */
   origem: z.enum(["erp", "celular"]).optional(),
   clientMessageId: z.string().nullish(),
   citacaoMensagemId: z.string().nullish(),

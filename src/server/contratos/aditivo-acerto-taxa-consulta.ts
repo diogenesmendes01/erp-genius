@@ -7,10 +7,6 @@ import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-f
 import { calcularCreditoAcertoTaxa } from "./aditivo-acerto-taxa-calculo";
 import { ConsultarAlvosAcertoTaxaAditivoSchema } from "./aditivo-acerto-taxa-schema";
 
-/**
- * Prévia somente de leitura. Cada linha continua exigindo escolha explícita da
- * cobrança existente: esta consulta nunca seleciona uma "primeira futura".
- */
 export async function consultarAlvosAcertoTaxaAditivo(input: unknown) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO, Papel.ADMINISTRADOR);

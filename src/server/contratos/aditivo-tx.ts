@@ -14,13 +14,9 @@ async function conferirAtor(tx: Prisma.TransactionClient, id: string, decidir = 
   await conferirAutor(tx, id, decidir);
 }
 
-/** Serviços internos. Identidade vem da sessão; aprovação administrativa não
- * substitui alçadas específicas, assinaturas, conferência ou aplicação. */
 export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = PrepararAditivoContratualSchema.parse(entrada);
   recusarAditivoDeRegime(d.alteracoes);
-  // Sem decisão do dono sobre o ambiente de assinatura do aditivo sobre contrato legado, ele não seria formalizado:
-  // nada é preparado sobre a origem histórica (também não por replay de chave).
   if (d.origemHistoricaId) throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await conferirAtor(tx, autorId);

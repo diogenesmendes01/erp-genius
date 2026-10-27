@@ -69,8 +69,6 @@ it("mantém o preparo de gestão para publicação legada sem carregar diário",
   expect(m.fixar).not.toHaveBeenCalled();
 });
 
-// Revisão R1 do #208 (C3): o preparo roda em SERIALIZABLE com o lock do calendário; o
-// perdedor concorrente recebe 40001/P2034 e deve ser repetido até cair no replay da chave.
 const erroPrisma = (code: string, meta?: Record<string, unknown>) =>
   new Prisma.PrismaClientKnownRequestError("falha", { code, clientVersion: "5.22.0", meta });
 
@@ -81,7 +79,6 @@ it("repete o preparo após P2034 e devolve o replay da chave, sem fixar o Drive 
   m.fixar.mockResolvedValue({ fileId: "arquivo", driveId: "drive", revisionId: "rev-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
   const repetida = { ...proposta, alvo: "PUBLICACAO_AULA", publicacaoAulaId: dadosPublicacao.alvoId, materialReposicaoId: null,
     arquivoOficialId: dadosPublicacao.arquivoOficialId, motivo: dadosPublicacao.motivo };
-  // Pré-conferência sem proposta; a concorrente vence e grava; a repetição a encontra.
   m.proposta.mockResolvedValueOnce(null).mockResolvedValueOnce(repetida);
   m.transacao
     .mockImplementationOnce(async (fn: (tx: object) => unknown) => fn(m.tx))
@@ -115,14 +112,11 @@ it("repete o preparo após 40001 (P2010) e recalcula a versão esperada com o es
   expect(criar.mock.calls[0][0]).toMatchObject({ data: { versaoEsperada: 1, chaveIdempotencia: dados.chaveIdempotencia } });
 });
 
-// Revisão R1 do #209 (C1): a decisão concorrente perdedora recebe 40001/P2034. A nova
-// tentativa enxerga a decisão já confirmada e devolve o ErroRegra claro, não "Erro inesperado".
 it.each([
   ["P2034", erroPrisma("P2034")],
   ["40001 (P2010)", erroPrisma("P2010", { code: "40001" })],
 ])("repete a decisão após %s e devolve a mensagem de proposta indisponível", async (_nome, conflito) => {
   m.consultar.mockResolvedValue(undefined);
-  // Preflight vê a proposta aberta; a repetição a encontra já decidida pela concorrente.
   m.proposta.mockResolvedValueOnce(proposta).mockResolvedValueOnce({ ...proposta, decisao: { id: "decisao-concorrente" } });
   m.transacao
     .mockImplementationOnce(async (fn: (tx: object) => unknown) => fn(m.tx))

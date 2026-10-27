@@ -7,7 +7,6 @@ import { whereAtendimentoEmSql } from "./where-sql";
 export interface ContextoFiltroSql { usuarioId:string; agora:Date; escopo:Prisma.AtendimentoWhatsAppWhereInput; ariaAtiva?:boolean }
 export const CONDICAO_FILA:Prisma.AtendimentoWhatsAppWhereInput=Object.freeze({responsavelId:null,encerradoEm:null});
 export const condicaoPrazoEstourado=(agora:Date):Prisma.AtendimentoWhatsAppWhereInput=>({prazoRespostaEm:{lt:agora},primeiraRespostaEm:null,encerradoEm:null});
-/** Somente parte expressável em WhereInput. Aria e leitura pessoal são composições SQL separadas. */
 export function condicoesWhereDosFiltros(usuarioId:string,f:FiltrosInbox,agora:Date):Prisma.AtendimentoWhatsAppWhereInput[] {
   const c:Prisma.AtendimentoWhatsAppWhereInput[]=[];
   if(f.setor)c.push({finalidade:f.setor});
@@ -30,7 +29,6 @@ export function naoLidaPessoalEmSql(usuarioId:string):Prisma.Sql {
         AND EXISTS (SELECT 1 FROM "MensagemWhatsApp" m
           WHERE m."atendimentoId" = a."id" AND m."direcao" = 'ENTRADA' AND m."criadoEm" > p."lidaAte")))`;
 }
-/** Sempre somar o escopo. Nenhum Prisma.Sql é convertido por cast em WhereInput. */
 export function filtrosEmSql(ctx:ContextoFiltroSql,f:FiltrosInbox):Prisma.Sql {
   const partes=[whereAtendimentoEmSql({AND:[ctx.escopo,...condicoesWhereDosFiltros(ctx.usuarioId,f,ctx.agora)]})];
   if(f.naoLidas)partes.push(naoLidaPessoalEmSql(ctx.usuarioId));

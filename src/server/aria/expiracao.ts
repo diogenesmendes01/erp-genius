@@ -7,11 +7,6 @@ import { executarHandoff } from "./turno/handoff";
 import { situacaoAria } from "./estado";
 import { versaoPublicada } from "./versoes";
 
-// Expiração das sugestões da Aria (Task 25): SUGERIDA com `expiraEm <= agora` vira EXPIRADA. Se a
-// versão publicada manda HANDOFF, o atendimento é passado a uma pessoa UMA vez (a primeira ação
-// expirada pausa a Aria; as seguintes do mesmo atendimento só expiram). Idempotente: o FOR UPDATE
-// e a reconferência do status impedem expirar duas vezes.
-
 type Tx = Prisma.TransactionClient;
 
 const LOTE = 200;
@@ -48,7 +43,6 @@ async function expirarUma(tx: Tx, id: string, agora: Date, comHandoff: boolean):
 
 export async function expirarSugestoesAria(agora: Date = new Date()): Promise<{ expiradas: number; handoffs: number }> {
   const total = { expiradas: 0, handoffs: 0 };
-  // Handoff só com a Aria ATIVA e não pausada globalmente: DESLIGADA, SHADOW (que não age de verdade) e pausada só expiram a sugestão.
   const { estado, pausada, versao } = await situacaoAria(agora);
   const comHandoff = estado === "ATIVA" && !pausada && versao?.config.confianca.acaoExpiracao === "HANDOFF";
   const vencidas = await prisma.acaoAgenteIA.findMany({

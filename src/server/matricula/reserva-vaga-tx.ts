@@ -7,9 +7,6 @@ import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
 const Entrada = z.object({ matriculaId: z.string().min(1), turmaId: z.string().min(1), autorId: z.string().min(1),
   motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
 
-/** Primitiva interna: chamador deve autorizar o contrato. Prazo vem da configuração operacional.
- * Não é Server Action. Integração comercial e ciclo de expiração/liberação ainda têm fluxo próprio.
- */
 export async function reservarVagaMatriculaTx(tx: Prisma.TransactionClient, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input), entradaHash = createHash("sha256").update(JSON.stringify(d)).digest("hex");
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

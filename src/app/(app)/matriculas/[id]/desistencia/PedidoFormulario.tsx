@@ -11,8 +11,6 @@ export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: str
   const router = useRouter();
   const [chave] = useState(() => crypto.randomUUID());
   const [registrado, setRegistrado] = useState(false);
-  // Chave de idempotência estável pela vida do formulário: na falha de transporte, reenviar sem
-  // alterar os dados confere a mesma operação (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();

@@ -4,8 +4,6 @@ import { FormaPagamento, Papel, TipoCobranca } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// A fronteira de sessão é a única simulação: as ações continuam relendo o
-// usuário ativo e seus papéis no PostgreSQL durante a transação real.
 vi.mock("@/server/_shared", async (importOriginal) => {
   const atual = await importOriginal<typeof import("@/server/_shared")>();
   const sessao = async () => {

@@ -8,11 +8,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 export default async function HomePage() {
-  // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
   const usuario = await exigirSessaoPagina();
-
-  // Papel ALUNO (só-portal) nem chega aqui: exigirSessaoPagina redireciona para /portal
-  // no núcleo da sessão (review PR #60 — barreira fail-closed única, não por tela).
 
   const ehGerente =
     usuario.papeis.includes(Papel.ADMINISTRADOR) ||
@@ -33,7 +29,6 @@ export default async function HomePage() {
     />;
   }
 
-  // Home genérica para os demais papéis (Vendedor, Secretaria, Financeiro, Pedagógico).
   const itens = navParaPapeis(usuario.papeis).filter((i) => i.href !== "/home");
   return (
     <div>

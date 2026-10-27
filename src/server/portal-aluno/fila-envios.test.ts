@@ -71,7 +71,6 @@ describe("consultarFilaEnviosPortalAluno", () => {
     expect(inicio.temAnterior).toBe(false);
     expect(new Set([...p1.itens, ...p2.itens, ...p3.itens].map((i) => i.id)).size).toBe(45);
 
-    // Conciliar r05 (que sai da fila) depois de ler a primeira página não faz a próxima pular r20.
     fila.splice(fila.findIndex((l) => l.id === "r05"), 1);
     expect((await ler({ depois: p1.proxima! })).itens.map((i) => i.id)).toEqual(p2.itens.map((i) => i.id));
   });
@@ -83,7 +82,6 @@ describe("consultarFilaEnviosPortalAluno", () => {
     await consultarFilaEnviosPortalAluno({ situacao: "falhas", depois: "r19" });
     expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: { situacao: "FALHOU", id: { gt: "r19" } }, take: 21 }));
     await consultarFilaEnviosPortalAluno({ situacao: "todos", antes: "r40" });
-    // Com a volta vazia, lerPaginaDaFila relê o primeiro trecho (src/lib/cursor-fila.ts); a leitura "antes" é a penúltima.
     expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { lt: "r40" } }, orderBy: { id: "desc" } }));
     await consultarFilaEnviosPortalAluno();
     expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: {} }));
@@ -101,7 +99,6 @@ describe("consultarFilaEnviosPortalAluno", () => {
     expect(p1.itens).toHaveLength(20);
     expect(p1.itens.every((i) => i.situacao === "INCERTO")).toBe(true);
     expect(p1.temProxima).toBe(false);
-    // 20 incertos cabem num trecho; um a mais abre a Próxima, e a volta traz o mesmo trecho.
     todas.push({ ...linha("r99"), situacao: "INCERTO" });
     const q1 = await ler(), q2 = await ler({ depois: q1.proxima! });
     expect(q2.itens.map((i) => i.id)).toEqual(["r99"]);

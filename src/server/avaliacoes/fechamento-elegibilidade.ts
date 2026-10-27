@@ -23,7 +23,6 @@ const pendenciasSegundaChamada = z.object({
 }).strict();
 
 const entradaSchema = z.object({
-  /** Resultado vindo de `calcularNotasNivel`; este módulo não recalcula pesos. */
   notas: contexto.extend({
     completa: z.boolean(), recuperacoesPendentes: z.boolean(), geral: fracao.nullable(),
     atendeGeral: z.boolean().nullable(), atendeRequisitosNotas: z.boolean().nullable(),
@@ -37,7 +36,6 @@ const entradaSchema = z.object({
     pendenciasHistoricas: z.number().int().min(0),
     pendenciasChamada: z.number().int().min(0),
   }).strict(),
-  /** Q131: só uma decisão independente, ligada ao mesmo snapshot, pode suprir frequência insuficiente. */
   excecaoFrequencia: contexto.extend({
     fonteHash: z.string().regex(/^[a-f0-9]{64}$/), aprovada: z.boolean(), proponenteId: id, decisorId: id,
   }).strict().optional(),
@@ -66,11 +64,6 @@ export type PendenciaFechamento =
 
 export type InsuficienciaFechamento = "MINIMO_POR_HABILIDADE" | "MINIMO_GERAL" | "FREQUENCIA_MINIMA";
 
-/**
- * Classifica um snapshot acadêmico já autorizado. Pendência impede criar ou
- * confirmar uma versão de fechamento; insuficiência permite confirmar o
- * resultado final insuficiente, mas nunca torna a progressão elegível.
- */
 export function avaliarElegibilidadeFechamento(entrada: EntradaElegibilidadeFechamento) {
   const dados = entradaSchema.parse(entrada);
   const mesmoContexto = (fonte: z.infer<typeof contexto>) =>

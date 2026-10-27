@@ -18,30 +18,21 @@ export type ReposicaoPortalAluno = {
 
 export type DetalheEntregaGravacaoPortalAluno = {
   disponivel: boolean;
-  /** Prazo da primeira versão, mantido para o histórico da entrega. */
   prazoAte: string | null;
-  /** Prazo aplicável à ação que o aluno pode executar agora. */
   prazoEtapaAte: string | null;
   etapaEntrega: "PRIMEIRA_ENTREGA" | "CORRECAO";
   pausadaDesde: string | null;
   liberacaoEspecifica: boolean;
-  /** Fonte efetiva da conclusão, nunca inferida das demais versões entregues. */
   entregaValidada: { entregaId: string; versao: number; validadaEm: string } | null;
   entregas: Array<{ id: string; versao: number; resumo: string; atividade: string; entregueEm: string }>;
   correcoes: Array<{ id: string; entregaId: string; comentario: string; situacao: string; prazoAte: string; respondidaEm: string | null }>;
-  /** Relatos feitos pela própria conta, sem expor relatos de outros alunos. */
   relatosIndisponibilidade: Array<{ id: string; descricao: string; situacao: string; criadoEm: string; confirmadoEm: string | null }>;
-  /** Interrupções confirmadas do material desta reposição, que explicam o prazo. */
   pausasMaterial: Array<{ id: string; inicio: string; fim: string | null }>;
 };
 
 type PausaMaterial = { inicio: Date; fim: Date | null };
 type CorrecaoComPrazo = { prazoAte: Date; criadaEm: Date; prorrogacoes: ProrrogacaoPrazoEtapa[] };
 
-/**
- * A resposta a uma correção é uma etapa autônoma. Pausas anteriores à sua
- * criação não podem ampliar (nem encerrar) o prazo publicado para ela.
- */
 export function prazoEtapaEntregaPortalAluno(
   prazoPrimeiraEntrega: Date | null,
   pausas: PausaMaterial[],
@@ -102,11 +93,6 @@ export async function listarReposicoesDoPortalAluno() {
   `);
 }
 
-/**
- * Escopo row-level do portal. Não recebe alunoId do navegador e não infere o
- * aluno de `Usuario`: toda leitura começa na sessão opaca do portal e cruza a
- * matrícula que é dona da reposição.
- */
 export async function exigirReposicaoDoPortalAluno(reposicaoId: string, sessao?: SessaoPortalAluno): Promise<ReposicaoPortalAluno> {
   if (!reposicaoId) throw new ErroRegra("Reposição não informada.");
   const identidade = sessao ?? await exigirSessaoPortalAluno();
@@ -146,8 +132,6 @@ export async function exigirReposicaoDoPortalAluno(reposicaoId: string, sessao?:
   return reposicao;
 }
 
-/** Detalhe estritamente da própria matrícula. Não devolve identificador de
- * Drive ou URL: a futura reprodução autenticada receberá só esta autorização. */
 export async function consultarEntregaGravacaoPortalAluno(reposicaoId: string, sessao?: SessaoPortalAluno): Promise<DetalheEntregaGravacaoPortalAluno | null> {
   const identidade = sessao ?? await exigirSessaoPortalAluno();
   const reposicao = await exigirReposicaoDoPortalAluno(reposicaoId, identidade);
@@ -252,11 +236,6 @@ export async function consultarEntregaGravacaoPortalAluno(reposicaoId: string, s
   };
 }
 
-/**
- * Q36: pausa/encerramento não apaga leitura. O escritor deve informar a
- * liberação específica e o prazo vigente, pois estas fontes serão adicionadas
- * com a etapa de entrega; sem elas a resposta é pendência, não autorização.
- */
 export function estadoEntregaPortalAluno(
   reposicao: ReposicaoPortalAluno,
   contexto: { prazoAberto: boolean; liberacaoEspecifica: boolean },

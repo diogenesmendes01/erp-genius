@@ -6,7 +6,6 @@ export type CampoMigracao = typeof CAMPOS_MIGRACAO[number];
 export type MapeamentoMigracao = Partial<Record<CampoMigracao, string>>;
 
 function celula(texto: string): CelulaPlanilha { const limpo = texto.trim(); return limpo ? limpo : null; }
-/** CSV RFC4180: aspas, vírgulas e quebras de linha dentro da célula. */
 export function detectarDelimitadorCsv(conteudo: string) { const cabecalho = conteudo.split(/\r?\n/, 1)[0] ?? ""; return (cabecalho.match(/;/g)?.length ?? 0) > (cabecalho.match(/,/g)?.length ?? 0) ? ";" : ","; }
 export function lerCsvPreparacao(conteudo: string, nome = "CSV", delimitador = detectarDelimitadorCsv(conteudo)): AbaPlanilha {
   const registros: string[][] = [[]]; let valor = "", aspas = false;
@@ -30,7 +29,6 @@ export function linhasMapeadasPreparacao(aba: AbaPlanilha, mapeamento: Mapeament
   return aba.linhas.map((linha) => ({ linhaOrigem: `${aba.nome}!${linha.numero}`, tipoEntrada,
     aluno: bloco(linha, "aluno", ["id", "nome", "email", "documento", "pais", "fuso"]), turma: bloco(linha, "turma", ["id", "codigo", "nome"]), matricula: bloco(linha, "matricula", ["id", "situacao", "inicio", "fim", "produtoOrigem", "moeda", "pais"]), alocacao: bloco(linha, "alocacao", ["inicio", "fim"]), financeiro: bloco(linha, "financeiro", ["id", "tipo", "valor", "moeda", "situacao"]),
     consentimentoOrigem: valor(linha, "consentimentoOrigem"), presencaOrigem: valor(linha, "presencaOrigem"),
-    // Toda coluna, inclusive não mapeada e cabeçalho duplicado, continua na fotografia.
     dadosAdicionais: Object.fromEntries(aba.cabecalhos.map((cabecalho) => [cabecalho.rotulo, linha.valores[cabecalho.id] ?? null])),
   }));
 }

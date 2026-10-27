@@ -2,9 +2,6 @@ import { describe, expect, it } from "vitest";
 import { POLITICAS_PADRAO, permitidos } from "./executor";
 import { valoresNaoAutorizados } from "./valores";
 
-// C4 da R1 do #238: a guarda de valores com respostas liberadas fica sob o `npm test` (o CI não roda *.int.test.ts).
-// C1 (decisão provisória): das respostas liberadas só os valores monetários entram; percentual e parcela
-// continuam vindo só da política da Aria.
 describe("permitidos com respostas rápidas liberadas", () => {
   const ctx = (...corpos: string[]) => ({ precos: [], respostasRapidas: corpos.map((corpo, i) => ({ atalho: `/r${i}`, corpo })) });
   const bloqueados = (texto: string, ...corpos: string[]) => valoresNaoAutorizados(texto, permitidos(ctx(...corpos), POLITICAS_PADRAO));

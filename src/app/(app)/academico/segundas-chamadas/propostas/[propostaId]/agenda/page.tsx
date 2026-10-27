@@ -33,8 +33,6 @@ export default async function AgendaInicial({ params, searchParams }: {
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   const fusoInicial = fusoInicialDeEntrada(fusoInstitucional, preferencia.ok ? preferencia.dado?.fusoExibicao : null);
-  // O horário proposto é publicado no fuso da agenda (fusoOrigem) e mantém esse fuso; o registro da proposta é
-  // instante: fuso pessoal de exibição (sem preferência, o da agenda), com o fuso dito.
   const registro = (valor: string, fusoOrigem: string) => { const e = formatarInstanteExibicao(valor, preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoOrigem); return `${e.texto} (${e.fuso})`; };
   return <section className="space-y-4">
     <Link className="underline" href="/academico">Acadêmico</Link>

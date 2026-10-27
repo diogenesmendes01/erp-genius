@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (1º lote): "Nova oportunidade" (funil) chama `criarLead` com chave de idempotência. Um reenvio
-// com a mesma chave não cria segunda oportunidade, Pessoa, Empresa nem Evento: devolve o mesmo id.
-
-// Sessão: só `exigirSessao` é trocada, e os papéis continuam lidos do banco (`carregarUsuarioFresco`).
-// O mock de `@/lib/auth` usado nas outras suítes não serve aqui: dois `import("@/lib/auth")` simultâneos
-// (o teste de envio concorrente) escapam do vi.mock no Vitest e carregam o NextAuth real.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

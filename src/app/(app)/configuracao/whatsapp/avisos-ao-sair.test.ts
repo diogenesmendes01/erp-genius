@@ -2,9 +2,6 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfiguracaoAvisosAgendaConfig, NumeroConfig, PoliticaConfig } from "@/server/whatsapp/consultas";
 
-// C32 da #170 (docs/42 L2519): números, setores, política da régua e avisos de agenda passam a marcar
-// "Alterações não salvas" e a avisar ao sair enquanto houver mudança. O gancho é observado pelo valor de
-// `sujo` a cada render (o beforeunload em si está em src/lib/aviso-ao-sair.test.ts). Sem DOM.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   aviso: vi.fn(), refresh: vi.fn(),
@@ -56,7 +53,7 @@ describe("AvisosAgendaPainel", () => {
     const t = tela();
     expect(sujo()).toBe(true);
     expect(marca(t)).toEqual([true]);
-    tela({ ...config, numeroAvisosAgendaId: "n1" }); // depois do salvar + router.refresh
+    tela({ ...config, numeroAvisosAgendaId: "n1" });
     expect(sujo()).toBe(false);
   });
 });

@@ -26,7 +26,6 @@ import { expirarSugestoesAria } from "../aria/expiracao";
 import { aprovarSugestaoNoInbox } from "../aria/decisao-inbox";
 import { criarTarefa } from "../crm/tarefas";
 import { carregarAriaDoAtendimento } from "./consultas-inbox";
-// RED caracterizou o legado; GREEN usa a nova fronteira pública.
 const assumir = assumirConversaDaAria;
 let c: Awaited<ReturnType<typeof cenario>>;
 async function cenario() {
@@ -75,7 +74,6 @@ function sinal() { let resolve!:()=>void;const promise=new Promise<void>(r=>reso
 let observar:((query:string)=>Promise<void>)|null=null;
 let depoisCancelamento:(()=>Promise<void>)|null=null;
 function consulta(args:unknown):string {const a=args as {query?:string;text?:string;sql?:string}|unknown[];const primeiro=Array.isArray(a)?a[0] as {text?:string;sql?:string;join?:(separador:string)=>string}:null;return (Array.isArray(a)?(primeiro?.text??primeiro?.sql??primeiro?.join?.("$1")??""):(a?.query??a?.text??a?.sql??"")).replace(/\s+/g," ").trim();}
-// Só observação DEPOIS de next: SQL, retorno, ACL, executor e transações de produção permanecem reais.
 prisma.$use(async(params,next)=>{const r=await next(params);if(params.model==="IntencaoMensagem"&&params.action==="updateMany")await depoisCancelamento?.();if(params.action==="queryRaw")await observar?.(consulta(params.args));return r;});
 const Q_ACOES='SELECT id FROM "AcaoAgenteIA" WHERE "atendimentoId"=$1 AND status=\'SUGERIDA\' ORDER BY id ASC FOR UPDATE';
 const Q_PAI='SELECT id FROM "AtendimentoWhatsApp" WHERE id=$1 FOR NO KEY UPDATE';

@@ -15,20 +15,11 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = botaoClasses();
 
-// Formas em que o comprovante é essencial pro fluxo (doc 09 §Registrar pagamento:
-// "Essencial pro fluxo de transferência — anexa a prova"). GreenPay também gera prova.
 export const FORMAS_EXIGEM_COMPROVANTE: FormaPagamento[] = [
   FormaPagamento.TRANSFERENCIA,
   FormaPagamento.GREENPAY,
 ];
 
-/**
- * Modal único de registrar pagamento (baixa manual), compartilhado entre o painel
- * financeiro geral e a ficha financeira do aluno. Sempre permite anexar comprovante
- * (PDF/JPG/PNG) e exige a prova quando a forma de pagamento for transferência/GreenPay.
- * O erro fica DENTRO do modal, junto dos botões — antes ia para a tela de trás, escondido
- * pelo overlay, e o operador via o botão voltar ao normal sem saber que a baixa não entrou.
- */
 export function PagamentoModal({
   cobrancaId,
   somenteInformar = false,
@@ -45,18 +36,13 @@ export function PagamentoModal({
   alunoNome?: string;
   moeda: string;
   valorEsperado: number;
-  /** Total já recebido na cobrança (parciais anteriores). Default 0. */
   jaRecebido?: number;
-  /** Saldo devedor restante; base da baixa. Default = valorEsperado (sem parciais). */
   saldoRestante?: number;
   onClose: () => void;
   onDone: () => void;
 }) {
-  // A baixa parte do saldo restante (issue #10): pagar o que falta, não o negociado cheio.
   const saldo = saldoRestante ?? valorEsperado;
   const [chaveIdempotencia] = useState(() => crypto.randomUUID());
-  // formatarMoedaParaCampo (não String cru): "150.5" seria recusado por parseMoeda (ponto ambíguo,
-  // issue #167); o campo começa no formato que ele mesmo produz, sem arredondar moeda sem centavos.
   const [valor, setValor] = useState(() => formatarMoedaParaCampo(saldo, moeda));
   const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
   const [data, setData] = useState("");
@@ -64,13 +50,9 @@ export function PagamentoModal({
   const [comprovanteNome, setCompNome] = useState("");
   const [comentario, setComentario] = useState("");
   const [permitirExcedente, setPermitirExcedente] = useState(false);
-  // Chave estável por abertura do modal, e registrarPagamento devolve o recebimento existente quando
-  // ela se repete: reenviar após falha de rede confere a mesma baixa, não cria outra.
   const acao = useAcaoCliente({ idempotente: true });
   const campoId = useId();
 
-  // diff compara o pagamento atual com o SALDO restante (coerente com acumularPagamento no backend).
-  // parseMoeda (não Number direto): "1.234" digitado não pode virar 1234 por acidente.
   const diff = saldo - (parseMoeda(valor) ?? 0);
   const exigeComprovante = FORMAS_EXIGEM_COMPROVANTE.includes(forma);
   const faltaComprovante = exigeComprovante && !comprovanteUrl;
@@ -85,8 +67,6 @@ export function PagamentoModal({
       acao.setErro(`Anexe o comprovante para pagamentos via ${FORMA_PAGAMENTO_LABEL[forma]}.`);
       return;
     }
-    // parseMoeda pode devolver null (texto não interpretável) — nunca cair pra 0 aqui:
-    // um valor inválido viraria um pagamento de zero registrado, silencioso.
     const valorRecebido = parseMoeda(valor);
     if (valorRecebido === null) {
       acao.setErro("Informe o valor recebido, com no máximo duas casas decimais.");
@@ -102,7 +82,6 @@ export function PagamentoModal({
       comentario,
       permitirExcedente,
     }));
-    // Fecha o modal só depois que o executor já liberou o ocupado.
     if (desfecho?.tipo === "ok") onDone();
   }
 
@@ -120,8 +99,6 @@ export function PagamentoModal({
       <p className="mb-1 block text-xs font-medium text-gray-600">
         Saldo restante: {formatarMoeda(saldo, moeda)}
       </p>
-      {/* id do useId do modal: com ele, o aviso do CampoMoeda (centavos em CRC/CLP, ponto ambíguo) entra no
-          aria-describedby do input (R1 da #173, C3). */}
       <CampoMoeda id={`${campoId}-valor`} value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
       {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {formatarMoeda(diff, moeda)}.</p>}
       {diff < 0 && (

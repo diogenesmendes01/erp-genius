@@ -7,10 +7,6 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, ErroAuten
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { consultarAlvoMoedaTx } from "./aditivo-moeda";
 
-// Q173 — mesmo protocolo do vencimento (225/228) e do adiantamento (Q172): Financeiro prepara, outro
-// aprovador financeiro decide e aplica após a vigência; o trigger do banco atualiza Matricula.moeda.
-// Mesmo contrato do adiantamento: recusa conhecida (regra, permissão, sessão, entrada) libera corrigir os dados;
-// falha desconhecida preserva a tentativa e a chave de idempotência na tela.
 async function executarMutacaoMoeda<T>(acao: () => Promise<T>) {
   let podeRevisar = false;
   const resultado = await executarAcao(async () => {
@@ -63,7 +59,6 @@ export async function proporMoedaAditivo(input: unknown) {
       const v = await conferirVersao(tx, d.matriculaId, d.versaoCondicoesId, d.revisaoHash);
       const alvo = await consultarAlvoMoedaTx(tx, d.matriculaId, v);
       if (!alvo.podePreparar || !alvo.moedaNova || !alvo.fuso) throw new ErroRegra([alvo.pendencia, ...alvo.pendencias.map(p => p.texto)].join(" "));
-      // Fotografia e hash saem do mesmo JSONB no INSERT, sem reserialização pelo ORM; o fuso da escola fica gravado.
       const [p] = await tx.$queryRaw<Array<{ id: string; fotografiaHash: string }>>`
         WITH foto AS (SELECT fotografia_moeda_aditivo_173(${v.id},${alvo.moedaNova},${alvo.fuso}) AS dados)
         INSERT INTO "PropostaMoedaAditivo" (id,"matriculaId","propostaAditivoId","versaoCondicoesId","preparadorId","moedaAnterior","moedaNova",fuso,fotografia,"fotografiaHash",motivo,evidencia,"chaveIdempotencia")
@@ -87,7 +82,6 @@ export async function decidirMoedaAditivo(input: unknown) {
         if (p.decisao.decisorId !== autor.id || p.decisao.aprovada !== d.aprovada || p.decisao.motivo !== d.motivo || p.decisao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("A proposta já recebeu outra decisão.");
         return { id: p.decisao.id, aprovada: p.decisao.aprovada };
       }
-      // A chave é única por decisor: reaproveitada em outra proposta é recusa conhecida, não erro desconhecido.
       if (await tx.decisaoMoedaAditivo.findUnique({ where: { decisorId_chaveIdempotencia: { decisorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } }, select: { id: true } }))
         throw new ErroRegra("A chave já corresponde a outra decisão. Gere uma nova tentativa.");
       if (d.aprovada) {
@@ -123,7 +117,6 @@ export async function aplicarMoedaAditivo(input: unknown) {
       const alvo = await consultarAlvoMoedaTx(tx, p.matriculaId, versao);
       if (!alvo.podePreparar) throw new ErroRegra([alvo.pendencia, ...alvo.pendencias.map(x => x.texto)].join(" "));
       if (alvo.fuso !== p.fuso || alvo.moedaAtual !== p.moedaAnterior || alvo.moedaNova !== p.moedaNova) throw new ErroRegra(MUDOU);
-      // A trigger reconfere a fotografia e atualiza a moeda da matrícula na mesma transação.
       const aplicacao = await tx.aplicacaoMoedaAditivo.create({ data: { decisaoId: p.decisao.id, executorId: autor.id, chaveIdempotencia: d.chaveIdempotencia, fotografiaHash: p.fotografiaHash, moedaAnterior: p.moedaAnterior, moedaNova: p.moedaNova } });
       await registrarEvento(tx, { tipo: "MoedaAditivoAplicada", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id, payload: { propostaId: p.id, aplicacaoId: aplicacao.id, de: p.moedaAnterior, para: p.moedaNova, fotografiaHash: p.fotografiaHash } });
       return { id: aplicacao.id, aplicada: true };
@@ -131,7 +124,6 @@ export async function aplicarMoedaAditivo(input: unknown) {
   });
 }
 
-/** Histórico financeiro restrito à matrícula e à versão solicitadas. */
 export async function consultarMoedasAditivo(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -143,7 +135,6 @@ export async function consultarMoedasAditivo(input: unknown) {
       if (!versao) throw new ErroRegra("Versão contratual indisponível nesta matrícula.");
       const aprova = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
       const linhas = await tx.propostaMoedaAditivo.findMany({ where: { matriculaId: d.matriculaId, versaoCondicoesId: versao.id }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], skip: (d.pagina - 1) * 50, take: 51, include: { decisao: { include: { aplicacao: true } } } });
-      // Aplicação e andamento são da versão inteira, não só da página exibida.
       const [aplicacaoVersao, emAndamento] = await Promise.all([
         tx.aplicacaoMoedaAditivo.findFirst({ where: { decisao: { proposta: { matriculaId: d.matriculaId, versaoCondicoesId: versao.id } } }, select: { id: true } }),
         tx.propostaMoedaAditivo.count({ where: { matriculaId: d.matriculaId, OR: [{ decisao: { is: null } }, { decisao: { is: { aprovada: true, aplicacao: { is: null } } } }] } }),
@@ -167,7 +158,6 @@ export async function consultarMoedasAditivo(input: unknown) {
   });
 }
 
-/** Lista do Financeiro: aditivos que formalizam troca de moeda, com o estado da troca de cada versão. */
 export async function listarAditivosParaTrocaMoeda(pagina = 1) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.FINANCEIRO);

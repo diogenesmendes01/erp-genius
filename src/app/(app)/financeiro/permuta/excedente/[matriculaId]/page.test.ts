@@ -18,7 +18,6 @@ const render = async (cobrancas: unknown[]) => {
 };
 beforeEach(() => { vi.clearAllMocks(); mocks.usos.mockResolvedValue({ ok: true, dado: { saldos: [], propostas: [] } }); });
 
-// C7 da R2 da #283: a ação já recusa (B1 e B3 da R1 rigorosa); a tela não oferece o formulário nesses casos e diz por quê.
 it("cobrança quitada com permuta propriamente dita oferece a preparação", async () => {
   const html = await render([cobranca("c1", true, [{ id: "a1", tipo: "CAIXA", valor: "50.00", usoSaldo: false }, { id: "a2", tipo: "PERMUTA", valor: "50.00", usoSaldo: false }])]);
   expect(html).toContain("formulario=preparar:c1");

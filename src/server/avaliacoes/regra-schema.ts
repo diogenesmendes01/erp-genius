@@ -8,7 +8,6 @@ const quantidade = z.number().int().min(0).max(2147483647);
 const prazo = quantidade.min(1);
 const id = z.string().trim().min(1).max(100);
 
-/** Todos os parâmetros pedagógicos são explícitos; minutos são a unidade armazenada. */
 export const ConteudoRegraAvaliacaoSchema = z.object({
   titulo: z.string().trim().min(3).max(200),
   aplicacao: z.string().trim().min(5).max(2000),
@@ -26,7 +25,6 @@ export const ConteudoRegraAvaliacaoSchema = z.object({
   recuperacao: z.object({ prazoRealizacaoMinutos: prazo, antecedenciaCancelamentoMinutos: quantidade }).strict(),
   segundaChamada: z.object({ prazoRealizacaoMinutos: prazo, antecedenciaCancelamentoMinutos: quantidade }).strict(),
 }).strict().superRefine((d, ctx) => {
-  // Refinamentos de formato podem falhar antes daqui: não entregar decimal inválido ao construtor.
   const valores = [d.escala.minimo, d.escala.maximo, d.minimoGeral, d.frequenciaMinimaPercentual,
     ...d.habilidades.flatMap(h => [h.peso, h.minimo]), ...d.avaliacoes.map(a => a.peso)];
   if (valores.some(v => !decimal.safeParse(v).success)) return;

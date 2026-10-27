@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// R1 do #239 (C2): a promessa de pagamento usa o dia da escola, não o relógio do servidor (Q176 · ref. #164).
-// Relógio fixo e dependências mockadas; verde com TZ=UTC e TZ=America/Sao_Paulo.
-
 const m = vi.hoisted(() => ({
   cobranca: vi.fn(),
   registrarEvento: vi.fn(),
@@ -12,8 +9,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     cobranca: { findUnique: m.cobranca },
-    configuracaoOperacional: { findUnique: async () => null }, // fusoDaEscola() → America/Sao_Paulo
-    // A cobrança é lida dentro da transação (C3 da R2 do #267: a repetição vem antes das validações).
+    configuracaoOperacional: { findUnique: async () => null },
     $transaction: async (fn: (tx: object) => Promise<unknown>) => fn({ cobranca: { findUnique: m.cobranca } }),
   },
 }));
@@ -30,7 +26,7 @@ describe("registrarPromessaPagamento no dia da escola", () => {
     vi.clearAllMocks();
     m.cobranca.mockResolvedValue({ id: "c1", status: "ATRASADO" });
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-06-23T02:30:00Z")); // 22/06, 23h30 em Brasília
+    vi.setSystemTime(new Date("2026-06-23T02:30:00Z"));
   });
   afterEach(() => vi.useRealTimers());
 

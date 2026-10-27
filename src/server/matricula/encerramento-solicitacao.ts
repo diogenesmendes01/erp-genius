@@ -8,7 +8,6 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { dataCivilInstitucional, FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { SolicitarEncerramentoSchema, type SolicitarEncerramentoInput } from "./encerramento-solicitacao-schema";
 
-/** Registra o pedido do aluno; não aprova retroatividade, acerto ou alteração da matrícula. */
 export async function solicitarEncerramentoMatriculas(input: SolicitarEncerramentoInput) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -16,7 +15,6 @@ export async function solicitarEncerramentoMatriculas(input: SolicitarEncerramen
     const ids = [...d.matriculaIds].sort();
     const hash = createHash("sha256").update(JSON.stringify({ ...d, matriculaIds: ids })).digest("hex");
     return prisma.$transaction(async (tx) => {
-      // A mesma chave pode chegar simultaneamente com seleções diferentes.
       const trava = `encerramento:${autor.id}:${d.chaveIdempotencia}`;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${trava}, 0))`;
       const usuario = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });

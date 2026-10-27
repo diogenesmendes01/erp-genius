@@ -5,8 +5,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { reavaliarAcessoAposPermuta } from "./permuta-acesso";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, ErroAutenticacao, registrarEvento } from "@/server/_shared";
-// As mutações desta unidade concluem dentro da transação. Somente rejeições
-// conhecidas permitem revisar a entrada; falhas de transporte/banco são incertas.
 async function executarPermuta<T>(acao: () => Promise<T>) {
   let podeRevisar = false;
   const resultado = await executarAcao(async () => {

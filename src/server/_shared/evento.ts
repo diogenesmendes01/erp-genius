@@ -1,10 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-// Gravação padronizada de Evento (ver docs/12-catalogo-de-eventos.md).
-// Regra inegociável (docs/13): toda mutação relevante grava um Evento na MESMA
-// transação da mudança de estado. Use sempre dentro de prisma.$transaction.
-
-/** Agregados conhecidos (mantém consistência com o catálogo de eventos). */
 export type AgregadoTipo =
   | "RegraAvaliacao"
   | "ModeloContratual"
@@ -23,7 +18,6 @@ export type AgregadoTipo =
   | "Lead"
   | "Matricula"
   | "Aluno"
-  // D14: a mescla de contatos repõe o cadastro do responsável (CadastroAcademicoRepontado).
   | "Responsavel"
   | "Cobranca"
   | "Comissao"
@@ -37,28 +31,21 @@ export type AgregadoTipo =
   | "ProdutoPais"
   | "Preco"
   | "TaxaCambio"
-  // Canal WhatsApp (docs 26/30). Conversa/Mensagem NÃO são agregados de Evento:
-  // são tabelas operacionais (doc 29 regra 3 — "Evento = auditoria; tabela = operacional").
   | "NumeroWhatsApp"
   | "ContatoWhatsApp"
   | "GrupoWhatsApp"
   | "TemplateWhatsApp"
   | "IntencaoMensagem"
   | "PoliticaRegua"
-  // "ConfigComercial" e "PoliticaComercial" (auto-lead, saudação e régua comercial do CRM antigo) saíram
-  // com a remoção do CRM antigo; os eventos já gravados continuam no histórico.
   | "LotePreparacaoMigracao"
-  // Fase 2 (doc 03): financeiro automatizado + B2B.
   | "ConfigFinanceiro"
   | "Empresa"
   | "FaturaB2B"
-  // Fase 2 CRM (2.M1+): hub de identidade, tarefas, tags, campos e filtros do CRM.
   | "Pessoa"
   | "Tarefa"
   | "Tag"
   | "CampoPersonalizado"
   | "FiltroSalvo"
-  // Fase 5 (ADR-F5-01): Aria, relatórios e configurações do CRM.
   | "AgenteIA"
   | "VersaoAgenteIA"
   | "AcaoAgenteIA"
@@ -66,35 +53,17 @@ export type AgregadoTipo =
   | "ConfigIA"
   | "MetaComercial"
   | "ConfigSetorAtendimento"
-  // Driver SIMULADO de assinatura eletrônica (Q155 aberta): o "serviço" simulado guarda os envelopes no banco.
   | "EnvelopeAssinaturaSimulado";
 
 export interface EntradaEvento {
-  /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
   tipo: string;
   agregadoTipo: AgregadoTipo;
   agregadoId: string;
-  /** Autor da ação (null = sistema/cron). */
   autorId?: string | null;
-  /** Antes→depois + contexto. */
   payload?: Prisma.InputJsonValue;
-  /** Versão do formato do payload (default 1). */
   versao?: number;
 }
 
-/**
- * Grava um Evento usando o client transacional (`tx`) recebido de
- * `prisma.$transaction(async (tx) => { ... })`.
- *
- * @example
- * await prisma.$transaction(async (tx) => {
- *   await tx.oportunidade.update({ ... });
- *   await registrarEvento(tx, {
- *     tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId, autorId,
- *     payload: { de, para },
- *   });
- * });
- */
 export async function registrarEvento(
   tx: Prisma.TransactionClient,
   entrada: EntradaEvento,

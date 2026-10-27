@@ -3,8 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Configuração do WhatsApp por rota (E8): índice → primeira seção da função; layout com as abas da
-// função; cada seção com o PRÓPRIO guard antes das consultas e só as consultas dela.
 const mocks = vi.hoisted(() => ({
   papeis: { valor: ["GERENTE_COMERCIAL"] as string[] },
   redirect: vi.fn((destino: string) => { throw new Error(`REDIRECT ${destino}`); }),

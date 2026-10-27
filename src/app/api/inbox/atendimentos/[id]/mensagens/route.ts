@@ -7,7 +7,6 @@ import { listarMensagensPagina } from "@/server/inbox/consultas-pagina";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Thread paginada por cursor (E6): ?antes= (mais antigas) ou ?depois= (mais novas). 404 fora do escopo.
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   let usuario;
   try {

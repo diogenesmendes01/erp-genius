@@ -20,22 +20,16 @@ function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string |
   return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
 }
 
-/** Navegação da fila de informes a conferir (aba do /financeiro): cursores do trecho, rota e a volta ao início. */
 export type FilaInformes = { anterior: string | null; proxima: string | null; rota: string; inicioDaFila: string | null };
 
 export function InformesPagamento({ informes, fila = null, preferenciaFusoExibicao = null, fusoEscola }: {
   informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
-  /** Só na fila do /financeiro (por cursor nos dois sentidos); a ficha do aluno mostra o histórico dele sem trechos. */
   fila?: FilaInformes | null;
   preferenciaFusoExibicao?: string | null;
-  /** A data do pagamento informada é data digitada (meio-dia da escola) ou, sem data, o instante do informe: sai no dia da escola (`formatarDiaDoPagamento`), sem fuso pessoal. */
   fusoEscola: string;
 }) {
   const router = useRouter();
-  // Idempotente por natureza (#166): a conferência trava o informe e confere a versão; repetida pelo mesmo
-  // conferente com a mesma decisão, devolve ok sem nova baixa (conferirPagamento; politica.int.test.ts).
   const acao = useAcaoCliente({ idempotente: true });
-  // O erro aparece no informe cujo botão disparou a conferência.
   const [alvo, setAlvo] = useState<string | null>(null);
   const [motivos, setMotivos] = useState<Record<string, string>>({});
   async function decidir(id: string, versao: number, confirmar: boolean) {

@@ -8,10 +8,8 @@ import { carregarEstadoOriginalAditivoTx } from "./aditivo-original-estado";
 
 const metadados = { id: true, propostaId: true, conferenciaId: true, pdfHash: true, baseHash: true, paginas: true, criadoEm: true } satisfies Prisma.ArtefatoAditivoContratualSelect;
 
-/** Preserva uma única vez o original preparado a partir da conferência vigente. */
 export async function preservarOriginalAditivoTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = PreservarOriginalAditivoSchema.parse(entrada);
-  // O estado toma calendário, matrícula e processo fonte antes da leitura da conferência.
   const estado = await carregarEstadoOriginalAditivoTx(tx, d);
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autorId} FOR SHARE`;
   await conferirAutor(tx, autorId);

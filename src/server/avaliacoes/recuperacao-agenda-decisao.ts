@@ -37,7 +37,6 @@ export async function decidirAgendaRecuperacao(input: z.input<typeof schema>) {
         if (d.autorizarDiaNaoLetivo !== temExcecao) throw new ErroRegra("Confira a autorização explícita para dia não letivo.");
         if (c.pendencias.length !== (temExcecao ? 1 : 0) || !c.professor || !c.calendarioId) throw new ErroRegra("Resolva as pendências de disponibilidade e calendário antes de aprovar.");
       }
-      // O trigger publica o encontro na mesma transação: falha na publicação desfaz a decisão.
       const decisao = await tx.decisaoAgendaRecuperacao.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, autorizarDiaNaoLetivo: d.autorizarDiaNaoLetivo, motivo: d.motivo } });
       const encontro = await tx.encontroAgenda.findUnique({ where: { propostaAgendaRecuperacaoId: p.id }, select: { id: true } });
       await registrarEvento(tx, { tipo: d.aprovar ? "AgendaRecuperacaoAprovada" : "AgendaRecuperacaoRejeitada", agregadoTipo: "Matricula", agregadoId: a.matriculaId, autorId: u.id,

@@ -5,9 +5,6 @@ import { EMPRESAS_POR_PAGINA, orderByEmpresas, whereFiltrosEmpresas, type Filtro
 import { vencimentoEmAtraso } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// B2B — consultas (Fase 2, doc 03): lista de empresas, ficha (colaboradores + faturas) e
-// o RELATÓRIO POR COLABORADOR (status da matrícula + mensalidades pagas/abertas/atrasadas).
-
 export interface EmpresaResumo {
   id: string;
   codigo: string | null;
@@ -15,7 +12,6 @@ export interface EmpresaResumo {
   pais: string | null;
   ativo: boolean;
   colaboradores: number;
-  /** Faturas FECHADAS: emitidas e aguardando pagamento (StatusFaturaB2B). */
   faturasAReceber: number;
 }
 
@@ -29,15 +25,12 @@ export async function listarEmpresas(): Promise<EmpresaResumo[]> {
   }));
 }
 
-/** Lista de /empresas (E4): uma página com os filtros da URL, o total filtrado e o total geral. */
 export async function listarEmpresasPagina(filtros: FiltrosEmpresas) {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const where = whereFiltrosEmpresas(filtros);
   const [empresas, total, totalBase] = await Promise.all([
     prisma.empresa.findMany({
       where,
-      // Ordem da URL (E1), no banco e antes da página; sem ordem, cadastro mais recente primeiro. O id
-      // desempata sempre: empresas empatadas não trocam de página entre consultas.
       orderBy: orderByEmpresas(filtros.ordem),
       skip: (filtros.pagina - 1) * EMPRESAS_POR_PAGINA,
       take: EMPRESAS_POR_PAGINA,
@@ -108,8 +101,6 @@ export async function obterEmpresa(id: string) {
   });
   if (!empresa) return null;
 
-  // RELATÓRIO POR COLABORADOR (doc 03 §B2B).
-  // Ref. #247: atrasada só depois do dia do vencimento na escola.
   const agora = new Date(), fuso = await fusoDaEscola();
   const colaboradores: ColaboradorRelatorio[] = empresa.matriculas.map((m) => {
     const pagas = m.cobrancas.filter((c) => c.status === StatusCobranca.PAGO);
@@ -162,7 +153,6 @@ export async function obterEmpresa(id: string) {
   };
 }
 
-/** Competências com mensalidades ABERTAS fora de fatura (candidatas ao fechamento). */
 export async function competenciasFaturaveis(empresaId: string): Promise<string[]> {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const grupos = await prisma.cobranca.groupBy({

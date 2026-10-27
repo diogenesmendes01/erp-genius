@@ -1,8 +1,3 @@
-/**
- * Regras puras para Q116. Elas não enviam, cancelam ou armazenam nada no
- * fornecedor: a orquestração deve persistir cada fato antes da chamada externa.
- */
-
 export type PapelSubstituicao = "SECRETARIA_ACADEMICA" | "ADMINISTRADOR" | string;
 export type AtorSubstituicao = { id: string; ativo: boolean; papeis: readonly PapelSubstituicao[] };
 export type EstadoProcessoFonte = "PREPARADO" | "ENVIANDO" | "ENVIO_INCERTO" | "ENVIADO" | "CANCELADO";
@@ -14,8 +9,6 @@ export type ProcessoFonteSubstituicao = {
   revisaoHash: string;
   referenciaExterna: string;
 };
-/** A existência desta conclusão é a única prova de assinatura total nesta regra.
- * Assinaturas ou evidências parciais não entram nesta API como conclusão. */
 export type ConclusaoAssinaturaFonte = { processoId: string; matriculaId: string; artefatoId: string };
 
 export type PropostaSubstituicao = {
@@ -126,8 +119,6 @@ export function aprovarSubstituicao(input: {
   return { ...proposta, estado: "APROVADA", aprovadaPorId: input.aprovador.id };
 }
 
-/** Autoriza somente o início da chamada externa; a orquestração persiste esta
- * identidade antes de chamar o fornecedor e usa-a na confirmação posterior. */
 export function autorizarInicioCancelamentoSubstituicao(input: {
   proposta: PropostaSubstituicao;
   executor: AtorSubstituicao;
@@ -150,8 +141,6 @@ export function autorizarInicioCancelamentoSubstituicao(input: {
     tentativaId: input.tentativaId, referenciaExterna: input.processoFonte.referenciaExterna };
 }
 
-/** Resultado da chamada externa já autenticada. Resultado incerto permanece
- * identificável para conciliação e nunca libera o substituto. */
 export function confirmarCancelamentoParaSubstituicao(input: {
   proposta: PropostaSubstituicao;
   autorizacao: AutorizacaoInicioCancelamento;

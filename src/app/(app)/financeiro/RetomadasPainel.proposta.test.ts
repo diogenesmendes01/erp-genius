@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Propor a retomada com chave de idempotência (#166; #282, C3): o reenvio da mesma tentativa devolve a proposta
-// original no status atual. Se outra pessoa já a decidiu, a tela não anuncia uma proposta nova: avisa que ela já
-// foi decidida e mantém os dados para uma nova proposta deliberada.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   solicitar: vi.fn(), refresh: vi.fn(),
@@ -39,7 +36,6 @@ const sucesso = (t: ReactNode) => elementos(t).filter((n: No) => n.type === Feed
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 const motivoDigitado = () => elementos(tela()).find((n: No) => n.type === CampoTexto)?.props.value;
 
-/** Escolhe manter os vencimentos, digita o motivo e envia. */
 async function propor() {
   const manter = elementos(tela()).find((n: No) => n.type === "input" && n.props.value === "MANTER_VENCIMENTOS")!;
   (manter.props.onChange as () => void)();

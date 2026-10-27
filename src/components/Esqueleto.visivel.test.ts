@@ -2,12 +2,6 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// Verificação no navegador do C6 (#263): no tema claro, `--surface-muted` é igual a `--bg-page` (#f7f5f3).
-// Os blocos do esqueleto pintados com `bg-surface-muted` ficavam invisíveis direto na página: na primeira
-// entrada no financeiro, só a moldura da tabela aparecia, sem título, abas nem indicadores. Esta trava
-// resolve a cor de cada bloco pelo tailwind.config e pelo globals.css (seguindo `var()` encadeado) e exige
-// uma razão mínima de contraste contra o fundo da página nos dois temas, não só um valor diferente (revisão
-// R1 do #269: #f7f5f4 seria "diferente" de #f7f5f3 e continuaria invisível).
 const m = vi.hoisted(() => ({ caminho: "/" }));
 vi.mock("next/navigation", () => ({ usePathname: () => m.caminho }));
 
@@ -19,7 +13,6 @@ import config from "../../tailwind.config";
 
 const { destaqueSobreAPagina } = fundosDoTailwind(config);
 
-/** Fundos dos blocos (divs sem filhos) do HTML de um esqueleto. */
 const fundosDosBlocos = (html: string) =>
   [...html.matchAll(/<div class="([^"]*)"[^>]*><\/div>/g)].flatMap((b) => b[1].split(" ").filter((c) => /^bg-/.test(c)));
 

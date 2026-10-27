@@ -1,12 +1,10 @@
 import { Prisma } from "@prisma/client";
 
-/** Relações singulares: uma linha por atendimento, nunca um JOIN de filhos. Aliases internos fixos. */
 export const RELACOES_ESTADO_ARIA = Prisma.sql`
   JOIN "ConversaWhatsApp" c ON c."id" = a."conversaId"
   JOIN "NumeroWhatsApp" n ON n."id" = c."numeroId"
   LEFT JOIN "ContatoWhatsApp" ct ON ct."id" = c."contatoId"`;
 
-/** Predicado correlacionado equivalente ao produtor342, sem materializar IDs. */
 export function handoffPendenteEmSql(): Prisma.Sql {
   return Prisma.sql`(a."iaPausaMotivo" = 'HANDOFF' AND a."iaPausadaEm" IS NOT NULL AND a."encerradoEm" IS NULL
     AND NOT EXISTS (SELECT 1 FROM "MensagemWhatsApp" m
@@ -22,7 +20,6 @@ export function sugestaoPendenteEmSql(agora: Date): Prisma.Sql {
       AND (s."expiraEm" IS NULL OR s."expiraEm" > ${agora.toISOString()}::timestamp(3)))`;
 }
 
-/** Mesma prioridade da derivação342. Classificação não é autorização e exige os aliases singulares acima. */
 export function estadoAriaEmSql(ativa: boolean, agora: Date): Prisma.Sql {
   return Prisma.sql`CASE
     WHEN a."encerradoEm" IS NOT NULL OR c."grupoId" IS NOT NULL THEN NULL

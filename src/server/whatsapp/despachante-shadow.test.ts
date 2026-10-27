@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decidirEnvio, intencaoEmShadow, type EntradaShadow } from "./despachante";
 
-// Revisão R1 do #208 (C1): trava unitária da decisão de shadow. A isenção do aviso de agenda
-// (`!agenda`) caiu no merge da #161 e só os *.int.test.ts perceberiam — que o CI não roda.
 const base: EntradaShadow = {
   live: true,
   agenda: false,
@@ -52,16 +50,12 @@ describe("intencaoEmShadow", () => {
     }
   });
 
-  // Remoção do CRM antigo: a gestão (C5) e a saudação reativa perderam a configuração e o produtor. O que sobrar
-  // na fila só simula (a gestão já é cancelada antes, em motivoIntencaoInvalida).
   it("gestão e reativa sem IA sempre viram SIMULADA, mesmo com a política ATIVA", () => {
     expect(shadow({ gestao: true })).toBe(true);
     expect(shadow({ reativa: true })).toBe(true);
     expect(shadow({ reativa: true, politicaEstado: "DESLIGADA" })).toBe(true);
   });
 
-  // Revisão final da Fase 5C: a resposta da Aria (origem IA, reativa) não pode ficar presa ao
-  // ensaio da saudação comercial; o ensaio dela é o estado da própria Aria.
   describe("origem IA", () => {
     const ia = { ia: true, reativa: true } as const;
 
@@ -86,9 +80,6 @@ describe("intencaoEmShadow", () => {
   });
 });
 
-// Revisão R1 do #208 (C2): o cron geral também drena avisos de agenda. Com
-// COMUNICACOES_AGENDA_ENVIO_ENABLED desligado o despachante retém o aviso na fila, sem
-// enviar e sem transformá-lo em SIMULADA.
 describe("decidirEnvio", () => {
   const decidir = (parcial: Partial<EntradaShadow & { envioAgendaHabilitado: boolean }>) =>
     decidirEnvio({ ...base, envioAgendaHabilitado: true, ...parcial });

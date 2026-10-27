@@ -5,11 +5,9 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { acessoEfetivoBloqueado, cobrancaGeraRestricaoAutomatica, DIAS_RESTRICAO_AUTOMATICA } from "./acesso-aulas-regras";
 
-/** Trava matrícula antes de cobranças; não chamar mantendo locks de recebimento. */
 export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.TransactionClient, matriculaId: string, agora: Date, opcoes: { naoAguardarCobrancas?: boolean } = {}) {
   await bloquearMatriculas(tx, [matriculaId]);
   if (opcoes.naoAguardarCobrancas) {
-    // Consumidores repetíveis cedem a uma baixa concorrente sem formar ciclo de locks.
     await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE NOWAIT`;
   } else {
     await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE`;
@@ -21,7 +19,7 @@ export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.Transactio
     } },
   } });
   if (!matricula) return "inalterado" as const;
-  const fuso = await fusoDaEscola(tx); // Q176: D+30 conta no calendário da escola
+  const fuso = await fusoDaEscola(tx);
   const elegiveis = matricula.status === "ATIVA" ? matricula.cobrancas.filter((c) => cobrancaGeraRestricaoAutomatica({
     ...c, saldo: c.saldo === null ? null : Number(c.saldo), valorNegociado: Number(c.valorNegociado), valorRecebido: c.valorRecebido === null ? null : Number(c.valorRecebido),
   }, agora, fuso)) : [];
@@ -32,8 +30,6 @@ export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.Transactio
     acessoBloqueioAutomatico: automatico, acessoBloqueado: bloqueado,
     bloqueadoEm: bloqueado ? matricula.bloqueadoEm ?? agora : null,
   } });
-  // Sem evento repetido em ticks sucessivos; a transição de motivo também é auditável
-  // quando uma restrição manual conserva o estado efetivo.
   const mudouAcesso = bloqueado !== matricula.acessoBloqueado;
   await registrarEvento(tx, {
     tipo: mudouAcesso ? bloqueado ? "AcessoBloqueado" : "AcessoDesbloqueado" : "RestricaoAutomaticaAtualizada",
@@ -45,14 +41,12 @@ export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.Transactio
   return mudouAcesso ? bloqueado ? "bloqueado" as const : "liberado" as const : "origem_atualizada" as const;
 }
 
-/** Após o commit do recebimento/informe, reflete a nova situação sem inverter locks. */
 export async function reavaliarAcessoAutomaticoDaCobranca(cobrancaId: string, agora = new Date()) {
   const vinculo = await prisma.cobranca.findUnique({ where: { id: cobrancaId }, select: { matriculaId: true } });
   if (!vinculo) return "inalterado" as const;
   return prisma.$transaction((tx) => reavaliarAcessoAutomaticoMatriculaTx(tx, vinculo.matriculaId, agora));
 }
 
-/** Política institucional de acesso: independe do estado das automações de mensagens. */
 export async function rodarControleAcessoAulas(agora = new Date()) {
   const matriculas = await prisma.matricula.findMany({
     where: { OR: [{ status: "ATIVA" }, { acessoBloqueioAutomatico: true }] }, select: { id: true }, orderBy: { id: "asc" },

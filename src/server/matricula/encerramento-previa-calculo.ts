@@ -10,7 +10,6 @@ import type { MultaEncerramentoSchema } from "./encerramento-multa";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 
-/** Componente mensal do acerto; conserva a origem e a conferência sem efetivar ajustes. */
 export function calcularPreviaMensalConferida(contexto: Contexto, dataEfetiva: string, input: z.input<typeof ConferenciaMensalEncerramentoSchema>) {
   const d = ConferenciaMensalEncerramentoSchema.parse(input);
   if (contexto.matriculaId !== d.matriculaId) throw new ErroRegra("Conferência pertence a outra matrícula.");

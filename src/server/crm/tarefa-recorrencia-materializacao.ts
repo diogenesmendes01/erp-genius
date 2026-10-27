@@ -26,7 +26,6 @@ function conferirUsuarios(usuarios:Usuario[],s:SnapshotRecorrenciaTarefa):{codig
  if(s.dados.criadorId&&!porId.has(s.dados.criadorId))return {codigo:"VINCULO_INDISPONIVEL",elegiveis:[]};
  return {codigo:null,elegiveis:s.notificarUsuarioIds.filter(id=>{const u=porId.get(id);return !!u&&candidatoPodeLerTarefaD10(u,alvo);})};
 }
-/** Uma intenção porTX; cada await usa a porta recebida. Não há retry/normalização de erro infra. */
 export async function materializarRecorrenciaTarefa(id:string,opcoes:Opcoes={}):Promise<ResultadoMaterializacaoTarefa>{
  const db=opcoes.db??prisma;
  return db.$transaction(async tx=>{
@@ -39,7 +38,6 @@ export async function materializarRecorrenciaTarefa(id:string,opcoes:Opcoes={}):
   const identidadeInicial=JSON.stringify([inicial.id,inicial.tarefaId,inicial.conclusaoVersao,inicial.versao,inicial.corteEm]);
   const parsed=SnapshotRecorrenciaTarefaSchema.safeParse(inicial.snapshot);
   if(!parsed.success){
-   // Só a versão suportada estruturalmente inválida é terminal; infra/futuras não são consumidas.
    if(typeof inicial.snapshot!=="object"||inicial.snapshot===null||Array.isArray(inicial.snapshot)||inicial.snapshot.versao!==1)throw new ErroRegra("Snapshot de recorrência inválido.");
    await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id=${tarefaId} FOR UPDATE`;
    await tx.$queryRaw`SELECT id FROM "IntencaoRecorrenciaTarefa" WHERE id=${id} FOR UPDATE`;
@@ -56,7 +54,6 @@ export async function materializarRecorrenciaTarefa(id:string,opcoes:Opcoes={}):
   }
   const s=parsed.data;
   const usuariosIds=[...new Set([s.dados.responsavelId,s.dados.criadorId,...s.notificarUsuarioIds].filter((v):v is string=>v!==null))].sort();
-  // Alvos deFK antes do pai; NOWAIT evita aguardar escritor reverso mantendo Task.
   await bloquear(tx,"Usuario",usuariosIds,true);
   let referencias=true;
   for(const [tabela,ref] of [["Lead",s.dados.leadId],["Pessoa",s.dados.pessoaId],["Aluno",s.dados.alunoId],["Matricula",s.dados.matriculaId],["AtendimentoWhatsApp",s.dados.atendimentoId]] as const){
@@ -67,7 +64,6 @@ export async function materializarRecorrenciaTarefa(id:string,opcoes:Opcoes={}):
   const t=await tx.tarefa.findUnique({where:{id:tarefaId}}),i=await tx.intencaoRecorrenciaTarefa.findUnique({where:{id}});
   if(!t||!i)return {tipo:"IGNORADA"};
   if(i.tarefaId!==tarefaId||JSON.stringify(i.snapshot)!==originalSnapshot)throw new ErroRegra("A intenção de recorrência mudou.");
-  // Reconcilia ACKperdido antes de status/clock/cálculo: nunca cria outro filho.
   const filho=await tx.tarefa.findUnique({where:{recorrenciaAnteriorId:tarefaId}});
   if(filho)return {tipo:"REPLAY",tarefaId:filho.id};
   if(i.estado!=="PENDENTE")return {tipo:"IGNORADA"};
@@ -96,7 +92,6 @@ export async function materializarRecorrenciaTarefa(id:string,opcoes:Opcoes={}):
   if(permissao.elegiveis.length)await tx.tarefaNotificado.createMany({data:permissao.elegiveis.map(usuarioId=>({tarefaId:novo.id,usuarioId}))});
   await registrarEvento(tx,{tipo:"RecorrenciaTarefaMaterializada",agregadoTipo:"Tarefa",agregadoId:t.id,autorId:null,payload:{intencaoId:i.id,filhoId:novo.id,indice:proxima.indice,corteOriginal:i.corteEm.toISOString(),agoraTentativa:agoraTentativa.toISOString(),corteEfetivo:corteEfetivo.toISOString(),ajuste:proxima.ajuste,solicitado:proxima.solicitado,resolvido:proxima.resolvido,fuso:s.ancora.fusoOrigem,politicaVersao:1}});
   await marcar("MATERIALIZADA");
-  // Última leitura qualificada após inserts/FKs/CAS. Não promete linearização global deACL.
   const finais=conferirUsuarios(await tx.usuario.findMany({where:{id:{in:usuariosIds}}}),s);
   if(finais.codigo||JSON.stringify(finais.elegiveis)!==JSON.stringify(permissao.elegiveis))throw new ErroRegra("A autorização da recorrência mudou durante a gravação.");
   return {tipo:"CRIADA",tarefaId:novo.id};

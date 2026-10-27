@@ -34,7 +34,6 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
     {erro && <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
     {!matriculas.length && <EstadoVazio>Nenhuma matrícula no seu escopo.</EstadoVazio>}
     {matriculas.map((m) => <article key={m.id} className="space-y-3 rounded-lg border border-gray-200 bg-surface p-4">
-      {/* Links lado a lado sem espaço viravam um texto só ("comercialConferir…"); em linha que quebra (DS-C). */}
       <nav aria-label={`Ações da matrícula ${m.codigo ?? ""}`.trim()} className="flex flex-wrap gap-x-4 gap-y-1">
       <Link className="text-sm underline" href={`/matriculas/${m.id}/preparacao`}>Revisar proposta comercial</Link>
       {secretaria && <>

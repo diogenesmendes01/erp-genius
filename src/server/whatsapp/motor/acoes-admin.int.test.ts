@@ -102,7 +102,6 @@ describe("gerir grupo pelo motor", () => {
     expect(r2).toMatchObject({ ok: false, erro: "Número ou turma fora do seu escopo." });
     expect(acao).not.toHaveBeenCalled();
     expect(await prisma.grupoWhatsApp.count()).toBe(0);
-    // No número que serve ao setor dele, sem turma, o mesmo gerente cria (e o grupo cai no escopoGrupos dele).
     acao.mockResolvedValue({ id: "120363000000000009@g.us", subject: "Comercial" });
     const r3 = await comoUsuario(c.gerente, () => criarGrupoWhatsApp({ numeroId: c.numero.id, nome: "Comercial", participantesE164: ["+50688887777"] }));
     expect(r3.ok).toBe(true);

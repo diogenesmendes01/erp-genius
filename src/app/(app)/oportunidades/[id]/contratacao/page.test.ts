@@ -1,9 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L2217): a key do formulário tinha a versão da oferta e as páginas de cadastros e
-// de turmas — "Mais turmas" ou "Cadastros anteriores" remontavam o formulário e apagavam taxa, valor, motivo e a
-// agenda conferida. Agora a key é só a oferta (outra oferta é outra contratação).
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), cadastros: vi.fn(), ofertas: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/preparacao-comercial", () => ({ consultarCadastrosPreparacao: mocks.cadastros, consultarOfertasPreparacao: mocks.ofertas }));

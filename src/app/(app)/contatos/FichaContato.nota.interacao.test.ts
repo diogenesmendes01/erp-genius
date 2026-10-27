@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// #166 (2º lote): "Registrar nota" na ficha manda chave de idempotência. A chave é a mesma enquanto a
-// tentativa não foi confirmada (resultado incerto) e muda depois do sucesso. As outras ações da ficha
-// (editar dados, tags, campos, opt-out) continuam sem chave.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   nota: vi.fn(), editar: vi.fn(),
@@ -13,7 +10,6 @@ vi.mock("react", async (original) => {
   const g = () => m.ganchos!;
   return {
     ...real,
-    // Harness legado apenas de payload: ciclo de vida é provado no cadastro.dom.test.ts real.
     useLayoutEffect: (()=>{}) as typeof real.useLayoutEffect,
     useState: ((i: unknown) => g().useState(i)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
@@ -44,7 +40,6 @@ const classesCor = { NEUTRA: "a", MARCA: "b", INFO: "c", SUCESSO: "d", ALERTA: "
 
 function montar(abaInicial: "historico" | "geral",d:DetalheContato=detalhe) {
   m.ganchos = criarGanchos();
-  // FichaContato só escolhe o corpo pelo key; o teste chama o corpo direto.
   const el = FichaContato({
     detalhe:d, historico: [], campos: [], tagsDisponiveis: [], classesCor, capacidades: ["contatos.ver", "contatos.editar"],
     vendedores: [], paises: [], abaInicial,

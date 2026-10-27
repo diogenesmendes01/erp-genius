@@ -35,7 +35,6 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     expect(html).toContain("antesVersao=3");
     expect(html).not.toContain("hash-interno");
     expect(html).not.toContain("encontro-interno");
-    // docs/43 §6 item 6: o registro da proposta sai no fuso de exibição, com a origem — não mais o ISO cru.
     expect(html).toContain("Registrada em 16/09/2026, 07:00 (America/Sao_Paulo).");
     expect(html).not.toContain("2026-09-16T10:00:00.000Z");
   });
@@ -61,8 +60,6 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     expect(html).toContain("Enviar proposta");
   });
 
-  // docs/43 §6 item 3 (docs/42 L1814): a key do formulário era o substitutoId da URL — trocar o professor fazia
-  // router.replace, remontava o formulário e apagava motivo e evidência já digitados.
   it("o formulário de proposta tem a mesma identidade no React ao trocar o professor (URL) e a página das propostas", async () => {
     const dado = (substituto: { id: string; nome: string } | null) => ({
       identificacao: { aluno: "Ana", matriculaCodigo: null, turma: "T-1", codigoAvaliacao: "FALA" },
@@ -81,8 +78,6 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     mocks.consultar.mockResolvedValue({ ok: true, dado: dado({ id: "p3", nome: "Professora três" }) });
     expect(identidadeNoReact(await renderizar({ substitutoId: "p3", antesVersao: "4" }), Formulario)).toEqual(base);
   });
-  // Lote 3 do fuso pessoal: sem preferência, registro e decisão saem no fuso da agenda (antes, UTC); agenda com fuso
-  // inválido usa o da escola. O horário do encontro continua no fuso da agenda. Fixo em TZ=UTC e America/Sao_Paulo.
   it("registro sem preferência: fuso da agenda; agenda inválida: escola; horário publicado no fuso da agenda", async () => {
     const dado = (fusoOrigem: string) => ({ ok: true, dado: {
       identificacao: { aluno: "Ana", matriculaCodigo: "M-1", turma: "T-1", codigoAvaliacao: "FALA" },

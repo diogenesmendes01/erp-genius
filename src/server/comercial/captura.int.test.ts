@@ -7,14 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { processarMensagemNormalizada } from "@/server/whatsapp/inbound";
 
-// Integração E1: o inbound não captura lead nem saúda (casca do CRM antigo removida; a configuração do
-// auto-lead e da saudação saiu do banco). Resta a trava S1 do despachante.
-
 let dono: Awaited<ReturnType<typeof criarUsuario>>;
 
 beforeEach(async () => {
   await truncarBanco();
-  dono = await criarUsuario([]); // dono do número de vendas
+  dono = await criarUsuario([]);
 });
 
 async function seedNumeroVendas() {

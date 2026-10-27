@@ -1,10 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-/**
- * Recorte estável que integra o histórico imutável de uma correção. Datas são
- * serializadas aqui para que os dois fluxos de correção calculem o mesmo hash.
- */
 export type ImpactoMudancaProgressao = {
   id: string;
   status: "APROVADA" | "EXECUTADA";
@@ -47,12 +43,6 @@ function aplicacaoEquivalenteDaMesmaMatricula(
     && aplicacao.alocacaoDestino.turmaId === aplicacao.turmaDestinoId;
 }
 
-/**
- * Retorna alocações alcançadas a partir da fonte corrigida, inclusive a própria
- * origem. A travessia segue somente fatos de
- * equivalência já aplicados: proposta aprovada -> aplicação -> nova alocação.
- * Nunca usa uma solicitação comum de mudança acadêmica como aresta da cadeia.
- */
 export async function carregarAlocacoesAlcancadasPorEquivalenciaTx(
   tx: Prisma.TransactionClient,
   entrada: { matriculaId: string; alocacaoOrigemId: string },
@@ -91,8 +81,6 @@ export async function carregarAlocacoesAlcancadasPorEquivalenciaTx(
     porOrigem.set(aplicacao.alocacaoOrigemId, seguintes);
   }
 
-  // Uma aplicação de destino é única. Ainda assim, o conjunto protege contra
-  // dados históricos cíclicos e torna a travessia idempotente.
   const alocacoesAfetadas = new Set<string>([entrada.alocacaoOrigemId]);
   const pendentes = [entrada.alocacaoOrigemId];
   for (let atual = pendentes.shift(); atual; atual = pendentes.shift()) {
@@ -115,8 +103,6 @@ export async function carregarImpactosProgressaoPorAproveitamentoTx(
     where: {
       OR: [
         { matriculaId: entrada.matriculaId, alocacaoOrigemId: { in: [...alocacoesAfetadas] } },
-        // Não atribuir uma matrícula a um registro legado. Apenas conservar a
-        // revisão direta da sua origem, como no comportamento anterior.
         { matriculaId: null, alocacaoOrigemId: entrada.alocacaoOrigemId },
       ],
       status: { in: ["APROVADA", "EXECUTADA"] },

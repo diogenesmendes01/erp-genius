@@ -22,7 +22,6 @@ export async function listarChamadaEncontro(input: { encontroId: string }) {
       if (e.status !== "PREVISTO" || e.fim > new Date()) throw new ErroRegra("A chamada exige encontro previsto já terminado.");
       if (e.diario && e.diario.professorId !== e.professorId) throw new ErroPermissao("O diário possui autoria diferente do professor original.");
       const chamada = e.turmaId ? await carregarChamadaTx(tx, e.turmaId, e.inicio) : await carregarAlunoParticularTx(tx, e.matriculaId!, e.inicio);
-      // Edição continua dependente de vínculo ativo hoje; esta consulta não amplia acesso docente.
       const ativos = new Set(e.turmaId ? (await tx.alocacaoTurma.findMany({ where: { turmaId: e.turmaId, ativa: true }, select: { alunoId: true } })).map((a) => a.alunoId) : chamada.alunos.map(a => a.alunoId));
       const anteriores = new Map(e.diario?.registros.map((r) => [r.alunoId, r]));
       const candidatosIdentificados = e.turmaId ? await tx.alocacaoTurma.findMany({ where: { turmaId: e.turmaId, matriculaId: { not: null }, OR: [

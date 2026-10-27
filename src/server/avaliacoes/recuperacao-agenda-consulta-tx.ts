@@ -1,6 +1,5 @@
 import type { Prisma } from "@prisma/client";
 
-/** Recebe somente tentativas já autorizadas pelo chamador, sob seus locks de acesso. */
 export async function agendasRecuperacaoAutorizadasTx(tx: Prisma.TransactionClient, itensAutorizados: string[], usuarioId: string) {
   const encontros = itensAutorizados.length ? await tx.encontroAgenda.findMany({
     where: { finalidade: "RECUPERACAO", propostaAgendaRecuperacao: { itemReservaId: { in: itensAutorizados }, decisao: { aprovada: true } } },

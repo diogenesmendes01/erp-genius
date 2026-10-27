@@ -4,8 +4,6 @@ import { carregarSituacoesNaAula } from "./historico-contratual";
 import { alocacaoCobreAula, alunosComVinculosSobrepostos } from "./alocacoes";
 
 export async function carregarChamadaTx(tx: Prisma.TransactionClient, turmaId: string, instante: Date) {
-  // A importação pode ocorrer após a aula: a vigência, e não criadoEm, é a âncora.
-  // Vínculos sem proveniência conservam integralmente o predicado legado.
   const candidatas = await tx.alocacaoTurma.findMany({ where: { turmaId, OR: [
     { provenienciaVinculo: "MIGRACAO", matriculaId: { not: null } },
     { provenienciaVinculo: null, criadoEm: { lte: instante }, AND: [

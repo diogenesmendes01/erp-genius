@@ -9,7 +9,6 @@ import { projetarDetalhesMovimentacao } from "./movimentacoes-detalhes";
 const schema = z.object({ alunoId: z.string().trim().min(1), tipo: z.enum(["PAUSA", "RETOMADA"]), cursor: z.string().min(1).optional() }).strict();
 const detalheSchema = schema.omit({ cursor: true }).extend({ propostaId: z.string().trim().min(1) });
 
-/** Retorna os impactos registrados na conferência, sem recalculá-los silenciosamente. */
 export async function obterDetalhesMovimentacao(input: z.input<typeof detalheSchema>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_PAUSA);
@@ -25,7 +24,6 @@ export async function obterDetalhesMovimentacao(input: z.input<typeof detalheSch
   });
 }
 
-/** Histórico operacional paginado. Não devolve hashes, entrada financeira ou snapshots brutos. */
 export async function listarPropostasMovimentacao(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_PAUSA);
@@ -38,7 +36,6 @@ export async function listarPropostasMovimentacao(input: z.input<typeof schema>)
         itens: { orderBy: { matriculaId: "asc" as const }, select: { matricula: { select: { id: true, codigo: true } } } },
       } as const;
       const where = { alunoId: dados.alunoId };
-      // Cursor precisa pertencer ao mesmo aluno e ao mesmo tipo de proposta.
       if (dados.cursor) {
         const existe = dados.tipo === "PAUSA"
           ? await tx.propostaPausaMatriculas.count({ where: { ...where, id: dados.cursor } })

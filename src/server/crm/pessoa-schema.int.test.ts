@@ -2,9 +2,6 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarAlunoMinimo } from "@/test/integracao";
 
-// Task 6 (2.M1): Pessoa como hub de identidade. Unicidade 1:1 com Aluno, lápide sem
-// auto-referência (CHECK) e N telefones (ContatoWhatsApp) para 1 pessoa.
-
 beforeEach(async () => {
   await truncarBanco();
 });

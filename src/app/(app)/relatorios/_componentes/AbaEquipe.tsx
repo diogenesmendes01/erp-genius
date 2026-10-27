@@ -10,7 +10,6 @@ export function AbaEquipe({ linhas, anterior, params }: { linhas: DesempenhoUsua
     <section aria-labelledby="equipe-titulo" className="space-y-1 text-sm">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="equipe-titulo" className="font-medium">Desempenho por pessoa</h2>
-        {/* A aba Equipe é só da gestão (admin e gerente comercial), que define as metas. */}
         <Link href="/configuracao/crm/metas" className="text-brand-700 hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center">Definir metas</Link>
       </div>
       <p className="text-xs text-gray-600">

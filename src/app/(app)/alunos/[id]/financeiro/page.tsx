@@ -17,8 +17,6 @@ import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export default async function FichaFinanceiraPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Ficha financeira do aluno: papéis que operam o financeiro (doc 07).
-  // Guard ANTES de consultar cobranças/ajustes/comissões.
   const usuario = await exigirSessaoPagina(
     Papel.FINANCEIRO,
     Papel.SECRETARIA_ACADEMICA,
@@ -27,15 +25,12 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
   );
   const tem = (...p: Papel[]) => temPapel(usuario, ...p);
 
-  // Escopo row-level (doc 07): vendedor só vê a ficha de alunos ligados a ele;
-  // fora do escopo → consulta devolve null → notFound (nunca dados de terceiros).
   const operacional = tem(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
   if (!operacional) {
     const resumo = await obterResumoComercialFinanceiro(id, usuario);
     if (!resumo) notFound();
     return <ResumoFinanceiroComercial dados={resumo} />;
   }
-  // As capacidades vêm do usuário da sessão (carregarUsuarioFresco já traz `permissoes`; C11 da #170).
   const [f, informes, contextoRetomada, propostasRetomada, preferencia, fusoEscola] = await Promise.all([
     obterFichaFinanceira(id, usuario), listarInformesPagamento(id),
     listarContextoRetomada(id), listarPropostasRetomada(id),

@@ -68,7 +68,6 @@ describe("NumerosPainel — motor", () => {
     expect(conectado).toContain("Desconectar");
     const caido = renderToStaticMarkup(createElement(NumerosPainel, { numeros: [numero({ sessao: "DESCONECTADO" })], vendedores: [] }));
     expect(caido).not.toContain(">Desconectar<");
-    // Desativado antes de desativar desligar a sessão: ainda dá para desconectar pela tela.
     const inativoVivo = renderToStaticMarkup(createElement(NumerosPainel, { numeros: [numero({ ativo: false })], vendedores: [] }));
     expect(inativoVivo).toContain(">Desconectar<");
     ganchos.atual = criarGanchos();

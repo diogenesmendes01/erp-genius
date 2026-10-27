@@ -12,10 +12,6 @@ import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { garantirAtendimento } from "./atendimentos";
 import { convidarParticipante, revogarParticipante } from "./acoes-atendimento";
 
-// Convite e revogação mudam o escopo (e o envio) de quem é convidado, mas só gravavam em
-// ParticipanteAtendimentoWhatsApp, que não tem o trigger notificar_inbox: o convidado só via o compositor
-// liberar ao reabrir. Agora a mesma transação toca o AtendimentoWhatsApp e o `atendimento.atualizado` sai.
-
 beforeAll(async () => { await iniciarEscuta(process.env.DATABASE_URL!); });
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 afterAll(() => prisma.$disconnect());
@@ -32,7 +28,7 @@ async function cenario() {
   const numero = await criarNumeroSetor({ telefoneE164: "+5511999990001", setores: ["COMERCIAL", "FINANCEIRO"], donoId: v1.id });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: v1.id }));
-  await pausa(300); // avisos da criação ficam fora da escuta de cada teste
+  await pausa(300);
   return { v1, fin, a };
 }
 
@@ -79,17 +75,14 @@ describe("convite e revogação de participante avisam o SSE (atendimento.atuali
     await pausa(200);
     sair();
     const daRevogacao = r.filter((x) => x.atendimentoId === a.id);
-    // O ex-convidado (já fora do escopo) recebe o aviso direcionado e nada além dele.
     const paraFin: AvisoInbox[] = [];
     for (const x of daRevogacao) if (await filtroFin(x)) paraFin.push(x);
     expect(paraFin).toEqual([direcionado]);
-    // Terceiro fora do escopo: nada. O responsável recebe o aviso comum, não o direcionado ao outro usuário.
     for (const x of daRevogacao) expect(await filtroOutro(x)).toBe(false);
     const paraV1: AvisoInbox[] = [];
     for (const x of daRevogacao) if (await filtroV1(x)) paraV1.push(x);
     expect(paraV1.length).toBeGreaterThan(0);
     expect(paraV1.every((x) => x.paraUsuarioId === undefined)).toBe(true);
-    // O aviso só carrega ids, e o quadro SSE não repassa o destinatário.
     expect(Object.keys(direcionado).sort()).toEqual(["atendimentoId", "conversaId", "mensagemId", "paraUsuarioId", "tipo"]);
     expect(formatarSSE(direcionado)).toBe(`event: atendimento.atualizado\ndata: ${JSON.stringify({ tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId })}\n\n`);
   });

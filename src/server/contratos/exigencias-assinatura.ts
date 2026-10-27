@@ -2,8 +2,6 @@ import { z } from "zod";
 import { RegraAssinaturaSchema } from "./modelo-schema";
 
 export const ContextoAssinaturaSchema = z.object({
-  // Classificação conferida segundo a regra aplicável. Não presume idade legal
-  // universal nem a calcula apenas pela data de nascimento.
   maioridade: z.enum(["MAIOR", "MENOR"]).nullable(),
   pagador: z.enum(["ALUNO", "RESPONSAVEL", "EMPRESA"]),
 }).strict();
@@ -15,8 +13,6 @@ export const PlanoAssinaturasSchema = z.object({
   pendencias: z.array(z.string()),
 }).strict();
 
-/** Resolve exigências do modelo, não identidades, capacidade de representação,
- * convites ou evidências de assinatura. Nenhum papel financeiro concede outro. */
 export function planejarExigenciasAssinatura(regrasInput: unknown, contextoInput: z.input<typeof ContextoAssinaturaSchema>) {
   const regras = z.array(RegraAssinaturaSchema).min(1).max(20).parse(regrasInput), contexto = ContextoAssinaturaSchema.parse(contextoInput);
   const resultado = regras.map((r) => {

@@ -17,7 +17,6 @@ const schema = z.object({
   if (new Set(d.atividades.map(a => a.habilidade)).size !== d.atividades.length) ctx.addIssue({ code: "custom", message: "Habilidade repetida no plano." });
 });
 
-/** Proposta preservada para revisão: não autoriza execução nem reserva oportunidades. */
 export async function proporPlanoRecuperacao(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);

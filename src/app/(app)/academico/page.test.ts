@@ -44,7 +44,6 @@ describe("painel acadêmico", () => {
     expect(mocks.listar).toHaveBeenLastCalledWith({ depois: "s-50", historico: true });
     expect(meio).toContain('href="/academico?historico=todos&amp;antes=s-51">← Anterior');
     expect(meio).toContain('href="/academico?historico=todos&amp;depois=s-100">Próxima');
-    // Um ponto da fila sem solicitações leva de volta ao início, com o filtro.
     expect(meio).toContain("inicio=/academico?historico=todos");
 
     mocks.listar.mockResolvedValue(fila({ temAnterior: true, temProxima: false, anterior: "s-101", proxima: null }));

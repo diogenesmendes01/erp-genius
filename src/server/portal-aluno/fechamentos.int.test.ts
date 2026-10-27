@@ -219,7 +219,7 @@ beforeEach(async () => {
   mocks.portalCookie = "";
   mocks.authMock.mockReset();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   catalogoContexto = { produtoId: catalogo.produto.id, paisId: catalogo.pais.id };
   professorId = (await criarUsuario([Papel.PROFESSOR], "Professor do fechamento")).id;

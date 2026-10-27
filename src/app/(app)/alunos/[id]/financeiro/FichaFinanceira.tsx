@@ -34,7 +34,6 @@ const VIGENCIA_INFO: Record<Vigencia, { label: string; cls: string }> = {
   CONTRATO_INTEIRO: { label: "Contrato inteiro", cls: "text-red-700" },
 };
 
-// Chip da régua (read-only) na linha da cobrança — espelha o estado da fila (doc 24 §só leitura).
 function reguaChipInfo(r: ReguaFicha | null, fusoEscola: string): { label: string; cls: string } | null {
   if (!r) return null;
   if (r.precisaBloqueio) return { label: "Bloqueio pendente", cls: "bg-red-100 text-red-700" };
@@ -59,7 +58,6 @@ export interface ReguaFicha {
   promessaAte: string | null;
   precisaBloqueio: boolean;
   diasAtraso: number;
-  /** Sinal de reincidência V1 (nº de cobranças já enviadas). Score de risco real é V2 (doc 24). */
   tentativas: number;
 }
 
@@ -107,12 +105,6 @@ export interface FichaFinanceiraDados {
   permissoes: { registrarPagamento: boolean; somenteInformar: boolean; renegociar: boolean; perdao: boolean };
 }
 
-/**
- * `fusoEscola`: a promessa é data civil gravada e sai no dia da escola (`formatarDiaCivilGravado`). O último
- * pagamento (`Cobranca.pagoEm`) é misto: data digitada ou instante real (ajuste, desistência, baixa sem data);
- * sai pelo `formatarDiaDoPagamento`, o dia da escola para os dois. Nenhum dos dois usa o fuso pessoal.
- * Instantes (envio, conferência) seguem a preferência pessoal.
- */
 export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEscola }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const router = useRouter();
   const [msg, setMsg] = useState<string | null>(null);
@@ -152,7 +144,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
         <Tile titulo="Em atraso" valor={formatarValores(t.emAtraso)} cls={t.emAtraso.some((v) => v.valor > 0) ? "text-red-600" : ""} />
       </div>
 
-      {/* Cobranças */}
       <section className="overflow-hidden rounded-lg border border-gray-200">
         <div className="border-b border-gray-100 bg-gray-50 px-4 py-2 text-sm font-medium">Cobranças</div>
         <div className="overflow-x-auto">
@@ -208,7 +199,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
         </div>
       </section>
 
-      {/* Histórico de negociação */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Histórico de negociação</h2>
         {dados.ajustes.length === 0 ? (
@@ -228,7 +218,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
         )}
       </section>
 
-      {/* Comissão */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Comissão</h2>
         {dados.comissoes.length === 0 ? (
@@ -242,7 +231,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
         )}
       </section>
 
-      {/* Histórico de cobrança — linha do tempo dos eventos da régua (read-only, doc 24) */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Histórico de cobrança</h2>
         {dados.historico.length === 0 ? (
@@ -302,7 +290,6 @@ function Tile({ titulo, valor, sub, cls }: { titulo: string; valor: string; sub?
   );
 }
 
-/** Exportado para o teste do pré-preenchimento do valor (R1 da #173, C2); a tela usa só a ficha. */
 export function RenegociarModal({
   cobranca,
   moeda,
@@ -318,13 +305,10 @@ export function RenegociarModal({
 }) {
   const tipos = [TipoAjuste.DESCONTO, TipoAjuste.BOLSA, TipoAjuste.ALTERACAO_VALOR, TipoAjuste.RENEGOCIACAO, ...(podePerdao ? [TipoAjuste.PERDAO] : [])];
   const [tipo, setTipo] = useState<TipoAjuste>(TipoAjuste.DESCONTO);
-  // formatarMoedaParaCampo (não String cru): "150.5" seria recusado por parseMoeda (ponto ambíguo, issue #167).
   const [valorPara, setValor] = useState(() => formatarMoedaParaCampo(cobranca.valorNegociado, moeda));
   const [vigencia, setVig] = useState<Vigencia>(Vigencia.ESTA_COBRANCA);
   const [novoVenc, setVenc] = useState("");
   const [motivo, setMotivo] = useState("");
-  // ajustarCobranca recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o mesmo
-  // desfecho (ajuste aplicado ou pedido de aprovação) sem registrar o ajuste duas vezes.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const campoId = useId();
@@ -332,8 +316,6 @@ export function RenegociarModal({
   const desconto =cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
 
   async function salvar() {
-    // Nunca ?? 0 aqui: texto inválido no valor viraria "novo valor: zero" registrado,
-    // silencioso — o mesmo tipo de erro que o CampoMoeda existe pra evitar.
     const valorParaNumero = tipo === TipoAjuste.PERDAO ? 0 : parseMoeda(valorPara);
     if (valorParaNumero === null) {
       acao.setErro("Informe o novo valor, com no máximo duas casas decimais.");

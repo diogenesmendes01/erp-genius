@@ -22,7 +22,6 @@ export async function revisarCorrecaoNota(propostaId: string) {
       return { propostaId: r.p.id, propostaHash: r.p.entradaHash, versao: r.p.versao, motivo: r.p.motivo,
         notasPropostas: NotasLancamentoSchema.parse(r.p.notas), notasVigentes: r.vigente.notas, origemHash: r.vigente.origemHash,
         impactos: r.impactos, impactosHash: r.impactosHash,
-        // Texto legível de cada impacto (turma de destino pelo código); `impactos` segue o recorte do hash.
         impactosLegiveis: await impactosLegiveisTx(tx, r.impactos), podeAprovar: r.podeAprovar, podeDecidir: !r.p.decisao && r.p.autorId !== u.id,
         identificacao: await identificarMatriculaAvaliacao(tx, r.a.matriculaId, r.a.turmaId), lancamentoId: r.p.lancamentoId };
     });

@@ -42,7 +42,6 @@ function temEquipe(papeis: string[]) {
   return papeis.some((papel) => permitidos.includes(papel));
 }
 
-/** Q10/Q11/Q27: histórico e origens da mesma matrícula, sem ficha, contato ou financeiro. */
 export async function consultarReposicoesEquipe(input: z.input<typeof porMatricula>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -129,8 +128,6 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
       ]);
       const pagina = reposicoes.slice(0, d.limite);
       const paginaOrigens = origens.slice(0, d.limite);
-      // 185 ainda pode estar pendente de integração. A leitura condicional
-      // mantém o histórico de frequência disponível antes da migration.
       const [cicloInstalado] = await tx.$queryRaw<{ instalado: boolean }[]>(Prisma.sql`
         SELECT to_regclass('public."PropostaCancelamentoAgendaReposicaoIndividual"') IS NOT NULL
           AND to_regclass('public."PropostaRemarcacaoAgendaReposicaoIndividual"') IS NOT NULL AS instalado
@@ -224,7 +221,6 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
   });
 }
 
-/** Q13: fila mínima do professor, limitada à designação ativa ou ao encontro próprio de reposição. */
 export async function consultarFilaReposicoesDocente(input: z.input<typeof filtroFila> = {}) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR);

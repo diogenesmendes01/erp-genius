@@ -11,7 +11,6 @@ export const RemarcacaoEntrada = z.object({ encontroOriginalId: z.string().min(1
   evidenciaEscolha: z.string().trim().min(5).max(2000), motivo: z.string().trim().min(5).max(2000),
   motivoExcecaoNaoLetiva: z.string().trim().min(5).max(2000).optional(), chaveIdempotencia: z.string().min(8).max(100) }).strict();
 
-/** Deve ser chamado dentro do bloqueio de calendário e matrícula; não publica nem reserva horas. */
 export async function conferirRemarcacaoParticularTx(tx: Prisma.TransactionClient, d: z.infer<typeof RemarcacaoEntrada>) {
   const e = await tx.encontroAgenda.findUnique({ where: { id: d.encontroOriginalId }, include: { matricula: { select: { status: true } }, diario: { select: { id: true } }, reservasHoras: { include: { consumo: true, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: { select: { destino: true } } } } } } } });
   if (!e?.matriculaId || e.finalidade !== "AULA" || e.turmaId || e.status !== "CANCELADO" || e.matricula?.status !== "ATIVA") throw new ErroRegra("Exige particular cancelada e matrícula ativa.");

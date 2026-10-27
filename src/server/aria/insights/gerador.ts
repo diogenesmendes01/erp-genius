@@ -33,14 +33,12 @@ export interface ServicosGeracaoInsight {
   disponivel:()=>boolean;
   executar:(meta:MetaGeracaoInsight,pedido:PedidoIA)=>Promise<EnvelopeInsight>;
 }
-/** Não invoca a factory nem lê presença de configuração até o request autorizado. */
 export const servicosPadraoInsight:ServicosGeracaoInsight={
   disponivel:chaveConfigurada,
   async executar(meta,pedido){
     if(meta.simulada){
       if(meta.modelo!=="simulado"||meta.provedor!=="simulado")return {tipo:"nao-enviada",fase:"nao-enviado",codigo:"CONFIG_INVALIDA"};
       const r=await provedorSimulado.gerar(pedido);
-      // Demo explícita neutra; não transforma o resumo genérico em afirmações sobre o cliente.
       const analise={temperatura:null,chanceFechar:null,sentimento:null,melhorHorario:null,intencao:null,sinais:[],riscos:[],proximoPasso:null,textoSugerido:null};
       return envelopeRespostaInsight({modelo:"simulado",provedor:"simulado",latenciaMs:r.latenciaMs},{texto:JSON.stringify(analise),recusa:r.recusa,
         uso:{tokensEntrada:r.tokensEntrada,tokensSaida:r.tokensSaida,tokensCache:r.tokensCache,tokensEscritaCache:r.tokensEscritaCache}});

@@ -1,6 +1,4 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-// Ganchos de src/test/tela-sem-dom.ts no lugar do React: o estado (inclusive o do useAcaoCliente) vive
-// entre renders, e os campos são preenchidos pelo onChange, como na tela.
 const mocks = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, propor: vi.fn(), refresh: vi.fn() }));
 vi.mock("react", async original => {
   const real = await original<typeof import("react")>();

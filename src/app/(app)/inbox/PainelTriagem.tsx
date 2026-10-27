@@ -8,16 +8,9 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { TIPO_MENSAGEM_LABEL, rotular } from "@/lib/labels";
 
-// Triagem e revisão de envio incerto, no painel da conversa (Task 33). classificarMensagemWhatsApp e
-// revisarFalhaEnvio recusam a repetição ("já classificada" / "já revisado"): sem chave de idempotência.
-// A triagem aparece a quem `listarTriagemWhatsApp` aceita (administrador ou responsável pela triagem do
-// número); a revisão de falha é só do administrador (`revisoes` chega nulo para os demais).
-
 export function PainelTriagem({ triagem, revisoes, preferenciaFusoExibicao }: { triagem: ItemTriagem[] | null; revisoes: RevisaoEnvio[] | null; preferenciaFusoExibicao: string | null }) {
-  // Resolvida a mensagem ou a falha, ela sai do painel na hora (a próxima carga da página já não a traz).
   const [resolvidas, setResolvidas] = useState<ReadonlySet<string>>(new Set());
   const resolver = (id: string) => setResolvidas((atual) => new Set(atual).add(id));
-  // Lista vazia é ausência: sem pendência o painel não mostra um <details> com "· 0".
   const pendentes = <T extends { id: string }>(l: T[] | null) => { const f = l?.filter((x) => !resolvidas.has(x.id)); return f?.length ? f : null; };
   const pendentesTriagem = pendentes(triagem);
   const pendentesRevisao = pendentes(revisoes);
@@ -67,11 +60,9 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
   const [decisao, setDecisao] = useState<"CANCELAR" | "REENVIAR_APOS_VERIFICACAO">("CANCELAR");
   const [evidencia, setEvidencia] = useState("");
   const acao = useAcaoCliente({ idempotente: false });
-  // Concluída, fica só o resultado do servidor (cancelado / nova tentativa autorizada / cobrança mudou).
   if (concluida) return <div className="rounded border bg-surface p-3 text-sm"><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /></div>;
   return <form className="space-y-2 rounded border bg-surface p-3 text-sm" onSubmit={async (e) => {
     e.preventDefault();
-    // A mensagem do servidor (cancelado / nova tentativa autorizada / cobrança mudou) é o resultado.
     const d = await acao.executar(() => revisarFalhaEnvio({ id: item.id, decisao, evidencia }), (dado) => dado?.mensagem ?? null);
     if (d?.tipo === "ok") setConcluida(true);
   }}>

@@ -19,10 +19,6 @@ const Entrada = z.object({
   texto: z.string().trim().min(1, "Escreva a mensagem.").max(4096, "Mensagem longa demais (máx. 4096)."),
 }).strict();
 
-/**
- * Prepara um link wa.me para ação humana. Não grava evento, intenção, mensagem ou
- * contato e não chama driver; o destinatário é sempre resolvido da matrícula atual.
- */
 export async function prepararCobrancaManual(input: {
   cobrancaId: string;
   modelo: ModeloWhatsapp;

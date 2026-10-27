@@ -3,7 +3,6 @@ import { useCallback, useSyncExternalStore } from "react";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import { assinarEventosCompartilhados } from "@/lib/eventos-inbox";
 
-/** Máquina de recontagem: no máximo um GET em voo e uma repetição pendente, sem polling. */
 export function criarLojaNaoLidas(inicial: number, buscar: () => Promise<Response>) {
   let total = inicial; let geracao = 0; let emVoo = false; let pendente = false;
   const ouvintes = new Set<{ notificar: () => void }>();
@@ -20,12 +19,10 @@ export function criarLojaNaoLidas(inicial: number, buscar: () => Promise<Respons
       const dado: unknown = await r.json();
       if (iniciada !== geracao || !dado || typeof dado !== "object" || !("total" in dado)) return;
       const n = dado.total; if (typeof n === "number" && Number.isSafeInteger(n) && n >= 0) aplicar(n);
-    } catch { /* rede/5xx mantém último total; aviso posterior ou repetição pendente reconcilia */ }
+    } catch {  }
     finally {
-      // fetch resolve nos headers. Até uma geração descartada precisa terminar o corpo
-      // antes de liberar outro GET; drenar evita abortar e gerar falha de rede no cliente.
       if (recebida && !recebida.bodyUsed) {
-        try { await recebida.arrayBuffer(); } catch { /* corpo encerrado com erro também libera o recurso */ }
+        try { await recebida.arrayBuffer(); } catch {  }
       }
       emVoo = false;
       if (pendente) { pendente = false; void executar(); }
@@ -46,12 +43,10 @@ function assinarLoja(inicial: number, ativo: boolean, notificar: () => void): ()
   if (!loja) loja = criarLojaNaoLidas(inicial, () => fetch("/api/inbox/nao-lidas", { cache: "no-store", credentials: "same-origin" }));
   const atual = loja; const sair = atual.subscribe(notificar);
   if (assinaturas++ === 0) sairEventos = assinarEventosCompartilhados(atual.aoAviso, () => {});
-  // Uma prop SSR nova pode refletir leitura/marcação pessoal sem NOTIFY compartilhado.
   atual.recontar();
   let ativa = true;
   return () => { if (!ativa) return; ativa = false; sair(); if (--assinaturas === 0) { sairEventos?.(); sairEventos = null; } };
 }
-/** SSR usa somente a prop; loja e rede começam na assinatura, nunca durante render. */
 export function useNaoLidasInbox(inicial: number, ativo = true): number {
   const subscribe = useCallback((notificar: () => void) => assinarLoja(inicial, ativo, notificar), [inicial, ativo]);
   return useSyncExternalStore(subscribe, () => ativo ? loja?.valor() ?? inicial : 0, () => ativo ? inicial : 0);

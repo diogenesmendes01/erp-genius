@@ -6,11 +6,6 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { pagarCobrancaSimulada } from "./requisicao";
 
-// Caminho de pagamento da cobrança pendente ou vencida (a página decide quando ele aparece; ./quadro.ts).
-// Erro e sucesso separados (useAcaoCliente + FeedbackAcao; docs/43 §6 item 8): a recusa sai em role="alert"
-// com o botão "Tentar de novo", a confirmação em role="status", e a falha de rede como resultado não confirmado
-// (recarregar mostra se a cobrança já está paga — a baixa não tem chave de idempotência). Depois do pagamento
-// aceito, a página é renderizada de novo, e o quadro do servidor passa de "em aberto" a "paga".
 export function PagarCliente({ token, simuladoHabilitado }: { token: string; simuladoHabilitado: boolean }) {
   const acao = useAcaoCliente({ idempotente: false });
   const router = useRouter();

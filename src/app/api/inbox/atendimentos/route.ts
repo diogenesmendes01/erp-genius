@@ -11,7 +11,6 @@ import { resumoDaListaInbox } from "@/server/inbox/contagens";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Lista paginada por cursor (E6). O escopo é aplicado na consulta; filtros só restringem.
 export async function GET(req: Request) {
   let usuario;
   try {
@@ -27,7 +26,6 @@ export async function GET(req: Request) {
   const bruto = params.get("cursor");
   const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
   if (bruto && !cursor) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
-  // `envio=1`: só os atendimentos em que o usuário pode enviar (destino do encaminhar).
   const enviar = params.get("envio") === "1";
   const operacao=criarOperacaoListaInbox(usuario,{enviar});
   const pedirResumo=params.get("contagens")==="1"&&!cursor;

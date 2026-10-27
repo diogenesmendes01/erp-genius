@@ -6,7 +6,6 @@ export type VencimentoVisivel =
 
 type OrigemVencimento = Extract<VencimentoVisivel, { estado: "CONFIRMADO" }>["origem"];
 
-/** Origem do vencimento em texto de operação (E5: "M01_HISTORICO" aparecia cru na tela). */
 export const ORIGEM_VENCIMENTO_LABEL: Record<OrigemVencimento, string> = {
   EMISSAO_ENTRADA: "emissão da entrada",
   EMISSAO_CONTINUIDADE: "continuidade mensal",
@@ -17,14 +16,12 @@ export const ORIGEM_VENCIMENTO_LABEL: Record<OrigemVencimento, string> = {
   RETOMADA_REPROGRAMADA: "retomada reprogramada",
 };
 
-/** Formata a data civil entregue pelo servidor sem reinterpretar o instante no navegador. */
 export function rotuloVencimento(vencimento: VencimentoVisivel): string {
   if (vencimento.estado !== "CONFIRMADO") return `Vencimento a conferir: ${vencimento.motivo}`;
   const referencia = vencimento.fuso ? `referência ${vencimento.fuso}` : `origem: ${ORIGEM_VENCIMENTO_LABEL[vencimento.origem] ?? vencimento.origem}`;
   return `vence ${formatarDataCivil(vencimento.dataCivil)} · ${referencia}`;
 }
 
-/** Datas da régua são dias civis relativos ao vencimento, não instantes do navegador. */
 export function dataCivilComDeslocamento(vencimento: VencimentoVisivel, dias: number): string | null {
   if (vencimento.estado !== "CONFIRMADO") return null;
   const data = new Date(`${vencimento.dataCivil}T12:00:00.000Z`);

@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { CobrancaPublica } from "@/server/financeiro/gateway";
 import { quadroDoPagamento } from "./quadro";
 
-// docs/42 /pagar #2 e #3 (docs/43 §6 item 8): cada situação do link e da cobrança tem um quadro próprio, com
-// título, explicação e saída; só pendente e vencida mantêm o caminho de pagamento.
 const TOKEN = "a".repeat(48);
 const cobranca = (status: string): CobrancaPublica => ({ valor: 350, moeda: "BRL", vencimentoISO: "2026-10-15T00:00:00.000Z", status, descricao: "Mensalidade — Ana (2026-10)" });
 
@@ -18,7 +16,6 @@ describe("quadroDoPagamento", () => {
       quadroDoPagamento(TOKEN, cobranca("PENDENTE")),
     ];
     expect(casos.map((q) => q.caso)).toEqual(["link-invalido", "link-expirado", "paga", "cancelada", "vencida", "pendente"]);
-    // Texto e saída próprios em todos (nenhum quadro repete o título de outro).
     expect(new Set(casos.map((q) => q.titulo)).size).toBe(casos.length);
     for (const q of casos) {
       expect(q.texto.length, q.caso).toBeGreaterThan(20);

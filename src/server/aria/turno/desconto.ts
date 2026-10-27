@@ -7,7 +7,6 @@ import type { ConfigAria } from "../config-schema";
 export type TipoCobrancaDesconto = "MATRICULA" | "MENSALIDADE";
 export type FaixaDesconto = "SEM_APROVACAO" | "COM_APROVACAO" | "HANDOFF";
 
-/** Faixas de desconto da política: até o limite sem aprovação, até o limite com aprovação, acima disso handoff. */
 export function avaliarDesconto(
   pct: number,
   parcelas: number,
@@ -30,7 +29,6 @@ export interface EntradaAprovacaoDesconto {
   acaoAgenteIAId: string;
 }
 
-/** Cria Aprovacao DESCONTO PENDENTE em nome do dono da oportunidade. Sem dono, nada é criado. */
 export async function solicitarAprovacaoDesconto(
   tx: Prisma.TransactionClient,
   input: EntradaAprovacaoDesconto,

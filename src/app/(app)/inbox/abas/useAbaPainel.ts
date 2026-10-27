@@ -7,7 +7,6 @@ export function urlAbaPainel(atendimentoId: string, aba: AbaDados): string {
   return `/api/inbox/atendimentos/${encodeURIComponent(atendimentoId)}/painel/${aba}`;
 }
 
-/** A versão invalida a leitura; somente atendimento/aba/ativação invalidam o último DTO bom. */
 export function useAbaPainel<T>(atendimentoId: string | null, aba: AbaDados, versao: number, ativo: boolean): {
   dado: T | null; erro: boolean; recarregar(): void;
 } {
@@ -15,7 +14,6 @@ export function useAbaPainel<T>(atendimentoId: string | null, aba: AbaDados, ver
   const identidade = ativo && atendimentoId ? JSON.stringify([atendimentoId, aba]) : null;
   const chave = ativo && atendimentoId ? JSON.stringify([atendimentoId, aba, versao, tentativa]) : null;
   const [resultado, setResultado] = useState<{ identidade: string | null; chave: string | null; dado: T | null; erro: boolean }>(() => ({ identidade, chave, dado: null, erro: false }));
-  // Limpar no render impede também A→B→A e desativar→reativar de ressuscitarem um snapshot.
   if (resultado.identidade !== identidade) setResultado({ identidade, chave, dado: null, erro: false });
   const recarregar = useCallback(() => setTentativa(n => n + 1), []);
   useEffect(() => {
@@ -28,7 +26,6 @@ export function useAbaPainel<T>(atendimentoId: string | null, aba: AbaDados, ver
     }
     void fetch(urlAbaPainel(atendimentoId, aba), { cache: "no-store", credentials: "same-origin", signal: controle.signal })
       .then(async r => {
-        // Negativa explícita revoga o snapshot; falha transitória conserva o que já foi lido.
         if (!r.ok) { falhar(r.status === 403 || r.status === 404); return; }
         const dado = await r.json() as T;
         if (!dado || typeof dado !== "object") throw new Error("Resposta inválida.");

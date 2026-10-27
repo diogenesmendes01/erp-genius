@@ -3,7 +3,6 @@ import { Papel } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
-// Auth permanece adaptada na fronteira; consultas e locks do domínio são reais, inclusive em paralelo.
 vi.mock("@/server/_shared/sessao", async original => {
   const real = await original<typeof import("@/server/_shared/sessao")>();
   return { ...real, exigirSessao: async () => {

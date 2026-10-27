@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RespostaIA } from "./provedor/tipos";
 
-// Mapeamento RespostaIA -> ChamadaIA sem banco: o Prisma é mockado e o teste lê o `data` do create.
-
 const m = vi.hoisted(() => ({ create: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { chamadaIA: { create: m.create } } }));
 

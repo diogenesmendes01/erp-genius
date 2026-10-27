@@ -34,7 +34,6 @@ import {
   professorAtribuido,
 } from "./experimental";
 
-/** DDI do país do lead (para normalizar o telefone); "" se sem país. */
 async function ddiDoPais(paisId?: string | null, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<string> {
   if (!paisId) return "";
   return (await db.pais.findUnique({ where: { id: paisId } }))?.ddi ?? "";
@@ -64,7 +63,6 @@ import { VALOR_CAMPO_LOCAL } from "@/server/operacao/fuso-entrada";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { marcarPerdidoTx } from "@/server/crm/marcar-perdido";
 
-/** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
   const professor = await prisma.usuario.findUnique({ where: { id: professorId } });
   if (!professor) throw new ErroRegra("Professor não encontrado.");
@@ -77,11 +75,6 @@ const PAPEIS_COMERCIAL: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 
 const DATA_CIVIL_LITERAL = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/**
- * O banco mantém datas como instantes. No evento, porém, conservamos também a
- * data civil que a pessoa informou quando ela estava explícita e válida. Isso
- * evita que uma leitura histórica escolha retroativamente um fuso inexistente.
- */
 function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
   if (typeof valor !== "string" || !normalizada) return null;
   const partes = DATA_CIVIL_LITERAL.exec(valor);
@@ -94,11 +87,9 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
 
 function revalidarLead() {
   revalidatePath("/funil");
-  // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
 }
 
-/** Carrega o lead garantindo que o usuário pode vê-lo (vendedor só os próprios). */
 async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   exigirPapel(usuario, ...PAPEIS_COMERCIAL);
   const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
@@ -113,7 +104,6 @@ async function exigirDocumentoPermitido(leadId: string, categoria: CategoriaDocu
   if (usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
     const matricula = await tx.matricula.findUnique({ where: { leadId }, select: { secretariaAssumiuEm: true } });
     if (matricula?.secretariaAssumiuEm) return;
-    // Acumular secretaria não revoga a coleta inicial já autorizada pela carteira.
     if (!usuario.papeis.some((p) => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL || p === Papel.PROFESSOR)) throw new ErroPermissao("Assuma a matrícula antes de alterar os documentos administrativos.");
   }
   if (categoria === CategoriaDocumento.TESTE_NIVEL && usuario.papeis.includes(Papel.PROFESSOR)) {
@@ -130,11 +120,8 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const { chaveIdempotencia, ...dados } = CriarLeadSchema.parse(input);
-    // Idempotência (#166): a chave e o hash da entrada vão no payload do `LeadCriado`.
     const marca = chaveIdempotencia ? { chaveIdempotencia, entradaHash: hashEntrada(dados) } : null;
 
-    // Vendedor vira dono por padrão; só gerente/admin podem atribuir a outro vendedor.
-    // O servidor ignora qualquer vendedorDonoId enviado por um vendedor (doc 09).
     const donoId = resolverDonoLead(autor, dados.vendedorDonoId);
     await exigirDestinoComercial(autor, donoId);
     const ddi = await ddiDoPais(dados.paisId);
@@ -149,8 +136,6 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
       }
       const codigo = await gerarCodigo("lead");
       const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
-      // `Empresa` não tem dono nem carteira; o escopo possível é o cadastro estar ativo. Inexistente ou
-      // inativa devolve a mesma mensagem, em vez de estourar a FK (P2003) num erro genérico.
       let empresaId = dados.empresaId || null;
       if (dados.criarEmpresa && (empresaId || dados.pessoaId)) {
         throw new ErroRegra("Oportunidade de empresa nova não leva empresa nem contato já existentes.");
@@ -159,9 +144,6 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
         const empresa = await tx.empresa.findFirst({ where: { id: empresaId, ativo: true }, select: { id: true } });
         if (!empresa) throw new ErroRegra("Empresa não encontrada.");
       } else if (dados.criarEmpresa) {
-        // Ruling (C2 da R1 do #196): no modo Empresa a oportunidade nasce ligada a uma `Empresa` prospect, criada
-        // com o nome e o contato digitados, e nenhuma `Pessoa` recebe o nome da empresa. Participantes
-        // (`ParticipanteOportunidade`) entram depois, pela ficha.
         const codigoEmpresa = await gerarCodigo("empresa", tx);
         const empresa = await tx.empresa.create({
           data: {
@@ -182,13 +164,8 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
           payload: { codigo: codigoEmpresa, nome: empresa.nome, origem: "oportunidade" },
         });
       }
-      // Comportamento intencional nesta fase (R1 do PR #194, C2): com `pessoaId` informado, o telefone não
-      // entra em `ContatoWhatsApp`; e o `email` digitado só vai para a Pessoa quando ela é criada aqui (via
-      // `garantirPessoaTx`). Pessoa já existente — informada, achada pelo contato ou pelo aluno/responsável —
-      // não tem telefone nem e-mail atualizados por esta ação.
       let pessoaId = dados.pessoaId || null;
       if (pessoaId) {
-        // Fora do escopo do autor (ou lápide) é indistinguível de inexistente: não vaza o contato.
         const existente = await tx.pessoa.findFirst({
           where: { AND: [{ id: pessoaId }, await escopoPessoas(autor, tx)] },
           select: { id: true },
@@ -211,15 +188,6 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
   });
 }
 
-// ── Cockpit do vendedor na inbox (doc 08 §CRM alimentado pela conversa) ──────
-// Ações pequenas para o vendedor operar o funil SEM sair da conversa. Reusam as mesmas
-// garantias das telas: papel comercial, escopo row-level do lead e evento auditável.
-
-/**
- * NOTA INTERNA sobre o lead: comentário da equipe, **nunca enviado ao contato**.
- * Distinta de `registrarInteracao` (que registra um contato REAL — ligação/presencial).
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra nota (a chave vai no payload do Evento).
- */
 export async function registrarNotaInterna(leadId: string, input: NotaInternaInput & { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -248,7 +216,6 @@ export async function registrarNotaInterna(leadId: string, input: NotaInternaInp
   });
 }
 
-/** Temperatura do lead em 1 clique (Quente/Morno/Frio) — sem abrir o formulário inteiro. */
 export async function definirTemperatura(leadId: string, temperatura: Temperatura): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -281,7 +248,6 @@ export async function editarLead(id: string, input: EditarLeadInput): Promise<Re
       const leadTravado = await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
       if (leadTravado.length !== 1) throw new ErroRegra("Oportunidade não encontrada.");
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${id} FOR UPDATE`;
-      // Antecipar as FKs antes da autorização final evita uma espera posterior com papéis antigos.
       if (dados.paisId) {
         const paisTravado = await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Pais" WHERE id=${dados.paisId} FOR KEY SHARE`;
         if (paisTravado.length !== 1) throw new ErroRegra("País não encontrado.");
@@ -334,9 +300,6 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = ResumoSchema.parse(input);
-    // Evento na MESMA transação da mutação (issue #1: resumo alterava sem auditoria).
-    // Tipo específico ResumoAtualizado com payload completo, consumido pela linha
-    // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
       await tx.oportunidade.update({
         where: { id },
@@ -373,15 +336,11 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
-    // A experimental digitada (texto do `datetime-local`) vira instante no fuso informado pela tela, aqui no servidor.
     const { fusoDataExperimental, ...entrada } = input;
     const experimental = typeof entrada.dataExperimental === "string" && VALOR_CAMPO_LOCAL.test(entrada.dataExperimental)
       ? exigirInstanteDoCampoLocal(entrada.dataExperimental, fusoDataExperimental).toISOString()
       : entrada.dataExperimental;
     const dados = analisarComDatasDaEscola(DatasSchema, { ...entrada, dataExperimental: experimental }, await fusoDaEscola());
-    // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
-    // Tipo específico DatasAtualizadas com payload completo, consumido pela linha
-    // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
       await tx.oportunidade.update({
         where: { id },
@@ -413,13 +372,11 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    // Máquina de estados, trava da linha e Evento na mesma transação: ver crm/mover-etapa.ts.
     await prisma.$transaction((tx) => moverEtapaTx(tx, autor, id, etapa));
     revalidarLead();
   });
 }
 
-/** Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra interação (a chave vai no payload do Evento). */
 export async function registrarInteracao(id: string, input: InteracaoInput & { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -428,7 +385,6 @@ export async function registrarInteracao(id: string, input: InteracaoInput & { c
     const dados = InteracaoSchema.parse(input);
     const payload = { canal: dados.canal || null, nota: dados.nota };
     const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { leadId: id, ...payload });
-    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     await prisma.$transaction(async (tx) => {
       if (marca) {
         const repetido = await repeticaoIdempotente(tx, {
@@ -449,9 +405,6 @@ export async function registrarInteracao(id: string, input: InteracaoInput & { c
   });
 }
 
-/** Agenda a experimental e (opcionalmente) grava o professor responsável na FK
- * `professorExperimentalId` — escopo que a Home do professor e o check-in usam
- * (Issue #13). O vínculo também é auditado no event log. */
 export async function agendarExperimental(
   id: string,
   input: AgendarExperimentalInput,
@@ -461,15 +414,11 @@ export async function agendarExperimental(
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = AgendarExperimentalSchema.parse(input);
-    // Texto digitado: convertido aqui, no fuso informado pela tela (lote 3 do fuso pessoal); senão, o ISO.
     const data = dados.dataLocal ? exigirInstanteDoCampoLocal(dados.dataLocal, dados.fuso) : new Date(dados.dataISO ?? "");
     if (isNaN(data.getTime())) throw new ErroRegra("Data inválida.");
-    // Schema normaliza "" → null; `?? null` cobre o campo ausente. Sempre
-    // persistimos a FK para que "Definir depois" limpe o responsável anterior.
     const professorId = dados.professorId ?? null;
     if (professorId) await exigirProfessorValido(professorId);
 
-    // Estado atual da FK para auditar só quando o responsável mudar (incl. remoção).
     const anterior = await professorAtribuido(prisma, id);
     const mudouProfessor = professorId !== anterior;
     await prisma.$transaction(async (tx) => {
@@ -479,12 +428,7 @@ export async function agendarExperimental(
           etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
           dataExperimental: data,
           professorExperimentalId: professorId,
-          // (Re)agendar abre uma OCORRÊNCIA nova: a confirmação do compromisso ANTERIOR não
-          // vale para o novo horário (review PR #56). Sem este reset o lead ficaria
-          // "confirmado" para sempre e a resposta ao novo lembrete nem gravaria evento.
           experimentalConfirmadaEm: null,
-          // B8 (doc 32): remarcar É a ação humana que o pedido de REAGENDAR esperava —
-          // libera a cadência pré-experimental para a ocorrência nova.
           aguardandoReagendamentoEm: null,
         },
       });
@@ -495,8 +439,6 @@ export async function agendarExperimental(
         autorId: autor.id,
         payload: { data: data.toISOString() },
       });
-      // Auditoria do vínculo: mesmo evento para atribuição/remanejamento e
-      // remoção (professorId null). Só registra quando houve mudança.
       if (mudouProfessor) {
         await registrarEvento(tx, {
           tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
@@ -558,9 +500,6 @@ export async function anexarDocumentoLead(
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${leadId} FOR UPDATE`;
       await exigirDocumentoPermitido(leadId, doc.categoria, autor, tx);
       await exigirArquivoVinculavel(autor, doc.url, { leadId, categoriaDocumento: doc.categoria }, tx);
-      // Idempotência por natureza (#166): cada upload tem URL própria, e o lead está travado acima. O reenvio do
-      // mesmo upload, com a mesma categoria e o mesmo nome, devolve o documento já anexado sem gravar outro
-      // registro nem outro Evento; com outro nome é recusado.
       const jaAnexado = await tx.documento.findFirst({ where: { leadId, url: doc.url, arquivado: false }, select: { categoria: true, nome: true } });
       if (jaAnexado) {
         if (jaAnexado.categoria === doc.categoria && jaAnexado.nome === doc.nome) return;
@@ -581,7 +520,6 @@ export async function anexarDocumentoLead(
   });
 }
 
-/** Arquiva o documento (soft-delete — doc 10 §6: ninguém apaga nada). */
 export async function arquivarDocumentoLead(documentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -594,7 +532,6 @@ export async function arquivarDocumentoLead(documentoId: string): Promise<Result
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${leadId} FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM "Documento" WHERE id = ${documentoId} FOR UPDATE`;
       await exigirDocumentoPermitido(leadId, doc.categoria, autor, tx);
-      // Estado-alvo (#166): o documento já arquivado não é arquivado de novo nem ganha outro Evento.
       const atual = await tx.documento.findUnique({ where: { id: documentoId }, select: { arquivado: true } });
       if (atual?.arquivado) return;
       const contratoEmUso = await tx.matricula.findFirst({ where: { contratoDocumentoId: documentoId, contratoOk: true }, select: { id: true } });
@@ -612,16 +549,8 @@ export async function arquivarDocumentoLead(documentoId: string): Promise<Result
   });
 }
 
-/** Check-in da experimental (professor): Compareceu → Experimental Realizada · Faltou → No-show.
- * Devolve o lead à fila do comercial (doc 09 §Visão do Professor).
- *
- * Escopo do professor (Issue #13): valida papel, etapa atual (precisa haver uma
- * experimental AGENDADA) e a associação professor↔experimental (FK
- * `professorExperimentalId`). Fora do escopo → ErroPermissao; etapa errada →
- * ErroRegra. */
 export async function checkinExperimental(leadId: string, compareceu: boolean): Promise<Resultado> {
   return executarAcao(async () => {
-    // 1) papel: só professor (Admin passa em exigirPapel)
     const autor = await exigirSessao();
     exigirPapel(autor, Papel.PROFESSOR);
 
@@ -629,14 +558,11 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     const proximaAcao = compareceu ? "Comercial: apresentar proposta" : "Remarcar experimental";
     const tipo = compareceu ? "ExperimentalRealizada" : "NoShow";
 
-    // Tudo na transação, com o lead travado: o clique duplo é serializado (antes, os dois gravavam o Evento).
     const repetido = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${leadId} FOR UPDATE`;
       const lead = await tx.oportunidade.findUnique({ where: { id: leadId } });
       if (!lead) throw new ErroRegra("Lead não encontrado.");
 
-      // 2) escopo: o professor precisa estar atribuído a esta experimental (FK).
-      //    Admin (passa em temPapel mas não é professor literal) ignora o vínculo.
       const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
       if (!ehAdmin) {
         if (!professorNoEscopoExperimental(lead.professorExperimentalId, autor.id)) {
@@ -644,8 +570,6 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
         }
       }
 
-      // Idempotência por natureza (#166, 5º lote): o mesmo check-in, já registrado por quem repete, devolve ok sem
-      // gravar de novo. Vem antes da etapa, que o próprio check-in já mudou.
       if (lead.etapa === etapa) {
         const ultimo = await tx.evento.findFirst({
           where: { agregadoTipo: "Lead", agregadoId: leadId, tipo: { in: ["ExperimentalRealizada", "NoShow"] } },
@@ -654,7 +578,6 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
         if (ultimo?.tipo === tipo && ultimo.autorId === autor.id) return true;
       }
 
-      // 3) etapa/agendamento: só vale enquanto há uma experimental agendada
       if (!podeCheckinExperimental(lead.etapa)) {
         throw new ErroRegra("Não há experimental agendada para check-in neste lead.");
       }
@@ -675,9 +598,6 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
   });
 }
 
-/** Atribui (ou remaneja) o professor responsável por uma experimental — define o
- * escopo que a Home do professor e o check-in usam (Issue #13). Comercial/Admin.
- * Grava a FK `professorExperimentalId` (fonte de verdade) e audita no event log. */
 export async function atribuirProfessorExperimental(
   leadId: string,
   professorId: string,
@@ -707,7 +627,6 @@ export async function atribuirProfessorExperimental(
   });
 }
 
-/** Redistribui a carteira; beneficiários de comissões anteriores permanecem intactos. */
 export async function atribuirDono(
   id: string,
   vendedorId: string,
@@ -721,8 +640,6 @@ export async function atribuirDono(
       await exigirDestinoComercial(autor, vendedorId, tx);
       if (lead.vendedorDonoId === vendedorId) return;
       await tx.oportunidade.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
-      // Responsável preenchido conta como assumido (regra do backfill da M2): quem estava "Na fila" passa a
-      // EM_ATENDIMENTO; AGUARDANDO_CLIENTE e EM_ATENDIMENTO mantêm o status.
       await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null, status: "ABERTO_SEM_RESPONSAVEL" }, data: { responsavelId: vendedorId, status: "EM_ATENDIMENTO" } });
       await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null }, data: { responsavelId: vendedorId } });
       if (lead.vendedorDonoId) await tx.intencaoMensagem.updateMany({ where: { OR: [{ leadId: id }, { atendimento: { is: { leadId: id, finalidade: "COMERCIAL" } } }], origem: "HUMANO", autorId: lead.vendedorDonoId, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "Carteira transferida; revisar responsável antes de enviar." } });

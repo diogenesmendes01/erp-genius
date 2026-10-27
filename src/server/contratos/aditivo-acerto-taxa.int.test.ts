@@ -166,7 +166,6 @@ it.each([
  ["crédito Q68", "CREDITO", "0.00", "100.00"],
  ["50 em dinheiro e 50 em crédito Q68", "MISTO", "50.00", "50.00"],
 ] as const)("DCT03 devolve 20 após taxa liquidada com %s, sem recebimento fictício e sem tocar outra matrícula", async (_descricao, liquidacao, recebidoEsperado, creditoEsperado) => {
-  // Este caso precisa substituir a quitação em dinheiro padrão do beforeEach.
   await truncarBanco();
   await cadeiaTaxa();
   await prepararFinanceiro(liquidacao);
@@ -656,8 +655,6 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
   });
 });
 
-// Q168/Q169: usa a mesma cadeia documental real de DCT03, mas com a política de
-// cobertura assinada. Nenhuma prova de decisão ou aplicação é inserida à mão.
 describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
   beforeEach(async () => {
     await truncarBanco();

@@ -7,7 +7,6 @@ import { carregarRevisaoAceite } from "./aceite-estado";
 import { hashPrevia } from "./previa-estado";
 import { Confirmar } from "./aceite-schema";
 
-/** Primitiva interna, não é Server Action; revalida autor dentro da transação. */
 export async function confirmarAceiteOriginalTx(tx: Prisma.TransactionClient, autorId: string, input: z.input<typeof Confirmar>) {
   const d = Confirmar.parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`aceite-original:${autorId}`}, 0))`;

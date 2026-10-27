@@ -34,7 +34,7 @@ describe("semDecimais", () => {
     expect(plano.matriculas[0].cobrancas[0].valorNegociado).toBe(85000);
     expect(plano.matriculas[0].cobrancas[0].saldo).toBe(85000.5);
     expect(plano.matriculas[0].cobrancas[0].valorRecebido).toBeNull();
-    expect(plano.criadoEm).toBe(criadoEm); // Date intacto (RSC serializa Date)
+    expect(plano.criadoEm).toBe(criadoEm);
     expect(plano.nome).toBe("Ana");
   });
 

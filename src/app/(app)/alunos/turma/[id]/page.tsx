@@ -12,8 +12,6 @@ import { EstadoVazioLinha } from "@/components/EstadoVazio";
 
 export default async function FichaTurmaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Ficha da turma (doc 07 / nav). Professor só vê turmas que leciona:
-  // obterTurma devolve null fora do seu escopo → notFound.
   const usuario = await exigirSessaoPagina(
     Papel.SECRETARIA_ACADEMICA,
     Papel.GERENTE_PEDAGOGICO,
@@ -24,10 +22,6 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
   if (!turma) notFound();
   const vagas = turma.capacidade - turma.alocacoes.length;
 
-  // Fase 3 (acadêmico): diário, avaliações e progressão sugerida da turma. FINANCEIRO vê
-  // esta página só pela lista de alunos — o payload acadêmico (diário/notas/progressão)
-  // NEM É BUSCADO para quem não é dos papéis acadêmicos (review PR #60: esconder o
-  // controle não basta; o dado não pode ir ao client).
   const podeVerAcademico = temPapel(usuario, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR);
   const [diario, progressao] = podeVerAcademico
     ? await Promise.all([diarioDaTurma(id), progressaoDaTurma(id)])
@@ -80,7 +74,6 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
         </table>
       </section>
 
-      {/* Fase 3 — acadêmico da turma (frequência · notas · progressão) — só papéis acadêmicos */}
       {diario && progressao && (
         <TurmaAcademico
           turmaId={id}

@@ -56,7 +56,6 @@ describe("Botao (E1)", () => {
       const c = botaoClasses({ variante: v });
       expect(c).not.toMatch(/outline-none|ring-/);
     }
-    // O indicador que vale é o global, para todo <button>.
     const css = readFileSync("src/app/globals.css", "utf-8");
     expect(css).toMatch(/button:focus-visible[\s\S]*?outline: 2px solid var\(--brand\)/);
   });
@@ -68,11 +67,10 @@ describe("Botao (E1)", () => {
     expect(html).toContain("bg-danger");
     expect(html).toMatch(/class="[^"]* mt-4"/);
     expect(html).toContain('disabled=""');
-    expect((Botao as unknown as { render?: unknown }).render).toBeTypeOf("function"); // forwardRef
+    expect((Botao as unknown as { render?: unknown }).render).toBeTypeOf("function");
   });
 });
 
-// #315: variante opt-in preserva os alvos existentes.
 it("neutro usa borda neutra sem alterar o mínimo móvel", () => {
   expect(botaoClasses({ variante: "neutro" })).toContain("border border-gray-200 bg-transparent text-gray-800 hover:bg-highlight");
   expect(botaoClasses({ variante: "neutro" })).toContain("max-sm:min-h-11");

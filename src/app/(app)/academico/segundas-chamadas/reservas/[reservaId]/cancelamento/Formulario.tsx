@@ -8,7 +8,6 @@ import { PreviaConversao } from "@/components/PreviaConversao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
-/** `fusoExibicao`: o fuso em que a página mostra os horários; a prévia da conversão usa ele (docs/43 §6 item 6; docs/42 L1786). */
 type Props = { reservaId: string; estadoConferido: string; proposta?: { id: string; hash: string }; fusoInstitucional: string | null; fusoExibicao?: string };
 export function Formulario({ reservaId, estadoConferido, proposta, fusoInstitucional, fusoExibicao }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);

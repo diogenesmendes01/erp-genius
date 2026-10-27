@@ -5,7 +5,6 @@ import type { Resultado } from "@/server/_shared";
 import { salvarDistribuicaoSetor } from "./distribuicao";
 import { salvarConfigSetor, salvarSlaSetor } from "./sla";
 
-// Fronteira de Server Action para a tela (distribuicao.ts não é "use server" porque exporta função pura).
 export async function salvarDistribuicaoDaTela(i: Parameters<typeof salvarDistribuicaoSetor>[0]): Promise<Resultado> {
   const r = await salvarDistribuicaoSetor(i);
   revalidatePath("/configuracao/crm/distribuicao");

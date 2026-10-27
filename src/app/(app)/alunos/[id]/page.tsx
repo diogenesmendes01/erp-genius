@@ -20,8 +20,6 @@ import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 
 export default async function AlunoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Ficha do aluno (doc 07 / nav). Professor recebe escopo: obterAluno devolve
-  // null se o aluno não estiver em uma das suas turmas → notFound.
   const usuario = await exigirSessaoPagina(
     Papel.SECRETARIA_ACADEMICA,
     Papel.GERENTE_PEDAGOGICO,
@@ -39,7 +37,6 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   const papeis = usuario.papeis;
   const podeVerSugestaoTurma = papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
   const turmaSugerida = podeVerSugestaoTurma && aluno.alocacoes.length === 0 ? await turmaSugeridaParaAluno(id) : null;
-  // Consultas legadas sem âncora por matrícula só são expostas provisoriamente à gestão.
   const podeVerAcademico = papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_PEDAGOGICO);
   const [niveis, testes, certificados] = podeVerAcademico
     ? await Promise.all([
@@ -88,7 +85,6 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
       label: `${a.turma.modalidade.nome} · ${a.turma.nivel.idioma.nome} ${a.turma.nivel.codigo}`,
       professor: a.turma.professor?.nome ?? null, diasHorario: a.turma.diasHorario ?? null,
     })),
-    // Projeção pedagógica (doc 10): professor não recebe financeiro (já vem null da consulta).
     financeiro: financeiro
       ? {
           atrasado: financeiro.atrasado,

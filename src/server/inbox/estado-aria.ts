@@ -30,7 +30,6 @@ export function ariaAtivaGlobal(
   return s.estado === "ATIVA" && !s.pausada && s.temVersao && !(o.situacao === "ESTOURADO" && o.acao === "PAUSAR");
 }
 
-/** A ordem é compartilhada pelos filtros abaixo; marcações de fila/SLA não são estados da Aria. */
 export function derivarEstadoAria(a: LinhaEstadoAria, ctx: ContextoEstadoAria, sugestaoPendente: boolean): EstadoAria | null {
   if (a.encerradoEm || a.grupo) return null;
   if (ctx.handoffPendentes.has(a.id)) return "handoff";
@@ -59,7 +58,6 @@ export const sugestaoVigente = (agora: Date): Prisma.AcaoAgenteIAWhereInput => (
   status: "SUGERIDA", OR: [{ expiraEm: null }, { expiraEm: { gt: agora } }],
 });
 
-/** [] não significa universo. Sem limite silencioso ou uma conexão global fora do Db recebido. */
 export async function idsHandoffPendente(db: Db, ids?: readonly string[]): Promise<string[]> {
   if (ids?.length === 0) return [];
   const filtro = ids === undefined ? Prisma.empty : Prisma.sql`AND a."id" = ANY(${[...new Set(ids)]}::text[])`;
@@ -81,7 +79,6 @@ export async function idsHandoffPendente(db: Db, ids?: readonly string[]): Promi
   return linhas.map(a => a.id);
 }
 
-/** Orçamento conserva a inicialização legada de ConfigIA; isto não é uma promessa de leitura sem escrita. */
 export async function carregarContextoAria(db: Db, o: { atendimentoIds?: readonly string[]; agora?: Date } = {}): Promise<ContextoEstadoAria> {
   const agora = o.agora ?? new Date();
   const s = await situacaoAria(agora, db);
@@ -92,8 +89,6 @@ export async function carregarContextoAria(db: Db, o: { atendimentoIds?: readonl
 
 export async function sugestoesPendentesPorAtendimento(db: Db, ids: readonly string[], agora: Date): Promise<Map<string, { acao: AcaoAgenteIATipo; criadoEm: Date }>> {
   if (ids.length === 0) return new Map();
-  // Date raw e ligado como timestamptz, mas as colunas Prisma sao timestamp UTC sem fuso.
-  // ISO UTC parametrizado + cast explicito preserva a paridade com o filtro Prisma em qualquer TZ.
   const linhas = await db.$queryRaw<{ atendimentoId: string; acao: AcaoAgenteIATipo; criadoEm: Date }[]>(Prisma.sql`
     SELECT DISTINCT ON ("atendimentoId") "atendimentoId", "acao", "criadoEm"
     FROM "AcaoAgenteIA"
@@ -104,7 +99,6 @@ export async function sugestoesPendentesPorAtendimento(db: Db, ids: readonly str
   return new Map(linhas.map(({ atendimentoId, acao, criadoEm }) => [atendimentoId, { acao, criadoEm }]));
 }
 
-/** Somar ao escopo autorizado do consumidor; classificação não concede acesso ao atendimento. */
 export function condicaoEstadoAria(estado: EstadoAria, ctx: ContextoEstadoAria): Prisma.AtendimentoWhatsAppWhereInput {
   const abertoIndividual: Prisma.AtendimentoWhatsAppWhereInput = { encerradoEm: null, conversa: { grupoId: null } };
   const handoff: Prisma.AtendimentoWhatsAppWhereInput = { id: { in: [...ctx.handoffPendentes] } };

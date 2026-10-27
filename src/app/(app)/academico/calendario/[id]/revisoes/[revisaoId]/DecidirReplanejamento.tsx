@@ -10,15 +10,10 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 
 type Excecao = { encontroId: string; codigo: string | null; inicio: string; fusoOrigem: string | null; motivoProposto: string | null };
-/** O tamanho do conjunto, contado na conferência registrada da revisão: turmas e encontros que mudam de data. */
 export type ResumoReplanejamento = { turmas: number; encontros: number };
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 export function DecidirReplanejamento({ calendarioId, revisaoId, podeAprovar, podeRejeitar, excecoes, resumo, preferenciaFusoExibicao = null }: { calendarioId: string; revisaoId: string; podeAprovar: boolean; podeRejeitar: boolean; excecoes: Excecao[]; resumo: ResumoReplanejamento; preferenciaFusoExibicao?: string | null }) {
- // Decisão sem chave de idempotência no contrato (server/agenda/replanejamento-decisao.ts:18): a falha não manda reenviar.
  const router = useRouter(), [motivo, setMotivo] = useState(""), [autorizar, setAutorizar] = useState<string[]>([]), acao = useAcaoCliente({ idempotente: false }), pendente = acao.ocupado;
- // Aprovar reescreve as datas dos encontros previstos de todas as turmas do conjunto (docs/42 L1102): o botão só
- // abre a confirmação, que repete turmas, encontros e exceções autorizadas e pede "Conferi…"; a action roda no
- // ConfirmarAcao. Rejeitar só encerra a revisão, sem mexer na agenda, e continua direto.
  const [confirmando, setConfirmando] = useState(false);
  const rejeitar = async () => { const d = await acao.executar(() => decidirEAplicarReplanejamentoConjunto({ calendarioId, revisaoId, aprovar: false, motivo, excecoesAutorizadas: [] })); if (d?.tipo === "ok") router.refresh(); };
  const pedirAprovacao = () => { acao.limpar(); setConfirmando(true); };

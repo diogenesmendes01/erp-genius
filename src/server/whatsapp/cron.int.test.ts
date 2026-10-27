@@ -7,10 +7,6 @@ import { rodarCronRegua } from "./cron";
 import { despacharFila } from "./despachante";
 import { processarMensagemNormalizada } from "./inbound";
 
-// Integração E1 (doc 30): cron reusa o cérebro, grava INTENÇÕES na outbox e o despachante
-// aplica os guard-rails. Sem WHATSAPP_LIVE=1 tudo vira SIMULADA — nenhum driver é chamado
-// (segurança de ambiente, gap A5). Fuso dos testes = fuso da máquina (helpers compartilhados).
-
 beforeEach(async () => {
   await truncarBanco();
 });
@@ -35,7 +31,6 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     expect(intencao?.corpoRenderizado).toContain("Maria");
     expect(intencao?.corpoRenderizado).not.toMatch(/\{(nome|valor|vencimento)\}/);
 
-    // Shadow NÃO cumpre degrau: sem evento de domínio, sem mensagem no log.
     expect(await eventosDo("Cobranca", cobranca.id)).toHaveLength(0);
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
   });
@@ -48,8 +43,6 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     await rodarCronRegua(agora);
     const r2 = await rodarCronRegua(agora);
     expect(r2.enfileiradas).toBe(0);
-    // SIMULADA não é terminal (review PR #49): o ensaio reabre e re-simula a mesma
-    // intenção — ao sair do shadow, o envio real acontece. Nunca nasce uma 2ª linha.
     expect(r2.reabertas).toBe(1);
     expect(await prisma.intencaoMensagem.count()).toBe(1);
     expect((await prisma.intencaoMensagem.findFirst())?.status).toBe("SIMULADA");
@@ -95,7 +88,7 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     });
 
     const r = await rodarCronRegua(agora);
-    expect(r.acoesDevidas).toBe(0); // D-7 feito, D-3 ainda não chegou → futuro
+    expect(r.acoesDevidas).toBe(0);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
@@ -134,7 +127,7 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
 
 describe("despachante — guard-rails", () => {
   it.each([{ intervalo: 60_000, esperado: "CANCELADA" }, { intervalo: -60_000, esperado: "ADIADA" }])("LEI DO DESPACHANTE: inbound relativo à criação ($intervalo ms) resulta em $esperado", async ({ intervalo, esperado }) => {
-    const agora = agoraAs(23); // fora da janela [9,20] → a intenção fica ADIADA na fila
+    const agora = agoraAs(23);
     const { numero } = await seedCanal({ janela: [9, 20] });
     const { cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
 
@@ -142,8 +135,6 @@ describe("despachante — guard-rails", () => {
     const antes = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(antes.status).toBe("ADIADA");
 
-    // Relacionar ao relógio real da criação, sem depender de rodar antes das 23h01.
-    // Mensagem anterior preserva a intenção; mensagem posterior a cancela.
     const resultado = await processarMensagemNormalizada({
       numeroProviderRef: numero.providerRef,
       contatoWaId: "50688887777",
@@ -167,16 +158,14 @@ describe("despachante — guard-rails", () => {
     const agora = agoraAs(10);
     await seedCanal();
     await seedCobranca({ vencimento: diasDepois(agora, 7) });
-    await rodarCronRegua(agora); // cria a intenção (SIMULADA no ensaio)
+    await rodarCronRegua(agora);
 
-    // Claim de outro worker, DENTRO do prazo → despachante não toca (nem re-simula).
     await prisma.intencaoMensagem.updateMany({
       data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + 600_000) },
     });
     await despacharFila(agora);
     expect((await prisma.intencaoMensagem.findFirst())?.status).toBe("ENVIANDO");
 
-    // Claim órfão (prazo vencido = worker morreu no meio) → FALHOU com motivo, fila humana.
     await prisma.intencaoMensagem.updateMany({
       data: { despacharAposEm: new Date(agora.getTime() - 60_000) },
     });
@@ -204,11 +193,10 @@ describe("despachante — guard-rails", () => {
   });
 
   it("opt-out (lei) cancela; fora da janela adia", async () => {
-    const agora = agoraAs(23); // 23h no fuso da máquina
+    const agora = agoraAs(23);
     await seedCanal({ janela: [9, 20] });
     const { cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
 
-    // 1ª rodada: fora da janela → ADIADA (mesmo em shadow, o ensaio respeita a janela).
     const r1 = await rodarCronRegua(agora);
     expect(r1.despacho?.adiadas).toBe(1);
     const adiada = await prisma.intencaoMensagem.findUnique({
@@ -217,7 +205,6 @@ describe("despachante — guard-rails", () => {
     expect(adiada?.status).toBe("ADIADA");
     expect(adiada?.motivoFalha).toBe("fora_da_janela");
 
-    // Contato faz opt-out → no horário certo, a intenção adiada é CANCELADA (lei vence).
     await prisma.contatoWhatsApp.updateMany({ data: { optOutEm: new Date() } });
     const dali2h = new Date(agora.getTime() + 2 * 3600_000);
     const r2 = await despacharFila(dali2h > (adiada?.despacharAposEm ?? dali2h) ? dali2h : new Date((adiada?.despacharAposEm ?? dali2h).getTime() + 1000));

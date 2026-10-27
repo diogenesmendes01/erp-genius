@@ -89,12 +89,10 @@ describe("atendimento e Aria × equipe", () => {
         data: { conversaId: a.conversaId, numeroId, atendimentoId: a.id, direcao: "SAIDA", origem: por, corpo: "de novo", driver: "MOTOR", criadoEm: dia(hhmm), providerMessageId: `out-extra${seq}` },
       });
     };
-    // IA primeiro e HUMANO depois: conta como Aria
     const iaDepoisHumano = await atendRespondidoPor("IA");
     await maisUma(iaDepoisHumano.a, "HUMANO", "11:00");
     let m = await metricasAriaEquipe(f, tudo);
     expect([m.aria.atendimentos, m.equipe.atendimentos]).toEqual([1, 0]);
-    // HUMANO primeiro e IA depois: conta como equipe
     const humanoDepoisIa = await atendRespondidoPor("HUMANO");
     await maisUma(humanoDepoisIa.a, "IA", "11:00");
     m = await metricasAriaEquipe(f, tudo);
@@ -119,7 +117,6 @@ describe("atendimento e Aria × equipe", () => {
 
   it("calor_no_fuso_da_escola", async () => {
     await atend({ inbound: "01:30" });
-    // 2026-11-15T01:30Z = 19h30 de sábado (14/11) na Costa Rica; domingo = 0, sábado = 6; 19h = coluna 12
     await prisma.atendimentoWhatsApp.updateMany({ data: { primeiroInboundEm: new Date("2026-11-15T01:30:00Z") } });
     await prisma.mensagemWhatsApp.updateMany({ data: { criadoEm: new Date("2026-11-15T01:30:00Z") } });
     const r = await metricasAtendimento(f, tudo);
@@ -139,9 +136,9 @@ describe("atendimento e Aria × equipe", () => {
 
   it("so_comercial_e_prazo_estourado", async () => {
     await atend({ finalidade: "SECRETARIA" });
-    await atend({ inbound: "10:00", resposta: "11:00", prazo: dia("10:30") }); // respondeu depois do prazo
-    await atend({ inbound: "10:00", resposta: "10:10", prazo: dia("10:30") }); // dentro do prazo
-    await atend({ prazo: new Date("2026-01-01T10:30:00Z") }); // sem resposta, prazo vencido
+    await atend({ inbound: "10:00", resposta: "11:00", prazo: dia("10:30") });
+    await atend({ inbound: "10:00", resposta: "10:10", prazo: dia("10:30") });
+    await atend({ prazo: new Date("2026-01-01T10:30:00Z") });
     const r = await metricasAtendimento(f, tudo);
     expect(r.conversas).toBe(3);
     expect(r.prazoEstourado).toBe(2);

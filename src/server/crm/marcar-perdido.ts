@@ -4,7 +4,6 @@ import {escopoComercialAtual} from "@/server/_shared/escopo-comercial";
 import {ultimoEventoDoAutor} from "@/server/_shared/idempotencia";
 import {PerdaSchema,type PerdaInput} from "@/server/comercial/schema";
 
-/** Núcleo interno: nenhuma sessão, cliente global, revalidação de rota ou transação própria. */
 export async function marcarPerdidoTx(tx:Prisma.TransactionClient,autor:UsuarioSessao,id:string,input:PerdaInput,revalidar?:()=>Promise<void>):Promise<boolean>{
   const dados=PerdaSchema.parse(input);
   await tx.$queryRaw`SELECT id FROM "Lead" WHERE id=${id} FOR UPDATE`;

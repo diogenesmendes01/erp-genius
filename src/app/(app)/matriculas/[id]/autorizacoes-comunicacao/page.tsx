@@ -11,8 +11,6 @@ export default async function AutorizacoesComunicacaoPage({ params, searchParams
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
   const { id } = await params;
   const pagina = lerPagina(await searchParams);
-  // A consulta e a preparação dos dados ficam no try (falha → o mesmo alerta de antes); o JSX é montado
-  // fora dele (react-hooks/error-boundaries: try/catch não pega erro de renderização).
   let dados;
   try {
     const [tela, preferencia] = await Promise.all([

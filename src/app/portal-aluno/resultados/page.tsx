@@ -39,8 +39,6 @@ const pendenciasHabilidade: Record<string, string> = {
   FONTE_APROVEITAMENTO_ALTERADA: "Uma nota aproveitada de vínculo anterior mudou na origem e está em nova conferência.",
 };
 
-// Sem rótulo: mostra o próprio código (rotular avisa em desenvolvimento) — "Habilidade em conferência"
-// dizia ao ALUNO que havia uma conferência em andamento, o que ninguém registrou (E5).
 const habilidade = (valor: string) => rotular(HABILIDADE_LABEL, valor);
 
 type FechamentoPortalAluno = Awaited<ReturnType<typeof consultarFechamentosPortalAluno>>[number];
@@ -106,13 +104,6 @@ const rotulosPendencia: Record<keyof ResultadoPortalAluno["matriculas"][number][
 };
 
 export default async function ResultadosPortalAlunoPage() {
-  // A projeção acadêmica confirma a sessão e o escopo das matrículas antes de
-  // ler a preferência da conta. A preferência muda somente a apresentação.
-  // O guard vive dentro de consultarResultadosPortalAluno (compartilhado com outras
-  // chamadas) e continua lançando ErroAutenticacao — aqui, numa página, convertemos
-  // isso em redirect em vez de deixar estourar como erro 500 (ver
-  // docs/42-auditoria-frontend-ux.md, achado N1). Qualquer outro erro sobe normalmente
-  // para o error.tsx do portal.
   let resultado: ResultadoPortalAluno;
   try {
     resultado = await consultarResultadosPortalAluno();

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 
-/** Executar somente após confirmar a transação financeira, inclusive no replay. */
 export async function reavaliarAcessoAposPermuta(decisaoId: string) {
   try {
     const aplicacoes = await prisma.aplicacaoCompensacaoPermuta.findMany({

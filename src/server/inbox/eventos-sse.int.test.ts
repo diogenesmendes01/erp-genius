@@ -65,7 +65,6 @@ describe("filtro de avisos do SSE", () => {
     expect(await criarFiltroDeAvisos(sess(fin))(direcionado)).toBe(true);
     expect(await criarFiltroDeAvisos(sess(v1))(direcionado)).toBe(false);
     expect(await criarFiltroDeAvisos(sess(v2))(direcionado)).toBe(false);
-    // Só atendimento.atualizado é direcionado: outro tipo com destinatário segue o escopo.
     expect(await criarFiltroDeAvisos(sess(fin))({ ...direcionado, tipo: "mensagem.nova", mensagemId: "m1" })).toBe(false);
   });
   it("C5: resync passa para qualquer usuário, sem consultar atendimento", async () => {

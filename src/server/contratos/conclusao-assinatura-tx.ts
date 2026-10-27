@@ -5,9 +5,6 @@ import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { ConclusaoAssinaturaSchema, validarConclusaoAssinatura } from "./conclusao-assinatura-schema";
 
-/** Primitiva interna, sem Server Action: somente adaptador autenticado que conferiu
- * o documento e a auditoria no fornecedor. Não aceita webhook público diretamente.
- * Preservar conclusão não confere o aceite pela Secretaria nem ativa matrícula. */
 export async function preservarConclusaoAssinaturaTx(tx: Prisma.TransactionClient, input: z.input<typeof ConclusaoAssinaturaSchema>) {
   const d = ConclusaoAssinaturaSchema.parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;

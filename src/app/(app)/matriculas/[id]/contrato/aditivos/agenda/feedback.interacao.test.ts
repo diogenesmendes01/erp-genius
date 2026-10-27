@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42, E3): erro e sucesso separados na conferência de
-// agenda do aditivo — erro em role="alert", sucesso em role="status", falha de rede como resultado
-// incerto e o botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, consultar: vi.fn(), registrar: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -14,7 +11,6 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("@/server/contratos/agenda-aditivo", () => ({ registrarPropostaAgendaAditivo: m.registrar }));
-// Lote 3 do fuso pessoal: a conferência manda o texto digitado e o fuso; quem converte é o servidor.
 vi.mock("@/server/contratos/agenda-aditivo-local", () => ({ consultarConferenciaAgendaAditivoLocal: m.consultar }));
 
 import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaAgendaFormulario";
@@ -33,7 +29,6 @@ describe("ConferenciaAgendaFormulario", () => {
   const props = { matriculaId: "m", encontros: [{ id: "e", inicio: "2099-10-10T10:00:00.000Z", fim: "2099-10-10T11:00:00.000Z", fusoOrigem: "UTC", professorId: "atual", professor: "Atual" }], professores: [{ id: "atual", nome: "Atual" }] };
   const tela = () => m.ganchos!.renderizar(ConferenciaAgendaFormulario, props);
   const valores = { "professor-e": "atual", "fuso-e": "UTC", "inicio-e": "2099-10-11T10:00", "fim-e": "2099-10-11T11:00" };
-  /** Marca o encontro e confere; devolve o que passou a ser anunciado. */
   const conferir = async () => {
     (elementos(tela()).find((n) => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)();
     const antes = anuncios(tela());

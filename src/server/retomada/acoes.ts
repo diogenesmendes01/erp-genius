@@ -29,17 +29,11 @@ async function exigirUsuarioAtual(tx: Prisma.TransactionClient, id: string, pape
   }
 }
 
-/**
- * `chaveIdempotencia` (#166, N3 da R1 do #274): a marca vai no `RetomadaSolicitada`, na mesma transação da proposta.
- * O reenvio da mesma tentativa devolve a proposta original mesmo depois que outra pessoa a decidiu; uma nova
- * proposta deliberada usa chave nova. A proposta pendente idêntica, do mesmo solicitante, continua devolvida.
- */
 export async function solicitarRetomada(alunoId: string, input: SolicitarRetomadaInput & { chaveIdempotencia?: string }): Promise<Resultado<{ propostaId: string; status: StatusAprovacao }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES);
     const dados = SolicitarRetomadaSchema.parse(input);
     if (!alunoId.trim()) throw new ErroRegra("Aluno obrigatório.");
-    // O hash ignora a ordem das datas: a mesma proposta pode chegar com as parcelas em outra ordem.
     const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), {
       alunoId, opcao: dados.opcao, motivo: dados.motivo,
       novosVencimentos: [...dados.novosVencimentos].sort((a, b) => a.cobrancaId.localeCompare(b.cobrancaId)),
@@ -47,15 +41,11 @@ export async function solicitarRetomada(alunoId: string, input: SolicitarRetomad
     const resultado = await prisma.$transaction(async (tx): Promise<{ propostaId: string; status: StatusAprovacao }> => {
       await exigirUsuarioAtual(tx, autor.id, SOLICITANTES);
       if (marca) {
-        // Antes das travas e das validações de estado: a proposta pode ter sido decidida desde a tentativa, e a
-        // chave reaproveitada com outro aluno (existente ou não) recebe a mesma recusa.
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "RetomadaSolicitada", agregadoTipo: "Aluno", autorId: autor.id, marca,
           mensagemConflito: "Esta tentativa já foi usada para outra proposta de retomada. Recarregue a página e confira as propostas antes de repetir.",
         });
         if (repetido) {
-          // O status real (#282, C3): a proposta pode já ter sido decidida por outra pessoa desde a tentativa; a
-          // tela avisa em vez de anunciar uma proposta nova.
           const original = await tx.propostaRetomada.findUniqueOrThrow({
             where: { id: String((repetido.payload as { propostaId?: unknown }).propostaId) }, select: { id: true, status: true },
           });
@@ -71,12 +61,9 @@ export async function solicitarRetomada(alunoId: string, input: SolicitarRetomad
       const pendente = await tx.propostaRetomada.findFirst({ where: { alunoId, status: "PENDENTE" } });
       if (pendente) {
         const anterior = SnapshotRetomadaSchema.safeParse(pendente.snapshot);
-        // Compara pelo dia digitado (ref. #247): a proposta pode ter sido gravada ao meio-dia do servidor, antes da correção.
         const diasAnteriores = anterior.success
           ? new Map(anterior.data.alvos.map((alvo) => [alvo.cobrancaId, dataDigitadaRetomada(new Date(alvo.novoVencimento), fuso)]))
           : null;
-        // `size === length` só prova "mesmas datas" com ids da entrada únicos; quem garante isso é o
-        // `SolicitarRetomadaSchema` ("Uma cobrança não pode receber duas datas."), antes da transação (#253, C3).
         const mesmasDatas = dados.opcao === "MANTER_VENCIMENTOS" || (!!diasAnteriores && diasAnteriores.size === dados.novosVencimentos.length &&
           dados.novosVencimentos.every((p) => diasAnteriores.get(p.cobrancaId) === p.vencimento));
         if (pendente.solicitanteId === autor.id && pendente.pausaId === estado.pausa.id && pendente.opcao === dados.opcao && pendente.motivo === dados.motivo && mesmasDatas) return { propostaId: pendente.id, status: pendente.status };
@@ -131,7 +118,6 @@ export async function decidirRetomada(propostaId: string, input: DecidirRetomada
           const vencimento = proposta.opcao === "REPROGRAMAR_PARCELAS" ? new Date(alvo.novoVencimento) : cobranca.vencimento;
           const mudouVencimento = vencimento.getTime() !== cobranca.vencimento.getTime();
           if (!restaurar && !mudouVencimento) continue;
-          // Ref. #247: atrasada só depois do dia do vencimento na escola.
           const novoStatus = statusEmAbertoPorVencimento(vencimento, agora, fuso);
           await tx.cobranca.update({ where: { id: cobranca.id }, data: {
             status: novoStatus, vencimento, versao: { increment: 1 },

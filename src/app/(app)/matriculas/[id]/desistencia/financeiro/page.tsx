@@ -28,8 +28,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const d = resultado.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const instanteAdministrativo = (valor: Date | string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
-  // As memórias guardam o id da cobrança; a tela diz QUAL cobrança é — tipo, vencimento e valor, cruzando com
-  // as cobranças da matrícula já carregadas (docs/42 L798; docs/43 §6 item 7).
   const rotuloCobranca = (cobrancaId: string) => {
     const c = d.cobrancas.find(x => x.id === cobrancaId);
     return c ? `${TIPO_COBRANCA_LABEL[c.tipo]} · vencimento ${formatarDataCivil(c.vencimento.slice(0, 10))} · ${formatarMoeda(c.valorNegociado, c.moeda)}` : "Cobrança fora da lista desta matrícula";

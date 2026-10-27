@@ -6,7 +6,6 @@ describe("prazo da etapa exibida no portal", () => {
     const etapa = prazoEtapaEntregaPortalAluno(
       new Date("2026-09-15T10:00:00.000Z"),
       [
-        // A pausa começou antes da correção; só o trecho posterior a ela conta.
         { inicio: new Date("2026-09-15T10:30:00.000Z"), fim: new Date("2026-09-15T11:30:00.000Z") },
       ],
       [],

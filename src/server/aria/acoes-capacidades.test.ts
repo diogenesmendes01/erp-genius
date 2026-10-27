@@ -1,8 +1,6 @@
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// C4: liga cada ação da Aria à capacidade exigida, sem banco (roda no `npm test` do CI). O prisma é
-// um dublê que falha se tocado: a recusa precisa acontecer ANTES de qualquer leitura ou escrita.
 const { sessaoMock, banco } = vi.hoisted(() => {
   const falha = (nome: string) => () => {
     throw new Error(`prisma.${nome} não deveria ser chamado`);
@@ -53,7 +51,6 @@ describe("ações da Aria exigem a capacidade certa", () => {
   });
 
   it("controle_admin_passa_da_capacidade", async () => {
-    // Controle positivo: com a capacidade, a ação segue até o banco (aqui o dublê falha de propósito).
     sessaoMock.mockResolvedValue(usuario([Papel.ADMINISTRADOR]));
     const erro = vi.spyOn(console, "error").mockImplementation(() => undefined);
     expect(await definirEstadoAria("SHADOW")).toEqual({ ok: false, erro: "Erro inesperado. Tente novamente." });

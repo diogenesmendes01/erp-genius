@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Fila de cobrança por cursor nos dois sentidos (docs/43 §6 item 9; decisão de 10/10/2026 para filas de
-// trabalho). Sem banco: o Prisma é mockado e o `findMany` responde como o banco — sem `where.id.in`, a fila
-// inteira (a leitura leve); com ele, só as cobranças pedidas (o detalhe do trecho). A régua (proximaAcao)
-// devolve o atraso de cada cobrança a partir do vencimento.
-
 const m = vi.hoisted(() => ({
   cobrancas: vi.fn(),
   eventos: vi.fn(),
@@ -21,7 +16,7 @@ vi.mock("@/lib/prisma", () => ({
     templateWhatsApp: { findMany: m.templates },
     intencaoMensagem: { findMany: m.intencoes },
     atendimentoWhatsApp: { findMany: m.atendimentos },
-    configuracaoOperacional: { findUnique: async () => null }, // fusoDaEscola() → America/Sao_Paulo
+    configuracaoOperacional: { findUnique: async () => null },
   },
 }));
 vi.mock("./politica", () => ({ carregarPoliticaRegua: async () => ({ degraus: [], templateIdPorPasso: new Map() }) }));
@@ -41,9 +36,7 @@ import { listarFilaCobranca } from "./consultas";
 import { FILA_COBRANCA_POR_TRECHO, cursorDoItemFila, lerFiltrosFila } from "./filtros-fila";
 
 type Linha = ReturnType<typeof cobranca>;
-/** Cobranças abertas no "banco": tirar uma da lista é pagá-la. */
 let abertas: Linha[] = [];
-/** Atraso de cada cobrança, pela data de vencimento (cada uma tem a sua). */
 const atrasoPorVencimento = new Map<number, number>();
 
 const vencimentoDe = (i: number) => new Date(Date.UTC(2026, 0, 1, 0, i));
@@ -61,7 +54,6 @@ function cobranca(id: string, i: number, pais = "Brasil") {
   };
 }
 
-/** `n` cobranças; o atraso decresce com o índice, então a ordem da fila (maior atraso primeiro) é a do índice. */
 function semear(n: number, pais: (i: number) => string = () => "Brasil") {
   abertas = [];
   atrasoPorVencimento.clear();
@@ -71,7 +63,6 @@ function semear(n: number, pais: (i: number) => string = () => "Brasil") {
   }
 }
 const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
-/** A chamada leve (a fila inteira) e as do detalhe (só o trecho), separadas pelo `where`. */
 const chamadas = () => m.cobrancas.mock.calls.map((c) => c[0] as { where: { id?: { in: string[] }; status?: { in: string[] } }; take?: number; select?: unknown; include?: unknown });
 
 beforeEach(() => {
@@ -102,7 +93,6 @@ describe("listarFilaCobranca — trechos por cursor (docs/43 §6 item 9)", () =>
     expect(detalhe[0].take).toBe(FILA_COBRANCA_POR_TRECHO);
     expect(detalhe[0].where.id!.in).toEqual(ids(abertas.slice(0, 50)));
     expect(detalhe[0].include).toBeDefined();
-    // A cobrança paga entre as duas leituras sai do trecho: o detalhe repete o recorte de situação (C1 da R1 da #180).
     expect(detalhe[0].where.status).toEqual({ in: ["PENDENTE", "ATRASADO"] });
     expect(ids(fila.itens)).toEqual(ids(abertas.slice(0, 50)));
     expect(fila).toMatchObject({ totalFila: 120, totalVisao: 120, temAnterior: false, temProxima: true, anterior: null });
@@ -128,7 +118,6 @@ describe("listarFilaCobranca — trechos por cursor (docs/43 §6 item 9)", () =>
   it("pagar cobranças já vistas — inclusive a do próprio cursor — não faz a próxima pular ninguém", async () => {
     semear(120);
     const p1 = await listarFilaCobranca();
-    // Paga a 1ª, a 10ª e a última da página 1 (a do cursor): a numerada subiria c050–c052 para a página 1.
     abertas = abertas.filter((c) => !["c000", "c009", "c049"].includes(c.id));
     const p2 = await listarFilaCobranca({ navegacao: { depois: p1.proxima! } });
     expect(ids(p2.itens)[0]).toBe("c050");

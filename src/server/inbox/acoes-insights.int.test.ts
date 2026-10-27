@@ -4,7 +4,6 @@ import { cenarioInsight377,respostaInsight377 } from "@/test/inbox-insights";
 import { conexao377,holder377,esperarBloqueio377 } from "@/test/inbox-insights-observacao";
 const m=vi.hoisted(()=>({atorId:"",gerar:vi.fn()}));
 vi.mock("@/server/_shared/sessao",async original=>{const real=await original<typeof import("@/server/_shared/sessao")>();return {...real,exigirSessao:async()=>{const u=await real.carregarUsuarioFresco(m.atorId);if(!u)throw new real.ErroAutenticacao();return u;}};});
-// Só a fronteira externa é fake. Claim/START/ACL/TX/custo/GET são os reais.
 vi.mock("@/server/aria/insights/gerador",()=>({servicosPadraoInsight:{disponivel:()=>true,executar:m.gerar}}));
 import { prisma } from "@/lib/prisma";
 import { atualizarInsightNoInbox,reconciliarInsightNoInbox,descartarInsightNoInbox } from "./acoes-insights";
@@ -23,7 +22,6 @@ it("fronteiras públicas reais geram com providerfake1 e GETreadonly não gera n
 it("público não aceita autor/demo/provider/envelope/custo do browser",async()=>{
   const c=await cenario();
   for(const extra of[{autorId:"arbitrario"},{demo:true},{provedor:"simulado"},{envelope:respostaInsight377()},{custoMicroUsd:0}]){
-    // Fronteira maliciosa de rede deliberada; o tipo público normal não permite esses campos.
     const i={tipo:"NOVO",atendimentoId:c.a.id,chaveTentativa:"377-wrapper-input-01",...extra} as unknown as AtualizarInsightInput;
     expect((await atualizarInsightNoInbox(i)).ok).toBe(false);
   }
@@ -39,7 +37,6 @@ it("retomar público usa claimoriginal porID/version/hash, sem devolver chave an
 });
 it("ações operacionais públicas usam metadatafresh e não chamam provider na resolução",async()=>{
   const c=await cenario(),g=await prepararNovoInsight(c.dono.id,{atendimentoId:c.a.id,chaveTentativa:"377-wrapper-operacional"},{disponivel:true});
-  // START real sem provider para representar request externo ainda em voo.
   const {iniciarInsight}=await import("@/server/aria/insights/inicio");const s=await iniciarInsight(c.dono.id,{atendimentoId:c.a.id,geracaoId:g.geracaoId,versaoEsperada:g.versao,contextoAtualEsperadoHash:g.contextoAtualEsperadoHash});
   let d=await(await ler(c.a.id,g.geracaoId)).json();const r=await reconciliarInsightNoInbox({atendimentoId:c.a.id,geracaoId:g.geracaoId,versaoEsperada:s.versao,estadoEsperado:"PROCESSANDO",contextoAtualEsperadoHash:d.contextoAtualEsperadoHash,chaveReconciliacao:"377-wrapper-reconciliar"});expect(r).toMatchObject({ok:true,dado:{estado:"INCERTO"}});if(!r.ok||!r.dado)throw Error("fixture reconciliação");
   d=await(await ler(c.a.id,g.geracaoId)).json();expect(await descartarInsightNoInbox({atendimentoId:c.a.id,geracaoId:g.geracaoId,versaoEsperada:r.dado.versao,estadoEsperado:"INCERTO",contextoAtualEsperadoHash:d.contextoAtualEsperadoHash,chaveDescarte:"377-wrapper-descartar"})).toMatchObject({ok:true,dado:{estado:"DESCARTADA"}});expect(m.gerar).not.toHaveBeenCalled();expect(await prisma.chamadaIA.count()).toBe(0);
@@ -53,7 +50,6 @@ it("orçamento cai ENTREclaim/start porfilaSQLreal:0provider/FALHOUconfirmada e 
     const bloqueados=await esperarBloqueio377(o,h.pid,"AtendimentoWhatsApp"),pidClaim=bloqueados[0].pid;
     await writer.query('BEGIN');update=writer.query('UPDATE "ConfigIA" SET "orcamentoMensalUsd"=0 WHERE id=\'ia\'');
     await esperarBloqueio377(o,pidClaim,"ConfigIA");await h.c.query('COMMIT');await update;
-    // O writer mantém o orçamento não commitado até comprovar START esperando seu lock.
     await esperarBloqueio377(o,pidWriter,"ConfigIA");await writer.query('COMMIT');
     const falha=await tentativa;expect(falha).toMatchObject({ok:true,dado:{estado:"FALHOU",statusPersistencia:"CONFIRMADA",mensagem:"Orçamento de IA esgotado."}});expect(m.gerar).not.toHaveBeenCalled();expect(await prisma.chamadaIA.count()).toBe(0);
     expect((await prisma.geracaoInsightInbox.findFirstOrThrow()).iniciadaEm).toBeNull();

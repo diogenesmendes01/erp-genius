@@ -12,20 +12,11 @@ const EfeitoSchema = z.discriminatedUnion("tipo", [
 const FotoSchema = z.object({ tipo: z.literal("AULA_NAO_COBRAVEL"), conferencia: z.object({ id: z.string() }).nullable(), encontro: z.object({ matriculaId: z.string() }), efeito: EfeitoSchema }).passthrough();
 export type EfeitoNaoCobravel = z.infer<typeof EfeitoSchema>;
 
-/** Lê o efeito calculado pelo banco; o Node nunca o recalcula. */
 export function lerEfeitoNaoCobravel(fotografia: unknown) {
   const foto = FotoSchema.safeParse(fotografia);
   return foto.success ? foto.data : null;
 }
 
-/**
- * Q175: chamado DENTRO da transação de `aprovarCorrecaoAula`, logo após nascer a aprovação.
- * O trigger da aprovação já revalidou a fotografia e as duas alçadas financeiras; aqui o
- * efeito aprovado vira fato: reduz a cobrança em aberto (trigger SQL), gera crédito quando
- * a fatura está paga, só marca a aula como não cobrável para o próximo fechamento, ou — aula
- * paga com horas pré-pagas — estorna o consumo e devolve os minutos à própria compra.
- * Revisão de outro tipo não tem efeito e devolve null.
- */
 export async function aplicarRevisaoNaoCobravelTx(tx: Prisma.TransactionClient, input: { aprovacaoId: string; decisaoRevisaoId: string; autorId: string }) {
   const decisao = await tx.decisaoRevisaoFinanceiraCorrecaoAula.findUnique({ where: { id: input.decisaoRevisaoId }, select: { id: true, aprovada: true, proposta: { select: { tipo: true, fotografia: true, fotografiaHash: true } } } });
   if (!decisao?.aprovada) throw new ErroRegra("Revisão financeira aprovada não encontrada.");

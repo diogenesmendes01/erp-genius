@@ -1,6 +1,5 @@
 const LIMITE_CORPO_BYTES = 10_000;
 
-/** Limita os bytes efetivamente recebidos, inclusive sem Content-Length. */
 export async function lerJsonPortalAluno(request: Request): Promise<unknown> {
   const declarado = request.headers.get("content-length");
   if (declarado !== null && (!/^\d+$/.test(declarado) || Number(declarado) > LIMITE_CORPO_BYTES)) {

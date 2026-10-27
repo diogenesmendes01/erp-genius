@@ -44,8 +44,6 @@ export default async function ParticipantesPage({ params, searchParams }: { para
     <SeletorMaioridade maioridade={maioridade} />
     {formulario.ok && formulario.dado ? <>
       <EvidenciaParticipantes matriculaId={id} />
-      {/* Sem key de versão ou de maioridade (docs/43 §6 item 3): trocar a classificação, mudar a página do
-          histórico ou registrar uma versão não remonta o formulário nem apaga o que foi digitado. */}
       <FormularioParticipantes dados={formulario.dado} />
     </> : formulario.ok ? <p role="status">Conferência indisponível.</p> : <p role="alert">{formulario.erro}</p>}
     <section className="space-y-3"><h2 className="text-xl">Histórico das conferências</h2>

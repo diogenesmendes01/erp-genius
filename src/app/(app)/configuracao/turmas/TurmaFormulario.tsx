@@ -17,7 +17,6 @@ import { botaoClasses } from "@/components/Botao";
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
-// 0=Dom … 6=Sáb. Exibição começando na segunda (uso comum no BR).
 const DIAS = [
   { n: 1, label: "Seg" },
   { n: 2, label: "Ter" },
@@ -37,8 +36,8 @@ export interface TurmaParaEditar {
   diasSemana: number[];
   horarioInicio: string;
   horarioFim: string;
-  dataInicio: string; // yyyy-mm-dd ou ""
-  dataFim: string; // yyyy-mm-dd ou ""
+  dataInicio: string;
+  dataFim: string;
   capacidade: number;
   rolling: boolean;
 }
@@ -63,7 +62,6 @@ type AcoesFormulario = {
   editar: (turmaId: string, input: TurmaInput) => Promise<ResultadoFormulario>;
 };
 
-/** Caminho acionado pelo submit: criação navega; edição apenas atualiza e fecha o diálogo. */
 export async function submeterTurma(
   turmaId: string | undefined,
   input: TurmaInput,
@@ -95,15 +93,10 @@ export function TurmaFormulario({
   niveis: Opcao[];
   professores: Opcao[];
   onClose: () => void;
-  /** Avisa quem envolve o formulário (o diálogo) que há um salvamento em curso — para não fechar no meio. */
   aoMudarOcupado?: (ocupado: boolean) => void;
-  /** Avisa o diálogo se há algo preenchido e não salvo — para o fundo/Escape pedirem confirmação antes de descartar. */
   aoMudarAlterado?: (alterado: boolean) => void;
 }) {
   const router = useRouter();
-  // A criação recebe chave de idempotência (#166): o reenvio da mesma tentativa devolve a turma já criada em vez
-  // de outra com novo código; a chave só muda depois do sucesso. A edição segue sem chave: a falha de rede manda
-  // conferir a lista antes de repetir.
   const acao = useAcaoCliente({ idempotente: !turma });
   const tentativa = useChaveIdempotencia();
   useEffect(() => { aoMudarOcupado?.(acao.ocupado); }, [acao.ocupado, aoMudarOcupado]);
@@ -119,7 +112,6 @@ export function TurmaFormulario({
   const [dataFim] = useState(turma?.dataFim ?? "");
   const [capacidade, setCapacidade] = useState(turma?.capacidade ?? 12);
   const [rolling, setRolling] = useState(turma?.rolling ?? false);
-  // Algo diferente do que o formulário abriu (docs/43 §6 item 3; docs/42 L2395): o diálogo não descarta sem confirmar.
   const alterado = JSON.stringify([nome, modalidadeId, nivelId, professorId, diasSemana, horarioInicio, horarioFim, dataInicio, capacidade, rolling])
     !== JSON.stringify([turma?.nome ?? "", turma?.modalidadeId ?? "", turma?.nivelId ?? "", turma?.professorId ?? "", turma?.diasSemana ?? [], turma?.horarioInicio ?? "", turma?.horarioFim ?? "", turma?.dataInicio ?? "", turma?.capacidade ?? 12, turma?.rolling ?? false]);
   useEffect(() => { aoMudarAlterado?.(alterado); }, [alterado, aoMudarAlterado]);
@@ -238,7 +230,6 @@ export function TurmaFormulario({
         </div>
       </div>
 
-      {/* Agenda (calendário real) */}
       <div className="mt-4 border-t border-gray-100 pt-4">
         <div className="mb-1 block text-xs text-gray-600">
           Dias da semana

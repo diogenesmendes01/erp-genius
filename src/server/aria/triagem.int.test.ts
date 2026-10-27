@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Falha simulada na atribuição (C7 da R2 do #233): erro de banco DENTRO da transação da triagem.
 const falha = vi.hoisted(() => ({ atribuicao: false, abertura: false }));
-// Falha simulada na abertura do atendimento do setor (C10 da revisão do #233): o erro tem de ir para o log.
 vi.mock("@/server/whatsapp/atendimentos", async (orig) => {
   const real = await orig<typeof import("@/server/whatsapp/atendimentos")>();
   return {
@@ -37,7 +35,6 @@ beforeEach(async () => { falha.atribuicao = false; falha.abertura = false; await
 let seq = 0;
 const provedorComConfianca = (setor: string | null, confianca: number): ProvedorIA => ({
   nome: "simulado",
-  // Parte da resposta do provedor simulado real: herda campos novos de RespostaIA (ex.: tokensEscritaCache).
   async gerar(p: PedidoIA) {
     return { ...(await provedorSimulado.gerar(p)), texto: JSON.stringify({ setor, confianca }) };
   },
@@ -89,7 +86,6 @@ describe("classificarSetorPelaAria", () => {
     expect(FRASE_ENCAMINHAMENTO.FINANCEIRO).toBe("Obrigada! Vou encaminhar sua mensagem para o Financeiro.");
     expect(fraseEncaminhamento("FINANCEIRO", "Aria", false)).toBe(FRASE_ENCAMINHAMENTO.FINANCEIRO);
     expect(i.corpoRenderizado).toBe(fraseEncaminhamento("FINANCEIRO", "Aria"));
-    // Primeira fala da Aria no atendimento: começa pela apresentação obrigatória.
     expect(i.corpoRenderizado).toBe("Oi! Eu sou a Aria, assistente virtual da escola. Obrigada! Vou encaminhar sua mensagem para o Financeiro.");
     expect(i).toMatchObject({ origem: "IA", reativa: true, status: "PENDENTE" });
   });
@@ -144,7 +140,6 @@ describe("classificarSetorPelaAria", () => {
       acao: "CLASSIFICAR_SETOR", status: "SIMULADA", modoConfigurado: "SHADOW", atendimentoId: null,
       intencaoId: null, payload: { mensagemId: msgBoleto.id, finalidade: "FINANCEIRO" },
     });
-    // Repetir a triagem da mesma mensagem não duplica a simulação.
     await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
     expect(await prisma.acaoAgenteIA.count({ where: { status: "SIMULADA" } })).toBe(1);
   });
@@ -245,7 +240,6 @@ describe("classificarSetorPelaAria", () => {
   });
 
   it("corrida_com_atendimento_ja_atribuido_nao_reclassifica", async () => {
-    // Enquanto o modelo responde, um humano tria a mensagem para outro atendimento.
     let humano = "";
     const comCorrida: ProvedorIA = {
       nome: "simulado",
@@ -297,7 +291,6 @@ describe("classificarSetorPelaAria", () => {
       const r = await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
       expect(r).toMatchObject({ setor: "FINANCEIRO" });
       const atendimentoId = (r as { atendimentoId: string }).atendimentoId;
-      // Atendimento aberto e ligado à mensagem, sem responsável (fila do setor), com o encaminhamento ao lead.
       expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId } })).toMatchObject({ responsavelId: null, finalidade: "FINANCEIRO" });
       expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: msgBoleto.id } })).atendimentoId).toBe(atendimentoId);
       expect(await ultimaIntencao()).toMatchObject({ atendimentoId, origem: "IA", status: "PENDENTE" });
@@ -323,7 +316,6 @@ describe("classificarSetorPelaAria", () => {
   });
 
   describe("COMERCIAL: a Aria atende em vez de só encaminhar", () => {
-    // Classifica como COMERCIAL e, no turno de atendimento, responde com confiança alta.
     const provedorComercial: ProvedorIA = {
       nome: "simulado",
       async gerar(p: PedidoIA) {
@@ -347,7 +339,6 @@ describe("classificarSetorPelaAria", () => {
       expect(turnos.map((t) => [t.tipo, t.ancoraMensagemId])).toEqual([["TRIAGEM", ancoraTriagem(m.id)], ["ATENDIMENTO", m.id]]);
       expect(turnos[1]).toMatchObject({ atendimentoId, resultado: "RESPONDEU" });
 
-      // Uma única fala ao lead: a resposta da Aria, começando pela apresentação; nenhuma frase de encaminhamento.
       const intencoes = await prisma.intencaoMensagem.findMany();
       expect(intencoes).toHaveLength(1);
       expect(intencoes[0]).toMatchObject({ origem: "IA", reativa: true, status: "PENDENTE", atendimentoId });

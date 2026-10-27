@@ -51,7 +51,6 @@ describe("fila de avisos da agenda no fuso pessoal", () => {
     const pendencias = [{ id: "pendencia", matriculaId: "matricula", matriculaCodigo: "MAT-1", alunoNome: "Ana", motivo: "CONTATO_INDISPONIVEL", situacao: "PENDENTE", criadoEm: new Date("2026-01-01T03:30:00.000Z") }];
     const render = async (params: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve(params) }));
 
-    // Início das duas filas: nenhuma "Anterior", nenhum número de página nem cursor vazio.
     mocks.consultar.mockResolvedValue({ ok: true, dado: { itens, pendencias,
       temAnterior: false, temProxima: true, anterior: null, proxima: "a-20",
       temAnteriorPendencia: false, temProximaPendencia: true, anteriorPendencia: null, proximaPendencia: "p-20" } });
@@ -63,7 +62,6 @@ describe("fila de avisos da agenda no fuso pessoal", () => {
     expect(inicio).toContain('href="/secretaria/avisos-agenda?depois=a-20">Próxima');
     expect(inicio).toContain('href="/secretaria/avisos-agenda?depoisPendencias=p-20">Próxima');
 
-    // Avisos e pendências no meio: cada link move só a sua fila e mantém o cursor da outra.
     mocks.consultar.mockResolvedValue({ ok: true, dado: { itens, pendencias,
       temAnterior: true, temProxima: true, anterior: "a-21", proxima: "a-40",
       temAnteriorPendencia: true, temProximaPendencia: true, anteriorPendencia: "p-21", proximaPendencia: "p-40" } });

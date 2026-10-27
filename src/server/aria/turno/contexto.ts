@@ -28,11 +28,6 @@ export interface ContextoTurno {
   precos: PrecoAria[];
   trechos: { id: string; texto: string }[];
   faq: ConfigAria["faq"];
-  /**
-   * Respostas rápidas marcadas "Aria pode usar" (Configurações › CRM › Respostas), ativas, do setor
-   * (finalidade) do atendimento e as gerais, por atalho, até LIMITE_RESPOSTAS_ARIA. Entram no prompt
-   * só como referência (não há ação própria) e os valores delas contam como autorizados na guarda.
-   */
   respostasRapidas: { atalho: string; corpo: string }[];
   primeiraDaAria: boolean;
   trocasSemAvanco: number;
@@ -90,9 +85,7 @@ export async function montarContextoTurno(atendimentoId: string, tx?: Prisma.Tra
 
   const publicada = await versaoPublicada(tx);
   const config = publicada?.config;
-  // Última fala COM texto: áudio, figurinha ou imagem sem legenda (corpo vazio) não apagam a busca nas fontes.
   const ultimaFala = [...mensagens].reverse().find((m) => m.direcao === "ENTRADA" && m.texto.trim() !== "")?.texto ?? "";
-  // Fontes usam o mesmo cliente da transação, sem adquirir outra conexão.
   const trechos = config && ultimaFala ? (await buscarTrechos(ultimaFala, config.fontesAtivas, 5, db)).map((t) => ({ id: t.id, texto: t.texto })) : [];
 
   return {
@@ -127,7 +120,6 @@ const TAMANHO: Record<ConfigAria["tamanho"], string> = {
   DETALHADA: "detalhadas, quando o assunto pedir",
 };
 
-/** Remove documentos, telefones e e-mails: nenhum dado pessoal entra no prompt. */
 export function ocultarDadosPessoais(texto: string): string {
   return texto
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[e-mail removido]")
@@ -137,7 +129,6 @@ export function ocultarDadosPessoais(texto: string): string {
 
 const lista = (itens: string[]) => itens.map((i) => `- ${ocultarDadosPessoais(i)}`).join("\n");
 
-/** Sistema determinístico: prefixo estável (persona, regras, config, FAQ) antes da parte variável. */
 export function montarSistema(config: ConfigAria, ctx: ContextoTurno): string {
   const p: string[] = [];
   p.push(
@@ -174,7 +165,6 @@ export function montarSistema(config: ConfigAria, ctx: ContextoTurno): string {
     p.push("FAQ\n" + faq.map((f) => `P: ${ocultarDadosPessoais(f.pergunta)}\nR: ${ocultarDadosPessoais(f.resposta)}`).join("\n\n"));
   }
 
-  // Parte variável.
   p.push(
     "PRECOS\n" +
       (ctx.precos.length
@@ -188,9 +178,6 @@ export function montarSistema(config: ConfigAria, ctx: ContextoTurno): string {
         : "(nenhuma fonte encontrada)"),
   );
   if (ctx.respostasRapidas.length) {
-    // Variáveis como no compositor do Inbox: {nome} é o nome do atendimento (no Comercial, o do lead) e
-    // {responsavel} é quem responde, aqui a própria Aria. Sem valor conhecido a variável fica, e a
-    // orientação abaixo impede que ela chegue crua ao cliente (no Inbox, o atendente completa).
     const variaveis = { nome: ctx.oportunidade?.nome, responsavel: config.nome };
     p.push(
       [

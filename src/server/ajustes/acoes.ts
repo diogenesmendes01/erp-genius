@@ -31,13 +31,9 @@ const SnapshotSchema = z.object({
 type Snapshot = z.infer<typeof SnapshotSchema>;
 
 async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, snapshot: Snapshot, motivo: string, vigencia: Vigencia, aprovacaoId?: string, marca?: MarcaIdempotencia | null) {
-  // Mesma ordem da ativação/negociação: lead, matrícula, cobranças e comissões.
-  // A aprovação não pode alterar a base enquanto a ativação monta o cronograma.
   const vinculos = await tx.cobranca.findMany({ where: { id: { in: snapshot.alvos.map((alvo) => alvo.id) } }, select: { matriculaId: true } });
   await bloquearMatriculas(tx, vinculos.map((vinculo) => vinculo.matriculaId));
-  // Ref. #247: o atraso segue o dia civil da escola (o dia do vencimento inteiro ainda é PENDENTE).
   const agora = new Date(), fuso = await fusoDaEscola(tx);
-  // A marca de idempotência (#166) vai só no Evento da primeira cobrança ajustada: é ele que o reenvio encontra.
   let marcaPendente = marca ?? null;
   for (const alvo of [...snapshot.alvos].sort((a,b) => a.id.localeCompare(b.id))) {
     const cobranca = await bloquearCobranca(tx, alvo.id);
@@ -46,8 +42,6 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     }
     if (cobranca.faturaB2BId && await tx.faturaB2B.count({ where: { id: cobranca.faturaB2BId, status: "FECHADA" } })) throw new ErroRegra("Cancele a fatura B2B fechada antes de ajustar esta cobrança.");
     if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança paga ou cancelada não aceita este ajuste.");
-    // O fechamento também bloqueia as comissões. Reler após o lock preserva uma
-    // comissão que tenha sido paga enquanto este ajuste aguardava sua vez.
     await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId" = ${cobranca.matriculaId} ORDER BY id FOR UPDATE`;
     const matricula = await tx.matricula.findUniqueOrThrow({ where: { id: cobranca.matriculaId }, include: { produto: { select: { modalidadeId: true } }, comissoes: true } });
     const valor = dinheiro(alvo.valorPara);
@@ -72,7 +66,6 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     } });
     if (cobranca.tipo === TipoCobranca.MATRICULA) {
       for (const comissao of matricula.comissoes) {
-        // Comissão fixa e comissões já liquidadas preservam seu valor histórico.
         if (comissao.tipo !== "PERCENTUAL" || !([StatusComissao.PENDENTE, StatusComissao.APROVADA] as StatusComissao[]).includes(comissao.status)) continue;
         const novo = dinheiro(valor.mul(comissao.percentual).div(100));
         await tx.comissao.update({ where: { id: comissao.id }, data: { valor: novo, valorBase: valor } });
@@ -87,15 +80,12 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
   }
 }
 
-/** Eventos que carregam a marca de idempotência do ajuste, sempre consultados nesta ordem (as travas consultivas também). */
 const TIPOS_EVENTO_AJUSTE = ["DescontoSolicitado", "CobrancaRenegociada", "CobrancaPerdoada"] as const;
 
 export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ aprovacao: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
     const { chaveIdempotencia, ...dados } = analisarComDatasDaEscola(AjusteSchema, input, await fusoDaEscola());
-    // Idempotência (#166): o ajuste aplicado grava a marca no `CobrancaRenegociada`/`CobrancaPerdoada` da primeira
-    // cobrança; o pedido de aprovação, no `DescontoSolicitado`. O reenvio encontra um deles e devolve o mesmo desfecho.
     const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const resultado = await prisma.$transaction(async (tx) => {
       if (marca) {
@@ -107,7 +97,6 @@ export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ a
           if (repetido) return { aprovacao: tipo === "DescontoSolicitado" };
         }
       }
-      // Primeiro consultar somente o vínculo, autorizando antes de ler valores sensíveis.
       const vinculo = await tx.cobranca.findUnique({ where: { id: dados.cobrancaId }, select: { matriculaId: true } });
       if (!vinculo) throw new ErroRegra("Cobrança não encontrada.");
       await bloquearMatriculas(tx, [vinculo.matriculaId]);

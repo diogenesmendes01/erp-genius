@@ -37,7 +37,7 @@ const proposta = (chaveIdempotencia = "segunda-chamada-proposta-1") => ({
 
 beforeEach(async () => {
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professor = (await criarUsuario(["PROFESSOR"])).id;
   gestor = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
@@ -189,13 +189,6 @@ async function aprovarAgendaInicial(
   };
 }
 
-/**
- * A partir da migração 126 não há encontro de segunda chamada antes de uma
- * proposta e decisão independentes. Estes adaptadores mantêm os cenários
- * antigos legíveis, mas exercitam exclusivamente o fluxo 125: a primeira
- * etapa só persiste a proposta; a segunda aplica encontro, reserva e agenda
- * de forma atômica.
- */
 async function proporEncontroInicialParaTeste(input: {
   propostaId: string; propostaHash: string; professorId: string; inicio: string; fim: string;
   fusoOrigem: string; motivo: string; chaveIdempotencia: string;
@@ -694,7 +687,6 @@ it.each([
   expect(await registrarOcorrenciaSegundaChamadaLocal({ ...dados, evidencia: "" })).toMatchObject({ ok: false });
   const { registrarOcorrenciaSegundaChamadaTx } = await import("./segunda-chamada-ocorrencia-tx");
   const entrada = { reservaId, tipo, ocorridaEm: dados.dataHoraLocal + "Z", motivo: dados.motivo, evidencia: dados.evidencia };
-  // Concorrência exercita a mesma transação da ação sem a importação dinâmica de NextAuth do ambiente de teste.
   const [primeiroRegistro, segundoRegistro] = await Promise.all([1, 2].map(() => prisma.$transaction(tx => registrarOcorrenciaSegundaChamadaTx(tx, gestor, entrada))));
   expect(segundoRegistro).toEqual(primeiroRegistro);
   const resultado = await registrarOcorrenciaSegundaChamadaLocal(dados);
@@ -866,7 +858,6 @@ it("cancelamento recusa professor e mutação direta da agenda, exigindo decisã
   })).rejects.toThrow();
   const agenda = await prisma.agendaSegundaChamada.findUniqueOrThrow({ where: { reservaId } });
   await expect(prisma.encontroAgenda.update({ where: { id: agenda.encontroId }, data: { status: "CANCELADO" } })).rejects.toThrow();
-  // A agenda aprovada é imutável; um fato concorrente válido é uma remarcação já decidida.
   await expect(prisma.$executeRaw`UPDATE "EncontroAgenda" SET fim=fim+interval '1 minute' WHERE id=${agenda.encontroId}`).rejects.toThrow();
   const remarcacao = await import("./segunda-chamada-remarcacao");
   const conferenciaRemarcacao = await remarcacao.consultarRemarcacoesAgendaSegundaChamada({ reservaId });
@@ -1106,7 +1097,6 @@ it.each(["CRIAR", "AGENDAR", "DESIGNAR", "DECIDIR", "PRORROGAR"] as const)("%s n
       await new Promise(resolve => setTimeout(resolve, 20));
     }
     expect(esperaConfirmada, JSON.stringify(atividades)).toBe(true);
-    // Mesma ordem do guard de realização: reserva, calendário, proposta.
     await tx.$queryRaw`SELECT id FROM "PropostaSegundaChamada" WHERE id=${reserva.propostaId} FOR SHARE`;
   }, { timeout: 10000 });
   await bloqueado;
@@ -1171,7 +1161,6 @@ it("Q164: gestão confirma a resolução do impedimento pela realização poster
   if (!realizada.ok || !realizada.dado) throw new Error(JSON.stringify(realizada));
   const entrada = { reservaImpedidaId: antiga, realizacaoId: realizada.dado.id, motivo: "Avaliação aplicada depois do impedimento escolar.", chaveIdempotencia: "q164-resolucao-0001" };
 
-  // Professor não confirma; sem nota oficial a gestão também não.
   expect(await confirmarResolucaoImpedimentoSegundaChamada(entrada)).toMatchObject({ ok: false });
   entrar(gestor);
   expect(await confirmarResolucaoImpedimentoSegundaChamada(entrada)).toMatchObject({ ok: false, erro: expect.stringContaining("nota oficial") });
@@ -1188,7 +1177,6 @@ it("Q164: gestão confirma a resolução do impedimento pela realização poster
 
   const historico = await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" });
   expect(historico).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: antiga, resolucaoImpedimento: null, realizacoesQueResolvem: [expect.objectContaining({ id: realizada.dado.id })] })]) } });
-  // A realização não resolve a si mesma nem é oferecida para reservas sem impedimento.
   expect(historico).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: nova.reservaId, realizacoesQueResolvem: [] })]) } });
   expect(await confirmarResolucaoImpedimentoSegundaChamada({ ...entrada, reservaImpedidaId: nova.reservaId, chaveIdempotencia: "q164-reserva-errada" })).toMatchObject({ ok: false });
 
@@ -1198,14 +1186,12 @@ it("Q164: gestão confirma a resolução do impedimento pela realização poster
   expect(await confirmarResolucaoImpedimentoSegundaChamada(entrada)).toMatchObject({ ok: true, dado: { id: confirmada.dado.id, nova: false } });
   expect(await confirmarResolucaoImpedimentoSegundaChamada({ ...entrada, chaveIdempotencia: "q164-resolucao-0002" })).toMatchObject({ ok: false, erro: expect.stringContaining("já possui resolução") });
 
-  // O impedimento continua no histórico, mas deixa de bloquear o fechamento.
   expect(await prisma.reservaSegundaChamada.findUniqueOrThrow({ where: { id: antiga } })).toMatchObject({ status: "PENDENCIA_ESCOLA" });
   expect((await pendencias()).pendenciasSegundaChamada).toMatchObject({ ocorrenciasAguardandoEscola: 0, realizacoesSemNotaOficial: 0 });
   const depois = await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" });
   expect(depois).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: antiga, realizacoesQueResolvem: [], resolucaoImpedimento: expect.objectContaining({ motivo: entrada.motivo, realizadaEm: fonte.realizadaEm.toISOString() }) })]) } });
   expect(await prisma.evento.count({ where: { tipo: "SegundaChamadaImpedimentoResolvido", agregadoId: matriculaId } })).toBe(1);
 
-  // O banco repete as invariantes e preserva o registro.
   await expect(prisma.resolucaoImpedimentoSegundaChamada.update({ where: { id: confirmada.dado.id }, data: { motivo: "Motivo reescrito indevidamente" } })).rejects.toThrow();
   await expect(prisma.resolucaoImpedimentoSegundaChamada.deleteMany()).rejects.toThrow();
   await expect(prisma.resolucaoImpedimentoSegundaChamada.create({ data: { reservaImpedidaId: nova.reservaId, realizacaoId: realizada.dado.id, confirmadaPorId: gestor, motivo: "Escrita direta sem impedimento", chaveIdempotencia: "q164-sql-direto" } })).rejects.toThrow("não possui impedimento");
@@ -1261,7 +1247,6 @@ it("consulta de remarcação projeta reserva, avaliação, professor e prazo pro
   if (!antes.ok || !antes.dado) throw new Error(JSON.stringify(antes));
   expect(antes.dado.conferencia).toMatchObject({ reservaId: reserva.reservaId, codigoAvaliacao: "I1", professorAtual: { id: professor } });
   expect(antes.dado.conferencia.prazoVigente).toEqual(expect.any(String));
-  // Lote 3 do fuso pessoal: o fuso do prazo vigente é o da agenda da reserva (nunca o do servidor nem UTC presumido).
   const encontroReserva = await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: reserva.encontroId }, select: { fusoOrigem: true } });
   expect(antes.dado.conferencia).toMatchObject({ fusoExibicao: encontroReserva.fusoOrigem, origemFusoExibicao: "AGENDA" });
   const [disponibilizacao] = await prisma.$queryRaw<{ id: string }[]>`SELECT d.id FROM "DisponibilizacaoSegundaChamada" d JOIN "PropostaSegundaChamada" p ON p.id=d."propostaId" JOIN "ReservaSegundaChamada" r ON r."propostaId"=p.id WHERE r.id=${reserva.reservaId}`;
@@ -1518,7 +1503,6 @@ it.each(["VINCULO", "DESIGNACAO"] as const)("escopo docente %s precisa cobrir to
   expect(await proporEncontroInicialParaTeste(dados)).toMatchObject({ ok: false });
   const criado = await proporEncontroInicialParaTeste({ ...dados, fim: fim.toISOString() });
   if (!criado.ok || !criado.dado) throw new Error(JSON.stringify(criado));
-  // Não existe encontro mutável entre proposta e decisão: a decisão aplica o intervalo conferido.
   expect(await aprovarAgendaInicialParaTeste({ propostaId: fonte.id, propostaHash: fonte.entradaHash,
     encontroId: criado.dado.id, motivo: "Reservar com fim exatamente no limite docente" })).toMatchObject({ ok: true });
   expect(await prisma.reservaSegundaChamada.count()).toBe(1);

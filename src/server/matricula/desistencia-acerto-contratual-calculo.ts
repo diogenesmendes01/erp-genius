@@ -2,8 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { RegrasEncerramentoSchema } from "./condicoes-encerramento-schema";
 
-/** Calcula somente a obrigação final prevista na versão contratual aprovada.
- * Recebimentos são entrada do cálculo e permanecem imutáveis. */
 export function calcularObrigacaoDesistenciaContratual(regrasEntrada: unknown, cobranca: { id: string; tipo: string; valorNegociado: Prisma.Decimal | string | number; valorRecebido: Prisma.Decimal | string | number | null; valorLiquidadoCredito: Prisma.Decimal | string | number; valorCompensadoPermuta?: Prisma.Decimal | string | number; valorCreditoJaApurado?: Prisma.Decimal | string | number }, cobrancasDaContratacao: { id: string; tipo: string; valorNegociado: Prisma.Decimal | string | number }[] = [cobranca]) {
   const regra = RegrasEncerramentoSchema.parse(regrasEntrada).acertoDesistenciaPreparacao;
   if (!regra) throw new ErroRegra("O contrato confirmado não traz regra estruturada para o acerto da desistência; complemente e confira as condições.");
@@ -21,8 +19,6 @@ export function calcularObrigacaoDesistenciaContratual(regrasEntrada: unknown, c
   }
   const contratado = new Prisma.Decimal(cobranca.valorNegociado);
   const liquidadoOriginal = new Prisma.Decimal(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito);
-  // Excedentes anteriormente convertidos em crédito continuam registrados e
-  // não podem ser novamente destinados no acerto desta mesma cobrança.
   const creditoAnterior = new Prisma.Decimal(cobranca.valorCreditoJaApurado ?? 0);
   if (!creditoAnterior.isFinite() || creditoAnterior.lt(0) || creditoAnterior.gt(liquidadoOriginal)) {
     throw new ErroRegra("Confira os créditos já apurados e a liquidação original da cobrança.");

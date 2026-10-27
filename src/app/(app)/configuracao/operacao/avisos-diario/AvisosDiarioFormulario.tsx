@@ -9,7 +9,6 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 type Valores = { prazoRegularizacaoDiarioMinutos: number | null; intervaloLembreteDiarioMinutos: number | null };
 
 export function AvisosDiarioFormulario({ valores }: { valores: Valores }) {
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
   async function salvar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();

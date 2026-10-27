@@ -12,7 +12,6 @@ import { diasPorSemanaDaFrequencia } from "@/server/turmas/schema";
 const hash = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 const origemGrade = z.object({ origem: GradeEncontrosSchema.pick({ dataInicial: true, diasSemana: true, horario: true, duracaoMinutos: true }).passthrough() }).passthrough();
 
-/** Estado atual, completo e não persistente usado para proposta, decisão e aplicação Q41–Q43. */
 export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClient, input: { modalidadeId: string; quantidadeNova: number; agora?: Date }) {
   const agora = input.agora ?? new Date();
   const modalidade = await tx.modalidade.findUnique({ where: { id: input.modalidadeId } });
@@ -36,8 +35,6 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
     const origem = proposta ? origemGrade.safeParse(proposta.snapshot) : null;
     if (t.impactosQuantidadeAulas[0]) return t.impactosQuantidadeAulas[0].quantidadeNova;
     if (origem?.success && typeof origem.data.origem.quantidadeAulas === "number" && origem.data.origem.quantidadeAulas > 0) return origem.data.origem.quantidadeAulas;
-    // Rascunho sem grade ainda não tem meta histórica; a modalidade é a origem
-    // explícita somente enquanto não houver agenda publicada.
     if (!t.encontrosAgenda.some((e) => e.status !== "RASCUNHO")) return modalidade.aulasPorNivel!;
     return modalidade.aulasPorNivel!;
   };
@@ -49,9 +46,6 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
   })) });
   const impactos = classificacao.impactos.map((base) => {
     const turma = turmas.find((t) => t.id === base.turmaId)!;
-    // Agenda publicada só pode usar a última grade aprovada; um rascunho ou
-    // rejeição posterior não redefine sua origem. Rascunho usa sua versão mais
-    // recente, ainda não publicada.
     const proposta = origensEfetivas.get(turma.id) ?? null;
     const pendencias: string[] = [...base.dadosIncoerentes];
     const excecoesQ37: string[] = [];
@@ -60,8 +54,6 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
     if (base.quantidadeNova !== base.quantidadeAnterior) {
       if (!proposta && base.publicada) pendencias.push("Turma publicada sem grade aprovada com meta histórica: confira antes de alterar a meta.");
       else if (!proposta) {
-        // Rascunho sem encontros pode receber a nova meta para sua grade futura;
-        // não cria nem confirma agenda oficial.
         if (turma.encontrosAgenda.length) pendencias.push("Rascunho sem origem de grade exige conferência antes do recálculo.");
       }
       else {
@@ -74,9 +66,6 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
           const frequenciaDaOrigem = typeof o.frequencia === "string" ? o.frequencia : null;
           const frequenciaPadrao = diasPorSemanaDaFrequencia(modalidade.frequencia);
           const diasDaOrigem = new Set(o.diasSemana).size;
-          // A aplicação de quantidade reutiliza exatamente a grade já aprovada
-          // da turma. Duração ou frequência particular são uma exceção Q37
-          // visível, não autorização para reverter ao padrão da modalidade.
           if (quantidadeSnapshot !== modalidade.aulasPorNivel || o.duracaoMinutos !== modalidade.horasAula * 60 || (frequenciaDaOrigem !== null && frequenciaDaOrigem !== modalidade.frequencia) || diasDaOrigem !== frequenciaPadrao) excecoesQ37.push(proposta.id);
           try { previsao = proporReplanejamentoGrade({ agora: agora.toISOString(), quantidadeAulasAlvo: base.quantidadeNova,
             grade: { dataInicial: o.dataInicial, diasSemana: o.diasSemana, horario: o.horario, duracaoMinutos: o.duracaoMinutos,

@@ -15,7 +15,6 @@ import { planejarTiposDocumento } from "./tipos-documento";
 
 const PATH = "/configuracao/paises";
 
-/** Habilita/desabilita um produto (idioma×modalidade) no país — doc 04/09. */
 export async function alternarProdutoPais(paisId: string, produtoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -144,7 +143,6 @@ export async function alterarStatusPais(id: string, novoStatus: StatusPais): Pro
     });
     if (!pais) throw new ErroRegra("País não encontrado.");
 
-    // Checklist de prontidão (doc 04): para ATIVAR exige moeda + doc + ≥1 preço.
     if (novoStatus === StatusPais.ATIVO) {
       if (!pais.moedaLocal) throw new ErroRegra("Defina a moeda antes de ativar.");
       if (pais._count.tiposDocumento === 0)

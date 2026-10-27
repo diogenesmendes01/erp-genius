@@ -158,7 +158,6 @@ beforeEach(async (contexto) => {
   const assinaturaAberta = contexto.task.name.includes("solicitação de assinatura aberta");
   const driverSimulado = contexto.task.name.includes("driver simulado");
   if (driverSimulado) {
-    // Envio real pela ação, com o driver simulado: o processo nasce SIMULADO/SANDBOX com referência do simulado.
     base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, semEnvio: true });
     process.env.ASSINATURA_DRIVER = "simulado";
     const envio = dado(await enviarContratoParaAssinatura({ matriculaId: base.matriculaId, artefatoId: base.artefatoFonteId, conferenciaId: base.conferenciaFonteId, chaveIdempotencia: "envio-simulado-q165" }));
@@ -270,7 +269,6 @@ it("driver simulado: cancela a solicitação de assinatura aberta pela desistên
   expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId } })).toMatchObject({ fornecedor: "SIMULADO", ambiente: "SANDBOX", estado: "ENVIADO" });
   const pedido = await registrarPedido();
   const entrada = { pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash };
-  // Antes da decisão administrativa e do acerto aplicado o cancelamento é recusado, sem intenção nem chamada.
   entrar(base.secretariaId);
   expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-cedo-q165" })).toMatchObject({ ok: false, erro: expect.stringContaining("aplicação Q165") });
   const decisao = await prepararEDecidir(pedido, "driver-simulado-q165");
@@ -296,10 +294,8 @@ it("driver simulado: cancela a solicitação de assinatura aberta pela desistên
   } finally { simulado.cancelarEnvelope = cancelar; }
   expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId } })).toMatchObject({ estado: "ENVIADO" });
   expect(await consultarDocumentosDesistenciaPreparacao({ matriculaId: base.matriculaId })).toMatchObject({ ok: true, dado: { processos: [{ cancelamentoDesistencia: { situacao: "RESULTADO_INCERTO" }, cancelamentoSubstituicao: { situacao: "NAO_INICIADO" } }] } });
-  // Mesma chave: devolve o resultado gravado sem chamar o serviço de novo.
   expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-1" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: false, repetido: true } });
 
-  // Mesma chave em requisições simultâneas: ambas respondem o mesmo resultado (sem "chave reutilizada com outro resultado").
   const simultaneos = await Promise.all([1, 2].map(() => executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-2" })));
   for (const r of simultaneos) expect(r).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true } });
   expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-3" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true, repetido: true } });
@@ -319,14 +315,9 @@ it("driver simulado: cancela a solicitação de assinatura aberta pela desistên
   expect(efetivada).toMatchObject({ ok: true, dado: { status: "CANCELADA" } });
 });
 
-// N2 da R2 #266: a fotografia SQL da Q165 (q165_fotografia_atual) reconhece as origens de crédito da reconferência
-// delta e da Q175 como o TS (fotografiaQ165). O fluxo real não chega aqui (crédito delta só nasce depois de uma Q165
-// aplicada; crédito Q175 exige aula ministrada, e a Q165 exige matrícula não ativada), então cada crédito entra com os
-// triggers desligados só dentro de uma transação, desfeita no fim.
 it.each([
   ["origemReconferenciaDeltaDesistenciaId", "origem-delta-fixture"],
   ["origemRevisaoCorrecaoAulaId", "origem-q175-fixture"],
-  // Q171/Q167C: crédito financeiro do excedente de permuta destinado no acordo (nona origem).
   ["origemExcedentePermutaId", "origem-q171-fixture"],
 ] as const)("fotografia Q165 Node/SQL coincide com crédito de %s", async (origem, origemId) => {
   const { fotografiaQ165 } = await import("./desistencia-acerto-contratual");

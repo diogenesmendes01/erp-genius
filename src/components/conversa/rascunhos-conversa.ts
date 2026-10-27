@@ -3,7 +3,6 @@
 import { useLayoutEffect, useState } from "react";
 
 type Revisao = { dono: object; intencao: object; aoConfirmar?: () => void };
-/** Controle local ao Inbox: não persiste metadados nem compartilha autorização entre montagens do Inbox. */
 export function criarRevisoesRascunhos() {
   const revisoes = new Map<string, Revisao>();
   let ativo = true;
@@ -11,7 +10,6 @@ export function criarRevisoesRascunhos() {
     ativar() { ativo = true; },
     invalidar() { ativo = false; revisoes.clear(); },
     registrar(chave: string, dono: object, aoConfirmar: () => void) {
-      // Remontar não é editar: somente uma intenção deliberada troca o token da chave.
       revisoes.set(chave, { dono, intencao: revisoes.get(chave)?.intencao ?? {}, aoConfirmar });
       return () => { const atual = revisoes.get(chave); if (atual?.dono === dono) atual.aoConfirmar = undefined; };
     },
@@ -39,7 +37,6 @@ export function useRevisoesRascunhos(): RevisoesRascunhos {
   const [revisoes] = useState(criarRevisoesRascunhos);
   useLayoutEffect(() => {
     revisoes.ativar();
-    // Sair do Inbox revoga callbacks antigos, inclusive se outro Inbox remontar com o mesmo texto.
     return () => revisoes.invalidar();
   }, [revisoes]);
   return revisoes;

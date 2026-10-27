@@ -36,8 +36,6 @@ function todos(no: unknown, tipo: string): No[] {
 
   const atual = no as No;
 
-  // A decisão tem estado próprio e teste próprio (PermutaOperacional.confirmacao.test.ts): aqui fica fechada.
-
   if (atual.type === DecidirCompensacao) return [];
 
   if (typeof atual.type === "function") return todos((atual.type as (props: Record<string, unknown>) => unknown)(atual.props ?? {}), tipo);
@@ -114,7 +112,6 @@ it("mantém chave e entrada para retry quando o acordo falha", async () => {
 
 });
 
-// A decisão (aprovar abate mensalidades) passou para o ConfirmarAcao: PermutaOperacional.confirmacao.test.ts.
 it("submete confirmação e proposta com os destinos explícitos", async () => {
 
   preparar();
@@ -211,12 +208,10 @@ it("acordo sem moeda (moeda nula) mostra \"moeda não definida\" no lugar de cad
 
   expect(textoDoNo(todos(arvore, "h2"))).toBe("M-1 · moeda não definida");
   expect(texto).toContain("Moeda não definida neste acordo: os valores não são exibidos para não serem lidos em outra moeda.");
-  // Valor por unidade, total, saldo, limite, proposta e aplicação: todos no estado explícito.
   expect(texto).toContain("× moeda não definida = moeda não definida");
   expect(texto).toContain("saldo moeda não definida · limite moeda não definida");
   expect(texto).toContain("Proposta de moeda não definida");
   expect(textoDoNo(todos(arvore, "li"))).toContain("C-1: moeda não definida");
-  // Nenhum valor monetário formatado sem moeda ("100,00", "50,00") nem com moeda inventada.
   expect(texto).not.toMatch(/\b(?:100|50),00\b/);
   expect(texto).not.toContain("R$");
 });

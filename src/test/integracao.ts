@@ -3,10 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// Helpers das suites de integração (*.int.test.ts). O banco é o Postgres de TESTE
-// (a URL é injetada pelo vitest.integration.config — nunca o .env/produção).
-
-/** Limpa TODAS as tabelas do domínio (ordem irrelevante: TRUNCATE ... CASCADE). */
 export async function truncarBanco(): Promise<void> {
   const tabelas = await prisma.$queryRaw<{ tablename: string }[]>`
     SELECT tablename FROM pg_tables
@@ -17,11 +13,6 @@ export async function truncarBanco(): Promise<void> {
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${lista} RESTART IDENTITY CASCADE`);
 }
 
-/**
- * Fuso da escola configurado (D10): sem ele, o lançamento de avaliação é recusado. As suítes que lançam notas
- * chamam isto no setup, depois do truncarBanco. Upsert: chamar de novo (ou depois de outra configuração) só
- * reafirma o fuso.
- */
 export async function configurarFusoDaEscola(fuso = "UTC"): Promise<void> {
   await prisma.configuracaoOperacional.upsert({
     where: { id: "escola" },
@@ -30,35 +21,24 @@ export async function configurarFusoDaEscola(fuso = "UTC"): Promise<void> {
   });
 }
 
-/**
- * Meio-dia da escola no dia corrente (revisão da #255, C1). Serve de relógio fixo para as suítes que
- * precisam do dia da máquina igual ao da escola: ao contrário de uma data literal, fica no mesmo dia do
- * `now()` do Postgres (`criadoEm` etc.), que segue o relógio real. Ler com o relógio real, antes de
- * `vi.setSystemTime`, e depois do `truncarBanco` (o fuso vem da configuração, ou do padrão).
- */
 export async function meioDiaDaEscolaHoje(): Promise<Date> {
   return new Date(inicioDoDiaInstitucional(new Date(), await fusoDaEscola()).getTime() + 12 * 3600_000);
 }
 
 let seqUsuario = 0;
 
-/** Cria um usuário REAL no banco de teste (papéis frescos são lidos daqui). */
 export async function criarUsuario(papeis: Papel[], nome = "Usuário Teste") {
   seqUsuario += 1;
   return prisma.usuario.create({
     data: {
       nome,
       email: `teste-${Date.now()}-${seqUsuario}@genius.test`,
-      senhaHash: "x", // nunca autentica por senha nos testes (sessão é mockada)
+      senhaHash: "x",
       papeis,
     },
   });
 }
 
-/**
- * Catálogo mínimo para o fluxo de matrícula: país ativo (CR) + idioma + modalidade +
- * produto oferecido no país + preços ativos de taxa e mensalidade + tipo de documento.
- */
 export async function seedCatalogoMinimo() {
   const pais = await prisma.pais.create({
     data: {
@@ -104,7 +84,6 @@ export async function seedCatalogoMinimo() {
   return { pais, idioma, modalidade, produto, precoTaxa, precoMensalidade };
 }
 
-/** Eventos gravados para um agregado, mais recentes por último. */
 export async function eventosDo(agregadoTipo: string, agregadoId: string) {
   return prisma.evento.findMany({
     where: { agregadoTipo, agregadoId },
@@ -112,10 +91,6 @@ export async function eventosDo(agregadoTipo: string, agregadoId: string) {
   });
 }
 
-/**
- * Aluno mínimo (país próprio criado sob demanda, reaproveitado se já existir).
- * `extra` sobrescreve/complementa os campos (ex.: `pessoaId`).
- */
 export async function criarAlunoMinimo(extra: Partial<Prisma.AlunoUncheckedCreateInput> = {}) {
   const pais =
     (await prisma.pais.findFirst({ where: { codigoISO: "CR" } })) ??

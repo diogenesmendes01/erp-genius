@@ -26,7 +26,6 @@ const semPapel = { id: "x", nome: "X", papeis: [Papel.VENDEDOR] };
 const comTurma = lerFiltrosAlunos({ turma: "t-alheia", status: "ATIVO" });
 
 describe("lista de alunos: escopo sempre junto dos filtros", () => {
-  // escopoTurmasDocente usa `new Date()` (vínculo docente vigente): relógio fixo para comparar as condições.
   beforeEach(() => {
     vi.useFakeTimers({ now: new Date("2026-09-24T12:00:00Z"), toFake: ["Date"] });
     mocks.alunos.mockClear(); mocks.contar.mockClear(); mocks.turmas.mockClear(); mocks.paises.mockClear();
@@ -77,7 +76,6 @@ describe("lista de alunos: escopo sempre junto dos filtros", () => {
     });
     await listarAlunos(secretaria, lerFiltrosAlunos({ ordem: "status", dir: "desc" }));
     expect(((mocks.alunos.mock.calls[1] as unknown[])[0] as { orderBy: unknown[] }).orderBy).toEqual([{ status: "desc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
-    // Sem filtros (chamadas internas antigas): a ordem de sempre.
     await listarAlunos(secretaria);
     expect(((mocks.alunos.mock.calls[2] as unknown[])[0] as { orderBy: unknown[] }).orderBy).toEqual([{ nomeOrdenacao: "asc" }, { id: "asc" }]);
   });
@@ -107,7 +105,6 @@ describe("turma do aluno na célula e na planilha (C17, #170)", () => {
       [{ id: "t1", label: "T-01 · Manhã · Regular · Inglês B1" }],
       [{ id: "t2", label: "T-02 · Noite · Regular · Inglês B1" }],
     ]);
-    // O idioma do nível vem junto da turma: sem ele o rótulo perderia "Inglês".
     const args = (mocks.alunos.mock.calls[mocks.alunos.mock.calls.length - 1] as unknown[])[0] as { include: { alocacoes: { include: { turma: { include: { nivel: unknown } } } } } };
     expect(args.include.alocacoes.include.turma.include.nivel).toEqual({ include: { idioma: true } });
   });

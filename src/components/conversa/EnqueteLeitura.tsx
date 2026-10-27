@@ -2,7 +2,6 @@ import { IconCircle, IconCircleCheck } from "@tabler/icons-react";
 
 export interface EnqueteDados { nome: string; selecionavel: number; opcoes: { texto: string; votos: number; escolhida?: boolean }[] }
 
-/** Enquete só para leitura: mostra opções e totais; votar é do motor (Fase 4), então não há botão de voto. */
 export function EnqueteLeitura({ enquete }: { enquete: EnqueteDados }) {
   const total = enquete.opcoes.reduce((s, o) => s + o.votos, 0);
   return (

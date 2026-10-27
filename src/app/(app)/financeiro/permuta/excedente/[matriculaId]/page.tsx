@@ -20,7 +20,6 @@ const PENDENCIAS: Record<string, string> = {
  CREDITO_ANTERIOR_SEM_ATRIBUICAO_POR_ORIGEM: "crédito anterior sem atribuição por origem",
 };
 
-/** Q171/Q167C: destinação negociada do excedente de permuta e uso do saldo restrito a serviços, por matrícula. */
 export default async function Pagina({ params }: { params: Promise<{ matriculaId: string }> }) {
  const usuario = await exigirSessaoPagina(Papel.FINANCEIRO);
  const { matriculaId } = await params;

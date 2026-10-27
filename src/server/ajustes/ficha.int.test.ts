@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Papel, StatusCobranca, StatusMatricula, TipoCobranca } from "@prisma/client";
 
-// Prioridade 1 do docs/14 (integração), lado FINANCEIRO: a ficha financeira respeita o
-// escopo row-level (doc 07) — vendedor só abre a ficha de alunos ligados a ele (comissão
-// dele OU lead dele); fora do escopo retorna null (nunca dados de terceiros). Dados
-// criados direto no banco de teste (sem passar pelas actions) para isolar a LEITURA.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 

@@ -9,7 +9,6 @@ import { carregarPreviaMensalEncerramentoTx } from "./encerramento-previa-tx";
 import { PreviaMensalPedidoEncerramentoSchema } from "./encerramento-previa-schema";
 const Entrada = z.object({ alunoId: z.string().min(1), rascunhoId: z.string().min(1), aprovar: z.boolean(), motivo: z.string().trim().min(5).max(2000), autorizaRetroatividade: z.boolean().default(false), autorizaExcecaoMulta: z.boolean().default(false) }).strict();
 
-/** Decisão financeira preservada. A execução deve revalidar origens e decisão antes de aplicar. */
 export async function decidirAcertoEncerramento(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = Entrada.parse(input);

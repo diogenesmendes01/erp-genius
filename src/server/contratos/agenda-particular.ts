@@ -7,7 +7,6 @@ import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { conferirDiasNaoLetivos } from "@/server/agenda/calendario-intervalo";
 
-/** Fontes da reserva histórica; não reclassifica o contrato pela oferta editada depois. */
 export async function carregarAgendaParticularContratual(tx: Prisma.TransactionClient, matriculaId: string, reservaId: string) {
   const atualId = await resolverReservaParticularAtual(tx, reservaId);
   const r = await tx.reservaAgendaParticular.findFirst({ where: { id: atualId, matriculaId }, include: { horarios: { include: { professor: { select: { id: true, nome: true, ativo: true, papeis: true } } }, orderBy: [{ inicio: "asc" }, { id: "asc" }] } } });

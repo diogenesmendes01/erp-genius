@@ -60,12 +60,10 @@ import { exigirCondicoesMensaisAceitas } from "./condicoes-aceitas";
 import { ativarPreparacaoTx } from "./ativacao-preparacao-tx";
 import { nomeCompleto } from "@/lib/nome";
 import { resolverMensalVigenteTx } from "@/server/contratos/aditivo-mensal-vigente";
-// Conjuntos de papéis centralizados (compartilhados com a UI).
 import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
 import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
 const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
 
 function revalidar() {
@@ -76,18 +74,12 @@ function revalidar() {
   revalidatePath("/comissoes");
 }
 
-// vencimento/comissão: regras puras em @/server/_shared/regras (testáveis).
 const vencimentoMes = vencimentoMensalidade;
 
-/**
- * Cria a matrícula (aluno, contrato, cobranças, comissão) dentro de uma transação.
- * Reutilizado por `criarMatricula` e pela operação atômica `criarEAtivarMatricula`.
- */
 async function criarMatriculaTx(
   tx: Prisma.TransactionClient,
   autor: UsuarioSessao,
   input: MatriculaInput,
-  /** Idempotência (#166): gravada no payload do `MatriculaCriada`, onde `criarMatricula` a procura. */
   marca: MarcaIdempotencia | null = null,
 ): Promise<{ id: string; alunoId: string; leadId: string | null; aguardaPreco: boolean }> {
   const dados = analisarComDatasDaEscola(MatriculaSchema, input, await fusoDaEscola(tx));
@@ -101,8 +93,6 @@ async function criarMatriculaTx(
   const produto = await tx.produto.findUnique({ where: { id: dados.produtoId } });
   if (!produto) throw new ErroRegra("Produto não encontrado.");
 
-  // Revalidação no servidor (Issue #7) — NÃO confiar no client.
-  // 1) Produto precisa estar OFERECIDO no país (catálogo coerente).
   const ofertaPais = await tx.produtoPais.findUnique({
     where: { produtoId_paisId: { produtoId: produto.id, paisId: pais.id } },
     select: { oferecido: true },
@@ -111,7 +101,6 @@ async function criarMatriculaTx(
 
   const moeda = pais.moedaLocal;
 
-  // dono do lead = quem recebe a comissão; senão o criador (se vendedor)
   let vendedorId = autor.id;
   let leadId: string | null = null;
   let etapaLeadAtual: EtapaLead | null = null;
@@ -122,7 +111,6 @@ async function criarMatriculaTx(
       include: { matricula: { select: { id: true } } },
     });
     if (!lead) throw new ErroRegra("Lead não encontrado.");
-    // Ownership/escopo: vendedor só converte lead do próprio escopo (doc 07).
     if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) && !await tx.oportunidade.findFirst({ where: { AND: [{ id: lead.id }, await escopoComercialAtual(autor, tx)] }, select: { id: true } })) throw new ErroPermissao();
     if (lead.matricula) throw new ErroRegra("Lead já possui matrícula.");
     leadId = lead.id;
@@ -130,14 +118,9 @@ async function criarMatriculaTx(
     if (lead.vendedorDonoId) vendedorId = lead.vendedorDonoId;
   }
 
-  // referência de preço (para registrar valorOriginal)
   const precos = await tx.precoReferencia.findMany({
     where: { ativo: true, paisId: pais.id, produtoId: produto.id },
   });
-  // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção AUDITÁVEL,
-  // JUSTIFICADA + APROVADA por papel (Issues #7/#22). A autorização é apurada no
-  // servidor (temPapel), nunca por flag do client; ausência de preço marca a
-  // matrícula (`precoReferenciaAusente`) e grava Evento `MatriculaSemPrecoReferencia`.
   const { precoReferenciaAusente } = validarOfertaPreco(precos, produto.id, pais.id, {
     justificativa: dados.justificativaSemPreco,
     autorizado: temPapel(autor, ...PAPEIS_EXCECAO_PRECO),
@@ -150,7 +133,6 @@ async function criarMatriculaTx(
   const limites = await limitesAtuais(tx, autor);
   const aguardaPreco = precoReferenciaAusente || exigeAprovacaoComponente(limites, TipoCobranca.MATRICULA, refTaxa, dados.taxaValor) ||
     exigeAprovacaoComponente(limites, TipoCobranca.MENSALIDADE, refMens, dados.mensalidadeValor);
-  // Um pedido acima da alçada não torna o preço proposto vigente antes da aprovação.
   const taxaEfetiva = aguardaPreco ? refTaxa : dados.taxaValor;
   const mensalidadeEfetiva = aguardaPreco ? refMens : dados.mensalidadeValor;
   const comissao = await resolverComissao(tx, { paisId: pais.id, produtoId: produto.id, taxa: taxaEfetiva, moeda });
@@ -161,21 +143,17 @@ async function criarMatriculaTx(
   const codPrimeiraMensalidade = await gerarCodigo("cobranca");
   const codCertificado = dados.certificadoValor && dados.certificadoValor > 0 ? await gerarCodigo("cobranca") : null;
 
-  // Documento estruturado (doc 04): o tipo escolhido deve pertencer ao país; a
-  // validação mira o validador DESSE tipo. Documento avisa, não bloqueia (flag).
   const tipoDoc = pais.tiposDocumento.find((t) => t.id === dados.alunoTipoDocumentoId);
   if (!tipoDoc) throw new ErroRegra("Tipo de documento não pertence ao país selecionado.");
 
   const aluno = await tx.aluno.create({
     data: {
       codigo: codAluno,
-      // Identificação
       primeiroNome: dados.alunoPrimeiroNome,
       sobrenome: dados.alunoSobrenome,
       nomePreferido: dados.alunoNomePreferido || null,
       nascimento: dados.alunoNascimento,
       genero: dados.alunoGenero,
-      // Documentação
       paisId: pais.id,
       tipoDocumentoId: tipoDoc.id,
       documento: dados.alunoDocumento,
@@ -183,12 +161,10 @@ async function criarMatriculaTx(
       documentoPaisEmissor: dados.alunoDocumentoPaisEmissor || null,
       nacionalidade: dados.alunoNacionalidade,
       segundaNacionalidade: dados.alunoSegundaNacionalidade || null,
-      // Contato
       email: dados.alunoEmail,
       telefoneE164: normalizarTelefoneE164(dados.alunoTelefone, pais.ddi),
       whatsapp: dados.alunoWhatsapp,
       aceitaComunicacoes: dados.alunoAceitaComunicacoes,
-      // Residência
       paisResidencia: dados.alunoPaisResidencia,
       cep: dados.alunoCep || null,
       rua: dados.alunoRua || null,
@@ -197,16 +173,13 @@ async function criarMatriculaTx(
       bairro: dados.alunoBairro || null,
       cidade: dados.alunoCidade || null,
       regiao: dados.alunoRegiao || null,
-      // Acadêmico
       escolaridade: dados.alunoEscolaridade ?? null,
       idiomaNativo: dados.alunoIdiomaNativo || null,
-      // Operacional
       fuso: dados.alunoFuso || null,
       observacoes: dados.alunoObservacoes || null,
     },
   });
 
-  // Contato de emergência (opcional) — reaproveita Responsavel com papel EMERGENCIA.
   if (dados.emergenciaNome) {
     const emerg = await tx.responsavel.create({
       data: {
@@ -220,7 +193,6 @@ async function criarMatriculaTx(
     });
   }
 
-  // Responsável financeiro (pagador) quando não é o próprio aluno (Kids/Teens/B2B)
   if (dados.pagador !== "ALUNO" && dados.responsavelNome) {
     const resp = await tx.responsavel.create({
       data: {
@@ -256,8 +228,6 @@ async function criarMatriculaTx(
     },
   });
 
-  // Auditoria da exceção de preço (Issue #7): registra motivo + autor na
-  // MESMA transação da criação.
   if (precoReferenciaAusente) {
     await registrarEvento(tx, {
       tipo: "MatriculaSemPrecoReferencia",
@@ -272,11 +242,7 @@ async function criarMatriculaTx(
     });
   }
 
-  // Data de início da PRIMEIRA AULA = Turma.dataInicio (quando há turma alocada).
-  // Base do vencimento da 1ª mensalidade (início + 30d, ajustado ao dia escolhido).
   if (dados.turmaId) {
-    // 3) Revalida a turma DENTRO da transação (turma aberta, coerente com o
-    // produto e com vaga). Vaga = capacidade − alocações ATIVAS (ativa:true).
     await tx.$queryRaw`SELECT id FROM "Turma" WHERE id = ${dados.turmaId} FOR UPDATE`;
     const turma = await tx.turma.findUnique({
       where: { id: dados.turmaId },
@@ -300,7 +266,6 @@ async function criarMatriculaTx(
     });
   }
 
-  // Taxa de matrícula (vence agora)
   const taxaCriada = await tx.cobranca.create({
     data: {
       codigo: codTaxa,
@@ -315,8 +280,6 @@ async function criarMatriculaTx(
     },
   });
 
-  // 1ª mensalidade (o restante do cronograma é gerado na ATIVAÇÃO — doc 09 / P18).
-  // Cobertura e primeiro vencimento são condições explícitas da contratação.
   const primeira = (() => {
     const [ano, mes, dia] = dados.primeiroVencimento.split("-").map(Number);
     return { data: new Date(ano, mes - 1, dia, 12), competencia: dados.primeiroVencimento.slice(0, 7) };
@@ -342,7 +305,6 @@ async function criarMatriculaTx(
     },
   });
 
-  // Certificado profissional (linha opcional — só Costa Rica, valor fixo)
   if (codCertificado && dados.certificadoValor) {
     await tx.cobranca.create({
       data: {
@@ -358,7 +320,6 @@ async function criarMatriculaTx(
     });
   }
 
-  // Comissão determinada no servidor pela política vigente, com memória do cálculo.
   await tx.comissao.create({
     data: {
       matriculaId: matricula.id,
@@ -393,8 +354,6 @@ async function criarMatriculaTx(
 
   if (leadId && etapaLeadAtual !== EtapaLead.AGUARDANDO_MATRICULA) {
     await tx.oportunidade.update({ where: { id: leadId }, data: { etapa: EtapaLead.AGUARDANDO_MATRICULA } });
-    // Etapa do lead muda no fluxo de matrícula: registra no agregado Lead para
-    // alimentar a timeline e o `etapaDesde` confiável (issue #15).
     await registrarEvento(tx, {
       tipo: "EtapaAlterada",
       agregadoTipo: "Lead",
@@ -429,13 +388,6 @@ async function criarMatriculaTx(
   return { id: matricula.id, alunoId: aluno.id, leadId, aguardaPreco };
 }
 
-/**
- * Preserva os recebimentos e estados existentes ao ativar. Valor novo, quando
- * informado por FIN/caixa, usa o mesmo ledger idempotente dos pagamentos.
- * Valor zero consulta a taxa já quitada; nunca cria uma baixa fictícia.
- * Exige contrato aceito e taxa confirmada. A configuração pode exigir também
- * a primeira mensalidade; informe de pagamento não confirma nenhum requisito.
- */
 async function ativarMatriculaTx(
   tx: Prisma.TransactionClient,
   autor: UsuarioSessao,
@@ -453,7 +405,6 @@ async function ativarMatriculaTx(
     return ativarPreparacaoTx(tx, matriculaId, autor.id);
   }
   await bloquearMatriculas(tx, [matriculaId]);
-  // Serializa também com o caminho de fechamento automático que usa o mesmo claim.
   await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${matriculaId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE`;
   const matricula = await tx.matricula.findUnique({
@@ -481,7 +432,6 @@ async function ativarMatriculaTx(
   if (await tx.aprovacao.count({ where: { alvoTipo: "Matricula", alvoId: matricula.id, status: "PENDENTE" } })) {
     throw new ErroRegra("A matrícula aguarda decisão dos preços propostos. Consulte as aprovações.");
   }
-  // Pagamentos já confirmados são preservados. Receber na ativação usa o mesmo ledger.
   if (dados && dados.valorRecebido > 0) {
     const caixa = autor.papeis.includes(Papel.FINANCEIRO) || autor.papeis.includes(Papel.ADMINISTRADOR) || (await tx.usuario.findUniqueOrThrow({ where: { id: autor.id }, select: { permissoes: true } })).permissoes.includes("pagamento.caixa");
     if (!caixa) throw new ErroPermissao("A secretaria informa o pagamento na ficha financeira; o Financeiro confirma antes da ativação.");
@@ -498,18 +448,13 @@ async function ativarMatriculaTx(
     throw new ErroRegra("A regra de entrada aplicável exige a primeira mensalidade integralmente recebida e confirmada antes da ativação.");
   }
 
-  // Cronograma gerado NA ATIVAÇÃO (doc 09 / P18): meses 2..N (o 1º já existe).
   const restante = Math.max(0, matricula.mesesPlano - 1);
   const coberturas = expandirCoberturaMensal(matricula, primeiraMensalidade, restante);
-  // A matrícula já está bloqueada; a formalização de versões também trava a
-  // matrícula, portanto a conferência e a projeção por cobertura não podem
-  // se intercalar com uma nova versão antes da criação do cronograma.
   const quantidadeAditivos = await tx.versaoCondicoesAditivo.count({ where: { matriculaId } });
   const codsRestante: string[] = [];
   for (let i = 0; i < restante; i++) codsRestante.push(await gerarCodigo("cobranca"));
 
   const agora = new Date();
-  // A primeira mensalidade conserva estado, vencimento e recebimentos anteriores.
   const venc1 = { data: primeiraMensalidade.vencimento, competencia: primeiraMensalidade.competencia };
 
   await tx.matricula.update({
@@ -517,22 +462,16 @@ async function ativarMatriculaTx(
     data: {
       status: StatusMatricula.ATIVA,
       pagamentoTaxaOk: true,
-      // Preserva a confirmação financeira existente da primeira mensalidade.
       primeiraMensalidadeOk: primeiraConfirmada,
       ativadaComPendencia: false,
       ativadaEm: agora,
     },
   });
 
-  // Gera o restante do cronograma de mensalidades (meses 2..N), a partir do mês
-  // de vencimento da 1ª mensalidade.
   const mensalidadesGeradas: { cobrancaId: string; coberturaInicio: string | null; coberturaFim: string | null; valorOriginal: string; valorNegociado: string; moeda: string; versaoAditivo: { id: string; versao: number; condicoesHash: string } | null }[] = [];
   for (let i = 0; i < restante; i++) {
     const { data, competencia } = vencimentoMes(matricula.diaVencimento, i + 1, venc1.data);
     const cobertura = coberturas?.[i];
-    // Nunca usa vencimento como substituto da cobertura para aplicar um
-    // aditivo. Sem período explícito, uma versão formalizada não tem alvo
-    // mensal determinável neste cronograma.
     if (!cobertura && quantidadeAditivos) throw new ErroRegra("Aditivo formalizado exige cobertura explícita antes de gerar mensalidades.");
     const valores = cobertura
       ? await resolverMensalVigenteTx(tx, { matriculaId, inicioCobertura: cobertura.coberturaInicio, fimCobertura: cobertura.coberturaFim,
@@ -545,8 +484,6 @@ async function ativarMatriculaTx(
         matriculaId,
         tipo: TipoCobranca.MENSALIDADE,
         competencia,
-        // Referência comercial permanece a do contrato; o aditivo formalizado
-        // pode alterar somente o valor negociado da parcela nova.
         valorOriginal: valores.valorOriginal,
         valorNegociado: valores.valorNegociado,
         moeda: valores.moeda,
@@ -568,7 +505,6 @@ async function ativarMatriculaTx(
     });
   }
 
-  // Comissão: Pendente → Aprovada (matrícula ativa)
   for (const com of matricula.comissoes) {
     if (com.status !== StatusComissao.PENDENTE) continue;
     await tx.comissao.updateMany({
@@ -579,8 +515,6 @@ async function ativarMatriculaTx(
 
   if (matricula.leadId && matricula.lead?.etapa !== EtapaLead.MATRICULADO) {
     await tx.oportunidade.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
-    // Etapa do lead muda na ativação: registra no agregado Lead p/ timeline e
-    // `etapaDesde` confiável (issue #15).
     await registrarEvento(tx, {
       tipo: "EtapaAlterada",
       agregadoTipo: "Lead",
@@ -618,18 +552,12 @@ async function ativarMatriculaTx(
   return { leadId: matricula.leadId };
 }
 
-/**
- * Criar-sem-ativar (issue #8): registra a matrícula em AGUARDANDO.
- * Exige apenas papel de criação; a ativação/recebimento fica para o Financeiro.
- */
 export async function criarMatricula(
   input: MatriculaInput,
 ): Promise<Resultado<{ id: string; alunoId: string; aguardaPreco?: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_CRIAR);
-    // Idempotência (#166): reenvio com a mesma chave (duplo clique, retry de rede, F5 no POST) devolve a
-    // matrícula já criada, sem segundo aluno, cobrança, comissão ou Evento.
     const { chaveIdempotencia, ...dados } = analisarComDatasDaEscola(MatriculaSchema, input, await fusoDaEscola());
     const marca = chaveIdempotencia ? { chaveIdempotencia, entradaHash: hashEntrada(dados) } : null;
 
@@ -651,7 +579,6 @@ export async function criarMatricula(
   });
 }
 
-/** Ativa matrícula com contrato aceito e pagamentos exigidos confirmados. */
 export async function ativarMatricula(
   matriculaId: string,
   input: AtivacaoInput,
@@ -674,7 +601,6 @@ export async function ativarMatricula(
   });
 }
 
-/** Conclui sem registrar baixa: secretaria, financeiro e administração usam as confirmações existentes. */
 export async function concluirMatricula(matriculaId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -685,13 +611,6 @@ export async function concluirMatricula(matriculaId: string): Promise<Resultado>
   });
 }
 
-/**
- * Criar + ativar atômico (issue #8): cria a matrícula e a ativa numa única
- * transação. Exige os papéis de criar E ativar — se faltar qualquer um, nada é
- * gravado (não fica matrícula parcial). Para quem só pode criar, use `criarMatricula`.
- * Compatibilidade de API: a mesma validação exige contrato aceito. Uma nova
- * matrícula sem aceite não ativa; a transação inteira é desfeita.
- */
 export async function criarEAtivarMatricula(
   input: MatriculaComAtivacaoInput,
 ): Promise<Resultado<{ id: string; alunoId: string; aguardaPreco?: boolean }>> {
@@ -719,10 +638,6 @@ export async function criarEAtivarMatricula(
   });
 }
 
-/**
- * Mantida para cron/webhook compatíveis. Fechamento comercial não prova aceite,
- * reserva, grade, pré-pagamento ou aprovação independente; por isso não ativa.
- */
 export async function ativarSeFechamentoCompletoTx(
   _tx: Prisma.TransactionClient,
   _matriculaId: string,
@@ -734,20 +649,8 @@ export async function ativarSeFechamentoCompletoTx(
   return { ativou: false, leadId: null };
 }
 
-// ---------------------------------------------------------------------------
-// C4 legado: contrato e link como histórico. Os atalhos de assinatura abaixo
-// permanecem bloqueados; o aceite e a ativação usam a preparação documental da SPEC.
-// ---------------------------------------------------------------------------
-
-/** Papéis que operam o fechamento: comercial (cria/negocia) + quem ativa (recebe). */
 const PAPEIS_FECHAMENTO: Papel[] = [...PAPEIS_CRIAR, ...PAPEIS_ATIVAR];
 
-/**
- * Titularidade do fechamento (review PR #60): VENDEDOR só opera matrícula cujo LEAD é da
- * carteira dele — sem isto, qualquer `matriculaId` colado dava contrato/link (e até a
- * autoativação) sobre negócio alheio. Papéis administrativos seguem sua autorização; gerente comercial continua
- * limitado à equipe/carteira vigente. Roda DENTRO da transação da ação.
- */
 async function exigirMatriculaNoEscopoTx(
   tx: Prisma.TransactionClient,
   matriculaId: string,
@@ -771,10 +674,6 @@ async function exigirMatriculaNoEscopoTx(
   return matricula;
 }
 
-/**
- * Registra que o CONTRATO foi enviado ao cliente — âncora da régua "contrato sem
- * assinatura" (C4). Reenviar atualiza a âncora (ocorrência nova da cadência).
- */
 export async function registrarContratoEnviado(matriculaId: string): Promise<Resultado> {
   return executarAcao(async () => {
     void matriculaId;
@@ -782,10 +681,6 @@ export async function registrarContratoEnviado(matriculaId: string): Promise<Res
   });
 }
 
-/**
- * Marca o CONTRATO como assinado (contratoOk) e, com a config de matrícula automática
- * LIGADA e a taxa já PAGA, conclui a ativação na mesma transação (C4).
- */
 export async function marcarContratoAssinado(matriculaId: string): Promise<Resultado> {
   return executarAcao(async () => {
     void matriculaId;
@@ -793,14 +688,6 @@ export async function marcarContratoAssinado(matriculaId: string): Promise<Resul
   });
 }
 
-/**
- * Registra o LINK DE PAGAMENTO enviado ao cliente (taxa de matrícula) — âncora da régua
- * "link sem pagamento" (C4). Na Fase 2 o gateway gera o link; aqui pode ser colado
- * manualmente (Pix copia-e-cola, link do provedor). Reenviar atualiza a âncora.
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outro LinkPagamentoEnviado nem move a
- * âncora, mesmo depois de a cobrança ser paga: a busca roda depois do papel e antes das validações da cobrança.
- * Chave nova é um reenvio deliberado.
- */
 export async function registrarLinkPagamento(cobrancaId: string, url: string, opcoes?: { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -824,7 +711,6 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string, op
         include: { matricula: { select: { id: true, leadId: true, status: true } } },
       });
       if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-      // Titularidade (review PR #60): mesmo escopo do fechamento; VENDEDOR só na TAXA.
       await exigirMatriculaNoEscopoTx(tx, cobranca.matricula.id, autor);
       if (!temPapel(autor, ...PAPEIS_ATIVAR) && cobranca.tipo !== TipoCobranca.MATRICULA) {
         throw new ErroPermissao("Vendedor só opera o link da taxa de matrícula.");
@@ -847,11 +733,6 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string, op
   });
 }
 
-/**
- * Gera o link de pagamento pelo GATEWAY (driver ativo — Fase 2) para uma cobrança aberta,
- * gravando `gatewayRef` (chave da conciliação) + `linkPagamento`/`linkEnviadoEm` (âncora
- * da régua C4). Substitui o registro manual quando o gateway está disponível.
- */
 export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Resultado<{ url: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -866,7 +747,6 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
         include: { matricula: { select: { id: true, leadId: true } } },
       });
       if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-      // Titularidade (review PR #60): mesmo escopo do fechamento; VENDEDOR só na TAXA.
       await exigirMatriculaNoEscopoTx(tx, cobranca.matricula.id, autor);
       if (!temPapel(autor, ...PAPEIS_ATIVAR) && cobranca.tipo !== TipoCobranca.MATRICULA) {
         throw new ErroPermissao("Vendedor só opera o link da taxa de matrícula.");
@@ -874,10 +754,6 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
       if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
         throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
 
-      // REUSA o link ativo (review PR #60 rodada 2): trocar o `gatewayRef` a cada geração
-      // deixaria o link já enviado órfão no provedor — cliente paga e o webhook não acha
-      // mais a cobrança pela referência. Enquanto a cobrança está aberta, re-gerar só
-      // re-ancora a régua (linkEnviadoEm) e devolve o MESMO link pagável.
       const link =
         cobranca.gatewayRef && cobranca.linkPagamento
           ? { gatewayRef: cobranca.gatewayRef, url: cobranca.linkPagamento }

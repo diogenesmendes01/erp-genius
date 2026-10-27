@@ -7,14 +7,12 @@ import {derivarEstadoAria,linhaEstadoDe} from "./estado-aria";
 import {podeAlterarAgendadaNoInbox} from "./agendadas-policy";
 export interface AgendadaNoFio{id:string;texto:string;agendadaPara:string;status:"PENDENTE"|"ADIADA";tipo:TipoMensagem;temAnexo:boolean;autor:"voce"|"aria"|"equipe";autorNome:string|null;podeAlterar:boolean}
 type Atendimento=NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>;
-/** Identidade bruta. O responsável do atendimento é capacidade, não troca de alvo da leitura. */
 function binding(a:Atendimento){const c=a.conversa.contato;return JSON.stringify([
  a.id,a.finalidade,a.numeroId,a.conversaId,a.contatoId,a.leadId??null,a.alunoId??null,a.matriculaId??null,a.turmaId??null,a.autorizacaoComunicacaoAcademicaId??null,
  a.conversa.id,a.conversa.grupoId,c?.id??null,c?.pessoaId??null,c?.leadId??null,c?.alunoId??null,c?.responsavelId??null,c?.telefoneE164??null,
 ]);}
 async function atorAtual(db:Db,id:string){const u=await db.usuario.findUnique({where:{id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});return u?.ativo&&!apenasPortal(u)?u:null;}
 function perfil(u:NonNullable<Awaited<ReturnType<typeof atorAtual>>>){return JSON.stringify([u.id,[...u.papeis].sort(),[...u.permissoes].sort()]);}
-/** ReadCommitted do Db recebido; não abre TX, não materializa configuração e não usa client global. */
 export async function lerAgendadasDoAtendimento(db:Db,autorId:string,atendimentoId:string):Promise<AgendadaNoFio[]>{
  if(!autorId||!atendimentoId)return [];
  const inicial=await atorAtual(db,autorId);if(!inicial)return [];
@@ -27,16 +25,13 @@ export async function lerAgendadasDoAtendimento(db:Db,autorId:string,atendimento
  const atual=await atendimentoVisivel(u,atendimentoId,false,db);if(!atual||atual.encerradoEm||binding(atual)!==alvo)return [];
  const envio=await atendimentoVisivel(u,atendimentoId,true,db);
  const {ctx,sugestao}=await lerContextoAtualInbox(db,atendimentoId);
- // Todas as leituras acima podem esperar. Revalidar ator e ACL/binding antes de publicar.
  const publicador=await atorAtual(db,autorId);if(!publicador)return [];
  const final=await atendimentoVisivel(publicador,atendimentoId,false,db);if(!final||final.encerradoEm||binding(final)!==alvo)return [];
- // Último snapshot único: ator e relações de equipe dos autores, após os demais awaits.
  const usuarios=await db.usuario.findMany({where:{id:{in:[...new Set([autorId,...linhas.flatMap(m=>m.autorId?[m.autorId]:[])])]}},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true,gerenteComercialId:true}});
  const porId=new Map(usuarios.map(u=>[u.id,u]));
  const ultimo=porId.get(autorId);if(!ultimo?.ativo||apenasPortal(ultimo)||perfil(ultimo)!==perfil(publicador))return [];
  const estadoAria=derivarEstadoAria(linhaEstadoDe(final),ctx,sugestao);
  const autorizadoEnviar=!!envio&&binding(envio)===alvo&&envio.responsavelId===final.responsavelId;
- // Nenhum await após a última conferência. Não promete linearizabilidade após ela.
  return linhas.flatMap(m=>{
   if(!m.agendadaPara||(m.status!=="PENDENTE"&&m.status!=="ADIADA"))return [];
   const dto:AgendadaNoFio={id:m.id,texto:m.corpoRenderizado,agendadaPara:m.agendadaPara.toISOString(),status:m.status,tipo:m.tipo,

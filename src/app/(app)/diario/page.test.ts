@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/diario/consultas", () => ({ listarAulasDiario: mocks.aulas, listarTurmasParaDiario: async () => [] }));
 vi.mock("./DiarioAulas", () => ({ DiarioAulas: mocks.diario }));
-// Lote 3 do fuso pessoal: a página resolve o fuso de entrada da data da aula (pessoal; sem preferência, o da escola).
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 

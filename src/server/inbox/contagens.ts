@@ -10,15 +10,12 @@ import { estadoAriaEmSql, RELACOES_ESTADO_ARIA } from "./estado-aria-sql";
 
 export interface ContagemChipsInbox { todas:number; ia:number; aprovacao:number; handoff:number; humano:number; semResposta:number; naoAtribuidas:number }
 export interface ResumoListaInbox { contagens:ContagemChipsInbox; aria:SituacaoAriaInbox }
-/** Tipo aditivo local até o parser/consumidores do marco3. */
 export type FiltrosResumoInbox = FiltrosInbox & { aria?:EstadoAria };
-/** COUNT devolve bigint no Postgres. Não truncar nem converter silenciosamente para int32. */
 export function contagemSegura(v:unknown):number {
   if(typeof v!=="bigint" || v<0n || v>BigInt(Number.MAX_SAFE_INTEGER)) throw Error("Contagem Inbox fora do intervalo inteiro seguro.");
   return Number(v);
 }
 type ContagensRaw = { [K in keyof ContagemChipsInbox]: bigint };
-/** Reutiliza o mesmo snapshot global/ACL na futura fase3, mas executa uma agregação por chamada. */
 export async function resumoComContexto(ctx:ContextoListaInbox,f:FiltrosResumoInbox):Promise<ResumoListaInbox> {
   const where=filtrosEmSql(ctx,{...f,aria:undefined,prazoEstourado:undefined,responsavel:f.responsavel==="fila"?undefined:f.responsavel});
   const [r]=await ctx.db.$queryRaw<ContagensRaw[]>(Prisma.sql`

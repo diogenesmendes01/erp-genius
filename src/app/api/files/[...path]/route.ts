@@ -5,19 +5,12 @@ import { exigirSessao, ErroAutenticacao } from "@/server/_shared/sessao";
 import { contentTypePorExtensao, resolverCaminhoUpload } from "@/lib/uploads";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 
-// Leitura AUTENTICADA + AUTORIZADA POR OBJETO de arquivos privados (comprovantes /
-// contratos / documentos). Os arquivos vivem em data/uploads (fora de public/), então
-// esta é a única forma de acessá-los. Além de exigir sessão, validamos se o usuário pode
-// LER o agregado que referencia o arquivo (Cobranca / Documento do Lead) — sem isso,
-// qualquer autenticado abriria documento de qualquer aluno/lead. Ver POST /api/upload e
-// src/server/uploads/autorizacao.ts.
 export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  // Sessão com papéis FRESCOS do banco (não do JWT) — usuário desativado/revogado cai aqui.
   let usuario;
   try {
     usuario = await exigirSessao();
@@ -39,8 +32,6 @@ export async function GET(
     return NextResponse.json({ erro: "Tipo não permitido." }, { status: 400 });
   }
 
-  // Autorização POR OBJETO: o arquivo só é servido se o usuário pode ler o agregado que
-  // o referencia (papel + escopo). Acesso negado => 403 (não vazamos o conteúdo).
   const autorizado = await podeLerArquivo(
     { id: usuario.id, papeis: usuario.papeis },
     segmentos ?? [],
@@ -60,7 +51,6 @@ export async function GET(
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `inline; filename="${path.basename(caminho)}"`,
-      // Conteúdo sensível: nunca cachear em proxies compartilhados.
       "Cache-Control": "private, no-store",
     },
   });

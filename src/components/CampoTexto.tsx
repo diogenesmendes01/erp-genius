@@ -2,17 +2,6 @@
 
 import { forwardRef, useCallback, useEffect, useId, useRef, useState, type TextareaHTMLAttributes } from "react";
 
-// Campo de texto longo com o mínimo visível (docs/42-auditoria-frontend-ux.md, E1/E7): havia 266
-// <textarea minLength> em que o operador só descobria o mínimo pelo balão do navegador ao enviar (ou
-// via um botão desabilitado sem explicação). Substitui <textarea> 1:1 — os mesmos atributos passam
-// adiante — e acrescenta, logo abaixo, "Mínimo N caracteres · x/máx", ligado por aria-describedby.
-//
-// - A dica fica fora do NOME do campo (aria-hidden: o nome continua sendo o do <label>) e entra como
-//   DESCRIÇÃO (aria-describedby pode apontar para conteúdo oculto).
-// - aria-invalid só quando há texto e ele está abaixo do mínimo — campo vazio não é marcado antes
-//   de o operador escrever (o `required` nativo cuida do envio).
-// - Funciona controlado (value) ou não (defaultValue + contagem interna, refeita no reset do form).
-
 type Props = TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 export function dicaDoCampo(tamanho: number, minLength?: number, maxLength?: number): string | null {
@@ -37,7 +26,6 @@ export const CampoTexto = forwardRef<HTMLTextAreaElement, Props>(function CampoT
   const curto = minLength !== undefined && tamanho > 0 && tamanho < minLength;
   const dica = dicaDoCampo(tamanho, minLength, maxLength);
 
-  // Reset do formulário devolve o defaultValue sem disparar onChange: recontar depois do reset.
   const interno = useRef<HTMLTextAreaElement | null>(null);
   const ligarRef = useCallback((el: HTMLTextAreaElement | null) => {
     interno.current = el;

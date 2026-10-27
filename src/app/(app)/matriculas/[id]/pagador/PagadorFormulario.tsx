@@ -7,10 +7,8 @@ import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 type Dados = { nome: string; paisId: string; documento?: string | null; email?: string | null; telefoneE164?: string | null; endereco?: string | null };
 
-/** Tipos de pagador com identificação digitada (o ALUNO copia o cadastro do próprio aluno). */
 export const TIPOS_COM_IDENTIFICACAO = ["RESPONSAVEL", "EMPRESA"] as const;
 export type TipoComIdentificacao = (typeof TIPOS_COM_IDENTIFICACAO)[number];
-/** Campos da identificação, na ordem da tela. */
 export const CAMPOS_DO_PAGADOR = ["nome", "paisId", "documento", "email", "telefoneE164", "endereco"] as const;
 type Campo = (typeof CAMPOS_DO_PAGADOR)[number];
 export type Identificacao = Record<Campo, string>;
@@ -18,7 +16,6 @@ export type Identificacao = Record<Campo, string>;
 const VAZIA: Identificacao = { nome: "", paisId: "", documento: "", email: "", telefoneE164: "", endereco: "" };
 const ehTipoComIdentificacao = (t: string): t is TipoComIdentificacao => (TIPOS_COM_IDENTIFICACAO as readonly string[]).includes(t);
 
-/** Rascunho inicial por tipo: o tipo registrado começa com os dados atuais; o outro, vazio. */
 export function rascunhosIniciais(atual: { tipo: string; dados: Dados } | null): Record<TipoComIdentificacao, Identificacao> {
   const doAtual = (t: TipoComIdentificacao): Identificacao => atual?.tipo === t ? {
     nome: atual.dados.nome ?? "", paisId: atual.dados.paisId ?? "", documento: atual.dados.documento ?? "",
@@ -29,10 +26,6 @@ export function rascunhosIniciais(atual: { tipo: string; dados: Dados } | null):
 
 export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matriculaId: string; versao: number; paises: { id: string; nome: string }[]; atual: { tipo: string; dados: Dados } | null }) {
   const [tipo, setTipo] = useState(atual?.tipo ?? ""), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
-  // Um rascunho por tipo (docs/43 §6 item 3; docs/42 L562): antes, `dados` só valia quando o tipo era o
-  // registrado e o <fieldset key={tipo}> remontava os campos — trocar "Responsável" por "Empresa" (ou clicar por
-  // engano) apagava nome, país, documento, e-mail, telefone e endereço. Agora cada tipo guarda o que foi
-  // digitado nele, e voltar ao tipo devolve tudo.
   const [rascunhos, setRascunhos] = useState(() => rascunhosIniciais(atual));
   const chave = useRef<string | null>(null), router = useRouter();
   const identificacao = ehTipoComIdentificacao(tipo) ? rascunhos[tipo] : null;

@@ -37,7 +37,6 @@ export async function solicitarRetomadaMatriculas(alunoId: string, input: Solici
   });
 }
 
-/** Decisão persistida; não aplica a retomada até integrar os consumidores por contrato. */
 export async function decidirRetomadaMatriculas(id: string, input: DecidirPausaMatriculasInput) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...APROVADORES_PAUSA);
@@ -59,7 +58,6 @@ export async function decidirRetomadaMatriculas(id: string, input: DecidirPausaM
         const previa = await carregarPreviaRetomadaTx(tx, p.alunoId, entrada, autor.id);
         await exigirUsuarioPausa(tx, p.solicitanteId, PAPEIS_PAUSA);
         await exigirUsuarioPausa(tx, autor.id, APROVADORES_PAUSA);
-        // Comparação estrutural normalizada: JSONB não preserva a ordem das chaves.
         if (await estadoHashPausa(tx, ids) !== p.estadoHash || !isDeepStrictEqual(p.snapshot, previa)) throw new ErroRegra("Os impactos mudaram. Prepare uma nova conferência.");
         if (previa.matriculas.some((m) => m.pendencias.length)) throw new ErroRegra("Há pendências que impedem aprovar a retomada.");
       }

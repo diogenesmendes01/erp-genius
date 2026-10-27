@@ -6,7 +6,6 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
-/** A ação revalida pedido, decisão administrativa e acerto aplicado; aqui só se dispara e mostra o resultado. */
 export function CancelarAssinatura({ pedidoId, processoId, estadoHash }: { pedidoId: string; processoId: string; estadoHash: string }) {
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), chave = useChaveIdempotencia();
   return <form className="space-y-2" onSubmit={async (e) => {

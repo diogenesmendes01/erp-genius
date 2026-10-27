@@ -4,9 +4,6 @@ import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { UPLOAD_DIR } from "@/lib/uploads";
 
-// Driver do motor FALSO: este arquivo liga WHATSAPP_LIVE=1 para exercitar o caminho "real" do
-// despachante — nenhuma mensagem pode sair. Desde a Fase 4 (Tarefa 5) só o motor envia; números
-// legados (META_CLOUD/BAILEYS) falham com driver_indisponivel sem qualquer I/O.
 const { enviarTextoMock, enviarTemplateMock, enviarMidiaMock } = vi.hoisted(() => ({
   enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-texto", mensagemIdMotor: "c:texto" }),
   enviarTemplateMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-template", mensagemIdMotor: "c:template" }),
@@ -21,10 +18,6 @@ import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { despacharFila } from "./despachante";
 import { garantirAtendimento } from "./atendimentos";
-
-// Integração do SHADOW por política com o canal LIVE (review PR #51 P1-3): com
-// WHATSAPP_LIVE=1, política em ensaio (SHADOW/DESLIGADA) precisa simular TODA automação —
-// CRON e LOTE. Só origem HUMANO (resposta na inbox/fila) atravessa o ensaio.
 
 beforeEach(async () => {
   await truncarBanco();
@@ -116,7 +109,6 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
 });
 
 describe("reativa sem IA × WHATSAPP_LIVE=1 (saudação do CRM antigo)", () => {
-  // A saudação reativa perdeu a configuração e o produtor com a remoção do CRM antigo: o que sobrar na fila só simula.
   it("SIMULADA mesmo com live — o driver NÃO é chamado", async () => {
     const numero = await prisma.numeroWhatsApp.create({
       data: { telefoneE164: "+5511988880000", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS", providerRef: "n-vendas" },
@@ -188,7 +180,7 @@ describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
         contatoId: contato.id, atendimentoId: contato.atendimentoId,
         origem: "HUMANO",
         tipo: "IMAGEM",
-        midiaPath: "/api/files/999-comprovante.jpg", // comprovante financeiro, não anexo da inbox
+        midiaPath: "/api/files/999-comprovante.jpg",
         corpoRenderizado: "",
         autorId: humano.id,
       },

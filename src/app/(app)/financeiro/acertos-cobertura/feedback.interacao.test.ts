@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2: erro e sucesso separados no preparo dos impactos de
-// cobertura — erro em role="alert", sucesso em role="status", falha de rede como resultado incerto e o
-// botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   preparar: vi.fn(), refresh: vi.fn(),
@@ -35,7 +32,6 @@ const props = {
 const tela = () => m.ganchos!.renderizar(ImpactosCoberturaFormulario, props);
 type AoMudar = (e: { target: { value: string } }) => void;
 
-/** Preenche limites, justificativa, motivo e evidência (cada onChange numa leitura nova da tela). */
 function preencher() {
   const datas = () => elementos(tela()).filter((n) => n.type === "input" && n.props.type === "date");
   (datas()[0].props.onChange as AoMudar)({ target: { value: "2026-11-01" } });

@@ -1,4 +1,3 @@
-/** Instantes epoch-ms recebidos pelo servidor, nunca timestamps de atividade declarados pelo browser. */
 export interface InscricaoPresencaInbox {
   id:string;geracao:number;confirmadaEm:number|null;ultimoContatoEm:number;
   ultimaInteracaoEm:number|null;desconectadaEm:number|null;
@@ -7,7 +6,6 @@ export type StatusPresencaInbox="online"|"ausente"|"offline";
 export const AUSENCIA_INBOX_MS=600_000;
 export const TOLERANCIA_INBOX_MS=60_000;
 const instanteValido=(t:number,agora:number)=>Number.isFinite(t)&&t>=0&&t<=agora;
-/** Leases são filtradas ANTES da atividade. TTL único: nunca TTL60 + outra tolerância60. */
 export function classificarPresencaInbox(inscricoes:readonly InscricaoPresencaInbox[],agora:number):StatusPresencaInbox {
   if(!Number.isFinite(agora)||agora<0)throw new RangeError("Instante do servidor inválido.");
   const atuais=new Map<string,InscricaoPresencaInbox>();
@@ -23,7 +21,6 @@ export function classificarPresencaInbox(inscricoes:readonly InscricaoPresencaIn
   }
   return viva?"ausente":"offline";
 }
-/** Cleanup só da geração física atual; close não é batimento e nunca renova a lease. */
 export function encerrarInscricaoInbox(atual:InscricaoPresencaInbox,alvo:Pick<InscricaoPresencaInbox,"id"|"geracao">,agora:number):InscricaoPresencaInbox {
   if(atual.id!==alvo.id||atual.geracao!==alvo.geracao||atual.desconectadaEm!==null||!instanteValido(agora,agora)||agora<atual.ultimoContatoEm)return atual;
   return {...atual,desconectadaEm:agora};

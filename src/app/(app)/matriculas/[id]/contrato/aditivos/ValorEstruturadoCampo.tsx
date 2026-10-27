@@ -53,7 +53,6 @@ function CampoDeTexto({ disabled, onChange, rotulo, valor, tipo = "TEXT", chave 
     onChange={event => onChange({ tipo, [chave]: event.target.value })} disabled={disabled} /></>;
 }
 
-/** Entrada client-side de um valor de aditivo; a validação e a aplicação são sempre do servidor. */
 export function ValorEstruturadoCampo({ campo, rotulo, disabled, onChange }: Props) {
   const [valor, setValor] = useState<unknown>(null);
   const id = useId();

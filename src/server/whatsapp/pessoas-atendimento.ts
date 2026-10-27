@@ -4,7 +4,6 @@ import {podeExecutar} from "@/server/inbox/permissoes";
 import {atendimentoVisivel} from "./atendimentos";
 import {PAPEIS_INBOX,type Db} from "./escopo";
 import {papeisDoSetor} from "./setor";
-/** Leitor interno compartilhado; não é Server Action e não aceita autoridade do browser. */
 export async function contextoPessoas(u:UsuarioSessao,id:string,para:"atribuir"|"convidar",db:Db=prisma){
   const a=await atendimentoVisivel(u,id,false,db);
   if(!a||a.encerradoEm)return null;

@@ -28,7 +28,6 @@ describe("status, prazo e reabertura (E3.3)", () => {
     expect(lido.primeiroInboundEm).toEqual(inicio);
     expect(lido.prazoRespostaEm).toEqual(new Date(inicio.getTime() + 15 * 60_000));
     expect(await prisma.$transaction((tx) => prazoRespostaEm(tx, "COMERCIAL", inicio))).toEqual(lido.prazoRespostaEm);
-    // 2º inbound não move o prazo
     await prisma.$transaction((tx) => aplicarInbound(tx, a.id, new Date(inicio.getTime() + 60_000)));
     lido = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } });
     expect(lido.prazoRespostaEm).toEqual(new Date(inicio.getTime() + 15 * 60_000));
@@ -66,7 +65,6 @@ describe("status, prazo e reabertura (E3.3)", () => {
     expect(novo.id).not.toBe(encerrado.id);
     expect(novo.contextoChave).toBe(`${encerrado.contextoChave}#2`);
     expect(novo.status).toBe("ABERTO_SEM_RESPONSAVEL");
-    // aberto existente é reaproveitado
     expect((await prisma.$transaction((tx) => garantirAtendimento(tx, { ...dados, reabrir: true }))).id).toBe(novo.id);
     await encerrar(novo.id);
     const terceiro = await prisma.$transaction((tx) => garantirAtendimento(tx, { ...dados, reabrir: true }));

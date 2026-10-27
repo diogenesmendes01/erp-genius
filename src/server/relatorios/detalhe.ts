@@ -25,10 +25,8 @@ export interface ItemDetalhe {
 
 export const LIMITE_DETALHE = 200;
 
-/** Filtros do relatório + busca por nome (texto livre, só no painel de oportunidades). */
 export type FiltrosDetalhe = FiltrosRelatorio & { busca?: string };
 
-/** Valida a chave vinda da URL; devolve null se não for uma chave conhecida. */
 export function lerChaveDetalhe(s: string | null | undefined): ChaveDetalhe | null {
   if (!s) return null;
   if (s === "abertas" || s === "ganhas" || s === "perdidas") return s;
@@ -71,10 +69,6 @@ function condicaoDaChave(chave: ChaveDetalhe, f: FiltrosRelatorio): Prisma.Sql {
 
 const escaparLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-/**
- * Oportunidades por trás de um número do relatório (até 200, mais recentes primeiro), dentro do escopo do papel
- * e dos mesmos filtros. Não devolve telefone, e-mail nem documento.
- */
 export async function detalharMetrica(chave: ChaveDetalhe, f: FiltrosDetalhe, e: EscopoRelatorio): Promise<{ total: number; itens: ItemDetalhe[] }> {
   const partes = [condicoesLead(f, e), condicaoDaChave(chave, f)];
   const busca = f.busca?.trim();

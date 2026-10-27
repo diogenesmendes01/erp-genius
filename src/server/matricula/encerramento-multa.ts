@@ -15,7 +15,6 @@ export const MultaEncerramentoSchema = z.discriminatedUnion("tipo", [
   z.object({ tipo: z.literal("PERCENTUAL"), ...Clausula, percentual: Valor, baseCalculo: Valor, descricaoBase: z.string().trim().min(1) }).strict(),
 ]);
 
-/** Q17: somente cálculo da previsão contratual; não autoriza aplicação ou dispensa. */
 export function calcularMultaEncerramento(input: z.input<typeof MultaEncerramentoSchema>) {
   const regra = MultaEncerramentoSchema.parse(input);
   const exato = regra.tipo === "SEM_PREVISAO" ? new Prisma.Decimal(0)

@@ -17,7 +17,6 @@ async function disparar(tipo: string, alvo: Elemento, key?: string) {
   const evento = { type: tipo, target: alvo, button: 0, bubbles: true, key,
     preventDefault: vi.fn(), stopPropagation() { parado = true; } };
   await act(async () => {
-    // O Modal usa portal no body; os eventos delegados da raiz e do portal são independentes.
     for (const objeto of [alvo.closest('[role="alertdialog"]') ? doc.body : container, doc]) for (const captura of [true, false]) {
       for (const o of [...ouvintes]) if (!parado && o.alvo === objeto && o.tipo === tipo && o.captura === captura) o.f(evento as unknown as Event);
     }
@@ -44,7 +43,6 @@ it.each(["Voltar", "Escape"])("cancelar opt-out por %s retorna foco ao botão de
   await disparar("click", origem);
   expect(doc.body.querySelector('[role="alertdialog"]')).not.toBeNull();
   expect(doc.activeElement === botao("Voltar")).toBe(true);
-  // Desabilitar a origem antes do efeito do modal faz o navegador perder activeElement.
   expect(origem.hasAttribute("disabled")).toBe(false);
   expect(origem.closest("[inert]")).not.toBeNull();
   await disparar(modo === "Escape" ? "keydown" : "click", botao("Voltar"), modo === "Escape" ? "Escape" : undefined);

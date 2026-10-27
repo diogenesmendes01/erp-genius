@@ -6,15 +6,10 @@ import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 import { escopoAtendimentos } from "./escopo";
 
-// #207 (C4 da R1 e C2 da R2): a checagem de escopo aceita o `db` da transação. Dentro dela, o escopo é lido
-// NELA: enxerga o que a própria transação gravou e ainda não foi commitado (o atendimento, a cobertura, a equipe),
-// e não pede outra conexão do pool. A trava de pool (uma conexão só) fica em acoes-atendimento-pool.int.test.ts.
-
 beforeEach(async () => { await truncarBanco(); });
 
 const sessao = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id, nome: u.nome, papeis: u.papeis });
 class Desfazer extends Error {}
-/** Roda `f` numa transação que nunca é commitada: tudo que ela grava some no fim. */
 async function semCommit(f: (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => Promise<void>) {
   await expect(prisma.$transaction(async (tx) => { await f(tx); throw new Desfazer(); })).rejects.toBeInstanceOf(Desfazer);
 }
@@ -56,7 +51,6 @@ describe("escopo dentro da transação (db opcional)", () => {
     const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" }));
     await semCommit(async (tx) => {
       await tx.usuario.update({ where: { id: vendedor.id }, data: { gerenteComercialId: gerente.id } });
-      // O gerente comercial já vê o setor inteiro; o que se mede aqui é o ramo da linha, lido na tx.
       expect(JSON.stringify(await escopoAtendimentos(gerente, { db: tx }))).toContain(vendedor.id);
       expect(JSON.stringify(await escopoAtendimentos(gerente))).not.toContain(vendedor.id);
       expect((await atendimentoVisivel(sessao(gerente), a.id, false, tx))?.id).toBe(a.id);

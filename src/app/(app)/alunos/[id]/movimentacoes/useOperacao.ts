@@ -1,7 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
 
-/** Bloqueia a interação até a operação assíncrona terminar, inclusive entre renders. */
 export function useOperacao() {
   const [ocupado, setOcupado] = useState(false);
   const emCurso = useRef(false);

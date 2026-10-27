@@ -16,8 +16,6 @@ import { identidadeNoReact } from "@/test/tela-sem-dom";
 
 const pagina = (sp: Record<string, string>) => ParticipantesPage({ params: Promise.resolve({ id: "m1", previaId: "pv1" }), searchParams: Promise.resolve(sp) });
 
-// Revisão R1 da #134 (B5): o histórico pagina junto com o filtro de maioridade da tela — a volta ao
-// início preserva a maioridade escolhida.
 describe("participantes da prévia — vazio paginado do histórico", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -43,8 +41,6 @@ describe("participantes da prévia — vazio paginado do histórico", () => {
   });
 });
 
-// docs/43 §6 item 3 (docs/42 L629): a maioridade era um <form method="get"> que navegava, e a key do formulário
-// tinha a versão e a maioridade — trocar a classificação apagava todo o preenchimento dos signatários.
 describe("participantes da prévia — o formulário não remonta", () => {
   const dados = (maioridade: "MAIOR" | "MENOR" | null, versaoEsperada = 1) => ({
     matriculaId: "m1", previaId: "pv1", versaoEsperada, maioridade, documentos: [],

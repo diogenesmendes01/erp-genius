@@ -2,9 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// `inert` é aplicado pela propriedade do DOM num efeito (os tipos do React 18 não conhecem o
-// atributo), então não aparece no HTML estático. Sem jsdom: os refs viram objetos observáveis e os
-// efeitos rodam na hora — o primeiro ref do Drawer é a raiz que recebe o `inert`.
 const refs = vi.hoisted(() => ({ lista: [] as { current: { inert?: boolean } }[] }));
 vi.mock("react", async (original) => {
   const react = await original<typeof import("react")>();
@@ -42,7 +39,6 @@ describe("Drawer → camada elevada (DS)", () => {
     expect(h).toContain("shadow-dialog");
     expect(h).toContain("border-gray-200");
     expect(h).toContain("bg-black/60");
-    // Bordas lógicas (RTL): à direita o painel tem borda no início; nunca a física border-l.
     expect(h).toContain("border-s");
     expect(h).not.toMatch(/\bborder-[lr]\b/);
   });

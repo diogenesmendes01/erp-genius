@@ -73,7 +73,6 @@ export function impedimentoRetomada(status: string, pausaId: string | null, paus
   if (!pausaRastreada && ativas.some((m) => m.cobrancas.some((c) => c.tipo === "MENSALIDADE" && c.status === "CANCELADA" && !c.canceladaPorPausaId))) {
     return "A pausa legada possui mensalidades canceladas sem origem identificada. Concilie o calendário com o Financeiro antes de propor a retomada.";
   }
-  // Um saldo armazenado divergente não pode ser normalizado silenciosamente pela retomada.
   if (ativas.some((m) => m.cobrancas.some((c) => c.tipo === "MENSALIDADE" && c.status !== "PAGO" &&
     (c.status !== "CANCELADA" || c.canceladaPorPausaId === pausaId) && c.saldo !== null &&
     !dinheiro(c.saldo).equals(saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito ?? 0, 0, c.valorCompensadoPermuta ?? 0))))) {
@@ -82,15 +81,10 @@ export function impedimentoRetomada(status: string, pausaId: string | null, paus
   return null;
 }
 
-/** Q176 (#164): o "hoje" da retomada é o dia civil da escola, nunca o do servidor (UTC em produção). */
 export function dataMinimaReprogramacao(agora: Date, fuso: string) {
   return dataCivilInstitucional(agora, fuso);
 }
 
-/**
- * Data AAAA-MM-DD que a pessoa digitou, de volta do instante gravado: o meio-dia da escola (`dataRetomada`) ou,
- * em propostas anteriores ao #247, o meio-dia do relógio do servidor. `diaCivilGravado` lê as duas.
- */
 export function dataDigitadaRetomada(instante: Date, fuso: string) {
   return diaCivilGravado(instante, fuso);
 }

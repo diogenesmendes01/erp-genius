@@ -21,14 +21,9 @@ const dataCivil = (valor: string) => {
  return ano && mes && dia ? `${dia}/${mes}/${ano}` : valor;
 };
 const periodoCalendario = (inicio: string, fim: string) => `${dataCivil(inicio)} até ${dataCivil(fim)}`;
-/**
- * Campos de que a prévia depende (docs/43 §6 item 3; docs/42 L1761): só eles invalidam a prévia conferida.
- * Motivo, evidência e a justificativa da exceção não entram na prévia — digitar neles não a apaga mais.
- */
 export const CAMPOS_DA_PREVIA = ["professorId", "inicioLocal", "fimLocal", "fusoOrigem"];
 export const AVISO_PREVIA_DESCARTADA = "Professor, horário ou fuso alterado: confira a prévia novamente.";
 
-/** `fusoInicial`: fuso da escola ou da preferência (fusoInicialDeEntrada); "" deixa o campo vazio e obrigatório. */
 export function Formulario({ propostaSegundaChamadaId, professores, podePropor, proposta, fusoInicial = "" }: { propostaSegundaChamadaId: string; professores: { id: string; nome: string }[]; podePropor: boolean; proposta?: Proposta; fusoInicial?: string }) {
  const router = useRouter(), form = useRef<HTMLFormElement>(null), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
  const [previa, setPrevia] = useState<Previa | null>(null), [ocupado, setOcupado] = useState(false), [erro, setErro] = useState(""), [decisao, setDecisao] = useState("");

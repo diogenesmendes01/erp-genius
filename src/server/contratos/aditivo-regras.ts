@@ -1,10 +1,8 @@
-/** Regras puras de Q117. A liberação é uma autorização; a aplicação é futura e transacional. */
 export type PapelAditivo = "SECRETARIA_ACADEMICA" | "ADMINISTRADOR" | string;
 export type AtorAditivo = { id: string; ativo: boolean; papeis: readonly PapelAditivo[] };
 export type ConclusaoOriginalAditivo = { id: string; matriculaId: string; artefatoId: string };
 export type BaseAditivo = { matriculaId: string; originalId: string; conclusaoOriginalId: string; aditivosAnterioresIds: readonly string[]; versao: string; hash: string };
 export type AprovacaoAplicavelAditivo = { id: string; propostaId: string; versaoProposta: string; estado: "PENDENTE" | "APROVADA" | "REJEITADA" };
-/** Deve ser montado pelo serviço a partir das alçadas persistidas, nunca de campos do cliente. */
 export type ContextoAlcadasAditivo = { aprovacoesNecessariasIds: readonly string[] };
 export type PropostaAditivo = { id: string; matriculaId: string; originalId: string; conclusaoOriginalId: string; aditivosAnterioresIds: readonly string[]; baseVersao: string; baseHash: string; versao: string; modeloVersaoId: string; alteracoesHash: string; motivo: string; vigencia: string; preparadaPorId: string; estado: "PREPARADA" | "APROVADA"; aprovadaPorId?: string };
 export type FormalizacaoAditivo = { propostaId: string; versaoProposta: string; matriculaId: string; originalId: string; conclusaoOriginalId: string; aditivoId: string; modeloVersaoId: string; alteracoesHash: string; vigencia: string; modeloAprovado: boolean; pdfHash: string; assinaturasCompletas: boolean };

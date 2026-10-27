@@ -6,8 +6,6 @@ import { ErroRegra, executarAcao, exigirSessao, type Resultado } from "@/server/
 import { atendimentoVisivel } from "./atendimentos";
 import { marcarConversaLida, marcarConversaLidaAutomatico } from "./acoes";
 
-// Preferências pessoais: tabelas operacionais, sem Evento (precedente: marcarConversaLida em acoes.ts).
-
 async function conversaDoAtendimento(atendimentoId: string) {
   const autor = await exigirSessao();
   const a = await atendimentoVisivel(autor, atendimentoId);
@@ -28,7 +26,6 @@ export async function alternarFixada(atendimentoId: string): Promise<Resultado> 
   });
 }
 
-/** `ate` ISO = silencia até lá; null reativa. */
 export async function silenciarConversa(atendimentoId: string, ate: string | null): Promise<Resultado> {
   return executarAcao(async () => {
     const { usuarioId, conversaId } = await conversaDoAtendimento(atendimentoId);
@@ -66,16 +63,10 @@ export async function marcarLida(atendimentoId: string): Promise<Resultado> {
   return registrarLeituraPessoal(atendimentoId, true);
 }
 
-/**
- * Alias legado de compatibilidade da API de leitura da #299, com invalidação de /inbox.
- * @deprecated Mantido sem chamador produtivo nesta árvore; o novo Inbox usa
- * marcarAtendimentoLidoAutomatico. A política de revalidação é fixa no servidor.
- */
 export async function marcarAtendimentoLido(atendimentoId: string): Promise<Resultado> {
   return registrarLeituraAtendimento(atendimentoId, true);
 }
 
-/** Caminho automático do Inbox: os mesmos efeitos operacionais, reconciliados por GET e selo. */
 export async function marcarAtendimentoLidoAutomatico(atendimentoId: string): Promise<Resultado> {
   return registrarLeituraAtendimento(atendimentoId, false);
 }
@@ -84,7 +75,6 @@ async function registrarLeituraAtendimento(atendimentoId: string, revalidar: boo
   const pessoal = await registrarLeituraPessoal(atendimentoId, false);
   if (!pessoal.ok) return pessoal;
   const compartilhada = revalidar ? await marcarConversaLida(atendimentoId) : await marcarConversaLidaAutomatico(atendimentoId);
-  // No caminho manual, o sucesso compartilhado já invalida. Se falhar, mantém a invalidação pessoal.
   if (revalidar && !compartilhada.ok) revalidatePath("/inbox");
   return compartilhada;
 }
@@ -93,7 +83,6 @@ export async function alternarFavorita(mensagemId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const m = await prisma.mensagemWhatsApp.findUnique({ where: { id: mensagemId }, select: { atendimentoId: true } });
-    // Mensagem sem atendimento (grupo/triagem) não é visível pelo escopo de atendimento.
     const visivel = m?.atendimentoId ? await atendimentoVisivel(autor, m.atendimentoId) : null;
     if (!visivel) throw new ErroRegra("Mensagem não encontrada ou fora do seu escopo.");
     const where = { usuarioId_mensagemId: { usuarioId: autor.id, mensagemId } };

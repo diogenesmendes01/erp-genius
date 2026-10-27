@@ -7,7 +7,6 @@ import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export type EventoStatus = "ASSUMIDO" | "DEVOLVIDO" | "INBOUND" | "RESPOSTA_HUMANA" | "ENCERRADO";
 
-/** Máquina de status do atendimento (E3.3). ENCERRADO é terminal: reabrir cria outro atendimento. */
 export function proximoStatus(atual: StatusAtendimentoWhatsApp, evento: EventoStatus, temResponsavel: boolean): StatusAtendimentoWhatsApp {
   if (atual === "ENCERRADO" || evento === "ENCERRADO") return "ENCERRADO";
   switch (evento) {
@@ -20,13 +19,6 @@ export function proximoStatus(atual: StatusAtendimentoWhatsApp, evento: EventoSt
   }
 }
 
-/**
- * Prazo de 1ª resposta do setor a partir de `inicio`; null quando o setor não tem prazo configurado.
- * Com `contarSoNoHorario` e horário cadastrado, conta só dentro do horário (fuso da escola), pulando os
- * feriados do setor e os do calendário escolar aprovado vigente; sem horário, ou com horário que não passa no
- * schema, conta corrido (D9) e ignora feriados. Gravado uma vez: mudar a config, publicar um calendário com
- * novo feriado ou remover um feriado não recalcula prazos já gravados (D7).
- */
 export async function prazoRespostaEm(db: Prisma.TransactionClient, finalidade: Setor, inicio: Date): Promise<Date | null> {
   const p = await db.prazoRespostaSetor.findUnique({ where: { finalidade }, select: { minutos: true, contarSoNoHorario: true, horario: true } });
   if (!p) return null;
@@ -41,10 +33,6 @@ export async function prazoRespostaEm(db: Prisma.TransactionClient, finalidade: 
   return prazoVenceEm(inicio, p.minutos, horario.data, fuso, feriados);
 }
 
-/**
- * Inbound do cliente: marca o 1º inbound e o prazo (só enquanto não houve resposta) e tira o
- * atendimento de AGUARDANDO_CLIENTE (EM_ATENDIMENTO com responsável, senão ABERTO_SEM_RESPONSAVEL).
- */
 export async function aplicarInbound(tx: Prisma.TransactionClient, atendimentoId: string, quando: Date): Promise<void> {
   const a = await tx.atendimentoWhatsApp.findUnique({
     where: { id: atendimentoId },
@@ -62,7 +50,6 @@ export async function aplicarInbound(tx: Prisma.TransactionClient, atendimentoId
   if (Object.keys(data).length) await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data });
 }
 
-/** Resposta humana (SAIDA origem HUMANO): grava a 1ª resposta uma vez e passa a AGUARDANDO_CLIENTE. */
 export async function aplicarResposta(tx: Prisma.TransactionClient, atendimentoId: string, quando: Date): Promise<void> {
   const a = await tx.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { status: true, primeiraRespostaEm: true } });
   if (!a || a.status === "ENCERRADO") return;
@@ -73,7 +60,6 @@ export async function aplicarResposta(tx: Prisma.TransactionClient, atendimentoI
   if (Object.keys(data).length) await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data });
 }
 
-/** Chave do atendimento reaberto: `base#2`, `base#3`… (`anteriores` = quantos já existiram com a base). */
 export function chaveDeReabertura(base: string, anteriores: number): string {
   return `${base}#${anteriores + 1}`;
 }

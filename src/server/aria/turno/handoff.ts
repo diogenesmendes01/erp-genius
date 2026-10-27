@@ -35,7 +35,6 @@ const ROTULOS_RESUMO: Record<keyof ResumoHandoff, string> = {
 
 const primeiroNome = (n: string | null | undefined) => n?.trim().split(/\s+/)[0] || null;
 
-/** Texto da nota interna: só os campos escolhidos em `camposResumo` (motivo, resumo, proximoPasso). */
 export function montarNotaResumo(resumo: ResumoHandoff | null, campos: string[]): string | null {
   if (!resumo) return null;
   const linhas = (Object.keys(ROTULOS_RESUMO) as (keyof ResumoHandoff)[])
@@ -44,7 +43,6 @@ export function montarNotaResumo(resumo: ResumoHandoff | null, campos: string[])
   return linhas.length ? linhas.join("\n") : null;
 }
 
-/** Leitura do formato legado: rótulos repetidos/fora de ordem são ambíguos. */
 export function lerNotaResumo(nota: string): Partial<ResumoHandoff> {
   const chaves = Object.keys(ROTULOS_RESUMO) as (keyof ResumoHandoff)[];
   const partes = new Map<keyof ResumoHandoff, string[]>();
@@ -66,13 +64,6 @@ export function lerNotaResumo(nota: string): Partial<ResumoHandoff> {
   return resumo;
 }
 
-/**
- * Passa o atendimento a uma pessoa: define o destino (responsável da oportunidade, usuário fixo ou fila),
- * avisa o lead, anota o resumo, pausa a Aria e grava o Evento, tudo na transação recebida.
- * Em SHADOW (simulado) nada muda no atendimento: só a ação SIMULADA (e a intenção SIMULADA).
- * Se uma pessoa assumiu durante o turno (a Aria já está pausada no atendimento), o handoff não
- * acontece: nada sai, responsável e status ficam como a pessoa deixou e a ação fica BLOQUEADA.
- */
 export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAgenteIA> {
   const h = i.config.handoff;
   const destinoCfg = h.destino;
@@ -95,7 +86,6 @@ export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAg
     .replace(/^[\s,]+/, "")
     .trim();
 
-  // A mensagem ao lead sai antes da pausa (o executor recusa atendimento já pausado).
   const msg = await executarResposta(tx, {
     turnoId: i.turnoId,
     ctx: i.ctx,
@@ -109,8 +99,6 @@ export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAg
     politicas: i.config.politicas,
   });
   if ("bloqueada" in msg && msg.bloqueada === "PAUSADA_DURANTE_TURNO") {
-    // Corrida com humano (atendente respondeu pelo ERP ou celular enquanto o provedor pensava):
-    // quem assumiu fica com o atendimento; só registra que o handoff não foi feito.
     return tx.acaoAgenteIA.create({
       data: {
         turnoId: i.turnoId,
@@ -152,7 +140,6 @@ export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAg
     where: { id: i.ctx.atendimentoId },
     data: { responsavelId: destinoId, status: proximoStatus(at.status, destinoId ? "ASSUMIDO" : "DEVOLVIDO", !!destinoId) },
   });
-  // A pausa cancela o que a Aria ainda tinha na fila, menos a mensagem deste handoff.
   await pausarAriaNoAtendimento(tx, i.ctx.atendimentoId, "HANDOFF", null, { preservarIntencaoId: intencaoId });
   if (nota) {
     await registrarEvento(tx, {

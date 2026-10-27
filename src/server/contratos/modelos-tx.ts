@@ -12,7 +12,6 @@ export async function conferirAutor(tx: Prisma.TransactionClient, id: string, de
 
 export async function prepararModeloTx(tx: Prisma.TransactionClient, autorId: string, input: z.input<typeof PrepararModeloSchema>) {
   const d = PrepararModeloSchema.parse(input);
-  // Serializa tanto versões da família quanto reenvios do mesmo autor.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`modelo-autor:${autorId}`}, 0))`;
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`modelo-codigo:${d.codigo}`}, 0))`;
   await conferirAutor(tx, autorId);

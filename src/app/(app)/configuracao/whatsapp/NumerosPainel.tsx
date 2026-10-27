@@ -28,11 +28,6 @@ import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { numeroAlterado, setoresAlterados } from "./alteracoes-pendentes";
 import { DRIVER_WHATSAPP_LABEL, FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 
-// TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro, estado da sessão no motor WhatsApp, conexão por QR ou
-// código de pareamento e desconexão. Todo número novo nasce MOTOR (sem escolha de driver).
-// Desativar desliga a sessão no motor e mantém o número na lista; Excluir também desliga e tira o número
-// desta tela, sem apagar conversas nem mensagens (recadastrar o mesmo telefone o restaura).
-
 const btnPri = botaoClasses({ tamanho: "md" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 const btnPerigo = botaoClasses({ variante: "perigo", tamanho: "sm" });
@@ -71,14 +66,11 @@ export function NumerosPainel({
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormNumero | null>(null);
-  // salvarNumeroWhatsApp não recebe chave de idempotência (sem id, cada envio cria um número):
-  // resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
   const [qrDe, setQrDe] = useState<NumeroConfig | null>(null);
   const [desconectando, setDesconectando] = useState<NumeroConfig | null>(null);
   const [desativando, setDesativando] = useState<NumeroConfig | null>(null);
   const [excluindo, setExcluindo] = useState<NumeroConfig | null>(null);
-  // C32 da #170: formulário aberto com mudança → marca e aviso ao sair (fechar ou salvar desliga).
   const sujo = numeroAlterado(form, numeros);
   useAvisoAoSair(sujo);
 
@@ -91,8 +83,6 @@ export function NumerosPainel({
     router.refresh();
   }
 
-  // Ativar volta direto (sem efeito externo: o número ainda precisa ser pareado). Desativar e Excluir
-  // passam pela confirmação, que roda a action e mostra a falha dentro dela.
   async function reativar(n: NumeroConfig) {
     const d = await acao.executar(() => reativarNumeroWhatsApp(n.id), `${n.rotulo} reativado. Conecte de novo por QR ou código.`);
     if (d?.tipo === "ok") router.refresh();
@@ -101,7 +91,7 @@ export function NumerosPainel({
   function concluido(mensagem: string) {
     setDesativando(null);
     setExcluindo(null);
-    if (form?.id && form.id === excluindo?.id) setForm(null); // o número saiu da tela: não há o que editar
+    if (form?.id && form.id === excluindo?.id) setForm(null);
     acao.setSucesso(mensagem);
     router.refresh();
   }
@@ -164,7 +154,6 @@ export function NumerosPainel({
                       </span>
                     </button>
                   )}
-                  {/* Também para inativo: número desativado antes desta regra pode ter ficado com a sessão viva. */}
                   {n.driver === "MOTOR" && n.sessao !== "DESCONECTADO" && (
                     <button type="button" className={btnSec} onClick={() => setDesconectando(n)}>
                       Desconectar
@@ -289,7 +278,6 @@ export function NumerosPainel({
           responsaveis={responsaveis}
         />
       )}
-      {/* Logo abaixo do "Salvar número" — e no mesmo lugar depois que o formulário fecha no sucesso. */}
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
 
       {desconectando && (
@@ -345,8 +333,6 @@ export function NumerosPainel({
   );
 }
 
-// Setores atendidos e responsável pela triagem (doc 02 E3): o número pode servir vários setores;
-// a triagem só existe com 2+ setores (null = administrador, Q2).
 export function SetoresNumeroEditor({
   numero,
   responsaveis,
@@ -357,20 +343,14 @@ export function SetoresNumeroEditor({
   const router = useRouter();
   const [setores, setSetores] = useState<Setor[]>(numero.setores);
   const [triagem, setTriagem] = useState<string>(numero.triagemResponsavelId ?? "");
-  // Operação de "definir o conjunto": repetir é inofensivo.
   const acao = useAcaoCliente({ idempotente: true });
 
   function alternar(s: Setor) {
     setSetores((atual) => (atual.includes(s) ? atual.filter((x) => x !== s) : SETORES.filter((x) => x === s || atual.includes(x))));
   }
 
-  // Só quem tem papel de um dos setores marcados (mesma regra que salvarSetoresNumero aplica no servidor).
   const elegiveis = responsaveis.filter((u) => podeTriarSetores(u.papeis, setores));
-  // Triagem salva que apontava para alguém fora de `responsaveis` (desativado, ou que perdeu o papel) não
-  // vale mais: fica vazia aqui, e o editor já abre com "Alterações não salvas" de propósito — salvar agora
-  // gravaria a triagem como nenhuma (null), diferente do que está no banco. A marca avisa disso.
   const triagemValida = elegiveis.some((u) => u.id === triagem) ? triagem : "";
-  // C32 da #170: o que seria gravado difere do número salvo (o refresh traz o salvo novo).
   const sujo = setoresAlterados(setores, setores.length >= 2 ? triagemValida : "", numero);
   useAvisoAoSair(sujo);
 
@@ -422,14 +402,12 @@ export function SetoresNumeroEditor({
   );
 }
 
-// Modal de conexão: abas "QR" e "Código". O poll de 5 s consulta a sessão e troca o QR quando ele muda.
 function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => void }) {
   const [aba, setAba] = useState<"QR" | "Código">("QR");
   const [qr, setQr] = useState<string | null>(null);
   const [codigo, setCodigo] = useState<string | null>(null);
   const [telefone, setTelefone] = useState(numero.telefoneE164);
   const [estado, setEstado] = useState<string>(numero.sessao);
-  // conectarNumeroQr/parearNumeroPorCodigo não recebem chave de idempotência: resultado incerto manda conferir.
   const acao = useAcaoCliente({ idempotente: false });
 
   async function pedirQr() {
@@ -449,22 +427,17 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
   }
 
   useEffect(() => {
-    // Agendado (não síncrono no corpo do effect): satisfaz react-hooks/set-state-in-effect.
     const t = setTimeout(() => void pedirQr(), 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll do estado a cada 5s enquanto o modal está aberto e não conectou.
   useEffect(() => {
     if (estado === "CONECTADO") return;
     const t = setInterval(async () => {
-      // Poll só-leitura: falha (de negócio ou de rede) é ignorada — o próximo tique tenta de novo.
-      // Fora do useAcaoCliente para não travar/limpar os botões a cada 5s.
       const d = await executarAcaoCliente(() => consultarSessaoNumero(numero.id), { idempotente: false });
       if (d.tipo !== "ok") return;
       setEstado(d.dado!.sessao);
-      // Só troca o QR quando o motor devolve um novo (o QR do WhatsApp gira a cada ~20 s).
       if (d.dado!.qrBase64) setQr((atual) => (atual === d.dado!.qrBase64 ? atual : d.dado!.qrBase64));
       if (d.dado!.codigoPareamento) setCodigo((atual) => (atual === d.dado!.codigoPareamento ? atual : d.dado!.codigoPareamento));
     }, 5000);

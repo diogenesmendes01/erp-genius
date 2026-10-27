@@ -6,9 +6,6 @@ vi.mock("@/server/turmas/acoes", () => ({ solicitarAberturaTurma: vi.fn() }));
 
 import { errosDoPasso1, type DadosPasso1 } from "./MatriculaFormulario";
 
-// Revisão de integração da #145: a validação do passo 1 marca TODOS os campos pendentes de uma vez
-// (o Campo liga cada erro ao controle). Cada regra aqui: apagar uma delas deixa a tela avançar com o
-// campo vazio sem marcar nada.
 const completo: DadosPasso1 = {
   primeiroNome: "Ana", sobrenome: "Souza", nascimento: "2010-05-01", genero: "FEMININO", alunoPaisId: "p1",
   tipoDocumentoId: "t1", documento: "123", nacionalidade: "CR", email: "ana@exemplo.com", telefone: "+50612345678",

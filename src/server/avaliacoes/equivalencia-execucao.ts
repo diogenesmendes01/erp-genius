@@ -49,18 +49,11 @@ type DecisaoBloqueada = {
   aplicacaoId: string | null;
 };
 
-/**
- * Q153: efetiva exclusivamente a decisão aprovada e ainda vigente. A aplicação
- * não materializa notas no destino: conserva as referências e o mapa aprovados
- * no mesmo fato que encerra o vínculo de origem e cria o de destino.
- */
 export async function executarEquivalenciaTransferencia(input: unknown) {
   return executarAcao(async () => {
     const executor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
     const entrada = executarSchema.parse(input);
     const resultado = await prisma.$transaction(async (tx) => {
-      // Sem lock: só descobre a chave que define a ordem de serialização. A
-      // proposta/decisão são relidas e bloqueadas depois da trava acadêmica.
       const referencia = await tx.decisaoEquivalenciaAvaliacao.findUnique({ where: { id: entrada.decisaoId }, select: {
         proposta: { select: { matriculaId: true, alocacaoOrigemId: true, turmaDestinoId: true, matricula: { select: { alunoId: true } } } },
       } });

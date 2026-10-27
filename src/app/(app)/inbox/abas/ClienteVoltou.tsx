@@ -14,7 +14,6 @@ type Props = {
   podeCriar: boolean; aoMudar(): void;
 };
 
-/** Cada troca de identidade ou de alçada desmonta o executor e invalida seu ACK. */
 export function ClienteVoltou(props: Props) {
   const chave = JSON.stringify([props.atendimentoId, props.pessoaId, props.dado.oportunidadeId, props.dado.contatoId, props.dado.podeVincular, props.podeCriar]);
   return <SessaoClienteVoltou key={chave} {...props} />;

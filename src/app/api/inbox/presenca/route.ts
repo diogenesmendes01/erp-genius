@@ -8,7 +8,6 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 const headers={"Cache-Control":"private, no-store, max-age=0","X-Content-Type-Options":"nosniff"};
 const resposta=(status:number,escopo?:"modal"|"sessao"|"inscricao")=>Response.json({erro:"Presença indisponível.",...(escopo?{escopo}:{})},{status,headers});
-// Defesa de volume por processo, não estado de presença/ACL. Limite8 é serializado no banco.
 const janelas=new Map<string,{inicio:number;n:number}>();
 function volume(id:string){const agora=Date.now();if(janelas.size>=1000){for(const[k,v]of janelas)if(agora-v.inicio>=60000)janelas.delete(k);if(janelas.size>=1000&&!janelas.has(id))return false;}const j=janelas.get(id);if(!j||agora-j.inicio>=60000){janelas.set(id,{inicio:agora,n:1});return true;}return ++j.n<=240;}
 const GRANDE=Symbol("corpo grande");
@@ -36,7 +35,7 @@ export async function POST(req:Request){
   }
   const inscricao=await prisma.$transaction(tx=>escreverPresenca(tx,usuario.id,entrada,expiraEm));
   if(entrada.modo==="pulso"&&entrada.consulta){
-   let foto:FotoPresenca|null=null;let erroFoto:{status:404;escopo:"modal"}|undefined;try{const consulta=entrada.consulta;foto=await prisma.$transaction(tx=>lerPresencasTransferiveis(tx,usuario.id,consulta));}catch(e){if(e instanceof ErroAutenticacao||e instanceof ErroPermissao)throw e;if(e instanceof ErroFotoPresenca)erroFoto={status:404,escopo:"modal"};/* Falha técnica da foto não desfaz batimento próprio. */}
+   let foto:FotoPresenca|null=null;let erroFoto:{status:404;escopo:"modal"}|undefined;try{const consulta=entrada.consulta;foto=await prisma.$transaction(tx=>lerPresencasTransferiveis(tx,usuario.id,consulta));}catch(e){if(e instanceof ErroAutenticacao||e instanceof ErroPermissao)throw e;if(e instanceof ErroFotoPresenca)erroFoto={status:404,escopo:"modal"}; }
    return Response.json({inscricao,foto,...(erroFoto?{erroFoto}:{})},{headers});
   }
   return Response.json({inscricao},{headers});

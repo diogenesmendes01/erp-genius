@@ -8,7 +8,6 @@ import { conferirGestorAvaliacao } from "./regras-tx";
 
 const schema = z.object({ reservaId: z.string().min(1).max(100), motivo: z.string().trim().min(5).max(2000), evidencia: z.string().trim().min(5).max(4000) }).strict();
 
-/** Cancela a tentativa reservada por iniciativa da escola; não é cancelamento do aluno. */
 export async function cancelarReservaRecuperacaoPelaEscola(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = schema.parse(input);

@@ -6,8 +6,6 @@ export const ConferirParticipantesSchema = z.object({
   maioridade: z.object({ classificacao: z.enum(["MAIOR", "MENOR"]), criterio: z.string().trim().min(5).max(2000), evidenciaDocumentoId: z.string().min(1) }).strict().nullable(),
   participantes: z.array(z.object({
     papel: RegraAssinaturaSchema.shape.papel,
-    // Para aluno/pagador esta identidade é comparada ao cadastro/snapshot. Para
-    // representantes é a pessoa natural conferida, com lastro documental.
     identidade: IdentidadeSignatarioSchema,
     representacao: z.object({ descricao: z.string().trim().min(5).max(2000), evidenciaDocumentoId: z.string().min(1) }).strict().optional(),
   }).strict()).min(1).max(5),

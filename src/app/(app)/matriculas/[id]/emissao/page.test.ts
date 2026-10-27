@@ -2,8 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// C36 da #170: a emissão registrada oferecia "Abrir Financeiro" a quem abre esta tela — a Secretaria —, que não
-// abre /financeiro e caía em "acesso negado". O mesmo beco que a #160 fechou em entrada-particular.
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/secretaria/conferencia-emissao", () => ({ consultarTelaEmissao: mocks.consultar, conferirEEmitirEntrada: vi.fn() }));

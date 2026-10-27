@@ -4,10 +4,6 @@ import { usePathname } from "next/navigation";
 import { ErroArea } from "@/components/ErroArea";
 import { ROTULO_ABA } from "./abas";
 
-// Erro do financeiro (docs/42 /financeiro #7 e L2031; docs/43 §6 item 10). Fica acima do layout de
-// (painel): segura também a falha do próprio painel (título, atalhos e abas). Volta: das telas avulsas
-// (acertos, recebimentos, migração…) ao Financeiro; do painel e das abas — que são o próprio
-// Financeiro — ao início. Sem error.message nem digest na tela.
 const ABAS = new Set(Object.keys(ROTULO_ABA));
 
 function voltaDoErroFinanceiro(caminho: string): string {

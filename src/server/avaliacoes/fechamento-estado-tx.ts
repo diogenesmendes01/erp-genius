@@ -25,11 +25,6 @@ export type AlocacaoFechamentoBloqueada = {
   turmaId: string;
 };
 
-/**
- * Coleta interna do fechamento sem conferir identidade ou papel. O chamador
- * deve obter `alocacao` com `bloquearLancamento` e autorizar a leitura antes
- * desta chamada, sempre na mesma transação.
- */
 export async function coletarEstadoFechamentoTx(
   tx: Prisma.TransactionClient,
   a: AlocacaoFechamentoBloqueada,
@@ -94,8 +89,6 @@ async function coletarEstadoAcademicoTx(tx: Prisma.TransactionClient, a: Alocaca
     pendenciasOperacionais: total.pendenciasOperacionais, pendenciasSegundaChamada: total.pendenciasSegundaChamada,
   });
   const fontesOficiais = await carregarFontesEquivalenciaTx(tx, { matriculaId: a.matriculaId, alocacaoId: a.id, turmaId: a.turmaId, nivelId: turma.nivelId, regraId: turma.regraAvaliacao.id });
-  // Excluir apenas o instante da consulta. Mudanças de fontes e de elegibilidade
-  // continuam mudando o hash, inclusive quando um encontro começa ou termina.
   const frequenciaAcademica = "simulacao" in frequencia && "encontroSimuladoId" in frequencia
     ? (({ simulacao, encontroSimuladoId, ...dados }) => {
       void simulacao;
@@ -109,15 +102,12 @@ async function coletarEstadoAcademicoTx(tx: Prisma.TransactionClient, a: Alocaca
   return { snapshot, estadoHash: hashFechamento(snapshot), contexto, elegibilidade };
 }
 
-/** Consulta interna de gestão. Confirmação e revisão devem usar a mesma coleta
- * sob os locks acadêmicos; não aceitar fontes de notas vindas do navegador. */
 export async function carregarEstadoFechamentoTx(tx: Prisma.TransactionClient, autorId: string, alocacaoId: string, agora = new Date()) {
   const a = await bloquearLancamento(tx, alocacaoId);
   await conferirGestorAvaliacao(tx, autorId);
   return coletarEstadoFechamentoTx(tx, a, agora);
 }
 
-/** Prévia Q23: mantém notas, pendências e exceções reais; não confirma fechamento. */
 export async function simularFechamentoCorrecaoAulaTx(tx: Prisma.TransactionClient, autorId: string, alocacaoId: string,
   chamada: Parameters<typeof simularFrequenciaCorrecaoAulaTx>[2], agora = new Date()) {
   const a = await bloquearLancamento(tx, alocacaoId);

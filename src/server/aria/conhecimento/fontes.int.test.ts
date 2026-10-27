@@ -6,8 +6,6 @@ import { CategoriaDocumento, Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Trava do teto de trechos (C6): com os demais tetos, o divisor real não passa de ~340 trechos, então
-// um texto-marcador força a saída acima do teto para exercitar a recusa.
 vi.mock("./trechos", async (original) => {
   const real = await original<typeof import("./trechos")>();
   return {
@@ -54,8 +52,6 @@ function provedorQueExtrai(texto: string, recusa = false): ProvedorIA & { pedido
     pedidos,
     async gerar(p) {
       pedidos.push(p);
-      // Parte de uma resposta real do provedor simulado: campos novos de RespostaIA (ex.: tokensEscritaCache)
-      // chegam pelo espalhamento sem quebrar o tipo.
       return {
         ...(await provedorSimulado.gerar(p)),
         texto: JSON.stringify({ texto }),
@@ -166,7 +162,6 @@ describe("fontes de conhecimento", () => {
     expect(await prisma.fonteConhecimento.findUnique({ where: { id } })).toMatchObject({ arquivadaEm: expect.any(Date) });
     expect(await prisma.trechoConhecimento.count({ where: { fonteId: id } })).toBe(1);
     expect((await eventosDo("FonteConhecimento", id)).map((e) => e.tipo)).toContain("FonteConhecimentoArquivada");
-    // #166 (5º lote): o reenvio de quem arquivou devolve ok sem outro Evento; outra pessoa segue recusada.
     expect((await arquivarFonte(id)).ok).toBe(true);
     expect((await eventosDo("FonteConhecimento", id)).filter((e) => e.tipo === "FonteConhecimentoArquivada")).toHaveLength(1);
     logado(await criarUsuario([Papel.ADMINISTRADOR], "Outra administração"));
@@ -206,7 +201,6 @@ describe("fontes de arquivo: autorização por objeto (B1)", () => {
     const deOutro = await upload("faq.txt", "Mensalidade vence dia 10.");
     expect(await criarFonteArquivo({ registroUploadId: deOutro.id, enviavelAoLead: false })).toEqual(recusado);
     const referenciado = await upload("contrato.txt", "Cláusula 1.", { autorId: gerente.id });
-    // Mesmo um documento que o gerente pode ler (lead dele) não vira fonte: o arquivo já tem finalidade.
     const lead = await prisma.oportunidade.create({ data: { nome: "Lead do gerente", vendedorDonoId: gerente.id } });
     await prisma.documento.create({ data: { categoria: CategoriaDocumento.PROPOSTA, nome: "contrato.txt", url: referenciado.url, leadId: lead.id } });
     expect(await criarFonteArquivo({ registroUploadId: referenciado.id, enviavelAoLead: false })).toEqual(recusado);

@@ -1,8 +1,3 @@
-// Sobe (ou derruba) o Postgres de TESTE dos testes de integração — porta 54329,
-// banco erp_genius_test, dados em .testdb/ (gitignored). Sem docker/WSL/admin:
-// usa os binários do pacote `embedded-postgres` (devDependency) via pg_ctl, que
-// daemoniza de verdade (o banco segue vivo depois que este script termina).
-// Uso: node scripts/test-db.mjs [start|stop]
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -10,13 +5,10 @@ import { PrismaClient } from "@prisma/client";
 
 const raiz = path.resolve(import.meta.dirname, "..");
 const dataDir = path.join(raiz, ".testdb");
-// Fora de PGDATA: o Windows bloqueia o log aberto durante o fsync de recuperação.
 const logDir = path.join(raiz, "node_modules", ".cache", "erp-genius-tests");
 const logFile = path.join(logDir, "postgres.log");
 const PORTA = "54329";
 
-// Binários nativos instalados pelo embedded-postgres (plataforma-específicos).
-// Caminho direto em node_modules: o package.json deles usa `exports` e bloqueia resolve.
 const binDir = (() => {
   const plataformas = ["windows-x64", "darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"];
   for (const p of plataformas) {
@@ -28,8 +20,6 @@ const binDir = (() => {
 
 const bin = (nome) => path.join(binDir, process.platform === "win32" ? `${nome}.exe` : nome);
 const rodar = (nome, args) => {
-  // O postgres daemonizado pode herdar o pipe no Windows e impedir o encerramento
-  // do pai mesmo depois de pg_ctl sair. A partida já grava diagnóstico em -l.
   const resultado = execFileSync(bin(nome), args, {
     stdio: nome === "pg_ctl" && args[0] === "start" ? "ignore" : "pipe",
     windowsHide: true,
@@ -65,8 +55,6 @@ try {
   console.log(`Postgres de teste iniciado na porta ${PORTA} (log: ${path.relative(raiz, logFile)}).`);
 }
 
-// O pacote Windows não fornece createdb.exe. A conexão é fixa no cluster descartável,
-// nunca na DATABASE_URL do ambiente ou da aplicação.
 const adminTeste = new PrismaClient({ datasources: { db: { url: `postgresql://postgres:teste@localhost:${PORTA}/postgres` } } });
 try {
   const bancos = await adminTeste.$queryRaw`SELECT datname FROM pg_database WHERE datname = 'erp_genius_test'`;

@@ -4,9 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { ConferenciaHoras } from "./ConferenciaHoras";
 
-// Lote 2 do fuso pessoal: o horário do encontro é publicado no fuso da agenda e mantém esse fuso; comunicação,
-// conferência e aplicação da declaração são instantes de registro e seguem a preferência (sem ela, o da agenda).
-// Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 const encontro = {
   id: "e1", inicio: "2026-10-21T13:00:00.000Z", fim: "2026-10-21T14:00:00.000Z", fusoOrigem: "America/Sao_Paulo",
   ocorrencia: { id: "o1", versao: 1, tipo: "CANCELAMENTO_ALUNO", evidencia: "ev", comunicadoEm: "2026-10-21T02:30:00.000Z", autor: { nome: "Prof" } },
@@ -36,7 +33,6 @@ describe("ConferenciaHoras: instante no fuso pessoal, horário do encontro no fu
     expect(html).toContain("Declaração aplicada em 22/10/2026, 23:50 (America/Sao_Paulo)");
   });
 
-  // Review do #289 (item E): a comunicação é comparada com o limite de cancelamento, que está no fuso da agenda.
   it("comunicação também no fuso da agenda quando o exibido difere; preferência igual à agenda não repete", () => {
     expect(render("Asia/Tokyo")).toContain("(na agenda: 20/10/2026, 23:30, America/Sao_Paulo)");
     const igual = render("America/Sao_Paulo");

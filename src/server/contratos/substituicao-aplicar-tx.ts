@@ -8,8 +8,6 @@ import { carregarContextoSubstituicaoTx, hashSubstituicao } from "./substituicao
 export const ConsumoSubstituicaoSchema = z.object({ intencaoId: z.string().min(1), observacaoId: z.string().min(1), propostaHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const Entrada = ConsumoSubstituicaoSchema.extend({ matriculaId: z.string().min(1), artefatoId: z.string().min(1), conferenciaId: z.string().min(1), fornecedor: z.string().min(1), ambiente: z.enum(["SANDBOX", "PRODUCAO"]) }).strict();
 
-/** Consome a confirmação e prepara o substituto, sem realizar envio remoto.
- * Aplicação, estado da fonte e novo processo precisam COMMITAR juntos. */
 export async function aplicarSubstituicaoContratualTx(tx: Prisma.TransactionClient, executorId: string, entrada: unknown) {
   const d = Entrada.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;

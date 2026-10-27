@@ -17,7 +17,6 @@ import { planejarEfeitosAditivo } from "./aditivo-efeitos";
 const id = z.string().trim().min(1).max(100);
 const Alvo = z.object({ matriculaId: id, propostaId: id }).strict();
 
-/** Revisão de valores preservados; não constitui autorização ou aplicação. */
 export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -41,20 +40,16 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         select: { id: true, aplicadaEm: true, vencimentoNovo: true },
       }) : null;
       const versaoFormalizada = await tx.versaoCondicoesAditivo.findUnique({ where: { propostaId: d.propostaId }, select: { id: true, versao: true, condicoes: true, vigenciaInicio: true } });
-      // Q172: o alvo só existe depois de formalizadas as condições; antes disso a tela orienta pelo texto padrão.
       const alteraAdiantamento = entrada.alteracoes.some(a => (CAMPOS_ADIANTAMENTO as readonly string[]).includes(a.origem));
       const alvoAdiantamento = alteraAdiantamento && versaoFormalizada ? await consultarAlvoAdiantamentoTx(tx, d.matriculaId, versaoFormalizada.condicoes) : null;
       const aplicacaoAdiantamento = alteraAdiantamento ? await tx.aplicacaoAdiantamentoAditivo.findFirst({
         where: { decisao: { proposta: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId } } }, orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }], select: { id: true, aplicadaEm: true },
       }) : null;
-      // Q173: a troca de moeda tem acerto próprio no Financeiro, com a lista do que ainda impede a matrícula de estar "limpa".
       const alteraMoeda = entrada.alteracoes.some(a => a.origem === "MOEDA");
       const aplicacaoMoeda = alteraMoeda ? await tx.aplicacaoMoedaAditivo.findFirst({ where: { decisao: { proposta: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId } } }, select: { id: true, aplicadaEm: true } }) : null;
       const alvoMoeda = alteraMoeda && versaoFormalizada && !aplicacaoMoeda ? await consultarAlvoMoedaTx(tx, d.matriculaId, versaoFormalizada) : null;
       const provas = versaoFormalizada ? projetarAplicacoesPorCampo((await carregarAplicacoesCamposTx(tx, d.matriculaId)).filter(v => v.versao <= versaoFormalizada.versao)) : {};
       const aplicacoesCampos = entrada.alteracoes.map(a => ({ campo: a.origem, aplicada: !!provas[a.origem]?.aplicacaoId }));
-      // Acertos de taxa comprovam somente as cobranças selecionadas; não liberam
-      // a condição contratual enquanto o conjunto de impactos não estiver conferido.
       const acertosTaxaAplicados = entrada.alteracoes.some(a => a.origem === "TAXA_VALOR" || a.origem === "TAXA_VENCIMENTO")
         ? await tx.aplicacaoAcertoTaxaAditivo.count({ where: { proposta: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId } } }) : 0;
       const cobrancasExistentes = await tx.cobranca.count({ where: { matriculaId: d.matriculaId } });

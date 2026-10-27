@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Preparar a troca de e-mail do portal com chave de idempotência (#166; #282, C3): o reenvio da mesma tentativa
-// devolve a solicitação original na situação atual. Se outra pessoa já a decidiu, a tela não anuncia uma validação
-// nova: avisa que a solicitação já foi decidida e mantém os dados para uma nova solicitação deliberada.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   preparar: vi.fn(), refresh: vi.fn(),
@@ -34,7 +31,6 @@ const tela = (): ReactNode => m.ganchos!.renderizar(PainelAcessoPortalAluno, {
 const sucesso = (t: ReactNode) => elementos(t).filter((n: No) => n.type === FeedbackAcao).map((n: No) => n.props.sucesso).filter(Boolean);
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 
-/** Submete o formulário da troca (o primeiro da tela); devolve quantas vezes ele foi limpo. */
 async function preparar(): Promise<number> {
   let resets = 0;
   const falso = { ...formularioFalso(VALORES), reset() { resets++; } };

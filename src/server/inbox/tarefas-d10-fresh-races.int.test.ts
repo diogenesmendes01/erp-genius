@@ -71,7 +71,6 @@ it("fanout SQL aborta claim e INSERT real quando destinatário perde autorizaç�
   const final=await prisma.tarefa.findUniqueOrThrow({where:{id:t.id}});prova.dado.estado={status:final.status,claim:final.lembreteDisparadoEm?.toISOString()??null,avisos:await prisma.notificacaoUsuario.count({where:{refId:t.id}}),eventos:await prisma.evento.count({where:{tipo:"LembreteDisparado",agregadoId:t.id}}),papel:(await prisma.usuario.findUniqueOrThrow({where:{id:colega.id}})).papeis};prova.dado.fase="MEDIDO_ANTES_ASSERTS";prova.preservar();
   expect(criou).toBe(true);expect(mudou).toBe(true);expect(prova.dado.fases).toEqual(["NOTIFICACAO_INSERT_SQL_REAL","REVOGACAO_COMMIT_CONFIRMADA","CAUSA_NO_LIMITE_TRANSACIONAL"]);
   expect(causaTx).toBeInstanceOf(ErroRegra);expect(causaTx).toMatchObject({message:"O lembrete mudou durante a entrega. Aguarde o próximo ciclo."});expect(causaSegura(causaTx)).toMatchObject({codigo:null,sqlState:null});
-  // Mantém o contrato externo: rejeição canônica ou contador0 se a fronteira o capturar.
   if(erroPublico)expect(erroPublico).toBe(causaTx);else expect(resultado).toEqual({notificadas:0});
   expect(prova.dado.estado).toEqual({status:"ABERTA",claim:null,avisos:0,eventos:0,papel:["ALUNO"]});prova.dado.fase="ASSERTS_PASSARAM";
  }catch(e){principal=e;prova.dado.fase="FALHOU";throw e;}finally{prova.preservar();await encerrar(externo,restaurar,principal);}

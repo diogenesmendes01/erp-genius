@@ -9,9 +9,6 @@ export type PrazosPortalAluno = {
   validacaoEmailMinutos: number;
 };
 
-// Limite explícito para impedir Date/cookie inválido mesmo com configuração
-// administrativa corrompida. Não é prazo padrão: a escola continua escolhendo
-// cada valor e o serviço recusa campos ausentes.
 const PRAZO_MAXIMO_MINUTOS = 365 * 24 * 60;
 
 type PrazosBrutos = {
@@ -21,7 +18,6 @@ type PrazosBrutos = {
   prazoValidacaoEmailPortalAlunoMinutos: number | null;
 };
 
-/** Não completa configuração ausente com número implícito. */
 export function exigirPrazosPortalAluno(configuracao: PrazosBrutos): PrazosPortalAluno {
   const pares = [
     ["sessaoMinutos", configuracao.prazoSessaoPortalAlunoMinutos],
@@ -45,7 +41,6 @@ export function normalizarEmailPortalAluno(valor: string): string {
   return email;
 }
 
-/** Token opaco; o digest é a única forma que vai para o banco. */
 export function gerarSegredoPortalAluno(): string {
   return randomBytes(32).toString("base64url");
 }
@@ -54,7 +49,6 @@ export function digestSegredoPortalAluno(segredo: string): string {
   return createHash("sha256").update(segredo, "utf8").digest("hex");
 }
 
-/** Caminho relativo para o adaptador institucional; o segredo fica no fragmento. */
 export function caminhoAtivacaoPortalAluno(segredo: string): string {
   if (!segredo || segredo.length > 200) throw new Error("Segredo de ativação inválido.");
   return `/portal-aluno/ativar#token=${encodeURIComponent(segredo)}`;
@@ -81,7 +75,6 @@ export function cookieSessaoPortalAluno(valor: string, expiraEm: Date) {
   };
 }
 
-/** Rotas mutáveis aceitam somente a origem do host atual (proteção CSRF). */
 export function origemPortalAlunoPermitida(request: Request): boolean {
   const origem = request.headers.get("origin");
   if (!origem) return false;

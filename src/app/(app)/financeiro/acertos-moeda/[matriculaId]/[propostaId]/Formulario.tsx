@@ -10,11 +10,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 
 type Props = { modo: "preparar" | "decidir" | "aplicar"; propostaId?: string; matriculaId?: string; versaoCondicoesId?: string; revisaoHash?: string };
 
-/**
- * Q173: troca de moeda por aditivo. A chave de idempotência (#166) é a mesma enquanto a tentativa não foi
- * confirmada; na falha de transporte, a entrada também fica preservada e reenviar consulta a mesma operação.
- * Recusa conhecida (regra, permissão, sessão, entrada) não grava nada no servidor: libera corrigir os dados.
- */
 export function MoedaFormulario(props: Props) {
  const router = useRouter();
  const acao = useAcaoCliente({ idempotente: true });

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Ganchos sem DOM (src/test/tela-sem-dom.ts): estado e refs vivem entre renders, como no React. Os refs
-// do componente (emEnvio, tentativa) ficam em `m.refs`, na ordem em que foram criados.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refs: [] as { current: unknown }[],
@@ -46,7 +44,6 @@ function montar() {
 it("preserva chave e entrada após resultado incerto, mesmo com campos alterados", async () => {
   m.preparar.mockRejectedValueOnce(new Error("rede")).mockResolvedValueOnce({ ok: true });
   const c = montar(); await c.enviar();
-  // A tela mostra "Repetir mesma tentativa" e trava os campos pelo estado, não pelo ref (react-hooks/refs).
   expect(rotuloDoBotao()).toBe("Repetir mesma tentativa"); expect(fieldset().props.disabled).toBe(true);
   c.alterar(); await c.enviar();
   expect(m.preparar.mock.calls[0][0]).toEqual(m.preparar.mock.calls[1][0]);
@@ -54,8 +51,6 @@ it("preserva chave e entrada após resultado incerto, mesmo com campos alterados
   expect(fieldset().props.disabled).toBe(true);
   expect(m.atualizar).toHaveBeenCalledTimes(1);
 });
-// useChaveIdempotencia (#166): a recusa conhecida não grava nada no servidor, então a chave segue a mesma e só a
-// entrada é refeita; a chave muda depois do sucesso, quando a próxima operação já é outra tentativa.
 it("rejeição conhecida permite corrigir a entrada; a chave só muda depois do sucesso", async () => {
   m.preparar.mockResolvedValueOnce({ ok: false, erro: "Corrigir", podeRevisar: true }).mockResolvedValueOnce({ ok: true });
   const c = montar(); await c.enviar(); expect(c.tentativa.current).toBeNull();
@@ -76,8 +71,6 @@ it("não dispara submissão concorrente antes da próxima renderização", async
   expect(c.envio.current).toBe(false);
 });
 
-// Integração da #151 (B3): o que a tela mostra com a tentativa pendente vem do estado `temTentativa` — campos
-// travados (fieldset) e "Repetir mesma tentativa" —, para a pessoa não editar e achar que reenviou outra coisa.
 it("tentativa pendente: campos travados e \"Repetir mesma tentativa\"; sem tentativa, editáveis e \"Preparar troca de moeda\"", async () => {
   expect({ travado: fieldset().props.disabled, botao: rotuloDoBotao() }).toEqual({ travado: false, botao: "Preparar troca de moeda" });
   m.preparar.mockResolvedValueOnce({ ok: false, erro: "Em conferência", podeRevisar: false });
@@ -85,8 +78,6 @@ it("tentativa pendente: campos travados e \"Repetir mesma tentativa\"; sem tenta
   expect({ travado: fieldset().props.disabled, botao: rotuloDoBotao() }).toEqual({ travado: true, botao: "Repetir mesma tentativa" });
 });
 
-// docs/43 §6 item 2: erro e sucesso separados. O erro do servidor chega composto com a orientação da
-// tentativa (preservada ou a corrigir), por isso os casos ficam aqui em vez de contratoFeedbackSeparado.
 describe("feedback separado", () => {
   const ERRO = "Recusado pelo servidor: revise a proposta.";
   async function anunciadoApos(desfecho: () => void) {

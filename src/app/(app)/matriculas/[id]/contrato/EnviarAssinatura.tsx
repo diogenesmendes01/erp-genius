@@ -7,7 +7,6 @@ import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { mensagemResultadoEnvio } from "./resultado-envio";
 
-/** Envio: exige conferência registrada para a revisão atual. Conciliação: só para envio pendente. A ação revalida tudo. */
 export function EnviarAssinatura(props: { matriculaId: string; servico: string } &
   ({ modo: "ENVIAR"; artefatoId: string; conferenciaId: string } | { modo: "CONCILIAR"; processoId: string })) {
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), chave = useChaveIdempotencia();

@@ -8,7 +8,6 @@ import { SolicitarPausaMatriculasSchema, DecidirPausaMatriculasSchema, type Soli
 
 import { APROVADORES_PAUSA as APROVADORES, hashPausa as hash, estadoHashPausa as estadoHash, exigirUsuarioPausa as exigirUsuario } from "./pausa-integridade";
 
-/** Persiste a seleção e os impactos; nenhuma matrícula ou cobrança é alterada. */
 export async function solicitarPausaMatriculas(alunoId: string, input: SolicitarPausaMatriculasInput) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_PAUSA);
@@ -37,7 +36,6 @@ export async function solicitarPausaMatriculas(alunoId: string, input: Solicitar
   });
 }
 
-/** Aprovação da proposta permanece distinta da execução; o executor deverá revalidar o estado. */
 export async function decidirPropostaPausaMatriculas(id: string, input: DecidirPausaMatriculasInput) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...APROVADORES);
@@ -50,8 +48,6 @@ export async function decidirPropostaPausaMatriculas(id: string, input: DecidirP
       await exigirUsuario(tx, autor.id, APROVADORES);
       const status = dados.aprovar ? "APROVADA" : "REJEITADA";
       if (p.status === status && p.decisorId === autor.id && p.motivoDecisao === dados.motivo) return { propostaId: p.id, status: p.status };
-      // Aprovação ainda não aplicada pode ser retirada com decisão independente e motivo.
-      // Isso libera uma nova conferência se o estado mudou; nunca desfaz uma pausa aplicada.
       if (p.status !== "PENDENTE" && !(p.status === "APROVADA" && !dados.aprovar)) throw new ErroRegra("A proposta já foi decidida ou aplicada.");
       if (dados.aprovar) {
         const ids = p.itens.map((i) => i.matriculaId);

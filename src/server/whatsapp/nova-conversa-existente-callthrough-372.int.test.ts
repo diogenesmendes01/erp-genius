@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { iniciarConversaPorNumero } from "./nova-conversa-acoes";
 
-// AUTORADO, NÃO EXECUTADO: só após lease ROOT ci-integracao/B500 e pins admitidos.
 let vendedor:Awaited<ReturnType<typeof criarUsuario>>,outro:Awaited<ReturnType<typeof criarUsuario>>,numeroId:string,paisId:string,seq=0;
 const tel=(n:number)=>`+5068666${String(n).padStart(4,"0")}`;
 const comando=(telefone:string,chave="tentativa-ex-native372")=>({modo:"EXISTENTE" as const,telefone,numeroId,chaveIdempotencia:chave});

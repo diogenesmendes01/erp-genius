@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-/** Conferência aritmética; não confirma comprovantes nem cria recebimento. */
 export function recebimentoPreservavel(c: { status: string; valorNegociado: Prisma.Decimal; valorRecebido: Prisma.Decimal | null; saldo: Prisma.Decimal | null; valorLiquidadoCredito?: Prisma.Decimal; valorCompensadoPermuta?: Prisma.Decimal }) {
   const permuta = c.valorCompensadoPermuta ?? new Prisma.Decimal(0);
   const credito = c.valorLiquidadoCredito ?? new Prisma.Decimal(0);

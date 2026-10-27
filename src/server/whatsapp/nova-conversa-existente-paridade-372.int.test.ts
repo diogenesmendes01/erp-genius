@@ -10,7 +10,6 @@ import { listarOpcoesAtendimento, abrirAtendimentoInstitucional } from "./operac
 import { consultarTelefoneNovaConversa } from "./nova-conversa-consultas";
 import { iniciarConversaPorNumero } from "./nova-conversa-acoes";
 
-// CONTRAPROVA ANTES DE FIX: autoria apenas. Executar RED só após revisão/lease ROOT.
 type Usuario=Awaited<ReturnType<typeof criarUsuario>>;
 let substituto:Usuario,titular:Usuario,admin:Usuario,responsavel:Usuario,numeroId:string,alheia:string,seq=0,fetchGuard:{mock:{calls:unknown[][]}};
 const telefone="+50683330001";
@@ -24,7 +23,6 @@ async function gatesEComparacao(c:Awaited<ReturnType<typeof contexto>>,causaAtua
  expect(await consultarTelefoneNovaConversa({telefone,numeroId})).toEqual({ok:true,dado:{tipo:"EXISTENTE",telefoneE164:telefone}});
  const antes=await principal(c),abertura=await abrirAtendimentoInstitucional({numeroId,destinoChave:`COMERCIAL:${c.lead.id}`,chaveIdempotencia:`legado-paridade-${c.lead.id}`});expect(abertura).toEqual({ok:true,dado:{id:c.atendimento.id}});expect(await principal(c)).toEqual(antes);expect(await eventos()).toEqual({aberturas:1,comandos:0});
  const entrada={modo:"EXISTENTE" as const,telefone,numeroId,chaveIdempotencia:`nova-paridade-${c.lead.id}`},novo=await iniciarConversaPorNumero(entrada);expect(await principal(c)).toEqual(antes);
- // Diferencia a regressão atual de erro infra/P2028. Não aceita erro inesperado como RED causal.
  if(!novo.ok){expect(novo.erro).toBe(causaAtual);expect(await eventos()).toEqual({aberturas:1,comandos:0});}
  expect(novo,JSON.stringify(novo)).toEqual({ok:true,dado:{atendimentoId:c.atendimento.id,criado:false}});
  expect((await prisma.oportunidade.findUniqueOrThrow({where:{id:c.lead.id}})).vendedorDonoId).toBe(c.lead.vendedorDonoId);expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({where:{id:c.atendimento.id}})).responsavelId).toBe(responsavel.id);expect(await eventos()).toEqual({aberturas:2,comandos:1});

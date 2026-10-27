@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-// A suite inteira usa o perfil descartavel resolvido pelo runner e pool1, sem client auxiliar.
 vi.hoisted(() => { const u = new URL(process.env.DATABASE_URL!); u.searchParams.set("connection_limit", "1"); u.searchParams.set("pool_timeout", "3"); process.env.DATABASE_URL = u.toString(); (globalThis as { prisma?: unknown }).prisma = undefined; });
 vi.mock("@/lib/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

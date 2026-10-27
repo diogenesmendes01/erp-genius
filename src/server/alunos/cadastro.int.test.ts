@@ -73,7 +73,6 @@ describe("cadastro acadêmico persistido — capacidade e projeção por funçã
     expect(ficha?.aluno.matriculas).toEqual([]);
     expect(ficha?.aluno.nascimento).toBeNull();
     expect(JSON.stringify(ficha)).not.toMatch(/DOCUMENTO_PRIVADO|50688887777|contato-privado|ENDERECO_PRIVADO|OBSERVACAO_ADMINISTRATIVA_PRIVADA/);
-    // IDs podem conter esses dígitos; valores financeiros não podem aparecer como folhas.
     const conferirValores = (valor: unknown): void => {
       if (valor && typeof valor === "object") Object.values(valor).forEach(conferirValores);
       else expect([85000, 84000, "85000", "84000"]).not.toContain(valor);

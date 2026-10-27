@@ -6,9 +6,6 @@ export type AcessoRegularizacaoAula = {
   professorOriginalId: string;
 };
 
-// Centraliza o desvio estritamente pontual da autoria do encontro. A trava é a
-// mesma usada pelas designações/revogações, portanto a consulta sempre vê a
-// vigência atual antes de liberar qualquer gravação ou leitura da chamada.
 export async function exigirAcessoRegularizacaoAulaTx(
   tx: Prisma.TransactionClient,
   entrada: { atorId: string; encontroId: string },

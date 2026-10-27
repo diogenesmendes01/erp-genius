@@ -523,10 +523,6 @@ export async function decidirRegularizacaoPeriodoIntegral(input: z.input<typeof 
   });
 }
 
-/**
- * Materializa uma decisão já aprovada. Os efeitos na cobrança são guardados no
- * banco; esta ação não cria uso de crédito, estorno ou devolução financeira.
- */
 export async function aplicarRegularizacaoPeriodoIntegral(input: { decisaoId: string }) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);

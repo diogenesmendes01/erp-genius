@@ -10,11 +10,6 @@ const entrada = z.object({
   pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1),
 }).strict();
 
-/**
- * Fila administrativa de agendas de segunda chamada. A consulta não expõe
- * lançamentos, notas, prazos, motivos, evidências ou qualquer dado financeiro.
- * Paginada por número (E4), em ordem estável (reservadaEm, id).
- */
 export async function listarAgendasSegundaChamada(input: z.input<typeof entrada> = {}) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(

@@ -32,7 +32,6 @@ export type LinhaCarteira = {
 type ParametrosUrl = Record<string, string | string[] | undefined>;
 const um = (v: string | string[] | undefined) => ((Array.isArray(v) ? v[0] : v) ?? "").trim();
 
-/** Filtros da URL de /carteira; valor fora das opções vira o padrão. */
 export function lerFiltrosCarteira(p: ParametrosUrl): FiltrosCarteira {
   const dias = um(p.semInteracao);
   const tipo = um(p.tipo);
@@ -51,18 +50,9 @@ export const TEXTO_CONSEQUENCIA_REATRIBUICAO =
   "Os atendimentos comerciais abertos passam para o novo responsável e as mensagens agendadas pelo responsável anterior são canceladas.";
 
 export const MAX_LOTE_CARTEIRA = 50;
-/** Corte de linhas devolvidas pela carteira; `total` continua contando todas. */
 export const MAX_LINHAS_CARTEIRA = 500;
 const FUSO_PADRAO = "America/Sao_Paulo";
 
-/**
- * Lista POSITIVA do "sem interação" da carteira (decisão D13 do dono, #198 C6): só conta o que é contato real
- * com o cliente. Do agregado Lead valem a interação registrada (ligação, presencial, e-mail; também a que nasce
- * da tarefa concluída com resultado), a tarefa concluída e a experimental (agendada, confirmada, realizada).
- * Mensagem recebida do cliente ou enviada por uma pessoa não vira Evento do Lead: entra pela consulta às mensagens
- * dos atendimentos da oportunidade (`JUNCOES_ULTIMO_CONTATO_SQL`). Nota interna, edição de cadastro, reatribuição, tags, documentos e
- * qualquer evento novo ficam de fora até alguém incluí-los aqui de propósito.
- */
 export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
   "InteracaoRegistrada",
   "TarefaConcluida",
@@ -71,16 +61,6 @@ export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
   "ExperimentalRealizada",
 ] as const;
 
-/**
- * Último contato real de cada oportunidade (alias `o` da tabela "Lead"), em SQL: junções laterais com o último evento
- * da lista positiva (`ev`) e a última mensagem dos atendimentos ligados a ela (`msg`). Mensagens: a recebida do
- * cliente e a enviada por uma pessoa (pela Inbox, `HUMANO`, ou pelo celular, `CELULAR`). A régua e as automações
- * (`CRON`, `LOTE`, `GESTAO`) e a resposta da Aria (`IA`) não são contato humano (decisão do dono no #254); saída sem
- * origem (legado) também fica de fora. Saída que falhou ou ainda está na fila não chegou ao cliente e não conta;
- * mensagem apagada depois continua sendo um contato que aconteceu.
- * Junção lateral, e não subconsulta no SELECT: o planejador estima o custo pelas linhas que passaram no filtro
- * (e não pela tabela inteira), o que evita, por exemplo, compilar JIT para a carteira de um vendedor.
- */
 const JUNCOES_ULTIMO_CONTATO_SQL = Prisma.sql`
   LEFT JOIN LATERAL (
     SELECT MAX(e."criadoEm") AS "em" FROM "Evento" e
@@ -94,13 +74,6 @@ const JUNCOES_ULTIMO_CONTATO_SQL = Prisma.sql`
       AND (m."direcao" = 'ENTRADA' OR (m."status" IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m."origem" IN ('HUMANO', 'CELULAR')))
   ) msg ON TRUE`;
 
-/**
- * Ids da carteira já filtrados, ordenados e cortados no banco (B19, #198 C2): dias civis sem interação no fuso
- * da escola (o maior primeiro; nunca negativo), desempate pelo id em ordem binária (a mesma do `<` do JS que a
- * versão em memória usava). O último contato é o mais recente entre evento e mensagem (`GREATEST` ignora o nulo,
- * como o "mais recente dos dois" de antes), ou a criação quando não há nenhum. `total` conta todas as que passam
- * no filtro, antes do corte.
- */
 async function idsOrdenadosDaCarteira(
   where: Prisma.OportunidadeWhereInput,
   hoje: string,
@@ -130,7 +103,6 @@ function diaMes(instante: Date, fuso: string): string {
   return `${v("day")}/${v("month")}`;
 }
 
-/** `limite`: corte das linhas devolvidas (padrão `MAX_LINHAS_CARTEIRA`); `total` conta todas as que passam no filtro. */
 export async function carregarCarteira(
   usuario: UsuarioSessao,
   f: FiltrosCarteira,
@@ -141,7 +113,6 @@ export async function carregarCarteira(
   const fuso = config?.fusoInstitucional ?? FUSO_PADRAO;
   const hoje = dataCivilInstitucional(agora, fuso);
 
-  // Oportunidades abertas e matriculadas (tudo, menos perdidas), dentro do escopo comercial.
   const escopoAberto: Prisma.OportunidadeWhereInput = { AND: [await escopoComercialAtual(usuario), { etapa: { not: "PERDIDO" } }] };
   const palavras = palavrasDaBuscaLeads(f.busca);
   const where: Prisma.OportunidadeWhereInput = {
@@ -168,7 +139,6 @@ export async function carregarCarteira(
     }),
   ]);
 
-  // Só as linhas que vão para a tela (no máximo `limite`) carregam os detalhes; o `where` continua no AND.
   const detalhes = ordenadas.ids.length
     ? await prisma.oportunidade.findMany({
         where: { AND: [where, { id: { in: ordenadas.ids.map((o) => o.id) } }] },
@@ -198,7 +168,6 @@ export async function carregarCarteira(
     }];
   });
 
-  // Vendedores que o usuário enxerga: ele mesmo, os que cobre, a equipe (gerente) ou todos (admin).
   const admin = usuario.papeis.includes(Papel.ADMINISTRADOR);
   const ehVendedor = usuario.papeis.includes(Papel.VENDEDOR);
   const ehGerente = usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
@@ -248,8 +217,6 @@ export async function reatribuirEmLote(input: {
     const unicos = [...new Set(input.ids)];
     if (unicos.length === 0) throw new ErroRegra("Selecione ao menos uma oportunidade.");
     if (unicos.length > MAX_LOTE_CARTEIRA) throw new ErroRegra(`Selecione no máximo ${MAX_LOTE_CARTEIRA} oportunidades.`);
-    // `atribuirDono` devolve ok sem mudar nada (nem gravar Evento) quando a oportunidade já é do destino:
-    // essas não contam como reatribuídas. O dono só é lido para contar; a visibilidade continua em `atribuirDono`.
     const donos = await prisma.oportunidade.findMany({ where: { id: { in: unicos } }, select: { id: true, vendedorDonoId: true } });
     const donoAntes = new Map(donos.map((o) => [o.id, o.vendedorDonoId]));
     let feitas = 0;

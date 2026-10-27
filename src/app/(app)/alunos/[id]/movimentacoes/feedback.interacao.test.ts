@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na decisão e na
-// efetivação do acerto de encerramento e na recomposição de cobertura — erro em role="alert" (a falha
-// da efetivação saía como role="status", achado L309), sucesso em role="status", falha de rede como
-// resultado incerto e os controles saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(), atualizar: vi.fn(), atualizarContexto: vi.fn(),
@@ -47,7 +43,6 @@ describe("DecisaoAcerto", () => {
   contratoFeedbackSeparado({
     nome: "registrar decisão do acerto", tela, action: m.decidirAcerto, acionar,
     sucesso: "Decisão registrada. Atualize a conferência para consultar o histórico. Encerramento ainda não efetivado.",
-    // A decisão conserva a própria mensagem de incerteza (reenviar a mesma decisão).
     incerto: MSG_DECISAO_INCERTA,
     ocupado: () => fieldsetTravado(tela()),
   });
@@ -64,7 +59,6 @@ describe("EfetivarAcerto", () => {
   const acionar = () => clicar(tela(), "Efetivar encerramento aprovado");
   contratoFeedbackSeparado({
     nome: "efetivar encerramento", tela, action: m.efetivar, acionar,
-    // #166: a efetivação é idempotente por natureza; na falha de rede, reenviar sem alterar.
     sucesso: "Encerramento efetivado.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => temBotao(tela(), "Efetivando…") && botao(tela(), "Efetivando…").props.disabled === true,
   });
@@ -88,7 +82,6 @@ describe("RecomposicaoPainel", () => {
   const contexto = { alunoId: "aluno", matriculaId: "matricula", cobrancas: [], compensacoes: [] } as unknown as Props["contexto"];
   const tela = () => m.ganchos!.renderizar(RecomposicaoPainel, { contexto, usuarioId: "usuario", podeAprovar: false, atualizarContexto: m.atualizarContexto });
   const rascunho = { id: "rascunho", versao: 1, preparador: { id: "outro", nome: "Ana" }, snapshot: {}, decisao: null };
-  /** Consulta o rascunho (a tela só mostra as ações sobre ele depois disso). */
   const carregar = async (dado: unknown) => {
     m.consultarRascunho.mockResolvedValue({ ok: true, dado });
     m.atualizarContexto.mockResolvedValue(undefined);

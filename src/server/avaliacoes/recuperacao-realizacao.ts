@@ -13,7 +13,6 @@ import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autoriza
 
 const schema = z.object({ itemReservaId: z.string().min(1).max(100), realizadaEm: z.string().datetime({ offset: true }), evidencia: z.string().trim().min(5).max(4000), realizadaPorId: z.string().min(1).max(100).optional(), motivoRegularizacao: z.string().trim().min(5).max(2000).optional() }).strict();
 
-/** Realização consome a habilidade reservada; nota e conferência são registros distintos. */
 export async function registrarRealizacaoRecuperacao(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR), d = schema.parse(input);

@@ -6,7 +6,6 @@ import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {podeVerLeadNaThread} from "@/server/whatsapp/visibilidade-lead";
 import type {Db} from "@/server/whatsapp/escopo";
 import {pessoaDoPayloadValida} from "@/server/aria/escopo-decisao-inbox";
-/** Leitura autorizada compartilhada; não carrega configuração nem calcula decisão. */
 export async function criarLeitorHistoricoAria(u:UsuarioSessao,atendimentoId:string,db:Db=prisma){
  const a=await (db===prisma?atendimentoVisivel(u,atendimentoId):atendimentoVisivel(u,atendimentoId,false,db));
  if(!a||a.finalidade!=="COMERCIAL"||!a.leadId||!await podeVerLeadNaThread(u,a.id,a.leadId,Date.now(),db))return null;
@@ -37,7 +36,6 @@ export async function criarLeitorHistoricoAria(u:UsuarioSessao,atendimentoId:str
  return {atendimento:a,leadAtual:atual,pagina,
   alteracoes:()=>pagina({status:{in:["EXECUTADA","APROVADA","DESFEITA"]},acao:{not:"CLASSIFICAR_SETOR"}},30)};
 }
-/** DESFEITA ocupa a janela autorizada, mas não conta como alteração vigente. */
 export function contarAlteracoesExecutadas(lista:readonly Pick<AcaoAgenteIA,"status">[]):number{
  return lista.filter(c=>c.status==="EXECUTADA"||c.status==="APROVADA").length;
 }

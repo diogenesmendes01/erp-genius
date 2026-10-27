@@ -51,8 +51,6 @@ beforeEach(async () => {
   ]);
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Pessoa", paisId: catalogo.pais.id } });
   matriculaId = (await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "AGUARDANDO" } })).id;
-  // A fixture real de informe conserva o avanço formal: não há guard desativado
-  // nem saldo fabricado para tornar a aprovação possível.
   const cobranca = await prisma.cobranca.create({ data: { matriculaId, tipo: TipoCobranca.MATRICULA, valorOriginal: 100, valorNegociado: 100,
     saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-15T12:00:00.000Z") } });
   informeId = (await prisma.pagamentoInformado.create({ data: { cobrancaId: cobranca.id, autorId: secretaria.id, chaveIdempotencia: "informe-decisao-administrativa",
@@ -79,7 +77,6 @@ describe("decisão administrativa de desistência", () => {
     const pedido = await criarPedido("permissao");
     entrar(secretaria.id);
     expect(await decidirDesistenciaAdministrativa({ pedidoId: pedido.id, estadoHash: pedido.estadoHash, aprovada: true, motivo })).toMatchObject({ ok: false });
-    // Administração também pode registrar o pedido, mas não pode decidir o seu.
     entrar(admin.id);
     const conferencia = await consultarDesistenciaPreparacao({ matriculaId });
     if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência ausente.");
@@ -177,8 +174,6 @@ describe("decisão administrativa de desistência", () => {
     expect((await prisma.cobranca.findFirstOrThrow({ where: { matriculaId }, select: { versao: true } })).versao).toBe(versaoAntes);
     await expect(prisma.decisaoAdministrativaDesistencia.create({ data: { pedidoId: stale.id, aprovada: true, motivo, estadoHash: stale.estadoHash, decisorId: admin.id } })).rejects.toThrow();
 
-    // Uma decisão aprovada válida passa pelo trigger e depois não pode mudar
-    // ou ser apagada por acesso direto ao banco.
     const novo = await criarPedido("sql-imutavel");
     const decisao = await prisma.decisaoAdministrativaDesistencia.create({ data: { pedidoId: novo.id, aprovada: true, motivo, estadoHash: novo.estadoHash, decisorId: admin.id } });
     await expect(prisma.decisaoAdministrativaDesistencia.update({ where: { id: decisao.id }, data: { motivo: "Motivo alterado indevidamente." } })).rejects.toThrow();

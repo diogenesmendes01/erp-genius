@@ -9,14 +9,12 @@ export interface PrecoAria {
   moeda: string;
 }
 
-/** Únicos preços que a Aria pode citar: PrecoReferencia ativo do país da oportunidade, em produto oferecido. */
 export async function precosDaOportunidade(oportunidadeId: string, tx?: Prisma.TransactionClient): Promise<PrecoAria[]> {
   const db = tx ?? prisma;
   const op = await db.oportunidade.findUnique({ where: { id: oportunidadeId }, select: { paisId: true } });
   return precosDoPais(op?.paisId ?? null, tx);
 }
 
-/** Mesma regra de `precosDaOportunidade`, a partir do país (usada também pelo playground). */
 export async function precosDoPais(paisId: string | null, tx?: Prisma.TransactionClient): Promise<PrecoAria[]> {
   const db = tx ?? prisma;
   if (!paisId) return [];

@@ -11,7 +11,6 @@ const instantesAfetados = (antes: Agenda[], depois: Agenda[], ids: Set<string>) 
   return [...ids].flatMap((id) => [porIdAntes.get(id), porIdDepois.get(id)].filter((e): e is Agenda => e !== undefined)).map((e) => new Date(e.inicio));
 };
 
-/** Agrupa somente encontros efetivamente mudados, para alocações vigentes antes ou depois da alteração. */
 export async function criarAvisosQuantidadeAulasTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; propostaId: string }) {
   const fonte = await validarFonteQuantidadeAulasTx(tx, { eventoId: entrada.eventoId });
   if (!fonte || fonte.proposta.id !== entrada.propostaId) throw new ErroRegra("Evento de quantidade não é fonte canônica de avisos.");

@@ -67,8 +67,6 @@ it("encerramento separa recuperação das horas contratadas sem alterar origens 
   expect(impactos.encontrosRecuperacao).toEqual([{ id: recuperacao.id, inicio: inicio.toISOString(), fim: fim.toISOString(), status: "RASCUNHO", professorId, fusoOrigem: "UTC" }]);
   const rascunho = await prisma.$transaction(tx => conferirAgendaEncerramentoTx(tx, impactos, "2026-01-09", "UTC", false));
   expect(rascunho).toMatchObject({ encontrosARegularizar: [], destinacoesHoras: [], pendencias: [] });
-  // Exercita a futura origem publicada na conferência, sem publicar ou contornar
-  // a proteção SQL que ainda exige implementar a aprovação de recuperação.
   const origemPublicada = { ...impactos, regimeCobranca: "HORA_PARTICULAR" as const, encontrosRecuperacao: impactos.encontrosRecuperacao!.map(e => ({ ...e, status: "PREVISTO" as const })) };
   const revista = await prisma.$transaction(tx => conferirAgendaEncerramentoTx(tx, origemPublicada, "2026-01-09", "UTC", false));
   expect(revista).toMatchObject({ encontrosARegularizar: [], destinacoesHoras: [], recuperacoesARegularizar: [recuperacao.id], pendencias: [expect.stringContaining("autorização acadêmica específica")] });

@@ -32,7 +32,6 @@ function lowerBound(values: readonly number[], target: number): number {
   return low;
 }
 
-/** End is exclusive; only rows intersecting the viewport plus pixel overscan are mounted. */
 export function virtualRange(
   layout: VirtualLayout,
   scrollTop: number,

@@ -6,7 +6,6 @@ import { calcularCompensacaoPendenteEncerramento } from "./encerramento-compensa
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Acerto = ReturnType<typeof calcularAcertoMensalEncerramento>;
 
-/** Apuração por cobrança original, sem usar crédito, liquidar direitos ou executar o encerramento. */
 export function conferirCompensacoesEncerramento(contexto: Contexto, mensal: Acerto) {
   const pendencias: string[] = [];
   const ajustes: { cobrancaId: string; compensacaoIds: string[];
@@ -29,7 +28,6 @@ export function conferirCompensacoesEncerramento(contexto: Contexto, mensal: Ace
       pendencias.push(`Dias duplicados nas compensações da cobrança ${cobrancaId}.`);
       continue;
     }
-    // Apenas dias ainda sem destinação podem já ter sido retirados pelo proporcional.
     const contemplados = dias.filter((d) => d.estado === "PENDENTE" && (!parcela.ultimoDiaCoberto || d.diaOrigem > parcela.ultimoDiaCoberto));
     const apuracao = calcularCompensacaoPendenteEncerramento({
       matriculaId: contexto.matriculaId, condicoesId: mensal.contratoVersaoId, cobrancaOrigemId: cobrancaId,

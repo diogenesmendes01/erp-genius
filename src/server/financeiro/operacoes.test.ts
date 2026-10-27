@@ -107,7 +107,6 @@ describe("pagamentos e conferência pela ação pública", () => {
     vi.setSystemTime(new Date("2026-09-09T12:00:00Z"));
     expect((await registrarPagamento("cobranca", entrada)).ok).toBe(true);
     expect(m.pagamentoInformado.create).toHaveBeenCalledOnce();
-    // Uma leitura do prazo de conferência; as demais são do fuso da escola (ref. #247).
     expect(m.configuracaoOperacional.findUnique.mock.calls.filter(([args]) => args.select?.prazoConferenciaHoras)).toHaveLength(1);
   });
 

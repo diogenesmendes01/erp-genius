@@ -70,8 +70,6 @@ async function temAtribuicaoVigenteTx(
   return !!vinculo || !!substituicao;
 }
 
-/** Fecha, de forma limitada e somente para o usuário atual, ciclos que deixaram
- * de ter fonte válida. Não altera encontro, diário nem qualquer cobrança. */
 async function encerrarCiclosObsoletosTx(
   tx: Prisma.TransactionClient,
   entrada: { usuarioId: string; papeis: Papel[]; gestao: boolean; agora: Date },
@@ -84,8 +82,6 @@ async function encerrarCiclosObsoletosTx(
     { tipo: "DOCENTE", encontro: { is: { ...fontePendente, AND: [responsavel] } } },
     ...(entrada.gestao ? [{ tipo: "GESTAO" as const, encontro: { is: { ...fontePendente, NOT: responsavel } } }] : []),
   ];
-  // Filtrar fontes inválidas ANTES do limite evita que vinte pendências ainda
-  // válidas impeçam para sempre o encerramento dos ciclos mais antigos.
   const obsoletos = await tx.avisoPendenciaDiario.findMany({
     where: { destinatarioId: entrada.usuarioId, encerradoEm: null, NOT: { OR: ciclosValidos } },
     orderBy: [{ vencimento: "asc" }, { id: "asc" }], take: LIMITE,
@@ -122,8 +118,6 @@ async function atualizarCicloTx(
       quantidadeLembretes: emitir ? 1 : 0, indiceLembrete: emitir ? 1 : 0,
     } });
   }
-  // A política atual recalcula a cadência desde o último aviso efetivamente
-  // registrado. Não reutilizar um próximo horário calculado com intervalo antigo.
   const proximo = new Date(Math.max(primeiroLembrete.getTime(),
     existente.ultimoLembreteEm ? somarMinutos(existente.ultimoLembreteEm, entrada.intervalo).getTime() : primeiroLembrete.getTime()));
   if (existente.encerradoEm) {
@@ -142,20 +136,11 @@ async function atualizarCicloTx(
   } });
 }
 
-/** Q22: refresh por acesso ao painel. É pull interno; não há job, e-mail ou
- * retroenvio. Cada chamada toca no máximo a página atual e até 20 ciclos
- * abertos do próprio usuário para encerrar fontes revogadas. Fila de trabalho com
- * cursor nos dois sentidos (E4, decisão de 10/10/2026), em ordem estável (fim desc,
- * id desc): o cursor é o encontro do fim (ou do começo) da página, lido no escopo
- * mas sem o filtro de pendência — regularizar a aula âncora não a perde, e a
- * próxima continua de onde a pessoa parou sem pular ninguém. */
 export async function consultarAvisosDiario(input: NavegacaoFila = {}): Promise<Resultado<ConsultaAvisosDiario>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
     const nav = ConsultaSchema.parse(input);
     return prisma.$transaction(async (tx) => {
-      // Q24 cria/revoga designações sob a mesma trava; obtê-la antes de usuário,
-      // configuração e encontros mantém a ordem de bloqueio do diário.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${sessao.id} FOR SHARE`;
       const usuario = await tx.usuario.findUnique({ where: { id: sessao.id }, select: { ativo: true, papeis: true } });
@@ -264,7 +249,6 @@ export async function salvarConfiguracaoAvisosDiario(input: { prazoRegularizacao
   });
 }
 
-/** A configuração é consultada sem gerar aviso para o administrador. */
 export async function consultarConfiguracaoAvisosDiario() {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

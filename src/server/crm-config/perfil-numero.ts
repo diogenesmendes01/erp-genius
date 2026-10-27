@@ -20,15 +20,11 @@ import {
   type Visibilidade,
 } from "@/server/whatsapp/motor/numero";
 
-// Perfil, privacidade e mensagens temporárias do número: só ADMINISTRADOR. O motor é chamado
-// PRIMEIRO; o ERP só grava (e só emite Evento) se o motor aceitar. `deps.motor` injeta o cliente.
-
 export interface DepsNumero {
   motor?: ClienteMotorNumero;
 }
 
 const FRASE_TEMPORARIAS = "ativar temporárias";
-/** Limite do motor (bytes decodificados): acima disso o `profile.picture` é recusado. */
 const MAX_FOTO_BYTES = 128 * 1024;
 const MSG_FOTO_GRANDE = "A foto pode ter no máximo 128 KB. Reduza a imagem e tente de novo.";
 const MIMES_FOTO = ["image/jpeg", "image/png"];
@@ -69,10 +65,6 @@ async function carregarNumero(id: string) {
 
 const MSG_MOTOR_FALHOU = "O motor do WhatsApp não aplicou a mudança. Nada foi salvo; tente de novo em instantes.";
 
-/**
- * Chama o motor e traduz a falha: nada é gravado no ERP quando isto lança. `ErroMotorParcial`
- * passa adiante para o chamador gravar só a parte que o motor já aplicou.
- */
 async function noMotor(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
@@ -104,7 +96,6 @@ async function lerFoto(uploadId: string): Promise<string> {
   return `data:${reg.mime};base64,${bytes.toString("base64")}`;
 }
 
-/** Converte o RegistroUpload recém-enviado (`/api/upload` devolve a URL) no id usado por `atualizarPerfilNumero`. */
 export async function uploadIdPorUrl(url: string): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -129,7 +120,7 @@ export async function atualizarPerfilNumero(
       await noMotor(() => cliente(deps).atualizarPerfil(n.ref, { nome: d.nome, recado: d.recado, fotoDataUri }));
     } catch (e) {
       if (!(e instanceof ErroMotorParcial)) throw e;
-      parcial = true; // a foto já está no motor; nome e recado não
+      parcial = true;
     }
     await prisma.$transaction(async (tx) => {
       const antes = { nome: n.perfilNome, recado: n.perfilRecado, fotoUploadId: n.perfilFotoUploadId };
@@ -147,7 +138,6 @@ export async function atualizarPerfilNumero(
   });
 }
 
-/** Confirmação de leitura não é configurável (é automática, doc 03). */
 export async function atualizarPrivacidadeNumero(
   i: { numeroId: string; privacidade: { vistoPorUltimo: Visibilidade; foto: Visibilidade; recado: Visibilidade; grupos: Visibilidade } },
   deps?: DepsNumero,
@@ -167,7 +157,6 @@ export async function atualizarPrivacidadeNumero(
       await noMotor(() => cliente(deps).atualizarPrivacidade(n.ref, mudou));
     } catch (e) {
       if (!(e instanceof ErroMotorParcial)) throw e;
-      // Grava só o que o motor já aplicou: o resto continua como estava.
       parcial = true;
       para = { ...(atual ?? {}), ...(e.aplicado.privacidade ?? {}) };
     }
@@ -181,7 +170,6 @@ export async function atualizarPrivacidadeNumero(
   });
 }
 
-/** Desligadas por padrão. Ligar exige digitar a frase de confirmação; desligar preserva histórico e auditoria. */
 export async function definirTemporariasNumero(
   i: { numeroId: string; segundos: 0 | 86400 | 604800 | 7776000; confirmacao: string },
   deps?: DepsNumero,
@@ -209,11 +197,10 @@ export interface PerfilNumeroDados {
   conectado: boolean;
   perfilNome: string | null;
   perfilRecado: string | null;
-  privacidade: Partial<PrivacidadeNumero> | null; // pode ser parcial (motor aplicou só parte)
+  privacidade: Partial<PrivacidadeNumero> | null;
   temporariasSegundos: number;
 }
 
-/** Dados da tela (só ADMINISTRADOR). Números MOTOR ativos. */
 export async function listarPerfisNumero(): Promise<PerfilNumeroDados[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const ns = await prisma.numeroWhatsApp.findMany({ where: { driver: "MOTOR", ativo: true }, orderBy: { criadoEm: "asc" } });

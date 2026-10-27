@@ -5,19 +5,11 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { elementos, texto } from "@/test/tela-sem-dom";
 
-// O que a tela ANUNCIA depois de uma ação (docs/42-auditoria-frontend-ux.md, E3; docs/43, §6 item 2):
-// erro em role="alert" (anunciado na hora, em vermelho), sucesso em role="status" (região polite) —
-// nunca os dois na mesma região. Lido sem DOM: a árvore do componente (chamado com os ganchos de
-// src/test/tela-sem-dom.ts) é percorrida; cada <FeedbackAcao>/<MensagemStatus> é renderizado à parte
-// com renderToStaticMarkup (é o HTML que vai para a tela), e os elementos nativos com `role` são lidos
-// direto. Só texto não vazio entra.
-
 export type Anuncios = { alerta: string[]; status: string[] };
 
 const ENTIDADES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#x27;": "'", "&#39;": "'", "&nbsp;": "\u00a0" };
 const decodifica = (html: string) => html.replace(/<[^>]*>/g, "").replace(/&(?:amp|lt|gt|quot|nbsp|#x27|#39);/g, (e) => ENTIDADES[e]);
 
-/** Textos em role="alert" e role="status" de um trecho de HTML (o conteúdo de cada região). */
 export function regioesDoHtml(html: string): Anuncios {
   const saida: Anuncios = { alerta: [], status: [] };
   for (const m of html.matchAll(/<(\w+)\b[^>]*\brole="(alert|status)"[^>]*>([\s\S]*?)<\/\1>/g)) {
@@ -27,7 +19,6 @@ export function regioesDoHtml(html: string): Anuncios {
   return saida;
 }
 
-/** O que a árvore anuncia agora: FeedbackAcao/MensagemStatus renderizados e elementos nativos com role. */
 export function anuncios(raiz: ReactNode): Anuncios {
   const saida: Anuncios = { alerta: [], status: [] };
   for (const n of elementos(raiz)) {
@@ -43,7 +34,6 @@ export function anuncios(raiz: ReactNode): Anuncios {
   return saida;
 }
 
-/** O que passou a ser anunciado entre duas leituras (multiconjunto: textos fixos da tela se cancelam). */
 export function novosAnuncios(antes: Anuncios, depois: Anuncios): Anuncios {
   const tira = (de: string[], base: string[]) => {
     const resto = [...base];
@@ -52,7 +42,6 @@ export function novosAnuncios(antes: Anuncios, depois: Anuncios): Anuncios {
   return { alerta: tira(depois.alerta, antes.alerta), status: tira(depois.status, antes.status) };
 }
 
-/** Promessa controlada: a action fica pendente até o teste decidir o desfecho. */
 export type Adiada<T> = { promessa: Promise<T>; resolver: (v: T) => void; rejeitar: (e: unknown) => void };
 
 export function adiada<T>(): Adiada<T> {
@@ -62,29 +51,19 @@ export function adiada<T>(): Adiada<T> {
 }
 
 export type CenarioFeedback = {
-  /** Nome curto do fluxo (entra no título de cada teste). */
   nome: string;
-  /** Prepara a tela antes de cada caso (montar ganchos, preencher campos…). Opcional. */
   preparar?: () => void | Promise<void>;
-  /** Render atual da tela (o componente chamado com os ganchos). */
   tela: () => ReactNode;
-  /** Dispara a ação a partir da tela atual (clique ou submit); devolve a promessa do handler. */
   acionar: () => unknown;
-  /** A server action (mock) que o fluxo chama. */
   action: Mock;
-  /** Resposta de sucesso da action (padrão `{ ok: true }`). */
   respostaOk?: unknown;
-  /** Texto de sucesso que a tela anuncia em role="status". */
   sucesso: string;
-  /** Mensagem da falha de transporte (resultado incerto), anunciada em role="alert". */
   incerto: string;
-  /** A tela mostra que está ocupada (rótulo de progresso, botão ou fieldset travado pela ação)? */
   ocupado: () => boolean;
 };
 
 const ERRO_DO_SERVIDOR = "Recusado pelo servidor: revise a proposta.";
 
-/** Aciona com a action num desfecho e devolve o que passou a ser anunciado. */
 async function anunciadoApos(c: CenarioFeedback, desfecho: () => void) {
   await c.preparar?.();
   const antes = anuncios(c.tela());
@@ -93,13 +72,6 @@ async function anunciadoApos(c: CenarioFeedback, desfecho: () => void) {
   return novosAnuncios(antes, anuncios(c.tela()));
 }
 
-/**
- * Os quatro casos do contrato de feedback separado, para um fluxo de uma tela:
- * - erro do servidor: só em role="alert" (nada novo em role="status");
- * - sucesso: só em role="status" (nenhum alerta novo);
- * - falha de rede/exceção: a mensagem de resultado incerto, em role="alert";
- * - ocupado durante a action e liberado depois de cada desfecho (erro, falha e sucesso, nesta ordem).
- */
 export function contratoFeedbackSeparado(c: CenarioFeedback) {
   it(`${c.nome}: erro do servidor sai em role="alert", não em role="status"`, async () => {
     const novos = await anunciadoApos(c, () => c.action.mockResolvedValueOnce({ ok: false, erro: ERRO_DO_SERVIDOR }));

@@ -87,7 +87,6 @@ it("consumidor abre Transferir com destinos opcionais ausentes sem falhar no for
   expect(p.destinos).toBeUndefined();
   await renderizar(p);
   expect(m.transferir).not.toBeNull();
-  // Coordenador, controlador, formulário e portal reais; a fixture fornece a geometria.
   await act(async () => m.transferir!.aoEscolher());
   const dialogo = document.body.querySelector('[role="dialog"]');
   expect(dialogo).not.toBeNull();

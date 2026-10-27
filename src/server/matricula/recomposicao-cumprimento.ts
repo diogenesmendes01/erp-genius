@@ -27,7 +27,6 @@ export async function consultarCumprimentosRecomposicao(input: { alunoId: string
   });
 }
 
-/** Registra evidência para conferência independente; não baixa o direito. */
 export async function prepararCumprimentoRecomposicao(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -66,7 +65,6 @@ export async function prepararCumprimentoRecomposicao(input: z.input<typeof Entr
 const Decisao = z.object({ alunoId: z.string().min(1), matriculaId: z.string().min(1), conferenciaId: z.string().min(1),
   aprovar: z.boolean(), motivo: z.string().trim().min(5).max(2000), evidenciaConferida: z.boolean() }).strict();
 
-/** Atesta cobertura efetivamente oferecida; passagem do tempo nunca basta. */
 export async function decidirCumprimentoRecomposicao(input: z.input<typeof Decisao>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -94,7 +92,6 @@ export async function decidirCumprimentoRecomposicao(input: z.input<typeof Decis
         const config = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" } });
         if (s.matriculaId !== d.matriculaId || s.alunoId !== d.alunoId || s.programacaoId !== r.programacaoId || s.aplicacaoId !== r.programacao.aplicacaoId || s.dataCobertura !== dia || s.direitoId !== direito.id || s.direitoVersao !== direito.versao || direito.estado !== "PENDENTE" || config?.fusoInstitucional !== s.fuso) throw new ErroRegra("A origem mudou. Rejeite e prepare nova conferência.");
         if (dia >= dataCivilInstitucional(new Date(), s.fuso)) throw new ErroRegra("Aguarde o término do dia de cobertura.");
-        // Localiza os limites civis sem presumir deslocamento UTC fixo ou dias de 24 horas.
         const limite = (posterior: boolean) => {
           let a = r.programacao.dataCobertura.getTime() - 172800000, b = a + 432000000;
           while (a < b) {

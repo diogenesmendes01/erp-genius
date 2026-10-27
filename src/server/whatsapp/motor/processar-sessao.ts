@@ -27,9 +27,6 @@ export async function processarSessaoEstado(env: EnvelopeMotor): Promise<Resulta
   const numero = await acharNumero({ numeroProviderRef: env.numeroId, driver: "MOTOR" });
   if (!numero) return { ignorado: "numero_desconhecido" };
 
-  // Fora de ordem (R1 do #215, C1): a re-tentativa de um estado antigo (ex.: CAIU em backoff) não
-  // pode sobrescrever um estado posterior já aplicado ao número. "Aplicado" = outro sessao.estado do
-  // mesmo número já processado com sucesso pelo dreno, com ocorridoEm maior que o deste evento.
   const posterior = await prisma.eventoMotorRecebido.findFirst({
     where: {
       tipo: "sessao.estado",
@@ -45,7 +42,6 @@ export async function processarSessaoEstado(env: EnvelopeMotor): Promise<Resulta
 
   await aplicarEstadoSessao(numero.id, d.estado, "webhook");
 
-  // Telefone divergente: só registra; nunca troca o cadastro.
   if (d.telefoneE164) {
     const cadastro = await prisma.numeroWhatsApp.findUnique({
       where: { id: numero.id },
@@ -71,7 +67,6 @@ export async function processarSessaoQr(env: EnvelopeMotor): Promise<ResultadoPr
   if (!parsed.success) return { ignorado: "dados_invalidos" };
   const numero = await acharNumero({ numeroProviderRef: env.numeroId, driver: "MOTOR" });
   if (!numero) return { ignorado: "numero_desconhecido" };
-  // O QR não é gravado no ERP; só marca que a sessão espera leitura.
   const atual = await prisma.numeroWhatsApp.findUnique({ where: { id: numero.id }, select: { sessao: true } });
   if (atual?.sessao === "CONECTADO") return { ignorado: "ja_conectado" };
   await aplicarEstadoSessao(numero.id, "AGUARDANDO_QR", "webhook");

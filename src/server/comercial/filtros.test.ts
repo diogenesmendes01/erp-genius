@@ -22,7 +22,6 @@ describe("filtros de leads na URL", () => {
       { OR: [{ nome: { contains: "Ana", mode: "insensitive" } }, { codigo: { contains: "Ana", mode: "insensitive" } }] },
       { OR: [{ nome: { contains: "8888-7777", mode: "insensitive" } }, { codigo: { contains: "8888-7777", mode: "insensitive" } }, { telefoneE164: { contains: "88887777" } }] },
     ]);
-    // Menos de 3 dígitos não varre telefones; a partir de 3, sim.
     const campos = (busca: string) => (whereFiltrosLead({ busca }).AND as { OR: Record<string, unknown>[] }[])[0].OR.map((c) => Object.keys(c)[0]);
     expect(campos("a1")).toEqual(["nome", "codigo"]);
     expect(campos("12")).toEqual(["nome", "codigo"]);

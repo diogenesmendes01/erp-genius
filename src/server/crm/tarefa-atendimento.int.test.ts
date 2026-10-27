@@ -21,7 +21,6 @@ import { atendimentoVisivel, garantirAtendimento } from "@/server/whatsapp/atend
 import { carregarUsuarioFresco } from "@/server/_shared/sessao";
 import { criarTarefa, editarTarefa, type TarefaInput } from "./tarefas";
 
-// Só o acréscimo da entrada é antecipado pelo teste RED; nenhum mock da persistência ou do escopo.
 const criar = (i: TarefaInput & { atendimentoId?: string }) => criarTarefa(i);
 let c: Awaited<ReturnType<typeof cenario>>;
 

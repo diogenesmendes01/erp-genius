@@ -3,8 +3,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { carregarFinanceiroDesistenciaTx } from "./desistencia-financeiro-tx";
 
-/** Chamador autoriza Secretaria/Administração e bloqueia calendário e matrícula.
- * Esta conferência registra o pedido; nunca autoriza sua efetivação. */
 export async function carregarConferenciaDesistenciaTx(tx: Prisma.TransactionClient, matriculaId: string) {
   const matricula = await tx.matricula.findUnique({ where: { id: matriculaId }, select: {
     id: true, codigo: true, alunoId: true, leadId: true, status: true, ativadaEm: true,
@@ -30,8 +28,6 @@ export async function carregarConferenciaDesistenciaTx(tx: Prisma.TransactionCli
     intencaoCancelamento: { select: { id: true, propostaId: true, decisaoId: true,
       observacoes: { orderBy: { id: "asc" }, select: { id: true, resultado: true, evidenciaHash: true } } } },
   } });
-  // Arquivo de contrato não comprova assinatura. É indício para conferência;
-  // representar a fonte por hash, sem expor URL ou nome no resultado.
   const fontesDocumentais = await tx.documento.findMany({ where: { matriculaId }, orderBy: { id: "asc" },
     select: { id: true, nome: true, url: true, arquivado: true, criadoEm: true } });
   const documentos = fontesDocumentais.map(d => ({ id: d.id, arquivado: d.arquivado,

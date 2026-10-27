@@ -18,8 +18,6 @@ import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
 const dominios = { CADASTRO: "Dados deste contrato", CONTRATUAL: "Condições contratadas", CONDICOES_FUTURAS: "Próximas cobranças", COBRANCA_EMITIDA: "Cobranças existentes", AGENDA: "Agenda" };
 export default async function PropostaAditivoPage({ params, searchParams }: { params: Promise<{ id: string; propostaId: string }>; searchParams: Promise<{ paginaConferencias?: string; paginaOriginais?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA); const { id, propostaId } = await params;
-  // Os acertos de vencimento e de taxa são telas do Financeiro (guard FINANCEIRO; Administrador passa): só quem as
-  // abre recebe o link. A Secretaria lê quem faz e o que fazer, em vez de cair em "acesso negado" (docs/42 L691).
   const abreAcertos = usuario.papeis.includes(Papel.FINANCEIRO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
   const [r, preferencia] = await Promise.all([consultarPropostaAditivo({ matriculaId: id, propostaId }), consultarPreferenciaFusoEquipe()]); if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;

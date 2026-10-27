@@ -52,8 +52,6 @@ export async function carregarReplanejamentoTx(tx: Prisma.TransactionClient, cal
     return { ...r, previsao, pendencias: [...r.pendencias, ...(exigeExcecao ? ["Encontro ajustado atinge dia não letivo; exige aprovação explícita da exceção para esse encontro."] : [])] };
    });
    const futurosEspeciais = await tx.encontroAgenda.findMany({ where: { status: "PREVISTO", inicio: { gt: agora }, OR: [{ finalidade: "AULA", turmaId: null }, { finalidade: "RECUPERACAO" }] }, select: { id: true, finalidade: true, inicio: true, fim: true, professorId: true }, orderBy: { id: "asc" } });
-   // A presença futura por si só não bloqueia o conjunto: só entra na pendência
-   // quando a versão proposta torna aquele horário não letivo.
    const especiaisAfetados = futurosEspeciais.map((e) => ({ ...e, periodosNaoLetivos: conferirDiasNaoLetivos({ inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoEscola: calendario.fusoInstitucional, periodos: periodos.map(({ id, inicio, fim }) => ({ id, inicio, fim })) }).periodosAfetados }))
      .filter((e) => e.periodosNaoLetivos.length);
    const particulares = especiaisAfetados.filter((e) => e.finalidade === "AULA").map(({ finalidade: _finalidade, ...e }) => e);

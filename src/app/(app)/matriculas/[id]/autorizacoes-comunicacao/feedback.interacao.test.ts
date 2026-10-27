@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): registrar e revogar autorização de comunicação
-// mostravam sucesso e erro no mesmo MensagemStatus. Agora cada fluxo tem o seu feedback junto do próprio
-// botão: erro em role="alert", sucesso em role="status", falha de rede como resultado incerto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   registrar: vi.fn(), revogar: vi.fn(), refresh: vi.fn(),
@@ -38,7 +35,6 @@ const historico = [
 ];
 const tela = () => m.ganchos!.renderizar(AutorizacoesFormulario, { matriculaId: "matricula-1", responsaveis: [{ id: "resp-1", nome: "Maria" }], historico });
 const botoes = (t: ReactNode) => elementos(t).filter((n) => n.type === "button");
-/** Os cartões do histórico (<article>), como nós da árvore para percorrer à parte. */
 const artigos = (t: ReactNode) => elementos(t).filter((n) => n.type === "article") as unknown as ReactNode[];
 
 describe("AutorizacoesFormulario — registrar", () => {
@@ -56,7 +52,6 @@ describe("AutorizacoesFormulario — revogar", () => {
     nome: "revogar autorização", tela, action: m.revogar,
     acionar: () => submeter(tela(), { motivo: "Responsável pediu a revogação" }, 1),
     sucesso: "Revogação registrada no histórico.", incerto: MSG_RESULTADO_INCERTO,
-    // O botão "Revogar autorização" não troca de rótulo: o sinal é ele (e o do registro) travados.
     ocupado: () => botoes(tela()).every((b) => b.props.disabled === true),
   });
 

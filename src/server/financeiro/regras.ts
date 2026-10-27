@@ -2,17 +2,12 @@ import { Prisma, StatusCobranca, StatusMatricula } from "@prisma/client";
 import { ErroRegra, ErroPermissao } from "@/server/_shared/sessao";
 import { vencimentoEmAtraso } from "@/server/operacao/fuso";
 
-/** Dinheiro é calculado em decimal e arredondado uma única vez na borda. */
 export function dinheiro(valor: Prisma.Decimal.Value): Prisma.Decimal {
   const n = new Prisma.Decimal(valor);
   if (!n.isFinite() || n.isNegative()) throw new ErroRegra("Valor monetário inválido.");
   return n.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 }
 
-/**
- * Status de uma cobrança que segue em aberto, pelo vencimento (ref. #247): ATRASADO só quando o dia civil da
- * escola já passou do dia do vencimento (`vencimentoEmAtraso`). O dia do vencimento inteiro ainda é PENDENTE.
- */
 export function statusEmAbertoPorVencimento(vencimento: Date, agora: Date, fuso: string) {
   return vencimentoEmAtraso(vencimento, agora, fuso) ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE;
 }
@@ -24,7 +19,7 @@ export function saldoAtual(negociado: Prisma.Decimal.Value, recebido: Prisma.Dec
 export function descontoAcumulado(referencia: Prisma.Decimal.Value, proposto: Prisma.Decimal.Value) {
   const base = dinheiro(referencia);
   const valor = dinheiro(proposto);
-  if (base.isZero()) return new Prisma.Decimal(0); // oferta gratuita não tem desconto a conceder
+  if (base.isZero()) return new Prisma.Decimal(0);
   return Prisma.Decimal.max(0, base.minus(valor).div(base).mul(100));
 }
 
@@ -45,7 +40,6 @@ export function validarEstadoAtivacao(status: StatusMatricula, taxaStatus: Statu
   if (taxaStatus === StatusCobranca.CANCELADA) throw new ErroRegra("Taxa cancelada não permite ativação.");
 }
 
-/** Quitação confirmada considera caixa e crédito aprovado separadamente; informe pendente não é liquidação. */
 export function pagamentoConfirmado(cobranca: {
   status: StatusCobranca; valorNegociado: Prisma.Decimal.Value;
   valorRecebido: Prisma.Decimal.Value | null; pagoEm: Date | null;

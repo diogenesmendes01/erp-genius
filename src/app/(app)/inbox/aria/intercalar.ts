@@ -1,7 +1,6 @@
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 import type { ItemSugestaoThread } from "@/components/conversa/itens-thread";
 export type { ItemSugestaoThread } from "@/components/conversa/itens-thread";
-/** Só composição visual: não participa de cursor, limite ou transporte da thread. */
 export function intercalarSugestoes<I>(itens:readonly I[],instante:(i:I)=>string|null,sugestoes:readonly SugestaoAriaThread[],o:{inicioJanela:string|null;fimJanela?:string|null}):(I|ItemSugestaoThread)[]{
  const inicio=o.inicioJanela===null?null:Date.parse(o.inicioJanela);
  const fim=o.fimJanela==null?null:Date.parse(o.fimJanela);

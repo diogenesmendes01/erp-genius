@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { calcularSaldoHorasEncerramento } from "./encerramento-horas";
 
-/** O chamador autentica e delimita o aluno e a transação. Somente apura origens persistidas. */
 export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, alunoId: string, matriculaId: string) {
   const m = await tx.matricula.findFirst({ where: { id: matriculaId, alunoId }, select: { moeda: true } });
   if (!m) throw new ErroRegra("Matrícula não encontrada para este aluno.");
@@ -10,8 +9,6 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
     liquidacaoAcerto: true,
     reservas: { orderBy: { id: "asc" }, include: { consumo: { include: { estorno: { select: { id: true } }, conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: true, credito: true } } } },
   } });
-  // Q173: compra na moeda anterior a uma troca aplicada é histórico do contrato. A troca só foi aplicada com
-  // saldo zero nessa compra, então ela não entra no acerto (como as cobranças em encerramento-contexto-tx).
   const trocasMoeda = await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId } } }, select: { moedaAnterior: true } });
   const moedasAnteriores = new Set(trocasMoeda.map((troca) => troca.moedaAnterior));
   const pendencias: string[] = [];
@@ -23,7 +20,6 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
     let minutosReservados = 0;
     for (const r of c.reservas) {
       if (r.consumo) {
-        // Q175: minutos estornados voltaram ao saldo e entram no que resta a liquidar.
         if (r.consumo.estorno) continue;
         const conferencia = r.consumo.conferenciaOcorrencia;
         if (conferencia) {
@@ -43,7 +39,6 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
     }
     if (c.moeda !== m.moeda && moedasAnteriores.has(c.moeda)) {
       const destinados = [...consumos, ...liquidacoesAnteriores].reduce((s, x) => s + x.minutos, 0);
-      // Nada é convertido: saldo que reaparecesse na moeda antiga fica visível como pendência, nunca é somado.
       if (minutosReservados || destinados < c.minutosComprados) pendencias.push(`A compra ${c.id} na moeda anterior (${c.moeda}) ainda tem minutos sem destino; resolva sem converter antes de apurar o encerramento.`);
       else historicas.add(c.id);
       return [];

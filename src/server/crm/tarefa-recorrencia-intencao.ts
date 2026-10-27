@@ -30,7 +30,6 @@ export async function cancelarIntencaoRecorrenciaTx(tx:Prisma.TransactionClient,
  const r=await tx.intencaoRecorrenciaTarefa.updateMany({where:{tarefaId,estado:"PENDENTE"},data:{estado:"CANCELADA_REABERTURA",versao:{increment:1}}});
  return r.count;
 }
-/** Última consulta de autoridade do autor humano; não reutiliza papéis capturados. */
 export async function conferirAutorRecorrenciaTx(tx:Prisma.TransactionClient,autor:UsuarioSessao,t:Tarefa):Promise<void>{
  const ids=[...new Set([autor.id,...(t.responsavelId?[t.responsavelId]:[])])];
  const rows=await tx.usuario.findMany({where:{id:{in:ids}}});

@@ -8,8 +8,6 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { VoltarPara } from "@/components/VoltarPara";
 import { IdentificacaoRegistro } from "@/components/IdentificacaoRegistro";
 
-// Quem aprova a troca (irreversível) vê de qual reposição e de quem se trata (docs/42 L1989; docs/43 §6
-// item 7): aluno, matrícula e a aula de origem — o `contexto` só trazia ids.
 export default async function TrocaFonteReposicaoPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { id } = await params;

@@ -20,7 +20,6 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
   const conferencia = await conferirRevisaoParaDecisao({ calendarioId: id, revisaoId });
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, r.calendario.fusoInstitucional);
   const data = (v: Date | string) => formatarInstanteExibicao(v, fusoExibicao, r.calendario.fusoInstitucional).texto;
-  // Tamanho do conjunto para a confirmação da aprovação (docs/42 L1102): turmas e encontros que mudam de data.
   const alterados = r.snapshot.revisoes.map((t) => t.previsao?.propostas.filter((p) => p.alterado).length ?? 0);
   const resumo = { turmas: alterados.filter((n) => n > 0).length, encontros: alterados.reduce((soma, n) => soma + n, 0) };
   return <div className="space-y-5">

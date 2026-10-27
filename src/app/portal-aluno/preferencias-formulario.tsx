@@ -13,7 +13,6 @@ export function PreferenciasFusoPortalFormulario({ atual }: { atual: string | nu
   const [ocupado, iniciar] = useTransition(), [erro, setErro] = useState(""), [feito, setFeito] = useState(""), [fuso, setFuso] = useState(atual ?? ""); const router = useRouter();
   function enviar() {
     const fusoExibicao = fuso.trim(); setErro(""); setFeito("");
-    // Mesma validação do campo e do servidor (fusoIanaValido); vazio é "sem preferência". Sem o jargão "IANA" (docs/42 L2652).
     const invalido = validadeDoFuso(fusoExibicao);
     if (invalido) { setErro(invalido); return; }
     iniciar(async () => { try { await salvarPreferenciaFusoPortalAluno({ fusoExibicao }); setFeito("Preferência salva."); router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } });

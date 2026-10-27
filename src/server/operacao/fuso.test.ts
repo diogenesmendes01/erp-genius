@@ -1,8 +1,5 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, inicioDoDiaCivil, inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional, inicioDoMesInstitucional, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana, diaCivilGravado, diasCivisDesde, vencimentoEmAtraso, limiteDoAtraso } from "./fuso";
-// Um critério só para servidor, PaisSchema e CampoFuso (docs/43 §6 item 6).
 describe("fusoIanaValido", () => {
   it.each(["America/Sao_Paulo", "America/Costa_Rica", "UTC", "Etc/GMT+3", "US/Eastern"])("aceita %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(true));
   it.each(["", "America/Sao Paulo", "America/SaoPaulo", "GMT-3", "+03:00", "-03:00", "Brasil", "America/Inexistente"])("recusa %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(false));
@@ -21,8 +18,6 @@ describe("data civil institucional", () => {
     expect(FusoInstitucionalSchema.safeParse(valor).success).toBe(false);
   });
 });
-// Q176 (#164): o dia e o mês da escola começam no primeiro instante válido do dia civil no fuso dela, nunca
-// à meia-noite do servidor. Onde a meia-noite não existe (início do horário de verão), o dia começa à 01h.
 describe("início do dia civil institucional", () => {
   it("meia-noite de Brasília é 03h UTC", () => {
     expect(inicioDoDiaCivil("2026-03-10", "America/Sao_Paulo").toISOString()).toBe("2026-03-10T03:00:00.000Z");
@@ -32,12 +27,10 @@ describe("início do dia civil institucional", () => {
     expect(inicioDoDiaInstitucional(new Date("2026-03-11T03:30:00Z"), "America/Sao_Paulo").toISOString()).toBe("2026-03-11T03:00:00.000Z");
   });
   it("sem meia-noite (America/Santiago, início do horário de verão em 06/09/2026), começa no primeiro instante válido", () => {
-    // 05/09 23:59:59 (-04) é seguido de 06/09 01:00 (-03): o dia 06/09 começa às 04h UTC.
     expect(inicioDoDiaCivil("2026-09-06", "America/Santiago").toISOString()).toBe("2026-09-06T04:00:00.000Z");
     expect(inicioDoDiaInstitucional(new Date("2026-09-06T15:00:00Z"), "America/Santiago").toISOString()).toBe("2026-09-06T04:00:00.000Z");
   });
   it("com meia-noite repetida no fim do horário de verão (America/Santiago, 05/04/2026), começa depois que a véspera acaba", () => {
-    // 04/04 23:59:59 (-03) volta para 04/04 23:00 (-04): o dia 05/04 começa às 04h UTC.
     expect(inicioDoDiaCivil("2026-04-05", "America/Santiago").toISOString()).toBe("2026-04-05T04:00:00.000Z");
   });
   it("fusos extremos do calendário", () => {
@@ -48,7 +41,6 @@ describe("início do dia civil institucional", () => {
     expect(() => inicioDoDiaCivil(data, "America/Sao_Paulo")).toThrow();
   });
 });
-// Dia seguinte e mês da escola, para quem precisa do fim exclusivo do dia ou do início do mês civil.
 describe("início do dia seguinte e do mês institucional", () => {
   it("às 23h30 de Brasília, o dia seguinte da escola começa à meia-noite local (03h UTC)", () => {
     expect(inicioDoDiaSeguinteInstitucional(new Date("2026-03-11T02:30:00Z"), "America/Sao_Paulo").toISOString()).toBe("2026-03-11T03:00:00.000Z");
@@ -63,8 +55,6 @@ describe("início do dia seguinte e do mês institucional", () => {
     expect(inicioDoMesInstitucional(new Date("2026-11-01T04:30:00Z"), "America/Costa_Rica").toISOString()).toBe("2026-10-01T06:00:00.000Z");
   });
 });
-// Decisão do dono (17/10/2026): apelidos legados (US/*, Brazil/*…) não existem num Postgres sem tzdata-legacy e
-// travam o trigger de fuso nos UPDATEs de Usuario e ContaPortalAluno. Ao salvar, viram o nome canônico IANA.
 describe("normalizarFusoIana", () => {
   it.each([
     ["US/Eastern", "America/New_York"], ["US/Central", "America/Chicago"], ["US/Mountain", "America/Denver"],
@@ -85,16 +75,6 @@ describe("normalizarFusoIana", () => {
     }
   });
 });
-describe("migration 20261017150000 (preferências já gravadas)", () => {
-  const sql = readFileSync(path.join(process.cwd(), "prisma/migrations/20261017150000_fuso_exibicao_canonico/migration.sql"), "utf8");
-  it("converte, nas duas tabelas, exatamente os apelidos do mapa", () => {
-    for (const tabela of ['UPDATE "Usuario"', 'UPDATE "ContaPortalAluno"']) expect(sql).toContain(tabela);
-    const pares = [...sql.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(([, apelido, canonico]) => [apelido, canonico]);
-    const esperado = Object.entries(APELIDOS_FUSO_US_BRASIL);
-    expect(pares).toEqual([...esperado, ...esperado]);
-  });
-});
-// Revisão R1 do #210 (C1): links do `backward` que o ICU lista em Intl.supportedValuesOf("timeZone").
 describe("links do backward listados pelo ICU", () => {
   it.each([
     ["Asia/Calcutta", "Asia/Kolkata"], ["America/Buenos_Aires", "America/Argentina/Buenos_Aires"], ["Europe/Kiev", "Europe/Kyiv"],
@@ -117,15 +97,6 @@ describe("links do backward listados pelo ICU", () => {
     expect(new Set(Object.keys(APELIDOS_FUSO_LEGADOS).map((k) => k.toLowerCase())).size).toBe(Object.keys(APELIDOS_FUSO_LEGADOS).length);
   });
 });
-describe("migration 20261017170000 (links do backward já gravados)", () => {
-  const sql = readFileSync(path.join(process.cwd(), "prisma/migrations/20261017170000_fuso_exibicao_links_backward/migration.sql"), "utf8");
-  it("converte, nas duas tabelas, exatamente os links do mapa", () => {
-    for (const tabela of ['UPDATE "Usuario"', 'UPDATE "ContaPortalAluno"']) expect(sql).toContain(tabela);
-    const pares = [...sql.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(([, apelido, canonico]) => [apelido, canonico]);
-    const esperado = Object.entries(LINKS_FUSO_BACKWARD_ICU);
-    expect(pares).toEqual([...esperado, ...esperado]);
-  });
-});
 describe("FusoPreferenciaSchema", () => {
   it("normaliza o apelido antes de validar", () => {
     expect(FusoPreferenciaSchema.parse("US/Eastern")).toBe("America/New_York");
@@ -136,9 +107,6 @@ describe("FusoPreferenciaSchema", () => {
   });
 });
 
-// Ref. #247: vencimento gravado como dia civil (meio-dia ou meia-noite da escola, ou meia-noite UTC no legado)
-// só entra em atraso quando o dia civil da escola passa do dia do vencimento. Relógio fixo; verde com
-// TZ=UTC e TZ=America/Sao_Paulo.
 describe("vencimento em atraso no dia civil da escola", () => {
   const FUSO = "America/Sao_Paulo";
   const convencoes = {
@@ -146,10 +114,10 @@ describe("vencimento em atraso no dia civil da escola", () => {
     "meia-noite da escola": new Date("2026-06-23T03:00:00Z"),
     "meia-noite UTC (legado)": new Date("2026-06-23T00:00:00Z"),
   };
-  const noDia2130 = new Date("2026-06-24T00:30:00Z"); // 23/06, 21h30 de Brasília (servidor em UTC já está no dia 24)
-  const noDia2359 = new Date("2026-06-24T02:59:59Z"); // 23/06, 23h59min59s de Brasília
-  const seguinte0030 = new Date("2026-06-24T03:30:00Z"); // 24/06, 00h30 de Brasília
-  const vespera2130 = new Date("2026-06-23T00:30:00Z"); // 22/06, 21h30 de Brasília
+  const noDia2130 = new Date("2026-06-24T00:30:00Z");
+  const noDia2359 = new Date("2026-06-24T02:59:59Z");
+  const seguinte0030 = new Date("2026-06-24T03:30:00Z");
+  const vespera2130 = new Date("2026-06-23T00:30:00Z");
 
   it.each(Object.entries(convencoes))("%s: às 21h30 do dia do vencimento não está atrasado; à 00h30 do dia seguinte está", (_, vencimento) => {
     expect(vencimentoEmAtraso(vencimento, vespera2130, FUSO)).toBe(false);

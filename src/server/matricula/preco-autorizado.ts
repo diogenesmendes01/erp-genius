@@ -3,12 +3,10 @@ import { z } from "zod";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { ConferenciaAlcadaSchema } from "./alcada-preparacao";
 
-/** Chamador mantém a matrícula bloqueada até concluir sua operação. */
 export async function exigirPrecoPreparacaoAutorizado(tx: Prisma.TransactionClient, matriculaId: string) {
   const preparacao = await tx.preparacaoComercialMatricula.findUnique({
     where: { matriculaId }, select: { referencias: true, decisaoPreco: { select: { aprovada: true } } },
   });
-  // Matrículas legadas continuam submetidas às validações do seu próprio fluxo.
   if (!preparacao) return;
   const memoria = z.object({ alcada: ConferenciaAlcadaSchema }).safeParse(preparacao.referencias);
   if (!memoria.success) throw new ErroRegra("A preparação não possui análise de preço conferível. Regularize antes de confirmar o contrato ou ativar a matrícula.");

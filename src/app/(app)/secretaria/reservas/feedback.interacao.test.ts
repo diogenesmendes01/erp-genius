@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): a conferência de vencimento da reserva punha
-// erro e "Resultado não confirmado…" no mesmo MensagemStatus do resultado. Agora: erro e incerteza em
-// role="alert", resultado da conferência em role="status", e o botão saindo do ocupado.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(), conferir: vi.fn(), conferirParticular: vi.fn(),
@@ -39,7 +36,6 @@ describe("ConferirReserva", () => {
   });
 
   it("resposta sem resultado: a incerteza sai em alerta, com a constante de ação sem chave, e a página não é atualizada", async () => {
-    // C10 (#170): antes era uma frase avulsa; agora a mesma instrução da falha de transporte desta ação.
     m.conferir.mockResolvedValueOnce({ ok: true });
     await clicar(tela(), "Conferir vencimento");
     expect(anuncios(tela())).toEqual({ alerta: [MSG_RESULTADO_INCERTO_SEM_CHAVE], status: [] });

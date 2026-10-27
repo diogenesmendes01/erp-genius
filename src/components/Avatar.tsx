@@ -9,7 +9,6 @@ const TAMANHOS = {
 } as const;
 const TONS = ["bg-avatar-1", "bg-avatar-2", "bg-avatar-3", "bg-avatar-4", "bg-avatar-5", "bg-avatar-6", "bg-avatar-7", "bg-avatar-8"] as const;
 
-/** Até duas iniciais de palavras com letras; números e emoji não identificam um nome. */
 export function iniciais(nome: string | null): string {
   const letras = (nome ?? "").trim().split(/\s+/).flatMap((palavra) =>
     Array.from(palavra.match(/\p{L}/u)?.[0]?.toLocaleUpperCase("pt-BR") ?? "").slice(0, 1));
@@ -17,7 +16,6 @@ export function iniciais(nome: string | null): string {
   return letras[0]! + (letras.length > 1 ? letras[letras.length - 1]! : "");
 }
 
-/** FNV-1a mantém a mesma cor do contato entre renders, sem depender do tema. */
 export function tomDoAvatar(chave: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < chave.length; i++) { hash ^= chave.charCodeAt(i); hash = Math.imul(hash, 0x01000193); }

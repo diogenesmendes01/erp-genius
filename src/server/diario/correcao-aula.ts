@@ -17,7 +17,6 @@ export async function revisarCorrecaoAula(input: { encontroId: string }) {
   });
 }
 
-/** Histórico da própria aula, inclusive após o fim do vínculo docente. */
 export async function consultarHistoricoCorrecaoAula(input: { encontroId: string; antesDaVersao?: number }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -26,7 +25,6 @@ export async function consultarHistoricoCorrecaoAula(input: { encontroId: string
   });
 }
 
-/** Conferência institucional das dependências; não publica a correção. */
 export async function revisarImpactosCorrecaoAula(input: { propostaId: string }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -35,7 +33,6 @@ export async function revisarImpactosCorrecaoAula(input: { propostaId: string })
   });
 }
 
-/** Rejeição terminal da proposta; não altera os registros acadêmicos originais. */
 export async function rejeitarCorrecaoAula(input: { propostaId: string; propostaHash: string; motivo: string }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -66,7 +63,6 @@ export async function rejeitarCorrecaoAula(input: { propostaId: string; proposta
   });
 }
 
-/** Publica a projeção conferida, sem reescrever o diário ou seus registros originais. */
 export async function aprovarCorrecaoAula(input: { propostaId: string; propostaHash: string; impactosHash: string; motivo: string; confirmarPreservacaoReposicoes?: boolean; revisaoFinanceiraDecisaoId?: string }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -126,7 +122,6 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
         impactos: { ...snapshotImpactos, ...(preservadas.length ? { preservacaoReposicoesConcluidas: preservadas } : {}),
           ...(continuadas.length ? { continuidadeReposicoesAutorizadas: continuadas } : {}) },
       } });
-      // Q175: o acerto financeiro da aula não cobrável nasce na mesma transação; o trigger diferido do banco exige os dois.
       if (d.revisaoFinanceiraDecisaoId) await aplicarRevisaoNaoCobravelTx(tx, { aprovacaoId: aprovacao.id, decisaoRevisaoId: d.revisaoFinanceiraDecisaoId, autorId: usuario.id });
       await registrarEvento(tx, { tipo: "CorrecaoAulaAprovada", agregadoTipo: "EncontroAgenda", agregadoId: proposta.encontroId,
         autorId: usuario.id, payload: { propostaId: proposta.id, aprovacaoId: aprovacao.id, versao: proposta.versao,
@@ -136,7 +131,6 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
   });
 }
 
-/** Preparação Q23: nunca altera o diário nem publica um resultado. */
 export async function proporCorrecaoAula(input: z.input<typeof propostaCorrecaoAulaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);

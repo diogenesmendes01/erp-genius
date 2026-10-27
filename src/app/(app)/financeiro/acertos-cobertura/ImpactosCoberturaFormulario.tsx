@@ -25,7 +25,6 @@ export function ImpactosCoberturaFormulario({ matriculaId, propostaId, conclusao
   const [limites, setLimites] = useState<Record<string, { inicio: string; fim: string }>>({});
   const [justificativas, setJustificativas] = useState<Record<string, string>>({});
   const [motivo, setMotivo] = useState(""), [evidencia, setEvidencia] = useState("");
-  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar a mesma entrada confere a mesma operação.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const linhas = cobrancas.map(c => ({ cobrancaId: c.id, classificacao: classificacoes[c.id] ?? "AFETADA", coberturaInicioNova: limites[c.id]?.inicio || undefined, coberturaFimNova: limites[c.id]?.fim || undefined, justificativa: (justificativas[c.id] ?? "").trim() }));

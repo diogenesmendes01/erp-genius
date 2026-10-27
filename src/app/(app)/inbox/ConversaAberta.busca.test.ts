@@ -19,7 +19,6 @@ const ms=Array.from({length:150},(_,i)=>({id:'id['+i+']',corpo:i===149?'Matrícu
 const props={item:{id:'a',capacidades:[],status:'EM_ATENDIMENTO'},usuario:{id:'u',papeis:[]},fuso:'UTC',conversa:{mensagens:ms,notas:[{id:'nota',nota:'Matrícula não buscável',criadoEm:'2026-10-22T12:00:00Z'}],temMaisAntes:true,temMaisDepois:true,maisAntigas:vi.fn()},aoVoltar(){},aoAlternarPainel(){},aoMudar(){},podeEnviar:false} as unknown as PropsConversaAberta;
 function tela(p=props){
  let t=g.atual!.renderizar(ConversaAberta,p);
- // Mantém os testes de ligação reais atravessando os dois coordenadores de slots.
  for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'||typeof n.props.renderizar==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
  return t;
 }
@@ -42,7 +41,6 @@ it('cada ativação entrega foco ao campo antes da carga, inclusive a última qu
   const pendente=new Promise<void>(r=>{resolver=r;});
   const t=paginacaoReal(()=>{expect(t.dom.documento.activeElement===t.campo).toBe(true);return pendente;});
   t.botao.focus();t.ativar();expect(t.dom.documento.activeElement===t.campo).toBe(true);
-  // A carga pode remover/recriar o controle; o input é o dono do foco desde a ativação.
   t.dom.documento.body.removeChild(t.botao);
   if(!ultima)t.dom.documento.body.appendChild(t.dom.documento.createElement('button'));
   resolver();await pendente;expect(t.dom.documento.activeElement===t.campo).toBe(true);
@@ -56,7 +54,6 @@ it('conclusão ou erro tratado não toma foco externo movido durante a espera',a
  for(const falha of [false,true]) {
   g.atual=criarGanchos();let resolver!:()=>void,rejeitar!:(e:Error)=>void,erro:string|null=null;
   const resposta=new Promise<void>((resolve,reject)=>{resolver=resolve;rejeitar=reject;});
-  // Como maisAntigas real, o produtor observa a falha e resolve após publicar o erro.
   const tarefa=resposta.catch(e=>{erro=(e as Error).message;});
   const t=paginacaoReal(()=>tarefa);
   t.botao.focus();t.ativar();expect(t.dom.documento.activeElement===t.campo).toBe(true);

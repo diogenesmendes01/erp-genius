@@ -49,7 +49,6 @@ interface FotoFinal {
 function mesmoConjunto(a: readonly string[], b: readonly string[]): boolean {
  return JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 }
-/** Última leitura qualificada READ COMMITTED, nunca promessa de linearização global. */
 async function conferirFotoFinal(tx: Prisma.TransactionClient, e: EntradaRamoExistenteConversa, t: TuplaExistente, perfilUsado: UsuarioSessao): Promise<void> {
  const rows = await tx.$queryRaw<{ foto: FotoFinal }[]>`
   SELECT jsonb_build_object(
@@ -74,14 +73,12 @@ async function conferirFotoFinal(tx: Prisma.TransactionClient, e: EntradaRamoExi
   LEFT JOIN "ConversaWhatsApp" cv ON cv.id = ${t.conversaId}
   LEFT JOIN "AtendimentoWhatsApp" a ON a.id = ${t.atendimentoId}
  `;
- // Daqui até retornar não há outro await: testemunhas do mesmo snapshot para os guards usados.
  const f = rows.length === 1 ? rows[0].foto : null;
  if (!f) throw new ErroAutenticacao();
  const u = f.autor;
  if (!u?.ativo) throw new ErroAutenticacao();
  if (u.id !== perfilUsado.id || !mesmoConjunto(u.papeis, perfilUsado.papeis) || !mesmoConjunto(u.permissoes, perfilUsado.permissoes ?? [])) throw mudou();
  const admin = u.papeis.includes(Papel.ADMINISTRADOR), gerente = u.papeis.includes(Papel.GERENTE_COMERCIAL), vendedor = u.papeis.includes(Papel.VENDEDOR);
- // Owner é histórico: abertura usa scope atual, não a política de escolha de dono de NOVO.
  if (t.ownerId !== null && f.owner?.id !== t.ownerId) throw mudou();
  if (!admin && !(vendedor && (t.ownerId === u.id || f.coberturaVigente)) && !(gerente && f.owner?.gerenteComercialId === u.id)) throw mudou();
  if (!f.numero?.ativo || f.numero.id !== e.numeroId || f.numero.finalidade !== "VENDAS" || (!admin && f.numero.donoId !== u.id && !(gerente && f.numero.donoId && f.numero.donoGerenteId === u.id))) throw mudou();
@@ -104,7 +101,6 @@ function lerReplay(payload: Prisma.JsonValue, atendimentoId: string, e: EntradaR
  if (payload.criado !== false || payload.numeroId !== e.numeroId || payload.leadId !== lead.id || payload.pessoaId !== lead.pessoaId || payload.ownerId !== lead.ownerId || typeof payload.contatoId !== "string" || !payload.contatoId || typeof payload.conversaId !== "string" || !payload.conversaId) throw mudou();
  return { ...lead, atendimentoId, contatoId: payload.contatoId, conversaId: payload.conversaId };
 }
-/** EXISTENTE-only. O caller mantém a única TX; nunca cria Pessoa/Lead nem transfere carteira. */
 export async function abrirRamoExistenteConversaTx(tx: Prisma.TransactionClient, e: EntradaRamoExistenteConversa): Promise<{ atendimentoId: string; leadId: string; criado: false }> {
  if (normalizarNumeroNovaConversa(e.telefoneE164) !== e.telefoneE164) throw new ErroRegra("Informe o telefone internacional válido.");
  const chave = ChaveIdempotenciaSchema.parse(e.chaveIdempotencia);
@@ -119,7 +115,6 @@ export async function abrirRamoExistenteConversaTx(tx: Prisma.TransactionClient,
   await conferirTupla(tx, e, { ...t, responsavelId: a.responsavelId });
   return { atendimentoId: t.atendimentoId, leadId: lead.id, criado: false };
  }
- // A espera de idempotência pode ter mudado escopo, carteira ou identidade.
  if (!mesmaIdentidade(lead, (await resolverLead(tx, e)).lead)) throw mudou();
  let contato = await tx.contatoWhatsApp.findUnique({ where: { telefoneE164: e.telefoneE164 } });
  if (contato) {

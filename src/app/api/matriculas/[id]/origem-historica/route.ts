@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoComPapel, ErroAutenticacao, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { registrarOrigemContratualHistoricaTx } from "@/server/contratos/origem-historica-tx";
 
-// Registro da origem contratual histórica: PDF assinado (multipart) + transcrição (JSON no mesmo formulário).
-// Sem Server Action porque os bytes do PDF são preservados no banco e conferidos por hash.
 export const runtime = "nodejs";
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -19,7 +17,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const form = await request.formData();
     const arquivo = form.get("pdfAssinado");
     if (!(arquivo instanceof File)) return NextResponse.json({ erro: "Envie o PDF assinado." }, { status: 400, headers: privado });
-    // O corte por content-length não vale para upload chunked (sem o cabeçalho): confere o tamanho do arquivo antes de lê-lo.
     if (arquivo.size > MAX_BYTES) return NextResponse.json({ erro: "PDF acima de 20 MiB." }, { status: 413, headers: privado });
     const pdfAssinado = Buffer.from(await arquivo.arrayBuffer());
     let transcricao: unknown;

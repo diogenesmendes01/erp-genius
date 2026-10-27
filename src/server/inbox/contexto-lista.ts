@@ -19,7 +19,6 @@ export interface OperacaoListaInbox {
   global():Promise<ContextoListaInbox>;
 }
 export interface OpcoesOperacaoInbox { db?:Db; agora?:Date; enviar?:boolean; operacao?:OperacaoListaInbox }
-/** Contexto interno preguiçoso. Construir não consulta DB nem inicializa ConfigIA. */
 export function criarOperacaoListaInbox(u:UsuarioSessao,o:Omit<OpcoesOperacaoInbox,"operacao">={}):OperacaoListaInbox {
   const db=o.db??prisma,agora=new Date((o.agora??new Date()).getTime()),enviar=o.enviar===true;
   if(!Number.isFinite(agora.getTime()))throw Error("Instante Inbox inválido.");
@@ -29,7 +28,6 @@ export function criarOperacaoListaInbox(u:UsuarioSessao,o:Omit<OpcoesOperacaoInb
   const escopo=()=>promessaEscopo??=Promise.resolve().then(()=>escopoAtendimentos(usuario,{db,agora,enviar}));
   const global=()=>promessaGlobal??=Promise.resolve().then(async()=>{
     const s=await situacaoAria(agora,db);
-    // Conserva somente o upsert legado de ConfigIA, sem buscar handoffs globais.
     const orcamento=await estadoOrcamento(agora,db);
     return {db,usuarioId:usuario.id,agora,escopo:await escopo(),
       ariaAtiva:ariaAtivaGlobal({estado:s.estado,pausada:s.pausada,temVersao:s.versao!==null},orcamento),
@@ -37,7 +35,6 @@ export function criarOperacaoListaInbox(u:UsuarioSessao,o:Omit<OpcoesOperacaoInb
   });
   return Object.freeze({db,usuarioId:usuario.id,papeisChave:JSON.stringify([...usuario.papeis].sort()),agora,enviar,escopo,global});
 }
-/** Nunca reutilizar um snapshot de outro ator, Db, instante ou escopo de envio. */
 export function resolverOperacaoListaInbox(u:UsuarioSessao,o:OpcoesOperacaoInbox={}):OperacaoListaInbox {
   const op=o.operacao;
   if(!op)return criarOperacaoListaInbox(u,o);
@@ -45,7 +42,6 @@ export function resolverOperacaoListaInbox(u:UsuarioSessao,o:OpcoesOperacaoInbox
     || (o.enviar!==undefined&&o.enviar!==op.enviar) || (o.agora!==undefined&&o.agora.getTime()!==op.agora.getTime()))throw Error("Operação Inbox de outro contexto.");
   return op;
 }
-/** Assinatura/shape M2 preservados; operação permite compartilhar a promessa na fase3. */
 export async function carregarContextoListaInbox(db:Db,u:UsuarioSessao,agora:Date=new Date(),enviar=false):Promise<ContextoListaInbox> {
   return criarOperacaoListaInbox(u,{db,agora,enviar}).global();
 }

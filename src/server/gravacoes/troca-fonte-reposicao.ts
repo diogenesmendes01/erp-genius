@@ -102,7 +102,6 @@ async function carregarContextoTx(tx: Prisma.TransactionClient, reposicaoId: str
   };
 }
 
-/** Prepara a adoção da revisão vigente da publicação, sem receber arquivo ou ID de fonte do navegador. */
 export async function proporTrocaFonteReposicaoGravacao(input: unknown) {
   return executarAcao(async () => {
     const preparador = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -131,7 +130,6 @@ export async function proporTrocaFonteReposicaoGravacao(input: unknown) {
   });
 }
 
-/** Decide de forma independente; aprovação relê a revisão fixa no Drive sem baixar ou enviar conteúdo. */
 export async function decidirTrocaFonteReposicaoGravacao(input: unknown) {
   return executarAcao(async () => {
     const decisor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -185,14 +183,10 @@ export async function decidirTrocaFonteReposicaoGravacao(input: unknown) {
       await registrarEvento(tx, { tipo: "FonteReposicaoAdotada", agregadoTipo: "Matricula", agregadoId: contexto.matriculaId, autorId: decisor.id,
         payload: { propostaId: proposta.id, decisaoId: decisao.id, materialId: contexto.materialId, fonteAnteriorId: contexto.fonteMaterialAnterior.id, fontePublicacaoId: contexto.fontePublicacao.id, fonteMaterialId: fonte.id, versao: fonte.versao } });
       return { id: decisao.id, aprovada: true as const, fonteId: fonte.id };
-    // A aplicação toma locks no usuário, publicação e material no SQL. Em
-    // Read Committed, a declaração da fonte relê a cabeça após esperar uma
-    // publicação concorrente, sem conservar um snapshot anterior ao lock.
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   });
 }
 
-/** Consulta contextual para a gestão: o navegador só recebe o estado da reposição já escolhida. */
 export async function consultarTrocaFonteReposicaoGravacao(input: unknown) {
   const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const dados = z.object({ reposicaoId: id }).strict().parse(input);

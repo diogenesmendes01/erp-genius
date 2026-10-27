@@ -13,13 +13,10 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const parametros = await searchParams;
   const antes = typeof parametros.antes === "string" ? parametros.antes : undefined;
-  // Busca no servidor (E4): por turma, assunto da aula ou professor; mantida ao paginar.
   const busca = lerBuscaDiario(parametros);
   const [historico, turmas, preferencia, fusoEscola] = await Promise.all([listarAulasDiario(usuario, antes, busca), listarTurmasParaDiario(usuario), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
-  // Data e hora da aula digitadas no fuso pessoal; sem preferência, no da escola (lote 3 do fuso pessoal nas telas).
   const fusoEntrada = fusoDoCampoLocal(preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEscola);
   return <div className="space-y-6">
-    {/* As sub-seções do diário estão nas abas do layout (E2); Avaliações é do acadêmico. */}
     <Link className="inline-block text-sm text-brand-700 underline" href="/academico/avaliacoes">Avaliações e histórico por matrícula</Link>
     <form method="get" action="/diario" role="search" aria-label="Buscar no histórico do diário" className="flex flex-wrap items-center gap-2">
       <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar aula por turma, assunto ou professor" placeholder="Buscar por turma, assunto ou professor…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />

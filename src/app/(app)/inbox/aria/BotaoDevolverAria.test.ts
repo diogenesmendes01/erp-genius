@@ -5,7 +5,6 @@ import { afterEach,beforeEach,expect,it,vi } from "vitest";
 import { criarDomMinimo,desligarObservadores,type Elemento,type Documento } from "@/test/dom-minimo";
 import { BotaoDevolverAria, ControladorDevolverAria } from "./BotaoDevolverAria";
 const devolver=vi.hoisted(()=>vi.fn());
-// DOM mínimo não implementa SVG; manter controlador/hook reais.
 vi.mock("@tabler/icons-react",()=>({IconSparkles:()=>createElement("span",{"aria-hidden":true})}));
 vi.mock("@/server/aria/acoes",()=>({devolverParaAria:devolver}));
 let root:Root,host:Elemento,doc:Documento;

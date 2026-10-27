@@ -1,7 +1,6 @@
 import { afterAll, afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Papel, type Prisma } from "@prisma/client";
 
-// Independente de #372: somente API/fixtures públicas do atendimento #361.
 const sessao = vi.hoisted(() => ({ id: "" }));
 vi.mock("@/server/_shared/sessao", async original => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -35,7 +34,6 @@ async function lead(dados: Partial<Prisma.OportunidadeUncheckedCreateInput> = {}
   return prisma.oportunidade.create({ data: { codigo: `L-OPCOES-OR-${++sequencia}`, nome: "Lead fictício opções", ...dados } });
 }
 async function foto() {
-  // Rows completas: detecta updates além de inserts/deletes nas entidades do fluxo.
   return {
     usuarios: await prisma.usuario.findMany({ orderBy: { id: "asc" } }),
     leads: await prisma.oportunidade.findMany({ orderBy: { id: "asc" } }),

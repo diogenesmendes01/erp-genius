@@ -1,8 +1,6 @@
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-// Consultas (leitura) de Turmas — chamadas por Server Components.
-
 export async function listarTurmas() {
   return prisma.turma.findMany({
     orderBy: { criadoEm: "desc" },
@@ -11,13 +9,11 @@ export async function listarTurmas() {
       modalidade: true,
       nivel: { include: { idioma: true } },
       professor: { select: { id: true, nome: true } },
-      // Mantém contagens separadas de matriculados e reservas ocupantes para calcular vagas.
       _count: { select: { alocacoes: { where: { ativa: true } }, reservasMatricula: { where: { status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } } } },
     },
   });
 }
 
-/** Níveis (com idioma) para o seletor de turma. */
 export async function listarNiveis() {
   return prisma.nivel.findMany({
     orderBy: [{ idioma: { nome: "asc" } }, { ordem: "asc" }],
@@ -25,7 +21,6 @@ export async function listarNiveis() {
   });
 }
 
-/** Usuários com papel de Professor, para alocar à turma. */
 export async function listarProfessores() {
   return prisma.usuario.findMany({
     where: { papeis: { has: Papel.PROFESSOR }, ativo: true },

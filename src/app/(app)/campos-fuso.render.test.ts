@@ -2,9 +2,6 @@ import { createElement, type ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 6: os campos de fuso migrados para o CampoFuso, renderizados de verdade. Cada um sai com a
-// lista de sugestões própria do CampoFuso (`list="fusos-…"`), com o valor inicial esperado (o fuso da escola,
-// do registro ou da preferência; vazio quando não há um conhecido) e com o `name` que a action lê.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("@/server/agenda/indisponibilidade", () => ({ solicitarIndisponibilidadeLocal: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-ocorrencia-local", () => ({ registrarOcorrenciaSegundaChamadaLocal: vi.fn() }));
@@ -25,7 +22,6 @@ import { FusoExibicaoFormulario } from "./preferencias/FusoExibicaoFormulario";
 import { PreferenciasFusoPortalFormulario } from "../portal-aluno/preferencias-formulario";
 import { PaisFormulario } from "./configuracao/paises/PaisFormulario";
 
-/** A tag do <input> com o `name` dado (o CampoFuso), ou "". */
 const campo = (html: string, name: string) => new RegExp(`<input[^>]*name="${name}"[^>]*>`).exec(html)?.[0] ?? "";
 const render = <P extends object>(c: ComponentType<P>, props: P) => renderToStaticMarkup(createElement(c, props));
 

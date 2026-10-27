@@ -8,7 +8,6 @@ import { normalizarParaOrdenacao } from "@/lib/nome-ordenacao";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 
 const normal = normalizarParaOrdenacao;
-/** Busca limitada; nunca lista usuários antes de conferir leitura do solicitante. */
 export async function listarCandidatosMencao(u: UsuarioSessao, id: string, busca: string): Promise<CandidatoMencao[] | null> {
   if (!await atendimentoVisivel(u, id)) return null;
   const q = normal(busca.trim());

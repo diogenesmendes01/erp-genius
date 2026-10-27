@@ -10,11 +10,6 @@ const MOTIVO_ACAO = {
   agendarExperimental: "Use “Agendar experimental”.",
 } as const;
 
-/**
- * Move a etapa pela máquina de estados do funil (`destinoDoArraste`), dentro da transação do chamador.
- * Trava a linha ("SELECT … FOR UPDATE") antes de ler a etapa, para que dois movimentos concorrentes
- * não gravem `de` desatualizado. Fica fora de "use server" de propósito: recebe `tx`.
- */
 export async function moverEtapaTx(tx: Prisma.TransactionClient, autor: UsuarioSessao, id: string, etapa: EtapaLead): Promise<void> {
   exigirPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   const visivel = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(autor, tx)] }, select: { id: true } });

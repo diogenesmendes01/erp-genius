@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// "Faltou" no check-in da experimental (docs/42 L2693; fatia B, issue #169): grava no-show e dispara a
-// recuperação de no-show, sem correção pela tela. O botão só abre o ConfirmarAcao com o nome do lead e a
-// data da aula; só a confirmação chama a action. "Compareceu" continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   checkin: vi.fn(), refresh: vi.fn(),
@@ -35,7 +32,6 @@ const experimentais = [
 const tela = (): ReactNode => m.ganchos!.renderizar(HomeProfessor, { nome: "Professor Um", turmas: [], experimentais, proximaExperimental: null, preferenciaFusoExibicao: null });
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
-/** Os botões "Faltou"/"Compareceu" da linha `i` (na ordem da lista). */
 const daLinha = (t: ReactNode, rotulo: string, i: number): No =>
   elementos(t).filter((n: No) => n.type === "button" && texto(n.props.children).trim() === rotulo)[i];
 
@@ -56,7 +52,7 @@ describe("HomeProfessor — \"Faltou\" passa pela confirmação", () => {
     expect(consequencia).toContain("13/10/2026, 17:00");
     expect(consequencia).toContain("recuperação de no-show");
     expect(consequencia).toContain("Não há desfazer pela tela");
-    expect(m.checkin).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.checkin).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.checkin).toHaveBeenCalledTimes(1);
     expect(m.checkin).toHaveBeenCalledWith("lead-bia", false);
@@ -84,7 +80,7 @@ describe("HomeProfessor — \"Faltou\" passa pela confirmação", () => {
     m.checkin.mockResolvedValueOnce({ ok: false, erro: "Não há experimental agendada para check-in neste lead." });
     expect(await confirmarNoDialogo(confirmacoes(tela())[0], usar)).toEqual({ erro: "Não há experimental agendada para check-in neste lead.", confirmarDisponivel: true });
     m.checkin.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO); // check-in idempotente por natureza (#166, 5º lote)
+    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO);
     expect(confirmacoes(tela())).toHaveLength(1);
     expect(m.refresh).not.toHaveBeenCalled();
   });

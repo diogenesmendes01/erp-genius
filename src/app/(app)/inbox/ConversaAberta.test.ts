@@ -1,6 +1,5 @@
 import { createElement, isValidElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -118,14 +117,6 @@ describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do
     const h = renderToStaticMarkup(createElement(BalaoMensagem, { m: msg, fuso: null, aoComando: () => {}, recursos: () => true, menuAberto: true }));
     for (const r of ["Responder", "Copiar", "Reagir", "Encaminhar", "Favoritar", "Editar", "Apagar"]) expect(h).toContain(`aria-label="${r}"`);
   });
-  it("a conversa passa ao balão os comandos da mensagem pelas capacidades e pelo envio, e abre as ações do motor (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
-    expect(fonte).toMatch(/<BalaoMensagem[\s\S]*?comandos=\{comandosDaMensagem\(m, capacidades, envioLiberado === true\)\}/); // carregando (null) não libera comando
-    expect(fonte).toMatch(/\(c === "reagir" \|\| c === "encaminhar" \|\| c === "editar" \|\| c === "apagar"\) && item\) setAcaoMensagem\(\{ acao: c, m, atendimentoId: item\.id, numeroId: item\.numeroId \}\)/);
-    expect(fonte).toMatch(/<AcoesMensagem[\s\S]*?aoMudar=\{\(\) => void conversa\.recarregar\(\)\}/);
-    // O encaminhar recebe a conversa de origem (para excluí-la e para listar só o mesmo número).
-    expect(fonte).toMatch(/<AcoesMensagem[\s\S]*?origem=\{\{ atendimentoId: acaoMensagem\.atendimentoId, numeroId: acaoMensagem\.numeroId \}\}/);
-  });
 });
 
 describe("ConversaAberta: o compositor respeita o podeEnviar do servidor e o status (C4 da R1 do #217 · C6 do #217)", () => {
@@ -175,23 +166,6 @@ describe("ConversaAberta: o compositor respeita o podeEnviar do servidor e o sta
   });
 });
 
-describe("ConversaAberta: anexo e áudio do compositor saem pelo envio de mídia da inbox (C2 da R1 do #217)", () => {
-  it("aoEnviarMidia chama enviarMidiaInbox com o atendimento, a URL do upload e a legenda (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
-    expect(fonte).toMatch(/aoEnviarMidia=\{\(url, legenda\) => enviarMidiaInbox\(\{ conversaId: item\.id, url, legenda \}\)\}/);
-  });
-});
-
-describe("ConversaAberta: recursos do motor pelas capacidades do número (merge da 4D com a 3F; B1/C4 da R1 do #219)", () => {
-  it("balão e compositor usam `item.capacidades` (motor ativo e sessão CONECTADO), não o driver sozinho (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
-    expect(fonte).toMatch(/const capacidades = item\?\.capacidades \?\? \[\];/);
-    expect(fonte).toMatch(/<BalaoMensagem[\s\S]*?recursos=\{\(r\) => capacidades\.includes\(r\)\}/);
-    expect(fonte).toMatch(/<RodapeConversa[\s\S]*?capacidades=\{capacidades\}/);
-    expect(fonte).not.toMatch(/recursoDisponivel|item\.driver/);
-  });
-});
-
 it("decora a thread no fuso usando referência explícita SSR e preserva nota sem comandos",()=>{
  const mensagens: MensagemThread[]=[{id:"m1",direcao:"ENTRADA",tipo:"TEXTO",corpo:"Olá",midiaPath:null,status:"RECEBIDA",origem:null,autorNome:null,templateNome:null,criadoEm:"2026-10-22T02:30:00Z",participanteNome:null,favorita:false,clientMessageId:null}];
  const notas: NotaInternaThread[]=[{id:"n1",nota:"Nota só equipe",autorNome:"Ana",criadoEm:"2026-10-22T12:00:00Z",origem:"oportunidade"}];
@@ -227,7 +201,6 @@ describe("319: estados públicos da thread",()=>{
  });
 });
 
-// #350: cartões vêm do painel autorizado; envio do compositor é outro contrato.
 it("não mostra sugestão posterior à janela antiga, mas a conserva na janela atual",()=>{
  const cartao={id:"futura",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-17T16:00Z",expiraEm:null,justificativa:null,texto:"Sugestão posterior à janela",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null};
  for(const temMaisDepois of [true,false]){

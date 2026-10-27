@@ -9,7 +9,6 @@ import { EmitirContinuidadeMensalSchema } from "./continuidade-emissao-schema";
 
 const civil = (data: Date) => data.toISOString().slice(0, 10);
 
-/** Q30/Q64/Q160/Q161/Q162: executor sem sessão, cron ou UI; cria uma única mensalidade por âncora. */
 export async function emitirContinuidadeMensalTx(tx: Prisma.TransactionClient, input: unknown) {
   const dados = EmitirContinuidadeMensalSchema.parse(input);
   const agora = new Date();

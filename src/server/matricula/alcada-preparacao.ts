@@ -8,7 +8,6 @@ export const ConferenciaAlcadaSchema = z.object({
     resultado: z.enum(["DENTRO_ALCADA", "EXIGE_APROVACAO", "REFERENCIA_INSUFICIENTE"]) })).length(2),
 });
 
-/** Análise de preço somente: não aprova cadastro, contrato, cobrança ou ativação. */
 export function conferirAlcadaPreparacao(input: {
   regime: "MENSALIDADE" | "HORA_PARTICULAR"; moeda: string; taxa: string; servico: string;
   limiteTaxa: Prisma.Decimal.Value | null; limiteMensalidade: Prisma.Decimal.Value | null;

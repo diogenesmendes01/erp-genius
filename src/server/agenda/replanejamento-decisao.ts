@@ -14,14 +14,10 @@ import { criarAvisosReplanejamentoConjuntoTx } from "./replanejamento-avisos-tx"
 const Entrada = z.object({ calendarioId: z.string().min(1), revisaoId: z.string().min(1), aprovar: z.boolean(), motivo: z.string().trim().min(5).max(2000), excecoesAutorizadas: z.array(z.string().min(1)).max(1000).default([]) }).strict();
 const autorizacoesCanonicas = (ids: readonly string[]) => [...new Set(ids)].sort();
 
-/** Decide uma revisão inteira. A aprovação publica a versão do calendário e move
- * somente encontros PREVISTO futuros da própria revisão na mesma transação. */
 export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeof Entrada>) {
  return executarAcao(async () => {
   const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
   const d = Entrada.parse(input);
-  // O lock do calendário não basta em SERIALIZABLE: o snapshot precede a espera
-  // pelo lock. A decisão concorrente perdedora é repetida e cai no replay idempotente.
   return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
    const usuario = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
@@ -73,8 +69,6 @@ export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeo
    await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: r.id, decisaoId: decisao.id, estadoHash: r.estadoHash } });
    const evento = await registrarEvento(tx, { tipo: "ReplanejamentoConjuntoAplicado", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id, payload: { aprovada: true, calendarioId: r.calendarioId, decisaoCalendarioId: decisaoCalendario.id, revisaoId: r.id, decisaoId: decisao.id, encontrosIds: ids, horarios: propostas.map((p) => ({ encontroId: p.encontroId, inicioAnterior: p.inicioAnterior, fimAnterior: p.fimAnterior, inicioProposto: p.inicioProposto, fimProposto: p.fimProposto })), excecoesAutorizadas: autorizacoes, motivo: d.motivo } });
    if (ids.length) await criarAvisosReplanejamentoConjuntoTx(tx, { eventoId: evento.id, rascunhoId: r.id });
-   // Avalia já dentro do callback para que uma violação deferred retorne um erro
-   // de negócio, sem parecer uma aplicação bem-sucedida ao chamador.
    await tx.$executeRawUnsafe('SET CONSTRAINTS "validar_aplicacao_replanejamento_material_167" IMMEDIATE');
    return { id: decisao.id, aprovada: true, aplicada: true };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 }));

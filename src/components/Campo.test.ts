@@ -9,11 +9,9 @@ import { CampoFuso } from "./CampoFuso";
 type Props = { rotulo?: ReactNode; obrigatorio?: boolean; dica?: ReactNode; erro?: string | null; id?: string; className?: string };
 type PropsCampo = Parameters<typeof Campo>[0];
 
-/** <Campo> com o controle como filho: a função vai no 3º argumento do createElement (o React a entrega em `children`). */
 const elCampo = (props: Omit<PropsCampo, "children">, filho: PropsCampo["children"]) =>
   createElement(Campo, props as PropsCampo, filho as unknown as ReactNode);
 
-/** Campo com um <input> espalhando a ligação — o uso padrão nas telas. */
 const comInput = (props: Props) =>
   renderToStaticMarkup(elCampo({ rotulo: "Nome", ...props }, (campo: LigacaoCampo) => createElement("input", { ...campo, className: "c" })));
 
@@ -54,7 +52,6 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
     const obrig = comInput({ id: "n", obrigatorio: true });
     expect(attr(tag(obrig, "input"), "aria-required")).toBe("true");
     expect(obrig).toContain('<span aria-hidden="true" class="text-red-700"> *</span></label>');
-    // Não põe `required` nativo: bloquear o envio é decisão da tela.
     expect(tag(obrig, "input")).not.toMatch(/\srequired=/);
     const opcional = comInput({ id: "n" });
     expect(opcional).not.toContain("aria-required");
@@ -79,7 +76,6 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
     const html = comInput({ id: "n", dica: "Como no documento.", erro: "Informe o nome." });
     expect(attr(tag(html, "input"), "aria-describedby")).toBe("n-dica n-erro");
     expect(html).toContain(`<span id="n-dica" class="${DICA_CAMPO}">Como no documento.</span>`);
-    // Ordem visual: controle, dica, erro.
     expect(html.indexOf("<input")).toBeLessThan(html.indexOf('id="n-dica"'));
     expect(html.indexOf('id="n-dica"')).toBeLessThan(html.indexOf('id="n-erro"'));
     const soDica = comInput({ id: "n", dica: "Como no documento." });
@@ -92,10 +88,8 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
       const html = comInput({ id: "n", dica });
       expect(html, String(dica)).not.toContain("aria-describedby");
       expect(html, String(dica)).not.toContain('id="n-dica"');
-      // Com erro, só o erro é descrito.
       expect(attr(tag(comInput({ id: "n", dica, erro: "Informe o nome." }), "input"), "aria-describedby"), String(dica)).toBe("n-erro");
     }
-    // Zero é conteúdo (React o mostra): continua sendo dica.
     expect(attr(tag(comInput({ id: "n", dica: 0 }), "input"), "aria-describedby")).toBe("n-dica");
   });
 
@@ -173,7 +167,6 @@ describe("focarPrimeiroComErro", () => {
     const ids = { nome: "f-nome", email: "f-email", pais: "f-pais" };
     expect(focarPrimeiroComErro({ email: "E-mail inválido.", nome: "Informe o nome." }, ids)).toBe(true);
     expect(focados).toEqual(["f-email"]);
-    // Chave sem mensagem não conta.
     expect(focarPrimeiroComErro({ nome: "", pais: "Selecione o país." }, ids)).toBe(true);
     expect(focados).toEqual(["f-email", "f-pais"]);
     expect(focarPrimeiroComErro({}, ids)).toBe(false);

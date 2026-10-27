@@ -13,12 +13,9 @@ import type { Resultado } from "@/server/_shared/resultado";
 export function PrepararResolucao({ reservaId, versao, fuso, particular = false }: { reservaId: string; versao: number; fuso: string; particular?: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [tipo, setTipo] = useState<"PRORROGAR" | "LIBERAR">("PRORROGAR");
-  // A chave é a mesma entre tentativas e o servidor devolve a proposta existente quando ela se repete:
-  // na falha de transporte, reenviar sem alterar é seguro (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true }); const ocupado = acao.ocupado;
   return <form className="space-y-3 rounded border p-4" onSubmit={async (e) => { e.preventDefault(); const dados = new FormData(e.currentTarget);
     let novoPrazo: string | undefined;
-    // Prazo conferido aqui, antes da action: horário inexistente ou ambíguo no fuso é erro de preenchimento.
     try { novoPrazo = tipo === "PRORROGAR" ? instanteDaGrade(String(dados.get("data")), String(dados.get("horario")), fuso).toISOString() : undefined; }
     catch (erro) { acao.limpar(); acao.setErro(erro instanceof Error ? erro.message : "Confira a data e o horário do novo prazo."); return; }
     chave.current ??= crypto.randomUUID(); const chaveIdempotencia = chave.current;
@@ -36,7 +33,6 @@ export function PrepararResolucao({ reservaId, versao, fuso, particular = false 
 }
 export function DecidirResolucao({ propostaId, podeAprovar, particular = false }: { propostaId: string; podeAprovar: boolean; particular?: boolean }) {
   const router = useRouter(); const [motivo, setMotivo] = useState("");
-  // A decisão não recebe chave de idempotência; na falha de transporte vale a mensagem própria de decisão.
   const acao = useAcaoCliente({ idempotente: false }); const ocupado = acao.ocupado;
   async function decidir(aprovar: boolean) {
     const d = await acao.executar(async (): Promise<Resultado<unknown>> => (particular ? decidirResolucaoParticular : decidirResolucaoReserva)({ propostaId, aprovar, motivo }), aprovar ? "Proposta aprovada e aplicada." : "Proposta rejeitada.");

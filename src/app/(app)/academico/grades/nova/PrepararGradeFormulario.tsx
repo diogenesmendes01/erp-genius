@@ -10,19 +10,12 @@ import { CampoFuso, type SugestaoFuso } from "@/components/CampoFuso";
 export type TurmaGrade = { id: string; codigo: string; versao: number; dataInicio: string | null; horario: string | null;
   dias: number[]; quantidade: number | null; duracao: number; frequencia: string; professor: string | null };
 type Turma = TurmaGrade;
-/** Sugestões do fuso de origem da turma: as da escola e UTC (turma online sem sede). */
 const FUSOS_DA_GRADE: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["America/Manaus", "Brasil — Manaus"], ["America/Rio_Branco", "Brasil — Rio Branco"], ["UTC", "UTC — horário universal"]];
 
-/**
- * Formulário da proposta de grade. `fusoInicial` vem de PrepararGrade (componente de servidor): o fuso da
- * escola, senão a preferência de quem prepara; "" deixa o campo vazio e obrigatório (docs/43 §6 item 6).
- */
 export function PrepararGradeFormulario({ turmas, turmaInicialId, fusoInicial }: { turmas: Turma[]; turmaInicialId?: string | null; fusoInicial: string }) {
   const router = useRouter();
   const inicialValida = turmas.some((t) => t.id === turmaInicialId) ? turmaInicialId ?? "" : "";
   const [turmaId, setTurmaId] = useState(inicialValida);
-  // Sem key de busca ou de cursor (docs/43 §6 item 3): "Próximas turmas" não remonta o formulário; a turma
-  // escolhida continua selecionada mesmo quando sai da lista desta consulta.
   const [escolhida, setEscolhida] = useState<Turma | null>(turmas.find((t) => t.id === inicialValida) ?? null);
   const selecionar = (id: string) => { setTurmaId(id); setEscolhida(turmas.find((t) => t.id === id) ?? (escolhida?.id === id ? escolhida : null)); };
   const [fuso, setFuso] = useState(fusoInicial);

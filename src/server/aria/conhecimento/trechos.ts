@@ -1,7 +1,3 @@
-// Divisão do texto da base de conhecimento em trechos para a busca textual.
-// Acumula parágrafos (separados por linha em branco) até `max`; parágrafo maior que `max`
-// é cortado em janelas de `max` com recuo de `sobreposicao` caracteres.
-
 export const EXTENSOES_ACEITAS = [".txt", ".md", ".csv", ".pdf"] as const;
 
 export function dividirEmTrechos(texto: string, max = 1200, sobreposicao = 150): string[] {

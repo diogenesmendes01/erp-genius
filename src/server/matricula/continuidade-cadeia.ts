@@ -4,10 +4,6 @@ import { DataCivilContinuidadeSchema } from "./continuidade-mensal-schema";
 const StatusMensalidadeSchema = z.enum(["PENDENTE", "PAGO", "ATRASADO", "CANCELADA"]);
 const RegularizacaoIntegralSchema = z.enum(["CREDITO", "COBERTURA_FUTURA"]);
 
-/**
- * Recorte persistido necessário para escolher uma âncora de continuidade.
- * Datas nulas representam legado sem cobertura definida e exigem conferência.
- */
 export const MensalidadeCadeiaContinuidadeSchema = z.object({
   id: z.string().trim().min(1),
   coberturaInicio: DataCivilContinuidadeSchema.nullable(),
@@ -42,14 +38,9 @@ function possuiCobertura(mensalidade: MensalidadeCadeiaContinuidade): mensalidad
 }
 
 function eAncora(mensalidade: MensalidadeComCobertura) {
-  // A regularização em cobertura futura preserva a cobertura hoje registrada.
   return mensalidade.status !== "CANCELADA" && mensalidade.regularizacaoIntegral !== "CREDITO";
 }
 
-/**
- * Q161/Q162 não são inferidas aqui. Esta função somente escolhe uma cobertura
- * já registrada ou devolve a cadeia para conferência; ela jamais cria cobrança.
- */
 export function conferirCadeiaContinuidade(
   input: EntradaConferirCadeiaContinuidade,
 ): ResultadoConferirCadeiaContinuidade {

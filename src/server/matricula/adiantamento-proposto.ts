@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared/sessao";
 
-/** Valor proposto pelos minutos contratados, preservando a fração de hora (Q94). */
 export function calcularAdiantamentoProposto(regime: string, minutos: number | undefined, valorHora: string, exigido: boolean | null) {
   if (regime !== "HORA_PARTICULAR") {
     if (minutos !== undefined) throw new ErroRegra("Adiantamento de horas não se aplica à mensalidade fixa.");

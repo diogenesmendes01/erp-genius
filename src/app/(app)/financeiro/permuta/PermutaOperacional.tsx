@@ -109,7 +109,6 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
   </form>;
 }
 
-// Estado próprio por formulário: o par de período também aparece uma vez por acordo, dentro de acordos.map.
 function CamposPeriodo({ nomeInicio, nomeFim }: { nomeInicio: string; nomeFim: string }) {
   const periodo = useInicioDoPeriodo();
   return <><label>Início <input required type="date" name={nomeInicio} {...periodo.propsInicio} /></label><label>Fim <input required type="date" name={nomeFim} min={periodo.min} /></label></>;
@@ -120,10 +119,6 @@ function dados(formulario: HTMLFormElement) {
 }
 const campo = (formulario: HTMLFormElement, nome: string) => String(dados(formulario).get(nome) ?? "").trim();
 
-// Decidir a compensação (docs/42 L2142): a decisão nasce vazia e obrigatória (antes vinha em "Aprovar e compensar" e
-// enviar sem tocar no campo abatia mensalidades), o botão diz a ação escolhida e aprovar só abre o ConfirmarAcao, que
-// diz quanto sai de cada mensalidade. A action roda na confirmação e mostra a falha lá. Rejeitar não abate nada e
-// continua direto. Repetir a mesma decisão com o mesmo motivo não grava de novo (servidor), então é idempotente.
 export function DecidirCompensacao({ proposta, moeda, cobrancas }: { proposta: Proposta; moeda: string | null; cobrancas: Acordo["cobrancas"] }) {
   const router = useRouter();
   const [decisao, setDecisao] = useState<"" | "APROVAR" | "REJEITAR">("");
@@ -183,7 +178,6 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
     </Acao>}
     {acordos.map(acordo => <article key={acordo.id} className="space-y-3 rounded border p-3">
       <h2 className="font-medium">{acordo.matricula} · {acordo.moeda ?? MOEDA_NAO_DEFINIDA}</h2>
-      {/* Acordo sem moeda (issue #167, C20): nenhum valor sai sem símbolo — cada um vira "moeda não definida". */}
       {!acordo.moeda && <p className="text-sm text-amber-700">Moeda não definida neste acordo: os valores não são exibidos para não serem lidos em outra moeda.</p>}
       <p>{acordo.quantidadePactuada} {rotular(UNIDADE_PERMUTA_SERVICO_LABEL, acordo.unidade).toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade != null ? formatarMoedaOuIndefinida(acordo.valorPorUnidade, acordo.moeda) : "—"} = {acordo.valorTotalPactuado != null ? formatarMoedaOuIndefinida(acordo.valorTotalPactuado, acordo.moeda) : "—"}</>}. {acordo.contrapartida}</p>
       <p className="text-sm">{acordo.formulaDescricao}</p>

@@ -4,9 +4,6 @@ import { describe, expect, it } from "vitest";
 import { literaisDeString } from "@/test/literais-string";
 import config from "../../tailwind.config";
 
-// docs/18: só as shades mapeadas no tailwind.config.ts invertem no dark. O config usa `extend`,
-// então a paleta padrão do Tailwind continua compilando — e cor fora do mapa quebra o tema escuro.
-
 const cores = (config.theme?.extend?.colors ?? {}) as Record<string, string | Record<string, string>>;
 const MAPA = new Map(
   Object.entries(cores)
@@ -47,11 +44,7 @@ function corSemToken(texto: string): string[] {
 
 const UTILITARIO_COR =
   /(?<![\w-])(?:[a-z0-9-]+:)*!?(?:bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+)-(\d{2,3})(?:\/\d+)?(?![\w-])/g;
-// Sombra como classe: só `shadow-popover` (menu/popover) e `shadow-dialog` (modal/drawer) são permitidas, com variantes
-// (`hover:`/`dark:`). Qualquer outra — shadow, shadow-md, drop-shadow-*, shadow-popover-lg, shadow-[…] — é violação.
-// Precedida de início/espaço/aspas e seguida de espaço/aspas — não pega o texto "ensaio (shadow)".
 const UTILITARIO_SOMBRA = /(?:^|[\s"'`])((?:[a-z0-9-]+:)*(?:drop-)?shadow(?:-(?:sm|md|lg|xl|2xl|inner|(?:popover|dialog)-[a-z0-9-]+)|-\[[^\]\s]+\])?)(?=[\s"'`]|$)/g;
-// Cor solta em valor arbitrário: hex, rgb()/rgba(), hsl()/hsla(). Nomes de cor CSS (bg-[red]) não entram.
 const COR_ARBITRARIA = /(?<![\w-])(?:[a-z0-9-]+:)*[a-z-]+-\[(?:#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?)\([^\]]*\))\]/g;
 
 function violacoesDePaleta(texto: string): string[] {
@@ -66,7 +59,6 @@ function violacoesDePaleta(texto: string): string[] {
   return achados;
 }
 
-// Onde vivem classes de UI. src/server fica de fora: lá "shadow" é o modo de ensaio do WhatsApp.
 const RAIZES_UI = ["src/app", "src/components", "src/lib"];
 const fontes = RAIZES_UI.flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])

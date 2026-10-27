@@ -39,12 +39,9 @@ function dataDaOcorrencia(ancora: Date, indice: number, recorrencia: Recorrencia
   if (!Number.isFinite(data.getTime()) || data.getUTCFullYear() < 1 || data.getUTCFullYear() > 9999) throw foraDoCalendario();
   return data.toISOString().slice(0, 10);
 }
-/** Política D10 local; os conversores globais de entrada continuam estritos. */
 function resolverHorario(data: string, hora: string, fuso: string) {
   const solicitado = `${data}T${hora}`, candidatos = candidatosDaGrade(data, hora, fuso);
   if (candidatos.length) return { inicioEm: candidatos[0], ajuste: candidatos.length > 1 ? "FOLD_PRIMEIRO" as const : "NENHUM" as const, solicitado, resolvido: solicitado };
-  // Um dia civil inteiro também pode ser omitido. A busca é por minutos civis,
-  // limitada a48h por resolução, nunca pelos anos/ocorrências vencidas da série.
   const nominal = Date.parse(`${solicitado}:00Z`);
   for (let minutos = 1; minutos <= 2880; minutos++) {
     const civil = new Date(nominal + minutos * 60_000);
@@ -54,7 +51,6 @@ function resolverHorario(data: string, hora: string, fuso: string) {
   }
   throw new ErroRegra("Não foi possível resolver o horário da próxima ocorrência.");
 }
-/** Sem relógio/DB/efeitos. Corte e índice vêm do snapshot durável da conclusão. */
 export function proximaOcorrenciaTarefa(pedido: PedidoRecorrenciaTarefa): OcorrenciaTarefaD10 | null {
   const validado = Entrada.safeParse(pedido);
   if (!validado.success) throw new ErroRegra("Dados de recorrência inválidos. Confira data, horário, fuso e índice.");
@@ -71,8 +67,6 @@ export function proximaOcorrenciaTarefa(pedido: PedidoRecorrenciaTarefa): Ocorre
   dataDaOcorrencia(ancora, primeiroIndice, p.recorrencia);
   const inicioAtual = p.ancora.hora === null ? null : resolverHorario(dataDaOcorrencia(ancora, p.indiceAtual, p.recorrencia), p.ancora.hora, p.ancora.fusoOrigem).inicioEm;
   const limite = Math.max(p.corteEm.getTime(), inicioAtual?.getTime() ?? -Infinity);
-  // O salto civil evita varrer o atraso. Nunca volta à ocorrência atual, mesmo
-  // quando uma pessoa a conclui antes do seu prazo.
   for (let indice = primeiroIndice; ; indice++) {
     const data = dataDaOcorrencia(ancora, indice, p.recorrencia);
     if (p.ancora.hora === null) {
@@ -80,7 +74,6 @@ export function proximaOcorrenciaTarefa(pedido: PedidoRecorrenciaTarefa): Ocorre
       return { dataCivil: data, hora: null, inicioEm: null, ajuste: "NENHUM", solicitado: null, resolvido: null, politicaVersao: 1, indice };
     }
     const r = resolverHorario(data, p.ancora.hora, p.ancora.fusoOrigem);
-    // Na dobra, só o primeiro instante pode representar esta ocorrência.
     if (r.inicioEm.getTime() <= limite) continue;
     return { ...r, dataCivil: r.resolvido.slice(0, 10), hora: r.resolvido.slice(11), politicaVersao: 1, indice };
   }

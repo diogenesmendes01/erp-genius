@@ -1,14 +1,5 @@
 import type { Prisma } from "@prisma/client";
 
-/**
- * Dependências de reposição da aula corrigida. O chamador já mantém o lock do
- * calendário; esta leitura não autoriza nem amplia a consulta para matrículas
- * fora da chamada original.
- *
- * `reposicoes` conserva o resumo usado pela comparação da correção. O
- * inventário é deliberadamente restrito a identificadores, estados e datas:
- * nenhum texto, evidência, arquivo, URL ou token integra o hash de revisão.
- */
 export async function carregarReposicoesCorrecaoAulaTx(
   tx: Prisma.TransactionClient,
   aulaOriginalId: string,

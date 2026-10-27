@@ -5,9 +5,6 @@ import { carregarCorrecaoAulaTx } from "@/server/diario/correcao-aula-tx";
 import { obterDriveOrganizacaoId } from "./credenciais";
 import { resolverFonteRevisaoGravacaoTx } from "./fonte-revisao-tx";
 
-/** Uso exclusivo no servidor. Reutiliza o escopo do histórico do diário;
- * não amplia a atribuição Q24 nem concede acesso a alunos/responsáveis.
- */
 export async function autorizarVideoAulaInstitucional(encontroId: string) {
   const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   return prisma.$transaction(tx => autorizarVideoAulaInstitucionalTx(tx, u.id, encontroId));
@@ -23,11 +20,6 @@ async function autorizarVideoAulaInstitucionalTx(tx: Prisma.TransactionClient, u
   return resolverFonteRevisaoGravacaoTx(tx, { publicacaoAulaId: p.id });
 }
 
-/**
- * Captura a identidade HTTP uma vez e a relê no banco a cada pull do stream.
- * A rota chama `revalidar` antes de cada leitura; nenhum callback relê auth ou
- * cookies. Uma troca da publicação encerra o stream, em vez de trocar o arquivo.
- */
 export async function prepararVideoAulaInstitucionalContinuo(encontroId: string) {
   const capturada = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const conferir = () => prisma.$transaction(async tx => {

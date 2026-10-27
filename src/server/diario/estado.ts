@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 
-/** Inclui conteúdo e chamada para detectar mudanças mesmo com timestamps iguais. */
 export function estadoDiario(diario: { id: string; conteudo: string; atualizadoEm: Date;
   registros: { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string | null; matriculaId?: string | null; participacao?: string | null }[] }) {
   return createHash("sha256").update(JSON.stringify({ id: diario.id, conteudo: diario.conteudo,

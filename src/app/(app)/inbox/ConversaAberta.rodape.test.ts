@@ -20,7 +20,6 @@ import type { ChavesPorAlvo } from '@/lib/chave-idempotencia';
 const base={item:{id:'a',capacidades:[],status:'EM_ATENDIMENTO',grupo:false},usuario:{id:'u',papeis:[]},fuso:'UTC',conversa:{mensagens:[],notas:[],temMaisAntes:false,temMaisDepois:false,maisAntigas:async()=>{}},aoVoltar(){},aoAlternarPainel(){},aoMudar(){},podeEnviar:false} as unknown as PropsConversaAberta;
 function tela(p=base):ReactNode{
  let t=m.g!.renderizar(ConversaAberta,p);
- // Materializa os coordenadores reais, incluindo o novo controlador de slots da Aria.
  for(let i=0;i<4;i++) { const c=elementos(t).find(n=>typeof n.props.children==='function'||typeof n.props.renderizar==='function'); if(!c)return t; t=(c.type as (p:unknown)=>ReactNode)(c.props); }
  return t;
 }

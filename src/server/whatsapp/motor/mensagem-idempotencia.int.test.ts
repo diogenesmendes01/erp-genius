@@ -1,14 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (6º lote): comandos do menu da mensagem que saem pelo motor.
-// - Encaminhar recebe chave: o reenvio da mesma tentativa não encaminha de novo ao contato. A tentativa é gravada
-//   antes da chamada ao motor e o resultado depois, sem transação aberta durante a chamada (B1 da R1 do #291).
-// - Editar com o mesmo texto e apagar a mensagem já apagada por quem repete devolvem ok sem chamar o motor
-//   nem gravar outro Evento.
-
-// Sessão: só `exigirSessao` é trocada (como empresas/empresa-idempotencia.int.test.ts), para os envios simultâneos
-// não esbarrarem no `import()` duplo do NextAuth mockado; os papéis continuam lidos do banco.
 const { sessao, acao } = vi.hoisted(() => ({ sessao: { usuarioId: "" }, acao: vi.fn() }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -100,11 +92,9 @@ describe("encaminharMensagemWhatsApp com chave (#166)", () => {
 });
 
 describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C2 da R1 do #291)", () => {
-  // Cenário C da R2: motor lento; o reenvio da mesma chave no meio não chama o motor.
   it("motor lento: nenhuma transação fica aberta; o reenvio no meio recebe 'não confirmado' e o posterior, ok", async () => {
     const { autor, m, destino } = await cenario();
     const dest = await destino("+50688880002");
-    // Mais que o timeout padrão (5 s) de uma transação interativa do Prisma: com a transação presa, a gravação falharia.
     acao.mockImplementation(async () => { await espera(6_000); return { key: { id: "FWD-LENTO" } }; });
     const entrada = { mensagemId: m.id, atendimentoDestinoId: dest.id, chaveIdempotencia: "chave-fwd-lento" };
     const primeiro = comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada));
@@ -118,7 +108,6 @@ describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C
     expect(await contar("MensagemWhatsAppEncaminhada")).toBe(1);
   }, 60_000);
 
-  // Cenário A da R2 / C2 da R1.
   it("dois envios simultâneos com a mesma chave encaminham uma vez só", async () => {
     const { autor, m, destino } = await cenario();
     const dest = await destino("+50688880002");
@@ -133,7 +122,6 @@ describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C
     expect(await contar("MensagemWhatsAppEncaminhamentoIniciado")).toBe(1);
   }, 60_000);
 
-  // Cenário B da R2: o motor entregou e a resposta se perdeu.
   it("timeout do motor vira incerto; o reenvio da mesma chave não encaminha de novo", async () => {
     const { autor, m, destino } = await cenario();
     const dest = await destino("+50688880002");
@@ -189,7 +177,6 @@ describe("editar e apagar por natureza (#166)", () => {
     expect(await contar("MensagemWhatsAppApagada")).toBe(1);
   });
 
-  // Cenários D e E da R2 (B3): dois pedidos simultâneos geram uma chamada ao motor e um Evento.
   it("dois editar simultâneos com o mesmo texto: uma chamada ao motor e um Evento", async () => {
     const { autor, m } = await cenario();
     acao.mockImplementation(async () => { await espera(1_500); return {}; });

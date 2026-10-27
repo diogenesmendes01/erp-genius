@@ -12,15 +12,12 @@ type Nota = { habilidade: "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA"; n
 
 export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas }: { lancamentoId: string; origemHash: string; versaoEsperada: number; notas: Nota[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
-  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar sem alterar (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   return <form className="space-y-3" onChange={() => { chave.current = null; acao.limpar(); }} onSubmit={async e => {
     e.preventDefault(); const form = e.currentTarget, f = new FormData(form); const chaveIdempotencia = (chave.current ??= crypto.randomUUID());
     const d = await acao.executar(() => proporCorrecaoNota({ lancamentoId, origemHash, versaoEsperada, chaveIdempotencia, motivo: String(f.get("motivo") ?? ""),
       notas: notas.map(n => ({ habilidade: n.habilidade, nota: String(f.get(`nota-${n.habilidade}`) ?? "").trim().replace(",", ".") || null, comentarioAluno: String(f.get(`comentario-${n.habilidade}`) ?? "") })) }),
     "Proposta registrada. As notas permanecem vigentes até aprovação independente.");
-    // Registrada: o formulário fica montado (sem key de versão), mas volta às notas vigentes e ao motivo vazio —
-    // repetir o clique não cria outra proposta idêntica (R1 da #155, C1); a próxima é outra tentativa (chave nova).
     if (d?.tipo === "ok") { form.reset(); chave.current = null; router.refresh(); }
   }}><fieldset disabled={acao.ocupado} className="space-y-3"><legend className="font-medium">Propor correção</legend>
     {notas.map(n => <div key={n.habilidade} className="space-y-2 rounded border p-3"><p>{HABILIDADE_LABEL[n.habilidade]} — nota vigente: {n.nota}</p>
@@ -34,7 +31,6 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
 }
 
 export function DecidirCorrecao({ propostaId, propostaHash, impactosHash, podeAprovar }: { propostaId: string; propostaHash: string; impactosHash: string; podeAprovar: boolean }) {
-  // Sem chave de idempotência; a decisão incerta mantém o texto próprio (reenviar a mesma decisão).
   const router = useRouter(); const acao = useAcaoCliente({ idempotente: false });
   return <form className="space-y-3" onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);

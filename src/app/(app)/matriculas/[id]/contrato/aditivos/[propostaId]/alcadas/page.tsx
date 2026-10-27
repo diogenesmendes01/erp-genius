@@ -18,7 +18,6 @@ export default async function AlcadasAditivoPage({ params }: { params: Promise<{
   const dado = resultado.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const vigencia = formatarInstanteExibicao(dado.vigenciaInicio, fusoExibicao, "UTC");
-  // O cabeçalho da matrícula (código · aluno · estado) vem do layout de /matriculas/[id]; aqui, o caminho de volta ao aditivo.
   return <div className="space-y-5"><VoltarPara href={`/matriculas/${matriculaId}/contrato/aditivos/${propostaId}`} para="Aditivo" /><h1 className="text-2xl">Alçadas da proposta de aditivo</h1>
     <p>As decisões abaixo tratam os impactos desta proposta. Elas não aplicam condições novas, não alteram horários e não formalizam o aditivo.</p>
     <p>Vigência proposta: {vigencia.texto} (horário exibido em {vigencia.fuso}; referência contratual preservada).</p>

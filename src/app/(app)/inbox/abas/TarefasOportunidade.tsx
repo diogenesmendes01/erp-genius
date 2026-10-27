@@ -26,7 +26,6 @@ function SessaoTarefas({atendimentoId,tarefas,fusoEscola,podeCriar,aoNova,aoEdit
  const alvoAtual=cancelando?tarefas.find(t=>t.id===cancelando.id):undefined;
  const aguardando=!!cancelando&&envio===cancelando.token;
  const alvoMudou=!!cancelando&&(!alvoAtual||alvoAtual.versao!==cancelando.versao||alvoAtual.status!=="ABERTA");
- // Ajusta somente o estado deste alvo; o campo permanece montado e o rascunho não muda.
  if(cancelando&&alvoMudou&&!aguardando&&!cancelando.invalidada)setCancelando({...cancelando,invalidada:true});
  const alvoValido=!!cancelando&&!cancelando.invalidada&&!alvoMudou;
  useEffect(()=>{tarefasAtuais.current=tarefas;},[tarefas]);

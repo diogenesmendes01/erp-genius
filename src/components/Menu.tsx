@@ -12,24 +12,14 @@ type Alvo = {
   removeEventListener(tipo: string, f: (e: Event) => void, captura?: boolean): void;
 };
 
-/**
- * Ouvintes do menu aberto; devolve a limpeza. Exportada para o teste ligar o menu com `document` falso.
- * - Teclado em document, na fase de CAPTURA: roda antes do ouvinte do diálogo (useDialogo, fase de bolha).
- *   No Escape, o menu fecha e chama stopPropagation, então um Modal/Drawer/ConfirmarAcao em volta não
- *   fecha junto. O Tab fecha o menu e segue para o diálogo, que mantém o foco preso.
- * - Scroll (captura, pega rolagem de qualquer lista) e resize fecham o menu: o painel é position:fixed e
- *   ficaria solto sobre outra linha, com ações (até de perigo) parecendo de outro item.
- */
 export function ligarMenuAberto(o: {
   doc: Alvo & { activeElement: Element | null };
-  /** Padrão: a janela global (o teste passa uma falsa). */
   win?: Alvo;
   painel: () => { contains(n: Node | null): boolean } | null;
   gatilho: () => { contains(n: Node | null): boolean } | null;
   habilitados: () => { focus(): void }[];
   fechar: (devolverFoco: boolean) => void;
 }): () => void {
-  // Só os dois métodos da janela (a trava de confirmacoes.test.ts não aceita `window` passado como valor).
   const win: Alvo = o.win ?? {
     addEventListener: (t, f, c) => window.addEventListener(t, f, c),
     removeEventListener: (t, f, c) => window.removeEventListener(t, f, c),
@@ -73,7 +63,6 @@ export function ligarMenuAberto(o: {
 
 export type ItemMenu = { rotulo: string; icone?: ReactNode; dica?: string; divisorDepois?: boolean; perigo?: boolean; desabilitado?: boolean; aoEscolher: () => void };
 
-// Menu de ações. Posição e teclado vêm de funções puras (@/lib/popover); aqui só se ligam eventos.
 export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatilho = "", abertoInicial = false, folhaNoCelular = false }: { rotulo: string; gatilho: ReactNode; itens: ItemMenu[]; densidade?: "padrao" | "compacta"; classeGatilho?: string; abertoInicial?: boolean; folhaNoCelular?: boolean }) {
   const compacto = densidade === "compacta";
   const [aberto, setAberto] = useState(abertoInicial);
@@ -102,9 +91,7 @@ export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatil
     setPos({ topo, esquerda });
   }, [aberto]);
 
-  // Foco no primeiro item só depois de pos definido: com visibility:hidden o elemento não recebe foco.
   useEffect(() => {
-    // preventScroll: o foco não pode rolar a página, senão o ouvinte de scroll fecharia o menu recém-aberto.
     if (aberto && pos) habilitados()[0]?.focus({ preventScroll: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, pos !== null]);

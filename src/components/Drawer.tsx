@@ -4,13 +4,6 @@ import { useEffect, useRef } from "react";
 import { IconX } from "@tabler/icons-react";
 import { useDialogo } from "@/lib/dialogo";
 
-/**
- * Painel lateral deslizante (desliza da direita, ~45% da tela).
- * Fica sempre montado para animar. Fechado, fica `inert` — fora da tela, sem clique, fora da ordem de
- * Tab e da árvore de acessibilidade (antes era só aria-hidden, com ~25 controles focáveis dentro).
- * Aberto: Escape e clique no fundo fecham, o foco entra no painel, fica preso nele e volta a quem
- * abriu ao fechar (useDialogo). Segue o design system (flat, tokens, sentence case).
- */
 export function Drawer({
   id,
   open,
@@ -21,36 +14,29 @@ export function Drawer({
   lado = "direita",
   largura = "w-full max-w-2xl md:w-[45%]",
 }: {
-  /** id do painel (para aria-controls de quem o abre). */
   id?: string;
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  /** De que lado o painel desliza. A gaveta de navegação mobile abre pela esquerda. */
   lado?: "direita" | "esquerda";
-  /** Classes de largura do painel. */
   largura?: string;
 }) {
   const raiz = useRef<HTMLDivElement>(null);
   const painel = useRef<HTMLElement>(null);
   useDialogo(painel, { aberto: open, aoFechar: onClose });
-  // `inert` pela propriedade do DOM: os tipos do React 18 ainda não conhecem o atributo.
   useEffect(() => { if (raiz.current) raiz.current.inert = !open; }, [open]);
 
   return (
     <div ref={raiz} className={"fixed inset-0 z-50 " + (open ? "" : "pointer-events-none")}>
-      {/* backdrop */}
       <div
         onClick={onClose}
         className={"absolute inset-0 bg-black/60 transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0")}
       />
-      {/* painel */}
       <aside
         id={id}
         ref={painel}
-        // Só é diálogo enquanto aberto; fechado, além de inert, deixa de se anunciar como modal.
         role={open ? "dialog" : undefined}
         aria-modal={open ? true : undefined}
         aria-label={title}
@@ -58,7 +44,6 @@ export function Drawer({
         className={
           `absolute top-0 flex h-full flex-col border-gray-200 bg-surface-raised transition-transform duration-200 ${largura} ` +
           (lado === "esquerda" ? "left-0 border-e " : "right-0 border-s ") +
-          // Sombra só aberto: fechado, o painel fica fora da tela e a sombra de 60 px vazava na borda (DS-C).
           (open ? "translate-x-0 shadow-dialog" : lado === "esquerda" ? "-translate-x-full" : "translate-x-full")
         }
       >

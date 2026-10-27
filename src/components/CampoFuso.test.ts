@@ -27,7 +27,6 @@ describe("CampoFuso", () => {
     expect(listaIds[0]).not.toBe(listaIds[1]);
   });
 
-  // docs/43 §6 item 6: a validação é a do servidor (fusoIanaValido), no próprio campo, sem o jargão "IANA".
   it("validade: vazio fica com o required nativo; fuso IANA passa; texto livre que não é fuso recebe a mensagem", () => {
     expect(validadeDoFuso("")).toBe("");
     expect(validadeDoFuso("  ")).toBe("");
@@ -54,7 +53,6 @@ describe("CampoFuso", () => {
     expect(preferencia).not.toMatch(/<input[^>]*required/);
   });
 
-  // Revisão R1 do #210 (C1): o ICU lista links do `backward` que um Postgres sem tzdata-legacy não aceita.
   it("a lista completa mostra o nome canônico, sem duplicatas", () => {
     expect(fusosCanonicos(["Asia/Kolkata", "Asia/Calcutta", "Europe/Kiev", "America/Sao_Paulo", "US/Eastern"]))
       .toEqual(["America/New_York", "America/Sao_Paulo", "Asia/Kolkata", "Europe/Kyiv"]);

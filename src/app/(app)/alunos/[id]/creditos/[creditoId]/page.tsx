@@ -11,8 +11,6 @@ import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { VoltarPara } from "@/components/VoltarPara";
 import { IdentificacaoRegistro } from "@/components/IdentificacaoRegistro";
 
-// Quem aprova uma utilização ou devolução de crédito vê de quem é o crédito (docs/42 L279; docs/43 §6 item 7):
-// aluno e matrícula pelo cabeçalho de /matriculas/[id], e a cobrança de origem pelo código, não pelo id.
 export default async function Page({ params }: { params: Promise<{ id: string; creditoId: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
   const { id, creditoId } = await params, r = await consultarPropostasUsoCredito({ alunoId: id, creditoId });

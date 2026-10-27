@@ -17,11 +17,6 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 
-/**
- * Instante de registro (proposta, confirmação, decisão): no fuso pessoal de exibição, com o fuso dito; sem
- * preferência, no fuso da escola (sem rótulo, como antes). Sem fuso da escola nem preferência, sai em UTC formatado e
- * rotulado; o aviso de configuração aparece uma vez no topo (docs/42 L939).
- */
 function instanteDoEvento(valor: string, fusoInstitucional: string | null, preferencia: string | null) {
   const e = formatarInstanteExibicao(valor, preferencia, fusoInstitucional ?? "UTC");
   return e.fuso === fusoInstitucional ? e.texto : `${e.texto} ${e.fuso}`;

@@ -13,10 +13,6 @@ import { formatarDataCivil } from "@/lib/data-civil";
 const Resumo = z.object({ turmaId: z.string(), statusReserva: z.string(), expiraEm: z.string(), criadaEm: z.string(), janelaAtual: z.object({ limiteEntrada: z.string(), fusoAdmissao: z.string() }).nullable(),
   identificacao: z.object({ aluno: z.string(), matricula: z.string().nullable(), turma: z.string().nullable() }),
   encontros: z.array(z.object({ id: z.string(), inicio: z.string(), fim: z.string() })) });
-/**
- * Instantes do cenário no fuso de exibição, com a origem dita (docs/43 §6 item 6; docs/42 L1037): antes, os
- * instantes do snapshot e do histórico saíam em ISO cru. O limite de entrada é data civil da janela.
- */
 function Cenario({ snapshot, fusoExibicao }: { snapshot: unknown; fusoExibicao: string }) {
   const p = Resumo.safeParse(snapshot);
   const quando = (valor: string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;

@@ -4,7 +4,6 @@ const m=vi.hoisted(()=>({alcance:vi.fn(),contato:vi.fn(),lead:vi.fn(),transactio
 vi.mock("@/lib/prisma",()=>({prisma:{contatoWhatsApp:{findUnique:m.contato},oportunidade:{findFirst:m.lead},pessoa:{findFirst:async()=>({id:"p329"})},$transaction:m.transaction}}));
 vi.mock("next/cache",()=>({revalidatePath:m.revalidar}));
 vi.mock("@/server/_shared",async original=>({...await original<typeof import("@/server/_shared")>(),exigirSessao:async()=>({id:"admin329",nome:"Admin fictício",papeis:["ADMINISTRADOR"]})}));
-// Fronteira de autorização já lida: não substitui garantirAtendimento, registrarEvento nem executarAcao reais.
 vi.mock("@/server/whatsapp/consultas",()=>({conversaVisivel:m.alcance,buscarPessoasVinculo:vi.fn(),contatoSoNoAlcance:vi.fn()}));
 vi.mock("@/server/whatsapp/atendimentos",async original=>({...await original<typeof import("@/server/whatsapp/atendimentos")>(),atendimentoVisivel:m.alcance}));
 import {vincularLeadRetornoNoInbox} from "@/server/inbox/acoes-cliente-voltou";

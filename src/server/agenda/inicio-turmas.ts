@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 
-/** Rotina interna do cron; não é uma Server Action acessível por sessão. */
 export async function iniciarTurmasDaAgenda(agora = new Date()) {
   if (!Number.isFinite(agora.getTime())) throw new Error("Instante inválido para processar início de turmas.");
   return prisma.$transaction(async (tx) => {

@@ -141,8 +141,6 @@ export async function prepararAcertoDesistenciaContratual(input: unknown) {
   });
 }
 
-// Arquivos "use server" só podem expor funções assíncronas. Mantemos este
-// ponto de entrada para os consumidores existentes sem reexportar o símbolo.
 export async function decidirAcertoDesistenciaContratual(input: unknown) {
   return decidirAcertoDesistenciaContratualInterna(input);
 }

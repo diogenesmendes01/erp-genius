@@ -1,10 +1,3 @@
-// ERP Genius — schema modelado em EVENTOS + estado (não em telas).
-// Espinha dorsal: tabela `Evento` (audit/event log append-only).
-// Regra: Evento = auditoria; tabelas tipadas (ex.: AjusteFinanceiro) = relatório.
-// Evolução futura (NÃO V0): Papel enum[] -> tabela UsuarioPapel (escopo por país);
-//   unificar Lead/Aluno/Responsavel sob uma entidade Pessoa/Contato.
-// Ver docs/02-arquitetura.md e docs/09-fase0-telas.md.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,8 +8,6 @@ datasource db {
 }
 
 model ConfiguracaoOperacional {
-  // Campos novos são opcionais no banco para não inventar prazo para a escola
-  // existente. O serviço do portal exige todos antes de criar sessão ou token.
   prazoSessaoPortalAlunoMinutos          Int?
   prazoConvitePortalAlunoMinutos         Int?
   prazoRecuperacaoPortalAlunoMinutos     Int?
@@ -25,8 +16,6 @@ model ConfiguracaoOperacional {
   prazoRespostaCorrecaoReposicaoMinutos Int?
   prazoRegularizacaoDiarioMinutos Int?
   intervaloLembreteDiarioMinutos Int?
-  // Canal institucional de avisos de agenda: a escola o escolhe de forma
-  // explícita; nunca é inferido do número comercial ou financeiro.
   numeroAvisosAgendaId String? @unique
   numeroAvisosAgenda NumeroWhatsApp? @relation("NumeroAvisosAgenda", fields: [numeroAvisosAgendaId], references: [id], onDelete: Restrict)
   templateAvisosAgendaId String? @unique
@@ -49,21 +38,16 @@ enum StatusMudancaAcademica {
   CANCELADA
 }
 
-// Q154: o encaminhamento de regularização preserva a pendência; somente as
-// duas ações terminais retiram o caso da revisão aberta.
 enum AcaoResolucaoRevisaoProgressao {
   REGISTRAR_CANCELAMENTO
   RECONFIRMAR_EXECUTADA
   ENCAMINHAR_REGULARIZACAO
 }
 
-// A aprovação pedagógica autoriza a execução posterior; não altera a alocação sozinha.
 model SolicitacaoMudancaAcademica {
   id String @id @default(cuid()) @map("id")
   matriculaId String?
   matricula Matricula? @relation(fields: [matriculaId, alunoId], references: [id, alunoId], onDelete: Restrict, onUpdate: NoAction)
-  // Legado pode não ter fechamento; progressão nova exige esta referência na
-  // aprovação e execução, preservando o hash da versão então conferida.
   fechamentoAcademicoId String?
   fechamentoAcademico FechamentoAcademico? @relation(fields: [fechamentoAcademicoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   fechamentoEstadoHash String?
@@ -124,7 +108,6 @@ enum OpcaoRetomada {
   REPROGRAMAR_PARCELAS
 }
 
-// A proposta não altera calendário nem estado do aluno antes da aprovação independente.
 model PropostaRetomada {
   id String @id @default(cuid())
   alunoId String
@@ -312,8 +295,6 @@ model PagamentoInformado {
 }
 
 model Recebimento {
-  // Compatibilidade de leitura até os consumidores FIN-04 passarem a consultar
-  // `destinacoes`. Novos recebimentos não podem preencher este vínculo singular.
   destinacoes DestinacaoRecebimento[]
   propostasConciliacaoMigracao PropostaConciliacaoFinanceiraMigracao[]
   conciliacoesMigracao ConciliacaoFinanceiraMigracao[]
@@ -356,7 +337,6 @@ model DestinacaoRecebimento {
   conciliacoesMigracao ConciliacaoFinanceiraMigracao[]
   tipo TipoDestinacaoRecebimento
   valor Decimal @db.Decimal(12, 2)
-  // Legado não tinha evidência por destinação. Não a inventar no backfill.
   evidencia String?
   origemLegada Boolean @default(false)
   chaveIdempotencia String
@@ -416,7 +396,6 @@ enum TipoTemplate {
   RESPOSTA_RAPIDA
 }
 
-// Prazo de primeira resposta por setor, em minutos (valores provisórios, Q3).
 model PrazoRespostaSetor {
   finalidade FinalidadeAtendimentoWhatsApp @id
   minutos Int
@@ -425,7 +404,6 @@ model PrazoRespostaSetor {
   alertarResponsavel Boolean @default(true)
   alertarGerente Boolean @default(false)
   contarSoNoHorario Boolean @default(true)
-  // Horário de atendimento (HorarioAtendimentoSchema, hora civil no fuso da escola); nulo = contagem corrida.
   horario Json?
   ultimoAtribuidoId String?
   atualizadoEm DateTime @updatedAt
@@ -452,8 +430,6 @@ model AtendimentoWhatsApp {
   aluno Aluno? @relation(fields: [alunoId], references: [id], onDelete: Restrict)
   matriculaId String?
   matricula Matricula? @relation(fields: [matriculaId, alunoId], references: [id, alunoId], onDelete: Restrict, onUpdate: Restrict)
-  // Referência da pessoa destinatária para atendimento PEDAGOGICO. Não usar
-  // responsavelId: ele continua sendo o usuário operador do atendimento.
   autorizacaoComunicacaoAcademicaId String?
   autorizacaoComunicacaoAcademica AutorizacaoComunicacaoAcademica? @relation("AutorizacaoAtendimentoPedagogico", fields: [autorizacaoComunicacaoAcademicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   turmaId String?
@@ -468,7 +444,6 @@ model AtendimentoWhatsApp {
   primeiroInboundEm DateTime?
   primeiraRespostaEm DateTime?
   prazoRespostaEm DateTime?
-  // Alerta de prazo estourado já tratado (claim do cron, uma vez por atendimento).
   slaAlertadoEm DateTime?
   atendimentoOrigemId String?
   atendimentoOrigem AtendimentoWhatsApp? @relation("TransferenciaAtendimento", fields: [atendimentoOrigemId], references: [id], onDelete: Restrict)
@@ -484,7 +459,6 @@ model AtendimentoWhatsApp {
   @@index([alunoId])
   @@index([matriculaId])
   @@index([autorizacaoComunicacaoAcademicaId])
-  // No banco: (ultimaMensagemEm DESC NULLS LAST, id DESC); o Prisma não expressa NULLS LAST (migration 20261017110000).
   @@index([ultimaMensagemEm(sort: Desc), id(sort: Desc)])
 }
 
@@ -504,10 +478,6 @@ model ParticipanteAtendimentoWhatsApp {
   @@index([atendimentoId, usuarioId, fim])
 }
 
-// ============================================================
-// ACESSO
-// ============================================================
-
 enum Papel {
   ADMINISTRADOR
   GERENTE_COMERCIAL
@@ -516,7 +486,7 @@ enum Papel {
   PROFESSOR
   FINANCEIRO
   SECRETARIA_ACADEMICA
-  ALUNO // Fase 3 (doc 03): portal do aluno — acesso restrito aos PRÓPRIOS dados
+  ALUNO
 }
 
 model Usuario {
@@ -604,7 +574,6 @@ model Usuario {
   excecoesAgendaReposicaoDocente ExcecaoAgendaReposicaoIndividual[] @relation("ProfessorExcecaoAgendaReposicao")
   excecoesBeneficioReposicaoSolicitadas AutorizacaoExcecaoReposicaoParticular[] @relation("SolicitanteExcecaoBeneficioReposicao")
   excecoesBeneficioReposicaoDecididas DecisaoAutorizacaoExcecaoReposicaoParticular[] @relation("DecisorExcecaoBeneficioReposicao")
-
 
   solicitacoesTrocaEmailPortalPreparadas SolicitacaoTrocaEmailPortalAluno[] @relation("PreparadorTrocaEmailPortal")
   decisoesTrocaEmailPortal DecisaoTrocaEmailPortalAluno[] @relation("DecisorTrocaEmailPortal")
@@ -816,10 +785,9 @@ model Usuario {
   email             String    @unique
   senhaHash         String
   ativo             Boolean   @default(true)
-  // Preferência pessoal para exibir instantes; não altera calendário, cobrança ou envio.
   fusoExibicao      String?
-  papeis            Papel[] // multi-papel. V2: migrar p/ tabela UsuarioPapel (permissões granulares / por país)
-  limiteDescontoPct Decimal?  @db.Decimal(5, 2) // legado; alçadas explícitas abaixo
+  papeis            Papel[]
+  limiteDescontoPct Decimal?  @db.Decimal(5, 2)
   limiteDescontoTaxaPct Decimal? @db.Decimal(5, 2)
   limiteDescontoMensalidadePct Decimal? @db.Decimal(5, 2)
   alcadaAlteradaEm DateTime?
@@ -833,7 +801,6 @@ model Usuario {
   atendimentosResponsavel AtendimentoWhatsApp[] @relation("ResponsavelAtendimentoWhatsApp")
   participacoesAtendimento ParticipanteAtendimentoWhatsApp[] @relation("ParticipanteUsuario")
   participacoesConcedidas ParticipanteAtendimentoWhatsApp[] @relation("ConcedenteParticipante")
-  // dados pessoais (ex.: professores importados — doc 23). Opcionais.
   telefoneE164      String?
   documento         String?
   nascimento        DateTime?
@@ -842,7 +809,7 @@ model Usuario {
   criadoEm          DateTime  @default(now())
 
   leads             Oportunidade[]              @relation("VendedorLeads")
-  experimentais     Oportunidade[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
+  experimentais     Oportunidade[]              @relation("ProfessorExperimentais")
   turmas            Turma[]             @relation("ProfessorTurmas")
   comissoes         Comissao[]
   eventos           Evento[]            @relation("AutorEventos")
@@ -891,17 +858,12 @@ model Usuario {
   remarcacoesAgendaReposicaoDocente PropostaRemarcacaoAgendaReposicaoIndividual[] @relation("ProfessorRemarcacaoAgendaReposicao")
   lotesPreparacaoMigracao LotePreparacaoMigracao[] @relation("PreparadorLoteMigracao")
   aplicacoesCadastroMigracao AplicacaoCadastroMigracao[] @relation("ExecutorAplicacaoCadastroMigracao")
-  acessoAluno       Aluno?              @relation("AcessoAluno") // Fase 3: portal do aluno
+  acessoAluno       Aluno?              @relation("AcessoAluno")
 
-  // CRM (2.M3)
   tagsPessoaAtribuidas  PessoaTag[]  @relation("PessoaTagCriadoPor")
   tagsEmpresaAtribuidas EmpresaTag[] @relation("EmpresaTagCriadoPor")
   filtrosSalvos         FiltroSalvo[]
 }
-
-// ============================================================
-// PAÍS / MERCADO (espinha dorsal do multi-país)
-// ============================================================
 
 enum StatusPais {
   RASCUNHO
@@ -915,8 +877,8 @@ model Pais {
   id         String     @id @default(cuid())
   nome       String
   codigoISO  String     @unique
-  moedaLocal String // ex.: CRC, USD, MXN
-  ddi        String // ex.: +506
+  moedaLocal String
+  ddi        String
   fuso       String     @default("America/Sao_Paulo")
   idioma     String     @default("es")
   status     StatusPais @default(RASCUNHO)
@@ -935,15 +897,11 @@ model TipoDocumento {
   id        String  @id @default(cuid())
   paisId    String
   pais      Pais    @relation(fields: [paisId], references: [id])
-  nome      String // CPF, DNI, CURP, Cédula, Passaporte...
-  validador String // nome do validador: cpf, curp, cedula_cr, passaporte...
-  alunos    Aluno[] // alunos que escolheram este tipo de documento (doc 04)
+  nome      String
+  validador String
+  alunos    Aluno[]
   pessoas   Pessoa[]
 }
-
-// ============================================================
-// CATÁLOGO
-// ============================================================
 
 enum Segmento {
   ADULTO
@@ -954,7 +912,7 @@ enum Segmento {
 
 model Idioma {
   id       String    @id @default(cuid())
-  nome     String // Português, Inglês...
+  nome     String
   ativo    Boolean   @default(true)
   niveis   Nivel[]
   produtos Produto[]
@@ -962,12 +920,12 @@ model Idioma {
 
 model Modalidade {
   id              String   @id @default(cuid())
-  nome            String // Regular, Semi-intensiva, Intensiva, Super-intensiva, Particular, Kids Regular...
+  nome            String
   segmento        Segmento @default(ADULTO)
-  frequencia      String // 1x/semana, 2x/semana...
+  frequencia      String
   horasAula       Float    @default(2)
-  duracaoPorNivel String // "3 meses", "1 mês"...
-  aulasPorNivel   Int? // 12, 16, 18, 20...
+  duracaoPorNivel String
+  aulasPorNivel   Int?
   minimoAbrir     Int      @default(1)
 
   produtos Produto[]
@@ -985,16 +943,15 @@ model Nivel {
   id       String @id @default(cuid())
   idiomaId String
   idioma   Idioma @relation(fields: [idiomaId], references: [id])
-  codigo   String // Pré A1, A1, A2, B1, B2, C1, C2
+  codigo   String
   ordem    Int
 
   turmas Turma[]
   propostasSegundaChamada PropostaSegundaChamada[]
-  testesNivel  TesteNivel[]  // Fase 3
-  certificados Certificado[] // Fase 3
+  testesNivel  TesteNivel[]
+  certificados Certificado[]
 }
 
-// Produto vendável = idioma + modalidade
 model Produto {
   correspondenciasMigracao CorrespondenciaProdutoMigracao[]
   politicasComissao PoliticaComissao[]
@@ -1010,15 +967,13 @@ model Produto {
 
 enum TipoCobranca {
   MULTA_ENCERRAMENTO
-  MATRICULA // taxa de matrícula (negociável)
-  MENSALIDADE // Regular/Intensivo/Kids… (negociável)
-  HORA_PARTICULAR // aulas particulares (cobrança por hora)
-  MATERIAL // material didático
-  CERTIFICADO // certificado profissional — fixo, só Costa Rica (doc 04)
+  MATRICULA
+  MENSALIDADE
+  HORA_PARTICULAR
+  MATERIAL
+  CERTIFICADO
 }
 
-// Disponibilidade do produto por país (catálogo global → país habilita subconjunto).
-// O PREÇO mora em PrecoReferencia (tabela tipada), não aqui.
 enum FormaAgendaOferta {
   TURMA
   PARTICULAR_GRADE_FIXA
@@ -1028,7 +983,7 @@ enum FormaAgendaOferta {
 model ProdutoPais {
  regrasBeneficioReposicao PropostaRegraBeneficioReposicaoOferta[]
 
-  formaAgenda FormaAgendaOferta? // null: classificação ainda não conferida; não inferir pelo nome
+  formaAgenda FormaAgendaOferta?
   versaoEntrada Int @default(0)
   taxaPreviaAssinatura Boolean?
   adiantamentoHoraExigido Boolean?
@@ -1043,9 +998,6 @@ model ProdutoPais {
   @@unique([produtoId, paisId])
 }
 
-// PREÇO TIPADO (decisão P5, doc 15): País + Produto + Modalidade + TipoCobrança = preço.
-// modalidadeId é explícito (apesar de derivável de Produto) p/ relatório/seed simples.
-// moeda gravada também aqui (vem do país) para fidelidade histórica.
 model PrecoReferencia {
   id           String       @id @default(cuid())
   paisId       String
@@ -1061,21 +1013,10 @@ model PrecoReferencia {
   versaoEstudo String?
   vigenteDesde DateTime     @default(now())
   criadoEm     DateTime     @default(now())
-  // Proteção lógica: no máximo UM preço ATIVO por combinação
-  // (país + produto + modalidade + tipo de cobrança). Como Prisma não suporta
-  // índice único parcial, ele é criado por SQL na migration
-  // 20260622120000_preco_ativo_unico (partial unique index WHERE ativo).
 
-  // Integridade (issue #1): no máx. UM preço ATIVO por país+produto+modalidade+tipoCobrança.
-  // Índice único PARCIAL (só ativo=true) — mora na migration `integridade_alocacao_preco`
-  // (UNIQUE ... WHERE "ativo"). O histórico desativado (supersede) permanece livre.
   @@index([paisId, produtoId, modalidadeId, tipoCobranca])
   @@index([ativo])
 }
-
-// ============================================================
-// TURMAS
-// ============================================================
 
 enum StatusTurma {
   PLANEJADA
@@ -1106,28 +1047,25 @@ model Turma {
   aulasDiario AulaDiario[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id            String      @id @default(cuid())
-  codigo        String?     @unique // T-000001
-  nome          String? // nome livre da turma (a escola batiza como quiser: "Salvador", "Particular Ronny"...)
+  codigo        String?     @unique
+  nome          String?
   modalidadeId  String
   modalidade    Modalidade  @relation(fields: [modalidadeId], references: [id])
   nivelId       String
   nivel         Nivel       @relation(fields: [nivelId], references: [id])
   professorId   String?
   professor     Usuario?    @relation("ProfessorTurmas", fields: [professorId], references: [id])
-  online        Boolean     @default(true) // online (hoje) × presencial (futuro) — não há "sede" física
-  // Agenda da turma (calendário real — doc 06): dias da semana + horário. O nº de dias
-  // deve casar com a frequência da modalidade (1x/2x/3x/5x por semana). `diasHorario` é o
-  // rótulo DERIVADO (ex.: "Seg, Qua, Sex · 19:00") mantido para exibição/compat.
-  diasSemana    Int[]       @default([]) // 0=Dom · 1=Seg … 6=Sáb
-  horarioInicio String? // "HH:MM" — início da aula
-  horarioFim    String? // "HH:MM" — fim da aula
-  diasHorario   String? // rótulo derivado (ex.: "Seg, Qua, Sex · 19:00–21:00"); null em turmas antigas
+  online        Boolean     @default(true)
+  diasSemana    Int[]       @default([])
+  horarioInicio String?
+  horarioFim    String?
+  diasHorario   String?
   dataInicio    DateTime?
   dataFim       DateTime?
   cronograma    String?
   capacidade    Int         @default(16)
   status        StatusTurma @default(PLANEJADA)
-  rolling       Boolean     @default(false) // Pré A1 (entrada contínua) — A1 herda janela maior
+  rolling       Boolean     @default(false)
   criadoEm      DateTime    @default(now())
 
   alocacoes AlocacaoTurma[]
@@ -1137,25 +1075,18 @@ model Turma {
   avaliacoes Avaliacao[]
 }
 
-// ============================================================
-// ALUNOS
-// ============================================================
-
 enum StatusAluno {
   ATIVO
   PAUSADO
   ENCERRADO
 }
 
-// Gênero (doc 09 §Identificação): lista curta — Masculino · Feminino · Prefiro não informar.
-// (V0 tinha OUTRO; removido na migration `aluno_cadastro_completo`, OUTRO→NAO_INFORMADO.)
 enum Genero {
   MASCULINO
   FEMININO
-  NAO_INFORMADO // rótulo na UI: "Prefiro não informar"
+  NAO_INFORMADO
 }
 
-// Escolaridade do aluno (doc 09 §Acadêmico). Lista fechada, ordem crescente.
 enum Escolaridade {
   FUNDAMENTAL_INCOMPLETO
   FUNDAMENTAL_COMPLETO
@@ -1169,10 +1100,6 @@ enum Escolaridade {
   DOUTORADO
 }
 
-// Cadastro de pessoa guiado pelo país (doc 04 §espinha dorsal). O `paisId` é o país-base
-// (mercado) que comanda tipos de documento, DDI do telefone e moeda da matrícula.
-// Nacionalidade / 2ª nacionalidade / país de residência / país emissor são ISO 3166
-// (qualquer país — ver `lib/paises-iso.ts`), pois não são mercados da Genius.
 model Aluno {
   tarefas Tarefa[]
   pessoaId String? @unique
@@ -1189,65 +1116,51 @@ model Aluno {
   registrosAula RegistroAulaAluno[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id     String  @id @default(cuid())
-  codigo String? @unique // A-000001
+  codigo String? @unique
 
-  // Identificação (doc 09 §Identificação). `nome` foi dividido em primeiroNome+sobrenome
-  // na migration `aluno_cadastro_completo` (backfill: split no 1º espaço).
   primeiroNome  String
   sobrenome     String?
   nomePreferido String?
-  /// Coluna GERADA (D1, #141): nome em minúsculas, sem acento e sem espaços repetidos, para ordenar
-  /// listas no Postgres locale C. Criada por SQL na migration 20261019110000_nome_ordenacao; o banco a
-  /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
-  /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
   nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(((\"primeiroNome\" || ' '::text) || COALESCE(sobrenome, ''::text)), 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
   nascimento    DateTime?
   genero        Genero?
 
-  // Documentação — país dirige o tipo de documento e a validação (doc 04).
   paisId               String
   pais                 Pais           @relation(fields: [paisId], references: [id])
   tipoDocumentoId      String?
   tipoDocumento        TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id])
-  documento            String? // número do documento
+  documento            String?
   documentoValido      Boolean        @default(false)
-  documentoPaisEmissor String? // ISO 3166 (opcional) — permite documento estrangeiro
-  nacionalidade        String? // ISO 3166
-  segundaNacionalidade String? // ISO 3166 (opcional)
+  documentoPaisEmissor String?
+  nacionalidade        String?
+  segundaNacionalidade String?
 
-  // Contato — telefone/e-mail bloqueiam se inválidos (doc 04 §3).
   email              String?
-  telefoneE164       String? // E.164 com DDI embutido (ex.: +50688887777). Máscara só na UI.
-  whatsapp           Boolean @default(false) // o telefone principal é WhatsApp?
-  aceitaComunicacoes Boolean @default(true) // opt-in de comunicações
+  telefoneE164       String?
+  whatsapp           Boolean @default(false)
+  aceitaComunicacoes Boolean @default(true)
 
-  // Residência (doc 09 §Residência) — país pode diferir da nacionalidade (comum na AC).
-  paisResidencia String? // ISO 3166
+  paisResidencia String?
   cep            String?
   rua            String?
   numero         String?
   complemento    String?
   bairro         String?
   cidade         String?
-  regiao         String? // Estado / Província / Departamento (nome varia por país)
+  regiao         String?
 
-  // Acadêmico (doc 09 §Acadêmico)
   escolaridade Escolaridade?
   idiomaNativo String?
 
-  // Operacional (doc 09 §Operacional)
-  fuso        String? // sobrescreve o fuso do país (envio de mensagens); default = país
+  fuso        String?
   observacoes String?
-  // Fase 3 (portal do aluno): usuário de acesso (papel ALUNO) vinculado 1:1.
   usuarioId   String?  @unique
   usuario     Usuario? @relation("AcessoAluno", fields: [usuarioId], references: [id])
-  // Fase 3 (acadêmico)
   presencas    Presenca[]
   notas        Nota[]
   testesNivel  TesteNivel[]
   certificados Certificado[]
 
-  // Estado
   status   StatusAluno @default(ATIVO)
   criadoEm DateTime    @default(now())
 
@@ -1285,7 +1198,7 @@ model Responsavel {
 enum PapelResponsavel {
   PEDAGOGICO
   FINANCEIRO
-  EMERGENCIA // contato de emergência (doc 09 §Operacional) — nome/parentesco/telefone
+  EMERGENCIA
 }
 
 model AlunoResponsavel {
@@ -1317,7 +1230,6 @@ model AlocacaoTurma {
   id       String   @id @default(cuid())
   alunoId  String
   aluno    Aluno    @relation(fields: [alunoId], references: [id])
-  // Expansão B01: null identifica legado ainda não conferido, nunca uma matrícula inferida.
   matriculaId String?
   matricula Matricula? @relation(fields: [matriculaId, alunoId], references: [id, alunoId], onDelete: Restrict, onUpdate: Restrict)
   turmaId  String
@@ -1325,11 +1237,6 @@ model AlocacaoTurma {
   ativa    Boolean  @default(true)
   criadoEm DateTime @default(now())
 
-  // Integridade parcial em SQL: uma alocação ATIVA por matrícula e por par
-  // aluno/turma; para legado sem matrícula, no máximo uma ativa por aluno. O
-  // trigger também impede combinar vínculo legado ativo com contrato simultâneo.
-  // Prisma não modela índices parciais; ver `alocacao_matricula_expansao` e
-  // `alocacoes_contratos_independentes`. Histórico (ativa=false) é livre.
   @@index([alunoId])
   @@index([turmaId])
   @@index([matriculaId, alunoId])
@@ -1338,10 +1245,6 @@ model AlocacaoTurma {
   autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[]
 }
 
-// MOVIMENTAÇÃO DO ALUNO — tabela TIPADA (decisão P6, doc 15).
-// Mesmo princípio do financeiro: Evento = auditoria; tabela tipada = relatório/operação.
-// Responde "quantos pausaram/encerraram este mês", "por que está nessa turma", etc.
-// (turmaOrigem/Destino ficam como IDs simples — é um log; aluno/usuário têm relação.)
 enum TipoMovimentacao {
   MATRICULA
   TROCA_TURMA
@@ -1376,10 +1279,6 @@ model MovimentacaoAluno {
   @@index([tipo])
   @@index([criadoEm])
 }
-
-// ============================================================
-// COMERCIAL (LEAD)
-// ============================================================
 
 enum Temperatura {
   QUENTE
@@ -1422,7 +1321,7 @@ model Oportunidade {
   participantes ParticipanteOportunidade[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id             String      @id @default(cuid())
-  codigo         String?     @unique // L-000001
+  codigo         String?     @unique
   nome           String
   telefoneE164   String?
   paisId         String?
@@ -1434,31 +1333,20 @@ model Oportunidade {
   vendedorDonoId String?
   vendedor       Usuario?    @relation("VendedorLeads", fields: [vendedorDonoId], references: [id])
 
-  // Professor responsável pela experimental (Issue #13). FK opcional (NULL) =
-  // sem atribuição: experimentais antigas/sem professor ficam sem escopo até
-  // serem (re)atribuídas. Fonte de verdade do vínculo professor↔experimental;
-  // o evento `ExperimentalAtribuida` é mantido apenas para auditoria.
   professorExperimentalId String?
   professorExperimental   Usuario? @relation("ProfessorExperimentais", fields: [professorExperimentalId], references: [id])
 
-  // origem inteligente (hierarquia de anúncio: campanha/conjunto/anúncio/palavra). Só é
-  // preenchida quando resolvida corretamente (form manual, ou Marketing API no futuro).
   origemCampanha String?
   origemConjunto String?
   origemAnuncio  String?
   origemPalavra  String?
 
-  // Referral CRU do click-to-WhatsApp (doc 27 C1 · review PR #53): os campos da Meta têm
-  // SEMÂNTICA PRÓPRIA e NÃO são a hierarquia de anúncio — `sourceType` é só `ad|post`,
-  // `sourceId` é o id do anúncio/post, `headline` é o título, `ctwaClid` é o id do clique.
-  // Guardados crus aqui; a resolução p/ campanha/conjunto exige a Marketing API (fora da C1).
   waReferralSourceType String?
   waReferralSourceId   String?
   waReferralHeadline   String?
   waReferralSourceUrl  String?
   waReferralCtwaClid   String?
 
-  // resumo executivo (manual no V0, IA na Fase 1)
   interesse   String?
   objetivo    String?
   urgencia    String?
@@ -1466,26 +1354,17 @@ model Oportunidade {
   objecao     String?
   proximaAcao String?
 
-  // datas que alimentam a fila da Home
   proximoFollowUp  DateTime?
   dataExperimental DateTime?
   dataProposta     DateTime?
 
-  // Estado de CONFIRMAÇÃO da experimental (doc 27 C2 · gap 33 do doc 28): o lead respondeu
-  // confirmando a presença (botão no oficial ou "SIM" no Baileys). O histórico de
-  // reagendamento já vem dos eventos `ExperimentalAgendada` repetidos — não precisa coluna.
   experimentalConfirmadaEm DateTime?
 
-  // B8 (doc 32): o lead pediu REAGENDAR — a cadência pré-experimental fica PAUSADA até a
-  // ação humana (o vendedor remarcar limpa o campo em `agendarExperimental`). Sem estado
-  // persistido, o tick seguinte re-enfileirava o próximo degrau por cima do pedido.
   aguardandoReagendamentoEm DateTime?
 
-  // Previsão manual opcional (D13): data civil literal, sem conversão de fuso.
   probabilidadePct   Int?
   previsaoFechamento String?
 
-  // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
   comissaoPrevista Decimal? @db.Decimal(12, 2)
@@ -1513,7 +1392,6 @@ enum CategoriaDocumento {
   OUTRO
 }
 
-// Um documento pertence a um lead OU diretamente a uma matrícula (inclusive sem lead).
 model Documento {
   rascunhosFechamentoHoras RascunhoFechamentoHoras[]
   condicoesHoras CondicoesHorasMatricula[]
@@ -1531,16 +1409,12 @@ model Documento {
   categoria CategoriaDocumento
   nome      String
   url       String
-  arquivado Boolean            @default(false) // soft-delete (doc 10 §6: ninguém apaga nada)
+  arquivado Boolean            @default(false)
   criadoEm  DateTime           @default(now())
 
   @@index([leadId])
   @@index([matriculaId])
 }
-
-// ============================================================
-// MATRÍCULA / FINANCEIRO
-// ============================================================
 
 enum StatusMatricula {
   RASCUNHO
@@ -1548,7 +1422,7 @@ enum StatusMatricula {
   ATIVA
   PAUSADA
   ENCERRADA
-  CANCELADA // encerramento precoce → estorno de comissão (ver docs/10)
+  CANCELADA
 }
 
 enum StatusPropostaPausaMatriculas {
@@ -1933,39 +1807,25 @@ model Matricula {
   produto                Produto         @relation(fields: [produtoId], references: [id])
   paisId                 String
   pais                   Pais            @relation(fields: [paisId], references: [id])
-  codigo                 String?         @unique // M-000001
+  codigo                 String?         @unique
   moeda                  String
   status                 StatusMatricula @default(RASCUNHO)
   diaVencimento          Int             @default(5)
-  mesesPlano             Int             @default(12) // p/ gerar o cronograma na ativação
-  // Indicadores de ativação: contrato com evidência e taxa confirmada; primeira
-  // mensalidade só é exigida quando a configuração operacional determinar (D10).
+  mesesPlano             Int             @default(12)
   contratoOk             Boolean         @default(false)
   pagamentoTaxaOk        Boolean         @default(false)
   primeiraMensalidadeOk  Boolean         @default(false)
-  // Registro legado de ativação com pendência; não dispensa as pré-condições atuais.
   ativadaComPendencia    Boolean         @default(false)
-  // Exceção de preço auditável (Issues #7/#22): matrícula criada SEM preço de
-  // referência ATIVO para a combinação país × produto × tipo de cobrança, por
-  // exceção justificada + aprovada. Exige justificativa e grava Evento
-  // `MatriculaSemPrecoReferencia`. Permite operar países/produtos sem matriz de
-  // preços fechada (doc 06 §Em aberto) sem perder a auditoria.
   precoReferenciaAusente Boolean         @default(false)
   justificativaSemPreco  String?
-  // C4 (doc 27 §fechamento): quando o CONTRATO foi enviado ao cliente — âncora da régua
-  // "contrato sem assinatura em 48h". Re-enviar atualiza (abre ocorrência nova da cadência).
   contratoEnviadoEm      DateTime?
-  // B2B (doc 03 Fase 2): matrícula CORPORATIVA — o pagador é a empresa (fatura única).
   empresaId              String?
   empresa                Empresa?        @relation(fields: [empresaId], references: [id])
-  // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId         String?
   origemNivel            OrigemNivel?
   dataAvaliacaoNivel     DateTime?
   criadoEm               DateTime        @default(now())
   ativadaEm              DateTime?
-  // Estado operacional efetivo: restrição automática D+30 OU restrição manual
-  // aprovada por outro administrador. Não existe integração com sala externa (D12).
   acessoBloqueado        Boolean         @default(false)
   bloqueadoEm            DateTime?
 
@@ -1975,7 +1835,6 @@ model Matricula {
   alocacoes AlocacaoTurma[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
 
-  // Alocação não pode apontar para contrato de outra pessoa, inclusive por SQL direto.
   @@unique([id, alunoId])
   propostasSegundaChamada PropostaSegundaChamada[]
   reservasSegundaChamada ReservaSegundaChamada[]
@@ -2000,7 +1859,7 @@ enum FormaPagamento {
   GREENPAY
   DINHEIRO
   CARTAO
-  PIX // Fase 2 (doc 03): integrações de pagamento
+  PIX
   BOLETO
 }
 
@@ -2054,33 +1913,25 @@ model Cobranca {
   informes PagamentoInformado[]
   recebimentos Recebimento[]
   id              String          @id @default(cuid())
-  codigo          String?         @unique // C-000001
+  codigo          String?         @unique
   matriculaId     String
   matricula       Matricula       @relation(fields: [matriculaId], references: [id])
   tipo            TipoCobranca
-  competencia     String? // "2026-06" para mensalidades
+  competencia     String?
   valorOriginal   Decimal         @db.Decimal(12, 2)
   valorNegociado  Decimal         @db.Decimal(12, 2)
   valorRecebido   Decimal?        @db.Decimal(12, 2)
-  saldo           Decimal?        @db.Decimal(12, 2) // valorNegociado - valorRecebido
+  saldo           Decimal?        @db.Decimal(12, 2)
   moeda           String
   vencimento      DateTime
   status          StatusCobranca  @default(PENDENTE)
   pagoEm          DateTime?
   formaPagamento  FormaPagamento?
-  // C4 (doc 27 §fechamento): link de pagamento enviado ao cliente. `linkEnviadoEm` é a
-  // âncora da régua "link sem pagamento". Na Fase 2 o gateway gera o link; aqui pode ser
-  // registrado manualmente (Pix copia-e-cola, link do provedor etc.).
   linkPagamento   String?
   linkEnviadoEm   DateTime?
-  // Fase 2 (gateway por DRIVER): referência opaca no provedor (token da página simulada,
-  // id da cobrança no GreenPay/PIX futuro). Única — é a chave do webhook de conciliação.
   gatewayRef      String?   @unique
-  // B2B (doc 03 Fase 2): mensalidade de matrícula corporativa agrupada numa FATURA ÚNICA.
   faturaB2BId     String?
   faturaB2B       FaturaB2B? @relation(fields: [faturaB2BId], references: [id])
-  // SNAPSHOT do valor levado à fatura no fechamento (= saldo aberto naquele momento —
-  // review PR #60): mudanças posteriores na cobrança não mudam a composição do documento.
   valorFaturado   Decimal?   @db.Decimal(12, 2)
   comprovanteUrl  String?
   comprovanteNome String?
@@ -2089,9 +1940,6 @@ model Cobranca {
 
   intencoesWhatsApp IntencaoMensagem[]
 
-  // Índice PARCIAL (SQL puro na migration review_pr60, Prisma não modela): no máximo UMA
-  // cobrança viva por matrícula×tipo×competência — dupla ativação não duplica cronograma.
-  // WHERE status <> 'CANCELADA' AND competencia IS NOT NULL.
 }
 
 model EmissaoContinuidadeMensal {
@@ -2138,16 +1986,10 @@ model Comissao {
   moeda                 String
   status                StatusComissao @default(PENDENTE)
   dataPrevistaPagamento DateTime?
-  // Quando a comissão foi APROVADA (ativação da matrícula) — é o corte de competência do
-  // fechamento mensal automático (review PR #60): o cron paga só o período já fechado.
   aprovadaEm            DateTime?
   pagaEm                DateTime?
   criadoEm              DateTime       @default(now())
 }
-
-// ============================================================
-// APROVAÇÕES (engine genérica)
-// ============================================================
 
 enum TipoAprovacao {
   DESCONTO
@@ -2177,20 +2019,15 @@ model Aprovacao {
   solicitante   Usuario         @relation("SolicitanteAprovacoes", fields: [solicitanteId], references: [id])
   aprovadorId   String?
   aprovador     Usuario?        @relation("AprovadorAprovacoes", fields: [aprovadorId], references: [id])
-  alvoTipo      String // "Cobranca", "Comissao"...
+  alvoTipo      String
   alvoId        String?
-  payload       Json? // { de, para, percentual, ... }
+  payload       Json?
   vigencia      Vigencia?
   motivo        String?
   impactoMensal Decimal?        @db.Decimal(12, 2)
   criadoEm      DateTime        @default(now())
   decididoEm    DateTime?
 }
-
-// ============================================================
-// AJUSTE FINANCEIRO — tabela TIPADA (relatório). Evento cuida da auditoria.
-// Responde: total de desconto concedido · desconto por vendedor / país / modalidade.
-// ============================================================
 
 enum TipoAjuste {
   DESCONTO
@@ -2204,11 +2041,11 @@ model AjusteFinanceiro {
   id            String     @id @default(cuid())
   matriculaId   String
   matricula     Matricula  @relation(fields: [matriculaId], references: [id])
-  cobrancaId    String? // referência leve (opcional)
+  cobrancaId    String?
   tipo          TipoAjuste
   valorDe       Decimal    @db.Decimal(12, 2)
   valorPara     Decimal    @db.Decimal(12, 2)
-  descontoValor Decimal    @db.Decimal(12, 2) // valorDe - valorPara
+  descontoValor Decimal    @db.Decimal(12, 2)
   descontoPct   Decimal?   @db.Decimal(5, 2)
   moeda         String
   vigencia      Vigencia?
@@ -2216,7 +2053,6 @@ model AjusteFinanceiro {
   autorId       String
   autor         Usuario    @relation("AutorAjustes", fields: [autorId], references: [id])
   aprovacaoId   String?
-  // denormalizados p/ relatório fácil (group by):
   vendedorId    String?
   paisId        String?
   modalidadeId  String?
@@ -2228,27 +2064,15 @@ model AjusteFinanceiro {
   @@index([criadoEm])
 }
 
-// ============================================================
-// CÂMBIO — cotações manuais p/ CONSOLIDAÇÃO gerencial (reporting-only, doc 04 §Câmbio).
-// NUNCA toca a conta do aluno: cada cobrança fica na sua moeda. Pivô único = USD
-// (`unidadesPorUsd` = quantas unidades da moeda equivalem a 1 USD; USD seria 1, não é gravado).
-// Append-only por (moeda, vigenteEm): a leitura usa a cotação MAIS RECENTE por moeda, e o
-// histórico permite reconstruir a taxa usada em cada relatório. Auditoria de "quem" no Evento.
-// ============================================================
-
 model TaxaCambio {
   id             String   @id @default(cuid())
-  moeda          String // ISO 4217 (ex.: CRC, BRL). Alvo/origem de conversão; USD é o pivô.
-  unidadesPorUsd Decimal  @db.Decimal(14, 6) // quantas unidades desta moeda equivalem a 1 USD (ex.: CRC ~ 512)
+  moeda          String
+  unidadesPorUsd Decimal  @db.Decimal(14, 6)
   vigenteEm      DateTime @default(now())
   criadoEm       DateTime @default(now())
 
   @@index([moeda, vigenteEm])
 }
-
-// ============================================================
-// EVENTO — audit / event log append-only (ESPINHA DORSAL)
-// ============================================================
 
 enum CanalAvisoAlteracaoAgenda {
  EMAIL
@@ -2359,41 +2183,24 @@ model Evento {
   pendenciasAvisosAgenda PendenciaAvisoAgenda[]
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("EventoAplicacaoAgendaAditivo")
   id           String   @id @default(cuid())
-  tipo         String // LeadCriado, MatriculaAtivada, PagamentoRegistrado, AlunoPausado...
-  agregadoTipo String // "Lead", "Matricula", "Aluno", "Cobranca"...
+  tipo         String
+  agregadoTipo String
   agregadoId   String
   autorId      String?
   autor        Usuario? @relation("AutorEventos", fields: [autorId], references: [id])
-  versao       Int      @default(1) // versão do formato do payload — versionamento salva vidas
-  payload      Json? // { de, para, motivo, ... } — o antes→depois
+  versao       Int      @default(1)
+  payload      Json?
   criadoEm     DateTime @default(now())
 
-  // Último Evento por agregado (MAX(criadoEm)) no funil/carteira (#262 C2): varredura reversa que para na 1ª linha.
-  // Também serve toda busca por (agregadoTipo, agregadoId) ou só agregadoTipo (prefixo); o antigo
-  // @@index([agregadoTipo, agregadoId]) virou redundante e saiu (migration 20261020410000).
   @@index([agregadoTipo, agregadoId, criadoEm])
   @@index([tipo])
   @@index([criadoEm])
-  // Idempotência das criações (#166): índice de expressão parcial "Evento_idempotencia_idx" sobre
-  // (tipo, autorId, payload->>'chaveIdempotencia') WHERE payload ? 'chaveIdempotencia', em SQL manual na
-  // migration 20261019100000_evento_idempotencia_idx (o Prisma não representa expressão nem predicado).
-  // Trava: src/server/_shared/idempotencia-indice.test.ts.
 }
-
-// ============================================================
-// CONTADOR — gera os códigos legíveis (L-/A-/M-/C-/T-) sem corrida (transacional)
-// ============================================================
 
 model Contador {
-  chave String @id // "lead", "aluno", "matricula", "cobranca", "turma"
+  chave String @id
   valor Int    @default(0)
 }
-
-// ============================================================
-// WHATSAPP — canal bimotor (docs 26/29/30)
-// Regra (doc 29 §3): estas são tabelas OPERACIONAIS (mutáveis, alto volume);
-// o Evento grava só fatos de negócio (degrau cumprido, opt-out, ciclo de template).
-// ============================================================
 
 enum DriverWhatsApp {
   META_CLOUD
@@ -2417,25 +2224,23 @@ enum SessaoNumero {
 model NumeroWhatsApp {
   id           String           @id @default(cuid())
   telefoneE164 String           @unique
-  rotulo       String // "Cobrança", "Vendas — Ana"
+  rotulo       String
   driver       DriverWhatsApp
   finalidade   FinalidadeNumero
-  providerRef  String? // META_CLOUD: phone_number_id · BAILEYS: nome da instância Evolution
-  sessao       SessaoNumero     @default(DESCONECTADO) // relevante só p/ BAILEYS
-  donoId       String? // dono da conversa = dono do número (doc 26 §Camada 3)
+  providerRef  String?
+  sessao       SessaoNumero     @default(DESCONECTADO)
+  donoId       String?
   dono         Usuario?         @relation("DonoNumerosWhatsApp", fields: [donoId], references: [id])
-  triagemResponsavelId String? // responsável pela triagem do número (null = ADMINISTRADOR, Q2 provisória)
+  triagemResponsavelId String?
   triagemResponsavel   Usuario?         @relation("TriagemNumeroWhatsApp", fields: [triagemResponsavelId], references: [id], onDelete: SetNull)
   ativo        Boolean          @default(true)
-  // Excluído pelo admin: some da configuração, mas conversas, mensagens e Eventos continuam ligados a ele.
-  // Sempre inativo e desconectado. Recadastrar o mesmo telefone restaura este registro (autor no Evento).
   excluidoEm   DateTime?
   criadoEm     DateTime         @default(now())
   perfilNome   String?
   perfilRecado String?
   perfilFotoUploadId String?
   privacidade  Json?
-  temporariasSegundos Int       @default(0) // mensagens temporárias: desligadas por padrão
+  temporariasSegundos Int       @default(0)
 
   setores             NumeroSetorWhatsApp[]
   conversas           ConversaWhatsApp[]
@@ -2445,13 +2250,9 @@ model NumeroWhatsApp {
   politicas           PoliticaRegua[]
   configuracaoAvisosAgenda ConfiguracaoOperacional? @relation("NumeroAvisosAgenda")
 
-  // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
-  // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
-  // mensagem cairia na conversa/dono errados (review PR #51 P2-6).
   @@unique([driver, providerRef])
 }
 
-/// Setores que um número atende (um número serve vários setores; sem repetir).
 model NumeroSetorWhatsApp {
   id         String                        @id @default(cuid())
   numeroId   String
@@ -2466,13 +2267,12 @@ model ContatoWhatsApp {
   pessoaId     String?
   pessoa       Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   id           String  @id @default(cuid())
-  telefoneE164 String  @unique // 1ª unicidade de telefone do sistema (doc 29) — embrião da entidade Pessoa (comentário do topo)
+  telefoneE164 String  @unique
   waId         String? @unique
-  nomeExibicao String? // nome dado pelo ERP (cadastro); webhook nunca escreve aqui
-  nomePerfil   String? // nome de perfil do WhatsApp (pushName) — só de mensagem RECEBIDA do contato
-  nomeEditadoEm DateTime? // equipe definiu/limpou o nome salvo ("Editar nome"): fluxos do ERP não o preenchem mais
+  nomeExibicao String?
+  nomePerfil   String?
+  nomeEditadoEm DateTime?
 
-  // Vínculos opcionais — um contato pode ser responsável E lead ao mesmo tempo.
   alunoId       String?
   aluno         Aluno?       @relation(fields: [alunoId], references: [id])
   responsavelId String?
@@ -2480,7 +2280,7 @@ model ContatoWhatsApp {
   leadId        String?
   lead          Oportunidade?        @relation(fields: [leadId], references: [id])
 
-  optOutEm DateTime? // LEI: opt-out sempre respeitado pelo despachante (doc 26/30 S10)
+  optOutEm DateTime?
   criadoEm DateTime  @default(now())
 
   conversas ConversaWhatsApp[]
@@ -2489,8 +2289,6 @@ model ContatoWhatsApp {
   @@index([pessoaId])
 }
 
-// Grupo do WhatsApp visto por um número (E3.5): conversa de grupo não tem contato individual
-// nem abre atendimento — só leitura e escopo (Divergência 3 do plano).
 model GrupoWhatsApp {
   id       String         @id @default(cuid())
   numeroId String
@@ -2512,27 +2310,20 @@ model ConversaWhatsApp {
   id               String          @id @default(cuid())
   numeroId         String
   numero           NumeroWhatsApp  @relation(fields: [numeroId], references: [id])
-  // XOR (CHECK "Conversa_contato_xor_grupo"): conversa individual tem contato; de grupo tem grupo.
   contatoId        String?
   contato          ContatoWhatsApp? @relation(fields: [contatoId], references: [id], onDelete: Restrict)
   grupoId          String?
   grupo            GrupoWhatsApp?  @relation(fields: [grupoId], references: [id], onDelete: Restrict)
   ultimaMensagemEm DateTime?
-  ultimoInboundEm  DateTime? // alimenta a lei do despachante + silêncio pós-inbound (S4)
-  // "Tratar" o inbound (S4/E3): promessa/pagamento pela inbox ou "retomar régua" marcam
-  // aqui; o despachante só aplica o silêncio quando ultimoInboundEm > inboundTratadoEm.
+  ultimoInboundEm  DateTime?
   inboundTratadoEm DateTime?
-  // Captura comercial C1 (doc 27): CLAIM ATÔMICO do "1º inbound" — marcado uma única vez
-  // por um updateMany condicional (where capturadaEm IS NULL). Dois inbounds concorrentes
-  // do mesmo contato: só um vence o claim (lock de linha), então só um lead/saudação nasce
-  // (review PR #53 P1 — o count===0 anterior não era atômico).
   capturadaEm      DateTime?
   naoLidas         Int             @default(0)
   criadoEm         DateTime        @default(now())
 
   mensagens MensagemWhatsApp[]
 
-  @@unique([numeroId, contatoId]) // um contexto conversa por um número só (doc 26)
+  @@unique([numeroId, contatoId])
   @@unique([numeroId, grupoId])
 }
 
@@ -2564,12 +2355,12 @@ enum StatusMensagem {
 }
 
 enum OrigemEnvio {
-  GESTAO // C5 (doc 27): mensagens do sistema para a EQUIPE (alerta de SLA, relatório do gestor)
+  GESTAO
   HUMANO
   CRON
   LOTE
-  CELULAR // eco fromMe: enviada pelo app do celular, fora do ERP (E3.6)
-  IA // resposta do agente Aria (motor, Fase 4)
+  CELULAR
+  IA
 }
 
 model MensagemWhatsApp {
@@ -2580,32 +2371,28 @@ model MensagemWhatsApp {
   id         String           @id @default(cuid())
   conversaId String
   conversa   ConversaWhatsApp @relation(fields: [conversaId], references: [id])
-  numeroId   String // denormalizado p/ dedupe por número
+  numeroId   String
   numero     NumeroWhatsApp   @relation(fields: [numeroId], references: [id])
 
   direcao   DirecaoMensagem
   tipo      TipoMensagem    @default(TEXTO)
-  corpo     String? // snapshot do texto renderizado (auditoria — S/gap 15)
-  midiaPath String? // caminho no storage (binário: decisão E3)
+  corpo     String?
+  midiaPath String?
 
   status            StatusMensagem    @default(NA_FILA)
   statusEm          DateTime?
-  // Momento em que a SAIDA saiu (gravada já ENVIADA, ou o primeiro status de envio vindo de NA_FILA).
-  // statusEm avança com ENTREGUE/LIDA; este não. Nulo em ENTRADA, NA_FILA, FALHOU e nas saídas anteriores
-  // à coluna (essas já nasciam enviadas: o criadoEm equivale). Usado pelo D6 do SLA (alertas-sla.ts).
   enviadaEm         DateTime?
   driver            DriverWhatsApp
-  origem            OrigemEnvio? // só SAIDA
-  providerMessageId String? // wamid/key.id do driver
-  clientMessageId   String?           @unique // UUID por tentativa de envio do motor (Fase 4); nulo com Meta/Evolution
-  mensagemIdMotor   String? // chatJid:idDoProtocolo do motor (Fase 4)
+  origem            OrigemEnvio?
+  providerMessageId String?
+  clientMessageId   String?           @unique
+  mensagemIdMotor   String?
   editadaEm         DateTime?
   apagadaEm         DateTime?
   autorId           String?
   autor             Usuario?          @relation("AutorMensagensWhatsApp", fields: [autorId], references: [id])
   templateId        String?
   template          TemplateWhatsApp? @relation(fields: [templateId], references: [id])
-  // Remetente em conversa de GRUPO (E3.5); nulos em conversa individual.
   participanteJid   String?
   participanteE164  String?
   participanteNome  String?
@@ -2614,12 +2401,11 @@ model MensagemWhatsApp {
   intencao IntencaoMensagem?
   reacoes  ReacaoMensagemWhatsApp[]
 
-  @@unique([numeroId, providerMessageId]) // dedupe dos retries de webhook (S7)
+  @@unique([numeroId, providerMessageId])
   @@index([conversaId, criadoEm])
   @@index([atendimentoId, criadoEm, id])
 }
 
-/// Reação a uma mensagem (Fase 4): uma por autor e mensagem.
 model ReacaoMensagemWhatsApp {
   id           String           @id @default(cuid())
   mensagemId   String
@@ -2633,7 +2419,6 @@ model ReacaoMensagemWhatsApp {
   @@unique([mensagemId, autorJid])
 }
 
-/// Caixa de entrada dos eventos do motor (Fase 4): dedupe por idEvento, processada em ordem de seq.
 model EventoMotorRecebido {
   id                 String    @id @default(cuid())
   seq                BigInt    @unique @default(autoincrement())
@@ -2653,7 +2438,7 @@ model EventoMotorRecebido {
 
 enum StatusIntencao {
   PENDENTE
-  ENVIANDO // claim atômico do despachante — evita envio duplo sob concorrência (review PR #49)
+  ENVIANDO
   DESPACHADA
   CANCELADA
   FALHOU
@@ -2661,8 +2446,6 @@ enum StatusIntencao {
   SIMULADA
 }
 
-// OUTBOX (doc 26 §fila única): nenhuma automação envia direto — grava intenção;
-// o despachante único aplica os guard-rails e entrega ao driver do número.
 model IntencaoMensagem {
   acaoAgenteIAId String?
   cicloCobranca Int @default(0)
@@ -2677,59 +2460,46 @@ model IntencaoMensagem {
 
   origem           OrigemEnvio
   status           StatusIntencao    @default(PENDENTE)
-  tipo             TipoMensagem      @default(TEXTO) // mídia da inbox (E3): IMAGEM/AUDIO/DOCUMENTO
-  midiaPath        String? // URL canônica /api/files/... do binário (pipeline único — doc 29 regra 10)
-  corpoRenderizado String // snapshot no enfileiramento (S/gap 15); em mídia é a legenda
-  variaveis        Json? // valores posicionais p/ template Meta (mesma renderização do corpo)
+  tipo             TipoMensagem      @default(TEXTO)
+  midiaPath        String?
+  corpoRenderizado String
+  variaveis        Json?
   templateId       String?
   template         TemplateWhatsApp? @relation(fields: [templateId], references: [id])
   avisoAlteracaoAgendaId String? @unique
   avisoAlteracaoAgenda AvisoAlteracaoAgenda? @relation(fields: [avisoAlteracaoAgendaId], references: [id], onDelete: Restrict)
 
-  // Vínculo de domínio — cobrança na E1; lead na E6 (fase doc 27).
   cobrancaId String?
   cobranca   Cobranca?      @relation(fields: [cobrancaId], references: [id])
-  passo      String? // PassoRegua ("D-7"...) — validado no Zod
+  passo      String?
   politicaId String?
   politica   PoliticaRegua? @relation(fields: [politicaId], references: [id])
 
-  // Vínculo com o lead. `passoComercial`/`ocorrenciaComercial` são da régua comercial do CRM antigo (a
-  // PoliticaComercial foi removida): nada novo os preenche e o despachante cancela as intenções que sobraram.
   leadId             String?
   lead               Oportunidade?             @relation(fields: [leadId], references: [id])
-  passoComercial     String? // passo da cadência comercial antiga ("+30min"...)
-  ocorrenciaComercial String? // âncora em ISO do ciclo da cadência antiga
+  passoComercial     String?
+  ocorrenciaComercial String?
 
-  // Classe REATIVA (doc 27 §regras transversais · gap C20): resposta automática a um
-  // inbound (saudação) — isenta de janela/teto/silêncio (uma saudação "em segundos" não
-  // pode esperar o horário comercial), mas respeita opt-out/kill switch/shadow.
   reativa Boolean @default(false)
 
-  // Motor (Fase 4): id gerado pelo ERP antes de enviar (um por tentativa) e conteúdo
-  // especial (ConteudoEspecial, sem binário).
   clientMessageId String? @unique
   conteudo        Json?
 
-  criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
-  atualizadoEm    DateTime          @default(now()) @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
-  // Mensagem agendada pelo atendente (Tarefas, Fase 2).
+  criadaEm        DateTime          @default(now())
+  atualizadoEm    DateTime          @default(now()) @updatedAt
   agendadaPara    DateTime?
   tarefaId        String?
   tarefa          Tarefa?           @relation(fields: [tarefaId], references: [id], onDelete: SetNull)
-  despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
-  // B3 (doc 32): VALIDADE do disparo — intenção pré-evento (lembrete -24h/-2h) não pode
-  // sair depois da aula, nem um degrau atrasado além da tolerância. O despachante CANCELA
-  // (nunca envia) quando `agora > validaAte`, inclusive itens ADIADOS por janela/silêncio/
-  // kill switch. NULL = sem validade (comportamento de backlog da cobrança).
+  despacharAposEm DateTime?
   validaAte       DateTime?
   despachadaEm    DateTime?
-  motivoFalha     String? // sem_destino, driver, opt_out... — estampado na fila humana
+  motivoFalha     String?
   mensagemId      String?           @unique
   mensagem        MensagemWhatsApp? @relation(fields: [mensagemId], references: [id])
-  autorId         String? // quem enfileirou (HUMANO/LOTE); null = cron
+  autorId         String?
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
-  @@unique([cobrancaId, passo, cicloCobranca]) // cada calendário aprovado tem seus próprios degraus
+  @@unique([cobrancaId, passo, cicloCobranca])
   @@index([status, despacharAposEm])
   @@index([status, agendadaPara])
 }
@@ -2741,19 +2511,17 @@ enum StatusTemplate {
   REJEITADO
 }
 
-// Entidade única com ciclo duplo (doc 26 §Camada 2): statusMeta só importa quando o
-// template roda em número META_CLOUD; em BAILEYS todo template vale no ato (texto livre).
 model TemplateWhatsApp {
   id             String         @id @default(cuid())
-  nome           String         @unique // amigavel, dados, vencida, firme
-  corpo          String // com variáveis {nome} {valor} {vencimento} {link}
-  idioma         String         @default("es") // casar com Pais.idioma (gap 11)
+  nome           String         @unique
+  corpo          String
+  idioma         String         @default("es")
   categoria      String         @default("utility")
   statusMeta     StatusTemplate @default(RASCUNHO)
   metaTemplateId String?
   tipo           TipoTemplate   @default(MODELO_AUTOMACAO)
   atalho         String?        @unique
-  titulo         String? // só RESPOSTA_RAPIDA
+  titulo         String?
   ariaPodeUsar   Boolean        @default(false)
   setor          FinalidadeAtendimentoWhatsApp?
   arquivadoEm    DateTime?
@@ -2778,19 +2546,16 @@ enum EstadoPolitica {
   ATIVA
 }
 
-// Política como DADO (doc 26): a const REGUA vira default de fábrica (seed).
-// LEIS fora da config (código): D+15 nunca AUTOMATICO; régua automática exige driver
-// oficial (S1); opt-out sempre respeitado; despachante nunca fala por cima de conversa viva.
 model PoliticaRegua {
   id                      String          @id @default(cuid())
   nome                    String          @unique
   escopo                  String          @default("COBRANCA")
-  estado                  EstadoPolitica  @default(DESLIGADA) // toda automação nasce desligada (doc 27)
-  janelaInicio            Int             @default(9) // hora local do CONTATO (S3: Aluno.fuso ?? Pais.fuso)
+  estado                  EstadoPolitica  @default(DESLIGADA)
+  janelaInicio            Int             @default(9)
   janelaFim               Int             @default(20)
-  diasSemana              Int[]           @default([1, 2, 3, 4, 5]) // 0=domingo
-  tetoPorContatoDia       Int             @default(2) // S5
-  silencioPosInboundHoras Int             @default(72) // S4
+  diasSemana              Int[]           @default([1, 2, 3, 4, 5])
+  tetoPorContatoDia       Int             @default(2)
+  silencioPosInboundHoras Int             @default(72)
   killSwitch              Boolean         @default(false)
   numeroRemetenteId       String?
   numeroRemetente         NumeroWhatsApp? @relation(fields: [numeroRemetenteId], references: [id])
@@ -2805,9 +2570,9 @@ model DegrauPolitica {
   id         String            @id @default(cuid())
   politicaId String
   politica   PoliticaRegua     @relation(fields: [politicaId], references: [id])
-  passo      String // "D-7"..."D+15"
+  passo      String
   offsetDias Int
-  tipo       String // lembrar | cobrar | bloquear
+  tipo       String
   rotulo     String
   modo       ModoDegrau        @default(MANUAL)
   ativo      Boolean           @default(true)
@@ -2817,22 +2582,9 @@ model DegrauPolitica {
   @@unique([politicaId, passo])
 }
 
-// ============================================================
-// COMERCIAL — fase pós-V1 (doc 27). Config como DADO, singleton (id fixo "comercial").
-// Regra de ouro (doc 27): TODA automação nasce DESLIGADA. O auto-lead, a saudação, a gestão
-// (C5) e a régua comercial (PoliticaComercial/DegrauComercial) saíram com o CRM antigo.
-// ============================================================
-
 model ConfigComercial {
-  id            String   @id @default("comercial") // singleton
-  // B9 (doc 32): tolerância (minutos após o horário da aula) para o professor registrar o
-  // check-in da experimental. Vencida a tolerância sem check-in: evento
-  // `ExperimentalCheckInVencido` + alerta nas Homes (professor e gerente). Sem o check-in
-  // a recuperação de no-show (C2) nunca dispara — o alerta é o que fecha esse ciclo.
+  id            String   @id @default("comercial")
   checkInToleranciaMinutos Int @default(30)
-  // C4 (doc 27): matrícula AUTOMÁTICA — contrato OK + taxa PAGA numa matrícula AGUARDANDO
-  // ativam sozinhos (cronograma + comissão + lead MATRICULADO). Nasce DESLIGADA; a turma
-  // segue híbrida (o sistema sugere, o consultor confirma — nunca aloca sozinho).
   matriculaAutomaticaAtiva Boolean @default(false)
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
@@ -2923,7 +2675,6 @@ model EncontroAgenda {
   reposicaoIndividualId String?
   reposicaoIndividualAgendada ReposicaoIndividual? @relation("EncontroReposicaoAgendado", fields: [reposicaoIndividualId], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
-
   reposicoesDaAula ReposicaoIndividual[] @relation("AulaOriginalReposicao")
   conclusoesReposicao ConclusaoReposicaoIndividual[] @relation("EncontroReposicaoIndividual")
   correcoesReposicao CorrecaoConclusaoReposicaoIndividual[] @relation("EncontroReposicaoCorrecao")
@@ -2982,8 +2733,6 @@ model EncontroAgenda {
   decisoesRemarcacaoReposicaoNovo DecisaoRemarcacaoAgendaReposicaoIndividual[] @relation("EncontroNovoRemarcacaoReposicao")
 }
 
-// Q121: pedido imutável antes de qualquer decisão ou execução. Nesta etapa ele
-// não altera matrícula, reserva, contrato, cobrança ou alocação.
 model PedidoDesistenciaPreparacao {
   id String @id @default(cuid())
   matriculaId String
@@ -3009,9 +2758,6 @@ model PedidoDesistenciaPreparacao {
   @@index([matriculaId, criadaEm])
 }
 
-// Q121: decisão administrativa independente sobre um pedido que tenha avanço
-// formal. A decisão registra somente a autorização/rejeição; não efetiva a
-// desistência nem altera saldo, cobrança, reserva ou assinatura.
 model DecisaoAdministrativaDesistencia {
   id String @id @default(cuid())
   pedidoId String @unique
@@ -3027,8 +2773,6 @@ model DecisaoAdministrativaDesistencia {
   @@index([decisorId, decididaEm])
 }
 
-// Q121: aplicação terminal somente para uma preparação sem avanço formal.
-// Casos com contrato, cobrança, crédito ou alocação seguem o fluxo de acerto.
 model EfetivacaoPedidoDesistenciaPreparacao {
   id String @id @default(cuid())
   pedidoId String @unique
@@ -3081,8 +2825,6 @@ model DecisaoFinanceiraDesistencia {
   efetivacao EfetivacaoPedidoDesistenciaPreparacao?
 }
 
-// Q22: ciclo interno exibido pelo painel. Não representa mensagem externa,
-// gravação, dado de aluno nem cobrança. A chave evita duplicação no refresh.
 model AvisoPendenciaDiario {
   id String @id @default(cuid())
   encontroId String
@@ -3364,8 +3106,6 @@ model ExcecaoGravacaoEncontro {
   @@unique([solicitanteId, chaveIdempotencia], map: "excecao_gravacao_chave_key")
 }
 
-// Q23: proposta imutável; aprovação e publicação da correção entram em etapa
-// posterior. Os snapshots preservam a fonte concluída sem editar o diário.
 model PropostaCorrecaoAula {
   id String @id @default(cuid())
   encontroId String
@@ -3392,7 +3132,6 @@ model PropostaCorrecaoAula {
   @@index([diarioId, criadaEm], map: "PropostaCorrecaoAula_diario_criada_idx")
 }
 
-// Q23: rejeição independente e imutável da proposta, sem publicar a correção.
 model RejeicaoCorrecaoAula {
   id String @id @default(cuid())
   propostaId String @unique
@@ -3404,8 +3143,6 @@ model RejeicaoCorrecaoAula {
   criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
 }
 
-// Q23: decisão independente que torna efetiva a projeção da proposta, sem
-// reescrever AulaDiario ou RegistroAulaAluno.
 model AprovacaoCorrecaoAula {
   aplicacaoRevisaoFinanceira AplicacaoRevisaoFinanceiraCorrecaoAula?
   id String @id @default(cuid())
@@ -3423,8 +3160,6 @@ model AprovacaoCorrecaoAula {
   casosRevisaoProgressao CasoRevisaoProgressao[] @relation("AprovacaoCorrecaoAulaCasoRevisaoProgressao")
 }
 
-// Q23/INV07: revisão limitada ao caso já conferido. Não recalcula ou aplica
-// qualquer valor; decisões financeiras ficam separadas da publicação pedagógica.
 model PropostaRevisaoFinanceiraCorrecaoAula {
   id String @id @default(cuid())
   propostaCorrecaoAulaId String
@@ -3463,8 +3198,6 @@ model DecisaoRevisaoFinanceiraCorrecaoAula {
   aprovacaoCorrecaoAula AprovacaoCorrecaoAula? @relation("AprovacaoCorrecaoAulaRevisaoFinanceira")
 }
 
-// Q175: efeito financeiro da correção "aula não devia ser cobrada". Nasce na MESMA transação
-// da aprovação acadêmica; conferência, item, emissão, reserva e consumo permanecem imutáveis.
 model AplicacaoRevisaoFinanceiraCorrecaoAula {
   id String @id @default(cuid())
   decisaoRevisaoId String @unique
@@ -3492,8 +3225,6 @@ model AplicacaoRevisaoFinanceiraCorrecaoAula {
   @@index([matriculaId, aplicadaEm])
 }
 
-// Q175 (fatia 2): aula paga com horas pré-pagas e declarada não cobrável devolve os minutos à
-// própria compra. Reserva e consumo continuam imutáveis; o estorno é o fato novo que os neutraliza.
 model EstornoConsumoHorasCompradas {
   id String @id @default(cuid())
   consumoId String @unique
@@ -3544,9 +3275,6 @@ model DecisaoGradeTurma {
   decididaEm DateTime @default(now())
 }
 
-// Q41–Q43: alteração versionada da quantidade de aulas. A modalidade só recebe
-// o novo valor durante a aplicação conjunta; cada turma mantém seu impacto
-// congelado para que redução, aumento e histórico possam ser auditados.
 enum SituacaoPropostaQuantidadeAulas {
   PREPARADA
   REJEITADA
@@ -3739,7 +3467,6 @@ model DecisaoResolucaoReserva {
   decididaEm DateTime @default(now())
 }
 
-
 model PreparacaoComercialMatricula {
   decisaoPreco DecisaoPrecoPreparacao?
   id String @id @default(cuid())
@@ -3774,7 +3501,6 @@ model DecisaoPrecoPreparacao {
   decididaEm DateTime @default(now())
 }
 
-
 model PagadorPreparacaoMatricula {
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   recebimentos Recebimento[] @relation("PagadorRecebimento")
@@ -3793,7 +3519,6 @@ model PagadorPreparacaoMatricula {
   @@unique([matriculaId, versao])
   @@unique([preparadorId, chaveIdempotencia])
 }
-
 
 model CondicoesEntradaPreparacao {
   previasContratuais PreviaDocumentoContratual[]
@@ -3943,7 +3668,6 @@ model ArtefatoContratual {
   gerador Json
   paginas Int
   criadoEm DateTime @default(now())
-  // O autor já possui FK através da conferência; geração preserva sua própria autoria.
   autorId String
   autor Usuario @relation(fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   motivo String
@@ -4147,7 +3871,6 @@ model ObservacaoEnvioAssinatura {
   registradaEm DateTime @default(now())
   @@unique([tentativaId, chave])
 }
-
 
 model ReservaAgendaParticular {
   retomadaOrigem RetomadaReservaParticular? @relation("ReservaRetomadaOrigem")
@@ -4624,10 +4347,6 @@ model ConclusaoAssinaturaContratual {
   registradaEm DateTime @default(now())
 }
 
-// Origem contratual histórica (contrato legado assinado fora do sistema): PDF assinado + transcrição das condições
-// + conferência dupla (preparador transcreve, outro administrador confere PDF e transcrição e decide). Aprovada, vale
-// como fonte de aditivos no lugar da conclusão assinada; nunca há as duas na mesma matrícula. Sem dado presumido:
-// só o que a transcrição declarar fica estruturado e pode ser alterado por aditivo.
 model PropostaOrigemContratualHistorica {
   id String @id @default(cuid())
   matriculaId String
@@ -4683,7 +4402,6 @@ model PropostaAditivoContratual {
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  // Exatamente uma fonte (CHECK no banco): conclusão assinada no sistema OU origem contratual histórica aprovada.
   conclusaoOriginalId String?
   conclusaoOriginal ConclusaoAssinaturaContratual? @relation(fields: [conclusaoOriginalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   origemHistoricaId String?
@@ -4794,9 +4512,6 @@ model ArtefatoAditivoContratual {
     @@index([artefatoId, criadaEm])
   }
 
-/// Driver SIMULADO de assinatura eletrônica (ASSINATURA_DRIVER=simulado): é o "serviço" simulado, não um
-/// registro do ERP. Nenhum envelope daqui foi enviado a alguém. Os processos que apontam para ele têm
-/// fornecedor SIMULADO e ambiente SANDBOX (CHECK no banco).
 model EnvelopeAssinaturaSimulado {
   id                String   @id @default(cuid())
   chave             String   @unique
@@ -5143,8 +4858,6 @@ model DecisaoCorrecaoNota {
   casosRevisaoProgressao CasoRevisaoProgressao[] @relation("DecisaoCorrecaoNotaCasoRevisaoProgressao")
 }
 
-// Q154: correções posteriores não desfazem a progressão executada. Cada caso
-// preserva o impacto lido na aprovação; a resolução será acrescentada depois.
 model CasoRevisaoProgressao {
   id String @id @default(cuid())
   matriculaId String
@@ -5173,8 +4886,6 @@ model CasoRevisaoProgressao {
   @@index([alocacaoFonteId, criadaEm], map: "CasoRevisaoProgressao_alocacaoFonte_criada_idx")
 }
 
-// A proposta seleciona casos imutáveis de uma única solicitação. A decisão
-// posterior registra o desfecho; não edita caso, fechamento ou movimentação.
 model PropostaResolucaoRevisaoProgressao {
   id String @id @default(cuid())
   matriculaId String
@@ -5225,9 +4936,6 @@ model DecisaoResolucaoRevisaoProgressao {
   decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
 }
 
-// Q153: transferência equivalente conserva a fonte oficial original. A
-// aplicação referencia o mapa aprovado, mas nunca cria lançamento de nota no
-// vínculo de destino nem muda a regra aplicada aos demais alunos da turma.
 model PropostaEquivalenciaAvaliacao {
   decisao DecisaoEquivalenciaAvaliacao?
   id String @id @default(cuid())
@@ -5302,8 +5010,6 @@ model AplicacaoEquivalenciaAvaliacao {
   @@index([alocacaoOrigemId, aplicadaEm], map: "AplicacaoEquivalenciaAvaliacao_origem_aplicada_idx")
 }
 
-// Q154: cada confirmação conserva integralmente a base acadêmica conferida.
-// Não substitui lançamentos, correções, equivalências ou o histórico anterior.
 model FechamentoAcademico {
   id String @id @default(cuid())
   matriculaId String
@@ -5315,8 +5021,6 @@ model FechamentoAcademico {
   regraId String
   regra VersaoRegraAvaliacao @relation("RegraFechamentoAcademico", fields: [regraId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   versao Int
-  // {versao,contexto,consolidado,frequencia,pendenciasPorVinculo,
-  //  elegibilidade,fontesOficiais}; o conteúdo é checado antes da confirmação.
   snapshot Json
   estadoHash String
   resultadoSuficiente Boolean
@@ -5335,9 +5039,6 @@ model FechamentoAcademico {
   @@index([alocacaoReferenciaId, confirmadoEm], map: "FechamentoAcademico_alocacao_confirmado_idx")
 }
 
-// Q131: exceção aprovada reconhece a insuficiência de frequência preservando
-// a apuração real e suas fontes. Só o fechamento que revalida o fonteHash pode
-// utilizá-la; esta proposta não ajusta presença, falta ou reposição.
 model PropostaExcecaoFrequencia {
   decisao DecisaoExcecaoFrequencia?
   id String @id @default(cuid())
@@ -5352,7 +5053,6 @@ model PropostaExcecaoFrequencia {
   fonteHash String
   versao Int
   motivo String
-  // Snapshot da frequência real no momento da proposta; não a substitui.
   frequencia Json
   evidencias String
   autorId String
@@ -5433,8 +5133,6 @@ enum UnidadePermutaServico {
   UNIDADE
 }
 
-// P02/Q89/Q98: acordo e comprovação não são recebimento, crédito ou isenção.
-// A aplicação financeira fica em ledger próprio para não alterar o caixa.
 model AcordoPermutaServico {
   id String @id @default(cuid())
   matriculaId String
@@ -5587,7 +5285,6 @@ model CreditoMatricula {
   origemReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia? @relation(fields: [origemReconferenciaDeltaDesistenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   origemRevisaoCorrecaoAulaId String? @unique
   origemRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula? @relation(fields: [origemRevisaoCorrecaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  // Q171/Q167C: nona origem — parte do excedente de permuta destinada a crédito financeiro no acordo aprovado.
   origemExcedentePermutaId String? @unique
   origemExcedentePermuta OrigemCreditoExcedentePermuta? @relation(fields: [origemExcedentePermutaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   reconhecimentosReconferenciaDelta ReconhecimentoCreditoReconferenciaDeltaDesistencia[]
@@ -5808,7 +5505,6 @@ model OcorrenciaParticular {
   @@index([matriculaId])
 }
 
-
 model CondicoesHorasMatricula {
   conferencias ConferenciaOcorrenciaHoras[]
  id String @id @default(cuid())
@@ -5831,7 +5527,6 @@ model CondicoesHorasMatricula {
  @@index([matriculaId, status])
 }
 
-
 model CondicoesContinuidadeMensalMatricula {
  id String @id @default(cuid())
  matriculaId String
@@ -5853,7 +5548,6 @@ model CondicoesContinuidadeMensalMatricula {
  @@index([matriculaId, status])
 }
 
-
 model RegistroIndisponibilidadeOfertaMatricula {
  id String @id @default(cuid())
  matriculaId String
@@ -5874,9 +5568,6 @@ model RegistroIndisponibilidadeOfertaMatricula {
  @@index([matriculaId, inicio, fim])
 }
 
-// Q157: correção versionada do período de um relato já confirmado. `inicio`/`fim` do
-// relato passam a refletir a última correção aprovada; cada versão preserva o antes e o
-// depois, de modo que o relato original nunca se perde.
 model PropostaCorrecaoRelatoIndisponibilidadeOferta {
  id String @id @default(cuid())
  registroId String
@@ -5953,7 +5644,6 @@ model DecisaoTerminoIndisponibilidadeOferta {
  entradaHash String
  decididaEm DateTime @default(now())
 }
-
 
 model PropostaPeriodoIntegral {
   id String @id @default(cuid())
@@ -6044,7 +5734,6 @@ model ConferenciaOcorrenciaHoras {
  conferidaEm DateTime @default(now())
  @@unique([conferenteId, chaveIdempotencia])
 }
-
 
 model RascunhoFechamentoHoras {
  decisao DecisaoFechamentoHoras?
@@ -6286,7 +5975,6 @@ model ReposicaoIndividual {
   excecoesBeneficioParticular AutorizacaoExcecaoReposicaoParticular[]
   encontrosParticularesAgendados EncontroAgenda[] @relation("EncontroReposicaoAgendado")
 
-
   entregas EntregaReposicaoGravacao[]
   materialGravacao MaterialReposicaoGravacao?
   disponibilizacaoEntrega DisponibilizacaoEntregaReposicao?
@@ -6314,7 +6002,6 @@ model ReposicaoIndividual {
   @@index([matriculaId, aulaOriginalId])
 }
 
-// Q11: autoriza o pedido, mas não confirma particular nem entrega gravada.
 model DecisaoReposicaoIndividual {
   id String @id @default(cuid())
   reposicaoId String @unique
@@ -6326,8 +6013,6 @@ model DecisaoReposicaoIndividual {
   decididaEm DateTime @default(now())
 }
 
-// Uma conclusão é imutável. PARTICULAR requer encontro REPOSICAO, diário e
-// chamada presente. GRAVACAO requer entrega, resumo/atividade e validação.
 model ConclusaoReposicaoIndividual {
   id String @id @default(cuid())
   concluidaPorId String
@@ -6351,8 +6036,6 @@ model ConclusaoReposicaoIndividual {
   @@index([encontroReposicaoId])
 }
 
-// Q13: origem de aluno separada da validação docente. `registradaPorId` não
-// existe até o portal ter identidade Aluno↔Usuario; não preencher por docente.
 model EntregaReposicaoGravacao {
   id String @id @default(cuid())
   reposicaoId String
@@ -6376,8 +6059,6 @@ model EntregaReposicaoGravacao {
   @@index([alunoId, entregueEm])
 }
 
-// Q54: correção só produz efeito depois da decisão aprovada. Até então a
-// conclusão anterior permanece a fonte vigente para a frequência.
 model CorrecaoConclusaoReposicaoIndividual {
   id String @id @default(cuid())
   conclusaoId String
@@ -6415,8 +6096,6 @@ model DecisaoCorrecaoConclusaoReposicao {
   casosRevisaoProgressao CasoRevisaoProgressao[] @relation("DecisaoCorrecaoConclusaoReposicaoCasoRevisaoProgressao")
 }
 
-// Q13/Q40: a validação gravada só vale enquanto esta designação estiver
-// vigente. A ação deve criar/alterar esta designação com motivo e auditoria.
 model DesignacaoAvaliadorReposicaoIndividual {
   id String @id @default(cuid())
   reposicaoId String
@@ -6434,8 +6113,6 @@ model DesignacaoAvaliadorReposicaoIndividual {
   @@index([reposicaoId, professorId, inicio])
 }
 
-// Q40: a linha de designação permanece imutável. Esta substituição define o
-// fim efetivo da anterior e a nova vigente, sem reescrever autoria histórica.
 model DesignacaoSubstituicaoAvaliadorReposicaoIndividual {
   id String @id @default(cuid())
   reposicaoId String
@@ -6480,11 +6157,9 @@ model ContaPortalAluno {
   id                 String @id @default(cuid())
   alunoId            String @unique
   aluno              Aluno @relation(fields: [alunoId], references: [id], onDelete: Restrict)
-  // Só é definido ao consumir o convite; alteração de Aluno.email não o troca.
   emailVerificado    String?
   emailVerificadoEm  DateTime?
   senhaHash          String?
-  // Preferência do próprio acesso do portal para exibir instantes; null preserva origem.
   fusoExibicao       String?
   versaoSessao       Int @default(1)
   ativa              Boolean @default(true)
@@ -6498,7 +6173,6 @@ model ContaPortalAluno {
   relatosMaterialReposicao RelatoIndisponibilidadeMaterialReposicao[] @relation("RelatoMaterialConta")
   liberacoesEntregaReposicao LiberacaoEntregaReposicao[]
 
-  // A migration mantém unicidade funcional de LOWER(emailVerificado).
 }
 
 model SessaoPortalAluno {
@@ -6688,8 +6362,6 @@ model BeneficioReposicaoParticularMatricula {
   referencia ReferenciaPeriodoBeneficioReposicao
   unidade UnidadePeriodoBeneficioReposicao
   duracaoPeriodo Int
-  // Obrigatória somente no ciclo, registrada ao aplicar o benefício para o
-  // vínculo. Nunca há fallback para criadoEm/ativadaEm.
   referenciaCiclo DateTime? @db.Date
   quantidadePorPeriodo Int
   antecedenciaCancelamentoMinutos Int
@@ -6977,7 +6649,6 @@ model DecisaoCancelamentoAgendaSegundaChamada {
  criadaEm DateTime @default(dbgenerated("(clock_timestamp() AT TIME ZONE 'UTC')"))
 }
 
-/// Proposta histórica; a decisão aprovada aplica a troca de agenda na mesma transação.
 model PropostaRemarcacaoAgendaSegundaChamada {
  id String @id @default(cuid())
  reservaId String
@@ -7005,7 +6676,6 @@ model PropostaRemarcacaoAgendaSegundaChamada {
  @@index([reservaId,criadaEm])
 }
 
-/// A decisão aprovada cria o fato de aplicação e aponta ao encontro novo.
 model DecisaoRemarcacaoAgendaSegundaChamada {
  id String @id @default(cuid())
  propostaId String @unique
@@ -7021,9 +6691,6 @@ model DecisaoRemarcacaoAgendaSegundaChamada {
  aplicacao AplicacaoRemarcacaoAgendaSegundaChamada?
 }
 
-// Q161: fato positivo separado do relato Q156. Cada intervalo conserva a
-// própria sequência de versões; uma correção não substitui intervalo distinto.
-// Ainda não autoriza emissão: a revalidação da agenda será acrescentada depois.
 model PropostaDisponibilidadeOfertaMatricula {
  id String @id @default(cuid())
  matriculaId String
@@ -7175,7 +6842,6 @@ model AplicacaoAgendaSegundaChamada {
  aplicadaEm DateTime @default(dbgenerated("(clock_timestamp() AT TIME ZONE 'UTC')"))
 }
 
-/// Fato criado exclusivamente pelo trigger da decisão aprovada, na mesma transação.
 model AplicacaoRemarcacaoAgendaSegundaChamada {
  id String @id
  decisaoId String @unique
@@ -7203,8 +6869,6 @@ id String @id @default(cuid())
  resolucoesImpedimento ResolucaoImpedimentoSegundaChamada[]
 }
 
-// Q164: o impedimento causado pela escola permanece como fato histórico; a gestão
-// pedagógica confirma sua resolução apontando a realização posterior com nota oficial.
 model ResolucaoImpedimentoSegundaChamada {
  id String @id @default(cuid())
  reservaImpedidaId String @unique
@@ -7491,9 +7155,6 @@ model DecisaoRegularizacaoFonteGravacao {
   decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
 }
 
-/// Proposta contextual: adota a revisão já publicada da aula original como uma
-/// nova versão imutável do material da reposição. Não altera a publicação nem o
-/// material, suas entregas, avaliações ou prazos.
 model PropostaTrocaFonteReposicaoGravacao {
   id String @id @default(cuid())
   materialReposicaoId String
@@ -7529,8 +7190,6 @@ model DecisaoTrocaFonteReposicaoGravacao {
   decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
 }
 
-/// Decisão imutável do conjunto calendário + remarcações. Rejeições preservam a
-/// revisão; aprovações somente se tornam aplicadas pela relação abaixo.
 model DecisaoReplanejamentoConjunto {
  id String @id @default(cuid())
  rascunhoId String @unique
@@ -7545,7 +7204,6 @@ model DecisaoReplanejamentoConjunto {
  aplicacao AplicacaoReplanejamentoConjunto?
 }
 
-/// Fato append-only de que a aprovação foi efetivamente aplicada no mesmo TX.
 model AplicacaoReplanejamentoConjunto {
  id String @id @default(cuid())
  rascunhoId String @unique
@@ -7556,8 +7214,6 @@ model AplicacaoReplanejamentoConjunto {
  estadoHash String
 }
 
-// M01: preparação é uma leitura rastreável da origem. Ela não cria dados
-// acadêmicos, financeiros, de consentimento ou de presença no ERP.
 enum EstadoLotePreparacaoMigracao {
   PREPARADO
   COM_PENDENCIAS
@@ -7618,8 +7274,6 @@ model LinhaPreparacaoMigracao {
   dadosOrigem Json
   entradaHash String
   estado EstadoLinhaPreparacaoMigracao
-  // Lotes anteriores à migration 180 não carregavam tipo; permanecem sem
-  // aplicação até conferência, em vez de serem reinterpretados como cadastro.
   tipoEntrada TipoEntradaPreparacaoMigracao?
   criadoEm DateTime @default(now())
   pendencias PendenciaCampoPreparacaoMigracao[]
@@ -7635,8 +7289,6 @@ model LinhaPreparacaoMigracao {
   @@index([financeiroOrigemId], map: "LinhaPreparacaoMigracao_financeiro_origem_idx")
 }
 
-// M01: a aplicação não reaproveita nome/e-mail como chave. Este mapa é a única
-// associação durável entre uma identidade declarada pela fonte e o aluno criado.
 model MapaOrigemAlunoMigracao {
   id String @id @default(cuid())
   origem String
@@ -7649,8 +7301,6 @@ model MapaOrigemAlunoMigracao {
   @@unique([alunoId], map: "MapaOrigemAlunoMigracao_aluno_key")
 }
 
-// Um ensaio ou aplicação é evidência append-only da linha imutável; falhas de
-// conferência não alteram a fotografia nem o destino já associado.
 model AplicacaoCadastroMigracao {
   id String @id @default(cuid())
   linhaId String
@@ -7668,8 +7318,6 @@ model AplicacaoCadastroMigracao {
   @@index([linhaId, criadoEm], map: "AplicacaoCadastroMigracao_linha_criado_idx")
 }
 
-// M01/183: correspondências são revisões administrativas append-only. A vigência
-// é determinada pela maior versão de cada chave, nunca por uma versão ativa antiga.
 enum ResultadoEnsaioVinculoMigracao {
   REQUISITO_AUSENTE
   PRONTO_PARA_REVISAO
@@ -7775,7 +7423,6 @@ model ColisaoOrigemPreparacaoMigracao {
   @@index([tipo, identificadorOrigem], map: "ColisaoOrigemPreparacaoMigracao_tipo_id_idx")
 }
 
-// Preserva uma nova tentativa divergente sem reescrever a linha imutável do lote.
 model ConflitoLinhaPreparacaoMigracao {
   id String @id @default(cuid())
   loteId String
@@ -7885,18 +7532,6 @@ model AplicacaoVinculoMigracao {
   @@index([linhaId, aplicadoEm], map: "AplicacaoVinculoMigracao_linha_aplicado_idx")
 }
 
-// Add inverses: LinhaPreparacaoMigracao.termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]; EnsaioVinculoMigracao.termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]
-
-// Adicionar em Usuario
-// conferenciasRegraHistoricaPreparadas PropostaConferenciaRegraHistoricaTurma[] @relation("PreparadorConferenciaRegraHistorica")
-// conferenciasRegraHistoricaDecididas DecisaoConferenciaRegraHistoricaTurma[] @relation("DecisorConferenciaRegraHistorica")
-
-// Adicionar em Turma
-// conferenciasRegraHistorica PropostaConferenciaRegraHistoricaTurma[]
-
-// Adicionar em VersaoRegraAvaliacao
-// conferenciasHistoricasDestino PropostaConferenciaRegraHistoricaTurma[] @relation("RegraConferenciaHistoricaDestino")
-
 model PropostaConferenciaRegraHistoricaTurma {
   id String @id @default(cuid())
   turmaId String
@@ -7928,13 +7563,6 @@ model DecisaoConferenciaRegraHistoricaTurma {
   motivo String
   criadaEm DateTime @default(now())
 }
-
-// Acrescentar às relações existentes:
-// model LinhaPreparacaoMigracao { propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[] }
-// model Matricula { propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[] }
-// model Cobranca { propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[] }
-// model PagadorPreparacaoMatricula { propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[] }
-// model Recebimento { conciliacaoMigracao ConciliacaoFinanceiraMigracao? }
 
 enum ModalidadeConciliacaoFinanceiraMigracao {
   PENDENCIA
@@ -8009,7 +7637,6 @@ model ConciliacaoFinanceiraMigracao {
   aplicadaPor Usuario @relation("AplicadorConciliacaoFinanceiraMigracao", fields: [aplicadaPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   snapshot Json
   aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
-  // Unicidade de aplicações com recebimento: índice parcial SQL da migração 194.
   @@index([origem, financeiroOrigemId], map: "ConciliacaoFinanceiraMigracao_origem_financeiro_idx")
 }
 
@@ -8271,8 +7898,6 @@ model InvalidacaoAcertoTaxaAditivo {
   criadaEm DateTime @default(now())
 }
 
-// M01/195: entrada anterior à conciliação. Não referencia cobrança nem pagador
-// porque ambos ainda não existem quando a fonte histórica é conferida.
 enum StatusPropostaEntradaFinanceiraHistoricaMigracao {
   PENDENTE
   APROVADA
@@ -8330,8 +7955,6 @@ model AplicacaoEntradaFinanceiraHistoricaMigracao {
   @@unique([origem, financeiroOrigemId])
 }
 
-// M01/203: presença migrada somente aponta uma aula histórica já existente.
-// Ela nunca cria diário, encontro, nota ou altera registro docente prévio.
 enum StatusPropostaPresencaHistoricaMigracao {
   PENDENTE
   APROVADA
@@ -8432,7 +8055,6 @@ model ResolucaoDivergenciaPresencaHistoricaMigracao {
 model AplicacaoCompensacaoPermuta {
   origensExcedente OrigemExcedentePermuta[]
   id String @id @default(cuid())
-  // Exatamente uma origem (CHECK no banco): destino de proposta de compensação OU uso aprovado de saldo restrito (Q171).
   destinoId String? @unique
   destino DestinoPropostaCompensacaoPermuta? @relation(fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   decisaoId String?
@@ -8447,10 +8069,6 @@ model AplicacaoCompensacaoPermuta {
   @@index([decisaoId])
 }
 
-
-// Q167C/Q171: destinação NEGOCIADA do excedente de permuta. O excedente nasce quando um acerto reduz a
-// obrigação de uma cobrança já compensada por serviços; nada é convertido automaticamente. O acordo escolhe
-// entre saldo restrito a serviços e crédito financeiro, com concordância das partes e aprovação independente.
 model PropostaDestinacaoExcedentePermuta {
   id String @id @default(cuid())
   matriculaId String
@@ -8527,7 +8145,6 @@ model DecisaoDestinacaoExcedentePermuta {
   origensCredito OrigemCreditoExcedentePermuta[]
 }
 
-// Saldo restrito a serviços: abate cobranças da MESMA matrícula, não expira e nunca vira dinheiro.
 model SaldoServicoPermuta {
   id String @id @default(cuid())
   itemId String @unique
@@ -8543,9 +8160,6 @@ model SaldoServicoPermuta {
   @@index([matriculaId])
 }
 
-// Q171: uso do saldo restrito a serviços. Abate cobrança da MESMA matrícula (mensalidade, hora particular ou taxa)
-// por proposta do Financeiro e aprovação independente; a aprovação nasce como AplicacaoCompensacaoPermuta
-// (é crédito de serviço) e o resto do sistema segue lendo valorCompensadoPermuta. Nunca vira dinheiro.
 model PropostaUsoSaldoServicoPermuta {
   id String @id @default(cuid())
   saldoId String
@@ -8598,7 +8212,6 @@ model OrigemCreditoExcedentePermuta {
   criadaEm DateTime @default(now())
 }
 
-// 225: proposta e decisão; aplicação financeira será registrada separadamente.
 model PropostaVencimentoAditivo {
   id String @id @default(cuid())
   matriculaId String
@@ -8658,9 +8271,6 @@ model AplicacaoVencimentoAditivo {
   @@unique([executorId, chaveIdempotencia])
 }
 
-// Q172: aplicação do aditivo de adiantamento (valor, minutos, vencimento). Só alcança o
-// adiantamento da emissão inicial enquanto não pago nem utilizado; os minutos vigentes
-// passam a ser os da última aplicação, que a compra de horas confere ao quitar.
 model PropostaAdiantamentoAditivo {
   id String @id @default(cuid())
   matriculaId String
@@ -8727,8 +8337,6 @@ model AplicacaoAdiantamentoAditivo {
   @@unique([executorId, chaveIdempotencia])
 }
 
-// Q173: aplicação do aditivo de moeda, só para o futuro e só com a matrícula "limpa" na moeda
-// antiga. A aplicação atualiza Matricula.moeda; a moeda anterior fica preservada aqui.
 model PropostaMoedaAditivo {
   id String @id @default(cuid())
   matriculaId String
@@ -8741,7 +8349,6 @@ model PropostaMoedaAditivo {
   preparador Usuario @relation("PreparadorMoedaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   moedaAnterior String
   moedaNova String
-  /// Fuso da escola no preparo: lê o dia civil da vigência contra a cobertura (data civil).
   fuso String
   fotografia Json
   fotografiaHash String
@@ -8929,8 +8536,6 @@ enum StatusConjuntoImpactosCoberturaAditivo {
   OBSOLETO
 }
 
-/// Q168/Q169: o conjunto registra todas as mensalidades existentes avaliadas
-/// pela proposta assinada e a escolha contratual para os ciclos futuros.
 model ConjuntoImpactosCoberturaAditivo {
   id String @id @default(cuid())
   matriculaId String
@@ -9014,11 +8619,6 @@ model AplicacaoCoberturaAditivo {
   @@index([cobrancaId])
 }
 
-// ============================================================
-// ARIA (Fase 5, ADR-F5-01): agente de IA do Comercial e da triagem de setor. O modelo
-// PROPÕE, o servidor DECIDE. Substitui o antigo copiloto (SugestaoIA), removido.
-// ============================================================
-
 enum StatusVersaoAgenteIA {
   RASCUNHO
   PUBLICADA
@@ -9074,7 +8674,6 @@ enum AcaoOrcamentoIA {
   PAUSAR
 }
 
-/// Singleton (id "aria"): estado global da Aria.
 model AgenteIA {
   id                String         @id @default("aria")
   estado            EstadoPolitica @default(DESLIGADA)
@@ -9086,7 +8685,6 @@ model AgenteIA {
   versaoPublicada   VersaoAgenteIA? @relation("VersaoPublicadaAgente", fields: [versaoPublicadaId], references: [id], onDelete: Restrict)
 }
 
-/// No máximo 1 RASCUNHO e 1 PUBLICADA (índices parciais na migration).
 model VersaoAgenteIA {
   geracoesInsight GeracaoInsightInbox[]
   id              String                @id @default(cuid())
@@ -9108,7 +8706,6 @@ model VersaoAgenteIA {
 model TurnoAgenteIA {
   id               String          @id @default(cuid())
   ancoraMensagemId String          @unique
-  /// Nulo só no turno TRIAGEM simulado em SHADOW: a mensagem ainda não tem atendimento.
   atendimentoId    String?
   atendimento      AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   versaoId         String?
@@ -9129,7 +8726,6 @@ model AcaoAgenteIA {
   id                 String             @id @default(cuid())
   turnoId            String
   turno              TurnoAgenteIA      @relation(fields: [turnoId], references: [id], onDelete: Restrict)
-  /// Nulo só na CLASSIFICAR_SETOR SIMULADA da triagem em SHADOW (sem atendimento aberto).
   atendimentoId      String?
   atendimento        AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   oportunidadeId     String?
@@ -9166,7 +8762,6 @@ model ChamadaIA {
   tokensEntrada      Int
   tokensSaida        Int
   tokensCache        Int
-  /// cache_creation_input_tokens (fora de tokensEntrada); já entra em custoMicroUsd.
   tokensEscritaCache Int             @default(0)
   custoMicroUsd      Int
   latenciaMs         Int
@@ -9178,7 +8773,6 @@ model ChamadaIA {
   @@index([criadoEm])
 }
 
-/// Singleton (id "ia"): modelos, orçamento e triagem.
 model ConfigIA {
   id                  String          @id @default("ia")
   modeloConversa      String          @default("claude-sonnet-5-5")
@@ -9190,34 +8784,21 @@ model ConfigIA {
   alteradaPorId       String?
 }
 
-// ============================================================
-// B2B — FASE 2 (doc 03): contrato corporativo · fatura única · matrículas em lote ·
-// relatório por colaborador. A empresa é o PAGADOR das matrículas corporativas; as
-// mensalidades dos colaboradores são agrupadas numa FaturaB2B por competência, e a baixa
-// da fatura baixa as cobranças em lote (mesma máquina de cobrança da Fase 0 por baixo).
-// ============================================================
-
 model Empresa {
   id              String   @id @default(cuid())
-  codigo          String?  @unique // E-000001
+  codigo          String?  @unique
   nome            String
-  /// Coluna GERADA (D1, #141): nome em minúsculas, sem acento e sem espaços repetidos, para ordenar
-  /// listas no Postgres locale C. Criada por SQL na migration 20261019110000_nome_ordenacao; o banco a
-  /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
-  /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
   nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(nome, 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
   paisId          String?
-  documento       String? // CNPJ/RUC/NIT... conforme o país
+  documento       String?
   contatoNome     String?
   contatoEmail    String?
   contatoTelefone String?
-  // Termos do CONTRATO CORPORATIVO (fatura única): dia de vencimento e observações.
   diaVencimento   Int      @default(10)
   observacoes     String?
   ativo           Boolean  @default(true)
   criadoEm        DateTime @default(now())
 
-  // CRM B2B (2.M2): ficha de prospect/cliente corporativo.
   site            String?
   segmentoMercado String?
   porte           String?
@@ -9243,7 +8824,6 @@ enum PapelParticipante {
   OUTRO
 }
 
-// Pessoas envolvidas em uma oportunidade B2B, cada uma com seu papel (uma vez por oportunidade).
 model ParticipanteOportunidade {
   id             String            @id @default(cuid())
   oportunidadeId String
@@ -9258,18 +8838,18 @@ model ParticipanteOportunidade {
 }
 
 enum StatusFaturaB2B {
-  ABERTA // agrupando cobranças da competência
-  FECHADA // emitida — aguarda pagamento
+  ABERTA
+  FECHADA
   PAGA
   CANCELADA
 }
 
 model FaturaB2B {
   id          String          @id @default(cuid())
-  codigo      String?         @unique // F-000001
+  codigo      String?         @unique
   empresaId   String
   empresa     Empresa         @relation(fields: [empresaId], references: [id])
-  competencia String // "2026-09"
+  competencia String
   moeda       String
   valorTotal  Decimal         @db.Decimal(12, 2)
   status      StatusFaturaB2B @default(ABERTA)
@@ -9279,28 +8859,16 @@ model FaturaB2B {
 
   cobrancas Cobranca[]
 
-  @@unique([empresaId, competencia]) // uma fatura por empresa×mês
+  @@unique([empresaId, competencia])
 }
 
-// Config do FINANCEIRO automatizado (Fase 2) — singleton, tudo nasce desligado.
 model ConfigFinanceiro {
   id                            String  @id @default("financeiro")
-  // Fechamento MENSAL de comissões automático (dia 1: paga as APROVADAS do mês anterior).
   fechamentoComissaoAutomatico  Boolean @default(false)
-  // D11: previsão de pagamento da comissão = este dia do mês seguinte à competência (1 a 28, CHECK na migration).
   diaPrevisaoPagamentoComissao  Int     @default(10)
   criadoEm                      DateTime @default(now())
   atualizadoEm                  DateTime @updatedAt
 }
-
-
-// ============================================================
-// ACADÊMICO — FASE 3 (doc 03): frequência · notas · teste de nível · progressão ·
-// certificados · portal do aluno. Diário de classe por AULA (frequência), avaliações
-// com notas, teste de nível como registro auditável, progressão por aprovação humana
-// (o sistema CALCULA e sugere; quem aprova é gente — mesma filosofia híbrida do C4) e
-// certificado com código de validação público.
-// ============================================================
 
 model Aula {
   id        String   @id @default(cuid())
@@ -9312,7 +8880,7 @@ model Aula {
 
   presencas Presenca[]
 
-  @@unique([turmaId, data]) // uma aula por turma×data (re-registrar edita, não duplica)
+  @@unique([turmaId, data])
 }
 
 model Presenca {
@@ -9331,7 +8899,7 @@ model Avaliacao {
   id      String    @id @default(cuid())
   turmaId String
   turma   Turma     @relation(fields: [turmaId], references: [id])
-  nome    String // "Prova 1", "Oral", "Projeto"...
+  nome    String
   peso    Decimal   @default(1) @db.Decimal(5, 2)
   data    DateTime?
   criadoEm DateTime @default(now())
@@ -9347,7 +8915,7 @@ model Nota {
   avaliacao   Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
   alunoId     String
   aluno       Aluno     @relation(fields: [alunoId], references: [id])
-  valor       Decimal   @db.Decimal(5, 2) // 0–100
+  valor       Decimal   @db.Decimal(5, 2)
   criadoEm    DateTime  @default(now())
 
   @@unique([avaliacaoId, alunoId])
@@ -9371,16 +8939,12 @@ model Certificado {
   nivelId         String
   nivel           Nivel    @relation(fields: [nivelId], references: [id])
   turmaId         String?
-  // Código PÚBLICO de validação (portal/terceiros conferem a autenticidade).
   codigoValidacao String   @unique
   emitidoEm       DateTime @default(now())
 
-  // Um certificado por aluno×nível (review PR #60): aprovações concorrentes não geram
-  // dois códigos públicos válidos — a ação trata o P2002 como idempotência.
   @@unique([alunoId, nivelId])
 }
 
-/// Preferências pessoais da inbox (fixar, silenciar, não lida). Tabela operacional, sem Evento.
 model PreferenciaConversaUsuario {
   id String @id @default(cuid())
   usuarioId String
@@ -9395,7 +8959,6 @@ model PreferenciaConversaUsuario {
   @@index([conversaId])
 }
 
-/// Mensagens favoritas por usuário. Tabela operacional, sem Evento.
 model FavoritoMensagemUsuario {
   id String @id @default(cuid())
   usuarioId String
@@ -9407,9 +8970,6 @@ model FavoritoMensagemUsuario {
   @@index([mensagemId])
 }
 
-// Hub de identidade do CRM (Fase 2, 2.M1): ContatoWhatsApp (N telefones), Aluno,
-// Responsavel e Oportunidade apontam para a Pessoa; nada é copiado. Sem delete físico:
-// mesclagem deixa lápide (mescladaEmId). CHECK em SQL: mescladaEmId <> id.
 enum OrigemCanal {
   WHATSAPP
   INSTAGRAM
@@ -9429,15 +8989,11 @@ model Pessoa {
   id           String       @id @default(cuid())
   codigo       String?      @unique
   nome         String
-  /// Coluna GERADA (D1, #141): nome em minúsculas, sem acento e sem espaços repetidos, para ordenar
-  /// listas no Postgres locale C. Criada por SQL na migration 20261019110000_nome_ordenacao; o banco a
-  /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
-  /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
   nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(nome, 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
   documento            String?
   tipoDocumentoId      String?
   tipoDocumento        TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  documentoPaisEmissor String? // ISO3166 opcional; distinto do país do catálogo do tipo.
+  documentoPaisEmissor String?
   nascimento           DateTime? @db.Date
   email        String?
   cidade       String?
@@ -9466,7 +9022,6 @@ model Pessoa {
   @@index([nomeOrdenacao, id])
 }
 
-// CRM (2.M3): tags, campos personalizados e filtros salvos.
 enum CorTag {
   NEUTRA
   MARCA
@@ -9544,7 +9099,6 @@ model CampoPersonalizado {
   @@unique([alvo, nome])
 }
 
-// Exatamente um dono por valor (CHECK na migration): pessoa ou empresa.
 model ValorCampoPersonalizado {
   id           String             @id @default(cuid())
   campoId      String
@@ -9584,7 +9138,6 @@ model FiltroSalvo {
   @@unique([usuarioId, tela, nome])
 }
 
-// Fase 2 CRM (2.M4): tarefas e notificações ao usuário.
 enum TipoTarefa {
   WHATSAPP
   LIGACAO
@@ -9638,8 +9191,6 @@ model Tarefa {
   status     StatusTarefa                  @default(ABERTA)
   prioridade PrioridadeTarefa              @default(NORMAL)
 
-  // Quando: data civil sempre (fuso de origem); instante só se tiver horário. O CHECK da migration
-  // impede inicioEm sem dataCivil.
   dataCivil  String?
   inicioEm   DateTime? @db.Timestamptz
   duracaoMin Int       @default(30)
@@ -9669,7 +9220,6 @@ model Tarefa {
   matriculaId String?
   matricula   Matricula?    @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
 
-  // Vínculo opcional definido na criação; tarefas anteriores permanecem sem atendimento (#322).
   atendimentoId String?
   atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -9699,14 +9249,9 @@ model NotificacaoUsuario {
   criadaEm  DateTime        @default(now())
   lidaEm    DateTime?
 
-  // SQL 20261023170000: unique parcial nas mesmas quatro colunas para tipo <> MENCAO_NOTA.
-  // Menção usa PK determinística Evento+usuário, sem colisão por TIMESTAMP(3).
   @@index([usuarioId, lidaEm])
 }
 
-// Metas comerciais mensais (Q9): por vendedor (usuarioId) ou geral/equipe (usuarioId NULL).
-// competencia = "AAAA-MM" (fuso institucional). moeda só em VALOR_GANHO. Unicidade com NULL
-// é garantida pelos índices únicos parciais da migration (Postgres trata NULL como distinto).
 enum MetricaMeta {
   MATRICULAS
   VALOR_GANHO
@@ -9766,16 +9311,12 @@ model TrechoConhecimento {
   fonte   FonteConhecimento @relation(fields: [fonteId], references: [id], onDelete: Restrict)
   ordem   Int
   texto   String
-  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration
-  /// 20261018020000_aria_conhecimento. O dbgenerated e o @@index Gin só existem para o `migrate diff` não
-  /// propor removê-los (o Prisma não gera colunas GENERATED); trava em conhecimento/migracao-busca.test.ts.
   busca   Unsupported("tsvector")? @default(dbgenerated("to_tsvector('portuguese'::regconfig, texto)"))
 
   @@unique([fonteId, ordem])
   @@index([busca], type: Gin)
 }
 
-// Insights D12: retenção histórica deliberada; nenhuma FK de uso é removida em cascata.
 enum EstadoGeracaoInsightInbox {
   PROCESSANDO
   PRONTA
@@ -9799,7 +9340,6 @@ model GeracaoInsightInbox {
   estado                EstadoGeracaoInsightInbox @default(PROCESSANDO)
   contextoHash          String
   baseHash              String
-  // Referência da base, sem FK: não é um caminho de autorização nem impede exclusão física da mensagem.
   baseUltimaMensagemId  String?
   baseQuantidade        Int
   configPublicadaId     String?
@@ -9819,10 +9359,8 @@ model GeracaoInsightInbox {
   erroCodigo            String?
 
   @@index([atendimentoId, solicitadoEm, id])
-  // UNIQUE parcial por atendimento nos estados PROCESSANDO/INCERTO em SQL na493.
 }
 
-// D6: inscrição efêmera explícita da aba Inbox; não representa login ERP, carteira ou permissão.
 model PresencaInbox {
   id String @id @default(cuid())
   usuarioId String

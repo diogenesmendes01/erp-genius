@@ -2,11 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 
-/** Observa NOTIFY real. Canal privado de barreira confirma a entrega após o
- * commit sem sleeps nem inserir um aviso falso no canal produtivo do Inbox.
- */
 export async function comAvisosInbox<T>(executar: () => Promise<T>): Promise<{ resultado: T; avisos: AvisoInbox[] }> {
-  // A config de integração injeta a URL do perfil; nunca aceitar o fallback do pg.
   const url = process.env.DATABASE_URL;
   const alvo = new URL(url ?? "invalid:");
   if (!["postgres:", "postgresql:"].includes(alvo.protocol) || !["localhost", "127.0.0.1"].includes(alvo.hostname)

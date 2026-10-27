@@ -24,12 +24,8 @@ const inputCls =
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  // Tudo aqui é seguro de repetir: criarIdioma recebe chave de idempotência (#166), e o reenvio depois de um
-  // resultado incerto devolve o idioma já criado; definirIdiomaAtivo recebe o estado-alvo (B4, #175 C2; C2 da
-  // revisão do #242), então repeti-lo não desfaz nada.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
   const [origem, setOrigem] = useState<string | null>(null);
 
   async function adicionar() {
@@ -48,8 +44,6 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
     if (d?.tipo === "ok") router.refresh();
   }
 
-  // Desativar o idioma atinge os produtos que o usam (docs/42 L2340): o botão só abre a confirmação, que nomeia o
-  // idioma e conta os produtos; a action roda no ConfirmarAcao, que mostra a falha. Ativar continua direto.
   const [desativando, setDesativando] = useState<IdiomaRow | null>(null);
   function pedirDesativacao(i: IdiomaRow) {
     setOrigem(i.id);

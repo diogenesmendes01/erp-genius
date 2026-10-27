@@ -2,12 +2,8 @@ import { validarCertificado } from "@/server/academico/consultas-legado";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// VALIDAÇÃO PÚBLICA de certificado (Fase 3): terceiros conferem a autenticidade pelo
-// código impresso no certificado. Projeção mínima (nome + nível + data de emissão).
-
 export default async function CertificadoPage({ params }: { params: Promise<{ codigo: string }> }) {
   const { codigo } = await params;
-  // Página pública: quem confere não tem fuso pessoal; a data de emissão sai no fuso da escola, nunca no do servidor.
   const [cert, fusoEscola] = await Promise.all([validarCertificado(codigo.toUpperCase()), fusoDaEscola()]);
 
   return (

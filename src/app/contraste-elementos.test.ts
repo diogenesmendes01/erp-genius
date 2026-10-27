@@ -2,9 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// Renderização dos indicadores de seleção que saíram de bg-brand-600 para bg-brand-solid (docs/43 §6 item 5):
-// chip de dia da TurmaFormulario e da PoliticaPainel e o passo do assistente de matrícula. SubTabs,
-// BarraAbasFinanceiro e FichaLead têm o teste no próprio arquivo. A trava estática é src/app/contraste.test.ts.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }), usePathname: () => "/" }));
 vi.mock("@/server/turmas/acoes", () => ({
   criarTurma: async () => ({ ok: true }),
@@ -18,7 +15,6 @@ import { TurmaFormulario } from "./(app)/configuracao/turmas/TurmaFormulario";
 import { PoliticaPainel } from "./(app)/configuracao/whatsapp/PoliticaPainel";
 import { MatriculaFormulario } from "./(app)/matriculas/nova/MatriculaFormulario";
 
-/** Classe de cada <button> com aria-pressed igual ao dado. */
 const botoes = (html: string, pressionado: "true" | "false") =>
   [...html.matchAll(/<button\b[^>]*>/g)]
     .map((m) => m[0])

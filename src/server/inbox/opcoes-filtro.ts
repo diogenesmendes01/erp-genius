@@ -6,7 +6,6 @@ import { setoresVisiveisNoInbox, type Setor } from "@/server/whatsapp/setor";
 
 export type SaudeNumero = "conectado" | "instavel" | "desconectado";
 
-/** Saúde de apresentação; não autoriza envio nem substitui as capacidades do canal. */
 export function saudeDoNumero(n: { driver: DriverWhatsApp; sessao: SessaoNumero; ativo: boolean }): SaudeNumero {
   if (!n.ativo) return "desconectado";
   if (n.driver === DriverWhatsApp.META_CLOUD || n.sessao === SessaoNumero.CONECTADO) return "conectado";
@@ -15,11 +14,6 @@ export function saudeDoNumero(n: { driver: DriverWhatsApp; sessao: SessaoNumero;
 
 export interface OpcoesFiltroInbox { setores: Setor[]; numeros: { id: string; rotulo: string; saude: SaudeNumero }[] }
 
-/**
- * Opções dos filtros da coluna: os setores que o usuário enxerga no inbox e os números que servem algum deles
- * (administrador: todos). Só rótulo, id e saúde; nenhum telefone. O filtro só restringe: o escopo do atendimento
- * continua valendo na consulta da lista.
- */
 export async function opcoesFiltroInbox(u: Pick<UsuarioSessao, "papeis">): Promise<OpcoesFiltroInbox> {
   const setores = setoresVisiveisNoInbox(u.papeis);
   if (!setores.length) return { setores, numeros: [] };

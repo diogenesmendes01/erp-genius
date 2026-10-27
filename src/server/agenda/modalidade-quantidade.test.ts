@@ -2,9 +2,6 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 
-// Revisão R1 do #208 (C3): preparo e decisão de quantidade rodam em SERIALIZABLE com o lock
-// da modalidade. O perdedor concorrente recebe 40001/P2034 e deve ser repetido até cair no
-// replay idempotente — sem duplicar proposta, decisão ou aplicação.
 const m = vi.hoisted(() => ({
   transacao: vi.fn(), sessao: vi.fn(), evento: vi.fn(), previa: vi.fn(),
   tx: {} as Record<string, unknown>,

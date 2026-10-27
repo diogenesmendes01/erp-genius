@@ -1,11 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// D14 (decisão do dono, 19/10/2026; #211 C4): antes de confirmar a mesclagem, a tela pede ao servidor a prévia do
-// que muda (vínculos, campos e cadastro acadêmico) e a mostra no diálogo. Quando o servidor diz que a mesclagem
-// será recusada (por exemplo, falta a alçada da Secretaria para mover o cadastro acadêmico), o diálogo não abre e
-// a tela mostra o motivo. Só o "Confirmar" do diálogo mescla.
-
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   previa: vi.fn(), mesclar: vi.fn(), refresh: vi.fn(),
@@ -33,7 +28,6 @@ const b = { id: "pb", nome: "Aluno Lima", email: null, cidade: "Recife", cargo: 
 const props = { a, b, aoFechar: vi.fn(), aoMesclar: vi.fn() };
 const tela = (): ReactNode => m.ganchos!.renderizar(PainelMescla, props);
 const doTipo = (t: ReactNode, tipo: unknown): No[] => elementos(t).filter((n) => n.type === tipo);
-// O conteúdo do diálogo é o <ResumoPrevia>, que a tela-sem-dom não chama: aqui ele é chamado com as props dele.
 const resumo = (c: No): string => {
   const r = c.props.children as No;
   return texto((r.type as (p: unknown) => ReactNode)(r.props)).replace(/\s+/g, " ");

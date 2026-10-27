@@ -1,6 +1,5 @@
 function temInert(el: Element): el is HTMLElement { return typeof (el as HTMLElement).inert === "boolean"; }
 
-/** Isolamento local sem portal/véu; percorre somente irmãos dos ancestrais até body. */
 export function isolarFundoDoPainel(painel: HTMLElement): () => void {
   const tocados: HTMLElement[] = [];
   for (let camada: HTMLElement | null = painel; camada?.parentElement; camada = camada.parentElement) {

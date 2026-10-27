@@ -4,9 +4,6 @@ import { unlink } from "node:fs/promises";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Ponta a ponta com o MOTOR SIMULADO em processo (src/test/motor-simulado.ts): nada de rede externa.
-// O ERP fala HTTP de verdade com o simulado (cliente.ts + driver MOTOR reais) e recebe eventos
-// assinados pela rota do webhook; só `after` e a sessão são neutralizados.
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: () => undefined }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -176,7 +173,6 @@ describe("ponta a ponta com o motor simulado", () => {
     const tentativas = envios(numeroId).map((e) => (e.corpo as { clientMessageId: string }).clientMessageId);
     expect(tentativas).toHaveLength(2);
     expect(new Set(tentativas).size).toBe(1);
-    // reexecutar o despacho não envia de novo
     await despacharFila(new Date(Date.now() + 120_000), { intencaoId: intencao.id });
     expect(envios(numeroId)).toHaveLength(2);
   });
@@ -199,7 +195,6 @@ describe("ponta a ponta com o motor simulado", () => {
     expect(sim.recebidos).toHaveLength(0);
     expect(sim.enviadas).toHaveLength(0);
     expect(sim.falharEnvio).toBeNull();
-    // sem o cache antigo de clientMessageId e com o contador do zero: cid-b recebe o 1º id, não o de antes
     expect(await postar("cid-b")).toBe(a);
   });
 
@@ -213,22 +208,18 @@ describe("ponta a ponta com o motor simulado", () => {
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
     const cid = intencao.clientMessageId!;
     expect(cid).toBeTruthy();
-    // o simulado entregou de fato (só a confirmação se perdeu)
     expect(sim.enviadas).toEqual([expect.objectContaining({ clientMessageId: cid })]);
 
-    // o despacho não reenvia sozinho um resultado incerto (revisão humana)
     sim.falharEnvio = null;
     await despacharFila(new Date(Date.now() + 61_000), { intencaoId: intencao.id });
     expect(envios(numeroId)).toHaveLength(1);
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).status).toBe("FALHOU");
 
-    // reenvio com o MESMO clientMessageId: o motor devolve a mensagem já enviada, não manda outra
     const reenvio = await driverMotor.enviarTexto(numero, TELEFONE, "chegou?", { clientMessageId: cid, origem: "HUMANO" });
     expect(reenvio).toEqual({ providerMessageId: sim.enviadas[0].providerMessageId, mensagemIdMotor: sim.enviadas[0].mensagemIdMotor });
     expect(envios(numeroId)).toHaveLength(2);
     expect(sim.enviadas).toHaveLength(1);
 
-    // o eco do motor (mesmo repetido) confirma o envio incerto sem criar mensagem duplicada
     const eco = dadosEntrada({
       mensagemId: reenvio.mensagemIdMotor, providerMessageId: reenvio.providerMessageId, texto: "chegou?",
       clientMessageId: cid, origem: "erp",
@@ -248,14 +239,12 @@ describe("ponta a ponta com o motor simulado", () => {
     const { cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
     const ref = numero.providerRef!;
 
-    // sem WHATSAPP_LIVE: tudo vira SIMULADA e nada chega ao motor
     vi.stubEnv("WHATSAPP_LIVE", "");
     const seco = await rodarCronRegua(agora);
     expect(seco.despacho).toMatchObject({ simuladas: 1, despachadas: 0 });
     expect(envios(ref)).toHaveLength(0);
     expect((await prisma.intencaoMensagem.findFirstOrThrow({ where: { cobrancaId: cobranca.id } })).status).toBe("SIMULADA");
 
-    // com WHATSAPP_LIVE=1: a mesma intenção sai pelo motor, uma vez
     vi.stubEnv("WHATSAPP_LIVE", "1");
     const real = await rodarCronRegua(agora);
     expect(real.despacho).toMatchObject({ despachadas: 1 });

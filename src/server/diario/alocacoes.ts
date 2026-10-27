@@ -1,8 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-/** Contrato explícito governa o acesso; outro contrato ativo não o substitui.
- * Legado conserva sua regra até conferir o vínculo, sem inferir matrícula.
- */
 export const escopoContratoDiario: Prisma.AlocacaoTurmaWhereInput = {
   OR: [
     { matriculaId: null, aluno: { status: "ATIVO" } },
@@ -19,7 +16,6 @@ type VigenciaAlocacao = {
   provenienciaVinculo?: string | null; inicioVigencia?: Date | null; fimVigencia?: Date | null;
 };
 
-/** Limites históricos nunca usam a data da importação como início acadêmico. */
 export function alocacaoCobreAula(a: VigenciaAlocacao, instante: Date) {
   if (!Number.isFinite(instante.getTime())) return false;
   if (a.provenienciaVinculo != null && a.provenienciaVinculo !== "MIGRACAO") return false;
@@ -31,7 +27,6 @@ export function alocacaoCobreAula(a: VigenciaAlocacao, instante: Date) {
   return fim === null ? a.ativa : instante.getTime() < fim;
 }
 
-/** Duas alocações elegíveis na mesma aula exigem conferência, mesmo com o mesmo contrato. */
 export function alunosComVinculosSobrepostos(alocacoes: readonly { alunoId: string }[]) {
   const vistos = new Set<string>(), ambiguos = new Set<string>();
   for (const a of alocacoes) {

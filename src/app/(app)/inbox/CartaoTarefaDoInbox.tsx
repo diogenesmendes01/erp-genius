@@ -19,7 +19,6 @@ export function CartaoTarefaDoInbox({atendimentoId,t,bloqueado=false,fuso,usuari
   emCurso.current=true;const origem=contexto;setTentativa(origem);
   const r=await exec.executar(()=>concluirTarefaNoInbox(atendimentoId,t.id,t.versao),"Tarefa concluída.");
   emCurso.current=false;
-  // O ACK próprio é autoridade nesta sessão, inclusive se o SSE já trouxe o estado concluído.
   if(vivo.current&&atual.current===origem&&r?.tipo==="ok")aoMudar();
  }
  return <div className="min-w-0"><CartaoTarefaFio t={bloqueado?{...t,podeAgir:false}:t} fuso={fuso} usuarioNome={usuarioNome} ocupado={exec.ocupado} aoEditar={aoEditar?()=>{if(!emCurso.current&&alvoValido())aoEditar(t);}:undefined} aoConcluir={()=>void concluir()}/><FeedbackAcao erro={tentativa===contexto?exec.erro:null} sucesso={tentativa===contexto?exec.sucesso:null} className="mx-auto mb-2 w-[86%] max-w-[440px]"/></div>;

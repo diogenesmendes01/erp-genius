@@ -19,11 +19,7 @@ type Proposta = { codigo: string; versaoEsperada: number; conteudo: Conteudo; mo
 export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?: string; versaoEsperada: number; inicial?: Conteudo }) {
   const router = useRouter(), [valor, setValor] = useState<Conteudo>(inicial ?? vazio), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
-  // Tentativa anterior não confirmada e a proposta mudou desde então (docs/42 L2368): a tela mostra qual era e
-  // oferece reenviá-la ou descartá-la, em vez de só bloquear (recarregar, a única saída, apagava tudo).
   const [pendente, setPendente] = useState<{ titulo: string; secoes: number } | null>(null);
-  // Aviso ao sair (docs/43 §6 item 3; docs/42 L2367): horas de redação jurídica viviam só no estado. Sujo = o
-  // conteúdo mudou ou algum campo foi tocado (código e motivo); depois de salvar, o aviso sai antes de navegar.
   const [tocado, setTocado] = useState(false), [salvo, setSalvo] = useState(false);
   useAvisoAoSair(!salvo && (tocado || JSON.stringify(valor) !== JSON.stringify(inicial ?? vazio)));
   async function enviar(d: Proposta, chave: string) {

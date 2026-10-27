@@ -41,7 +41,7 @@ it("SSR23:59 hidrata00:01 preservando nó e depois nova mensagem00:02 usa dia cl
     expect(container.textContent).toBe("Ontem|Hoje");
     vi.setSystemTime(new Date("2026-10-24T00:02:00Z"));
     await act(async () => { root!.render(createElement(Thread, { mensagens: atualizadas })); });
-    expect(container.textContent).toBe("Ontem|Hoje"); // ociosidade não cria relógio ativo
+    expect(container.textContent).toBe("Ontem|Hoje");
     await act(async () => { root!.render(createElement(Thread, { mensagens: atualizadas, selecionado: "a2" })); });
     expect(container.textContent).toBe("22/10/2026|Ontem"); expect(vi.getTimerCount()).toBe(0);
     vi.setSystemTime(new Date("2026-10-25T00:02:00Z"));

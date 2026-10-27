@@ -14,7 +14,6 @@ beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
 async function preparar(){const c=await cenarioInsight377(),g=await prepararNovoInsight(c.dono.id,{atendimentoId:c.a.id,chaveTentativa:"377-concorrencia-0001"},{disponivel:true});return {c,g,i:{atendimentoId:c.a.id,geracaoId:g.geracaoId,versaoEsperada:g.versao,contextoAtualEsperadoHash:g.contextoAtualEsperadoHash}};}
 async function comBarreira<T>(tabela:"AtendimentoWhatsApp"|"GeracaoInsightInbox",id:string,acao:()=>Promise<T>,alterar:(holder:Client)=>Promise<unknown>) {
   const h=await holder377(tabela,id),observador=await conexao377();
-  // Captura rejeição imediatamente, sem deixar unhandled enquanto observa a espera.
   const tentativa=acao().then(valor=>({valor}),erro=>({erro}));
   try {
     const bloqueados=await esperarBloqueio377(observador,h.pid,tabela);expect(bloqueados.length).toBeGreaterThan(0);

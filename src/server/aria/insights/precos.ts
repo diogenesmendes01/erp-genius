@@ -10,7 +10,6 @@ export const PrecosInsightSchema = z.object({
 }).strict();
 export type PrecosInsight = z.infer<typeof PrecosInsightSchema>;
 
-/** Captura a tabela canônica no claim; finalizar não consulta preços/configuração atuais. */
 export function capturarPrecosInsight(modelo:string):PrecosInsight {
   const zero={entrada:0,cache:0,saida:0};
   return PrecosInsightSchema.parse({versao:1,modelo,limitePromptFaixaBaixa:LIMITE_PROMPT_HAIKU_FAIXA_BAIXA,
@@ -19,7 +18,6 @@ export function capturarPrecosInsight(modelo:string):PrecosInsight {
     fatorEscritaCache:fatorEscritaCache(CACHE_CONTROL_SISTEMA.ttl)});
 }
 
-/** Null significa custo não calculável; não é uma chamada de custo zero. */
 export function usoParaRegistroInsight(snapshot:unknown,envelope:EnvelopeInsight) {
   const s=PrecosInsightSchema.parse(snapshot);
   if(envelope.tipo==="nao-enviada"||!envelope.modelo||envelope.modelo!==s.modelo)return null;

@@ -34,8 +34,6 @@ export async function salvarPrazosPortalAluno(input: z.input<typeof schema>) {
   });
 }
 
-/** Q35: os dois prazos são configurados juntos, sem número implícito. Cada
- * disponibilização/correção copia o valor então vigente para o seu histórico. */
 export async function salvarPrazosEntregaReposicao(input: z.input<typeof schemaEntrega>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

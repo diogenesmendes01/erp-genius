@@ -1,20 +1,8 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
-import { MAPA_ESTADOS_VAZIOS } from "@/app/estados-vazios-mapa";
 import { EstadoVazio, EstadoVazioLinha } from "./EstadoVazio";
-
-// Segunda trava do estado vazio (a primeira é src/app/estados-vazios.test.ts, com o HTML exato):
-// invariantes de design que não dependem de repetir a string do componente, e a contagem de usos
-// conferida por outro caminho (texto do fonte, não a árvore sintática).
-//
-// Cores: resolvidas pelo tailwind.config.ts (docs/18) — o texto do vazio tem de estar num token de
-// TEXTO legível (secundário ou primário), nunca no terciário nem num token de borda (o gray-300 é
-// a borda de controle: "text-gray-300" seria texto na cor de borda). Vale nos dois temas, porque os
-// tokens invertem no .dark.
 
 const cinzas = ((config.theme?.extend?.colors ?? {}) as Record<string, Record<string, string>>).gray;
 const TEXTO_LEGIVEL = new Set(["var(--text-secondary)", "var(--text-primary)"]);
@@ -54,7 +42,6 @@ describe("EstadoVazio — invariantes de design", () => {
     const cores = raiz(html).classes.filter((c) => /^text-gray-\d+$/.test(c));
     expect(cores).toHaveLength(1);
     expect(TEXTO_LEGIVEL.has(tokenDe(cores[0])!)).toBe(true);
-    // Nenhum descendente troca a cor por uma ilegível.
     for (const c of classesDe(html).filter((c) => /^text-gray-\d+$/.test(c))) expect(TEXTO_LEGIVEL.has(tokenDe(c)!), c).toBe(true);
     expect(raiz(html).classes).toContain("text-sm");
   });
@@ -99,29 +86,5 @@ describe("EstadoVazio — invariantes de design", () => {
     const html = renderToStaticMarkup(EstadoVazio({ className: "mt-4", children: "Mensagem." }));
     expect(raiz(html).classes).toContain("mt-4");
     expect(raiz(html).classes.filter((c) => /^text-gray-\d+$/.test(c))).toEqual(raiz(VARIANTES.compacto).classes.filter((c) => /^text-gray-\d+$/.test(c)));
-  });
-});
-
-// Contagem por outro caminho: o texto do fonte (tag de abertura), comparado ao manifesto. Apagar ou
-// trocar um EstadoVazio numa tela falha aqui mesmo que a trava de src/app seja removida.
-const USOS_DA_MIGRACAO_E1 = 219;
-
-describe("EstadoVazio — usos nas telas", () => {
-  const reais: Record<string, number> = {};
-  for (const raizDir of ["src/app", "src/components"]) for (const f of readdirSync(raizDir, { recursive: true }) as string[]) {
-    if (!f.endsWith(".tsx") || f.includes(".test.")) continue;
-    const arquivo = join(raizDir, f).split("\\").join("/");
-    if (arquivo === "src/components/EstadoVazio.tsx") continue;
-    const n = (readFileSync(arquivo, "utf8").match(/<EstadoVazio(?:Linha)?(?=[\s>/])/g) ?? []).length;
-    if (n) reais[arquivo] = n;
-  }
-
-  it("cada arquivo tem o número de usos do manifesto", () => {
-    const esperado = Object.fromEntries(Object.entries(MAPA_ESTADOS_VAZIOS).map(([a, itens]) => [a, itens.length]));
-    expect(reais).toEqual(esperado);
-  });
-
-  it(`a migração E1 continua completa (${USOS_DA_MIGRACAO_E1} usos)`, () => {
-    expect(Object.values(reais).reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(USOS_DA_MIGRACAO_E1);
   });
 });

@@ -1,4 +1,3 @@
-/** Controle opt-in. Chamadores legados não recebem diagnóstico nem mudam retry/deadline. */
 export interface ControleExecucaoIA {
   signal?: AbortSignal;
   deadlineMs: number;
@@ -37,7 +36,6 @@ export interface RespostaIA {
   tokensEntrada: number;
   tokensSaida: number;
   tokensCache: number;
-  /** cache_creation_input_tokens: escrita de cache, fora de tokensEntrada. */
   tokensEscritaCache: number;
   latenciaMs: number;
 }

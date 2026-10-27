@@ -41,10 +41,6 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); desligarObservadores(); vi.unstubAllGlobals(); });
 
-/** Fronteira nativa observada em Chromium 320x500: trocar value longo por vazio
- * limita scrollTop a 20, pois o placeholder ocupa 62px numa area de 42px.
- * ReactDOM e o ACK/owner sao reais; nao ha layout sintetico na aplicacao.
- */
 function campoComRolagem() {
   const campo = host.querySelector("textarea")! as Elemento & Pick<HTMLTextAreaElement, "value" | "scrollTop">;
   let valor = String(campo.value ?? ""), topo = 0;

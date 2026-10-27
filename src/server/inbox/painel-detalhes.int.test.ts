@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
-// A consulta chamada numa transação não pode pedir o cliente global (pool1 real).
 vi.hoisted(() => {
   const url = new URL(process.env.DATABASE_URL!);
   url.searchParams.set("connection_limit", "1");
@@ -183,7 +182,7 @@ describe("consultas autorizadas da ficha por atendimento", () => {
       expect(await carregarCabecalhoPainel(convidado, c.a.id)).toBeNull();
       expect(await pessoaDoAtendimento(convidado, c.a.id)).toBeNull();
     };
-    await negar(); // Sem convite: a fixture contém PII, mas o papel não alcança este atendimento comercial.
+    await negar();
     const convite = await convidar(c.a.id, c.dono, convidado);
     const detalhes = await carregarDetalhesPainel(convidado, c.a.id);
     expect(detalhes?.pessoa).toEqual({ id: pessoa.id, nome: pessoa.nome, email: pessoa.email, cidade: pessoa.cidade, cargo: pessoa.cargo, linkedin: pessoa.linkedin, origemCanal: "WHATSAPP", telefone: c.contato.telefoneE164,
@@ -194,7 +193,7 @@ describe("consultas autorizadas da ficha por atendimento", () => {
       { pessoaId: interlocutor.id, nome: interlocutor.nome, papel: "DECISOR", cargo: interlocutor.cargo, naConversa: true, hrefConversa: "/inbox?c=" + c.a.id },
     ]) });
     expect(detalhes?.b2b?.participantes).toHaveLength(2);
-    expect(detalhes?.campos).toEqual([]); // A exceção contextual não libera os campos personalizados do CRM.
+    expect(detalhes?.campos).toEqual([]);
     expect(await carregarCabecalhoPainel(convidado, c.a.id)).toMatchObject({ pessoaId: pessoa.id, subtitulo: "Falando com Interlocutor autorizado fictício409 · Decisor", tagsDisponiveis: [], capacidades: { veLead: true, verContato: false, editarContato: false, editarTags: false } });
     await prisma.participanteAtendimentoWhatsApp.update({ where: { id: convite.id }, data: { revogadoEm: new Date() } });
     await negar();

@@ -61,13 +61,11 @@ describe("barramento do inbox", () => {
   it("C5: ao reconectar o LISTEN emite resync às assinaturas (e não na primeira conexão)", async () => {
     const { r, sair } = escutar();
     expect(r.filter((x) => x.tipo === "resync")).toHaveLength(0);
-    // Derruba só a conexão de escuta deste banco (a que fez LISTEN no canal), nunca outras.
     const mortos = await prisma.$queryRawUnsafe<{ n: number }[]>(
       `SELECT count(pg_terminate_backend(pid))::int AS n FROM pg_stat_activity
        WHERE datname = current_database() AND pid <> pg_backend_pid() AND query LIKE 'LISTEN inbox_eventos%'`);
     expect(mortos[0].n).toBeGreaterThan(0);
     await vi.waitFor(() => expect(r).toContainEqual({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" }), { timeout: 8000 });
-    // A escuta voltou a funcionar.
     const m = await criarMensagemEntrada("depois");
     await vi.waitFor(() => expect(r).toContainEqual({ tipo: "mensagem.nova", atendimentoId: a.id, mensagemId: m.id, conversaId: a.conversaId }), { timeout: 3000 });
     sair();
@@ -77,7 +75,6 @@ describe("barramento do inbox", () => {
   });
 });
 
-// #345: só os triggers de ação/global estão sob prova; criação de âncora/turno e setup ficam antes da barreira.
 let cerca345:Client,turno345:string,seq345=0;
 function deferred345(){let resolver!:()=>void;const promessa=new Promise<void>(r=>{resolver=r;});return{promessa,resolver};}
 async function drenar345(){
@@ -143,7 +140,6 @@ describe("#345 notificações de ações e estado global",()=>{
     const {r,sair}=escutar();try{await expect(prisma.$transaction(async tx=>{await acao345(tx);throw Error("ROLLBACK_ACAO345");})).rejects.toThrow("ROLLBACK_ACAO345");await drenar345();expect(avisosAlvo345(r)).toEqual([]);}finally{sair();}
   });
   it("AgenteIA INSERT e updates sem mudança operacional não avisam",async()=>{
-    // Remoção somente da linha fake criada no beforeEach, para observar o INSERT verdadeiro.
     await prisma.agenteIA.delete({where:{id:"aria"}});await drenar345();
     const {r,sair}=escutar();try{await prisma.agenteIA.create({data:{id:"aria",estado:"DESLIGADA"}});await prisma.agenteIA.upsert({where:{id:"aria"},create:{id:"aria"},update:{}});await prisma.agenteIA.update({where:{id:"aria"},data:{estado:"DESLIGADA",pausadoEm:null,motivoPausa:"SEGREDO345",supervisaoAte:new Date("2026-10-25T12:00:00Z")}});await drenar345();expect(globais345(r)).toEqual([]);}finally{sair();}
   });

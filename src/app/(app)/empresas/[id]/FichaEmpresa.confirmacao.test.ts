@@ -1,15 +1,11 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Pagar e cancelar fatura B2B (docs/42 L2281): os dois botões da linha só abrem o ConfirmarAcao, que
-// repete fatura, competência, cobranças e total; só a confirmação chama a action. Inativar a empresa (fatia B,
-// issue #169) também passa pela confirmação; reativar continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   pagar: vi.fn(), cancelar: vi.fn(), situacao: vi.fn(), refresh: vi.fn(),
   b2bAtiva: true,
 }));
-// As confirmações de pagar e cancelar só existem com a cobrança de empresas ligada (D9): estes testes a religam.
 vi.mock("@/lib/funcionalidades", async (original) => ({
   ...(await original<typeof import("@/lib/funcionalidades")>()),
   get COBRANCA_B2B_ATIVA() { return m.b2bAtiva; },
@@ -76,12 +72,11 @@ describe("FichaEmpresa \u2014 pagar fatura passa pela confirmação", () => {
     expect(consequencia).toContain("R$");
     expect(consequencia).toContain("As 14 cobranças da fatura são baixadas em lote");
     expect(consequencia).toContain("Não há desfazer pela tela.");
-    expect(m.pagar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.pagar).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.pagar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.pagar).toHaveBeenCalledTimes(1);
     expect(m.pagar).toHaveBeenCalledWith("fat-1");
     expect(m.cancelar).not.toHaveBeenCalled();
-    // O anúncio usa o que o SERVIDOR baixou (R1 da #154, B7), não a contagem da linha (14).
     (c.props.aoConcluir as (d: { baixadas: number } | undefined) => void)({ baixadas: 13 });
     const t = tela();
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
@@ -98,9 +93,9 @@ describe("FichaEmpresa \u2014 cancelar fatura passa pela confirmação", () => {
     expect(c.props.titulo).toBe("Cancelar a fatura FAT-0031?");
     expect(c.props.confirmacao).toBe("cancelamento da fatura");
     expect(texto((c.props.children as No[])[1]).replace(/\s+/g, " ")).toContain("as 14 cobranças voltam a ficar soltas");
-    expect(m.cancelar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.cancelar).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.cancelar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.cancelar).toHaveBeenCalledTimes(1);
     expect(m.cancelar).toHaveBeenCalledWith("fat-1");
     expect(m.pagar).not.toHaveBeenCalled();
   });
@@ -125,7 +120,7 @@ describe("FichaEmpresa — inativar a empresa passa pela confirmação", () => {
     expect(consequencia).toContain("Acme (EMP-1) passa a inativa.");
     expect(consequencia).toContain("Os 0 contratos individuais vinculados continuam como estão, e a fatura em aberto também: nada é cancelado nem baixado.");
     expect(consequencia).toContain("Reativar empresa");
-    expect(m.situacao).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.situacao).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.situacao).toHaveBeenCalledTimes(1);
     expect(m.situacao).toHaveBeenCalledWith("emp-1", false);
@@ -163,7 +158,6 @@ describe("FichaEmpresa — inativar a empresa passa pela confirmação", () => {
 
 describe("FichaEmpresa — vencimento da fatura é data civil (C52 da #170)", () => {
   it("mostra o dia gravado, mesmo num navegador em UTC−3", () => {
-    // O vencimento chega como ISO à meia-noite UTC; com toLocaleDateString, em São Paulo, 10/10 virava 09/10.
     const anterior = process.env.TZ;
     process.env.TZ = "America/Sao_Paulo";
     try {
@@ -182,7 +176,7 @@ describe("FichaEmpresa — cobrança de empresas desligada (D9)", () => {
     m.b2bAtiva = false;
     const t = tela();
     const tudo = texto(t);
-    expect(tudo).toContain("FAT-0031"); // a fatura histórica segue para consulta
+    expect(tudo).toContain("FAT-0031");
     expect(tudo).not.toContain("Registrar pagamento");
     expect(tudo).toContain(MSG_COBRANCA_B2B_DESLIGADA);
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);

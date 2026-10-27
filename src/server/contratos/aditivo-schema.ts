@@ -15,7 +15,6 @@ export const CicloCoberturaFuturoAditivoSchema = z.discriminatedUnion("escolha",
 ]);
 export const PrepararAditivoContratualSchema = z.object({
   matriculaId: id,
-  // Exatamente uma fonte: conclusão assinada no sistema ou origem contratual histórica aprovada.
   conclusaoOriginalId: id.optional(),
   conclusaoHashEsperado: hash.optional(),
   origemHistoricaId: id.optional(),
@@ -26,7 +25,6 @@ export const PrepararAditivoContratualSchema = z.object({
   alteracoes: z.array(z.object({
     origem: OrigemCampoSchema.refine(o => !o.startsWith("ADITIVO_"), "Referências do aditivo são derivadas pelo servidor."),
     novo: z.string().trim().min(1).max(4000),
-    // Ausente é o snapshot legado: não há default nem tentativa de inferir texto.
     valorEstruturado: ValorAlteracaoAditivoSchema.optional(),
   }).strict()).min(1).max(100),
   motivo,

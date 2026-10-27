@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2: erro e sucesso separados na preparação e na decisão das
-// condições de continuidade mensal — erro em role="alert", sucesso em role="status", falha de rede como
-// resultado incerto e o formulário saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   preparar: vi.fn(), decidir: vi.fn(), refresh: vi.fn(),
@@ -33,7 +30,6 @@ const dados = {
 } as unknown as Parameters<typeof CondicoesContinuidadeMensal>[0]["dados"];
 const tela = () => m.ganchos!.renderizar(CondicoesContinuidadeMensal, { dados, fusoEscola: "America/Sao_Paulo" });
 
-/** Escolhe o valor de um <select> controlado pelo id (o onChange recebe o evento nativo). */
 const escolher = (id: string, valor: string) =>
   (elementos(tela()).find((n) => n.type === "select" && n.props.id === id)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 function escolherRegras() {

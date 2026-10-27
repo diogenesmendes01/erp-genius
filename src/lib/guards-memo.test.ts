@@ -1,9 +1,6 @@
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Um único memo de usuário por requisição (ganho rápido 15): papeisDaSessao (lib/guards) e os guards
-// de sessao.ts leem a MESMA linha uma vez só. `cache` é simulado como no App Router (memo por
-// argumentos); se guards.ts voltar a consultar o banco direto, a contagem sobe para 2 e isto falha.
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(async () => ({ nome: "Ana", papeis: ["SECRETARIA_ACADEMICA"], ativo: true, permissoes: [] as string[] })),
 }));

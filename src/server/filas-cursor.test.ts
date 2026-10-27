@@ -1,21 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ArgsPaginados } from "@/test/consulta-paginada";
 
-// Filas de trabalho por cursor nos dois sentidos (E4, decisão de 10/10/2026). Na página numerada, quem
-// resolve itens da página 1 desloca a página 2 e quem avança pula registros. Para cada fila:
-// - ida e volta devolvem os mesmos itens (`depois` do último, `antes` do primeiro);
-// - a primeira página não tem anterior e a última não tem próxima;
-// - RESOLVER UM ITEM DA PRIMEIRA PÁGINA (e até o próprio item âncora) NÃO FAZ O PRÓXIMO "Próxima" PULAR NINGUÉM;
-// - a ordem termina no id e nenhuma leitura usa `skip`/OFFSET;
-// - cursor com formato inválido, ou os dois sentidos juntos, é erro antes de consultar.
-//
-// O Prisma é de mentira e nunca toca o banco. `findMany` aplica o corte do cursor do `where`
-// (`findManyComOnde`, src/test/consulta-paginada.ts) sobre as linhas que a fila mostraria agora; resolver
-// é tirar a linha dessa lista. A âncora (`findUnique`/`findFirst` por id) é procurada em todas as linhas:
-// um item resolvido continua existindo. Na SQL crua, o mock acha o cursor entre os valores do SQL, confere
-// que o operador (`>`/`<`) corresponde ao sentido de leitura (`ORDER BY … ASC|DESC`) e devolve as linhas
-// depois (ou antes) da posição do cursor na ordem natural da fila, até o LIMIT.
-
 type Direcao = "asc" | "desc";
 type Linha = Record<string, unknown> & { id: string };
 
@@ -129,12 +114,6 @@ const passado = Date.parse("2026-09-01T12:00:00.000Z");
 const quando = new Date(passado);
 const turma = { codigo: "T", nome: null, modalidade: { nome: "Regular" }, nivel: { codigo: "A1", idioma: { nome: "Inglês" } }, diasHorario: null };
 
-/**
- * Ordem natural da fila e as linhas na ordem em que ela as mostra (índice 0 primeiro):
- * - "id-asc"/"id-desc": só pelo id;
- * - { campo }: (campo desc, id desc), sete itens por instante — o id desempata, e o último item de cada página
- *   (a âncora do cursor) cai no meio ou no começo de um empate.
- */
 type Ordem = "id-asc" | "id-desc" | { campo: string };
 function gerar(quantidade: number, ordem: Ordem, extra: (id: string, i: number) => Record<string, unknown>): Linha[] {
   return Array.from({ length: quantidade }, (_, i) => {
@@ -147,12 +126,10 @@ function gerar(quantidade: number, ordem: Ordem, extra: (id: string, i: number) 
 type Caso = {
   nome: string;
   porPagina: number;
-  /** Modelo do Prisma ou SQL crua (com a ordem natural e o id de cada linha crua). */
   fonte: { modelo: string } | { raw: Direcao; id: (linha: Record<string, unknown>) => string; campoId: string };
   ordem: Ordem;
   linha: (id: string, i: number) => Record<string, unknown>;
   ler: (n: Nav) => Promise<PaginaLida>;
-  /** Como a linha fica depois de resolvida, quando o filtro da fila olha um campo dela (a âncora tem de continuar achável). */
   resolver?: (linha: Linha) => void;
 };
 
@@ -262,12 +239,10 @@ describe("filas por cursor nos dois sentidos (E4)", () => {
     const p3 = await caso.ler({ depois: p2.proxima! });
     expect(p3).toMatchObject({ ids: ids.slice(2 * n), temAnterior: true, temProxima: false, anterior: ids[2 * n], proxima: null });
 
-    // Volta: a partir do primeiro item visto, as mesmas páginas, na mesma ordem.
     expect((await caso.ler({ antes: p3.anterior! })).ids).toEqual(p2.ids);
     const volta = await caso.ler({ antes: p2.anterior! });
     expect(volta).toEqual(p1);
 
-    // A ordem termina no id e nenhuma leitura pula registros por posição (skip/OFFSET).
     if ("modelo" in caso.fonte) {
       const leituras = estado.chamadas.filter((c) => c.modelo === (caso.fonte as { modelo: string }).modelo);
       expect(leituras.length).toBeGreaterThan(0);
@@ -287,8 +262,6 @@ describe("filas por cursor nos dois sentidos (E4)", () => {
     const n = caso.porPagina;
     const ids = preparar(caso, n * 2 + 3);
     const p1 = await caso.ler({});
-    // Alguém resolve o 3º item e o último da página (a âncora do cursor): os dois saem da fila (e, onde o filtro da fila
-    // olha um campo da linha, o campo muda — a âncora continua existindo, fora da fila).
     for (const id of [ids[2], ids[n - 1]]) {
       estado.resolvidos.add(id);
       const linha = "modelo" in caso.fonte ? estado.todas[caso.fonte.modelo].find((l) => l.id === id) : undefined;
@@ -297,7 +270,6 @@ describe("filas por cursor nos dois sentidos (E4)", () => {
     const p2 = await caso.ler({ depois: p1.proxima! });
     expect(p2.ids).toEqual(ids.slice(n, 2 * n));
     expect(p2.ids[0]).toBe(ids[n]);
-    // Na volta, a página antes de p2 é o começo da fila de agora (sem os resolvidos), cheia e sem anterior.
     const volta = await caso.ler({ antes: p2.anterior! });
     expect(volta.temAnterior).toBe(false);
     expect(volta.ids).toEqual(ids.filter((id) => !estado.resolvidos.has(id)).slice(0, n));

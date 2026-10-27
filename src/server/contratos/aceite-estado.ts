@@ -37,7 +37,6 @@ export async function carregarRevisaoAceite(tx: Prisma.TransactionClient, matric
   } });
   const condicoes = m.condicoesEntradaPreparacao[0], emissao = m.emissoesEntrada[0];
   if (!condicoes || !emissao?.conferenciaInicial || m.emissoesEntrada.length !== 1 || emissao.condicoesId !== condicoes.id) throw new ErroRegra("Confira a emissão inicial correspondente ao original.");
-  // A consistência financeira é exigida; pagamento inicial para ativar não é exigência adicional de assinatura.
   const entrada = conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, m.cobrancas, emissao.itens.map(i => i.cobrancaId), await carregarAplicacoesAdiantamentoEntradaTx(tx, matriculaId));
   if (m.cobrancas.some(i => i.status === "CANCELADA")) throw new ErroRegra("Regularize as cobranças canceladas antes de confirmar o aceite.");
   const condicoesMensais = { referenciaCobertura: m.referenciaCobertura, dataReferenciaCobertura: m.dataReferenciaCobertura?.toISOString() ?? null, diaVencimento: m.diaVencimento,
@@ -49,7 +48,6 @@ export async function carregarRevisaoAceite(tx: Prisma.TransactionClient, matric
     versaoCondicoes: condicoes.versao, participantes: revisao.dados.participantes.map(p => ({ nome: p.nome, papel: p.papel })), entrada } };
 }
 
-/** Chamado pelo guard de ativação, que já bloqueou a matrícula. Não substitui os demais requisitos. */
 export async function exigirAceiteIntegrado(tx: Prisma.TransactionClient, m: { id: string; contratoDocumentoId: string | null; confirmacaoContratoEm: Date | null; confirmacaoContratoPorId: string | null }) {
   if (!await tx.preparacaoComercialMatricula.count({ where: { matriculaId: m.id } })) return null;
   const aceite = await tx.aceiteOriginalContratual.findUnique({ where: { matriculaId: m.id }, include: { documento: true } });

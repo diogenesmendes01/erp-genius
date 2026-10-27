@@ -46,7 +46,6 @@ describe("AgendaInicialSegundaChamadaPage", () => {
   expect(html).toContain("rejeitar:O vínculo de origem mudou; rejeite ou prepare nova proposta.");
   expect(html).not.toContain("aprovar:");
  });
- // docs/43 §6 item 6: o fuso dos horários começava vazio, só com placeholder.
  it("o fuso dos horários começa no fuso da escola; sem ele, na preferência; sem nenhum, vazio (nunca UTC presumido)", async () => {
   mocks.consultar.mockResolvedValue({ ok: true, dado });
   mocks.fuso.mockResolvedValue("America/Costa_Rica");
@@ -60,8 +59,6 @@ describe("AgendaInicialSegundaChamadaPage", () => {
   await renderizar();
   expect(fusoInicialPassado()).toBe("");
  });
- // Lote 2 do fuso pessoal: o registro da proposta é instante (fuso pessoal, sem preferência o da agenda); o horário
- // proposto é publicado no fuso da agenda e mantém esse fuso. Expectativas fixas em TZ=UTC e America/Sao_Paulo.
  it("registro da proposta no fuso pessoal; horário proposto no fuso da agenda", async () => {
   mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, itens: [{ ...item, criadaEm: "2026-09-02T02:30:00.000Z" }] } });
   mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "Asia/Tokyo" } });

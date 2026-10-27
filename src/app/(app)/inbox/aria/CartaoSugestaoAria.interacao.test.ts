@@ -6,7 +6,6 @@ import type { Resultado } from "@/server/_shared/resultado";
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 const mocks=vi.hoisted(()=>({aprovar:vi.fn<()=>Promise<Resultado>>(),rejeitar:vi.fn<()=>Promise<Resultado>>() }));
 vi.mock("@/server/aria/acoes",()=>({aprovarSugestaoNoInbox:mocks.aprovar,rejeitarSugestaoNoInbox:mocks.rejeitar}));
-// DOM mínimo não implementa namespace SVG; só os glifos são fakes. Executor/feedback/ReactDOM permanecem reais.
 vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react");const I=()=>createElement("span",{"aria-hidden":true});return {IconSparkles:I,IconSend:I,IconClock:I,IconArrowRight:I,IconListCheck:I,IconTag:I,IconForms:I,IconX:I,IconNote:I,IconPercentage:I,IconAlertTriangle:I};});
 let Cartao:typeof import("./CartaoSugestaoAria").CartaoSugestaoAria,root:Root,host:Elemento,doc:Documento;
 const listeners:{tipo:string;f:(e:Event)=>void;captura:boolean}[]=[];const mudou=vi.fn();

@@ -100,7 +100,6 @@ describe("contexto do turno", () => {
       data: { tipo: "TEXTO", nome: "Horários", status: "PRONTA", hashConteudo: "h-ctx", criadoPorId: c.dono.id },
     });
     const tr = await prisma.trechoConhecimento.create({ data: { fonteId: f.id, ordem: 0, texto: "As turmas noturnas começam às 19h." } });
-    // Fonte ativa mas vencida (validoAte no passado) não entra no contexto do turno.
     const vencida = await prisma.fonteConhecimento.create({
       data: { tipo: "TEXTO", nome: "Horários antigos", status: "PRONTA", hashConteudo: "h-ctx-venc", criadoPorId: c.dono.id, validoAte: new Date(Date.now() - 86_400_000) },
     });
@@ -141,7 +140,6 @@ describe("contexto do turno", () => {
       { atalho: "/comercial", corpo: "corpo /comercial" },
       { atalho: "/zgeral", corpo: "corpo /zgeral" },
     ]);
-    // Na transação recebida: o que ela gravou e ainda não confirmou já entra.
     await prisma.$transaction(async (tx) => {
       await tx.templateWhatsApp.create({ data: { nome: "rr:/atx", atalho: "/atx", titulo: "x", corpo: "corpo /atx", tipo: "RESPOSTA_RAPIDA", setor: "COMERCIAL", ariaPodeUsar: true } });
       expect((await montarContextoTurno(c.at.id, tx)).respostasRapidas.map((r) => r.atalho)).toEqual(["/atx", "/comercial", "/zgeral"]);
@@ -169,8 +167,6 @@ describe("contexto do turno", () => {
     expect(ctx.respostasRapidas[0].atalho).toBe("/r000");
   });
 
-  // C10 da R3 do #229: texto seguido de áudio/figurinha/imagem sem legenda (corpo vazio) continua
-  // buscando FONTES pela última fala com texto.
   it("ultima_fala_ignora_inbound_sem_texto", async () => {
     const c = await cenario();
     const f = await prisma.fonteConhecimento.create({

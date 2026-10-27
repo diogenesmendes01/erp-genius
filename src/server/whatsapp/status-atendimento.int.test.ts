@@ -76,9 +76,9 @@ describe("prazo da 1ª resposta respeita o horário do setor", () => {
     const admin = await criarUsuario([Papel.ADMINISTRADOR]);
     const ids = async () => (await listarAtendimentosPagina({ id: admin.id, papeis: [Papel.ADMINISTRADOR] } as never, { prazoEstourado: true }, null)).itens.map((i) => i.id);
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(d("2026-10-17T12:00-03:00")); // sábado: ainda no prazo útil
+    vi.setSystemTime(d("2026-10-17T12:00-03:00"));
     expect(await ids()).not.toContain(a.id);
-    vi.setSystemTime(d("2026-10-19T09:01-03:00")); // segunda, passou da 1ª hora útil
+    vi.setSystemTime(d("2026-10-19T09:01-03:00"));
     expect(await ids()).toContain(a.id);
   });
 });

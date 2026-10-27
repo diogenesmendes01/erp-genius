@@ -5,7 +5,6 @@ import { RegrasHorasSchema } from "./condicoes-horas-schema";
 import { classificarOcorrenciaHoras, OcorrenciaHorasSchema } from "./ocorrencia-horas";
 import { resolverHoraVigenteTx } from "@/server/contratos/aditivo-hora-vigente";
 
-/** O chamador mantém agenda/matrícula bloqueadas e valida o ator financeiro. */
 export async function carregarPreviaOcorrenciaFinanceiraTx(tx: Prisma.TransactionClient, d: {
   alunoId: string; matriculaId: string; ocorrenciaId: string; condicoesId: string;
 }) {
@@ -21,8 +20,6 @@ export async function carregarPreviaOcorrenciaFinanceiraTx(tx: Prisma.Transactio
   const e = o.encontro;
   if (e.matriculaId !== d.matriculaId || e.turmaId || e.inicio.getTime() !== o.inicio.getTime() || e.fim.getTime() !== o.fim.getTime()) throw new ErroRegra("A agenda mudou após o informe. Regularize as origens.");
   if (await tx.ocorrenciaParticular.count({ where: { encontroId: e.id, versao: { gt: o.versao } } })) throw new ErroRegra("Há uma versão mais recente do informe.");
-  // Q173 (R4 do #284, B5): aula a partir da vigência de uma troca de moeda ainda não aplicada não é conferida na moeda
-  // anterior; seria faturada na moeda errada. Depois da aplicação, a conferência sai na moeda nova.
   const trocaPendente = await tx.propostaMoedaAditivo.findFirst({ where: { matriculaId: d.matriculaId, moedaAnterior: m.moeda, versaoCondicoes: { vigenciaInicio: { lte: e.inicio } },
     OR: [{ decisao: { is: null } }, { decisao: { is: { aprovada: true, aplicacao: { is: null } } } }] }, orderBy: { versaoCondicoes: { vigenciaInicio: "asc" } },
     select: { fuso: true, versaoCondicoes: { select: { vigenciaInicio: true } } } });
@@ -73,8 +70,6 @@ export async function carregarPreviaOcorrenciaFinanceiraTx(tx: Prisma.Transactio
   ];
   const precoVigente = await resolverHoraVigenteTx(tx, { matriculaId: d.matriculaId, inicio: o.inicio, fim: o.fim, valorHoraOriginal: regras.valorHora, moedaOriginal: regras.moeda });
   const valorContratual = classificacao.consomeHoras ? dinheiro(new Prisma.Decimal(precoVigente.valorHora).mul(minutos).div(60)) : dinheiro(0);
-  // A reserva já foi quitada na compra. Falta e cancelamento tardio consomem
-  // esse preço histórico proporcional, sem reprecificar pela tabela/aditivo atual.
   const valor = podeConsumirReserva ? dinheiro(reserva!.compra.valorPagoAlocado.mul(reserva!.minutos).div(reserva!.compra.minutosComprados)) : valorContratual;
   if (valor.gt("9999999999.99")) throw new ErroRegra("Valor excede a capacidade da cobrança.");
   return { matriculaId: d.matriculaId, ocorrenciaId: o.id, versaoOcorrencia: o.versao, condicoesId: c.id, versaoCondicoes: c.versao,

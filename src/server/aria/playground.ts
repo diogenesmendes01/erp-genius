@@ -16,10 +16,6 @@ import { valoresNaoAutorizados } from "./turno/valores";
 import { buscarTrechos } from "./conhecimento/busca";
 import { estadoOrcamento, registrarChamadaIA } from "./uso";
 
-// Playground (Task 28): roda a Aria contra uma conversa digitada, sem efeito. Não cria turno, ação,
-// intenção, mensagem nem Evento; a única escrita é o registro da chamada ao provedor (origem
-// PLAYGROUND), que entra no orçamento do mês.
-
 const MAX_MENSAGENS = 30;
 const MAX_TEXTO = 2000;
 const MAX_TOKENS_CONVERSA = 1024;
@@ -95,8 +91,6 @@ export async function testarAria(i: EntradaPlayground): Promise<Resultado<Result
       precos: await precosDoPais(pais?.id ?? null),
       trechos: (await buscarTrechos(ultimaFala, config.fontesAtivas)).map((t) => ({ id: t.id, texto: t.texto })),
       faq: config.faq.filter((f) => f.ativa),
-      // Como o turno real (`montarContextoTurno`): a Aria só atua no COMERCIAL, então valem as respostas
-      // liberadas desse setor e as gerais, com a mesma função e o mesmo teto.
       respostasRapidas: (await respostasParaAria("COMERCIAL")).map((r) => ({ atalho: r.atalho, corpo: r.corpo })),
       primeiraDaAria: !mensagens.some((m) => m.papel === "assistente"),
       trocasSemAvanco: 0,
@@ -117,8 +111,6 @@ export async function testarAria(i: EntradaPlayground): Promise<Resultado<Result
     } catch (e) {
       falha = e instanceof ErroProvedorIA ? e.codigo : "DESCONHECIDO";
     }
-    // O registro fica fora do try do provedor: se o INSERT do sucesso falhar, a chamada já paga não
-    // vira um "erro" sem tokens (subcontaria o orçamento); o erro do banco sobe como erro do banco.
     if (resposta) {
       await registrarChamadaIA("PLAYGROUND", resposta);
     } else {
@@ -165,8 +157,6 @@ export async function testarAria(i: EntradaPlayground): Promise<Resultado<Result
     }));
     const texto = saida.resposta?.trim() || null;
     const fora = texto ? valoresNaoAutorizados(texto, permitidos(ctx, config.politicas)) : [];
-    // Como no turno real: o executor bloqueia o texto com valor fora da lista e o orquestrador
-    // transfere com VALOR_NAO_AUTORIZADO. O texto bloqueado não volta como fala da Aria.
     return {
       resposta: fora.length ? null : texto,
       confianca: saida.confianca,

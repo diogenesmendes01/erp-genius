@@ -21,7 +21,6 @@ function texto(origem: unknown) {
   return typeof origem === "string" && origem.trim() ? origem.trim() : null;
 }
 
-/** Normaliza somente decimais finitos com até duas casas, sem arredondar a fonte. */
 export function normalizarDecimalExato(valor: unknown) {
   const bruto = typeof valor === "number" && Number.isFinite(valor) ? String(valor) : texto(valor);
   if (!bruto || !/^\d+(\.\d{1,2})?$/.test(bruto)) return null;

@@ -1,13 +1,4 @@
-// Trilha de navegação (breadcrumb) do shell — docs/42-auditoria-frontend-ux.md, E2. Em nível 4, 5, 6
-// a tela não dizia onde se estava nem como subir: "Voltar" tinha 65 redações e o menu lateral só
-// conhece a área. A trilha é derivada do caminho: cada ancestral que é uma PÁGINA vira um link.
-//
-// Chaves: rotas com page.tsx, com `*` no lugar de cada segmento dinâmico ([id], [propostaId]…).
-// Um teste confere que toda chave (e todo destino de SEM_PAGINA) existe no sistema de arquivos —
-// a trilha nunca aponta para um 404. Rota fora do mapa simplesmente não aparece na trilha.
-
 export const ROTULOS_TRILHA: Record<string, string> = {
-  // Áreas
   "/academico": "Acadêmico",
   "/alunos": "Alunos",
   "/aria": "Agente de IA",
@@ -26,7 +17,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/secretaria": "Secretaria",
   "/tarefas": "Tarefas",
 
-  // Acadêmico
   "/academico/admissoes": "Admissões",
   "/academico/admissoes/*": "Janela de admissão",
   "/academico/admissoes/excecoes": "Exceções de ingresso",
@@ -67,8 +57,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/academico/recuperacoes/planos/*/prorrogacoes": "Prorrogações",
   "/academico/recuperacoes/planos/autorizacoes-preparacao": "Autorizações de preparação",
   "/academico/recuperacoes/reservas/*/cancelamento": "Cancelamento da recuperação",
-  // A tentativa em si (…/tentativas/*) é a tela do professor designado e fica fora (FORA_DA_TRILHA no teste);
-  // as telas da gestão sobre ela sobem pela Recuperação.
   "/academico/recuperacoes/tentativas/*/agenda": "Propostas de horário",
   "/academico/recuperacoes/tentativas/*/autorizacao": "Autorização especial",
   "/academico/recuperacoes/tentativas/*/designacao": "Avaliador da recuperação",
@@ -91,7 +79,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/academico/segundas-chamadas/*/*/autorizacoes": "Autorizações especiais",
   "/academico/segundas-chamadas/*/*/historico": "Histórico de reservas",
 
-  // Alunos
   "/alunos/*": "Ficha do aluno",
   "/alunos/*/academico": "Acadêmico",
   "/alunos/*/agenda-aditivo": "Agenda para aditivo",
@@ -101,7 +88,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/alunos/*/creditos/*": "Crédito",
   "/alunos/turma/*": "Alunos da turma",
 
-  // Configuração
   "/configuracao/catalogo": "Catálogo",
   "/configuracao/contratos": "Contratos",
   "/configuracao/contratos/novo": "Novo modelo",
@@ -126,7 +112,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/configuracao/whatsapp/politica": "Política da régua",
   "/configuracao/whatsapp/avisos-agenda": "Avisos da agenda",
 
-  // Diário
   "/diario/encontros": "Encontros",
   "/diario/encontros/*": "Encontro",
   "/diario/encontros/*/cancelamento": "Cancelamento",
@@ -140,11 +125,9 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/diario/reposicoes": "Reposições",
   "/diario/reposicoes/*/troca-fonte": "Troca de publicação",
 
-  // Empresas, oportunidades
   "/empresas/*": "Empresa",
   "/oportunidades/*/contratacao": "Contratação",
 
-  // Financeiro
   "/financeiro/cobrancas": "Cobranças",
   "/financeiro/informes": "A conferir",
   "/financeiro/retomadas": "Retomadas",
@@ -160,7 +143,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/financeiro/acertos-taxa/*/*": "Acerto da taxa",
   "/financeiro/acertos-moeda": "Trocas de moeda",
   "/financeiro/acertos-moeda/*/*": "Troca de moeda",
-  // Sem lista própria: a tela sobe direto para o Financeiro (é para lá que o "voltar" dela leva).
   "/financeiro/acertos-vencimento/*/*": "Acerto do vencimento",
   "/financeiro/acertos-adiantamento/*/*": "Acerto do adiantamento",
   "/financeiro/continuidade": "Continuidade mensal",
@@ -168,12 +150,9 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/financeiro/migracao": "Conciliação da migração",
   "/financeiro/migracao/*": "Linha da migração",
   "/financeiro/permuta": "Permutas",
-  // Q171/Q167C: sem lista própria; o "voltar" leva às permutas.
   "/financeiro/permuta/excedente/*": "Excedente de permuta",
   "/financeiro/recebimentos": "Recebimentos",
 
-  // Matrículas (o registro tem o próprio cabeçalho com as seções). As seções têm o MESMO nome da aba
-  // (SECOES_MATRICULA em matriculas/[id]/secoes.ts) — um teste confere.
   "/matriculas/nova": "Nova matrícula",
   "/matriculas/*": "Matrícula",
   "/matriculas/*/autorizacoes-comunicacao": "Comunicação",
@@ -212,7 +191,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/matriculas/*/preparacao": "Preparação",
   "/matriculas/*/reserva": "Reserva",
 
-  // Secretaria
   "/secretaria/avisos-agenda": "Avisos da agenda",
   "/secretaria/desistencias": "Desistências",
   "/secretaria/envios-portal": "Envios do portal",
@@ -221,7 +199,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/secretaria/reservas/particulares/*": "Reserva particular",
 };
 
-/** Segmentos que não têm página própria mas fazem parte do caminho: a trilha mostra o destino que os representa. */
 export const SEM_PAGINA: Record<string, { href: string; rotulo: string }> = {
   "/matriculas": { href: "/secretaria", rotulo: "Matrículas" },
 };
@@ -235,17 +212,8 @@ const prefixosDasChaves = new Set(
   }),
 );
 
-/** Identificadores (cuid, uuid, códigos numerados) têm dígito; segmentos estáticos das rotas, não. */
 const pareceIdentificador = (segmento: string) => /\d/.test(segmento);
 
-/**
- * Trilha do caminho atual: os ancestrais conhecidos (links) e, se conhecido, o próprio (atual).
- * Cada segmento é comparado primeiro literalmente ("novo", "reservas"). Fora do mapa, só um
- * segmento com cara de identificador é tratado como dinâmico (`*`); um segmento estático
- * desconhecido ENCERRA a trilha — tratá-lo como `*` levaria a uma página de registro com um id
- * inventado ("/academico/recuperacoes/tentativas" não é a recuperação "tentativas").
- * Query string e barra final são ignoradas.
- */
 export function trilhaDoCaminho(caminho: string): ItemTrilha[] {
   const segmentos = caminho.split(/[?#]/)[0].split("/").filter(Boolean);
   const itens: ItemTrilha[] = [];
@@ -264,10 +232,6 @@ export function trilhaDoCaminho(caminho: string): ItemTrilha[] {
   return itens;
 }
 
-/**
- * Nome de um destino de navegação pelo mesmo mapa da trilha — só quando o caminho É uma página do
- * mapa (o último elo da trilha é o próprio destino). Query string ignorada. Caso contrário, null.
- */
 export function rotuloDoDestino(href: string): string | null {
   const caminho = href.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
   if (DESTINOS_FORA_DO_SHELL[caminho]) return DESTINOS_FORA_DO_SHELL[caminho];
@@ -275,10 +239,6 @@ export function rotuloDoDestino(href: string): string | null {
   return ultimo && ultimo.atual && ultimo.href === caminho ? ultimo.rotulo : null;
 }
 
-/**
- * Destinos de "voltar" fora do shell da equipe (o portal do aluno tem layout próprio e não mostra a
- * trilha). Mesmo princípio do mapa: um destino, um nome. Um teste confere que cada um é uma página.
- */
 export const DESTINOS_FORA_DO_SHELL: Record<string, string> = {
   "/portal-aluno": "Área do aluno",
   "/portal-aluno/entrar": "Acesso ao portal",

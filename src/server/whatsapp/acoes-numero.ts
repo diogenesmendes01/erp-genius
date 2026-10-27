@@ -22,12 +22,6 @@ export interface SetoresNumeroInput {
   triagemResponsavelId: string | null;
 }
 
-/**
- * Define os setores que o número atende e quem faz a triagem (só com 2+ setores;
- * null = ADMINISTRADOR, Q2). Grava NumeroSetoresAlterados e, se o responsável mudou, NumeroTriagemAlterada
- * (ação única de setores e triagem; a tela de Números usa esta). NumeroSetorWhatsApp é tabela de configuração: recria-se
- * as linhas, e a auditoria fica no Evento.
- */
 export async function salvarSetoresNumero(input: SetoresNumeroInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

@@ -4,7 +4,7 @@ import { VoltarPara } from "@/components/VoltarPara";
 export default async function GravacaoAulaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let autorizada = false;
-  try { await autorizarVideoAulaInstitucional(id); autorizada = true; } catch { /* Mesma resposta para fonte ausente ou sem permissão. */ }
+  try { await autorizarVideoAulaInstitucional(id); autorizada = true; } catch {  }
   return <div className="space-y-4">
     <VoltarPara href="/diario" />
     <h1 className="text-2xl font-medium">Gravação da aula</h1>

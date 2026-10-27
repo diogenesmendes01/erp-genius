@@ -26,9 +26,7 @@ function dataValida(texto: string): boolean {
   return dt.getUTCFullYear() === a && dt.getUTCMonth() === mes - 1 && dt.getUTCDate() === d;
 }
 
-/** Valida e normaliza o valor de um campo personalizado conforme o tipo. Vazio vira `null` (ou erro, se obrigatório). */
 export function validarValorCampo(campo: DefinicaoCampo, valor: unknown): ResultadoValidacao {
-  // Para BOOLEANO, `false` é um valor; só null/undefined/"" contam como vazio.
   if (vazio(valor)) {
     return campo.obrigatorio ? { ok: false, erro: "Campo obrigatório." } : { ok: true, valor: null };
   }
@@ -146,7 +144,6 @@ const ValorSchema = z.object({
 
 export type DefinirValorCampoInput = { campoId: string; pessoaId?: string; empresaId?: string; valor: unknown };
 
-/** Núcleo sem sessão/tx aninhada; também mantém o caminho Empresa do CRM. */
 export async function definirValorCampoNaTransacao(tx: Prisma.TransactionClient, autor: UsuarioSessao, input: DefinirValorCampoInput, antesDeGravar?: () => Promise<void>): Promise<boolean> {
   exigirCapacidadeCrm(autor, "contatos.editar");
   const dados = ValorSchema.parse(input);
@@ -186,7 +183,7 @@ export async function definirValorCampoNaTransacao(tx: Prisma.TransactionClient,
   const existente = await tx.valorCampoPersonalizado.findFirst({ where: { campoId: campo.id, ...dono } });
   const de = (existente?.valor ?? null) as ValorCampo;
   const para = validado.valor;
-  if (de === para) return false; // idempotente: sem Evento
+  if (de === para) return false;
 
   const json: Prisma.InputJsonValue | typeof Prisma.JsonNull = para === null ? Prisma.JsonNull : para;
   if (existente) {

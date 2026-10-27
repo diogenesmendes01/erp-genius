@@ -1,8 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Aba de cobranças (E4 + item 9 de docs/43 §6): os filtros e o cursor da fila vêm da URL, lidos e validados
-// no servidor; a consulta devolve o trecho já filtrado e ordenado, e a página só repassa ao componente.
 const mocks = vi.hoisted(() => ({
   contexto: vi.fn(),
   fila: vi.fn(),
@@ -11,7 +9,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../contexto", () => ({ contextoDaAba: mocks.contexto }));
 vi.mock("@/server/cobrancas/consultas", () => ({ listarFilaCobranca: mocks.fila }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-// Fuso pessoal nas telas: datas civis gravadas (promessa, pagamento) saem no dia da escola.
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => "Acesso negado" }));
 vi.mock("../../FilaCobranca", () => ({ FilaCobranca: () => null }));
@@ -25,7 +22,6 @@ const consulta = {
   opcoes: { paises: ["Brasil", "Costa Rica"], turmas: ["Inglês A1"] },
   temAnterior: true, temProxima: true, anterior: "1_3_cr2", proxima: "1_3_cr2",
 };
-/** Props entregues ao componente da fila (o elemento devolvido pela página); undefined quando não é a fila. */
 const render = async (params: Record<string, string>) => {
   const el = await Page({ searchParams: Promise.resolve(params) });
   return el.type === FilaCobranca ? (el.props as Record<string, unknown>) : undefined;
@@ -57,7 +53,6 @@ describe("/financeiro/cobrancas — filtros e cursor na URL", () => {
     expect(p.dashs).toEqual(dashs);
     expect(p.opcoes).toEqual({ paises: ["Brasil", "Costa Rica"], turmas: ["Inglês A1"] });
     expect(p.navegacao).toEqual({ anterior: "1_3_cr2", proxima: "1_3_cr2" });
-    // Leu a partir de um cursor: a volta ao início mantém o recorte (e não leva cursor).
     expect(p.inicioDaFila).toBe("/financeiro/cobrancas?indicador=emAtraso&pais=Costa+Rica");
     expect(p.preferenciaFusoExibicao).toBe("America/Costa_Rica");
   });

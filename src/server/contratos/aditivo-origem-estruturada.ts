@@ -9,10 +9,6 @@ export type OrigemEstruturadaAditivo = {
   fontesMonetarias: OrigemCampo[];
 };
 
-/**
- * Lê somente as condições imutáveis preservadas na prévia original. Campos
- * renderizados e cadastro atual não são fontes contratuais neste carregador.
- */
 export function extrairOrigemEstruturadaAditivo(snapshot: unknown): OrigemEstruturadaAditivo {
   if (!snapshot || typeof snapshot !== "object" || !("condicoes" in snapshot))
     throw new ErroRegra("A prévia original não preserva condições estruturadas.");

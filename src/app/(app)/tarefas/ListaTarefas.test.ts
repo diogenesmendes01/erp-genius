@@ -9,7 +9,7 @@ import { ListaTarefas } from "./ListaTarefas";
 import { acoesLote } from "./visao";
 import type { ItemAgenda, TarefaLista } from "@/server/crm/mensagens-agendadas";
 
-const AGORA = "2026-10-17T15:00:00.000Z"; // 09:00 em Costa Rica
+const AGORA = "2026-10-17T15:00:00.000Z";
 const FUSO = "America/Costa_Rica";
 
 const tarefa = (id: string, dataCivil: string | null, extra: Partial<TarefaLista> = {}): ItemAgenda => ({
@@ -27,12 +27,12 @@ const mensagem = (id: string, status: "ADIADA" | "PENDENTE" | "DESPACHADA", agen
 });
 
 const itens: ItemAgenda[] = [
-  tarefa("a", "2026-10-15"), // atrasada
-  tarefa("h", "2026-10-17"), // hoje
-  tarefa("am", "2026-10-18"), // amanhã
-  tarefa("p7", "2026-10-22"), // próximos 7 dias
-  tarefa("d", "2026-12-01"), // mais adiante
-  tarefa("s", null), // sem data
+  tarefa("a", "2026-10-15"),
+  tarefa("h", "2026-10-17"),
+  tarefa("am", "2026-10-18"),
+  tarefa("p7", "2026-10-22"),
+  tarefa("d", "2026-12-01"),
+  tarefa("s", null),
   mensagem("m1", "ADIADA", "2026-10-17T20:00:00Z"),
 ];
 

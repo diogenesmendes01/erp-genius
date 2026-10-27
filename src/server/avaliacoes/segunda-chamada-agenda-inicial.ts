@@ -191,7 +191,6 @@ async function conferirAgendaTx(
   return { estado: estadoConferido, estadoConferidoHash: hash(estadoConferido), calendario };
 }
 
-/** Prévia sem efeitos; o hash identifica o conjunto efetivamente revisado. */
 export async function consultarPreviaAgendaInicialSegundaChamada(input: z.input<typeof previaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -211,7 +210,6 @@ export async function consultarPreviaAgendaInicialSegundaChamada(input: z.input<
   });
 }
 
-/** Prepara uma agenda concreta sem reservar oportunidade nem criar encontro. */
 export async function proporAgendaInicialSegundaChamada(input: z.input<typeof ProporAgendaInicialSegundaChamadaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -256,7 +254,6 @@ export async function proporAgendaInicialSegundaChamada(input: z.input<typeof Pr
   });
 }
 
-/** Outra pessoa da gestão decide; o trigger SQL aplica encontro, reserva e agenda numa transação. */
 export async function decidirAgendaInicialSegundaChamada(input: z.input<typeof DecidirAgendaInicialSegundaChamadaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -364,7 +361,6 @@ export async function decidirAgendaInicialSegundaChamada(input: z.input<typeof D
   });
 }
 
-/** Histórico administrativo; não libera reserva, realização ou decisão fora das permissões. */
 export async function consultarAgendasIniciaisSegundaChamada(input: z.input<typeof consultaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);

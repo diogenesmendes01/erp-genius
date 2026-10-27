@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { anonimizarBuscaExportacoes, CORTE_PADRAO, TIPO_EVENTO_ANONIMIZACAO } from "./anonimizar-busca-exportacoes";
 
-// LGPD (#165, D5): o texto da busca dos DadosExportados antigos sai; o resto da trilha fica.
-
 const ANTES = new Date("2026-09-24T18:00:00.000Z");
 const DIA_25_ANTES_DO_DEPLOY = new Date("2026-09-25T13:00:00.000Z");
 const DEPOIS = new Date("2026-09-27T12:00:00.000Z");
@@ -44,11 +42,9 @@ describe("anonimizarBuscaExportacoes (LGPD, #165 D5)", () => {
     const r = await anonimizarBuscaExportacoes(prisma, { aplicar: true, lote: 1 });
     expect(r).toMatchObject({ modo: "aplicacao", candidatos: 2, afetados: 2, lotes: 2, intervalo: { de: ANTES.toISOString(), ate: DIA_25_ANTES_DO_DEPLOY.toISOString() } });
 
-    // O resto do payload fica igual; a busca vira { aplicada, caracteres } sem chave extra.
     expect(await payloadDe(s.alunos.id)).toEqual({ conjunto: "alunos", quantidade: 3, colunas: ["Nome"], filtros: { busca: { aplicada: true, caracteres: "ana.souza@email.com".length }, status: "ATIVO" }, finalidade: "exportacao_da_listagem" });
     expect(await payloadDe(s.leads.id)).toEqual({ conjunto: "leads", quantidade: 1, colunas: ["Nome"], filtros: { busca: { aplicada: true, caracteres: "+50688887777".length } }, finalidade: "exportacao_da_listagem" });
 
-    // Fora do critério: sem busca, já no formato novo, depois do corte e outro tipo de evento.
     for (const e of [s.semBusca, s.formatoNovo, s.depoisDoCorte, s.outroTipo]) expect(await payloadDe(e.id)).toEqual(e.payload);
 
     const texto = JSON.stringify(await prisma.evento.findMany({ where: { criadoEm: { lt: CORTE_PADRAO }, tipo: "DadosExportados" } }));
@@ -88,7 +84,6 @@ describe("anonimizarBuscaExportacoes (LGPD, #165 D5)", () => {
     const texto = JSON.stringify(eventos[0]);
     for (const pessoal of ["ana.souza", "88887777", "Maria", "Joao"]) expect(texto).not.toContain(pessoal);
 
-    // A reexecução também fica registrada, com zero linhas.
     const r2 = await anonimizarBuscaExportacoes(prisma, { aplicar: true });
     expect(await prisma.evento.count({ where: { tipo: TIPO_EVENTO_ANONIMIZACAO } })).toBe(2);
     expect(await payloadDe(r2.eventoId!)).toMatchObject({ candidatos: 0, afetados: 0, lotes: 0, intervalo: { de: null, ate: null }, concluida: true });

@@ -8,7 +8,6 @@ function simplificar(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-/** Primeiro gatilho determinístico de handoff que dispara, ou null. Recusa e saída inválida sempre valem. */
 export function gatilhoDeHandoff(i: {
   saida: SaidaModelo | null;
   recusa: boolean;

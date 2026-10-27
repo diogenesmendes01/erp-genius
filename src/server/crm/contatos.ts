@@ -134,7 +134,6 @@ function maximo(a: Date | null, b: Date | null | undefined): Date | null {
   return !a || b > a ? b : a;
 }
 
-/** Lista de Contatos (pessoas e empresas) no escopo do papel. Pessoas primeiro, depois empresas, por nome. */
 export async function listarContatos(
   usuario: UsuarioSessao,
   f: FiltrosContatos,
@@ -174,7 +173,7 @@ export async function listarContatos(
   if (incluiPessoas && inicio < totalP) {
     const pessoas = await prisma.pessoa.findMany({
       where: wP,
-      orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }], // coluna gerada sem acento (D1, #141)
+      orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }],
       skip: inicio,
       take: Math.min(CONTATOS_POR_PAGINA, totalP - inicio),
       select: {
@@ -217,7 +216,7 @@ export async function listarContatos(
     const saltar = Math.max(0, inicio - totalP);
     const empresas = await prisma.empresa.findMany({
       where: wE,
-      orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }], // coluna gerada sem acento (D1, #141)
+      orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }],
       skip: saltar,
       take: Math.min(CONTATOS_POR_PAGINA - linhas.length, totalE - saltar),
       select: {
@@ -254,7 +253,6 @@ export async function listarContatos(
     }
   }
 
-  // Última interação: maior Evento.criadoEm da pessoa e das oportunidades dela (só quem enxerga o comercial).
   if (linhas.length) {
     const pessoaIds = [...porPessoa.keys()];
     const empresaIds = [...porEmpresa.keys()];
@@ -288,7 +286,6 @@ export async function listarContatos(
     for (const o of ops) {
       const alvo = (o.pessoaId && porPessoa.get(o.pessoaId)) || (o.empresaId && porEmpresa.get(o.empresaId)) || null;
       if (alvo) alvo.ultimaInteracaoEm = maximo(alvo.ultimaInteracaoEm, maxPor.get(`Lead:${o.id}`));
-      // Oportunidade de empresa com pessoa também conta para a pessoa; a de pessoa conta para a empresa dela só se listada.
       if (o.pessoaId && o.empresaId) {
         const outra = porEmpresa.get(o.empresaId);
         if (outra && outra !== alvo) outra.ultimaInteracaoEm = maximo(outra.ultimaInteracaoEm, maxPor.get(`Lead:${o.id}`));
@@ -298,10 +295,6 @@ export async function listarContatos(
 
   return { itens: linhas, total, possuiMais: total > fim };
 }
-
-// ---------------------------------------------------------------------------
-// Ficha da pessoa: detalhe, edição auditada, nota interna e opt-out (Tarefa 20)
-// ---------------------------------------------------------------------------
 
 export type DetalheContato = {
   cadastroPessoa:CadastroPessoa|null;
@@ -319,12 +312,10 @@ export type DetalheContato = {
   optOut: boolean;
   ehAluno: boolean;
   tags: { id: string; nome: string; cor: CorTag }[];
-  /** Oportunidades no escopo comercial do usuário (vazio para quem não é do comercial). */
   oportunidades: { id: string; nome: string; etapa: EtapaLead; temperatura: Temperatura; dono: string | null }[];
   criadoEm: Date;
 };
 
-/** Detalhe da pessoa para a ficha. `null` = fora do escopo do usuário. */
 export async function obterContato(id: string, usuario: UsuarioSessao): Promise<DetalheContato | null> {
   if (!usuario?.id || !capacidadesCrm(usuario.papeis).has("contatos.ver")) return null;
   const { comercial } = papeisDe(usuario);
@@ -355,7 +346,6 @@ export async function obterContato(id: string, usuario: UsuarioSessao): Promise<
         select: { id: true, nome: true, etapa: true, temperatura: true, vendedor: { select: { nome: true } } },
       })
     : [];
-  // A tx curta evita o memo RSC do singleton; o helper relê scope nessa conexão.
   const cadastro=await prisma.$transaction(tx=>carregarCadastroPessoaAutorizado(tx,usuario.id,id),{isolationLevel:"ReadCommitted"});
   return {
     cadastroPessoa:cadastro?.valores??null,informacoesCadastro:cadastro?.informacoes??null,
@@ -427,7 +417,6 @@ type CamposPessoa = {
   empresaId: string | null;
 };
 
-/** Carrega a pessoa dentro do escopo do autor (na transação) ou recusa. */
 async function pessoaNoEscopo(tx: Prisma.TransactionClient, id: string, autor: UsuarioSessao) {
   const pessoa = await tx.pessoa.findFirst({
     where: { AND: [{ id }, await escopoPessoas(autor, tx)] },
@@ -437,8 +426,6 @@ async function pessoaNoEscopo(tx: Prisma.TransactionClient, id: string, autor: U
   return pessoa;
 }
 
-/** Edita a pessoa. Grava `PessoaEditada` só com os campos que mudaram (e-mail sem o valor cru). */
-/** Núcleo transacional compartilhado: sessão fica na action; capacidade/escopo e Evento permanecem aqui. */
 export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, autor: UsuarioSessao, id: string, input: EditarPessoaInput, antesDeGravar?: () => Promise<void>): Promise<boolean> {
   exigirCapacidadeCrm(autor, "contatos.editar");
   const dados = EditarPessoaSchema.parse(input);
@@ -446,7 +433,6 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
   await antesDeGravar?.();
   exigirCapacidadeCrm(autor, "contatos.editar");
   if(temCadastroPessoa(dados)){
-    // O SELECT de identidade FOR UPDATE acima já encerrou sua espera. Nenhum valor novo foi selecionado.
     const fresco=await tx.usuario.findUnique({where:{id:autor.id},select:{id:true,nome:true,ativo:true,papeis:true,permissoes:true}});
     if(!fresco?.ativo||apenasPortal(fresco))throw new ErroPermissao();
     const crm=capacidadesCrm(fresco.papeis);
@@ -472,14 +458,12 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
   const novo: CamposPessoa = { ...antesCampos, ...mudancas };
   const { antes, depois } = diffCampos(antesCampos, novo);
   const campos = Object.keys(depois) as (keyof CamposPessoa)[];
-  if (!campos.length&&!cadastro?.mudou) return false; // nada mudou: sem escrita e sem Evento
+  if (!campos.length&&!cadastro?.mudou) return false;
 
   if (atual.aluno && (campos.includes("nome") || campos.includes("email")) && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
     throw new ErroRegra("Nome e e-mail de aluno são alterados pela Secretaria.");
   }
   if (depois.empresaId) {
-    // Só empresa visível ao autor (como em `definirValorCampo`): ligar a pessoa a uma empresa de outra
-    // carteira faria essa empresa aparecer na lista dele (R1 do PR #211, C2).
     const empresa = await tx.empresa.findFirst({
       where: { AND: [{ id: depois.empresaId }, await escopoEmpresas(autor, tx)] },
       select: { id: true },
@@ -491,7 +475,6 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
   await tx.pessoa.update({ where: { id }, data: {...depois,...cadastro?.data} });
   const payload: Record<string, Prisma.InputJsonValue> = {};
   for (const c of campos) {
-    // E-mail é dado de contato: o Evento guarda só se estava e passou a estar preenchido.
     payload[c] =
       c === "email"
         ? { de: antes.email ? "definido" : null, para: depois.email ? "definido" : null }
@@ -509,7 +492,6 @@ export async function editarPessoaNaTransacao(tx: Prisma.TransactionClient, auto
   return true;
 }
 
-/** Edita a pessoa, mantendo a assinatura/Resultado do CRM e sua própria transação. */
 export async function editarPessoa(id: string, input: EditarPessoaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -520,11 +502,6 @@ export async function editarPessoa(id: string, input: EditarPessoaInput): Promis
 const NotaSchema = z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota deve ter até 2.000 caracteres.");
 const MotivoOptOutSchema = z.string().trim().min(1, "Informe o motivo.").max(500, "O motivo deve ter até 500 caracteres.");
 
-/**
- * Nota interna da equipe sobre a pessoa (`Evento NotaInterna` no agregado Pessoa). Nunca é enviada ao contato.
- * Com `chaveIdempotencia` (a ficha manda, #166), o reenvio da mesma tentativa não grava uma segunda nota: a nota
- * é o próprio Evento, então a chave e o hash da entrada (pessoa + texto) vão no payload dele.
- */
 export async function registrarNotaPessoa(id: string, texto: string, chaveIdempotencia?: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -551,7 +528,6 @@ export async function registrarNotaPessoa(id: string, texto: string, chaveIdempo
   });
 }
 
-/** Opt-out da pessoa: marca todos os telefones. Não há desfazer por esta ação. */
 export async function registrarOptOut(pessoaId: string, motivo: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();

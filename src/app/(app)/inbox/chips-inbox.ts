@@ -7,7 +7,6 @@ export const ID_CHIPS = ["todas", "ia", "aprovacao", "handoff", "humano", "sem-r
 export type IdChip = (typeof ID_CHIPS)[number];
 export type ChipAriaInbox = { id: IdChip; rotulo: string; tom: TomEstado; total: number; href: string };
 
-/** Exclusividade da faixa Aria; mantém os filtros pessoais e os demais filtros autorizados. */
 export function filtrosDoChip(id: IdChip, f: FiltrosInbox): FiltrosInbox {
   const novo = { ...f };
   delete novo.aria;

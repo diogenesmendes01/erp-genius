@@ -9,7 +9,7 @@ describe("periodo dos relatórios", () => {
     expect(variacao(0, 0)).toEqual({ valor: null, texto: "—" });
     expect(variacao(null, 5)).toEqual({ valor: null, texto: "—" });
     expect(variacao(12, 10)).toEqual({ valor: 0.2, texto: "+20%" });
-    const hoje = periodoDoFiltro({ tipo: "HOJE" }, "America/Costa_Rica", new Date("2026-11-15T05:30:00Z")); // 23h30 de 14/11 na Costa Rica
+    const hoje = periodoDoFiltro({ tipo: "HOJE" }, "America/Costa_Rica", new Date("2026-11-15T05:30:00Z"));
     expect(hoje).toEqual({ inicio: new Date("2026-11-14T06:00:00Z"), fim: new Date("2026-11-15T06:00:00Z") });
   });
   it("variacao_negativa_usa_sinal_de_menos_tipografico", () => {
@@ -38,8 +38,6 @@ describe("periodo dos relatórios", () => {
 });
 
 describe("periodo dos relatórios no dia sem meia-noite (horário de verão)", () => {
-  // America/Santiago, 06/09/2026: à meia-noite (−04) o relógio pula para 01h (−03). O dia começa às 01h locais,
-  // 04:00Z; antes da correção, o início caía às 03:00Z, 23h do dia 05.
   it("hoje_comeca_no_primeiro_instante_valido_do_dia", () => {
     const agora = new Date("2026-09-06T15:00:00Z");
     expect(periodoDoFiltro({ tipo: "HOJE" }, "America/Santiago", agora)).toEqual({

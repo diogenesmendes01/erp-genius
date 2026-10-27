@@ -2,9 +2,6 @@ import { createElement, type RefObject } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// O Modal repassa ao useDialogo o que o diálogo precisa (R1 da #154, B3/O3): sem `focoInicial`, o
-// ConfirmarAcao abriria com o foco no primeiro botão em vez do "Voltar". O comportamento do gancho em si
-// está em src/lib/dialogo.interacao.test.ts.
 const m = vi.hoisted(() => ({ useDialogo: vi.fn() }));
 vi.mock("@/lib/dialogo", () => ({ useDialogo: m.useDialogo }));
 

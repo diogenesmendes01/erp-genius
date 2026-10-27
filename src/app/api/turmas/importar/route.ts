@@ -21,11 +21,9 @@ import {
   resolverProfessor,
 } from "@/server/turmas/importacao";
 
-// Importação de turmas por XLSX (recurso ADMIN — doc 12, evento `TurmaImportada`). Cada turma
-// é criada na própria transação → uma linha ruim não derruba as demais (relatório por linha).
 export const runtime = "nodejs";
 const MAX_BYTES = 5 * 1024 * 1024;
-const MAX_LINHAS = 1000; // teto de linhas por importação (evita criação em massa acidental)
+const MAX_LINHAS = 1000;
 const HORARIO_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
 function cellTexto(v: ExcelJS.CellValue): string {
@@ -45,8 +43,6 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
-  // Autorização por papéis FRESCOS do banco (não do JWT — _shared/sessao): admin revogado/
-  // desativado perde o acesso na hora. Cobre também a sessão órfã (autorId do Evento é FK).
   const autor = await prisma.usuario.findUnique({
     where: { id: session.user.id },
     select: { id: true, papeis: true, ativo: true },
@@ -58,7 +54,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "Apenas administrador pode importar turmas." }, { status: 403 });
   }
 
-  // Rejeita cedo, antes de bufferizar o multipart inteiro em memória.
   const tamanho = Number(req.headers.get("content-length") ?? 0);
   if (tamanho > MAX_BYTES) {
     return NextResponse.json({ erro: "Arquivo acima de 5MB." }, { status: 413 });
@@ -138,7 +133,6 @@ export async function POST(req: Request) {
       erros.push({ linha: r, motivo: `Nível não reconhecido: "${raw.nivel ?? ""}".` });
       continue;
     }
-    // Professor é opcional; texto presente mas não encontrado é erro (evita silenciar engano).
     let professorId: string | null = null;
     if (raw.professor) {
       const prof = resolverProfessor(raw.professor, professores);

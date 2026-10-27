@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { prisma } from "@/lib/prisma";
 
-// Trava de pg_proc: cada migration desta fase acrescenta o próprio nome em NOVAS.
 const BASE = [
   "guard_identidade_destinatario_aviso_agenda",
   "validar_contexto_financeiro_atendimento_whatsapp",

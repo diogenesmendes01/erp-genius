@@ -12,8 +12,6 @@ import { garantirAtendimento } from "./atendimentos";
 import { carregarAcoesContatoInbox } from "./consultas-inbox";
 import { desvincularContatoWhatsApp } from "./desvincular-contato";
 
-// D8 (#175, L2298): "Desvincular contato" no Inbox. Desfaz o vínculo do contato (e, na linha de vendas, o lead do
-// atendimento da linha) com motivo e evento auditado; não apaga lead, aluno, mensagens nem atendimentos.
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 const comoUsuario = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 const sessao = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id, nome: u.nome, papeis: u.papeis });
@@ -53,7 +51,6 @@ describe("desvincularContatoWhatsApp", () => {
     expect(r).toEqual({ ok: true });
     expect((await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { id: c.contato.id } })).leadId).toBeNull();
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).leadId).toBeNull();
-    // Não apaga dados: o lead, o atendimento e a mensagem continuam.
     expect(await prisma.oportunidade.count({ where: { id: c.lead.id } })).toBe(1);
     expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: c.at.id } })).toBe(1);
     const eventos = await eventosDo("ContatoWhatsApp", c.contato.id);
@@ -107,7 +104,6 @@ describe("desvincularContatoWhatsApp", () => {
       .toEqual({ ok: false, erro: "Este contato não está mais vinculado a esse cadastro. Recarregue a conversa." });
     expect(await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "aluno", id: "x" }, motivo: MOTIVO }))
       .toEqual({ ok: false, erro: "Neste atendimento só se desfaz o vínculo com a oportunidade." });
-    // Repetir depois de desvincular não grava um segundo evento.
     expect((await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: MOTIVO })).ok).toBe(true);
     expect((await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: MOTIVO })).ok).toBe(false);
     expect(await prisma.evento.count({ where: { tipo: "ContatoDesvinculado" } })).toBe(1);

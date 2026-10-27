@@ -28,7 +28,6 @@ async function evidenciar(tx: Prisma.TransactionClient, linha: Linha, situacao: 
   await tx.$executeRaw`INSERT INTO "AplicacaoCadastroMigracao" (id, "linhaId", "entradaHash", situacao, "alunoId", detalhe, "executadoPorId") VALUES (${randomUUID()}, ${linha.id}, ${linha.entradaHash}, ${situacao}::"SituacaoAplicacaoCadastroMigracao", ${alunoId ?? null}, ${detalhe ?? null}, ${autorId}) ON CONFLICT ("linhaId", "entradaHash", situacao) DO NOTHING`;
 }
 
-/** Ensaia ou aplica somente CADASTRO completo; nunca cria contrato, vínculo, cobrança, consentimento ou conta. */
 export async function aplicarCadastroPreparacaoMigracao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -45,8 +44,6 @@ export async function aplicarCadastroPreparacaoMigracao(input: unknown) {
       if (!linhas.length) return { aplicadas: 0, ensaiadas: 0, bloqueadas: 0, divergencias: 0, confirmacaoHash: null, explicacao: "Lote não encontrado." };
       const confirmacaoHash = hashConfirmacao(linhas);
       if (entrada.modo === "APLICAR" && entrada.confirmacaoHash !== confirmacaoHash) return { aplicadas: 0, ensaiadas: 0, bloqueadas: 0, divergencias: 0, confirmacaoHash: null, explicacao: "Faça um novo ensaio: a fotografia do lote ou a confirmação não corresponde." };
-      // A ordem global por origem/ID evita corrida entre lotes e deadlock quando
-      // a mesma fonte reaparece em mais de um lote.
       const identidades = linhas.map((linha) => alunoDaFonte(linha.dadosOrigem)).filter((fonte): fonte is AlunoFonte => !!fonte)
         .map((fonte) => `${linhas.find((linha) => alunoDaFonte(linha.dadosOrigem)?.id === fonte.id)?.origem ?? ""}:${fonte.id}`).sort();
       for (const identidade of [...new Set(identidades)]) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`migracao-aluno-origem:${identidade}`}, 0))`;

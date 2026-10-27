@@ -19,9 +19,6 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
   const [busca, setBusca] = useState(""), [professorId, setProfessor] = useState(""), [fuso, setFuso] = useState(base.fuso);
   const [encontros, setEncontros] = useState([{ data: "", horario: "", duracao: "" }]);
   const [revisao, setRevisao] = useState<Revisao | null>(null), [conferido, setConferido] = useState(false), [motivo, setMotivo] = useState("");
-  // Três grupos de ação, cada um com o erro junto do próprio botão (docs/42 E3). Consulta e revisão só
-  // leem: na falha de transporte, a mensagem fixa de cada uma. A confirmação tem chave de idempotência
-  // estável (reaproveitada depois de erro ou falha): reenviar confere a mesma operação (MSG_RESULTADO_INCERTO).
   const acaoConsulta = useAcaoCliente({ idempotente: false });
   const acaoRevisao = useAcaoCliente({ idempotente: false });
   const acaoConfirmacao = useAcaoCliente({ idempotente: true });

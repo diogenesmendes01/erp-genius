@@ -27,7 +27,6 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
   const [cobrancaId, setCobrancaId] = useState("");
   const [motivo, setMotivo] = useState("");
   const [evidencia, setEvidencia] = useState("");
-  // Chave estável entre tentativas da mesma entrada: na falha de transporte, reenviar confere a mesma proposta.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const atual = cobrancas.find(c => c.id === cobrancaId);
@@ -40,7 +39,6 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
     const entrada = JSON.stringify(dados);
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
     const chaveIdempotencia = tentativa.current.chave;
-    // O executor ignora o clique enquanto há envio em curso (devolve null).
     const d = await acao.executar(() => proporAcertoTaxaAditivo({ ...dados, chaveIdempotencia }),
       "Proposta registrada. Aguarda conferência de outra pessoa autorizada.");
     if (d?.tipo !== "ok") return;

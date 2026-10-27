@@ -3,9 +3,6 @@ import { Papel } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared";
 import type { AvisoInbox } from "./barramento";
 
-// Caminho de permissão do aviso direcionado (`paraUsuarioId`, revogação de convite) sem banco: o Prisma e o
-// escopo são mockados e respondem "fora do escopo", então só o ramo direcionado pode deixar o aviso passar.
-
 const m = vi.hoisted(() => ({ atendimento: vi.fn(), conversa: vi.fn() }));
 
 vi.mock("@/lib/prisma", () => ({

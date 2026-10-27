@@ -10,7 +10,6 @@ const Entrada = z.object({ alunoId: z.string().min(1), matriculaId: z.string().m
   cursor: z.string().min(1).optional(), rascunhoId: z.string().min(1).optional(), periodo: PeriodoFechamentoHorasSchema.optional() }).strict()
   .refine(d => !(d.cursor && d.rascunhoId), "Consulte uma versão ou uma página por vez.");
 
-/** Histórico preservado: nunca recalcula uma versão pela agenda ou preço atuais. */
 export async function consultarFechamentosHoras(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = Entrada.parse(input);
@@ -54,7 +53,6 @@ export async function consultarFechamentosHoras(input: z.input<typeof Entrada>) 
               valorNegociado: r.decisao.emissao.cobranca.valorNegociado.toFixed(2), saldo: r.decisao.emissao.cobranca.saldo?.toFixed(2) ?? null,
               vencimento: r.decisao.emissao.cobranca.vencimento.toISOString() } } : null,
           periodoFimExclusivo: r.periodoFimExclusivo.toISOString(),
-          // Detalhes somente na consulta individual; a lista não transporta todos os encontros.
           memoria: d.rascunhoId ? r.snapshot : null,
           natureza: "RASCUNHO" as const, comprovaEmissao: Boolean(r.decisao?.emissao) })) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });

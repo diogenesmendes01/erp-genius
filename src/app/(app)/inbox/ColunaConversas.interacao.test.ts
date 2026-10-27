@@ -5,7 +5,6 @@ import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } f
 import type { ColunaConversas as Coluna, PropsColunaConversas } from "./ColunaConversas";
 const replace=vi.hoisted(()=>vi.fn());
 vi.mock("next/navigation",()=>({useRouter:()=>({replace}),usePathname:()=>"/inbox"}));
-// O DOM mínimo não oferece SVG; só decoração é substituída. React, diálogos, filtros e URLs são reais.
 vi.mock("@tabler/icons-react",async()=>{const {createElement}=await import("react");const I=()=>createElement("span");return{IconFilter:I,IconEdit:I,IconSearch:I,IconX:I,IconChevronDown:I,IconCheck:I,IconDeviceMobile:I,IconSparkles:I,IconBellOff:I,IconClockExclamation:I,IconPin:I,IconUsersGroup:I,IconUserX:I};});
 let doc:Documento,container:Elemento,root:Root,ColunaConversas:typeof Coluna;
 const ouvintes:{alvo:object;tipo:string;f:(e:Event)=>void;captura:boolean}[]=[];

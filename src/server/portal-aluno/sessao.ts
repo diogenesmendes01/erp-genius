@@ -62,11 +62,6 @@ export async function lerSessaoPortalAluno(): Promise<SessaoPortalAluno | null> 
   return { sessaoId: sessao.sessaoId, contaId: sessao.contaId, alunoId: sessao.alunoId, email: sessao.email };
 }
 
-/**
- * Revalida, dentro da transação consumidora, uma identidade do portal já
- * capturada. É próprio para operações longas (por exemplo, um pull de
- * stream): não relê cookie nem considera o snapshot suficiente.
- */
 export async function revalidarSessaoPortalAlunoTx(
   tx: PrismaTypes.TransactionClient,
   sessao: SessaoPortalAluno,
@@ -92,23 +87,12 @@ export async function revalidarSessaoPortalAlunoTx(
   if (!atual) throw new ErroAutenticacao("Sessão do aluno inválida ou expirada.");
 }
 
-/**
- * Guard exclusivo do portal para Server Actions e route handlers: falha de identidade
- * continua sendo erro (401/rejeição), não navegação. Não chama auth() nem lê cookie de
- * funcionário.
- */
 export async function exigirSessaoPortalAluno(): Promise<SessaoPortalAluno> {
   const sessao = await lerSessaoPortalAluno();
   if (!sessao) throw new ErroAutenticacao("Sessão do aluno inválida ou expirada.");
   return sessao;
 }
 
-/**
- * Guard exclusivo do portal para páginas (RSC): cookie ausente ou expirado manda para a
- * tela de entrar, em vez de lançar — sem isso, sessão morta virava erro 500 em inglês
- * (ver docs/42-auditoria-frontend-ux.md, achado N1). Não usar em Server Action nem em
- * route handler: ali a falha precisa continuar sendo erro, não redirect.
- */
 export async function exigirSessaoPortalAlunoPagina(): Promise<SessaoPortalAluno> {
   const sessao = await lerSessaoPortalAluno();
   if (!sessao) redirect("/portal-aluno/entrar");

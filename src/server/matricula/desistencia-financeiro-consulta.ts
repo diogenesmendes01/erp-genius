@@ -45,8 +45,6 @@ export async function consultarCancelamentoFinanceiroDesistencia(input: { matric
   });
 }
 
-/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026): a ordem por `id` é estável e a
- * leitura continua do último pedido visto, então concluir um pedido da página não faz a próxima pular outro. */
 export async function listarDesistenciasFinanceiras(input: NavegacaoFila = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO);

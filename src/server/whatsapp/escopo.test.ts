@@ -2,8 +2,6 @@ import { describe, it, expect } from "vitest";
 import { Papel } from "@prisma/client";
 import { escopoNumeros, usuarioVeNumero } from "./escopo";
 
-// Escopo row-level da conversa (gap D22 → decisão S11 da E3): a conversa é do NÚMERO.
-
 const usuario = (id: string, ...papeis: Papel[]) => ({ id, nome: "t", papeis });
 
 describe("escopoNumeros", () => {

@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Aplicar acerto e reconferência delta (docs/42 L799): "as duas ações mais irreversíveis da área" agora
-// revelam o resumo (cobranças ajustadas, crédito criado) num ConfirmarAcao que exige "Confirmo os valores
-// acima"; só a confirmação chama a action, com a chave de idempotência estável do formulário.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   aplicarAcerto: vi.fn(), aplicarDelta: vi.fn(), prepararDelta: vi.fn(), decidirDelta: vi.fn(), refresh: vi.fn(),
@@ -35,14 +32,12 @@ import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botao, clicar, criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
 
 const doTipo = (t: ReactNode, tipo: unknown): No[] => elementos(t).filter((n) => n.type === tipo);
-/** Componente filho (ReconciliarTentativaDelta) chamado como função, para achar o botão dele. */
 const expandir = (n: No): ReactNode => (n.type as (p: unknown) => ReactNode)(n.props);
 
 const itensAcerto = [
   { cobrancaId: "c1", moeda: "CRC", devido: "50000", saldoDevido: "0", creditoApurado: "12500" },
   { cobrancaId: "c2", moeda: "CRC", devido: "50000", saldoDevido: "50000", creditoApurado: "0" },
 ];
-/** Ajuste só no saldo (o devido não muda): ainda é uma cobrança ajustada. */
 const soSaldo = { cobrancaId: "c4", moeda: "CRC", ajusteDevido: "0", ajusteSaldo: "-500", creditoDelta: "0", reducaoCredito: "0" };
 const itensDelta = [
   { cobrancaId: "c1", moeda: "CRC", ajusteDevido: "-5000", ajusteSaldo: "0", creditoDelta: "5000", reducaoCredito: "0" },
@@ -83,9 +78,9 @@ describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", ()
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Serão ajustadas 2 cobranças desta matrícula");
     expect(consequencia).toContain("Será criado crédito de \u20a1");
-    expect(m.aplicarAcerto).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.aplicarAcerto).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.aplicarAcerto).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.aplicarAcerto).toHaveBeenCalledTimes(1);
     expect(m.aplicarAcerto).toHaveBeenCalledTimes(1);
     expect(m.aplicarAcerto.mock.calls[0][0]).toMatchObject({ decisaoId: "decisao-1" });
   });
@@ -93,15 +88,14 @@ describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", ()
   it("a chave é a mesma entre tentativas (incerto) e só troca depois do sucesso", async () => {
     clicar(tela(), "Aplicar acerto aprovado");
     let c = doTipo(tela(), ConfirmarAcao)[0];
-    expect(m.aplicarAcerto).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.aplicarAcerto).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.aplicarAcerto).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.aplicarAcerto).toHaveBeenCalledTimes(1);
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "incerto", mensagem: MSG_RESULTADO_INCERTO });
     c = doTipo(tela(), ConfirmarAcao)[0];
     await (c.props.acao as () => Promise<unknown>)();
     const [primeira, segunda] = m.aplicarAcerto.mock.calls.map((x) => x[0].chaveIdempotencia);
     expect(segunda).toBe(primeira);
-    // O incerto também fica fora do diálogo, como ERRO (role="alert"), não como status (#153).
     expect(anuncios(tela())).toEqual({ alerta: [MSG_RESULTADO_INCERTO], status: [] });
     (c.props.aoConcluir as () => void)();
     const t = tela();
@@ -133,9 +127,9 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Será ajustada 1 cobrança desta matrícula");
     expect(consequencia).toContain("Será criado crédito novo de \u20a1");
-    expect(m.aplicarDelta).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.aplicarDelta).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     expect(m.aplicarDelta.mock.calls[0][0]).toMatchObject({ decisaoFinanceiraId: "df-1" });
   });
@@ -143,18 +137,17 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
   it("resultado incerto: fecha a confirmação, trava o botão e a reconciliação REABRE a confirmação com a mesma chave", async () => {
     clicar(tela(), "Aplicar reconferência");
     let c = doTipo(tela(), ConfirmarAcao)[0];
-    expect(m.aplicarDelta).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.aplicarDelta).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "incerto", mensagem: MSG_RESULTADO_INCERTO });
     (c.props.aoCancelar as () => void)();
     let t = tela();
-    // Fechada a confirmação, o incerto continua anunciado como ERRO (role="alert"), nunca como status (#153).
     expect(anuncios(t)).toEqual({ alerta: [MSG_RESULTADO_INCERTO], status: [] });
     expect(botao(t, "Aplicar reconferência").props.disabled).toBe(true);
     const [reconciliar] = elementos(t).filter((n) => typeof n.type === "function" && "aoReconciliar" in n.props);
     clicar(expandir(reconciliar), "Reconciliar mesma tentativa");
-    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // reconciliar não envia sozinho
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     t = tela();
     c = doTipo(t, ConfirmarAcao)[0];
     await (c.props.acao as () => Promise<unknown>)();
@@ -165,11 +158,10 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
   it("erro de negócio troca a chave (outra tentativa); sucesso troca e anuncia", async () => {
     clicar(tela(), "Aplicar reconferência");
     let c = doTipo(tela(), ConfirmarAcao)[0];
-    expect(m.aplicarDelta).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.aplicarDelta).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "erro", mensagem: "Decisão revogada." });
-    // O erro de negócio fica DENTRO do diálogo (que continua aberto); fora dele, nada é anunciado.
     expect(anuncios(tela())).toEqual({ alerta: [], status: [] });
     c = doTipo(tela(), ConfirmarAcao)[0];
     await (c.props.acao as () => Promise<unknown>)();
@@ -180,7 +172,6 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
     expect(anuncios(t)).toEqual({ alerta: [], status: ["Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência."] });
     expect(m.refresh).toHaveBeenCalledTimes(1);
-    // R1 da #154, B6: depois do sucesso, a próxima aplicação é OUTRA tentativa (chave nova).
     clicar(t, "Aplicar reconferência");
     await (doTipo(tela(), ConfirmarAcao)[0].props.acao as () => Promise<unknown>)();
     const terceira = m.aplicarDelta.mock.calls[2][0].chaveIdempotencia;
@@ -219,7 +210,6 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
 });
 
 describe("Reconciliar mesma tentativa no preparo e na decisão (R2 da #154, B11)", () => {
-  // Campos do formulário enviado (FormData simulado: o teste roda sem DOM).
   const CAMPOS = new Map<string, string>([["motivo", "Fato posterior conferido."], ["decisao", "aprovar"]]);
   class DadosFormulario {
     get(nome: string): string | null { return CAMPOS.get(nome) ?? null; }
@@ -230,7 +220,6 @@ describe("Reconciliar mesma tentativa no preparo e na decisão (R2 da #154, B11)
     (formulario.props.onSubmit as (e: { preventDefault: () => void; currentTarget: object }) => void)({ preventDefault: () => {}, currentTarget: {} });
     await esvaziar();
   };
-  /** O botão "Reconciliar mesma tentativa" (filho ReconciliarTentativaDelta, chamado como função). */
   const reconciliar = (t: ReactNode): ReactNode => expandir(elementos(t).find((n: No) => typeof n.type === "function" && "op" in n.props && !("aoReconciliar" in n.props))!);
 
   beforeEach(() => { vi.stubGlobal("FormData", DadosFormulario); });
@@ -267,12 +256,10 @@ describe("feedback separado nos formulários do acerto e da reconferência (#153
   beforeEach(() => { vi.stubGlobal("FormData", DadosFormulario); });
   afterEach(() => { vi.unstubAllGlobals(); });
 
-  /** Envia o formulário da tela atual e devolve a promessa do handler. */
   const enviarDe = (tela: () => ReactNode) => () => {
     const formulario = elementos(tela()).find((n: No) => n.type === "form")!;
     return (formulario.props.onSubmit as (e: { preventDefault: () => void; currentTarget: object }) => Promise<void>)({ preventDefault: () => {}, currentTarget: {} });
   };
-  /** O botão de envio mostra o rótulo de ocupado? */
   const rotuloOcupado = (tela: () => ReactNode, rotulo: string) => () =>
     elementos(tela()).some((n: No) => n.type === "button" && texto(n.props.children).trim() === rotulo);
 
@@ -333,7 +320,7 @@ describe("feedback separado nos formulários do acerto e da reconferência (#153
     expect(chaves[1]).toBe(chaves[0]);
     expect(chaves[2]).toBe(chaves[0]);
     expect(chaves[3]).not.toBe(chaves[2]);
-    expect(m.refresh).toHaveBeenCalledTimes(2); // só os dois sucessos releem a página
+    expect(m.refresh).toHaveBeenCalledTimes(2);
   });
 });
 

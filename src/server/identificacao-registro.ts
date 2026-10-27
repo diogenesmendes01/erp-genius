@@ -4,11 +4,6 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { escopoAlunos } from "@/server/alunos/consultas";
 import { consultarCabecalhoMatricula, type CabecalhoMatricula } from "@/server/matricula/cabecalho";
 
-// Identificação do registro nas telas de decisão fora de /matriculas/[id] (docs/43 §6 item 7): só o nome
-// do aluno, o código da matrícula e o que distingue o registro — leitura, sem efeito, com o MESMO alcance das
-// páginas: o aluno pelo escopo da ficha (escopoAlunos) e a matrícula pelo do cabeçalho de /matriculas/[id]
-// (consultarCabecalhoMatricula). Fora do alcance (ou inexistente): null, e a tela segue sem a identificação.
-
 export type IdentificacaoAluno = { alunoId: string; aluno: string };
 
 export async function consultarIdentificacaoAluno(usuario: UsuarioSessao, alunoId: string): Promise<IdentificacaoAluno | null> {
@@ -17,7 +12,6 @@ export async function consultarIdentificacaoAluno(usuario: UsuarioSessao, alunoI
   return aluno ? { alunoId: aluno.id, aluno: nomeCompleto(aluno) } : null;
 }
 
-/** Matrícula da reposição + a aula de origem (turma e início), para dizer de qual reposição se trata. */
 export type IdentificacaoReposicao = CabecalhoMatricula & { turma: string | null; aulaOrigemInicio: Date };
 
 export async function consultarIdentificacaoReposicao(usuario: UsuarioSessao, entrada: { reposicaoId: string; matriculaId: string }): Promise<IdentificacaoReposicao | null> {

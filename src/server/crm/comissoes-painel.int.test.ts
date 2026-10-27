@@ -114,13 +114,10 @@ describe("carregarPainelComissoes", () => {
     const lista = async (u: U, vendedorId: string) => (await carregarPainelComissoes(sessaoDe(u), { ...base, vendedorId })).matriculadasSemComissao;
     expect(await lista(financeiro, v1.id)).toEqual([{ oportunidadeId: deV1, nome: "De V1" }]);
     expect(await lista(gerente, v1.id)).toEqual([{ oportunidadeId: deV1, nome: "De V1" }]);
-    // Gerente filtrando por vendedor de outra equipe: o escopo continua valendo (AND), nada aparece.
     expect(await lista(gerente, v3.id)).toEqual([]);
   });
 });
 
-// D11 (decisão do dono, 20/10/2026): previsão de pagamento = dia X do mês seguinte à competência, no fuso da escola,
-// calculada na leitura com o X da ConfigFinanceiro (padrão 10). Paga e estornada ficam sem previsão.
 describe("carregarPainelComissoes — previsão de pagamento (D11)", () => {
   const competenciaDe = (id: string, p: PainelComissoes) => p.linhas.find((l) => l.id === id);
 
@@ -139,11 +136,9 @@ describe("carregarPainelComissoes — previsão de pagamento (D11)", () => {
   it("dezembro vira janeiro, no fuso da escola, com o dia configurado", async () => {
     await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "America/Sao_Paulo" } });
     await prisma.configFinanceiro.create({ data: { id: "financeiro", diaPrevisaoPagamentoComissao: 5 } });
-    // 01/01/2027 às 02h30 UTC ainda é 31/12/2026 em São Paulo: competência dezembro, previsão 05/01/2027.
     const virada = await comissao(v1, { valor: 9, moeda: "BRL", status: "PENDENTE", aprovadaEm: new Date("2027-01-01T02:30:00Z") });
     const meio = await comissao(v1, { valor: 8, moeda: "BRL", status: "APROVADA", aprovadaEm: new Date("2026-12-15T15:00:00Z") });
     const estornada = await comissao(v1, { valor: 3, moeda: "BRL", status: "ESTORNADA", aprovadaEm: new Date("2026-12-15T15:00:00Z") });
-    // "Este mês" do painel é dezembro de 2026: só o relógio (Date) é fixado, o resto segue real.
     vi.useFakeTimers({ now: new Date("2026-12-20T15:00:00Z"), toFake: ["Date"] });
     try {
       const p = await carregarPainelComissoes(sessaoDe(financeiro), base);

@@ -37,8 +37,6 @@ export async function prepararLoteMigracao(input: unknown) {
     const entrada = EntradaPrepararLoteMigracao.parse(input);
     const entradaHash = hash(entrada);
     return prisma.$transaction(async (tx) => {
-      // A identidade de uma fonte pode reaparecer em lotes diferentes. Um lock por
-      // origem impede que duas transações aceitem, ao mesmo tempo, versões divergentes.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`migracao-preparacao:${entrada.origem}`}, 0))`;
       await adminFrescoTx(tx, autor.id);
       const existente = await tx.lotePreparacaoMigracao.findUnique({ where: { origem_chaveLote: { origem: entrada.origem, chaveLote: entrada.chaveLote } } });
@@ -65,7 +63,6 @@ export async function prepararLoteMigracao(input: unknown) {
           loteId: lote.id, linhaOrigem: linha.linhaOrigem, alunoOrigemId: textoDaCelula(linha.aluno?.id), turmaOrigemId: textoDaCelula(linha.turma?.id),
           matriculaOrigemId: textoDaCelula(linha.matricula?.id), financeiroOrigemId: textoDaCelula(linha.financeiro?.id),
           dadosOrigem: dadosDaLinha(linha), entradaHash: hash(linha), estado: estadoDaLinha(pendencias),
-          // O cliente Prisma é regenerado pelo integrador junto da migration 180.
           ...( { tipoEntrada: linha.tipoEntrada } as unknown as Record<string, unknown> ),
           pendencias: { create: pendencias },
         } });
@@ -82,8 +79,6 @@ export async function prepararLoteMigracao(input: unknown) {
           for (const candidata of candidatas) {
             const dadosExistentes = (candidata.dadosOrigem as Record<string, unknown>)[tipo.toLowerCase()];
             if (!diferem(dadosExistentes, identidade.dados)) {
-              // A repetição de ID idêntico continua pendente: não representa uma
-              // associação automática entre linhas da origem.
               possuiPendencias = true;
               await tx.colisaoOrigemPreparacaoMigracao.createMany({ data: [{ tipo: `${tipo}_REPETIDO`, identificadorOrigem: identidade.id, linhaExistenteId: candidata.id, linhaConflitanteId: criada.id }], skipDuplicates: true });
               await tx.linhaPreparacaoMigracao.updateMany({ where: { id: { in: [candidata.id, criada.id] } }, data: { estado: "COLISAO_ORIGEM" } });

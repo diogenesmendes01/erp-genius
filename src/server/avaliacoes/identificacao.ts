@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { nomeCompleto } from "@/lib/nome";
 
-/** Projeção mínima; chamada somente após autorização do vínculo correspondente. */
 export async function identificarMatriculaAvaliacao(tx: Prisma.TransactionClient, matriculaId: string, turmaId: string) {
   const m = await tx.matricula.findUniqueOrThrow({ where: { id: matriculaId }, select: { id: true, codigo: true,
     aluno: { select: { primeiroNome: true, sobrenome: true } },

@@ -17,21 +17,12 @@ const SETORES: { v: Setor; t: string }[] = [
   { v: "COMERCIAL", t: "Comercial" }, { v: "FINANCEIRO", t: "Financeiro" }, { v: "SECRETARIA", t: "Secretaria" }, { v: "PEDAGOGICO", t: "Pedagógico" },
 ];
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
-/**
- * ariaPodeUsar é lido pelo turno da Aria (`montarContextoTurno` via `respostasParaAria`): as respostas
- * marcadas, ativas, do setor do atendimento e as gerais entram no prompt como referência, e os preços
- * citados nelas passam na guarda de valores (percentuais e parcelas seguem a política da Aria). Hoje a
- * Aria só atua no Comercial (`turno/guardas.ts`), então marcadas de outros setores ainda não têm efeito.
- */
 export const AVISO_ARIA =
   "A Aria usa as respostas marcadas como referência, inclusive os preços citados no texto. Hoje a Aria só atua no Comercial: valem as respostas do Comercial e as gerais; respostas de outros setores marcadas ainda não têm efeito.";
 const VARIAVEIS = ["{nome}", "{responsavel}", "{curso}"];
 
 export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: RespostaLinha[]; setoresPermitidos: Setor[] }) {
   const router = useRouter();
-  // Criar resposta leva chave de idempotência (#166): o reenvio devolve a resposta já criada. Editar grava os
-  // valores da tela na resposta (estado-alvo) e o servidor não grava nada quando eles já estão lá. Arquivar
-  // roda neste mesmo executor e também é por estado-alvo: repetir devolve ok, sem novo Evento.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [id, setId] = useState<string | undefined>();
@@ -41,8 +32,6 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
   const [setor, setSetor] = useState<Setor | "">("");
   const [aria, setAria] = useState(false);
   const limpar = () => { setId(undefined); setAtalho("/"); setTitulo(""); setCorpo(""); setSetor(""); setAria(false); };
-  // `criacao`: só o "Criar resposta" consome a chave; um arquivamento ou edição que deu certo não pode
-  // trocar a chave de uma criação que ficou incerta.
   const rodar = async (fn: () => Promise<Resultado<unknown>>, depois: () => void, criacao = false) => {
     const d = await acao.executar(fn);
     if (criacao) tentativa.depoisDo(d);

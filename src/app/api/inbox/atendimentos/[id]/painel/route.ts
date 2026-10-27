@@ -6,7 +6,6 @@ import { carregarPainel } from "@/server/inbox/paineis";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Painel lateral por setor (Tarefa 32). Só leitura; 404 fora do escopo (não revela se o atendimento existe).
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   let usuario;
   try {

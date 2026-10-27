@@ -18,7 +18,6 @@ describe("importação de alunos — parsers", () => {
   });
 
   it("reimporta o próprio modelo: cabeçalho obrigatório com ' *' casa", () => {
-    // O modelo gera "Nome *", "País *" — precisam casar na reimportação.
     expect(chaveDoCabecalho("Nome *")).toBe("primeiroNome");
     expect(chaveDoCabecalho("País *")).toBe("pais");
   });

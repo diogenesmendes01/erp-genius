@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { telefoneE164 } from "@/server/_shared/validacao";
 
-// Zod do módulo whatsapp (padrão docs/13). As ações da fila, da inbox e das telas de
-// config validam aqui.
-
 export const LoteCobrancaSchema = z.object({
   cobrancaIds: z
     .array(z.string().min(1))
@@ -11,10 +8,6 @@ export const LoteCobrancaSchema = z.object({
     .max(200, "Lote máximo: 200 cobranças por aprovação."),
 });
 export type LoteCobrancaInput = z.input<typeof LoteCobrancaSchema>;
-
-// ---------------------------------------------------------------------------
-// Inbox (E3)
-// ---------------------------------------------------------------------------
 
 export const EnviarTextoInboxSchema = z.object({
   conversaId: z.string().min(1),
@@ -24,7 +17,6 @@ export type EnviarTextoInboxInput = z.input<typeof EnviarTextoInboxSchema>;
 
 export const EnviarMidiaInboxSchema = z.object({
   conversaId: z.string().min(1),
-  /** URL canônica devolvida pelo POST /api/upload. */
   url: z.string().startsWith("/api/files/", "Envie o arquivo pelo uploader do sistema."),
   legenda: z.string().trim().max(1024, "Legenda longa demais.").optional().default(""),
 });
@@ -43,7 +35,6 @@ export const VincularContatoSchema = z.object({
 });
 export type VincularContatoInput = z.input<typeof VincularContatoSchema>;
 
-/** Desvincular contato pelo Inbox (D8, #175, L2298): o vínculo atual que sai e o motivo, obrigatório. */
 export const DesvincularContatoSchema = z.object({
   atendimentoId: z.string().min(1),
   alvo: z.object({ tipo: z.enum(["aluno", "responsavel", "lead"]), id: z.string().min(1) }),
@@ -51,11 +42,9 @@ export const DesvincularContatoSchema = z.object({
 });
 export type DesvincularContatoInput = z.input<typeof DesvincularContatoSchema>;
 
-/** Nome salvo do contato (edição na thread). Vazio = volta ao nome de perfil do WhatsApp / número. */
 export const EditarNomeContatoSchema = z.object({
   atendimentoId: z.string().min(1),
   nome: z.string().trim().max(80, "Nome longo demais (até 80 caracteres)."),
-  /** Nome salvo que a tela carregou: a gravação só vale se ele ainda for o atual (edições concorrentes). */
   nomeAnterior: z.string().nullable(),
 });
 export type EditarNomeContatoInput = z.input<typeof EditarNomeContatoSchema>;
@@ -66,15 +55,10 @@ export const TratarConversaSchema = z.object({
 });
 export type TratarConversaInput = z.input<typeof TratarConversaSchema>;
 
-// ---------------------------------------------------------------------------
-// Config — número (E3)
-// ---------------------------------------------------------------------------
-
 export const NumeroWhatsAppSchema = z.object({
   id: z.string().min(1).optional(),
   telefoneE164,
   rotulo: z.string().trim().min(2, "Dê um rótulo ao número (ex.: Cobrança)." ).max(60),
-  // Só o motor aceita número novo; o providerRef é o próprio id (definido ao salvar).
   driver: z.literal("MOTOR").default("MOTOR"),
   finalidade: z.enum(["COBRANCA", "VENDAS", "AGENDA"]),
   donoId: z
@@ -82,21 +66,15 @@ export const NumeroWhatsAppSchema = z.object({
     .trim()
     .optional()
     .transform((v) => (v ? v : null)),
-  // Só no cadastro (padrão: ativo). Na edição, ativar e desativar têm ações próprias (desativar desconecta).
   ativo: z.boolean().optional(),
 });
 export type NumeroWhatsAppInput = z.input<typeof NumeroWhatsAppSchema>;
 
-/** Escolha explícita do canal institucional de avisos de agenda. */
 export const ConfiguracaoAvisosAgendaSchema = z.object({
   numeroAvisosAgendaId: z.string().trim().min(1),
   templateAvisosAgendaId: z.string().trim().min(1),
 });
 export type ConfiguracaoAvisosAgendaInput = z.input<typeof ConfiguracaoAvisosAgendaSchema>;
-
-// ---------------------------------------------------------------------------
-// Config — template (E4). Nome segue a regra da Meta: minúsculas/dígitos/underscore.
-// ---------------------------------------------------------------------------
 
 export const TemplateWhatsAppSchema = z.object({
   id: z.string().min(1).optional(),
@@ -114,10 +92,6 @@ export const TemplateWhatsAppSchema = z.object({
   categoria: z.enum(["utility", "marketing"]).default("utility"),
 });
 export type TemplateWhatsAppInput = z.input<typeof TemplateWhatsAppSchema>;
-
-// ---------------------------------------------------------------------------
-// Config — política da régua (E4)
-// ---------------------------------------------------------------------------
 
 export const PASSOS_POLITICA = ["D-7", "D-3", "D0", "D+3", "D+7", "D+15"] as const;
 

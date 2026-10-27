@@ -8,8 +8,6 @@ const chave = (email: string) => digestSegredoPortalAluno(`login-portal:${email}
 
 type LinhaTentativa = { chaveDigest: string; falhas: number; janelaIniciadaEm: Date; bloqueadaAte: Date | null };
 
-// Uma linha ainda inexistente não pode ser protegida com FOR UPDATE.
-// Serializar pela chave também protege o primeiro registro e a limpeza.
 async function bloquearChaveTx(tx: Prisma.TransactionClient, email: string) {
   await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${chave(email)}, 0))`);
 }

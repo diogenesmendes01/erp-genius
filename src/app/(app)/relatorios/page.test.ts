@@ -65,14 +65,12 @@ async function render(o: { papel: string; aba?: string; semDadosAnteriores?: boo
   return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ ...(o.aba ? { aba: o.aba } : {}), ...o.sp }) }));
 }
 
-/** Variação de cada KPI pelo rótulo, lida do `<span data-variacao>` do cartão. */
 function variacoes(html: string): Record<string, string> {
   const r: Record<string, string> = {};
   for (const m of html.matchAll(/<p class="text-xs text-gray-600">([^<]+)<\/p><p class="text-lg font-medium">.*?<span data-variacao="">([^<]*)<\/span>/g)) r[m[1]] = m[2];
   return r;
 }
 
-/** Query do link "Exportar CSV". */
 function linkExportar(html: string): URLSearchParams {
   const m = html.match(/href="\/api\/relatorios\/exportar\?([^"]*)"/);
   expect(m, "link de exportação").not.toBeNull();
@@ -109,7 +107,6 @@ describe("/relatorios (página)", () => {
   it("kpi_mostra_variacao_e_traco", async () => {
     const semBase = await render({ papel: "ADMINISTRADOR", semDadosAnteriores: true });
     const v = variacoes(semBase);
-    // Período anterior zerado/vazio: a variação desses KPIs é o traço, nunca Infinity/NaN.
     for (const rotulo of ["Valor em pipeline", "Oportunidades abertas", "Criadas no período", "Ganhas", "Conversão"]) expect(v[rotulo], rotulo).toBe("—");
     expect(semBase).not.toMatch(/Infinity|NaN/);
     mocks.chamadas.length = 0;

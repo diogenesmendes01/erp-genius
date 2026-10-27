@@ -146,7 +146,6 @@ describe("executarHandoff", () => {
   it("humano_assumiu_durante_o_turno_nao_mexe_no_atendimento", async () => {
     const c = await cenario(true);
     const atendente = await criarUsuario([], "Bruno Atendente");
-    // O atendente respondeu pelo celular enquanto o provedor pensava: Aria pausada e ele responsável.
     await prisma.$transaction(async (tx) => {
       await pausarAriaNoAtendimento(tx, c.at.id, "CELULAR", null);
       await tx.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { responsavelId: atendente.id, status: "EM_ATENDIMENTO" } });

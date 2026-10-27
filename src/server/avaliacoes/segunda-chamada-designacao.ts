@@ -12,7 +12,6 @@ import { instanteUtcOuNuloSql, instanteUtcSql } from "./segunda-chamada-utc";
 const schema = z.object({ propostaId: z.string().min(1).max(100), professorId: z.string().min(1).max(100), inicio: z.string().datetime({ offset: true }), fim: z.string().datetime({ offset: true }).optional(), motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
 const hash = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 
-/** Q152: designa acesso temporal somente para a segunda chamada identificada; não transfere fatos passados. */
 export async function designarProfessorSegundaChamada(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = schema.parse(input);

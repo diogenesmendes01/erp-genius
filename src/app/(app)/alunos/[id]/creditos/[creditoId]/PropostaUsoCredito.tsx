@@ -15,8 +15,6 @@ const estilo = "block rounded border p-2";
 export function PropostaUsoCredito({ dados }: { dados: Dados }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition(); const chave = useRef(""); const router = useRouter();
   const [valor, setValor] = useState("");
-  // Cobrança pelo código e vencimento, nunca pelo id interno (docs/43 §6 item 7). A proposta pode citar uma
-  // cobrança que já saiu das abertas (quitada depois): aí ela é dita assim, sem o id.
   const rotuloCobranca = (cobrancaId: string) => {
     const c = dados.cobrancas.find(x => x.id === cobrancaId);
     return c ? `${c.codigo ?? "Cobrança sem código"} · vencimento ${formatarDataCivil(c.vencimento.slice(0, 10))}` : "Cobrança que não está mais em aberto";

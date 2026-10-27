@@ -34,7 +34,6 @@ it("consulta matrícula/proposta exatas, explica que nada é convertido e mostra
  expect(mocks.sessao).toHaveBeenCalledWith("FINANCEIRO");
  expect(mocks.versao).toHaveBeenCalledWith({ where: { matriculaId: "m1", propostaId: "p1" }, select: { id: true } });
  expect(mocks.consulta).toHaveBeenCalledWith({ matriculaId: "m1", versaoCondicoesId: "v1", pagina: 2 });
- // 2026-09-01T00:00Z é 31/08 em São Paulo: o dia civil é o da escola, não o UTC nem o fuso pessoal.
  expect(html).toContain("Dia da vigência na escola: 31/08/2026 (America/Sao_Paulo)");
  expect(html).toContain("nada é convertido"); expect(html).toContain("Moeda atual: CRC · Moeda contratada: USD");
  expect(html).toContain("CRC → USD · fuso da escola na preparação: America/Sao_Paulo");

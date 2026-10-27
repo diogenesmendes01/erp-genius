@@ -25,10 +25,6 @@ const TODAS: CapacidadeCrm[] = [
   "comissoes.ver", "comissoes.equipe", "comissoes.estornar",
 ];
 
-/**
- * Matriz de capacidades do CRM por papel do ERP.
- * `comissoes.estornar` do FINANCEIRO depende da Q7 (decisão provisória: comissão nasce com a matrícula).
- */
 const MATRIZ: Record<Papel, CapacidadeCrm[]> = {
   [Papel.ADMINISTRADOR]: TODAS,
   [Papel.GERENTE_COMERCIAL]: [
@@ -39,7 +35,7 @@ const MATRIZ: Record<Papel, CapacidadeCrm[]> = {
     "comissoes.ver", "comissoes.equipe",
   ],
   [Papel.VENDEDOR]: ["funil.ver", "funil.mover", "contatos.ver", "contatos.editar", "tarefas.ver", "comissoes.ver"],
-  [Papel.FINANCEIRO]: ["tarefas.ver", "comissoes.ver", "comissoes.equipe", "comissoes.estornar"], // estornar: Q7
+  [Papel.FINANCEIRO]: ["tarefas.ver", "comissoes.ver", "comissoes.equipe", "comissoes.estornar"],
   [Papel.SECRETARIA_ACADEMICA]: ["contatos.ver", "tarefas.ver"],
   [Papel.GERENTE_PEDAGOGICO]: [],
   [Papel.PROFESSOR]: [],
@@ -58,5 +54,4 @@ export function exigirCapacidadeCrm(usuario: UsuarioSessao, c: CapacidadeCrm): v
   }
 }
 
-// Mapeamento papel → setor: fonte única em ./setores-papel (módulo puro, importável no cliente).
 export { setoresDoUsuario } from "./setores-papel";

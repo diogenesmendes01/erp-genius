@@ -29,7 +29,6 @@ export async function decidirUtilizacaoCredito(input: { propostaId: string; apro
         const atual = await estadoUsoCreditoTx(tx, p.creditoId, p.cobrancaId, p.valor);
         if (!isDeepStrictEqual(p.snapshot, atual.snapshot)) throw new ErroRegra("Crédito ou cobrança mudou. Prepare nova proposta para conferência.");
       }
-      // O trigger aplica a liquidação por crédito, preservando valorRecebido e Recebimento.
       const decisao = await tx.decisaoUsoCredito.create({ data: { propostaId: p.id, decisorId: autor.id, aprovada: d.aprovar, motivo: d.motivo } });
       await registrarEvento(tx, { tipo: "UtilizacaoCreditoDecidida", agregadoTipo: "Matricula", agregadoId: inicial.credito.matriculaId, autorId: autor.id, payload: { propostaId: p.id, decisaoId: decisao.id, creditoId: p.creditoId, cobrancaId: p.cobrancaId, valor: p.valor.toFixed(2), aprovada: d.aprovar, motivo: d.motivo } });
       return { id: decisao.id, aprovada: d.aprovar };

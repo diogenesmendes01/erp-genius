@@ -36,8 +36,6 @@ export function ModalidadeFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  // criarModalidade recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve a
-  // modalidade já criada. A edição continua sem chave: o formulário é outro (`modalidade` fixa na montagem).
   const acao = useAcaoCliente({ idempotente: !modalidade });
   const tentativa = useChaveIdempotencia();
 

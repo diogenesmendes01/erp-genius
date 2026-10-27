@@ -5,7 +5,6 @@ import { Papel } from "@prisma/client";
 const { enviarMock, authMock } = vi.hoisted(() => ({ enviarMock: vi.fn(), authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Exercita o despacho completo com respostas falsas; nenhum driver acessa a rede.
 vi.mock("./drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 
 import { prisma } from "@/lib/prisma";

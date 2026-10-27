@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L1059): preparar o calendário protege o que foi digitado com o aviso de saída —
-// ligado só com alteração não salva, desligado depois de salvar. O gancho é observado pelo valor de `sujo`
-// a cada render (o comportamento do beforeunload em si está em src/lib/aviso-ao-sair.test.ts).
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   aviso: vi.fn(), preparar: vi.fn(), push: vi.fn(),

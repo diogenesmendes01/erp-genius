@@ -1,6 +1,5 @@
 import { execFileSync } from "node:child_process";
 
-/** O índice, e não o disco, é a fonte: Windows pode materializar só um dos nomes. */
 export function caminhosRastreados(raiz = process.cwd()): string[] {
   return execFileSync("git", ["ls-files", "-z"], { cwd: raiz, encoding: "utf8" }).split("\0").filter(Boolean);
 }

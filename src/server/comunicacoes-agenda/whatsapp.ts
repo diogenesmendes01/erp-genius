@@ -34,7 +34,6 @@ export function renderizarTemplateAgenda(corpo: string, dados: { nome: string; h
     variaveis.push(valor);
     return valor;
   });
-  // Tokens desconhecidos tornam os parâmetros posicionais divergentes da Meta.
   if (/\{[^}]+\}/.test(texto) || !encontrouHorario) return null;
   return { texto, variaveis };
 }
@@ -86,7 +85,6 @@ export function motivoConfiguracaoAgendaInvalida(config: ConfiguracaoAgenda | nu
   const numero = config?.numeroAvisosAgenda;
   const template = config?.templateAvisosAgenda;
   if (!config?.numeroAvisosAgendaId || !config.templateAvisosAgendaId || !numero || !template) return "configuracao_agenda_ausente";
-  // Só o motor envia aviso de agenda: é o único driver do despachante.
   if (!numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") return "numero_agenda_invalido";
   if (template.idioma !== idioma || !renderizarTemplateAgenda(template.corpo, { nome: "x", horarios: "x" })) return "template_agenda_incompativel";
   return null;
@@ -99,7 +97,6 @@ async function configuracaoAgenda(db: Prisma.TransactionClient | typeof prisma =
   });
 }
 
-/** Cria/reabre a intenção sem enviar. Diagnósticos operacionais permanecem em PREPARADO. */
 export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClient, avisoId: string) {
   const aviso = await tx.avisoAlteracaoAgenda.findUnique({
     where: { id: avisoId },
@@ -160,7 +157,6 @@ export async function enfileirarAvisosAgendaWhatsApp(limite = 20) {
   return enfileirados;
 }
 
-/** Releitura do estado atual após o claim, antes de tocar o driver. */
 export async function motivoAvisoAgendaInvalido(it: { avisoAlteracaoAgendaId: string | null; numeroId: string; contatoId: string; templateId: string | null; atendimentoId: string | null; corpoRenderizado?: string; variaveis?: unknown }) {
   if (!it.avisoAlteracaoAgendaId) return null;
   const aviso = await prisma.avisoAlteracaoAgenda.findUnique({ where: { id: it.avisoAlteracaoAgendaId }, include: { evento: true, itens: { include: { encontro: true } }, aluno: { include: { pais: { select: { idioma: true } }, responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavelId: true, responsavel: { select: { telefoneE164: true } } } } } }, matricula: true } });
@@ -189,14 +185,12 @@ export async function motivoAvisoAgendaInvalido(it: { avisoAlteracaoAgendaId: st
   return null;
 }
 
-/** A evidência do resultado fica no aviso apenas quando o driver aceitou ou falhou após claim. */
 export async function registrarResultadoAvisoAgendaTx(tx: Prisma.TransactionClient, avisoId: string, situacao: "ENVIADO" | "FALHOU", provedorId?: string | null) {
   const aviso = await tx.avisoAlteracaoAgenda.findUnique({ where: { id: avisoId }, select: { situacao: true } });
   if (!aviso || aviso.situacao !== "INCERTO") return;
   await tx.avisoAlteracaoAgenda.update({ where: { id: avisoId }, data: { situacao, tentativas: { create: { id: randomUUID(), situacao, provedorId: provedorId ?? null } } } });
 }
 
-/** Claim persistente antes do driver: a intenção e o aviso entram em voo juntos. */
 export async function claimAvisoAgendaTx(tx: Prisma.TransactionClient, avisoId: string) {
   const claim = await tx.avisoAlteracaoAgenda.updateMany({ where: { id: avisoId, situacao: "PREPARADO" }, data: { situacao: "INCERTO" } });
   if (claim.count === 1) await tx.tentativaAvisoAlteracaoAgenda.create({ data: { id: randomUUID(), avisoId, situacao: "INCERTO" } });

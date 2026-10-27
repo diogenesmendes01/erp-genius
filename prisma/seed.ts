@@ -17,7 +17,7 @@ async function main() {
       nome: "Diógenes Mendes",
       email: "admin@genius.com",
       papeis: [Papel.ADMINISTRADOR],
-      limiteDescontoPct: null, // sem limite
+      limiteDescontoPct: null,
     },
     {
       nome: "Mariana López",
@@ -53,7 +53,6 @@ async function main() {
     });
   }
 
-  // contadores dos códigos legíveis (L-/A-/M-/C-/T-)
   for (const chave of ["lead", "aluno", "matricula", "cobranca", "turma"]) {
     await prisma.contador.upsert({
       where: { chave },
@@ -68,20 +67,12 @@ async function main() {
   console.log("Login admin:  admin@genius.com  /  genius123");
 }
 
-// ------------------------------------------------------------
-// Catálogo + preços (decisão P5). Idempotente no nível do bloco:
-// se já houver idioma cadastrado, assume catálogo populado e pula.
-// ⚠️ Valores = EXEMPLOS documentados (doc 04). A matriz completa
-//    (mensalidade × modalidade × país, taxa, hora particular) é a
-//    pendência P5 (doc 15) — substituir quando o usuário fornecer.
-// ------------------------------------------------------------
 async function seedCatalogo() {
   if (await prisma.idioma.findFirst()) {
     console.log("Catálogo já populado — pulando.");
     return;
   }
 
-  // Países (status ATIVO) + tipo de documento
   const paisesData = [
     { nome: "Costa Rica", codigoISO: "CR", moedaLocal: "CRC", ddi: "+506", doc: { nome: "Cédula", validador: "cedula_cr" } },
     { nome: "Panamá", codigoISO: "PA", moedaLocal: "USD", ddi: "+507", doc: { nome: "Cédula/Pasaporte", validador: "passaporte" } },
@@ -103,14 +94,12 @@ async function seedCatalogo() {
     paises[p.codigoISO] = { id: pais.id, moeda: p.moedaLocal };
   }
 
-  // Idioma + níveis (CEFR)
   const portugues = await prisma.idioma.create({ data: { nome: "Português" } });
   const niveis = ["Pré A1", "A1", "A2", "B1", "B2", "C1", "C2"];
   for (let i = 0; i < niveis.length; i++) {
     await prisma.nivel.create({ data: { idiomaId: portugues.id, codigo: niveis[i], ordem: i } });
   }
 
-  // Modalidades (doc 06; mínimo p/ abrir vive na modalidade)
   const modalidadesData = [
     { nome: "Regular", segmento: Segmento.ADULTO, frequencia: "1x/semana", duracaoPorNivel: "3 meses", aulasPorNivel: 12, minimoAbrir: 4 },
     { nome: "Semi-intensiva", segmento: Segmento.ADULTO, frequencia: "2x/semana", duracaoPorNivel: "2 meses", aulasPorNivel: 16, minimoAbrir: 4 },
@@ -126,7 +115,6 @@ async function seedCatalogo() {
     modalidades[m.nome] = mod.id;
   }
 
-  // Produtos = idioma × modalidade
   const produtos: Record<string, string> = {};
   for (const nome of Object.keys(modalidades)) {
     const prod = await prisma.produto.create({
@@ -135,7 +123,6 @@ async function seedCatalogo() {
     produtos[nome] = prod.id;
   }
 
-  // Disponibilidade por país (ProdutoPais) — todos os produtos ofertados nos 3 países
   for (const cod of Object.keys(paises)) {
     for (const nome of Object.keys(produtos)) {
       await prisma.produtoPais.create({
@@ -144,8 +131,6 @@ async function seedCatalogo() {
     }
   }
 
-  // PrecoReferencia (EXEMPLOS doc 04). Mensalidade do Regular + taxa de matrícula.
-  // Mensalidade documentada: CR ₡25.000 · PA US$50 · SV US$30. Taxa = placeholder (P5).
   const precos: Record<string, { mensalidade: number; matricula: number }> = {
     CR: { mensalidade: 25000, matricula: 20000 },
     PA: { mensalidade: 50, matricula: 40 },
@@ -163,7 +148,6 @@ async function seedCatalogo() {
 
   console.log(`Catálogo: ${paisesData.length} países · 1 idioma · ${niveis.length} níveis · ${modalidadesData.length} modalidades · preços de exemplo.`);
 
-  // Canal WhatsApp (doc 30): templates + política padrão (nasce DESLIGADA — nada dispara).
   await semearWhatsApp(prisma);
 }
 

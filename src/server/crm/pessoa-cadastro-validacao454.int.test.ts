@@ -8,7 +8,7 @@ import {editarPessoa} from "./contatos";
 import {carregarCadastroPessoaAutorizado} from "./pessoa-cadastro";
 import {editarContatoNoInbox} from "@/server/inbox/acoes-painel";
 beforeEach(async()=>{vi.restoreAllMocks();await truncarBanco();m.auth.mockReset();});afterAll(()=>prisma.$disconnect());
-const INVALIDO="FICTICIO-LATAM340"; // Valor positivo antigo preservado agora como negativo C1 explícito.
+const INVALIDO="FICTICIO-LATAM340";
 const ERRO="Documento inválido para o tipo selecionado. Corrija o documento e tente novamente.";
 const como=(u:{id:string})=>m.auth.mockResolvedValue({user:{id:u.id}});
 type PatchDoc={documento?:string|null;tipoDocumentoId?:string|null;documentoPaisEmissor?:string|null;nascimento?:string|null;nome?:string;cidade?:string|null};

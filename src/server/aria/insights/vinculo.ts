@@ -7,7 +7,6 @@ const VinculoInsightSchema=z.object({
   alunoId:id.nullable(),matriculaId:id.nullable(),turmaId:id.nullable(),grupoId:id.nullable(),
 });
 export type VinculoInsight=z.infer<typeof VinculoInsightSchema>;
-/** Identidade crua, com null explícito. Permissão e apresentação não são o mesmo hash. */
 export function hashVinculoInsight(vinculo:unknown):string {
   return createHash("sha256").update(JSON.stringify(VinculoInsightSchema.parse(vinculo))).digest("hex");
 }

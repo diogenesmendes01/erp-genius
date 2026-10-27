@@ -11,10 +11,6 @@ export interface AlvoResponsavelAria {
   atendimentoId: string | null;
   oportunidadeId: string | null;
 }
-/**
- * Somente a exceção D1, com contexto autorizado e fresco fornecido pelo chamador.
- * Não substitui escopo do atendimento, existência do alvo ou autorização global.
- */
 export function excecaoResponsavelNoInbox(
   u: Pick<UsuarioSessao, "id" | "papeis">,
   atendimento: ContextoResponsavelAria,
@@ -45,7 +41,6 @@ export function pessoaDoPayloadValida(acao: Pick<AcaoDecisaoInbox,"acao"|"payloa
   return !!pessoaId&&p?.pessoaId===pessoaId;
 }
 export const usaLeadAtualNaResposta = (acao: Pick<AcaoDecisaoInbox,"acao">): boolean => acao.acao === "RESPONDER" || acao.acao === "ENVIAR_DOCUMENTO";
-/** Contexto vem do escopo autorizado; consultas agrupadas, nunca uma por cartão. */
 export async function acoesDecidiveisNoInbox(db: Db, u: UsuarioSessao, atendimento: ContextoResponsavelAria, acoes: readonly AcaoDecisaoInbox[]): Promise<Set<string>> {
   const leadIds=acoes.flatMap(a=>usaLeadAtualNaResposta(a)?[a.oportunidadeId??atendimento.leadId,atendimento.leadId]:[a.oportunidadeId??atendimento.leadId]);
   const ids=[...new Set(leadIds.filter((id):id is string=>!!id))];

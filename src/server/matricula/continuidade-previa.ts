@@ -8,7 +8,6 @@ import { carregarContinuidadeMensalTx } from "./continuidade-estado-tx";
 
 const MatriculaId = z.string().min(1);
 
-/** Q30/Q64: consulta autenticada. O carregador interno não emite cobrança. */
 export async function consultarPreviaContinuidadeMensal(matriculaId: string) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(

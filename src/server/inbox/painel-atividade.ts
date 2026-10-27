@@ -11,7 +11,6 @@ import {autorDaAgendada,podeCancelarAgendadaInbox,type ContextoCancelarAgendadaI
 export type AgendadaAtividade={id:string;texto:string;agendadaPara:string;autor:AutorAgendada;podeCancelar:boolean};
 export type AtividadeRecente={ultimaInteracaoEm:string|null;conversas:number;tarefasAbertas:number;notas:NotaInternaThread[]};
 export type AtividadePainel={agendadas:AgendadaAtividade[];recente:AtividadeRecente;aria:AriaNoContato|null;alteracoes:AlteracaoAriaPainel[]};
-/** Leitura da conversa, não permissão de envio/Assumir; ações mantêm autorização própria fresca. */
 export async function carregarAtividadePainel(u:UsuarioSessao,atendimentoId:string):Promise<AtividadePainel|null>{
  if(!u?.id)return null;
  const contextoGP=u.papeis.includes(Papel.GERENTE_PEDAGOGICO);
@@ -33,7 +32,6 @@ export async function carregarAtividadePainel(u:UsuarioSessao,atendimentoId:stri
   linhas=await listarAgendadas();
   const ultimo=await lerAtor();if(!ultimo?.ativo||JSON.stringify([atual.papeis,atual.permissoes])!==JSON.stringify([ultimo.papeis,ultimo.permissoes]))return null;
   const final=await atendimentoVisivel(ultimo,atendimentoId,false,prisma);if(!final)return null;
-  // Contexto publicado após os awaits, sem impor envio/Assumir ou veto a encerrado.
   publicador=ultimo;contexto={ativo:ultimo.ativo,responsavelId:final.responsavelId};
  }
  return {aria:aria.aria,alteracoes:aria.alteracoes,agendadas:linhas.map(m=>({id:m.id,texto:m.corpoRenderizado,agendadaPara:m.agendadaPara!.toISOString(),autor:autorDaAgendada(u.id,{autorId:m.autorId,origem:m.origem,autorNome:m.autor?.nome??null}),podeCancelar:podeCancelarAgendadaInbox(publicador,m,contexto)})),recente:{ultimaInteracaoEm:a.ultimaMensagemEm?.toISOString()??null,conversas,tarefasAbertas:tarefas.filter(t=>t.status==="ABERTA").length,notas:notas.slice(0,2)}};

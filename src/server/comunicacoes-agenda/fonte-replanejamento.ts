@@ -10,8 +10,6 @@ export type HorarioReplanejamento = z.infer<typeof Horario> & { fusoOrigem: stri
 type AlocacaoHistorica = { turmaId: string; criadoEm: Date; encerradaEm: Date | null; ativa: boolean; provenienciaVinculo: "MIGRACAO" | null; inicioVigencia: Date | null; fimVigencia: Date | null };
 export const alocacaoCobreHorarioReplanejado = (alocacao: AlocacaoHistorica, instante: string) => alocacaoCobreAula(alocacao, new Date(instante));
 
-/** Fonte restrita a uma matrícula: não devolve nem renderiza encontros de outras
- * turmas. O vínculo histórico vale no horário original OU no proposto. */
 export async function validarFonteReplanejamentoConjuntoTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; matriculaId: string; encontrosIds: string[] }) {
   const evento = await tx.evento.findUnique({ where: { id: entrada.eventoId }, select: { tipo: true, agregadoTipo: true, agregadoId: true, payload: true } });
   const payload = Payload.safeParse(evento?.payload);

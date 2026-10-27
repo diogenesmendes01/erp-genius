@@ -38,8 +38,6 @@ describe("históricos administrativos das movimentações", () => {
   });
 });
 
-// Lote 3 do fuso pessoal nas telas: o registro da compra de horas, sem preferência, sai no fuso da ESCOLA (antes,
-// UTC), com o fuso escrito. Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 describe("registro da compra de horas", () => {
   const html = (preferenciaFusoExibicao: string | null, fusoEscola: string) => renderToStaticMarkup(createElement(RegistroCompraHoras, { nome: "Financeiro", criadoEm: instante, preferenciaFusoExibicao, fusoEscola }));
   it("pessoal; sem preferência, a escola; escola sem fuso válido, UTC", () => {

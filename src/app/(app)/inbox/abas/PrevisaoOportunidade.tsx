@@ -8,7 +8,6 @@ import {definirPrevisaoNoInbox} from "@/server/inbox/acoes-previsao";
 import type {ValoresPrevisao} from "@/server/comercial/previsao-schema";
 
 type Props=ValoresPrevisao&{atendimentoId:string;oportunidadeId:string;podeEditar:boolean;aoMudar():void};
-/** A identidade encerra a abertura anterior; atualizações de dados não remontam o formulário. */
 export function PrevisaoOportunidade(p:Props){return <PrevisaoDoAlvo key={JSON.stringify([p.atendimentoId,p.oportunidadeId])} {...p}/>;}
 function PrevisaoDoAlvo(p:Props){
  const acao=useAcaoCliente({idempotente:false});

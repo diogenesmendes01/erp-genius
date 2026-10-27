@@ -21,9 +21,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { Aviso } from "@/components/Aviso";
 import { COBRANCA_B2B_ATIVA, MSG_COBRANCA_B2B_DESLIGADA } from "@/lib/funcionalidades";
 
-// FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
-// A matrícula é preparada individualmente; lote corporativo não está disponível.
-
 const btnPri = botaoClasses();
 
 interface EmpresaFicha {
@@ -40,7 +37,6 @@ interface EmpresaFicha {
   ativo: boolean;
 }
 
-/** Identificação da fatura na confirmação: código, competência, cobranças e total. */
 function ResumoFatura({ fatura }: { fatura: FaturaResumo }) {
   return (
     <p>
@@ -63,10 +59,7 @@ export function FichaEmpresa({
   podePagar: boolean;
 }) {
   const router = useRouter();
-  // Antes, uma falha de rede deixava `ocupado` preso em true e travava a ficha inteira. Nenhuma das
-  // três ações tem chave de idempotência: resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
-  // O resultado aparece na seção do botão que o disparou (faturas ou contrato), não no topo.
   const [origem, setOrigem] = useState<"faturas" | "contrato" | null>(null);
   const ocupado = acao.ocupado;
 
@@ -74,9 +67,6 @@ export function FichaEmpresa({
     setOrigem(secao);
     if ((await acao.executar(disparar, sucesso))?.tipo === "ok") router.refresh();
   }
-  // Pagar baixa EM LOTE todas as cobranças da fatura; cancelar desfaz o agrupamento. Nenhum dos dois tem
-  // desfazer pela tela (docs/42 L2281): o botão da linha só abre a confirmação, que repete fatura,
-  // competência, quantidade de cobranças e total. A action roda no ConfirmarAcao.
   const [confirmarFatura, setConfirmarFatura] = useState<{ fatura: FaturaResumo; operacao: "pagar" | "cancelar" } | null>(null);
   function pedirConfirmacao(fatura: FaturaResumo, operacao: "pagar" | "cancelar") {
     setOrigem("faturas");
@@ -89,8 +79,6 @@ export function FichaEmpresa({
     acao.setSucesso(mensagem);
     router.refresh();
   }
-  // Inativar a empresa (docs/42 L2281, a parte que faltava): o botão só abre a confirmação, que diz o que muda e o
-  // que fica; a action roda no ConfirmarAcao, com o estado-alvo explícito. Reativar continua direto.
   const [confirmarInativacao, setConfirmarInativacao] = useState(false);
   function pedirInativacao() {
     setOrigem("contrato");
@@ -123,7 +111,6 @@ export function FichaEmpresa({
         </p>
       </header>
 
-      {/* Histórico de contratos individuais vinculados ao responsável financeiro. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-medium">Colaboradores ({colaboradores.length})</h2>
@@ -173,12 +160,8 @@ export function FichaEmpresa({
         )}
       </section>
 
-      {/* Faturas corporativas já registradas permanecem consultáveis e editáveis. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Faturas históricas</h2>
-        {/* D9 (19/10/2026): a escola não usa a cobrança de empresas. Sem registrar pagamento (o servidor também
-            recusa); cancelar continua, para soltar as cobranças de uma fatura fechada antiga (R1 do #251, B1).
-            Religar: COBRANCA_B2B_ATIVA em src/lib/funcionalidades. */}
         {!COBRANCA_B2B_ATIVA && faturas.length > 0 && <Aviso tom="info" className="mb-3">{MSG_COBRANCA_B2B_DESLIGADA}</Aviso>}
 
         {faturas.length === 0 ? (
@@ -208,14 +191,10 @@ export function FichaEmpresa({
                     <td className="px-3 py-2 text-gray-800">
                       {formatarMoeda(f.valorTotal, f.moeda)}
                     </td>
-                    {/* Vencimento é dia, não instante: sai do ISO sem passar pelo fuso do navegador (em UTC−3 o
-                        toLocaleDateString mostrava o dia anterior; C52 da #170). */}
                     <td className="px-3 py-2 text-gray-600">{formatarDataCivil(f.vencimento.slice(0, 10))}</td>
                     <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
                     <td className="px-3 py-2">
                       {f.status === "FECHADA" && (
-                        // "Cancelar" sozinho, ao lado da ação primária, lia-se como "desistir da operação":
-                        // o botão diz o que cancela e fica afastado do pagamento.
                         <span className="flex flex-wrap gap-3">
                           {COBRANCA_B2B_ATIVA && podePagar && (
                             <button
@@ -278,7 +257,6 @@ export function FichaEmpresa({
         )}
       </section>
 
-      {/* Dados do contrato */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-2 font-medium">Contrato corporativo</h2>
         <dl className="grid grid-cols-1 gap-1 text-sm text-gray-700 md:grid-cols-2">

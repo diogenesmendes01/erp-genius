@@ -7,7 +7,6 @@ export interface ReferenciasInsight {
   campos: Partial<Record<"etapa" | "interesse" | "objetivo" | "urgencia" | "orcamento" | "objecao" | "proximaAcao", string | null>>;
 }
 
-/** Porta pura: referências já autorizadas e configuração PUBLICADA escolhidas pelo servidor. */
 export function criarPedidoInsight(
   contexto: ContextoInsight,
   referencias: ReferenciasInsight,

@@ -13,7 +13,6 @@ const schema = z.object({
   antesId: z.string().min(1).max(100).optional(),
 }).strict();
 
-/** Histórico administrativo de todas as tentativas, inclusive reservas anteriores da mesma proposta. */
 export async function consultarHistoricoReservasSegundaChamada(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -42,8 +41,6 @@ export async function consultarHistoricoReservasSegundaChamada(input: z.input<ty
           realizacao: { select: { realizadaEm: true, evidencia: true, professor: { select: { nome: true } }, registradaPor: { select: { nome: true } } } },
         },
       });
-      // Q164: só realização da mesma avaliação (inclusive a mesma regra, C4 da #265), já com nota oficial,
-      // pode resolver um impedimento; o núcleo transacional e o guard SQL conferem o mesmo.
       const oficiais = reservas.some(r => r.status === "PENDENCIA_ESCOLA" && !r.resolucaoImpedimento) ? await tx.realizacaoSegundaChamada.findMany({
         where: { reserva: escopo, lancamentosOriginais: { some: { decisao: { is: { aprovada: true } } } } },
         orderBy: [{ realizadaEm: "asc" }, { id: "asc" }], select: { id: true, reservaId: true, realizadaEm: true, reserva: { select: { regraId: true } } },

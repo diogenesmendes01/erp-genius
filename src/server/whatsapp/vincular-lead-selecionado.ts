@@ -4,7 +4,6 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { atendimentoVisivel } from "./atendimentos";
 import { CHAVE_LINHA } from "./linha-comercial";
 
-/** Vínculo na identidade selecionada: nunca cria outro contexto nem chama o roteamento inbound. */
 export async function vincularLeadSelecionadoTx(tx: Prisma.TransactionClient, sessao: UsuarioSessao, entrada: { contatoId: string; atendimentoId?: string; leadId: string }) {
   const { atendimentoId, contatoId, leadId } = entrada;
   if (!atendimentoId) throw new ErroRegra("Atendimento fora do seu escopo para vinculação.");
@@ -27,7 +26,6 @@ export async function vincularLeadSelecionadoTx(tx: Prisma.TransactionClient, se
       select: { id: true, pessoaId: true },
     });
     if (!lead) throw new ErroRegra("Lead não encontrado ou fora do seu escopo.");
-    // Pessoa ausente é contrato legado de AcoesContato; não transforma telefone em identidade de Pessoa.
     if (contato.pessoaId) {
       if (lead.pessoaId && lead.pessoaId !== contato.pessoaId) throw new ErroRegra("A Pessoa do contato não corresponde à oportunidade.");
       const pessoa = await tx.pessoa.findFirst({ where: { id: contato.pessoaId, mescladaEmId: null, responsavel: null }, select: { id: true } });
@@ -42,7 +40,6 @@ export async function vincularLeadSelecionadoTx(tx: Prisma.TransactionClient, se
     if (candidato?.id !== atendimentoId) throw new ErroRegra("O vínculo pertence a outro atendimento. Recarregue a conversa.");
     return { a, contato };
   }
-  // Os IDs vêm do atendimento validado, nunca de uma consulta preliminar usada como autorização final.
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR UPDATE`;
   await resolver();
   await tx.$queryRaw`SELECT id FROM "ContatoWhatsApp" WHERE id=${contatoId} FOR UPDATE`;
@@ -55,7 +52,6 @@ export async function vincularLeadSelecionadoTx(tx: Prisma.TransactionClient, se
   if (atendimento.count !== 1) throw new ErroRegra("O atendimento mudou. Recarregue a conversa.");
   const depois = await resolver();
   if (depois.a.leadId !== leadId || depois.contato.leadId !== leadId) throw new ErroRegra("Não foi possível confirmar o vínculo neste atendimento.");
-  // Repetição manual mantém o contrato legado: um Evento por POST; não há promessa de idempotência.
   await registrarEvento(tx, { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId, autorId: autor.id,
     payload: { alvo: { tipo: "lead", id: leadId }, antes: { alunoId: antes.contato.alunoId, responsavelId: antes.contato.responsavelId, leadId: antes.contato.leadId } } });
 }

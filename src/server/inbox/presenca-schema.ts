@@ -15,7 +15,6 @@ export const EntradaPresencaSchema=z.discriminatedUnion("modo",[
 });
 export type EntradaPresenca=z.infer<typeof EntradaPresencaSchema>;
 export type ConsultaPresenca=z.infer<typeof consulta>;
-/** Origin obrigatório e header custom não simples: não aceita form CSRF nem fallback por Host. */
 export function origemPresencaValida(req:Request,origem:string|undefined):boolean {
  try {
   if(!origem)return false;const esperada=new URL(origem).origin;

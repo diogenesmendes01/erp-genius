@@ -30,8 +30,6 @@ const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm
 
 export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: CampoLinha[] }) {
   const router = useRouter();
-  // Criar tag ou campo leva chave de idempotência (#166): o reenvio devolve o registro já criado. Editar grava os
-  // valores da tela no registro (estado-alvo) e o servidor não grava nada (nem Evento) quando eles já estão lá. Arquivar usa o ConfirmarAcao.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativaTag = useChaveIdempotencia();
   const tentativaCampo = useChaveIdempotencia();
@@ -107,7 +105,6 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
       <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarCampoDaTela({ id: campoId, nome: cNome, tipo: cTipo, alvo: cAlvo, opcoes: cTipo === "SELECAO" ? cOpcoes.split("\n").map((s) => s.trim()).filter(Boolean) : [], obrigatorio: cObrig, ...(campoId ? {} : { chaveIdempotencia: tentativaCampo.atual }) }), limparCampo, campoId ? undefined : tentativaCampo)}>{acao.ocupado ? "Salvando…" : campoId ? "Salvar campo" : "Criar campo"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />
-    {/* Arquivar tag e campo: idempotentes por natureza (#166, 5º lote), o reenvio de quem arquivou devolve ok. */}
     {arquivandoTag && <ConfirmarAcao
       titulo={`Arquivar a tag ${arquivandoTag.nome}?`}
       confirmacao="arquivamento da tag"

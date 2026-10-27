@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na proposta e na
-// decisão do cancelamento financeiro da desistência (Formularios.tsx) — erro em role="alert", sucesso em
-// role="status", falha de rede como resultado incerto e o botão saindo do ocupado.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   propor: vi.fn(), decidir: vi.fn(), refresh: vi.fn(),
@@ -31,7 +28,6 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** O rótulo de progresso do botão (o fieldset também trava depois do sucesso, por isso não serve aqui). */
 const registrando = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button")?.props.children) === "Registrando…";
 
 describe("PropostaFormulario", () => {

@@ -6,10 +6,8 @@ import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
 
-/** Q173: entrada do Financeiro para as trocas de moeda formalizadas em aditivo. */
 export default async function AcertosMoedaPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO);
-  // ?pagina inválida cai na primeira página, sem erro na tela.
   const solicitada = Number((await searchParams).pagina ?? 1);
   const pagina = Number.isInteger(solicitada) && solicitada >= 1 && solicitada <= 10000 ? solicitada : 1;
   const r = await listarAditivosParaTrocaMoeda(pagina);

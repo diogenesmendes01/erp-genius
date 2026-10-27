@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-// Menu aberto dentro de um diálogo (Modal/Drawer/ConfirmarAcao, via useDialogo LIGADO). Sem DOM: useRef vira
-// objeto e useEffect roda na hora; o `document` falso entrega o keydown primeiro aos ouvintes de captura e
-// depois aos de bolha, respeitando stopPropagation — como o navegador faz com ouvintes no próprio document.
 const m = vi.hoisted(() => ({ limpezas: [] as (() => void)[] }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -63,7 +60,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-/** Diálogo aberto (useDialogo ligado) com um Menu aberto dentro, como as ações da conversa no drawer. */
 function dialogoComMenu() {
   const aoFecharDialogo = vi.fn();
   const gatilho = elemento("gatilho"), editar = elemento("editar"), excluir = elemento("excluir");
@@ -115,7 +111,6 @@ describe("Menu dentro de diálogo", () => {
     const e = documento.disparar("keydown", { key: "Tab" });
     expect(fecharMenu).toHaveBeenCalledWith(false);
     expect(e.parado).toBe(false);
-    // O último focável do diálogo era o item do menu: o diálogo leva o foco de volta ao primeiro.
     expect(gatilho.focus).toHaveBeenCalledTimes(1);
   });
 });

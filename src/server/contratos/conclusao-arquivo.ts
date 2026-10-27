@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 import { conferirAutor } from "./modelos-tx";
 
-/** Sem Server Action: bytes só são entregues pela rota privada autenticada. */
 export async function carregarArquivoConclusao(input: { matriculaId: string; conclusaoId: string; tipo: string }) {
   const u = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
   const d = z.object({ matriculaId: z.string().min(1).max(100), conclusaoId: z.string().min(1).max(100), tipo: z.enum(["pdf", "auditoria"]) }).strict().parse(input);

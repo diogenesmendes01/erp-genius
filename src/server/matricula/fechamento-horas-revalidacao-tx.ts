@@ -6,7 +6,6 @@ import { PreparacaoFechamentoHorasSchema } from "./fechamento-horas-schema";
 import { resolverPeriodoFechamentoHoras } from "./fechamento-horas-periodo";
 import { carregarApuracaoHorasTx } from "./fechamento-horas-tx";
 
-/** Somente uso interno por chamador autorizado. Mantém as travas até decisão/execução na mesma transação. */
 export async function revalidarFechamentoHorasTx(tx: Prisma.TransactionClient, d: { alunoId: string; matriculaId: string; rascunhoId: string }) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
   await bloquearMatriculas(tx, [d.matriculaId]);

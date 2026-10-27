@@ -34,13 +34,8 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
   const [form, setForm] = useState<{ matriculaId: string; bloquear: boolean } | null>(null);
   const [motivo, setMotivo] = useState("");
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  // #166: o pedido recebe chave de idempotência (o reenvio da mesma tentativa devolve a solicitação já registrada,
-  // mesmo decidida no meio); a chave só muda depois do sucesso. A decisão é idempotente por natureza: a mesma
-  // decisão, do mesmo decisor e com o mesmo motivo, devolve ok sem gravar de novo (server/cobrancas/acoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
-  // Uma tentativa por matrícula e pedido (C3 da R1 do #291): o incerto de uma não prende o pedido de outra.
   const tentativas = useChavesPorAlvo();
-  // O resultado aparece junto do formulário da matrícula ou da solicitação que disparou a ação.
   const [alvo, setAlvo] = useState<string | null>(null);
   const carregar = useCallback(async () => {
     const resultado = await carregarGestaoAcessoAulas({ matriculaId, alunoId });
@@ -96,7 +91,6 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
         <label className="block text-sm">Motivo da {form.bloquear ? "restrição" : "liberação"}<CampoTexto className={campo} rows={2} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} /></label>
         <div className="flex gap-2"><button className={botao} disabled={acao.ocupado || motivo.trim().length < 5} onClick={solicitar}>Enviar solicitação</button><button className={botao} disabled={acao.ocupado} onClick={() => setForm(null)}>Cancelar</button></div>
       </div>}
-      {/* Fora do formulário: no sucesso ele fecha, e a confirmação continua visível no lugar do botão. */}
       <FeedbackAcao erro={alvo === `form:${m.id}` ? acao.erro : null} sucesso={alvo === `form:${m.id}` ? acao.sucesso : undefined} />
       {m.solicitacoes.map((p) => <div key={p.id} className="space-y-2 rounded-md bg-gray-50 p-3 text-sm">
         <p className="font-medium">{p.bloquear ? "Restrição manual" : "Liberação manual"} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, p.status)}</p>

@@ -12,7 +12,6 @@ const dados = (metaMatriculasMes: Dados["kpis"]["metaMatriculasMes"]): Dados => 
 });
 const render = (d: Dados) => renderToStaticMarkup(createElement(HomeGerente, { nome: "Gil Souza", dados: d }));
 
-/** Cartão inteiro do KPI de matrículas (do valor ao fim do cartão). */
 function cartaoMatriculas(html: string): string {
   const i = html.indexOf("Matrículas ativadas no mês");
   expect(i).toBeGreaterThan(-1);

@@ -74,7 +74,6 @@ describe("/configuracao/crm/metas", () => {
       { usuarioId: "v1", metrica: "MATRICULAS", meta: 5, realizado: 1, pct: 0.2, moeda: null },
     ]);
     mocks.findMany.mockImplementationOnce(async (args?: unknown) => {
-      // A consulta de nomes do gerente precisa trazer ele mesmo, além da equipe.
       expect(JSON.stringify(args)).toContain('"id":"g1"');
       return [{ id: "g1", nome: "G" }, { id: "v1", nome: "Vera" }];
     });
@@ -82,7 +81,6 @@ describe("/configuracao/crm/metas", () => {
     expect(html).toContain('<td class="py-1">G</td>');
     expect(html).toContain('<td class="py-1">Vera</td>');
     expect(html).not.toContain(">Vendedor<");
-    // O próprio gerente segue como "Eu" no seletor, sem repetir o nome.
     expect(html).toContain('<option value="g1" selected="">Eu</option>');
     expect(html).not.toContain('<option value="g1">G</option>');
   });

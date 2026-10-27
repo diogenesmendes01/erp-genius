@@ -23,8 +23,6 @@ const inputCls =
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-/** Números já parseados dos três campos de dinheiro do passo 2 — errosDoPasso2 devolve
- *  isto (ou os erros), montarInput só aceita isto, nunca o texto cru de novo. */
 interface ValoresMonetariosPasso2 {
   taxa: number;
   mensalidade: number;
@@ -38,8 +36,6 @@ export interface PrecoRef {
   valor: number;
 }
 
-/** Campos validados no cliente, na ordem da tela (o foco vai para o primeiro com erro). Os ids são os
- *  do <Campo> de cada um. */
 const IDS_PASSO1 = {
   primeiroNome: "matricula-nome",
   sobrenome: "matricula-sobrenome",
@@ -56,15 +52,8 @@ const IDS_PASSO1 = {
 } as const;
 type CampoPasso1 = keyof typeof IDS_PASSO1;
 
-/** Valores do passo 1 que a validação confere (os mesmos estados do formulário). */
 export type DadosPasso1 = Record<Exclude<CampoPasso1, "respNome">, string> & { respNome: string; pagador: "ALUNO" | "RESPONSAVEL" | "EMPRESA" };
 
-/**
- * Validação "inteligente" do passo 1 (essenciais obrigatórios) — espelha o MatriculaSchema
- * (servidor é a fonte da verdade). País dirige o resto. Todos os erros de uma vez, por campo, na
- * ordem da tela: o operador vê cada campo marcado em vez de descobrir um por clique. Função pura
- * (fora do componente) para o teste conferir cada regra sem simular o clique.
- */
 export function errosDoPasso1(d: DadosPasso1): ErrosDeCampos<CampoPasso1> {
   const erros: ErrosDeCampos<CampoPasso1> = {};
   if (!d.primeiroNome.trim()) erros.primeiroNome = "Informe o nome do aluno.";
@@ -95,7 +84,6 @@ const IDS_PASSO2 = {
 } as const;
 type CampoPasso2 = keyof typeof IDS_PASSO2;
 
-/** Valores do passo 2 que a validação confere (o texto cru dos campos de dinheiro e as datas). */
 export type DadosPasso2 = {
   taxaValor: string;
   mensalidadeValor: string;
@@ -105,13 +93,6 @@ export type DadosPasso2 = {
   inicioCobertura: string;
 };
 
-/**
- * Validação do passo 2, por campo e na ordem da tela (taxa, mensalidade, cobertura, primeiro
- * vencimento, início, certificado). Nunca ?? 0 nos três valores monetários: texto inválido viraria
- * taxa/mensalidade/certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
- * devolve os números prontos só quando os três são válidos — montarInput não reparseia (e não tem
- * fallback ?? 0 interno pra ninguém reusar por engano sem validar antes). Função pura, testada à parte.
- */
 export function errosDoPasso2(d: DadosPasso2): { erros: ErrosDeCampos<CampoPasso2>; valores: ValoresMonetariosPasso2 | null } {
   const erros: ErrosDeCampos<CampoPasso2> = {};
   const taxa = parseMoeda(d.taxaValor);
@@ -135,7 +116,6 @@ interface PaisOpt {
   tiposDocumento: { id: string; nome: string }[];
 }
 
-/** Divide um nome completo (ex.: vindo do lead) em primeiro nome + sobrenome. */
 function dividirNome(completo: string): { primeiro: string; sobrenome: string } {
   const t = completo.trim().split(/\s+/);
   return { primeiro: t[0] ?? "", sobrenome: t.slice(1).join(" ") };
@@ -150,10 +130,6 @@ export function MatriculaFormulario({
   niveis,
   precos,
 }: {
-  /**
-   * O usuário pode CRIAR matrículas (Vendedor/Gerente Comercial/Admin)? Habilita
-   * "Salvar matrícula" (fica AGUARDANDO). O backend revalida (defesa em profundidade).
-   */
   podeCriar: boolean;
   lead: { id: string; nome: string; telefoneE164: string | null; paisId: string | null } | null;
   paises: PaisOpt[];
@@ -163,20 +139,13 @@ export function MatriculaFormulario({
   precos: PrecoRef[];
 }) {
   const router = useRouter();
-  // criarMatricula recebe chave de idempotência (#166): a mesma chave até o sucesso, e o reenvio depois
-  // de um resultado incerto devolve a matrícula já criada em vez de criar aluno e contrato em dobro.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  // Solicitar abertura recebe chave (#166, 5º lote): o reenvio da mesma tentativa não grava outro pedido.
   const abertura = useAcaoCliente({ idempotente: true });
   const tentativaAbertura = useChaveIdempotencia();
-  // Depois do sucesso a tela navega; o botão segue travado até sair, para não criar a matrícula de novo.
   const [navegando, setNavegando] = useState(false);
   const salvando = acao.ocupado || navegando;
-  // Wizard: passo 1 = informações do aluno · passo 2 = curso, alocação e contrato.
   const [passo, setPasso] = useState<1 | 2>(1);
-  // Depois da primeira tentativa de avançar/salvar, os erros de cada campo acompanham a digitação
-  // (somem quando o campo é corrigido); antes dela nenhum campo é marcado.
   const [tentouPasso1, setTentouPasso1] = useState(false);
   const [tentouPasso2, setTentouPasso2] = useState(false);
 
@@ -188,25 +157,21 @@ export function MatriculaFormulario({
   const leadNome = lead ? dividirNome(lead.nome) : null;
   const paisInicial = paises.find((p) => p.id === (lead?.paisId ?? paises[0]?.id));
 
-  // Aluno — Identificação
   const [primeiroNome, setPrimeiroNome] = useState(leadNome?.primeiro ?? "");
   const [sobrenome, setSobrenome] = useState(leadNome?.sobrenome ?? "");
   const [nomePreferido, setNomePreferido] = useState("");
   const [nascimento, setNasc] = useState("");
   const [genero, setGenero] = useState<Genero | "">("");
-  // Aluno — Documentação
   const [alunoPaisId, setPaisId] = useState(paisInicial?.id ?? "");
   const [tipoDocumentoId, setTipoDoc] = useState("");
   const [documento, setDoc] = useState("");
   const [documentoPaisEmissor, setDocEmissor] = useState(paisInicial?.codigoISO ?? "");
   const [nacionalidade, setNacionalidade] = useState(paisInicial?.codigoISO ?? "");
   const [segundaNacionalidade, setSegNacionalidade] = useState("");
-  // Aluno — Contato
   const [email, setEmail] = useState("");
   const [telefone, setTel] = useState(lead?.telefoneE164 ?? "");
   const [whatsapp, setWhatsapp] = useState(true);
   const [aceitaComunicacoes, setAceitaCom] = useState(true);
-  // Aluno — Residência
   const [paisResidencia, setPaisResidencia] = useState(paisInicial?.codigoISO ?? "");
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
@@ -215,23 +180,18 @@ export function MatriculaFormulario({
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
   const [regiao, setRegiao] = useState("");
-  // Aluno — Acadêmico
   const [escolaridade, setEscolaridade] = useState<Escolaridade | "">("");
   const [idiomaNativo, setIdiomaNativo] = useState("");
-  // Aluno — Operacional
   const [fuso, setFuso] = useState("");
   const [observacoes, setObservacoes] = useState("");
-  // Aluno — Contato de emergência
   const [emergenciaNome, setEmergNome] = useState("");
   const [emergenciaParentesco, setEmergParentesco] = useState("");
   const [emergenciaTelefone, setEmergTel] = useState("");
-  // Responsável financeiro (pagador)
   const [pagador, setPagador] = useState<"ALUNO" | "RESPONSAVEL" | "EMPRESA">("ALUNO");
   const [respNome, setRespNome] = useState("");
   const [respParentesco, setRespParentesco] = useState("");
   const [respTelefone, setRespTelefone] = useState("");
   const [respEmail, setRespEmail] = useState("");
-  // Curso & contrato (passo 2)
   const [produtoId, setProduto] = useState(produtos[0]?.id ?? "");
   const [turmaId, setTurma] = useState("");
   const [nivelInicialId, setNivel] = useState("");
@@ -256,7 +216,6 @@ export function MatriculaFormulario({
     return precos.find((p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === tipo);
   }
 
-  // Sugerido (preço de referência ativo) por linha + ausência da tabela (issue #22).
   const refTaxa = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MATRICULA);
   const refMens = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MENSALIDADE);
   const semTabela = !refTaxa || !refMens;
@@ -267,14 +226,10 @@ export function MatriculaFormulario({
     const taxa = precoRefDe(pid, prodId, TipoCobranca.MATRICULA);
     const mens = precoRefDe(pid, prodId, TipoCobranca.MENSALIDADE);
     const moedaDoPais = paises.find((p) => p.id === pid)?.moedaLocal;
-    // formatarMoedaParaCampo (não String cru): pré-preenche já no formato que o campo
-    // exibe depois do blur — vírgula, casas certas pra moeda — em vez do ponto do JS.
     if (taxa) setTaxa(formatarMoedaParaCampo(taxa.valor, moedaDoPais));
     if (mens) setMens(formatarMoedaParaCampo(mens.valor, moedaDoPais));
   }
 
-  // País dirige documento/telefone/moeda — ao trocar, reseta o tipo de documento se não
-  // pertencer ao novo país (doc 04).
   function aoTrocarPais(novoPaisId: string) {
     setPaisId(novoPaisId);
     const np = paises.find((p) => p.id === novoPaisId);
@@ -285,26 +240,22 @@ export function MatriculaFormulario({
   function montarInput(referencia: "MES_CIVIL" | "CICLO_MATRICULA", valores: ValoresMonetariosPasso2) {
     return {
       leadId: lead?.id,
-      // Identificação
       alunoPrimeiroNome: primeiroNome,
       alunoSobrenome: sobrenome,
       alunoNomePreferido: nomePreferido || undefined,
       alunoNascimento: nascimento,
-      alunoGenero: genero as Genero, // garantido não-vazio por validarPasso1; zod rejeita "" no servidor
+      alunoGenero: genero as Genero,
 
-      // Documentação
       alunoPaisId,
       alunoTipoDocumentoId: tipoDocumentoId,
       alunoDocumento: documento,
       alunoDocumentoPaisEmissor: documentoPaisEmissor || undefined,
       alunoNacionalidade: nacionalidade,
       alunoSegundaNacionalidade: segundaNacionalidade || undefined,
-      // Contato
       alunoEmail: email,
       alunoTelefone: telefone,
       alunoWhatsapp: whatsapp,
       alunoAceitaComunicacoes: aceitaComunicacoes,
-      // Residência
       alunoPaisResidencia: paisResidencia,
       alunoCep: cep || undefined,
       alunoRua: rua || undefined,
@@ -313,23 +264,18 @@ export function MatriculaFormulario({
       alunoBairro: bairro || undefined,
       alunoCidade: cidade || undefined,
       alunoRegiao: regiao || undefined,
-      // Acadêmico
       alunoEscolaridade: escolaridade || undefined,
       alunoIdiomaNativo: idiomaNativo || undefined,
-      // Operacional
       alunoFuso: fuso || undefined,
       alunoObservacoes: observacoes || undefined,
-      // Emergência
       emergenciaNome: emergenciaNome || undefined,
       emergenciaParentesco: emergenciaParentesco || undefined,
       emergenciaTelefone: emergenciaTelefone || undefined,
-      // Pagador
       pagador,
       responsavelNome: respNome,
       responsavelParentesco: respParentesco,
       responsavelTelefone: respTelefone,
       responsavelEmail: respEmail,
-      // Curso & contrato
       produtoId,
       turmaId: turmaId || undefined,
       nivelInicialId: nivelInicialId || undefined,
@@ -359,7 +305,6 @@ export function MatriculaFormulario({
   function irParaPasso(p: 1 | 2) {
     acao.limpar();
     if (p === 2) {
-      // O erro aparece em cada campo (aria-invalid + mensagem) e o foco vai ao primeiro deles.
       setTentouPasso1(true);
       if (focarPrimeiroComErro(validarPasso1(), IDS_PASSO1)) return;
     }
@@ -396,10 +341,8 @@ export function MatriculaFormulario({
 
       <Stepper passo={passo} onIr={irParaPasso} />
 
-      {/* Passo 1 — Informações do aluno */}
       {passo === 1 && (
         <>
-          {/* Identificação */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Identificação</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -428,7 +371,6 @@ export function MatriculaFormulario({
             </div>
           </section>
 
-          {/* Documentação (país dirige) */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-1 text-sm font-medium">Documentação</h2>
             <p className="mb-4 text-xs text-gray-400">O país dirige os tipos de documento e a validação. Documento inválido avisa, mas não bloqueia (doc 04).</p>
@@ -467,7 +409,6 @@ export function MatriculaFormulario({
             </div>
           </section>
 
-          {/* Contato */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Contato</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -490,7 +431,6 @@ export function MatriculaFormulario({
             </div>
           </section>
 
-          {/* Residência */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Residência</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -521,7 +461,6 @@ export function MatriculaFormulario({
             </div>
           </section>
 
-          {/* Acadêmico */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Acadêmico</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -541,7 +480,6 @@ export function MatriculaFormulario({
             </div>
           </section>
 
-          {/* Operacional */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Operacional</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -551,7 +489,6 @@ export function MatriculaFormulario({
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">
               <h3 className="mb-2 text-xs font-medium text-gray-600">Contato de emergência</h3>
-              {/* Rótulo visível em cada campo: o placeholder era o único nome e sumia ao digitar. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
                 <Campo id="matricula-emergencia-nome" rotulo="Nome do contato">
                   {(campo) => <input {...campo} className={inputCls} value={emergenciaNome} onChange={(e) => setEmergNome(e.target.value)} />}
@@ -569,7 +506,6 @@ export function MatriculaFormulario({
             </Campo>
           </section>
 
-          {/* Responsável financeiro (pagador) */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 id="matricula-pagador-titulo" className="mb-4 text-sm font-medium">Responsável financeiro (pagador)</h2>
             <select aria-labelledby="matricula-pagador-titulo" className={inputCls + " mb-2 md:w-1/3"} value={pagador} onChange={(e) => setPagador(e.target.value as typeof pagador)}>
@@ -597,7 +533,6 @@ export function MatriculaFormulario({
             )}
           </section>
 
-          {/* Erro do servidor junto do botão que avança; os de validação ficam em cada campo (foco no primeiro). */}
           <FeedbackAcao erro={acao.erro} />
           <div className="flex justify-end">
             <button
@@ -611,7 +546,6 @@ export function MatriculaFormulario({
         </>
       )}
 
-      {/* Passo 2 — Curso, alocação e contrato */}
       {passo === 2 && (
         <>
           <div className="rounded-lg border border-gray-200 bg-surface px-5 py-3 text-sm text-gray-600">
@@ -625,7 +559,6 @@ export function MatriculaFormulario({
             </button>
           </div>
 
-          {/* Curso & alocação */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Curso & alocação</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -690,7 +623,6 @@ export function MatriculaFormulario({
             </div>
           </section>
 
-          {/* Contrato */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-1 text-sm font-medium">Contrato — linhas de cobrança</h2>
             <p className="mb-4 text-xs text-gray-400">Moeda: {moeda || "—"} · valores de referência pré-preenchidos (edite o negociado).</p>
@@ -791,8 +723,6 @@ export function MatriculaFormulario({
               ← Voltar
             </button>
             <div className="ml-auto flex gap-2">
-              {/* C30 (#170): "Salvar matrícula" é a ação que conclui o assistente — primária, como o
-                  "Próximo" do passo 1; "← Voltar" fica secundário. */}
               {podeCriar && (
                 <button
                   type="button"
@@ -817,7 +747,6 @@ export function MatriculaFormulario({
   );
 }
 
-/** Select de país ISO 3166 (nacionalidade, residência, país emissor). Recebe as ligações do <Campo>. */
 function SelectISO({
   id,
   value,
@@ -840,8 +769,6 @@ function SelectISO({
   );
 }
 
-/** Etiqueta da linha de cobrança: diferencia preço sugerido × manual × sem tabela (issue #22). Vai como
- *  dica do <Campo> (texto em linha, ligado ao campo por aria-describedby). */
 function PrecoTag({ refValor, moeda, manual }: { refValor?: number; moeda: string; manual: boolean }) {
   if (refValor === undefined) {
     return <span className="text-amber-700">Sem tabela — valor manual</span>;
@@ -852,9 +779,6 @@ function PrecoTag({ refValor, moeda, manual }: { refValor?: number; moeda: strin
   return <>Sugerido: {formatarMoeda(refValor, moeda)}</>;
 }
 
-/** Stepper do wizard (2 passos). O passo concluído/clicável volta livremente; avançar valida o passo 1.
- *  Lista ordenada com o passo atual em `aria-current="step"` (C49, #168): o leitor de tela diz em que
- *  etapa o operador está, não só a cor do círculo. */
 export function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => void }) {
   const passos = [
     { n: 1 as const, label: "Informações do aluno" },

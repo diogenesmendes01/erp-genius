@@ -10,8 +10,6 @@ import { fotografiaQ165 } from "./desistencia-acerto-contratual";
 
 const entrada = z.object({ matriculaId: z.string().trim().min(1).max(100) }).strict();
 
-/** Leitura operacional Q165. Não reproduz a autorização da escrita: as ações
- * sempre recalculam fotografia, contexto e alçada no banco. */
 export async function consultarAcertoDesistenciaContratual(input: z.input<typeof entrada>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
@@ -33,8 +31,6 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
       const temRevisaoPosterior = condicoes && await tx.condicoesEncerramentoMatricula.count({ where: { matriculaId, versao: { gt: condicoes.versao } } }) > 0;
       const fontes = condicoes ? await tx.$queryRaw<Array<{ valida: boolean }>>`SELECT q165_fonte_condicoes_valida(${condicoes.id}, true) AS valida` : [];
       const fonteValida = fontes[0]?.valida === true;
-      // A cadeia e sua versão pertencem ao pedido atual; versões de pedidos
-      // anteriores são evidência histórica, nunca candidatas a nova decisão.
       const propostas = await tx.propostaAcertoDesistenciaContratual.findMany({ where: { pedidoId: pedido?.id ?? "__pedido_indisponivel__" }, orderBy: { versao: "desc" }, take: 21,
         select: { id: true, pedidoId: true, condicoesId: true, anteriorId: true, versao: true, motivoReapresentacao: true, fotografiaHash: true, criadaEm: true, preparadorId: true, preparador: { select: { nome: true } }, memoria: true,
           decisao: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } }, aplicacao: { select: {

@@ -29,7 +29,6 @@ async function validarGerente(gerenteId: string | null, usuarioId?: string, tx: 
 }
 
 async function bloquearUsuarios(tx: Prisma.TransactionClient, autorId: string, ids: string[]) {
-  // Ordem estável evita duas edições administrativas concorrentes se bloquearem.
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id IN (${Prisma.join([...new Set([autorId, ...ids])])}) ORDER BY id FOR UPDATE`;
   const autor = await tx.usuario.findUnique({ where: { id: autorId }, select: { ativo: true, papeis: true } });
   if (!autor?.ativo || !autor.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao();
@@ -138,10 +137,6 @@ export async function editarUsuario(id: string, input: EditarUsuarioInput): Prom
   });
 }
 
-/**
- * Ativa ou desativa o acesso com o estado-alvo explícito (B4, #175 C2): o segundo administrador que confirma, com a
- * tela velha, o estado em que o usuário já está não desfaz o primeiro — é um no-op, sem evento.
- */
 export async function definirUsuarioAtivo(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

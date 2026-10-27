@@ -14,12 +14,8 @@ import {
   registrarResumoImportacao,
 } from "@/server/crm/importacao-contatos";
 
-// Importação de contatos por XLSX (capacidade `contatos.importar`). "previa" só lê e valida; "aplicar" grava
-// cada linha em transação própria (uma linha ruim não derruba as outras) e registra `ContatosImportados`
-// só com contagens. Nenhum consentimento é importado e nenhuma mensagem é enviada.
 export const runtime = "nodejs";
 
-/** Coage qualquer tipo de célula do exceljs para texto (mesmo critério da importação de alunos). */
 function cellTexto(v: ExcelJS.CellValue): string {
   if (v == null) return "";
   if (v instanceof Date) return v.toISOString().slice(0, 10);
@@ -67,7 +63,6 @@ export async function POST(req: Request) {
     });
     if (![...colunas.values()].includes("Nome")) return erro("Cabeçalho inválido. A coluna Nome é obrigatória.", 400);
 
-    // Linhas em branco entram (para manter a numeração) e viram "Informe o nome." só se tiverem outro dado.
     const linhas: Record<string, string>[] = [];
     for (let r = 2; r <= folha.rowCount; r++) {
       const bruta: Record<string, string> = {};
@@ -100,12 +95,10 @@ export async function POST(req: Request) {
         else atualizados++;
         if (r.oportunidade) comOportunidade++;
       } catch (e) {
-        // Contato já existente na carteira de outro: a linha foi desfeita e é contada à parte.
         if (e instanceof LinhaForaDaCarteira) {
           foraDaCarteira++;
           continue;
         }
-        // Sem PII: só a linha e a classe/código do erro (ex.: P2002 de unicidade).
         const codigo = (e as { code?: unknown })?.code;
         console.error("[contatos/importar] falha na linha", {
           linha: l.linha,

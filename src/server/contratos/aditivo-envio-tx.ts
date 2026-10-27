@@ -13,7 +13,6 @@ const Preparar = z.object({ ...CamposDestinoAssinatura, matriculaId: z.string().
   .refine(destinoAssinaturaCoerente, MENSAGEM_DESTINO_SIMULADO);
 const Marca = z.object({ chaveIdempotencia: z.string().min(1), entradaHash: z.string().min(1) }).strict();
 const Resultado = z.object({ processoId: z.string().min(1), tentativaId: z.string().min(1), chave: z.string().min(8).max(200), resultado: z.enum(["INCERTO", "REGISTRADO", "NAO_CRIADO"]), referenciaExterna: z.string().trim().min(1).max(200).nullable(), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/),
-  /** Quem pediu a conciliação e a marca de idempotência dessa ação (o envio em si é do sistema). */
   autorId: z.string().min(1).optional(), marca: Marca.optional() }).strict();
 
 async function estado(tx: Prisma.TransactionClient, p: { matriculaId: string; propostaId: string; artefatoId: string; conferenciaId: string }) {
@@ -24,7 +23,6 @@ async function estado(tx: Prisma.TransactionClient, p: { matriculaId: string; pr
   if (!c || c.artefatoId !== p.artefatoId || hashSubstituicao(c.snapshot) !== c.revisaoHash || c.revisaoHash !== e.revisaoHash) throw new ErroRegra("A conferência interna não corresponde ao original atual.");
   return e;
 }
-/** A base da origem histórica tem ambiente HISTORICO, que o envio não aceita; a mensagem diz o motivo real. */
 async function recusarOrigemHistoricaTx(tx: Prisma.TransactionClient, propostaId: string) {
   const p = await tx.propostaAditivoContratual.findUnique({ where: { id: propostaId }, select: { origemHistoricaId: true } });
   if (p?.origemHistoricaId) throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);

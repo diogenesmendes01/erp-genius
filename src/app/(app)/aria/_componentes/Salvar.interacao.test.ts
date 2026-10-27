@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Salvar envia o token do rascunho aberto (id + atualizadoEm) e mostra a recusa de concorrência.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, refresh: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

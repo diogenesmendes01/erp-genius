@@ -8,9 +8,6 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
 import { abrirAtendimentoInstitucional } from "./operacoes-atendimento";
 
-// Ruling B2 do #199 (E3.4): abrir um destino que já tem atendimento aberto com outro responsável,
-// fora do escopo de quem abre, é recusado antes do evento. Participante só por convite (Task 17).
-
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 
 async function base() {
@@ -39,7 +36,6 @@ describe("abrir atendimento institucional já aberto por um colega", () => {
     expect(await abertos()).toBe(1);
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.dado!.id } })).responsavelId).toBe(f1.id);
 
-    // O próprio responsável reabre o mesmo atendimento normalmente.
     como(f1);
     const de = await abrirAtendimentoInstitucional({ numeroId: c.canal.numero.id, destinoChave: chave });
     expect(de).toEqual({ ok: true, dado: { id: a.dado!.id } });
@@ -88,7 +84,6 @@ describe("abrir atendimento institucional já aberto por um colega", () => {
     como(f1);
     const a = await abrirAtendimentoInstitucional({ numeroId: c.canal.numero.id, destinoChave: chave });
     if (!a.ok) throw new Error(a.erro);
-    // Volta para a fila, mas o número deixa de servir o setor FINANCEIRO: a fila não alcança f2.
     await prisma.atendimentoWhatsApp.update({ where: { id: a.dado!.id }, data: { responsavelId: null } });
     await prisma.numeroSetorWhatsApp.create({ data: { numeroId: c.canal.numero.id, finalidade: "SECRETARIA" } });
     como(f2);

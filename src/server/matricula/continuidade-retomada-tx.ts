@@ -9,9 +9,6 @@ const CoberturaSnapshotSchema = z.object({
   fim: DataCivilSchema,
 }).strict();
 
-/* O snapshot contém outros dados da prévia. Esta leitura só aceita a parte que
- * comprova a cobertura, sem fazer do formato completo uma API da continuidade.
- */
 const SnapshotRetomadaSchema = z.object({
   matriculas: z.array(z.object({
     matriculaId: z.string().trim().min(1),
@@ -46,19 +43,12 @@ type Entrada = {
 
 const dataCivil = (data: Date) => data.toISOString().slice(0, 10);
 
-/**
- * Prova, a partir da persistência, que esta cobertura foi aplicada pela
- * retomada contratual Q66 com decisão independente. A chamada não recebe nem
- * aceita uma alegação de aprovação do consumidor.
- */
 export async function carregarReferenciaRetomadaAplicadaTx(
   tx: Prisma.TransactionClient,
   input: Entrada,
 ): Promise<ReferenciaRetomadaAplicada | null> {
   if (!Number.isFinite(input.inicio.getTime()) || !Number.isFinite(input.fim.getTime()) || input.inicio > input.fim) return null;
 
-  // Confere contra a cobrança, em vez de tratar as datas recebidas do chamador
-  // como evidência de que a cobertura persiste.
   const cobranca = await tx.cobranca.findFirst({ where: {
     id: input.cobrancaId,
     matriculaId: input.matriculaId,
@@ -129,7 +119,5 @@ export async function carregarReferenciaRetomadaAplicadaTx(
     }));
   }
 
-  // Mais de uma origem para a mesma cobertura deixa a cadeia ambígua; quem
-  // planeja deve pedir conferência em vez de escolher uma arbitrariamente.
   return referencias.length === 1 ? referencias[0] : null;
 }

@@ -1,7 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { Papel, Prisma } from "@prisma/client";
 
-/** Uso interno após bloquear o vínculo; não substitui aprovação ou execução. */
 export async function preparacaoRecuperacaoVigenteTx(tx: Prisma.TransactionClient, propostaId: string, instante = new Date(), autorizacaoId?: string) {
   const p = await tx.propostaPlanoRecuperacao.findUnique({ where: { id: propostaId }, include: {
     matricula: true, alocacao: { include: { turma: true } }, autorizacaoPreparacao: { include: { autorizador: { select: { ativo: true, papeis: true } } } },

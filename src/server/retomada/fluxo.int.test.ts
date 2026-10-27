@@ -129,8 +129,6 @@ function sinal() {
 
 beforeEach(async () => {
   await truncarBanco();
-  // As datas destas suítes saem do relógio local do processo (`diaEm`); a escola fica no mesmo fuso para que
-  // "ontem" e "hoje" sejam os mesmos dias civis para o teste e para a regra (Q176).
   await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: Intl.DateTimeFormat().resolvedOptions().timeZone } });
   sec = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria");
   fin = await criarUsuario([Papel.FINANCEIRO], "Financeiro");
@@ -240,7 +238,6 @@ describe("pausa e retomada sem recriar a dívida", () => {
   it("REPROGRAMAR aplica novas datas aos remanescentes mantendo IDs, saldo parcial, recebimentos e histórico", async () => {
     await pausar();
     const input = await reprogramacao();
-    // Restaurar uma parcela sem mudar sua data não inicia outro ciclo de mensagens.
     input.novosVencimentos!.find((p) => p.cobrancaId === parcelas.parcial.id)!.vencimento = diaEm(10);
     expect(input.novosVencimentos).toHaveLength(4);
     const antes = await calendario();
@@ -415,7 +412,6 @@ describe("proposta não se aplica sobre um calendário diferente", () => {
     if (mudanca === "matrícula encerrada") await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "ENCERRADA" } });
     if (mudanca === "aluno encerrado") await prisma.aluno.update({ where: { id: alunoId }, data: { status: "ENCERRADO" } });
     if (mudanca === "nova pausa") {
-      // Simula mudança externa de estado; o endpoint antigo não é usado como atalho.
       await prisma.aluno.update({ where: { id: alunoId }, data: { status: "ATIVO" } });
       await pausar();
     }
@@ -469,7 +465,6 @@ describe("proposta não se aplica sobre um calendário diferente", () => {
   });
 
   it("replay de REPROGRAMAR com entrada invertida reutiliza a proposta sem evento ou aplicação adicional", async () => {
-    // A ordem por ID é deliberadamente diferente da ordem visual dos vencimentos.
     await prisma.cobranca.createMany({ data: [
       { id: "z-primeiro-vencimento", matriculaId, tipo: "MENSALIDADE", status: "ATRASADO", vencimento: dataEm(-60), valorOriginal: 100, valorNegociado: 100, valorRecebido: 0, saldo: 100, moeda: "CRC" },
       { id: "a-ultimo-vencimento", matriculaId, tipo: "MENSALIDADE", status: "PENDENTE", vencimento: dataEm(200), valorOriginal: 100, valorNegociado: 100, valorRecebido: 0, saldo: 100, moeda: "CRC" },
@@ -499,9 +494,6 @@ describe("proposta não se aplica sobre um calendário diferente", () => {
   });
 
   it("replay de REPROGRAMAR com cobrancaId repetido na entrada não reutiliza a proposta pendente", async () => {
-    // Revisão da #253, C3: o replay compara por mapa e `size === length`, então `[A, A, …]` com o mesmo tamanho
-    // da proposta `{A, B, …}` passaria como "mesmas datas". O schema recusa id repetido antes disso; este teste
-    // trava esse comportamento: erro, proposta e eventos intactos.
     await pausar();
     const input = await reprogramacao();
     const datas = input.novosVencimentos!;

@@ -27,8 +27,6 @@ import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_sha
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// Valida a agenda contra a frequência da modalidade e devolve o rótulo derivado.
-// Lança ErroRegra se o nº de dias não casar (ex.: Intensiva 3x exige 3 dias).
 async function validarAgenda(
   modalidadeId: string,
   diasSemana: number[],
@@ -41,7 +39,7 @@ async function validarAgenda(
   const modalidade = await db.modalidade.findUnique({ where: { id: modalidadeId } });
   if (!modalidade) throw new ErroRegra("Modalidade não encontrada.");
   const req = diasPorSemanaDaFrequencia(modalidade.frequencia);
-  const dias = Array.from(new Set(diasSemana)); // sem duplicados
+  const dias = Array.from(new Set(diasSemana));
   if (exigirFrequencia && req !== null && dias.length !== req) {
     throw new ErroRegra(
       `A modalidade ${modalidade.nome} é ${modalidade.frequencia}: selecione exatamente ${req} dia(s) — você marcou ${dias.length}.`,
@@ -61,23 +59,16 @@ async function validarAgenda(
 
 const PATH = "/configuracao/turmas";
 
-// Dono = Gerente Pedagógico (Admin passa automaticamente em exigirPapel).
 async function exigirGestorTurma() {
   return exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
 }
 
-/** Revalidar depois dos locks: a sessão pode ter perdido autoridade durante a espera. */
 async function exigirGestorAtual(tx: Prisma.TransactionClient, usuarioId: string) {
   const usuario = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { id: true, nome: true, papeis: true, ativo: true } });
   if (!usuario?.ativo) throw new ErroPermissao("Seu acesso à gestão de turmas foi revogado.");
   exigirPapel(usuario, Papel.GERENTE_PEDAGOGICO);
 }
 
-/** Vendedor solicita abertura de turma ao Gerente Pedagógico (doc 09 §Matrícula). */
-/**
- * Com `chaveIdempotencia` (#166, 5º lote), o reenvio da mesma tentativa não grava outra solicitação: a chave e o
- * hash da entrada vão no payload do `AberturaTurmaSolicitada`.
- */
 export async function solicitarAberturaTurma(input: {
   produtoId: string;
   nivelId?: string;
@@ -89,7 +80,6 @@ export async function solicitarAberturaTurma(input: {
     if (!input.produtoId) throw new ErroRegra("Selecione o produto.");
     const payload = { nivelId: input.nivelId ?? null, observacao: input.observacao ?? null };
     const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { produtoId: input.produtoId, ...payload });
-    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     await prisma.$transaction(async (tx) => {
       if (marca) {
         const repetido = await repeticaoIdempotente(tx, {
@@ -110,10 +100,6 @@ export async function solicitarAberturaTurma(input: {
   });
 }
 
-/**
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve a turma já criada em vez de criar outra
- * com outro código: a chave e o hash da entrada vão no payload do `TurmaCriada`.
- */
 export async function criarTurma(input: TurmaInput & { chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirGestorTurma();
@@ -180,14 +166,11 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
     const autor = await exigirGestorTurma();
     const dados = analisarComDatasDaEscola(TurmaSchema, input, await fusoDaEscola());
     await prisma.$transaction(async (tx) => {
-      // Matrícula, transferências e diário usam este mesmo lock antes de alterar ocupação/contexto.
       await tx.$queryRaw`SELECT id FROM "Turma" WHERE id = ${id} FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM "Modalidade" WHERE id = ${dados.modalidadeId} FOR SHARE`;
       await exigirGestorAtual(tx, autor.id);
       const atual = await tx.turma.findUnique({ where: { id }, include: { _count: { select: { alocacoes: true } } } });
       if (!atual) throw new ErroRegra("Turma não encontrada.");
-      // O formulário de edição não apaga a referência histórica automaticamente.
-      // A limpeza explícita demanda a revisão que trate os consumidores legados.
       const dataFim = dados.dataFim ?? atual.dataFim;
       if (dataFim && dataFim <= dados.dataInicio)
         throw new ErroRegra("A data final de referência deve ser depois da data de início.");
@@ -208,7 +191,6 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
         throw new ErroRegra("A turma possui agenda publicada. Mudanças de professor, nível, modalidade, datas ou horários exigem revisão e aprovação da agenda.");
       if ((dados.nivelId !== atual.nivelId || dados.modalidadeId !== atual.modalidadeId) && atual._count.alocacoes > 0)
         throw new ErroRegra("Turma com alunos ou histórico não pode mudar de nível ou modalidade. Crie outra turma e solicite a mudança acadêmica.");
-      // O formulário/schema ainda não oferece mudança online/presencial. Não ignorar uma tentativa explícita pela API.
       if ("online" in input && input.online !== undefined && input.online !== atual.online)
         throw new ErroRegra("O formato online/presencial não pode ser alterado por esta operação.");
       const ocupacao = await tx.alocacaoTurma.count({ where: { turmaId: id, ativa: true } });

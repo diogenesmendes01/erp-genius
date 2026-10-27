@@ -26,7 +26,6 @@ describe("FechamentosHorasPage fuso de históricos", () => {
     mocks.fuso.mockResolvedValue(null);
   });
 
-  // docs/43 §6 item 6: "Fuso do período" começava vazio, só com placeholder.
   it("o fuso do período começa no fuso da escola; sem ele, na preferência da equipe", async () => {
     const abrir = async () => renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ aluno: "aluno" }) }));
     mocks.fuso.mockResolvedValue("America/Sao_Paulo");
@@ -99,8 +98,6 @@ describe("FechamentosHorasPage fuso de históricos", () => {
     expect(fallback).toContain("31/12/2025, 23:30");
     expect(fallback).toContain("origem America/Sao_Paulo");
   });
-  // B2 da R1 #266: a aula declarada não cobrável (Q175) vai para `preservados` com tipo próprio; a memória precisa
-  // continuar legível, com rótulo próprio, e o botão Emitir aparecer para a versão aprovada.
   it("memória com aula não cobrável (Q175) é apresentada com rótulo próprio e libera Emitir", async () => {
     const memoria = { periodo: { inicio: "2026-01-01", fim: "2026-01-31", fuso: "America/Sao_Paulo", vencimento: "2026-02-10" }, apuracao: {
       moeda: "BRL", estado: "APURACAO_COMPLETA", totalApurado: "100.00", minutosApurados: 60,

@@ -168,7 +168,6 @@ describe("mensagemFalhaParcialCampos", () => {
   });
 });
 
-// Fuso pessoal nas telas (pendência da Q176): o cadastro sai no fuso pessoal; sem ele, no da escola.
 describe("FichaContato: fuso pessoal de exibição", () => {
   const d: DetalheContato = { ...detalhe, criadoEm: new Date("2026-10-21T02:30:00Z") };
   it("Costa Rica pela preferência; sem preferência, São Paulo (escola) — igual em TZ=UTC e America/Sao_Paulo", () => {

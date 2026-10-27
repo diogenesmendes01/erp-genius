@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
-// Somente o client deste arquivo tem pool1; a URL do perfil/listener continua intacta.
 vi.mock("@/lib/prisma", async () => {
   const { PrismaClient } = await import("@prisma/client");
   const { protegerTransacoes } = await import("@/lib/transacao-confirmada");

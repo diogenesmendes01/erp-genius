@@ -27,19 +27,10 @@ import { FusoInstitucionalSchema, dataCivilInstitucional } from "@/server/operac
 import { fusoDoCampoLocal, valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
-// Edições da oportunidade que moravam na ficha antiga (/leads/[id], removida no bloco J; B1 da R1 do #216):
-// resumo e próximo passo, datas (follow-up, experimental, proposta), dados cadastrais, documentos e interação.
-// As server actions são as mesmas da ficha (server/comercial/acoes.ts), com o mesmo papel e o mesmo escopo
-// de carteira. registrarInteracao recebe chave de idempotência (#166): o reenvio da mesma tentativa não
-// grava outra interação. Documentos são idempotentes por natureza (#166, lote 4): anexar o mesmo upload devolve
-// o documento já anexado (a URL do upload é única) e arquivar o já arquivado não grava nada. As demais seguem
-// sem chave: resultado incerto manda conferir antes de repetir.
-
 const CONTROLE = `w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11 ${CONTROLE_INVALIDO}`;
 const SECAO = "grid gap-3 border-b border-gray-200 pb-4";
 const TITULO = "text-sm font-medium text-gray-900";
 
-/** Estado da ação da seção; `concluiu` recarrega o painel só com a confirmação do servidor e diz se deu certo. */
 function useAcaoSecao(idempotente = false) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente });
@@ -79,7 +70,6 @@ const resumoDe = (op: DetalheOportunidade): CamposResumo => ({
   proximaAcao: op.proximaAcao ?? "",
 });
 
-/** Resumo comercial e próximo passo (o funil ordena e sinaliza pelo próximo passo). */
 export function ResumoOportunidade({ oportunidade: op, podeEditar }: { oportunidade: DetalheOportunidade; podeEditar: boolean }) {
   const { acao, concluiu } = useAcaoSecao();
   const [editando, setEditando] = useState(false);
@@ -126,10 +116,6 @@ export function ResumoOportunidade({ oportunidade: op, podeEditar }: { oportunid
   );
 }
 
-/**
- * "YYYY-MM-DD" da data civil no fuso institucional (as datas civis são gravadas ao meio-dia). Fuso inválido não
- * derruba o painel (C3 da review do #286): cai no dia UTC, como a exibição do follow-up.
- */
 function dataCivil(d: Date | string | null, fuso: string): string {
   if (!d) return "";
   const x = new Date(d);
@@ -140,11 +126,6 @@ function dataCivil(d: Date | string | null, fuso: string): string {
 
 type CamposDatas = { followUp: string; experimental: string; proposta: string };
 
-/**
- * Próximo follow-up e datas de experimental e proposta (alimentam a ordenação e os alertas do funil). A experimental
- * tem hora: é lida e escrita no fuso pessoal de exibição (sem preferência, o da escola), escrito ao lado do campo, e
- * convertida no servidor (antes, no fuso do navegador). Follow-up e proposta são datas civis da escola.
- */
 export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferenciaFusoExibicao = null }: { oportunidade: DetalheOportunidade; podeEditar: boolean; fuso: string; preferenciaFusoExibicao?: string | null }) {
   const { acao, concluiu } = useAcaoSecao();
   const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
@@ -179,8 +160,6 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
             const enviados = f;
             const dados = {
               proximoFollowUp: enviados.followUp,
-              // Experimental intocada volta como o instante gravado (menor 4 da review do #290): na hora repetida do fim
-              // do horário de verão, o texto inicial é ambíguo e a conversão o recusaria, travando salvar só o follow-up.
               ...(op.dataExperimental && enviados.experimental === experimentalInicial
                 ? { dataExperimental: new Date(op.dataExperimental).toISOString() }
                 : { dataExperimental: enviados.experimental, fusoDataExperimental: fusoExperimental }),
@@ -214,7 +193,6 @@ const dadosDe = (op: DetalheOportunidade): CamposDados => ({
   comissaoPrevista: paraCampoMoeda(op.comissaoPrevista),
 });
 
-/** Dados cadastrais da oportunidade (nome, contato, segmento, B2B, origem, valores previstos). */
 export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { oportunidade: DetalheOportunidade; podeEditar: boolean; paises: { id: string; nome: string }[] }) {
   const { acao, concluiu } = useAcaoSecao();
   const [editando, setEditando] = useState(false);
@@ -286,7 +264,6 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
             const ok = concluiu(await acao.executar(() => editarLead(op.id, {
                 ...enviado,
                 nome: enviado.nome.trim(),
-                // editarLead grava o formulário inteiro: temperatura e a origem que esta tela não mostra vão como estão.
                 temperatura: op.temperatura,
                 origemConjunto: op.origemConjunto ?? "",
                 origemPalavra: op.origemPalavra ?? "",
@@ -300,9 +277,7 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
   );
 }
 
-/** Documentos da oportunidade: anexar (upload ligado à oportunidade e à categoria) e arquivar. */
 export function DocumentosOportunidade({ oportunidade: op, podeEditar }: { oportunidade: DetalheOportunidade; podeEditar: boolean }) {
-  // Idempotente por natureza (#166): o mesmo upload não vira segundo documento; arquivar duas vezes não grava de novo.
   const { acao, concluiu } = useAcaoSecao(true);
   const [categoria, setCategoria] = useState<CategoriaDocumento>(CategoriaDocumento.PROPOSTA);
 
@@ -350,10 +325,7 @@ export function DocumentosOportunidade({ oportunidade: op, podeEditar }: { oport
   );
 }
 
-/** Registro de interação com o contato (canal e o que aconteceu); entra no histórico da oportunidade. */
 export function InteracaoOportunidade({ oportunidadeId }: { oportunidadeId: string }) {
-  // Com chave de idempotência (#166), fora do `useAcaoSecao`: o reenvio depois de um resultado incerto devolve a
-  // interação já registrada, e a mensagem do incerto manda reenviar.
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
@@ -375,7 +347,6 @@ export function InteracaoOportunidade({ oportunidadeId }: { oportunidadeId: stri
           variante="secundario"
           disabled={!nota.trim() || acao.ocupado}
           onClick={async () => {
-            // Canal e nota só são limpos com a interação confirmada: na falha, o texto fica para conferir.
             const d = await acao.executar(() => registrarInteracao(oportunidadeId, { canal, nota, chaveIdempotencia: tentativa.atual }), "Interação registrada.");
             tentativa.depoisDo(d);
             if (d?.tipo === "ok") {

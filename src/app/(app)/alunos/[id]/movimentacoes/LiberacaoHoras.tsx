@@ -8,10 +8,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { parcelasDiferenca, ROTULO_DESCONTO_CREDITO, ROTULO_REDUCAO_CREDITO, type DiferencaValorCompra } from "@/server/matricula/compra-horas-diferenca";
-/** Parcelas da diferença gravada na compra (Q172): desconto de emissão e redução por aditivo. */
 type DiferencaCompra = Pick<DiferencaValorCompra, "desconto" | "reducaoAditivo">;
 const estilo = "rounded border p-2 text-sm";
-/** Moeda registrada na memória de cálculo do crédito (texto vazio se ausente: número formatado sem símbolo). */
 const moedaDoCalculo = (calculo: unknown) => {
   const moeda = (calculo as { moeda?: unknown } | null)?.moeda;
   return typeof moeda === "string" ? moeda : "";
@@ -53,13 +51,11 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, diferencaCompra,
   </div>;
 }
 
-/** Q172: `descontoOriginal` do cálculo gravado é exibido nas parcelas da compra (desconto de emissão e redução por aditivo). */
 export function MemoriaCredito({ calculo, diferencaCompra }: { calculo: unknown; diferencaCompra: DiferencaCompra }) {
   if (!calculo || typeof calculo !== "object" || Array.isArray(calculo)) return <p>Memória de cálculo indisponível; confira a proposta.</p>;
   const valores = calculo as Record<string, unknown>, parcelas = parcelasDiferenca(diferencaCompra);
   const linha = (campo: string, rotulo: string): [string, string, unknown] => [campo, rotulo, valores[campo]];
   const campos: [string, string, unknown][] = [linha("moeda", "Moeda"), linha("valorPagoOriginal", "Valor pago na compra"),
-    // Sem redução por aditivo, o desconto exibido segue o valor gravado no cálculo, como antes da Q172.
     ...(parcelas.desconto ? [parcelas.reducao ? ["descontoOriginal", ROTULO_DESCONTO_CREDITO, diferencaCompra.desconto] as [string, string, unknown] : linha("descontoOriginal", ROTULO_DESCONTO_CREDITO)] : []),
     ...(parcelas.reducao ? [["reducaoAditivo", ROTULO_REDUCAO_CREDITO, diferencaCompra.reducaoAditivo] as [string, string, unknown]] : []),
     linha("minutosComprados", "Minutos comprados"), linha("minutosConvertidos", "Minutos desta conversão"), linha("minutosAnteriores", "Minutos convertidos anteriormente"),

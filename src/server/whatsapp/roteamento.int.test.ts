@@ -7,7 +7,6 @@ import { criarNumeroSetor, seedCobranca } from "@/test/integracao-whatsapp";
 import { atendimentoDoInbound, garantirAtendimento } from "./atendimentos";
 import type { Setor } from "./setor";
 
-// Roteamento do inbound pelo setor do número (E4). Sem WHATSAPP_LIVE: nenhum envio real.
 beforeEach(async () => { await truncarBanco(); });
 
 let seq = 0;
@@ -22,7 +21,6 @@ const rotear = (conversaId: string) => prisma.$transaction((tx) => atendimentoDo
 
 describe("roteamento do inbound por setor do número", () => {
   it("1. atendimento aberto: mantém", async () => {
-    // Destinatário atual de atendimento com aluno: o telefone do contato é o do aluno.
     const { aluno } = await seedCobranca({ vencimento: new Date("2026-10-10T12:00:00Z") });
     const c = await cenario(["SECRETARIA"], { alunoId: aluno.id, telefone: aluno.telefoneE164! });
     const aberto = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: c.numero.id, contatoId: c.contato.id, finalidade: "SECRETARIA", alunoId: aluno.id }));
@@ -33,7 +31,6 @@ describe("roteamento do inbound por setor do número", () => {
     const c = await cenario(["SECRETARIA"]);
     const id = await rotear(c.conversa.id);
     expect(await prisma.atendimentoWhatsApp.findUnique({ where: { id: id! } })).toMatchObject({ finalidade: "SECRETARIA", responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
-    // Contato sem aluno: o segundo inbound mantém o atendimento criado (não cai na triagem).
     expect(await rotear(c.conversa.id)).toBe(id);
     expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: c.conversa.id } })).toBe(1);
   });

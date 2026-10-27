@@ -10,8 +10,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 export function ConferirAssinatura({ matriculaId, artefatoId, revisaoHash }: { matriculaId: string; artefatoId: string; revisaoHash: string }) {
   const router = useRouter();
   const [chave] = useState(() => crypto.randomUUID());
-  // Chave fixa pela vida do formulário e o servidor devolve a conferência existente quando ela se repete
-  // com a mesma entrada (server/contratos/assinatura-conferencia.ts:36-39): reenviar sem alterar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const pendente = acao.ocupado;
   return <form className="space-y-3 rounded border p-4" onSubmit={async (e) => {

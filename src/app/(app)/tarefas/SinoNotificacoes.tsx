@@ -12,20 +12,17 @@ import { marcarNotificacaoLida } from "@/server/crm/tarefas-acoes";
 import type { NotificacaoItem } from "@/server/crm/notificacoes";
 import { hrefTarefas } from "./visao";
 
-/** Destino da notificação: o atendimento no Inbox (prazo estourado) ou a tarefa (lembrete). */
 export function hrefNotificacao(n: NotificacaoItem): string {
   if ((n.tipo === "SLA_ESTOURADO" || n.tipo === "MENCAO_NOTA")) return `/inbox?${new URLSearchParams({ c: n.refId })}`;
   return hrefTarefas({ t: n.refId });
 }
 
-/** Lê as notificações a cada navegação (o servidor entrega a lista); o tempo real fica para a Fase 3. */
 export function SinoNotificacoes({ notificacoes, fusoExibicao, fusoEscola }: { notificacoes: NotificacaoItem[]; fusoExibicao: string; fusoEscola: string }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const naoLidas = notificacoes.filter((n) => !n.lida).length;
 
   async function abrir(n: NotificacaoItem) {
-    // Falha em marcar como lida não impede de abrir o destino.
     if (!n.lida) await marcarNotificacaoLida(n.id).catch(() => undefined);
     setAberto(false);
     router.push(hrefNotificacao(n));

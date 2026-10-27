@@ -2,8 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// docs/42 /portal-aluno/recuperar (docs/43 §6 item 8): a tela abre com o formulário e o aviso de resposta neutra,
-// sem nenhuma confirmação antes do envio. Nenhuma requisição: a chamada à rota é um mock.
 const pedir = vi.hoisted(() => vi.fn());
 vi.mock("../requisicoes", async (original) => ({ ...(await original<typeof import("../requisicoes")>()), pedirRecuperacaoPortalAluno: pedir }));
 
@@ -21,7 +19,6 @@ describe("recuperar — render", () => {
   it("avisa que a resposta é neutra e não confirma nada antes do envio", () => {
     expect(html).toContain("a resposta é a mesma havendo ou não uma conta");
     expect(html).not.toContain("Pedido registrado");
-    // A região de status já está montada, vazia, para anunciar a confirmação.
     expect(html).toContain('<p role="status" class="sr-only"></p>');
     expect(html).not.toContain('role="alert"');
     expect(pedir).not.toHaveBeenCalled();

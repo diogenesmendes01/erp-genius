@@ -15,10 +15,6 @@ type Tentativa = { acao: () => Promise<ResultadoAcao>; sucesso: string };
 
 const SUCESSO_APLICACAO = "Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência.";
 
-// Erro e sucesso em estados separados (docs/43 §6 item 2): o erro — recusa do servidor ou resultado incerto —
-// sai em role="alert" e o sucesso em role="status", pelo <FeedbackAcao> junto dos botões. A tentativa incerta,
-// a chave estável e a reconciliação (ReconciliarTentativaDelta) continuam como antes.
-
 function useOperacaoDelta() {
   const router = useRouter();
   const chave = useRef(crypto.randomUUID());
@@ -57,8 +53,6 @@ function useOperacaoDelta() {
     }
   }
 
-  // Aplicação executada fora daqui (ConfirmarAcao), com as mesmas regras de chave do `executar`: sucesso
-  // e erro de negócio trocam a chave; resultado incerto a mantém e trava a tela até reconciliar.
   function concluirAplicacao() {
     tentativa.current = null;
     chave.current = crypto.randomUUID();
@@ -67,7 +61,6 @@ function useOperacaoDelta() {
     setSucesso(SUCESSO_APLICACAO);
     router.refresh();
   }
-  /** Erro de negócio: a mensagem já está no diálogo, que fica aberto. Incerto: fica também aqui, como erro. */
   function registrarFalha(falha: FalhaConfirmacao) {
     tentativa.current = null;
     setSucesso(null);
@@ -83,7 +76,6 @@ function useOperacaoDelta() {
   return { ocupado, incerta, erro, sucesso, chave, iniciar: executar, reconciliar: () => executar(), concluirAplicacao, registrarFalha };
 }
 
-/** Reconcilia a tentativa incerta: reenvia a mesma (mesma chave) — ou, na aplicação, reabre a confirmação. */
 function ReconciliarTentativaDelta({ op, aoReconciliar }: { op: ReturnType<typeof useOperacaoDelta>; aoReconciliar?: () => void }) {
   return op.incerta && <button type="button" disabled={op.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={async () => { if (aoReconciliar) aoReconciliar(); else await op.reconciliar(); }}>
     {op.ocupado ? "Reconciliando…" : "Reconciliar mesma tentativa"}
@@ -116,10 +108,8 @@ export function DecidirReconferenciaDeltaFormulario({ propostaId, fotografiaHash
   </form>;
 }
 
-/** Item da memória da reconferência, como a página o recebe (valores em texto decimal). */
 export type ItemMemoriaDelta = { cobrancaId: string; moeda: string; ajusteDevido: string; ajusteSaldo: string; creditoDelta: string; reducaoCredito: string };
 
-/** O que a aplicação da reconferência faz, em números: cobranças com ajuste, crédito novo e redução bloqueada. */
 export function resumoAplicacaoDelta(itens: ItemMemoriaDelta[]) {
   const comAjuste = itens.filter((i: ItemMemoriaDelta) => Number(i.ajusteDevido) !== 0 || Number(i.ajusteSaldo) !== 0).length;
   const credito = somarPorMoeda(itens.map((i: ItemMemoriaDelta): ValorMoeda => ({ moeda: i.moeda, valor: Number(i.creditoDelta) }))).filter((v: ValorMoeda) => v.valor > 0);
@@ -129,9 +119,6 @@ export function resumoAplicacaoDelta(itens: ItemMemoriaDelta[]) {
 
 export function AplicarReconferenciaDeltaFormulario({ decisaoFinanceiraId, itens }: { decisaoFinanceiraId: string; itens: ItemMemoriaDelta[] }) {
   const op = useOperacaoDelta();
-  // Ajusta cobranças e cria crédito com um clique (docs/42 L799): o botão só revela o resumo; a aplicação
-  // exige marcar "Confirmo os valores acima". Resultado incerto mantém a chave e a reconciliação reabre a
-  // confirmação — o reenvio é a MESMA tentativa.
   const [confirmando, setConfirmando] = useState(false);
   const resumo = resumoAplicacaoDelta(itens);
   return <div className="space-y-2"><p>Aplica somente os ajustes calculados. Uma reconferência sem diferença é concluída sem criar novo crédito.</p><button disabled={op.ocupado || op.incerta} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => setConfirmando(true)}>Aplicar reconferência</button><ReconciliarTentativaDelta op={op} aoReconciliar={() => setConfirmando(true)} /><FeedbackAcao erro={op.erro} sucesso={op.sucesso} />

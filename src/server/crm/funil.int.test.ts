@@ -54,7 +54,6 @@ describe("carregarFunil", () => {
     const b = await prisma.oportunidade.findFirstOrThrow({ where: { nome: "Novo BR 2" } });
     await prisma.oportunidade.update({ where: { id: a.id }, data: { criadoEm: new Date(Date.now() - 50 * 86_400_000) } });
     await prisma.oportunidade.update({ where: { id: b.id }, data: { criadoEm: new Date(Date.now() - 40 * 86_400_000) } });
-    // A é mais antiga, mas entrou na etapa agora; B entrou há 30 dias.
     const tipo = TIPOS_MUDAM_ETAPA[0];
     await prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: a.id, payload: {}, criadoEm: new Date() } });
     await prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: b.id, payload: {}, criadoEm: new Date(Date.now() - 30 * 86_400_000) } });

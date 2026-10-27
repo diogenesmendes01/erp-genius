@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export type TrechoEncontrado = { id: string; fonteId: string; texto: string; rank: number };
 
-/** Busca textual em português (websearch_to_tsquery) só nas fontes informadas PRONTAS, não arquivadas e dentro da validade. */
 export async function buscarTrechos(consulta: string, fonteIds: string[], limite = 5, db: Pick<Prisma.TransactionClient, "$queryRaw"> = prisma): Promise<TrechoEncontrado[]> {
   if (fonteIds.length === 0 || consulta.trim() === "") return [];
   const max = Math.max(1, Math.min(50, Math.trunc(limite)));

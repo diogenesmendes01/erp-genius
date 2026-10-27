@@ -1,11 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
-/**
- * Constrói uma realização PARTICULAR persistida pela trilha Q34. É um helper
- * de integração para fontes históricas: a gratuidade excepcional continua
- * separada de cobrança e o encontro fica ligado à agenda do pedido exato.
- */
 export async function criarAgendaParticularIsentaFixture(input: {
   reposicaoId: string;
   matriculaId: string;
@@ -50,8 +45,6 @@ export async function criarAgendaParticularIsentaFixture(input: {
     } });
   });
 
-  // A agenda é conferida no commit com o encontro ainda PREVISTO. A realização
-  // ocorre depois, quando o diário já existe e o trigger pode consumir a reserva.
   await prisma.$transaction(async (tx) => {
     await tx.aulaDiario.create({ data: {
       encontroId, professorId: input.professorId, ocorridaEm: input.inicio,

@@ -1,11 +1,9 @@
-/** Cursor opaco da paginação (keyset): instante ISO (ou null) + id. Base64url de JSON. */
 export interface CursorInbox { em: string | null; id: string }
 
 export function codificarCursor(c: CursorInbox): string {
   return Buffer.from(JSON.stringify({ em: c.em, id: c.id })).toString("base64url");
 }
 
-/** Qualquer entrada que não seja um cursor bem formado vira null (a rota trata como "sem cursor"). */
 export function decodificarCursor(s: string): CursorInbox | null {
   if (!s || s.length > 512 || !/^[A-Za-z0-9_-]+$/.test(s)) return null;
   try {
@@ -19,7 +17,6 @@ export function decodificarCursor(s: string): CursorInbox | null {
   } catch { return null; }
 }
 
-/** Cursor da thread: toda mensagem tem `criadoEm`, então `em: null` (válido só na lista) é inválido aqui. */
 export function cursorThreadValido(s: string): boolean {
   return decodificarCursor(s)?.em != null;
 }

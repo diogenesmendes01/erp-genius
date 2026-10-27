@@ -16,7 +16,6 @@ export const InsightSchema = z.object({
 
 export type AnaliseInsight = z.infer<typeof InsightSchema>;
 
-/** Nunca repara conteúdo truncado, markdown ou campos inesperados do provedor. */
 export function normalizarInsight(valor: unknown): AnaliseInsight | null {
   let entrada = valor;
   if (typeof valor === "string") {
@@ -26,7 +25,6 @@ export function normalizarInsight(valor: unknown): AnaliseInsight | null {
   return resultado.success ? resultado.data : null;
 }
 
-/** Espelho JSON Schema para saída estruturada; a validação local continua soberana. */
 const textoJson = (maxLength: number) => ({ type: ["string", "null"], minLength: 1, maxLength, pattern: "\\S" });
 export const ESQUEMA_INSIGHT: Record<string, unknown> = {
   type: "object",

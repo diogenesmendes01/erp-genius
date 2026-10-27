@@ -16,11 +16,7 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
   leadId?: string | null; alunoId?: string | null; matriculaId?: string | null; turmaId?: string | null; responsavelId?: string | null;
   autorizacaoComunicacaoAcademicaId?: string | null;
-  /** Contexto encerrado vira atendimento NOVO (`base#n`) em vez de devolver o encerrado.
-   *  COMERCIAL em linha VENDAS já se comporta assim sempre (atendimentoComercialDaLinha só considera abertos e
-   *  cria `COMERCIAL:LINHA:<n>`), portanto `reabrir` é redundante ali. */
   reabrir?: boolean;
-  /** Transferência entre setores (E3.3): o atendimento novo aponta para o encerrado. */
   atendimentoOrigemId?: string | null;
 }) {
   if (dados.finalidade === "FINANCEIRO") {
@@ -35,8 +31,6 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
     where: { numeroId_contatoId: { numeroId: dados.numeroId, contatoId: dados.contatoId } },
     create: { numeroId: dados.numeroId, contatoId: dados.contatoId }, update: {},
   });
-  // Linha comercial (SPEC-ERP-005): assunto comercial num número de VENDAS usa o atendimento único
-  // da conversa — fila comercial, abertura manual e vínculo de lead não partem mais o histórico.
   if (dados.finalidade === "COMERCIAL") {
     const daLinha = await atendimentoComercialDaLinha(tx, conversa.id, { leadId: dados.leadId, responsavelId: dados.responsavelId });
     if (daLinha) return daLinha;
@@ -52,7 +46,6 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
     ...(dados.responsavelId ? { status: "EM_ATENDIMENTO" as const } : {}),
   };
   if (dados.reabrir) {
-    // Serializa reaberturas do mesmo contexto: sem isso, duas transações contariam o mesmo `n`.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${conversa.id}), hashtext(${contextoChave}))`;
     const doContexto = await tx.atendimentoWhatsApp.findMany({
       where: { conversaId: conversa.id, OR: [{ contextoChave }, { contextoChave: { startsWith: `${contextoChave}#` } }] },
@@ -71,11 +64,10 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   return tx.atendimentoWhatsApp.upsert({
     where: { conversaId_contextoChave: { conversaId: conversa.id, contextoChave } },
     create: { conversaId: conversa.id, contextoChave, ...criar },
-    update: {}, // nunca reabre vínculo encerrado nem muda o proprietário por visita/telefone
+    update: {},
   });
 }
 
-/** `db`: a transação em curso, quando a checagem roda dentro de uma (ver `escopoAtendimentos`). */
 export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: string, enviar = false, db: Db = prisma) {
   const a = await db.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario, { enviar, db })] },
@@ -88,19 +80,10 @@ export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: 
     numero: i.conversa.numero, contato: i.conversa.contato };
 }
 
-/**
- * Linha comercial: toda mensagem vai para o atendimento único da conversa (SPEC-ERP-005 §5.2).
- * Canal institucional: não adivinha o assunto quando há mais de um atendimento aberto — fica na triagem.
- */
 export async function atendimentoDoInbound(
   tx: Prisma.TransactionClient, conversaId: string, opcoes: { atribuir: boolean },
 ): Promise<string | null> {
   const id = await resolverAtendimentoDoInbound(tx, conversaId);
-  // Abertura sem responsável: a distribuição do setor (Fase 5F) atribui só no 1º inbound DO CONTATO.
-  // Mensagem `fromMe` (celular da escola) e chamada recebida passam `atribuir: false` para não
-  // consumir a vez do rodízio nem dar o atendimento a outra pessoa; sem regra, fica na fila.
-  // Num SAVEPOINT, como na abertura pela triagem: um erro de banco no rodízio não derruba a transação do
-  // inbound; o atendimento fica na fila do setor, sem responsável (C9 da revisão do #233).
   if (id && opcoes.atribuir) {
     await comSavepoint(tx, "atribuir_setor", () => atribuirAutomaticamente(tx, id), (e) => {
       console.error("[distribuicao] atribuição automática no inbound falhou; atendimento fica na fila do setor:", { atendimentoId: id, erro: resumoDoErro(e) });
@@ -112,14 +95,12 @@ export async function atendimentoDoInbound(
 
 async function resolverAtendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
   const abertos = await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, include: { conversa: { include: { contato: true } } }, take: 2 });
-  // Assunto institucional aberto: o roteamento institucional vale mesmo num número de VENDAS (LC-I01).
   if (abertos.every((a) => a.finalidade === "COMERCIAL")) {
     const daLinha = await atendimentoDaLinhaParaInbound(tx, conversaId);
     if (daLinha !== undefined) return daLinha;
   }
   if (abertos.length === 1) {
     const aberto = abertos[0];
-    // Atendimento financeiro legado continua consultável, mas não recebe inbound automático sem contrato explícito.
     if ((aberto.finalidade === "FINANCEIRO" && !aberto.matriculaId)
       || !await destinatarioAtualDoAtendimento(comContatoIndividual(aberto), tx)) return null;
     return aberto.id;
@@ -127,25 +108,12 @@ async function resolverAtendimentoDoInbound(tx: Prisma.TransactionClient, conver
   if (abertos.length > 1) return null;
   const c = await tx.conversaWhatsApp.findUnique({ where: { id: conversaId }, include: { numero: true, contato: { include: { lead: true } } } });
   if (!c?.numero.ativo || !c.contato || !c.contatoId) return null;
-  // VENDAS sem atendimento aberto é linha comercial e já foi roteado acima.
-  // Roteamento por setor do número: zero ou vários setores → triagem (humana ou, com `triagemAtiva`,
-  // classificação pela Aria depois do commit: `agendarTriagemAria`).
   const setores = await setoresDoNumero(tx, c.numeroId);
   if (setores.length !== 1) return null;
-  // Sem atribuir aqui: atendimentoDoInbound decide (mensagem fromMe e chamada não atribuem).
   const atendimento = await abrirAtendimentoDoSetor(tx, { numeroId: c.numeroId, contatoId: c.contatoId, contato: c.contato }, setores[0], { atribuir: false });
   return atendimento && !atendimento.encerradoEm ? atendimento.id : null;
 }
 
-/**
- * Abre (ou reaproveita) o atendimento do setor para o contato, com a regra de contexto da Fase 3:
- * FINANCEIRO só com uma única matrícula possível; PEDAGOGICO exige matrícula e autorização explícitas
- * (nunca abre automaticamente). Devolve null quando o contexto não permite abrir.
- *
- * Ponto comum de abertura por setor (inbound e triagem da Aria, Fase 5C): por padrão aplica a
- * distribuição do setor (Fase 5F) ao atendimento aberto sem responsável, para quem abre por aqui
- * sem passar por atendimentoDoInbound também entrar no rodízio.
- */
 export async function abrirAtendimentoDoSetor(
   tx: Prisma.TransactionClient,
   c: { numeroId: string; contatoId: string; contato: { leadId: string | null; alunoId: string | null } },
@@ -154,8 +122,6 @@ export async function abrirAtendimentoDoSetor(
 ) {
   const atendimento = await abrirSemAtribuir(tx, c, setor);
   if (atendimento && !atendimento.encerradoEm && opcoes.atribuir) {
-    // A atribuição roda num SAVEPOINT: se ela falhar (ex.: erro de banco no FOR UPDATE), a transação do
-    // chamador continua utilizável e o atendimento fica na fila do setor, sem responsável.
     const responsavelId = await comSavepoint(tx, "atribuir_setor", () => atribuirAutomaticamente(tx, atendimento.id), (e) => {
       console.error("[distribuicao] atribuição automática falhou; atendimento fica na fila do setor:", e);
       return null;
@@ -178,21 +144,15 @@ async function abrirSemAtribuir(
       return garantirAtendimento(tx, { ...base, finalidade: "SECRETARIA", alunoId: c.contato.alunoId });
     case "FINANCEIRO": {
       if (!c.contato.alunoId) return null;
-      // A identidade não escolhe contrato: só roteia quando existe uma única matrícula possível.
       const matriculas = await tx.matricula.findMany({ where: { alunoId: c.contato.alunoId }, select: { id: true }, take: 2 });
       if (matriculas.length !== 1) return null;
       return garantirAtendimento(tx, { ...base, finalidade: "FINANCEIRO", alunoId: c.contato.alunoId, matriculaId: matriculas[0].id });
     }
     default:
-      // PEDAGOGICO: a abertura exige matrícula e autorização explícitas.
       return null;
   }
 }
 
-/**
- * Encerra o atendimento (ENCERRADO + cancela intenções pendentes/adiadas + Evento) na transação do chamador.
- * Ponto único usado por `encerrarAtendimentoWhatsApp` e pela transferência entre setores.
- */
 export async function encerrarAtendimentoNaTransacao(tx: Prisma.TransactionClient, atendimentoId: string, autorId: string, payload: Prisma.InputJsonValue = {}) {
   await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
   await tx.intencaoMensagem.updateMany({ where: { atendimentoId, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "atendimento_encerrado" } });

@@ -10,7 +10,6 @@ import { exigirAlcadasAditivoTx } from "./aditivo-alcadas-tx";
 
 const json = (valor: unknown): Prisma.InputJsonObject => JSON.parse(JSON.stringify(valor));
 
-/** Revalida os fatos que sustentam a proposta antes de conferir ou apresentar signatários. */
 export async function carregarContextoParticipantesAditivoTx(tx: Prisma.TransactionClient, propostaId: string) {
   const proposta = await tx.propostaAditivoContratual.findUnique({ where: { id: propostaId }, include: { decisao: true, modelo: true } });
   if (!proposta?.decisao?.aprovada || proposta.decisao.propostaHash !== proposta.entradaHash) throw new ErroRegra("A proposta exige aprovação administrativa antes da conferência dos signatários.");

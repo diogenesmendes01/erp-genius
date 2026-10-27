@@ -14,11 +14,6 @@ export type PendenciasFechamentoColetadas = Pick<
   "pendenciasOperacionais" | "pendenciasSegundaChamada"
 >;
 
-/**
- * Lê apenas fontes ainda abertas no mesmo vínculo, matrícula, nível e versão
- * de regra. Não decide fechamento: quem o fizer deve combinar este retorno ao
- * snapshot de notas, à frequência e à equivalência sob os próprios locks.
- */
 export async function carregarPendenciasFechamentoTx(
   tx: Prisma.TransactionClient,
   contexto: ContextoPendenciasFechamento,
@@ -32,9 +27,6 @@ export async function carregarPendenciasFechamentoTx(
   const [operacionais, propostasAguardandoDecisao, autorizacoesAguardandoAgenda, reservasAguardandoRealizacao, ocorrenciasAguardandoEscola, realizacoesSemNotaOficial, extrasAguardandoDecisao] = await Promise.all([
     carregarPendenciasResultadoTx(tx, contexto),
     tx.propostaSegundaChamada.count({ where: { ...escopoSegunda, decisao: null } }),
-    // A decisão aprovada precisa de disponibilização e primeira reserva. Uma
-    // reserva terminal já é histórico; ela não se transforma em bloqueio
-    // eterno por ter sido cancelada corretamente.
     tx.propostaSegundaChamada.count({ where: {
       ...escopoSegunda,
       decisao: { aprovada: true },
@@ -43,20 +35,15 @@ export async function carregarPendenciasFechamentoTx(
         { reservas: { none: {} } },
       ],
     } }),
-    // Reservas liberadas por cancelamento correto e reservas já consumidas não
-    // aguardam realização; PENDENCIA_ESCOLA tem motivo próprio abaixo.
     tx.reservaSegundaChamada.count({ where: {
       status: "RESERVADA",
       proposta: escopoSegunda,
     } }),
     tx.reservaSegundaChamada.count({ where: {
       status: "PENDENCIA_ESCOLA",
-      // Q164: a confirmação da gestão encerra a pendência sem reescrever o histórico.
       resolucaoImpedimento: null,
       proposta: escopoSegunda,
     } }),
-    // Uma realização não é resultado: enquanto o lançamento original não for
-    // oficializado, a avaliação continua pendente, inclusive se foi rejeitada.
     tx.realizacaoSegundaChamada.count({ where: {
       reserva: { proposta: escopoSegunda },
       NOT: {

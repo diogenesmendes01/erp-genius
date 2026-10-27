@@ -44,7 +44,6 @@ describe("Comissoes — cabeçalhos ordenáveis (E1)", () => {
     expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=valor&amp;dir=asc"[^>]*>Valor</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=vendedor&amp;dir=asc"[^>]*>Vendedor</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
-    // "%" não ordena (percentual e valor fixo misturados na mesma coluna).
     expect(html).toContain('<th class="px-4 py-2 font-medium">%</th>');
   });
 
@@ -78,7 +77,6 @@ describe("Aprovacoes — botões de decisão não permitem duplo clique", () => 
 
 describe("Comissoes — total a pagar (E4: lista paginada)", () => {
   it("mostra o total das aprovadas recebido do servidor, não a soma da página exibida", () => {
-    // A página tem uma aprovada de R$ 100; o escopo inteiro tem R$ 5.000 a pagar.
     const html = renderToStaticMarkup(createElement(Comissoes, {
       comissoes, aPagar: [{ moeda: "BRL", valor: 5000 }], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false,
     }));
@@ -88,7 +86,6 @@ describe("Comissoes — total a pagar (E4: lista paginada)", () => {
 
 describe("Comissoes — lista vazia (E4: filtro sem resultado)", () => {
   const base = { aPagar: [], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false };
-  // A forma real vinda da página: um nó React com texto e o link "Ver todas" (não só string).
   const vazioReal = createElement("span", null, "Nenhuma comissão nesta situação. ", createElement("a", { href: "/financeiro/comissoes" }, "Ver todas"));
 
   it("mostra o texto de vazio recebido (filtro), não o genérico; sem ele, o genérico", () => {

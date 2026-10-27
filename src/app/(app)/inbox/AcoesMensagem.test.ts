@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-// C4 da R1 do #219: reagir, editar e apagar do menu da mensagem chamam as actions do motor (Fase 4D).
 const m = vi.hoisted(() => ({ g: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -143,7 +142,6 @@ describe("EncaminharMensagem (destino entre as conversas do mesmo número com en
 
   it("C2 da revisão do #223: \"Carregar mais\" busca a próxima página da mesma busca e acrescenta os destinos", async () => {
     const paginas: Record<string, { itens: ItemListaInbox[]; proximo: string | null }> = {
-      // Primeira página só com o que o cliente descarta (origem, grupo, opt-out): sem estado vazio enquanto há mais.
       "": { itens: [lista[0]!, lista[2]!, lista[3]!], proximo: "p2" },
       p2: { itens: [lista[1]!, lista[1]!], proximo: "p3" },
       p3: { itens: [lista[4]!, lista[1]!], proximo: null },
@@ -161,7 +159,6 @@ describe("EncaminharMensagem (destino entre as conversas do mesmo número com en
     const rotulos = () => elementos(tela()).filter((n) => n.type === Botao).map((n) => [n.props.children].flat().join(""));
     expect(elementos(tela()).some((n) => n.type === EstadoVazio)).toBe(false);
     expect(rotulos()).toContain("Carregar mais");
-    // A busca digitada depois não muda a página seguinte: o cursor é da busca aplicada.
     (elementos(tela()).find((n) => n.type === "input")!.props.onChange as (e: unknown) => void)({ target: { value: "outra" } });
     clicarBotao(tela(), "Carregar mais");
     await esvaziar();
@@ -212,7 +209,6 @@ describe("EncaminharMensagem (destino entre as conversas do mesmo número com en
     expect(confirmar.props.titulo).toBe("Encaminhar esta mensagem para Bia?");
     expect(acoes.encaminharMensagemWhatsApp).not.toHaveBeenCalled();
     await (confirmar.props.acao as () => Promise<unknown>)();
-    // #166: a chave da tentativa vai junto; o reenvio da mesma tentativa não encaminha de novo.
     expect(acoes.encaminharMensagemWhatsApp).toHaveBeenCalledWith({ mensagemId: "m1", atendimentoDestinoId: "a2", chaveIdempotencia: expect.any(String) });
     expect(confirmar.props.idempotente).toBe(true);
     (confirmar.props.aoConcluir as () => void)();

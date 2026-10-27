@@ -2,10 +2,6 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FilaCobrancaItem } from "@/server/cobrancas/consultas";
 
-// Cobrar por WhatsApp (docs/42 L2014; docs/43 §6 item 1): o "Cobrar"/"Lembrar" da linha e o "Enviar via
-// WhatsApp (API)" do detalhe NÃO enviam — abrem o ConfirmarAcao; só a confirmação chama a action. Sem DOM
-// (src/test/tela-sem-dom.ts): a tela é chamada como função; os filhos (AcaoRapida, DetalheCobranca,
-// ConfirmarAcao) não rodam — as props deles são acionadas.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   enfileirar: vi.fn(), lote: vi.fn(), refresh: vi.fn(),
@@ -96,7 +92,6 @@ describe("FilaCobranca \u2014 cobrar pela linha passa pela confirmação", () =>
     expect(c.props.titulo).toBe("Enviar a cobrança D+3 para Ana Silva pelo WhatsApp?");
     expect(c.props.confirmacao).toBe("envio para Carla");
     expect(c.props.idempotente).toBe(false);
-    // A consequência (ResumoEnvioApi): para quem, por qual número, quanto, com qual degrau, e sem desfazer.
     const resumo = c.props.children as No;
     const consequencia = texto((resumo.type as (p: unknown) => ReactNode)(resumo.props)).replace(/\s+/g, " ");
     expect(consequencia).toContain("Mensagem real para Carla Souza (responsável financeiro), no número +5511999999999.");
@@ -104,9 +99,9 @@ describe("FilaCobranca \u2014 cobrar pela linha passa pela confirmação", () =>
     expect(consequencia).toContain("Uma mensagem enviada não pode ser desfeita.");
     expect(m.enfileirar).not.toHaveBeenCalled();
 
-    expect(m.enfileirar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.enfileirar).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.enfileirar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.enfileirar).toHaveBeenCalledTimes(1);
     expect(m.enfileirar).toHaveBeenCalledTimes(1);
     expect(m.enfileirar).toHaveBeenCalledWith("cobranca-1");
   });
@@ -122,8 +117,6 @@ describe("FilaCobranca \u2014 cobrar pela linha passa pela confirmação", () =>
     expect(m.refresh).toHaveBeenCalledTimes(1);
   });
 
-  // R1 da #154, B5: cada desfecho do despacho sai no lugar certo — falha como erro (role="alert"), o resto
-  // como nota (região polite). FALHOU numa nota verde esconderia a mensagem que não saiu.
   const desfechos: { status: string; motivo: string | null; nota: string | null; erro: string | null }[] = [
     { status: "DESPACHADA", motivo: null, nota: "Enviado via WhatsApp (D+3).", erro: null },
     { status: "SIMULADA", motivo: null, nota: "Ensaio (shadow): D+3 simulado \u2014 nada foi enviado de verdade.", erro: null },
@@ -180,11 +173,11 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirma�
     (detalhe.props.onEnviarApi as () => void)();
     expect(m.enfileirar).not.toHaveBeenCalled();
     let t = tela();
-    expect(doTipo(t, DetalheCobranca)).toHaveLength(1); // o detalhe continua aberto por baixo
+    expect(doTipo(t, DetalheCobranca)).toHaveLength(1);
     const [c] = confirmacoes(t);
-    expect(m.enfileirar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.enfileirar).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.enfileirar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.enfileirar).toHaveBeenCalledTimes(1);
     expect(m.enfileirar).toHaveBeenCalledWith("cobranca-1");
     (c.props.aoConcluir as (d: unknown) => void)({ passo: "D+3", status: "SIMULADA", motivo: null });
     t = tela();
@@ -194,7 +187,6 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirma�
   });
 });
 
-/** Marca a caixa do lote da linha `i` (na ordem da tela). */
 const marcarNoLote = (i = 0) => {
   const caixas = elementos(tela()).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
   (caixas[i].props.onChange as () => void)();
@@ -216,7 +208,7 @@ describe("FilaCobranca — \"Aprovar e enviar lote\" passa pela confirmação (d
     expect(consequencia).toContain("Ana Silva · R$");
     expect(consequencia).toContain("degrau D+3 (Cobrar)");
     expect(consequencia).toContain("Mensagem enviada não pode ser desfeita.");
-    expect(m.lote).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.lote).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.lote).toHaveBeenCalledTimes(1);
     expect(m.lote).toHaveBeenCalledWith({ cobrancaIds: ["cobranca-1"] });
@@ -254,7 +246,6 @@ describe("FilaCobranca — \"Aprovar e enviar lote\" passa pela confirmação (d
 
 describe("FilaCobranca — o lote só leva o que está na tela (docs/43 §6 item 9)", () => {
   const outra: FilaCobrancaItem = { ...item, id: "cobranca-2", aluno: { id: "aluno-2", nome: "Bruno Costa", telefone: null } };
-  /** A tela com o trecho `itens` (o componente não é recriado ao navegar: o estado continua). */
   const noTrecho = (itens: FilaCobrancaItem[]) => m.ganchos!.renderizar(FilaCobranca, { ...props, itens, totalFila: 2 });
   const caixas = (t: ReactNode) => elementos(t).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
   const temBarra = (t: ReactNode) => elementos(t).some((n: No) => n.type === "button" && texto(n.props.children).trim() === "Aprovar e enviar lote");
@@ -263,7 +254,6 @@ describe("FilaCobranca — o lote só leva o que está na tela (docs/43 §6 item
   it("marcada num trecho e fora da tela no seguinte: some da barra, não vai na revisão nem no envio", async () => {
     (caixas(noTrecho([item]))[0].props.onChange as () => void)();
     expect(temBarra(noTrecho([item]))).toBe(true);
-    // Próxima: o trecho seguinte não tem a cobrança marcada.
     expect(temBarra(noTrecho([outra]))).toBe(false);
     (caixas(noTrecho([outra]))[0].props.onChange as () => void)();
     const t = noTrecho([outra]);
@@ -300,7 +290,6 @@ describe("FilaCobranca — o lote só leva o que está na tela (docs/43 §6 item
 });
 
 describe("FilaCobranca — lote: falha parcial em role=\"alert\", resumo em role=\"status\" (#153)", () => {
-  /** Seleciona a cobrança para o lote, confirma e conclui; devolve o que a tela anuncia depois. */
   async function aprovarLote(dado: { enfileiradas: number; despachadas: number; simuladas: number; falhas: number; puladas: { motivo: string }[] }) {
     m.lote.mockResolvedValueOnce({ ok: true, dado });
     marcarNoLote();

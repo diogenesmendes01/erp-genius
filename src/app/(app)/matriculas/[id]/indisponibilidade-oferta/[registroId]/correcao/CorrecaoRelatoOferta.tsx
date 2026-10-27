@@ -12,10 +12,8 @@ import { decidirCorrecaoRelatoIndisponibilidadeOferta, proporCorrecaoRelatoIndis
 
 const CONTROLE = "block w-full rounded border p-2";
 
-/** Q157. Datas civis: o navegador não reinterpreta fuso. Relato aberto não recebe fim por aqui (término, Q156). */
 export function ProporCorrecaoRelato({ registroId, inicio, fim }: { registroId: string; inicio: string; fim: string | null }) {
   const router = useRouter();
-  // A proposta leva chave estável: o reenvio idêntico devolve a mesma versão.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [novoInicio, setNovoInicio] = useState(inicio);
@@ -45,10 +43,8 @@ export function ProporCorrecaoRelato({ registroId, inicio, fim }: { registroId: 
   </form>;
 }
 
-/** Q157: decisão independente. Aprovada, o relato passa ao novo período na mesma transação. */
 export function DecidirCorrecaoRelato({ propostaId }: { propostaId: string }) {
   const router = useRouter();
-  // Sem chave: a decisão é única por proposta e o reenvio idêntico devolve a mesma decisão pelo hash da entrada.
   const acao = useAcaoCliente({ idempotente: false });
   const [motivo, setMotivo] = useState("");
   const [evidencia, setEvidencia] = useState("");

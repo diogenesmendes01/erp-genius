@@ -31,9 +31,6 @@ export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno
   </form>;
 }
 
-// Conferir (docs/42 L1479): oficializar não tem volta pela tela (depois só muda por correção aprovada). Escolher
-// "Oficializar esta versão" só abre o ConfirmarAcao, que repete versão e nota e exige marcar a conferência; a action
-// roda nele e mostra a falha lá. Repetir a mesma decisão não grava de novo (servidor). Rejeitar continua direto.
 export function ConferirNota({ notaId, entradaHash, podeAprovar, versao, nota }: { notaId: string; entradaHash: string; podeAprovar: boolean; versao: number; nota: string | null }) {
   const [erro, setErro] = useState(""), [enviando, setEnviando] = useState(false), router = useRouter();
   const [oficializando, setOficializando] = useState<{ motivo: string } | null>(null);

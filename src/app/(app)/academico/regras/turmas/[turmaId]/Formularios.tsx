@@ -13,7 +13,6 @@ export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada 
   turmaId: string; destinoId: string; estadoHash: string; versaoEsperada: number;
 }) {
   const router = useRouter(); const chave = useRef<string | null>(null);
-  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar sem alterar (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   return <form className="space-y-3" onChange={() => { chave.current = null; acao.limpar(); }} onSubmit={async e => {
     e.preventDefault(); const form = new FormData(e.currentTarget);
@@ -31,7 +30,6 @@ export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada 
 }
 
 export function DecidirMigracao({ propostaId, estadoHash, podeAprovar }: { propostaId: string; estadoHash: string; podeAprovar: boolean }) {
-  // Sem chave de idempotência; a decisão incerta mantém o texto próprio (reenviar a mesma decisão).
   const router = useRouter(); const acao = useAcaoCliente({ idempotente: false });
   return <form className="space-y-3" onSubmit={async e => {
     e.preventDefault(); const form = new FormData(e.currentTarget);

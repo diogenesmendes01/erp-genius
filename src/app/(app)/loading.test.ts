@@ -2,12 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// #174 (pendência declarada): na primeira entrada numa área com layout próprio, quem cobre a espera é o
-// (app)/loading.tsx — o layout da área ainda não montou, e o loading.tsx dela fica DENTRO dele. Antes, essa
-// espera mostrava sempre o esqueleto genérico (título + três blocos), e a tela "saltava" quando o título,
-// as abas e o cabeçalho da área chegavam. Agora o genérico olha o caminho de destino e desenha o formato da
-// área: título e barra de abas (financeiro, configuração), cabeçalho do registro e abas (matrícula) ou só
-// as abas (acadêmico, diário). Um título só, sempre.
 const m = vi.hoisted(() => ({ caminho: "/" }));
 vi.mock("next/navigation", () => ({ usePathname: () => m.caminho }));
 
@@ -35,7 +29,7 @@ describe("areaDoEsqueleto — que formato de área o caminho de destino tem", ()
 
   it.each([
     "/", "/home", "/alunos", "/secretaria",
-    "/financeiro/acertos-taxa", "/financeiro/continuidade", // fora do (painel): sem título nem abas de área
+    "/financeiro/acertos-taxa", "/financeiro/continuidade",
     "/matriculas/nova", "/matriculas", "/configuracaox", "/academicos",
   ])("%s → genérico", (caminho) => {
     expect(areaDoEsqueleto(caminho)).toBeNull();

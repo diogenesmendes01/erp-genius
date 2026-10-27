@@ -5,8 +5,6 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import { criarAgendaParticularIsentaFixture } from "@/test/reposicao-agenda";
 import { carregarFrequenciaVinculoTx } from "./frequencia-tx";
 
-// Requer a migration 20260914234000_regularizacao_reposicao. Usa SQL para que
-// este arquivo também seja compilável antes do `prisma generate` central.
 let gestor: string, secretaria: string, administrador: string, professor: string, alunoId: string, contaPortalAlunoId: string, matriculaId: string, turmaId: string, alocacaoId: string;
 const inicio = new Date("2026-01-01T00:00:00.000Z");
 const fimOriginal = new Date("2026-01-10T11:00:00.000Z");
@@ -116,7 +114,6 @@ it("correção aprovada remove a regularização; rejeitada conserva a conclusã
   await inserirFonte({ correcaoAprovada: true });
   expect(await contexto()).toMatchObject({ base: 1, faltas: 1, regularizadas: 0 });
   await truncarBanco();
-  // a segunda fixture prova que a decisão rejeitada não apaga a conclusão real.
   const c = await seedCatalogoMinimo();
   gestor = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id; secretaria = (await criarUsuario(["SECRETARIA_ACADEMICA"])).id; administrador = (await criarUsuario(["ADMINISTRADOR"])).id; professor = (await criarUsuario(["PROFESSOR"])).id;
   const nivel = await prisma.nivel.create({ data: { id: "nivel-1", idiomaId: c.idioma.id, codigo: "A1", ordem: 1 } });

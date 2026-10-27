@@ -39,7 +39,6 @@ it("357 404 após ACK não autoriza foco quando capacidade volta com503",async()
  await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");expect(m.aria).toHaveBeenCalledOnce();await montar({cap:false,envio:false,leitura:{solicitada:1,finalizada:1,resultado:"sem-acesso"}});await montar({leitura:{solicitada:2,finalizada:2,resultado:"falha"}});expect(doc.activeElement===host.querySelector('[data-compositor-campo]')).toBe(false);expect(Boolean(botao("Assumir e responder"))).toBe(false);
 });
 
-// Três adversariais do oráculo independente T, original SHA9c2c05ed preservado em output.
 it("T357 SSE próprio antes do ACK preserva intenção; somente 200 posterior ao ACK conclui",async()=>{
  let resolver!:(r:{ok:true})=>void;m.aria.mockImplementationOnce(()=>new Promise(r=>resolver=r));await montar();await clicar("Ver resumo e assumir");await clicar("Assumir e responder");
  await montar({handoff:null,owner:"u",leitura:{solicitada:1,finalizada:1,resultado:"ok"}});

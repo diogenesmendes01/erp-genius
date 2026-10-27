@@ -16,7 +16,6 @@ function AlteracoesDaConversa({itens,atendimentoId,fuso,fusoEscola,aoMudar}:Prop
  useEffect(()=>{vivo.current=true;return()=>{vivo.current=false;};},[]);
  useLayoutEffect(()=>{atual.current=alvo;},[alvo]);
  const itemAtual=alvo?itens.find(i=>i.id===alvo.item.id):undefined;
- // DESFEITA pode chegar por SSE próprio antes do ACK; não concede nova execução.
  if(alvo&&!alvo.invalidada&&(!itemAtual||(!itemAtual.podeDesfazer&&!itemAtual.desfeita)||itemAtual.acao!==alvo.item.acao||itemAtual.em!==alvo.item.em))setAlvo({...alvo,invalidada:true});
  const podeConfirmar=!!itemAtual?.podeDesfazer&&!alvo?.invalidada;
  return <section aria-label="Alterações da Aria" className="space-y-3">

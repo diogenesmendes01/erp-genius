@@ -2,9 +2,6 @@ import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { carregarEstadoFechamentoTx } from "./fechamento-estado-tx";
 
-/** Somente para o fluxo interno de mudança acadêmica, após conferir o ator e
- * bloquear a solicitação. A gestão responsável já está identificada no ato;
- * a Secretaria recebe apenas a referência, nunca as notas do snapshot. */
 export async function exigirFechamentoProgressaoTx(tx: Prisma.TransactionClient, entrada: {
   matriculaId: string | null;
   alocacaoId: string;

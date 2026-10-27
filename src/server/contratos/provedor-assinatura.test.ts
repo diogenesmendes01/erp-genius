@@ -46,7 +46,6 @@ describe("provedor simulado", () => {
     expect(await p.cancelarEnvelope(referenciaExterna)).toMatchObject({ resultado: "NAO_CANCELAVEL" });
     const b = await p.criarEnvelope(envelope({ chave: "tentativa:t2" })) as { referenciaExterna: string };
     expect(await p.cancelarEnvelope(b.referenciaExterna)).toMatchObject({ resultado: "CANCELADO" });
-    // Repetição devolve exatamente a mesma evidência (o hash gravado não varia entre chamadas iguais).
     expect(await p.cancelarEnvelope(b.referenciaExterna)).toEqual({ resultado: "CANCELADO", evidencia: { simulado: true } });
     expect(await p.consultarPorChave("tentativa:t2")).toMatchObject({ situacao: "CANCELADO" });
     expect(await p.cancelarEnvelope("desconhecida")).toMatchObject({ resultado: "INCERTO", evidencia: { motivo: "REFERENCIA_DESCONHECIDA" } });
@@ -84,7 +83,6 @@ describe("chamadas sem presunção", () => {
 });
 
 describe("conciliação do envio pela situação do envelope (R1 C2)", () => {
-  // Driver fake que devolve cada situação na consulta pela chave.
   const fake = (situacao: SituacaoEnvelope) => ({ ...simulado(),
     consultarPorChave: async () => ({ resultado: "ENCONTRADO" as const, referenciaExterna: "ref-1", situacao, evidencia: { fake: true } }) }) as ProvedorAssinatura;
   it.each(["EM_ASSINATURA", "ASSINADO"] as const)("%s confirma o envio com a referência", async (situacao) => {

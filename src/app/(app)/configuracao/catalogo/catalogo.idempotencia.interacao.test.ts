@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// #166 (2º lote): os cadastros de criação do catálogo mandam chave de idempotência. A chave é a mesma
-// enquanto a tentativa não foi confirmada (resultado incerto) e muda depois do sucesso. O incerto manda
-// reenviar sem alterar; ativar/desativar continuam sem chave (cobertos em catalogo.confirmacao.test.ts).
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   criarIdioma: vi.fn(), criarNivel: vi.fn(), criarProduto: vi.fn(), criarPreco: vi.fn(), criarModalidade: vi.fn(),
@@ -25,7 +22,6 @@ vi.mock("@/server/catalogo/acoes", () => ({
   criarIdioma: m.criarIdioma, definirIdiomaAtivo: vi.fn(), criarNivel: m.criarNivel, criarProduto: m.criarProduto,
   criarPreco: m.criarPreco, definirPrecoAtivo: vi.fn(), criarModalidade: m.criarModalidade, editarModalidade: vi.fn(),
 }));
-// O formulário da modalidade usa react-hook-form; aqui só o envio importa.
 vi.mock("react-hook-form", () => ({
   useForm: () => ({
     register: () => ({}),
@@ -56,7 +52,6 @@ const controle = (t: ReactNode, chave: string): No => {
 const erros = (t: ReactNode) => elementos(t).filter((n) => n.type === FeedbackAcao).map((n) => n.props.erro).filter(Boolean);
 const chaves = (f: ReturnType<typeof vi.fn>) => f.mock.calls.map((c) => (c[0] as { chaveIdempotencia?: string }).chaveIdempotencia);
 
-/** Incerto, reenvio (mesma chave), sucesso e nova criação (outra chave). */
 async function conferirTentativas(acao: ReturnType<typeof vi.fn>, tela: () => ReactNode, enviar: () => Promise<unknown>) {
   acao.mockRejectedValueOnce(new TypeError("Failed to fetch"));
   await enviar();

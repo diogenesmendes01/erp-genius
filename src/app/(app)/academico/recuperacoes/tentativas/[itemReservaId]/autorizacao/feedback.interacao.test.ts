@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na autorização de
-// realização especial da recuperação — erro em role="alert", sucesso em role="status", falha de rede
-// como resultado incerto e o formulário saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   autorizar: vi.fn(), refresh: vi.fn(),
@@ -28,7 +25,6 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** "Autorizando…" no botão e o fieldset travado: os dois sinais do ocupado. */
 const ocupadoEm = (t: ReactNode) => {
   const botao = elementos(t).find((n) => n.type === "button");
   const fieldset = elementos(t).find((n) => n.type === "fieldset");

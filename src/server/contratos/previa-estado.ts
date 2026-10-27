@@ -51,7 +51,7 @@ export async function carregarBasePrevia(tx: Prisma.TransactionClient, matricula
   }
   const documento = preencherModelo(conteudo, fontes);
   const assinaturasPlanejadas = planejarExigenciasAssinatura(conteudo.assinaturas, {
-    maioridade: null, // Conferência específica ainda não registrada; nascimento não basta.
+    maioridade: null,
     pagador: z.enum(["ALUNO", "RESPONSAVEL", "EMPRESA"]).parse(pagador.tipo),
   });
   const snapshot = { ...(agendaParticular ? { agendaParticular: agendaParticular.snapshot } : {}), matriculaId: m.id, alunoId: m.aluno.id, preparacaoId: m.preparacaoComercial.id, pagadorRegistroId: pagador.id,

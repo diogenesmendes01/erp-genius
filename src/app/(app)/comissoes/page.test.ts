@@ -73,8 +73,6 @@ describe("/comissoes (página)", () => {
     expect(await renderPagina(vendedor)).not.toContain("/financeiro/comissoes");
   });
 
-  // D11 (decisão do dono, 20/10/2026): a previsão de pagamento aparece em cada linha, na tabela e no cartão; a
-  // paga ou estornada fica sem previsão ("—"), e a tela diz a regra com o dia configurado.
   it("previsão de pagamento por linha, com a regra e o dia configurado", async () => {
     mocks.usuario.valor = financeiro;
     const aprovada = { ...painel.linhas[0], id: "c2", nome: "Bruno Lima", status: "APROVADA", previsaoPagamento: "2026-11-15" };
@@ -84,7 +82,7 @@ describe("/comissoes (página)", () => {
     expect(html).toContain("15/11/2026");
     expect(html).toContain("previsão de pagamento 15/11/2026");
     expect(html).toContain("dia 15 do mês seguinte à competência");
-    expect(html).toContain("<td class=\"px-4 py-2\">—</td>"); // a PAGA não tem previsão
+    expect(html).toContain("<td class=\"px-4 py-2\">—</td>");
   });
 
   it("tabela vira cartões no celular", async () => {
@@ -103,7 +101,7 @@ describe("/comissoes (página)", () => {
     for (const u of [financeiro, com(["ADMINISTRADOR"])]) {
       const html = await comAprovada(u);
       expect(html).toContain('aria-label="Estornar comissão de Bruno Lima"');
-      expect(html).not.toContain("Estornar comissão de Ana Souza"); // PAGA não é estornável
+      expect(html).not.toContain("Estornar comissão de Ana Souza");
     }
     for (const u of [vendedor, gerente]) expect(await comAprovada(u)).not.toContain("Estornar");
   });

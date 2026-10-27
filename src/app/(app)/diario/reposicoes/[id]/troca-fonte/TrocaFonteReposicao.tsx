@@ -37,7 +37,6 @@ type Contexto = {
 
 type Resultado = { ok: boolean; erro?: string };
 
-/** Não recebe arquivo, revisão ou fonte do formulário: todos são resolvidos pela reposição no servidor. */
 export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { contexto: Contexto; propostas: Proposta[]; fusoExibicao: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
@@ -65,7 +64,6 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
   return <section className="space-y-5">
     <section className="rounded border bg-surface p-4 text-sm" aria-label="Fontes atuais da reposição">
       <h2 className="font-medium">Fonte da reposição</h2>
-      {/* A revisão do Drive é identificador técnico: fica como texto secundário (title), não como o nome da fonte. */}
       <p className="mt-1" title={`Revisão fixa no Drive: ${contexto.fonteMaterialAtual.revisao}`}>Material: versão {contexto.fonteMaterialAtual.versao}, com revisão fixada.</p>
       <p title={`Revisão fixa no Drive: ${contexto.fontePublicacaoAtual.revisao}`}>Publicação corrigida da aula original: versão {contexto.fontePublicacaoAtual.versao}, com revisão fixada.</p>
       <p className="mt-1 text-gray-700">O material está {contexto.materialDisponivel ? "disponível" : "indisponível"}. A troca só cria outra versão da fonte; não altera disponibilização, entregas, avaliações ou prazos.</p>

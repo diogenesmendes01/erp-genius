@@ -49,7 +49,6 @@ describe("/contatos (página)", () => {
   beforeEach(() => { Object.values(mocks).forEach((m) => "mockClear" in m && m.mockClear()); mocks.obter.mockResolvedValue(null); });
 
   it("guard com SECRETARIA", () => {
-    // papeisDoGuardArquivo devolve os papéis em ordem alfabética.
     expect(papeisDoGuardArquivo("src/app/(app)/contatos/page.tsx")).toEqual(["ADMINISTRADOR", "GERENTE_COMERCIAL", "SECRETARIA_ACADEMICA", "VENDEDOR"]);
   });
 
@@ -65,7 +64,6 @@ describe("/contatos (página)", () => {
     expect(mocks.obter).toHaveBeenCalledWith("p1", expect.objectContaining({ id: "u1" }));
     expect(html).toContain("data-ficha");
     expect(mocks.historico).toHaveBeenCalledWith("p1", expect.anything(), "tudo");
-    // Fuso pessoal nas telas: a ficha recebe a preferência de exibição e, à parte, o fuso da escola.
     expect(mocks.ficha.mock.calls.at(-1)?.[0]).toMatchObject({ fuso: "America/Costa_Rica", preferenciaFusoExibicao: "Asia/Tokyo" });
     const fora = await renderPagina({ c: "alheia" });
     expect(fora).not.toContain("data-ficha");

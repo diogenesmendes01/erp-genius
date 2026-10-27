@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-/** Valores cumulativos conferidos no ledger da cobrança, nunca no formulário. */
 export type FatoDelta = {
   cobrancaId: string;
   moeda: string;
@@ -31,10 +30,6 @@ function valor(texto: string): Prisma.Decimal {
   return new Prisma.Decimal(texto);
 }
 
-/** A obrigação aprovada continua ancorada na memória original. Rejeitar um
- * informe não remove recebimentos reais; o carregador apenas exclui o informe
- * do total liquidado. Crédito sem destinação não liquida nenhuma cobrança e
- * deve ser reconhecido separadamente por ID, sem rateio implícito aqui. */
 export function calcularReconferenciaDelta(
   fatos: FatoDelta[],
   obrigacoes: Record<string, ObrigacaoDelta>,

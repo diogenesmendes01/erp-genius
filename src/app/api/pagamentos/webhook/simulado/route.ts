@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { pagamentoSimuladoHabilitado, processarPagamentoGateway } from "@/server/financeiro/gateway";
 
-// "WEBHOOK" do gateway SIMULADO (Fase 2): a página pública /pagar/[token] posta aqui.
-// Só existe com PAGAMENTO_SIMULADO=1 no env (dev/demo) — em produção, o driver real
-// (GreenPay/PIX) terá o próprio webhook autenticado por assinatura do provedor.
-// O TOKEN é o segredo (opaco, único por cobrança) — mesma semântica de um link de
-// pagamento real: quem tem o link paga aquela cobrança, e nada além dela.
-
 export const runtime = "nodejs";
 
 export async function POST(req: Request): Promise<NextResponse> {

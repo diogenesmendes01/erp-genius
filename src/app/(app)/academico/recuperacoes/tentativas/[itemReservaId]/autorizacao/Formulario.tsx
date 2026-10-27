@@ -11,7 +11,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 
 export function Formulario({ itemReservaId, fusoInstitucional }: { itemReservaId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
-  // Chave de idempotência estável entre tentativas com a mesma entrada: na falha de transporte, reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
 

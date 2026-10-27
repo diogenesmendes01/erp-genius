@@ -9,11 +9,6 @@ import { ETAPA_LABEL, rotular } from "@/lib/labels";
 import type { ItemDetalhe } from "@/server/relatorios/detalhe";
 import { fmtDias, fmtInteiro, fmtMoedas, hrefRelatorio, type ParamsRelatorio } from "./formato";
 
-/**
- * Oportunidades por trás de um número. Celular: folha inteira (fullsheet); a partir de md, painel lateral (Drawer:
- * diálogo com foco preso, Escape e fundo fecham). A lista chega pronta do servidor; fechar volta à URL sem `detalhe`.
- * Sem telefone, e-mail nem documento.
- */
 export function PainelDetalhe({ titulo, params, resultado, erro, limite }: {
   titulo: string;
   params: ParamsRelatorio;

@@ -35,9 +35,7 @@ export type TarefaInput = {
   pessoaId?: string;
   alunoId?: string;
   matriculaId?: string;
-  /** Vínculo definido somente na criação; editarTarefa o descarta (#322). */
   atendimentoId?: string;
-  /** Só na criação pela tela (#166): a mesma chave até o sucesso; o reenvio devolve a tarefa já criada. */
   chaveIdempotencia?: string;
 };
 
@@ -68,18 +66,12 @@ export const CamposTarefaSchema = z.object({
   alunoId: z.string().min(1).optional(),
   matriculaId: z.string().min(1).optional(),
 });
-// Chave e atendimento só existem na criação: editarTarefa usa CamposTarefaSchema.partial(), sem ambos.
 const CriarTarefaSchema = CamposTarefaSchema.extend({
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
   atendimentoId: z.string().min(1).optional(),
 });
 
 
-/**
- * Escopo de leitura das tarefas: as minhas, mais a fila (sem responsável) dos meus setores.
- * Com `equipe` e a capacidade `tarefas.equipe`, entram as dos responsáveis cujo `gerenteComercialId` sou eu.
- * Administrador vê tudo.
- */
 export async function escopoTarefas(usuario: UsuarioSessao, equipe: boolean): Promise<Prisma.TarefaWhereInput> {
   if (!usuario?.id) return { id: "__sem_acesso__" };
   if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return {};
@@ -110,8 +102,6 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const { chaveIdempotencia, ...d } = CriarTarefaSchema.parse(i);
-    // Idempotência (#166): a chave e o hash da entrada vão no payload do `TarefaCriada` da tarefa. O lembrete
-    // mora na própria tarefa (`lembrarEm`), então o reenvio não agenda um segundo aviso.
     const marca = marcaIdempotencia(chaveIdempotencia, d);
     const id = await prisma.$transaction(async (tx) => {
       if (marca) {
@@ -198,9 +188,6 @@ export async function cancelarTarefa(id: string, versao: number, motivo: string)
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const m = z.string().trim().min(1, "Informe o motivo do cancelamento.").max(500, "O motivo deve ter até 500 caracteres.").parse(motivo);
     await prisma.$transaction(async (tx) => {
-      // Idempotência por natureza (#166, 5º lote): a linha travada serializa o clique duplo, e o mesmo cancelamento,
-      // já feito por quem repete com o mesmo motivo, devolve ok sem outro Evento. Vem antes da versão, que o próprio
-      // cancelamento já mudou. O escopo continua conferido primeiro.
       await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id = ${id} FOR UPDATE`;
       const t = await carregarVisivel(tx, autor, id);
       await cancelarTarefaTx({ tx, autor, tarefa: t, versao }, m);
@@ -209,7 +196,6 @@ export async function cancelarTarefa(id: string, versao: number, motivo: string)
   });
 }
 
-/** Pega para si uma tarefa da fila do setor (sem responsável). Dois cliques simultâneos: só um vence. */
 export async function assumirTarefa(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();

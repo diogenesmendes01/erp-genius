@@ -23,9 +23,6 @@ export async function salvarAulaDiario(input: DiarioInput): Promise<Resultado<{ 
       const acessoRegularizacao = dados.encontroId
         ? await exigirAcessoRegularizacaoAulaTx(tx, { atorId: autor.id, encontroId: dados.encontroId })
         : null;
-      // O guard do diário também usa a trava institucional. Obtê-la antes de
-      // matrícula/turma evita inversão com a conclusão de encontros, inclusive
-      // quando este lançamento ainda não está associado à agenda.
       if (!dados.encontroId) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       const atribuicao = await tx.turma.findUnique({ where: { id: dados.turmaId }, select: { professorId: true, status: true, vinculosDocentes: true } });
       if (!atribuicao || (!dados.encontroId && !docenteAtual(autor.id, atribuicao))) throw new ErroPermissao("Sem atribuição docente para esta turma.");
@@ -60,8 +57,6 @@ export async function salvarAulaDiario(input: DiarioInput): Promise<Resultado<{ 
       if (anterior?.encontroId && dados.estadoAnterior !== estadoDiario(anterior)) throw new ErroRegra("O diário mudou desde a consulta. Recarregue a chamada antes de salvar.");
       if (anterior && anterior.ocorridaEm.getTime() !== ocorridaEm.getTime()) throw new ErroRegra("A data de uma aula registrada não pode ser alterada.");
 
-      // Primeira chamada usa o intervalo histórico. Edição existente conserva a proteção
-      // dos registros de quem saiu; correções oficiais seguem seu fluxo independente.
       if (alunosComVinculosSobrepostos(turma.alocacoes.filter(a => alocacaoCobreAula(a, ocorridaEm))).size)
         throw new ErroRegra("Há vínculos históricos sobrepostos. Solicite conferência antes de registrar a chamada.");
       const situacoes = await carregarSituacoesNaAula(tx, turma.alocacoes.flatMap((a) => a.matriculaId ? [a.matriculaId] : []), ocorridaEm);
@@ -82,7 +77,7 @@ export async function salvarAulaDiario(input: DiarioInput): Promise<Resultado<{ 
       if (anterior) await tx.aulaDiario.update({ where: { id: aula.id }, data: { conteudo: dados.conteudo } });
       for (const registro of dados.registros) {
         const alocacao = atuais.get(registro.alunoId);
-        if (!alocacao) continue; // Preserva integralmente quem saiu, inclusive se omitido pelo formulário.
+        if (!alocacao) continue;
         const antigo = anteriores.get(registro.alunoId);
         const participacao = participacaoParaRegistro(registro, alocacao.matriculaId ?? null, antigo);
         await tx.registroAulaAluno.upsert({
@@ -101,7 +96,6 @@ export async function salvarAulaDiario(input: DiarioInput): Promise<Resultado<{ 
         },
       });
       return aula.id;
-    // Após esperar os locks, a consulta precisa ver o vínculo e os papéis recém-confirmados.
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
     revalidatePath("/diario");
     return { id };

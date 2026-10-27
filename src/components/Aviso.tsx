@@ -1,16 +1,9 @@
 import { forwardRef, type ReactNode } from "react";
 
-// Aviso do design system (Fase 0, Task 9): uma caixa só para info, sucesso, atenção e erro. Cor e borda
-// inicial de 3 px vêm do tom (as shades já invertem no escuro pelos tokens); o papel acessível também:
-// erro anuncia como alert, os demais como status. `papel="nenhum"` é para quem já tem a região anunciante
-// em outro lugar (MensagemStatus mantém a sr-only e esconde a caixa visível com aria-hidden).
-
 export type TomAviso = "info" | "sucesso" | "atencao" | "erro";
 
 export const BASE_AVISO = "rounded-md p-3 text-sm";
 export const TONS_AVISO: Record<TomAviso, string> = {
-  // Info com tom e borda próprios, como os demais: com `bg-surface-muted` (= --bg-page no claro) e sem borda, a
-  // caixa sumia direto sobre a página e só o texto aparecia (revisão R1 do #269).
   info: "bg-blue-100 text-blue-700 border-s-[3px] border-blue-700",
   sucesso: "bg-green-100 text-green-700 border-s-[3px] border-green-700",
   atencao: "bg-amber-100 text-amber-800 border-s-[3px] border-amber-600",
@@ -22,9 +15,7 @@ type Props = {
   titulo?: string;
   children: ReactNode;
   acao?: ReactNode;
-  /** Só posição (margem). */
   className?: string;
-  /** Padrão: alert no erro, status nos demais. */
   papel?: "nenhum";
   tabIndex?: number;
   "aria-hidden"?: true;

@@ -7,7 +7,6 @@ const financeiro = { nome: "Operador financeiro", email: "operador@example.test"
 it("permite conceder execução de devoluções e preservá-la ao editar o usuário", () => {
   const permissoes = ["financeiro.executar_devolucoes"];
   const criado = CriarUsuarioSchema.parse({ ...financeiro, senha: "senha-teste", permissoes });
-  // Mesma seleção usada ao carregar o formulário administrativo.
   const selecionadas = CAPACIDADES_LISTA.filter(p => criado.permissoes.includes(p));
   expect(EditarUsuarioSchema.parse({ ...financeiro, permissoes: selecionadas }).permissoes).toEqual(permissoes);
 });

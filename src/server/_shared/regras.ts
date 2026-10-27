@@ -2,14 +2,6 @@ import { Papel, EtapaLead, TipoAjuste, TipoCobranca } from "@prisma/client";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import { ErroRegra } from "./sessao";
 
-// Regras de negócio PURAS (sem I/O) — fonte única e testável (ver docs/14).
-
-/**
- * Chave de negócio de um Preço de Referência (doc 15, P5):
- * País + Produto + Modalidade + TipoCobrança identificam a combinação que só
- * pode ter UM preço ativo. Usada para encontrar/inativar "irmãos" ao criar ou
- * reativar um preço, e como base da proteção lógica no banco.
- */
 export interface ChavePreco {
   paisId: string;
   produtoId: string;
@@ -17,22 +9,14 @@ export interface ChavePreco {
   tipoCobranca: TipoCobranca;
 }
 
-/** Serializa a chave de negócio do preço de forma determinística (p/ comparar/agrupar). */
 export function chavePrecoReferencia(p: ChavePreco): string {
   return [p.paisId, p.produtoId, p.modalidadeId, p.tipoCobranca].join("|");
 }
 
-/** Dois preços pertencem à mesma combinação de negócio (mesmos irmãos)? */
 export function mesmaChavePreco(a: ChavePreco, b: ChavePreco): boolean {
   return chavePrecoReferencia(a) === chavePrecoReferencia(b);
 }
 
-/**
- * Ao reativar o preço `alvo`, quais preços ativos devem ser inativados para
- * preservar o invariante "no máximo um ativo por combinação".
- * Retorna os ids dos irmãos da MESMA chave de negócio, exceto o próprio alvo.
- * Função pura: a ação só passa os candidatos já carregados do banco.
- */
 export function irmaosParaInativar(
   alvo: ChavePreco & { id: string },
   candidatosAtivos: ReadonlyArray<ChavePreco & { id: string }>,
@@ -42,21 +26,10 @@ export function irmaosParaInativar(
     .map((c) => c.id);
 }
 
-/**
- * Quem pode atribuir um lead a OUTRO vendedor? (doc 09 §Atribuição de leads)
- * Vendedor só pode ser dono de leads que ele mesmo cria — qualquer dono enviado
- * por ele é ignorado pelo servidor. Apenas gerente/admin atribuem a terceiros.
- */
 export function podeAtribuirOutroDono(papeis: Papel[]): boolean {
   return papeis.includes(Papel.GERENTE_COMERCIAL) || papeis.includes(Papel.ADMINISTRADOR);
 }
 
-/**
- * Define o dono de um lead recém-criado a partir do papel do autor.
- * - Vendedor sem privilégio de atribuição: SEMPRE ele mesmo (ignora o id enviado).
- * - Gerente/admin: usa o vendedor escolhido, ou nenhum (atribuir depois).
- * O backend é a fonte da regra, independentemente do formulário.
- */
 export function resolverDonoLead(
   autor: { id: string; papeis: Papel[] },
   vendedorDonoIdSolicitado?: string | null,
@@ -68,15 +41,10 @@ export function resolverDonoLead(
   return vendedorDonoIdSolicitado || null;
 }
 
-/** Comissão = % da taxa de matrícula (doc 10 §3). */
 export function calcularComissao(taxa: number, percentual: number): number {
   return (taxa * percentual) / 100;
 }
 
-/**
- * Vencimento da mensalidade no dia escolhido, no mês atual + offset (0 = este mês).
- * `agora` injetável para testes determinísticos.
- */
 export function vencimentoMensalidade(
   dia: number,
   offset: number,
@@ -90,15 +58,6 @@ export function vencimentoMensalidade(
   return { data: d, competencia };
 }
 
-/**
- * Vencimento da 1ª mensalidade (regra de domínio do PO): 30 dias após o início
- * da PRIMEIRA AULA da turma, ajustado para o DIA de vencimento selecionado na
- * matrícula. Sem turma/data de início, cai para a referência informada
- * (`fallback`, normalmente a data de criação) + 30 dias, também ajustada ao dia.
- *
- * "Ajustado ao dia" = mantém o mês de (início + 30d) mas troca o dia para o
- * `diaVencimento`. Função pura (sem I/O) → testável.
- */
 export function vencimentoPrimeiraMensalidade(
   diaVencimento: number,
   dataInicioAula: Date | null | undefined,
@@ -109,53 +68,29 @@ export function vencimentoPrimeiraMensalidade(
   return vencimentoMensalidade(diaVencimento, 0, mais30);
 }
 
-/** O usuário pode mover o lead para esta etapa manualmente? (Perdido/Matriculado têm fluxo próprio.) */
 export function ehEtapaManual(etapa: EtapaLead): boolean {
   return ETAPAS_MANUAIS.includes(etapa);
 }
 
-// ------------------------------------------------------------
-// Lastro financeiro da ativação (issue #23).
-// A ativação COM pagamento não pode presumir quitação integral: o valor
-// recebido é alocado às cobranças na ordem dada e cada uma só vira PAGO se for
-// integralmente coberta. Regra pura (sem I/O) → testável.
-// ------------------------------------------------------------
-
-/** Uma cobrança vista pela regra de alocação (só o que importa para distribuir o valor). */
 export interface CobrancaParaAlocar {
   id: string;
   valorNegociado: number;
 }
 
-/** Resultado da alocação de uma cobrança. */
 export interface AlocacaoCobranca {
   id: string;
-  /** Quanto deste pagamento foi aplicado a esta cobrança. */
   valorRecebido: number;
-  /** Saldo restante da cobrança (0 quando quitada). */
   saldo: number;
-  /** Quitada integralmente? Só então pode ir para PAGO. */
   quitada: boolean;
 }
 
-/** Resultado completo da distribuição do valor recebido entre as cobranças. */
 export interface ResultadoAlocacao {
   alocacoes: AlocacaoCobranca[];
-  /** Soma dos valores negociados das cobranças informadas. */
   totalDevido: number;
-  /** Sobra do pagamento após cobrir tudo (>= 0). */
   troco: number;
-  /** Todas as cobranças foram integralmente quitadas? */
   quitouTudo: boolean;
 }
 
-/**
- * Distribui `valorRecebido` entre `cobrancas`, na ordem informada, sem presumir
- * quitação: cada cobrança só é marcada como `quitada` quando o valor alocado
- * cobre todo o seu `valorNegociado`. Pagamentos parciais ficam com saldo > 0
- * (continuam PENDENTES no chamador). Garante o critério: "o backend valida se o
- * valor recebido cobre taxa/mensalidade antes de marcar a cobrança como paga".
- */
 export function alocarPagamento(
   valorRecebido: number,
   cobrancas: CobrancaParaAlocar[],
@@ -177,21 +112,10 @@ export function alocarPagamento(
   };
 }
 
-/**
- * O check-in da experimental só vale enquanto o lead está na etapa que tem
- * uma experimental AGENDADA — protege contra check-in repetido / fora de ordem
- * (lead já Realizado, No-show, Perdido, Matriculado, etc.). Ver docs/09 §Check-in.
- */
 export function podeCheckinExperimental(etapa: EtapaLead): boolean {
   return etapa === EtapaLead.EXPERIMENTAL_AGENDADA;
 }
 
-/**
- * O professor está no escopo desta experimental? (associação professor↔lead).
- * O vínculo é gravado no event log como `ExperimentalAtribuida` — não há FK no V0
- * (pendência de modelagem, docs/15). `professorAtribuidoId` = professor da última
- * atribuição (null = ainda sem vínculo → fora do escopo de qualquer professor).
- */
 export function professorNoEscopoExperimental(
   professorAtribuidoId: string | null | undefined,
   professorId: string,
@@ -199,33 +123,21 @@ export function professorNoEscopoExperimental(
   return !!professorAtribuidoId && professorAtribuidoId === professorId;
 }
 
-// ---- Matrícula × preço de referência (issue #22) ----
-
-/** Tipos de cobrança que TODA matrícula precisa precificar (taxa + 1ª mensalidade). */
 export const TIPOS_PRECO_OBRIGATORIO: TipoCobranca[] = [
   TipoCobranca.MATRICULA,
   TipoCobranca.MENSALIDADE,
 ];
 
-/** Preço de referência ativo (forma mínima consumida pela regra). */
 export interface PrecoRefAtivo {
   tipoCobranca: TipoCobranca;
   valor: number;
 }
 
 export interface AvaliacaoPrecoReferencia {
-  /** Falta ao menos um preço ativo (taxa OU mensalidade) para a combinação. */
   ausente: boolean;
-  /** Tipos obrigatórios sem preço de referência ativo. */
   tiposAusentes: TipoCobranca[];
 }
 
-/**
- * Avalia a cobertura da matriz de preços para a combinação país × produto.
- * Recebe APENAS os preços já filtrados por `ativo + paisId + produtoId` (I/O fica na ação).
- * Decisão da issue #22: matrícula sem preço ativo é PERMITIDA, mas marcada como
- * exceção auditável — então a ação só precisa saber se há ausência e quais tipos.
- */
 export function avaliarPrecoReferencia(
   precos: PrecoRefAtivo[],
   obrigatorios: TipoCobranca[] = TIPOS_PRECO_OBRIGATORIO,
@@ -236,30 +148,13 @@ export function avaliarPrecoReferencia(
   return { ausente: tiposAusentes.length > 0, tiposAusentes };
 }
 
-/** Resultado puro do cálculo de um pagamento (parcial/total/excedente). */
 export interface ResultadoPagamento {
-  /** Total acumulado já recebido na cobrança (recebidos anteriores + valor atual). */
   recebidoTotal: number;
-  /** Saldo devedor restante (nunca negativo). */
   saldo: number;
-  /** Verdadeiro quando o acumulado cobre o valor devido. */
   quitada: boolean;
-  /** Valor recebido acima do negociado (>= 0). Crédito/excedente explícito. */
   excedente: number;
 }
 
-/**
- * Acumula um pagamento sobre o que já foi recebido e calcula saldo/quitação.
- *
- * Regras (doc 09 §Financeiro, issue #10):
- * - o valor atual SOMA ao já recebido (parciais sucessivos acumulam corretamente);
- * - o saldo é calculado pelo ACUMULADO, não só pelo valor atual;
- * - a cobrança só quita quando o acumulado cobre o valor negociado;
- * - recebimento acima do negociado só é aceito com `permitirExcedente`; caso
- *   contrário lança `ErroRegra` para ser bloqueado pela camada de ação.
- *
- * Função PURA (sem I/O) — fonte única e testável (ver docs/14).
- */
 export function acumularPagamento(
   jaRecebido: number,
   valorNegociado: number,
@@ -280,31 +175,16 @@ export function acumularPagamento(
   return { recebidoTotal, saldo, quitada: saldo <= 0, excedente };
 }
 
-// ── Ajustes financeiros (doc 09 §Renegociação · doc 10 §2/§3) ────────────────
-// Um ajuste é, por padrão, uma REDUÇÃO de valor (desconto, bolsa, renegociação,
-// perdão). Aumentar o valor cobrado é uma operação distinta e intencional, só
-// permitida no tipo ALTERACAO_VALOR ("alterar valor") — nunca como efeito
-// colateral de um desconto.
-
-/** Único tipo de ajuste que pode AUMENTAR o valor cobrado. */
 export const TIPO_AJUSTE_PERMITE_AUMENTO: TipoAjuste = TipoAjuste.ALTERACAO_VALOR;
 
-/** O `valorPara` representa um aumento sobre o valor atual? */
 export function ehAumento(valorDe: number, valorPara: number): boolean {
   return valorPara > valorDe;
 }
 
-/** O aumento é permitido para este tipo de ajuste? (só ALTERACAO_VALOR aumenta.) */
 export function aumentoPermitido(tipo: TipoAjuste): boolean {
   return tipo === TIPO_AJUSTE_PERMITE_AUMENTO;
 }
 
-/**
- * Valida a direção do ajuste em relação ao valor atual.
- * - Tipos de redução (desconto/bolsa/renegociação/perdão): `valorPara` <= `valorDe`.
- * - ALTERACAO_VALOR: livre (pode aumentar ou reduzir).
- * Retorna `null` quando válido, ou a mensagem de erro.
- */
 export function validarDirecaoAjuste(
   tipo: TipoAjuste,
   valorDe: number,
@@ -316,20 +196,12 @@ export function validarDirecaoAjuste(
   return null;
 }
 
-/** Percentual de desconto (0 quando não há redução ou valor base zero). */
 export function descontoPercentual(valorDe: number, valorPara: number): number {
   if (valorDe <= 0) return 0;
   const pct = ((valorDe - valorPara) / valorDe) * 100;
   return pct > 0 ? pct : 0;
 }
 
-/**
- * Um pedido de desconto precisa de aprovação?
- * Regra (doc 10 §2): só Financeiro/Admin aplicam sem limite. Para os demais
- * (ex.: Vendedor), `limiteDescontoPct = null` NÃO significa ilimitado — significa
- * "sem autonomia" (limite efetivo 0): qualquer desconto vai para aprovação.
- * Aumentos (descontoPct <= 0) nunca exigem aprovação por limite.
- */
 export function precisaAprovacaoDesconto(params: {
   podeAplicarSemLimite: boolean;
   limiteDescontoPct: number | null;
@@ -338,79 +210,39 @@ export function precisaAprovacaoDesconto(params: {
   const { podeAplicarSemLimite, limiteDescontoPct, descontoPct } = params;
   if (podeAplicarSemLimite) return false;
   if (descontoPct <= 0) return false;
-  const limiteEfetivo = limiteDescontoPct ?? 0; // null = sem autonomia, não ilimitado
+  const limiteEfetivo = limiteDescontoPct ?? 0;
   return descontoPct > limiteEfetivo;
 }
 
-// ── Máquina de estados do lead (transições MANUAIS) ─────────────────────────
-// Doc 10 §1 define quem dispara cada transição. O arraste no Kanban (moverEtapa)
-// só cobre o trecho que é responsabilidade do VENDEDOR e nunca pode pular para
-// etapas que dependem de evento (Exp. Realizada, Proposta, Aguardando Matrícula,
-// Matriculado) nem para as saídas paralelas (Perdido/No-show — fluxo próprio).
-//
-// Cada chave é a etapa ATUAL; o conjunto são os destinos manuais permitidos a
-// partir dela. Avanço passo-a-passo no funil + correções (voltar uma casa /
-// reabrir um lead encerrado pelo evento). Tudo o que não estiver no mapa é salto
-// inválido e é recusado no servidor, mesmo que o client envie.
 const TRANSICOES_MANUAIS: Partial<Record<EtapaLead, EtapaLead[]>> = {
   [EtapaLead.NOVO]: [EtapaLead.EM_ATENDIMENTO],
   [EtapaLead.EM_ATENDIMENTO]: [EtapaLead.NOVO, EtapaLead.QUALIFICADO],
   [EtapaLead.QUALIFICADO]: [EtapaLead.EM_ATENDIMENTO, EtapaLead.EXPERIMENTAL_AGENDADA],
-  // Reagendar a experimental volta a este passo; antes da experimental ainda
-  // dá para corrigir a qualificação.
   [EtapaLead.EXPERIMENTAL_AGENDADA]: [EtapaLead.QUALIFICADO],
-  // Etapas geradas por evento permitem RETOMAR o trabalho manual do vendedor
-  // (ex.: pós no-show/experimental, reagendar; pós proposta, voltar a qualificar),
-  // mas nunca avançar para uma etapa de evento manualmente.
   [EtapaLead.EXPERIMENTAL_REALIZADA]: [EtapaLead.QUALIFICADO, EtapaLead.EXPERIMENTAL_AGENDADA],
   [EtapaLead.NO_SHOW]: [EtapaLead.QUALIFICADO, EtapaLead.EXPERIMENTAL_AGENDADA],
   [EtapaLead.PROPOSTA]: [EtapaLead.QUALIFICADO, EtapaLead.EXPERIMENTAL_AGENDADA],
   [EtapaLead.AGUARDANDO_MATRICULA]: [EtapaLead.PROPOSTA],
 };
 
-/**
- * Uma transição MANUAL de `origem` → `destino` é permitida?
- *
- * Regras (puras, sem I/O — fonte única e testável):
- *  - destino precisa ser uma etapa manual (`ETAPAS_MANUAIS`);
- *  - `origem === destino` é no-op (permitido; o chamador trata como nada a fazer);
- *  - caso contrário, o par precisa existir na máquina de estados.
- *
- * Saltos para etapas de evento (Proposta, Aguardando Matrícula, etc.) ou para as
- * saídas paralelas (Perdido/Matriculado) são SEMPRE recusados aqui.
- */
 export function transicaoManualPermitida(origem: EtapaLead, destino: EtapaLead): boolean {
   if (origem === destino) return true;
   if (!ehEtapaManual(destino)) return false;
   return TRANSICOES_MANUAIS[origem]?.includes(destino) ?? false;
 }
 
-/**
- * Destinos MANUAIS válidos a partir de `origem` (exclui a própria etapa). Fonte única
- * para todo lugar que oferece uma mudança de etapa (hoje, o cockpit da inbox).
- */
 export function destinosManuaisPermitidos(origem: EtapaLead): EtapaLead[] {
   return ETAPAS_MANUAIS.filter((destino) => destino !== origem && transicaoManualPermitida(origem, destino));
 }
 
-/**
- * Vagas disponíveis numa turma (issue #1): capacidade menos alocações ATIVAS.
- * `alocacoesAtivas` DEVE vir de uma contagem filtrada por `ativa = true` — alocações
- * inativas (histórico/troca de turma) não ocupam vaga. Nunca negativo.
- */
 export function vagasDisponiveis(capacidade: number, alocacoesAtivas: number): number {
   return Math.max(0, capacidade - alocacoesAtivas);
 }
 
-/** Há vaga na turma? (atalho sobre vagasDisponiveis.) */
 export function temVaga(capacidade: number, alocacoesAtivas: number): boolean {
   return vagasDisponiveis(capacidade, alocacoesAtivas) > 0;
 }
 
-/**
- * Diff antes→depois de campos para payload de Evento (auditoria enxuta): inclui só o que mudou.
- * Mesmo princípio usado em editarAluno. Devolve mapas `antes`/`depois` só com as chaves alteradas.
- */
 export function diffCampos<T extends Record<string, unknown>>(
   atual: T,
   novo: T,
@@ -426,11 +258,6 @@ export function diffCampos<T extends Record<string, unknown>>(
   return { antes, depois };
 }
 
-/**
- * Aplica uma baixa (parcial ou total) a uma cobrança ACUMULANDO o recebido (issue #1).
- * Nunca sobrescreve: soma a baixa atual ao total já recebido — assim uma 2ª baixa não
- * reduz o total. Devolve o acumulado, o saldo (nunca negativo) e se quitou.
- */
 export function aplicarBaixa(
   valorNegociado: number,
   recebidoAnterior: number | null,

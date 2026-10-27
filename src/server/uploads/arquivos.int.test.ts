@@ -98,7 +98,7 @@ describe("arquivos privados persistidos — identidade, objeto, finalidade e con
     const url = await upload({ matriculaId: c.matricula.id, categoriaDocumento: CategoriaDocumento.CONTRATO });
     const registro = await prisma.registroUpload.findUnique({ where: { url } });
     expect(registro).toMatchObject({ autorId: c.secretaria.id, matriculaId: c.matricula.id, alunoId: c.aluno.id, leadId: null, categoriaDocumento: CategoriaDocumento.CONTRATO });
-    expect((await download(url)).status).toBe(403); // Ainda não existe Documento vinculado.
+    expect((await download(url)).status).toBe(403);
     await anexarNaMatricula(url, c.matricula.id, CategoriaDocumento.CONTRATO);
     const usuario = await exigirSessao();
     await expect(prisma.$transaction((tx) => exigirArquivoVinculavel(usuario, url, { matriculaId: c.matricula.id, categoriaDocumento: CategoriaDocumento.TESTE_NIVEL }, tx))).rejects.toThrow("outro objeto ou finalidade");

@@ -2,10 +2,8 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { describe, expect, it } from "vitest";
 
-// Task 26 (Fase 4): o serviço do motor substitui a Evolution nos dois composes, no backup e nas envs.
 const ler = (arq: string) => readFileSync(resolve(process.cwd(), arq), "utf8").replace(/\r\n/g, "\n");
 
-// Corpo do serviço `nome`: da linha "  nome:" até o próximo serviço (ou bloco raiz).
 function secao(texto: string, nome: string): string {
   const m = texto.match(new RegExp(`^  ${nome}:\\n((?:(?:[ \\t]+.*)?\\n)*?)(?=^  [^\\s#]|^[^\\s#]|(?![\\s\\S]))`, "m"));
   if (!m) throw new Error(`serviço ${nome} não encontrado`);
@@ -109,7 +107,6 @@ describe("scripts/backup-producao.sh", () => {
     expect(t).toContain("motor-data.tar.gz");
     expect(t).not.toContain("evolution.dump");
   });
-  // C1 da R1 do #221: PGlite em arquivo não pode ser copiado com o motor gravando.
   it("para o motor só durante o tar e religa também em erro (trap)", () => {
     const iParar = t.indexOf("$COMPOSE stop motor");
     const iTar = t.indexOf('tar -czf - -C / data > "$PASTA/motor-data.tar.gz"');

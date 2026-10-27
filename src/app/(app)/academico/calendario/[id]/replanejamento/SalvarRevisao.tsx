@@ -9,7 +9,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 
 export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajustes, desatualizado = false }: {
   calendarioId: string; estadoHash: string; versaoAnterior: number; ajustes?: AjusteReplanejamento[];
-  /** Há ajustes ainda não conferidos (ou a conferência está em curso): guardar fica bloqueado até conferir. */
   desatualizado?: boolean;
 }) {
   const router = useRouter();

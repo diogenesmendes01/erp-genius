@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L629): trocar a classificação de maioridade não apaga o que foi digitado na
-// conferência dos participantes. Sem DOM: ganchos de src/test/tela-sem-dom.ts; o mesmo jogo de ganchos entre
-// renders é o mesmo componente montado (a página não tem mais key), recebendo os `dados` novos da URL nova.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   conferir: vi.fn(), refresh: vi.fn(), replace: vi.fn(),
@@ -48,13 +45,11 @@ describe("FormularioParticipantes — a maioridade troca sem apagar o preenchime
     digitar(tela(menor), "REPRESENTANTE_LEGAL_representacao", "Mãe, guarda conferida.");
     digitar(tela(menor), "motivo", "Conferência inicial dos signatários.");
 
-    // Maioridade "maior": o critério e o representante legal saem da tela (papéis exigidos mudam)…
     const maior = tela(dados(null, []));
     expect(porNome(maior, "criterio")).toBeUndefined();
     expect(porNome(maior, "REPRESENTANTE_LEGAL_nome")).toBeUndefined();
     expect(porNome(maior, "motivo")!.props.value).toBe("Conferência inicial dos signatários.");
 
-    // …e voltar para "menor" devolve tudo o que foi digitado.
     const devolta = tela(menor);
     expect(porNome(devolta, "criterio")!.props.value).toBe("Certidão de nascimento conferida.");
     expect(porNome(devolta, "evidenciaMaioridade")!.props.value).toBe("doc-1");
@@ -101,7 +96,6 @@ describe("SeletorMaioridade — troca client-side, sem <form method=get>", () =>
 
   it("atualiza a URL pelo roteador, sem rolar a tela, e só quando a escolha mudou", () => {
     expect(elementos(seletor("MENOR")).some((n) => n.type === "form")).toBe(false);
-    // O campo continua sendo "maioridade" (o mesmo nome do parâmetro da URL; historicos-fuso.test.ts confere no HTML).
     expect(elementos(seletor("MENOR")).find((n) => n.type === "select")!.props.name).toBe("maioridade");
     expect(botao(seletor("MENOR")).props.disabled).toBe(true);
     escolher("MAIOR");

@@ -18,8 +18,6 @@ import { origemHistoricaIntegra } from "./fonte-contratual-tx";
 
 type EntradaFonte = { matriculaId: string; conclusaoOriginalId?: string; conclusaoHashEsperado?: string; origemHistoricaId?: string; origemHashEsperado?: string };
 
-/** Fonte da base: conclusão assinada (com integridade e evidências revalidadas) ou origem contratual
- * histórica aprovada (PDF + transcrição conferidos). Exatamente uma por matrícula. */
 async function carregarFonteBaseTx(tx: Prisma.TransactionClient, d: EntradaFonte) {
   if (d.origemHistoricaId) {
     const o = await tx.propostaOrigemContratualHistorica.findFirst({ where: { id: d.origemHistoricaId, matriculaId: d.matriculaId }, include: { decisao: true } });
@@ -51,8 +49,6 @@ async function carregarFonteBaseTx(tx: Prisma.TransactionClient, d: EntradaFonte
     base: { tipo: "ORIGINAL", conclusaoOriginalId: c.id, conclusaoHash: c.entradaHash, artefatoOriginalId: a.id, originalHash: a.pdfHash, pdfAssinadoHash: c.pdfHash, ambiente: p.ambiente, referenciaExterna: p.referenciaExterna } };
 }
 
-/** Base própria de aditivo: consulta o documento preservado, não regenera o
- * contrato assinado com o cadastro atual. Chamador confere a sessão primeiro. */
 export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrada: unknown, antesDaVersao?: number) {
   const d = PrepararAditivoContratualSchema.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -78,8 +74,6 @@ export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrad
     if (!anterior) throw new ErroRegra(`A condição ${ROTULOS_ORIGEM[mudanca.origem]} não está estruturada no original preservado. Confira sua origem antes de propor a alteração.`);
     return { campo: mudanca.origem, rotulo: ROTULOS_ORIGEM[mudanca.origem], anterior, novo: mudanca.novo };
   });
-  // Valores novos são comparados às condições imutáveis do original assinado.
-  // Legados não são interpretados a partir do texto nem ganham dados presumidos.
   if (d.alteracoes.some(m => m.valorEstruturado && (m.valorEstruturado.tipo === "DINHEIRO" || m.origem === "MOEDA" || m.origem === "COBERTURA_INICIO" || m.origem === "COBERTURA_FIM"))) {
     const relacionadas = new Set(["MOEDA", "TAXA_VALOR", "MENSALIDADE_VALOR", "HORA_VALOR", "ADIANTAMENTO_VALOR", "COBERTURA_INICIO", "COBERTURA_FIM"]);
     if (d.alteracoes.some(m => relacionadas.has(m.origem) && !m.valorEstruturado)) throw new ErroRegra("Preencha os valores estruturados de todas as condições financeiras alteradas nesta proposta.");

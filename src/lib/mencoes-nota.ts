@@ -1,5 +1,4 @@
 import { normalizarParaOrdenacao } from "./nome-ordenacao";
-/** Texto público e coordenadas UTF16; IDs só via metadados opcionais, nunca HTML no texto. */
 export interface TokenMencao { usuarioId: string; inicio: number; fim: number }
 export interface PessoaMencao { id: string; nome: string }
 export interface CandidatoMencao extends PessoaMencao { descricao: string }
@@ -7,9 +6,7 @@ const alias = (v: string) => normalizarParaOrdenacao(v);
 const letra = (v: string) => /^[\p{L}\p{N}_]/u.test(v);
 const limiteUtf16 = (v: string, n: number) => !(n > 0 && n < v.length && /[\uD800-\uDBFF]/.test(v[n - 1]) && /[\uDC00-\uDFFF]/.test(v[n]));
 
-/** Metadados usam a NOTA NORMALIZADA, não a posição no texto bruto do textarea. */
 export function normalizarNotaComMencoes(texto: string, mencoes?: readonly TokenMencao[]): { nota: string; mencoes?: TokenMencao[] } {
-  // Sem o campo novo: preservar exatamente trim/hash/payload de #166, inclusive CRLF legado.
   if (mencoes === undefined) return { nota: texto.trim() };
   const nota = texto.replace(/\r\n?/g, "\n").trim();
   if (!Array.isArray(mencoes) || mencoes.length > 50) throw new Error("Menções inválidas.");
@@ -23,7 +20,6 @@ export function normalizarNotaComMencoes(texto: string, mencoes?: readonly Token
   return { nota, mencoes: tokens };
 }
 
-/** Entrada da UI é bruta; o comando é uma cópia canônica nas coordenadas já normalizadas. */
 export function comandoDaNota(texto: string, tokens: readonly TokenMencao[]): { nota: string; mencoes?: TokenMencao[] } {
   if (!tokens.length) return normalizarNotaComMencoes(texto);
   const semCr = texto.replace(/\r\n?/g, "\n");
@@ -32,11 +28,6 @@ export function comandoDaNota(texto: string, tokens: readonly TokenMencao[]): { 
   return normalizarNotaComMencoes(texto, tokens.map(t => ({ usuarioId: t.usuarioId, inicio: posicao(t.inicio), fim: posicao(t.fim) })));
 }
 
-/** Grupos lexicais por ocorrencia, do alias mais longo ao mais curto.
- * Conserva TODOS os membros, sem decidir identidade ou permissao. O produtor
- * verifica ACL do grupo inteiro antes de decidir se precisa do proximo alias.
- * Recebe texto livre com os tokens por ID ja mascarados pelo produtor.
- */
 export function gruposLexicaisMencao<T extends PessoaMencao>(textoLivre: string, pessoas: readonly T[]): T[][][] {
   const mapa = new Map<string, T[]>();
   for (const p of pessoas) for (const nome of new Set([alias(p.nome), alias(p.nome.split(/\s+/)[0])])) {
@@ -52,20 +43,17 @@ export function gruposLexicaisMencao<T extends PessoaMencao>(textoLivre: string,
   });
 }
 
-/** Autor/ACL são filtrados pelo servidor; aqui só identidades explicitamente fornecidas. */
 export function extrairMencoes(texto: string, pessoas: readonly PessoaMencao[], tokens: readonly TokenMencao[] = [], textoLivre = true): string[] {
   const validos = normalizarNotaComMencoes(texto, tokens).mencoes!;
   const ids = new Set<string>();
   for (const t of validos) {
     const p = pessoas.find(p => p.id === t.usuarioId);
-    // Destinatário revogado/inativo é removido pelo produtor, sem transformar a nota em erro.
     if (!p) continue;
     const nome = alias(texto.slice(t.inicio + 1, t.fim));
     if (nome !== alias(p.nome)) throw new Error("A menção não corresponde à pessoa selecionada.");
     ids.add(p.id);
   }
   if (!textoLivre) return [...ids];
-  // Retirar trechos selecionados evita casar o primeiro nome de um homônimo no mesmo token.
   let livre = texto;
   for (const t of [...validos].reverse()) livre = livre.slice(0, t.inicio) + " ".repeat(t.fim - t.inicio) + livre.slice(t.fim);
   const mapa = new Map<string, Set<string>>();
@@ -83,7 +71,6 @@ export function extrairMencoes(texto: string, pessoas: readonly PessoaMencao[], 
   return [...ids];
 }
 
-/** Uma edição antes/dentro invalida; não remapear identidade de homônimo por suposição. */
 export function tokensAposEdicao(antes: string, depois: string, tokens: readonly TokenMencao[]): TokenMencao[] {
   if (antes === depois) return tokens.map(t => ({ ...t }));
   let inicio = 0;

@@ -14,7 +14,6 @@ const retomada = z.object({ retorno: DataCivilSchema, fusoInstitucional: z.strin
   })),
 })) });
 
-/** Lista explícita de campos operacionais; descarta campos extras em qualquer nível. */
 export function projetarDetalhesMovimentacao(tipo: "PAUSA" | "RETOMADA", snapshot: unknown) {
   if (tipo === "PAUSA") {
     const r = pausa.safeParse(snapshot);

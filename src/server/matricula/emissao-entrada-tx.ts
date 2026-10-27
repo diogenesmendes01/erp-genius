@@ -10,8 +10,6 @@ import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { carregarAgendaParticularContratual } from "@/server/contratos/agenda-particular";
 
-/** Primitiva interna, não Server Action. Chamador deve conferir cadastro/documentos e
- * autorização da etapa na mesma transação; este executor não os aprova implicitamente. */
 export async function emitirEntradaTx(tx: Prisma.TransactionClient, input: { matriculaId: string; condicoesId: string; executorId: string; etapa: "CONFERENCIA_SECRETARIA" | "ATIVACAO" }) {
   const d = z.object({ matriculaId: z.string().min(1), condicoesId: z.string().min(1), executorId: z.string().min(1), etapa: z.enum(["CONFERENCIA_SECRETARIA", "ATIVACAO"]) }).strict().parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

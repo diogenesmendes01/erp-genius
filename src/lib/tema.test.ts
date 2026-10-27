@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CHAVE_TEMA, acompanharTema, alternarTema, temaEscuroAplicado, temaEscuroNoServidor } from "./tema";
 
-// C21 da #170: uma fonte só para o tema (a classe `dark` do <html>), com aviso a todos os controles.
-// Sem DOM na suíte: document e localStorage falsos, só com o que o módulo usa.
 function ambiente(escuroInicial: boolean) {
   const classes = new Set(escuroInicial ? ["dark"] : []);
   const gravado = new Map<string, string>();

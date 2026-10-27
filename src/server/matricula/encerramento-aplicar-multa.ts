@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import type { carregarAcertoAprovadoParaEfetivacaoTx } from "./encerramento-efetivacao-estado";
 
-/** Etapa interna da efetivação; não emite multa isolada nem confirma recebimento. */
 export async function aplicarMultasAcertoTx(tx: Prisma.TransactionClient, acerto: Awaited<ReturnType<typeof carregarAcertoAprovadoParaEfetivacaoTx>>) {
   const ids: string[] = [];
   for (const contrato of acerto.previa.contratos) {

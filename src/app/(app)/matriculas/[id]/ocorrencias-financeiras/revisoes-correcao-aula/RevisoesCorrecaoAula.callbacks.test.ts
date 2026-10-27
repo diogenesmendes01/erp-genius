@@ -60,7 +60,7 @@ it("apresenta a fonte consumida, o preço preservado e as condições para a dec
     }],
   } as never }));
   expect(html).toContain("Reserva consumida reserva");
-  expect(html).toContain("valor preservado ₡ 1,67"); // fração existente não é arredondada (CRC)
+  expect(html).toContain("valor preservado ₡ 1,67");
   expect(html).toContain("Condições contratuais v1");
   expect(html).toContain("Aprovar sem alteração de valores");
 });
@@ -82,7 +82,6 @@ it("não oferece aprovação quando a fotografia histórica é incompatível, ma
   expect(html).not.toContain("Aprovar sem alteração de valores");
 });
 
-// ── Q175: declaração de aula não cobrável ─────────────────────────────────────────────────────
 class DadosFormularioNaoCobravel { get(nome: string) { return nome === "motivo" ? "Aula não ocorreu por motivo da escola." : nome === "tipo" ? "AULA_NAO_COBRAVEL" : null; } }
 
 it("Q175: envia o tipo escolhido só quando o Financeiro declara a aula não cobrável", async () => {

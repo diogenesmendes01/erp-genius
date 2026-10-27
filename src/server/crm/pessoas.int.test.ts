@@ -139,7 +139,6 @@ describe("garantirPessoaTx e criarLead", () => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chaveLockPessoaTelefone(telefone)}, 0))`;
         travado();
         await segurando;
-        // Grava a pessoa e o contato enquanto segura o lock: quem esperava tem de enxergá-los.
         const p = await tx.pessoa.create({ data: { nome: "Primeira" } });
         await tx.contatoWhatsApp.create({ data: { telefoneE164: telefone, pessoaId: p.id } });
         return p.id;

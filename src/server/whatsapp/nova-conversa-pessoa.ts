@@ -2,7 +2,6 @@ import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { registrarEvento } from "@/server/_shared/evento";
 
-/** Uso interno: witness de Contato inserido pela MESMA tx; nunca recebe identidade de um endpoint. */
 export async function criarPessoaDoContatoNovoTx(
  tx: Prisma.TransactionClient,
  contatoCriadoNaTx: { id: string; telefoneE164: string },

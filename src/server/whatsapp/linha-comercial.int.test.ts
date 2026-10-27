@@ -19,10 +19,6 @@ import { abrirAtendimentoInstitucional, listarOpcoesAtendimento, listarTriagemWh
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, CHAVE_LINHA } from "./linha-comercial";
 
-// SPEC-ERP-005 — linha comercial do WhatsApp (critérios LC-01…LC-15). Número de VENDAS é o espelho
-// do WhatsApp do vendedor: toda conversa aparece para o dono, com ou sem lead; o canal institucional
-// não muda. Sem WHATSAPP_LIVE: envios viram SIMULADA (nenhuma mensagem real sai).
-
 type Usuario = Awaited<ReturnType<typeof criarUsuario>>;
 let vendedorA: Usuario, vendedorB: Usuario, gerenteA: Usuario, gerenteB: Usuario, financeiro: Usuario, admin: Usuario;
 
@@ -76,7 +72,6 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(await carregarPainel(sessao(vendedorA), lista[0].id)).toMatchObject({ oportunidade: null, acoes: { podeCriarLead: true, leadId: null }, podeEnviar: true });
 
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: lista[0].id } });
-    // Dono da linha como responsável conta como assumido (mesma regra do backfill da M2).
     expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", contextoChave: CHAVE_LINHA, leadId: null, responsavelId: vendedorA.id, status: "EM_ATENDIMENTO" });
     expect(await prisma.oportunidade.count()).toBe(0);
     entrar(admin);
@@ -127,7 +122,6 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     expect(await listaDoInbox(sessao(gerenteA))).toHaveLength(1);
-    // E5, Task 13: GERENTE_COMERCIAL vê todo COMERCIAL (antes: só a carteira da equipe).
     expect(await listaDoInbox(sessao(gerenteB))).toHaveLength(1);
     expect(await contarConversasNaoLidas(sessao(gerenteA))).toBe(1);
   });
@@ -143,7 +137,7 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
 
   it("LC-D02: cobertura de carteira não dá a linha do titular; o substituto vê só os leads cobertos", async () => {
     await linhaDe(vendedorA);
-    await mensagem("linha-a"); // conversa sem lead
+    await mensagem("linha-a");
     const lead = await prisma.oportunidade.create({ data: { nome: "Lead coberto", telefoneE164: "+50670009999", vendedorDonoId: vendedorA.id } });
     await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
     await mensagem("linha-a", { contatoWaId: "50670009999", nomeExibicao: "Lead coberto" });
@@ -172,7 +166,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     const atendimentos = await prisma.atendimentoWhatsApp.findMany();
     expect(atendimentos).toHaveLength(1);
     expect((await mensagensDoInbox(sessao(vendedorA), atendimentos[0].id))?.map((m) => m.direcao)).toEqual(["ENTRADA", "SAIDA"]);
-    expect(atendimentos[0].naoLidas).toBe(1); // a saída não conta como não lida
+    expect(atendimentos[0].naoLidas).toBe(1);
   });
 
   it("LC-06: 'Criar lead' grava o lead no mesmo atendimento, com autoria; segundo clique devolve o mesmo lead (#166)", async () => {
@@ -196,7 +190,6 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     expect(criado?.autorId).toBe(vendedorA.id);
     expect(criado?.payload).toMatchObject({ origem: "whatsapp_linha" });
 
-    // Idempotente por natureza (#166, lote 4): o segundo clique devolve a mesma oportunidade, sem outro vínculo.
     const vinculos = await prisma.evento.count({ where: { tipo: "ContatoVinculado" } });
     expect(await criarLeadDaConversa(conversa.id)).toEqual(r);
     expect(await prisma.oportunidade.count()).toBe(1);
@@ -260,9 +253,8 @@ describe("LC-07/LC-08: ver a conversa não abre outros dados", () => {
     expect(await mensagensDoInbox(sessao(vendedorA), conversa.id)).toHaveLength(1);
     const doDono = await carregarPainel(sessao(vendedorA), conversa.id);
     expect(doDono).toMatchObject({ oportunidade: null, acoes: { leadId: null } });
-    expect(doDono?.acoes?.podeCriarLead).toBe(false); // a conversa já tem lead (de outra carteira)
+    expect(doDono?.acoes?.podeCriarLead).toBe(false);
 
-    // O titular da carteira continua com o painel completo (regra anterior preservada).
     const doTitular = await carregarPainel(sessao(vendedorC), conversa.id);
     expect(doTitular).toMatchObject({ oportunidade: { id: lead.id }, acoes: { leadId: lead.id } });
   });
@@ -300,8 +292,6 @@ describe("LC-12: canal institucional inalterado", () => {
     await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: linha.id, contatoId: contato.id, finalidade: "SECRETARIA" }));
     await mensagem("linha-a");
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow();
-    // E4 (f2af0cdb), Task 13: SECRETARIA sem aluno é destinatário válido do atendimento roteado
-    // (antes: triagem). Cai no atendimento institucional já aberto, nunca no COMERCIAL da linha.
     expect(m.atendimentoId).not.toBeNull();
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: m.atendimentoId! } })).finalidade).toBe("SECRETARIA");
     expect(await prisma.atendimentoWhatsApp.count({ where: { finalidade: "COMERCIAL" } })).toBe(0);

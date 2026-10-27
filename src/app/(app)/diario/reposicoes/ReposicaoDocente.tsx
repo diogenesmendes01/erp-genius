@@ -43,7 +43,6 @@ export function ReposicaoDocente({ reposicaoId, versaoAnterior, modalidade, orig
           const r = await solicitarCorrecaoEntregaReposicao({ reposicaoId, entregaId: entrega.id, comentario: String(dados.get("comentarioCorrecao") ?? "") });
           if (!r.ok) { setErro(r.erro); return; } router.refresh(); return;
         }
-        // A validação é lida no fuso escrito ao lado do campo e convertida no servidor (antes: fuso do dispositivo).
         const validadaLocal = String(dados.get("validadaEm") ?? "").trim();
         if (!validadaLocal) { setErro("Informe uma data e horário de validação válidos."); return; }
         const r = await concluirReposicaoGravadaLocal({ reposicaoId, versaoAnterior, entregaId: entrega.id, validadaLocal, fuso: fusoExibicao, evidencia: String(dados.get("evidencia") ?? "") });

@@ -13,7 +13,6 @@ export async function exigirCondicoesMensaisAceitas(tx: Prisma.TransactionClient
 }) {
   const evento = await tx.evento.findFirst({ where: { agregadoTipo: "Matricula", agregadoId: m.id, tipo: "ContratoConfirmado" }, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { payload: true } });
   const payload = evento?.payload as Record<string, unknown> | null | undefined;
-  // Eventos antigos não continham a cópia das condições; não fabricar uma retroativamente.
   if (!payload || !("condicoesMensais" in payload)) return;
   const aceitas = Condicoes.safeParse(payload.condicoesMensais);
   const atuais = {

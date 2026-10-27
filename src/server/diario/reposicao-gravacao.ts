@@ -10,9 +10,6 @@ const texto = z.string().trim().min(5).max(4_000);
 const instanteUtc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
 const pedidoCorrecao = z.object({ reposicaoId: z.string().min(1), entregaId: z.string().min(1), comentario: texto }).strict();
 
-/** Q13/Q35/Q52: o docente designado pede correção sem concluir a reposição,
- * preservando a entrega original. O prazo é próprio da resposta e não muda a
- * data de disponibilidade do material. */
 export async function solicitarCorrecaoEntregaReposicao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.PROFESSOR);

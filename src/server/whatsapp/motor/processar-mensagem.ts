@@ -9,7 +9,6 @@ import { DadosMensagemSchema, type DadosMensagem, type EnvelopeMotor } from "./e
 import { processarMensagemGrupo } from "./processar-grupo";
 import { PROCESSADORES, type ResultadoProcessamento } from "./receber";
 
-/** Tipos do motor (`tipoMotor`) que não cabem no `tipo` genérico do evento. */
 export const TIPO_POR_TIPO_MOTOR: Record<string, TipoMensagem> = {
   sticker: "FIGURINHA",
   location: "LOCALIZACAO",
@@ -32,7 +31,6 @@ export function inboundDeEventoMotor(
   if (dados.ehGrupo) return { descarte: "grupo" };
   const digitos = (dados.contato?.telefoneE164 ?? "").replace(/\D/g, "");
   if (!digitos) {
-    // Sem conteúdo no log: só número e motivo.
     console.warn("motor: mensagem descartada", { numeroRef: env.numeroId, motivo: "lid_sem_telefone" });
     return { descarte: "lid_sem_telefone" };
   }
@@ -62,10 +60,6 @@ export async function processarMensagemRecebida(env: EnvelopeMotor): Promise<Res
   return gravarMensagemMotor(env, parsed.data, false);
 }
 
-/**
- * Eco de mensagem `fromMe`. `origem: "erp"` é o envio do próprio ERP (reconcilia, não grava de novo);
- * qualquer outra coisa veio do celular e entra como SAIDA/CELULAR.
- */
 export async function processarMensagemEnviada(env: EnvelopeMotor): Promise<ResultadoProcessamento> {
   const parsed = DadosMensagemSchema.safeParse(env.dados);
   if (!parsed.success) return { ignorado: "dados_invalidos" };
@@ -73,11 +67,6 @@ export async function processarMensagemEnviada(env: EnvelopeMotor): Promise<Resu
   return gravarMensagemMotor(env, parsed.data, true);
 }
 
-/**
- * Eco com `origem: "erp"`: o envio já nasceu no ERP (mensagem gravada pelo despachante ou intenção
- * em voo). Nunca cria mensagem; só completa `mensagemIdMotor` ou registra a confirmação de um envio
- * que o ERP deu por incerto. A decisão sobre a intenção continua humana.
- */
 export async function reconciliarEcoErp(numeroId: string, dados: DadosMensagem): Promise<ResultadoProcessamento> {
   const numero = await acharNumero({ numeroProviderRef: numeroId, driver: "MOTOR" });
   if (!numero) return { ignorado: "numero_desconhecido" };
@@ -134,7 +123,6 @@ async function gravarMensagemMotor(env: EnvelopeMotor, dados: DadosMensagem, fro
   });
   if (existente) return { ignorado: "duplicada" };
   if (fromMe && dados.clientMessageId) {
-    // Eco rotulado "celular" de um envio que o ERP já conhece: não duplica.
     const doErp = await prisma.mensagemWhatsApp.findFirst({ where: { numeroId: numero.id, clientMessageId: dados.clientMessageId }, select: { id: true } });
     if (doErp) return { ignorado: "duplicada" };
   }

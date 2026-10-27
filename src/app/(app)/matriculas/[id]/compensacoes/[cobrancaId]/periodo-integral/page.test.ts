@@ -25,7 +25,6 @@ it("encaminha a preferência e o fuso da escola após a guarda", async () => {
   expect(renderToStaticMarkup(await Page(entrada))).toContain('data-fuso="nenhum" data-escola="America/Sao_Paulo"');
 });
 
-// Lote 3 do fuso pessoal: sem preferência, o instante sai no fuso da escola (antes, UTC). Fixo em TZ=UTC e SP.
 it("instante de registro/decisão/aplicação: pessoal; sem preferência, a escola; escola inválida, UTC — sempre escrito", async () => {
   const { instanteDoPeriodoIntegral } = await import("./PeriodoIntegral");
   expect(instanteDoPeriodoIntegral("2026-10-21T02:30:00.000Z", null, "America/Sao_Paulo")).toBe("20/10/2026, 23:30 (horário exibido em America/Sao_Paulo)");

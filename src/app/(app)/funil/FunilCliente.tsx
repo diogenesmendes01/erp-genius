@@ -35,9 +35,7 @@ type Props = {
   vendedores: { id: string; nome: string }[];
   paises: { id: string; nome: string }[];
   fuso?: string;
-  /** Fuso pessoal de exibição dos instantes do painel (criação, histórico, experimental); sem ele, o da escola. */
   preferenciaFusoExibicao?: string | null;
-  /** Estado vazio já resolvido no servidor (carteira vazia × filtro sem resultado); null = há oportunidades. */
   vazio: ReactNode;
   preenchidoNova?: { pessoaId: string; nome: string } | null;
 };

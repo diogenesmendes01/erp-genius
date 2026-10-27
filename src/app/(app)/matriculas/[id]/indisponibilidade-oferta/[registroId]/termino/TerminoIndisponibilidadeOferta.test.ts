@@ -40,7 +40,6 @@ describe("TerminoIndisponibilidadeOferta", () => {
     expect(seguinte).toMatch(/<a[^>]*href="\?pagina=1"[^>]*>Ir para a primeira página<\/a>/);
   });
 
-  // docs/43 §6 item 6 (docs/42 L939): sem fuso da escola, o instante era o ISO cru com "(fuso institucional não configurado)".
   it("sem fuso da escola: aviso explícito com o caminho para configurar, e o instante em UTC formatado — não o ISO", () => {
     const proposta = { id: "p", fim: "2026-09-20", motivo: "Motivo", evidenciaTexto: "Evidência", criadaEm: "2026-09-12T13:41:07.482Z", decisao: null, podeDecidir: false };
     const render = (fusoInstitucional: string | null) => renderToStaticMarkup(createElement(TerminoIndisponibilidadeOferta, {
@@ -56,7 +55,6 @@ describe("TerminoIndisponibilidadeOferta", () => {
     expect(com).toContain("Proposta registrada em 12/09/2026, 10:41.");
   });
 
-  // Lote 2 do fuso pessoal: registro da proposta no fuso pessoal, com o fuso dito; vale também sem fuso da escola.
   it("registro da proposta no fuso pessoal, com ou sem fuso da escola", () => {
     const proposta = { id: "p", fim: "2026-09-20", motivo: "Motivo", evidenciaTexto: "Evidência", criadaEm: "2026-09-12T13:41:07.482Z", decisao: null, podeDecidir: false };
     const render = (fusoInstitucional: string | null) => renderToStaticMarkup(createElement(TerminoIndisponibilidadeOferta, {

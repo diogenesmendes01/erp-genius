@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-// Filtro em pílula. Selecionado = accent-soft (fundo suave da marca + texto forte); o estado vai em aria-pressed.
 const BASE = "inline-flex items-center gap-1.5 rounded-full border border-border-soft px-3 text-sm max-sm:min-h-11 min-h-8 transition-colors";
 const SELECIONADO = "bg-brand-bg text-brand-800 border-transparent";
 const NORMAL = "text-gray-600 hover:bg-highlight";

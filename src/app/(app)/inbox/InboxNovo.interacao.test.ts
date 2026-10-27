@@ -3,9 +3,6 @@ import { DriverWhatsApp } from "@prisma/client";
 import type { ReactElement, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Interação do InboxNovo sem DOM (src/test/tela-sem-dom.ts): o componente é chamado como função, com useState/useRef/
-// useCallback dos ganchos de teste e um useEffect mínimo que roda o efeito quando as dependências mudam (o painel
-// do atendimento é buscado num efeito). O aviso do SSE é capturado do useEventosInbox simulado.
 const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
@@ -30,7 +27,6 @@ vi.mock("react", async (original) => {
     useState: ((i: unknown) => {
       if (!m.g) return real.useState(i as never);
       const estado = m.g.useState(i);
-      // Observa o estado produtor por sua forma pública, sem índice de hook ou atributo de teste na UI.
       if (i && typeof i === "object" && "todas" in i) m.contagens = estado[0];
       return estado;
     }) as unknown as typeof real.useState,
@@ -134,7 +130,7 @@ describe("InboxNovo: identidades React dos painéis", () => {
     const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
     tela(); await esvaziar();
     const anteriores = paineis(tela());
-    expect(anteriores).toHaveLength(1); // AcoesContato permanece uma única montagem.
+    expect(anteriores).toHaveLength(1);
     expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
     expect(anteriores[0].key).not.toBeNull();
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", conversaId: "cv1", mensagemId: null });
@@ -193,7 +189,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-antigo", conversaId: "cv1" });
     await vi.advanceTimersByTimeAsync(50);
-    expect(concluirAntigo).toBeTypeOf("function"); // GET começou antes da entrada oculta
+    expect(concluirAntigo).toBeTypeOf("function");
     respostaLista = async () => new Response("", { status: 503 });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-apos-get", conversaId: "cv1" });
     concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
@@ -207,7 +203,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     respostaLista = () => new Promise((ok) => { concluirAntigo = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pre-entrada", conversaId: "cv1" });
     await vi.advanceTimersByTimeAsync(50);
-    expect(concluirAntigo).toBeTypeOf("function"); // corpo antigo aberto antes do SSE
+    expect(concluirAntigo).toBeTypeOf("function");
     respostaLista = async () => new Response("", { status: 503 });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-oculta-falha", conversaId: "cv1" });
     concluirAntigo(pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]));
@@ -246,7 +242,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     respostaLista = () => new Promise((ok) => { concluirFresco = ok; });
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "status-pos-pedido", conversaId: "cv1" });
     await vi.advanceTimersByTimeAsync(50);
-    expect(concluirFresco).toBeTypeOf("function"); // consulta na mesma versão, ação ainda pendente
+    expect(concluirFresco).toBeTypeOf("function");
     respostaLista = async () => new Response("", { status: 503 });
     concluirLeitura({ ok: false }); await esvaziar();
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
@@ -417,7 +413,7 @@ describe("InboxNovo: leitura ao abrir", () => {
   it("ao abrir outra conversa, zera imediatamente o contador da lista", () => {
     const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
     lista(tela()).aoSelecionar("a2");
-    tela(); // o efeito da nova seleção publica o estado no render seguinte
+    tela();
     expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
     expect(marcar).toHaveBeenLastCalledWith("a2");
   });
@@ -449,7 +445,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirLista!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirLista = ok; });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
-    await esvaziar(); // GET começa enquanto a leitura segue pendente
+    await esvaziar();
     concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
     await esvaziar();
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
@@ -461,7 +457,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirLista!: (r: Response) => void;
     respostaLista = () => new Promise((ok) => { concluirLista = ok; });
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
-    await esvaziar(); // snapshot iniciado antes da troca de seleção
+    await esvaziar();
     let concluirLeitura!: (r: { ok: boolean }) => void;
     marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
     lista(tela()).aoSelecionar("a2");
@@ -479,7 +475,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     let concluirLeitura!: (r: { ok: boolean }) => void;
     marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
-    await esvaziar(); // snapshot iniciado antes da conclusão da leitura
+    await esvaziar();
     concluirLeitura({ ok: true });
     await esvaziar();
     concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
@@ -506,7 +502,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(2);
   });
   it("GET da leitura anterior não desfaz a restauração após falha; GET fresco continua válido", async () => {
-    tela(); await esvaziar(); // leitura inicial v1 concluída
+    tela(); await esvaziar();
     let concluirAntigo!: (r: Response) => void;
     let consultas = 0;
     respostaLista = () => {
@@ -514,15 +510,15 @@ describe("InboxNovo: leitura ao abrir", () => {
       return consultas === 1 ? new Promise((ok) => { concluirAntigo = ok; }) : Promise.resolve(new Response("", { status: 503 }));
     };
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m0", conversaId: "cv1" });
-    await esvaziar(); // voo v1 permanece aberto
+    await esvaziar();
     marcar.mockResolvedValue({ ok: false });
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
-    await esvaziar(); // a leitura v2 falha; a consulta de reconciliação também falha
-    expect(consultas).toBe(1); // eventos/leitura compartilham uma pendência, sem GET concorrente
+    await esvaziar();
+    expect(consultas).toBe(1);
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
     concluirAntigo(pagina([item("a1"), item("a2")]));
     await esvaziar();
-    expect(consultas).toBe(2); // recuperação fresca após consumir o corpo antigo
+    expect(consultas).toBe(2);
     expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
     respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
     m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
@@ -816,7 +812,7 @@ describe("C1: fronteiras de leitura e contexto", () => {
       .mockImplementation(()=>new Promise(r=>{resolverFresco=r;}));
     const p={...props,contagens:inicial};render(p);m.aoAviso!(aviso);await esvaziar();
     ler({ok});await esvaziar();
-    const ack={...p,filtros:{...p.filtros}};render(ack); // ACK com identidade nova, mesmo contexto público
+    const ack={...p,filtros:{...p.filtros}};render(ack);
     expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("?contagens"))).toHaveLength(1);
     controle.enqueue(new TextEncoder().encode(JSON.stringify({itens:props.inicial.itens,proximo:null,contagens:{...inicial,naoLidas:60}})));controle.close();
     await esvaziar();render(ack);expect(m.contagens).toEqual(inicial);
@@ -1111,7 +1107,6 @@ it("331: editar encaminha identidade/versão do alvo, e editor de contato fecha 
  const aba=await abrirAba331();(aba.props.aoEditarTarefa as (t:{id:string;versao:number})=>void)({id:"t331",versao:4});const aberta=elementos(tela()).find(n=>n.type===ModalTarefa)!;expect(aberta.props.modo).toEqual({tipo:"editar",tarefa:{id:"t331",versao:4}});painel326(tela()).aoEditar!();expect(elementos(tela()).some(n=>n.type===ModalTarefa)).toBe(false);
 });
 
-// #350: uma fonte de painel, sem prop antiga enquanto a seleção nova carrega.
 it("sugestões da thread pertencem só ao painel atual, inclusive podeDecidir=false",async()=>{
  const a={podeDecidir:false,cartoes:[{id:"cartao-a"}]};respostaPainel=()=>new Response(JSON.stringify({podeEnviar:false,aria:a}));
  tela();await esvaziar();expect(cabecalho(tela()).aria).toEqual(a);

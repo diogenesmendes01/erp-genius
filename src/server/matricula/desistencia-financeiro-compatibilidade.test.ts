@@ -26,8 +26,6 @@ describe("compatibilidade da fotografia financeira Q121", () => {
       emissaoFechamentoHoras: vazio, emissaoCobrancasEntrada: vazio,
       decisaoUsoCredito: vazio, diaCompensacaoCobertura: vazio,
     } as unknown as Prisma.TransactionClient;
-    // Formato persistido antes da reconferência249. Acrescentar um null
-    // invalidaria decisões antigas apesar de nenhum fato financeiro mudar.
     const anterior = { matriculaId: "matricula", cobrancas: [], creditos: [{
       id: "credito", origemLiberacaoId: null, origemAcertoId,
       origemPeriodoIntegralId: null, origemDestinacaoRecebimentoId: null,

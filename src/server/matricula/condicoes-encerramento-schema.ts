@@ -38,7 +38,5 @@ export const RegrasEncerramentoSchema = z.object({
     z.object({ tipo: z.literal("VALOR_FIXO"), ...clausula, valor }).strict(),
     z.object({ tipo: z.literal("PERCENTUAL"), ...clausula, percentual: valor, descricaoBase: z.string().trim().min(1) }).strict(),
   ]),
-  // Ausente nas versões históricas: Q165 deve tratá-las como pendência, nunca
-  // inferir uma retenção, devolução ou proporcionalidade.
   acertoDesistenciaPreparacao: RegraAcertoDesistenciaPreparacaoSchema.optional(),
 }).strict();

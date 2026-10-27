@@ -19,7 +19,6 @@ describe("AutorizacoesComunicacaoPage", () => {
     const html = await render({ pagina: "3" });
     expect(vi.mocked(consultarTelaAutorizacoesComunicacaoAcademica)).toHaveBeenLastCalledWith({ matriculaId: "m/a", pagina: 3 });
     expect(html).toContain("Evidência registrada"); expect(html).toContain("31/12/2025, 18:00 (horário exibido em America/Costa_Rica; origem UTC)");
-    // No meio: as duas direções, com o id da matrícula codificado.
     expect(html).toContain('href="/matriculas/m%2Fa/autorizacoes-comunicacao?pagina=2">← Anterior');
     expect(html).toContain('href="/matriculas/m%2Fa/autorizacoes-comunicacao?pagina=4">Próxima');
   });
@@ -33,8 +32,6 @@ describe("AutorizacoesComunicacaoPage", () => {
   });
 });
 
-// Integração da #151 (B4): a consulta e a preparação dos dados ficam no try (o JSX foi montado fora dele por
-// react-hooks/error-boundaries); falha na consulta continua virando o alerta da tela, não o error.tsx.
 describe("AutorizacoesComunicacaoPage — falha na consulta", () => {
   const ALERTA = `<p role="alert">Não foi possível consultar as autorizações desta matrícula.</p>`;
   const render = async () => renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m/a" }), searchParams: Promise.resolve({}) }));

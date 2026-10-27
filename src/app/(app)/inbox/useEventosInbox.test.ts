@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assinarEventosInbox, type FonteEventos } from "./useEventosInbox";
 
-// B9 (#201 C6): o servidor fecha o stream no prazo máximo de vida ou quando a sessão deixa de valer. A reconexão
-// continua sendo do próprio EventSource (o servidor sugere `retry:`); avisos do intervalo sem conexão podem ter
-// se perdido, então cada reabertura depois da primeira entrega um `resync` para a tela recarregar o que mostra.
-
 class FonteFalsa implements FonteEventos {
   readyState = 0;
   onopen: ((e: Event) => void) | null = null;
@@ -41,11 +37,11 @@ describe("assinarEventosInbox", () => {
     const { fonte, fontes, avisos, estados } = montar();
     fonte.onopen!(new Event("open"));
     expect(avisos).toEqual([]);
-    fonte.onerror!(new Event("error")); // servidor fechou (prazo de vida ou sessão revalidada); o EventSource reconecta
+    fonte.onerror!(new Event("error"));
     fonte.onopen!(new Event("open"));
     expect(avisos).toEqual([{ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" }]);
     expect(estados).toEqual([true, false, true]);
-    expect(fontes).toHaveLength(1); // a reconexão é a do próprio EventSource: nenhuma fonte nova
+    expect(fontes).toHaveLength(1);
   });
 
   it("sair fecha a fonte e marca desconectado", () => {

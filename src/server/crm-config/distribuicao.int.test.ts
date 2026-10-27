@@ -4,7 +4,6 @@ import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Falha simulada na atribuição (C9 da revisão do #233): erro de banco DENTRO da transação do inbound.
 const falha = vi.hoisted(() => ({ atribuicao: false }));
 vi.mock("@/server/crm-config/distribuicao", async (orig) => {
   const real = await orig<typeof import("@/server/crm-config/distribuicao")>();
@@ -159,8 +158,6 @@ describe("Distribuição e SLA por setor", () => {
     expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } })).ultimoAtribuidoId).toBeNull();
   });
 
-  // Ponto comum de abertura por setor: a triagem da Aria (5C) abre direto por aqui, sem passar por
-  // atendimentoDoInbound, e também entra no rodízio.
   it("abrir_atendimento_do_setor_entra_no_rodizio", async () => {
     await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
     const abrir = async (atribuir?: boolean) => {
@@ -191,7 +188,6 @@ describe("Distribuição e SLA por setor", () => {
         numeroProviderRef: numero.providerRef, contatoWaId: "50691110002", providerMessageId: "wamid.falha.atribuicao",
         corpo: "Oi, quero saber dos cursos", tipo: "TEXTO", driver: "MOTOR", fromMe: false, quando: new Date(),
       })).toBe("gravada");
-      // A mensagem foi gravada e ligada ao atendimento, que ficou na fila do setor, sem responsável.
       const m = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "wamid.falha.atribuicao" } });
       expect(m.atendimentoId).not.toBeNull();
       expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: m.atendimentoId! } })).toMatchObject({ finalidade: "COMERCIAL", responsavelId: null });

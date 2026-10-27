@@ -23,9 +23,6 @@ import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { reavaliarAcessoAutomaticoMatriculaTx } from "./acesso-aulas";
 import { promessaNoPassado } from "./regua";
 
-// Ações da régua de cobrança (doc 24). O envio do lembrete/cobrança (WhatsApp + passo) fica em
-// financeiro/acoes.ts (registrarCobrancaWhatsApp). Aqui: promessa de pagamento e bloqueio.
-
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 
 const PromessaSchema = z.object({
@@ -35,11 +32,6 @@ const PromessaSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}/, "Informe uma data válida (AAAA-MM-DD)."),
 });
 
-/**
- * Registra uma promessa de pagamento (doc 24 §D2): a cobrança fica DORMENTE na fila até a data
- * prometida. NÃO altera o vencimento (isso é renegociação, outro fluxo) — só adia via evento.
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra promessa.
- */
 export async function registrarPromessaPagamento(cobrancaId: string, ate: string, chaveIdempotencia?: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
@@ -47,13 +39,10 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
     const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(chaveIdempotencia), { cobrancaId, ate: ateStr.slice(0, 10) });
     const ateCivil = ateStr.slice(0, 10);
     if (!DataCivilSchema.safeParse(ateCivil).success) throw new ErroRegra("Data prometida inválida.");
-    // Q176: "hoje" é o dia da escola, e a promessa é gravada ao meio-dia dela (não do servidor).
     const fuso = await fusoDaEscola();
     const ateData = instanteDaGrade(ateCivil, "12:00", fuso);
 
     await prisma.$transaction(async (tx) => {
-      // C3 da R2 do #267: a repetição vem antes das validações de data e de situação. O reenvio tardio da mesma
-      // tentativa (a data passou, a cobrança foi paga) devolve a promessa já gravada em vez de um erro.
       if (marca) {
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "PromessaPagamento", agregadoTipo: "Cobranca", autorId: autor.id, marca,
@@ -80,18 +69,10 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
 
 const PedidoAcessoSchema = z.object({ matriculaId: z.string().min(1), bloquear: z.boolean(), motivo: z.string().trim().min(5, "Informe o motivo da solicitação (mínimo 5 caracteres).").max(2000) });
 
-/** Opções da tentativa: com `chaveIdempotencia` (#166), o reenvio devolve a solicitação já registrada. */
 export type OpcoesSolicitacaoAcesso = { chaveIdempotencia?: string };
 
 const MSG_CONFLITO_ACESSO = "Esta tentativa já foi usada com outro pedido. Recarregue a página e confira as solicitações antes de repetir.";
 
-/**
- * Solicitar não restringe: FIN/SEC propõe e outra pessoa da administração decide.
- * Com `chaveIdempotencia` (#166), a busca roda depois do papel e antes das validações de estado: o reenvio da
- * mesma tentativa devolve a solicitação original mesmo já decidida (antes, a rejeição no meio fazia o reenvio
- * abrir outro pedido, e a aprovação o fazia ser recusado). A mesma chave com outra entrada recebe a mesma recusa,
- * exista a matrícula ou não.
- */
 async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: string, opcoes?: OpcoesSolicitacaoAcesso): Promise<Resultado<{ solicitacaoId: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
@@ -99,15 +80,12 @@ async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: 
     const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(opcoes?.chaveIdempotencia), dados);
     const solicitacaoId = await prisma.$transaction(async (tx) => {
       if (marca) {
-        // Trava comum aos dois pedidos (C4 da R1 do #291): a de `repeticaoIdempotente` inclui o tipo, e restringir e
-        // liberar com a mesma chave ao mesmo tempo não se esperariam.
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`idem:acesso-aulas:${autor.id}:${marca.chaveIdempotencia}`}, 0))`;
         const repetido = await repeticaoIdempotente(tx, {
           tipo: bloquear ? "RestricaoAulasSolicitada" : "LiberacaoAulasSolicitada", agregadoTipo: "Matricula", autorId: autor.id, marca,
           mensagemConflito: MSG_CONFLITO_ACESSO,
         });
         if (repetido) return String((repetido.payload as { solicitacaoId?: unknown }).solicitacaoId);
-        // A mesma chave no pedido inverso (restringir × liberar): outra entrada, mesma recusa.
         const [inverso] = await tx.$queryRaw<{ id: string }[]>(sqlBuscaIdempotente({
           tipo: bloquear ? "LiberacaoAulasSolicitada" : "RestricaoAulasSolicitada", agregadoTipo: "Matricula", autorId: autor.id, chaveIdempotencia: marca.chaveIdempotencia,
         }));

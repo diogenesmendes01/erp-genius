@@ -3,7 +3,6 @@ import { instanteDoCampoLocal } from "@/server/operacao/fuso-entrada";
 import { somarDiasDataCivil } from "@/server/crm/tarefas-regras";
 export type IdAtalhoHorario = "hoje18" | "amanha9" | "amanha14" | "seg9";
 export interface AtalhoHorario { id: IdAtalhoHorario; rotulo: string; valorLocal: string }
-/** Calendário civil explícito; nenhum texto local passa pelo fuso do processo/browser. */
 export function atalhosDeHorario(agora: Date, fuso: string): AtalhoHorario[] {
  if (!Number.isFinite(agora.getTime()) || !FusoInstitucionalSchema.safeParse(fuso).success) return [];
  const hoje = dataCivilInstitucional(agora, fuso);

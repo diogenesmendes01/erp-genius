@@ -44,7 +44,7 @@ async function oficializar(lancamento: { id: string; conteudoHash: string }) {
 
 beforeEach(async () => {
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;

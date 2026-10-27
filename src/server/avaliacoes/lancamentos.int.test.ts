@@ -2,8 +2,6 @@ import { beforeEach, expect, it, vi } from "vitest";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Ações concorrentes usam sessão local determinística, mas mantêm os papéis
-// atuais do banco e todas as verificações transacionais reais do domínio.
 vi.mock("@/server/_shared", async importOriginal => {
   const original = await importOriginal<typeof import("@/server/_shared")>();
   const sessao = async () => {
@@ -645,7 +643,6 @@ it.each(["futuro", "foraDaTitularidade", "turmaConcluida"] as const)("oportunida
   const snapshot = await prisma.$transaction(tx => estadoExtraRecuperacaoTx(tx, alocacaoId, "FALA"));
   await expect(prisma.propostaExtraRecuperacao.create({ data: { ...entradaExtra, chaveIdempotencia: "extra-atribuicao-direta", autorId: professor, matriculaId, nivelId: p.nivelId, snapshot, estadoHash: proposta.estadoHash, entradaHash: proposta.entradaHash } })).rejects.toThrow("Autor sem atribuição");
   expect(await prisma.propostaExtraRecuperacao.count()).toBe(1);
-  // Gestão continua podendo resolver a solicitação anterior sem devolver acesso docente.
   entrar(gestor);
   expect((await decidirExtraRecuperacao({ propostaId: proposta.id, entradaHash: proposta.entradaHash, aprovada: false, motivo: "Resolver pendência preservando histórico" })).ok).toBe(true);
 });
@@ -878,7 +875,7 @@ it("frequência contabiliza impedimento com matrícula", async () => {
 });
 beforeEach(async () => {
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const c = await seedCatalogoMinimo();
   professor = (await criarUsuario(["PROFESSOR"])).id; gestor = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
@@ -1363,8 +1360,6 @@ async function confirmarFechamentoSuficienteParaImpacto(chaveIdempotencia: strin
   return prisma.fechamentoAcademico.findUniqueOrThrow({ where: { id: fechado.dado.id } });
 }
 async function aguardarInstanteRegistrado(instante: Date) {
-  // Timestamp(3) do PostgreSQL pode arredondar o instante para o próximo ms.
-  // O teste só informa um evento posterior quando esse instante já chegou.
   const restante = instante.getTime() - Date.now();
   if (restante > 5000) throw new Error("Relógios do teste exigem sincronização");
   if (restante >= 0) await new Promise(resolve => setTimeout(resolve, restante + 2));
@@ -1422,8 +1417,6 @@ it("corrige recuperação por decisão independente, reduz resultado errado e pr
   expect(await listarRevisoesPorCorrecao({})).toMatchObject({ ok: true, dado: { itens: [] } });
   const turma = await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } });
   const destino = await prisma.turma.create({ data: { modalidadeId: turma.modalidadeId, nivelId: turma.nivelId, professorId: professor, nome: "Destino após recuperação", dataInicio: new Date("2099-01-01") } });
-  // Estado preexistente para validar detecção de impacto; não executa transferência neste fluxo.
-  // A aprovação preserva um fechamento suficiente real, capturado antes da correção.
   const mudanca = await prisma.solicitacaoMudancaAcademica.create({ data: { alunoId, matriculaId, alocacaoOrigemId: alocacaoId, turmaOrigemId: turmaId, turmaDestinoId: destino.id,
     motivo: "Transferência já aprovada", horarioCompativel: true, snapshot: { matriculaOrigemId: matriculaId }, status: "APROVADA", solicitanteId: professor, aprovadorId: gestor, motivoDecisao: "Aprovação de teste", decididoEm: new Date(),
     fechamentoAcademicoId: fechamento.id, fechamentoEstadoHash: fechamento.estadoHash } });
@@ -1457,7 +1450,6 @@ it("corrige recuperação por decisão independente, reduz resultado errado e pr
   expect(filaRecuperacao).toMatchObject({ ok: true, dado: { itens: [expect.objectContaining({ tipo: "RECUPERACAO", notaRecuperacaoId: nota.id, lancamentoId: null, matricula: expect.objectContaining({ id: matriculaId }), impactos: [expect.objectContaining({ casoId: casoRecuperacao!.id, solicitacaoId: mudanca.id, statusNaCorrecao: "APROVADA", statusAtual: "APROVADA" })] })] } });
   expect(JSON.stringify(filaRecuperacao)).not.toMatch(/telefone|email|chaveIdempotencia|entradaHash/);
   expect((await prisma.solicitacaoMudancaAcademica.findUniqueOrThrow({ where: { id: mudanca.id } })).status).toBe("APROVADA");
-  // Corrigir uma recuperação erroneamente alta devolve o melhor resultado válido original.
   expect(await consultarConsolidadoAvaliacoes(alocacaoId)).toMatchObject(falaResultado("5"));
   expect((await prisma.notaRecuperacao.findUniqueOrThrow({ where: { id: nota.id } })).nota).toBe("8");
   expect(await consultarNotaRecuperacao({ realizacaoId: nota.realizacaoId })).toMatchObject({ ok: true, dado: { notas: [expect.objectContaining({ nota: "8", correcaoVigente: expect.objectContaining({ nota: "4" }) })] } });
@@ -1473,7 +1465,6 @@ it("corrige recuperação por decisão independente, reduz resultado errado e pr
   expect(await consultarConsolidadoAvaliacoes(alocacaoId)).toMatchObject(falaResultado("5"));
   await expect(prisma.propostaCorrecaoRecuperacao.deleteMany()).rejects.toThrow();
   expect(await consultarCorrecoesRecuperacao({ notaId: nota.id, antesVersao: 2 })).toMatchObject({ ok: true, dado: { vigente: { nota: "4" }, propostas: [expect.objectContaining({ versao: 1, podeRevisar: false })] } });
-  // A mesma fila inclui correções regulares e pagina o conjunto, não cada fonte separadamente.
   const regular = await prisma.versaoLancamentoAvaliacao.findFirstOrThrow({ where: { registro: { alocacaoId, codigoAvaliacao: "I1" } }, orderBy: { versao: "desc" } });
   let origemHash = regular.conteudoHash;
   for (let versao = 1; versao <= 20; versao++) {
@@ -1505,7 +1496,6 @@ it("regulariza realização histórica sem transferir autoria e conserva leitura
   expect((await registrarRealizacaoRecuperacao(dados)).ok).toBe(false);
   entrar(gestor);
   expect((await designarProfessorRecuperacao({ itemReservaId: fala.id, professorId: substituto, versaoEsperada: 0, motivo: "Regularizar avaliação já realizada", chaveIdempotencia: "designar-regularizacao" })).ok).toBe(true);
-  // A situação atual do realizador não deve apagar sua autoria histórica.
   await prisma.usuario.update({ where: { id: professor }, data: { ativo: false } });
   entrar(substituto);
   const consulta = await consultarTentativaRecuperacaoDesignada(fala.id);
@@ -2277,8 +2267,6 @@ it("mudança aprovada após a revisão invalida a aprovação e depois aparece n
   expect(await listarRevisoesPorCorrecao({})).toMatchObject({ ok: true, dado: { itens: [] } });
   const t = await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } });
   const destino = await prisma.turma.create({ data: { modalidadeId: t.modalidadeId, nivelId: t.nivelId, professorId: professor, nome: "Destino de teste", dataInicio: new Date("2099-01-01") } });
-  // Estado acadêmico preexistente; este teste não executa o fluxo de transferência.
-  // A aprovação carrega o fechamento real que a correção posterior tornará obsoleto.
   const mudanca = await prisma.solicitacaoMudancaAcademica.create({ data: { alunoId, matriculaId, alocacaoOrigemId: alocacaoId, turmaOrigemId: turmaId, turmaDestinoId: destino.id,
     motivo: "Transferência de teste aprovada", horarioCompativel: true, snapshot: { matriculaOrigemId: matriculaId }, status: "APROVADA", solicitanteId: professor, aprovadorId: gestor, motivoDecisao: "Aprovação pedagógica de teste", decididoEm: new Date(),
     fechamentoAcademicoId: fechamento.id, fechamentoEstadoHash: fechamento.estadoHash } });
@@ -2637,7 +2625,7 @@ it("correção exige origem oficial, mudança válida e atribuição docente vig
 });
 
 it("entrada local sem fuso da escola é recusada com a mensagem que leva à configuração (D10)", async () => {
-  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: null } }); // escola sem fuso
+  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: null } });
   const { realizadaEm: _r, ...base } = entrada();
   void _r;
   expect(await salvarLancamentoAvaliacaoLocal({ ...base, realizadaLocal: "2026-01-10T04:00", fuso: "America/Costa_Rica" }))

@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 
-/** A ordem evita inversão com ativação e recebimentos; o Aluno trava inclusões por FK. */
 export async function bloquearCalendarioAluno(tx: Prisma.TransactionClient, alunoId: string) {
   const antes = await tx.matricula.findMany({ where: { alunoId }, select: { id: true }, orderBy: { id: "asc" } });
   const ids = antes.map((m) => m.id);

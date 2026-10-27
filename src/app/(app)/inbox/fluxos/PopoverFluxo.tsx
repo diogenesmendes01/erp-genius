@@ -6,7 +6,6 @@ import { posicaoPopover } from "@/lib/popover";
 const assinar = () => () => {};
 const cliente = () => true;
 const servidor = () => false;
-/** Casco local dos fluxos Inbox: diálogo/foco canônicos, folha mobile e âncora desktop. */
 export function PopoverFluxo({ titulo, ancora, aoFechar, ocupado = false, children }: { titulo: string; ancora: RefObject<HTMLElement | null>; aoFechar(): void; ocupado?: boolean; children?: ReactNode }) {
   const painel = useRef<HTMLDivElement>(null);
   const camada = useRef<HTMLDivElement>(null);

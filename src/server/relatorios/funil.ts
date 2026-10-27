@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import type { EscopoRelatorio } from "./escopo";
 import { condicoesLead, instanteUtc, type FiltrosRelatorio } from "./pipeline";
 
-/** Linha principal do funil, em ordem. NO_SHOW e PERDIDO ficam fora da linha. */
 export const ETAPAS_FUNIL: EtapaLead[] = [
   "NOVO",
   "EM_ATENDIMENTO",
@@ -31,11 +30,6 @@ export interface PerdaFunil {
 
 const arred = (n: number) => Math.round(n * 100) / 100;
 
-/**
- * Linha do tempo de etapa de cada oportunidade, reconstruída dos eventos do agregado Lead
- * (`EtapaAlterada.para`, `PropostaEnviada`, `ExperimentalAgendada/Realizada`, `NoShow`, `LeadPerdido`),
- * com NOVO na criação. Repetições consecutivas da mesma etapa colapsam em uma visita.
- */
 function visitasCte(f: FiltrosRelatorio, e: EscopoRelatorio): Prisma.Sql {
   return Prisma.sql`
     lf AS (SELECT l.id, l."criadoEm" FROM "Lead" l WHERE ${condicoesLead(f, e)}),
@@ -75,15 +69,6 @@ function visitasCte(f: FiltrosRelatorio, e: EscopoRelatorio): Prisma.Sql {
     )`;
 }
 
-/**
- * Funil por eventos de etapa, no período.
- * - `chegaram`: oportunidades que entraram na etapa no período; pular etapas conta as puladas
- *   (a entrada numa etapa é o primeiro instante em que a oportunidade chegou nela ou além dela).
- * - `agora`: oportunidades hoje nessa etapa (retrato atual, no escopo/filtros).
- * - `conversaoProxima`: das que entraram na etapa no período, a parcela que já chegou à seguinte; null sem base.
- * - `tempoMedioDias`: tempo parado na etapa (soma de todas as visitas já encerradas, idas e voltas), média por oportunidade.
- * - `perdas`: LeadPerdido no período, por motivo, com a etapa onde mais pararam (a etapa anterior à perda).
- */
 export async function metricasFunil(f: FiltrosRelatorio, e: EscopoRelatorio): Promise<{ etapas: EtapaFunil[]; perdas: PerdaFunil[] }> {
   const ini = instanteUtc(f.periodo.inicio);
   const fim = instanteUtc(f.periodo.fim);
@@ -135,7 +120,6 @@ export async function metricasFunil(f: FiltrosRelatorio, e: EscopoRelatorio): Pr
     };
   });
 
-  // Perdas: a última perda de cada oportunidade no período; etapa = visita anterior à perda.
   const perdasBrutas = await prisma.$queryRaw<{ motivo: string | null; etapa: string | null }[]>(Prisma.sql`
     WITH ${cte},
     ult AS (

@@ -11,7 +11,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 type Alcada = "FINANCEIRA" | "COMERCIAL" | "PEDAGOGICA";
 
 export function FormularioAlcada({ matriculaId, propostaId, propostaHash, alcada }: { matriculaId: string; propostaId: string; propostaHash: string; alcada: Alcada }) {
-  // A decisão não leva chave; na falha de transporte vale a mensagem própria de decisão (MSG_DECISAO_INCERTA).
   const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
   return <form className="space-y-3 rounded border p-4" onSubmit={async event => { event.preventDefault(); const dados = new FormData(event.currentTarget), decisao = dados.get("decisao");
     if (decisao !== "aprovar" && decisao !== "rejeitar") { acao.limpar(); acao.setErro("Escolha uma decisão."); return; }

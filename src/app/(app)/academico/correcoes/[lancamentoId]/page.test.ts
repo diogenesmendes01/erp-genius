@@ -41,8 +41,6 @@ describe("correções de nota", () => {
     expect(html).toContain("UTC; origem UTC");
   });
 
-  // docs/43 §6 item 3: a proposta de correção só existia na página 1 do histórico e tinha a versão na key —
-  // mudar de página ou receber a versão nova depois de registrar apagava notas, comentários e motivo.
   it("o formulário de proposta tem a mesma identidade no React em qualquer página do histórico e depois de uma versão nova", async () => {
     const renderizar = (pagina?: string) => Page({ params: Promise.resolve({ lancamentoId: "lancamento" }), searchParams: Promise.resolve(pagina ? { pagina } : {}) });
     const base = identidadeNoReact(await renderizar(), ProporCorrecao);

@@ -21,7 +21,6 @@ type Caso = { id: string; matriculaId: string; solicitacaoId: string; decisaoCor
 type DecisaoReposicao = { id: string; criadaEm: Date; motivo: string; decisor: string; versaoCorrecao: number; reposicaoId: string; conclusaoVersao: number; matriculaId: string; codigo: string | null; alunoId: string; primeiroNome: string; sobrenome: string | null; contexto: unknown };
 type AprovacaoAula = { id: string; criadaEm: Date; motivo: string; decisor: string; versaoCorrecao: number; encontroId: string; matriculaId: string; codigo: string | null; alunoId: string; primeiroNome: string; sobrenome: string | null; contexto: unknown; impactos: unknown };
 
-/** Fila institucional: inclui correções aprovadas de nota, recuperação e reposição. */
 export async function listarRevisoesPorCorrecao(input: { pagina?: number }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

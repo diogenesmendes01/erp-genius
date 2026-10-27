@@ -20,7 +20,6 @@ import { CartaoExperimental } from "./CartaoExperimental";
 import { PrevisaoOportunidade } from "./PrevisaoOportunidade";
 
 type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; fusoEscola?: string; aoMudar(): void; aoNovaTarefa?(): void; aoAdicionarNota?(): void; aoEditarTarefa?(t: import("@/server/inbox/painel-tarefas").TarefaPainel): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean; podeCriarOportunidade?: boolean; contextoAria?: boolean; podeAssumir?: boolean; aoAssumir?(): Promise<Resultado> };
-/** Mudança de thread/oportunidade encerra a sessão de ação, sem ACK antigo reconciliar outra. */
 export function AbaOportunidades(props: Props) {
   return <OportunidadeDoAtendimento key={JSON.stringify([props.atendimentoId, props.dados.atual?.id ?? null])} {...props} />;
 }

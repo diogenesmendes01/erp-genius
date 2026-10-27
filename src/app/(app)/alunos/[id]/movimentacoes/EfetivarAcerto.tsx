@@ -6,8 +6,6 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: string; decisaoId: string; atualizar: () => void }) {
-  // Idempotente por natureza (#166): a efetivação é única por solicitação e o reenvio com a mesma decisão devolve
-  // a efetivação já aplicada (server/matricula/encerramento-efetivar-tx.ts). Na falha de transporte, reenviar.
   const acao = useAcaoCliente({ idempotente: true });
   const router = useRouter();
   return <div className="space-y-2 rounded border p-3">

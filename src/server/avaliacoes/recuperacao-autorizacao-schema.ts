@@ -20,7 +20,6 @@ function dataIsoComOffsetValida(valor: string) {
 
 const instante = z.string().datetime({ offset: true }).refine(dataIsoComOffsetValida, "Data ISO com offset inválida.");
 
-/** Entrada estrita da gestão; o contexto acadêmico vem do servidor. */
 export const AutorizacaoEspecialRecuperacaoEntradaSchema = z.object({
   itemReservaId: id,
   motivo,
@@ -28,10 +27,8 @@ export const AutorizacaoEspecialRecuperacaoEntradaSchema = z.object({
   chaveIdempotencia,
 }).strict();
 
-/** Nome público do contrato usado pela ação de autorização. */
 export const AutorizarRecuperacaoEspecialSchema = AutorizacaoEspecialRecuperacaoEntradaSchema;
 
-/** Registro já resolvido pelo consumidor de banco, sem defaults implícitos. */
 export const AutorizacaoEspecialRecuperacaoSchema = z.object({
   id,
   matriculaId: id,
@@ -55,7 +52,6 @@ export const ContextoRealizacaoAutorizacaoEspecialRecuperacaoSchema = z.object({
   alocacaoId: id,
   regraId: id,
   realizadaEm: instante,
-  /** O consumidor de banco calcula este valor a partir do autorizador persistido. */
   autorizadorVigente: z.boolean(),
 }).strict();
 
@@ -66,11 +62,6 @@ export type DecisaoVigenciaAutorizacaoEspecialRecuperacao =
     motivo: "AUTORIZADOR_NAO_VIGENTE" | "CONTEXTO_DIVERGENTE" | "ANTES_DA_AUTORIZACAO" | "PRAZO_VENCIDO";
   };
 
-/**
- * Q151: valida somente o alcance e a janela da autorização persistida.
- * Plano, reserva, limite, agenda e atribuição docente continuam sendo gates
- * independentes do consumidor.
- */
 export function decidirVigenciaAutorizacaoEspecialRecuperacao(
   autorizacao: z.input<typeof AutorizacaoEspecialRecuperacaoSchema>,
   realizacao: z.input<typeof ContextoRealizacaoAutorizacaoEspecialRecuperacaoSchema>,

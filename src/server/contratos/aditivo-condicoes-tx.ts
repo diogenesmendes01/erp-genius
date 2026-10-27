@@ -101,8 +101,6 @@ export async function aplicarCondicoesFormalizadasAditivoTx(tx: Prisma.Transacti
   const aplicacao = await tx.aplicacaoCondicoesAditivo.create({ data: { versaoCondicoesId: versao.id, matriculaId: d.matriculaId, propostaId: d.propostaId, autorId, revisaoHash: d.revisaoHash, condicoesHash: versao.condicoesHash, vigenciaInicio: versao.vigenciaInicio, chaveIdempotencia: d.chaveIdempotencia } });
   const aplicacaoAgendaId = versao.propostaAgendaId ? randomUUID() : null;
   const eventoId = aplicacaoAgendaId ? randomUUID() : null;
-  // O evento é criado antes da aplicação de agenda para que a própria aplicação
-  // grave a referência canônica. O rollback comum remove ambos se a agenda falhar.
   const evento = eventoId && aplicacaoAgendaId
     ? await tx.evento.create({ data: { id: eventoId, tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash, propostaAgendaId: versao.propostaAgendaId, aplicacaoAgendaId } } })
     : await registrarEvento(tx, { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash } });

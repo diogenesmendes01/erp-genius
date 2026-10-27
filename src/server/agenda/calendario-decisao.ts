@@ -26,7 +26,6 @@ export async function decidirCalendarioEscolar(input: { calendarioId: string; ap
         const config = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" } });
         if (config?.fusoInstitucional !== c.fusoInstitucional) throw new ErroRegra("O fuso da escola mudou. Prepare uma nova versão.");
         PeriodosCalendarioSchema.parse(c.periodos);
-        // O fluxo de revisão conjunta aplicará calendário e remarcações atomicamente.
         if (await tx.encontroAgenda.count({ where: { status: "PREVISTO" } })) throw new ErroRegra("Há encontros publicados. Revise os impactos e as remarcações conjuntamente antes de aplicar o calendário.");
       }
       const decisao = await tx.decisaoCalendarioEscolar.create({ data: { calendarioId: c.id, decisorId: autor.id, aprovada: d.aprovar, motivo: d.motivo } });

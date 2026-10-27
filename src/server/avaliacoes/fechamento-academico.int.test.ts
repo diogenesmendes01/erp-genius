@@ -88,7 +88,7 @@ async function confirmarDaRevisao(revisao: Awaited<ReturnType<typeof revisarComo
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;

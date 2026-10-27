@@ -194,7 +194,6 @@ describe("DesistenciaFinanceiraPage", () => {
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
 
     expect(html).toContain("Créditos externos preservados nesta fotografia");
-    // O crédito é um link legível para a tela dele; o id só vai no href (docs/43 §6 item 7).
     expect(html).toContain('<a class="underline" href="/alunos/aluno/creditos/credito-externo">Crédito 1</a>');
     expect(html.replace(/href="[^"]*"/g, "")).not.toContain("credito-externo");
     expect(html).toContain("BRL");

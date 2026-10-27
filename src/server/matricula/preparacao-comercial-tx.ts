@@ -15,9 +15,6 @@ export const CadastroInicialSchema = z.object({ primeiroNome: z.string().trim().
 export const PreparacaoComercialSchema = z.object({ autorId: z.string().min(1), leadId: z.string().min(1), alunoId: z.string().min(1).optional(), novoCadastro: CadastroInicialSchema.optional(), produtoId: z.string().min(1), paisId: z.string().min(1), turmaId: z.string().min(1).optional(), agendaParticular: AgendaParticularSchema.extend({ estadoHash: z.string().regex(/^[a-f0-9]{64}$/), horariosAcordadosConferidos: z.literal(true) }).optional(),
   regime: z.enum(["MENSALIDADE", "HORA_PARTICULAR"]), minutosAdiantamento: z.number().int().positive().max(2147483647).optional(), taxaProposta: valor, valorServicoProposto: valor, motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
 
-/** Interna: o chamador deve identificar e autorizar a identidade alunoId antes de invocar.
- * Não é Server Action. Valores são propostas, não condições aprovadas ou cobranças.
- */
 export async function prepararContratacaoTx(tx: Prisma.TransactionClient, input: z.input<typeof PreparacaoComercialSchema>) {
   const d = PreparacaoComercialSchema.refine((d) => !!d.alunoId !== !!d.novoCadastro, "Informe cadastro existente ou pessoa nova.").parse(input), entradaHash = createHash("sha256").update(JSON.stringify(d)).digest("hex");
   if (!!d.turmaId === !!d.agendaParticular) throw new ErroRegra("Informe turma ou agenda particular, exclusivamente.");
@@ -48,7 +45,6 @@ export async function prepararContratacaoTx(tx: Prisma.TransactionClient, input:
   await tx.$queryRaw`SELECT id FROM "ProdutoPais" WHERE "produtoId" = ${d.produtoId} AND "paisId" = ${d.paisId} FOR SHARE`;
   const oferta = await tx.produtoPais.findUnique({ where: { produtoId_paisId: { produtoId: d.produtoId, paisId: d.paisId } }, select: { id: true, oferecido: true, moeda: true, formaAgenda: true, versaoEntrada: true, taxaPreviaAssinatura: true, adiantamentoHoraExigido: true } });
   if (!pais || pais.status !== "ATIVO" || !oferta?.oferecido || oferta.moeda !== pais.moedaLocal) throw new ErroRegra("Confira a oferta e a moeda do país antes de preparar.");
-  // Uma vaga de turma não comprova os horários individuais exigidos por Q111.
   const particular = oferta.formaAgenda === "PARTICULAR_GRADE_FIXA" || oferta.formaAgenda === "PARTICULAR_FLEXIVEL";
   if (particular && !d.agendaParticular) throw new ErroRegra("Esta oferta exige reserva de horários particulares. O fluxo de reserva individual ainda precisa ser concluído; uma vaga de turma não o substitui.");
   if (oferta.formaAgenda === "TURMA" && d.regime === "HORA_PARTICULAR") throw new ErroRegra("A oferta está configurada para turma. Confira a forma de agenda da particular antes de contratar por hora.");

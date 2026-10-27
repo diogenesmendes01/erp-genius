@@ -36,9 +36,7 @@ const LEMBRETES: { valor: string; rotulo: string }[] = [
 
 type Props = {
   conversa?: ConversaParaAbrir | null;
-  /** Null = nova tarefa. */
   tarefa: TarefaLista | null;
-  /** Vazio quando o usuário não gerencia equipe: a tarefa fica sempre com ele. */
   responsaveis: { id: string; nome: string }[];
   fusoEscola: string;
   fusoExibicao: string;
@@ -46,17 +44,12 @@ type Props = {
   params: ParamsTarefas;
 };
 
-/** Painel lateral da tarefa. Salva no botão "Salvar" (não a cada tecla) e envia a `versao` lida. */
 export function PainelTarefa(props: Props) {
-  // Outra tarefa (deep link ?t=) recomeça o formulário; salvar a mesma não apaga o que está na tela.
   return <FormularioTarefa key={props.tarefa?.id ?? "nova"} {...props} />;
 }
 
 function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, dataInicial, params, conversa }: Props) {
   const router = useRouter();
-  // Nova tarefa: criarTarefa recebe chave de idempotência (#166), e o reenvio depois de um resultado incerto
-  // devolve a tarefa já criada (sem segundo lembrete). Tarefa existente: as ações usam a `versao` e ficam
-  // sem chave. `tarefa` não muda na vida do formulário (PainelTarefa troca o key).
   const acao = useAcaoCliente({ idempotente: !tarefa });
   const tentativa = useChaveIdempotencia();
   const aberta = !tarefa || tarefa.status === "ABERTA";
@@ -182,7 +175,6 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
           </div>
         )}
       </Drawer>
-      {/* Cancelar é idempotente por natureza (#166, 5º lote): o mesmo cancelamento, de quem repete e com o mesmo motivo, devolve ok. */}
       {cancelando && tarefa && (
         <ConfirmarAcao
           titulo={`Cancelar a tarefa "${tarefa.titulo}"?`}

@@ -1,16 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166, 5º lote: comissões (dinheiro).
-// - Fechar o mês com chave: o reenvio da mesma tentativa devolve quantas foram pagas e não paga as comissões
-//   aprovadas depois da tentativa (antes, o reenvio pagava tudo o que estivesse aprovado no momento).
-// - Estornar: o mesmo estorno, do mesmo autor e com o mesmo motivo, devolve ok sem outro Evento (antes, erro).
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Só a sessão é trocada (os papéis continuam lidos do banco): o `auth` real importa o next-auth na primeira chamada,
-// o que falha quando duas chamadas simultâneas chegam juntas.
 vi.mock("@/server/_shared/sessao", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/server/_shared/sessao")>();
   const sessao = async () => {

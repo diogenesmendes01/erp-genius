@@ -15,9 +15,6 @@ import { listarEmpresasPagina } from "@/server/empresas/consultas";
 import { lerFiltrosEmpresas } from "@/server/empresas/filtros";
 import { normalizarParaOrdenacao } from "./nome-ordenacao";
 
-// D1 (#141): o Postgres de produção ordena byte a byte (locale C), e "Álvaro" ia para o fim.
-// A coluna gerada `nomeOrdenacao` resolve sem ICU nem `unaccent`.
-
 let admin: UsuarioSessao;
 
 beforeEach(async () => {

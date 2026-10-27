@@ -11,7 +11,6 @@ import {cenarioPerda328} from "@/test/inbox-perda";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {capacidadesCrm} from "@/server/crm/permissoes";
 import {cancelarAgendadaInboxTx} from "./agendadas-cancelamento";
-/** Contraprova TEST-ONLY coordenada333/362, não muda permissões, SQL ou políticaGP. */
 beforeEach(()=>truncarBanco());afterAll(()=>prisma.$disconnect());
 async function fixture(){const c=await cenarioPerda328();expect(c.dono.papeis).toEqual([Papel.VENDEDOR]);expect(capacidadesCrm(c.dono.papeis).has("tarefas.ver")).toBe(true);expect(c.a.responsavelId).toBeNull();expect(await atendimentoVisivel(c.dono,c.a.id,false,prisma)).not.toBeNull();const intencao=await prisma.intencaoMensagem.create({data:{atendimentoId:c.a.id,numeroId:c.numero.id,contatoId:c.contato.id,autorId:c.dono.id,origem:"HUMANO",status:"PENDENTE",tipo:"TEXTO",corpoRenderizado:"Fictício cancel333 claim",agendadaPara:new Date(Date.now()+3_600_000)}});expect(intencao).toMatchObject({status:"PENDENTE",autorId:c.dono.id,atendimentoId:c.a.id});return {...c,intencao};}
 async function conectar(){const pg=new Client({connectionString:process.env.DATABASE_URL});try{await pg.connect();return pg;}catch(erro){const fim=await Promise.allSettled([pg.end()]);const falhas=fim.flatMap(r=>r.status==="rejected"?[r.reason]:[]);if(falhas.length)throw new AggregateError([erro,...falhas],"Falha de conexão e cleanup");throw erro;}}
@@ -31,7 +30,6 @@ function instrumentar(tx:Prisma.TransactionClient,d:Diagnostico){
 function iniciar(autor:UsuarioSessao,atendimentoId:string,intencaoId:string){
  let sinal!:(pid:number)=>void;const pronto=new Promise<number>(r=>sinal=r);let terminou=false;
  const diag:Diagnostico={inicio:Date.now(),timeline:[],samples:[]};
- // Callthrough na mesma TX; telemetria registra somente fases estáticas/PIDs, não argumentos.
  const db={$transaction:async<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>)=>prisma.$transaction(async tx=>{const [linha]=await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() pid`;diag.worker=linha!.pid;fase(diag,"worker.pid");sinal(linha!.pid);return fn(instrumentar(tx,diag));})} as unknown as typeof prisma;
  const resultado=cancelarAgendadaInboxTx(autor,atendimentoId,intencaoId,db).then(valor=>{diag.ending={sucesso:true};return {valor};},(erro:unknown)=>{diag.ending={sucesso:false,...resumoErro(erro)};return {erro};}).finally(()=>{terminou=true;fase(diag,"worker.ended");});
  return {pronto,resultado,diag,terminou:()=>terminou};
@@ -44,7 +42,6 @@ async function esperar(observer:Client,h:Holder,op:Operacao,tabela:string,operac
  op.diag.holder=h.pid;op.diag.observer=observerPid;
  expect(worker).not.toBe(h.pid);expect(worker).not.toBe(observerPid);expect(h.pid).not.toBe(observerPid);
  const limite=Date.now()+2000;
- // Encerramento é checado fora de callback retry: worker que terminou falha imediatamente.
  while(Date.now()<limite){
   if(op.terminou())throw new Error("Worker terminou antes da espera SQL instrumental");
   await observer.query("SELECT pg_stat_clear_snapshot()");

@@ -152,7 +152,6 @@ describe("C3 PR398: data inválida não duplica separador", () => {
   });
 });
 
-// #350: sugestão é item temporal, nunca mensagem ou nota do transporte.
 it("cartão entre balões rompe sequência e conserva separadores/transferência",()=>{
  const a=saida("a",{criadoEm:"2026-10-22T12:00:00Z"}),b=saida("b",{criadoEm:"2026-10-22T12:02:00Z"});
  const extra={tipo:"sugestao-aria",id:"sugestao-aria:s",s:{id:"s",criadoEm:"2026-10-22T12:01:00Z"}};

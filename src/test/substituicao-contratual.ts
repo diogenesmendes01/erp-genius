@@ -19,10 +19,7 @@ function dado<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
   return r.dado;
 }
 
-/** Fluxo contratual real no banco descartável. Apenas sessão e resultado do
- * transporte são simulados; prévia, PDF, emissão e revisões usam os serviços. */
-export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; /** Q172: contratação por hora com adiantamento emitido na entrada. */ minutosAdiantamento?: number; /** B1 da #264: preço de referência por hora diferente do negociado (125). */ valorReferenciaHora?: string; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string; /** Q173: moeda e taxa no modelo da contratação por hora, sem os campos mensais. */ campoMoeda?: boolean;
-  /** Envio integrado (driver de assinatura): devolve só o original conferido, sem processo; o teste cria o processo pela ação. */
+export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean;  minutosAdiantamento?: number;  valorReferenciaHora?: string; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string;  campoMoeda?: boolean;
   semEnvio?: boolean } = {}) {
   const ambiente = opcoes.ambiente ?? "SANDBOX";
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
@@ -55,7 +52,6 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   }
   const preparacao = await prisma.$transaction(tx => prepararContratacaoTx(tx, { autorId: secretaria.id, leadId: lead.id, alunoId: aluno.id, produtoId: c.produto.id, paisId: c.pais.id, ...(agendaParticular ? { agendaParticular } : { turmaId: turma.id }), regime: opcoes.porHora ? "HORA_PARTICULAR" : "MENSALIDADE", ...(opcoes.minutosAdiantamento ? { minutosAdiantamento: opcoes.minutosAdiantamento } : {}), taxaProposta: "999999", valorServicoProposto: opcoes.porHora ? "125" : (opcoes.valorServicoMensal ?? "999999"), motivo: "Contratação para substituição", chaveIdempotencia: "preparacao-q116" }));
   const matriculaId = preparacao.matriculaId;
-  // Negociado abaixo da referência por hora: exceção de preço aprovada pela Administração, como na decisão real.
   if (opcoes.valorReferenciaHora) await prisma.decisaoPrecoPreparacao.create({ data: { preparacaoId: preparacao.id, decisorId: admin.id, aprovada: true, motivo: "Exceção de preço por hora aprovada" } });
   await prisma.matricula.update({ where: { id: matriculaId }, data: { secretariaAssumiuEm: new Date() } });
   const pagador = dado(await registrarPagadorPreparacao({ matriculaId, versaoEsperada: 0, pagador: { tipo: "ALUNO" }, motivo: "Aluno pagador conferido", chaveIdempotencia: "pagador-q116" }));
@@ -101,7 +97,6 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   const referenciaExternaFonte = "q116-fonte-simulada";
   await prisma.$transaction(tx => registrarResultadoEnvioTx(tx, { processoId: processo.id, tentativaId: tentativa.tentativaId, chave: "envio-q116", resultado: "REGISTRADO", referenciaExterna: referenciaExternaFonte, evidenciaHash: "a".repeat(64) }));
   if (opcoes.porHora || opcoes.semSubstituicao) return { secretariaId: secretaria.id, adminId: admin.id, matriculaId, processoId: processo.id, artefatoFonteId: fonte.artefatoId, conferenciaFonteId: fonte.conferenciaId, conferenciaSubstitutoId: fonte.conferenciaId, artefatoSubstitutoId: fonte.artefatoId, revisaoFonteHash: fonte.revisaoHash, revisaoSubstitutoHash: fonte.revisaoHash, referenciaExternaFonte };
-  // Alteração real depois do envio. O original antigo permanece preservado.
   await prisma.aluno.update({ where: { id: aluno.id }, data: { sobrenome: "Corrigido" } });
   const substituto = await original("substituto");
   return { secretariaId: secretaria.id, adminId: admin.id, matriculaId, processoId: processo.id,

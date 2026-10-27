@@ -25,7 +25,6 @@ const regras: Record<Exclude<OrigemCampo, `ADITIVO_${string}`>, Regra> = {
 
 const EntradaSchema = z.array(z.object({ campo: OrigemCampoSchema, rotulo: z.string().trim().min(1), anterior: z.string().trim().min(1), novo: z.string().trim().min(1) }).strict()).min(1);
 
-/** Classifica fatos do snapshot para revisão. Não atualiza cadastro, cobrança ou agenda. */
 export function classificarAlteracoesAditivo(entrada: unknown) {
   const alteracoes = EntradaSchema.parse(entrada);
   const vistos = new Set<string>();

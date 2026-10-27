@@ -3,7 +3,6 @@ import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { hashSubstituicao } from "./substituicao-estado";
 
 const instante = z.string().datetime({ offset: true });
-/** Entrada do cliente: a fonte, os horários antigos e os nomes vêm do banco. */
 export const PrepararAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.object({ encontroId: z.string().trim().min(1), professorNovoId: z.string().trim().min(1), inicioNovo: instante, fimNovo: instante, duracaoMinutos: z.number().int().positive().max(1440), fusoOrigem: FusoInstitucionalSchema }).strict().superRefine((e, c) => { if (Date.parse(e.fimNovo) - Date.parse(e.inicioNovo) !== e.duracaoMinutos * 60_000) c.addIssue({ code: z.ZodIssueCode.custom, message: "A duração nova não corresponde aos instantes informados." }); })).min(1).max(1000) }).strict().superRefine((p,c)=>{if(new Set(p.encontros.map(e=>e.encontroId)).size!==p.encontros.length)c.addIssue({code:z.ZodIssueCode.custom,message:"Cada encontro só pode constar uma vez na proposta."});});
 export const EncontroAgendaAditivoSchema = z.object({
   encontroId: z.string().trim().min(1), professorAnteriorId: z.string().trim().min(1), professorAnteriorNome: z.string().trim().min(1), professorNovoId: z.string().trim().min(1), professorNovoNome: z.string().trim().min(1),
@@ -14,7 +13,6 @@ export const EncontroAgendaAditivoSchema = z.object({
   if (Date.parse(e.fimNovo) - Date.parse(e.inicioNovo) !== e.duracaoMinutos * 60_000) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A duração nova não corresponde aos instantes informados.", path: ["fimNovo"] });
 });
 
-/** Fotografia interna: o servidor preenche preparadores, fonte, estado anterior e nomes docentes reconsultados. */
 export const PropostaAgendaAditivoSchema = z.object({
   matriculaId: z.string().trim().min(1), preparadorId: z.string().trim().min(1), fonteContratualId: z.string().trim().min(1), fonteContratualHash: z.string().regex(/^[a-f0-9]{64}$/), reservaContratualId: z.string().trim().min(1).optional(),
   texto: z.string().trim().min(1).max(4000).default("Agenda"),

@@ -12,7 +12,6 @@ import {diaUtilAs} from "@/test/janela-envio";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {executarAgendadaInbox,type BancoAgendadaInbox,type ComandoAgendadaInbox} from "./agendadas-operacao-inbox";
 import {lerAgendadasDoAtendimento} from "./agendadas-leitura";
-/** Autoria FS pós672254d7. Nenhuma execução alegada; usar somente sob lease ROOT. */
 beforeEach(()=>truncarBanco());
 afterAll(()=>prisma.$disconnect());
 async function fixture(){
@@ -43,7 +42,6 @@ function instrumentar(tx:Prisma.TransactionClient,d:Diagnostico){
 function iniciar(autorId:string,comando:ComandoAgendadaInbox){
  let sinal!:(pid:number)=>void;const pronto=new Promise<number>(r=>sinal=r);let terminou=false;
  const diag:Diagnostico={inicio:Date.now(),timeline:[],samples:[]};
- // Callthrough na mesma TX; telemetria registra somente fases estáticas/PIDs, não argumentos.
  const db={$transaction:async<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>)=>prisma.$transaction(async tx=>{const [linha]=await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() pid`;diag.worker=linha!.pid;fase(diag,"worker.pid");sinal(linha!.pid);return fn(instrumentar(tx,diag));})} as unknown as BancoAgendadaInbox;
  const resultado=executarAgendadaInbox(db,autorId,comando).then(valor=>{diag.ending={sucesso:true};return {valor};},(erro:unknown)=>{diag.ending={sucesso:false,...resumoErro(erro)};return {erro};}).finally(()=>{terminou=true;fase(diag,"worker.ended");});
  return {pronto,resultado,diag,terminou:()=>terminou};
@@ -56,7 +54,6 @@ async function esperar(observer:Client,h:Holder,op:Operacao,tabela:string,operac
  op.diag.holder=h.pid;op.diag.observer=observerPid;
  expect(worker).not.toBe(h.pid);expect(worker).not.toBe(observerPid);expect(h.pid).not.toBe(observerPid);
  const limite=Date.now()+2000;
- // Encerramento é checado fora de callback retry: worker que terminou falha imediatamente.
  while(Date.now()<limite){
   if(op.terminou())throw new Error("Worker terminou antes da espera SQL instrumental");
   await observer.query("SELECT pg_stat_clear_snapshot()");
@@ -154,7 +151,6 @@ it("SQL cria e commita enquanto KEY SHARE alheio no pai continua retido",async()
  catch(erro){primario=erro;throw erro;}finally {await limpar(primario,h,undefined,op);}
 });
 
-/** Grafo curado dos dois PIDs; observação opcional, não substitui o resultado de domínio. */
 async function grafoClaim(observer:Client,h:Holder,op:Operacao,holderTerminou:()=>boolean){
  const worker=await workerPid(op);const limite=Date.now()+500;
  do {await observer.query("SELECT pg_stat_clear_snapshot()");const r=await observer.query<{pid:number;state:string;wait_event_type:string;wait_event:string;query:string;bloqueadores:number[]}>("SELECT pid,state,wait_event_type,wait_event,query,pg_blocking_pids(pid) bloqueadores FROM pg_stat_activity WHERE pid=ANY($1::int[]) AND datname=current_database()",[[worker,h.pid]]);
@@ -169,7 +165,6 @@ it("SQL ciclo real claim ENVIANDO após worker travar pai preserva recusa de dom
  let claim:Promise<{sucesso:true}|{erro:unknown}>|undefined;
  try {
   h=await holder('SELECT id FROM "IntencaoMensagem" WHERE id=$1 FOR UPDATE',nova.id);observer=await conectar();
-  // Antes do UPDATE, worker deve ter ultrapassado o lock pai e esperar a intenção selecionada.
   op=iniciar(c.dono.id,{tipo:"REAGENDAR",atendimentoId:c.atendimento.id,intencaoId:nova.id,agendadaPara:diaUtilAs(11,"America/Costa_Rica").toISOString()});
   await esperar(observer,h,op,'"IntencaoMensagem"');fase(op.diag,"holder.before.UPDATE_ENVIANDO.afterWorkerIntencaoWait");
   let holderTerminou=false;
@@ -179,12 +174,10 @@ it("SQL ciclo real claim ENVIANDO após worker travar pai preserva recusa de dom
   op.diag.holderEnding="erro" in resultadoHolder?{sucesso:false,...resumoErro(resultadoHolder.erro)}:{sucesso:true};
   if("erro" in resultadoHolder)await h.pg.query("ROLLBACK");else await h.pg.query("COMMIT");
   const resultadoWorker=await op.resultado;
-  // 40P01/P2010/P2028/observer não são GREEN: só commit do claim e recusa ErroRegra servem.
   expect(op.diag.holderEnding,"holder deve confirmar claim sem erro de lock/infra").toEqual({sucesso:true});
   exigirRecusa(resultadoWorker,/Mensagem não encontrada ou mudou de situação\./);
   expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:nova.id}})).status).toBe("ENVIANDO");expect(await contar(c)).toBe(1);
  }catch(erro){primario=erro;throw erro;}finally {
-  // Libera recursos primeiro; eventual claim pendente também precisa terminar antes de sair.
   try{await limpar(primario,h,observer,op);}finally{if(claim)await claim;}
  }
 });

@@ -16,11 +16,6 @@ import { AlteracaoPendente } from "@/components/AlteracaoPendente";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { politicaAlterada } from "./alteracoes-pendentes";
 
-// POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
-// template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
-// estado desligada/shadow/ativa). LEIS fora da config: D+15 nunca automatiza; trava S1
-// (automação só no motor próprio — D38): número de outro driver não arma a política; prontidão S15 validada no servidor ao armar.
-
 const btnPri = botaoClasses({ tamanho: "md" });
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
 
@@ -32,12 +27,10 @@ const ESTADO_HINT: Record<string, string> = {
   ATIVA: "Valendo: degraus automáticos disparam sozinhos dentro da janela.",
 };
 
-/** A estimativa de alcance da ativação (docs/42 L2517), pedida ao servidor quando a confirmação abre. */
 type EstadoAlcance = { estado: "carregando" } | { estado: "pronto"; alcance: AlcanceRegua } | { estado: "indisponivel"; motivo: string };
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
-/** Quantas pessoas recebem: o número primeiro, e o que fica de fora (sem destino) ou depende de aprovação (lote). */
 function TextoAlcance({ alcance }: { alcance: EstadoAlcance | null }) {
   if (!alcance || alcance.estado === "carregando") return <p>Calculando quantas pessoas vão receber…</p>;
   if (alcance.estado === "indisponivel") return <p>Não foi possível estimar quantas pessoas vão receber: {alcance.motivo}</p>;
@@ -55,7 +48,6 @@ function TextoAlcance({ alcance }: { alcance: EstadoAlcance | null }) {
   );
 }
 
-/** Janela e dias em texto: "9h às 20h, seg, ter, qua, qui, sex". */
 function textoJanela(inicio: number, fim: number, dias: number[]): string {
   const nomes = [...dias].sort((a: number, b: number) => a - b).map((d: number) => DIAS[d]).filter((nome: string | undefined): nome is string => !!nome);
   return `${inicio}h às ${fim}h, ${nomes.length ? nomes.join(", ") : "nenhum dia marcado"}`;
@@ -82,13 +74,9 @@ export function PoliticaPainel({
     numeroRemetenteId: politica.numeroRemetenteId ?? "",
     degraus: politica.degraus as DegrauConfig[],
   });
-  // C32 da #170: política na tela diferente da salva → marca e aviso ao sair (o refresh traz a salva nova).
   const sujo = politicaAlterada(form, politica);
   useAvisoAoSair(sujo);
-  // Nenhuma das duas actions recebe chave de idempotência (o kill switch grava o estado-alvo, mas sem
-  // chave): resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
-  // O resultado aparece junto do botão que o disparou (kill switch no topo, salvar no rodapé).
   const [origem, setOrigem] = useState<"kill" | "salvar" | null>(null);
 
   async function run<T>(secao: "kill" | "salvar", disparar: () => Promise<Resultado<T>>, sucesso: string) {
@@ -108,9 +96,6 @@ export function PoliticaPainel({
     }));
   }
 
-  // Sair de desligada/ensaio para ATIVA põe a régua a mandar mensagens reais a clientes (docs/42 L2517):
-  // o Salvar, nesse caso, só abre a confirmação com remetente, janela, teto e degraus armados — o mesmo
-  // rigor do go-live do piloto. Salvar sem ativar continua direto.
   const ativando = politica.estado !== "ATIVA" && form.estado === "ATIVA";
   const [confirmar, setConfirmar] = useState<"salvar" | "kill" | null>(null);
 
@@ -129,8 +114,6 @@ export function PoliticaPainel({
   }
   const SUCESSO_SALVAR = "Política salva — cron, fila e timeline passam a ler esta configuração.";
 
-  // Quantas pessoas recebem (docs/42 L2517): estimado no servidor, com a regra do cron e os degraus do formulário,
-  // quando a confirmação da ativação abre. Só a resposta do último pedido vale (o diálogo pode ter sido reaberto).
   const [alcance, setAlcance] = useState<EstadoAlcance | null>(null);
   const pedidoAlcance = useRef(0);
   async function estimarAlcance() {
@@ -158,8 +141,6 @@ export function PoliticaPainel({
     if (desfecho?.tipo === "ok") router.refresh();
   }
 
-  // O kill switch congela (ou destrava) TODA a automação de cobrança (docs/42 L2516): confirmação nos
-  // dois sentidos, dizendo o que para ou o que volta a sair.
   function pedirKill() {
     setOrigem("kill");
     acao.limpar();
@@ -175,7 +156,6 @@ export function PoliticaPainel({
   }
 
   const nomeTemplate = new Map(templates.map((t: TemplateConfig): [string, string] => [t.id, t.nome]));
-  // Degraus que disparam depois de ativar (ativos, fora do D+15, que é sempre aprovação humana), por modo.
   const armados = (modo: string) => form.degraus
     .filter((d: DegrauConfig) => d.ativo && d.tipo !== "bloquear" && d.modo === modo)
     .map((d: DegrauConfig) => `${d.passo} (${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
@@ -205,7 +185,6 @@ export function PoliticaPainel({
       {feedback("kill")}
 
       <div className="mt-4 rounded-lg border border-gray-200 bg-surface p-4">
-        {/* Config global */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-xs text-gray-600">
             Estado
@@ -319,7 +298,6 @@ export function PoliticaPainel({
           </label>
         </div>
 
-        {/* Degraus */}
         <div className="mt-5 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

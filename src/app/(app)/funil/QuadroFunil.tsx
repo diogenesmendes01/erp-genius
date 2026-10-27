@@ -31,9 +31,7 @@ type Props = {
   podeMover: boolean;
   aoAbrir: (id: string) => void;
   aoPedirAcao: (id: string, acao: AcaoDoCartao) => void;
-  /** Instante de referência para "dias na etapa" e vencimento (testes); padrão: agora. */
   agora?: Date;
-  /** Fuso institucional (ConfiguracaoOperacional.fusoInstitucional). */
   fuso?: string;
 };
 
@@ -44,7 +42,6 @@ const etapaDoId = (id: unknown): EtapaLead | null =>
 
 const colisao: CollisionDetection = (args) => (args.pointerCoordinates ? pointerWithin(args) : rectIntersection(args));
 
-// Setas esquerda/direita levam o cartão para o centro da coluna vizinha; as demais teclas não movem.
 const coordenadasPorSetas: KeyboardCoordinateGetter = (evento, { context: { droppableRects, droppableContainers, collisionRect }, currentCoordinates }) => {
   if (!collisionRect) return undefined;
   if (evento.code !== "ArrowRight" && evento.code !== "ArrowLeft") return undefined;
@@ -131,7 +128,6 @@ export function QuadroFunil({ colunas, podeMover, aoAbrir, aoPedirAcao, agora, f
     if (d.tipo === "recusar") return setErro(d.motivo);
     setErro(null);
     if (d.tipo === "acao") return aoPedirAcao(id, d.acao);
-    // Sem mudança otimista: a coluna fica travada até o Resultado; só então a tela recarrega.
     setMovendo(true);
     const desfecho = await executarAcaoCliente(() => moverEtapa(id, destino), { idempotente: false });
     if (desfecho.tipo === "ok") router.refresh();

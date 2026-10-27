@@ -6,7 +6,6 @@ import {CHAVE_LINHA} from "./linha-comercial";
 
 type DestinoLegado = {id:string|null;contextoChave:string;marcar:boolean;responsavelId?:string|null;alunoId?:string|null;turmaId?:string|null};
 
-/** Caminho de AcoesContato: conserva o roteamento legado sem impor identidade de Pessoa/selected do cartão329. */
 export async function vincularLeadLegadoTx(tx:Prisma.TransactionClient,sessao:UsuarioSessao,entrada:{contatoId:string;atendimentoId?:string;leadId:string}){
  const {contatoId,atendimentoId,leadId}=entrada;
  if(!atendimentoId)throw new ErroRegra("Atendimento fora do seu escopo para vinculação.");
@@ -39,12 +38,9 @@ export async function vincularLeadLegadoTx(tx:Prisma.TransactionClient,sessao:Us
    }
   }
   const contextoChave=["COMERCIAL",leadId,a.alunoId??"",a.turmaId??""].join(":"),existente=atendimentos.find(t=>t.contextoChave===contextoChave);
-  // Mesmo contexto de garantirAtendimento no institucional/fallback: não descarta os vínculos do selected.
   const destino:DestinoLegado={id:existente?.id??null,contextoChave,marcar:false,alunoId:a.alunoId,turmaId:a.turmaId};
   return{a,contato,ids,destino};
  }
- // Todos os atendimentos que podem ser escolhidos são travados antes do contato e em ordem comum.
- // Uma inserção concorrente fora desse conjunto exige rollback, nunca lock tardio de outra identidade.
  const inicial=await resolver();
  for(const id of inicial.ids)await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR UPDATE`;
  await resolver(inicial.ids,inicial.a.conversaId);
@@ -57,7 +53,6 @@ export async function vincularLeadLegadoTx(tx:Prisma.TransactionClient,sessao:Us
  let destinoId=destino.id;
  if(destinoId&&destino.marcar){const r=await tx.atendimentoWhatsApp.updateMany({where:{id:destinoId,leadId:null,encerradoEm:null},data:{leadId}});if(r.count!==1)throw new ErroRegra("O atendimento mudou. Recarregue a conversa.");}
  if(!destinoId){
-  // Registro novo desta TX; create não reutiliza silenciosamente contexto que apareceu depois dos locks.
   const novo=await tx.atendimentoWhatsApp.create({data:{conversaId:antes.a.conversaId,contextoChave:destino.contextoChave,finalidade:"COMERCIAL",leadId,alunoId:destino.alunoId,turmaId:destino.turmaId,...(destino.responsavelId?{responsavelId:destino.responsavelId,status:"EM_ATENDIMENTO" as const}:{})}});destinoId=novo.id;
  }
  const idsFinais=[...new Set([...inicial.ids,destinoId])].sort();const depois=await resolver(idsFinais,inicial.a.conversaId);

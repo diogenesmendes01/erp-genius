@@ -1,15 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
-// Consulta interna (SEM "use server"): não é endpoint. Quem chama já filtrou os atendimentos
-// pelo escopo da sessão (atendimentoVisivel / listagem do inbox) e passa o usuarioId da sessão.
-
 export type PreferenciaDoAtendimento = { fixada: boolean; silenciada: boolean; naoLidas: number };
 
-/**
- * Preferências do usuário para uma página de atendimentos (chave = id do atendimento).
- * naoLidas pessoal: ENTRADA do atendimento depois de lidaAte (no mínimo 1 se marcada como não lida);
- * sem lidaAte, vale o contador compartilhado do atendimento.
- */
 export async function preferenciasDoUsuario(usuarioId: string, atendimentoIds: string[]): Promise<Map<string, PreferenciaDoAtendimento>> {
   const resultado = new Map<string, PreferenciaDoAtendimento>();
   if (!atendimentoIds.length) return resultado;
@@ -19,7 +11,6 @@ export async function preferenciasDoUsuario(usuarioId: string, atendimentoIds: s
     where: { usuarioId, conversaId: { in: atendimentos.map((a) => a.conversaId) } } });
   const porConversa = new Map(prefs.map((p) => [p.conversaId, p]));
   const agora = new Date();
-  // Atendimentos com lidaAte: contagem por groupBy, um grupo por instante de leitura.
   const contagens = new Map<string, number>();
   const porLidaAte = new Map<number, string[]>();
   for (const a of atendimentos) {

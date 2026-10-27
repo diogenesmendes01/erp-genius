@@ -99,7 +99,6 @@ describe("mensagem.status", () => {
     expect(evs).toHaveLength(1);
     expect(evs[0]).toMatchObject({ agregadoTipo: "NumeroWhatsApp", agregadoId: numeroId });
     expect(evs[0].payload).toMatchObject({ mensagemId: m.id, motivo: "numero_invalido" });
-    // reentrega não duplica
     await processar(envStatus("FALHOU"));
     expect(await prisma.evento.count({ where: { tipo: "EntregaWhatsAppFalhou" } })).toBe(1);
   });

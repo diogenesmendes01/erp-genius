@@ -21,7 +21,6 @@ type EntradaPendencia = { eventoId: string; matriculaId: string; motivo: MotivoP
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
 const ReconferirSchema = z.object({ pendenciaId: z.string().trim().min(1), motivo: z.string().trim().min(5).max(2_000) }).strict();
 
-/** Registra uma falha operacional visível sem criar intenção, tentativa ou transporte. */
 export async function registrarPendenciaAvisoAgendaTx(tx: Prisma.TransactionClient, entrada: EntradaPendencia) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${entrada.eventoId}:${entrada.matriculaId}:${entrada.motivo}`}, 0))`;
   const existente = await tx.pendenciaAvisoAgenda.findFirst({
@@ -33,7 +32,6 @@ export async function registrarPendenciaAvisoAgendaTx(tx: Prisma.TransactionClie
   return { id: criada.id, criada: true };
 }
 
-/** Só o fluxo que confirmou a condição corrigida deve encerrar a pendência; não reabre transporte. */
 export async function resolverPendenciaAvisoAgendaTx(tx: Prisma.TransactionClient, entrada: { id: string; resolvidaPorId: string; observacaoResolucao: string }) {
   const autor = await tx.usuario.findFirst({ where: { id: entrada.resolvidaPorId, ativo: true, papeis: { hasSome: ["ADMINISTRADOR", "SECRETARIA_ACADEMICA"] } }, select: { id: true } });
   if (!autor) throw new Error("Resolutor sem papel atual.");
@@ -53,11 +51,6 @@ function encontrosDoEvento(payload: unknown) {
   return [...new Set(ids)];
 }
 
-/**
- * Confere a fonte aplicada sem criar avisos. O conjunto devolvido é sempre o
- * subconjunto histórico da matrícula; por isso uma pendência nunca revela
- * encontros de outra turma ao ser reconferida.
- */
 async function encontrosElegiveisDaFonteTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; matriculaId: string; evento: { tipo: string; agregadoTipo: string; agregadoId: string; payload: unknown } }) {
   if (entrada.evento.tipo === "QuantidadeAulasModalidadeAplicada") {
     const fonte = await validarFonteQuantidadeAulasTx(tx, { eventoId: entrada.eventoId });
@@ -102,7 +95,6 @@ async function encontrosElegiveisDaFonteTx(tx: Prisma.TransactionClient, entrada
   return encontros.filter((encontro) => encontro.matriculaId === entrada.matriculaId || (!!encontro.turmaId && alocacoes.some((a) => a.turmaId === encontro.turmaId && alocacaoCobreAula(a, encontro.inicio)))).map((encontro) => encontro.id);
 }
 
-/** Reconferência explícita: prepara apenas a intenção válida e nunca toca no driver. */
 export async function reconferirPendenciaAvisoAgendaInterna(input: unknown): Promise<Resultado<{ resolvida: boolean; explicacao: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);

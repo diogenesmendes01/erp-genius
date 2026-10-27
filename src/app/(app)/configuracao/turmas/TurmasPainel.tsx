@@ -26,8 +26,8 @@ export interface TurmaRow {
   diasSemana: number[];
   horarioInicio: string | null;
   horarioFim: string | null;
-  dataInicio: string | null; // ISO ou null
-  dataFim: string | null; // ISO ou null
+  dataInicio: string | null;
+  dataFim: string | null;
   capacidade: number;
   rolling: boolean;
   status: StatusTurma;
@@ -50,11 +50,6 @@ function situacao(status: StatusTurma): { label: string; cls: string } {
   return porStatus[status];
 }
 
-// Casco de diálogo do formulário de turma (E7): TurmaFormulario já desenha o próprio cartão e o
-// título ("Nova turma"/"Editar turma"), então aqui não entra o <Modal> compartilhado — ele duplicaria
-// o título e o cartão. O comportamento é o mesmo do Modal: role="dialog" + aria-modal, Escape e o
-// fundo fecham (menos durante o salvamento), foco preso e devolvido (useDialogo). Alinhado ao topo com rolagem: o formulário é
-// mais alto que a tela no celular.
 function DialogoFormularioTurma({ titulo, aoFechar, bloquearFechamento, children }: {
   titulo: string;
   aoFechar: () => void;
@@ -98,8 +93,6 @@ export function TurmasPainel({
 }) {
   const [form, setForm] = useState<"none" | "nova" | { editar: TurmaParaEditar }>("none");
   const [salvandoTurma, setSalvandoTurma] = useState(false);
-  // Fundo e Escape não descartam uma turma preenchida sem confirmar (docs/43 §6 item 3; docs/42 L2395): o
-  // formulário tem 12 campos e o clique fora fechava tudo em silêncio.
   const [turmaAlterada, setTurmaAlterada] = useState(false);
   const [confirmandoDescarte, setConfirmandoDescarte] = useState(false);
   const fecharFormulario = () => { setForm("none"); setTurmaAlterada(false); setConfirmandoDescarte(false); };
@@ -166,7 +159,6 @@ export function TurmasPainel({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {turmas.map((t) => {
-                // _count.alocacoes já vem filtrado por { ativa: true } (ver listarTurmas).
                 const vagas = Math.max(0, t.capacidade - t._count.alocacoes - t._count.reservasMatricula);
                 const sit = situacao(t.status);
                 return (
@@ -193,9 +185,6 @@ export function TurmasPainel({
                       {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {/* Início e término são dias: o formulário grava ao meio-dia da escola (paraDataLocal), e registros
-                          gravados por script podem vir à meia-noite UTC. Nos dois casos o dia sai do ISO, sem passar
-                          pelo fuso do navegador — em UTC−3 o toLocaleDateString mostrava o dia anterior (C52 da #170). */}
                       {t.dataInicio ? formatarDataCivil(t.dataInicio.slice(0, 10)) : "—"}
                       {t.dataFim ? ` → ${formatarDataCivil(t.dataFim.slice(0, 10))}` : ""}
                       {t.status === "PLANEJADA" && !t.dataFim && (

@@ -3,20 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado, type UsuarioSessao } from "../_shared";
 import { escopoAtendimentos } from "../whatsapp/escopo";
 
-// Pausa da Aria por atendimento: quando um humano responde (ERP ou celular) a Aria sai da conversa
-// até alguém devolvê-la. Chamado na MESMA transação que grava a mensagem de saída.
-
 type Tx = Prisma.TransactionClient;
 
-/** Motivo gravado nas intenções da Aria canceladas porque ela saiu da conversa. */
 export const MOTIVO_ARIA_PAUSADA = "aria_pausada";
 
-/**
- * Cancela as intenções da Aria (origem IA) ainda não enviadas do atendimento: resposta pendente,
- * mensagem agendada por ela (ADIADA/PENDENTE com agendadaPara). `preservarIntencaoId` é a
- * mensagem do próprio handoff, que precisa sair. Interna (trava de auditoria da Task 43): só
- * `pausarAriaNoAtendimento` a usa, na transação do chamador.
- */
 async function cancelarIntencoesDaAria(tx: Tx, atendimentoId: string, preservarIntencaoId: string | null = null): Promise<number> {
   const r = await tx.intencaoMensagem.updateMany({
     where: {
@@ -30,11 +20,6 @@ async function cancelarIntencoesDaAria(tx: Tx, atendimentoId: string, preservarI
   return r.count;
 }
 
-/**
- * true se pausou agora; false se já estava pausado (idempotente, sem novo Evento).
- * Em qualquer caso cancela, na mesma transação, as intenções pendentes da Aria no atendimento
- * (uma pessoa assumiu: nada da Aria pode sair depois), exceto `preservarIntencaoId`.
- */
 export async function pausarAriaNoAtendimento(
   tx: Tx,
   atendimentoId: string,
@@ -58,7 +43,6 @@ export async function pausarAriaNoAtendimento(
   return true;
 }
 
-/** Só saída HUMANO (ERP) ou CELULAR (eco) pausa; IA, CRON, LOTE e GESTAO nunca. */
 export async function aoGravarSaidaHumana(
   tx: Tx,
   m: { atendimentoId: string | null; origem: OrigemEnvio | null; autorId: string | null },
@@ -68,10 +52,6 @@ export async function aoGravarSaidaHumana(
   else if (m.origem === "CELULAR") await pausarAriaNoAtendimento(tx, m.atendimentoId, "CELULAR", m.autorId);
 }
 
-/**
- * Devolver põe a Aria para FALAR com o contato: exige o escopo de envio, não só o de leitura. Regra
- * única da action (`devolverParaAria`) e do botão "Devolver para Aria" no Inbox (`carregarAriaDoAtendimento`).
- */
 export async function podeDevolverParaAria(db: Tx | typeof prisma, u: UsuarioSessao, atendimentoId: string): Promise<boolean> {
   const visivel = await db.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { enviar: true, db })] } });
   return visivel === 1;

@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-/** Cada informe guarda seu próprio prazo; editar a configuração não estende os anteriores. */
 export async function suspensoesPorConferencia(ids: string[], agora: Date = new Date()): Promise<Map<string, Date>> {
   if (!ids.length) return new Map();
   const informes = await prisma.pagamentoInformado.groupBy({ by: ["cobrancaId"], where: {

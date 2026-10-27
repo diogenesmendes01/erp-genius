@@ -3,9 +3,6 @@ import { Papel, TipoAjuste, TipoCobranca, Vigencia } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Auth.js usa import dinâmico incompatível com concorrência neste runner Windows.
-// Substituímos só a fronteira de autenticação: os papéis/estado continuam sendo
-// relidos no PostgreSQL real, e as ações/locks/ledger permanecem sem mocks.
 vi.mock("@/server/_shared/sessao", async (importOriginal) => {
   const atual = await importOriginal<typeof import("@/server/_shared/sessao")>();
   const sessao = async () => {
@@ -52,9 +49,6 @@ beforeEach(async () => {
     alunoId, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "AGUARDANDO", mesesPlano: 2,
     referenciaCobertura: "MES_CIVIL",
     cobrancas: { create: [
-      // Vence ontem, no calendário da escola: no dia do vencimento a taxa ainda não está em atraso (ref. #247).
-      // "Agora − 24 h" não servia: entre 21h e 24h de Brasília o dia UTC desse instante já é o de hoje na
-      // escola (`diaCivilGravado` fica com o maior) e `emAtraso` saía vazio.
       { tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, moeda: "CRC", vencimento: ontemAoMeioDia, saldo: 100 },
       { tipo: "MENSALIDADE", coberturaInicio: new Date("2026-09-01"), coberturaFim: new Date("2026-09-30"), valorOriginal: 200, valorNegociado: 200, moeda: "CRC", vencimento: new Date(Date.now() + 86400000), saldo: 200 },
     ] },

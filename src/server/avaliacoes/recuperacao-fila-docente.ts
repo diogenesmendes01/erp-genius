@@ -13,9 +13,6 @@ import { agendasRecuperacaoAutorizadasTx } from "./recuperacao-agenda-consulta-t
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autorizacao-tx";
 
-/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026), em ordem de id: registrar a realização
- * de uma tentativa a tira da fila de pendentes sem deslocar as seguintes, e a próxima continua da última vista. O
- * histórico (`modo: "historico"`) usa o mesmo cursor. */
 export async function listarTentativasRecuperacaoDesignadas(input: NavegacaoFila & { modo?: "pendentes" | "historico" } = {}) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);

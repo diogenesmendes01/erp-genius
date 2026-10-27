@@ -6,9 +6,6 @@ import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 export function DecisaoAcerto({ alunoId, rascunhoId }: { alunoId: string; rascunhoId: string }) {
-  // Idempotente por natureza (#166): a mesma decisão do mesmo decisor, com o mesmo motivo e as mesmas
-  // autorizações, devolve a decisão já registrada (server/matricula/encerramento-decisao.ts). Na falha de
-  // transporte vale a mensagem própria de decisão.
   const acao = useAcaoCliente({ idempotente: true });
   return <form onSubmit={async event => {
     event.preventDefault(); const f = new FormData(event.currentTarget);

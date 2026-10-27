@@ -5,12 +5,8 @@ import { REGUA } from "@/server/cobrancas/regua";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabrica";
 import { seedCatalogoMinimo } from "./integracao";
 
-// Helpers das suítes de integração do canal WhatsApp (doc 30 E1/E2).
-// O fuso usado é o DA MÁQUINA para os checks de janela serem determinísticos em qualquer TZ.
-
 export const FUSO_MAQUINA = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** "agora" de hoje com hora controlada — vencimentos derivados dele estabilizam o degrau. */
 export const agoraAs = (hora: number) => {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hora, 0, 0);
@@ -66,7 +62,6 @@ export async function seedCobranca(
     vencimento: Date;
     fusoAluno?: string;
   },
-  // Reuso do catálogo p/ criar N cobranças no mesmo teste (codigoISO do país é @unique).
   catalogo?: { pais: { id: string }; produto: { id: string } },
 ) {
   const { pais, produto } = catalogo ?? (await seedCatalogoMinimo());
@@ -106,7 +101,6 @@ export async function seedCobranca(
   return { pais, aluno, matricula, cobranca };
 }
 
-/** Número de teste com setores cadastrados (M1). Finalidade legada padrão: VENDAS. */
 export async function criarNumeroSetor(dados: {
   telefoneE164: string;
   setores: Setor[];

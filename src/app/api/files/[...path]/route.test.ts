@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Mocks: sessão (auth), Prisma e o sistema de arquivos. Testa a rota ponta a ponta
-// (autenticação + autorização por objeto + defesa contra path traversal).
 const authMock = vi.fn();
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 
@@ -20,7 +18,6 @@ vi.mock("@/lib/prisma", () => ({
     registroUpload: { findUnique: (...a: unknown[]) => registroFindUnique(...a) },
     documento: { findFirst: (...a: unknown[]) => documentoFindFirst(...a) },
     usuario: { findUnique: (...a: unknown[]) => usuarioFindUnique(...a) },
-    // 3º ramo (E3): mídia de mensagem WhatsApp — null = a URL não é mídia do canal.
     mensagemWhatsApp: { findFirst: () => mensagemFindFirst() },
     intencaoMensagem: { findFirst: () => intencaoFindFirst() },
   },
@@ -37,8 +34,6 @@ function ctx(segmentos: string[]) {
 }
 const req = new Request("http://localhost/api/files/x");
 
-// Sessão + usuário no banco: `exigirSessao` relê os papéis do BANCO (papéis frescos —
-// _shared/sessao), então o papel efetivo vem de usuario.findUnique, não do token.
 function comoUsuario(id: string, papeis: Papel[]) {
   authMock.mockResolvedValue({ user: { id, papeis } });
   usuarioFindUnique.mockResolvedValue({ nome: "U", papeis, ativo: true });
@@ -63,7 +58,7 @@ describe("GET /api/files/[...path]", () => {
 
   it("usuário autorizado lê o arquivo (200) e marca como privado", async () => {
     comoUsuario("u1", [Papel.FINANCEIRO]);
-    cobrancaFindFirst.mockResolvedValue({ id: "c1" }); // comprovante existe
+    cobrancaFindFirst.mockResolvedValue({ id: "c1" });
 
     const res = await GET(req, ctx(["123-comprovante.pdf"]));
     expect(res.status).toBe(200);
@@ -75,7 +70,7 @@ describe("GET /api/files/[...path]", () => {
 
   it("usuário autenticado sem escopo recebe 403 e NÃO lê o arquivo", async () => {
     comoUsuario("u1", [Papel.VENDEDOR]);
-    cobrancaFindFirst.mockResolvedValue({ id: "c1" }); // comprovante: vendedor não pode
+    cobrancaFindFirst.mockResolvedValue({ id: "c1" });
 
     const res = await GET(req, ctx(["123-comprovante.pdf"]));
     expect(res.status).toBe(403);

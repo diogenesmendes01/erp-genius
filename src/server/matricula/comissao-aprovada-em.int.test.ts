@@ -19,8 +19,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { ativarMatricula } from "./acoes";
 
-// A ativação pela preparação (ativarPreparacaoTx) é exercida, com a mesma asserção de aprovadaEm,
-// em reserva-vaga.int.test.ts (montar a preparação completa aqui duplicaria centenas de linhas).
 describe("aprovadaEm da comissão (K15)", () => {
   beforeEach(async () => { await truncarBanco(); });
 

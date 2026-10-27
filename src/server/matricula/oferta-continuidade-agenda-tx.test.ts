@@ -60,9 +60,7 @@ it("usa intervalos noturnos locais e fim exclusivo à meia-noite, sem recorrer a
   const turma = base({ dataFim: new Date("2026-10-02T00:00:00Z") }).turma;
   turma.propostasGrade[0].calendario.fusoInstitucional = "Pacific/Kiritimati";
   turma.encontrosAgenda = [
-    // 01/10 local 23:30 → 02/10 local 00:30: cruza a meia-noite local.
     { ...turma.encontrosAgenda[0], inicio: new Date("2026-10-01T09:30:00Z"), fim: new Date("2026-10-01T10:30:00Z") },
-    // 31/10 local 23:00 → 01/11 local 00:00: o fim exclusivo ainda cobre 31/10.
     { ...turma.encontrosAgenda[1], inicio: new Date("2026-10-31T09:00:00Z"), fim: new Date("2026-10-31T10:00:00Z") },
   ];
   await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base(turma)]) as never, entrada)).resolves.toMatchObject({ estado: "COMPROVADA_POR_AGENDA" });
@@ -167,7 +165,6 @@ describe("hash de contexto com alterações de quantidade aplicadas", () => {
   const cancelouA2 = impacto("quantidade-1", previstas, aposPrimeira, "2026-09-25T00:00:00Z");
 
   it("impacto aplicado que não vira elo da cadeia não muda o hash de memórias já confirmadas", async () => {
-    // Turma em GRADE_PUBLICADA: o impacto existe no banco desde antes do deploy, mas não entra na cadeia.
     const semImpacto = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: aposPrimeira })]) as never, entrada);
     const comImpacto = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: aposPrimeira })], [], { id: "cal", versao: 4 }, [cancelouA2]) as never, entrada);
     expect(semImpacto).toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["AULA_EXCEPCIONAL_NO_PERIODO"] } });

@@ -32,7 +32,6 @@ export default async function Pagina() {
       <div className="mt-4 grid gap-4">
         {setores.map((s) => {
           const c = prazos.find((x) => x.finalidade === s);
-          // Mostra o prazo gravado como está (ex.: Pedagógico 24 h); só sem linha cai no padrão 60.
           const prazo = c?.minutos ?? 60;
           return <SetorPainel key={s} finalidade={s} rotulo={SETOR_ATENDIMENTO_LABEL[s]} regra={c?.regraDistribuicao ?? "MANUAL"}
             participantesIds={c?.participantesIds ?? []} prazo={prazo}

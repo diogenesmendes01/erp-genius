@@ -15,7 +15,6 @@ const pessoa: DesempenhoUsuario = {
 describe("rótulos das abas de Relatórios", () => {
   it("funil_link_da_etapa_diz_que_abre_o_retrato_atual", () => {
     const html = renderToStaticMarkup(createElement(AbaFunil, { dados: { etapas: [etapa], perdas: [] }, anterior: { etapas: [], perdas: [] }, params: {} }));
-    // O painel da etapa lista as oportunidades que estão nela agora (coluna "Agora"), não as que chegaram no período.
     expect(html).toMatch(/<a(?=[^>]*\shref="\/relatorios\?detalhe=etapa%3APROPOSTA")(?=[^>]*\stitle="Ver oportunidades agora nesta etapa")[^>]*>Proposta<\/a>/);
     expect(html).toContain('aria-label="Proposta: ver oportunidades agora nesta etapa"');
   });

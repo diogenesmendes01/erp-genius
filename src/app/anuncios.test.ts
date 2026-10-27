@@ -5,16 +5,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MensagemStatus } from "@/components/MensagemStatus";
 
-// Resultado de ação precisa chegar a quem usa leitor de tela: erro com role="alert" (anunciado mesmo
-// inserido já com texto); sucesso/aviso por MensagemStatus (região polite sempre montada).
-
 const telas = ["src/app", "src/components"].flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])
     .filter((f) => /\.tsx$/.test(f))
     .map((f) => ({ arquivo: join(raiz, f), conteudo: readFileSync(join(raiz, f), "utf-8") })),
 );
 
-/** Tag de abertura inteira a partir de `<`, ignorando `>` dentro de `{…}` (ex.: `onChange={(e) => …}`). */
 function tagEm(fonte: string, inicio: number) {
   let nivel = 0;
   for (let i = inicio; i < fonte.length; i++) {
@@ -26,11 +22,6 @@ function tagEm(fonte: string, inicio: number) {
   return fonte.slice(inicio);
 }
 
-/**
- * A tag abre uma região que anuncia: `role="alert"`/`role="status"`, `role={…}` que só escolhe entre os dois
- * (`role={bloqueia ? "alert" : "status"}`) ou `aria-live` polite/assertive. Antes bastava qualquer `role=` —
- * `role="presentation"`, `aria-live="off"` e até `data-role` passavam (C51, #170).
- */
 function anuncia(tag: string) {
   if (/(?<![\w-])role="(?:alert|status)"|(?<![\w-])aria-live="(?:polite|assertive)"/.test(tag)) return true;
   const dinamico = /(?<![\w-])role=\{([^}]*)\}/.exec(tag)?.[1];
@@ -38,11 +29,6 @@ function anuncia(tag: string) {
   return literais.length > 0 && literais.every((r) => r === "alert" || r === "status");
 }
 
-/**
- * Além das regiões que anunciam, a trava aceita a nota estática declarada (`role="note"`): texto que acompanha
- * um campo ou um modo da tela (a nota interna do compositor, o aviso do cadastro do contato), não o resultado
- * de uma ação. Qualquer outro papel (`presentation`, `none`…) continua acusado.
- */
 const regiaoDeclarada = (tag: string) => anuncia(tag) || /(?<![\w-])role="note"/.test(tag);
 
 function renderizacoesSemRegiao(variavel: RegExp) {
@@ -54,13 +40,7 @@ function renderizacoesSemRegiao(variavel: RegExp) {
   );
 }
 
-/**
- * Região polite montada junto com o próprio texto — `{aviso && <p role="status">{aviso}</p>}` ou
- * `{ocupado && <p role="status">Processando…</p>}` — pode passar em silêncio: ela não existia antes da mudança.
- * Só em telas cliente, onde o texto aparece depois de uma ação; conteúdo composto (prévias, listas) fica de fora.
- */
 function regioesPoliteMontadasComOTexto() {
-  // `{x && …}` ou `{x ? … : …}`; o bloco inteiro é lido, então fragmento (`<>…</>`) e parênteses não escondem a região.
   const re = /\{\s*([\w.?]+)\s*(?:&&|\?(?![.?]))/g;
   return telas
     .filter(({ conteudo }) => /^\s*["']use client["']/.test(conteudo))
@@ -73,7 +53,6 @@ function regioesPoliteMontadasComOTexto() {
             const tag = tagEm(bloco, t.index!);
             if (!/role="status"|aria-live="polite"/.test(tag)) return false;
             const corpo = bloco.slice(t.index! + tag.length, bloco.indexOf(`</${t[1]}>`, t.index!)).trim();
-            // Texto fixo só conta como mensagem quando a região é o primeiro elemento do bloco condicional.
             const primeira = /^[\s(]*(?:<>\s*)?$/.test(bloco.slice(aposCondicao, t.index));
             return corpo === `{${m[1]}}` || (primeira && !/[<{}]/.test(corpo));
           })
@@ -82,7 +61,6 @@ function regioesPoliteMontadasComOTexto() {
     );
 }
 
-/** Expressão `{…}` inteira a partir da chave de abertura, respeitando chaves aninhadas. */
 function blocoEm(fonte: string, inicio: number) {
   let nivel = 0;
   for (let i = inicio; i < fonte.length; i++) {

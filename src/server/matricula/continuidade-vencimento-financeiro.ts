@@ -7,9 +7,6 @@ export const PlanejarContinuidadeFinanceiraSchema = PlanejarContinuidadeMensalSc
   .omit({ ajusteVencimento: true })
   .extend({ regraVencimento: RegraVencimentoDiaUtilSchema }).strict();
 
-/** Q99/Q160/Q64: cálculo sem persistência; exige a regra financeira explícita.
- * A aprovação contratual e a comprovação de oferta pertencem ao chamador.
- */
 export function planejarContinuidadeComVencimentoFinanceiro(
   input: z.input<typeof PlanejarContinuidadeFinanceiraSchema>,
 ) {

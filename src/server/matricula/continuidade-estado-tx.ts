@@ -18,7 +18,6 @@ import { selecionarFonteContinuidade } from "./continuidade-precedencia";
 const Entrada = z.object({ matriculaId: z.string().min(1), agora: z.date() }).strict();
 const civil = (data: Date) => data.toISOString().slice(0, 10);
 
-/** Fonte transacional: não autentica, não emite e não presume oferta por ausência de relato. */
 export async function carregarContinuidadeMensalTx(tx: Prisma.TransactionClient, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const m = await tx.matricula.findUnique({ where: { id: d.matriculaId }, select: {

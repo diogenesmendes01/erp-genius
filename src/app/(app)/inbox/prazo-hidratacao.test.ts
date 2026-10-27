@@ -18,7 +18,6 @@ it("hydrateRoot preserva DOMSSR29min ao hidratar30min e atualiza após assinar s
   try {
     const html = renderToStaticMarkup(createElement(Relogio)); expect(html).toBe("<span>29</span>");
     const container = dom.documento.createElement("div"), span = dom.documento.createElement("span");
-    // Esta folha SSR não tem atributos; o DOM mínimo não expõe NamedNodeMap.
     Object.defineProperty(span, "attributes", { value: [] });
     span.textContent = "29"; container.appendChild(span); dom.documento.body.appendChild(container);
     vi.stubGlobal("window", dom.janela); vi.setSystemTime(T + minuto);

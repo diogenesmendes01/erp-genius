@@ -8,7 +8,6 @@ export interface ConfigMotor {
 
 const MIN_SEGREDO = 32;
 
-/** Lê a configuração do motor. Lança ErroMotor("SEM_CONFIG") se faltar algo ou se chave/segredo forem curtos. */
 export function lerConfigMotor(env: Record<string, string | undefined> = process.env): ConfigMotor {
   const url = env.MOTOR_URL?.trim();
   const apiKey = env.MOTOR_API_KEY?.trim();

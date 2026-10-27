@@ -12,7 +12,6 @@ export async function POST(request: Request) {
   try {
     await solicitarRecuperacaoPortalAluno(await lerJsonPortalAluno(request));
   } catch {
-    // A resposta é deliberadamente a mesma para entrada inválida, ausente ou bloqueada.
   }
   return NextResponse.json({ ok: true, situacao: "PENDENTE_ENVIO" }, { headers: { "Cache-Control": "no-store" } });
 }

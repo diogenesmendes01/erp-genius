@@ -10,11 +10,6 @@ import { renderizarTemplate, TEXTOS_FABRICA } from "./render";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { ONDE_MODELO_REGUA } from "./modelos-regua";
 
-// CRON DA RÉGUA (doc 26 §Camada 1): reusa o MESMO cérebro e a MESMA projeção da fila
-// humana (montarReguaPorCobranca + proximaAcao) — nunca recalcula "quem dispara" com
-// lógica própria (doc 29 regra 1). Só grava INTENÇÕES; quem envia é o despachante. A regra de quem recebe é
-// decidirEnvioCron (alcance-regua.ts), a mesma que conta o alcance na ativação da régua (docs/42 L2517).
-
 export interface ResultadoCron {
   executou: boolean;
   motivoParada: string | null;
@@ -46,15 +41,12 @@ const zerado = (motivo: string): ResultadoCron => ({
 export async function rodarCronRegua(agora: Date = new Date()): Promise<ResultadoCron> {
   const politica = await carregarPoliticaRegua();
 
-  // Toda automação nasce desligada (doc 27): DESLIGADA não gera nem intenção.
-  // SHADOW gera intenções que o despachante marcará como SIMULADA (ensaio, S8).
   if (politica.estado === "DESLIGADA") return zerado("politica_desligada");
   if (politica.killSwitch) return zerado("kill_switch");
   if (!politica.numeroRemetenteId) return zerado("sem_numero_remetente");
 
   const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: politica.numeroRemetenteId } });
   if (!numero || !numero.ativo) return zerado("numero_remetente_inativo");
-  // Trava de driver (S1 revogada para MOTOR, D38): o cron nem enfileira em driver legado (BAILEYS).
   if (!driverAceitaAutomacao(numero.driver)) return zerado("trava_driver_oficial");
 
   const { cobrancas, regua } = await carregarCobrancasDaRegua(agora, politica.degraus);
@@ -71,18 +63,16 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
     if (decisao.tipo === "sem_acao" || !calc) continue;
     r.acoesDevidas += 1;
 
-    // D+15 (bloquear) e degrau manual/lote nunca viram intenção automática — aprovação humana sempre (lei).
     if (decisao.tipo === "nao_automatico") {
       r.degrausNaoAutomaticos += 1;
       continue;
     }
     if (decisao.tipo === "sem_destino") {
-      r.semDestino += 1; // S2: sem destino → intenção não nasce; item segue na fila humana
+      r.semDestino += 1;
       continue;
     }
     const { passo, destino } = decisao;
 
-    // Template do degrau: config da política → por nome (modelo de fábrica) → texto de fábrica.
     const templateId = politica.templateIdPorPasso.get(passo) ?? null;
     const template =
       (templateId ? templatePorId.get(templateId) : undefined) ??
@@ -125,8 +115,6 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
         });
       });
     } catch (erro) {
-      // Outro pagamento/ajuste/retomada mudou esta cobrança. A próxima rodada
-      // recalcula seu degrau e texto; as demais cobranças continuam nesta rodada.
       if (!(erro instanceof ErroCobrancaAlterada)) throw erro;
       r.cobrancasAlteradas += 1;
       continue;

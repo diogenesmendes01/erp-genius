@@ -3,7 +3,6 @@ import { ErroRegra } from "@/server/_shared/sessao";
 import { exigirPrecoPreparacaoAutorizado } from "./preco-autorizado";
 import { exigirAceiteIntegrado } from "@/server/contratos/aceite-estado";
 
-/** O aceite deve apontar para um contrato vigente, com autor e data da conferência. */
 export async function exigirContratoAceito(tx: Prisma.TransactionClient, matricula: {
   id: string; leadId: string | null; contratoOk: boolean; contratoDocumentoId: string | null;
   confirmacaoContratoEm: Date | null; confirmacaoContratoPorId: string | null;

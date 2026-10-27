@@ -3,7 +3,6 @@
 import { useSyncExternalStore } from "react";
 import type { VistaInbox } from "./InboxNovo";
 
-// Limiares locais: a Sidebar global ocupa 224px a partir de md. Validados pela medição da casca.
 export const LIMIAR_DUAS_COLUNAS = 960;
 export const LIMIAR_TRES_COLUNAS = 1400;
 const CONSULTAS = ["(min-width: 960px)", "(min-width: 1400px)"];
@@ -17,7 +16,6 @@ function assinarModo(avisar: () => void) {
   return () => medias.forEach((media) => media.removeEventListener("change", avisar));
 }
 const modoServidor = () => null;
-/** CSS decide o primeiro paint; o snapshot neutro é igual no servidor e na hidratação. */
 export function useModoInbox(): ModoInbox | null { return useSyncExternalStore(assinarModo, lerModo, modoServidor); }
 
 export function painelEfetivo(aberto: boolean | null, vista: VistaInbox, largura: number): boolean {

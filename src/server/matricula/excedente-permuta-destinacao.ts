@@ -9,10 +9,6 @@ import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { calcularExcedentePermuta } from "./excedente-permuta-calculo";
 import { carregarOrigensExcedentePermutaTx } from "./excedente-permuta-origens-tx";
 
-// Q167C/Q171 (decisões de 21/09/2026): o excedente de permuta nunca vira crédito ou devolução sozinho. O Financeiro
-// propõe a destinação negociada, registram-se as concordâncias do aluno (ou responsável) e da escola, e outro
-// aprovador financeiro decide; os destinos (saldo restrito a serviços e/ou crédito financeiro) nascem na transação
-// da decisão. Port da #62 (5f2354ee); guards no banco em 20261021300000_destinacao_excedente_permuta.
 const id = z.string().trim().min(1).max(100);
 const dinheiro = z.string().regex(/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/, "Informe valor com até duas casas.");
 const texto = z.string().trim().min(5).max(2000);
@@ -25,7 +21,6 @@ const Preparar = z.object({
 const Concordar = z.object({ propostaId: id, parte: z.enum(["ALUNO_OU_RESPONSAVEL", "ESCOLA"]), nomeDeclarante: z.string().trim().min(2).max(200), meio: z.string().trim().min(2).max(100), evidencia: z.string().trim().min(5).max(4000) }).strict();
 const Decidir = z.object({ propostaId: id, aprovada: z.boolean(), motivo: texto }).strict();
 
-/** Como a permuta da main (permuta-servico.ts): só a recusa conhecida libera corrigir a entrada; falha de transporte/banco é incerta. */
 async function executarDestinacao<T>(acao: () => Promise<T>) {
   let podeRevisar = false;
   const resultado = await executarAcao(async () => {
@@ -51,10 +46,7 @@ async function bloquear(tx: Prisma.TransactionClient, matriculaId: string, cobra
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${cobrancaId} FOR UPDATE`;
 }
 
-/** Fotografia = fontes reais da cobrança + aritmética do excedente. É recalculada na decisão; qualquer mudança invalida a proposta. */
 async function apurarTx(tx: Prisma.TransactionClient, d: { matriculaId: string; cobrancaId: string; valorDevidoAcordado: string; distribuicao?: { origemId: string; valor: string }[] }) {
-  // B3 da R1 da #283: o excedente é fato sobre liquidação JÁ feita. Com a cobrança em aberto, o crédito nasceria
-  // enquanto ela continua cobrando o valor original (o ajuste de cobrança com permuta é bloqueado).
   const cobranca = await tx.cobranca.findUnique({ where: { id: d.cobrancaId }, select: { status: true, saldo: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true } });
   if (!cobranca || cobranca.status !== "PAGO" || cobranca.saldo === null || !cobranca.saldo.isZero()
     || new Prisma.Decimal(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito).plus(cobranca.valorCompensadoPermuta).lt(cobranca.valorNegociado)) {
@@ -67,8 +59,6 @@ async function apurarTx(tx: Prisma.TransactionClient, d: { matriculaId: string; 
   if (calculo.status === "DISTRIBUICAO_MISTA_PENDENTE") throw new ErroRegra("A redução mistura fontes de liquidação. Informe a distribuição por origem acordada antes de propor a destinação.");
   if (calculo.status === "SEM_EXCEDENTE_SERVICO" || !calculo.excedentesServico.length) throw new ErroRegra("Esta cobrança não possui excedente de serviço a destinar com a obrigação informada.");
   const fotografia = JSON.parse(JSON.stringify({ fontes: fontes.fotografia, origens: fontes.origens, calculo })) as Prisma.JsonObject;
-  // B1 da R1 da #283 (saldo restrito nunca vira dinheiro): o uso aprovado do saldo de serviços (cadeia com saldoServicoId)
-  // é liquidação da cobrança, mas não é origem de excedente; destiná-lo o mandaria a crédito financeiro ou o reciclaria.
   const usosSaldo = new Set(fontes.fotografia.cadeias.filter((cadeia) => cadeia.saldoServicoId).map((cadeia) => cadeia.origemId));
   if (calculo.excedentesServico.some((e) => usosSaldo.has(e.aplicacaoPermutaId))) throw new ErroRegra("O uso do saldo de serviços não é origem de excedente: saldo restrito nunca vira crédito financeiro nem saldo novo. Distribua a redução às compensações de permuta propriamente ditas.");
   return { fotografia, fotografiaHash: hashSubstituicao(fotografia), versaoCobranca: fontes.fotografia.versaoCobranca, moeda: fontes.fotografia.moeda,
@@ -83,7 +73,6 @@ export async function prepararDestinacaoExcedentePermuta(input: z.input<typeof P
       await bloquear(tx, d.matriculaId, d.cobrancaId); await autorFinanceiro(tx, autor.id);
       const repetida = await tx.propostaDestinacaoExcedentePermuta.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } } });
       if (repetida) { if (repetida.entradaHash !== entradaHash) throw new ErroRegra("A chave já corresponde a outra destinação."); return { id: repetida.id, valorExcedente: repetida.valorExcedente.toFixed(2) }; }
-      // O cálculo não conhece destinações anteriores; uma segunda contaria o mesmo excedente de novo.
       if (await tx.propostaDestinacaoExcedentePermuta.count({ where: { cobrancaId: d.cobrancaId, decisao: { is: { aprovada: true } } } })) throw new ErroRegra("Esta cobrança já possui destinação de excedente aprovada. Nova redução da obrigação exige conferência financeira específica.");
       if (await tx.propostaDestinacaoExcedentePermuta.count({ where: { cobrancaId: d.cobrancaId, decisao: null } })) throw new ErroRegra("Já existe destinação de excedente aguardando decisão para esta cobrança.");
       const apuracao = await apurarTx(tx, d);
@@ -101,7 +90,6 @@ export async function prepararDestinacaoExcedentePermuta(input: z.input<typeof P
   });
 }
 
-/** Concordância de uma das partes, com quem declarou, por qual meio e a evidência. Não decide nem aplica nada. */
 export async function registrarConcordanciaExcedentePermuta(input: z.input<typeof Concordar>) {
   return executarDestinacao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA), d = Concordar.parse(input);
@@ -109,7 +97,6 @@ export async function registrarConcordanciaExcedentePermuta(input: z.input<typeo
       const p = await tx.propostaDestinacaoExcedentePermuta.findUnique({ where: { id: d.propostaId }, select: { id: true, matriculaId: true, cobrancaId: true } });
       if (!p) throw new ErroRegra("Destinação não encontrada.");
       await bloquear(tx, p.matriculaId, p.cobrancaId);
-      // A repetição idêntica devolve a mesma concordância mesmo depois da decisão (quem repete não grava de novo).
       const anterior = await tx.concordanciaDestinacaoExcedentePermuta.findUnique({ where: { propostaId_parte: { propostaId: p.id, parte: d.parte } } });
       if (anterior) {
         if (anterior.nomeDeclarante !== d.nomeDeclarante || anterior.meio !== d.meio || anterior.evidencia !== d.evidencia) throw new ErroRegra("Esta parte já possui concordância registrada. Para mudar o acordo, rejeite a proposta e prepare outra.");
@@ -161,7 +148,6 @@ export async function decidirDestinacaoExcedentePermuta(input: z.input<typeof De
   });
 }
 
-/** Painel da matrícula: cobranças compensadas por permuta, destinações e saldo restrito a serviços. Só leitura. */
 export async function consultarDestinacoesExcedentePermuta(input: { matriculaId: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = z.object({ matriculaId: id }).strict().parse(input);
@@ -176,12 +162,10 @@ export async function consultarDestinacoesExcedentePermuta(input: { matriculaId:
         tx.saldoServicoPermuta.findMany({ where: { matriculaId: d.matriculaId }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { id: true, moeda: true, valorInicial: true, criadoEm: true } }),
         fusoDaEscola(tx),
       ]);
-      // As fontes reais de cada cobrança orientam quem prepara a distribuição; a leitura não altera nada.
       const fontes = new Map<string, { prontas: boolean; pendencias: string[]; origens: { id: string; tipo: string; valor: string; usoSaldo: boolean }[] }>();
       for (const c of cobrancas) {
         try {
           const f = await carregarOrigensExcedentePermutaTx(tx, { matriculaId: d.matriculaId, cobrancaId: c.id });
-          // C7 da R2 da #283: a tela marca o uso de saldo, que não é origem de excedente (B1), para não convidar ao erro.
           const usos = new Set(f.fotografia.cadeias.filter(x => x.saldoServicoId).map(x => x.origemId));
           fontes.set(c.id, { prontas: f.status === "PRONTA", pendencias: f.pendencias.map(x => x.codigo), origens: f.origens.map(o => ({ id: o.id, tipo: o.tipo, valor: new Prisma.Decimal(o.valor).toFixed(2), usoSaldo: usos.has(o.id) })) });
         } catch (erro) {
@@ -191,9 +175,7 @@ export async function consultarDestinacoesExcedentePermuta(input: { matriculaId:
       }
       return {
         matriculaId: d.matriculaId,
-        // Vencimento é dia civil, lido no fuso da escola (Q176), nunca no do servidor.
         cobrancas: cobrancas.map(c => ({ fontes: fontes.get(c.id)!, id: c.id,
-          // C7 da R2 da #283: mesmo critério de apurarTx (B3) — só cobrança quitada recebe destinação.
           quitada: c.status === "PAGO" && c.saldo !== null && c.saldo.isZero() && new Prisma.Decimal(c.valorRecebido ?? 0).plus(c.valorLiquidadoCredito).plus(c.valorCompensadoPermuta).gte(c.valorNegociado), tipo: c.tipo, versao: c.versao, moeda: c.moeda, status: c.status, vencimento: diaCivilGravado(c.vencimento, fuso), valorNegociado: c.valorNegociado.toFixed(2),
           liquidado: new Prisma.Decimal(c.valorRecebido ?? 0).plus(c.valorLiquidadoCredito).plus(c.valorCompensadoPermuta).toFixed(2), permuta: c.valorCompensadoPermuta.toFixed(2),
           emAndamento: propostas.some(p => p.cobrancaId === c.id && !p.decisao),

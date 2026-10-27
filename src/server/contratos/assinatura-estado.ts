@@ -10,8 +10,6 @@ import { conferirBaseOriginalAtual } from "./original-estado";
 import { carregarAgendaParticularContratual } from "./agenda-particular";
 import { hashPrevia } from "./previa-estado";
 
-/** Revalidar novamente imediatamente antes de um futuro envio externo.
- * Um registro anterior desta conferência não é autorização duradoura de envio. */
 export async function carregarRevisaoAssinatura(tx: Prisma.TransactionClient, matriculaId: string, artefatoId: string) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await bloquearMatriculas(tx, [matriculaId]);
@@ -50,7 +48,6 @@ export async function carregarRevisaoAssinatura(tx: Prisma.TransactionClient, ma
     const agenda = await tx.encontroAgenda.findMany({ where: { turmaId: reserva.turmaId, status: "PREVISTO", inicio: { gt: disponibilidade.agora } }, orderBy: { id: "asc" }, select: { id: true, inicio: true, fim: true, professorId: true, propostaGradeId: true } });
     return { reserva: { id: reserva.id, turmaId: reserva.turmaId, status: reserva.status, expiraEm: reserva.expiraEm.toISOString() }, janela: disponibilidade.janela, excecaoAdmissaoId: disponibilidade.excecaoId, agenda, agendaParticular: null as string | null };
   })();
-  // Projeção explícita: não envia PDF, URLs de evidências ou dados de outras contratações à tela.
   const dados = { matriculaId, artefatoId: a.id, previaId: a.previaId, pdfHash: a.pdfHash, baseHash: a.baseHash,
     conferenciaParticipantesId: participantes.id, conferenciaInicialId: inicial.id, condicoesId: base.condicoesId,
     regraTaxa: politica.taxaPreviaAssinatura ? "CONFIRMACAO_PREVIA_EXIGIDA" as const : "SEM_PAGAMENTO_PREVIO" as const,

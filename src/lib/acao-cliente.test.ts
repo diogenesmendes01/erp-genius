@@ -34,8 +34,6 @@ describe("executarAcaoCliente", () => {
   });
 });
 
-// O hook só liga useState/useRef ao criarExecutor; o comportamento é testado aqui, sem renderizador
-// (o projeto não tem jsdom/RTL e AGENTS.md não permite instalar dependência).
 function executorDeTeste(idempotente = true) {
   const estado = { ocupado: false, erro: null as string | null, sucesso: null as string | null, historicoOcupado: [] as boolean[] };
   const executar = criarExecutor({
@@ -103,7 +101,7 @@ describe("criarExecutor (comportamento do useAcaoCliente)", () => {
     const { estado, executar } = executorDeTeste();
     await expect(executar(async () => ({ ok: true as const }), () => { throw new Error("bug no rótulo"); })).rejects.toThrow("bug no rótulo");
     expect(estado.ocupado).toBe(false);
-    await expect(executar(async () => ({ ok: true as const }))).resolves.not.toBeNull(); // trava liberada
+    await expect(executar(async () => ({ ok: true as const }))).resolves.not.toBeNull();
   });
 
   it("sem chave de idempotência, a falha de transporte usa a mensagem que manda conferir antes de repetir", async () => {

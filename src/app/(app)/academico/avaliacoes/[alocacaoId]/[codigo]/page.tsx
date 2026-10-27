@@ -14,7 +14,6 @@ import { AvisoFusoNaoConfigurado, DESTINO_CONFIGURAR_FUSO } from "@/components/A
 import { Aviso } from "@/components/Aviso";
 import { MSG_LANCAMENTO_SEM_FUSO, dataHoraAvaliacaoLocal } from "@/server/avaliacoes/tempo";
 
-/** D10: no lugar do formulário, o motivo do bloqueio e o caminho para configurar o fuso. */
 function BloqueioLancamentoSemFuso() {
   return <Aviso tom="erro">
     {MSG_LANCAMENTO_SEM_FUSO} <Link className="underline" href={DESTINO_CONFIGURAR_FUSO}>Configurar o fuso da escola</Link>
@@ -27,9 +26,6 @@ export default async function LancamentoPage({ params, searchParams }: {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { alocacaoId, codigo } = await params, busca = await searchParams, p = Number(busca.pagina ?? 1);
   if (busca.fuso && !FusoInstitucionalSchema.safeParse(busca.fuso).success) return <div role="alert">Fuso inválido. <Link className="underline" href="?fuso=UTC">Voltar para UTC</Link></div>;
-  // D10 (decisão do dono, 19/10/2026; C7 da #170): o fuso da escola é sempre conferido, mesmo com fuso na URL.
-  // Sem ele, o formulário de lançamento não aparece (em UTC a data pode cair no dia errado) e a tela leva à
-  // configuração; o histórico continua visível, exibido em UTC. A ação do servidor também recusa.
   const fusoInstitucional = await consultarFusoInstitucional();
   const semFusoDaEscola = !fusoInstitucional;
   const fusoEntrada = FusoInstitucionalSchema.parse(busca.fuso ?? fusoInstitucional ?? "UTC");
@@ -49,8 +45,6 @@ export default async function LancamentoPage({ params, searchParams }: {
     <p>Regra {c.regraVersao ?? "não vinculada"}. Oficializar uma avaliação não fecha o nível nem autoriza a progressão.</p>
     {!c.avaliacao && <p role="alert">Avaliação não encontrada na regra vinculada. Confira a configuração antes de lançar.</p>}
     {d.oficial && <p role="status">Esta avaliação possui notas oficiais. Alterações exigem o fluxo de correção com aprovação independente.</p>}
-    {/* Sem key de versão, fuso ou página (docs/43 §6 item 3): o fuso é escolhido dentro do formulário, e trocar a
-        página do histórico ou receber a versão nova depois de salvar não remonta o que foi digitado. */}
     {semFusoDaEscola && d.podeLancar && <BloqueioLancamentoSemFuso />}
     {semFusoDaEscola && !d.podeLancar && <AvisoFusoNaoConfigurado />}
     {!semFusoDaEscola && d.podeLancar && c.avaliacao && c.escala && <LancarNotas fuso={fusoEntrada} alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} habilidades={c.avaliacao.habilidades} escala={c.escala}

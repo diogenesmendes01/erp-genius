@@ -67,8 +67,6 @@ it("sem propostas, mostra o estado vazio", async () => {
  expect(renderToStaticMarkup(await Page(entrada()))).toContain("Nenhuma proposta de acerto registrada.");
 });
 
-// Lote 3 do fuso pessoal nas telas: sem preferência, registro e aplicação no fuso da ESCOLA (antes, UTC), com o fuso
-// escrito; o vencimento é data civil gravada, no fuso em que o acerto foi preparado. Expectativas fixas (TZ=UTC e SP).
 it("registro e aplicação: sem preferência, o fuso da escola; com preferência, a pessoal; vencimento como data civil", async () => {
  const d = dado(); Object.assign(d.propostas[0], { criadaEm: "2026-09-11T02:30:00Z", aplicadaEm: "2026-09-19T01:00:00Z", estado: "APLICADA", podeSolicitarAplicacao: false });
  mocks.consulta.mockResolvedValue({ ok: true, dado: d });

@@ -5,9 +5,6 @@ import { carregarConferenciaDesistenciaTx } from "./desistencia-conferencia-tx";
 
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-/** Fotografia de cobranças emitidas que podem ser canceladas integralmente.
- * Não calcula acerto: qualquer baixa, crédito, pausa ou tratamento incompatível sai
- * deste fluxo e exige tratamento financeiro posterior. */
 export async function conferirCancelamentoFinanceiroDesistenciaTx(tx: Prisma.TransactionClient, pedidoId: string, estadoHash: string) {
   const pedido = await tx.pedidoDesistenciaPreparacao.findUnique({ where: { id: pedidoId }, select: { id: true, matriculaId: true, estadoHash: true } });
   if (!pedido || pedido.estadoHash !== estadoHash) throw new ErroRegra("Pedido ou conferência de desistência inválidos.");

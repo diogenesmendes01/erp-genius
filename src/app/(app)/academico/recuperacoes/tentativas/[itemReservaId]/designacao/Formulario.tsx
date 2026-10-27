@@ -12,8 +12,6 @@ export function Designar({ itemReservaId, versaoEsperada, atualId, professores }
     const dados = { itemReservaId, versaoEsperada, professorId: escolha === "revogar" ? null : escolha, motivo: String(data.get("motivo") ?? "") }, entrada = JSON.stringify(dados);
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
     const chaveIdempotencia = tentativa.current.chave;
-    // O <Formulario> compartilhado guarda ocupado/erro e só entende { ok, erro }; executarAcaoCliente decide a mensagem de resultado incerto.
-    // Chave estável por entrada; o servidor devolve a designação já criada com a mesma chave (server/avaliacoes/recuperacao-designacao.ts:21-24).
     const r = await executarAcaoCliente(() => designarProfessorRecuperacao({ ...dados, chaveIdempotencia }), { idempotente: true });
     if (r.tipo !== "ok") return { ok: false, erro: r.mensagem };
     tentativa.current = null;

@@ -9,8 +9,6 @@ vi.mock("./CorrecoesConclusaoReposicao", () => ({ CorrecoesConclusaoReposicao: (
 
 import CorrecoesReposicao from "./page";
 
-// Revisão R2 da #134 (B2): a página repassa a página da lista ao componente — e na PRIMEIRA página não
-// repassa nada (`antes ?? 1` faria a página 1 dizer "Não há correções nesta página.").
 describe("correções da conclusão de reposição — página repassada ao componente", () => {
   beforeEach(() => {
     vi.resetAllMocks();

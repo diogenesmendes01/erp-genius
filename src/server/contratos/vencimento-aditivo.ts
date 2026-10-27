@@ -10,7 +10,6 @@ import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { reconciliarAcessoVencimento } from "./vencimento-acesso";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
-// O callback só retorna após a transação terminar. Falhas desconhecidas preservam a tentativa.
 async function executarMutacaoVencimento<T>(acao: () => Promise<T>) {
   let podeRevisar = false;
   const resultado = await executarAcao(async () => {
@@ -71,7 +70,6 @@ export async function proporVencimentoAditivo(input: unknown) {
         SELECT f AS fotografia, encode(sha256(convert_to(f::text,'UTF8')),'hex') AS hash
         FROM (SELECT fotografia_vencimento_aditivo_225(${v.id},${c.id},${fuso},(${vencimentoNovo}::timestamptz AT TIME ZONE 'UTC')) AS f) fonte`;
       if (!foto?.fotografia) throw new ErroRegra("Fotografia do acerto indisponível.");
-      // Fotografia e hash usam o mesmo JSONB no INSERT, sem nova conversão numérica pelo ORM.
       const [p] = await tx.$queryRaw<Array<{ id: string; fotografiaHash: string }>>`
         WITH foto AS (SELECT ${JSON.stringify(foto.fotografia)}::jsonb AS dados)
         INSERT INTO "PropostaVencimentoAditivo" (id,"matriculaId","propostaAditivoId","versaoCondicoesId","cobrancaId","preparadorId","versaoCobranca","vencimentoAnterior","vencimentoNovo",fuso,fotografia,"fotografiaHash",motivo,evidencia,"chaveIdempotencia")
@@ -119,7 +117,6 @@ export async function aplicarVencimentoAditivo(input: unknown) {
       }
       const versaoAplicavel = await conferirVersao(tx, p.matriculaId, p.versaoCondicoesId);
       if (versaoAplicavel.vigenciaInicio > new Date()) throw new ErroRegra("Aguarde a vigência aprovada antes de aplicar o vencimento.");
-      // A trigger reconfere a fotografia e altera a cobrança na mesma transação.
       const aplicacao = await tx.aplicacaoVencimentoAditivo.create({ data: {
         decisaoId: p.decisao.id, executorId: autor.id, chaveIdempotencia: d.chaveIdempotencia,
         fotografiaHash: p.fotografiaHash, versaoCobrancaAntes: p.versaoCobranca,
@@ -134,7 +131,6 @@ export async function aplicarVencimentoAditivo(input: unknown) {
   return resultado;
 }
 
-/** Histórico financeiro restrito à matrícula e à versão solicitadas. */
 export async function consultarVencimentosAditivo(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);

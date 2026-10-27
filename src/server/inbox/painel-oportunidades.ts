@@ -18,7 +18,6 @@ export type OutraOportunidadePainel = { id: string; titulo: string; etapa: Etapa
 export type OportunidadesPainel = { atual: OportunidadeAtualPainel | null; outras: OutraOportunidadePainel[]; pessoaId: string | null; tarefas: TarefaPainel[]; fusoEscola: string };
 const vazio = (tarefas: TarefaPainel[] = [], fusoEscola = ""): OportunidadesPainel => ({ atual: null, outras: [], pessoaId: null, tarefas, fusoEscola });
 
-/** Só leitura; todas as alçadas usam Db fornecida, Config compartilhada durante a leitura; sem fallback por Pessoa do Contato. */
 export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoId: string, db: Db = prisma): Promise<OportunidadesPainel | null> {
   if (!u?.id) return null;
   if (db === prisma) return prisma.$transaction(tx => carregarOportunidadesPainel(u, atendimentoId, tx));
@@ -30,7 +29,6 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
   if (a.finalidade !== "COMERCIAL") return vazio();
   const fusoEscola = await carregarFusoInstitucionalTx(db) ?? "";
   const leadVisivel = a.leadId && a.conversa.contatoId ? await podeVerLeadNaThread(u, a.id, a.leadId, Date.now(), db) : false;
-  // A alçada do lead não substitui a ACL das tarefas: inclui vínculo direto e tarefas próprias com lead oculto.
   const tarefas = await carregarTarefasDoAtendimento(u, a, { soDaConversa: false }, db);
   if (!a.leadId || !leadVisivel) return vazio(tarefas, fusoEscola);
   const op = await db.oportunidade.findUnique({

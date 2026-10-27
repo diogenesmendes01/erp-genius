@@ -14,13 +14,6 @@ export type PendenciaOrigem = PendenciaCreditoAnterior | {
   ids: string[];
 };
 
-/**
- * Fotografia somente de leitura das liquidações já aplicadas a uma cobrança.
- *
- * `obrigacaoAtual` é contexto para uma proposta futura; deliberadamente não é
- * passada como `valorDevido` ao calculador. Quem propuser a nova destinação
- * precisa informar a obrigação que foi acordada e revalidar esta versão.
- */
 export async function carregarOrigensExcedentePermutaTx(
   tx: Prisma.TransactionClient,
   entrada: { matriculaId: string; cobrancaId: string },
@@ -87,8 +80,6 @@ export async function carregarOrigensExcedentePermutaTx(
     }
     positivo(uso.valor, "A utilização de crédito deve ter valor positivo.");
   }
-  // Não há aplicação separada no modelo: a decisão aprovada dispara o trigger
-  // na mesma transação. Assim, decisão aprovada + contador reconciliado é final.
   const usosAprovados = cobranca.utilizacoesCreditoPropostas.filter((uso) => uso.decisao?.aprovada);
   for (const uso of usosAprovados) {
     origens.push({ id: uso.id, tipo: "CREDITO", cobrancaId: cobranca.id, versaoCobranca: cobranca.versao, moeda: cobranca.moeda, valor: uso.valor });
@@ -98,7 +89,6 @@ export async function carregarOrigensExcedentePermutaTx(
   if (!totalCredito.equals(cobranca.valorLiquidadoCredito)) throw new ErroRegra("O contador de crédito diverge das utilizações aprovadas.");
 
   for (const aplicacao of cobranca.aplicacoesPermuta) {
-    // Q171: uso aprovado do saldo restrito a serviços também é liquidação por serviço (fonte PERMUTA), com cadeia própria.
     if (aplicacao.usoSaldoServico) {
       const uso = aplicacao.usoSaldoServico, saldo = uso.proposta.saldo;
       if (aplicacao.destino || aplicacao.decisao || aplicacao.cobrancaId !== cobranca.id || uso.proposta.cobrancaId !== cobranca.id || !uso.aprovada ||

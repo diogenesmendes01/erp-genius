@@ -32,7 +32,6 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); });
 
-/** Lê tudo o que o stream já entregou e diz se ele terminou. */
 async function ler(res: Response) {
   const leitor = res.body!.getReader();
   const dec = new TextDecoder();
@@ -52,8 +51,6 @@ const abrir = async () => {
 
 describe("GET /api/inbox/eventos", () => {
   it("mantém apenas handler e configurações de rota nos exports públicos", () => {
-    // Next valida o namespace da rota; constantes de controle ficam em limites.ts.
-    // Inspecionar o módulo real também detecta reexports e export default acidentais.
     expect(Object.keys(rota).sort()).toEqual(["GET", "dynamic", "runtime"]);
   });
   it("sem sessão → 401", async () => {
@@ -73,7 +70,7 @@ describe("GET /api/inbox/eventos", () => {
     expect(m.sair).not.toHaveBeenCalled();
     ctl.abort();
     expect(m.sair).toHaveBeenCalledTimes(1);
-    await res.body!.cancel(); // cancel depois do abort não desassina de novo
+    await res.body!.cancel();
     expect(m.sair).toHaveBeenCalledTimes(1);
   });
   it("cancel do corpo (aba fechada) desassina uma vez", async () => {

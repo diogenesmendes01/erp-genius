@@ -65,7 +65,6 @@ beforeEach(async () => {
 });
 
 it("CT10 completo: encerra um contrato com desconto, multa, caixa, crédito e dias compensados sem tocar o outro", async () => {
-  // Contrato e condições são fixtures sintéticas já conferidas; emissão e assinatura não pertencem a este cenário de acerto.
   const documento = await prisma.documento.create({
     data: { matriculaId: matriculaAId, nome: "Contrato CT10 completo", categoria: "CONTRATO", url: "/api/files/ct10-completo.pdf" },
   });

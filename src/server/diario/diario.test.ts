@@ -81,7 +81,7 @@ describe("diário mantém história de autoria sem reabrir cadastro", () => {
     const where = db.aulaDiario.findMany.mock.calls[0][0].where;
     expect(where.AND[0]).toEqual({ professorId: "prof" });
     expect(JSON.stringify(where.AND[1])).toContain("verbos");
-    db.aulaDiario.findFirst.mockResolvedValueOnce(null); // cursor fora da busca
+    db.aulaDiario.findFirst.mockResolvedValueOnce(null);
     expect((await listarAulasDiario(u(Papel.PROFESSOR), "aula-x", "verbos")).aulas).toEqual([]);
     expect(db.aulaDiario.findFirst.mock.calls.at(-1)![0].where).toEqual({ AND: [where, { id: "aula-x" }] });
   });

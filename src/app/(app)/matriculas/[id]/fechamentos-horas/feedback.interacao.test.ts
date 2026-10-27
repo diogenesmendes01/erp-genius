@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2: erro e sucesso separados na preparação (conferir e salvar
-// rascunho) e na decisão do fechamento de horas — erro em role="alert", sucesso em role="status", falha
-// de rede como resultado incerto e o formulário saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), consultar: vi.fn(), salvar: vi.fn(), refresh: vi.fn(), push: vi.fn(),
@@ -33,7 +30,6 @@ beforeEach(() => { vi.resetAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal
 afterEach(() => { vi.unstubAllGlobals(); });
 
 const rotuloDoBotao = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button")!.props.children);
-/** Escolhe o valor do primeiro <select> controlado (o onChange recebe o evento nativo). */
 const escolher = (t: ReactNode, valor: string) =>
   (elementos(t).find((n) => n.type === "select" && typeof n.props.onChange === "function")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 

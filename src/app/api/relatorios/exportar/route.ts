@@ -51,7 +51,6 @@ function lerFiltros(p: URLSearchParams, fuso: string): FiltrosDetalhe {
   };
 }
 
-/** Só o que foi filtrado, para a trilha: a busca é texto livre (pode ser nome/telefone), então vai só o tamanho. */
 function filtrosRegistrados(p: URLSearchParams, f: FiltrosDetalhe, aba: Aba, chave: string | null) {
   const campos = {
     periodo: p.get("periodo") ?? "30D",
@@ -125,15 +124,9 @@ async function tabela(aba: Aba, f: FiltrosDetalhe, e: EscopoRelatorio, chave: st
   };
 }
 
-/** Abas e filtros que a tela de Relatórios só mostra à gestão comercial (admin e gerente). */
 const ABAS_GESTAO: readonly Aba[] = ["equipe", "aria"];
 const ehGestao = (papeis: Papel[]) => papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.GERENTE_COMERCIAL);
 
-/**
- * O vendedor exporta só o que a tela oferece a ele: sem as abas Equipe e Aria, sem filtro de responsável ou de
- * autor e sem o detalhe por pessoa. O escopo já o limitaria às próprias oportunidades, mas a URL não pode abrir
- * recortes que a tela esconde.
- */
 function exigirRecorteDaTela(papeis: Papel[], aba: Aba, f: FiltrosDetalhe, chave: string | null) {
   if (ehGestao(papeis)) return;
   const motivo = ABAS_GESTAO.includes(aba)
@@ -165,7 +158,6 @@ export async function GET(req: Request) {
     const { colunas, linhas } = await tabela(aba, f, escopo, chave);
     const csv = gerarCsv(colunas, linhas);
 
-    // Recheca depois de gerar: permissão revogada, usuário trocado ou escopo mudado no meio invalidam o arquivo.
     const atual = await exigirSessao();
     await exigirCapacidade(atual, "dados.exportar_leads");
     if (atual.id !== usuario.id) throw new ErroPermissao();

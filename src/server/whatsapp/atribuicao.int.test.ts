@@ -14,13 +14,8 @@ beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 
 type U = { id: string };
 function comoUsuario(u: U) { authMock.mockResolvedValue({ user: { id: u.id } }); }
-/** auth() é um mock global: cada chamada concorrente precisa enxergar o seu usuário já na 1ª leitura. */
 async function como<T>(u: U, f: () => Promise<T>): Promise<T> { comoUsuario(u); return f(); }
 
-/**
- * Padrão: número institucional que atende o COMERCIAL fora de uma linha de VENDAS — ali o responsável gravado dá
- * acesso (escopo.ts). `linhaVendas` monta a linha de VENDAS, onde a posse vem do dono da linha (LC-D02).
- */
 async function cenario(opcoes: { linhaVendas?: boolean; donoDaLinha?: "v1" } = {}) {
   const v1 = await criarUsuario([Papel.VENDEDOR], "Vend Um");
   const v2 = await criarUsuario([Papel.VENDEDOR], "Vend Dois");
@@ -50,10 +45,6 @@ describe("assumir, devolver e atribuir", () => {
 
   it("assumir concorrente: só um vence", async () => {
     const { v1, v2, a } = await cenario();
-    // Determinístico: a linha fica travada por uma transação do teste; as duas chamadas passam pelas
-    // checagens de leitura (que não bloqueiam) e disputam o UPDATE condicional quando a trava cai.
-    // (As chamadas entram escalonadas: dois `import()` dinâmicos simultâneos do módulo mockado de
-    // sessão falham no vitest, e isso não é o que o teste mede.)
     let soltar!: () => void;
     const trava = new Promise<void>((r) => { soltar = r; });
     let travou!: () => void;
@@ -127,7 +118,7 @@ describe("assumir, devolver e atribuir", () => {
 describe("linha de VENDAS: a posse vem do dono da linha (B1 da R1 do #207)", () => {
   it("vendedor que não é dono da linha não assume: recusa, segue na fila e continua visível", async () => {
     const { v1, a } = await cenario({ linhaVendas: true });
-    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull(); // vê pela fila
+    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
     comoUsuario(v1); expect(await assumirAtendimento(a.id)).toEqual({ ok: false, erro: MSG_LINHA });
     expect(await ler(a.id)).toMatchObject({ responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
     expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
@@ -143,7 +134,7 @@ describe("linha de VENDAS: a posse vem do dono da linha (B1 da R1 do #207)", () 
 
   it("dono da linha: assume da fila e recebe atribuição, e o atendimento continua visível para ele", async () => {
     const { v1, gc, a } = await cenario({ linhaVendas: true, donoDaLinha: "v1" });
-    expect(await ler(a.id)).toMatchObject({ responsavelId: v1.id }); // a linha já entrega ao dono
+    expect(await ler(a.id)).toMatchObject({ responsavelId: v1.id });
     comoUsuario(gc); expect((await devolverParaFila(a.id)).ok).toBe(true);
     comoUsuario(v1); expect(await assumirAtendimento(a.id)).toEqual({ ok: true });
     expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
@@ -157,7 +148,6 @@ describe("linha de VENDAS: a posse vem do dono da linha (B1 da R1 do #207)", () 
 describe("mensagem de recusa segue o motivo (C1 da revisão da 3C)", () => {
   it("fora de linha de vendas a recusa não fala de linha de vendas", async () => {
     const { v1, v2, gc, numero, contato } = await cenario();
-    // Lead da carteira de v1 num número institucional: v2 não o enxerga (o responsável gravado não abre a carteira alheia).
     const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688880009", vendedorDonoId: v1.id } });
     const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id, reabrir: true }));
     comoUsuario(gc);

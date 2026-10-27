@@ -8,7 +8,6 @@ export function statusExperimental(o: EstadoExperimental): "Agendada" | "Confirm
   if (o.etapa === "EXPERIMENTAL_REALIZADA") return "Realizada";
   return o.experimentalConfirmada ? "Confirmada" : "Agendada";
 }
-/** Projeção do instante persistido; edição e autorização global continuam no Funil. */
 export function CartaoExperimental({ oportunidade: o, fuso, fusoEscola, podeAbrirFunil = false }: {
   oportunidade: OportunidadeAtualPainel; fuso: string | null; fusoEscola: string; podeAbrirFunil?: boolean;
 }) {

@@ -5,7 +5,6 @@ const h = "h".repeat(64), q = "q".repeat(64), agora = new Date("2026-10-05T00:00
 const professor = { ativo: true, papeis: ["PROFESSOR"] };
 const aula = (id: string, dia: string, status = "PREVISTO") => ({ id, turmaId: "turma", propostaGradeId: "grade", inicio: new Date(`${dia}T12:00:00Z`), fim: new Date(`${dia}T13:00:00Z`), status, professorId: "p1", professor });
 const iso = (e: ReturnType<typeof aula>) => ({ id: e.id as string | null, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status });
-// A aula passada não foi realizada: só a agenda futura participa da conferência do destino.
 const passada = aula("a0", "2026-10-01", "NAO_REALIZADO"), futura = aula("a1", "2026-10-08"), nova = aula("a2", "2026-10-15");
 const revisao = { id: "rascunho", estadoHash: h, decisaoConjunta: { id: "decisao", aprovada: true, estadoHash: h }, aplicacaoConjunta: { id: "aplicacao", estadoHash: h, aplicadaEm: new Date("2026-09-21T00:00:00Z") },
   snapshot: { calendarioId: "cal-novo", conferidoEm: "2026-09-20T12:00:00.000Z", pendencias: [], recursos: { internos: [], externos: [], indisponibilidades: [], semDocenteApto: [] }, particulares: [],

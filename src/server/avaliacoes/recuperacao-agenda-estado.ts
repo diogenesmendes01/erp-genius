@@ -5,7 +5,6 @@ export function baseAgendaRecuperacao(c: Awaited<ReturnType<typeof conferirAgend
   void conferidoEm;
   return base;
 }
-/** Canonicaliza objetos persistidos como JSONB, cuja ordem de chaves não é contratual. */
 export function hashAgendaRecuperacao(valor: unknown): string {
   function canon(v: unknown): unknown {
     if (Array.isArray(v)) return v.map(canon);

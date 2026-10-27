@@ -40,7 +40,6 @@ describe("horário de atendimento do SLA", () => {
   it("mesmo_horario_nao_gera_evento_vazio", async () => {
     await salvarSlaSetor({ ...sla, horario: util });
     const n = await contarEventos();
-    // Mesma grade em outra ordem: a comparação é canônica.
     expect((await salvarSlaSetor({ ...sla, horario: { intervalos: [...util.intervalos].reverse(), feriados: [] } })).ok).toBe(true);
     expect(await contarEventos()).toBe(n);
   });

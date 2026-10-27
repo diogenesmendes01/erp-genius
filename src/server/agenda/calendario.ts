@@ -7,7 +7,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrar
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { PropostaCalendarioSchema } from "./calendario-schema";
 
-/** Versão candidata do calendário único; a aprovação/aplicação tem fluxo próprio. */
 export async function prepararCalendarioEscolar(input: z.input<typeof PropostaCalendarioSchema>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);

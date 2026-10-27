@@ -14,7 +14,6 @@ import { instanteUtcSql } from "./segunda-chamada-utc";
 const realizarSchema = z.object({ reservaId: z.string().min(1).max(100), realizadaEm: z.string().datetime({ offset: true }), evidencia: z.string().trim().min(5).max(4000) }).strict();
 const notaSchema = z.object({ realizacaoId: z.string().min(1).max(100), lancamento: SalvarLancamentoSchema }).strict();
 
-/** Q146/Q148: registra fato realizado e consome sem lançar zero; a nota é uma versão normal da avaliação original. */
 export async function registrarRealizacaoSegundaChamada(input: z.input<typeof realizarSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR), d = realizarSchema.parse(input);
@@ -49,7 +48,6 @@ export async function registrarRealizacaoSegundaChamada(input: z.input<typeof re
   });
 }
 
-/** A versão submetida é a nota original e ainda exige oficialização independente Q142. */
 export async function salvarNotaOriginalSegundaChamada(input: z.input<typeof notaSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR), d = notaSchema.parse(input);

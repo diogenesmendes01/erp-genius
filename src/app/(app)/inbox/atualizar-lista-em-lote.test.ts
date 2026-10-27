@@ -48,8 +48,8 @@ describe("lotes de atualização da lista", () => {
       return new Promise<void>(r => resolvers.push(r));
     });
     fila.solicitar(); await vi.advanceTimersByTimeAsync(50);
-    fila.solicitar(); fila.cancelarPendentes(); // A→B
-    fila.solicitar(); fila.cancelarPendentes(); // B→A
+    fila.solicitar(); fila.cancelarPendentes();
+    fila.solicitar(); fila.cancelarPendentes();
     expect(vigencias[0]()).toBe(false);
     fila.solicitar(); await vi.advanceTimersByTimeAsync(100);
     expect(vigencias).toHaveLength(1);
@@ -82,7 +82,6 @@ describe("lotes de atualização da lista", () => {
 
 it("StrictMode React real setup→cleanup→setup conserva um timer e um GET; unmount limpa tudo", async () => {
   vi.useRealTimers();
-  // Observa apenas timers da fila; o Scheduler React usa setImmediate próprio.
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const { criarDomMinimo } = await import("@/test/dom-minimo");
   const dom=criarDomMinimo();

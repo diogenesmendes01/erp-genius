@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Decidir a presença histórica (docs/42 L2499; fatia B, issue #169): a decisão nasce vazia, o botão diz a ação
-// escolhida, e aprovar só abre o ConfirmarAcao, que repete aluno, aula e participação; só a confirmação chama a
-// action. Rejeitar não toca o diário e continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),
@@ -47,7 +44,6 @@ const preencherMotivo = () => {
 };
 const botaoDecidir = (t: ReactNode) => elementos(t).find((n: No) => n.type === "button" && n.props.type === "submit")!;
 const enviar = () => (elementos(tela()).find((n: No) => n.type === "form")!.props.onSubmit as (e: { preventDefault(): void }) => unknown)({ preventDefault() {} });
-/** Deixa a action (mock) terminar e o handler sair do ocupado. */
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
@@ -88,7 +84,7 @@ describe("PresencaHistorica — decidir", () => {
     expect(consequencia).toContain("B1 noite · Unidade 3");
     expect(consequencia).toContain(`Motivo registrado: ${MOTIVO}`);
     expect(consequencia).toContain("Não há desfazer pela tela");
-    expect(m.decidir).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    expect(m.decidir).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.decidir).toHaveBeenCalledTimes(1);
     expect(m.decidir).toHaveBeenCalledWith({ propostaId: "proposta-1", aprovada: true, motivo: MOTIVO, chaveIdempotencia: "chave-1" });

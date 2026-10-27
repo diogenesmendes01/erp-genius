@@ -14,19 +14,10 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { apagarMensagemWhatsApp, editarMensagemWhatsApp, encaminharMensagemWhatsApp, reagirMensagemWhatsApp } from "@/server/whatsapp/motor/acoes-mensagem";
 
-// Comandos do menu da mensagem que dependem do motor (Fase 4D, ligados no Inbox novo da 3F): reagir, encaminhar,
-// editar e apagar. Quem abre (ConversaAberta) só oferece o comando com a capacidade do número (motor ativo e sessão
-// CONECTADO) e o envio liberado e, em editar/apagar, só nas mensagens próprias; cada Server Action confere tudo de
-// novo (escopo de envio, autoria, janela de 15 min da edição, sessão do motor; no encaminhar, envio, opt-out e
-// mesmo número no destino). "Apagar para todos" e o encaminhar (sai para outro contato) não voltam: rodam no
-// ConfirmarAcao (lista fechada em src/app/confirmacoes-mapa.ts).
-
 export type AcaoMensagem = "reagir" | "encaminhar" | "editar" | "apagar";
 
-/** A conversa de onde a mensagem sai: o destino do encaminhar é outra conversa do mesmo número. */
 export interface OrigemEncaminhar { atendimentoId: string; numeroId: string }
 
-/** Reações rápidas do menu; o WhatsApp aceita qualquer emoji, e o servidor limita o tamanho. */
 export const REACOES_RAPIDAS = ["👍", "❤️", "😂", "😮", "😢", "🙏"] as const;
 
 export interface PropsAcoesMensagem {
@@ -34,12 +25,10 @@ export interface PropsAcoesMensagem {
   mensagem: Pick<MensagemThread, "id" | "corpo">;
   origem: OrigemEncaminhar;
   aoFechar(): void;
-  /** A ação concluiu: a conversa recarrega as mensagens. */
   aoMudar(): void;
 }
 
 export function AcoesMensagem({ acao, mensagem, origem, aoFechar, aoMudar }: PropsAcoesMensagem) {
-  // Apagar é idempotente por natureza (#166): o reenvio de quem já apagou devolve ok sem chamar o motor.
   if (acao === "apagar") {
     return (
       <ConfirmarAcao
@@ -63,15 +52,8 @@ export function AcoesMensagem({ acao, mensagem, origem, aoFechar, aoMudar }: Pro
 
 export const ERRO_LISTA_DESTINOS = "Não foi possível carregar as conversas. Tente de novo.";
 
-/** Uma página de destinos já filtrada e o cursor da seguinte (null na última). */
 export interface PaginaDestinos { itens: ItemListaInbox[]; proximo: string | null }
 
-/**
- * Destinos do encaminhar pela lista do Inbox novo (`GET /api/inbox/atendimentos`, com a busca e o cursor): só o
- * número da origem e só onde o usuário pode enviar (`envio=1`: escopo de envio no servidor). Fora a própria origem,
- * os grupos e os contatos com opt-out, que a action recusaria; o filtro roda na página, então uma página pode vir
- * vazia com `proximo` (C2 da revisão do #223). null quando a lista não carrega.
- */
 export async function buscarDestinosEncaminhar(origem: OrigemEncaminhar, busca: string, cursor: string | null = null): Promise<PaginaDestinos | null> {
   const q = new URLSearchParams({ numeroId: origem.numeroId, envio: "1" });
   const termo = busca.trim();
@@ -87,19 +69,14 @@ export async function buscarDestinosEncaminhar(origem: OrigemEncaminhar, busca: 
 
 export function EncaminharMensagem({ mensagem, origem, aoFechar, aoMudar }: Omit<PropsAcoesMensagem, "acao">) {
   const [termo, setTermo] = useState("");
-  // A busca da lista mostrada: "Carregar mais" segue o cursor dela, não o que foi digitado depois.
   const [buscaAplicada, setBuscaAplicada] = useState("");
   const [destinos, setDestinos] = useState<ItemListaInbox[] | null>(null);
   const [proximo, setProximo] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  // Encaminhar manda a mensagem a outro contato e não volta: escolher o destino só abre a confirmação.
   const [escolha, setEscolha] = useState<ItemListaInbox | null>(null);
-  // Chave de idempotência (#166), uma por destino (C3 da R1 do #291): o reenvio da mesma tentativa não encaminha de
-  // novo, e trocar de destino depois de um resultado incerto não esbarra na chave do anterior.
   const tentativas = useChavesPorAlvo();
 
-  // Primeira carga (sem busca) fora do render; a resposta de um efeito descartado não é aplicada.
   useEffect(() => {
     let ativo = true;
     void buscarDestinosEncaminhar(origem, "").then((p) => {
@@ -117,7 +94,6 @@ export function EncaminharMensagem({ mensagem, origem, aoFechar, aoMudar }: Omit
     if (p) { setErro(null); setDestinos(p.itens); setProximo(p.proximo); setBuscaAplicada(termo); } else setErro(ERRO_LISTA_DESTINOS);
   }
 
-  // Como "Carregar mais" da lista do Inbox: acrescenta a página seguinte sem repetir linhas.
   async function carregarMais() {
     if (!proximo || ocupado) return;
     setOcupado(true);

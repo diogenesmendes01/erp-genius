@@ -9,7 +9,6 @@ import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { AutorizarRecuperacaoEspecialSchema } from "./recuperacao-autorizacao-schema";
 
-/** Registra a autorização pontual. Não realiza avaliação nem amplia oportunidades. */
 export async function autorizarRealizacaoEspecialRecuperacao(input: z.input<typeof AutorizarRecuperacaoEspecialSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

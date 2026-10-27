@@ -82,7 +82,6 @@ describe("operação de recuperação", () => {
     const segunda = await render({ pagina: "2" });
     expect(segunda).toContain(`href="${base}">← Anterior`);
     expect(segunda).not.toContain("Próxima");
-    // Página além do fim, vazia: "nesta página" só fora da primeira, com a volta ao início.
     expect(segunda).toContain("Nenhuma reserva nesta página.");
   });
 

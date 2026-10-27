@@ -4,9 +4,6 @@ import { abasVisiveis } from "../abas";
 import { BarraAbasFinanceiro } from "../BarraAbasFinanceiro";
 import { carregarContextoFinanceiro, carregarFilasPendentes } from "../contexto";
 
-// /financeiro por rota (docs/42-auditoria-frontend-ux.md, E8): o layout segura título, atalhos e a
-// barra de abas; cada aba é uma página com as próprias consultas e o próprio guard. Antes, a página
-// única entregava tudo a um painel que mostrava uma aba só, e todo revalidatePath reconstruía as 11.
 export default async function FinanceiroPainelLayout({ children }: { children: React.ReactNode }) {
   const ctx = await carregarContextoFinanceiro();
   if (!ctx) return <AcessoNegado recurso="o financeiro" />;

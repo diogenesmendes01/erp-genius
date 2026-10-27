@@ -51,7 +51,6 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
   ]);
   const { config } = dados;
   const baseVersaoId = dados.publicada?.id ?? null;
-  // Token do rascunho aberto (id + atualizadoEm): as ações recusam se outra pessoa o alterou desde então.
   const rascunho = dados.rascunho ? { id: dados.rascunho.id, atualizadoEm: dados.rascunho.atualizadoEm } : null;
   const podeEditar = cap.has("editarComportamento");
   const edicao = ABAS_DE_EDICAO.includes(aba);

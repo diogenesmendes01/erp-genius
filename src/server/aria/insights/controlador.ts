@@ -11,7 +11,6 @@ const negado=()=>new ErroRegra("O contexto não está mais autorizado para gerar
 function confirmado(g:{geracaoId:string;estado:string;versao:number}) {
   return {geracaoId:g.geracaoId,estado:g.estado,versao:g.versao,statusPersistencia:"CONFIRMADA" as const};
 }
-/** Orquestrador privado: rede uma vez; apenas a persistência do mesmo recibo pode repetir. */
 export async function executarAtualizacaoInsight(autorId:string,entrada:unknown,opcoes:{db?:BancoInsight;servicos?:ServicosGeracaoInsight;demo?:boolean}={}) {
   const i=AtualizarInsightSchema.parse(entrada),servicos=opcoes.servicos??servicosPadraoInsight;
   let inicioInput;
@@ -26,7 +25,6 @@ export async function executarAtualizacaoInsight(autorId:string,entrada:unknown,
   const inicio=await iniciarInsight(autorId,inicioInput,opcoes.db);
   if(inicio.negado)throw negado();
   if(!inicio.iniciada){
-    // A falha conhecida já foi commitada; conserva ID/estado/versão para leitura/replay.
     const mensagem="erroCodigo"in inicio?inicio.erroCodigo==="ORCAMENTO_ESGOTADO"?"Orçamento de IA esgotado.":inicio.erroCodigo==="CONFIG_IA_INDISPONIVEL"?"Geração de Insights indisponível.":undefined:undefined;
     return {...confirmado(inicio),...(mensagem?{mensagem}:{})};
   }
@@ -35,7 +33,6 @@ export async function executarAtualizacaoInsight(autorId:string,entrada:unknown,
   try {
     envelope=await servicos.executar({modelo:inicio.modelo,provedor:inicio.provedor,simulada:inicio.simulada},inicio.pedido);
   } catch(erro) {
-    // Uma porta inesperadamente rejeitada não comprova ausência de envio nem custo zero.
     envelope=envelopeErroInsight(erro,inicio.modelo,Math.min(2_147_483_647,Math.max(0,Math.round(performance.now()-inicioRede))));
   }
   const recebidoEm=new Date();
@@ -44,7 +41,6 @@ export async function executarAtualizacaoInsight(autorId:string,entrada:unknown,
     try {
       final=await finalizarInsight({atendimentoId:i.atendimentoId,geracaoId:inicio.geracaoId,envelope,recebidoEm},opcoes.db);
     } catch {continue;}
-    // Recusa de publicação é posterior ao commit do custo; não é erro de persistência.
     if(!final.autorizado||!final.contextoConfere)throw negado();
     return confirmado(final);
   }

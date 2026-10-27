@@ -13,7 +13,6 @@ type Props = {
   config: ConfigAria;
   baseVersaoId: string | null;
   rascunho: RascunhoAberto;
-  /** Só quem tem `editarMatriz` (Administrador). */
   podeEditar: boolean;
 };
 
@@ -25,7 +24,6 @@ const COR: Record<ModoAcao, string> = {
   SUGERE: "bg-amber-100 text-amber-800",
   NAO_FAZ: "bg-gray-100 text-gray-600",
 };
-// Ações com decisão própria (handoff e triagem de setor) ficam fora da matriz.
 const modoDe = (m: Matriz, etapa: EtapaLead, acao: AcaoAgenteIATipo): ModoAcao => m[etapa]?.[acao] ?? "NAO_FAZ";
 
 export function Permissoes({ config, baseVersaoId, rascunho, podeEditar }: Props) {

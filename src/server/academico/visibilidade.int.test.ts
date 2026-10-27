@@ -170,8 +170,6 @@ async function esperarBloqueados(pid: number, quantidade: number) {
   const limite = Date.now() + 3000;
   let esperas: { pid: number; consulta: string; bloqueadores: number[] }[] = [];
   while (Date.now() < limite) {
-    // O primeiro waiter pode possuir o tuple lock enquanto aguarda a transação inicial.
-    // O segundo espera esse waiter: seguir toda a cadeia, sem exigir bloqueio direto no holder.
     esperas = await prisma.$queryRaw<typeof esperas>`
       WITH RECURSIVE atividade AS MATERIALIZED (
         SELECT pid, query, wait_event_type, pg_blocking_pids(pid) AS bloqueadores
@@ -199,7 +197,7 @@ async function esperarBloqueados(pid: number, quantidade: number) {
 
 beforeEach(async () => {
   vi.clearAllMocks(); await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   vi.stubEnv("WHATSAPP_LIVE", "1");
   enviarMock.mockResolvedValue({ providerMessageId: "teste-sem-rede" });
 });
@@ -280,8 +278,6 @@ describe("mudança acadêmica revoga vínculos atuais e preserva o diário", () 
       escrita = salvarAulaDiario({ ...c.entradaAula, ocorridaEm: new Date(Date.now() - DIA).toISOString(), conteudo: "Chamada atrasada de aula anterior à transferência" });
       const ambas = await esperarBloqueados(bloqueio.pid, 2);
       expect(new Set(ambas.map((e) => e.pid)).size).toBe(2);
-      // A execução já reteve calendário/matrícula antes de esperar o aluno.
-      // O diário aguarda primeiro o calendário, respeitando a mesma ordem.
       expect(ambas.some((e) => e.consulta.includes('FROM "Aluno"') && e.consulta.includes("FOR UPDATE"))).toBe(true);
       expect(ambas.some((e) => e.consulta.includes("pg_advisory_xact_lock") && e.consulta.includes("calendario-escola"))).toBe(true);
     } finally {
@@ -297,8 +293,6 @@ describe("mudança acadêmica revoga vínculos atuais e preserva o diário", () 
   });
 
   it("diário relê a atribuição docente alterada enquanto aguardava o aluno", async () => {
-    // Este cenário verifica somente a releitura da atribuição. Não publica agenda,
-    // pois mudança de professor em agenda publicada requer seu fluxo próprio.
     const c = await cenario({ comAgendaPublicada: false });
     const antes = await eventosDo("Turma", c.origem.id);
     const bloqueio = await bloquearAluno(c.aluno.id);

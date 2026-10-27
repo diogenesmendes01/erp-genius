@@ -8,7 +8,6 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 const Id=z.string().min(1).max(100);
 const json=(dado:unknown,status=200)=>NextResponse.json(dado,{status,headers:{"Cache-Control":"no-store"}});
-/** Apenas leitura autorizada; nunca inicia/retoma/reconcilia provider ou estado. */
 export async function GET(req:Request,{params}:{params:Promise<{id:string}>}) {
   try {
     const usuario=await exigirSessao();exigirPapel(usuario,...PAPEIS_INBOX);

@@ -21,7 +21,6 @@ export async function bloquearCobranca(tx: Prisma.TransactionClient, id: string)
   return cobranca;
 }
 
-/** Segue a ordem usada na assunção/documentos: lead, matrícula e depois cobranças. */
 export async function bloquearMatriculas(tx: Prisma.TransactionClient, ids: string[]) {
   const matriculas = await tx.matricula.findMany({ where: { id: { in: ids } }, select: { id: true, leadId: true } });
   const leads = [...new Set(matriculas.flatMap((matricula) => matricula.leadId ? [matricula.leadId] : []))].sort();
@@ -29,12 +28,6 @@ export async function bloquearMatriculas(tx: Prisma.TransactionClient, ids: stri
   for (const matriculaId of [...new Set(ids)].sort()) await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${matriculaId} FOR UPDATE`;
 }
 const HORA = 3_600_000;
-/**
- * Dias civis D ("AAAA-MM-DD") para os quais o instante é o MEIO-DIA de D em algum fuso do mundo (UTC−12 a UTC+14,
- * deslocamentos múltiplos de 15 minutos, sem segundos). É a forma de uma data DIGITADA gravada ao meio-dia: pela
- * regra antiga do FIN-04, o meio-dia do NAVEGADOR (`new Date("D T12:00:00")`); pela nova, o da escola. Um instante
- * qualquer (com segundos ou fora do quarto de hora) não é data digitada: nenhum dia.
- */
 export function diasDoMeioDiaDigitado(instante: Date): string[] {
   const t = instante.getTime();
   if (!Number.isFinite(t) || t % (15 * 60_000) !== 0) return [];
@@ -42,18 +35,6 @@ export function diasDoMeioDiaDigitado(instante: Date): string[] {
   return [-1, 0, 1].map((d) => base + d * 24 * HORA).filter((dia) => t >= dia + 12 * HORA - 14 * HORA && t <= dia + 12 * HORA + 12 * HORA)
     .map((dia) => new Date(dia).toISOString().slice(0, 10));
 }
-/**
- * Replay do FIN-04 (C3 e menor 1 das reviews do #290): a nova entrada é o MESMO dia que a escola VÊ no registro
- * existente (`diaCivilDoPagamento`, o dia exibido nas telas)? A comparação é exata, não "meio-dia de algum fuso" nos
- * dois lados: em escolas a UTC−10 ou menos, ou a UTC+12 ou mais, o meio-dia da escola cai na janela que é meio-dia de
- * dois dias, e outro dia digitado com a mesma chave passava como replay (ex.: Pacific/Auckland, 04/10 e depois 05/10).
- * - Entrada nova (data digitada → meio-dia da escola): o dia digitado tem de ser o dia visto no existente.
- * - Entrada de um formulário antigo (ISO, meio-dia do navegador): o dia visto no existente tem de estar entre os dias
- *   de que esse instante pode ser o meio-dia (`diasDoMeioDiaDigitado`).
- * Consequência aceita: registro antigo de um navegador muito a leste ou a oeste (que a escola já vê em OUTRO dia,
- * ex.: Sydney 05/10 visto como 04/10 em São Paulo) não casa com o reenvio de 05/10: é recusado como "já usado",
- * coerente com o que a escola vê, e nunca duplica o caixa.
- */
 export function mesmaDataDigitadaNaEscola(existente: Date, entrada: Date, fusoEscola: string): boolean {
   if (!fusoIanaValido(fusoEscola)) return false;
   const visto = diaCivilDoPagamento(existente, fusoEscola);
@@ -63,13 +44,6 @@ export function mesmaDataDigitadaNaEscola(existente: Date, entrada: Date, fusoEs
   return meioDiaDaEscola ? diaDaEntrada === visto : diasDoMeioDiaDigitado(entrada).includes(visto);
 }
 
-/**
- * Cria um fato de caixa único e suas destinações materiais FIN-04.
- * `dataDigitada`: a data veio digitada (AAAA-MM-DD) e foi gravada ao meio-dia. No REPLAY da mesma chave, a data
- * gravada por outra convenção de meio-dia (o do navegador, antes da correção do lote 3 do fuso pessoal; o da escola,
- * depois) para o MESMO dia que a escola vê no registro existente não é outra operação: devolve o recebimento
- * existente, sem duplicar o caixa (`mesmaDataDigitadaNaEscola`).
- */
 export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, input: {
   titularMatriculaId: string; pagadorId?: string | null; chaveIdempotencia: string; autorId: string; valorRecebido: number; forma: FormaPagamento; dataPagamento: Date;
   destinos: DestinoRecebimento[]; comprovanteUrl?: string | null; comprovanteNome?: string | null; comentario?: string | null; informeId?: string; hashDados?: string; moeda: string; dataDigitada?: boolean;
@@ -83,15 +57,11 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
   if (idsCobrancas.length !== input.destinos.filter((d) => d.tipo === TipoDestinacaoRecebimento.COBRANCA).length) throw new ErroRegra("Uma cobrança só pode aparecer uma vez em cada recebimento; consolide sua parcela preservando a evidência.");
 
   const destinos = [...input.destinos].sort((a, b) => a.chaveIdempotencia.localeCompare(b.chaveIdempotencia));
-  // O hash informado por fluxos legados identifica a fonte, mas não substitui
-  // a identidade material do caixa (data, comprovantes, comentário e destinos).
   const hashCom = (dataPagamento: Date) => createHash("sha256").update(JSON.stringify({ titularMatriculaId: input.titularMatriculaId, pagadorId: input.pagadorId ?? null, autorId: input.autorId, informeId: input.informeId ?? null, valor: valorOriginal.toFixed(2), moeda: input.moeda, forma: input.forma, dataPagamento: dataPagamento.toISOString(), comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null, fonteHash: input.hashDados ?? null, destinos: destinos.map((d) => ({ ...d, valor: dinheiro(d.valor).toFixed(2) })) })).digest("hex");
   const hashDados = hashCom(input.dataPagamento);
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${input.autorId} FOR SHARE`;
   const caixa = await tx.usuario.findUnique({ where: { id: input.autorId }, select: { ativo: true, papeis: true, permissoes: true } });
   if (!caixa?.ativo || !(caixa.papeis.includes("ADMINISTRADOR") || caixa.papeis.includes("FINANCEIRO") || caixa.permissoes.includes("pagamento.caixa"))) throw new ErroPermissao("Exige capacidade de caixa vigente.");
-  // Serializa também o replay: concorrentes da mesma matrícula relêem a chave
-  // somente depois do lock e não produzem dois fatos/eventos.
   await bloquearMatriculas(tx, [input.titularMatriculaId]);
   const existente = await tx.recebimento.findUnique({ where: { chaveIdempotencia: input.chaveIdempotencia }, include: { destinacoes: { orderBy: { chaveIdempotencia: "asc" } } } });
   if (existente) {
@@ -100,7 +70,6 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
     return existente;
   }
   if (!input.informeId && idsCobrancas.length && await tx.pagamentoInformado.count({ where: { cobrancaId: { in: idsCobrancas }, autorId: input.autorId, status: "A_CONFERIR" } })) throw new ErroPermissao("Seu informe aguarda conferência de outra pessoa.");
-  // O replay já retornou acima antes de condições que só valem para uma baixa nova.
   const cobrancas = new Map<string, Awaited<ReturnType<typeof bloquearCobranca>>>();
   for (const id of idsCobrancas) cobrancas.set(id, await bloquearCobranca(tx, id));
   for (const cobranca of cobrancas.values()) {
@@ -119,7 +88,6 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
       comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null,
       hashDados, destinos: destinos.map(d => ({ tipo: d.tipo, cobrancaId: d.cobrancaId ?? null, valor: dinheiro(d.valor).toFixed(2), evidencia: d.evidencia.trim() })) },
   });
-  // Ref. #247: o saldo que resta só fica ATRASADO depois do dia do vencimento na escola.
   const agora = new Date(), fuso = await fusoDaEscola(tx);
   for (const destino of input.destinos) {
     const valor = dinheiro(destino.valor);
@@ -143,7 +111,6 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
   return recebimento;
 }
 
-/** Compatibilidade para os fluxos que ainda liquidam uma única cobrança. */
 export async function receberTx(tx: Prisma.TransactionClient, input: {
   cobrancaId: string; chaveIdempotencia: string; autorId: string; valorRecebido: number; forma: FormaPagamento; dataPagamento: Date; comprovanteUrl?: string | null; comprovanteNome?: string | null; comentario?: string | null; permitirExcedente?: boolean; informeId?: string; hashDados?: string; moeda?: string; pagadorId?: string | null; evidencia?: string;
 }) {
@@ -157,7 +124,6 @@ export async function receberTx(tx: Prisma.TransactionClient, input: {
   let destinos: DestinoRecebimento[];
   if (anterior) {
     if (anterior.destinacoes.some(d => d.tipo === TipoDestinacaoRecebimento.COBRANCA && d.cobrancaId !== input.cobrancaId) || (anterior.destinacoes.some(d => d.tipo === TipoDestinacaoRecebimento.CREDITO_SEM_DESTINO) && !input.permitirExcedente)) throw new ErroRegra("Identificador de pagamento já usado para outra operação.");
-    // O saldo atual já reflete a primeira baixa; o replay conserva sua divisão.
     destinos = anterior.destinacoes.map(d => ({ tipo: d.tipo, cobrancaId: d.cobrancaId ?? undefined, valor: d.valor.toNumber(), evidencia, chaveIdempotencia: d.chaveIdempotencia }));
   } else {
     const atual = await bloquearCobranca(tx, input.cobrancaId);

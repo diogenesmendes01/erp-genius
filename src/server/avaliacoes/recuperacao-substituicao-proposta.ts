@@ -47,7 +47,6 @@ export async function proporSubstituicaoRecuperacao(input: z.input<typeof schema
   });
 }
 
-/** A aprovação é aplicada pela trigger da decisão: designação e encontro mudam ou ambos revertem. */
 export async function decidirSubstituicaoRecuperacao(input: z.input<typeof decisaoSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = decisaoSchema.parse(input);

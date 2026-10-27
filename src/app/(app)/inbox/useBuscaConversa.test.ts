@@ -83,7 +83,6 @@ describe("C2: a busca respeita a rolagem manual", () => {
     vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => { frames.push(f); return frames.length; });
     const { area, mensagens } = await preparar();
     const frameAntigo = frames[0];
-    // A mesma área e uma janela ainda transitória não autorizam o callback antigo.
     await renderRolagem(mensagens, undefined, "b");
     const externo = document.createElement("button"); document.body.appendChild(externo); externo.focus();
     area.scrollTop = 700;

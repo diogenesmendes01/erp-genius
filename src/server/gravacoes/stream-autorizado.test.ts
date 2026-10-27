@@ -25,7 +25,6 @@ it("preserva bytes sem acumular o vídeo e revalida antes de ler e entregar", as
   });
 
   await expect(lerTudo(stream)).resolves.toEqual([1, 2, 3]);
-  // Duas verificações para cada chunk e uma antes de observar o fim.
   expect(revalidar).toHaveBeenCalledTimes(5);
 });
 

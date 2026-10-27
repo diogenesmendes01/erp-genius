@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// D10 (decisão do dono, 19/10/2026; C7 da #170): sem o fuso da escola configurado, o lançamento de avaliação com
-// data e hora locais é recusado no servidor, com a mensagem que leva à configuração. Em UTC a data da avaliação
-// pode cair no dia errado. A recusa vem depois da sessão e antes de abrir a transação.
-
 const m = vi.hoisted(() => ({ sessao: vi.fn(), fuso: vi.fn(), transacao: vi.fn(), salvarTx: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: m.transacao } }));
 vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: m.fuso }));
@@ -58,7 +54,6 @@ describe("salvarLancamentoAvaliacaoLocal sem fuso da escola (D10)", () => {
   });
 });
 
-// Lacuna fechada (decisão do dono, 20/10/2026): a ação com instante absoluto também recusa sem fuso da escola.
 describe("salvarLancamentoAvaliacao sem fuso da escola (D10)", () => {
   const { realizadaLocal: _l, fuso: _f, ...base } = entrada;
   const absoluta = { ...base, realizadaEm: "2026-10-10T12:00:00.000Z" };

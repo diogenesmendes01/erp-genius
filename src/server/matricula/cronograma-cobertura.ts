@@ -1,7 +1,6 @@
 import { ErroRegra } from "@/server/_shared/sessao";
 import { periodoMensalNaData, type RegraCobertura } from "./cobertura";
 
-/** Expande a cobertura conferida da primeira mensalidade, nunca seu vencimento. */
 export function expandirCoberturaMensal(
   contrato: { referenciaCobertura: "MES_CIVIL" | "CICLO_MATRICULA" | null; dataReferenciaCobertura: Date | null },
   primeira: { coberturaInicio: Date | null; coberturaFim: Date | null },

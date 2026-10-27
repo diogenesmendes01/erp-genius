@@ -7,10 +7,8 @@ import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { usuariosRelevantesParaMencao, type UsuarioMencao } from "./usuarios-mencoes";
 export { extrairMencoes } from "@/lib/mencoes-nota";
 
-/** Tupla JSON é inequívoca mesmo se um ID contiver separadores. Nunca vai ao texto público. */
 export const idDaNotificacaoMencao = (eventoId: string, usuarioId: string) => `mencao-nota:${JSON.stringify([eventoId, usuarioId])}`;
 
-/** Somente primeira criação da nota: todos os dados/ACL na mesma transação, inclusive pool1. */
 export async function notificarMencoesNaNota(tx: Prisma.TransactionClient, entrada: { atendimentoId: string; eventoId: string; autor: UsuarioSessao; nota: string; mencoes?: readonly TokenMencao[] }): Promise<void> {
   const { autor, nota, atendimentoId, eventoId } = entrada;
   const tokens = entrada.mencoes ?? [];
@@ -24,7 +22,6 @@ export async function notificarMencoesNaNota(tx: Prisma.TransactionClient, entra
   }) : [];
   const completos = relevantes.length <= 200;
   const unicos = new Map<string, UsuarioMencao>();
-  // O sentinel precede os grupos; tokens por ID nunca dependem do alias lexical.
   for (const p of [...(completos ? relevantes : []), ...selecionados]) unicos.set(p.id, p);
   const autorizados = new Map<string, UsuarioMencao>();
   const verificados = new Map<string, boolean>();
@@ -41,9 +38,7 @@ export async function notificarMencoesNaNota(tx: Prisma.TransactionClient, entra
   if (completos) for (const grupos of gruposLexicaisMencao(livre, [...unicos.values()])) {
     for (const grupo of grupos) {
       let temAutorizado = false;
-      // Nunca parar no primeiro membro: dois homonimos visiveis continuam ambiguos.
       for (const p of grupo) if (await autorizar(p)) temAutorizado = true;
-      // Ambiguidade tambem impede fallback curto; so nenhum visivel tenta o proximo alias.
       if (temAutorizado) break;
     }
   }

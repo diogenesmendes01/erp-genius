@@ -14,12 +14,6 @@ import {
   type CampoSenha,
 } from "./ativacao";
 
-// Definir a senha do portal pelo link do convite ou da recuperação (docs/42 /portal-aluno/ativar; docs/43 §6
-// item 8). O link sobrevive ao F5 (cópia na aba, ver ./ativacao.ts); sem link, a tela não mostra o formulário
-// e diz o que fazer. A regra da senha está escrita, a confirmação bloqueia o envio enquanto as duas não
-// coincidem, e erro e sucesso saem separados (useAcaoCliente + FeedbackAcao). Os campos não têm maxLength:
-// ele conta caracteres, e o limite é de 72 bytes; quem avisa é a validarSenhas, no envio (#172).
-
 const IDS: Record<CampoSenha, string> = { senha: "ativar-senha", confirmacao: "ativar-confirmacao" };
 const CONTROLE = `w-full rounded-md border border-gray-300 px-3 py-2 text-sm ${CONTROLE_INVALIDO}`;
 const MSG_ACESSO_CONFIRMADO = "Senha definida. Abrindo a sua área do aluno…";
@@ -29,7 +23,6 @@ function Moldura({ children }: { children: ReactNode }) {
   return <section className="mx-auto flex min-h-screen max-w-md items-center px-5"><div className="w-full rounded-xl border bg-surface p-7"><h1 className="text-2xl font-medium">Definir senha</h1>{children}</div></section>;
 }
 
-/** Saídas de quem não tem (ou já não tem) um link válido nesta aba. */
 function SemLink({ indisponivel }: { indisponivel: boolean }) {
   return <>
     <p className="mt-3 text-sm text-gray-700">{indisponivel ? ERRO_LINK_INDISPONIVEL : "Não encontramos o link de acesso nesta aba."}</p>
@@ -43,18 +36,15 @@ function SemLink({ indisponivel }: { indisponivel: boolean }) {
 
 export default function AtivarPortalAlunoPage() {
   const router = useRouter();
-  // undefined: lendo o link (o efeito ainda não rodou); null: não há link nesta aba; texto: o segredo.
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [indisponivel, setIndisponivel] = useState(false);
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [errosCampos, setErrosCampos] = useState<ErrosDeCampos<CampoSenha>>({});
-  // A ativação consome o link: não há chave de idempotência (a falha de rede tem instrução própria abaixo).
   const acao = useAcaoCliente({ idempotente: false });
 
   useEffect(() => {
     const lido = capturarTokenAtivacao(window.location.hash, armazenamentoDaAba());
-    // O segredo vive no fragmento, que não alcança logs HTTP, e some da barra; a cópia da aba fica para o F5.
     if (window.location.hash) window.history.replaceState(null, "", window.location.pathname);
     setToken(lido);
   }, []);
@@ -73,7 +63,6 @@ export default function AtivarPortalAlunoPage() {
       esquecerTokenAtivacao(armazenamentoDaAba());
       if (desfecho.dado?.conclusao !== "EMAIL_VALIDADO") { router.replace("/portal-aluno"); router.refresh(); }
     } else if (desfecho?.tipo === "erro" && desfecho.mensagem === ERRO_LINK_INDISPONIVEL) {
-      // O link não serve mais: some com o formulário e mostra as saídas.
       esquecerTokenAtivacao(armazenamentoDaAba());
       setIndisponivel(true);
       setToken(null);

@@ -43,7 +43,6 @@ describe("consultarFilaContinuidadeMensal", () => {
     expect((await ler({ antes: p2.anterior! })).itens).toEqual(p1.itens);
     expect(new Set([...p1.itens, ...p2.itens, ...p3.itens].map((i) => i.matriculaId)).size).toBe(41);
 
-    // A matrícula r03 sai da fila (encerrada) depois que a pessoa leu a primeira página: a próxima começa em r20.
     fila.splice(3, 1);
     const seguinte = await ler({ depois: p1.proxima! });
     expect(seguinte.itens.map((i) => i.matriculaId)).toEqual(p2.itens.map((i) => i.matriculaId));

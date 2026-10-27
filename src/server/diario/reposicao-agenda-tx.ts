@@ -30,7 +30,6 @@ function adicionarDias(data: string, dias: number) {
   const valor = new Date(`${data}T00:00:00.000Z`); valor.setUTCDate(valor.getUTCDate() + dias); return civilDate(valor);
 }
 
-/** Q49: o intervalo é calculado da regra persistida; não existe duração padrão. */
 export function periodoBeneficioReposicao(regra: RegraBeneficio, dataAgendada: string) {
   const data = new Date(`${dataAgendada}T00:00:00.000Z`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAgendada) || !Number.isFinite(data.getTime()) || civilDate(data) !== dataAgendada
@@ -49,13 +48,9 @@ export function periodoBeneficioReposicao(regra: RegraBeneficio, dataAgendada: s
   let bloco = Math.floor(((a - ar) * 12 + m - mr) / regra.duracaoPeriodo);
   let inicio = adicionarMeses(referencia, bloco * regra.duracaoPeriodo);
   if (inicio > dataAgendada) inicio = adicionarMeses(referencia, --bloco * regra.duracaoPeriodo);
-  // Cada fronteira deriva da mesma referência. Fevereiro pode encurtar um
-  // encontro de ciclo no dia 31, mas não deve deslocar março para o dia 28.
   return { inicio: inicio < vigente ? vigente : inicio, fimExclusivo: adicionarMeses(referencia, (bloco + 1) * regra.duracaoPeriodo) };
 }
 
-/** A primeira regra vale no período civil/cíclico atual. Uma regra posterior
- * só começa em limite próprio que não recorta o período já reservado. */
 export function vigenciaNovoBeneficioReposicao(anterior: RegraBeneficio | null, novaRegra: RegraBeneficio, hoje: string) {
   if (!anterior) return periodoBeneficioReposicao({ ...novaRegra, vigenteAPartirDe: new Date("0001-01-01T00:00:00.000Z") }, hoje).inicio;
   const fimAnterior = periodoBeneficioReposicao(anterior, hoje).fimExclusivo;
@@ -98,9 +93,6 @@ export async function carregarRegraBeneficioTx(tx: Prisma.TransactionClient, mat
   return regra;
 }
 
-/** Contagem compartilhada por criação e remarcação. A agenda em alteração não
- * ocupa uma vaga contra si mesma; agendas de snapshots antigos no intervalo
- * continuam contando para não reabrir saldo na transição Q50. */
 export async function contarReservasBeneficioReposicaoTx(tx: Prisma.TransactionClient, input: {
   matriculaId: string; inicio: string; fimExclusivo: string; ignorarAgendaId?: string;
 }) {
@@ -119,7 +111,6 @@ export async function contarReservasBeneficioReposicaoTx(tx: Prisma.TransactionC
   return Number(linha?.quantidade ?? 0);
 }
 
-/** Conferência usada tanto na prévia quanto no comando. O chamador mantém os locks. */
 export async function conferirAgendaReposicaoIndividualTx(tx: Prisma.TransactionClient, input: {
   reposicaoId: string; professorId: string; inicio: Date; fim: Date; fuso: string;
   permitirSemBeneficio?: boolean; ignorarAgendaId?: string;

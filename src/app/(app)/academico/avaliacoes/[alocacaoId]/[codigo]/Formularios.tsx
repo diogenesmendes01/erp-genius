@@ -14,10 +14,8 @@ import { CampoFuso, type SugestaoFuso } from "@/components/CampoFuso";
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 type Nota = { habilidade: Habilidade; nota: string | null; comentarioAluno: string };
 
-/** Fusos sugeridos para a entrada (o CampoFuso aceita qualquer fuso IANA válido). */
 export const FUSOS_SUGERIDOS_AVALIACAO: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"]];
 
-/** Data e hora locais (`datetime-local` com milissegundos) de um instante no fuso; null se o fuso não vale. */
 export function dataHoraLocalNoFuso(instante: string, fuso: string): string | null {
   const valido = FusoInstitucionalSchema.safeParse(fuso);
   const data = new Date(instante);
@@ -30,25 +28,19 @@ export function dataHoraLocalNoFuso(instante: string, fuso: string): string | nu
 export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habilidades, escala, anterior, fuso: fusoInicial, realizadores, registradorId }: {
   alocacaoId: string; codigoAvaliacao: string; versaoEsperada: number; habilidades: Habilidade[];
   escala: { minimo: string; maximo: string };
-  /** Última versão: `realizadaEm` já no fuso inicial; `instante` (ISO) para reconverter quando o fuso muda. */
   anterior: { realizadaEm: string; instante: string; notas: Nota[] } | null;
-  /** Fuso inicial da entrada (o da URL ou o institucional); trocá-lo é estado deste formulário, sem navegar. */
   fuso: string;
   realizadores: { id: string; nome: string }[]; registradorId: string;
 }) {
   const router = useRouter(), chave = useRef<string | null>(null);
-  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar sem alterar (MSG_RESULTADO_INCERTO).
   const acao = useAcaoCliente({ idempotente: true });
   const [realizador, setRealizador] = useState("");
-  // Fuso e data/hora da realização controlados aqui (docs/43 §6 item 3, docs/42 L1314): antes, trocar o fuso
-  // era um <form method="get"> que recarregava a página e remontava o formulário, apagando as notas digitadas.
   const [fuso, setFuso] = useState(fusoInicial);
   const [realizadaEm, setRealizadaEm] = useState(anterior?.realizadaEm ?? "");
   const [dataTocada, setDataTocada] = useState(false);
   const fusoValido = FusoInstitucionalSchema.safeParse(fuso).success;
   function trocarFuso(novo: string) {
     setFuso(novo);
-    // A data que veio da última versão acompanha o fuso (é o mesmo instante); a digitada fica como está.
     const convertida = anterior && !dataTocada ? dataHoraLocalNoFuso(anterior.instante, novo.trim()) : null;
     if (convertida) setRealizadaEm(convertida);
   }
@@ -64,7 +56,6 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
       ...(realizador && realizador !== registradorId ? { motivoRegularizacao: String(form.get("motivoRegularizacao") ?? ""), evidenciasRegularizacao: String(form.get("evidenciasRegularizacao") ?? "") } : {}),
       notas: habilidades.map(habilidade => ({ habilidade, nota: String(form.get(`nota-${habilidade}`) ?? "").trim().replace(",", ".") || null, comentarioAluno: String(form.get(`comentario-${habilidade}`) ?? "") })),
     }), "Versão registrada. A submissão exige conferência de outra pessoa da gestão.");
-    // Registrada: a próxima versão é outra tentativa (chave nova). O formulário fica montado com o que foi salvo.
     if (d?.tipo === "ok") { chave.current = null; router.refresh(); }
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-4"><legend className="font-medium">Registrar avaliação realizada</legend>
@@ -89,7 +80,6 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
 }
 
 export function ConferirNotas({ lancamentoId, conteudoHash, podeAprovar }: { lancamentoId: string; conteudoHash: string; podeAprovar: boolean }) {
-  // Sem chave de idempotência; a decisão incerta mantém o texto próprio (reenviar a mesma decisão).
   const router = useRouter(); const acao = useAcaoCliente({ idempotente: false });
   return <form className="space-y-3" onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);

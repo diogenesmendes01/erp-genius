@@ -17,7 +17,6 @@ const texto = (v: unknown): v is string => typeof v === "string" && !!v.trim();
 const etapa = (v: unknown): v is EtapaLead => Object.values(EtapaLead).some(e => e === v);
 const motivoConhecido = (v: unknown): v is MotivoHandoff => typeof v === "string" && Object.hasOwn(MOTIVO_HANDOFF_LABEL, v);
 
-/** Descreve a ação histórica; estado de ação não é recibo de entrega externa. */
 export function descreverAcaoExecutada(acao: AcaoAgenteIATipo, payload: unknown): string {
   const p = objeto(payload);
   switch (acao) {
@@ -56,7 +55,6 @@ interface AlvoHandoff {
 const selectAcao = { id: true, acao: true, criadoEm: true, oportunidadeId: true, payload: true } as const;
 type Linha = Prisma.AcaoAgenteIAGetPayload<{ select: typeof selectAcao }>;
 
-/** Uso interno: a vem do escopo autorizado do atendimento, nunca de identidade fornecida pelo cliente. */
 export async function handoffDoAtendimento(db: Db, u: UsuarioSessao, a: AlvoHandoff, agora: Date): Promise<HandoffDoAtendimento | null> {
   if (!(await idsHandoffPendente(db, [a.id])).includes(a.id)) return null;
   const handoff = await db.acaoAgenteIA.findFirst({ where: { atendimentoId: a.id, acao: "HANDOFF", status: "EXECUTADA" }, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true, criadoEm: true, payload: true } });
@@ -65,7 +63,6 @@ export async function handoffDoAtendimento(db: Db, u: UsuarioSessao, a: AlvoHand
   const motivo = motivoConhecido(p.motivo) ? p.motivo : null;
   const destino = p.destino === "RESPONSAVEL" || p.destino === "USUARIO" ? p.destino : "FILA_SETOR";
   const responsavel = texto(p.responsavelId) ? await db.usuario.findUnique({ where: { id: p.responsavelId }, select: { nome: true } }) : null;
-  // Nota do ATENDIMENTO segue E0: todo leitor autorizado pode ler, inclusive convidado.
   const nota = typeof p.nota === "string" ? lerNotaResumo(p.nota) : {};
   const resumo = nota.resumo || nota.proximoPasso ? { quer: nota.resumo ?? null, proximoPasso: nota.proximoPasso ?? null } : null;
   const contextoVisivel = a.finalidade === "COMERCIAL" && !!a.leadId && await podeVerLeadNaThread(u, a.id, a.leadId, agora.getTime(), db);

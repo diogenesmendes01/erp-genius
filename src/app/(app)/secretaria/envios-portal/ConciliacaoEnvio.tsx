@@ -11,10 +11,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export function ConciliacaoEnvio({ item, preferenciaFusoExibicao }: { item: ItemFilaEnviosPortalAluno; preferenciaFusoExibicao: string | null }) {
   const router=useRouter();
-  // Idempotentes por natureza (#166, server/portal-aluno/conciliacao-envio.ts): a mesma evidência sobre o mesmo
-  // estado devolve a conciliação já gravada, e a mesma decisão devolve a decisão já tomada, sem Evento nem envio novo.
   const registro=useAcaoCliente({ idempotente: true });
-  // Na falha de transporte da decisão vale a mensagem própria de decisão (MSG_DECISAO_INCERTA).
   const decisao=useAcaoCliente({ idempotente: true });
   const ocupado=registro.ocupado||decisao.ocupado;
   const instanteAdministrativo = (valor: Date | string) => {

@@ -28,8 +28,6 @@ describe("históricos filhos de aditivo", () => {
     expect(html).toContain("01/10/2026, 02:30 (UTC; origem UTC)");
   });
 
-  // Os dois painéis estão na mesma tela ([propostaId]/page.tsx): a navegação de um preserva a página do
-  // outro, inclusive o "Ir para a primeira página" do vazio (revisão R1 da #134, B2).
   it("página vazia: o texto de página e a volta ao início preservam a página do outro painel", async () => {
     const base = "/matriculas/matricula/contrato/aditivos/proposta";
     mocks.originais.mockResolvedValue({ ok: true, dado: { conferencia: null, preservada: false, registros: [], temProxima: false } });
@@ -42,7 +40,6 @@ describe("históricos filhos de aditivo", () => {
 
     const participantes = renderToStaticMarkup(await ParticipantesHistorico({ matriculaId: "matricula", propostaId: "proposta", pagina: 3, paginaOriginais: 4 }));
     expect(participantes).toContain("Nenhuma conferência nesta página.");
-    // A primeira página das conferências não leva "paginaConferencias=1" (hrefLista), mas mantém a dos originais.
     expect(participantes).toContain(`<a class="underline" href="${base}?paginaOriginais=4">Ir para a primeira página</a>`);
     expect(participantes).toContain(`href="${base}?paginaConferencias=2&amp;paginaOriginais=4">← Anterior</a>`);
   });

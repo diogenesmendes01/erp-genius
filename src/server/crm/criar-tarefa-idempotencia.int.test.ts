@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (2º lote): o painel "Nova tarefa" chama `criarTarefa` com chave de idempotência. O reenvio com a
-// mesma chave não cria segunda tarefa (nem segundo lembrete, que mora na própria tarefa) nem Evento.
-
-// Sessão: só `exigirSessao` é trocada (mesmo motivo de comercial/criar-lead-idempotencia.int.test.ts).
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

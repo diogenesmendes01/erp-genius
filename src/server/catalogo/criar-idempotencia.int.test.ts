@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { Papel, TipoCobranca } from "@prisma/client";
 
-// #166 (2º lote): os cadastros de criação do catálogo (idioma, nível, modalidade, produto e preço) recebem
-// chave de idempotência. O reenvio com a mesma chave devolve o registro já criado: não duplica opções do
-// formulário de matrícula nem aposenta o preço de referência que a própria tentativa acabou de criar.
-
-// Sessão: `exigirSessao` e `exigirSessaoComPapel` trocadas (a segunda chama a primeira dentro do módulo);
-// os papéis continuam lidos do banco. Mesmo motivo de comercial/criar-lead-idempotencia.int.test.ts.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

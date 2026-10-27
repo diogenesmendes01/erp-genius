@@ -10,7 +10,6 @@ export const SnapshotInsightSchema=z.object({
 export function criarSnapshotInsight(config:ConfigAria,referenciasHash:string) {
   return SnapshotInsightSchema.parse({versao:1,configPublicada:config,camposAutorizados:[...CAMPOS_INSIGHT],base:{ultimaMensagemEmISO:null,referenciasHash}});
 }
-/** Fronteira JSON para snapshots previamente validados; não guarda prompt/mensagens. */
 export function jsonInsight(valor:unknown):Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(valor)) as Prisma.InputJsonValue;
 }

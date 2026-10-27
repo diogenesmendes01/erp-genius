@@ -37,7 +37,6 @@ afterAll(() => prisma.$disconnect());
 async function foto() {
  return { pessoas: await prisma.pessoa.findMany({ orderBy: { id: "asc" } }), leads: await prisma.oportunidade.findMany({ orderBy: { id: "asc" } }), contatos: await prisma.contatoWhatsApp.findMany({ orderBy: { id: "asc" } }), conversas: await prisma.conversaWhatsApp.findMany({ orderBy: { id: "asc" } }), atendimentos: await prisma.atendimentoWhatsApp.findMany({ orderBy: { id: "asc" } }), eventos: await prisma.evento.findMany({ orderBy: { id: "asc" } }), mensagens: await prisma.mensagemWhatsApp.count(), intencoes: await prisma.intencaoMensagem.count() };
 }
-// Três casos novos C9; não são o arquivo C4 nem os resultados8/78 históricos.
 it.each(["COMMIT_COMPATIVEL", "ROLLBACK_WRITER", "COMMIT_INCOMPATIVEL"] as const)("C9 %s: UNIQUE real, rollback e nova leitura sem adoção silenciosa", async caso => {
  const n = ++sequencia, telefone = `+5068333${String(n).padStart(4, "0")}`, contatoWriterId = `contato-ficticio-c9-${n}`;
  leadId = (await prisma.oportunidade.create({ data: { codigo: `L-C9-${n}`, nome: "Lead autorizado C9", telefoneE164: telefone, pessoaId, vendedorDonoId: atorId } })).id;
@@ -103,13 +102,11 @@ it.each(["COMMIT_COMPATIVEL", "ROLLBACK_WRITER", "COMMIT_INCOMPATIVEL"] as const
    expect(a.leadId).toBe(leadId); expect(a.conversa.contato).toMatchObject({ pessoaId, leadId }); expect(avisos).toHaveLength(1);
    const apos = await foto(); expect(await iniciarConversaPorNumero(entrada)).toEqual(resposta); await cerca(); expect(await foto()).toEqual(apos); expect(avisos).toHaveLength(1);
   } else {
-   // Prova causal ANTES do oráculo de mensagem: erro único real, mesmo modelo/target, sem infra/P2028.
    expect(bloqueioConfirmado).toBe(true); expect(meta).toEqual({ code: "P2002", modelName: "ContatoWhatsApp", target: ["telefoneE164"] });
    const depois = await foto(); expect({ ...depois, contatos: [] }).toEqual({ ...antes, contatos: [] }); expect(depois.contatos).toHaveLength(1); expect(depois.contatos[0].id).toBe(contatoWriterId); expect(avisos).toEqual([]);
    const retry = await iniciarConversaPorNumero(entrada); await cerca();
    if (caso === "COMMIT_INCOMPATIVEL") { expect(retry).toEqual({ ok: false, erro: DOMINIO }); expect(await foto()).toEqual(depois); expect(avisos).toEqual([]); }
    else { expect(retry.ok, JSON.stringify(retry)).toBe(true); const aposRetry = await foto(); expect(await iniciarConversaPorNumero(entrada)).toEqual(retry); await cerca(); expect(await foto()).toEqual(aposRetry); expect(avisos).toHaveLength(1); expect((await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { id: contatoWriterId } }))).toMatchObject({ pessoaId, leadId }); }
-   // Baseline deve falhar só aqui: produção antiga devolve Erro inesperado.
    expect(resposta).toEqual({ ok: false, erro: DOMINIO });
   }
   expect(await prisma.mensagemWhatsApp.count()).toBe(0); expect(await prisma.intencaoMensagem.count()).toBe(0);

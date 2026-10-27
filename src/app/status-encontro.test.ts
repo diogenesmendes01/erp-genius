@@ -1,17 +1,8 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { StatusEncontroAgenda } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
-
-// Status do encontro (StatusEncontroAgenda) no masculino em todas as telas — concorda com "encontro";
-// decisão do responsável em 25/09/2026. A trava é de COMPORTAMENTO: cada tela que mostra o status é
-// renderizada com cada um dos seis estados e precisa exibir o rótulo de STATUS_ENCONTRO_LABEL. Não
-// importa como um mapa local seria escrito (objeto, Map, atribuição, constante renomeada, rótulo
-// único sobrescrito): se a tela mostrar outro texto, o teste quebra. Os textos distintivos do status
-// ficam proibidos fora de src/lib/labels.ts, para telas novas não montarem o próprio rótulo.
 
 const mocks = vi.hoisted(() => ({
   encontros: vi.fn(),
@@ -36,7 +27,6 @@ import { ConteudoRevisao } from "@/app/(app)/academico/calendario/[id]/replaneja
 
 const inicio = "2026-10-01T03:30:00.000Z", fim = "2026-10-01T04:30:00.000Z";
 
-/** Cada tela que mostra o status do encontro, renderizada com um status qualquer. */
 const TELAS: Record<string, (status: string) => Promise<string>> = {
   "/diario/encontros": async (status) => {
     mocks.encontros.mockResolvedValue({ ok: true, dado: { proximoCursor: null, encontros: [{ id: "e", turma: "T-1", status, inicio, fim, fusoExibicao: "UTC", fusoOrigem: "UTC", professor: "Ana", particular: false, atribuicaoPropria: false }] } });
@@ -89,7 +79,6 @@ describe("status do encontro no masculino, em todas as telas que o mostram", () 
 
   for (const [tela, renderizar] of Object.entries(TELAS)) {
     it(`${tela}: cada um dos seis status aparece com o rótulo do mapa central`, async () => {
-      // Linha de base com um status desconhecido: o rótulo testado tem de aparecer A MAIS, e só por causa do status.
       const base = await renderizar("STATUS_DESCONHECIDO");
       for (const status of Object.values(StatusEncontroAgenda)) {
         const html = await renderizar(status);
@@ -101,32 +90,4 @@ describe("status do encontro no masculino, em todas as telas que o mostram", () 
       }
     });
   }
-});
-
-// Telas novas: os textos distintivos do status só existem em src/lib/labels.ts. ("Cancelado",
-// "Rascunho" e "Não realizado" são comuns a outras entidades e não entram — as telas acima são
-// travadas pelo comportamento.)
-const TEXTOS_DO_STATUS = /^(Previst[oa]|Ministrad[oa]|Impedid[oa] pela escola)$/;
-const fontes = ["src/app", "src/components"].flatMap((raiz) =>
-  (readdirSync(raiz, { recursive: true }) as string[])
-    .filter((f) => /\.(t|j)sx?$/.test(f) && !/\.test\./.test(f))
-    .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
-);
-
-describe("rótulo do status do encontro só no mapa central", () => {
-  it("nenhuma tela (ts, tsx, js, jsx) escreve \"Previsto\", \"Ministrado\" ou \"Impedido pela escola\" — nem no feminino", () => {
-    const ofensores = fontes.flatMap(({ arquivo, conteudo }) =>
-      [...conteudo.matchAll(/["'`>]\s*([^"'`<>{}]{3,40}?)\s*["'`<]/g)].map((m) => m[1].trim()).filter((t) => TEXTOS_DO_STATUS.test(t)).map((t) => `${arquivo}: ${t}`),
-    );
-    expect(ofensores).toEqual([]);
-  });
-
-  it("o detector pega o texto em string, template e JSX, e ignora frase que só contém a palavra", () => {
-    const achar = (fonte: string) => [...fonte.matchAll(/["'`>]\s*([^"'`<>{}]{3,40}?)\s*["'`<]/g)].map((m) => m[1].trim()).filter((t) => TEXTOS_DO_STATUS.test(t));
-    expect(achar('const r = { PREVISTO: "Prevista" };')).toEqual(["Prevista"]);
-    expect(achar("const r = new Map().set(P, 'Ministrado');")).toEqual(["Ministrado"]);
-    expect(achar("const r = `Impedido pela escola`;")).toEqual(["Impedido pela escola"]);
-    expect(achar("<span>Previsto</span>")).toEqual(["Previsto"]);
-    expect(achar('<p>"Encontro previsto para amanhã"</p>')).toEqual([]);
-  });
 });

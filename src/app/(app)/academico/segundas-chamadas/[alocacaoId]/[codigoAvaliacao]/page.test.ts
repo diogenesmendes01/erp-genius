@@ -58,7 +58,6 @@ it("consulta dados e preferência somente após a guarda da página", async () =
   expect(mocks.preferencia).not.toHaveBeenCalled();
 });
 
-// docs/42 L1670 (docs/43 §6 item 7): o formulário sumia sem explicar quando a matrícula não estava ativa.
 const comEstado = (estado: Record<string, unknown>) => mocks.consulta.mockResolvedValue({ ok: true, dado: {
   fusoExibicao: "UTC", proximoId: null,
   estado: { limiteBase: 2, extrasAprovados: 0, reservasOcupadas: 0, saldo: 2, ativa: true, statusMatricula: "ATIVA", ...estado },

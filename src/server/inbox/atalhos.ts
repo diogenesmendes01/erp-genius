@@ -9,7 +9,6 @@ const INDIVIDUAL: Prisma.AtendimentoWhatsAppWhereInput = { conversa: { contatoId
 const ORDEM = [{ ultimaMensagemEm: { sort: "desc", nulls: "last" } }, { id: "desc" }] satisfies Prisma.AtendimentoWhatsAppOrderByWithRelationInput[];
 const podeConsultar = (u: UsuarioSessao) => !!u?.id && u.papeis.some(p => PAPEIS_INBOX.includes(p));
 
-/** Entrada interna: cada alvo reaplica o escopo; um convite a A não autoriza B. */
 export async function atendimentoParaAbrir(u: UsuarioSessao, alvo: AlvoConversa, db: Db = prisma): Promise<ConversaParaAbrir | null> {
   if (!podeConsultar(u) || !(alvo.atendimentoId || alvo.leadId || alvo.pessoaId)) return null;
   const escopo = await escopoAtendimentos(u, { db });
@@ -39,7 +38,6 @@ function depoisDe(cursor: CursorAtendimento): Prisma.AtendimentoWhatsAppWhereInp
     ] };
 }
 
-/** Lotes limitados, sem consulta por participante nem teto que esconda pessoas antigas. */
 export async function atendimentosParaPessoas(u: UsuarioSessao, pessoaIds: readonly string[], db: Db = prisma): Promise<Map<string, ConversaParaAbrir>> {
   const achados = new Map<string, ConversaParaAbrir>();
   const pendentes = new Set(pessoaIds.filter(Boolean));

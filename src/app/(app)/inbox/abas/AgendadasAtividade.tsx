@@ -16,7 +16,6 @@ function AgendadasDaConversa({itens,atendimentoId,fuso,fusoEscola,aoMudar}:Props
  useLayoutEffect(()=>{atual.current=alvo;},[alvo]);
  const itemAtual=alvo?itens.find(i=>i.id===alvo.item.id):undefined;
  if(alvo&&itemAtual&&!itemAtual.podeCancelar&&!alvo.invalidada)setAlvo({...alvo,invalidada:true});
- // Ausência esperada após SSE próprio não invalida o ACK em voo; impede iniciar outra chamada.
  const podeConfirmar=!!itemAtual?.podeCancelar&&!alvo?.invalidada;
  return <div className="space-y-2">
   {!!itens.length&&<section aria-label="Mensagens agendadas" className="space-y-2"><h3 className="text-sm font-medium">Mensagens agendadas</h3><ul className="space-y-2">{itens.map(m=><li key={m.id} className="flex min-w-0 items-start gap-2 rounded-lg border border-border-soft bg-surface p-2"><IconClock size={17} className="mt-0.5 shrink-0 text-brand-700" aria-hidden/><div className="min-w-0 flex-1"><p className="text-xs text-gray-600">{formatarInstanteExibicao(m.agendadaPara,fuso,fusoEscola).texto} · <span className={m.autor.tipo==="aria"?"text-ai-700":undefined}>{m.autor.tipo==="voce"?"Você":m.autor.tipo==="aria"?"Aria":m.autor.nome}</span></p><p className="truncate text-[13px]" title={m.texto}>{m.texto}</p></div>{m.podeCancelar&&<BotaoIcone rotulo="Cancelar mensagem agendada" tamanho={34} onClick={()=>{setSucesso(null);setAlvo({item:m,sessao:++sessao.current,invalidada:false});}}><IconX size={15}/></BotaoIcone>}</li>)}</ul></section>}

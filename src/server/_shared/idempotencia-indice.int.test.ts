@@ -4,9 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { sqlBuscaIdempotente } from "./idempotencia";
 
-// C1 da revisão do #240: a busca do Evento de criação pela chave de idempotência usa o índice de expressão
-// parcial `Evento_idempotencia_idx` em vez de percorrer todos os Eventos do mesmo tipo.
-
 let autorId: string;
 
 beforeAll(async () => {
@@ -23,8 +20,6 @@ describe("Evento_idempotencia_idx", () => {
   });
 
   it("a busca de repeticaoIdempotente usa o índice", async () => {
-    // Cenário de produção: muitos Eventos do mesmo tipo e agregado, a maioria sem chave e o resto com chaves
-    // de vários autores. Com estatísticas atualizadas, o planejador deve preferir o índice parcial.
     await prisma.$executeRaw`
       INSERT INTO "Evento" ("id", "tipo", "agregadoTipo", "agregadoId", "autorId", "payload")
       SELECT 'carga-' || g, 'TarefaCriada', 'Tarefa', 'tarefa-' || g, ${autorId},

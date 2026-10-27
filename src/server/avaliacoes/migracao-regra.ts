@@ -73,7 +73,6 @@ export async function consultarMigracoesRegra(input: { turmaId: string; pagina?:
   });
 }
 
-/** Dados de apresentação; a confirmação sempre revalida a revisão no servidor. */
 export async function consultarPreparacaoMigracao(input: { turmaId: string }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

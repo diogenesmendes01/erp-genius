@@ -45,7 +45,6 @@ describe("sessao.estado / sessao.qr", () => {
 
   it("estado mais antigo que o último aplicado é ignorado (re-tentativa de CAIU antigo não derruba CONECTADO posterior)", async () => {
     const T = 1_790_000_000_000;
-    // CONECTADO em T+60s já aplicado pelo dreno (linha processada na tabela de entrada).
     await prisma.eventoMotorRecebido.create({
       data: {
         idEvento: "0b9f3c1e-6c1d-4a55-9d3e-2f6f8a1b7c21",
@@ -65,7 +64,6 @@ describe("sessao.estado / sessao.qr", () => {
     expect(await sessao()).toBe("CONECTADO");
     expect(await eventos("SessaoBaileysCaiu")).toBe(0);
 
-    // Estado posterior ao último aplicado segue valendo.
     const caiuNovo = { ...caiuAntigo, idEvento: "0b9f3c1e-6c1d-4a55-9d3e-2f6f8a1b7c23", ocorridoEm: T + 120_000 };
     expect(await PROCESSADORES["sessao.estado"](caiuNovo)).toBe("ok");
     expect(await sessao()).toBe("CAIU");
@@ -96,7 +94,6 @@ describe("sessao.estado / sessao.qr", () => {
     });
     await drenarEventosMotor(agora);
     expect(await sessao()).toBe("CONECTADO");
-    // A re-tentativa do CAIU chega depois.
     await drenarEventosMotor(new Date(agora.getTime() + 120_000));
     expect(await sessao()).toBe("CONECTADO");
     const caiu = await prisma.eventoMotorRecebido.findUniqueOrThrow({ where: { idEvento: "0b9f3c1e-6c1d-4a55-9d3e-2f6f8a1b7c31" } });

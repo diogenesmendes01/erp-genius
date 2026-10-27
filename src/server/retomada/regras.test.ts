@@ -8,7 +8,6 @@ import {
 } from "./regras";
 
 const hoje = new Date(2026, 8, 8, 16);
-// Os casos antigos montam datas no relógio local do processo; a escola, neles, está no mesmo fuso.
 const FUSO_SERVIDOR = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const pausaId = "pausa-atual";
 const manter = { opcao: "MANTER_VENCIMENTOS" as const, motivo: "Retorno solicitado pelo aluno" };
@@ -167,8 +166,6 @@ describe("conjunto elegível e memória financeira", () => {
   });
 });
 
-// Q176 (#164): "hoje" da retomada é o dia civil da escola, não o do servidor (UTC em produção). Na Costa Rica (−06),
-// às 04:30Z de 09/09/2026 ainda são 22h30 de 08/09: a data mínima é 08/09 e uma parcela para 08/09 não é retroativa.
 describe("retomada no dia civil da escola", () => {
   const fuso = "America/Costa_Rica";
   const agora = new Date("2026-09-09T04:30:00Z");
@@ -186,11 +183,9 @@ describe("retomada no dia civil da escola", () => {
   });
 });
 
-// Ref. #247: a data digitada na reprogramação vira o meio-dia da ESCOLA; propostas antigas, gravadas ao meio-dia do
-// relógio do servidor (UTC em produção), continuam lidas no mesmo dia civil.
 describe("datas digitadas da retomada no fuso da escola", () => {
   const fuso = "America/Costa_Rica";
-  const agora = new Date("2026-09-09T04:30:00Z"); // 08/09, 22h30 na Costa Rica
+  const agora = new Date("2026-09-09T04:30:00Z");
   it("grava o meio-dia da escola, qualquer que seja o fuso do servidor", () => {
     const m = matricula();
     const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], { ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos: m.cobrancas.map((c) => ({ cobrancaId: c.id, vencimento: "2026-09-08" })) }, agora, fuso);

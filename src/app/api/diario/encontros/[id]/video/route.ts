@@ -14,7 +14,6 @@ const privados = {
   "Referrer-Policy": "no-referrer",
 };
 
-/** Cada Range autoriza de novo a gravação oficial da aula. */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const site = request.headers.get("sec-fetch-site");
   if ((site && site !== "same-origin" && site !== "none")

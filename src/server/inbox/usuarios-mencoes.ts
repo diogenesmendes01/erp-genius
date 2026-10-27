@@ -2,7 +2,6 @@ import { Prisma, type Papel } from "@prisma/client";
 import { expressaoOrdenacaoSql, normalizarParaOrdenacao } from "@/lib/nome-ordenacao";
 import { PAPEIS_INBOX, type Db } from "@/server/whatsapp/escopo";
 export interface UsuarioMencao { id: string; nome: string; ativo: boolean; papeis: Papel[]; permissoes: string[] }
-// Coluna literal constante: nenhum nome de coluna/SQL vem do cliente. Valores são parâmetros.
 const nomeSql = Prisma.raw(expressaoOrdenacaoSql('u."nome"'));
 export async function usuariosRelevantesParaMencao(db: Db, autorId: string, filtro: { busca: string } | { primeiros: string[] }): Promise<UsuarioMencao[]> {
   const condicao = "busca" in filtro

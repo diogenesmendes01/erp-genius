@@ -16,7 +16,6 @@ type Habilidade = typeof HABILIDADES[number];
 
 export function AutorizarReservaEspecial({ propostaId, habilidades, fusoInstitucional }: { propostaId: string; habilidades: string[]; fusoInstitucional: string | null }) {
   const router = useRouter();
-  // Chave de idempotência estável entre tentativas com a mesma entrada: na falha de transporte, reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const [habilidade, setHabilidade] = useState("");
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
@@ -48,7 +47,6 @@ export function AutorizarReservaEspecial({ propostaId, habilidades, fusoInstituc
 
 export function ReservarComAutorizacao({ propostaId, propostaHash, autorizacaoId, habilidade }: { propostaId: string; propostaHash: string; autorizacaoId: string; habilidade: string }) {
   const router = useRouter();
-  // Chave de idempotência estável entre tentativas com a mesma entrada: na falha de transporte, reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
 

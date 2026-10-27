@@ -3,7 +3,6 @@ import { Avatar, tomDoAvatar } from "@/components/Avatar";
 import { PAPEL_PARTICIPANTE_LABEL } from "@/lib/labels";
 import type { BlocoB2BPainel } from "@/server/inbox/painel-detalhes";
 
-/** Os destinos já foram autorizados pelo produtor336; null não vira ação local. */
 export function BlocoB2B({ bloco, verEmpresa }: { bloco: BlocoB2BPainel; verEmpresa: boolean }) {
   return <section aria-label="Contatos da empresa" className="flex min-w-0 flex-col gap-2">
     <div className="flex min-w-0 flex-wrap items-center gap-2">

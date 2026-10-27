@@ -9,7 +9,7 @@ const objeto=(v:unknown):Record<string,unknown>|null=>v!==null&&typeof v==="obje
 function bindingValido(v:unknown):Binding|null{const b=objeto(v);return b&&typeof b.id==="string"&&b.id.length>0&&b.id.length<=128&&typeof b.geracao==="string"&&/^[1-9][0-9]{0,18}$/.test(b.geracao)&&BigInt(b.geracao)<=9223372036854775807n?{id:b.id,geracao:b.geracao}:null;}
 class Falha extends Error{constructor(public status:number,public escopo?:"modal"){super("Presença indisponível.");}}
 async function enviar(payload:unknown){const inicio=performance.now();const r=await fetch("/api/inbox/presenca",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Inbox-Presenca":"1"},body:JSON.stringify(payload)});if(!r.ok){let erro:Record<string,unknown>|null=null;try{erro=objeto(await r.json());}catch{}throw new Falha(r.status,erro?.escopo==="modal"?"modal":undefined);}return{dados:objeto(await r.json()),inicio};}
-function armazenar(u:string,abaId:string,b:Binding){try{sessionStorage.setItem(`erp.inbox.presenca.${JSON.stringify([u,abaId])}`,JSON.stringify(b));}catch{/* presença não depende de storage disponível */}}
+function armazenar(u:string,abaId:string,b:Binding){try{sessionStorage.setItem(`erp.inbox.presenca.${JSON.stringify([u,abaId])}`,JSON.stringify(b));}catch{ }}
 function recuperar(u:string,abaId:string):Binding|null{try{return bindingValido(JSON.parse(sessionStorage.getItem(`erp.inbox.presenca.${JSON.stringify([u,abaId])}`)??"null"));}catch{return null;}}
 function aba(){try{const antiga=sessionStorage.getItem("erp.inbox.presenca.aba");if(antiga&&/^[0-9a-f-]{36}$/i.test(antiga))return antiga;const nova=crypto.randomUUID();sessionStorage.setItem("erp.inbox.presenca.aba",nova);return nova;}catch{return crypto.randomUUID();}}
 function cancelarFoto(o:Observador){if(o.timer!==null)clearTimeout(o.timer);o.timer=null;}
@@ -39,7 +39,6 @@ async function abrirNoServidor(c:Ciclo,causa:"entrada"|"reconexao"){
  }
  if(c.revogada)return;const b=bindingValido(r.dados?.inscricao);if(!b)throw new Error("Inscrição inválida.");c.binding=b;c.possuiAbertura=true;c.seq=0n;armazenar(c.usuarioId,c.abaId,b);
 }
-// Compartilha somente o futuro ponteiro CAS da mesma aba/usuário, nunca presença confirmada.
 const aberturasPendentes=new Map<string,Promise<Binding|null>>();
 function abrir(c:Ciclo,causa:"entrada"|"reconexao"):Promise<void>{
  const chave=JSON.stringify([c.usuarioId,c.abaId]);const anterior=aberturasPendentes.get(chave);
@@ -48,11 +47,10 @@ function abrir(c:Ciclo,causa:"entrada"|"reconexao"):Promise<void>{
   if(c.revogada)throw new Error("Abertura cancelada.");if(!c.vivo)return c.binding;
   await abrirNoServidor(c,causa);if(c.revogada)throw new Error("Abertura cancelada.");return c.binding;
  });
- // Reserva síncrona antes da microtask iniciar o transporte.
  aberturasPendentes.set(chave,tarefa);
  return tarefa.finally(()=>{if(aberturasPendentes.get(chave)===tarefa)aberturasPendentes.delete(chave);}).then(()=>{});
 }
-async function fechar(c:Ciclo){if(c.revogada||c.fechado||!c.possuiAbertura||!c.binding||c.pendente)return;c.fechado=true;try{await enviar({modo:"fechar",...c.binding,seq:String(++c.seq)});}catch{/* close best-effort; lease60 é autoritativa */}}
+async function fechar(c:Ciclo){if(c.revogada||c.fechado||!c.possuiAbertura||!c.binding||c.pendente)return;c.fechado=true;try{await enviar({modo:"fechar",...c.binding,seq:String(++c.seq)});}catch{ }}
 async function pulsar(c:Ciclo){if(!c.vivo||!c.conectado||c.pendente||!c.possuiAbertura||!c.binding)return;c.pendente=true;let o:Observador|null=null;try{
  if(!c.vivo)return;
  o=observador?.vivo&&!observador.lendo?observador:null;if(o)o.lendo=true;
@@ -62,11 +60,9 @@ async function pulsar(c:Ciclo){if(!c.vivo||!c.conectado||c.pendente||!c.possuiAb
  }catch(e){tratarFalha(e,c,o);if(o&&o.vivo&&observador===o){cancelarFoto(o);o.receber(null);}if(e instanceof Falha&&(e.status===401||e.status===403)){c.conectado=false;pararPulso(c);}}finally{if(o)o.lendo=false;c.pendente=false;if(!c.vivo)void fechar(c);else if(c.atividadePendente){c.atividadePendente=false;interagirPresencaInbox();}}}
 function pararPulso(c:Ciclo){if(c.intervalo!==null)clearInterval(c.intervalo);c.intervalo=null;}
 function iniciarPulso(c:Ciclo){if(c.intervalo!==null)return;const pulso=()=>void pulsar(c);c.intervalo=setInterval(pulso,25_000);void pulsar(c);}
-/** Exclusivamente montado pelo Inbox, nunca pelo selo externo. SSEOPEN é observado só no cliente. */
 export function montarPresencaInbox(usuarioId:string):()=>void{
  if(ciclo&&ciclo.usuarioId!==usuarioId){ciclo.vivo=false;pararPulso(ciclo);ciclo.sairEventos?.();void fechar(ciclo);ciclo=null;}
  if(!ciclo){const abaId=aba();const c:Ciclo={usuarioId,abaId,binding:recuperar(usuarioId,abaId),aberturaId:crypto.randomUUID(),seq:0n,assinantes:new Set(),vivo:true,revogada:false,conectado:false,pendente:false,fechado:false,possuiAbertura:false,intervalo:null,sairEventos:null,ultimaAtividade:-Infinity,atividadePendente:false};ciclo=c;
- // Montagem deliberada sempre cria uma abertura nova; reconexão técnica só nasce no ramo409.
  c.pendente=true;void abrir(c,"entrada").catch(e=>{tratarFalha(e,c,null);if(c.vivo)encerrarCiclo(c);}).finally(()=>{c.pendente=false;if(!c.vivo)void fechar(c);else if(c.conectado)void pulsar(c);});
  c.sairEventos=assinarEventosCompartilhados(()=>{},conectado=>{if(!c.vivo)return;c.conectado=conectado;if(conectado)iniciarPulso(c);else pararPulso(c);});}
  const c=ciclo,token=Symbol("Inbox");c.assinantes.add(token);

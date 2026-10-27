@@ -18,7 +18,6 @@ export const OcorrenciaHorasSchema = z.object({
   if ("comunicadoEm" in d.ocorrencia && Date.parse(d.ocorrencia.comunicadoEm) > Date.parse(d.registradoEm)) falha("Comunicação não pode ser posterior ao registro da ocorrência.");
 });
 
-/** Classificação financeira de ocorrência conferida; não conclui diário nem gera cobrança. */
 export function classificarOcorrenciaHoras(input: z.input<typeof OcorrenciaHorasSchema>) {
   const d = OcorrenciaHorasSchema.parse(input);
   const o = d.ocorrencia;

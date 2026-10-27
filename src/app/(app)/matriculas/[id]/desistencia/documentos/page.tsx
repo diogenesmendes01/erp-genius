@@ -29,8 +29,6 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
   const resposta = await consultarDocumentosDesistenciaPreparacao({ matriculaId: id });
   if (!resposta.ok || !resposta.dado) return <p role="alert">{resposta.ok ? "Conferência indisponível." : resposta.erro}</p>;
   const d = resposta.dado;
-  // Cancelamento integrado: só com driver ativo, processo do mesmo serviço/ambiente enviado e sem conclusão,
-  // e o pedido mais recente ainda não efetivado. A ação revalida decisão administrativa e acerto aplicado.
   const consultaIntegracao = await consultarIntegracaoAssinatura();
   const integracao = consultaIntegracao.ok ? consultaIntegracao.dado : null;
   const cancelavel = (p: typeof d.processos[number]) => !!integracao && p.estado === "ENVIADO" && !p.conclusaoRegistrada && p.referenciaExternaPresente

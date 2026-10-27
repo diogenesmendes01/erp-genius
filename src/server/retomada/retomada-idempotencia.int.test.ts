@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166, 5º lote (N3 da R1 do #274): proposta de retomada com chave da tentativa. Sem chave, se outra pessoa
-// rejeitasse a proposta entre a tentativa e o reenvio, o reenvio abria uma nova proposta (o servidor não distingue
-// esse reenvio de uma nova proposta deliberada com o mesmo texto). Com a chave (marca no `RetomadaSolicitada`), o
-// reenvio devolve a proposta original; chave nova continua sendo nova proposta.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -80,7 +75,6 @@ describe("proposta de retomada com chave (#166, N3 da R1 do #274)", () => {
     const { propostaId, status } = sucesso(await solicitarRetomada(alunoId, comChave));
     expect(status).toBe("PENDENTE");
     await rejeitar(propostaId);
-    // O status real, não o de uma proposta nova (#282, C3): a tela avisa que já foi decidida.
     expect(sucesso(await solicitarRetomada(alunoId, comChave))).toEqual({ propostaId, status: "REJEITADA" });
     expect(await propostas()).toBe(1);
     expect(await solicitadas()).toBe(1);

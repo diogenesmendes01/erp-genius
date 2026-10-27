@@ -13,7 +13,6 @@ import { HABILIDADES } from "./calculo";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
 
-/** Histórico paginado por número (E4), em ordem de id: ida e volta trazem as mesmas autorizações. */
 export async function consultarAutorizacoesReservaRecuperacao(input: { propostaId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

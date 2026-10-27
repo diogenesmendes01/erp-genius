@@ -13,9 +13,6 @@ export type HistoricoSituacaoMatricula = {
   fatosMigracao?: readonly { tipo: string; efetivoEm: Date; ordem: number }[];
 };
 
-/** Q53: reconstrução apenas com evidência temporal suficiente; nunca usa outro contrato.
- * Encerramento sem registro temporal e legado sem ativação exigem conferência própria.
- */
 export function situacaoMatriculaNaAula(h: HistoricoSituacaoMatricula, instante: Date): "ATIVA" | "PAUSADA" | "ENCERRADA" | "CANCELADA" | "NAO_ATIVADA" | "A_CONFERIR" {
   if (h.fatosMigracao?.length) return situacaoHistoricaMigrada(h, instante);
   if (!Number.isFinite(instante.getTime()) || !h.ativadaEm || !Number.isFinite(h.ativadaEm.getTime())) return "A_CONFERIR";
@@ -53,7 +50,6 @@ export function situacaoMatriculaNaAula(h: HistoricoSituacaoMatricula, instante:
 
 
 type EstadoMigrado = "ATIVA" | "PAUSADA" | "ENCERRADA" | "CANCELADA";
-/** Fatos importados são evidências próprias; não simulam o aceite ou a ativação comercial. */
 function situacaoHistoricaMigrada(h: HistoricoSituacaoMatricula, instante: Date): EstadoMigrado | "NAO_ATIVADA" | "A_CONFERIR" {
   if (!Number.isFinite(instante.getTime())) return "A_CONFERIR";
   const fatos = [...h.fatosMigracao!].sort((a, b) => a.ordem - b.ordem);
@@ -72,7 +68,6 @@ function situacaoHistoricaMigrada(h: HistoricoSituacaoMatricula, instante: Date)
       if (!parsed.success || !p.aplicadaEm || !Number.isFinite(p.aplicadaEm.getTime())) return "A_CONFERIR";
       const s = parsed.data;
       const civil = "dataEfetiva" in s ? s.dataEfetiva : s.retorno;
-      // PostgreSQL date não representa ano zero: não produzir estado divergente do banco.
       if (civil.startsWith("0000-")) return "A_CONFERIR";
       let em: number;
       try { em = instanteDaGrade(civil, "00:00", s.fusoInstitucional).getTime(); } catch { return "A_CONFERIR"; }

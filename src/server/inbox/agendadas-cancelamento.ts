@@ -9,11 +9,9 @@ import {podeGerirAgendadaInbox} from "./atividade-regras";
 import {avisarAtendimentoAtualizado} from "./barramento";
 const Id=z.string().min(1,"Mensagem agendada não encontrada.");
 const MARCA="cancelada_pelo_autor_inbox";
-/** Operação Inbox; a exceção GP não altera APIs/defaults CRM nem desfaz AcaoAgenteIA. */
 export async function cancelarAgendadaInboxTx(sessao:UsuarioSessao,atendimentoId:string,intencaoId:string,db=prisma):Promise<void>{
  const id=Id.parse(atendimentoId),mid=Id.parse(intencaoId);
  await db.$transaction(async tx=>{
-  // SHARE é compatível com claim264/265 e FK; nenhuma escrita/upgrade do pai.
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR SHARE`;
   await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${mid} AND "atendimentoId"=${id} AND "agendadaPara" IS NOT NULL AND "passo" IS NULL AND "passoComercial" IS NULL FOR UPDATE`;
   const ator=async()=>{
@@ -26,8 +24,6 @@ export async function cancelarAgendadaInboxTx(sessao:UsuarioSessao,atendimentoId
   if(!await atendimentoVisivel(inicial,id,false,tx))throw new ErroRegra("Atendimento não encontrado.");
   const m=await tx.intencaoMensagem.findFirst({where:{id:mid,atendimentoId:id,agendadaPara:{not:null},passo:null,passoComercial:null}});
   if(!m)throw new ErroRegra("Mensagem agendada não encontrada ou sem permissão para cancelar.");
-  // Pai/intenção permanecem locked. ACL/ator são relidos após awaits; READ COMMITTED
-  // confirma a última leitura, sem prometer linearização de todas as ACL globais.
   const autorizar=async()=>{
    const u=await ator();
    const a=await atendimentoVisivel(u,id,false,tx);

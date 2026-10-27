@@ -19,8 +19,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const senha = credentials?.senha as string | undefined;
         if (!email || !senha) return null;
 
-        // Rate-limit por e-mail (ver lib/rate-limit-login): bloqueado responde igual a
-        // credencial inválida, sem tocar o banco.
         if (loginBloqueado(email)) return null;
 
         const user = await prisma.usuario.findUnique({ where: { email } });
@@ -64,7 +62,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as { papeis?: string[] }).papeis =
           (token.papeis as string[]) ?? [];
       }
-      // O `exp` do JWT recebido (não o prazo renovado de `session.expires`): o SSE do Inbox fecha quando ele vence.
       session.expiraEm = prazoDoToken(token.exp);
       return session;
     },

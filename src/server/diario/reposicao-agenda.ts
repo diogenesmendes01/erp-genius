@@ -27,7 +27,6 @@ type RegraOferta = RegraBeneficio & { permiteParticular: boolean; produtoPaisId:
 const dataCivil = (valor: Date) => valor.toISOString().slice(0, 10);
 const dataSql = (valor: string) => Prisma.sql`${valor}::date`;
 
-/** Q14/Q49: gestão propõe a regra da oferta, sem alterar snapshots existentes. */
 export async function proporRegraBeneficioReposicaoOferta(input: z.input<typeof regraInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = regraInput.parse(input), entradaHash = hashAgendaReposicao(d);
@@ -45,7 +44,6 @@ export async function proporRegraBeneficioReposicaoOferta(input: z.input<typeof 
   });
 }
 
-/** Q11 aplicado à regra: o autor da versão não escolhe sua vigência. */
 export async function decidirRegraBeneficioReposicaoOferta(input: { regraId: string; aprovar: boolean; motivo: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = z.object({ regraId: id, aprovar: z.boolean(), motivo: textoAgendaReposicao }).strict().parse(input);
@@ -64,7 +62,6 @@ export async function decidirRegraBeneficioReposicaoOferta(input: { regraId: str
   });
 }
 
-/** Q50/Q61: herda uma regra aprovada para o vínculo, somente no próximo período. */
 export async function aplicarBeneficioReposicaoParticularMatricula(input: { matriculaId: string; regraId: string; referenciaCiclo?: string; motivo: string; chaveIdempotencia: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = z.object({ matriculaId: id, regraId: id, referenciaCiclo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), motivo: textoAgendaReposicao, chaveIdempotencia: chave }).strict().parse(input), entradaHash = hashAgendaReposicao(input);
@@ -95,7 +92,6 @@ export async function aplicarBeneficioReposicaoParticularMatricula(input: { matr
   });
 }
 
-/** Q19: Secretaria propõe exceção somente para um intervalo já conferível. */
 export async function proporExcecaoAgendaReposicaoIndividual(input: z.input<typeof excecaoInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), d = excecaoInput.parse(input), inicio = instanteAvaliacaoLocal(d.inicioLocal, d.fuso), fim = instanteAvaliacaoLocal(d.fimLocal, d.fuso), entradaHash = hashAgendaReposicao(d);
@@ -116,7 +112,6 @@ export async function proporExcecaoAgendaReposicaoIndividual(input: z.input<type
   });
 }
 
-/** Q19/Q11: outra pessoa da gestão aprova a exceção exata, sem liberar o calendário geral. */
 export async function decidirExcecaoAgendaReposicaoIndividual(input: { excecaoId: string; aprovar: boolean; motivo: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = z.object({ excecaoId: id, aprovar: z.boolean(), motivo: textoAgendaReposicao }).strict().parse(input);
@@ -143,7 +138,6 @@ export async function decidirExcecaoAgendaReposicaoIndividual(input: { excecaoId
 
 const autorizacaoExcecaoInput = z.object({ reposicaoId: id, motivo: textoAgendaReposicao, evidencia: textoAgendaReposicao, chaveIdempotencia: chave }).strict();
 
-/** Q34: propõe gratuidade acadêmica excepcional sem criar crédito, cobrança ou saldo normal. */
 export async function proporAutorizacaoExcecaoReposicaoParticular(input: z.input<typeof autorizacaoExcecaoInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO), d = autorizacaoExcecaoInput.parse(input), entradaHash = hashAgendaReposicao(d);
@@ -164,7 +158,6 @@ export async function proporAutorizacaoExcecaoReposicaoParticular(input: z.input
   });
 }
 
-/** A mesma pessoa não transforma seu pedido excepcional em gratuidade. */
 export async function decidirAutorizacaoExcecaoReposicaoParticular(input: { autorizacaoId: string; aprovar: boolean; motivo: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = z.object({ autorizacaoId: id, aprovar: z.boolean(), motivo: textoAgendaReposicao }).strict().parse(input);
@@ -184,7 +177,6 @@ export async function decidirAutorizacaoExcecaoReposicaoParticular(input: { auto
   });
 }
 
-/** Q11/Q14: mostra a mesma cota, período e conflitos que o comando conferirá de novo. */
 export async function consultarPreviaAgendaReposicaoIndividual(input: z.input<typeof previaAgendaInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), d = previaAgendaInput.parse(input);
@@ -219,7 +211,6 @@ export async function consultarPreviaAgendaReposicaoIndividual(input: z.input<ty
   });
 }
 
-/** Q11/Q14: Secretaria cria o único encontro REPOSICAO e reserva o benefício na mesma transação. */
 export async function agendarReposicaoIndividual(input: z.input<typeof agendaInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), d = agendaInput.parse(input), inicio = instanteAvaliacaoLocal(d.inicioLocal, d.fuso), fim = instanteAvaliacaoLocal(d.fimLocal, d.fuso), entradaHash = hashAgendaReposicao(d);
@@ -248,7 +239,6 @@ export async function agendarReposicaoIndividual(input: z.input<typeof agendaInp
       await tx.$executeRaw(Prisma.sql`INSERT INTO "EncontroAgenda" (id,finalidade,"reposicaoIndividualId","matriculaId","professorId","preparadorId",inicio,fim,"fusoOrigem",status,motivo,"chaveIdempotencia","entradaHash") VALUES (${encontroId},'REPOSICAO'::"FinalidadeEncontroAgenda",${c.reposicao.id},${c.reposicao.matriculaId},${d.professorId},${autor.id},${instanteUtcAgendaReposicao(inicio)},${instanteUtcAgendaReposicao(fim)},${d.fuso},'PREVISTO'::"StatusEncontroAgenda",${d.motivo},${d.chaveIdempotencia},${entradaHash})`);
       await tx.$executeRaw(Prisma.sql`INSERT INTO "AgendaReposicaoIndividual" (id,"reposicaoId","encontroId","beneficioId","periodoInicio","periodoFimExclusivo","statusBeneficio","autorizacaoExcecaoId","excecaoId","reservadoPorId",motivo) VALUES (${agendaId},${c.reposicao.id},${encontroId},${autorizacaoExcecaoId ? null : c.regra?.id ?? null},${autorizacaoExcecaoId ? null : c.periodo ? dataSql(c.periodo.inicio) : null},${autorizacaoExcecaoId ? null : c.periodo ? dataSql(c.periodo.fimExclusivo) : null},${autorizacaoExcecaoId ? 'ISENTA_EXCECAO' : 'RESERVADA'}::"StatusReservaBeneficioReposicao",${autorizacaoExcecaoId},${excecaoId},${autor.id},${d.motivo})`);
       await registrarEvento(tx, { tipo: "ReposicaoIndividualAgendada", agregadoTipo: "Matricula", agregadoId: c.reposicao.matriculaId, autorId: autor.id, payload: { reposicaoId: c.reposicao.id, agendaId, encontroId, beneficioId: autorizacaoExcecaoId ? null : c.regra?.id ?? null, autorizacaoExcecaoId, periodo: autorizacaoExcecaoId ? null : c.periodo, excecaoId } });
-      // Confere os guards diferidos antes de produzir uma resposta de sucesso.
       await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
       return { encontroId, agendaId, periodo: c.periodo, idempotente: false };
     });
@@ -262,7 +252,6 @@ type AgendaCiclo = {
   antecedenciaCancelamentoMinutos: number | null;
 };
 
-/** Locks the current, singular agenda and its exact PREVISTO meeting. */
 async function agendaCicloTx(tx: Prisma.TransactionClient, agendaId: string) {
   const [agenda] = await tx.$queryRaw<AgendaCiclo[]>(Prisma.sql`
     SELECT a.id,a."reposicaoId" AS "reposicaoId",a."encontroId" AS "encontroId",r."matriculaId" AS "matriculaId",
@@ -289,7 +278,6 @@ async function agendaCicloTx(tx: Prisma.TransactionClient, agendaId: string) {
   return agenda;
 }
 
-/** Q16: Secretaria registra o pedido histórico; a gestão independente decide o efeito no benefício. */
 export async function proporCancelamentoReposicaoIndividual(input: z.input<typeof propostaCancelamentoInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
@@ -320,7 +308,6 @@ export async function proporCancelamentoReposicaoIndividual(input: z.input<typeo
   });
 }
 
-/** Q16/Q26: only an independent decision changes the reservation and cancels its exact meeting. */
 export async function decidirCancelamentoReposicaoIndividual(input: z.input<typeof decisaoCancelamentoInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -356,7 +343,6 @@ export async function decidirCancelamentoReposicaoIndividual(input: z.input<type
   });
 }
 
-/** Q26: remarcação é uma proposta auditável; ela não move encontro nem cota por si. */
 export async function proporRemarcacaoReposicaoIndividual(input: z.input<typeof propostaRemarcacaoInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
@@ -365,9 +351,6 @@ export async function proporRemarcacaoReposicaoIndividual(input: z.input<typeof 
       const agenda = await agendaCicloTx(tx, d.agendaId);
       await exigirAtorAgendaAtual(tx, autor.id, [Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR]);
       const c = await conferirAgendaReposicaoIndividualTx(tx, { reposicaoId: agenda.reposicaoId, professorId: d.professorId, inicio, fim, fuso: d.fuso, permitirSemBeneficio: !!agenda.autorizacaoExcecaoId, ignorarAgendaId: agenda.id });
-      // A proposta é histórica e não consome saldo. A decisão independente
-      // revalida a cota sob lock; assim uma cota ocupada entre as etapas gera
-      // rejeição auditável sem alterar a agenda atual.
       if (!c.regra && !agenda.autorizacaoExcecaoId) throw new ErroRegra("A remarcação não tem benefício vigente nem autorização excepcional.");
       if (c.disponibilidade.encontros.length || c.disponibilidade.indisponibilidades || c.disponibilidade.reservas) throw new ErroRegra("Há conflito com agenda, indisponibilidade docente ou reserva contratada.");
       const [repetida] = await tx.$queryRaw<{ id: string; entradaHash: string }[]>(Prisma.sql`
@@ -391,7 +374,6 @@ export async function proporRemarcacaoReposicaoIndividual(input: z.input<typeof 
   });
 }
 
-/** Q26: a decisão revalida tudo e troca agenda/encontro de forma atômica. */
 export async function decidirRemarcacaoReposicaoIndividual(input: z.input<typeof decisaoRemarcacaoInput>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);

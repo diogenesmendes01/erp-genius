@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2: erro e sucesso separados na prévia e no registro da
-// conferência de horas — erro em role="alert", sucesso em role="status", falha de rede com a orientação
-// própria de cada etapa e o botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   prever: vi.fn(), conferir: vi.fn(), refresh: vi.fn(),
@@ -51,7 +48,6 @@ describe("ConferenciaHoras — registrar conferência", () => {
     nome: "registrar conferência", preparar: carregarPrevia, tela, action: m.conferir,
     acionar: () => submeter(tela(), { motivo: "Conferido com a professora" }),
     sucesso: "Conferência registrada.", incerto: "Atualize o histórico para conferir o resultado antes de repetir.",
-    // O "Conferir prévia" fica na tela em todos os desfechos (a prévia some depois do registro) e trava com o ocupado.
     ocupado: () => botao(tela(), "Conferir prévia").props.disabled === true,
   });
 

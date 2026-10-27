@@ -49,10 +49,6 @@ let catalogo: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
 
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 
-/** Cria uma fonte M01 com lote e mapa de origem montados pela fixture, seguida
- * das ações públicas de ensaio, vínculo aplicado e obrigação financeira
- * aprovada por outra pessoa. Não insere assinatura, proposta ou aplicação de
- * aditivo artificialmente. */
 async function criarMatriculaM01(nome: string) {
   const origem = `M01-ADITIVO-${randomUUID()}`;
   const alunoOrigemId = `aluno-${randomUUID()}`;
@@ -164,8 +160,6 @@ const transcricao = { moeda: "CRC", aluno: { nome: "Aluno legado alvo", document
 const registrar = (matriculaId: string, extra: Record<string, unknown> = {}) => prisma.$transaction(tx => registrarOrigemContratualHistoricaTx(tx, secretariaId, {
   matriculaId, referencia: "Contrato 2025/017", assinadoEm: "2024-12-20", pdfAssinado: pdf, transcricao, motivo: "Contrato legado digitalizado e transcrito para servir de fonte de aditivos.", chaveIdempotencia: "origem-historica-1", ...extra }));
 
-/** B1 da #285: a ação não prepara aditivo sobre a origem histórica. Para exercitar a base (carregarBaseAditivoTx) e os
- * guards do banco, a proposta é montada como a ação a montaria e inserida direto: o banco continua aceitando a fonte. */
 async function inserirPropostaDireta(entrada: Record<string, unknown>, autorId = secretariaId) {
   return prisma.$transaction(async tx => {
     const contexto = await carregarBaseAditivoTx(tx, entrada);
@@ -184,7 +178,6 @@ it("Origem histórica: PDF + transcrição + conferência dupla viram fonte de a
   const alvo = await criarMatriculaM01("Aluno legado alvo");
   entrar(secretariaId);
   expect(await consultarAditivosContratuais({ matriculaId: alvo.matriculaId })).toMatchObject({ ok: true, dado: { fonte: null, impedimento: expect.stringContaining("origem contratual histórica") } });
-  // Transcrição em outra moeda ou sem PDF válido é recusada; nada presumido.
   await expect(registrar(alvo.matriculaId, { transcricao: { ...transcricao, moeda: "USD" } })).rejects.toThrow(/moeda/i);
   await expect(registrar(alvo.matriculaId, { pdfAssinado: Buffer.from("nao e pdf") })).rejects.toThrow();
   const origem = await registrar(alvo.matriculaId);
@@ -193,11 +186,9 @@ it("Origem histórica: PDF + transcrição + conferência dupla viram fonte de a
   const gravada = await prisma.propostaOrigemContratualHistorica.findUniqueOrThrow({ where: { id: origem.id } });
   expect(gravada.pdfHash).toBe(origem.pdfHash);
   expect(hashSubstituicao(gravada.transcricao as Prisma.JsonObject)).toBe(gravada.transcricaoHash);
-  // Ainda não é fonte: a base do aditivo sobre a origem pendente é recusada.
   const base = { matriculaId: alvo.matriculaId, origemHistoricaId: origem.id, origemHashEsperado: gravada.entradaHash, modeloId, modeloHashEsperado: modeloHash, vigenciaInicio: "2026-02-01T00:00:00Z",
     alteracoes: [{ origem: "MENSALIDADE_VALOR" as const, novo: "130.00 CRC", valorEstruturado: { tipo: "DINHEIRO" as const, valor: "130.00", moeda: "CRC" } }], motivo: "Reajuste da mensalidade acordado com o aluno.", chaveIdempotencia: "aditivo-historico-1" };
   await expect(prisma.$transaction(tx => carregarBaseAditivoTx(tx, base))).rejects.toThrow(/não aprovada/);
-  // Conferência dupla: o preparador não decide; hashes divergentes recusam; outro administrador aprova.
   expect(await decidirOrigemContratualHistorica({ propostaId: origem.id, aprovada: true, motivo: "Tentativa do próprio preparador.", pdfHashConferido: gravada.pdfHash, transcricaoHashConferido: gravada.transcricaoHash })).toMatchObject({ ok: false });
   entrar(adminId);
   expect(await decidirOrigemContratualHistorica({ propostaId: origem.id, aprovada: true, motivo: "Hash digitado errado.", pdfHashConferido: "0".repeat(64), transcricaoHashConferido: gravada.transcricaoHash })).toMatchObject({ ok: false, erro: expect.stringContaining("hashes conferidos divergem") });
@@ -205,7 +196,6 @@ it("Origem histórica: PDF + transcrição + conferência dupla viram fonte de a
   const decisao = await decidirOrigemContratualHistorica({ propostaId: origem.id, aprovada: true, motivo: "PDF aberto e transcrição relida linha a linha.", pdfHashConferido: gravada.pdfHash, transcricaoHashConferido: gravada.transcricaoHash });
   expect(decisao).toMatchObject({ ok: true, dado: { aprovada: true } });
   expect(await decidirOrigemContratualHistorica({ propostaId: origem.id, aprovada: true, motivo: "PDF aberto e transcrição relida linha a linha.", pdfHashConferido: gravada.pdfHash, transcricaoHashConferido: gravada.transcricaoHash })).toEqual(decisao);
-  // Agora é a fonte: consulta expõe campos transcritos; taxa e adiantamento não são alteráveis.
   entrar(secretariaId);
   const consulta = await consultarAditivosContratuais({ matriculaId: alvo.matriculaId });
   expect(consulta).toMatchObject({ ok: true, dado: { impedimento: null, fonte: { tipo: "ORIGEM_HISTORICA", origemHistoricaId: origem.id, origemHash: gravada.entradaHash, conclusaoId: null, ambiente: "HISTORICO" } } });
@@ -214,28 +204,21 @@ it("Origem histórica: PDF + transcrição + conferência dupla viram fonte de a
   expect(campos.some(c => c.origem === "PAGADOR_NOME" || c.origem === "ALUNO_EMAIL")).toBe(false);
   expect(await prepararAditivoContratual({ ...base, chaveIdempotencia: "aditivo-historico-taxa", alteracoes: [{ origem: "TAXA_VALOR", novo: "60.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "60.00", moeda: "CRC" } }] })).toMatchObject({ ok: false, erro: expect.stringContaining("taxa, primeira mensalidade ou adiantamento") });
   expect(await prepararAditivoContratual({ ...base, chaveIdempotencia: "aditivo-historico-conclusao", origemHistoricaId: undefined, origemHashEsperado: undefined, conclusaoOriginalId: "conclusao-inexistente", conclusaoHashEsperado: "a".repeat(64) })).toMatchObject({ ok: false });
-  // B1 da #285: enquanto o dono não decide o ambiente de assinatura, a ação não prepara aditivo sobre a origem histórica
-  // e diz o porquê (não a mensagem genérica de ambiente do envio). Nada é gravado.
   expect(await prepararAditivoContratual(base)).toEqual({ ok: false, erro: MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA });
-  // Q173 (#284): a troca de moeda só tem fonte em conclusão assinada em PRODUCAO; sobre a origem histórica, a regra B1
-  // recusa antes, com a mesma mensagem, sozinha ou com os valores na moeda nova.
   for (const alteracoes of [
     [{ origem: "MOEDA" as const, novo: "USD", valorEstruturado: { tipo: "MOEDA" as const, moeda: "USD" } }],
     [{ origem: "MOEDA" as const, novo: "USD", valorEstruturado: { tipo: "MOEDA" as const, moeda: "USD" } }, { origem: "MENSALIDADE_VALOR" as const, novo: "130.00 USD", valorEstruturado: { tipo: "DINHEIRO" as const, valor: "130.00", moeda: "USD" } }],
   ]) expect(await prepararAditivoContratual({ ...base, chaveIdempotencia: `aditivo-historico-moeda-${alteracoes.length}`, alteracoes })).toEqual({ ok: false, erro: MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA });
   expect(await prisma.propostaAditivoContratual.count({ where: { matriculaId: alvo.matriculaId } })).toBe(0);
-  // A base continua correta (o limite é só de formalização): uma proposta montada como a ação montaria entra no banco...
   const proposta = await inserirPropostaDireta(base);
   const p = await prisma.propostaAditivoContratual.findUniqueOrThrow({ where: { id: proposta.id } });
   expect(p).toMatchObject({ conclusaoOriginalId: null, origemHistoricaId: origem.id });
   expect((p.snapshot as { base: Record<string, unknown> }).base).toMatchObject({ tipo: "ORIGEM_HISTORICA", origemHash: gravada.entradaHash, pdfAssinadoHash: gravada.pdfHash, transcricaoHash: gravada.transcricaoHash, ambiente: "HISTORICO" });
-  // ...mas não é aprovada nem enviada para assinatura, cada uma com a mensagem específica; rejeitar continua possível.
   entrar(adminId);
   expect(await decidirAditivoContratual({ propostaId: proposta.id, propostaHashEsperado: proposta.propostaHash, aprovada: true, motivo: "Reajuste conferido sobre a origem histórica." })).toEqual({ ok: false, erro: MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA });
   await expect(prisma.$transaction(tx => prepararProcessoAditivoTx(tx, adminId, { matriculaId: alvo.matriculaId, propostaId: proposta.id, artefatoId: "artefato", conferenciaId: "conferencia", fornecedor: "ZAPSIGN", ambiente: "PRODUCAO" })))
     .rejects.toThrow(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   expect(await decidirAditivoContratual({ propostaId: proposta.id, propostaHashEsperado: proposta.propostaHash, aprovada: false, motivo: "Aguarda decisão sobre a assinatura do contrato legado." })).toMatchObject({ ok: true, dado: { aprovada: false } });
-  // Segunda origem aprovada ou contrato assinado no sistema não coexistem com a origem aprovada.
   await expect(prisma.$transaction(tx => registrarOrigemContratualHistoricaTx(tx, secretariaId, { matriculaId: alvo.matriculaId, referencia: "Outro", assinadoEm: "2024-12-20", pdfAssinado: pdf, transcricao, motivo: "Segunda origem para a mesma matrícula.", chaveIdempotencia: "origem-historica-3" }))).rejects.toThrow(/já possui origem/);
   entrar(secretariaId);
   const painel = await consultarOrigemContratualHistorica({ matriculaId: alvo.matriculaId });
@@ -260,7 +243,6 @@ it("Origem histórica no banco: moeda da matrícula, aditivo de taxa recusado se
   const alvo = await criarMatriculaM01("Aluno legado no banco");
   entrar(secretariaId);
   const projecaoUsd = { condicoes: { moeda: "USD", aulas: { regime: "MENSALIDADE" } }, documento: { campos: [] } };
-  // O guard do banco confere a moeda da matrícula, como a ação: a inserção direta em outra moeda é recusada.
   await expect(prisma.propostaOrigemContratualHistorica.create({ data: {
     matriculaId: alvo.matriculaId, referencia: "Direto", assinadoEm: new Date("2024-12-20T00:00:00Z"), pdfAssinado: pdf,
     pdfHash: createHash("sha256").update(pdf).digest("hex"), transcricao: { moeda: "USD" }, transcricaoHash: "a".repeat(64),
@@ -275,8 +257,6 @@ it("Origem histórica no banco: moeda da matrícula, aditivo de taxa recusado se
   expect(await decidirOrigemContratualHistorica(conferencia)).toMatchObject({ ok: true });
   const eventos = await prisma.evento.findMany({ where: { agregadoTipo: "Matricula", agregadoId: alvo.matriculaId, tipo: { in: ["OrigemContratualHistoricaRegistrada", "OrigemContratualHistoricaDecidida"] } }, select: { tipo: true, autorId: true } });
   expect(eventos.sort((a, b) => a.tipo.localeCompare(b.tipo))).toEqual([{ tipo: "OrigemContratualHistoricaDecidida", autorId: adminId }, { tipo: "OrigemContratualHistoricaRegistrada", autorId: secretariaId }]);
-  // Proposta de mensalidade montada como a ação montaria (B1: a ação não prepara sobre a origem); uma versão seguinte
-  // que altere a taxa, inserida direto no banco, é recusada pelo guard.
   const proposta = await inserirPropostaDireta({ matriculaId: alvo.matriculaId, origemHistoricaId: origem.id, origemHashEsperado: gravada.entradaHash, modeloId, modeloHashEsperado: modeloHash, vigenciaInicio: "2026-02-01T00:00:00Z",
     alteracoes: [{ origem: "MENSALIDADE_VALOR", novo: "130.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "130.00", moeda: "CRC" } }], motivo: "Reajuste da mensalidade acordado com o aluno.", chaveIdempotencia: "aditivo-historico-banco" });
   const p = await prisma.propostaAditivoContratual.findUniqueOrThrow({ where: { id: proposta.id } });
@@ -285,9 +265,7 @@ it("Origem histórica no banco: moeda da matrícula, aditivo de taxa recusado se
     matriculaId: p.matriculaId, origemHistoricaId: p.origemHistoricaId, modeloId: p.modeloId, versao: p.versao + 1, preparadaPorId: p.preparadaPorId, vigenciaInicio: p.vigenciaInicio,
     motivo: p.motivo, baseHash: p.baseHash, alteracoesHash: p.alteracoesHash, snapshot, entradaHash: "d".repeat(64), chaveIdempotencia: "aditivo-historico-taxa-direto",
   } })).rejects.toThrow(/não admite aditivo de taxa/);
-  // A proposta é imutável: o trigger recusa a troca de fonte antes de qualquer CHECK.
   await expect(prisma.$executeRaw`UPDATE "PropostaAditivoContratual" SET "conclusaoOriginalId" = 'x' WHERE id = ${p.id}`).rejects.toThrow();
-  // CHECK de fonte única exercitado de fato: com triggers (e FKs) desligados, só a constraint resta.
   await expect(adulterar(Prisma.sql`UPDATE "PropostaAditivoContratual" SET "conclusaoOriginalId" = 'x' WHERE id = ${p.id}`)).rejects.toThrow(/PropostaAditivoContratual_fonte_unica/);
   await expect(adulterar(Prisma.sql`UPDATE "PropostaAditivoContratual" SET "origemHistoricaId" = NULL WHERE id = ${p.id}`)).rejects.toThrow(/PropostaAditivoContratual_fonte_unica/);
   const fotografia = (fontes: { conclusao: string | null; origem: string | null }, chave: string) => adulterar(Prisma.sql`
@@ -298,7 +276,6 @@ it("Origem histórica no banco: moeda da matrícula, aditivo de taxa recusado se
 });
 
 const pdfAdulterado = Buffer.from("%PDF-1.4 outro documento colocado no lugar do contrato legado");
-/** Altera uma linha imutável sem passar pelos triggers, para simular adulteração fora do sistema. */
 const adulterar = (sql: Prisma.Sql) => prisma.$transaction(async tx => {
   await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica");
   await tx.$executeRaw(sql);
@@ -318,22 +295,17 @@ it("Agenda particular sobre origem histórica: integridade do PDF e da transcri�
   const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: alvo.matriculaId, professorId: professor.id, preparadorId: secretariaId, inicio: new Date("2099-10-10T15:00:00Z"), fim: new Date("2099-10-10T16:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Agenda contratada", chaveIdempotencia: "origem-historica-encontro", entradaHash: "fixture" } });
   const entrada = { matriculaId: alvo.matriculaId, encontros: [{ encontroId: encontro.id, professorNovoId: professor.id, inicioNovo: "2099-10-12T15:00:00Z", fimNovo: "2099-10-12T16:00:00Z", duracaoMinutos: 60, fusoOrigem: "UTC" }] };
 
-  // R2 (C6): a tela de opções sabe que a fonte é a origem histórica e avisa antes da conferência.
   entrar(secretariaId);
   expect(await consultarOpcoesConferenciaAgendaAditivo({ matriculaId: alvo.matriculaId })).toMatchObject({ ok: true, dado: { fonteOrigemHistorica: true, encontros: [expect.objectContaining({ id: encontro.id })] } });
-  // Íntegra: a conferência (somente leitura) usa a origem histórica como fonte.
   const conferencia = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, secretariaId, entrada));
   expect(conferencia).toMatchObject({ somenteConsulta: true, fonte: { tipo: "ORIGEM_HISTORICA", conclusaoId: origem.id, conclusaoHash: gravada.entradaHash }, pendencias: [] });
-  // B1 da #285: a fotografia só serve ao aditivo, que ainda não segue para assinatura; nada é gravado.
   await expect(prisma.$transaction(tx => registrarPropostaAgendaAditivoTx(tx, secretariaId, { ...entrada, chaveIdempotencia: "agenda-origem-historica-1" }))).rejects.toThrow(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   expect(await prisma.propostaAgendaAditivoParticular.count({ where: { matriculaId: alvo.matriculaId } })).toBe(0);
 
-  // PDF trocado fora do sistema: a agenda reconfere os bytes como a base do aditivo (carregarFonteBaseTx).
   await adulterar(Prisma.sql`UPDATE "PropostaOrigemContratualHistorica" SET "pdfAssinado" = ${pdfAdulterado} WHERE id = ${origem.id}`);
   await expect(prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, secretariaId, entrada))).rejects.toThrow(/origem histórica e sua integridade/);
   await adulterar(Prisma.sql`UPDATE "PropostaOrigemContratualHistorica" SET "pdfAssinado" = ${pdf} WHERE id = ${origem.id}`);
   expect(await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, secretariaId, entrada))).toMatchObject({ fonte: { tipo: "ORIGEM_HISTORICA" } });
-  // Transcrição alterada depois da conferência dupla: também recusada.
   await adulterar(Prisma.sql`UPDATE "PropostaOrigemContratualHistorica" SET transcricao = jsonb_set(transcricao, '{aulas,valor}', '"999.00"') WHERE id = ${origem.id}`);
   await expect(prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, secretariaId, entrada))).rejects.toThrow(/origem histórica e sua integridade/);
 });
@@ -341,23 +313,19 @@ it("Agenda particular sobre origem histórica: integridade do PDF e da transcri�
 it("Origem histórica: data de assinatura posterior a hoje no fuso da escola é recusada na ação e no banco", async () => {
   const alvo = await criarMatriculaM01("Aluno legado datado");
   const t = { ...transcricao, aluno: { nome: "Aluno legado datado" } };
-  // Kiritimati (UTC+14) está sempre ao menos um dia civil à frente de Pago Pago (UTC−11): o "hoje" depende do fuso da escola.
   const hojeKiritimati = dataCivilInstitucional(new Date(), "Pacific/Kiritimati");
   const amanha = (civil: string) => { const d = new Date(`${civil}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "Pacific/Pago_Pago" } });
   entrar(secretariaId);
   await expect(registrar(alvo.matriculaId, { transcricao: t, assinadoEm: hojeKiritimati })).rejects.toThrow(/não pode ser posterior a hoje/);
-  // O guard do banco aplica a mesma regra a uma inserção direta.
   await expect(prisma.propostaOrigemContratualHistorica.create({ data: {
     matriculaId: alvo.matriculaId, referencia: "Direto", assinadoEm: new Date(`${hojeKiritimati}T00:00:00Z`), pdfAssinado: pdf,
     pdfHash: createHash("sha256").update(pdf).digest("hex"), transcricao: { moeda: "CRC" }, transcricaoHash: "a".repeat(64),
     projecao: { condicoes: { moeda: "CRC", aulas: { regime: "MENSALIDADE" } }, documento: { campos: [] } }, projecaoHash: "b".repeat(64), preparadorId: secretariaId, motivo: "Inserção direta", chaveIdempotencia: "origem-direta-futura", entradaHash: "c".repeat(64),
   } })).rejects.toThrow(/posterior a hoje no fuso da escola/);
-  // Na escola em Kiritimati, a mesma data é hoje e vale; o dia seguinte, não.
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "Pacific/Kiritimati" } });
   await expect(registrar(alvo.matriculaId, { transcricao: t, assinadoEm: amanha(hojeKiritimati), chaveIdempotencia: "origem-historica-amanha" })).rejects.toThrow(/não pode ser posterior a hoje/);
   const origem = await registrar(alvo.matriculaId, { transcricao: t, assinadoEm: hojeKiritimati, chaveIdempotencia: "origem-historica-hoje" });
-  // Fuso inválido gravado (validado na gravação; aqui forçado sem triggers): erro de configuração legível, não ZodError.
   await adulterar(Prisma.sql`UPDATE "ConfiguracaoOperacional" SET "fusoInstitucional" = 'GMT-3' WHERE id = 'escola'`);
   await expect(registrar(alvo.matriculaId, { transcricao: t, chaveIdempotencia: "origem-historica-fuso" })).rejects.toThrow("O fuso institucional configurado (GMT-3) não é reconhecido. Corrija a configuração da escola antes de registrar a origem histórica.");
   expect((await prisma.propostaOrigemContratualHistorica.findUniqueOrThrow({ where: { id: origem.id } })).assinadoEm.toISOString().slice(0, 10)).toBe(hojeKiritimati);

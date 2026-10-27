@@ -20,7 +20,6 @@ export async function consultarPlanosRecuperacao(input: { alocacaoId: string; an
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
     const d = z.object({ alocacaoId: z.string().min(1).max(100), antesVersao: z.number().int().positive().optional() }).strict().parse(input);
     return prisma.$transaction(async tx => {
-      // Autoriza o consolidado antes de projetar cadastro ou planos deste vínculo.
       const atual = await carregarConsolidadoAvaliacoesTx(tx, u.id, d.alocacaoId, "BASE_PLANO");
       const a = await tx.alocacaoTurma.findUniqueOrThrow({ where: { id: d.alocacaoId }, include: { matricula: true, turma: { include: { regraAvaliacao: true } } } });
       const usuario = await tx.usuario.findUniqueOrThrow({ where: { id: u.id }, select: { papeis: true } });

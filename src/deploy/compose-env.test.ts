@@ -2,20 +2,13 @@ import { readdirSync, readFileSync } from "fs";
 import { join, resolve } from "path";
 import { describe, expect, it } from "vitest";
 
-// Toda variável de ambiente de produção lida pelo código precisa ser repassada no `environment`
-// do serviço `app` dos dois composes: o Coolify (e o `.env` da VPS) só chegam ao container pelo
-// que estiver citado ali. Sem isso, definir a variável no painel não tem efeito nenhum.
 const raiz = process.cwd();
 const ler = (arq: string) => readFileSync(resolve(raiz, arq), "utf8").replace(/\r\n/g, "\n");
 
-// Lista de exclusão explícita: variáveis só de teste/homologação local (nunca em produção).
 const SO_TESTE_EXATAS = new Set(["FAKE_PRISMA", "GUARD", "GUARD_GRADES", "TZ", "PRISMA_TESTE_TIMEOUT_MS"]);
 const SO_TESTE_PREFIXOS = ["HOMOLOGACAO_UI_", "QA_"];
-// Definidas pela própria imagem (Dockerfile), não pelo compose.
 const DA_IMAGEM = ["NODE_ENV", "GIT_SHA"];
-// Montadas pelo compose a partir de outras variáveis (não aparecem cruas no env de produção).
 const DERIVADAS_NO_COMPOSE = ["DATABASE_URL", "NEXTAUTH_URL", "MOTOR_URL"];
-// Definidas no compose mas não repassadas ao app (são usadas na definição de serviços, não no environment).
 const DO_COMPOSE = ["APP_IMAGE", "APP_MIGRATE_IMAGE", "MOTOR_IMAGE"];
 
 const soTeste = (v: string) => SO_TESTE_EXATAS.has(v) || SO_TESTE_PREFIXOS.some((p) => v.startsWith(p));
@@ -29,8 +22,6 @@ function arquivosFonte(dir: string): string[] {
   });
 }
 
-// Acessos: process.env.X, process.env["X"] e os objetos de ambiente injetáveis (`ambiente.X`, `env.X`),
-// cujo padrão é process.env.
 const ACESSOS = [
   /(?:process\.env|\bambiente|\benv)\??\.([A-Z][A-Z0-9_]+)/g,
   /process\.env\[\s*["'`]([A-Z][A-Z0-9_]+)["'`]\s*\]/g,
@@ -47,7 +38,6 @@ function lidasPeloCodigo() {
   return porVariavel;
 }
 
-// Corpo do serviço `nome`: da linha "  nome:" até o próximo serviço (ou bloco raiz).
 function secao(texto: string, nome: string): string {
   const m = texto.match(new RegExp(`^  ${nome}:\\n((?:(?:[ \\t]+.*)?\\n)*?)(?=^  [^\\s#]|^[^\\s#]|(?![\\s\\S]))`, "m"));
   if (!m) throw new Error(`serviço ${nome} não encontrado`);

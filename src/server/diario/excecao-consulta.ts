@@ -6,9 +6,6 @@ import { alemDoCursor, camposNavegacaoFila, cursorDaLeitura, direcaoDeLeitura, l
 import { executarAcao, exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 import { estadoDiario } from "./estado";
 
-/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026), no escopo de quem consulta e em ordem
- * estável (criadoEm desc, id desc). A âncora do cursor é lida no escopo, mas sem o filtro de pendentes: decidir a
- * exceção âncora não a perde, e a próxima continua de onde a pessoa parou sem pular ninguém. */
 export async function listarExcecoesGravacao(input: NavegacaoFila & { apenasPendentes?: boolean } = {}) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);

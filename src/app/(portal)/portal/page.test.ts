@@ -2,9 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// C4 da #170 (docs/42, /portal #1): o guard da equipe manda o usuário só-portal para /portal, e o /portal
-// redirecionava calado para /portal-aluno, que pede OUTRO login — "fiz login e ele me pediu login de novo".
-// Agora o /portal explica que a área do aluno tem acesso próprio e leva à entrada dela.
 const redirect = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));

@@ -8,7 +8,6 @@ import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { mensagemResultadoEnvio } from "../resultado-envio";
 
-/** Envio/conciliação integrados do aditivo. A ação revalida processo, conferência e serviço ativo. */
 export function EnvioAditivoFormulario({ matriculaId, propostaId, processoId, modo }: { matriculaId: string; propostaId: string; processoId: string; modo: "ENVIAR" | "CONCILIAR" }) {
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), chave = useChaveIdempotencia(), enviar = modo === "ENVIAR";
   return <form className="space-y-2" onSubmit={async event => {

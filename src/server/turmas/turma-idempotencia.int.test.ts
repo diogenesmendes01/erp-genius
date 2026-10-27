@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (4º lote): criar turma recebe chave de idempotência. O reenvio da mesma tentativa devolve a turma já criada
-// (um código, um Evento); a mesma chave com outros dados é recusada.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

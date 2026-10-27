@@ -4,7 +4,6 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { whereOportunidadeEmSql } from "@/server/crm/oportunidade-sql";
 import type { CadastroTelefoneInterno } from "./nova-conversa-interna";
 
-/** Witness privado de tuplas inseridas pela mesma TX. Nunca vem do cliente ou de uma leitura antiga. */
 export interface PropriosNovaConversaTx {
  contato?: { id: string; telefoneE164: string; pessoaId: string|null; leadId: string|null };
  lead?: { id: string; telefoneE164: string; pessoaId: string; vendedorDonoId: string };
@@ -12,7 +11,6 @@ export interface PropriosNovaConversaTx {
 export interface EntradaLeituraNovaConversa { autorId: string; telefoneE164: string; leadEsperadoId?: string; proprios?: PropriosNovaConversaTx }
 type Projecao = Omit<CadastroTelefoneInterno, "oportunidadesAutorizadas"> & { oportunidadesAutorizadas: unknown };
 
-/** Projeção interna de classificação. Não autoriza mutação nem prova unicidade de telefone acadêmico. */
 export async function lerCadastroNovaConversaTx(tx: Prisma.TransactionClient, entrada: EntradaLeituraNovaConversa): Promise<CadastroTelefoneInterno> {
  const fresco = await tx.usuario.findUnique({ where: { id: entrada.autorId }, select: { nome: true, ativo: true, papeis: true, permissoes: true } });
  if (!fresco?.ativo) throw new ErroAutenticacao();

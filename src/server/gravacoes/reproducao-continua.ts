@@ -5,8 +5,6 @@ import { exigirSessaoPortalAluno, revalidarSessaoPortalAlunoTx } from "@/server/
 import { autorizarReproducaoGravacaoTx } from "./autorizacao";
 import { obterDriveOrganizacaoId } from "./credenciais";
 
-/** Captura a identidade no contexto HTTP; cada leitura consulta novamente os
- * direitos no banco, sem depender de cookies no contexto posterior do stream. */
 export async function prepararReproducaoContinua(reposicaoId: string) {
   const sessao = await exigirSessaoPortalAluno();
   const conferir = () => prisma.$transaction(async tx => {

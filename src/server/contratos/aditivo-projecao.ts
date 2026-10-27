@@ -2,7 +2,6 @@ import { z } from "zod";
 import { OrigemCampoSchema } from "./campos";
 import { TextoPreviaSchema } from "./previa-projecao";
 
-/** Apenas conteúdo histórico destinado à revisão; não publica a entrada ou evidências. */
 export const ProjecaoAditivoSchema = z.object({
   base: z.object({ ambiente: z.enum(["SANDBOX", "PRODUCAO", "HISTORICO"]), artefatoOriginalId: z.string().min(1).max(100).optional(), modeloCodigo: z.string(), modeloVersao: z.number().int().positive() }),
   cicloCoberturaFutura: z.object({ escolha: z.enum(["PRESERVAR_REFERENCIA", "MUDAR_REFERENCIA"]), referencia: z.enum(["MES_CIVIL", "CICLO_MATRICULA"]).optional(), dataReferencia: z.string().optional() }).optional(),

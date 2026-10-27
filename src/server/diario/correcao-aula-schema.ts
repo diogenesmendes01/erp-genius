@@ -36,7 +36,6 @@ export function hashCorrecaoAula(valor: unknown) {
   return createHash("sha256").update(JSON.stringify(valor)).digest("hex");
 }
 
-/** A entrada não recebe identidades de aluno/contrato nem cria registros. */
 export function prepararSnapshotCorrecaoAula(anterior: SnapshotCorrecaoAula, entrada: z.input<typeof alteracaoAulaSchema>): SnapshotCorrecaoAula {
   const d = alteracaoAulaSchema.parse(entrada);
   const porId = new Map(d.registros.map(r => [r.registroId, r]));

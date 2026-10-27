@@ -48,8 +48,6 @@ it("exibe o status canônico mesmo quando a referência de período já passou",
 });
 
 it("início e término saem como o dia gravado, mesmo num navegador em UTC−3 (C52 da #170)", () => {
-  // O caso pior: o dia gravado à meia-noite UTC (o formulário grava ao meio-dia local); com toLocaleDateString,
-  // em São Paulo, 15/10 virava 14/10.
   const anterior = process.env.TZ;
   process.env.TZ = "America/Sao_Paulo";
   try {

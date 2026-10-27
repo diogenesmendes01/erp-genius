@@ -12,28 +12,20 @@ import {
   buildVirtualLayout, captureVirtualAnchor, restoreVirtualAnchor, virtualIndexes, virtualRange,
   type VirtualLayout,
 } from './virtual-window';
-// estilos: classes Tailwind abaixo
 
 export type VirtualListProps<T> = {
   items: readonly T[];
   getKey: (item: T, index: number) => string;
   renderItem: (item: T, index: number) => ReactNode;
-  /** The existing scroll container; this component never adds a nested scroller. */
   scrollRef: RefObject<HTMLElement | null>;
   estimatedHeight: number;
   threshold?: number;
-  /** Preserve row DOM/focus across the threshold; opt-in only, with natural flow below it. */
   stableMount?: boolean;
-  /** Extra pixels mounted above and below the viewport. */
   overscan?: number;
-  /** Keep open menu anchors or other interactive rows mounted. */
   pinKeys?: readonly string[];
-  /** Explicit captured row top during pagination, including transitions into virtualization. */
   transitionAnchor?: {key: string; viewportOffset: number};
-  /** Optional cheap exclusion for date/system rows; remaining rows are checked for actual controls. */
   isItemFocusable?: (item: T, index: number) => boolean;
 };
-// Linhas da lista (mensagens, conversas) não têm campo de texto longo; o compositor fica fora da lista.
 const focusable = 'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 function controlsIn(row?: HTMLElement) {
   return row ? [...row.querySelectorAll<HTMLElement>(focusable)].filter(element =>
@@ -96,8 +88,6 @@ export function VirtualList<T>({
     if (transitionAnchor && transitionAnchor !== providedAnchor.current) {seededAnchor.current = transitionAnchor; providedAnchor.current = transitionAnchor;}
     const seed = seededAnchor.current;
     if (container && seed && layout.indexes.has(seed.key)) {
-      // Keep the real captured row through every initial measurement, rather than anchoring
-      // inside an estimated date divider whose eventual height may be much smaller.
       const next = listOffset() + layout.offsets[layout.indexes.get(seed.key)!] - seed.viewportOffset;
       if (Math.abs(next - container.scrollTop) > 0.5) container.scrollTop = next;
     } else if (container && old && old !== layout) {
@@ -119,8 +109,6 @@ export function VirtualList<T>({
       }
       const key = keys[pending.index], row = nodes.current.get(key);
       if (!row) {
-        // Probe one missing row at a time, keeping the original focus mounted. A long run
-        // of noninteractive rows never accumulates DOM nodes or synchronous React updates.
         if (!focusFrame.current) focusFrame.current = requestAnimationFrame(() => {
           focusFrame.current = 0;
           setCandidate(key);
@@ -144,7 +132,6 @@ export function VirtualList<T>({
     }
     pendingFocus.current = null;
     setCandidate(undefined);
-    // Reaching a run of noninteractive rows at either end should still leave the list.
     const all = controlsIn(document.body), current = all.indexOf(document.activeElement as HTMLElement);
     for (let index = current + direction; index >= 0 && index < all.length; index += direction) {
       if (!root.current?.contains(all[index])) {all[index].focus(); return;}
@@ -152,7 +139,6 @@ export function VirtualList<T>({
     (document.activeElement as HTMLElement | null)?.blur();
   });
 
-  // Ancestor refs attach after child layout effects on the first mount.
   useEffect(() => {
     if (!enabled && !stableMount) return;
     const container = scrollRef.current, list = root.current;
@@ -162,8 +148,6 @@ export function VirtualList<T>({
     container.style.overflowAnchor = 'none';
     const onScroll = () => {
       const next = {top: container.scrollTop - listOffset(), height: container.clientHeight};
-      // Component corrections call readViewport synchronously; a different position here
-      // is a new user/parent scroll and releases the initial transition anchor.
       if (Math.abs(next.top - lastViewport.current.top) > 1) seededAnchor.current = undefined;
       lastViewport.current = next;
       if (!frame) frame = requestAnimationFrame(() => {frame = 0; readViewport();});
@@ -179,8 +163,6 @@ export function VirtualList<T>({
         const key = node.dataset.virtualKey;
         if (key === undefined) continue;
         const height = node.getBoundingClientRect().height;
-        // Natural-flow rows must carry their subpixel size into absolute layout;
-        // discarding <0.5px per row would accumulate into a visible anchor jump.
         if (height > 0 && Math.abs((measured.current.get(key) ?? estimatedHeight) - height) > (stableMount ? 0.001 : 0.5)) {
           measured.current.set(key, height);
           changed = true;

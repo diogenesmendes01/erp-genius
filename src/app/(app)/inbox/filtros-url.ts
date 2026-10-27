@@ -1,5 +1,4 @@
 import type { FiltrosInbox, IdChipInbox } from "@/server/inbox/filtros";
-/** Formato público da URL, compartilhado com o painel anterior até sua retirada. */
 export function paramsDaUrl(f: FiltrosInbox): URLSearchParams {
  const q = new URLSearchParams();
  if (f.setor) q.set("setor", f.setor);

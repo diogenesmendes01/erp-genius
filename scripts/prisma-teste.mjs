@@ -14,6 +14,5 @@ execFileSync(process.execPath, [path.join(raiz, "node_modules/prisma/build/index
   env: { ...process.env, DATABASE_URL: perfil.url },
   stdio: "inherit",
   windowsHide: true,
-  // No CI a migração do zero (466+ migrations) passa de 2 min; o workflow aumenta por variável.
   timeout: Number(process.env.PRISMA_TESTE_TIMEOUT_MS) || 120_000,
 });

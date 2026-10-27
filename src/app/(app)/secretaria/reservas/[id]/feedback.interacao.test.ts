@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): preparar e decidir a resolução da reserva —
-// erro em role="alert" (agora pelo FeedbackAcao, com foco), sucesso em role="status", falha de rede
-// como resultado incerto (com chave na preparação; mensagem própria na decisão) e os controles saindo
-// do ocupado. Sem DOM: src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(),
@@ -82,7 +78,6 @@ describe("DecidirResolucao", () => {
     nome: "aprovar e aplicar a resolução", preparar: digitarMotivo, tela, action: m.decidirReserva,
     acionar: () => clicarEm("Aprovar e aplicar"),
     sucesso: "Proposta aprovada e aplicada.",
-    // A decisão conserva a própria mensagem de incerteza (reenviar a mesma decisão).
     incerto: MSG_DECISAO_INCERTA,
     ocupado: () => botao(tela(), "Aprovar e aplicar").props.disabled === true && botao(tela(), "Rejeitar proposta").props.disabled === true,
   });

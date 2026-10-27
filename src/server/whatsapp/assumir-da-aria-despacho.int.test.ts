@@ -26,7 +26,6 @@ async function cenario(){
 }
 beforeEach(async()=>{await truncarBanco();vi.resetAllMocks();m.enviar.mockResolvedValue({providerMessageId:"fake357claim",mensagemIdMotor:"fake357claim"});vi.stubEnv("WHATSAPP_LIVE","1");c=await cenario();});
 afterEach(()=>vi.unstubAllEnvs());
-// WHATSAPP_LIVE=1 só dentro do teste, com módulo do driver inteiramente fake; zero I/O externo.
 it("357 assumir antes do claim cancela a intenção e nunca chama o driver fake",async()=>{
  expect((await assumirConversaDaAria(c.at.id)).ok).toBe(true);expect(await despacharFila()).toMatchObject({despachadas:0});expect(m.enviar).not.toHaveBeenCalled();expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:c.intencao.id}})).status).toBe("CANCELADA");
 });

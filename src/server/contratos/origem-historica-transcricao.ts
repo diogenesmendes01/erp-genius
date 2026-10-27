@@ -6,9 +6,6 @@ import { calcularAdiantamentoProposto } from "@/server/matricula/adiantamento-pr
 import { planejarCobrancasEntrada } from "@/server/matricula/plano-cobrancas-entrada";
 import type { OrigemCampo } from "./campos";
 
-// Contrato legado assinado fora do sistema: a transcrição é a declaração explícita das condições que constam no
-// PDF. Nada é presumido — só o que for transcrito fica estruturado (e, portanto, alterável por aditivo). A
-// projeção reproduz o formato do snapshot da prévia, para que a cadeia de aditivos leia a mesma coisa.
 const dinheiro = z.string().regex(/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/, "Informe decimal canônico com até duas casas.");
 const moeda = z.string().regex(/^[A-Z]{3}$/, "Informe a moeda ISO em três letras maiúsculas.");
 const textoCurto = z.string().trim().min(1).max(400);
@@ -27,7 +24,6 @@ export const TranscricaoOrigemHistoricaSchema = z.object({
 }).strict();
 export type TranscricaoOrigemHistorica = z.infer<typeof TranscricaoOrigemHistoricaSchema>;
 
-/** Projeta a transcrição no formato do snapshot da prévia (condições + campos), sem texto de modelo. */
 export function projetarOrigemHistorica(entrada: unknown) {
   const t = TranscricaoOrigemHistoricaSchema.parse(entrada);
   const diaVencimento = Number(t.aulas.regime === "MENSALIDADE" ? t.aulas.primeiroVencimento.slice(8, 10) : "1");
@@ -43,7 +39,6 @@ export function projetarOrigemHistorica(entrada: unknown) {
     politicaEntrada: { taxaPreviaAssinatura: true, exigirPrimeiraMensalidade: t.aulas.regime === "MENSALIDADE" ? true : null, adiantamentoHoraExigido: t.aulas.regime === "HORA_PARTICULAR" ? !!t.aulas.adiantamento : null },
     adiantamentoProposto: adiantamento ? { minutos: adiantamento.minutos, valor: adiantamento.valor, valorHora: adiantamento.valorHora, unidadeMinutos: 60 as const } : null,
   };
-  // A mesma aritmética do plano de entrada confere a transcrição (cobertura mensal, adiantamento por minutos).
   let plano: ReturnType<typeof planejarCobrancasEntrada>;
   try { plano = planejarCobrancasEntrada(condicoes); } catch (erro) { throw new ErroRegra(erro instanceof Error ? erro.message : "Transcrição insuficiente."); }
   const taxa = plano.find(p => p.tipo === "MATRICULA")!, mensalidade = plano.find(p => p.tipo === "MENSALIDADE"), antecipacao = plano.find(p => p.tipo === "HORA_PARTICULAR");

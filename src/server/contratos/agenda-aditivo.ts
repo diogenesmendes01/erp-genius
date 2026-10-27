@@ -7,7 +7,6 @@ import { PrepararAgendaAditivoSchema } from "./agenda-aditivo-schema";
 import { carregarConferenciaAgendaAditivoTx, registrarPropostaAgendaAditivoTx } from "./agenda-aditivo-tx";
 import { PropostaAgendaAditivoSchema, hashPropostaAgendaAditivo } from "./agenda-aditivo-schema";
 
-/** Consulta de conferência: não persiste proposta, não reserva e não aplica agenda. */
 export async function consultarConferenciaAgendaAditivo(input: z.input<typeof PrepararAgendaAditivoSchema>) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
@@ -17,8 +16,6 @@ export async function consultarConferenciaAgendaAditivo(input: z.input<typeof Pr
 
 const RegistrarAgendaSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.unknown()), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 
-/** Gestão Pedagógica pode registrar a fotografia, mas não prepara nem aprova o
- * aditivo contratual. A referência contratual é criada pelo fluxo próprio. */
 export async function registrarPropostaAgendaAditivo(input: z.input<typeof RegistrarAgendaSchema>) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
@@ -26,8 +23,6 @@ export async function registrarPropostaAgendaAditivo(input: z.input<typeof Regis
   });
 }
 
-/** Permite à Secretaria selecionar uma fotografia já registrada na preparação
- * contratual, sem conceder à Gestão Pedagógica a preparação do aditivo. */
 export async function consultarPropostaAgendaAditivo(input: { matriculaId: string; propostaAgendaId: string }) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
@@ -46,7 +41,6 @@ export async function consultarPropostaAgendaAditivo(input: { matriculaId: strin
 
 const ConsultaOpcoesAgendaSchema = z.object({ matriculaId: z.string().trim().min(1) }).strict();
 
-/** Dados mínimos para montar a conferência. A ação não oferece reservas, cobranças ou contatos. */
 export async function consultarOpcoesConferenciaAgendaAditivo(input: z.input<typeof ConsultaOpcoesAgendaSchema>) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
@@ -59,7 +53,6 @@ export async function consultarOpcoesConferenciaAgendaAditivo(input: z.input<typ
       const [encontros, professores, origensHistoricas] = await Promise.all([
         tx.encontroAgenda.findMany({ where: { matriculaId: matricula.id, finalidade: "AULA", turmaId: null, reposicaoIndividualId: null, agendaReposicaoIndividual: null, status: "PREVISTO", inicio: { gt: new Date() }, professorId: { not: null } }, orderBy: [{ inicio: "asc" }, { id: "asc" }], select: { id: true, inicio: true, fim: true, fusoOrigem: true, professor: { select: { id: true, nome: true } } } }),
         tx.usuario.findMany({ where: { ativo: true, papeis: { has: Papel.PROFESSOR } }, orderBy: [{ nome: "asc" }, { id: "asc" }], select: { id: true, nome: true } }),
-        // R2 da #285 (C6): sobre a origem histórica a tela avisa o limite do B1 antes da conferência.
         tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: matricula.id, decisao: { is: { aprovada: true } } } }),
       ]);
       return { matricula: { id: matricula.id, aluno: [matricula.aluno.primeiroNome, matricula.aluno.sobrenome].filter(Boolean).join(" ") }, fonteOrigemHistorica: origensHistoricas > 0, encontros: encontros.map(e => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoOrigem: e.fusoOrigem, professorId: e.professor?.id ?? null, professor: e.professor?.nome ?? "Professor não disponível" })), professores };

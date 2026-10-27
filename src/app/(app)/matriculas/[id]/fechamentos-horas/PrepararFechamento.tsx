@@ -10,9 +10,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso } from "@/components/CampoFuso";
 
-/** `fusoInicial`: fuso da escola ou da preferência (fusoInicialDeEntrada); "" deixa o campo vazio e obrigatório. */
 export function PrepararFechamento({ alunoId, matriculaId, fusoInicial = "" }: { alunoId: string; matriculaId: string; fusoInicial?: string }) {
-  // A conferência é leitura e o rascunho leva chave de idempotência estável: na falha de transporte, reenviar sem alterar confere a mesma operação.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   const [referencia, setReferencia] = useState(""), [preparado, setPreparado] = useState<Parameters<typeof prepararFechamentoHoras>[0] | null>(null);
   const chave = useRef<{ entrada: string; valor: string } | null>(null);
@@ -20,7 +18,6 @@ export function PrepararFechamento({ alunoId, matriculaId, fusoInicial = "" }: {
   return <form className="space-y-3 rounded border p-4" onChange={() => setPreparado(null)} onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);
     if (preparado) {
-      // Resposta sem o rascunho salvo é falha, não sucesso: a tela volta à conferência.
       const salvo = await acao.executar(async () => {
         const r = await prepararFechamentoHoras(preparado);
         return r.ok && !r.dado ? { ok: false as const, erro: "Resultado indisponível." } : r;
@@ -34,7 +31,6 @@ export function PrepararFechamento({ alunoId, matriculaId, fusoInicial = "" }: {
     }
     const periodo = { referencia: referencia === "MES_CIVIL" ? { referencia: "MES_CIVIL" as const } : { referencia: "CICLO_MATRICULA" as const, dataReferencia: String(f.get("ancora")) },
       dataNoPeriodo: String(f.get("data")), fuso: String(f.get("fuso")), vencimento: String(f.get("vencimento")), clausula: String(f.get("clausula")) };
-    // A conferência devolve o período calculado; o texto dele é o "sucesso" desta etapa (ainda nada foi salvo).
     const consulta = await acao.executar(async () => {
       const r = await consultarFechamentosHoras({ alunoId, matriculaId, periodo });
       return r.ok && (!r.dado?.preparacao || !r.dado.matricula.contratoDocumentoId) ? { ok: false as const, erro: "Contrato ou referência indisponível para preparação." } : r;

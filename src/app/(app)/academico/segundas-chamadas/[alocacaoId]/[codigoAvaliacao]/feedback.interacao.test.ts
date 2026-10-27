@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3; achado Alta L1671): erro e sucesso separados no
-// painel da segunda chamada (proposta, decisão, disponibilização) e no registro de ocorrência — erro em
-// role="alert" junto do grupo que disparou a ação, sucesso em role="status", falha de rede como resultado
-// incerto, botões saindo do ocupado e o sucesso atualizando a tela com router.refresh (nunca
-// window.location.reload). Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   propor: vi.fn(), decidir: vi.fn(), disponibilizar: vi.fn(), ocorrencia: vi.fn(), refresh: vi.fn(), reload: vi.fn(),
@@ -35,7 +30,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   m.ganchos = criarGanchos();
   vi.stubGlobal("FormData", FormDataFalso);
-  // Rede de segurança: se o painel voltasse a recarregar a página, o teste veria a chamada.
   vi.stubGlobal("window", { location: { reload: m.reload } });
 });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -51,7 +45,6 @@ const painel = (itens: ItemPainel[], ativa = true) => () =>
   m.ganchos!.renderizar(SegundaChamadaPainel, { alocacaoId: "alocacao-1", codigoAvaliacao: "A", itens, ativa, fuso: "UTC", fusoEntrada: "UTC" });
 
 const desabilitado = (t: ReactNode, rotulo: string) => botao(t, rotulo).props.disabled === true;
-/** O que um trecho da árvore (um formulário, um item) anuncia. */
 const anunciosDe = (no: unknown) => anuncios(no as ReactNode);
 
 describe("SegundaChamadaPainel — proposta", () => {
@@ -141,7 +134,6 @@ describe("SegundaChamadaPainel — disponibilização", () => {
 describe("FormularioOcorrencia", () => {
   const tela = () => m.ganchos!.renderizar(FormularioOcorrencia, { reservaId: "reserva-1", fuso: "UTC" });
   const valores = { tipo: "FALTA", dataHoraLocal: "2026-10-01T10:00:00.000", fuso: "UTC", motivo: "Aluno não compareceu", evidencia: "Lista de presença" };
-  /** "Registrando…" no botão e o fieldset travado: os dois sinais do ocupado. */
   const ocupadoEm = (t: ReactNode) => {
     const b = elementos(t).find((n) => n.type === "button");
     const fieldset = elementos(t).find((n) => n.type === "fieldset");

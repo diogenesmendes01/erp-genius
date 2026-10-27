@@ -4,8 +4,6 @@ vi.mock("@/server/matricula/reserva-particular-cron", () => ({ rodarVencimentoPa
 vi.mock("@/server/agenda/inicio-turmas", () => ({ iniciarTurmasDaAgenda: m.outras }));
 vi.mock("@/server/cobrancas/acesso-aulas", () => ({ rodarControleAcessoAulas: m.outras }));
 vi.mock("@/server/whatsapp/cron", () => ({ rodarCronRegua: m.outras }));
-// Todas as rotinas do tick mockadas: o teste da rota não pode tocar banco nenhum (antes, as não
-// mockadas tentavam conectar ao DATABASE_URL do ambiente e estouravam o tempo sem banco).
 vi.mock("@/server/financeiro/cron-financeiro", () => ({ rodarFechamentoComissoes: m.outras }));
 vi.mock("@/server/matricula/cron-fechamento", () => ({ rodarFechamentosPendentes: m.outras }));
 vi.mock("@/server/whatsapp/motor/drenar", () => ({ drenarEventosMotor: m.outras }));

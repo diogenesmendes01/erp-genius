@@ -21,7 +21,6 @@ export async function consultarOcorrenciasFinanceiras(input: { matriculaId: stri
           conferenciaOcorrenciaHoras: { select: { id: true, valor: true, moeda: true, minutos: true, desfecho: true, motivo: true, conferidaEm: true,
             conferente: { select: { nome: true } }, ocorrenciaId: true, condicoesId: true, snapshot: true,
             consumoAntecipacao: { select: { id: true, reservaId: true, motivo: true, reserva: { select: { compraId: true, minutos: true } } } },
-            // Q175 (C5 da R1-b #266): a conferência guarda o valor histórico; a declaração de não cobrável aparece ao lado.
             aplicacaoNaoCobravel: { select: { id: true, efeito: true, aplicadaEm: true } } } } } });
       const condicoes = await tx.condicoesHorasMatricula.findMany({ where: { matriculaId: m.id, status: "APROVADA" }, orderBy: { versao: "desc" }, select: { id: true, versao: true, regras: true, documentoId: true } });
       const pagina = encontrados.slice(0, 30);

@@ -23,7 +23,6 @@ export function ResultadoPreviaSubstituicao({ dado, itemReservaId, preferenciaFu
 
 export function PreviaSubstituicao({ itemReservaId, atualId, professores, preferenciaFusoExibicao }: { itemReservaId: string; atualId: string | null; professores: { id: string; nome: string }[]; preferenciaFusoExibicao: string | null }) {
   const [resultado, setResultado] = useState<DadosPreviaSubstituicao | null>(null);
-  // Prévia só de leitura (server/avaliacoes/recuperacao-substituicao-previa.ts:8-18): repetir a conferência é sempre seguro.
   const acao = useAcaoCliente({ idempotente: true }), pendente = acao.ocupado;
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferir substituição na agenda</h2>
     <p>Esta tela confere a disponibilidade para o horário aprovado. O avaliador e a atribuição atuais permanecem em vigor.</p>

@@ -69,11 +69,6 @@ import { telefoneE164 as telefoneE164Schema } from "@/server/_shared/validacao";
 import { ONDE_MODELO_REGUA, ehModeloRegua } from "./modelos-regua";
 import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
-// Ações do braço API da fila de cobrança (doc 30 E2). Mesmos papéis que já operam a
-// cobrança manual (financeiro/acoes.ts). NENHUMA envia direto: gravam INTENÇÃO e chamam o
-// despachante — humano/lote passam pelos MESMOS guard-rails do cron (doc 26 §fila única).
-// Papéis definitivos por papel×ação: gap 21 do doc 28 (matriz), pendente para a E3/E5.
-
 const PAPEIS_ENVIO: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 
 interface CanalPronto {
@@ -96,7 +91,6 @@ async function prepararCanal(): Promise<CanalPronto> {
   return { politica, numeroId: numero.id, templates: new Map(templates.map((t) => [t.id, t])) };
 }
 
-/** Enfileira o degrau DEVIDO de uma cobrança. Lança ErroRegra com motivo claro quando não dá. */
 async function enfileirarDegrauDevido(
   canal: CanalPronto,
   cobrancaId: string,
@@ -168,12 +162,10 @@ async function enfileirarDegrauDevido(
 
 export interface EnvioApiResultado {
   passo: string;
-  /** Estado final da intenção após o despacho imediato. */
   status: string;
   motivo: string | null;
 }
 
-/** Botão da fila (doc 30 E2): enfileira o degrau devido e despacha na hora (origem HUMANO). */
 export async function enfileirarCobrancaWhatsApp(cobrancaId: string): Promise<Resultado<EnvioApiResultado>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_ENVIO);
@@ -199,7 +191,6 @@ export interface LoteResultado {
   falhas: number;
 }
 
-/** Lote-com-aprovação (doc 24 §V2 → doc 26): humano seleciona e aprova; a fila dispara. */
 export async function aprovarLoteCobranca(input: LoteCobrancaInput): Promise<Resultado<LoteResultado>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_ENVIO);
@@ -213,7 +204,6 @@ export async function aprovarLoteCobranca(input: LoteCobrancaInput): Promise<Res
         await enfileirarDegrauDevido(canal, id, "LOTE", autor.id);
         enfileiradas += 1;
       } catch (e) {
-        // Item inválido não derruba o lote — volta com o motivo estampado (doc 26).
         puladas.push({ cobrancaId: id, motivo: e instanceof ErroRegra ? e.message : "Erro inesperado." });
       }
     }
@@ -235,13 +225,6 @@ export async function aprovarLoteCobranca(input: LoteCobrancaInput): Promise<Res
   });
 }
 
-// ===========================================================================
-// INBOX (doc 26 §Camada 3 · doc 30 E3). Guard: escopo do NÚMERO (escopo.ts, D22) —
-// quem vê a conversa opera a conversa; alçadas de cobrança seguem as ações existentes.
-// Clique na inbox também NÃO envia direto: grava intenção (origem HUMANO, isenta de
-// janela/teto — C20) e chama o mesmo despachante da régua (doc 26 §fila única).
-// ===========================================================================
-
 export interface EnvioInboxResultado {
   status: string;
   motivo: string | null;
@@ -257,7 +240,6 @@ async function despacharIntencaoInbox(intencaoId: string): Promise<EnvioInboxRes
   return { status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
 }
 
-/** Texto livre da inbox (thread). */
 export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Resultado<EnvioInboxResultado>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -267,7 +249,6 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
   });
 }
 
-/** Mídia da inbox: o arquivo já subiu pelo POST /api/whatsapp/upload; aqui só vira intenção. */
 export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Resultado<EnvioInboxResultado>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -277,12 +258,10 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
   });
 }
 
-/** Zera o contador de não-lidas ao abrir a thread (tabela operacional — sem evento). */
 export async function marcarConversaLida(conversaId: string): Promise<Resultado> {
   return registrarConversaLida(conversaId, true);
 }
 
-/** A leitura automática reconcilia lista/chips/selo no cliente, sem revalidar a árvore da rota. */
 export async function marcarConversaLidaAutomatico(conversaId: string): Promise<Resultado> {
   return registrarConversaLida(conversaId, false);
 }
@@ -295,7 +274,6 @@ async function registrarConversaLida(conversaId: string, revalidar: boolean): Pr
     if (conversa.naoLidas > 0) {
       await prisma.atendimentoWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
     }
-    // Marca como lida no WhatsApp sem bloquear: motor fora do ar não impede a leitura local.
     if (capacidadesDoNumero(conversa.numero).includes("confirmacaoLeitura")) {
       const digitos = (conversa.contato.waId ?? conversa.contato.telefoneE164).replace(/\D/g, "");
       try {
@@ -309,8 +287,6 @@ async function registrarConversaLida(conversaId: string, revalidar: boolean): Pr
   });
 }
 
-// "Tratar" o inbound (S4): promessa/pagamento pela inbox ou "retomar régua" liberam o
-// silêncio pós-inbound. Alçada = quem opera cobrança (doc 12: Financeiro/Secretaria).
 const PAPEIS_TRATAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 
 export async function marcarConversaTratada(input: TratarConversaInput): Promise<Resultado> {
@@ -326,7 +302,6 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
         where: { id: conversaId },
         data: { inboundTratadoEm: new Date() },
       });
-      // Evento de negócio só na retomada explícita — promessa/pagamento já têm os seus.
       if (motivo === "retomar_regua") {
         await registrarEvento(tx, {
           tipo: "ReguaRetomada",
@@ -341,11 +316,6 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
   });
 }
 
-/**
- * "Criar lead" numa conversa de linha comercial (SPEC-ERP-005 §5.3, LC-D05). Mesmo miolo da
- * auto-captura (código, LeadCriado, LeadAtribuido), com autor = sessão e dono = dono atual da linha.
- * Dedupe (gap 17): telefone que já é lead só vincula; aluno/responsável não vira lead por aqui.
- */
 export async function criarLeadDaConversa(atendimentoId: string): Promise<Resultado<{ leadId: string; criado: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR);
@@ -354,15 +324,12 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
       throw new ErroRegra("Conversa fora de uma linha comercial do seu escopo.");
     }
     const resultado = await prisma.$transaction(async (tx) => {
-      // Trava o atendimento: o segundo clique simultâneo espera o primeiro e encontra o lead já vinculado.
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${alcance.id} FOR UPDATE`;
       const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({
         where: { id: alcance.id }, include: { conversa: { include: { contato: true, numero: true } } },
       });
       const contato = contatoIndividual(atual.conversa);
       if (atual.leadId) {
-        // Estado-alvo (#166): a conversa já tem oportunidade. O reenvio devolve a mesma, sem gravar outro Evento;
-        // `criado` vem do vínculo que este autor gravou (a tela repete a mesma mensagem de sucesso).
         const vinculo = await tx.evento.findFirst({
           where: { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contato.id, autorId: autor.id },
           orderBy: { criadoEm: "desc" }, select: { payload: true },
@@ -382,8 +349,6 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
           leadId = await criarLeadDeInboundWhatsApp(tx, {
             telefoneE164: contato.telefoneE164,
             nomeExibicao: nomeConhecidoDoContato(contato),
-            // Linha sem dono: quem cria assume se for vendedor; gestão cria sem dono (atribui depois).
-            // `papeis.includes`, não temPapel: o administrador "tem" todo papel e viraria dono do lead.
             donoId: atual.conversa.numero.donoId ?? (autor.papeis.includes(Papel.VENDEDOR) ? autor.id : null),
             autorId: autor.id,
             origem: "whatsapp_linha",
@@ -392,7 +357,6 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
         }
         await tx.contatoWhatsApp.update({ where: { id: contato.id }, data: { leadId } });
       }
-      // Condicional: dois cliques concorrentes não gravam dois leads na mesma conversa.
       const marcado = await tx.atendimentoWhatsApp.updateMany({ where: { id: atual.id, leadId: null }, data: { leadId } });
       if (!marcado.count) throw new ErroRegra("Esta conversa já tem lead.");
       await registrarEvento(tx, {
@@ -414,7 +378,6 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
   });
 }
 
-/** Busca de pessoas para o vínculo (client-side da inbox — respeita escopoLeads). */
 export async function buscarVinculosInbox(q: string, atendimentoId?: string): Promise<Resultado<PessoasVinculo>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -422,7 +385,6 @@ export async function buscarVinculosInbox(q: string, atendimentoId?: string): Pr
   });
 }
 
-/** Vincular contato → aluno/responsável/lead (doc 26 §Camada 3; auditoria D26). */
 export async function vincularContatoWhatsApp(input: VincularContatoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -480,27 +442,18 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
   });
 }
 
-/**
- * Editar o nome salvo do contato pela thread: corrige o nome que a pessoa usa no perfil ou o que
- * veio errado. Vale o mesmo alcance de quem responde a conversa; o pedagógico não expõe o contato.
- * Vazio limpa o nome salvo (a tela volta ao perfil do WhatsApp ou ao número). Cadastro de aluno,
- * lead e responsável não é editado aqui: continua no cadastro de cada um.
- */
 export async function editarNomeContatoWhatsApp(input: EditarNomeContatoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { atendimentoId, nome, nomeAnterior } = EditarNomeContatoSchema.parse(input);
-    // Corrigir um rótulo não envia nada: basta ver o atendimento (encerrado ou com pagador trocado inclusive).
     const alcance = await conversaVisivel(autor, atendimentoId);
     if (!alcance || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para editar o contato.");
-    // O contato é um só para todas as linhas e áreas: quem não vê todos os atendimentos dele não o renomeia.
     if (!await contatoSoNoAlcance(autor, alcance.contatoId)) {
       throw new ErroRegra("Este contato também é atendido por outra área. Peça à administração para corrigir o nome.");
     }
     const depois = nome || null;
     if (nomeAnterior === depois) return;
     await prisma.$transaction(async (tx) => {
-      // Condicional ao nome que a tela carregou: quem editou antes não é sobrescrito às cegas.
       const { count } = await tx.contatoWhatsApp.updateMany({ where: { id: alcance.contatoId, nomeExibicao: nomeAnterior },
         data: { nomeExibicao: depois, nomeEditadoEm: new Date() } });
       if (count === 0) throw new ErroRegra("O nome do contato mudou enquanto você editava. Recarregue a conversa e tente de novo.");
@@ -516,7 +469,6 @@ export async function editarNomeContatoWhatsApp(input: EditarNomeContatoInput): 
   });
 }
 
-/** Opt-out manual (botão da thread — S10) e a reativação, ambos auditáveis (D26/D27). */
 export async function registrarOptOutContato(contatoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -532,9 +484,6 @@ export async function registrarOptOutContato(contatoId: string): Promise<Resulta
         data: { optOutEm: new Date() },
       });
       if (count === 0) {
-        // Idempotência por natureza (#166, 5º lote): o opt-out já registrado por quem repete devolve ok sem outro
-        // Evento (o `updateMany` espera o clique simultâneo e então não acha a linha). Registrado por outra pessoa
-        // ou pelo próprio contato, segue recusado.
         if (await ultimoEventoDoAutor(tx, { tipo: "OptOutRegistrado", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId, autorId: autor.id })) return;
         throw new ErroRegra("Contato já está em opt-out.");
       }
@@ -566,8 +515,6 @@ export async function removerOptOutContato(contatoId: string, evidencia = ""): P
         data: { optOutEm: null },
       });
       if (count === 0) {
-        // Idempotência por natureza (#166, 5º lote): a mesma remoção, por quem repete e com a mesma evidência, devolve
-        // ok sem outro Evento.
         const p = await ultimoEventoDoAutor(tx, { tipo: "OptOutRemovido", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId, autorId: autor.id });
         if (p?.evidencia === evidencia.trim()) return;
         throw new ErroRegra("Contato não está em opt-out.");
@@ -583,11 +530,6 @@ export async function removerOptOutContato(contatoId: string, evidencia = ""): P
     revalidatePath("/inbox");
   });
 }
-
-// ===========================================================================
-// CONFIG DO CANAL (E3/E4) — números, sessão/QR, templates e política.
-// Alçada: ADMINISTRADOR (doc 26: "régua configurável pelo admin"; matriz D21 na E3).
-// ===========================================================================
 
 export interface NumeroSalvoResultado {
   id: string;
@@ -607,7 +549,6 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
       where: { telefoneE164: dados.telefoneE164, ...(dados.id ? { id: { not: dados.id } } : {}) },
       select: { id: true, excluidoEm: true },
     });
-    // Telefone de número excluído: o cadastro novo restaura aquele registro (o histórico volta junto).
     const restaurar = conflito?.excluidoEm && !dados.id ? conflito.id : null;
     if (conflito && !restaurar) {
       throw new ErroRegra(conflito.excluidoEm
@@ -654,9 +595,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
             donoId: dados.donoId,
           },
         });
-        // Edição preserva driver e providerRef do registro (número legado não vira MOTOR aqui).
         driverEditado = antes.driver;
-        // Auditoria D26 (inclui troca de driver): antes → depois.
         await registrarEvento(tx, {
           tipo: "NumeroWhatsAppAlterado",
           agregadoTipo: "NumeroWhatsApp",
@@ -695,7 +634,6 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
           ativo: ativoFinal,
         },
       });
-      // providerRef de número MOTOR = id (numeroId do motor).
       await tx.numeroWhatsApp.update({ where: { id: criado.id }, data: { providerRef: criado.id } });
       await registrarEvento(tx, {
         tipo: "NumeroWhatsAppCriado",
@@ -707,8 +645,6 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
       return criado.id;
     });
 
-    // Cadastro no motor fora da transação: motor fora do ar não desfaz o número (o conectar refaz).
-    // Número inativo não volta ao motor (reativar faz o cadastro).
     if (driverEditado === "MOTOR" && ativoFinal) {
       try {
         await garantirNumeroNoMotor({ providerRef: id, rotulo: dados.rotulo });
@@ -717,8 +653,6 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
       }
     }
 
-    // Linha comercial (SPEC-ERP-005 LC-15): conversas desta linha que estavam na triagem passam já
-    // para a inbox do dono. O cron repete o backfill; falha aqui não desfaz o número salvo.
     if (dados.finalidade === "VENDAS" && ativoFinal) {
       try {
         await adotarMensagensOrfasDaLinha({ numeroId: id, limiteConversas: 500 });
@@ -732,10 +666,6 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
   });
 }
 
-/**
- * Configura o caminho proativo de agenda (D38): número AGENDA do motor com o texto do template,
- * Número de outro driver é recusado.
- */
 export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAgendaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -753,7 +683,6 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
     }
     await prisma.$transaction(async (tx) => {
       const antes = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } });
-      // Nada mudou (ex.: reenvio após resultado incerto): sem upsert nem Evento, como aplicarSlaSetor.
       if (antes?.numeroAvisosAgendaId === numero.id && antes.templateAvisosAgendaId === template.id) return;
       await tx.configuracaoOperacional.upsert({
         where: { id: "escola" }, create: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },
@@ -781,7 +710,6 @@ async function numeroMotorParaSessao(numeroId: string) {
   return numero;
 }
 
-/** Fluxo "conectar via QR" (doc 26 §Camada 0/E3) — só números do motor. */
 export async function conectarNumeroQr(numeroId: string): Promise<Resultado<ConexaoQrResultado>> {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -793,7 +721,6 @@ export async function conectarNumeroQr(numeroId: string): Promise<Resultado<Cone
   });
 }
 
-/** Pareamento por código (alternativa ao QR). */
 export async function parearNumeroPorCodigo(numeroId: string, telefoneE164: string): Promise<Resultado<ConexaoQrResultado>> {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -806,7 +733,6 @@ export async function parearNumeroPorCodigo(numeroId: string, telefoneE164: stri
   });
 }
 
-/** Poll do estado da sessão (tela do número). */
 export async function consultarSessaoNumero(
   numeroId: string,
 ): Promise<Resultado<{ sessao: SessaoNumero; qrBase64: string | null; codigoPareamento: string | null }>> {
@@ -819,7 +745,6 @@ export async function consultarSessaoNumero(
     try {
       r = await consultarSessaoMotor({ id: numero.id, providerRef: numero.id, rotulo: numero.rotulo });
     } catch {
-      // Motor fora do ar no poll: devolve o último estado conhecido.
       return { sessao: numero.sessao, qrBase64: null, codigoPareamento: null };
     }
     revalidatePath("/configuracao/whatsapp", "layout");
@@ -827,7 +752,6 @@ export async function consultarSessaoNumero(
   });
 }
 
-/** Logout do número no motor; exige novo pareamento. Grava Evento. */
 export async function desconectarNumero(numeroId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -848,25 +772,17 @@ export async function desconectarNumero(numeroId: string): Promise<Resultado> {
   });
 }
 
-/** Logout no motor; motor fora do ar recusa a ação (nada muda no ERP antes de a sessão cair lá). */
 async function desligarNoMotor(numeroId: string): Promise<void> {
   try {
     await solicitarLogoutMotor({ providerRef: numeroId });
   } catch (e) {
     if (e instanceof ErroMotor && e.codigo === "NUMERO_INEXISTENTE") {
-      // O motor nunca conheceu este número: nada a desligar lá.
     } else {
       throw new ErroRegra("Não foi possível desconectar no motor agora. Tente de novo em instantes.");
     }
   }
 }
 
-/**
- * Tira o número de operação: sessão do motor desligada (logout) antes de gravar, para não ficar um número
- * inativo ainda recebendo e enviando. Número de outro driver só é marcado inativo. A sessão do Evento é
- * relida aqui, na transação: entre o logout e a gravação, uma conexão concorrente pode tê-la mudado.
- * Se o webhook já confirmou o logout solicitado por esta ação, conserva sua sessão anterior para a auditoria.
- */
 async function tirarDeOperacao(
   tx: Prisma.TransactionClient,
   numeroId: string,
@@ -889,13 +805,11 @@ async function tirarDeOperacao(
   }
 }
 
-/** Desativa: o número para de enviar e receber (logout no motor) e continua na lista para reativar. */
 export async function desativarNumeroWhatsApp(numeroId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
     if (!numero || numero.excluidoEm) throw new ErroRegra("Número não encontrado.");
-    // Repetir é inofensivo: já inativo e sem sessão, não há o que fazer.
     if (!numero.ativo && (numero.driver !== "MOTOR" || numero.sessao === "DESCONECTADO")) return undefined;
     const sessaoAntesDoLogout = numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO" ? numero.sessao : null;
     if (sessaoAntesDoLogout !== null) await desligarNoMotor(numero.id);
@@ -917,7 +831,6 @@ export async function desativarNumeroWhatsApp(numeroId: string): Promise<Resulta
   });
 }
 
-/** Reativa: o número volta ao motor e precisa ser pareado de novo (Conectar). */
 export async function reativarNumeroWhatsApp(numeroId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -947,11 +860,6 @@ export async function reativarNumeroWhatsApp(numeroId: string): Promise<Resultad
   });
 }
 
-/**
- * Exclui o número da configuração sem apagar dados: desativa (logout no motor) e marca `excluidoEm`. Ele some
- * da tela de Números; conversas, mensagens e Eventos ficam. Recusa o número em uso pela política da régua ou
- * pelos avisos da agenda (a tela deles apontaria para um número invisível). Repetir, pela mesma pessoa, é ok.
- */
 export async function excluirNumeroWhatsApp(numeroId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -986,8 +894,6 @@ export async function excluirNumeroWhatsApp(numeroId: string): Promise<Resultado
     return undefined;
   });
 }
-
-// --- Templates (Camada 2: entidade única, ciclo duplo) ----------------------
 
 export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
@@ -1035,11 +941,8 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
   });
 }
 
-// --- Política da régua (config como DADO — doc 26 §Camada 1) ----------------
-
 const TIPO_ROTULO_POR_PASSO = new Map(REGUA.map((d) => [d.passo, { tipo: d.tipo, rotulo: d.rotulo }]));
 
-/** Degraus do formulário com tipo e rótulo fixos do passo; D+15 conserva envio manual (a restrição de aulas é a D+30). */
 function degrausComTipoFixo(degraus: ReturnType<typeof PoliticaReguaSchema.parse>["degraus"]) {
   return degraus.map((d) => {
     const fixo = TIPO_ROTULO_POR_PASSO.get(d.passo);
@@ -1048,12 +951,6 @@ function degrausComTipoFixo(degraus: ReturnType<typeof PoliticaReguaSchema.parse
   });
 }
 
-/**
- * Estimativa de alcance da ativação da régua (docs/42 L2517), só leitura: quantas pessoas recebem mensagem
- * automática se a política do formulário passar a valer agora. Os degraus do formulário passam pela mesma
- * tradução da política guardada (traduzirDegrausPolitica) e a contagem usa a regra do cron (decidirEnvioCron,
- * em alcance-regua.ts) — nada é gravado nem enviado. Mesma alçada de salvar a política.
- */
 export async function estimarAlcanceRegua(input: PoliticaReguaInput): Promise<Resultado<AlcanceRegua>> {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -1074,31 +971,24 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = PoliticaReguaSchema.parse(input);
 
-    // D+15 conserva envio manual. A restrição automática de aulas tem política própria D+30.
     const degraus = degrausComTipoFixo(dados.degraus);
 
-    // Degrau só aponta para modelo de automação: resposta rápida do Inbox (mesma tabela) não entra na régua.
     const idsTemplate = [...new Set(degraus.map((d) => d.templateId).filter((x): x is string => !!x))];
     if (idsTemplate.length) {
       const validos = await prisma.templateWhatsApp.count({ where: { id: { in: idsTemplate }, ...ONDE_MODELO_REGUA } });
       if (validos !== idsTemplate.length) throw new ErroRegra("Template inválido num degrau: escolha um modelo de automação.");
     }
 
-    // Prontidão (S15): armar a política (SHADOW/ATIVA) valida o canal por número
-    // (doc 26: "degrau só arma se o template estiver pronto para o driver do remetente").
     if (dados.estado !== "DESLIGADA") {
       if (!dados.numeroRemetenteId) throw new ErroRegra("Defina o número remetente antes de armar a política.");
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
-      // C1 da R1 do #213: META_CLOUD (legado) não tem driver no despachante, então armar a política
-      // nele (automático, lote ou manual) só geraria intenções que falham com driver_indisponivel.
       if (remetente.driver === DriverWhatsApp.META_CLOUD) {
         throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Troque o remetente por um número do motor WhatsApp antes de armar a política.`);
       }
 
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
-      // Trava de driver (S1 revogada para MOTOR, D38): automação exige número do motor.
       if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
         throw new ErroRegra(
           "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +
@@ -1187,7 +1077,6 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
         });
       }
 
-      // Auditoria D26: mudança de política com antes → depois.
       await registrarEvento(tx, {
         tipo: "PoliticaReguaAlterada",
         agregadoTipo: "PoliticaRegua",
@@ -1198,11 +1087,10 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
     });
 
     revalidatePath("/configuracao/whatsapp", "layout");
-    revalidatePath("/financeiro", "layout"); // timeline do drawer lê a política do banco (E2)
+    revalidatePath("/financeiro", "layout");
   });
 }
 
-/** Freio de emergência: liga/desliga o kill switch sem mexer no resto da política. */
 export async function acionarKillSwitchRegua(ligado: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

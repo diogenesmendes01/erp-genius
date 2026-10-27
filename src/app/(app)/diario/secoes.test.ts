@@ -23,7 +23,6 @@ describe("seções de /diario", () => {
     expect(rotulos([Papel.GERENTE_PEDAGOGICO])).toEqual([
       "Aulas", "Encontros", "Pendências", "Regularizações de aula", "Exceções de gravação", "Regularizações de gravação",
     ]);
-    // A Secretaria só abre Encontros (chega pelo acadêmico) — o layout não mostra barra de uma aba só.
     expect(rotulos([Papel.SECRETARIA_ACADEMICA])).toEqual(["Encontros"]);
     expect(rotulos([Papel.ADMINISTRADOR])).toHaveLength(SECOES_DIARIO.length);
     expect(rotulos([Papel.VENDEDOR])).toEqual([]);

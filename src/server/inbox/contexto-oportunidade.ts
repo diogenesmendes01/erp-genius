@@ -4,7 +4,6 @@ import { escopoAtendimentos } from "@/server/whatsapp/escopo";
 import { podeVerLeadNaThread } from "@/server/whatsapp/consultas-inbox";
 import { capacidadesPainel } from "./permissoes";
 
-/** Contexto de mutação: alvo vem da thread; o ID esperado é somente uma comparação CAS. */
 export async function comOportunidadeDoInboxTx<T>(
   tx: Prisma.TransactionClient,
   sessao: UsuarioSessao,

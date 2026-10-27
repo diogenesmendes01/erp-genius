@@ -14,7 +14,6 @@ async function atorAtual(db:Db,id:string){
  const u=await db.usuario.findUnique({where:{id},select:{id:true,nome:true,ativo:true,papeis:true,permissoes:true}});
  return u?.ativo&&!apenasPortal(u)?u:null;
 }
-/** Cada passe relê ator e alçadas sem memo global. Perfil alterado durante awaits exige nova conferência. */
 async function conferir(db:Db,usuarioId:string,linhas:Linha[]):Promise<Linha[]|null>{
  let u=await atorAtual(db,usuarioId);
  for(let tentativa=0;tentativa<MAX_CONFERENCIAS_PERFIL;tentativa++){
@@ -42,18 +41,15 @@ async function conferir(db:Db,usuarioId:string,linhas:Linha[]):Promise<Linha[]|n
   if(perfil(fresco)!==perfil(u)){u=fresco;continue;}
   return linhas.filter(n=>n.tipo==='MENCAO_NOTA'?n.refTipo==='AtendimentoWhatsApp'&&mencoes.has(n.refId):n.tipo==='LEMBRETE_TAREFA'?n.refTipo==='Tarefa'&&tarefas.has(n.refId):true);
  }
- // Perfil oscilante não autoriza publicar o último snapshot positivo.
  return null;
 }
 const serializar=(linhas:Linha[]):NotificacaoItem[]=>linhas.slice(0,20).map(n=>({id:n.id,tipo:n.tipo,titulo:n.titulo,refTipo:n.refTipo,refId:n.refId,criadaEm:n.criadaEm,lida:n.lidaEm!==null}));
-/** ReadCommitted: conferência final depois de cada lote, sem prometer linearizabilidade após a última consulta. */
 export async function lerNotificacoesNaDb(db:Db,usuarioId:string):Promise<NotificacaoItem[]>{
  if(!await atorAtual(db,usuarioId))return[];
  let candidatas:Linha[]=[],cursor:{criadaEm:Date;id:string}|undefined;
  for(;;){
   const linhas=await db.notificacaoUsuario.findMany({where:{usuarioId,...(cursor?{OR:[{criadaEm:{lt:cursor.criadaEm}},{criadaEm:cursor.criadaEm,id:{lt:cursor.id}}]}:{})},orderBy:[{criadaEm:'desc'},{id:'desc'}],take:100,select:SELECT});
   if(!linhas.length&&!candidatas.length)return[];
-  // No máximo 19 candidatas anteriores +100 linhas SQL; nenhuma cauda válida é descartada antes da conferência final.
   const lote=await conferir(db,usuarioId,[...candidatas,...linhas]);
   if(lote===null)return[];
   const finais=await conferir(db,usuarioId,lote);

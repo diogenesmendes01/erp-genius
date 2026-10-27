@@ -20,14 +20,6 @@ export type ContextoConsolidadoAvaliacoesBloqueado = {
   };
 };
 
-/** BASE_PLANO compara as fontes de notas da proposta aprovada. A realização ainda
- * sem nota não muda essa base nem invalida as demais etapas do próprio plano.
- * ACOMPANHAMENTO inclui essas pendências e deve ser usado na revisão do resultado. */
-/**
- * Coleta interna sem autorização própria. O chamador deve, na mesma transação,
- * obter `alocacao` por `bloquearLancamento` e já ter autorizado a leitura.
- * Não aceite dados de vínculo, regra ou notas vindos do cliente neste ponto.
- */
 export async function coletarConsolidadoAvaliacoesDoVinculoTx(
   tx: Prisma.TransactionClient,
   contexto: ContextoConsolidadoAvaliacoesBloqueado,
@@ -41,10 +33,6 @@ export async function coletarConsolidadoAvaliacoesDoVinculoTx(
         select: { alocacaoId: true, regraId: true, codigoAvaliacao: true, versoes: { orderBy: { versao: "desc" }, take: 1,
           select: { id: true, notas: true, decisao: { select: { aprovada: true } }, propostasCorrecao: { where: { decisao: { aprovada: true } }, orderBy: { versao: "desc" }, take: 1, select: { id: true, notas: true } } } } } });
       if (registros.some(r => r.alocacaoId !== a.id || r.regraId !== t.regraAvaliacao!.id)) throw new ErroRegra("Há registros de outro vínculo ou regra. Confira o aproveitamento antes de consolidar.");
-      // Aproveitamento aplicado já é fonte acadêmica efetiva do vínculo de
-      // destino. BASE_PLANO também o inclui para que recuperação posterior
-      // compare a habilidade contra a base correta; a realização sem nota
-      // continua excluída pela regra própria de BASE_PLANO abaixo.
       const aproveitamento = await carregarAproveitamentoAplicadoTx(tx, {
         matriculaId: a.matriculaId,
         alocacaoDestinoId: a.id,
@@ -63,9 +51,6 @@ export async function coletarConsolidadoAvaliacoesDoVinculoTx(
           etapa: av.etapa, peso: av.peso, notas: av.habilidades.map(habilidade => {
             const notaLocal = notas.find(n => n.habilidade === habilidade)?.nota ?? null;
             const aplicada = aproveitamentoPorRequisito.get(chaveRequisito(av.codigo, habilidade));
-            // A nota local, quando oficial, já foi removida do aproveitamento
-            // pelo coletor. Só a fonte aplicada ainda vigente entra onde não
-            // há esse lançamento, sem duplicar o requisito.
             const notaAproveitada = aplicada?.situacao === "APROVEITADO" ? aplicada.notaParaConsolidado : null;
             return {
               habilidade,
@@ -106,9 +91,6 @@ export async function coletarConsolidadoAvaliacoesDoVinculoTx(
         estado: "ACOMPANHAMENTO_REGULAR" as const };
 }
 
-/** BASE_PLANO compara as fontes de notas da proposta aprovada. A realização ainda
- * sem nota não muda essa base nem invalida as demais etapas do próprio plano.
- * ACOMPANHAMENTO inclui essas pendências e deve ser usado na revisão do resultado. */
 export async function carregarConsolidadoAvaliacoesTx(tx: Prisma.TransactionClient, autorId: string, id: string, finalidade: "BASE_PLANO" | "ACOMPANHAMENTO") {
       const a = await bloquearLancamento(tx, id);
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autorId} FOR SHARE`;

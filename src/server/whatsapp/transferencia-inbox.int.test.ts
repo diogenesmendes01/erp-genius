@@ -3,7 +3,6 @@ import { Papel, PrismaClient } from "@prisma/client";
 const mocks=vi.hoisted(()=>({auth:vi.fn(),falharNota:false}));
 vi.mock("@/lib/auth",()=>({auth:mocks.auth}));
 vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
-// Falha de persistência localizada: SQL/ACL e TX continuam reais; só o caso de rollback ativa isto.
 vi.mock("@/server/_shared/evento",async original=>{const real=await original<typeof import("@/server/_shared/evento")>();const{ErroRegra}=await import("@/server/_shared/sessao");return{...real,registrarEvento:async(...args:Parameters<typeof real.registrarEvento>)=>{if(mocks.falharNota&&args[1].tipo==="NotaInterna")throw new ErroRegra("Falha fictícia ao persistir nota");return real.registrarEvento(...args);}};});
 import { prisma } from "@/lib/prisma";
 import { criarUsuario,truncarBanco } from "@/test/integracao";

@@ -15,7 +15,6 @@ import { ETAPA_LABEL, SEGMENTO_LABEL, STATUS_ALUNO_LABEL, TEMPERATURA_LABEL, rot
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Inclui o vínculo de turma que compõe cada linha, não somente a identidade do aluno. */
 function assinaturaDaProjecaoAlunos(alunos: Awaited<ReturnType<typeof listarAlunos>>) {
   return JSON.stringify([...alunos]
     .map(({ id, codigo, nome, status, pais, turmas }) => ({
@@ -25,11 +24,6 @@ function assinaturaDaProjecaoAlunos(alunos: Awaited<ReturnType<typeof listarAlun
     .sort((a, b) => a.id.localeCompare(b.id)));
 }
 
-/**
- * Filtros aplicados, para a trilha de auditoria — só os preenchidos. A busca é texto livre (pode ser
- * nome, e-mail ou telefone de alguém): a trilha registra só que houve busca e o tamanho dela, nunca o
- * conteúdo (LGPD, minimização — decisão do responsável em 25/09/2026).
- */
 function filtrosRegistrados(f: ReturnType<typeof lerFiltrosAlunos> | ReturnType<typeof lerFiltrosLeads> | FiltrosContatos | null) {
   if (!f) return {};
   const busca = f.busca ? { aplicada: true, caracteres: f.busca.length } : null;
@@ -55,28 +49,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
     const ids: string[] = [];
     let assinaturaAlunos: string | null = null;
     let assinaturaContatos: string | null = null;
-    // Mesmo recorte da tela (E4): o link de exportação leva os filtros da lista. Só as chaves de
-    // filtro são lidas e validadas (lerFiltrosAlunos/lerFiltrosLeads); qualquer outra (colunas, ids…) é ignorada, e
-    // a planilha sai inteira — sem paginação. Os filtros só estreitam o escopo do usuário.
     const parametros = new URL(req.url).searchParams;
     const filtrosAlunos = tipo === "alunos" ? { ...lerFiltrosAlunos(parametros), pagina: 1 } : null;
     const filtrosLeads = tipo === "leads" ? { ...lerFiltrosLeads(parametros), pagina: 1 } : null;
     const filtrosContatos = tipo === "contatos" ? { ...lerFiltrosContatos(Object.fromEntries(parametros)), pagina: 1 } : null;
-    // Somente colunas da listagem autorizada. Não usar objetos Prisma nem campos
-    // fornecidos pelo cliente; strings são células de texto, nunca fórmulas.
     if (tipo === "alunos") {
       folha.columns = [{ header: "Código", key: "codigo", width: 18 }, { header: "Nome", key: "nome", width: 35 }, { header: "Situação", key: "status", width: 20 }, { header: "País", key: "pais", width: 25 }, { header: "Turma", key: "turma", width: 35 }];
       const dados = await listarAlunos(usuario, filtrosAlunos!);
       assinaturaAlunos = assinaturaDaProjecaoAlunos(dados);
       for (const aluno of dados) { ids.push(aluno.id); folha.addRow({ codigo: aluno.codigo ?? "", nome: aluno.nome, status: rotular(STATUS_ALUNO_LABEL, aluno.status), pais: aluno.pais, turma: aluno.turmas.map((t) => t.label).join("; ") }); }
     } else if (tipo === "contatos") {
-      // Sem telefone nem e-mail; células de texto neutralizadas contra fórmula (celulaSegura).
       folha.columns = COLUNAS_EXPORTACAO_CONTATOS.map((header) => ({ header, key: header, width: header === "Nome" ? 35 : 20 }));
       const dados = await linhasExportacaoContatos(usuario, filtrosContatos!);
       assinaturaContatos = JSON.stringify([...dados.ids].sort());
       for (const linha of dados.linhas) folha.addRow(linha);
     } else {
-      // Mesmas colunas da tabela de /leads, exceto o telefone (dado de contato fica fora da planilha).
       folha.columns = [{ header: "Código", key: "codigo", width: 18 }, { header: "Nome", key: "nome", width: 35 }, { header: "Tipo", key: "tipo", width: 12 }, { header: "Segmento", key: "segmento", width: 20 }, { header: "Etapa", key: "etapa", width: 25 }, { header: "Temperatura", key: "temperatura", width: 20 }, { header: "País", key: "pais", width: 25 }, { header: "Dono", key: "dono", width: 30 }];
       const dados = await listarLeads(usuario, filtrosDaConsultaLeads(filtrosLeads!));
       for (const lead of dados) { ids.push(lead.id); folha.addRow({ codigo: lead.codigo ?? "", nome: lead.nome, tipo: lead.b2b ? "B2B" : "PF", segmento: rotular(SEGMENTO_LABEL, lead.segmento), etapa: rotular(ETAPA_LABEL, lead.etapa), temperatura: rotular(TEMPERATURA_LABEL, lead.temperatura), pais: lead.pais?.nome ?? "", dono: lead.vendedor?.nome ?? "" }); }
@@ -84,8 +71,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
     folha.getRow(1).font = { bold: true };
     folha.views = [{ state: "frozen", ySplit: 1 }];
     const arquivo = new Uint8Array(await livro.xlsx.writeBuffer());
-    // Checa novamente antes de liberar a resposta gerada, inclusive se a permissão
-    // foi revogada durante a geração. O arquivo não fica disponível em URL pública.
     const atual = await exigirSessao();
     await exigirCapacidade(atual, CAPACIDADE_EXPORTACAO[tipo]);
     if (atual.id !== usuario.id) throw new ErroPermissao();

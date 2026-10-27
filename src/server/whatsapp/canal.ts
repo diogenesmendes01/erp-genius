@@ -1,42 +1,30 @@
 import type { DriverWhatsApp, OrigemEnvio } from "@prisma/client";
 
-// PORTA do canal (doc 26 §Camada 0): interface única que os drivers implementam.
-// REGRA DE FRONTEIRA (doc 29): só o despachante importa drivers; régua/inbox/lote gravam
-// intenções e nunca sabem qual motor mandou.
-
 export interface NumeroCanal {
   id: string;
   telefoneE164: string;
   driver: DriverWhatsApp;
-  /** MOTOR: id do número no motor (`NumeroWhatsApp.id`). */
   providerRef: string | null;
 }
 
 export interface EnvioTemplate {
-  /** Nome do template registrado (Meta) — no Baileys é ignorado (texto livre). */
   nome: string;
   idioma: string;
-  /** Valores posicionais {{1}}..{{n}} na ordem. */
   variaveis: string[];
-  /** Corpo já renderizado — usado pelo Baileys e como fallback de auditoria. */
   corpoRenderizado: string;
 }
 
 export interface EnvioMidia {
-  /** Tipo normalizado da mensagem (enum TipoMensagem, sem TEXTO/OUTRO). */
   tipo: "IMAGEM" | "AUDIO" | "VIDEO" | "DOCUMENTO";
   mime: string;
   nomeArquivo: string;
-  /** Binário em base64 — lido do storage privado pelo despachante (midia.ts). */
   dadosBase64: string;
   legenda?: string | null;
 }
 
 export interface OpcoesEnvio {
-  /** UUID gerado pelo ERP antes do envio; separa o eco do ERP do eco do celular. */
   clientMessageId: string;
   origem: OrigemEnvio;
-  /** Id da mensagem citada no motor (`<jid>:<id>`), quando a saída é uma resposta. */
   citarMensagemIdMotor?: string | null;
 }
 
@@ -52,7 +40,6 @@ export type ConteudoEspecial =
   | { tipo: "LOCALIZACAO"; latitude: number; longitude: number; nome?: string }
   | { tipo: "CONTATO"; contatoJid: string };
 
-/** Falha de driver com motivo estável (vai para IntencaoMensagem.motivoFalha e fila humana). */
 export class ErroDriver extends Error {
   readonly reprocessavel: boolean;
   readonly adiarMs: number;
@@ -68,7 +55,6 @@ export class ErroDriver extends Error {
   }
 }
 
-/** `destino` é E.164 ou JID (contém "@"). */
 export interface CanalWhatsApp {
   enviarTexto(numero: NumeroCanal, destino: string, corpo: string, opcoes: OpcoesEnvio): Promise<ResultadoEnvio>;
   enviarTemplate(numero: NumeroCanal, destino: string, template: EnvioTemplate, opcoes: OpcoesEnvio): Promise<ResultadoEnvio>;
@@ -82,13 +68,8 @@ export interface CanalWhatsApp {
   ): Promise<ResultadoEnvio>;
 }
 
-/** Mensagem única para recusar número META_CLOUD (legado) enquanto ele não tiver driver no despachante. */
 export const MENSAGEM_META_CLOUD_SEM_ENVIO = "Meta Cloud ainda não tem envio disponível.";
 
-/**
- * Drivers em que a automação (régua/lote) pode enviar. Só o MOTOR: é o único driver em `DRIVERS`
- * do despachante, então armar automação em outro só falharia no envio.
- */
 export function driverAceitaAutomacao(driver: DriverWhatsApp): boolean {
   return driver === "MOTOR";
 }

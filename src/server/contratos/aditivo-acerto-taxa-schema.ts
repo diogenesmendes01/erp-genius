@@ -26,7 +26,6 @@ export const DecidirAcertoTaxaAditivoSchema = z.object({
   chaveIdempotencia: chave,
 }).strict();
 
-/** Dados calculados exclusivamente da versão formalizada e da cobrança fotografada. */
 export const MemoriaAcertoTaxaAditivoSchema = z.object({
   condicoesHash: hash,
   revisaoHash: hash,

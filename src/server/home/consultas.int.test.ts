@@ -5,9 +5,6 @@ import { criarAlunoMinimo, criarUsuario, seedCatalogoMinimo, truncarBanco } from
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { dadosHomeGerente } from "./consultas";
 
-// KPI "Matrículas ativadas no mês" × meta do funil (Q9): são dois critérios e a Home os mantém separados.
-// O número grande conta `Matricula.ativadaEm`; a meta conta a 1ª entrada em MATRICULADO (Evento) no mês da escola.
-
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 let admin: U, vend: U;
 
@@ -36,7 +33,6 @@ describe("dadosHomeGerente · meta de matrículas do mês", () => {
     await matriculadosNoFunil(2);
     const { kpis } = await dadosHomeGerente(sessao(admin));
     expect(kpis.metaMatriculasMes).toBeNull();
-    // Nenhuma Matricula ativada: o funil não contamina o número grande.
     expect(kpis.matriculasMes).toBe(0);
   });
 
@@ -62,8 +58,6 @@ describe("dadosHomeGerente · meta de matrículas do mês", () => {
 describe("dadosHomeGerente · hoje e mês no fuso da escola", () => {
   afterEach(() => { vi.useRealTimers(); });
 
-  // Escola na Costa Rica (−06, sem horário de verão). Às 04:30Z de 01/11/2026 ainda são 22h30 de 31/10 na escola:
-  // "hoje" é 31/10 e o mês é outubro, qualquer que seja o fuso do servidor (UTC em produção, −03 no notebook).
   it("leads_de_hoje_e_matriculas_do_mes_seguem_o_dia_civil_da_escola", async () => {
     await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "America/Costa_Rica" } });
     await prisma.oportunidade.create({ data: { nome: "Hoje", vendedorDonoId: vend.id, criadoEm: new Date("2026-10-31T15:00:00Z") } });
@@ -74,7 +68,7 @@ describe("dadosHomeGerente · hoje e mês no fuso da escola", () => {
       alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA", ativadaEm: new Date(ativadaEm),
     } });
     await matricula("2026-10-20T12:00:00Z");
-    await matricula("2026-10-01T05:00:00Z"); // 30/09 23h na escola: mês anterior
+    await matricula("2026-10-01T05:00:00Z");
 
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-11-01T04:30:00Z"));

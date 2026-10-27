@@ -7,7 +7,6 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revisaoHash }: { matriculaId: string; propostaId: string; artefatoId: string; revisaoHash: string }) {
-  // Chave estável enquanto os dados não mudam: na falha de transporte, reenviar confere a mesma conferência.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ dados: string; chave: string } | null>(null);
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => {

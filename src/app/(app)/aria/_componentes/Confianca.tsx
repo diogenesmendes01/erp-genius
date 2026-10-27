@@ -18,7 +18,6 @@ type Props = {
   baseVersaoId: string | null;
   rascunho: RascunhoAberto;
   podeEditar: boolean;
-  /** `editarConfianca`: expiração das sugestões e afrouxar as faixas (só Administrador). */
   podeEditarExpiracao: boolean;
   supervisao: boolean;
   podeLigarSupervisao: boolean;
@@ -31,10 +30,6 @@ const faixa = (de: number, ate: number) => Array.from({ length: (ate - de) / 5 +
 
 export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEditarExpiracao, supervisao, podeLigarSupervisao, podeDesligarSupervisao }: Props) {
   const router = useRouter();
-  // Idempotente por natureza (#166): este executor só define a supervisão (estado-alvo `supervisaoAte`),
-  // e o servidor não grava nada quando `supervisaoAte` já é o alvo. Para o reenvio cair nesse caso,
-  // o `ate` é fixado dentro da tentativa (como o `fimDaTentativa` do convite): depois de um resultado
-  // incerto, repetir a mesma opção manda o mesmo valor (regras em supervisao-tentativa.ts).
   const acao = useAcaoCliente({ idempotente: true });
   const ateDaTentativa = useRef<TentativaSupervisao>(null);
   const [c, setC] = useState<ConfigAria>(config);
@@ -49,7 +44,6 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
     if (d?.tipo === "ok") router.refresh();
   }
 
-  /** Liga por `horas` a partir de agora, reaproveitando o `ate` da tentativa anterior que ficou incerta. */
   function ligarPor(horas: number, ok: string) {
     const ate = ateParaLigar(ateDaTentativa.current, horas, Date.now());
     ateDaTentativa.current = { horas, ate };

@@ -15,7 +15,6 @@ export const MOTIVOS_HANDOFF = [
   "SEM_PERMISSAO",
   "ERRO_PROVEDOR",
 ] as const;
-/** Motivos que só o sistema usa (fora do esquema de saída do modelo). */
 export type MotivoHandoffSistema = "TURNO_INTERROMPIDO";
 export type MotivoHandoff = (typeof MOTIVOS_HANDOFF)[number] | MotivoHandoffSistema;
 
@@ -75,10 +74,8 @@ export const SaidaModeloSchema = z.object({
 });
 export type SaidaModelo = z.infer<typeof SaidaModeloSchema>;
 
-// Raiz: acoes aceita itens desconhecidos, que são filtrados um a um.
 const RaizBrutaSchema = SaidaModeloSchema.extend({ acoes: z.array(z.unknown()).max(5) });
 
-/** Texto bruto do modelo -> saída validada; ações inválidas são descartadas, raiz inválida -> null. */
 export function normalizarSaida(texto: string): SaidaModelo | null {
   let bruto: unknown;
   try {

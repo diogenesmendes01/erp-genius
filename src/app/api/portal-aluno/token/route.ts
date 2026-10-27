@@ -20,8 +20,6 @@ export async function POST(request: Request) {
     resposta.cookies.set(cookieSessaoPortalAluno(resultado.sessaoCookie, resultado.expiraEm));
     return resposta;
   } catch (e) {
-    // Senha fora das regras (#172): o schema recusa antes de tocar no token, então o link continua valendo.
-    // Só o campo é informado; token malformado, link vencido e corpo ilegível ficam no 422 genérico.
     if (e instanceof ZodError && e.issues.length > 0 && e.issues.every((i) => i.path[0] === "senha")) {
       return NextResponse.json({ erro: "Senha fora das regras.", campo: "senha" }, { status: 400, headers: { "Cache-Control": "no-store" } });
     }

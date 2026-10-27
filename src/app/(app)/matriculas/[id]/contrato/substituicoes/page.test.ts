@@ -52,7 +52,6 @@ describe("SubstituicoesPage", () => {
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
 
-  // Revisão R1 da #134 (B5): duas listas na mesma tela — a volta de uma preserva a página da outra.
   it("vazios: página 1 afirma ausência; páginas seguintes voltam ao início sem perder a outra lista", async () => {
     const vazio = (pagina: number, paginaConferencias: number) => ({ ok: true, dado: { ...resposta().dado, conferencias: [], propostas: [], pagina, paginaConferencias } });
     mocks.consulta.mockResolvedValue(vazio(1, 1));

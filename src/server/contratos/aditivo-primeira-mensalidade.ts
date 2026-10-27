@@ -2,7 +2,6 @@ import type { Prisma } from "@prisma/client";
 import { validarValorAlteracaoAditivo } from "./aditivo-valores";
 import { ErroRegra } from "@/server/_shared";
 
-/** Identifica a cobrança pela emissão original, nunca pela ordem dos vencimentos. */
 export async function consultarAlvoPrimeiraMensalidadeTx(tx: Prisma.TransactionClient, matriculaId: string, valor: unknown) {
   const alteracao = validarValorAlteracaoAditivo("PRIMEIRA_MENSALIDADE_VENCIMENTO", valor);
   if (alteracao.tipo !== "DATA") throw new ErroRegra("Vencimento contratual inválido.");

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { reavaliarAcessoAutomaticoMatriculaTx } from "@/server/cobrancas/acesso-aulas";
 
-/** Consumidor interno: chamado depois do commit financeiro ou pelo cron autenticado. */
 export async function reconciliarAcessoVencimento(aplicacaoId: string) {
   try {
     return await prisma.$transaction(async tx => {
@@ -13,8 +12,6 @@ export async function reconciliarAcessoVencimento(aplicacaoId: string) {
       return "concluido" as const;
     }, { timeout: 30000 });
   } catch {
-    // A intenção já foi confirmada pelo commit financeiro; até falha neste registro
-    // deixa a tarefa pendente para a próxima rodada. Não armazenar mensagens sensíveis.
     try {
       await prisma.reconciliacaoAcessoVencimento.updateMany({ where: { aplicacaoId, concluidaEm: null }, data: { ultimaTentativaEm: new Date(), tentativas: { increment: 1 }, erro: "Falha na reavaliação de acesso; nova tentativa pendente." } });
     } catch { console.error("[aditivo] Não foi possível registrar a tentativa de reconciliação de acesso."); }
@@ -23,8 +20,6 @@ export async function reconciliarAcessoVencimento(aplicacaoId: string) {
 }
 
 export async function rodarReconciliacaoAcessoVencimento() {
-  // Uma falha volta ao fim pela data da tentativa; entradas novas não passam
-  // indefinidamente à frente de uma falha mais antiga.
   const itens = await prisma.$queryRaw<{ aplicacaoId: string }[]>`SELECT "aplicacaoId" FROM "ReconciliacaoAcessoVencimento" WHERE "concluidaEm" IS NULL ORDER BY COALESCE("ultimaTentativaEm", "criadaEm"), "aplicacaoId" LIMIT 100`;
   const resultado = { concluidos: 0, pendentes: 0, inalterados: 0 };
   for (const item of itens) {

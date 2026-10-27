@@ -19,7 +19,6 @@ export type ExcecaoAgenda = {
 
 export type HorarioExcecaoProposto = HorarioExcecaoConferido;
 
-/** Q19: a proposta reaproveita o horário já conferido; nunca aceita identificadores digitados. */
 export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, preferenciaFusoExibicao }: {
   reposicaoId: string;
   proposta?: HorarioExcecaoProposto | null;

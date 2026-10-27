@@ -14,7 +14,6 @@ import { TextoPreviaSchema } from "./previa-projecao";
 const Gerar = z.object({ previaId: z.string().min(1), conferenciaId: z.string().min(1), motivo: z.string().trim().min(5).max(2000), conteudoConferido: z.literal(true) }).strict();
 const metadados = { id: true, previaId: true, conferenciaId: true, pdfHash: true, baseHash: true, gerador: true, paginas: true, criadoEm: true, motivo: true } satisfies Prisma.ArtefatoContratualSelect;
 
-/** Uma conferência gera um único original; repetição devolve a referência preservada. */
 export async function preservarOriginalContratual(input: z.input<typeof Gerar>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), d = Gerar.parse(input);
@@ -29,7 +28,6 @@ export async function preservarOriginalContratual(input: z.input<typeof Gerar>) 
       const ultima = await tx.conferenciaParticipantesContratuais.findFirst({ where: { previaId: previa.id }, orderBy: { versao: "desc" }, select: { id: true } });
       if (ultima?.id !== conferencia.id) throw new ErroRegra("Há outra conferência de participantes. Atualize a revisão.");
       await conferirBaseOriginalAtual(tx, previa, conferencia);
-      // Nova conferência dos mesmos dados não deve criar outra versão binária.
       const baseHash = hashPrevia({ previaHash: previa.conteudoHash, conferencia: conferencia.snapshot });
       const equivalente = await tx.artefatoContratual.findFirst({ where: { previaId: previa.id, baseHash }, select: metadados });
       if (equivalente) return { registro: equivalente };
@@ -65,7 +63,6 @@ export async function consultarOriginaisContratuais(input: { previaId: string; p
   });
 }
 
-/** Leitura interna de bytes, usada pela rota autenticada; não regenerar um original. */
 export async function consultarPdfOriginal(input: { matriculaId: string; artefatoId: string }) {
   await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
   const d = z.object({ matriculaId: z.string().min(1), artefatoId: z.string().min(1) }).strict().parse(input);

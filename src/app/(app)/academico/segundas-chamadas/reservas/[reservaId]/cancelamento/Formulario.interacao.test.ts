@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 6 (docs/42 L1786): a hora da ocorrência decide se o cancelamento é tempestivo, e o fuso é
-// digitado à mão. Antes do envio, a tela mostra em que horário aquilo cai no fuso de exibição — e a prévia
-// acompanha a troca do fuso. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

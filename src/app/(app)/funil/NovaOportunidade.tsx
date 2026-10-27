@@ -14,8 +14,6 @@ import { criarLead, moverEtapa } from "@/server/comercial/acoes";
 import { buscarPossiveisDuplicados } from "@/server/crm/oportunidades";
 import type { PossivelDuplicado } from "@/server/crm/pessoas";
 
-// Etapas de entrada: EXPERIMENTAL_AGENDADA não é oferecida (agende depois de criar). A oportunidade
-// nasce em NOVO; as etapas seguintes são alcançadas passo a passo pela máquina de estados (moverEtapa).
 type EtapaEntrada = "NOVO" | "EM_ATENDIMENTO" | "QUALIFICADO";
 const ETAPAS: { valor: EtapaEntrada; rotulo: string }[] = [
   { valor: "NOVO", rotulo: "Novo" },
@@ -33,7 +31,6 @@ const MIN_LETRAS = 3;
 const MIN_DIGITOS = 8;
 const CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11";
 
-/** A busca de duplicados só roda com 3 letras do nome ou 8 dígitos do telefone. */
 export function buscaLiberada(nome: string, telefone: string): boolean {
   return nome.trim().length >= MIN_LETRAS || telefone.replace(/\D/g, "").length >= MIN_DIGITOS;
 }
@@ -43,13 +40,10 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   podeAtribuir: boolean;
   vendedores: { id: string; nome: string }[];
   paises: { id: string; nome: string }[];
-  /** Pré-preenchimento por id do cadastro: nome e telefone nunca vão para a URL (contatos.md §8 item 25). */
   preenchido?: { pessoaId?: string; nome?: string };
   aoFechar?: () => void;
 }) {
   const router = useRouter();
-  // criarLead recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve a
-  // oportunidade já criada. moverEtapa para a etapa em que a oportunidade já está não faz nada.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [empresa, setEmpresa] = useState(false);
@@ -72,7 +66,6 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   function agendarBusca(n: string, t: string, e: string, p: string) {
     if (espera.current) clearTimeout(espera.current);
     const rodada = ++busca.current;
-    // No modo Empresa não há Pessoa a reaproveitar: a busca de duplicados (de pessoas) não roda.
     if (empresa || pessoaId || !buscaLiberada(n, t)) {
       setDuplicados([]);
       return;
@@ -92,7 +85,6 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   function trocarTipo(paraEmpresa: boolean) {
     setEmpresa(paraEmpresa);
     if (!paraEmpresa) return;
-    // Ruling (C2 da R1 do #196): a oportunidade de empresa cria a `Empresa` e não liga nem cria Pessoa.
     if (espera.current) clearTimeout(espera.current);
     busca.current++;
     setPessoaId("");
@@ -101,7 +93,6 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
 
   function usarCadastro(d: PossivelDuplicado) {
     if (!d.pessoaId) return;
-    // Descarta o timer pendente e a resposta em voo: senão a lista volta com o cadastro já escolhido.
     if (espera.current) clearTimeout(espera.current);
     ++busca.current;
     setPessoaId(d.pessoaId);
@@ -138,7 +129,7 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
       const d = await acao.executar(() => moverEtapa(id, destino));
       if (d?.tipo !== "ok") {
         router.refresh();
-        return; // criada em Novo: o erro da etapa fica na tela e "Criar oportunidade" só repete a movimentação
+        return;
       }
     }
     router.refresh();

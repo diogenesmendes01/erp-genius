@@ -23,28 +23,17 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
   const busca = (buscaBruta ?? "").trim().slice(0, 100);
   const [preferencia, fusoEscola] = await Promise.all([consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
-  // B1 da review do #290: este fuso também é o dos CAMPOS de entrada da operação da entrega (novo prazo da etapa,
-  // "Expira em" da liberação). Pessoal; sem preferência, o da escola — nunca UTC presumido (antes, o fallback era
-  // "UTC" e 25/10 23:59 digitado em São Paulo gravava 3 horas antes). O mesmo vale para os horários exibidos.
   const fusoExibicao = fusoDoCampoLocal(preferenciaFusoExibicao, fusoEscola);
   const encontradas = !matriculaId && busca.length >= 2 ? await buscarMatriculasParaReposicao({ busca }) : null;
   return <div className="space-y-5">
     <VoltarPara href="/academico" />
     {!matriculaId && <EscolherMatricula busca={busca} r={encontradas} />}
-    {/* A consulta da matrícula e uma por gravação autorizada (Conteudo) não seguram mais a página inteira
-        (docs/42 /academico/reposicoes #2): o "voltar" sai antes e o esqueleto ocupa o lugar do conteúdo. O key
-        é só a matrícula (identidade do registro): trocar de matrícula recomeça o painel com o esqueleto. Trocar
-        de página NÃO remonta, para não apagar a justificativa que estiver sendo digitada em SolicitarReposicao
-        (docs/43 §6 item 3; trava formularios-preservados) — a navegação do App Router mantém a tela anterior até
-        a nova chegar. */}
     {matriculaId && <Suspense key={matriculaId} fallback={<EsqueletoCartoes rotulo="reposições da matrícula" cartoes={2} />}>
       <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </Suspense>}
   </div>;
 }
 
-// Sem `?matriculaId=` a tela era um beco (docs/42 L1244; docs/43 §6 item 7): só a frase "abra pelo contexto da
-// matrícula". Agora ela dá a busca e a lista para escolher a matrícula, e diz o outro caminho (a ficha do aluno).
 function EscolherMatricula({ busca, r }: { busca: string; r: Awaited<ReturnType<typeof buscarMatriculasParaReposicao>> | null }) {
   return <>
     <h1 className="text-2xl font-medium">Reposições individuais</h1>

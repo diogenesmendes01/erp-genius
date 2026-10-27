@@ -32,7 +32,6 @@ describe("paginação e filtros na URL (páginas de servidor)", () => {
 });
 
 describe("consulta numerada nos dois sentidos (E4)", () => {
-  // 45 registros em ordem estável (criadoEm desc, id desc), com empate de criadoEm resolvido pelo id.
   const base = Array.from({ length: 45 }, (_, i) => ({ id: `r${String(i).padStart(2, "0")}`, criadoEm: Math.floor(i / 3) }));
   const ordenados = [...base].sort((a, b) => b.criadoEm - a.criadoEm || (a.id < b.id ? 1 : -1));
   const ler = (pagina: number) => {
@@ -58,7 +57,6 @@ describe("consulta numerada nos dois sentidos (E4)", () => {
     expect(p3.registros).toHaveLength(5);
     expect(ler(2).registros).toEqual(p2.registros);
     expect(ler(1).registros).toEqual(p1.registros);
-    // Nenhum registro some nem se repete entre as páginas.
     const todos = [...p1.registros, ...p2.registros, ...p3.registros].map((r) => r.id);
     expect(new Set(todos).size).toBe(45);
     expect(todos).toEqual(ordenados.map((r) => r.id));
@@ -69,7 +67,6 @@ describe("consulta numerada nos dois sentidos (E4)", () => {
     expect(hrefLista("/x", { pagina: 1, paginaPendencias: 3 })).toBe("/x?paginaPendencias=3");
     expect(lerPagina({ paginaPendencias: "4" }, "paginaPendencias")).toBe(4);
     expect(lerPagina({ pagina: "4" }, "paginaPendencias")).toBe(1);
-    // Só "pagina" e "paginaX": outra chave com 1 continua no link.
     expect(hrefLista("/x", { modelos: 1, paginas: 1 })).toBe("/x?modelos=1&paginas=1");
   });
 });

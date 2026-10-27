@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-/** Avança antes de processar: uma falha/queda será revisitada na próxima volta,
- * sem prender as reservas posteriores. Cursor não concede liberação da reserva. */
 export async function proximaReservaParticularVencida() {
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('cursor-reservas-particulares', 0))`;

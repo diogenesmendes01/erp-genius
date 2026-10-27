@@ -28,20 +28,12 @@ export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaite
 type Matricula = NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>>["matriculas"][number];
 type Preco = Matricula["precos"][number];
 
-/** Linha isolada pra poder ter estado local do campo de valor (CampoMoeda é controlado) —
- *  o form continua enviando via FormData normalmente, `name="valor"` participa do submit
- *  igual a um input não controlado. */
 function LinhaAjustePreco({ preco, moeda }: { preco: Preco; moeda: string }) {
   const router = useRouter();
   const [valor, setValor] = useState(formatarMoedaParaCampo(preco.valor, moeda));
-  // Estado por linha: o resultado aparece logo abaixo do botão clicado, não no topo da página.
-  // ajustarCobranca recebe chave de idempotência (#166): o reenvio não aplica o desconto duas vezes nem abre
-  // segundo pedido de aprovação.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   async function ajustar(form: FormData) {
-    // parseMoeda (não Number): "1.234" digitado não pode virar 1234 por acidente. E nunca
-    // ?? 0: texto inválido viraria "novo valor: zero" registrado, silencioso.
     const valorPara = parseMoeda(String(form.get("valor")));
     if (valorPara === null) {
       acao.setErro("Informe o novo valor, com no máximo duas casas decimais.");

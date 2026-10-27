@@ -2,8 +2,6 @@ import { Genero } from "@prisma/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type ReactNode } from "react";
 
-// R1 da #145 (B3): o erro por campo dos dois passos, pelo clique — sem DOM. O componente é chamado como
-// função com os ganchos de src/test/tela-sem-dom.ts; botões e controles dos <Campo> são acionados na árvore.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   criar: vi.fn(), abrir: vi.fn(), push: vi.fn(), refresh: vi.fn(),
@@ -84,7 +82,6 @@ describe("matrícula nova — passo 1 pela tela", () => {
     clicar(tela(), PROXIMO);
     const t = tela();
     expect(temCampo(t, "matricula-taxa")).toBe(false);
-    // País, nacionalidade e residência vêm preenchidos pelo país inicial.
     expect(errosNaTela(t)).toEqual({
       "matricula-nome": "Informe o nome do aluno.",
       "matricula-sobrenome": "Informe o sobrenome.",
@@ -112,7 +109,6 @@ describe("matrícula nova — passo 1 pela tela", () => {
   });
 
   it("R2 B1 — cada obrigatório do passo 1 vazio SOZINHO (os outros preenchidos): não avança, erro só nele e foco nele", () => {
-    // Mesmo fio do passo 2: cada estado da tela tem de chegar ao seu campo em errosDoPasso1.
     const casos: [string, string][] = [
       ["matricula-nome", "Informe o nome do aluno."],
       ["matricula-sobrenome", "Informe o sobrenome."],
@@ -191,8 +187,6 @@ describe("matrícula nova — passo 2 pela tela", () => {
   });
 
   it("R2 B1 — cada campo do passo 2 pendente SOZINHO (os outros preenchidos): não envia, erro só nele e foco nele", async () => {
-    // O fio da tela até errosDoPasso2: trocar um campo por outro na chamada (ex.: primeiroVencimento
-    // recebendo o início da cobertura) deixa um destes passar.
     const casos: [string, string, string][] = [
       ["matricula-taxa", "", "Informe a taxa de matrícula, com no máximo duas casas decimais."],
       ["matricula-mensalidade", "", "Informe a mensalidade, com no máximo duas casas decimais."],
@@ -295,9 +289,7 @@ describe("matrícula nova — validação do passo 2 (função pura)", () => {
   });
 });
 
-// B12 (#170 C30 e #168 C49): a etapa atual é anunciada e a ação que conclui o assistente é a primária.
 describe("matrícula nova — acessibilidade do assistente", () => {
-  /** O Stepper da árvore, desenhado como o React o desenharia (ele não tem ganchos). */
   const stepperDaTela = (t: ReactNode) => {
     const no = elementos(t).find((n) => n.type === Stepper);
     expect(no, "Stepper na tela").toBeDefined();

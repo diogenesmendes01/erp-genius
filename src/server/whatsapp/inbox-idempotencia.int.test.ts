@@ -1,12 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (3º lote): nota interna, convite de participante e mensagem agendada do Inbox recebem chave de
-// idempotência. O reenvio da mesma tentativa (resultado incerto, duplo clique) devolve o registro já
-// criado; a mesma chave com outra entrada é recusada sem gravar nada.
-
-// Sessão: só `exigirSessao` é trocada (mesmo motivo de comercial/criar-lead-idempotencia.int.test.ts: dois
-// `import("@/lib/auth")` simultâneos escapam do vi.mock e carregam o NextAuth real).
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -131,22 +125,17 @@ describe("agendarMensagemNoAtendimento com chave (#166)", () => {
   });
 });
 
-// C3 da R2 do #267 (lote 4): a busca da repetição roda antes das validações de estado. O reenvio tardio da
-// mesma tentativa, depois que o atendimento foi encerrado ou o contato pediu opt-out, devolve o que já foi feito
-// em vez de um erro, e não grava nada de novo.
 describe("reenvio tardio da mesma chave devolve o registro já feito (C3 do #267)", () => {
   it("nota: o atendimento saiu do escopo de quem anotou e foi encerrado; o reenvio devolve ok sem nova nota", async () => {
     const { a, outro } = await cenario();
     const entrada = { atendimentoId: a.id, nota: "Combinou retorno", chaveIdempotencia: "chave-nota-tardia-01" };
     const primeira = await registrarNotaAtendimento(entrada);
     expect(primeira.ok, primeira.ok ? undefined : primeira.erro).toBe(true);
-    // O atendimento e a linha passam a outro vendedor: quem anotou perde o escopo.
     const { numeroId } = await prisma.conversaWhatsApp.findUniqueOrThrow({ where: { id: a.conversaId } });
     await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { donoId: outro.id } });
     await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: outro.id, encerradoEm: new Date(), status: "ENCERRADO" } });
     expect(await registrarNotaAtendimento(entrada)).toEqual(primeira);
     expect(await prisma.evento.count({ where: { tipo: "NotaInterna" } })).toBe(1);
-    // Chave nova continua passando pelas validações.
     expect((await registrarNotaAtendimento({ ...entrada, chaveIdempotencia: "chave-nota-tardia-02" })).ok).toBe(false);
   });
 
@@ -161,7 +150,6 @@ describe("reenvio tardio da mesma chave devolve o registro já feito (C3 do #267
     expect(await agendarMensagemNoAtendimento(entrada)).toEqual(primeira);
     expect(await prisma.intencaoMensagem.count()).toBe(1);
     expect(await prisma.evento.count({ where: { tipo: "MensagemAgendada" } })).toBe(1);
-    // Sem a repetição, as validações continuam valendo.
     const nova = await agendarMensagemNoAtendimento({ ...entrada, chaveIdempotencia: "chave-agenda-tardia-02" });
     expect(nova.ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(1);

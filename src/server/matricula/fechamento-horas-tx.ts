@@ -12,8 +12,6 @@ const DecimalCanonico = z.string().regex(/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/);
 const ReferenciaAditivo = z.object({ id: z.string().min(1), versao: z.number().int().positive(), condicoesHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const Memoria = z.object({ matriculaId: z.string(), ocorrenciaId: z.string(), condicoesId: z.string(), regras: RegrasHorasSchema,
   classificacao: z.object({ origem: OcorrenciaHorasSchema }), minutos: z.number().int().positive(), valorApurado: DecimalCanonico, moeda: z.string(),
-  // Ausentes nos fatos anteriores ao aditivo. A referência, quando existe, é
-  // uma identidade preservada do preço já conferido, não uma consulta de preço atual.
   precoHoraAplicado: DecimalCanonico.optional(), aditivo: ReferenciaAditivo.nullable().optional() });
 
 function precoDaVersaoPreservada(v: { condicoes: Prisma.JsonValue; condicoesHash: string }, base: string, moeda: string) {
@@ -35,28 +33,20 @@ function precoDaVersaoPreservada(v: { condicoes: Prisma.JsonValue; condicoesHash
   return hora.valor;
 }
 
-/** Leitura interna. O chamador fornece período/vencimento contratuais e trava agenda/matrícula.
- * Nenhum informe não conferido é promovido a ocorrência cobrável por este leitor.
- */
 export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: Omit<EntradaFechamentoHoras, "encontros" | "moeda"> & { alunoId: string }) {
   const m = await tx.matricula.findFirst({ where: { id: d.matriculaId, alunoId: d.alunoId }, select: { moeda: true, preparacaoComercial: { select: { regime: true } } } });
   if (!m) throw new ErroRegra("Matrícula não encontrada para este aluno.");
   if (m.preparacaoComercial && m.preparacaoComercial.regime !== "HORA_PARTICULAR") throw new ErroRegra("Matrícula não contratada por hora.");
-  // Valida os limites antes de consultar; entradas de período malformadas não viram filtros abertos.
   apurarFechamentoHoras({ matriculaId: d.matriculaId, moeda: m.moeda, periodo: d.periodo, vencimento: d.vencimento, escolha: d.escolha, encontros: [] });
   const encontros = await tx.encontroAgenda.findMany({ where: { finalidade: "AULA", matriculaId: d.matriculaId, turmaId: null, status: { not: "RASCUNHO" },
     inicio: { gte: new Date(d.periodo.inicio), lt: new Date(d.periodo.fimExclusivo) } }, orderBy: [{ inicio: "asc" }, { id: "asc" }],
     include: { conferenciaOcorrenciaHoras: { include: { itemFaturado: { include: { emissao: { select: { cobrancaId: true } } } }, consumoAntecipacao: { select: { id: true, reservaId: true } }, aplicacaoNaoCobravel: { select: { id: true } }, condicoes: { select: { regras: true } }, ocorrencia: true } },
       ocorrenciasParticulares: { orderBy: { versao: "desc" }, take: 1, select: { id: true } },
       reservasHoras: { select: { id: true, consumo: { select: { id: true } }, decisoesLiberacao: { where: { aprovada: true }, select: { id: true, proposta: { select: { destino: true } } } } } } } });
-  // Q173 (R3 do #284, B4): moeda vigente na data de cada aula. Uma troca aplicada só vale a partir da vigência; a
-  // conferência anterior a ela, já destinada (faturada, não cobrável ou antecipação), continua na moeda em que nasceu.
   const trocas = (await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId: d.matriculaId } } },
     select: { moedaAnterior: true, decisao: { select: { proposta: { select: { versaoCondicoes: { select: { vigenciaInicio: true } } } } } } } }))
     .map(t => ({ moedaAnterior: t.moedaAnterior, vigencia: t.decisao.proposta.versaoCondicoes.vigenciaInicio.getTime() })).sort((a, b) => a.vigencia - b.vigencia);
   const moedaNaData = (instante: Date) => trocas.find(t => t.vigencia > instante.getTime())?.moedaAnterior ?? m.moeda;
-  // R4 do #284 (B5): a conferência já destinada só é preservada, sem gerar item. Aceita a moeda da data ou qualquer moeda
-  // anterior de troca aplicada (dado legado de aula na janela entre a vigência e a aplicação, faturada na moeda anterior).
   const moedasAceitas = (instante: Date) => new Set([moedaNaData(instante), ...trocas.map(t => t.moedaAnterior)]);
   const itens: EntradaFechamentoHoras["encontros"] = [];
   const origens: { encontroId: string; inicio: string; fim: string; status: string; conferenciaId: string | null; informeId: string | null }[] = [];
@@ -80,8 +70,6 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     const consumoAntecipacao = c.consumoAntecipacao;
     const conferenciaConsomeAntecipacao = !!consumoAntecipacao && !!reserva && reserva.id === consumoAntecipacao.reservaId && reserva.consumo?.id === consumoAntecipacao.id
       && ["FALTA_COBRAVEL", "CANCELAMENTO_TARDIO"].includes(c.desfecho);
-    // Conferência sem destino precisa estar na moeda atual: a da moeda anterior é barrada antes da troca (HORAS_A_FATURAR)
-    // e, na janela entre a vigência e a aplicação, pela guarda da conferência.
     const destinada = !!c.itemFaturado || !!c.aplicacaoNaoCobravel || conferenciaConsomeAntecipacao;
     if ((e.reservasHoras.length && !conferenciaConsomeAntecipacao) || c.ocorrenciaId !== e.ocorrenciasParticulares[0]?.id || s.ocorrenciaId !== c.ocorrenciaId || s.condicoesId !== c.condicoesId
       || s.matriculaId !== d.matriculaId || s.moeda !== c.moeda || (destinada ? !moedasAceitas(e.inicio).has(c.moeda) : c.moeda !== m.moeda) || s.minutos !== c.minutos
@@ -90,8 +78,6 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
       || c.ocorrencia.fim.getTime() !== e.fim.getTime() || !!consumoAntecipacao !== conferenciaConsomeAntecipacao) throw new ErroRegra("Origem da conferência financeira diverge do encontro.");
     let valorHoraContratado = s.regras.valorHora;
     if (s.aditivo) {
-      // Não resolve a versão vigente hoje: uma conferência já registrada deve
-      // continuar ligada à versão, hash e vigência que ela preservou.
       if (!s.precoHoraAplicado) throw new ErroRegra("Memória da conferência não preserva o preço do aditivo.");
       const v = await tx.versaoCondicoesAditivo.findUnique({ where: { id: s.aditivo.id }, select: {
         matriculaId: true, versao: true, condicoesHash: true, condicoes: true, vigenciaInicio: true,
@@ -102,18 +88,14 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
       if (!new Prisma.Decimal(s.precoHoraAplicado).equals(precoPreservado)) throw new ErroRegra("Preço preservado diverge da versão de aditivo.");
       valorHoraContratado = s.precoHoraAplicado;
     } else if (s.precoHoraAplicado && !new Prisma.Decimal(s.precoHoraAplicado).equals(s.regras.valorHora)) {
-      // A nova memória sem versão ainda pode explicitar o preço-base, mas não
-      // pode introduzir um preço alternativo sem uma referência formalizada.
       throw new ErroRegra("Preço preservado sem referência de aditivo diverge das condições-base.");
     }
     itens.push({ ...base, contratoVersaoId: c.condicoesId, valorHoraContratado, ocorrencia: o,
       destinacao: c.itemFaturado ? { tipo: "FATURADA", cobrancaId: c.itemFaturado.emissao.cobrancaId, itemId: c.itemFaturado.id }
-        // Q175: aula declarada não cobrável antes de ser fechada nunca entra em cobrança; a conferência permanece como histórico.
         : c.aplicacaoNaoCobravel ? { tipo: "NAO_COBRAVEL_CORRECAO", aplicacaoId: c.aplicacaoNaoCobravel.id }
         : consumoAntecipacao ? { tipo: "ANTECIPACAO_CONFERIDA", registroId: consumoAntecipacao.id } : { tipo: "SEM_DESTINACAO" } });
   }
   const apuracao = apurarFechamentoHoras({ matriculaId: d.matriculaId, moeda: m.moeda, periodo: d.periodo, vencimento: d.vencimento, escolha: d.escolha, encontros: itens });
-  // Confronta a recomposição com os valores efetivamente conferidos, sem reprecificar pelo catálogo.
   for (const e of encontros) {
     const c = e.conferenciaOcorrenciaHoras;
     if (!c || c.itemFaturado || c.consumoAntecipacao || c.aplicacaoNaoCobravel) continue;

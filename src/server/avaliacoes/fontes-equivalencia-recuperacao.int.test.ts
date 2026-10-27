@@ -153,7 +153,7 @@ async function oficializarRecuperacao(notaId: string) {
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
@@ -280,8 +280,6 @@ it("mantém fontes oficializadas de outra matrícula fora do contexto", async ()
     turmaId,
     criadoEm: inicio,
   } });
-  // A segunda matrícula também precisa estar insuficiente para que sua
-  // recuperação seja uma origem persistida real, e não uma fixture direta.
   await lancarRegular(outraAlocacao.id, "outra-matricula", "5");
 
   const contextoPrincipal = { matriculaId, alocacaoId };

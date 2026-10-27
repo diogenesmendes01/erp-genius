@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// D9 com a chave COBRANCA_B2B_ATIVA desligada (padrão, sem mock aqui) — R1 do #251, B1: uma fatura FECHADA que já
-// existia congela as cobranças dela (pausar aluno, ajustar e dar baixa mandam cancelar a fatura antes). Cancelar
-// continua disponível e só desfaz o agrupamento; depois disso o aluno pode ser pausado. Fechar e pagar recusam.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -37,7 +33,6 @@ async function faturaFechadaAntiga() {
   const mat = await prisma.matricula.create({ data: { alunoId: aluno.id, empresaId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
   const vencimento = new Date(Date.now() + 40 * 86_400_000);
   const competencia = vencimento.toISOString().slice(0, 7);
-  // Fatura fechada antes da D9: criada direto no banco, como o histórico que a escola já tem.
   const fatura = await prisma.faturaB2B.create({ data: { codigo: "FAT-ANTIGA", empresaId, competencia, moeda: "CRC", valorTotal: 500, status: "FECHADA", vencimento } });
   const cobranca = await prisma.cobranca.create({ data: {
     matriculaId: mat.id, tipo: "MENSALIDADE", competencia, valorOriginal: 500, valorNegociado: 500, saldo: 500, moeda: "CRC",

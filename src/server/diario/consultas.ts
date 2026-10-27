@@ -18,7 +18,6 @@ export async function listarTurmasParaDiario(usuario: UsuarioSessao) {
   return turmas.map((t) => ({ id: t.id, label: [t.codigo, t.nome].filter(Boolean).join(" · ") }));
 }
 
-/** Histórico do diário, 50 por vez (cursor `antesDe`). `busca` filtra no servidor, em AND com o escopo (E4). */
 export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string, busca = "") {
   if (!usuario?.id || (!ehGestaoDiario(usuario) && !usuario.papeis.includes(Papel.PROFESSOR))) return { aulas: [], proximo: null };
   const preferencia = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, fusoExibicao: true } });
@@ -28,7 +27,6 @@ export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string
   const where = Object.keys(filtroBusca).length ? { AND: [escopo, filtroBusca] } : escopo;
   let cursor: { id: string } | undefined;
   if (antesDe) {
-    // O cursor também precisa atender à busca: um link antigo com outra busca não abre página alheia.
     const autorizado = await prisma.aulaDiario.findFirst({ where: Object.keys(filtroBusca).length ? { AND: [where, { id: antesDe }] } : { ...escopo, id: antesDe }, select: { id: true } });
     if (!autorizado) return { aulas: [], proximo: null };
     cursor = autorizado;
@@ -41,12 +39,9 @@ export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string
         publicacaoGravacao: { select: { id: true } }, excecoesGravacao: { where: { decisao: { aprovada: true } }, take: 1, select: { id: true } } } },
       professor: { select: { nome: true } },
       turma: { select: { codigo: true, professorId: true, status: true, vinculosDocentes: true, alocacoes: { where: { OR: [
-        // O bloco legado é intencionalmente idêntico ao anterior.
         { provenienciaVinculo: null, ativa: true, OR: [{ matriculaId: null, aluno: { status: "ATIVO" } }, { matricula: { status: { in: ["ATIVA", "PAUSADA"] } } }] },
-        // Histórico migrado depende da matrícula âncora e será limitado pela vigência abaixo.
         { provenienciaVinculo: "MIGRACAO", matriculaId: { not: null } },
       ] }, select: { alunoId: true, matriculaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } } } },
-      // O histórico usa exclusivamente nome capturado na aula, nunca a ficha atual do aluno.
       registros: { select: { alunoId: true, nomeAluno: true, presente: true, observacao: true, participacao: true }, orderBy: { nomeAluno: "asc" } },
     },
   });

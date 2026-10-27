@@ -9,7 +9,6 @@ let root:Root,host:Elemento,Compositor:typeof import("./Compositor").Compositor,
 const storage=new Map<string,string>(),enviar=vi.fn(),publicar=(p:PortaRascunhoInsight|null)=>{porta=p;};
 const props=(p:Partial<PropsCompositor>={}):PropsCompositor=>({atendimentoId:"A",modo:"responder",podeEnviar:true,capacidades:[],aoEnviarTexto:enviar,aoEnviarMidia:enviar,aoNota:enviar,aoPortaRascunhoInsight:publicar,...p});
 const evento=(e:Elemento)=>(e as unknown as Record<string,Record<string,(e?:unknown)=>void>>)[Object.keys(e).find(k=>k.startsWith("__reactProps"))!];
-// O React instala value no textarea do DOM mínimo durante o commit.
 const campo=()=>host.querySelector("textarea")! as Elemento & {value:string};
 async function montar(p:Partial<PropsCompositor>={}){await act(async()=>root.render(createElement(Compositor,props(p))));}
 async function digitar(texto:string){await act(async()=>evento(campo()).onChange({target:{value:texto,selectionStart:texto.length}}));}

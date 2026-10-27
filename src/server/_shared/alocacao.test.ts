@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { alocarPagamento } from "./regras";
 
-// Lastro financeiro da ativação: a alocação NÃO pode presumir quitação. Cobrança
-// só é "quitada" quando o valor a cobre integralmente. (helper genérico)
 describe("alocarPagamento", () => {
   const taxa = { id: "taxa", valorNegociado: 100 };
   const mensalidade = { id: "mens", valorNegociado: 300 };
@@ -50,9 +48,6 @@ describe("alocarPagamento", () => {
   });
 });
 
-// Regra de ativação do PO: ATIVAR EXIGE A TAXA QUITADA — e SÓ a taxa. A 1ª
-// mensalidade NÃO entra na alocação da ativação (não é exigida para ativar).
-// Espelha a decisão tomada em ativarMatricula: aloca o recebido apenas à taxa.
 describe("ativação: decisão depende SÓ da taxa", () => {
   const taxa = { id: "taxa", valorNegociado: 100 };
   const decideAtiva = (valorRecebido: number) =>
@@ -60,7 +55,7 @@ describe("ativação: decisão depende SÓ da taxa", () => {
 
   it("pagamento cobre a taxa → pode ATIVAR (taxa quitada)", () => {
     expect(decideAtiva(100)).toBe(true);
-    expect(decideAtiva(150)).toBe(true); // sobra vira troco, não baixa mensalidade
+    expect(decideAtiva(150)).toBe(true);
   });
 
   it("pagamento NÃO cobre a taxa → NÃO ativa (fica AGUARDANDO)", () => {
@@ -69,7 +64,6 @@ describe("ativação: decisão depende SÓ da taxa", () => {
   });
 
   it("a 1ª mensalidade nunca participa da decisão de ativar", () => {
-    // mesmo valor enorme alocado só à taxa: a mensalidade fica de fora.
     const r = alocarPagamento(99999, [taxa]);
     expect(r.alocacoes).toHaveLength(1);
     expect(r.alocacoes[0].id).toBe("taxa");

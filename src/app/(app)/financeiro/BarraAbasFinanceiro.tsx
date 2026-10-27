@@ -6,10 +6,6 @@ import { usePathname } from "next/navigation";
 import { mostrarAbaAtiva } from "@/components/SubTabs";
 import { ROTULO_ABA, hrefAba, type AbaFinanceiro } from "./abas";
 
-/**
- * Barra de abas do /financeiro (E8): cada aba é uma rota; a ativa vem do caminho. As contagens das
- * filas pendentes aparecem no rótulo (A conferir, Retomadas sempre; Aprovações quando houver).
- */
 export function BarraAbasFinanceiro({ abas, contagem }: { abas: AbaFinanceiro[]; contagem: Partial<Record<AbaFinanceiro, number>> }) {
   const pathname = usePathname() ?? "";
   const rotulo = (a: AbaFinanceiro) =>
@@ -18,8 +14,6 @@ export function BarraAbasFinanceiro({ abas, contagem }: { abas: AbaFinanceiro[];
     : ROTULO_ABA[a];
   const nav = useRef<HTMLElement>(null);
   useEffect(() => { mostrarAbaAtiva(nav.current); }, [pathname]);
-  // Abaixo de sm, faixa só rolável na horizontal, como a SubTabs (C45); antes as 9 abas quebravam em 3 linhas
-  // a 375 px (C6, #263).
   return (
     <nav ref={nav} aria-label="Seções do financeiro" className="mb-5 flex gap-1 max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:p-1 sm:flex-wrap">
       {abas.map((a) => {

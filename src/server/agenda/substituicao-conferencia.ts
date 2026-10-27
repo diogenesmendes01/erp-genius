@@ -2,7 +2,6 @@ import { isDeepStrictEqual } from "node:util";
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-/** A futura aplicação deve repetir esta leitura sob os bloqueios de escrita da agenda. */
 export async function conferirSubstituicaoTx(tx: Prisma.TransactionClient, propostaId: string) {
   const p = await tx.propostaSubstituicaoDocente.findUnique({ where: { id: propostaId }, include: {
     decisao: true, substituto: { select: { ativo: true, papeis: true } }, itens: { include: { encontro: true }, orderBy: { encontroId: "asc" } },

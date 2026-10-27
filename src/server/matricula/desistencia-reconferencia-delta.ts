@@ -58,7 +58,6 @@ async function decisoesDaAplicacaoVigentes(tx: Prisma.TransactionClient, aplicac
     && administrativa.decisor.ativo && administrativa.decisor.papeis.includes(Papel.ADMINISTRADOR));
 }
 
-/** Prepara somente a diferença contra a última aplicação da cadeia Q165. */
 export async function prepararReconferenciaDeltaDesistencia(input: z.input<typeof prepararSchema>): Promise<Resultado<{ id: string; estado: EstadoReconferenciaDeltaDesistencia }>> {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
@@ -78,12 +77,6 @@ export async function prepararReconferenciaDeltaDesistencia(input: z.input<typeo
       const anterior = await tx.aplicacaoReconferenciaDeltaDesistencia.findFirst({ where: { aplicacaoBaseId: base.id }, orderBy: ordemDelta });
       const fontes = await carregarFontesReconferenciaDeltaTx(tx, pedido.matriculaId, base.memoria);
       const fotografiaHash = hashSubstituicao(fontes.fotografia);
-      // Cada aplicação criada a partir de Q165.255 deixa uma leitura posterior
-      // imutável. Ela é a única âncora segura para saber se houve fato novo.
-      // Aplicações antigas não a possuem: uma nova proposta pode reancorar a
-      // cadeia quando houver fonte nova ou quando a alçada anterior perdeu
-      // validade. Ela nunca reescreve a aplicação histórica a partir do saldo
-      // presente.
       const fotografiaBaseAnterior = anterior?.fotografiaPosteriorHash ?? anterior?.fotografiaHash;
       const revisaoAutorizacao = Boolean(anterior && fotografiaHash === fotografiaBaseAnterior
         && !(await decisoesDaAplicacaoVigentes(tx, anterior.id)));

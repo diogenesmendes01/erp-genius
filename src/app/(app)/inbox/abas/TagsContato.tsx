@@ -17,7 +17,6 @@ export function tagsParaEscolher(disponiveis: Opcao[], atuais: TagPainel[], busc
   const ids = new Set(atuais.map(t => t.id)), termo = normalizar(busca);
   return disponiveis.filter(t => !ids.has(t.id) && normalizar(t.nome).includes(termo)).slice(0, 8);
 }
-/** A limitação visual a oito nunca decide se o nome já existe no catálogo. */
 export function podeCriarTagComBusca(disponiveis: Opcao[], busca: string): boolean {
   const termo = normalizar(busca);
   return !!termo && !disponiveis.some(t => normalizar(t.nome) === termo);

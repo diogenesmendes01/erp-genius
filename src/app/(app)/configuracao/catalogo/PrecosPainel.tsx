@@ -45,12 +45,8 @@ export function PrecosPainel({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  // Tudo aqui é seguro de repetir: criarPreco recebe chave de idempotência (#166), e o reenvio depois de um
-  // resultado incerto devolve o preço já criado, sem aposentá-lo com uma cópia; definirPrecoAtivo recebe o
-  // estado-alvo (B4, #175 C2; C2 da revisão do #242), então repeti-lo não desfaz nada.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  // Onde mostrar o resultado: no formulário de novo preço ou na linha do preço alternado.
   const [origem, setOrigem] = useState<string | null>(null);
 
   const [paisId, setPaisId] = useState(paises[0]?.id ?? "");
@@ -63,8 +59,6 @@ export function PrecosPainel({
 
   async function salvar() {
     setOrigem("novo");
-    // Nunca ?? 0 aqui: texto inválido no valor criaria um preço de referência ZERO, que
-    // matrículas passariam a usar como preço negociado — silencioso.
     const valorNumero = parseMoeda(valor);
     if (valorNumero === null) {
       acao.setErro("Informe o valor, com no máximo duas casas decimais.");
@@ -92,9 +86,6 @@ export function PrecosPainel({
     if (d?.tipo === "ok") router.refresh();
   }
 
-  // Desativar o preço ativo deixa a combinação país × produto × tipo sem preço de referência (docs/42 L2340): o
-  // botão só abre a confirmação, que nomeia a combinação e avisa quando não resta outro preço ativo; a action roda
-  // no ConfirmarAcao, que mostra a falha. Reativar continua direto.
   const [desativando, setDesativando] = useState<PrecoRow | null>(null);
   function pedirDesativacao(p: PrecoRow) {
     setOrigem(p.id);

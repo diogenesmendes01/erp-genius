@@ -8,15 +8,10 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
-// "Emitir cobrança aprovada" emite uma cobrança REAL (docs/42 L906): o botão só abre a confirmação, que
-// exige marcar "Confirmo a emissão de {valor} para este período" — o mesmo rigor da tela irmã de decisão.
-// A action roda no ConfirmarAcao (erro e resultado incerto ficam no diálogo); aqui fica o sucesso.
 export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda }: {
   alunoId: string; matriculaId: string; decisaoId: string; valor: string; moeda: string;
 }) {
   const router = useRouter();
-  // Idempotente por natureza (#166): a emissão é uma por decisão; repetir devolve a mesma emissão e a mesma
-  // cobrança, sem gravar nada (emitirFechamentoHorasTx).
   const resultado = useAcaoCliente({ idempotente: true });
   const [confirmando, setConfirmando] = useState(false);
   const total = formatarMoeda(valor, moeda);

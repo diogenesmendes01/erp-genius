@@ -2,23 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { gerarCodigo } from "@/lib/codigo";
 import { registrarEvento } from "@/server/_shared/evento";
 
-// CAPTURA AUTOMÁTICA DE LEAD (doc 27 C1 · doc 29 §fluxo F5, regra 6).
-// O 1º inbound de um número de VENDAS sem vínculo vira um Lead — MAS pelo MESMO caminho
-// que o formulário usa (gerarCodigo "lead" + LeadCriado/LeadAtribuido), nunca um
-// `tx.oportunidade.create` solto no webhook (regra 6: pular o Contador/normalização/auditoria).
-// Sem sessão: autorId = null (sistema). Dono = dono do NumeroWhatsApp de vendas.
-//
-// DEDUPE (gap 17): telefone que JÁ é aluno/responsável/lead não vira lead novo — a régua
-// de "lead novo" metralhando um aluno matriculado é o cenário concreto que isto evita.
-
 export interface ReferralInbound {
-  /** Bloco referral CRU do click-to-WhatsApp (Meta). Baileys normalmente não traz.
-   *  Campos com a semântica REAL da Meta — NÃO são campanha/conjunto/anúncio/palavra. */
-  sourceType?: string | null; // "ad" | "post"
-  sourceId?: string | null; // id do anúncio/post
-  headline?: string | null; // título do anúncio/post
+  sourceType?: string | null;
+  sourceId?: string | null;
+  headline?: string | null;
   sourceUrl?: string | null;
-  ctwaClid?: string | null; // id do clique (click-to-WhatsApp)
+  ctwaClid?: string | null;
 }
 
 export interface PessoaPorTelefone {
@@ -27,11 +16,6 @@ export interface PessoaPorTelefone {
   leadId: string | null;
 }
 
-/**
- * Primeira pessoa do ERP que atende por este telefone (E.164). Prioridade: aluno →
- * responsável → lead. Vazio = telefone desconhecido (candidato a lead novo).
- * `telefoneE164` já vem normalizado (a mesma regra do sistema — doc 29 regra 5).
- */
 export async function resolverPessoaPorTelefone(
   tx: Prisma.TransactionClient,
   telefoneE164: string,
@@ -47,22 +31,13 @@ export async function resolverPessoaPorTelefone(
 export interface LeadDeInbound {
   telefoneE164: string;
   nomeExibicao?: string | null;
-  /** Dono do número de vendas → dono do lead (doc 26 §Camada 3). */
   donoId: string | null;
   paisId?: string | null;
   referral?: ReferralInbound | null;
-  /** Quem pediu a criação ("Criar lead" na linha comercial — SPEC-ERP-005 §5.3). null = sistema. */
   autorId?: string | null;
-  /** Origem registrada no LeadCriado. Padrão: auto-captura do 1º inbound. */
   origem?: "whatsapp_inbound" | "whatsapp_linha";
 }
 
-/**
- * Cria um Lead a partir de um inbound (sem sessão). MESMO miolo de `criarLead`:
- * `gerarCodigo("lead")` + `LeadCriado` + `LeadAtribuido` (quando há dono) + origem via
- * referral. Retorna o id. NÃO faz dedupe nem vincula contato — quem chama (inbound.ts)
- * já resolveu a identidade e cuida do ContatoWhatsApp.
- */
 export async function criarLeadDeInboundWhatsApp(
   tx: Prisma.TransactionClient,
   dados: LeadDeInbound,
@@ -75,9 +50,6 @@ export async function criarLeadDeInboundWhatsApp(
       telefoneE164: dados.telefoneE164,
       paisId: dados.paisId ?? null,
       vendedorDonoId: dados.donoId,
-      // Referral CRU (review PR #53): guarda os campos da Meta com a semântica deles;
-      // NÃO preenche origemCampanha/Conjunto/Anúncio/Palavra (a hierarquia de anúncio exige
-      // a Marketing API — fora da C1; corromper esses campos quebraria relatórios de origem).
       waReferralSourceType: dados.referral?.sourceType ?? null,
       waReferralSourceId: dados.referral?.sourceId ?? null,
       waReferralHeadline: dados.referral?.headline ?? null,
@@ -89,7 +61,7 @@ export async function criarLeadDeInboundWhatsApp(
     tipo: "LeadCriado",
     agregadoTipo: "Lead",
     agregadoId: lead.id,
-    autorId: dados.autorId ?? null, // null = sistema (auto-captura via WhatsApp)
+    autorId: dados.autorId ?? null,
     payload: { codigo, nome: lead.nome, origem: dados.origem ?? "whatsapp_inbound", b2b: false },
   });
   if (dados.donoId) {
@@ -104,23 +76,8 @@ export async function criarLeadDeInboundWhatsApp(
   return lead.id;
 }
 
-// ---------------------------------------------------------------------------
-// C2 — resposta à confirmação da experimental (doc 27 §nota bimotor)
-// ---------------------------------------------------------------------------
-
-// Botões interativos são confiáveis no driver OFICIAL e instáveis no Baileys — por isso o
-// fallback textual ("responda SIM"). O match é EXATO e conservador, como o do opt-out:
-// uma frase que contenha "sim" não confirma (falso positivo marcaria presença errada).
-//
-// O conjunto de CONFIRMAÇÃO é exatamente o PUBLICADO no template ("Responda SIM para
-// confirmar ou REAGENDAR...") — review PR #56 P2. `ok`/`si`/`confirmar`/`confirmado` saíram:
-// são respostas genéricas de conversa ("ok" fecha qualquer assunto) e marcavam presença por
-// engano. Confirmar muda ESTADO do funil; pedir reagendamento só emite um sinal para o
-// vendedor, então esse lado pode aceitar os sinônimos naturais sem risco.
 const KEYWORDS_CONFIRMA = new Set(["sim", "confirmo"]);
-/** Chave da cadência pré-experimental do CRM antigo nos eventos `ReguaComercialEnviada` já gravados. */
 const CHAVE_PRE_EXPERIMENTAL = "PRE_EXPERIMENTAL";
-/** Folga entre o relógio do banco (evento) e o do WhatsApp (mensagem) na correlação. */
 const TOLERANCIA_RELOGIO_MS = 5 * 60_000;
 const KEYWORDS_REAGENDA = new Set(["reagendar", "remarcar", "reagendo", "outro horario", "outro horário"]);
 
@@ -134,18 +91,6 @@ export function classificarRespostaExperimental(corpo: string | null): RespostaE
   return null;
 }
 
-/**
- * Captura a resposta do lead à confirmação da experimental. Só vale enquanto há uma
- * experimental AGENDADA (mesma guarda do check-in). Confirmar grava
- * `experimentalConfirmadaEm` + evento; pedir reagendamento só SINALIZA (evento) — quem
- * remarca é o vendedor, pela ação existente (a máquina de funil é uma só, doc 29 regra 7).
- *
- * CORRELAÇÃO com o pedido (review PR #56 P2): uma confirmação é a RESPOSTA a uma pergunta.
- * Sem um lembrete pré-experimental efetivamente enviado para ESTA ocorrência, um "sim" solto
- * numa conversa qualquer não confirma presença nenhuma. A prova do pedido é o evento
- * `ReguaComercialEnviada { chave: PRE_EXPERIMENTAL, ocorrencia }` — o mesmo que o motor usa
- * para contar o degrau cumprido (em SHADOW nada é enviado, logo não há o que confirmar).
- */
 export async function capturarRespostaExperimental(
   tx: Prisma.TransactionClient,
   ctx: { leadId: string | null; corpo: string | null; quando: Date },
@@ -165,10 +110,6 @@ export async function capturarRespostaExperimental(
       agregadoTipo: "Lead",
       agregadoId: lead.id,
       tipo: "ReguaComercialEnviada",
-      // A resposta vem DEPOIS da pergunta — com folga: `criadoEm` é relógio do Postgres e
-      // `quando` é o timestamp da mensagem no WhatsApp (granularidade de segundo). Sem a
-      // tolerância, quem responde no mesmo instante em que o lembrete é gravado teria a
-      // confirmação descartada em silêncio.
       criadoEm: { lte: new Date(ctx.quando.getTime() + TOLERANCIA_RELOGIO_MS) },
       AND: [
         { payload: { path: ["chave"], equals: CHAVE_PRE_EXPERIMENTAL } },
@@ -176,23 +117,21 @@ export async function capturarRespostaExperimental(
       ],
     },
   });
-  if (pedido === 0) return null; // ninguém perguntou nada sobre ESTA experimental
+  if (pedido === 0) return null;
 
   if (resposta === "confirmada") {
-    if (lead.experimentalConfirmadaEm) return null; // já confirmada — não duplica evento
+    if (lead.experimentalConfirmadaEm) return null;
     await tx.oportunidade.update({ where: { id: lead.id }, data: { experimentalConfirmadaEm: ctx.quando } });
     await registrarEvento(tx, {
       tipo: "ExperimentalConfirmada",
       agregadoTipo: "Lead",
       agregadoId: lead.id,
-      autorId: null, // o próprio lead respondeu
+      autorId: null,
       payload: { via: "whatsapp_keyword" },
     });
     return "confirmada";
   }
 
-  // B8 (doc 32): o pedido de reagendamento fica persistido até a ação humana (remarcar limpa o campo
-  // em `agendarExperimental` e abre uma ocorrência nova).
   await tx.oportunidade.update({ where: { id: lead.id }, data: { aguardandoReagendamentoEm: ctx.quando } });
   await registrarEvento(tx, {
     tipo: "ExperimentalReagendamentoSolicitado",

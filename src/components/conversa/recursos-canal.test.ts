@@ -18,7 +18,6 @@ describe("recursos por driver", () => {
     for (const r of TODOS) expect(recursoDisponivel("MOTOR", r)).toBe(true);
   });
   it("driver ausente do mapa não libera recurso", () => {
-    // Simula um valor novo do enum antes de alguém preenchê-lo no mapa.
     const ausente = "DRIVER_FORA_DO_MAPA" as DriverWhatsApp;
     for (const r of TODOS) expect(recursoDisponivel(ausente, r)).toBe(false);
   });

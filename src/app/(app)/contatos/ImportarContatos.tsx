@@ -13,10 +13,6 @@ type Aplicada = { modo: "aplicar"; novos: number; atualizados: number; foraDaCar
 
 const CONTROLE = "w-full rounded-md border border-border-soft bg-surface-raised px-2 py-1.5 text-sm max-sm:min-h-11";
 
-/**
- * Importação de contatos por XLSX: primeiro a prévia (nada é gravado), depois "Importar". Nenhum consentimento
- * vem da planilha, e nenhuma mensagem é enviada. Só aparece com a capacidade `contatos.importar`.
- */
 export function ImportarContatos({ vendedores }: { vendedores: { id: string; nome: string }[] }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);

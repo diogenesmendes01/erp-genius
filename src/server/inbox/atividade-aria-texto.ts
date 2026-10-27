@@ -1,6 +1,5 @@
 import type {AcaoAgenteIATipo,EtapaLead} from "@prisma/client";
 import {ALTERACAO_ARIA_LABEL,ETAPA_LABEL,rotular} from "@/lib/labels";
-/** Só nomes de apresentação; identificadores do payload nunca viram rótulos. */
 export function textoAlteracaoAria(acao:AcaoAgenteIATipo,payload:unknown):string{
  const p=payload!==null&&typeof payload==="object"&&!Array.isArray(payload)?payload as Record<string,unknown>:{};
  const texto=(chave:string)=>typeof p[chave]==="string"?(p[chave] as string).trim():"";

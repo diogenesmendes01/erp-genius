@@ -1,11 +1,6 @@
 import type { ContatoWhatsApp, DriverWhatsApp, Prisma, TipoMensagem } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-// GRUPOS DO WHATSAPP (E3.5): uma conversa é de contato individual OU de grupo (CHECK
-// "Conversa_contato_xor_grupo"). Grupo é só leitura/escopo: não abre atendimento (trigger
-// impedir_atendimento_em_grupo), não conta não lidas e não cancela automação de ninguém.
-
-/** Contato individual da conversa; conversa de grupo não tem. */
 export function contatoIndividual<T extends { contato: ContatoWhatsApp | null }>(c: T): ContatoWhatsApp {
   if (!c.contato) throw new ErroRegra("Conversa de grupo não tem contato individual.");
   return c.contato;
@@ -25,7 +20,6 @@ export interface MensagemGrupo {
   driver: DriverWhatsApp;
 }
 
-/** Grava a mensagem recebida num grupo, sem atendimento. O dedupe (numeroId, providerMessageId) explode no create. */
 export async function gravarMensagemGrupo(tx: Prisma.TransactionClient, d: MensagemGrupo): Promise<{ mensagemId: string; conversaId: string }> {
   const grupo = await tx.grupoWhatsApp.upsert({
     where: { numeroId_grupoJid: { numeroId: d.numeroId, grupoJid: d.grupoJid } },
@@ -48,7 +42,6 @@ export async function gravarMensagemGrupo(tx: Prisma.TransactionClient, d: Mensa
   return { mensagemId: mensagem.id, conversaId: conversa.id };
 }
 
-/** Estreita um objeto com `conversa.contato` anulável para o mesmo objeto com contato garantido (lança em grupo). */
 export function comContatoIndividual<T extends { conversa: { contato: unknown } }>(a: T): Omit<T, "conversa"> & { conversa: Omit<T["conversa"], "contato"> & { contato: NonNullable<T["conversa"]["contato"]> } } {
   if (!a.conversa.contato) throw new ErroRegra("Conversa de grupo não tem contato individual.");
   return a as never;

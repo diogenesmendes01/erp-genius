@@ -4,7 +4,6 @@ import type { calcularPreviaMensalConferida } from "./encerramento-previa-calcul
 import type { carregarHorasEncerramentoTx } from "./encerramento-horas-tx";
 import { consolidarPreviaEncerramento } from "./encerramento-consolidacao";
 
-/** Plano reproduzível por origem; não cria lançamentos nem comprova aprovação. */
 export function prepararLancamentosEncerramento(mensal: ReturnType<typeof calcularPreviaMensalConferida>, horas: Awaited<ReturnType<typeof carregarHorasEncerramentoTx>>) {
   const consolidacao = consolidarPreviaEncerramento(mensal, horas);
   if (!consolidacao.totais) return { pendencias: consolidacao.pendencias, plano: null };

@@ -120,8 +120,8 @@ describe("desempenho da equipe", () => {
     await ganhar(cat.pais.id, 100, em("2026-11-05"));
     await ganhar(cat.pais.id, 50.5, em("2026-11-06"));
     await ganhar(us.id, 30, em("2026-11-07"));
-    await ganhar(cat.pais.id, 999, em("2026-10-20")); // fora do periodo
-    await ganhar(cat.pais.id, 777, em("2026-11-08"), vend2.id); // outro dono
+    await ganhar(cat.pais.id, 999, em("2026-10-20"));
+    await ganhar(cat.pais.id, 777, em("2026-11-08"), vend2.id);
 
     const numero = await prisma.numeroWhatsApp.create({
       data: { telefoneE164: "+50670000000", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS", providerRef: "n1" },
@@ -140,7 +140,6 @@ describe("desempenho da equipe", () => {
 
     await prisma.metaComercial.create({ data: { competencia: "2026-11", usuarioId: vend1.id, metrica: "MATRICULAS", valor: 4, criadaPorId: vend1.id } });
 
-    // periodo alinhado ao mes civil do fuso da escola (como o periodoDoFiltro produz), p/ casar com a competencia
     const fc: FiltrosRelatorio = { periodo: { inicio: new Date("2026-11-01T06:00:00Z"), fim: new Date("2026-12-01T06:00:00Z") } };
     const l = (await desempenhoEquipe(fc, tudo)).find((x) => x.usuarioId === vend1.id)!;
     expect(l.ganhas).toBe(3);

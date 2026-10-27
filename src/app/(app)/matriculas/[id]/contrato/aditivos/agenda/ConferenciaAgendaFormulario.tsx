@@ -17,10 +17,8 @@ type Professor = { id: string; nome: string };
 type Resultado = { proposta: { encontros: { encontroId: string; professorAnteriorId: string; professorNovoId: string; professorAnteriorNome: string; professorNovoNome: string; inicioAnterior: string; fimAnterior: string; inicioNovo: string; fimNovo: string; fusoAnterior: string; fusoNovo: string; duracaoMinutos: number }[] }; pendencias: string[] };
 
 const exibir = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
-/** Valor inicial dos campos: o horário atual no fuso do encontro (o mesmo do <CampoFuso> ao lado); não lança com fuso inválido. */
 const campoData = (valor: string, fuso: string) => valorCampoLocal(valor, fuso);
 export function ConferenciaAgendaFormulario({ matriculaId, encontros, professores }: { matriculaId: string; encontros: Encontro[]; professores: Professor[] }) {
-  // A consulta só lê (não reserva nem grava): repetir com os mesmos dados é seguro, daí a mensagem de reenvio.
   const [selecionados, setSelecionados] = useState<string[]>([]), [resultado, setResultado] = useState<Resultado | null>(null), acao = useAcaoCliente({ idempotente: true });
   const pendente = acao.ocupado;
   const alternar = (id: string) => { setResultado(null); setSelecionados(atual => alternarEncontro(atual, id)); };
@@ -40,7 +38,6 @@ export function ConferenciaAgendaFormulario({ matriculaId, encontros, professore
 }
 
 export function RegistrarFotografia({ matriculaId, resultado }: { matriculaId: string; resultado: Resultado }) {
-  // Chave estável pela vida do componente: na falha de transporte, repetir consulta a mesma tentativa.
   const acao = useAcaoCliente({ idempotente: true }), [id, setId] = useState<string | null>(null), [chave] = useState(() => crypto.randomUUID());
   const registrar = async () => {
     const d = await acao.executar(() => registrarPropostaAgendaAditivo({ matriculaId, encontros: resultado.proposta.encontros.map(e => ({ encontroId: e.encontroId, professorNovoId: e.professorNovoId, inicioNovo: e.inicioNovo, fimNovo: e.fimNovo, duracaoMinutos: e.duracaoMinutos, fusoOrigem: e.fusoNovo })), chaveIdempotencia: chave }),

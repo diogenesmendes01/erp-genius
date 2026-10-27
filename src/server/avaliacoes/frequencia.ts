@@ -6,8 +6,6 @@ const instante = z.string().datetime();
 const entradaSchema = z.object({
   matriculaId: id, nivelId: id, apuradaEm: instante,
   minimoPercentual: z.string().regex(/^\d+(\.\d+)?$/).max(30),
-  // O carregador deve conferir vínculo, situação histórica e equivalência antes
-  // de incluir uma aula. Esta função não concede acesso nem aprova reposições.
   aulas: z.array(z.object({
     aulaId: id, matriculaId: id, nivelId: id, fim: instante,
     situacao: z.enum(["PREVISTA", "MINISTRADA", "CANCELADA"]),
@@ -20,7 +18,6 @@ const entradaSchema = z.object({
   }).strict()),
 }).strict();
 
-/** Apuração por encontros, sem arredondar o percentual para decidir o mínimo. */
 export function apurarFrequenciaNivel(entrada: z.input<typeof entradaSchema>) {
   const d = entradaSchema.parse(entrada);
   const minimo = new Prisma.Decimal(d.minimoPercentual);

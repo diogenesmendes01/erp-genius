@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { EtapaLead, Papel, FormaPagamento, StatusMatricula, TipoCobranca } from "@prisma/client";
 
-// C4 (doc 27 §fechamento): contrato e link de pagamento são estados auditáveis e
-// alimentam réguas comerciais. Eles não substituem a preparação contratual segura.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -38,9 +35,6 @@ async function seedMatriculaAguardando() {
   const lead = await prisma.oportunidade.create({
     data: { nome: "Lead Fechamento", vendedorDonoId: vendedor.id, etapa: EtapaLead.AGUARDANDO_MATRICULA },
   });
-  // Fixture de estado legado explícita: este arquivo verifica que o fechamento
-  // não transforma taxa/contrato em aprovação de preparação. Não chama a ação
-  // pública, cuja entrada exige o fluxo comercial atual.
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Paula", paisId: catalogo.pais.id } });
   const matricula = await prisma.matricula.create({
     data: { alunoId: aluno.id, leadId: lead.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: StatusMatricula.AGUARDANDO, mesesPlano: 3, diaVencimento: 5 },
@@ -93,14 +87,11 @@ describe("fechamento comercial sem bypass da preparação", () => {
     await ligarMatriculaAutomatica();
     const { lead, matriculaId, taxa } = await seedMatriculaAguardando();
 
-    // O pagamento confirmado é preparado fora deste recorte. Fechamento não pode
-    // reinterpretá-lo como autorização de ativação.
     await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, autorId: admin.id, chaveIdempotencia: `teste:${taxa.id}`, valorRecebido: TAXA, forma: FormaPagamento.PIX, dataPagamento: new Date(), evidencia: "Comprovante conferido no teste" }));
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe(
       StatusMatricula.AGUARDANDO,
     );
 
-    // O atalho de assinatura também é recusado: não substitui preparação/aceite.
     const r = await marcarContratoAssinado(matriculaId);
     expect(r.ok).toBe(false);
 
@@ -174,7 +165,7 @@ describe("fechamento comercial sem bypass da preparação", () => {
 describe("titularidade do fechamento (review PR #60)", () => {
   it("VENDEDOR de outra carteira não opera contrato/link; o dono opera", async () => {
     const outro = await criarUsuario([Papel.VENDEDOR], "Outro Vendedor");
-    const { matriculaId, taxa } = await seedMatriculaAguardando(); // lead do `vendedor`
+    const { matriculaId, taxa } = await seedMatriculaAguardando();
 
     authMock.mockResolvedValue({ user: { id: outro.id } });
     expect((await registrarContratoEnviado(matriculaId)).ok).toBe(false);
@@ -184,7 +175,6 @@ describe("titularidade do fechamento (review PR #60)", () => {
     expect(intocada.contratoOk).toBe(false);
     expect(intocada.contratoEnviadoEm).toBeNull();
 
-    // Mesmo o dono não pode burlar a conferência documental.
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
     expect((await registrarContratoEnviado(matriculaId)).ok).toBe(false);
     expect((await registrarLinkPagamento(taxa.id, "https://x.exemplo/2")).ok).toBe(true);
@@ -194,18 +184,15 @@ describe("titularidade do fechamento (review PR #60)", () => {
 describe("backfill da matrícula automática", () => {
   it("flag ligada informa bloqueio explícito e não ativa fora do fluxo seguro", async () => {
     const { matriculaId, taxa } = await seedMatriculaAguardando();
-    // Tudo acontece com a automação desligada — matrícula fica presa em AGUARDANDO.
     await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, autorId: admin.id, chaveIdempotencia: `teste:${taxa.id}`, valorRecebido: TAXA, forma: FormaPagamento.PIX, dataPagamento: new Date(), evidencia: "Comprovante conferido no teste" }));
     await marcarContratoAssinado(matriculaId);
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe(
       StatusMatricula.AGUARDANDO,
     );
 
-    // Desligada: o scanner nem roda.
     const r0 = await rodarFechamentosPendentes();
     expect(r0.executou).toBe(false);
 
-    // Ligar a flag não autoriza o cron a pular a preparação.
     await ligarMatriculaAutomatica();
     const r1 = await rodarFechamentosPendentes();
     expect(r1).toMatchObject({ executou: false, motivoParada: "matricula_automatica_aguarda_fluxo_seguro", avaliadas: 0, ativadas: 0 });
@@ -221,7 +208,6 @@ describe("review PR #60 rodada 2 — fechamento", () => {
   it("ativações automáticas concorrentes não contornam o fluxo seguro", async () => {
     await ligarMatriculaAutomatica();
     const { matriculaId, taxa } = await seedMatriculaAguardando();
-    // Estado completo SEM disparar os gatilhos (simula dois ticks/webhooks na iminência).
     await prisma.matricula.update({ where: { id: matriculaId }, data: { contratoOk: true } });
     await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, autorId: admin.id, chaveIdempotencia: `teste:${taxa.id}`, valorRecebido: TAXA, forma: FormaPagamento.PIX, dataPagamento: new Date(), evidencia: "Comprovante conferido no teste" }));
 
@@ -234,7 +220,7 @@ describe("review PR #60 rodada 2 — fechamento", () => {
     const mensalidades = await prisma.cobranca.count({
       where: { matriculaId, tipo: TipoCobranca.MENSALIDADE },
     });
-    expect(mensalidades).toBe(1); // sem cronograma fora da ativação segura
+    expect(mensalidades).toBe(1);
     const ativacoes = (await eventosDo("Matricula", matriculaId)).filter((e) => e.tipo === "MatriculaAtivada");
     expect(ativacoes).toHaveLength(0);
   });

@@ -1,12 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (4º lote): salvar, publicar e descartar o rascunho da Aria são idempotentes por natureza. O reenvio depois de
-// um resultado incerto chega com o token antigo do rascunho; em vez de "o rascunho mudou", o servidor reconhece o
-// estado-alvo já alcançado e devolve o mesmo resultado sem gravar nem registrar outro Evento.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -43,7 +37,6 @@ describe("rascunho da Aria repetido (#166)", () => {
     expect(await salvarRascunho(entrada)).toEqual(a);
     expect(await prisma.versaoAgenteIA.count()).toBe(1);
     expect(await contar("AgenteIARascunhoSalvo")).toBe(1);
-    // Outra configuração com o token antigo continua recusada.
     const outra = await salvarRascunho({ ...entrada, config: comNome("Bia") });
     expect(outra.ok).toBe(false);
   });

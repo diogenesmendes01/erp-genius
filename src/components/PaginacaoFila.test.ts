@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { PaginacaoFila, type CursorDoLink } from "./PaginacaoFila";
 import { hrefLista } from "@/lib/pagina-url";
 
-// Navegação das filas por cursor nos dois sentidos (E4, decisão de 10/10/2026).
 const render = (anterior: string | null, proxima: string | null) =>
   renderToStaticMarkup(createElement(PaginacaoFila, { anterior, proxima, href: (c: CursorDoLink) => hrefLista("/x", { modo: "a", ...c }), rotulo: "Navegação da fila de x" }));
 

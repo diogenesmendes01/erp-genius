@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { IconSparkles } from "@tabler/icons-react";
 
-/** Campo só de leitura; permissões e ausência do telefone são decididas pelo chamador. */
 export function LinhaCampo({ icone, valor, rotulo, ia = false }: { icone: ReactNode; valor: ReactNode; rotulo: string; ia?: boolean }) {
   return <div className="flex min-h-[52px] items-center gap-4 py-[9px]">
     <span aria-hidden="true" className="w-5 shrink-0 text-gray-600">{icone}</span>

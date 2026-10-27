@@ -3,10 +3,6 @@ import type { ModoDegrau } from "@prisma/client";
 import type { ReguaCalculada } from "@/server/cobrancas/consultas";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 
-// Alcance da régua (docs/42 L2517; fatia B, issue #169): a regra de quem recebe é a do cron — decidirEnvioCron —,
-// e contarAlcanceRegua conta com ela, só lendo. Prisma, o cérebro da régua e o destino financeiro são mocks: o
-// teste fixa a REGRA (degrau devido → bloqueio nunca automático → só AUTOMATICO → precisa de destino) e a contagem.
-
 const m = vi.hoisted(() => ({ findMany: vi.fn(), regua: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { cobranca: { findMany: m.findMany } } }));
 vi.mock("@/server/cobrancas/consultas", () => ({ montarReguaPorCobranca: m.regua }));
@@ -59,7 +55,7 @@ describe("contarAlcanceRegua — a consulta de alcance (só leitura)", () => {
     vi.clearAllMocks();
     const lista = [
       cobranca("auto-ana-1", destino("+5511900000001")),
-      cobranca("auto-ana-2", destino("+5511900000001")), // mesma pessoa, outra cobrança
+      cobranca("auto-ana-2", destino("+5511900000001")),
       cobranca("auto-bia", destino("+5511900000002")),
       cobranca("auto-sem-destino", null),
       cobranca("lote-com-destino", destino("+5511900000003")),

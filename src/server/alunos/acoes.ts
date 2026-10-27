@@ -45,10 +45,6 @@ function revalidar(id: string) {
   revalidatePath("/financeiro", "layout");
 }
 
-/**
- * Edita os dados cadastrais do aluno. Toda edição EXIGE motivo e registra autor + antes→depois
- * no Evento `AlunoEditado` (auditoria). Telefone normalizado pelo DDI do país escolhido.
- */
 export async function editarAluno(id: string, input: EditarAlunoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -68,8 +64,6 @@ export async function editarAluno(id: string, input: EditarAlunoInput): Promise<
           });
     if (!paisDestino) throw new ErroRegra("País não encontrado.");
 
-    // Documento (doc 04: avisa, não bloqueia). Valida pelo TIPO escolhido quando houver;
-    // senão tenta os validadores do país (compatível com registros legados sem tipo).
     const documento = dados.documento?.trim() || null;
     const tipoDoc = dados.tipoDocumentoId
       ? paisDestino.tiposDocumento.find((t) => t.id === dados.tipoDocumentoId)
@@ -113,7 +107,6 @@ export async function editarAluno(id: string, input: EditarAlunoInput): Promise<
       observacoes: dados.observacoes || null,
     };
 
-    // antes→depois só dos campos que mudaram (auditoria enxuta, JSON serializável).
     const fmt = (o: typeof novo | typeof aluno): Record<string, string | null> => ({
       primeiroNome: o.primeiroNome,
       sobrenome: o.sobrenome,
@@ -159,16 +152,12 @@ export async function editarAluno(id: string, input: EditarAlunoInput): Promise<
   });
 }
 
-/** Preserva taxa, recebimentos e dívidas vencidas; somente a pausa identifica o que pode ser restaurado. */
 async function cancelarMensalidadesFuturas(tx: Prisma.TransactionClient, alunoId: string, agora: Date, pausaId?: string) {
   const matriculas = await tx.matricula.findMany({ where: { alunoId, status: "ATIVA" }, select: { id: true } });
   const ids = matriculas.map((m) => m.id);
   if (ids.length === 0) return;
-  // Ref. #247: "futura" é a mensalidade ainda não atrasada no dia civil da escola (o dia do vencimento inteiro).
   const naoAtrasada = limiteDoAtraso(agora, await fusoDaEscola(tx));
   const alvo = { matriculaId: { in: ids }, tipo: "MENSALIDADE" as const, status: StatusCobranca.PENDENTE, vencimento: { gte: naoAtrasada } };
-  // Item de fatura B2B FECHADA é congelado (review PR #60 rodada 2): cancelar por aqui
-  // deixaria a fatura impagável/divergente. O caminho é cancelar a fatura primeiro.
   const faturada = await tx.cobranca.findFirst({
     where: { ...alvo, faturaB2B: { status: StatusFaturaB2B.FECHADA } },
     include: { faturaB2B: { select: { codigo: true } } },

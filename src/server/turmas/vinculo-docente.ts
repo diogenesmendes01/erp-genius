@@ -1,7 +1,6 @@
 import { Papel, type Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared/sessao";
 
-/** Executar na mesma transação que altera a turma; início é o instante conhecido da atribuição. */
 export async function sincronizarVinculoDocente(tx: Prisma.TransactionClient, turmaId: string, professorId: string | null, agora = new Date()) {
   if (professorId) {
     const professor = await tx.usuario.findFirst({ where: { id: professorId, ativo: true, papeis: { has: Papel.PROFESSOR } }, select: { id: true } });

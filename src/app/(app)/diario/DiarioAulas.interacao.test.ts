@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L1835): trocar a data/hora depois de preencher a chamada não apaga presenças nem
-// observações. A lista nova é mesclada com a preenchida; se alguém com dados preenchidos sair da lista, a troca
-// espera a confirmação (dizendo quem) antes de descartar. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, listar: vi.fn(), salvar: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -16,7 +13,6 @@ vi.mock("react", async (original) => {
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/diario/acoes", () => ({ salvarAulaDiario: m.salvar }));
-// Lote 3 do fuso pessoal: a tela manda o texto digitado e o fuso; quem converte é o servidor (diario-local.ts).
 vi.mock("@/server/diario/diario-local", () => ({ listarAlunosParaChamadaLocal: m.listar, salvarAulaDiarioLocal: m.salvar }));
 
 import type { ReactNode } from "react";
@@ -31,7 +27,7 @@ const tela = () => m.ganchos!.renderizar(DiarioAulas, { aulas: [], turmas: [{ id
 const tick = () => new Promise((r) => setTimeout(r, 0));
 type Mudanca = (e: { target: { value: string } }) => void;
 const selects = (t: ReactNode) => elementos(t).filter((n) => n.type === "select");
-const observacoes = (t: ReactNode) => elementos(t).filter((n) => n.type === CampoTexto).slice(1); // o 1º é o conteúdo da aula
+const observacoes = (t: ReactNode) => elementos(t).filter((n) => n.type === CampoTexto).slice(1);
 const data = (t: ReactNode) => elementos(t).find((n) => n.type === CampoDataHoraLocal)!;
 const alunos = (...nomes: string[]) => ({ ok: true, dado: { exigeConferencia: false, alunos: nomes.map((n) => ({ alunoId: n.toLowerCase(), nomeAluno: n })) } });
 const chamada = (t: ReactNode) => selects(t).slice(1).map((s, i) => `${s.props.value}|${observacoes(t)[i]?.props.value ?? ""}`);
@@ -41,8 +37,8 @@ async function prepararChamada() {
   m.listar.mockResolvedValueOnce(alunos("Ana", "Bia"));
   (selects(tela())[0].props.onChange as Mudanca)({ target: { value: "t1" } });
   await tick();
-  (selects(tela())[1].props.onChange as Mudanca)({ target: { value: "sim" } }); // Ana presente
-  (observacoes(tela())[1].props.onChange as Mudanca)({ target: { value: "Participou bem." } }); // Bia
+  (selects(tela())[1].props.onChange as Mudanca)({ target: { value: "sim" } });
+  (observacoes(tela())[1].props.onChange as Mudanca)({ target: { value: "Participou bem." } });
   expect(chamada(tela())).toEqual(["sim|", "|Participou bem."]);
 }
 
@@ -63,7 +59,7 @@ describe("DiarioAulas — trocar a data não apaga a chamada", () => {
     await tick();
     const aviso = elementos(tela()).find((n) => n.props.role === "alert" && texto(n.props.children).includes("Na nova data"))!;
     expect(texto(aviso.props.children)).toContain("Bia não está na chamada");
-    expect(chamada(tela())).toEqual(["sim|", "|Participou bem."]); // nada aplicado ainda
+    expect(chamada(tela())).toEqual(["sim|", "|Participou bem."]);
     clicar(tela(), "Manter a data anterior");
     expect(data(tela()).props.value).toBe(anterior);
     expect(chamada(tela())).toEqual(["sim|", "|Participou bem."]);
@@ -80,8 +76,6 @@ describe("DiarioAulas — trocar a data não apaga a chamada", () => {
     expect(data(tela()).props.value).toBe("2026-10-01T10:00");
   });
 
-  // R1 da #155, C2: se a chamada da nova data não carrega, a lista na tela é a da data anterior — a tela volta à
-  // data anterior (lista e data coerentes ao salvar) e mantém o que foi digitado.
   it("falha ao carregar a chamada da nova data: volta à data anterior e mantém a chamada", async () => {
     for (const falha of [() => m.listar.mockResolvedValueOnce({ ok: false, erro: "Turma sem agenda na data." }), () => m.listar.mockRejectedValueOnce(new TypeError("Failed to fetch"))]) {
       m.ganchos = criarGanchos();

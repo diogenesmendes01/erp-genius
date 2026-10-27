@@ -97,7 +97,7 @@ async function iniciarSessaoPortal() {
 beforeEach(async () => {
   mocks.portalCookie = ""; mocks.authMock.mockReset();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR], "Professor A e B")).id;
   gestorId = (await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gestão da transferência")).id;
@@ -110,8 +110,6 @@ beforeEach(async () => {
   const versaoRegra = await prisma.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: regra.id } });
   await prisma.$transaction(tx => decidirRegraAvaliacaoTx(tx, administradorId, { regraId: regra.id, conteudoHash: versaoRegra.conteudoHash, aprovada: true, motivo: "Direção publica a regra da trajetória A para B." }));
   const criarTurma = async (nome: string, status: "ABERTA" | "EM_ANDAMENTO") => {
-    // A trigger vincula a regra vigente quando a turma ainda está no futuro;
-    // só então a fixture torna a turma disponível no calendário histórico.
     const turma = await prisma.turma.create({ data: { nome, modalidadeId: catalogo.modalidade.id, nivelId, professorId, dataInicio: new Date("2099-01-01T00:00:00.000Z"), capacidade: 10, vinculosDocentes: { create: { professorId, inicio } } } });
     await prisma.turma.update({ where: { id: turma.id }, data: { status, dataInicio: inicio } });
     return turma.id;
@@ -162,7 +160,6 @@ it("agrega frequência A→B no mesmo nível e exige nova versão de fechamento 
 
   const frequencia = await prisma.$transaction(tx => carregarFrequenciaNivelTx(tx, { matriculaId, nivelId, minimoPercentual: "75" }));
   expect(frequencia).toMatchObject({ base: 2, presencas: 2, faltas: 0, regularizadas: 0, percentual: { numerador: "200", denominador: "2" }, alocacoesIds: [alocacaoAId, alocacaoBId] });
-  // Fechar o nível em B pressupõe o nível concluído, sem a aula futura da oferta.
   await retirarAulaFuturaDaOferta(turmaBId);
   const fechamentoB = await confirmar(alocacaoBId, "fechamentos-transferencia-b-v2");
   expect(fechamentoB).toMatchObject({ versao: 2, resultadoSuficiente: true });

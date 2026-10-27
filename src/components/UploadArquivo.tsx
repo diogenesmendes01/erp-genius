@@ -4,13 +4,10 @@ import { useState } from "react";
 import { IconUpload } from "@tabler/icons-react";
 import type { CategoriaDocumento } from "@prisma/client";
 
-// Restrições espelham a validação do servidor (POST /api/upload).
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png"];
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_BYTES = 10 * 1024 * 1024;
 const RESTRICOES = "PDF, JPG ou PNG · até 10MB";
 
-// Upload de arquivo (PDF/JPG/PNG) → POST /api/upload → devolve { url, nome }.
-// A url aponta para a rota autenticada /api/files (storage privado).
 export function UploadArquivo({
   onUpload,
   label = "Anexar arquivo",
@@ -31,7 +28,6 @@ export function UploadArquivo({
     const file = e.target.files?.[0];
     if (!file) return;
     setErro(null);
-    // Validação local (UX) antes de enviar — o servidor revalida.
     if (!TIPOS_OK.includes(file.type)) {
       setErro("Tipo inválido (use PDF, JPG ou PNG).");
       e.target.value = "";

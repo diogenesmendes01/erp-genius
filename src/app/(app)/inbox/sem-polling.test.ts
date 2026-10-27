@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from "node:fs";
 import { contratoPresencaValido, MODULO_PRESENCA } from "@/test/contrato-presenca";
 import { describe, expect, it } from "vitest";
 
-// O Inbox antigo foi removido na Task 33: nenhum arquivo da pasta tem exceção. Presença D6 é nominal em um módulo externo.
 const RAIZ = "src/app/(app)/inbox";
 const LEGADO: string[] = [];
 

@@ -12,7 +12,6 @@ import{apenasPortal}from"@/server/_shared/sessao";
 type Tx=Prisma.TransactionClient;
 export type SaidaInbox={tipo:"texto";texto:string}|{tipo:"midia";url:string;legenda?:string}|{tipo:"especial";conteudo:ConteudoEspecial;midiaUrl?:string};
 
-/** Validações específicas do canal permanecem só no ramo de conteúdo especial. */
 function dadosEspeciais(payload:Extract<SaidaInbox,{tipo:"especial"}>,autorId:string,numero:Parameters<typeof exigirMotorConectado>[0]){
  if(numero.driver!=="MOTOR")throw new ErroRegra("Este canal não envia esse tipo de conteúdo.");
  exigirMotorConectado(numero);
@@ -28,7 +27,6 @@ function dadosEspeciais(payload:Extract<SaidaInbox,{tipo:"especial"}>,autorId:st
  const corpoRenderizado=c.tipo==="ENQUETE"?c.nome:c.tipo==="LOCALIZACAO"?`📍 ${c.nome??"Localização"}`:"";
  return{tipo:tipos[c.tipo],conteudo:c as unknown as Prisma.InputJsonObject,midiaPath,corpoRenderizado};
 }
-/** Não inicializa ConfigIA: somente a preparação anterior ao pai pode fazê-lo. */
 export async function lerContextoAtualInbox(tx:Tx,id:string){
  const agora=new Date();
  const s=await situacaoAria(agora,tx),config=await tx.configIA.findUnique({where:{id:"ia"}});
@@ -39,7 +37,6 @@ export async function lerContextoAtualInbox(tx:Tx,id:string){
  return{ctx:{agora,ariaAtiva:ariaAtivaGlobal({estado:s.estado,pausada:s.pausada,temVersao:s.versao!==null},o),handoffPendentes:new Set(await idsHandoffPendente(tx,[id]))},sugestao:(await sugestoesPendentesPorAtendimento(tx,[id],agora)).has(id)};
 }
 async function autorAtual(tx:Tx,id:string){const u=await tx.usuario.findUnique({where:{id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});if(!u?.ativo)throw new ErroPermissao("Sua sessão não está mais ativa.");if(apenasPortal(u))throw new ErroPermissao("Acesso restrito ao portal do aluno.");return u;}
-/** Enfileira na mesma TX da autorização; o chamador só despacha depois do commit. */
 export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorId:string,id:string,payload:SaidaInbox){return db.$transaction(async tx=>{
  await tx.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR NO KEY UPDATE`;
@@ -50,7 +47,6 @@ export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorI
  if(conversa.contato.optOutEm)throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
  let tipo:"TEXTO"|ReturnType<typeof tipoPorMime>="TEXTO";
  if(payload.tipo==="midia"){
-  // Posse por autor: nunca consultar conteúdo de arquivo alheio.
   if(!midiaSaidaDoAutor(payload.url,u.id))throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
   const mime=contentTypePorExtensao(payload.url);tipo=tipoPorMime(mime);
   if(!mime||tipo==="TEXTO"||tipo==="OUTRO")throw new ErroRegra("Tipo de arquivo não suportado para envio.");

@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 6 (docs/42 L1540, L1566, L1590): disponibilização, prorrogação e realização pedem data/hora
-// local e o fuso; a recomendação pedia "exibir a conversão resultante abaixo do campo antes de enviar".
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

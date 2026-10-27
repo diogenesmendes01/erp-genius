@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { descreverAulaNaoCobravel } from "./ConferenciaHoras";
 
-// C5 da R1-b #266: a tela de ocorrências avisa que o valor da conferência é histórico depois da declaração Q175.
 describe("descreverAulaNaoCobravel", () => {
   it("descreve cada efeito da declaração sem esconder que o valor é histórico", () => {
     expect(descreverAulaNaoCobravel("SEM_ITEM")).toContain("fica fora do fechamento por hora");

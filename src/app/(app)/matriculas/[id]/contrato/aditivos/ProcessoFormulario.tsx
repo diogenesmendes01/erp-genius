@@ -9,11 +9,8 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, conferenciaId, ambiente, simuladoDisponivel = false }: {
   matriculaId: string; propostaId: string; artefatoId: string; conferenciaId: string; ambiente: "SANDBOX" | "PRODUCAO";
-  /** Driver simulado ligado e fonte em SANDBOX: oferece o serviço simulado (nada sai do ERP). */
   simuladoDisponivel?: boolean;
 }) {
-  // Idempotente por natureza (#166): um processo por proposta; a mesma entrada devolve o processo já preparado
-  // (aditivo-envio-tx.ts; aditivo.int.test.ts). Reenviar é seguro.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), [fornecedor, setFornecedor] = useState("");
   return <form className="space-y-3 rounded border p-4" onSubmit={async event => { event.preventDefault(); if (fornecedor !== "ZAPSIGN" && fornecedor !== "CLICKSIGN" && fornecedor !== "DOCUSIGN" && !(simuladoDisponivel && fornecedor === "SIMULADO")) { acao.limpar(); acao.setErro("Selecione o fornecedor."); return; }
     const d = await acao.executar(() => prepararProcessoAssinaturaAditivo({ matriculaId, propostaId, artefatoId, conferenciaId, fornecedor, ambiente }), "Processo preparado internamente.");

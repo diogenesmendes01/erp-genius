@@ -19,7 +19,6 @@ export async function exigirEscopoAjuste(usuario: UsuarioSessao, matriculaId: st
   if (!matricula) throw new ErroPermissao();
 }
 
-/** Aprovar usa a equipe supervisionada; caixa e cobertura não ampliam esse alcance. */
 export async function escopoMatriculaAprovacao(usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma): Promise<Prisma.MatriculaWhereInput> {
   if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return {};
   if (!usuario.papeis.includes(Papel.GERENTE_COMERCIAL)) return { id: { in: [] } };

@@ -4,14 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
-// Idempotência só na criação (#166): a chave vai no Evento de criação (`TagSalva`/`CampoSalvo` com `de: null`);
-// na edição (com `id`) ela é ignorada.
 const MSG_CONFLITO = "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se o item já aparece antes de repetir.";
 
 export type TipoCampo = TipoCampoPersonalizado;
 export type AlvoCampo = AlvoCampoPersonalizado;
 
-/** Chave de comparação do nome: sem acento, sem caixa, espaços colapsados. */
 export function chaveNome(nome: string): string {
   return nome.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
 }
@@ -40,7 +37,6 @@ export async function salvarTag(i: { id?: string; nome: string; grupo: string; c
       const antes = d.id ? todas.find((t) => t.id === d.id) : undefined;
       if (d.id && !antes) throw new ErroRegra("Tag não encontrada.");
       if (antes && !antes.ativo) throw new ErroRegra("Tag arquivada não pode ser editada.");
-      // Edição sem mudança (ex.: reenvio após resultado incerto): sem update nem Evento.
       if (antes && antes.nome === d.nome && antes.grupo === d.grupo && antes.cor === d.cor) return { id: antes.id };
       const tag = antes
         ? await tx.tag.update({ where: { id: antes.id }, data: { nome: d.nome, grupo: d.grupo, cor: d.cor } })
@@ -58,8 +54,6 @@ export async function arquivarTag(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
     await prisma.$transaction(async (tx) => {
-      // Idempotência por natureza (#166, 5º lote): a linha travada serializa o clique duplo, e a tag já arquivada
-      // por quem repete devolve ok sem outro Evento. Arquivada por outra pessoa, segue recusada.
       const [tag] = await tx.$queryRaw<{ ativo: boolean }[]>`SELECT ativo FROM "Tag" WHERE id = ${id} FOR UPDATE`;
       if (!tag) throw new ErroRegra("Tag não encontrada.");
       if (!tag.ativo) {
@@ -114,7 +108,6 @@ export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCamp
       }
       const dados = { nome: d.nome, tipo: d.tipo, alvo: d.alvo, opcoes, obrigatorio: d.obrigatorio };
       const resumo = (c: typeof dados) => ({ nome: c.nome, tipo: c.tipo, alvo: c.alvo, opcoes: c.opcoes, obrigatorio: c.obrigatorio });
-      // Edição sem mudança (ex.: reenvio após resultado incerto): sem update nem Evento.
       if (antes && JSON.stringify(resumo(antes)) === JSON.stringify(resumo(dados))) return { id: antes.id };
       const campo = antes
         ? await tx.campoPersonalizado.update({ where: { id: antes.id }, data: dados })
@@ -128,13 +121,10 @@ export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCamp
   });
 }
 
-/** Arquivar não apaga valores: o campo some das listas de seleção, mas os registros antigos o mantêm. */
 export async function arquivarCampo(id: string, confirmacao: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
     await prisma.$transaction(async (tx) => {
-      // Idempotência por natureza (#166, 5º lote): como em `arquivarTag`. O reenvio também confere a
-      // confirmação: com outro nome, segue recusado.
       const [campo] = await tx.$queryRaw<{ nome: string; arquivadoEm: Date | null }[]>`SELECT nome, "arquivadoEm" FROM "CampoPersonalizado" WHERE id = ${id} FOR UPDATE`;
       if (!campo) throw new ErroRegra("Campo não encontrado.");
       if (campo.arquivadoEm) {

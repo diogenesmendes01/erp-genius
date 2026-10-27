@@ -64,7 +64,6 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
     let chamadasUseState = 0;
     mocks.useState.mockImplementation((inicial: unknown) => {
       chamadasUseState += 1;
-      // O 1º useState da fila é o detalhe aberto (`aberta`): os filtros saíram do estado local para a URL (E4).
       return [chamadasUseState === 1 ? item : resolverEstadoInicial(inicial), vi.fn()];
     });
     const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})), dashs, regua, podeOperar: false, podeBloquear: false, fusoEscola: "America/Sao_Paulo" }));
@@ -97,9 +96,6 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
     expect(fallback).toContain("horário exibido em UTC; origem UTC");
     expect(preferida).toContain("vence 01/03/2099 · referência Pacific/Kiritimati");
   });
-  // Lote 2 (ressalva A da review do #286): pagoEm é misto. Instante real à noite na escola (ajuste que quita,
-  // desistência, baixa sem data) sai no dia da escola, não no seguinte; data digitada e legado à meia-noite UTC
-  // continuam no próprio dia. Sem fuso pessoal.
   it("último pagamento: instante à noite na escola fica no dia da escola; data digitada e legado mantêm o dia", () => {
     mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
     const casos: [string, string][] = [

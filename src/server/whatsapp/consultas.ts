@@ -19,16 +19,14 @@ export interface NumeroConfig {
   donoId: string | null;
   donoNome: string | null;
   ativo: boolean;
-  /** Setores que o número atende (cadastro explícito ou, sem cadastro, derivado da finalidade legada). */
   setores: Setor[];
-  /** Responsável pela triagem; null = ADMINISTRADOR (Q2). */
   triagemResponsavelId: string | null;
 }
 
 export async function listarNumerosConfig(): Promise<NumeroConfig[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const numeros = await prisma.numeroWhatsApp.findMany({
-    where: { excluidoEm: null }, // excluído some da configuração; o histórico continua no inbox
+    where: { excluidoEm: null },
     orderBy: { criadoEm: "asc" },
     include: { dono: { select: { nome: true } } },
   });
@@ -55,12 +53,6 @@ export interface ResponsavelTriagem {
   papeis: Papel[];
 }
 
-/**
- * Usuários ativos que podem ser responsáveis pela triagem: só quem tem papel de triagem de algum
- * dos `setores` (`papeisDeTriagem`; padrão: todos os setores). ALUNO, PROFESSOR e ADMINISTRADOR
- * (o admin já é o padrão, Q2) ficam de fora. Os papéis voltam para o editor filtrar pelos setores
- * marcados no número (`podeTriarSetores`); `salvarSetoresNumero` aplica a mesma regra no servidor.
- */
 export async function listarResponsaveisTriagem(setores: readonly Setor[] = SETORES): Promise<ResponsavelTriagem[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   return prisma.usuario.findMany({
@@ -103,7 +95,6 @@ export interface ConfiguracaoAvisosAgendaConfig {
   templates: Pick<TemplateConfig, "id" | "nome" | "idioma" | "categoria" | "statusMeta" | "metaTemplateId" | "corpo">[];
 }
 
-/** Não devolve contatos/conversas: esta tela é só a escolha do canal institucional. */
 export async function carregarConfiguracaoAvisosAgenda(): Promise<ConfiguracaoAvisosAgendaConfig> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const [config, numeros, templates] = await Promise.all([
@@ -125,7 +116,6 @@ export interface DegrauConfig {
 }
 
 export interface PoliticaConfig {
-  /** null = ainda não existe registro (valores de fábrica; o salvar cria). */
   id: string | null;
   nome: string;
   estado: string;
@@ -147,7 +137,6 @@ export async function carregarPoliticaConfig(): Promise<PoliticaConfig> {
     orderBy: { criadoEm: "asc" },
   });
   if (!p) {
-    // Fábrica (doc 26 §defaults): a tela mostra e o salvar materializa o registro.
     return {
       id: null,
       nome: POLITICA_COBRANCA_NOME,

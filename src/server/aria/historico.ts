@@ -8,9 +8,6 @@ import { podeDecidirAcaoAria } from "./escopo-decisao";
 import { capacidadesAria } from "./permissoes-tela";
 import { aplicarAcao, efetivarRespostaSugerida } from "./turno/executor";
 
-// Histórico da Aria (Task 24): aprovar, rejeitar e desfazer. O servidor revalida tudo na hora da
-// decisão (FOR UPDATE na ação e no alvo) e nunca sobrescreve o que uma pessoa fez depois.
-
 type Tx = Prisma.TransactionClient;
 type Json = Prisma.InputJsonValue;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload gravado pelo próprio executor
@@ -25,7 +22,6 @@ async function exigirDecisor(): Promise<UsuarioSessao> {
   return u;
 }
 
-// Checkpoint após a espera do lock, sem memo da sessão anterior à transação.
 async function decisorAtual(tx: Tx, id: string): Promise<UsuarioSessao> {
   const u = await tx.usuario.findUnique({ where: { id }, select: { id: true, nome: true, ativo: true, papeis: true, permissoes: true } });
   if (!u?.ativo || !capacidadesAria(u).has("decidirHistorico")) throw new ErroPermissao("Sem permissão para decidir ações da Aria.");
@@ -39,7 +35,6 @@ async function travarAcao(tx: Tx, id: string): Promise<AcaoAgenteIA> {
   return acao;
 }
 
-/** Gerente só decide sobre oportunidades da própria equipe; ação sem oportunidade é só do Administrador. */
 async function exigirEscopo(tx: Tx, u: UsuarioSessao, acao: AcaoAgenteIA): Promise<void> {
   if (!(await podeDecidirAcaoAria(tx, u, acao))) throw new ErroRegra("Esta ação está fora do seu escopo.");
 }
@@ -97,7 +92,6 @@ export async function rejeitarAcaoAria(id: string, motivo?: string): Promise<Res
   });
 }
 
-/** Houve mudança humana no campo depois da ação? Evento do mesmo agregado e campo, sem ator ARIA. */
 async function campoMudouPorHumano(tx: Tx, acao: AcaoAgenteIA, p: Dados, atual: unknown): Promise<boolean> {
   if (!mesmo(atual, p.para)) return true;
   const eventos = await tx.evento.findMany({
@@ -191,8 +185,6 @@ async function reverter(tx: Tx, u: UsuarioSessao, acao: AcaoAgenteIA): Promise<v
 export async function desfazerAcaoAriaTx(tx: Tx, acao: AcaoAgenteIA, u: UsuarioSessao, opcoes?: { replayMesmoAutorNoInbox: true }): Promise<void> {
   const id = acao.id;
   if (acao.status === "DESFEITA") {
-    // Opt-in exclusivo do wrapper Inbox: autorização e bindings já foram revalidados após os locks.
-    // A API global mantém o erro histórico; replay não reaplica efeito nem emite Evento/aviso.
     if (opcoes?.replayMesmoAutorNoInbox && acao.desfeitaPorId === u.id && await ultimoEventoDoAutor(tx, {
       tipo: "AcaoAriaDesfeita", agregadoTipo: "AcaoAgenteIA", agregadoId: id, autorId: u.id,
     })) return;

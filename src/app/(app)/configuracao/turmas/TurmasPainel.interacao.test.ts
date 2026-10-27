@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L2395): clicar no fundo escuro (ou Escape) com a turma preenchida não descarta o
-// formulário em silêncio — pede confirmação. Intocado, fecha como antes. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -26,7 +24,6 @@ import { clicar, criarGanchos, elementos, temBotao, texto, type No } from "@/tes
 beforeEach(() => { m.ganchos = criarGanchos(); });
 
 const tela = () => m.ganchos!.renderizar(TurmasPainel, { turmas: [], modalidades: [], niveis: [], professores: [] });
-/** O casco do diálogo é o elemento que recebe o TurmaFormulario como filho (o 1º com `aoFechar`). */
 const dialogo = (t: ReactNode): No | undefined => elementos(t).find((n) => typeof n.props.aoFechar === "function");
 const formulario = (t: ReactNode): No => elementos(t).find((n) => n.type === TurmaFormulario)!;
 const fecharPeloFundo = () => (dialogo(tela())!.props.aoFechar as () => void)();

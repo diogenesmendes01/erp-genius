@@ -25,9 +25,6 @@ import { definirTemperatura, registrarNotaInterna } from "@/server/comercial/aco
 import { garantirAtendimento } from "./atendimentos";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
-// Integração da inbox, atualizada ao doc 36: escopo por atendimento, envio HUMANO pela mesma
-// fila/despachante, opt-out (S10), silêncio pós-inbound tratado (S4) e vínculo de contato.
-
 let vendedor: Awaited<ReturnType<typeof criarUsuario>>;
 let financeiro: Awaited<ReturnType<typeof criarUsuario>>;
 
@@ -57,7 +54,6 @@ async function seedConversaVendas(donoId: string | null) {
   const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
     numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: donoId,
   }));
-  // "conversa" nos inputs da UI é agora o atendimento, nunca o transporte.
   return { numero, contato, conversa: atendimento, transporte: conversa };
 }
 
@@ -73,7 +69,7 @@ describe("escopo do atendimento (doc 36)", () => {
     expect(doOutro).toHaveLength(0);
 
     const doFinanceiro = await listaDoInbox({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] });
-    expect(doFinanceiro).toHaveLength(0); // número é de VENDAS
+    expect(doFinanceiro).toHaveLength(0);
 
     expect(await obterItemListaInbox({ id: outroVendedor.id, nome: "o", papeis: [Papel.VENDEDOR] }, minha.conversa.id)).toBeNull();
   });
@@ -109,16 +105,14 @@ describe("enviarTextoInbox (origem HUMANO na MESMA fila)", () => {
   });
 
   it("kill switch congela a AUTOMAÇÃO mas não a resposta humana (S13)", async () => {
-    await seedCanal({ estado: "ATIVA", janela: [0, 24] }); // política de cobrança (padrão p/ intenções sem política)
+    await seedCanal({ estado: "ATIVA", janela: [0, 24] });
     await prisma.politicaRegua.updateMany({ data: { killSwitch: true } });
     const { conversa, numero, contato } = await seedConversaVendas(vendedor.id);
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
 
-    // HUMANO passa (vira SIMULADA no ambiente sem live)…
     const r = await enviarTextoInbox({ conversaId: conversa.id, texto: "resposta humana" });
     expect(r.ok && r.dado!.status).toBe("SIMULADA");
 
-    // …automação fica congelada na fila.
     await prisma.intencaoMensagem.create({
       data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: conversa.id, autorId: vendedor.id, origem: "LOTE", corpoRenderizado: "auto" },
     });
@@ -171,7 +165,7 @@ describe("opt-out (S10)", () => {
     const r1 = await registrarOptOutContato(contato.id);
     expect(r1.ok).toBe(true);
     const r2 = await registrarOptOutContato(contato.id);
-    expect(r2.ok).toBe(true); // #166 (5º lote): o reenvio de quem registrou devolve ok, sem outro Evento
+    expect(r2.ok).toBe(true);
 
     expect((await eventosDo("ContatoWhatsApp", contato.id)).filter((e) => e.tipo === "OptOutRegistrado")).toHaveLength(1);
   });
@@ -190,7 +184,6 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
       numeroId: numero.id, contatoId: contato.id, finalidade: "FINANCEIRO", alunoId: aluno.id, matriculaId: matricula.id,
     }));
 
-    // Intenção do CRON criada DEPOIS do inbound (a lei da conversa viva não pega; S4 sim).
     await prisma.intencaoMensagem.create({
       data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: atendimento.id, origem: "CRON", corpoRenderizado: "degrau" },
     });
@@ -199,19 +192,17 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
     const adiada = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(adiada.motivoFalha).toBe("silencio_pos_inbound");
 
-    // "Tratar" (retomar régua) marca inboundTratadoEm → o silêncio deixa de valer.
     authMock.mockResolvedValue({ user: { id: financeiro.id } });
     const tratado = await marcarConversaTratada({ conversaId: atendimento.id, motivo: "retomar_regua" });
     expect(tratado.ok, tratado.ok ? "" : `falhou: ${(tratado as { erro?: string }).erro}`).toBe(true);
     expect((await eventosDo("ContatoWhatsApp", contato.id)).map((e) => e.tipo)).toContain("ReguaRetomada");
 
-    // Reabre a intenção adiada para redespachar agora (sem esperar as 72h).
     await prisma.intencaoMensagem.update({
       where: { id: adiada.id },
       data: { status: "PENDENTE", despacharAposEm: null },
     });
     const depois = await despacharFila();
-    expect(depois.simuladas).toBe(1); // passou do S4; morre no shadow (sem WHATSAPP_LIVE)
+    expect(depois.simuladas).toBe(1);
   });
 
   it("vendedor não pode retomar régua (alçada de cobrança)", async () => {
@@ -329,7 +320,6 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
       produto: matricula.produtoId ? { id: matricula.produtoId } : await prisma.produto.findFirstOrThrow({ select: { id: true } }),
     });
 
-    // Conversa no número de COBRANCA, contato vinculado ao aluno devedor.
     const contatoCobranca = await prisma.contatoWhatsApp.create({
       data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id },
     });
@@ -356,11 +346,8 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
     });
     expect(doFinanceiro?.id).not.toBe(outraMatricula.cobranca.id);
     expect(doFinanceiro?.matriculaId).not.toBe(outraMatricula.matricula.id);
-    // Thread em ordem cronológica mesmo com o take desc (P2-5).
     expect((await mensagensDoInbox(financeiroSessao, atendimentoCobranca.id))?.map((m) => m.corpo)).toEqual(["primeira", "última"]);
 
-    // Mesmo aluno devedor, mas num número de VENDAS do vendedor: o payload NÃO leva
-    // saldo/vencimento — o gate é no server, não no botão do client.
     const { numero: numeroVendas } = await seedConversaVendas(vendedor.id);
     const contatoVendas = await prisma.contatoWhatsApp.create({
       data: { telefoneE164: "+50677770002", alunoId: aluno.id },
@@ -386,19 +373,16 @@ describe("posse do anexo no envio de mídia (P1-2)", () => {
     const outro = await criarUsuario([Papel.VENDEDOR]);
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
 
-    // Comprovante financeiro (fora de whatsapp-out): exfiltração barrada na action.
     const comprovante = await enviarMidiaInbox({ conversaId: conversa.id, url: "/api/files/999-comprovante.jpg" });
     expect(comprovante.ok).toBe(false);
     expect((comprovante as { erro?: string }).erro).toContain("Anexo inválido");
 
-    // Anexo de OUTRO usuário: idem.
     const alheio = await enviarMidiaInbox({
       conversaId: conversa.id,
       url: `/api/files/whatsapp-out/${outro.id}/foto.jpg`,
     });
     expect(alheio.ok).toBe(false);
 
-    // Traversal disfarçado de anexo próprio: idem.
     const traversal = await enviarMidiaInbox({
       conversaId: conversa.id,
       url: `/api/files/whatsapp-out/${vendedor.id}/../${outro.id}/foto.jpg`,
@@ -407,7 +391,6 @@ describe("posse do anexo no envio de mídia (P1-2)", () => {
 
     expect(await prisma.intencaoMensagem.count()).toBe(0);
 
-    // Anexo do próprio autor passa (vira SIMULADA no ambiente sem live).
     const proprio = await enviarMidiaInbox({
       conversaId: conversa.id,
       url: `/api/files/whatsapp-out/${vendedor.id}/foto.jpg`,
@@ -419,14 +402,14 @@ describe("posse do anexo no envio de mídia (P1-2)", () => {
 
 describe("roteamento de webhook por driver (P2-6)", () => {
   it("mesmo providerRef em drivers diferentes: cada mensagem cai no número do SEU driver", async () => {
-    const { numero: numeroBaileys } = await seedConversaVendas(vendedor.id); // providerRef "inst-teste", BAILEYS
+    const { numero: numeroBaileys } = await seedConversaVendas(vendedor.id);
     const numeroMeta = await prisma.numeroWhatsApp.create({
       data: {
         telefoneE164: "+5511977770000",
         rotulo: "Cobrança Meta (teste)",
         driver: DriverWhatsApp.META_CLOUD,
         finalidade: "COBRANCA",
-        providerRef: numeroBaileys.providerRef, // colisão de referência ENTRE drivers
+        providerRef: numeroBaileys.providerRef,
       },
     });
 
@@ -442,9 +425,8 @@ describe("roteamento de webhook por driver (P2-6)", () => {
     });
     expect(r).toBe("gravada");
     const msg = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "MSG-DRIVER-1" } });
-    expect(msg.numeroId).toBe(numeroMeta.id); // e NÃO o número Baileys de mesmo ref
+    expect(msg.numeroId).toBe(numeroMeta.id);
 
-    // Status idem: o ack do Baileys não atualiza mensagem do número Meta.
     const ignorado = await processarStatusNormalizado({
       numeroProviderRef: numeroBaileys.providerRef,
       providerMessageId: "MSG-DRIVER-1",
@@ -485,27 +467,18 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
       data: { numeroId: numero.id, contatoId: contato.id, ultimaMensagemEm: new Date() },
     });
 
-    // doc 36: nem a thread comercial nem legado são abertos pelo número.
     expect(await obterItemListaInbox({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, conversa.id)).toBeNull();
   });
 
   it("lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)", async () => {
-    // A conversa é escopada pelo dono do NÚMERO (vendedor A), mas o lead vinculado ao
-    // contato pertence a OUTRO vendedor B — o cockpit (etapa/temperatura/notas) não pode
-    // vazar para A só porque a conversa cai no número dele (review PR #58 P1).
     const b = await criarUsuario([Papel.VENDEDOR]);
-    const { conversa, lead } = await seedLeadNaConversa(b.id); // número de A, lead de B
+    const { conversa, lead } = await seedLeadNaConversa(b.id);
 
     const thread = await carregarPainel({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    // Falha da linha de base (main f8a9c0e), não mudança de E5: conflito doc 36 x LC-D02/SPEC-ERP-005
-    // (dono da linha vê todas as conversas da linha). Resolvido a favor de LC-D02, AGUARDANDO aval do
-    // integrador/produto (quadro, "Fase 3, Task 13"): o dono da linha VÊ a conversa, mas o painel do
-    // lead de outra carteira segue fechado; o P1 é o vazamento do cockpit, não o acesso à conversa.
     expect(thread).not.toBeNull();
     expect(thread).toMatchObject({ setor: "COMERCIAL", oportunidade: null });
     expect(thread?.acoes?.leadId).toBeNull();
 
-    // Caminho feliz intacto: se o lead for do PRÓPRIO A, o cockpit volta a aparecer.
     await prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });
     const propria = await carregarPainel({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
     expect(propria?.acoes?.leadId).toBe(lead.id);
@@ -518,7 +491,6 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     const r = await registrarNotaInterna(lead.id, { nota: "Prefere aula à noite; decide com a esposa." });
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("NotaInterna");
-    // O ponto da nota interna: NADA foi enfileirado nem gravado como mensagem do canal.
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
 

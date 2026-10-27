@@ -47,7 +47,6 @@ describe("lançamentos de avaliação", () => {
     mocks.sessao.mockResolvedValue({ id: "professor" });
     mocks.consultar.mockResolvedValue({ ok: true, dado });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
-    // Com a escola sem fuso o lançamento é bloqueado (D10); o padrão destes testes é a escola configurada.
     mocks.fuso.mockResolvedValue("America/Sao_Paulo");
   });
 
@@ -55,13 +54,11 @@ describe("lançamentos de avaliação", () => {
     const html = renderToStaticMarkup(await renderizar({ fuso: "UTC" }));
     expect(html).toMatch(/30\/09\/2026.*20:30/);
     expect(html).toContain("Fuso de exibição do histórico: America/Costa_Rica (origem UTC).");
-    // O fuso de entrada mora no formulário (docs/43 §6 item 3): a página só passa o inicial, sem <form method="get">.
     expect(html).not.toContain('method="get"');
     expect(html).toContain("entrada=UTC");
     expect(html).toContain("anterior=2026-10-01T02:30");
     expect(html).toContain('href="?fuso=UTC&amp;pagina=2"');
     expect(html).toContain('href="/academico/avaliacoes/alocacao/final/designacao"');
-    // O fuso da escola é sempre conferido, mesmo com fuso na URL: sem ele, não há lançamento (D10).
     expect(mocks.fuso).toHaveBeenCalledTimes(1);
   });
 
@@ -97,8 +94,6 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("entrada=America/Sao_Paulo");
   });
 
-  // D10 (decisão do dono, 19/10/2026; C7 da #170): em UTC a data da avaliação pode cair no dia errado. Sem fuso da
-  // escola, o formulário de lançamento não aparece; a tela diz por quê e leva à configuração. O histórico continua.
   it("sem fuso institucional configurado, bloqueia o lançamento e leva à configuração do fuso", async () => {
     mocks.fuso.mockResolvedValue(null);
     const html = renderToStaticMarkup(await renderizar({}));
@@ -126,8 +121,6 @@ describe("lançamentos de avaliação", () => {
     }
   });
 
-  // docs/43 §6 item 3 (docs/42 L1314): antes, a key do LancarNotas tinha a versão e o fuso, e o formulário só
-  // existia na página 1 do histórico — aplicar o fuso, mudar de página ou receber a versão nova apagava as notas.
   it("o formulário tem a mesma identidade no React ao mudar a página do histórico, o fuso da URL e a versão: nada remonta", async () => {
     const base = identidadeNoReact(await renderizar({ fuso: "UTC" }), LancarNotas);
     expect(base).not.toBeNull();

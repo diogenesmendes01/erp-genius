@@ -55,10 +55,6 @@ function valorCanonico(valor: string, descricao: string): string {
   }
 }
 
-/**
- * Lê o preço mensal histórico, sem emitir cobrança. O chamador fornece a nova
- * cobertura e este loader aplica somente versões formalizadas de aditivo.
- */
 export async function resolverPrecoContinuidadeMensalTx(
   tx: Prisma.TransactionClient,
   input: z.input<typeof EntradaResolverPrecoSchema>,
@@ -86,8 +82,6 @@ export async function resolverPrecoContinuidadeMensalTx(
     throw new ErroRegra("Matrícula não encontrada.");
   }
 
-  // O gate usa a memória imutável da preparação e sua decisão, não uma tabela
-  // atual de referências comerciais.
   await exigirPrecoPreparacaoAutorizado(tx, matricula.id);
   const documentoId = await exigirContratoAceito(tx, matricula);
 
@@ -106,7 +100,6 @@ export async function resolverPrecoContinuidadeMensalTx(
       "A matrícula legada não possui fonte estruturada de preço mensal. Faça conferência específica.",
     );
   }
-  // Q173: depois de um aditivo de moeda aplicado, a preparação permanece na moeda original do contrato.
   const moedaTrocada = preparacao.moeda !== matricula.moeda
     && !!(await tx.aplicacaoMoedaAditivo.findFirst({ where: { moedaNova: matricula.moeda, decisao: { proposta: { matriculaId: matricula.id } } }, select: { id: true } }));
   if (preparacao.regime !== "MENSALIDADE" || (preparacao.moeda !== matricula.moeda && !moedaTrocada)) {
@@ -164,11 +157,7 @@ export async function resolverPrecoContinuidadeMensalTx(
     throw new ErroRegra("A condição mensal aprovada não corresponde ao contrato confirmado.");
   }
 
-  // A condição é transcrição do preço autorizado em sua própria vigência. Ela
-  // não congela o valor para períodos posteriores, que podem ter aditivo válido.
   const inicioRegra = new Date(`${vigente.regras.vigenteDesde}T00:00:00.000Z`);
-  // Sem câmbio no sistema, não existe preço de tabela na moeda nova: depois da troca o valor de
-  // referência é o próprio valor contratado, e período anterior à troca não pode ser precificado nela.
   const naMoedaVigente = <T extends { valorOriginal: string; valorNegociado: string; versaoAditivo: unknown }>(resolvido: T): T => {
     if (!moedaTrocada) return resolvido;
     if (!resolvido.versaoAditivo) throw new ErroRegra("O período é anterior à troca de moeda do contrato e exige conferência específica.");

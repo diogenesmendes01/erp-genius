@@ -3,8 +3,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Duas formas de teste no mesmo arquivo, sem DOM: marcação (renderToStaticMarkup, React real) e interação
-// (o componente chamado como função, com os ganchos de src/test/tela-sem-dom.ts; efeitos não rodam).
 const m = vi.hoisted(() => ({ g: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -57,7 +55,6 @@ function digitar(raiz: ReactNode, v: string) {
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 
 describe("Compositor", () => {
-  // C6 da revisão do #233: lista simples de botões (sem role=listbox/option, que exigiria foco e setas).
   it("respostas rapidas aparecem como lista de botoes e o clique aplica as variaveis", () => {
     m.g = criarGanchos();
     const p = props({ respostas: [{ id: "r1", atalho: "/preco", titulo: "Preço", corpo: "Olá {nome}" }], variaveisResposta: { nome: "Ana" } });
@@ -216,7 +213,6 @@ describe("Compositor", () => {
     m.g=criarGanchos();let resolver!:(r:{ok:true}|{ok:false;erro:string})=>void;const pendente=new Promise<{ok:true}|{ok:false;erro:string}>(r=>{resolver=r;});
     const p=props({aoEnviarTexto:()=>pendente,respostas:[{id:'r',atalho:'/preco',titulo:'Preço',corpo:'Novo rascunho preparado'}]}),tela=()=>m.g!.renderizar(Compositor,p);
     digitar(tela(),'/pre');clicarBotao(tela(),'Enviar');
-    // A sugestão e o seletor de arquivo continuam acionáveis enquanto o envio aguarda.
     clicarBotao(tela(),'/preco Preço');
     const seletor=elementos(tela()).find(n=>n.type==='input'&&n.props['aria-label']==='Escolher arquivo')!;
     (seletor.props.onChange as (e:unknown)=>void)({target:{files:[{name:'nova-intencao.pdf',size:100,type:'application/pdf'}],value:'novo'}});
@@ -295,7 +291,7 @@ describe("Compositor", () => {
     expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("Janela de 24h fechada.");
 
     p = { ...p, atendimentoId: "at2" };
-    tela(); // render da troca: ajusta o estado (o React refaria o render na hora)
+    tela();
     expect(texto()).toBe("rascunho do at2");
     expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).not.toContain("Janela de 24h fechada.");
 
@@ -366,7 +362,6 @@ describe("Compositor", () => {
     expect(h).not.toContain("O envio deste tipo pelo Inbox ainda não está disponível.");
   });
 
-  // C2 da R1 do #217: anexar arquivo e gravar áudio (os do Inbox antigo) ficam no compositor novo.
   it("anexar: o arquivo escolhido sobe em /api/whatsapp/upload do atendimento e sai pelo aoEnviarMidia com a legenda", async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ url: "/api/files/whatsapp-out/u1/doc.pdf" }) }));
     vi.stubGlobal("fetch", fetchMock);
@@ -479,7 +474,6 @@ describe("SeletorEmoji", () => {
   });
 });
 
-// #365: cliques locais e atributos nativos; nenhuma câmera, browser ou envio real.
 import { ITENS_ANEXO } from "./itens-anexo";
 function abrirAnexos365(raiz: ReactNode) {
  const b=elementos(raiz).find(n=>n.type==="button"&&n.props["aria-label"]==="Anexar");

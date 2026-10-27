@@ -42,7 +42,6 @@ const objeto = (p: unknown): Record<string, unknown> | null => p !== null && typ
 const dataISO = (v: unknown): string | null => typeof v === "string" && Number.isFinite(Date.parse(v)) ? new Date(v).toISOString() : null;
 const etapa = (v: unknown): v is EtapaLead => Object.values(EtapaLead).some(e => e === v);
 
-/** Decodifica apenas os campos públicos do cartão; payload legado malformado permanece opaco. */
 export function detalheDaSugestao(acao: AcaoAgenteIATipo, payload: unknown): DetalheSugestao {
   const p = objeto(payload);
   if (!p) return { tipo: "outro" };
@@ -85,7 +84,6 @@ export function detalheDaSugestao(acao: AcaoAgenteIATipo, payload: unknown): Det
 
 const statusCartao = (s: string): s is StatusCartao => s === "SUGERIDA" || s === "APROVADA" || s === "REJEITADA" || s === "EXPIRADA" || s === "EXECUTADA" || s === "DESFEITA";
 
-/** Primeiros 20 autorizados, ASC criadoEm/id; keyset sem limite artificial de candidatos. */
 export async function cartoesDaThread(db: Db, usuario: UsuarioSessao, atendimento: ContextoResponsavelAria, agora: Date): Promise<SugestaoAriaThread[]> {
   if (!capacidadesAria(usuario).has("decidirHistorico") && !(usuario.papeis.includes("VENDEDOR") && atendimento.finalidade === "COMERCIAL" && atendimento.responsavelId === usuario.id)) return [];
   const where: Prisma.AcaoAgenteIAWhereInput = {

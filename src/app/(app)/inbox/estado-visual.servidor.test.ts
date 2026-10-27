@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 
-// A regra compartilhada não pode depender do relógio cliente para calcular estado.
-// A fábrica só é executada se esse módulo entrar no grafo de imports da regra.
 vi.mock("./prazo-vivo", () => { throw new Error("O relógio cliente não está disponível neste consumidor."); });
 
 describe("estado visual compartilhado", () => {

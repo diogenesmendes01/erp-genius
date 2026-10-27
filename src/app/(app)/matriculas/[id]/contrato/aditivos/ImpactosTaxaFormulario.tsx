@@ -17,7 +17,6 @@ export function ImpactosTaxaFormulario({ matriculaId, propostaId, conclusaoId, r
   const router = useRouter();
   const [decisoes, setDecisoes] = useState<Record<string, "AFETADA" | "PRESERVADA">>(() => Object.fromEntries(cobrancas.map(c => [c.id, "AFETADA"])));
   const [justificativas, setJustificativas] = useState<Record<string, string>>({});
-  // Chave estável entre tentativas da mesma entrada: na falha de transporte, reenviar confere o mesmo conjunto.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const linhas = cobrancas.map(c => ({ cobrancaId: c.id, decisao: decisoes[c.id] ?? "AFETADA", justificativa: (justificativas[c.id] ?? "").trim() }));

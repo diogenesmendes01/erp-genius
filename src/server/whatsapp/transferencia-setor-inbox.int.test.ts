@@ -7,7 +7,6 @@ vi.mock("@/server/_shared/sessao",async original=>{
  return{...real,exigirSessao:async()=>{const id=(await m.auth())?.user?.id,u=id?await real.carregarUsuarioFresco(id):null;if(!u)throw new real.ErroAutenticacao();if(real.apenasPortal(u))throw new real.ErroPermissao();return u;}};
 });
 vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
-// Somente um caso injeta falha ao persistir a nota-resumo; SQL, ACL e rollback PostgreSQL são reais.
 vi.mock("@/server/_shared/evento",async original=>{const real=await original<typeof import("@/server/_shared/evento")>();const{ErroRegra}=await import("@/server/_shared/sessao");return{...real,registrarEvento:async(...args:Parameters<typeof real.registrarEvento>)=>{if(m.falharResumo&&args[1].tipo==="NotaInterna"&&(args[1].payload as {origem?:string})?.origem==="resumoAria")throw new ErroRegra("Falha fictícia ao persistir resumo");return real.registrarEvento(...args);}};});
 import { prisma } from "@/lib/prisma";
 import { criarUsuario,truncarBanco } from "@/test/integracao";

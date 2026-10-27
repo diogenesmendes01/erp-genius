@@ -62,7 +62,6 @@ describe("executor: ações no CRM", () => {
   const ultimoEvento = (tipo: string) => prisma.evento.findFirstOrThrow({ where: { tipo }, orderBy: { criadoEm: "desc" } });
   const tagsDe = () => prisma.pessoaTag.findMany({ where: { pessoaId: c.pessoa!.id } });
   const amanha = () => new Date(Date.now() + 86_400_000).toISOString();
-  // D12: a mensagem agendada pela Aria precisa cair na janela de envio da escola (fábrica: 9h–20h, seg. a sex.).
   const util = (hora = 10) => diaUtilAs(hora).toISOString();
 
   it("mover_etapa_grava_evento_da_aria", async () => {
@@ -224,20 +223,17 @@ describe("executor: ações no CRM", () => {
     expect(s.status).toBe("SUGERIDA");
     await prisma.$transaction((tx) => aplicarAcao(tx, s));
     expect(await prisma.intencaoMensagem.count({ where: { corpoRenderizado: texto } })).toBe(2);
-    // A resposta deixou de ser liberada: a sugestão antiga perde a autorização do valor.
     const s2 = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: util(), justificativa: "x" }, "SUGERIR");
     await prisma.templateWhatsApp.update({ where: { id: rr.id }, data: { ariaPodeUsar: false } });
     await expect(prisma.$transaction((tx) => aplicarAcao(tx, s2))).rejects.toThrow(/valor/);
   });
 
   it("agendar_mensagem_no_horario_de_silencio_da_escola_e_bloqueada_com_motivo (D12)", async () => {
-    // O seedCanal abre a janela o dia todo; aqui vale a janela de fábrica (9h–20h, segunda a sexta).
     await prisma.politicaRegua.updateMany({ where: { escopo: "COBRANCA" }, data: { janelaInicio: 9, janelaFim: 20, diasSemana: [1, 2, 3, 4, 5] } });
     const a = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: util(3), justificativa: "x" });
     expect(a.status).toBe("BLOQUEADA");
     expect(a.payload).toMatchObject({ motivoBloqueio: "FORA_DA_JANELA" });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
-    // Sugestão feita dentro da janela, aplicada depois que a política mudou: a execução recusa com a mensagem clara.
     const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: util(10), justificativa: "x" }, "SUGERIR");
     expect(s.status).toBe("SUGERIDA");
     await prisma.politicaRegua.updateMany({ where: { escopo: "COBRANCA" }, data: { janelaInicio: 14, janelaFim: 18 } });

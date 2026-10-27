@@ -1,15 +1,5 @@
 import { Prisma } from "@prisma/client";
 
-/**
- * Fonte financeira somente de leitura para a desistência da preparação (Q121).
- *
- * O chamador já deve ter travado calendário e matrícula. As cobranças são
- * travadas em ordem estável para que a proposta e a decisão possam comparar a
- * fotografia contra baixas, informes e usos de crédito concorrentes.
- *
- * Não inclui comprovantes, comentários, nomes ou outros dados sensíveis. Os
- * identificadores e as versões abaixo são fontes de revalidação futura.
- */
 export async function carregarFinanceiroDesistenciaTx(
   tx: Prisma.TransactionClient,
   matriculaId: string,
@@ -146,9 +136,7 @@ export async function carregarFinanceiroDesistenciaTx(
     snapshot: { matriculaId, cobrancas: serializadas, creditos: creditos.map(({ origemAcertoTaxaAditivoId: _origemTaxa, origemReconferenciaDeltaDesistenciaId, origemRevisaoCorrecaoAulaId, origemExcedentePermutaId, ...credito }) => ({
       ...credito,
       ...(origemReconferenciaDeltaDesistenciaId ? { origemReconferenciaDeltaDesistenciaId } : {}),
-      // Q175: só aparece quando existe, preservando o hash das fotografias anteriores.
       ...(origemRevisaoCorrecaoAulaId ? { origemRevisaoCorrecaoAulaId } : {}),
-      // Q171/Q167C: idem para o crédito do excedente de permuta (q165_fotografia_atual e _255 seguem a mesma regra).
       ...(origemExcedentePermutaId ? { origemExcedentePermutaId } : {}),
       valorInicial: credito.valorInicial.toFixed(2), criadoEm: credito.criadoEm.toISOString(),
     })) },
@@ -158,8 +146,6 @@ export async function carregarFinanceiroDesistenciaTx(
       informesAConferir,
       recebimentos,
       cobrancasComLiquidacao,
-      // A mera emissão/cadastro de cobrança também requer conferência; ela não
-      // equivale a pagamento nem é apagada da fotografia por não ter emissão.
       exigeConferenciaFinanceira: cobrancas.length > 0 || creditos.length > 0,
       haAvancoFormal,
     },

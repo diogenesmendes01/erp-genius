@@ -125,14 +125,11 @@ describe("listarResponsaveisTriagem", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 function dadoDe<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
   if (!r.ok) throw new Error(r.erro);
   return r.dado as T;
 }
 
-// Task 18 — ciclo do número no motor (motor simulado: nenhuma chamada real)
-// ---------------------------------------------------------------------------
 describe("ciclo do número no motor", () => {
   beforeEach(async () => {
     chamar.mockReset();
@@ -222,9 +219,6 @@ describe("ciclo do número no motor", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Desativar de verdade e excluir sem apagar dados (motor simulado: nenhuma chamada real)
-// ---------------------------------------------------------------------------
 describe("desativar, reativar e excluir número", () => {
   const motorNum = (o: { telefoneE164: string; sessao?: "CONECTADO" | "DESCONECTADO" | "AGUARDANDO_QR" | "CAIU"; ativo?: boolean }) =>
     prisma.numeroWhatsApp.create({ data: { rotulo: "Cobrança", driver: "MOTOR", finalidade: "COBRANCA", sessao: "CONECTADO", ...o } });
@@ -251,7 +245,6 @@ describe("desativar, reativar e excluir número", () => {
     expect(chamar).not.toHaveBeenCalled();
     expect((await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppDesativado")).toHaveLength(1);
     expect((await eventosDo("NumeroWhatsApp", num.id)).filter((e) => e.tipo === "NumeroWhatsAppDesconectado")).toHaveLength(1);
-    // Continua na configuração, como inativo.
     expect((await listarNumerosConfig()).find((n) => n.id === num.id)).toMatchObject({ ativo: false });
   });
 
@@ -335,7 +328,6 @@ describe("desativar, reativar e excluir número", () => {
     const outro = await criarUsuario([Papel.ADMINISTRADOR], "Outro admin");
     authMock.mockResolvedValue({ user: { id: outro.id } });
     expect(await excluirNumeroWhatsApp(num.id)).toEqual({ ok: false, erro: "Número não encontrado." });
-    // Excluído também não se edita, desativa nem reativa pelo id.
     expect((await reativarNumeroWhatsApp(num.id)).ok).toBe(false);
     expect((await desativarNumeroWhatsApp(num.id)).ok).toBe(false);
     expect((await salvarNumeroWhatsApp({ id: num.id, telefoneE164: num.telefoneE164, rotulo: "X1", finalidade: "COBRANCA" })).ok).toBe(false);

@@ -15,13 +15,11 @@ describe("VoltarPara (E2)", () => {
   });
 
   it("o nome vem do mapa da trilha quando o destino é página conhecida — mesmo destino, mesmo nome", () => {
-    // Antes: "Voltar à Secretaria", "Voltar à secretaria", "Voltar a Secretaria", "Voltar às matrículas"…
     for (const para of ["Secretaria", "secretaria", "Matrículas"]) expect(render({ href: "/secretaria", para })).toContain("> Secretaria</a>");
     expect(render({ href: "/alunos/clx1a2b3c", para: "Ficha" })).toContain("> Ficha do aluno</a>");
   });
 
   it("destino fora do mapa usa `para`; sem nenhum, \"página anterior\"", () => {
-    // A tentativa da recuperação (tela do professor) fica fora do mapa de propósito (FORA_DA_TRILHA).
     expect(render({ href: "/academico/recuperacoes/tentativas/ct1x2y3", para: "Tentativa" })).toContain('aria-label="Voltar para Tentativa"');
     expect(render({ href: "/rota-desconhecida" })).toContain('aria-label="Voltar para página anterior"');
   });
@@ -33,7 +31,7 @@ describe("VoltarPara (E2)", () => {
   it("rotuloDoDestino: só quando o caminho É uma página do mapa (query ignorada)", () => {
     expect(rotuloDoDestino("/financeiro")).toBe("Financeiro");
     expect(rotuloDoDestino("/secretaria/reservas?tipo=particular")).toBe("Reservas");
-    expect(rotuloDoDestino("/academico/recuperacoes/tentativas/ct1x2y3")).toBeNull(); // não pega o ancestral "Recuperações"
+    expect(rotuloDoDestino("/academico/recuperacoes/tentativas/ct1x2y3")).toBeNull();
     expect(rotuloDoDestino("/")).toBeNull();
   });
 });

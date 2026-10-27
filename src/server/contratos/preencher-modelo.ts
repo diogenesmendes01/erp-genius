@@ -2,9 +2,6 @@ import { ConteudoModeloSchema } from "./modelo-schema";
 import { OrigemCampo, ROTULOS_ORIGEM } from "./campos";
 import { ErroRegra } from "@/server/_shared/sessao";
 
-/** Resolve somente campos declarados, em uma passagem, sem avaliar expressões
- * ou interpretar como modelo o valor vindo do cadastro. Chamador fornece fontes
- * conferidas no servidor, nunca cláusulas ou valores financeiros do navegador. */
 export function preencherModelo(conteudo: unknown, fontes: Partial<Record<OrigemCampo, string | null | undefined>>) {
   const modelo = ConteudoModeloSchema.parse(conteudo);
   const campos: { chave: string; origem: OrigemCampo; valor: string }[] = [];

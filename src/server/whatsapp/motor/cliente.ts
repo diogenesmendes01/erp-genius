@@ -26,7 +26,6 @@ export class ErroMotor extends Error {
   }
 }
 
-/** Mensagem exibida ao atendente quando o ritmo do motor recusa o envio. */
 export const MENSAGEM_LIMITE_RITMO = "Muitas mensagens em pouco tempo. Tente de novo em instantes.";
 
 export const TIMEOUT_PADRAO_MS = 10_000;

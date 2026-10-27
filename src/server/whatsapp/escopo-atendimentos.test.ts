@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel, type Prisma } from "@prisma/client";
 
-// Trava UNITÁRIA do escopo de atendimentos na linha comercial (SPEC-ERP-005 LC-D02/LC-L03/LC-L03b/
-// LC-L05), no `npm test` comum: a forma do filtro fica presa sem depender do banco de integração.
-
 const db = vi.hoisted(() => ({ usuario: { findMany: vi.fn() }, alocacaoTurma: { findMany: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
 const CARTEIRA = { vendedorDonoId: { in: ["carteira"] } };
@@ -18,7 +15,6 @@ const LINHA = (donos: string[]): Where => ({
   conversa: { numero: { finalidade: "VENDAS", ativo: true, donoId: { in: donos } } },
 });
 
-/** Os ramos OR do escopo de um usuário não administrador. */
 async function ramos(id: string, ...papeis: Papel[]): Promise<Where[]> {
   const w = await escopoAtendimentos({ id, papeis });
   const [, ors] = (w as { AND: [Where, Where] }).AND;
@@ -33,7 +29,6 @@ describe("escopoAtendimentos × linha comercial", () => {
     expect(r).toContainEqual(LINHA(["v1"]));
     const comercial = r.find((x) => x.finalidade === "COMERCIAL" && "OR" in x) as { OR: Where[] };
     expect(comercial.OR).toContainEqual({ lead: { is: CARTEIRA } });
-    // LC-L03b: o "responsável sem lead" NÃO vale em número de VENDAS (troca de dono corta o anterior).
     expect(comercial.OR).toContainEqual({ leadId: null, responsavelId: "v1", conversa: { numero: { finalidade: { not: "VENDAS" } } } });
     expect(comercial.OR).not.toContainEqual({ leadId: null, responsavelId: "v1" });
     expect(db.usuario.findMany).not.toHaveBeenCalled();

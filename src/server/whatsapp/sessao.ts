@@ -4,16 +4,6 @@ import { registrarEvento } from "@/server/_shared/evento";
 
 import { chamarMotor, ErroMotor } from "./motor/cliente";
 
-// SESSÃO DO NÚMERO (doc 26 §Camada 0/E3): estado por número + fluxo "conectar via QR" na tela do
-// número. O motor gerencia a sessão (1 por número, numeroId = NumeroWhatsApp.providerRef = id);
-// desconexão degrada para "acumula na fila + alerta" — a fila já segura sozinha. Este módulo NÃO é
-// a porta de mensagens (canal.ts): é gestão de sessão — só as ações de config e os webhooks usam.
-
-/**
- * Aplica um estado de sessão ao número e grava os EVENTOS de domínio nas transições
- * (doc 30 §eventos): NumeroWhatsAppConectado ao abrir; SessaoBaileysCaiu quando um número
- * que estava CONECTADO cai. Idempotente: mesmo estado não gera nada.
- */
 export async function aplicarEstadoSessao(
   numeroId: string,
   nova: SessaoNumero,
@@ -67,7 +57,6 @@ interface SessaoMotor {
   codigoPareamento?: string;
 }
 
-/** status do motor (ConnectionStatus do Baileys) → enum SessaoNumero. */
 export function sessaoDeStatusMotor(status: string | null | undefined): SessaoNumero | null {
   switch (status) {
     case "qr":
@@ -107,7 +96,6 @@ function mensagemErroMotor(e: unknown): string {
 
 const rotaNumero = (ref: string) => `/v1/numeros/${encodeURIComponent(ref)}`;
 
-/** Cadastra (ou atualiza o rótulo) o número no motor. Idempotente. */
 export async function garantirNumeroNoMotor(n: { providerRef: string; rotulo: string }): Promise<void> {
   await chamarMotor(rotaNumero(n.providerRef), { metodo: "PUT", json: { rotulo: n.rotulo } });
 }
@@ -121,18 +109,12 @@ async function resultadoDe(n: NumeroMotor, sessao: SessaoMotor, via: "conectar" 
   const qrBase64 = sessao.qr ?? null;
   const codigoPareamento = sessao.codigoPareamento ?? null;
   let estado = sessaoDeStatusMotor(sessao.status);
-  // Sem QR nem código ainda e sem status conhecido: a sessão espera leitura.
   if (!estado) estado = qrBase64 || codigoPareamento ? "AGUARDANDO_QR" : "DESCONECTADO";
   if (estado === "DESCONECTADO" && via === "conectar") estado = "AGUARDANDO_QR";
   await aplicarEstadoSessao(n.id, estado, via);
   return { qrBase64, codigoPareamento, estado, erro: estado === "CONECTADO" ? null : sessao.erro ?? null };
 }
 
-/**
- * Fluxo "conectar via QR": garante o número no motor (refaz o cadastro se o salvar falhou),
- * inicia a sessão e lê o QR atual. O estado local vira AGUARDANDO_QR; a confirmação chega
- * pelo evento sessao.estado ou pelo poll da tela.
- */
 export async function conectarNumeroMotor(n: NumeroMotor): Promise<ResultadoConexao> {
   try {
     await garantirNumeroNoMotor(n);
@@ -148,7 +130,6 @@ export async function conectarNumeroMotor(n: NumeroMotor): Promise<ResultadoCone
   }
 }
 
-/** Pareamento por código (alternativa ao QR). */
 export async function parearNumeroMotor(n: NumeroMotor, telefoneE164: string): Promise<ResultadoConexao> {
   try {
     await garantirNumeroNoMotor(n);
@@ -169,7 +150,6 @@ export async function parearNumeroMotor(n: NumeroMotor, telefoneE164: string): P
   }
 }
 
-/** Poll do estado real no motor (botão/intervalo da tela do número). */
 export async function consultarSessaoMotor(
   n: NumeroMotor | { id: string; providerRef: string; rotulo?: string },
 ): Promise<{ sessao: SessaoNumero; qrBase64: string | null; codigoPareamento: string | null }> {
@@ -184,15 +164,10 @@ export async function consultarSessaoMotor(
   };
 }
 
-/** Comando externo; a operação administrativa confirma estado e auditoria na sua própria transação. */
 export async function solicitarLogoutMotor(n: { providerRef: string }): Promise<void> {
   await chamarMotor(`${rotaNumero(n.providerRef)}/desconectar`, { metodo: "POST" });
 }
 
-/**
- * Contrato legado de logout com sincronização local, mantido para compatibilidade.
- * Ações administrativas usam solicitarLogoutMotor e confirmam estado/eventos na própria transação.
- */
 export async function desconectarNumeroMotor(n: { id: string; providerRef: string }): Promise<void> {
   await solicitarLogoutMotor(n);
   await aplicarEstadoSessao(n.id, "DESCONECTADO", "conectar");

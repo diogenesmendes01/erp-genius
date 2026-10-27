@@ -13,7 +13,6 @@ type VinculoFrequencia = {
   fimVigencia?: Date | null;
 };
 
-/** Chamar após autorizar e bloquear o vínculo acadêmico. Não é fechamento do nível. */
 export async function carregarFrequenciaVinculoTx(tx: Prisma.TransactionClient, a: VinculoFrequencia, nivelId: string, minimoPercentual: string, agora = new Date()) {
   const pendenciasHistoricas: { origemId: string; motivo: string }[] = [];
   const inicio = a.provenienciaVinculo === "MIGRACAO" ? a.inicioVigencia : a.criadoEm;

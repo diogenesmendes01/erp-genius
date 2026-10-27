@@ -14,12 +14,6 @@ export const ConfirmarResolucaoImpedimentoSchema = z.object({
 
 type Linha = { id: string; status: string; matriculaId: string; regraId: string; codigoAvaliacao: string; alocacaoId: string; turmaId: string };
 
-/**
- * Q164: a gestão pedagógica confirma que o impedimento causado pela escola foi resolvido
- * por uma realização posterior da MESMA avaliação, já com nota oficial. A reserva impedida
- * e sua ocorrência continuam como histórico; rascunho, rejeição, nota de outro contrato ou
- * de outra avaliação não resolvem. O guard do banco repete estas invariantes.
- */
 export async function confirmarResolucaoImpedimentoSegundaChamadaTx(tx: PrismaTypes.TransactionClient, autorId: string, input: z.input<typeof ConfirmarResolucaoImpedimentoSchema>) {
   const d = ConfirmarResolucaoImpedimentoSchema.parse(input);
   const [impedida] = await tx.$queryRaw<Linha[]>(Prisma.sql`

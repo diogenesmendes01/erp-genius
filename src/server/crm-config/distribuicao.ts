@@ -7,7 +7,6 @@ import { SETORES } from "@/server/whatsapp/setor";
 
 export type MotivoAtribuicao = "CARTEIRA" | "RODIZIO" | "MENOR_CARGA";
 
-/** Setores que o autor pode configurar: Admin todos; Gerente Comercial só COMERCIAL; Gerente Pedagógico só PEDAGOGICO. */
 export function setoresEditaveis(papeis: Papel[]): FinalidadeAtendimentoWhatsApp[] {
   if (papeis.includes(Papel.ADMINISTRADOR)) return [...SETORES];
   const r: FinalidadeAtendimentoWhatsApp[] = [];
@@ -30,10 +29,6 @@ interface EntradaEscolha {
   donoCarteira: string | null;
 }
 
-/**
- * Pura. A carteira do lead vale SEMPRE e vem antes da regra do setor (inclusive MANUAL e sem
- * participantes); sem dono, rodízio (ordem da lista) ou menor carga (empate pela ordem); MANUAL/sem participantes = fila (null).
- */
 export function escolherResponsavel(i: EntradaEscolha): string | null {
   if (i.donoCarteira) return i.donoCarteira;
   if (i.regra === "MANUAL" || i.participantes.length === 0) return null;
@@ -60,7 +55,6 @@ export const DistribuicaoSchema = z.object({
 });
 export type EntradaDistribuicao = { finalidade: FinalidadeAtendimentoWhatsApp; regra: RegraDistribuicao; participantesIds: string[] };
 
-/** Grava a distribuição na transação do chamador; só registra `DistribuicaoAlterada` quando algo mudou. */
 export async function aplicarDistribuicaoSetor(tx: Prisma.TransactionClient, autorId: string, dados: EntradaDistribuicao): Promise<boolean> {
   const ids = [...new Set(dados.participantesIds)];
   const usuarios = await tx.usuario.findMany({ where: { id: { in: ids }, ativo: true }, select: { id: true, papeis: true } });
@@ -92,10 +86,6 @@ export async function salvarDistribuicaoSetor(i: EntradaDistribuicao): Promise<R
   });
 }
 
-/**
- * Atribuição automática na abertura sem responsável (primeiro inbound). Trava a linha do setor com
- * FOR UPDATE para o rodízio não repetir sob concorrência. Devolve o responsável ou null (fila).
- */
 export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, atendimentoId: string): Promise<string | null> {
   const a = await tx.atendimentoWhatsApp.findUnique({
     where: { id: atendimentoId },
@@ -105,7 +95,6 @@ export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, aten
   const travada = await tx.$queryRaw<{ ok: number }[]>`SELECT 1 AS ok FROM "PrazoRespostaSetor" WHERE "finalidade" = ${a.finalidade}::"FinalidadeAtendimentoWhatsApp" FOR UPDATE`;
   if (!travada.length) return null;
   const cfg = await tx.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: a.finalidade } });
-  // Carteira primeiro (vale também em setor MANUAL ou sem participantes): o lead com dono ativo volta para ele.
   let donoCarteira: string | null = null;
   const leadId = a.leadId ?? a.conversa.contato?.leadId ?? null;
   if (a.finalidade === "COMERCIAL" && leadId) {

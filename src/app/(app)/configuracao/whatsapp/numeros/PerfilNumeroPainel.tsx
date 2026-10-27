@@ -9,9 +9,6 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { privacidadeInicial } from "./privacidade-inicial";
 
-// Perfil, privacidade e mensagens temporárias de cada número MOTOR (só ADMINISTRADOR).
-// O motor é chamado primeiro; se ele recusar, nada é salvo no ERP.
-
 const btn = botaoClasses({ tamanho: "sm" });
 const input = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 type Vis = "TODOS" | "CONTATOS" | "NINGUEM";
@@ -56,7 +53,6 @@ function PainelDoNumero({ n }: { n: PerfilNumeroDados }) {
     const d = await aPerfil.executar(async () => {
       let fotoUploadId: string | undefined;
       if (foto) {
-        // O motor recusa foto acima de 128 KB: avisa antes de enviar, com a mensagem certa.
         if (foto.size > 128 * 1024) return { ok: false as const, erro: "A foto pode ter no máximo 128 KB. Reduza a imagem e tente de novo." };
         const form = new FormData();
         form.append("file", foto);

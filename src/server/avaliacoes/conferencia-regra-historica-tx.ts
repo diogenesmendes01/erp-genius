@@ -11,7 +11,6 @@ export const RevisarConferenciaRegraHistoricaSchema = z.object({ turmaId: id, de
 export const ProporConferenciaRegraHistoricaSchema = RevisarConferenciaRegraHistoricaSchema.extend({ estadoHash: z.string().regex(/^[a-f0-9]{64}$/), versaoEsperada: z.number().int().nonnegative(), motivo: texto, evidencia: texto, chaveIdempotencia: z.string().min(8).max(100) }).strict();
 export const DecidirConferenciaRegraHistoricaSchema = z.object({ propostaId: id, estadoHash: z.string().regex(/^[a-f0-9]{64}$/), aprovada: z.boolean(), motivo: texto }).strict();
 
-/** Mantém a mesma ordem de locks da migração Q141: calendário, nível, turma, papel. */
 export async function bloquearConferenciaRegraHistorica(tx: Prisma.TransactionClient, turmaId: string, atorId: string) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const turma = await tx.turma.findUnique({ where: { id: turmaId }, select: { nivelId: true } });
@@ -22,7 +21,6 @@ export async function bloquearConferenciaRegraHistorica(tx: Prisma.TransactionCl
   return turma.nivelId;
 }
 
-/** Não seleciona a regra; apenas confere a versão publicada apontada pela evidência. */
 export async function contextoConferenciaRegraHistorica(tx: Prisma.TransactionClient, turmaId: string, destinoId: string) {
   const turma = await tx.turma.findUniqueOrThrow({ where: { id: turmaId }, select: { id: true, nome: true, codigo: true, nivelId: true, status: true, dataInicio: true, dataFim: true, regraAvaliacaoId: true } });
   if (turma.regraAvaliacaoId) throw new ErroRegra("A turma já possui regra vinculada.");

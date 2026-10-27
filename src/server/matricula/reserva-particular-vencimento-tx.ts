@@ -3,8 +3,6 @@ import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { resolverReservaParticularAtual } from "./reserva-particular-cadeia";
 
-/** Executor interno para Secretaria/rotina autenticada. Chamador autoriza o executor.
- * Resultado externo incerto nunca autoriza liberação dos horários. */
 export async function conferirVencimentoParticularTx(tx: Prisma.TransactionClient, reservaId: string, autorId: string | null = null) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const referencia = await tx.reservaAgendaParticular.findUnique({ where: { id: reservaId }, select: { matriculaId: true } });
@@ -22,8 +20,6 @@ export async function conferirVencimentoParticularTx(tx: Prisma.TransactionClien
   const informes = await tx.pagamentoInformado.findMany({ where: { cobranca: { matriculaId: reserva.matriculaId }, status: { in: ["A_CONFERIR", "CONFIRMADO"] } }, select: { id: true }, orderBy: { id: "asc" } });
   const recebimentos = await tx.recebimento.findMany({ where: { titularMatriculaId: reserva.matriculaId }, select: { id: true }, orderBy: { id: "asc" } });
   const indicacoes = await tx.cobranca.findMany({ where: { matriculaId: reserva.matriculaId, OR: [{ valorRecebido: { gt: 0 } }, { pagoEm: { not: null } }, { status: "PAGO" }] }, select: { id: true }, orderBy: { id: "asc" } });
-  // Mesmo um processo cancelado exige conciliação: cancelamento não prova ausência
-  // de assinaturas parciais, nem substitui o tratamento dos documentos/valores.
   const processos = await tx.processoAssinaturaContratual.findMany({ where: { matriculaId: reserva.matriculaId }, select: { id: true, estado: true }, orderBy: { id: "asc" } });
   const documentos = await tx.documento.findMany({ where: { matriculaId: reserva.matriculaId, categoria: "CONTRATO" }, select: { id: true }, orderBy: { id: "asc" } });
   const evidenciaContrato = m.contratoOk || !!m.confirmacaoContratoEm || !!m.contratoDocumentoId;

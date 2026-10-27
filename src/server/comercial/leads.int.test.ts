@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Papel, EtapaLead } from "@prisma/client";
 
-// Prioridades 1 e 2 do docs/14 (integração):
-//  1. row-level de LEITURA: vendedor não enxerga lead de outro vendedor;
-//  2. toda mutação grava Evento NA MESMA transação (e falha não grava nada).
-// Sessão mockada devolve só o id — os PAPÉIS vêm do banco de teste (papéis frescos),
-// então o caminho real de autorização é exercitado de ponta a ponta.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -81,7 +75,7 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
     const eventos = await eventosDo("Lead", leadV1);
     const tipos = eventos.map((e) => e.tipo);
     expect(tipos).toContain("LeadCriado");
-    expect(tipos).toContain("LeadAtribuido"); // vendedor vira dono ao criar
+    expect(tipos).toContain("LeadAtribuido");
     expect(eventos.find((e) => e.tipo === "LeadCriado")?.autorId).toBe(vendedor1.id);
   });
 
@@ -100,7 +94,6 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
     const efemero = await criarUsuario([Papel.VENDEDOR], "Efêmero");
     logadoComo(efemero.id);
 
-    // Revoga o papel DEPOIS do "login" (sessão mockada continua a mesma).
     await prisma.usuario.update({ where: { id: efemero.id }, data: { papeis: [] } });
 
     const r = await criarLead({ nome: "Barrado", segmento: "ADULTO", temperatura: "MORNO", b2b: false });
@@ -126,7 +119,6 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
     expect(evento?.payload).toMatchObject({
       proximoFollowUpCivil: "2026-09-10",
       dataPropostaCivil: "2026-09-12",
-      // Lote 3 do fuso pessoal: 09:30 digitado em São Paulo, convertido no servidor com o fuso explícito.
       dataExperimental: "2026-09-11T12:30:00.000Z",
     });
   });

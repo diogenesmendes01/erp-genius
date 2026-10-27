@@ -13,11 +13,6 @@ import { contextoDaAba } from "../../contexto";
 
 const ROTA = "/financeiro/comissoes";
 
-// Aba "comissoes" do /financeiro (E8: uma rota por aba). Guard da própria aba ANTES das consultas — o
-// layout só decide a barra; uma rota pedida direto por quem não enxerga a aba não consulta nada.
-// E4: antes trazia todas as comissões do escopo de uma vez; agora filtro por situação e página na URL
-// (50 por página, como /comissoes). O total "a pagar" vem agregado do servidor, não da página exibida.
-// E1: ordem pelo cabeçalho, feita no servidor; filtrar, limpar e paginar mantêm a ordem escolhida.
 export default async function ComissoesFinanceiroPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const ctx = await contextoDaAba("comissoes");
   if (!ctx) return <AcessoNegado recurso="esta seção do financeiro" />;

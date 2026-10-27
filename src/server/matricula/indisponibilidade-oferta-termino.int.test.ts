@@ -93,8 +93,6 @@ it("recusa intervalo anterior, chave divergente e relato já fechado ou não con
 });
 
 it("serializa proposta e decisão simultâneas, preservando um único término", async () => {
-  // Fixar a sessão evita a corrida do mock de import dinâmico de NextAuth;
-  // a conferência fresca de ator e todas as transações continuam reais.
   const autenticacao = vi.spyOn(sessao, "exigirSessaoComPapel").mockResolvedValue({ id: secretariaId, nome: "Secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
   try {
     const [p, repetida] = await Promise.all([proporTerminoIndisponibilidadeOferta(proposta()), proporTerminoIndisponibilidadeOferta(proposta())]);

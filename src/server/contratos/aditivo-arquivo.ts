@@ -7,7 +7,6 @@ import { hashSubstituicao } from "./substituicao-estado";
 import { ProjecaoAditivoSchema } from "./aditivo-projecao";
 import { gerarPdfPreviaAditivo } from "./pdf-previa";
 
-/** Bytes privados de revisão. Não cria artefato de assinatura nem altera a proposta. */
 export async function carregarPdfPreviaAditivo(input: { matriculaId: string; propostaId: string }) {
   const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
   const id = z.string().trim().min(1).max(100);
@@ -20,7 +19,6 @@ export async function carregarPdfPreviaAditivo(input: { matriculaId: string; pro
   if (!p) return null;
   if (hashSubstituicao(p.snapshot) !== p.entradaHash) throw new ErroRegra("A proposta preservada exige conferência de integridade.");
   const s = ProjecaoAditivoSchema.parse(p.snapshot);
-  // Renderização fora da transação; somente fatos imutáveis foram carregados.
   const pdf = await gerarPdfPreviaAditivo({ propostaId: p.id, criadaEm: p.criadaEm, propostaHash: p.entradaHash,
     modeloCodigo: s.base.modeloCodigo, modeloVersao: s.base.modeloVersao, versaoProposta: p.versao, ambiente: s.base.ambiente, documento: s.documento });
   return { id: p.id, ...pdf };

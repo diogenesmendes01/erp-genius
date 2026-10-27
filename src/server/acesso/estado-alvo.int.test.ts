@@ -7,9 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { definirUsuarioAtivo } from "./acoes";
 
-// B4 (#175 C2): ativar/desativar usuário recebe o estado-alvo. Com a tela velha, o segundo administrador que
-// confirma o mesmo estado não desfaz o primeiro e não grava evento.
-
 beforeEach(async () => { await truncarBanco(); });
 
 describe("definirUsuarioAtivo — estado-alvo explícito", () => {

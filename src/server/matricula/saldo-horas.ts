@@ -8,7 +8,6 @@ export const SaldoCompraHorasSchema = z.object({
   }).strict()).max(10000),
 }).strict().superRefine((d, ctx) => {
   if (new Set(d.reservas.map((r) => r.id)).size !== d.reservas.length) ctx.addIssue({ code: "custom", message: "Reserva repetida." });
-  // Uma tentativa cancelada pode ter nova reserva; duas reservas vigentes do mesmo encontro não.
   const vigentes = d.reservas.filter((r) => !["CANCELAMENTO_NO_PRAZO", "CANCELAMENTO_ESCOLA"].includes(r.desfecho));
   if (new Set(vigentes.map((r) => r.referenciaEncontro)).size !== vigentes.length) ctx.addIssue({ code: "custom", message: "Encontro já possui reserva ou consumo nesta compra." });
 });
@@ -25,7 +24,6 @@ export function calcularSaldoCompraHoras(input: z.input<typeof SaldoCompraHorasS
     minutosReservados: reservados, minutosConsumidos: consumidos, minutosDisponiveis: d.minutosComprados - reservados - consumidos };
 }
 
-/** O chamador deve conferir agenda, autorização, prazo contratual e persistir atomicamente. */
 export function reservarHorasCompradas(input: z.input<typeof SaldoCompraHorasSchema>, reserva: { id: string; referenciaEncontro: string; minutos: number }) {
   const atual = SaldoCompraHorasSchema.parse(input);
   const proximo = SaldoCompraHorasSchema.parse({ ...atual, reservas: [...atual.reservas, { ...reserva, desfecho: "PENDENTE" }] });

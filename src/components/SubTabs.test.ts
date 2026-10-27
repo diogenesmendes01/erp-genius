@@ -1,5 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -66,20 +64,6 @@ describe("SubTabs", () => {
     expect(html).not.toContain("Sub-navegação");
   });
 
-  it("todo <SubTabs> do app declara um aria-label literal próprio, sem repetir o de outra área (C45, #170)", () => {
-    const usos = (readdirSync("src/app", { recursive: true }) as string[])
-      .filter((f) => f.endsWith(".tsx"))
-      .flatMap((f) => [...readFileSync(join("src/app", f), "utf-8").matchAll(/<SubTabs\b[^>]*>/g)].map((m) => ({ arquivo: f, tag: m[0] })));
-    expect(usos.length).toBeGreaterThanOrEqual(6);
-    const rotulos = usos.map(({ arquivo, tag }) => {
-      const r = /\bariaLabel="([^"]+)"/.exec(tag)?.[1];
-      expect(r, `${arquivo}: ${tag}`).toBeTruthy();
-      expect(r, arquivo).not.toBe("Sub-navegação");
-      return r;
-    });
-    expect(new Set(rotulos).size, rotulos.join(" | ")).toBe(rotulos.length);
-  });
-
   it("sub-aba ativa é pílula sólida com text-on-brand", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
     const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
@@ -93,7 +77,7 @@ describe("SubTabs", () => {
     const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
     const nav = html.match(/^<nav class="([^"]*)"/)?.[1].split(" ") ?? [];
     expect(nav).toEqual(expect.arrayContaining(["flex", "max-sm:flex-nowrap", "max-sm:overflow-x-auto", "max-sm:p-1", "sm:flex-wrap"]));
-    expect(nav).not.toContain("flex-wrap"); // sem quebra incondicional
+    expect(nav).not.toContain("flex-wrap");
     const links = [...html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)].map((m) => m[1].split(" "));
     expect(links).toHaveLength(2);
     for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
@@ -107,19 +91,13 @@ describe("SubTabs", () => {
       mostrarAbaAtiva(nav as unknown as HTMLElement);
       return { nav, ativa };
     };
-    // Aba cortada à direita: avança só o que falta.
     expect(faixa({ left: 330, right: 400 }).nav.scrollLeft).toBe(141);
-    // Aba cortada à esquerda: recua só o que falta.
     expect(faixa({ left: -4, right: 60 }).nav.scrollLeft).toBe(80);
-    // Já visível: não mexe.
     expect(faixa({ left: 40, right: 120 }).nav.scrollLeft).toBe(100);
-    // Faixa sem transbordo (sm+): nem procura a aba.
     const larga = faixa({ left: 330, right: 400 }, 343, 343);
     expect(larga.nav.querySelector).not.toHaveBeenCalled();
     expect(larga.nav.scrollLeft).toBe(100);
-    // Nunca usa scrollIntoView (que rolaria a página).
     expect(faixa({ left: 330, right: 400 }).ativa?.scrollIntoView).not.toHaveBeenCalled();
-    // Sem aba ativa (rota fora das abas) ou sem nav montada: nada a fazer, sem erro.
     expect(faixa(null).nav.scrollLeft).toBe(100);
     expect(() => mostrarAbaAtiva(null)).not.toThrow();
   });

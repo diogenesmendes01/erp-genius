@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na decisão e na
-// execução da equivalência — cada formulário com o próprio feedback (erro em role="alert", sucesso em
-// role="status"), falha de rede como resultado incerto e o formulário saindo do ocupado. Sem DOM:
-// ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), executar: vi.fn(), refresh: vi.fn(),
@@ -34,7 +30,6 @@ afterEach(() => { vi.unstubAllGlobals(); });
 const props: Parameters<typeof AcoesEquivalencia>[0] = { propostaId: "proposta", estadoHash: "a".repeat(64), podeDecidir: true, decisaoId: "decisao", podeExecutar: true };
 const tela = (p: Partial<typeof props> = {}) => m.ganchos!.renderizar(AcoesEquivalencia, { ...props, ...p });
 const botoes = (t: ReactNode) => elementos(t).filter((n) => n.type === "button");
-/** O botão do formulário (0 = decisão, 1 = execução) mostra o rótulo de progresso e está travado. */
 const ocupadoEm = (indice: number, rotulo: string) => {
   const b = botoes(tela())[indice];
   return texto(b.props.children) === rotulo && b.props.disabled === true;
@@ -89,7 +84,6 @@ describe("AcoesEquivalencia: execução", () => {
     concluir({ ok: false, erro: "Sem vaga na turma de destino." });
     await execucao;
     expect(botoes(tela()).every((b) => b.props.disabled === false)).toBe(true);
-    // Dois FeedbackAcao: o primeiro (decisão) sem nada; o segundo (execução) com o erro.
     const feedbacks = elementos(tela()).filter((n) => n.type === FeedbackAcao);
     expect(feedbacks.map((f) => f.props.erro)).toEqual([null, "Sem vaga na turma de destino."]);
     expect(m.refresh).not.toHaveBeenCalled();

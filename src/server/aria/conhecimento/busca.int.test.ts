@@ -40,12 +40,10 @@ describe("busca nos trechos", () => {
     const processando = await fonte("B", "A turma começa tarde.", "PROCESSANDO");
     const erro = await fonte("C", "A turma começa à tarde.", "ERRO");
     const controle = await fonte("D", "A turma começa ao meio-dia.");
-    // Controle positivo: antes de arquivar, a mesma consulta acha a fonte.
     expect(await buscarTrechos("turma", [arquivada])).toHaveLength(1);
     await prisma.fonteConhecimento.update({ where: { id: arquivada }, data: { arquivadaEm: new Date() } });
     const r = await buscarTrechos("turma", [arquivada, processando, erro, controle]);
     expect(r.map((t) => t.fonteId)).toEqual([controle]);
-    // Voltando a PRONTA, a fonte em processamento passa a aparecer (a consulta casa com o texto).
     await prisma.fonteConhecimento.update({ where: { id: processando }, data: { status: "PRONTA" } });
     expect((await buscarTrechos("turma", [processando])).map((t) => t.fonteId)).toEqual([processando]);
   });
@@ -55,7 +53,6 @@ describe("busca nos trechos", () => {
     const vigente = await fonte("F", "A turma começa tarde.");
     const semValidade = await fonte("S", "A turma começa ao meio-dia.");
     await prisma.fonteConhecimento.update({ where: { id: vencida }, data: { validoAte: new Date(Date.now() + 60_000) } });
-    // Controle positivo: dentro da validade a fonte aparece.
     expect((await buscarTrechos("turma", [vencida])).map((t) => t.fonteId)).toEqual([vencida]);
     await prisma.fonteConhecimento.update({ where: { id: vencida }, data: { validoAte: new Date(Date.now() - 1000) } });
     await prisma.fonteConhecimento.update({ where: { id: vigente }, data: { validoAte: new Date(Date.now() + 864e5) } });
@@ -68,7 +65,6 @@ describe("busca nos trechos", () => {
     expect(await buscarTrechos("'); DROP TABLE x; --", [fonteId])).toEqual([]);
     expect(await buscarTrechos(`"turmas noturnas" ; ) ' --`, [fonteId])).toHaveLength(1);
     expect(await prisma.trechoConhecimento.count()).toBe(1);
-    // A busca continua funcionando depois da consulta maliciosa.
     const r = await buscarTrechos("turma noturna", [fonteId]);
     expect(r).toHaveLength(1);
     expect(r[0].fonteId).toBe(fonteId);
@@ -100,12 +96,9 @@ describe("busca nos trechos", () => {
       const [original] = await db.$queryRaw<Sessao[]>`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`;
       try {
         await db.$transaction(async tx => {
-          // NOW é estável na transação; fixtures UTC não dependem do relógio Node.
           await tx.$executeRaw(Prisma.sql`UPDATE "FonteConhecimento" SET "validoAte" =
             (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + CASE WHEN id = ${vencida} THEN INTERVAL '-1 second' ELSE INTERVAL '1 second' END
             WHERE id IN (${vencida}, ${vigente})`);
-          // Apenas transporte de teste: SQL, parâmetros e resultado são os da função real.
-          // Captura ANTES do spy para não depender do proxy do cliente transacional.
           const consultarTx = tx.$queryRaw.bind(tx);
           const encaminhamento = vi.spyOn(prisma, "$queryRaw").mockImplementation(consultarTx);
           let saudavel = true;
@@ -129,7 +122,6 @@ describe("busca nos trechos", () => {
           }
         }, { timeout: 15000 });
       } catch (e) { falhaTx = e; }
-      // Mesmo pool1, inclusive após rollback se alguma consulta lançou erro.
       const [final] = await db.$queryRaw<Sessao[]>`SELECT pg_backend_pid() AS pid, current_setting('TimeZone') AS tz`;
       expect(final).toEqual(original);
       if (falhaTx) throw falhaTx;

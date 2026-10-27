@@ -1,13 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// B2B — Fase 2 (doc 03): lote de matrículas corporativas, fatura única por competência,
-// baixa em lote e relatório por colaborador. Sessão mockada; papéis frescos do banco.
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// A cobrança de empresas está desligada (D9, src/lib/funcionalidades.ts); esta suíte cobre o fluxo religado.
 vi.mock("@/lib/funcionalidades", async (original) => ({
   ...(await original<typeof import("@/lib/funcionalidades")>()),
   COBRANCA_B2B_ATIVA: true,
@@ -37,7 +33,6 @@ async function seedEmpresa() {
 }
 
 
-// Q88 preserva empresas pagadoras; o lote que ativava sem contrato/reserva é obsoleto.
 describe("empresas e dados históricos após merge", () => {
   it("Financeiro mantém cadastro da empresa com autoria", async () => {
     const id = await seedEmpresa();

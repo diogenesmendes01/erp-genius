@@ -5,20 +5,12 @@ import { EnvelopeMotorSchema } from "@/server/whatsapp/motor/eventos";
 import { registrarEventoMotor } from "@/server/whatsapp/motor/receber";
 import { drenarEventosMotor } from "@/server/whatsapp/motor/drenar";
 
-// WEBHOOK DO MOTOR: confere o HMAC, grava o evento (dedupe por idEvento), responde 200 e drena depois.
 export const runtime = "nodejs";
 
-/**
- * Teto do corpo (R1 do #215, C3): a rota é pública e o HMAC só é conferido depois de ler o corpo.
- * O maior evento do contrato (MODO-SERVICO.md §Eventos) é `mensagem.recebida` com texto longo
- * (~65 mil caracteres, até ~260 KB em UTF-8) ou `sessao.qr` (data URL PNG, dezenas de KB); a mídia
- * nunca vem no corpo. 1 MB dá folga de ~4x.
- */
 export const TETO_CORPO_WEBHOOK_MOTOR = 1024 * 1024;
 
 const corpoGrande = () => NextResponse.json({ erro: "Corpo acima do limite." }, { status: 413 });
 
-/** Lê o corpo até o teto; acima dele cancela a leitura e devolve null. */
 async function lerCorpoLimitado(req: Request, teto: number): Promise<string | null> {
   if (!req.body) return "";
   const leitor = req.body.getReader();

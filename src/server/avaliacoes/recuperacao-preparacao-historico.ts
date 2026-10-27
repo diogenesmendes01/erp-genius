@@ -7,7 +7,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 
-/** Histórico paginado por número (E4), em ordem de id: ida e volta trazem as mesmas autorizações. */
 export async function consultarHistoricoPreparacaoRecuperacao(input: { alocacaoId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

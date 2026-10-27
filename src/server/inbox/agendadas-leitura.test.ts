@@ -9,7 +9,6 @@ const ator=()=>({id:"u",nome:"Pessoa fictícia",papeis:[Papel.VENDEDOR],permisso
 const atendimento=()=>({id:"a",responsavelId:"u",encerradoEm:null,numeroId:"numero",contatoId:"contato",leadId:"lead",iaPausadaEm:new Date(),finalidade:"COMERCIAL",conversaId:"conversa",conversa:{id:"conversa",grupoId:null,numero:{donoId:"u",ativo:true},contato:{id:"contato",pessoaId:"pessoa",leadId:"lead",optOutEm:null}}});
 const linha=(id="m")=>({id,atendimentoId:"a",corpoRenderizado:"Texto fictício",agendadaPara:new Date("2030-01-02T15:00:00Z"),status:"PENDENTE",tipo:"TEXTO",midiaPath:null,conteudo:null,origem:"HUMANO",autorId:"u",passo:null,passoComercial:null,autor:{nome:"Pessoa fictícia",gerenteComercialId:null}});
 function fixture(){const usuario={findUnique:vi.fn().mockResolvedValue(ator())},intencaoMensagem={findMany:vi.fn<(query:unknown)=>Promise<unknown[]>>().mockResolvedValue([linha()])};Object.assign(usuario,{findMany:vi.fn().mockImplementation(async()=>[await usuario.findUnique()])});const dados={usuario,intencaoMensagem};
- // Double de fronteira Db deliberadamente parcial: só as portas deste leitor; não simula SQL/ACL nativos.
  return {...dados,db:dados as unknown as Db};}
 beforeEach(()=>{vi.resetAllMocks();m.visivel.mockResolvedValue(atendimento());m.estado.mockResolvedValue({ctx:{agora:new Date(),ariaAtiva:false,handoffPendentes:new Set()},sugestao:false});});
 it("projeta somente contrato autorizado, sem IDs de vínculo, arquivo ou campos cadastrais",async()=>{const f=fixture();expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([{id:"m",texto:"Texto fictício",agendadaPara:"2030-01-02T15:00:00.000Z",status:"PENDENTE",tipo:"TEXTO",temAnexo:false,autor:"voce",autorNome:"Pessoa fictícia",podeAlterar:true}]);});
@@ -30,9 +29,7 @@ it("GC mantém leitura mas perde alteração quando autor sai da equipe durante 
  const findMany=vi.fn().mockImplementation(async()=>[gerente(),autor()]);
  Object.assign(f.usuario,{findMany});
  f.intencaoMensagem.findMany.mockResolvedValue([{...linha(),autorId:"colega",autor:{nome:"Autora fictícia",gerenteComercialId:"u"}}]);
- // Controle com equipe preservada: a mesma linha continua alterável antes da revogação.
  expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([expect.objectContaining({id:"m",podeAlterar:true})]);
- // A fronteira canônica é aguardada pelo leitor; esta mutação ocorre após o snapshot da lista.
  m.estado.mockImplementation(async()=>{await Promise.resolve();saiuDaEquipe=true;return {ctx:{agora:new Date(),ariaAtiva:false,handoffPendentes:new Set()},sugestao:false};});
  const dto=await lerAgendadasDoAtendimento(f.db,"u","a");
  expect(saiuDaEquipe).toBe(true);

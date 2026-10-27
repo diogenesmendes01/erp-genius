@@ -9,19 +9,12 @@ interface ResultadoImport {
   total: number;
   criados: number;
   erros: { linha: number; motivo: string }[];
-  /** Linhas não importadas por repetirem um aluno cadastrado ou uma linha anterior (docs/42 L224). */
   ignorados?: { linha: number; motivo: string }[];
 }
 
 const btnPri = botaoClasses({ tamanho: "lg" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "lg" });
 
-/**
- * Modal de cadastro de alunos em lote (XLSX) — exibido só para administrador (doc 22).
- * docs/42 L224: depois do resultado, o botão vira "Importar outra planilha" — limpa o arquivo e o resultado — e
- * "Importar" só habilita com um arquivo escolhido; o mesmo arquivo não é reenviado por um segundo clique. O
- * servidor também ignora a linha repetida (cadastro ou linha anterior) e devolve o motivo, listado aqui.
- */
 export function ImportarAlunosModal() {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
@@ -45,7 +38,6 @@ export function ImportarAlunosModal() {
     limparArquivo();
   }
 
-  /** Volta ao começo do modal para outra planilha: sem resultado, sem arquivo, "Importar" travado até escolher. */
   function outraPlanilha() {
     setRes(null);
     setErro(null);
@@ -70,7 +62,6 @@ export function ImportarAlunosModal() {
         setErro(data?.erro ?? "Falha na importação.");
       } else {
         setRes(data as ResultadoImport);
-        // O arquivo enviado sai do campo: um segundo clique não manda a mesma planilha de novo.
         limparArquivo();
         if (data.criados > 0) router.refresh();
       }
@@ -153,7 +144,6 @@ export function ImportarAlunosModal() {
           )}
 
           <div className="flex justify-end gap-2">
-            {/* Durante o envio nada fecha — o resultado precisa aparecer aqui; depois dele, só este botão fecha. */}
             <button type="button" className={btnSec} onClick={fechar} disabled={enviando}>
               {res ? "Fechar" : "Cancelar"}
             </button>

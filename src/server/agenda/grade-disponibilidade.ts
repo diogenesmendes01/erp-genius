@@ -6,7 +6,6 @@ type Grade = {
   grade: { encontros: { inicio: string; fim: string }[] };
 };
 
-/** Verifica intervalos reais; o mesmo dia da semana em outro período não é conflito. */
 export async function conferirDisponibilidadeGrade(tx: Prisma.TransactionClient, proposta: Grade) {
   const { professorId } = proposta.origem;
   const professor = professorId ? await tx.usuario.findUnique({ where: { id: professorId }, select: { ativo: true, papeis: true } }) : null;

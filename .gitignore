@@ -1,56 +1,39 @@
-# dependencies
 /node_modules
 
-# next.js
 /.next/
 /out/
 
-# production
 /build
 
-# misc
 .DS_Store
 *.pem
 
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env
 .env
 .env*.local
 
-# typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
 /prisma/*.db
 
-# uploads (storage local PRIVADO — servido só via /api/files autenticado)
 /data/uploads/
-# legado: caminho público antigo (não deve mais ser usado)
 /public/uploads/
 
-# Postgres de teste (npm run test:db)
 .testdb/
 
-# Arquivos intermediários de validação; relatórios finais ficam em docs/.
 /tmp/
 
-# Identidade local do banco descartável de cada worktree.
 /.erp-test-profile
 
-# testes E2E (Playwright) — ver e2e/README.md
-# .env.e2e tem senhas do UAT; e2e/.auth/ tem cookies de sessão. Nunca versionar.
 .env.e2e
 /e2e/.auth/
-# relatórios e evidências gerados a cada execução (podem conter dados de tela)
 /playwright-report/
 /test-results/
 /blob-report/
 /playwright/.cache/
 
-# capturas de conferência dos PDFs do kit de QA (docs/qa/pdf/preview.mjs e paginas.mjs)
 /docs/qa/pdf/*.png

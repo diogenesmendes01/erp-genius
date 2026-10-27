@@ -16,9 +16,6 @@ export class ErroConfiguracaoEmail extends Error {
   constructor() { super("Envio institucional indisponível."); }
 }
 
-/** Transporte interno. ACEITO significa aceitação pelo provedor, nunca entrega.
- * A fila precisa gravar a tentativa antes do envio e manter a idempotência
- * durável: a janela da chave no Resend é limitada a 24 horas. Não há retry aqui. */
 export async function enviarEmailResend(mensagem: MensagemResend, opcoes: {
   ambiente?: AmbienteEmail; fetch?: FetchEmail; signal?: AbortSignal; timeoutMs?: number;
 } = {}): Promise<ResultadoResend> {
@@ -57,7 +54,6 @@ export async function enviarEmailResend(mensagem: MensagemResend, opcoes: {
     const recebido = z.object({ id: z.string().uuid() }).safeParse(json);
     return recebido.success ? { situacao: "ACEITO", provedorId: recebido.data.id } : { situacao: "INCERTO" };
   } catch {
-    // Uma falha depois de iniciar a requisição não prova que não houve envio.
     void resposta?.body?.cancel().catch(() => undefined);
     return { situacao: "INCERTO" };
   } finally {

@@ -28,7 +28,6 @@ async function adminFresco(tx: Prisma.TransactionClient, usuarioId: string) {
   if (!usuario?.ativo || !usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao("Sua Administração não está mais ativa.");
 }
 
-/** Registra uma revisão, nunca altera ou reativa uma versão anterior. */
 export async function revisarCorrespondenciaProdutoMigracao(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR); const dados = EntradaProduto.parse(input);
@@ -88,7 +87,6 @@ export async function ensaiarVinculoMigracao(input: unknown) {
       if (!linha) throw new ErroRegra("A linha não é uma fotografia de vínculo disponível.");
       const produtoOrigem = texto(linha.dadosOrigem, ["matricula", "produtoOrigem"]); const statusOrigem = texto(linha.dadosOrigem, ["matricula", "situacao"]);
       const moeda = texto(linha.dadosOrigem, ["matricula", "moeda"]); const pais = texto(linha.dadosOrigem, ["matricula", "pais"]);
-      // A revisão e o ensaio disputam as mesmas chaves, antes de ler a última versão.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`migracao-produto:${linha.origem}:${produtoOrigem ?? "<ausente>"}`}, 0))`;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`migracao-turma:${linha.origem}:${linha.turmaOrigemId ?? "<ausente>"}`}, 0))`;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`migracao-status-matricula:${linha.origem}:${statusOrigem ?? "<ausente>"}`}, 0))`;
@@ -106,9 +104,6 @@ export async function ensaiarVinculoMigracao(input: unknown) {
         ...pendencias.filter((pendencia) => pendencia.codigo !== "SITUACAO_NAO_CONFIRMADA" || !status?.ativa).map((pendencia) => `PENDENCIA_PREPARACAO_${pendencia.codigo}`),
         "CONTRATO_HISTORICO_EXIGE_EVIDENCIA", "PAGAMENTO_HISTORICO_EXIGE_EVIDENCIA",
       ].filter((codigo): codigo is string => !!codigo).map((codigo) => ({ codigo }));
-      // A situação declarada vira pendência de confirmação durante a preparação.
-      // Uma correspondência administrativa ativa confirma precisamente essa única
-      // pendência para o ensaio, sem esconder as demais pendências da fotografia.
       const pendenciasBloqueantes = pendencias.filter((pendencia) => pendencia.codigo !== "SITUACAO_NAO_CONFIRMADA");
       const completas = !!produto?.ativa && produto.moeda === moeda && produto.codigoISO === pais && !!turma?.ativa && !!status?.ativa && !!mapaAluno && pendenciasBloqueantes.length === 0;
       const resultado = completas ? "PRONTO_PARA_REVISAO" : "REQUISITO_AUSENTE";

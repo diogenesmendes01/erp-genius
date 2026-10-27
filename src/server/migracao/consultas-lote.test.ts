@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Detalhe do lote de migração com as linhas paginadas (docs/42 L2483; docs/43 §6 item 9). Sem banco: o Prisma é
-// mockado e o teste confere os argumentos da leitura das linhas (`skip`/`take`/`orderBy`) e que as correspondências
-// de vínculo só são lidas para as linhas da página.
-
 const m = vi.hoisted(() => ({
   sessao: vi.fn(),
   queryRaw: vi.fn(),
@@ -45,7 +41,6 @@ const lote = (linhas: ReturnType<typeof linha>[], total: number) => ({
   id: "lote-1", origem: "OPERACIONAL", chaveLote: "arquivo", estado: "PREPARADO", criadoEm: new Date("2026-09-16T00:00:00Z"),
   preparadoPor: { nome: "Admin" }, _count: { linhas: total }, conflitosEntrada: [], linhas,
 });
-/** Os argumentos da leitura das linhas (o `select.linhas` do findUnique do lote). */
 const leituraDasLinhas = () => (m.lote.mock.calls.at(-1)![0] as { select: { linhas: { skip: number; take: number; orderBy: unknown } } }).select.linhas;
 
 beforeEach(() => {

@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// B2B — Fase 2 (doc 03): validação de Empresa, matrículas em LOTE e fatura única.
-
 export const EmpresaSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome da empresa.").max(200),
   paisId: z
@@ -81,7 +79,6 @@ export type MatriculasLoteB2BInput = z.input<typeof MatriculasLoteB2BSchema>;
 
 export const FecharFaturaSchema = z.object({
   empresaId: z.string().min(1),
-  /** "YYYY-MM" da competência a faturar. */
   competencia: z.string().regex(/^\d{4}-\d{2}$/, "Competência no formato AAAA-MM."),
 });
 export type FecharFaturaInput = z.input<typeof FecharFaturaSchema>;

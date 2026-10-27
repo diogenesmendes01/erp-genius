@@ -73,7 +73,7 @@ export async function decidirPresencaHistoricaMigracao(input: unknown) {
       await tx.$executeRaw`INSERT INTO "AplicacaoPresencaHistoricaMigracao" (id,"propostaId",origem,"presencaOrigemId",resultado,"registroId","registroExistenteId","aplicadaPorId",snapshot) VALUES (${aplicacaoId},${p.id},${p.origem},${p.presencaOrigemId},${existente?'VINCULO_EXISTENTE':'NOVO_REGISTRO'}::"ResultadoAplicacaoPresencaHistoricaMigracao",${registroId},${existente?.id??null},${autor.id},${json({propostaId:p.id,registroId,resultado:existente?'VINCULO_EXISTENTE':'NOVO_REGISTRO'})})`;
       await tx.$executeRaw`UPDATE "PropostaPresencaHistoricaMigracao" SET status='APLICADA',"aplicadaEm"=now() WHERE id=${p.id}`;
       await registrarEvento(tx,{tipo:"PresencaHistoricaMigracaoAplicada",agregadoTipo:"Matricula",agregadoId:p.matriculaId,autorId:autor.id,payload:{propostaId:p.id,aulaId:p.aulaId,registroId,origem:p.origem,presencaOrigemId:p.presencaOrigemId}});return{id:p.id,registroId,repetida:false};
-    }); try { revalidatePath("/configuracao/migracao"); } catch { /* integração não possui store de geração */ } return resultado;
+    }); try { revalidatePath("/configuracao/migracao"); } catch {  } return resultado;
   });
 }
 
@@ -85,7 +85,6 @@ export async function listarAulasElegiveisPresencaHistoricaMigracao(linhaId:stri
   return executarAcao(async()=>{const autor=await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA,Papel.GERENTE_PEDAGOGICO,Papel.ADMINISTRADOR);return prisma.$transaction(async tx=>{const [u]=await tx.$queryRaw<{ativo:boolean;papeis:Papel[]}[]>(Prisma.sql`SELECT ativo,papeis FROM "Usuario" WHERE id=${autor.id} FOR SHARE`);if(!u?.ativo||!u.papeis.some(p=>p===Papel.SECRETARIA_ACADEMICA||p===Papel.GERENTE_PEDAGOGICO||p===Papel.ADMINISTRADOR))throw new ErroPermissao("Exige contexto acadêmico ativo.");return tx.$queryRaw<{id:string;ocorridaEm:Date;fusoAgenda:string|null;conteudo:string;turma:string|null}[]>(Prisma.sql`SELECT DISTINCT a.id,a."ocorridaEm",ea."fusoOrigem" AS "fusoAgenda",a.conteudo,t.nome AS turma FROM "LinhaPreparacaoMigracao" l JOIN "LotePreparacaoMigracao" lo ON lo.id=l."loteId" JOIN "MapaOrigemMatriculaMigracao" mm ON mm.origem=lo.origem AND mm."matriculaOrigemId"=l."matriculaOrigemId" JOIN "Matricula" m ON m.id=mm."matriculaId" JOIN "AlocacaoTurma" al ON al."matriculaId"=m.id AND al."alunoId"=m."alunoId" JOIN "AulaDiario" a ON a."turmaId"=al."turmaId" LEFT JOIN "EncontroAgenda" ea ON ea.id=a."encontroId" LEFT JOIN "Turma" t ON t.id=a."turmaId" WHERE l.id=${linhaId} AND l."tipoEntrada"='HISTORICO_PRESENCA'::"TipoEntradaPreparacaoMigracao" AND alocacao_cobre_instante(al,a."ocorridaEm" AT TIME ZONE 'UTC') AND situacao_matricula_no_instante(m.id,a."ocorridaEm")='ATIVA' AND a."ocorridaEm" AT TIME ZONE 'UTC'<=clock_timestamp() ORDER BY a."ocorridaEm" DESC`);});});
 }
 
-/** Após a correção Q23, apenas vincula a comprovação ao mesmo registro existente. */
 export async function resolverDivergenciaPresencaHistoricaMigracao(input:unknown) {
   return executarAcao(async()=>{
     const autor=await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO,Papel.ADMINISTRADOR),d=ResolucaoDivergenciaPresencaHistoricaMigracaoSchema.parse(input);

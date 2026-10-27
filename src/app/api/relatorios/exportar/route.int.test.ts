@@ -103,7 +103,6 @@ describe("GET /api/relatorios/exportar", () => {
       expect((await r.json()).erro, q).toMatch(/gestão comercial/);
     }
     expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
-    // O que a tela oferece ao vendedor continua exportando.
     for (const q of ["?aba=pipeline", "?aba=funil", "?aba=atendimento", "?aba=atividades", "?aba=detalhe&chave=abertas"]) expect((await req(q)).status, q).toBe(200);
   });
 

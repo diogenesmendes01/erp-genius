@@ -26,7 +26,6 @@ describe("listarComissoesPagina (E4)", () => {
     await listarComissoesPagina({ status: null, pagina: 1 });
     expect(m.findMany.mock.calls[0][0].orderBy).toEqual([{ vendedor: { nome: "asc" } }, { criadoEm: "desc" }, { id: "desc" }]);
     await listarComissoesPagina({ status: null, pagina: 2, ordem: { campo: "valor", dir: "desc" } });
-    // Valores de moedas diferentes não se comparam: agrupa por moeda e ordena dentro de cada uma.
     expect(m.findMany.mock.calls[1][0]).toMatchObject({ orderBy: [{ moeda: "asc" }, { valor: "desc" }, { id: "desc" }], skip: COMISSOES_POR_PAGINA, take: COMISSOES_POR_PAGINA });
     await listarComissoesPagina({ status: null, pagina: 1, ordem: { campo: "status", dir: "asc" } });
     expect(m.findMany.mock.calls[2][0].orderBy).toEqual([{ status: "asc" }, { vendedor: { nome: "asc" } }, { criadoEm: "desc" }, { id: "desc" }]);
@@ -85,7 +84,6 @@ describe("totaisComissoesAPagar (aba de comissões do /financeiro)", () => {
       { moeda: "CRC", _sum: { valor: new Prisma.Decimal("5000.50") }, _count: { _all: 3 } },
       { moeda: "USD", _sum: { valor: null }, _count: { _all: 0 } },
     ]);
-    // A quantidade por moeda alimenta a confirmação do fechamento do mês ("N comissões, total X").
     expect(await totaisComissoesAPagar()).toEqual([{ moeda: "CRC", valor: 5000.5, quantidade: 3 }, { moeda: "USD", valor: 0, quantidade: 0 }]);
     const consulta = m.groupBy.mock.calls[0][0];
     expect(consulta).toMatchObject({ by: ["moeda"], _sum: { valor: true }, _count: { _all: true } });

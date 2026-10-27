@@ -90,7 +90,6 @@ function projetarRelato(relato: {
   };
 }
 
-/** Registra um relato imutável. Relatar não confirma indisponibilidade nem altera cobranças. */
 export async function registrarRelatoIndisponibilidadeOferta(
   input: z.input<typeof RegistrarRelatoSchema>,
 ) {
@@ -159,7 +158,6 @@ export async function registrarRelatoIndisponibilidadeOferta(
   });
 }
 
-/** Histórico limitado para a equipe; não projeta aluno, pagador ou dados de contrato. */
 export async function consultarRelatosIndisponibilidadeOferta(
   input: z.input<typeof ConsultarRelatosSchema>,
 ) {

@@ -316,7 +316,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   mocks.portalCookie = "";
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
@@ -435,8 +435,6 @@ it("executa a cadeia aprovada e usa a nota de origem no consolidado sem lançame
 
   const consolidado = await prisma.$transaction(tx => carregarConsolidadoAvaliacoesTx(tx, professorId, aplicada.alocacaoDestinoId, "ACOMPANHAMENTO"));
   const falaConsolidada = consolidado.resultado.habilidades.find(habilidade => habilidade.habilidade === "FALA");
-  // I1 usa a nota aproveitada, mas F1 ainda não foi mapeada: o consolidado não
-  // pode apresentar um resultado final de fala com requisito obrigatório aberto.
   expect(falaConsolidada).toMatchObject({
     habilidade: "FALA",
     resultado: null,
@@ -771,7 +769,6 @@ it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isolada
   } });
   const notaIsolada = await oficializarFala(alocacaoIsolada.id, "4", "aca-v01-isolada-i1");
 
-  // Fechar o nível no destino pressupõe o nível concluído, sem a aula futura da oferta.
   await retirarAulaFuturaDaOferta((await prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: executada.dado.alocacaoDestinoId } })).turmaId);
   entrar(gestorId);
   const revisaoFechamento = await revisarFechamentoAcademico({ alocacaoId: executada.dado.alocacaoDestinoId });

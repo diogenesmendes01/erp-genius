@@ -4,7 +4,6 @@ import { normalizarFonteRevisaoDrive, type FonteRevisaoPersistida } from "./font
 
 type Alvo = { publicacaoAulaId: string; materialReposicaoId?: never } | { materialReposicaoId: string; publicacaoAulaId?: never };
 
-/** Resolve exclusivamente a última fonte persistida; linhas legadas não caem na cabeça do Drive. */
 export async function resolverFonteRevisaoGravacaoTx(tx: Prisma.TransactionClient, alvo: Alvo) {
   const fonte = await tx.fonteRevisaoGravacao.findFirst({
     where: "publicacaoAulaId" in alvo ? { publicacaoAulaId: alvo.publicacaoAulaId } : { materialReposicaoId: alvo.materialReposicaoId },

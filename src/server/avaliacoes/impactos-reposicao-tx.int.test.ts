@@ -53,8 +53,6 @@ async function publicarRegra(nivelId: string) {
     aprovada: true, motivo: "Publicação independente da regra de teste." }));
 }
 
-// Fixture persistida de dependência: esta suíte verifica alcance, não o cálculo
-// de notas/fechamento, coberto nas suítes próprias. Nenhum guard é desativado.
 async function criarPedido(alocacaoOrigemId: string, turmaDestinoId: string, status: "APROVADA" | "EXECUTADA" = "APROVADA") {
   const a = await prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: alocacaoOrigemId }, include: { turma: true } });
   const regraId = a.turma.regraAvaliacaoId!;
@@ -177,7 +175,6 @@ it("usa início inclusivo e fim exclusivo ao localizar o vínculo da aula origin
 
 it("recusa vínculo inativo sem data de encerramento", async () => {
   await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { ativa: false, encerradaEm: null } });
-  // O seletor temporal já exclui o vínculo sem intervalo histórico conferível.
   await expect(carregar()).rejects.toThrow("único vínculo histórico");
 });
 
@@ -216,15 +213,12 @@ it("M01: vigência histórica seleciona fonte real, respeita fronteiras e recusa
     const r = await aplicarVinculoMigracao({ linhaId: linhas[indice]!.id, ensaioId: revisoes[indice]!.id, entradaHash: linhas[indice]!.entradaHash, contextoHash: revisoes[indice]!.contextoHash, fusoReferencia: "America/Costa_Rica", semanticaFim: "LIMITE_EXCLUSIVO", inicioAlocacao: inicio, fimAlocacao: fim, diaVencimento: 10, mesesPlano: 1, evidenciaContrato: { fonte: "contrato" }, evidenciaPagamento: { fonte: "pagamento" }, fatos: [{ tipo: "ATIVACAO", data: "2025-01-01", evidencia: { fonte: "situação" } }], ...(fim ? { complementoVigencia: { motivo: "Limite histórico conferido na fonte migrada.", evidencia: { fonte: "limite histórico" } } } : {}) });
     if (!r.ok || !r.dado) throw new Error(r.ok ? "Aplicação M01 ausente" : r.erro); return r.dado;
   };
-  // B é importada antes da A: a criação técnica não define a fonte histórica.
   const b = await aplicar(1, "2025-02-01", null); const a = await aplicar(0, "2025-01-01", "2025-02-01");
   const m = await prisma.matricula.findUniqueOrThrow({ where: { id: a.matriculaId } });
   const fonte = (inicio: string, turma = turmaA.id) => ({ matriculaId: m.id, alunoId: aluno.id, turmaId: turma, nivelId: turmaA.nivelId, inicio: new Date(inicio) });
-  // Q23: data dentro de A finita, embora criada tecnicamente depois de B.
   await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2025-01-10T12:00:00Z")))).resolves.toMatchObject({ alocacaoFonteId: a.alocacaoId });
   await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2025-02-01T06:00:00Z")))).rejects.toThrow("único vínculo histórico");
   await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2024-12-31T23:59:59Z")))).rejects.toThrow("único vínculo histórico");
-  // Q54 usa o mesmo fato real de aula e deve selecionar B no período posterior, não a última importação técnica.
   const encontro = await prisma.encontroAgenda.create({ data: { turmaId: turmaB.id, professorId, preparadorId: secretariaId, inicio: new Date("2025-02-10T12:00:00Z"), fim: new Date("2025-02-10T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", finalidade: "AULA", motivo: "Aula M01 posterior", chaveIdempotencia: "m01-q54", entradaHash: "fixture", diario: { create: { turmaId: turmaB.id, professorId, ocorridaEm: new Date("2025-02-10T12:00:00Z"), conteudo: "Histórico", registros: { create: { alunoId: aluno.id, matriculaId: m.id, nomeAluno: "Ana", presente: false, participacao: "FALTA" } } } } } });
   await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { status: "MINISTRADO" } });
   const repo = await prisma.reposicaoIndividual.create({ data: { aulaOriginalId: encontro.id, matriculaId: m.id, modalidade: "GRAVACAO", solicitanteId: secretariaId, motivo: "Q54 temporal", evidencia: "Evidência histórica", chaveIdempotencia: "m01-q54-repo", entradaHash: "fixture" } });

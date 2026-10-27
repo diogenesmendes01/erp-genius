@@ -7,7 +7,6 @@ import { camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerPaginaDaFila, MENS
 import { ErroPermissao, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 import { SITUACOES_FILA_ENVIOS, whereSituacaoFilaEnvios, type SituacaoFilaEnvios } from "./filtro-fila-envios";
 
-// `situacao` (docs/42 L431): o recorte da tela. Sem ele, a consulta lê todas as situações (a tela abre em "incertos").
 const Entrada = z.object({ ...camposNavegacaoFila, situacao: z.enum(SITUACOES_FILA_ENVIOS).optional() }).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 
 export type ItemFilaEnviosPortalAluno = {
@@ -26,10 +25,6 @@ export type FilaEnviosPortalAluno = NavegacaoDaPagina & {
   itens: ItemFilaEnviosPortalAluno[];
 };
 
-/** Visão operacional sem destinatário, token, link ou recibo do provedor. Fila de trabalho com cursor nos dois sentidos
- * (E4, decisão de 10/10/2026), em ordem de id: a próxima continua do último item visto, e uma solicitação nova
- * (reemissão) não desloca a página de quem está conciliando. O recorte de situação (incertos, falhas, todos) vale
- * para os dois sentidos: o cursor anda dentro do recorte. */
 export async function consultarFilaEnviosPortalAluno(input: NavegacaoFila & { situacao?: SituacaoFilaEnvios } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);

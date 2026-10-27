@@ -82,7 +82,6 @@ function classificarCredito(credito: CreditoFoto, saldoDisponivel: Prisma.Decima
     : { tipo: "EXTERNO_AO_ACERTO" as const, ...detalhe };
 }
 
-/** Lê o ledger Q121: caixa vem de destinações reais, e informes jamais subtraem caixa. */
 export async function carregarFontesReconferenciaDeltaTx(
   tx: Prisma.TransactionClient,
   matriculaId: string,
@@ -175,9 +174,6 @@ export async function carregarFontesReconferenciaDeltaTx(
   const creditosDoAcerto = creditosClassificados
     .filter((credito): credito is Extract<typeof credito, { tipo: "DO_ACERTO" }> => credito.tipo === "DO_ACERTO")
     .map(({ tipo: _tipo, ...credito }) => credito);
-  // Esta fotografia é exclusiva da reconferência. Q121 continua preservando
-  // apenas valor inicial e origem, enquanto Q165.249 precisa detectar uso ou
-  // reserva posterior que reduz o saldo disponível do crédito.
   const saldos = new Map(creditosClassificados.map(credito => [credito.id, credito.saldoDisponivel]));
   const fotografia = { ...foto, creditos: creditosFoto.map(credito => ({
     ...credito, saldoDisponivel: saldos.get(credito.id)!,

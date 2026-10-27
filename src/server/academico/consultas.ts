@@ -49,7 +49,6 @@ export async function listarContextoMudancaAcademica(alunoId: string, matriculaI
 
 type AutorAcademico = Awaited<ReturnType<typeof exigirSessaoComPapel>>;
 
-/** Escopo e filtros das solicitações de quem consulta (a mesma base para a lista do aluno e a fila de /academico). */
 function filtroSolicitacoes(autor: AutorAcademico, dados: { alunoId?: string; matriculaId?: string; apenasAbertas?: boolean }) {
   const amplo = autor.papeis.some((p) => SOLICITANTES_ACADEMICOS.includes(p));
   const escopo: Prisma.SolicitacaoMudancaAcademicaWhereInput = amplo ? {} : {
@@ -63,7 +62,6 @@ function filtroSolicitacoes(autor: AutorAcademico, dados: { alunoId?: string; ma
   return { amplo, escopo, where };
 }
 
-/** Solicitações em ordem (criadoEm, id), na direção pedida (a fila lê ao contrário para voltar). */
 function lerSolicitacoes(where: Prisma.SolicitacaoMudancaAcademicaWhereInput, janela: { direcao: Direcao; take: number; skip?: number }) {
   return prisma.solicitacaoMudancaAcademica.findMany({
     where, orderBy: [{ criadoEm: janela.direcao }, { id: janela.direcao }], take: janela.take, ...(janela.skip ? { skip: janela.skip } : {}),
@@ -81,7 +79,6 @@ function lerSolicitacoes(where: Prisma.SolicitacaoMudancaAcademicaWhereInput, ja
   });
 }
 
-/** Cada solicitação lida, com o estado acadêmico atual e o que quem consulta pode fazer com ela. */
 async function montarSolicitacoes(autor: AutorAcademico, amplo: boolean, registros: Awaited<ReturnType<typeof lerSolicitacoes>>, agora: Date) {
   const solicitacoes: SolicitacaoAcademicaView[] = [];
   for (const registro of registros) {
@@ -120,7 +117,6 @@ async function montarSolicitacoes(autor: AutorAcademico, amplo: boolean, registr
       pareceres: registro.pareceres.map((p) => ({ id: p.id, autorNome: p.autor.nome, conteudo: p.conteudo, criadoEm: p.criadoEm.toISOString() })),
       temParecerVigente: temParecer,
       podeDarParecer: podeDarParecer && !impedimento,
-      // Mesmo obsoleto, GP independente pode rejeitar; a aprovação é revalidada na action.
       podeDecidir: registro.status === "PENDENTE" && registro.solicitanteId !== autor.id && autor.papeis.some((p) => APROVADORES_ACADEMICOS.includes(p)),
       podeExecutar: registro.status === "APROVADA" && !impedimento && autor.papeis.some((p) => EXECUTORES_ACADEMICOS.includes(p)),
       podeCancelar: aberto && amplo, impedimento,
@@ -129,14 +125,12 @@ async function montarSolicitacoes(autor: AutorAcademico, amplo: boolean, registr
   return solicitacoes;
 }
 
-/** Lista (histórico) das solicitações de um aluno: página numerada (E4), 50 por página, contada no escopo de quem consulta. */
 export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string; matriculaId?: string; apenasAbertas?: boolean; pagina?: number }): Promise<Resultado<{ solicitacoes: SolicitacaoAcademicaView[]; pagina: number; temProxima: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS, Papel.PROFESSOR);
     const agora = new Date();
     const dados = FiltrosSolicitacoesAcademicasSchema.parse(filtros ?? {});
     const { amplo, where } = filtroSolicitacoes(autor, dados);
-    // Página numerada (E4), contada dentro do escopo de quem consulta: não carrega id de registro na URL.
     const pagina = dados.pagina ?? 1;
     const lidos = await lerSolicitacoes(where, { direcao: "desc", ...janelaDaPagina(pagina, 50) });
     const { registros, temProxima } = recorteDaPagina(lidos, 50);
@@ -144,12 +138,6 @@ export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string;
   });
 }
 
-/**
- * Fila de trabalho de /academico (E4, decisão de 10/10/2026): as solicitações abertas (pendentes e aprovadas), ou todas
- * com `historico`, por cursor nos dois sentidos em ordem estável (criadoEm desc, id desc). A âncora do cursor é lida no
- * escopo de quem consulta, mas sem o filtro de abertas: executar ou cancelar a solicitação âncora não a perde, e a
- * próxima continua de onde a pessoa parou sem pular ninguém.
- */
 export async function listarFilaSolicitacoesAcademicas(input: NavegacaoFila & { historico?: boolean } = {}): Promise<Resultado<NavegacaoDaPagina & { solicitacoes: SolicitacaoAcademicaView[] }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS, Papel.PROFESSOR);

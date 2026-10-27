@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (6º lote): pedido manual de restrição e de liberação de aulas recebe chave. Antes, se a solicitação era
-// rejeitada entre a tentativa e o reenvio, o reenvio abria outra solicitação. A decisão já era idempotente por
-// natureza (mesmo decisor, mesma decisão e mesmo motivo): fica a trava.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// empresas/empresa-idempotencia.int.test.ts: dois `import()` simultâneos do NextAuth mockado falham no vitest e o
-// envio simultâneo é o que o teste mede); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -63,7 +56,6 @@ describe("bloquearAcesso e desbloquearAcesso com chave (#166)", () => {
     como(c.financeiro);
     expect(await bloquearAcesso(c.matricula.id, MOTIVO, { chaveIdempotencia: "chave-acesso-02" })).toEqual(r1);
     expect(await prisma.solicitacaoAcessoAulas.count()).toBe(1);
-    // Chave nova é um novo pedido deliberado.
     const nova = await bloquearAcesso(c.matricula.id, MOTIVO, { chaveIdempotencia: "chave-acesso-03" });
     expect(nova.ok).toBe(true);
     expect(await prisma.solicitacaoAcessoAulas.count()).toBe(2);
@@ -78,7 +70,6 @@ describe("bloquearAcesso e desbloquearAcesso com chave (#166)", () => {
     expect((await decidirSolicitacaoAcessoAulas(r1.dado!.solicitacaoId, { aprovar: true, motivo: "Fundamento conferido" })).ok).toBe(true);
     como(c.financeiro);
     expect(await bloquearAcesso(c.matricula.id, MOTIVO, { chaveIdempotencia: "chave-acesso-04" })).toEqual(r1);
-    // Liberação com chave própria segue o mesmo contrato.
     const lib = { chaveIdempotencia: "chave-acesso-05" };
     const l1 = await desbloquearAcesso(c.matricula.id, "Regularização manual autorizada", lib);
     expect(l1.ok).toBe(true);

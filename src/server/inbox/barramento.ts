@@ -1,26 +1,16 @@
 import { Client } from "pg";
 import type { Prisma } from "@prisma/client";
 
-// Barramento de tempo real do inbox (E6): um único pg.Client por processo faz LISTEN no canal
-// e repassa os avisos (só ids, sem conteúdo) aos assinantes. O NOTIFY só chega no commit.
 export const CANAL_INBOX = "inbox_eventos";
 
 export type AvisoInbox = {
-  // `resync`: a escuta caiu e voltou; avisos podem ter sido perdidos, o cliente recarrega o que mostra.
   tipo: "atendimento.atualizado" | "mensagem.nova" | "mensagem.status" | "resync" | "aria.global";
-  // aria.global usa somente os quatro campos públicos: ids nulos e conversaId vazio.
   atendimentoId: string | null;
   mensagemId: string | null;
   conversaId: string;
-  /**
-   * Aviso direcionado (só `atendimento.atualizado`): vai apenas a este usuário, sem consultar o escopo. Sai da
-   * revogação de um convite, quando o ex-convidado já está fora do escopo e o aviso comum não o alcançaria.
-   * O NOTIFY só é emitido pelo servidor (nunca pelo cliente) e o id não é repassado no quadro SSE.
-   */
   paraUsuarioId?: string;
 };
 
-/** NOTIFY transacional: só ids, entregue após o commit a quem o SSE considerar no escopo. */
 export async function avisarAtendimentoAtualizado(tx: Prisma.TransactionClient, a: { id: string; conversaId: string }): Promise<void> {
   const aviso: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId };
   await tx.$executeRaw`SELECT pg_notify(${CANAL_INBOX}, ${JSON.stringify(aviso)})`;
@@ -60,7 +50,7 @@ function emitir(payload: string | undefined) {
 
 function repassar(aviso: AvisoInbox) {
   for (const fn of [...estado.assinantes]) {
-    try { fn(aviso); } catch { /* assinante com defeito não derruba o barramento */ }
+    try { fn(aviso); } catch {  }
   }
 }
 
@@ -107,12 +97,10 @@ async function conectar(): Promise<void> {
   }
   estado.client = client;
   estado.tentativa = 0;
-  // Reconexão (não a primeira): o NOTIFY não é guardado enquanto a escuta está fora, então manda reler.
   if (estado.jaConectou) repassar({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
   estado.jaConectou = true;
 }
 
-// Idempotente: chamadas repetidas reaproveitam a escuta ativa (ou em andamento).
 export function iniciarEscuta(url?: string): Promise<void> {
   if (estado.client) return Promise.resolve();
   if (estado.iniciando) return estado.iniciando;

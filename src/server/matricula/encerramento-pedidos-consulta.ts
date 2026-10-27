@@ -10,10 +10,6 @@ const Entrada = z.object({
   pagina: z.number().int().min(1).max(100000).default(1),
 }).strict();
 
-/**
- * Consulta interna da página já guardada. A identidade vem exclusivamente da
- * sessão do servidor; a releitura abaixo também impede usar papéis revogados.
- */
 export async function listarPedidosEncerramentoParaUsuario(
   input: z.input<typeof Entrada>,
   usuarioSessao: UsuarioSessao,

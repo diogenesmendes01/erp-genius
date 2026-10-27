@@ -24,8 +24,6 @@ describe("RelatosIndisponibilidadeOferta (Q157)", () => {
     expect(html).not.toContain("pendente/correcao");
   });
 
-  // Lote 2 do fuso pessoal: a confirmação é instante de registro e segue a preferência, com o fuso dito; sem
-  // preferência, o fuso da escola (sem rótulo, como antes). Expectativas fixas em TZ=UTC e America/Sao_Paulo.
   it("confirmação no fuso pessoal; sem preferência, no da escola", () => {
     const render = (preferenciaFusoExibicao: string | null) => renderToStaticMarkup(createElement(RelatosIndisponibilidadeOferta, {
       matriculaId: "mat", fusoInstitucional: "America/Sao_Paulo", preferenciaFusoExibicao,

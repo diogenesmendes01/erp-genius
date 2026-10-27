@@ -21,7 +21,6 @@ const MSG_RESPONSAVEL_SEM_ACESSO = "Esta pessoa não teria acesso a este atendim
 export async function exigirResponsavelEnxerga(tx: Tx, id: string, alvo: { id: string; papeis: Papel[] }) {
   const n = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id }, await escopoAtendimentos(alvo, { db: tx })] } });
   if (n === 1) return;
-  // O texto segue o motivo: só a linha de vendas tem a regra do dono da linha.
   const a = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { finalidade: true, conversa: { select: { numero: { select: { finalidade: true } } } } } });
   const linha = a?.finalidade === "COMERCIAL" && !!a.conversa.numero && ehLinhaComercial(a.conversa.numero);
   throw new ErroRegra(linha ? MSG_RESPONSAVEL_SEM_ACESSO_LINHA : MSG_RESPONSAVEL_SEM_ACESSO);
@@ -51,8 +50,6 @@ async function resolverDestino(tx: Tx, destino: Setor, chave: string | null, tel
     if (p[0] !== "FINANCEIRO" || !p[1]) throw new ErroRegra("Escolha a matrícula do atendimento financeiro.");
     const m = await tx.matricula.findUnique({ where: { id: p[1] }, include: INCLUDE_MATRICULA_DESTINO });
     if (!m) throw new ErroRegra("Matrícula do atendimento financeiro não encontrada.");
-    // Mesmo critério de abrirAtendimentoInstitucional: o destinatário de cobrança da matrícula é único; o contato
-    // da conversa tem de ser esse destinatário, senão as cobranças iriam para a pessoa errada.
     const fin = resolverDestinoFinanceiroDaMatricula(m);
     if (!fin) throw new ErroRegra("A matrícula selecionada não possui destinatário válido para cobrança. Confira o pagador e o telefone deste contrato.");
     if (fin.telefoneE164 !== telefoneContato) throw new ErroRegra("O contato desta conversa não é o destinatário de cobrança da matrícula escolhida.");
@@ -65,8 +62,6 @@ async function resolverDestino(tx: Tx, destino: Setor, chave: string | null, tel
     if (p[4] === "AUT" && !autorizacao) throw new ErroRegra("Escolha a autorização do atendimento pedagógico.");
     const m = await tx.matricula.findFirst({ where: { id: p[3], alunoId: p[1] }, select: { id: true } });
     if (!m) throw new ErroRegra("Matrícula pedagógica não corresponde ao aluno selecionado.");
-    // Mesmo critério da lista de opções: aluno, turma e matrícula precisam formar uma alocação ativa
-    // (o escopo do professor usa { alunoId, turmaId }; os triggers só olham matrícula × aluno).
     const alocacao = await tx.alocacaoTurma.count({ where: { ativa: true, alunoId: p[1], turmaId: p[2], matriculaId: p[3] } });
     if (alocacao === 0) throw new ErroRegra("A turma escolhida não corresponde a uma alocação ativa desta matrícula.");
     return { alunoId: p[1], matriculaId: p[3], turmaId: p[2], autorizacaoComunicacaoAcademicaId: autorizacao };
@@ -157,7 +152,6 @@ export async function transferirAtendimentoTx(tx: Tx, u: UsuarioSessao, dados: D
       for (const agregadoId of [a.id, novo.id]) {
         await registrarEvento(tx, { tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", agregadoId, autorId: autor.id, payload });
       }
-      // O contexto também vira nota interna do novo atendimento (mesmo mecanismo de registrarNotaAtendimento), autor = quem transferiu.
       if (!inbox || dados.contexto) await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: novo.id, autorId: autor.id, payload: { nota: dados.contexto } });
       if (resumo) await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: novo.id, autorId: autor.id, payload: { nota: resumo.nota, origem: "resumoAria", acaoAgenteIAId: resumo.acaoId } });
       return novo.id;

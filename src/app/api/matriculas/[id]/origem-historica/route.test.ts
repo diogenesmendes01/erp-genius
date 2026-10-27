@@ -12,7 +12,6 @@ function request(pdf: Uint8Array<ArrayBuffer>, assinadoEm = "2024-12-20") {
   const form = new FormData();
   form.append("pdfAssinado", new File([pdf], "contrato.pdf", { type: "application/pdf" }));
   for (const [k, v] of Object.entries({ referencia: "Contrato 2025/017", assinadoEm, motivo: "Contrato legado digitalizado.", chaveIdempotencia: "origem-historica-1", transcricao: JSON.stringify(transcricao) })) form.append(k, v);
-  // Sem content-length, como num upload chunked.
   return new Request("http://localhost/api/matriculas/m1/origem-historica", { method: "POST", body: form });
 }
 const params = { params: Promise.resolve({ id: "m1" }) };
@@ -23,7 +22,6 @@ beforeEach(() => {
   m.transacao.mockImplementation((fn: (tx: unknown) => unknown) => fn({}));
 });
 
-// Revisão 5606023454 da #285.
 describe("upload da origem histórica", () => {
   it("PDF acima de 20 MiB sem content-length: 413 antes de ler o arquivo e sem transação", async () => {
     const r = request(new Uint8Array(20 * 1024 * 1024 + 1));

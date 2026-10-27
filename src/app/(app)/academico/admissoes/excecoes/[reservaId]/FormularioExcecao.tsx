@@ -10,8 +10,6 @@ import { CampoTexto } from "@/components/CampoTexto";
 export function FormularioExcecao({ reservaId, estadoHash, propostaId, podeAprovar = true }: { reservaId: string; estadoHash: string; propostaId?: string; podeAprovar?: boolean }) {
   const router = useRouter();
   const [chave] = useState(() => crypto.randomUUID());
-  // Proposta: chave estável por formulário e o servidor devolve a proposta já criada com a mesma chave (server/matricula/excecao-admissao.ts:29-30).
-  // Decisão: o contrato não recebe chave de idempotência (excecao-admissao.ts:41), então a falha não manda reenviar.
   const preparo = useAcaoCliente({ idempotente: true }), decisao = useAcaoCliente({ idempotente: false });
   const acao = propostaId ? decisao : preparo, pendente = acao.ocupado;
   return <form className="space-y-3 rounded border p-3" onSubmit={async (e) => {

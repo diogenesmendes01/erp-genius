@@ -18,7 +18,6 @@ type Cobertura = { id: string; titular: string; substituto: string; inicio: stri
 
 type PeriodoExibido = { inicio: { texto: string; fuso: string }; fim: { texto: string } };
 
-/** Corpo da confirmação de revogação (exportado para o teste: o diálogo só abre no clique). */
 export function ConsequenciaRevogacao({ cobertura, periodo }: { cobertura: Pick<Cobertura, "substituto" | "titular">; periodo: PeriodoExibido }) {
   return (
     <>
@@ -40,15 +39,12 @@ export function CoberturasPainel({
 }: {
   vendedores: { id: string; nome: string }[];
   coberturas: Cobertura[];
-  /** Fuso da escola ("" quando não configurado: o campo fica vazio e obrigatório). */
   fusoPadrao?: string;
   preferenciaFusoExibicao?: string | null;
 }) {
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  // "Revogar" tira o acesso do substituto à carteira inteira, sem desfazer pela tela: o botão só abre a
-  // confirmação com os dois nomes e o período; a action roda no ConfirmarAcao, que mostra a falha.
   const [revogando, setRevogando] = useState<Cobertura | null>(null);
   const periodo = useInicioDoPeriodo();
   const router = useRouter();
@@ -153,7 +149,6 @@ export function CoberturasPainel({
         })}
       </ul>
       {!coberturas.length && <EstadoVazio>Nenhuma cobertura cadastrada.</EstadoVazio>}
-      {/* Revogar é idempotente por natureza (#166, 5º lote): já revogada devolve ok, e a linha travada evita dois Eventos. */}
       {revogando && (
         <ConfirmarAcao
           titulo={`Revogar a cobertura de ${revogando.substituto} sobre a carteira de ${revogando.titular}?`}

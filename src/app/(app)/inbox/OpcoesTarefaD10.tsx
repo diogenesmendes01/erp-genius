@@ -18,7 +18,6 @@ export type PropsOpcoesTarefaD10={
  prioridades:readonly {valor:Prioridade;rotulo:string}[];
  lembrete:Lembrete;
  lembretes:readonly {valor:Lembrete;rotulo:string}[];
- /** Apenas candidatos já autorizados pela porta readonly; esta UI não concede acesso. */
  colegas:readonly {id:string;nome:string}[];
  notificados:readonly string[];
  podeNotificar:boolean;
@@ -35,7 +34,6 @@ export function CampoLembreteTarefaD10(p:Pick<PropsOpcoesTarefaD10,"lembrete"|"l
   </label>
 );}
 
-/** Opções controladas do modal; autorização e persistência continuam no servidor. */
 export function OpcoesTarefaD10(p:PropsOpcoesTarefaD10){
  const id=useId();
  const disponiveis=new Set(p.colegas.map(c=>c.id));

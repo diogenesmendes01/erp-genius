@@ -23,7 +23,6 @@ it("provider mesmo número concorrente: P2002 é Mensagem e uma linha persistida
  const primeira=processarMensagemNormalizada(m).then(dado=>({dado,erro:null}),erro=>({dado:null,erro}));let segunda:Promise<Awaited<typeof primeira>>|undefined,erroFixture:unknown;
  try{
   expect(await Promise.race([pronto.promessa.then(()=>"INSERT"),primeira.then(()=>"TERMINOU")])).toBe("INSERT");
-  // Contatos distintos evitam lock de Conversa anterior à UNIQUE(numeroId,providerMessageId).
   segunda=processarMensagemNormalizada({...m,contatoWaId:"50687778882"}).then(dado=>({dado,erro:null}),erro=>({dado:null,erro}));
   expect(await Promise.race([segundoInicio.promessa.then(()=>"SEGUNDA"),segunda.then(()=>"TERMINOU")])).toBe("SEGUNDA");
   await original(async obs=>{const [p]=await obs.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid()::int AS pid`;expect(new Set([pid1,pid2,p.pid]).size).toBe(3);await vi.waitFor(async()=>{await obs.$executeRaw`SELECT pg_stat_clear_snapshot()`;expect(fase2).toBe("mensagemWhatsApp.create");const [r]=await obs.$queryRaw<{espera:boolean}[]>`SELECT EXISTS(SELECT 1 FROM pg_stat_activity a WHERE a.pid=${pid2}::int AND a.datname=current_database() AND a.state='active' AND a.wait_event_type='Lock' AND ${pid1}::int=ANY(pg_blocking_pids(a.pid)) AND a.query LIKE 'INSERT INTO "public"."MensagemWhatsApp"%') AS espera`;expect(r.espera).toBe(true);},{timeout:5000,interval:20});},{timeout:10000});

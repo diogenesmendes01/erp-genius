@@ -10,19 +10,14 @@ import { descartarRascunho, publicarRascunho } from "@/server/aria/acoes";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 
 type Props = {
-  /** Caminhos alterados do rascunho em relação à versão publicada (ex.: "confianca.executaAPartirDe"). */
   diff: string[];
-  /** Rascunho aberto na tela: publicar e descartar recusam se outra pessoa o alterou desde então. */
   rascunho: RascunhoAberto;
   podePublicar: boolean;
   podeDescartar: boolean;
 };
 
-/** Barra fixa acima da tabbar do celular; só existe quando há rascunho com alterações. */
 export function BarraPublicar({ diff, rascunho, podePublicar, podeDescartar }: Props) {
   const router = useRouter();
-  // Idempotentes por natureza (#166): publicar o rascunho que este autor já publicou devolve o mesmo número, e
-  // descartar o que ele já descartou devolve ok; nenhum dos dois grava de novo (aria/versoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
   const [confirmando, setConfirmando] = useState<"publicar" | "descartar" | null>(null);
   if (diff.length === 0) return null;

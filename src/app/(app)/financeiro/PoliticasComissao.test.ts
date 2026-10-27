@@ -19,7 +19,6 @@ describe("PoliticasComissao", () => {
     expect(html).toContain("até 01/01/2026, 20:30 (horário exibido em America/Costa_Rica)");
     expect(html).toContain('name="vigencia"');
     expect(html).toContain('type="datetime-local"');
-    // Lote 3 do fuso pessoal: o campo diz em que fuso a vigência é digitada (o mesmo das vigências exibidas).
     expect(html).toContain('data-fuso="America/Costa_Rica"');
     expect(html).toContain("Horário em America/Costa_Rica.");
   });

@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-// O CampoFuso chamado como função (sem DOM): o useId vira constante, e o onChange do <input> recebe um evento
-// mínimo com `setCustomValidity` — é o que o navegador usa para barrar o envio com a mensagem do campo.
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return { ...real, useId: (() => ":id:") as unknown as typeof real.useId };

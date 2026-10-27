@@ -40,7 +40,6 @@ export async function registrarConferenciaAssinatura(input: z.input<typeof Confe
       }
       const r = await carregarRevisaoAssinatura(tx, d.matriculaId, d.artefatoId);
       if (r.revisaoHash !== d.revisaoHash) throw new ErroRegra("As condições mudaram desde a revisão. Atualize a conferência antes de continuar.");
-      // A mesma revisão já registrada não cria novas autorizações por repetição.
       const equivalente = await tx.conferenciaAssinaturaContratual.findFirst({ where: { artefatoId: d.artefatoId, revisaoHash: r.revisaoHash }, select: { id: true } });
       if (equivalente) return { id: equivalente.id, envioRealizado: false as const };
       const c = await tx.conferenciaAssinaturaContratual.create({ data: { artefatoId: d.artefatoId, autorId: autor.id, revisaoHash: r.revisaoHash, snapshot: r.snapshot,

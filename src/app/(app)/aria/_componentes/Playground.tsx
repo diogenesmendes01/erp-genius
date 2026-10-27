@@ -29,7 +29,6 @@ const FONTE_ROTULO: Record<ResultadoPlayground["fontes"][number]["tipo"], string
   PRECO: "Preço de referência",
 };
 
-/** Conversa de teste com a Aria: nada é enviado nem alterado no CRM (só a chamada ao provedor é registrada). */
 export function Playground({ paises, temRascunho, nome }: Props) {
   const acao = useAcaoCliente({ idempotente: false });
   const [historico, setHistorico] = useState<Fala[]>([]);

@@ -5,11 +5,6 @@ import { Campo, type LigacaoCampo } from "./Campo";
 import { DICA_PONTO_DECIMAL, DICA_PONTO_MILHAR } from "@/lib/dinheiro";
 import { criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
 
-// C6 do doc 44 (issue #167): em moeda sem centavos (CRC, CLP), sair do campo com "100,50" virava "101"
-// em silêncio. Agora o texto fica como o operador digitou e um aviso visível, ligado ao input, aparece.
-// C6 da #173 (B12 da triagem): o aviso visível muda a cada tecla, mas o anúncio ao leitor de tela só sai
-// no blur, por uma região polite sempre montada. CampoMoeda é chamado como função, com o useState de
-// src/test/tela-sem-dom.ts, para ler a árvore e disparar digitação e blur sem DOM.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -30,16 +25,13 @@ const attr = (trecho: string, nome: string) => new RegExp(`\\s${nome}="([^"]*)"`
 const desenhar = (p: Partial<Props>) => m.ganchos!.renderizar(CampoMoeda, props(p));
 const inputDe = (arvore: ReactNode) => elementos(arvore).find((n: No) => n.type === "input")!;
 
-/** Renderiza, dispara o onBlur do <input> e desenha de novo: devolve o que o campo pediu para gravar e a árvore depois do blur. */
 function sairDoCampo(p: Partial<Props>) {
   const onChange = vi.fn();
   (inputDe(desenhar({ ...p, onChange })).props.onBlur as () => void)();
   return { onChange, arvore: desenhar({ ...p, onChange }) };
 }
 
-/** Os avisos visíveis (texto amarelo abaixo do campo). */
 const avisos = (arvore: ReactNode) => elementos(arvore).filter((n) => n.type === "span" && String(n.props.className ?? "").includes("text-amber-700"));
-/** O que a região polite está anunciando. */
 function anuncio(arvore: ReactNode) {
   const regioes = elementos(arvore).filter((n) => n.props.role === "status");
   expect(regioes, "uma região polite sempre montada").toHaveLength(1);

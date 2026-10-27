@@ -12,7 +12,6 @@ const seguinte = (data: string) => {
   return d.toISOString().slice(0, 10);
 };
 
-/** A proposta financeira resolve efeitos colaterais sem substituir os limites assinados. */
 export function conferirIntervalosCoberturaAditivo(linhas: Linha[], formalizada: { inicio: string; fim: string }) {
   const ordenadas = [...linhas].filter(l => l.nova.inicio && l.nova.fim)
     .sort((a, b) => a.nova.inicio!.localeCompare(b.nova.inicio!) || a.id.localeCompare(b.id));

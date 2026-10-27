@@ -7,7 +7,6 @@ vi.mock("@/server/catalogo/acoes", () => ({ criarModalidade: vi.fn(), editarModa
 
 import { ModalidadeFormulario } from "./ModalidadeFormulario";
 
-// As opções do segmento vêm do mapa central (SEGMENTO_LABEL), na ordem do enum — R1 da #150, B5.
 it("opções do segmento: rótulo do mapa central e ordem do enum (Adulto, Kids, Teens, Empresa)", () => {
   const html = renderToStaticMarkup(createElement(ModalidadeFormulario, { onClose: () => {} }));
   const select = /<select[^>]*id="modalidade-segmento"[^>]*>([\s\S]*?)<\/select>/.exec(html)?.[1] ?? "";

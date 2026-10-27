@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { describe, expect, it } from "vitest";
 
-// Os dois composes têm um laço de despacho a cada minuto, além do tick de 5 min da régua.
 for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
   describe(arq, () => {
     const texto = fs.readFileSync(path.resolve(process.cwd(), arq), "utf8").replace(/\r\n/g, "\n");
@@ -21,8 +20,6 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
   });
 }
 
-// Agendadores do portal do aluno e dos avisos de agenda: antes as rotas existiam sem ninguém chamá-las.
-// Com a flag desligada a rota responde {executou:false} (coberto nos testes das rotas).
 const NOVOS_CRONS = [
   { servico: "cron-portal-envios", rota: "http://app:3000/api/portal-aluno/envios/cron", sono: "sleep 60" },
   { servico: "cron-avisos-agenda", rota: "http://app:3000/api/agenda/avisos/cron", sono: "sleep 300" },
@@ -48,9 +45,6 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
   });
 }
 
-// Em `command: >-` as linhas mais indentadas preservam a quebra de linha: o sh encerrava o curl antes do
-// `-o /dev/null -w ...` (e o `|| true` ficava preso ao comando errado). Todo laço de cron fica numa linha só.
-// A trava recusa qualquer bloco escalar (dobrado `>` ou literal `|`, com ou sem indicador `-`/`+`).
 for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
   describe(`${arq}: laços de cron em linha única`, () => {
     const texto = fs.readFileSync(path.resolve(process.cwd(), arq), "utf8").replace(/\r\n/g, "\n");
@@ -58,7 +52,6 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
       expect(texto).not.toMatch(/^\s*command:\s*[>|][+-]?\s*$/m);
     });
     it("cada curl leva -o /dev/null e || true na mesma linha", () => {
-      // Um laço por serviço `cron*` do compose: um cron novo entra na conta sem mexer no teste.
       const servicos = texto.match(/^services:\n((?:(?:[ \t]+.*)?\n)*?)(?=^[^\s#]|(?![\s\S]))/m)?.[1] ?? "";
       const crons = [...servicos.matchAll(/^  (cron[\w-]*):\s*$/gm)].map((m) => m[1]);
       expect(crons.length).toBeGreaterThan(0);

@@ -1,5 +1,4 @@
 import type { Resultado } from "@/server/_shared/resultado";
-/** Porta local opt-in #377; não envia, assume, agenda ou altera outra modalidade. */
 export interface PortaRascunhoInsight {
   atendimentoId:string;
   textoAtual:string;

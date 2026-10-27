@@ -53,7 +53,6 @@ const tipoFinalPorSituacao: Record<string, TipoFatoMigrado> = {
   ATIVA: "ATIVACAO", PAUSADA: "PAUSA", ENCERRADA: "ENCERRAMENTO", CANCELADA: "CANCELAMENTO",
 };
 
-/** Só o ensaio mais recente que ainda representa as correspondências atuais pode ser aplicado. */
 export function ensaioVigenteMaisRecente(ensaios: EnsaioVinculoExibido[], entradaHash: string) {
   const maisRecente = ensaios[0];
   return maisRecente && maisRecente.entradaHash === entradaHash && maisRecente.vigente && maisRecente.resultado === "PRONTO_PARA_REVISAO"

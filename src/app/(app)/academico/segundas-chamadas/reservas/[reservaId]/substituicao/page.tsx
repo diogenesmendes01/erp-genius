@@ -11,7 +11,6 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { fusoIanaValido } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-/** Horário publicado no fuso da agenda. Fuso gravado inválido não derruba a tela: sai em UTC, e a tela diz isso. */
 function periodo(inicio: string, fim: string, fuso: string) {
   const valido = fusoIanaValido(fuso);
   const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
@@ -44,9 +43,6 @@ export default async function Page({
     return <section className="space-y-3"><VoltarPara href="/academico/segundas-chamadas/agendas" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   }
   const d = resultado.dado;
-  // Registro e decisão são instantes (lote 3 do fuso pessoal nas telas): fuso pessoal de exibição; sem preferência,
-  // o da agenda (como na agenda inicial do lote 2) e, sem agenda válida, o da escola — antes, UTC. O fuso é escrito.
-  // O horário do encontro é publicado no fuso da agenda e mantém esse fuso (`periodo`).
   const fusoOrigem = fusoIanaValido(d.encontro.fusoOrigem) ? d.encontro.fusoOrigem : fusoEscola;
   const instante = (valor: Date | string) => { const e = formatarInstanteExibicao(valor, preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoOrigem); return `${e.texto} (${e.fuso})`; };
   const base = `/academico/segundas-chamadas/reservas/${encodeURIComponent(reservaId)}/substituicao`;
@@ -56,8 +52,6 @@ export default async function Page({
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · avaliação {d.identificacao.codigoAvaliacao}.</p>
     <section className="rounded border p-4"><h2 className="font-medium">Agenda preservada</h2><p>Professor atual: {d.encontro.professorNome}.</p><p>Horário: {periodo(d.encontro.inicio, d.encontro.fim, d.encontro.fusoOrigem)}.</p><p>Situação: {rotular(STATUS_ENCONTRO_LABEL, d.encontro.status)}.</p></section>
     <p>A aprovação atualiza o responsável por esta avaliação, preservando turma, horário, contrato e oportunidade. Outra pessoa da gestão precisa decidir.</p>
-    {/* Sem key do substituto (docs/43 §6 item 3; docs/42 L1814): trocar o professor faz router.replace com o novo
-        substitutoId, e o formulário continua montado — motivo e evidência digitados não se perdem. */}
     {(d.podePropor || d.previa) && <Formulario reservaId={reservaId} base={base} professores={d.professores} selecionado={substitutoId} previa={d.previa} />}
     <h2 className="font-medium">Propostas e decisões</h2>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma proposta de substituição foi registrada.</EstadoVazio>}

@@ -224,7 +224,6 @@ it("prévia carrega o pedido e as origens, exige todos os contratos e preserva c
   const professor = await criarUsuario(["PROFESSOR"]);
   const encontroBase = { professorId: professor.id, preparadorId: admin.id, inicio: new Date("2099-10-01T12:00:00Z"), fim: new Date("2099-10-01T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO" as const, motivo: "Encontro para conferência acadêmica", entradaHash: "teste" };
   await prisma.encontroAgenda.create({ data: { ...encontroBase, matriculaId: ids[2], chaveIdempotencia: "encontro-outro-contrato" } });
-  // Alterações em contrato excluído não invalidam nem ampliam o acerto selecionado.
   expect((await conferirAplicacao()).previa.contratos[0].impactosAcademicos.encontrosParticulares).toEqual([]);
   await expect(prisma.$transaction(tx => carregarImpactosAcademicosEncerramentoTx(tx, "outro-aluno", ids[0]))).rejects.toThrow("não encontrada");
   await expect(prisma.$transaction(async tx => {

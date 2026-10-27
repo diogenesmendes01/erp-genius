@@ -7,9 +7,6 @@ vi.mock("@/server/migracao/presenca-historica", () => ({ proporPresencaHistorica
 
 import { PresencaHistorica, horarioDaAula, instanteDoRegistro } from "./PresencaHistorica";
 
-// Lote 2 do fuso pessoal: a tela fixava UTC. O horário da aula é publicado na agenda da escola (fuso da escola);
-// a resolução da divergência é instante de registro (fuso pessoal; sem preferência, o da escola). Expectativas fixas
-// em TZ=UTC e America/Sao_Paulo.
 describe("PresencaHistorica: horário da aula no fuso da escola, registro no fuso pessoal", () => {
   it("helpers: aula ignora a preferência; registro a segue; sem fuso da escola, UTC rotulado", () => {
     const fusos = { preferenciaFusoExibicao: "Asia/Tokyo", fusoEscola: "America/Sao_Paulo" };
@@ -19,8 +16,6 @@ describe("PresencaHistorica: horário da aula no fuso da escola, registro no fus
     expect(horarioDaAula("2026-03-10T22:00:00.000Z")).toBe("10/03/2026, 22:00 (UTC)");
   });
 
-  // Review do #289 (item D): o horário da aula usa o fuso de origem do encontro, como o diário; o da escola só
-  // quando a aula não tem encontro.
   it("helpers: aula com encontro sai no fuso da agenda; sem encontro, no da escola", () => {
     const fusos = { preferenciaFusoExibicao: "Asia/Tokyo", fusoEscola: "America/Sao_Paulo" };
     expect(horarioDaAula("2026-03-10T22:00:00.000Z", fusos, "America/Costa_Rica")).toBe("10/03/2026, 16:00 (America/Costa_Rica)");

@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Lote 3 do fuso pessoal nas telas: as ações `*-local` recebem o texto do datetime-local e o fuso escrito ao lado do
-// campo, convertem NO SERVIDOR e só então chamam a ação de origem com o instante ISO. Fuso inválido ou texto
-// incompleto voltam como erro, sem chamar a origem. Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 const m = vi.hoisted(() => ({ origem: vi.fn(async (entrada: unknown) => ({ ok: true as const, dado: entrada })) }));
 vi.mock("@/server/diario/reposicao-individual", () => ({ concluirReposicaoIndividual: m.origem, proporCorrecaoConclusaoReposicao: m.origem }));
 vi.mock("@/server/diario/reposicao-entrega-operacional", () => ({ prorrogarEtapaOperacional: m.origem, liberarEntregaOperacional: m.origem }));

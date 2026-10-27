@@ -7,9 +7,6 @@ vi.mock("@/server/matricula/condicoes-continuidade-mensal", () => ({ consultarCo
 
 import { CondicoesContinuidadeMensal } from "./CondicoesContinuidadeMensal";
 
-// Lote 2 do fuso pessoal: registro e decisão da versão são instantes. Antes saíam como o dia UTC (o registro feito
-// às 23:30 em São Paulo aparecia no dia seguinte). Agora: o dia no fuso pessoal; sem preferência, no da escola.
-// Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 const dados = {
   matriculaId: "m", codigo: "M-1", moeda: "BRL", impedimento: null, podePreparar: false, documentoId: "d",
   versoes: [{

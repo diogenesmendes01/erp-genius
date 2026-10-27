@@ -69,7 +69,6 @@ describe("Configurações › Números", () => {
     expect(chamadas).toEqual([]);
   });
 
-  // Setores e triagem: uma só ação (salvarSetoresNumero, a que a tela usa); C4 da revisão do #233.
   const setores = (lista: ("COMERCIAL" | "SECRETARIA" | "FINANCEIRO" | "PEDAGOGICO")[], triagemResponsavelId: string | null = null) =>
     salvarSetoresNumero({ numeroId, setores: lista, triagemResponsavelId });
 
@@ -80,17 +79,14 @@ describe("Configurações › Números", () => {
   });
 
   it("triagem_so_com_mais_de_um_setor_e_usuario_ativo", async () => {
-    // Com 1 setor a triagem é ignorada (fica com o administrador).
     expect((await setores(["COMERCIAL"], sec.id)).ok).toBe(true);
     expect((await numero()).triagemResponsavelId).toBeNull();
     expect((await setores(["SECRETARIA", "FINANCEIRO"], admin.id)).ok).toBe(false);
     expect((await setores(["SECRETARIA", "FINANCEIRO"], sec.id)).ok).toBe(true);
     expect((await numero()).triagemResponsavelId).toBe(sec.id);
     expect((await ultimoEvento("NumeroTriagemAlterada")).payload).toMatchObject({ de: null, para: sec.id });
-    // voltar a 1 setor limpa a triagem
     await setores(["SECRETARIA"], sec.id);
     expect((await numero()).triagemResponsavelId).toBeNull();
-    // usuário inativo
     await prisma.usuario.update({ where: { id: sec.id }, data: { ativo: false } });
     expect((await setores(["SECRETARIA", "FINANCEIRO"], sec.id)).ok).toBe(false);
   });
@@ -102,7 +98,6 @@ describe("Configurações › Números", () => {
     expect((await setores(["COMERCIAL", "PEDAGOGICO"], null)).ok).toBe(true);
     expect((await numero()).triagemResponsavelId).toBeNull();
     expect((await ultimoEvento("NumeroTriagemAlterada")).payload).toEqual({ de: sec.id, para: null });
-    // responsável que segue válido é mantido
     await setores(["SECRETARIA", "FINANCEIRO"], sec.id);
     await setores(["SECRETARIA", "COMERCIAL"], sec.id);
     expect((await numero()).triagemResponsavelId).toBe(sec.id);

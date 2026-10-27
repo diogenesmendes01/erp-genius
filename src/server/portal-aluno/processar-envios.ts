@@ -21,10 +21,6 @@ export type ResultadoProcessamentoEnviosPortalAluno = {
   proximoCursor: string | null;
 };
 
-/**
- * Worker interno chamado pelo cron protegido: processa somente PREPARADO.
- * Cada despacho faz seu próprio claim durável; INCERTO nunca volta para esta fila.
- */
 export async function processarEnviosPortalAluno(
   input: { cursor?: string } = {},
   opcoes: { ambiente?: AmbienteEnvioPortal } = {},
@@ -48,7 +44,6 @@ export async function processarEnviosPortalAluno(
 
   for (const registro of registros.slice(0, 20)) {
     try {
-      // Deliberadamente serial: o claim muda PREPARADO para INCERTO antes de I/O.
       const resultado = await despacharAcessoPortalResend(registro.id, { ambiente });
       processados += 1;
       if (resultado.situacao === "ENVIADO") aceitosPeloProvedor += 1;

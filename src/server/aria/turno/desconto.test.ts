@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { configPadrao } from "../config-schema";
 import { avaliarDesconto } from "./desconto";
 
-const pol = configPadrao().politicas; // 10 / 20, parcelas 10
+const pol = configPadrao().politicas;
 
 describe("avaliarDesconto", () => {
   it("faixas", () => {

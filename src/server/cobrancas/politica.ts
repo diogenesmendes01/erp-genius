@@ -5,22 +5,12 @@ import { MODELOS_WHATSAPP, type ModeloWhatsapp } from "@/server/financeiro/schem
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME } from "./fabrica";
 import { REGUA, type DegrauRegua, type PassoRegua, type TipoAcao } from "./regua";
 
-// Política como DADO (docs 26/30): a régua deixa de ser a const REGUA e passa a ser um
-// registro editável (PoliticaRegua/DegrauPolitica). Este módulo carrega o registro e o
-// traduz para o formato puro que o cérebro (`proximaAcao`) consome. Sem registro no banco,
-// vale a política de FÁBRICA (a própria REGUA, com os modos do doc 26 e estado DESLIGADA).
-//
-// D+15 conserva seu ID histórico e o envio manual; a restrição D+30 é processada
-// pelo controle de acesso independente, sem usar o degrau de mensagem como autorização.
-
 export { MODOS_FABRICA, POLITICA_COBRANCA_NOME };
 
 export interface PoliticaCarregada {
-  /** null = política de fábrica (nenhum registro no banco ainda). */
   id: string | null;
   nome: string;
   estado: EstadoPolitica;
-  /** Degraus ATIVOS, em ordem crescente de offset — o formato que `proximaAcao` consome. */
   degraus: readonly DegrauRegua[];
   modoPorPasso: ReadonlyMap<PassoRegua, ModoDegrau>;
   templateIdPorPasso: ReadonlyMap<PassoRegua, string | null>;
@@ -40,7 +30,7 @@ export function politicaDeFabrica(): PoliticaCarregada {
   return {
     id: null,
     nome: POLITICA_COBRANCA_NOME,
-    estado: "DESLIGADA", // toda automação nasce desligada (doc 27 §modelo de config)
+    estado: "DESLIGADA",
     degraus: REGUA,
     modoPorPasso: new Map(REGUA.map((d) => [d.passo, MODOS_FABRICA[d.passo]])),
     templateIdPorPasso: new Map(REGUA.map((d) => [d.passo, null])),
@@ -54,11 +44,6 @@ export function politicaDeFabrica(): PoliticaCarregada {
   };
 }
 
-/**
- * Carrega a política de cobrança do banco (ou a de fábrica, se não houver registro).
- * Linhas inválidas do banco (passo/tipo desconhecidos) são IGNORADAS com segurança — o
- * cérebro só recebe degraus bem-formados, em ordem crescente de offset.
- */
 export async function carregarPoliticaRegua(db: Pick<Prisma.TransactionClient, "politicaRegua"> = prisma): Promise<PoliticaCarregada> {
   const p = await db.politicaRegua.findFirst({
     where: { escopo: "COBRANCA" },
@@ -88,7 +73,6 @@ export async function carregarPoliticaRegua(db: Pick<Prisma.TransactionClient, "
   };
 }
 
-/** Uma linha de degrau como está guardada (DegrauPolitica) ou como o formulário da política a manda salvar. */
 export interface LinhaDegrauPolitica {
   passo: string;
   offsetDias: number;
@@ -97,16 +81,9 @@ export interface LinhaDegrauPolitica {
   modo: ModoDegrau;
   ativo: boolean;
   templateId: string | null;
-  /** Nome do template ligado ao degrau (para o modelo de fábrica correspondente); null = modelo de fábrica do passo. */
   templateNome: string | null;
 }
 
-/**
- * Linhas de degrau → o formato que o cérebro (`proximaAcao`) e o cron consomem: só os degraus ATIVOS e
- * bem-formados, em ordem crescente de offset; D+15 e "bloquear" nunca automáticos. É a tradução da política
- * guardada (carregarPoliticaRegua) e também a da política que o formulário vai salvar — a estimativa de alcance
- * da ativação (docs/42 L2517) usa a mesma, para contar com a régua que vai valer.
- */
 export function traduzirDegrausPolitica(linhas: readonly LinhaDegrauPolitica[]): Pick<PoliticaCarregada, "degraus" | "modoPorPasso" | "templateIdPorPasso"> {
   const degraus: DegrauRegua[] = [];
   const modoPorPasso = new Map<PassoRegua, ModoDegrau>();
@@ -116,7 +93,7 @@ export function traduzirDegrausPolitica(linhas: readonly LinhaDegrauPolitica[]):
     if (!d.ativo) continue;
     const passo = PASSOS.find((x) => x === d.passo);
     const tipo = passo === "D+15" ? "cobrar" : TIPOS.find((x) => x === d.tipo);
-    if (!passo || !tipo) continue; // linha malformada nunca chega ao cérebro
+    if (!passo || !tipo) continue;
     const template = MODELOS_WHATSAPP.find((m) => m === d.templateNome) ?? modeloFabrica(passo);
     degraus.push({ passo, offsetDias: d.offsetDias, tipo, template, rotulo: passo === "D+15" ? "Cobrança final" : d.rotulo });
     modoPorPasso.set(passo, (passo === "D+15" || tipo === "bloquear") && d.modo === "AUTOMATICO" ? "MANUAL" : d.modo);

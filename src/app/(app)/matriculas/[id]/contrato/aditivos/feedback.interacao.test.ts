@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42, E3): erro e sucesso separados nos formulários do
-// aditivo contratual — erro em role="alert", sucesso em role="status", falha de rede como resultado
-// incerto e o botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(), push: vi.fn(),
@@ -17,7 +14,6 @@ vi.mock("react", async (original) => {
     useState: ((inicial: unknown) => m.ganchos!.useState(inicial)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
     useRef: ((inicial: unknown) => m.ganchos!.useRef(inicial)) as unknown as typeof real.useRef,
-    // PrepararAditivo: id dos campos.
     useId: (() => "teste") as unknown as typeof real.useId,
   };
 });
@@ -26,7 +22,6 @@ vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ proporAcertoTax
 vi.mock("@/server/contratos/aditivo-assinatura", () => ({ registrarConferenciaAssinaturaAditivo: m.conferenciaAssinatura }));
 vi.mock("@/server/contratos/aditivo-condicoes", () => ({ aplicarCondicoesFormalizadasAditivo: m.aplicarCondicoes, formalizarEAplicarCondicoesAditivo: m.formalizarCondicoes }));
 vi.mock("@/server/contratos/aditivo-conferencia-final", () => ({ registrarConferenciaFinalAditivo: m.conferenciaFinal }));
-// Lote 3 do fuso pessoal: a vigência vai como texto + fuso; quem converte é o servidor (aditivos-local.ts).
 vi.mock("@/server/contratos/aditivos-local", () => ({ prepararAditivoContratualLocal: m.prepararAditivo }));
 vi.mock("@/server/contratos/aditivos", () => ({ prepararAditivoContratual: vi.fn(), decidirAditivoContratual: m.decidirAditivo }));
 vi.mock("@/server/contratos/aditivo-taxa-impactos", () => ({ prepararImpactosTaxaAditivo: m.impactos }));
@@ -53,10 +48,8 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** O botão está com o rótulo de progresso e travado? */
 const botaoOcupado = (t: ReactNode, rotulo: string) =>
   elementos(t).some((n) => n.type === "button" && texto(n.props.children).trim() === rotulo && n.props.disabled === true);
-/** Campo controlado: dispara o onChange com o evento mínimo. */
 const mudar = (no: No, value: string) => (no.props.onChange as (e: unknown) => void)({ target: { value } });
 
 describe("AcertoTaxaFormulario", () => {
@@ -219,8 +212,6 @@ describe("ImpactosTaxaFormulario", () => {
     ocupado: () => botaoOcupado(tela(), "Preparando…"),
   });
 
-  // R1 da #153 (B5): na falha de transporte o resultado é incerto — a tentativa (e a chave) fica, e a tela
-  // não atualiza; o reenvio sem alterar confere o mesmo conjunto. Só o sucesso descarta a chave e atualiza.
   const justificar = (motivo: string) => mudar(elementos(tela()).find((n) => n.type === CampoTexto)!, motivo);
   const chaves = () => m.impactos.mock.calls.map((chamada: unknown[]) => (chamada[0] as { chaveIdempotencia: string }).chaveIdempotencia);
 

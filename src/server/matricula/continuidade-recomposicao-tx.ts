@@ -48,11 +48,6 @@ const diaSeguinte = (data: string) => {
   return DataCivilSchema.parse(civil(proximo));
 };
 
-/**
- * Q162: a aplicaÃ§Ã£o Q70 Ã© a Ãºnica fonte que desloca a Ã¢ncora mensal. A Ãºltima
- * aplicaÃ§Ã£o da matrÃ­cula precisa continuar coerente com todas as cobranÃ§as que
- * ela alterou; nÃ£o hÃ¡ fallback para uma aplicaÃ§Ã£o mais antiga ou legado.
- */
 export async function carregarReferenciaRecomposicaoAplicadaTx(
   tx: Pick<Prisma.TransactionClient, "aplicacaoRecomposicaoCobertura" | "aplicacaoCoberturaAditivo" | "cobranca">,
   matriculaId: string,
@@ -101,9 +96,6 @@ export async function carregarReferenciaRecomposicaoAplicadaTx(
       if (!coberturaInicioAtual || !coberturaFimAtual || versaoAtual === undefined) {
         throw new ErroRegra("A Ãºltima recomposiÃ§Ã£o foi alterada por outra origem; confira a continuidade antes de prosseguir.");
       }
-      // A sucessão Q168 pode conter mais de uma aplicação válida. Cada elo
-      // precisa partir do intervalo e da versão deixados pelo anterior; uma
-      // aplicação isolada não pode encobrir lacuna ou alteração manual.
       const posteriores = await tx.aplicacaoCoberturaAditivo.findMany({
         where: {
           cobrancaId: periodo.cobrancaId,
@@ -152,10 +144,6 @@ export async function carregarReferenciaRecomposicaoAplicadaTx(
   });
 }
 
-/**
- * Q70: dias jÃ¡ destinados a compensaÃ§Ã£o nÃ£o podem integrar uma nova mensalidade.
- * A consulta Ã© isolada para que o emissor e a prÃ©via usem a mesma barreira.
- */
 export async function conferirCompensacaoProgramadaContinuidadeTx(
   tx: Pick<Prisma.TransactionClient, "diaProgramadoRecomposicao">,
   input: z.input<typeof Entrada>,
@@ -184,7 +172,6 @@ export async function conferirCompensacaoProgramadaContinuidadeTx(
 
 
 
-/** Q162 não escolhe precedência entre a recomposição e aplicações posteriores da mesma matrícula. */
 export async function conferirOrigensConcorrentesAposRecomposicaoTx(
   tx: Pick<Prisma.TransactionClient, "aplicacaoPeriodoIntegral" | "itemPropostaRetomadaMatriculas">,
   input: { matriculaId: string; aplicadaEm: string },

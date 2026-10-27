@@ -12,9 +12,6 @@ function encontrar(no: unknown, tipo: string) { return todos(no, tipo)[0]; }
 const dados = { creditoId: "c", valorCredito: "200.00", reservaDevolucao: "0.00", devolvido: "0.00", moeda: "CRC", devolucoes: [], cobrancas: [], propostas: [], matriculaId: "m", aplicacaoDisponivel: true as const } as any;
 afterEach(() => vi.unstubAllGlobals());
 it("submete proposta pelo callback real e refresca apenas após sucesso", async () => {
-  // Dois useState na ordem em que o componente chama: erro, depois valor (CampoMoeda) —
-  // "100,00" com vírgula pra confirmar que parseMoeda entende o formato que o campo produz. O useState do
-  // próprio CampoMoeda (anúncio no blur, B12) cai no padrão do mock: o valor inicial.
   mocks.useState.mockReturnValueOnce(["", vi.fn()]).mockReturnValueOnce(["100,00", vi.fn()]);
   mocks.useTransition.mockReturnValue([false, (cb: () => void) => cb()]); mocks.useRef.mockReturnValue({ current: "" });
   mocks.propor.mockResolvedValue({ ok: true, dado: { id: "p" } }); vi.stubGlobal("crypto", { randomUUID: () => "chave-ui-devolucao" });

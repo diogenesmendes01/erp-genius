@@ -49,7 +49,6 @@ describe("rota de conciliação financeira", () => {
 
   it("cada coleção pagina nos dois sentidos e o link de uma mantém a página das outras", async () => {
     const render = async (busca: Record<string, string>) => renderToStaticMarkup(await Pagina({ params: Promise.resolve({ linhaId: "l/1" }), searchParams: Promise.resolve(busca) }));
-    // Primeira página de tudo: só "Próxima" nas coleções com mais registros, e nenhum link para a página 1.
     mocks.consulta.mockResolvedValue({ ok: true, dado: { ...dado, temProxima: true, temProximaPropostas: true } });
     const primeira = await render({});
     expect(mocks.consulta).toHaveBeenLastCalledWith({ linhaId: "l/1", pagina: 1, paginaRecebimentos: 1, paginaPagadores: 1, paginaPropostas: 1 });
@@ -58,7 +57,6 @@ describe("rota de conciliação financeira", () => {
     expect(primeira).toContain('href="/financeiro/migracao/l%2F1?pagina=2">Próxima');
     expect(primeira).toContain('href="/financeiro/migracao/l%2F1?paginaPropostas=2">Próxima');
 
-    // Cobranças na 3ª e recebimentos na 2ª: os dois sentidos em cada uma, sem perder a outra.
     mocks.consulta.mockResolvedValue({ ok: true, dado: { ...dado, pagina: 3, paginaRecebimentos: 2, temProxima: true } });
     const meio = await render({ pagina: "3", paginaRecebimentos: "2" });
     expect(mocks.consulta).toHaveBeenLastCalledWith({ linhaId: "l/1", pagina: 3, paginaRecebimentos: 2, paginaPagadores: 1, paginaPropostas: 1 });

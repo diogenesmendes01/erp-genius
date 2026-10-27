@@ -3,7 +3,6 @@ import { normalizarInsight, type AnaliseInsight } from "./saida";
 export interface LeituraInsightAutorizada {
   autorizado: boolean;
   capacidadeAtualizar: boolean;
-  /** Resolução operacional não depende da compatibilidade necessária à geração. */
   capacidadeOperacional?: boolean;
   indisponivel: boolean;
   emCurso: { id: string; estado: "PROCESSANDO" | "INCERTO" } | null;
@@ -21,7 +20,6 @@ export interface InsightPainel {
   contextoAlterado: boolean;
 }
 
-/** Projeção pura; o produtor deve autorizar ANTES de buscar a geração e calcular a base. */
 export function projetarInsightPainel(entrada: LeituraInsightAutorizada): InsightPainel | null {
   if (!entrada.autorizado) return null;
   const analise = entrada.ultima ? normalizarInsight(entrada.ultima.resultadoJson) : null;

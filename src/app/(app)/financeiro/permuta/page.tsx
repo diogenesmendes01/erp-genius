@@ -10,7 +10,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function PermutaPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {
   const pagina = Number((await searchParams).pagina ?? 1);
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO);
-  // A capacidade vem do usuário da sessão (carregarUsuarioFresco já traz `permissoes`; C11 da #170).
   const preferencia = await consultarPreferenciaFusoEquipe();
   const admin = usuario.papeis.includes(Papel.ADMINISTRADOR);
   const retorno = admin || usuario.papeis.includes(Papel.FINANCEIRO) ? "/financeiro" : "/home";

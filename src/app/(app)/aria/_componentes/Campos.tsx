@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 export const CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
-/** Interruptor acessível (`role="switch"`): texto ao lado, nunca só a cor. */
 export function Interruptor({ rotulo, descricao, ligado, aoMudar, desabilitado }: {
   rotulo: string;
   descricao?: ReactNode;
@@ -34,5 +33,4 @@ export function Interruptor({ rotulo, descricao, ligado, aoMudar, desabilitado }
   );
 }
 
-/** Lista de textos digitada uma por linha (prioridades, nunca fazer, palavras-chave). */
 export const emLinhas = (texto: string): string[] => texto.split("\n").map((l) => l.trim()).filter(Boolean);

@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42, E3): erro e sucesso separados na decisão de
-// alçada do aditivo — erro em role="alert", sucesso em role="status", falha de rede com a mensagem
-// própria de decisão incerta e o botão saindo do ocupado. Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, decidir: vi.fn(), refresh: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

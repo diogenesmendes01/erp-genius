@@ -4,9 +4,6 @@ import {
   tokenDoFragmento, validarSenhas, type ArmazenamentoDaAba,
 } from "./ativacao";
 
-// docs/42 /portal-aluno/ativar #1 e #2 (docs/43 §6 item 8): o link sobrevive ao F5 (cópia só desta aba) e a
-// senha segue as regras do servidor, com confirmação.
-
 function armazenamento(inicial: Record<string, string> = {}): ArmazenamentoDaAba & { dados: Map<string, string> } {
   const dados = new Map(Object.entries(inicial));
   return {

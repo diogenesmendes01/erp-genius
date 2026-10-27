@@ -74,8 +74,6 @@ describe("mesclarPessoas", () => {
     expect(JSON.stringify((await eventosDo("Pessoa", a)).at(-1)!.payload)).not.toContain("@");
   });
 
-  // D14 (decisão do dono, 19/10/2026; #211 C4): repor Aluno/Responsavel.pessoaId pela mescla exige a alçada da
-  // Secretaria (Secretaria Acadêmica ou Administrador), além de contatos.mesclar, e grava um evento no cadastro.
   it("move o cadastro acadêmico quando só a secundária o tem, com a alçada da Secretaria, e não remescla lápide", async () => {
     const gcSecretaria = await criarUsuario([Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA], "GC e Secretaria");
     logadoComo(gcSecretaria.id);
@@ -99,7 +97,6 @@ describe("mesclarPessoas", () => {
     expect(await prisma.responsavel.count({ where: { pessoaId: pessoaResponsavel } })).toBe(1);
     expect((await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoaAluno } })).mescladaEmId).toBeNull();
     expect(await prisma.evento.count({ where: { tipo: { in: ["PessoasMescladas", "CadastroAcademicoRepontado"] } } })).toBe(0);
-    // O cadastro acadêmico na principal não é movido: a mescla comum segue com o gerente.
     expect((await mesclarPessoas({ principalId: pessoaResponsavel, secundariaId: b, escolhas: {} })).ok).toBe(true);
   });
 
@@ -116,10 +113,8 @@ describe("mesclarPessoas", () => {
   it("quem não é Administrador não muda nome nem e-mail de aluno pela mescla", async () => {
     await prisma.pessoa.update({ where: { id: pessoaAluno }, data: { email: "aluno@x.com" } });
     logadoComo(gerente.id);
-    // Aluno na principal, nome da secundária escolhido.
     expect(await mesclarPessoas({ principalId: pessoaAluno, secundariaId: a, escolhas: { nome: "secundaria" } }))
       .toEqual({ ok: false, erro: MSG_NOME_ALUNO });
-    // Aluno na secundária, nome comercial da principal mantido (com a alçada da Secretaria, que não é Administrador).
     logadoComo((await criarUsuario([Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA], "GC e Secretaria")).id);
     expect(await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { email: "secundaria" } }))
       .toEqual({ ok: false, erro: MSG_NOME_ALUNO });
@@ -143,7 +138,6 @@ describe("mesclarPessoas", () => {
     const sessao: UsuarioSessao = { id: gerente.id, nome: gerente.nome, papeis: gerente.papeis };
     const h = (await historicoPessoa(a, sessao))!;
     expect(h.filter((i) => i.tipo === "NotaInterna").map((i) => i.texto).sort()).toEqual(["nota-da-b", "nota-da-c"]);
-    // Cada mescla aparece uma vez, não uma por agregado.
     expect(h.filter((i) => i.tipo === "PessoasMescladas").map((i) => i.rotulo)).toEqual(["Contatos mesclados", "Contatos mesclados"]);
   });
 
@@ -212,7 +206,7 @@ describe("sugerirDuplicados", () => {
     await prisma.oportunidade.createMany({ data: [{ nome: "A", pessoaId: a }, { nome: "B", pessoaId: b }] });
     const sessao = { id: gerente.id, nome: "G", papeis: [Papel.GERENTE_COMERCIAL] };
     const r = await sugerirDuplicados(sessao);
-    expect(r).toHaveLength(0); // só nome (40): abaixo de 60
+    expect(r).toHaveLength(0);
     await prisma.pessoa.update({ where: { id: b }, data: { email: "a@x.com" } });
     const r2 = await sugerirDuplicados(sessao);
     expect(r2).toEqual([{ a: expect.any(String), b: expect.any(String), pontos: 120, motivos: ["email", "nome"] }]);

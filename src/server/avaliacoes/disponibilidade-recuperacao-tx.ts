@@ -1,6 +1,5 @@
 import type { Prisma } from "@prisma/client";
 
-/** O encontro ignorado, quando informado, deve ser a origem conferida pelo chamador. */
 export async function disponibilidadeRecuperacaoTx(tx: Prisma.TransactionClient, d: {
   alunoId: string; professorId: string | null; inicio: Date; fim: Date; ignorarEncontroId?: string;
 }) {

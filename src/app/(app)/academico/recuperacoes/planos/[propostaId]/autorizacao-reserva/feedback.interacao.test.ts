@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na autorização de
-// pré-reserva especial e na reserva com autorização — erro em role="alert", sucesso em role="status",
-// falha de rede como resultado incerto e o formulário saindo do ocupado. Sem DOM: ganchos de
-// src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   autorizar: vi.fn(), reservar: vi.fn(), refresh: vi.fn(),
@@ -30,7 +26,6 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** Rótulo de progresso no botão e o fieldset travado: os dois sinais do ocupado. */
 const ocupadoEm = (t: ReactNode, rotulo: string) => {
   const botao = elementos(t).find((n) => n.type === "button");
   const fieldset = elementos(t).find((n) => n.type === "fieldset");
@@ -40,7 +35,6 @@ const ocupadoEm = (t: ReactNode, rotulo: string) => {
 describe("AutorizarReservaEspecial", () => {
   const tela = () => m.ganchos!.renderizar(AutorizarReservaEspecial, { propostaId: "proposta-1", habilidades: ["FALA", "LEITURA"], fusoInstitucional: "America/Sao_Paulo" });
   const valores = { motivo: "Aluno com atestado médico", prazoLocal: "2026-10-20T18:00:00", fuso: "America/Sao_Paulo" };
-  /** Escolhe a habilidade no select controlado (estado do componente) antes de enviar. */
   const escolherHabilidade = () => {
     const select = elementos(tela()).find((n) => n.type === "select");
     (select!.props.onChange as (e: unknown) => void)({ target: { value: "FALA" } });

@@ -14,9 +14,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { templateAlterado } from "./template-alterado";
 
-// TEMPLATES (doc 26 §Camada 2): editor de texto. O motor envia o texto do template como está,
-// sem aprovação externa; as variáveis amigáveis são preenchidas pela régua.
-
 const btnPri = botaoClasses({ tamanho: "md" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
@@ -34,12 +31,10 @@ const FORM_VAZIO: FormTemplate = { nome: "", corpo: "", idioma: "es", categoria:
 export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) {
   const router = useRouter();
   const [form, setForm] = useState<FormTemplate | null>(null);
-  // A action de salvar não recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
-  // O resultado aparece no formulário (salvar).
   const [origem, setOrigem] = useState<string | null>(null);
   const ocupado = acao.ocupado;
-  useAvisoAoSair(templateAlterado(form, templates)); // docs/43 §6 item 3: editor aberto com alteração não salva
+  useAvisoAoSair(templateAlterado(form, templates));
 
   async function run<T>(secao: string, disparar: () => Promise<Resultado<T>>, sucesso: MensagemSucesso<T>) {
     setOrigem(secao);
@@ -165,7 +160,6 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
               onChange={(e) => setForm({ ...form, corpo: e.target.value })}
             />
           </label>
-          {/* Erro dentro do card, colado ao "Salvar" — o formulário continua aberto para corrigir. */}
           <FeedbackAcao erro={origem === "form" ? acao.erro : null} className="mt-3" />
           <div className="mt-3 flex justify-end">
             <button type="button" className={btnPri} disabled={ocupado} onClick={salvar}>
@@ -174,7 +168,6 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           </div>
         </div>
       )}
-      {/* O card fecha no sucesso; "Template salvo." é anunciado aqui, numa região sempre montada. */}
       <FeedbackAcao erro={null} sucesso={!form && origem === "form" ? acao.sucesso : null} className="mt-3" />
     </section>
   );

@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-// global-error.tsx (#172): o "Tentar de novo" era um <button> escrito à mão, com as classes do primário copiadas.
-// Agora é o <Botao> do design system, que leva o `reset` no onClick.
 vi.mock("./globals.css", () => ({}));
 
 import GlobalError from "./global-error";

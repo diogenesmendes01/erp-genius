@@ -50,8 +50,6 @@ it("validação de endereço não cria sessão e recuperação mantém resposta 
   expect(await erro.json()).toEqual(await sucesso.json());
 });
 
-// #172: a senha recusada pelo schema não é "link indisponível". O link continua valendo (a validação vem antes
-// de tocar no token), então a rota responde 400 com o campo, e o 422 fica só para o link que não serve.
 it("token: senha recusada pelo schema devolve 400 com o campo, não o 422 do link", async () => {
   const { z } = await import("zod");
   const curta = z.object({ senha: z.string().min(12) }).safeParse({ senha: "curta" });

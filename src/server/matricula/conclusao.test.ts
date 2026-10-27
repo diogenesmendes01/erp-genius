@@ -60,7 +60,6 @@ function cobrancas() {
 
 beforeEach(() => {
   vi.resetAllMocks(); m.papeis = [Papel.SECRETARIA_ACADEMICA];
-  // Locks do fluxo não retornam dados; a checagem da conclusão integrada, sim.
   m.$queryRaw.mockResolvedValue([{ existe: false }]);
   m.aluno.findUnique.mockResolvedValue({ status: "ATIVO" });
   m.matricula.findMany.mockResolvedValue([{ id: "matricula", leadId: null }]);

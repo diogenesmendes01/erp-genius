@@ -10,7 +10,6 @@ import { identificarMatriculaAvaliacao } from "./identificacao";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { designadoRecuperacao } from "./recuperacao-designacao-acesso";
 
-/** Paginada por número (E4), 50 por página, em ordem de id: ida e volta trazem as mesmas realizações. */
 export async function listarRecuperacoesRealizadas(input: { alocacaoId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);

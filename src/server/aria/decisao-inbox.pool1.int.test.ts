@@ -3,9 +3,6 @@ import { Papel, Prisma } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
-// Mesmo limite do Vitest documentado em comercial/criar-lead-idempotencia.int.test.ts:
-// imports concorrentes de auth escapam do mock. Só a fronteira da sessão é adaptada;
-// usuário fresco, autorização pós-lock, decisões e executor continuam reais.
 vi.mock("@/server/_shared/sessao", async original => {
   const real = await original<typeof import("@/server/_shared/sessao")>();
   return { ...real, exigirSessao: async () => {

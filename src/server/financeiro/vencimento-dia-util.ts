@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
 
-/**
- * Data civil que pode ser persistida. Este cálculo não usa Date local nem fuso:
- * toda comparação é feita no calendário gregoriano representado por YYYY-MM-DD.
- */
 export const DataCivilPersistivelSchema = DataCivilSchema.refine(
   (data) => data >= "0001-01-01" && data <= "9999-12-31",
   "Data fora do intervalo persistível.",
@@ -16,7 +12,6 @@ const DiasSemanaUteisSchema = z
   .max(7)
   .refine((dias) => new Set(dias).size === dias.length, "Dia útil financeiro repetido.");
 
-/** Calendário financeiro explícito; não é nem deriva de calendário escolar. */
 export const CalendarioFinanceiroSchema = z
   .object({
     id: z.string().trim().min(1).max(200),
@@ -74,7 +69,6 @@ export type ResultadoAjusteVencimentoDiaUtil = {
   referenciaCalendarioAplicada: { id: string; versao: number; referencia: string } | null;
 };
 
-/** Indica que a conferência humana precisa corrigir a configuração ou a data. */
 export class ErroConferenciaVencimento extends Error {
   constructor(mensagem: string) {
     super(mensagem);
@@ -86,7 +80,6 @@ function paraDataUtc(data: string): Date {
   const [ano, mes, dia] = data.split("-").map(Number);
   const resultado = new Date(0);
   resultado.setUTCHours(0, 0, 0, 0);
-  // Date.UTC transforma os anos 0..99 em 1900..1999; setUTCFullYear não.
   resultado.setUTCFullYear(ano, mes - 1, dia);
   return resultado;
 }
@@ -97,10 +90,6 @@ function proximoDiaCivil(data: string): string {
   return proximo.toISOString().slice(0, 10);
 }
 
-/**
- * Ajusta exclusivamente a data de vencimento já calculada. Não recebe nem altera
- * cobertura contratual, dia de vencimento ou qualquer calendário acadêmico.
- */
 export function ajustarVencimentoDiaUtil(input: EntradaAjustarVencimentoDiaUtil): ResultadoAjusteVencimentoDiaUtil {
   let dados: z.infer<typeof AjustarVencimentoDiaUtilSchema>;
   try {

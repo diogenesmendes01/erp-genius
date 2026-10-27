@@ -53,7 +53,6 @@ it.each(["valor", "vencimento", "moeda", "vinculo", "extra", "memoria"])("recusa
   expect(() => f.consultar()).toThrow();
 });
 
-// Q172: aditivo de adiantamento aplicado. A cobrança vigente é a da última aplicação, e a cadeia parte do conferido.
 function aplicarAditivo(f: ReturnType<typeof fixture>, extra: Partial<AplicacaoAdiantamentoEntrada> = {}) {
   const a: AplicacaoAdiantamentoEntrada = { id: `ap${f.aplicacoes.length}`, cobrancaId: "c1", versaoCobrancaAntes: f.cobrancas[1].versao, versaoCobrancaDepois: f.cobrancas[1].versao + 1, valorAnterior: f.cobrancas[1].valorNegociado, valorNovo: "375",
     vencimentoAnterior: f.cobrancas[1].vencimento, vencimentoNovo: new Date("2099-10-20T12:00:00Z"), minutosAnteriores: f.aplicacoes.at(-1)?.minutosNovos ?? 75, minutosNovos: 112, ...extra };

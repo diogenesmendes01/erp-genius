@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (achado L776): a decisão administrativa da desistência
-// mostrava sucesso e erro no mesmo MensagemStatus. Agora: erro em role="alert", sucesso em role="status",
-// falha de rede com o texto fixo da decisão incerta (MSG_DECISAO_INCERTA) e o botão saindo do ocupado.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),
@@ -35,7 +32,6 @@ describe("DecisaoFormulario (administração da desistência)", () => {
     acionar: () => submeter(tela(), valores),
     respostaOk: { ok: true, dado: { id: "decisao-1", aprovada: true, estadoHash: "hash-2" } },
     sucesso: "Decisão registrada. A efetivação ainda depende das conferências e dos tratamentos aplicáveis.", incerto: MSG_DECISAO_INCERTA,
-    // O rótulo do botão é o sinal do ocupado (o fieldset também trava depois do sucesso).
     ocupado: () => texto(elementos(tela()).find((n) => n.type === "button")?.props.children) === "Registrando…",
   });
 

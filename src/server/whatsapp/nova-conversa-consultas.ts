@@ -35,7 +35,6 @@ interface FotoConsulta {
  linhas: { id: string; rotulo: string; ativo: boolean; finalidade: string; donoId: string | null; donoGerenteId: string | null }[];
  candidatos: { id: string; telefoneE164: string | null; vendedorDonoId: string | null; donoGerenteId: string | null; coberturaVigente: boolean }[];
 }
-/** Foto restritiva dos candidatos já autorizados; não descobre novos alvos ou concede capacidade. */
 async function fotoFinal(tx: Prisma.TransactionClient, perfil: UsuarioSessao, ids: readonly string[], candidatos: readonly { id: string; telefoneE164: string | null }[] = []): Promise<FotoConsulta> {
  const filtroLinhas = ids.length ? Prisma.sql`n.id IN (${Prisma.join([...ids])})` : Prisma.sql`FALSE`;
  const filtroLeads = candidatos.length ? Prisma.sql`l.id IN (${Prisma.join(candidatos.map(c => c.id))})` : Prisma.sql`FALSE`;
@@ -49,7 +48,6 @@ async function fotoFinal(tx: Prisma.TransactionClient, perfil: UsuarioSessao, id
     FROM "Lead" l LEFT JOIN "Usuario" v ON v.id=l."vendedorDonoId" WHERE ${filtroLeads}), '[]'::jsonb)
   ) AS foto FROM (SELECT 1) base LEFT JOIN "Usuario" u ON u.id=${perfil.id}
  `);
- // Nenhum await após a foto: só compara as mesmas capacidades/seleções já verificadas.
  const foto = rows.length === 1 ? rows[0].foto : null;
  if (!foto?.autor?.ativo) throw new ErroAutenticacao();
  conferirPerfil(perfil, { ...foto.autor, nome: "" });
@@ -58,7 +56,6 @@ async function fotoFinal(tx: Prisma.TransactionClient, perfil: UsuarioSessao, id
  if (foto.candidatos.length !== new Set(candidatos.map(c => c.id)).size || foto.candidatos.some(l => !candidatos.some(c => c.id === l.id && c.telefoneE164 === l.telefoneE164) || (!admin && !(vendedor && (l.vendedorDonoId === u.id || l.coberturaVigente)) && !(gerente && l.donoGerenteId === u.id)))) throw mudou();
  return foto;
 }
-/** Independente de existir Lead. Não amplia o DTO/fluxo361 nem decide owner de criação. */
 export async function listarLinhasNovaConversa(): Promise<Resultado<{ linhas: { id: string; rotulo: string }[] }>> {
  return executarAcao(async () => {
   const sessao = await exigirSessao();
@@ -74,7 +71,6 @@ export async function listarLinhasNovaConversa(): Promise<Resultado<{ linhas: { 
   });
  });
 }
-/** Preview é somente dica; o comando conserva modo/key e o core confirma tudo novamente. */
 export async function consultarTelefoneNovaConversa(input: unknown): Promise<Resultado<{ tipo: "NOVO" | "EXISTENTE" | "RECUSAR"; telefoneE164: string }>> {
  return executarAcao(async () => {
   const sessao = await exigirSessao();

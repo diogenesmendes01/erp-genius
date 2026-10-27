@@ -24,14 +24,10 @@ async function usuarioAtualTx(tx: Prisma.TransactionClient, id: string, decisor 
   return usuario;
 }
 
-/** Registra uma revisão completa. Não publica a modalidade, agenda ou grade. */
 export async function prepararAlteracaoQuantidadeAulasModalidade(input: z.input<typeof Preparar>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
     const d = Preparar.parse(input), entradaHash = hash(d);
-    // O lock da modalidade não basta em SERIALIZABLE: o snapshot precede a espera pelo
-    // lock. O preparo concorrente perdedor é repetido e cai no replay da chave de
-    // idempotência (mesma entrada) ou na conferência de versão (outra revisão).
     return repetirEmFalhaDeSerializacao(() => prisma.$transaction(confirmarTransacao(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'modalidade-quantidade:' + d.modalidadeId}, 0))`;
       await usuarioAtualTx(tx, autor.id);
@@ -60,13 +56,10 @@ export async function prepararAlteracaoQuantidadeAulasModalidade(input: z.input<
   });
 }
 
-/** Aprovação independente já materializa o conjunto; não existe etapa pública posterior. */
 export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<typeof Decidir>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const d = Decidir.parse(input);
-    // Mesmo motivo do preparo; aqui o snapshot é fixado já na leitura da proposta, antes
-    // do lock. A decisão perdedora é repetida e cai no replay de `p.decisao`.
     return repetirEmFalhaDeSerializacao(() => prisma.$transaction(confirmarTransacao(async (tx) => {
       const p = await tx.propostaQuantidadeAulasModalidade.findUnique({ where: { id: d.propostaId }, include: { decisao: true, aplicacao: true } });
       if (!p) throw new ErroRegra("Proposta de quantidade não encontrada.");
@@ -93,8 +86,6 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
       await tx.modalidade.update({ where: { id: p.modalidadeId }, data: { aulasPorNivel: p.quantidadeNova } });
       const encontrosAplicados: { turmaId: string; encontroId: string }[] = [];
       for (const impacto of atual.impactos.filter((i) => !i.preservada && i.previsao)) {
-        // Rascunho recebe uma nova versão de grade, sem criar encontro de
-        // agenda. A publicação normal continuará a consumir essa versão.
         if (!impacto.publicada) {
           const origem = impacto.propostaGradeId ? await tx.propostaGradeTurma.findUnique({ where: { id: impacto.propostaGradeId } }) : null;
           if (!origem) throw new ErroRegra("Rascunho sem proposta de grade de origem; confira antes de aplicar.");
@@ -103,9 +94,6 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
           await tx.propostaGradeTurma.create({ data: { turmaId: impacto.turmaId, calendarioId: origem.calendarioId, preparadorId: p.preparadorId, versao: (ultimo?.versao ?? 0) + 1, fusoOrigem: origem.fusoOrigem, motivo: p.motivo, chaveIdempotencia: `quantidade-rascunho:${p.id}:${impacto.turmaId}`, entradaHash: hash({ propostaId: p.id, turmaId: impacto.turmaId, quantidade: impacto.quantidadeNova }), snapshot: snapshot as Prisma.InputJsonValue } });
           continue;
         }
-        // A prévia representa todos os futuros reaproveitáveis, inclusive os
-        // que já coincidem com a grade recalculada. Só os realmente alterados
-        // pertencem à materialização e ao evento que alimenta os avisos.
         for (const encontro of impacto.previsao!.propostas.filter((e) => e.alterado)) {
           const existente = impacto.agendaAntes.find((e) => e.id === encontro.encontroId)!;
           const r = await tx.encontroAgenda.updateMany({ where: { id: encontro.encontroId, status: existente.status, inicio: new Date(encontro.inicioAnterior), fim: new Date(encontro.fimAnterior), professorId: existente.professorId ?? undefined }, data: { inicio: new Date(encontro.inicioProposto), fim: new Date(encontro.fimProposto), motivo: p.motivo } });

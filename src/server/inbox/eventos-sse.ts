@@ -5,26 +5,14 @@ import type { AvisoInbox } from "./barramento";
 
 export const TTL_FILTRO_MS = 10_000;
 
-/** Quadro SSE: `event: <tipo>`, `data: <json>` e linha em branco. */
 export function formatarSSE(a: AvisoInbox): string {
   const { paraUsuarioId: _destinatario, ...publico } = a;
   void _destinatario;
   return `event: ${a.tipo}\ndata: ${JSON.stringify(publico)}\n\n`;
 }
 
-/**
- * Filtro de avisos por escopo do usuário, com cache por atendimento (ou conversa de grupo) por
- * `ttlMs`. O aviso não carrega conteúdo; o filtro só decide se o usuário é avisado. Fail-closed:
- * aviso sem atendimento só passa se for conversa de grupo dentro do `escopoGrupos`.
- * Só `visivel: true` é guardado (um "não" em cache faria o usuário perder avisos de quem acabou de ganhar acesso,
- * por transferência ou participação), `atendimento.atualizado` invalida a chave (o escopo pode ter mudado) e o
- * Map é podado de expirados com teto de chaves. `resync` (escuta reconectada) passa sempre; `aria.global` só passa no contrato fechado sem IDs/conteúdo. `atendimento.atualizado`
- * direcionado (`paraUsuarioId`, da revogação de convite) passa só para esse usuário e não consulta o escopo: o
- * ex-convidado já está fora dele, e o aviso só carrega ids (o cliente recarrega o painel e recebe 404).
- */
 const MAX_CHAVES_CACHE = 500;
 
-/** Global nunca é transporte de IDs/conteúdo: só o contrato próprio de quatro campos passa. */
 function globalValido(a: AvisoInbox): boolean {
   const chaves = Reflect.ownKeys(a);
   return chaves.length === 4

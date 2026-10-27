@@ -33,7 +33,6 @@ async function cenario(finalidade: FinalidadeNumero) {
 }
 const eventos = (contatoId: string) => prisma.evento.findMany({ where: { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId } });
 
-// Correções após caracterização real: provas anteriores preservadas na SPEC/ledger.
 it("ACTION real institucional recusa sem Contato, novo atendimento ou Evento", async () => {
   const c = await cenario("AGENDA");
   expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(false);
@@ -57,7 +56,6 @@ it("repetição manual da ACTION real registra dois Eventos", async () => {
   expect((await vincularLeadRetornoNoInbox(c.input)).ok).toBe(true);
   expect(await eventos(c.contato.id)).toHaveLength(2);
 });
-/** Espera observável no Postgres: não basta esperar uma duração arbitrária. */
 async function aguardarBloqueadoPor(pid: number) {
   for (let i = 0; i < 150; i++) {
     const [r] = await prisma.$queryRaw<{ bloqueados: bigint }[]>`SELECT count(*) AS bloqueados FROM pg_stat_activity WHERE ${pid} = ANY(pg_blocking_pids(pid))`;

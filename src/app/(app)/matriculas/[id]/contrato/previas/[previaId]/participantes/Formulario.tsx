@@ -13,16 +13,11 @@ type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantes>>;
 type Dados = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
 type Participante = z.infer<typeof ConferirParticipantesSchema>["participantes"][number];
 
-/** Valor digitado por nome de campo; nome que nunca foi digitado vale "" (sem herdar nada do protótipo). */
 export const valorDigitado = (valores: Record<string, string>, nome: string) => Object.prototype.hasOwnProperty.call(valores, nome) ? valores[nome] : "";
 
 export function FormularioParticipantes({ dados }: { dados: Dados }) {
   const router = useRouter(), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
-  // Tudo o que é digitado fica no estado, por nome de campo (docs/43 §6 item 3; docs/42 L629): a troca da
-  // maioridade muda os papéis exigidos e pode tirar e devolver seções (critério, um signatário); com o valor
-  // aqui, voltar a classificação devolve o que foi preenchido. O componente não tem key e não remonta.
   const [valores, setValores] = useState<Record<string, string>>({});
-  // A chave de idempotência acompanha a entrada: dados novos (outra maioridade, outro texto) são outra tentativa.
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const valor = (nome: string) => valorDigitado(valores, nome);
   const ligar = (nome: string) => ({ name: nome, value: valor(nome), onChange: (e: { target: { value: string } }) => setValores((v) => ({ ...v, [nome]: e.target.value })) });
@@ -47,7 +42,6 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
     try {
       const r = await conferirParticipantesContratuais(input.data);
       if (!r.ok) setErro(r.erro);
-      // Registrada: a próxima conferência começa limpa (é outra versão), como antes fazia a remontagem pela key.
       else { setValores({}); tentativa.current = null; router.refresh(); }
     }
     catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }

@@ -2,10 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 8 (docs/42 /portal-aluno/ativar #1, #2, #4 e #5): o link sobrevive ao F5; sem link, nada de
-// formulário e duas saídas; regra da senha escrita, confirmação que bloqueia o envio, autocomplete de senha nova;
-// erro em role="alert" e sucesso em role="status". Sem DOM e sem rede: ganchos de src/test/tela-sem-dom.ts, o
-// efeito de montagem rodado à mão e a chamada à rota (../requisicoes) trocada por um mock.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as (() => void)[],
@@ -17,7 +13,6 @@ vi.mock("react", async (original) => {
     ...real,
     useState: ((inicial: unknown) => m.ganchos!.useState(inicial)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
-    // Efeitos não rodam no render: o teste roda o de montagem quando quer (montar()).
     useEffect: ((efeito: () => void) => { m.efeitos.push(efeito); }) as unknown as typeof real.useEffect,
   };
 });
@@ -50,7 +45,6 @@ let aba: Aba;
 const tela = () => m.ganchos!.renderizar(AtivarPortalAlunoPage, {});
 const html = () => renderToStaticMarkup(tela() as ReactElement);
 
-/** Abre a tela (componente novo) com este fragmento e roda o efeito de montagem. */
 function montar(hash: string) {
   m.ganchos = criarGanchos();
   vi.stubGlobal("window", { location: { hash, pathname: "/portal-aluno/ativar" }, history: { replaceState: m.replaceState }, sessionStorage: aba });
@@ -89,7 +83,7 @@ describe("ativar — o link de acesso", () => {
 
   it("F5 depois de abrir o link: sem fragmento, a tela relê a cópia da aba e envia com ela", async () => {
     abrirPeloLink();
-    montar(""); // recarga: componente novo, fragmento já limpo
+    montar("");
     expect(formularios(tela())).toHaveLength(1);
     preencherSenhas();
     m.definir.mockResolvedValueOnce({ ok: true, dado: { conclusao: "SESSAO" } });
@@ -128,10 +122,8 @@ describe("ativar — a senha", () => {
   });
 
   it("os campos não cortam a senha por caracteres: o limite é de bytes e é conferido no envio (#172)", async () => {
-    // maxLength conta caracteres, não bytes: cortaria em silêncio uma senha colada com mais de 72 letras e
-    // deixaria passar 72 letras acentuadas (144 bytes). Quem avisa do limite é a validarSenhas.
     expect(html()).not.toMatch(/maxlength/i);
-    const longa = "é".repeat(40); // 40 caracteres, 80 bytes
+    const longa = "é".repeat(40);
     preencherSenhas(longa, longa);
     await submeter(tela());
     expect(m.definir).not.toHaveBeenCalled();

@@ -15,7 +15,6 @@ const schema = z.object({
   busca: z.string().trim().max(100).default(""),
 }).strict();
 
-/** Projeção administrativa limitada à proposta e à avaliação que ela identifica. */
 export async function consultarDesignacoesSegundaChamada(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);

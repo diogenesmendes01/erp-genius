@@ -24,8 +24,6 @@ async function ouvir(atendimentoId:string){
 it("finalização NOTIFY real commit1/replay0/rollback0, sem spy do barramento",async()=>{
   const {c,g}=await preparar();await iniciarInsight(c.dono.id,{atendimentoId:c.a.id,geracaoId:g.geracaoId,versaoEsperada:g.versao,contextoAtualEsperadoHash:g.contextoAtualEsperadoHash});
   const o=await ouvir(c.a.id),i={atendimentoId:c.a.id,geracaoId:g.geracaoId,envelope:respostaInsight377(),recebidoEm:new Date()};
-  // Injeção explícita após callback real: a TX PostgreSQL aborta depois do NOTIFY enfileirado.
-  // Não simula query/commit e não é teste de concorrência.
   const rollbackDb={ $transaction:(f:(tx:Prisma.TransactionClient)=>Promise<unknown>)=>prisma.$transaction(async tx=>{await f(tx);throw new Error("Rollback real após callback377");}) } as unknown as BancoInsight;
   try{
     await expect(finalizarInsight(i,rollbackDb)).rejects.toThrow("Rollback real após callback377");await o.sincronizar();expect(o.avisos).toHaveLength(0);expect(await prisma.chamadaIA.count()).toBe(0);
@@ -45,8 +43,6 @@ it("reconciliar/descarte cada commit avisa1 e cada replay0 em LISTEN real",async
 
 it.each([1,2])("commit real com %s ACKs perdidos repete só persistência e GET resolve PRONTA",async quantos=>{
   const c=await cenarioInsight377();let commits=0,perdidos=0,providerChamadas=0;
-  // Fronteira de transporte: todas as transações/commits são PostgreSQL reais. Só a entrega
-  // do retorno ao orquestrador é perdida após COMMIT nas finalizações (terceira TX em diante).
   const db={ $transaction:async(f:(tx:Prisma.TransactionClient)=>Promise<unknown>)=>{
     const r=await prisma.$transaction(f);commits++;if(commits>=3&&perdidos<quantos){perdidos++;throw new Error("ACK perdido após COMMIT377");}return r;
   }} as unknown as BancoInsight;

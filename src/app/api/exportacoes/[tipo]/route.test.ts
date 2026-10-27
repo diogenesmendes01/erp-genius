@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Unitário da exportação filtrada (E4). O comportamento com banco real está em route.int.test.ts.
 const mocks = vi.hoisted(() => {
   class ErroAutenticacao extends Error {}
   class ErroPermissao extends Error {}
@@ -28,7 +27,6 @@ vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (f: (tx: unknown)
 import ExcelJS from "exceljs";
 import { GET } from "./route";
 
-/** Linhas da planilha gerada (cabeçalho incluso), como texto. */
 async function linhas(res: Response) {
   const livro = new ExcelJS.Workbook();
   await livro.xlsx.load(await res.arrayBuffer());
@@ -46,7 +44,7 @@ describe("planilha com rótulos, não enums crus (E5)", () => {
 
   it("leads: segmento, etapa e temperatura rotulados (\"Adulto\", \"Novo\", \"Morno\")", async () => {
     mocks.listarLeads.mockResolvedValueOnce([{ id: "l1", codigo: "L-1", nome: "Ana", b2b: false, segmento: "ADULTO", etapa: "NOVO", temperatura: "MORNO", pais: { nome: "Costa Rica" }, vendedor: { nome: "Bia" } }]);
-    mocks.contarLeads.mockResolvedValueOnce(1); // a linha continua na carteira na conferência final
+    mocks.contarLeads.mockResolvedValueOnce(1);
     const res = await GET(new Request("http://localhost/api/exportacoes/leads"), { params: Promise.resolve({ tipo: "leads" }) });
     expect(res.status).toBe(200);
     expect((await linhas(res))[1]).toEqual(["L-1", "Ana", "PF", "Adulto", "Novo", "Morno", "Costa Rica", "Bia"]);
@@ -79,7 +77,7 @@ describe("exportação de alunos com os filtros da tela", () => {
     await exportar("?status=ATIVO&pagina=7&colunas=cpf,telefone&ids=x");
     const filtros = (mocks.listarAlunos.mock.calls[0] as unknown as [unknown, Record<string, unknown>, unknown])[1];
     expect(filtros).toMatchObject({ status: "ATIVO", pagina: 1 });
-    expect((mocks.listarAlunos.mock.calls[0] as unknown[])[2]).toBeUndefined(); // sem skip/take
+    expect((mocks.listarAlunos.mock.calls[0] as unknown[])[2]).toBeUndefined();
   });
 
   it("evento de auditoria registra só os filtros preenchidos", async () => {
@@ -91,11 +89,9 @@ describe("exportação de alunos com os filtros da tela", () => {
   it("LGPD: a trilha registra que houve busca e o tamanho dela, nunca o texto digitado", async () => {
     await exportar("?status=ATIVO&busca=ana.souza%40email.com");
     const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
-    // Forma exata: nenhuma chave a mais pode carregar o texto (nem codificado) — nem em filtros, nem no evento.
     expect(payload.filtros).toStrictEqual({ status: "ATIVO", busca: { aplicada: true, caracteres: "ana.souza@email.com".length } });
     expect(Object.keys(payload).sort()).toEqual(["colunas", "conjunto", "filtros", "finalidade", "quantidade"]);
     expect(JSON.stringify(payload)).not.toContain("ana.souza");
-    // A busca continua valendo para o recorte exportado — só a trilha não guarda o conteúdo.
     expect((mocks.listarAlunos.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1]).toMatchObject({ busca: "ana.souza@email.com" });
   });
 
@@ -121,7 +117,7 @@ describe("exportação de leads com os filtros da tela", () => {
 
   it("colunas iguais às da tabela (sem telefone) e filtros no evento de auditoria", async () => {
     mocks.listarLeads.mockResolvedValueOnce([{ id: "l1", codigo: "L-1", nome: "Ana", b2b: true, segmento: "ADULTO", etapa: "NOVO", temperatura: "MORNO", pais: { nome: "Costa Rica" }, vendedor: { nome: "Bia" }, telefoneE164: "+50688887777" }]);
-    mocks.contarLeads.mockResolvedValueOnce(1); // a linha continua na carteira na conferência final
+    mocks.contarLeads.mockResolvedValueOnce(1);
     await exportarLeads("?temperatura=MORNO");
     const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
     expect(payload).toMatchObject({ conjunto: "leads", colunas: ["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], filtros: { temperatura: "MORNO" } });
@@ -131,10 +127,8 @@ describe("exportação de leads com os filtros da tela", () => {
     await exportarLeads("?busca=%2B50688887777");
     const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
     expect(payload).toMatchObject({ conjunto: "leads" });
-    // Forma exata: nenhuma chave a mais pode carregar o texto (nem codificado).
     expect(payload.filtros).toStrictEqual({ busca: { aplicada: true, caracteres: "+50688887777".length } });
     expect(JSON.stringify(payload)).not.toContain("88887777");
-    // A busca continua valendo para o recorte exportado — só a trilha não guarda o conteúdo.
     expect((mocks.listarLeads.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1]).toMatchObject({ busca: "+50688887777" });
   });
 });

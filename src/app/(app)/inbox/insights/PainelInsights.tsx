@@ -16,7 +16,6 @@ import { useRascunhoInsight } from "./useRascunhoInsight";
 
 export interface PortaRascunhoInsight {
   textoAtual: string;
-  /** Token monotônico do rascunho, não o próprio texto. */
   revisao: string;
   podeUsar: boolean;
   usar: (pedido: { texto: string; geracaoId: string; revisaoEsperada: string }) => Promise<Resultado>;
@@ -29,7 +28,6 @@ export interface PropsPainelInsights extends Omit<PortaGeracaoInsight, "podeAtua
   renderControles?:(controle:{bloqueado:boolean;retomar(i:RetomadaInsight):Promise<void>})=>ReactNode;
 }
 
-/** Apresentação compartilhada pela aba real e portas locais testáveis. */
 export function PainelInsights(props: PropsPainelInsights) {
   const { dados, fuso, fusoEscola, autorizado, ativo } = props;
   const geracao = useGeracaoInsight({ ...props, podeAtualizar: dados.podeAtualizar });

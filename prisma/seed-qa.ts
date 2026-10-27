@@ -2,40 +2,8 @@ import { PrismaClient, Papel, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { CAPACIDADES_LISTA } from "../src/lib/capacidades";
 
-// Seed ADICIONAL de QA/UAT (docs/qa/02-usuarios-e-papeis.md; auditoria consolidada B7; relatório 01 §Usuários de teste).
-//
-// O que este script faz, nesta ordem:
-//   1. Cria ou atualiza (upsert por e-mail) os 12 usuários de QA que o seed principal não tem: GC, GP, GP-2, FIN, FIN-2,
-//      SEC, VEND-B, VEND-0, PROF-2, ADM-2, VEND+PROF e ALUNO-EQUIPE. Para eles, re-rodar o script devolve tudo ao estado
-//      de QA: nome, papéis, senha, ativo = true, alçadas, gerente comercial e permissões extras (o que o ADM mudou pela
-//      tela nesses usuários é desfeito).
-//   2. Nos usuários do seed principal (prisma/seed.ts), NÃO mexe em senha, nome nem papéis. Só atualiza, com `update` por
-//      e-mail, as alçadas novas e o vínculo de gerente de joao (VEND-A) e mariana (GC+V). admin, ana e carla não são
-//      tocados. Se o seed principal ainda não rodou, avisa e segue.
-//
-// Campos gravados (prisma/schema.prisma, model Usuario):
-//   - alçadas: `limiteDescontoTaxaPct` e `limiteDescontoMensalidadePct` (os que as regras leem: src/server/financeiro/politica.ts).
-//     Vazio (null) = 0% de autonomia, para qualquer papel, inclusive ADM e FIN. O campo antigo `limiteDescontoPct` não é lido
-//     por nenhuma regra; nos usuários de QA ele é limpo (null) para não mostrar um número enganoso.
-//   - `alcadaAlteradaEm`: atualizado só quando a alçada muda de verdade (mesma regra de src/server/acesso/acoes.ts), porque
-//     alterar a alçada invalida aprovações e preparações abertas antes da mudança.
-//   - equipe comercial: `gerenteComercialId` -> gerente@genius.com (GC), para joao, vendedor2, vendedor3 e mariana.
-//   - permissões extras: `permissoes` (String[], valores de src/lib/capacidades.ts). Só FIN-2 recebe
-//     "financeiro.aprovar_acertos" (Aprovar acertos e compensações financeiras).
-//
-// NÃO substitui prisma/seed.ts: rode o seed principal antes (catálogo, contadores, WhatsApp, 5 usuários de dev).
-// NÃO cria leads, alunos, turmas, prazos do portal nem conta do portal do aluno (ver relatório 09 §Dados mínimos do UAT).
-// A senha vem de QA_SEED_PASSWORD (obrigatória). Sem ela, o script aborta sem gravar nada. Nunca use a senha de dev do
-// seed principal, e não anote a senha em ticket, print ou chat.
-//
-//   QA_SEED_PASSWORD='...' npm run seed:qa
-//
-// E-mails sempre em minúsculas: o login converte o e-mail digitado para minúsculas e busca por igualdade exata
-// (src/lib/auth.ts), então um e-mail gravado com maiúscula nunca loga (auditoria consolidada X1).
-
 const prisma = new PrismaClient();
 
-// Mesmo mínimo do formulário de usuários (src/server/acesso/schema.ts).
 const SENHA_MIN = 6;
 
 const EMAIL_GERENTE_QA = "gerente@genius.com";
@@ -43,17 +11,16 @@ const EMAIL_GERENTE_QA = "gerente@genius.com";
 type Capacidade = (typeof CAPACIDADES_LISTA)[number];
 
 type UsuarioQa = {
-  apelido: string; // como o roteiro de QA chama o usuário
+  apelido: string;
   nome: string;
   email: string;
   papeis: Papel[];
-  limiteTaxa: number | null; // limiteDescontoTaxaPct
-  limiteMensalidade: number | null; // limiteDescontoMensalidadePct
-  naEquipeDoGerente: boolean; // gerenteComercialId = gerente@genius.com
+  limiteTaxa: number | null;
+  limiteMensalidade: number | null;
+  naEquipeDoGerente: boolean;
   permissoes: Capacidade[];
 };
 
-/** Usuários criados por este script. O GC vem primeiro: os vendedores precisam do id dele. */
 const USUARIOS_QA: UsuarioQa[] = [
   {
     apelido: "GC",
@@ -83,17 +50,17 @@ const USUARIOS_QA: UsuarioQa[] = [
     limiteTaxa: null,
     limiteMensalidade: null,
     naEquipeDoGerente: false,
-    permissoes: [], // segunda pessoa da gestão pedagógica: decide o que o GP prepara (regras, calendário, grades)
+    permissoes: [],
   },
   {
     apelido: "FIN",
     nome: "Fernanda Rojas",
     email: "financeiro@genius.com",
     papeis: [Papel.FINANCEIRO],
-    limiteTaxa: null, // vazio = 0%: desconto pedido pelo FIN também vai para aprovação
+    limiteTaxa: null,
     limiteMensalidade: null,
     naEquipeDoGerente: false,
-    permissoes: [], // prepara acertos e compensações; quem decide é o FIN-2
+    permissoes: [],
   },
   {
     apelido: "FIN-2",
@@ -130,7 +97,7 @@ const USUARIOS_QA: UsuarioQa[] = [
     nome: "Lucía Herrera",
     email: "vendedor3@genius.com",
     papeis: [Papel.VENDEDOR],
-    limiteTaxa: null, // vazio = 0% de autonomia: todo desconto vai para aprovação
+    limiteTaxa: null,
     limiteMensalidade: null,
     naEquipeDoGerente: true,
     permissoes: [],
@@ -143,7 +110,7 @@ const USUARIOS_QA: UsuarioQa[] = [
     limiteTaxa: null,
     limiteMensalidade: null,
     naEquipeDoGerente: false,
-    permissoes: [], // segundo professor: escopo por turma e experimental atribuída a outro
+    permissoes: [],
   },
   {
     apelido: "ADM-2",
@@ -153,7 +120,7 @@ const USUARIOS_QA: UsuarioQa[] = [
     limiteTaxa: null,
     limiteMensalidade: null,
     naEquipeDoGerente: false,
-    permissoes: [], // ADM passa em toda capacidade; serve de "outro administrador" nas decisões independentes
+    permissoes: [],
   },
   {
     apelido: "VEND+PROF",
@@ -163,14 +130,12 @@ const USUARIOS_QA: UsuarioQa[] = [
     limiteTaxa: null,
     limiteMensalidade: null,
     naEquipeDoGerente: false,
-    permissoes: [], // AC03: o escopo docente não abre o financeiro comercial
+    permissoes: [],
   },
   {
     apelido: "ALUNO-EQUIPE",
     nome: "Bruno Salas",
     email: "alunoequipe@genius.com",
-    // O enum aceita ALUNO num usuário da equipe (o formulário também oferece "Aluno (portal)"). Ao entrar, ele é
-    // levado a /portal, que só explica que a área do aluno tem acesso próprio (relatório 01, achado 2).
     papeis: [Papel.ALUNO],
     limiteTaxa: null,
     limiteMensalidade: null,
@@ -179,11 +144,8 @@ const USUARIOS_QA: UsuarioQa[] = [
   },
 ];
 
-/** Usuários do seed principal: só alçadas e vínculo de gerente. Senha, nome e papéis ficam como o seed principal deixou. */
 const AJUSTES_SEED_PRINCIPAL: Pick<UsuarioQa, "apelido" | "email" | "limiteTaxa" | "limiteMensalidade" | "naEquipeDoGerente">[] = [
   { apelido: "VEND-A", email: "joao@genius.com", limiteTaxa: 10, limiteMensalidade: 10, naEquipeDoGerente: true },
-  // GC+V: mesmo valor que o seed principal grava no campo antigo (15%). Como ela também é GC, o desconto pedido por ela
-  // vai sempre para a direção (ADM).
   { apelido: "GC+V", email: "mariana@genius.com", limiteTaxa: 15, limiteMensalidade: 15, naEquipeDoGerente: true },
 ];
 
@@ -191,7 +153,6 @@ function decimalOuNull(v: number | null): Prisma.Decimal | null {
   return v === null ? null : new Prisma.Decimal(v);
 }
 
-/** Mesma comparação de src/server/acesso/acoes.ts: vazio conta como 0. */
 function alcadaMudou(
   atual: { limiteDescontoTaxaPct: Prisma.Decimal | null; limiteDescontoMensalidadePct: Prisma.Decimal | null } | null,
   taxa: number | null,
@@ -233,7 +194,6 @@ async function main() {
   const agora = new Date();
   let gerenteId: string | null = null;
 
-  // 1. Usuários de QA (upsert completo).
   for (const u of USUARIOS_QA) {
     if (u.naEquipeDoGerente && !gerenteId) throw new Error(`Gerente comercial de QA ainda não gravado ao processar ${u.email}.`);
     const gerenteComercialId: string | null = u.naEquipeDoGerente ? gerenteId : null;
@@ -245,7 +205,7 @@ async function main() {
     const dados = {
       nome: u.nome,
       papeis: u.papeis,
-      limiteDescontoPct: null, // campo antigo: nenhuma regra lê
+      limiteDescontoPct: null,
       limiteDescontoTaxaPct: decimalOuNull(u.limiteTaxa),
       limiteDescontoMensalidadePct: decimalOuNull(u.limiteMensalidade),
       permissoes: u.permissoes,
@@ -253,7 +213,6 @@ async function main() {
       senhaHash,
       ativo: true,
     };
-    // update também redefine a senha e reativa: re-rodar o script devolve o usuário ao estado de QA.
     const gravado: { id: string } = await prisma.usuario.upsert({
       where: { email: u.email },
       update: { ...dados, ...(alcadaMudou(atual, u.limiteTaxa, u.limiteMensalidade) ? { alcadaAlteradaEm: agora } : {}) },
@@ -263,7 +222,6 @@ async function main() {
     if (u.email === EMAIL_GERENTE_QA) gerenteId = gravado.id;
   }
 
-  // 2. Usuários do seed principal: só alçadas e equipe, com update por e-mail.
   const ausentes: string[] = [];
   for (const u of AJUSTES_SEED_PRINCIPAL) {
     const atual = await prisma.usuario.findUnique({

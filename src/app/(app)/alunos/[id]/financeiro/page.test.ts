@@ -14,7 +14,6 @@ vi.mock("@/server/financeiro/consultas", () => ({ listarInformesPagamento: mocks
 vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUniqueOrThrow: mocks.usuario } } }));
 vi.mock("@/server/retomada/consultas", () => ({ listarContextoRetomada: mocks.contexto, listarPropostasRetomada: mocks.propostas }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-// Fuso pessoal nas telas: datas civis gravadas (promessa, pagamento) saem no dia da escola.
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/lib/nome", () => ({ nomeCompleto: () => "Ana Aluna" }));
 vi.mock("./FichaFinanceira", () => ({ FichaFinanceira: ({ preferenciaFusoExibicao, dados }: { preferenciaFusoExibicao?: string | null; dados?: { permissoes?: { somenteInformar?: boolean } } }) => createElement("p", { "data-ficha": preferenciaFusoExibicao ?? "UTC", "data-somente-informar": String(dados?.permissoes?.somenteInformar) }, "ficha") }));
@@ -57,8 +56,6 @@ describe("FichaFinanceiraPage acesso a aulas", () => {
   });
 });
 
-// C11 da #170: a capacidade `pagamento.caixa` vem do usuário da sessão (carregarUsuarioFresco já traz
-// `permissoes`), sem uma segunda leitura de `usuario` no banco.
 describe("FichaFinanceiraPage capacidade de caixa", () => {
   beforeEach(() => {
     vi.resetAllMocks();

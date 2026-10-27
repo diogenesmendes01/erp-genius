@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Interação da NovaOportunidade sem DOM (src/test/tela-sem-dom.ts). Efeitos não rodam (useEffect vazio);
-// a espera de 400 ms da busca de duplicados usa timers falsos.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -173,7 +171,7 @@ describe("NovaOportunidade", () => {
       duplicadosMock.mockReturnValueOnce(emVoo.promessa);
       const t = montar({});
       await t.digitar("WhatsApp", "+5511988887777");
-      await t.digitar("Nome", "Ana"); // segunda busca sai e fica em voo
+      await t.digitar("Nome", "Ana");
       expect(duplicadosMock).toHaveBeenCalledTimes(2);
       await t.clicar("Usar cadastro");
       emVoo.resolver({ ok: true, dado: [BETO] });
@@ -187,7 +185,7 @@ describe("NovaOportunidade", () => {
       duplicadosMock.mockResolvedValueOnce({ ok: true, dado: [ANA] });
       const t = montar({});
       await t.digitar("WhatsApp", "+5511988887777");
-      await t.digitar("Nome", "Ana", 100); // agenda a busca sem esperar os 400 ms
+      await t.digitar("Nome", "Ana", 100);
       await t.clicar("Usar cadastro");
       await vi.advanceTimersByTimeAsync(400);
       expect(duplicadosMock).toHaveBeenCalledTimes(1);

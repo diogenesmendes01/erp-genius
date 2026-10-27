@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Deduplicação da importação de alunos (docs/42 L224; docs/43 §6 item 9). Sem banco: o Prisma é mockado e o
-// teste confere o `where`/`take`/`cursor`/`select` da leitura dos candidatos; as chaves e o índice são puros.
-
 const m = vi.hoisted(() => ({ alunos: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findMany: m.alunos } } }));
 

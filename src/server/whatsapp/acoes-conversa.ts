@@ -28,10 +28,6 @@ const NotaSchema = z.object({
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
-/**
- * Nota interna do atendimento (regra 20): só Evento, nunca MensagemWhatsApp nem IntencaoMensagem. Ver basta; participante sem envio pode anotar.
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra nota: a chave vai no payload do próprio Evento.
- */
 export async function registrarNotaAtendimento(input: { atendimentoId: string; nota: string; chaveIdempotencia?: string; mencoes?: readonly TokenMencao[] }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -41,8 +37,6 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
     catch { throw new ErroRegra("Confira as menções da nota."); }
     const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, ...comando });
     await prisma.$transaction(async (tx) => {
-      // C3 da R2 do #267: a repetição vem antes do escopo. A nota já gravada por este autor, neste atendimento
-      // e com este texto, é devolvida mesmo que o atendimento tenha mudado de mãos depois; nada novo é gravado.
       if (marca) {
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
@@ -60,7 +54,6 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
   });
 }
 
-/** Notas do atendimento, mais recentes primeiro; vazio se o atendimento não é visível ao usuário. */
 export async function notasDoAtendimento(atendimentoId: string): Promise<NotaInternaThread[]> {
   const u = await exigirSessao();
   const id = z.string().min(1).parse(atendimentoId);
@@ -68,14 +61,12 @@ export async function notasDoAtendimento(atendimentoId: string): Promise<NotaInt
   return notasInternasDoAtendimento(id);
 }
 
-/** As ações invalidam as agendas somente depois do commit do núcleo. */
 function revalidarAgendadas() {
   revalidatePath("/inbox");
   revalidatePath("/tarefas");
   revalidatePath("/inicio");
 }
 
-/** Cria no destino resolvido pelo núcleo transacional, com D11 e replay autorizados atuais. */
 export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -88,7 +79,6 @@ export async function agendarMensagemNoAtendimento(input: { atendimentoId: strin
   });
 }
 
-/** Reagenda no fuso explícito exibido pelo Inbox; autorização e CAS pertencem ao núcleo. */
 export async function reagendarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -101,7 +91,6 @@ export async function reagendarAgendamentoDoAtendimento(input: { atendimentoId: 
   });
 }
 
-/** Torna elegível ao próximo ciclo, sem despacho ou relógio calculado pelo wrapper. */
 export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -113,19 +102,12 @@ export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId
   });
 }
 
-/**
- * Agendamento com o horário DIGITADO (lote 3 do fuso pessoal nas telas): `quandoLocal` é o texto do `datetime-local`,
- * lido no `fuso` que o Inbox escreve ao lado do campo (pessoal; sem preferência, o da escola) e convertido AQUI.
- * Antes, o navegador fazia `new Date(valor)` no fuso do dispositivo. O resto (acesso, janela, idempotência pela
- * chave) é o de `agendarMensagemNoAtendimento`, com o instante convertido.
- */
 export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   const r = await executarAcao(async () => exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString());
   if (!r.ok) return { ok: false, erro: r.erro };
   return agendarMensagemNoAtendimento({ atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, chaveIdempotencia: input.chaveIdempotencia });
 }
 
-/** Cancela uma mensagem agendada pelo atendimento: ela precisa ser deste atendimento; autoria e estado ficam em `cancelarMensagemAgendada`. */
 export async function cancelarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string }): Promise<Resultado> {
   const pre = await executarAcao(async () => {
     const u = await exigirSessao();
@@ -155,11 +137,6 @@ const EncaminharSchema = z.object({
   destinoAtendimentoIds: z.array(z.string().min(1)).min(1, "Escolha ao menos um destino.").max(MAX_DESTINOS_ENCAMINHAR, `Escolha no máximo ${MAX_DESTINOS_ENCAMINHAR} destinos.`),
 });
 
-/**
- * Encaminha uma mensagem como cópia (nova intenção HUMANO por destino). A autorização vem de a origem ser visível
- * (a mídia da origem é copiada para whatsapp-out/<autor>, que é de onde o despachante lê). Cada destino exige envio no escopo e
- * contato sem opt-out; qualquer recusa cancela tudo antes de criar intenção.
- */
 export async function encaminharMensagem(input: { mensagemId: string; destinoAtendimentoIds: string[] }): Promise<Resultado<{ intencaoIds: string[] }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -179,7 +156,6 @@ export async function encaminharMensagem(input: { mensagemId: string; destinoAte
       destinos.push(d);
     }
 
-    // O despachante só lê de whatsapp-out/: copia a mídia da origem (recebida ou enviada) para a pasta do autor.
     let midiaPath: string | null = null;
     if (origem.midiaPath) {
       midiaPath = await copiarMidiaParaSaida(u.id, origem.midiaPath);

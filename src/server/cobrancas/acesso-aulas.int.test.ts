@@ -6,7 +6,6 @@ import { randomUUID } from "node:crypto";
 const { authMock, cronMensagem, despacho } = vi.hoisted(() => ({ authMock: vi.fn(), cronMensagem: vi.fn(), despacho: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// O endpoint real executa o controle de acesso; os braços de mensagens ficam isolados.
 vi.mock("@/server/whatsapp/cron", () => ({ rodarCronRegua: cronMensagem }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: despacho }));
 
@@ -45,11 +44,6 @@ async function solicitar(c: Awaited<ReturnType<typeof cenario>>, bloquear = true
   return resultado.dado.solicitacaoId;
 }
 
-// Relógio fixo ao meio-dia da escola do dia corrente. O vencimento "agora − N × 24 h" é lido pelo dia
-// civil (`diaCivilGravado`, o maior entre o dia UTC e o da escola) e o D+30 conta no dia da escola
-// (Q176, #239). Entre 00h e 03h UTC o dia UTC do vencimento já é o seguinte ao da escola e o
-// cenário "D+29" virava D+28, em qualquer TZ da máquina. Ao meio-dia de Brasília (15h UTC) os dois dias
-// coincidem. O dia é o de hoje, não uma data literal, para não se afastar do `now()` do banco.
 beforeEach(async () => {
   vi.clearAllMocks();
   cronMensagem.mockResolvedValue({ executou: false, motivoParada: "politica_desligada" });

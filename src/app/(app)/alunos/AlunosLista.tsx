@@ -30,16 +30,11 @@ const STATUS_CLS: Record<StatusAluno, string> = {
 
 const campo = "rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500";
 
-/** Link da mesma lista com os filtros atuais e outra página. */
 const hrefPagina = (f: FiltrosAlunos, pagina: number) => {
   const q = filtrosParaQuery({ ...f, pagina });
   return q ? `/alunos?${q}` : "/alunos";
 };
 
-// Lista de alunos (E4): os filtros vivem na URL e são aplicados no servidor. Navegação dentro de uma
-// transição: enquanto a nova página não chega, o botão mostra "Buscando…" e a tabela fica aria-busy.
-// Trocar um filtro volta à página 1. Os selects enviam após uma pausa curta (setas do teclado não
-// criam uma navegação — e uma entrada de histórico — por tecla).
 export function AlunosLista({
   alunos,
   total,
@@ -51,9 +46,7 @@ export function AlunosLista({
   podeImportar = false,
 }: {
   alunos: AlunoRow[];
-  /** Alunos que atendem aos filtros (todas as páginas). */
   total: number;
-  /** Alunos no escopo do usuário, sem filtro — distingue "nenhum aluno" de "nenhum resultado". */
   totalBase: number;
   filtros: FiltrosAlunos;
   opcoes: { paises: { id: string; nome: string }[]; turmas: { id: string; label: string }[] };
@@ -65,8 +58,6 @@ export function AlunosLista({
   const inicio = total ? (filtros.pagina - 1) * ALUNOS_POR_PAGINA + 1 : 0;
   const fim = (filtros.pagina - 1) * ALUNOS_POR_PAGINA + alunos.length;
   const temProxima = fim < total;
-  // Campos controlados, transição, espera nos selects e links na transição: useFiltrosUrl (E4).
-  // A ordem escolhida no cabeçalho (E1) não é campo do formulário: buscar/filtrar/limpar a mantém.
   const { campos, buscando, aplicar, mudarTexto, mudarSelect, aoClicar } = useFiltrosUrl({
     campos: camposDosFiltros(filtros),
     hrefDosCampos: (c) => hrefDosCampos(c, filtros.ordem),
@@ -126,7 +117,6 @@ export function AlunosLista({
             <option key={t.id} value={t.id}>{t.label}</option>
           ))}
         </select>
-        {/* Sem JavaScript, o formulário GET também leva a ordem atual. */}
         {ordemNaoPadrao && <>
           <input type="hidden" name="ordem" value={filtros.ordem.campo} />
           <input type="hidden" name="dir" value={filtros.ordem.dir} />
@@ -147,7 +137,6 @@ export function AlunosLista({
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
-              {/* Ordenação no servidor (E1); Turma e Financeiro não têm ordem no banco. */}
               <ColunaOrdenavel campo="nome" rotulo="Aluno" {...coluna} />
               <ColunaOrdenavel campo="pais" rotulo="País" {...coluna} />
               <th className="px-4 py-2 font-medium">Turma</th>
@@ -158,7 +147,6 @@ export function AlunosLista({
           <tbody className="divide-y divide-gray-100">
             {alunos.length === 0 ? (
               <EstadoVazioLinha colSpan={exibirFinanceiro ? 5 : 4}>
-                  {/* Estado vazio duplo: base vazia × filtro sem resultado (este oferece a saída). */}
                   {totalBase === 0 ? "Nenhum aluno cadastrado no seu alcance." : filtrando ? (
                     <>Nenhum aluno com esses filtros. <Link href={limpar} onClick={aoClicar(limpar)} className="text-brand-700 hover:underline">Limpar filtros</Link></>
                   ) : (

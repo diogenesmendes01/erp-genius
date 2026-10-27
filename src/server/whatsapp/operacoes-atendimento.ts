@@ -27,10 +27,6 @@ export interface OpcaoAtendimento {
   disponivel?: boolean;
   impedimento?: string | null;
 }
-/**
- * `numeros[].comercial`: o número aceita atendimento COMERCIAL deste usuário (só linhas acessíveis — SPEC-ERP-005 §5.5).
- * `comercial`: o usuário abre atendimento comercial — a tela orienta a cadastrar o lead quando não há destino.
- */
 export interface OpcoesAtendimento { destinos: OpcaoAtendimento[]; numeros: { id: string; nome: string; comercial: boolean }[]; comercial: boolean }
 
 export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
@@ -40,7 +36,6 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
   const academico = temPapel(u, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   if (comercial || academico) {
     const scopeComercial = comercial ? await escopoComercialAtual(u) : null;
-    // Prisma descarta {} dentro de OR; o escopo canônico irrestrito precisa manter TRUE OR x.
     const comercialIrrestrito = scopeComercial !== null && Object.keys(scopeComercial).length === 0;
     const where: Prisma.OportunidadeWhereInput = comercialIrrestrito ? {} : { OR: [
       ...(scopeComercial !== null ? [scopeComercial] : []),
@@ -91,9 +86,6 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
       if (temPapel(u, Papel.SECRETARIA_ACADEMICA)) destinos.push({ chave: `SECRETARIA:${a.id}`, nome: `Secretaria · ${nomeCompleto(a)}`, finalidade: "SECRETARIA", alunoId: a.id });
     }
   }
-  // Cobrança sempre abre no contrato escolhido, nunca no primeiro contrato do
-  // aluno. Isso mantém conversas de responsáveis com mais de uma matrícula
-  // separadas e dá à revalidação posterior uma referência inequívoca.
   if (temPapel(u, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA)) {
     const matriculas = await prisma.matricula.findMany({ take: 200, orderBy: { criadoEm: "desc" }, include: INCLUDE_MATRICULA_DESTINO });
     for (const matricula of matriculas) {
@@ -105,11 +97,9 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
       });
     }
   }
-  // Sem destino no escopo não há o que abrir: os canais não são listados (a tela explica o motivo).
   if (!destinos.length) return { destinos: [], numeros: [], comercial };
   const numeros = await prisma.numeroWhatsApp.findMany({ where: { ativo: true }, select: { id: true, rotulo: true, finalidade: true, donoId: true }, orderBy: { criadoEm: "asc" } });
   const soPedagogico = destinos.every((d) => d.finalidade === "PEDAGOGICO");
-  // Assunto comercial sai só pelas linhas que o usuário enxerga; o institucional segue como antes.
   const donos = new Set(comercial ? await donosDeLinhaVisiveis(u) : []);
   return { destinos, numeros: numeros.map((n, i) => ({ id: n.id, nome: soPedagogico ? `Canal institucional ${i + 1}` : n.rotulo,
     comercial: ehLinhaComercial(n) && (temPapel(u, Papel.ADMINISTRADOR) || (!!n.donoId && donos.has(n.donoId))) })), comercial };
@@ -117,12 +107,6 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
 
 const AbrirSchema = z.object({ numeroId: z.string().min(1), destinoChave: z.string().min(1), chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
 
-/**
- * O cliente escolhe um identificador interno. Telefones são resolvidos somente no servidor.
- * O atendimento é por upsert, mas cada abertura grava `AtendimentoInstitucionalAberto`. Com `chaveIdempotencia`
- * (#166), o reenvio da mesma tentativa devolve o atendimento já aberto sem gravar outro Evento; a busca vem antes
- * das validações de destino, para o reenvio tardio também receber o mesmo atendimento.
- */
 export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirSchema>): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -189,7 +173,6 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
     if (!telefone) throw new ErroRegra("A secretaria precisa cadastrar um destinatário válido para essa finalidade.");
     const escopo = await escopoAtendimentos(u);
     const atendimento = await prisma.$transaction(async (tx) => {
-      // De novo dentro da transação: é a trava da chave que serializa dois envios simultâneos.
       if (alvoRepeticao) {
         const repetido = await repeticaoIdempotente(tx, alvoRepeticao);
         if (repetido) return { id: repetido.agregadoId };
@@ -200,10 +183,6 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
         leadId: destino.leadId, alunoId: alunoAtendimentoId, turmaId: destino.turmaId, matriculaId, responsavelId: u.id,
         autorizacaoComunicacaoAcademicaId: destino.autorizacaoComunicacaoAcademicaId });
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado; solicite revisão à gestão antes de reabri-lo.");
-      // Ruling B2 do #199 (E3.4): o upsert devolve o atendimento já aberto no mesmo contexto. Se ele
-      // está com outro responsável e fora do escopo de quem abriu, recusa antes do evento: entrar
-      // como participante é convite explícito (Task 17), nunca efeito colateral de "abrir".
-      // C6 da revisão do #199: sem responsável também vale, quando o atendimento (fila) está fora do escopo.
       if (a.responsavelId !== u.id
         && !await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: a.id }, escopo] } })) {
         if (!a.responsavelId) throw new ErroRegra("Este atendimento está fora do seu escopo; peça para ser incluído como participante.");
@@ -219,10 +198,6 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
   });
 }
 
-/**
- * Triagem do número (E4.3): ADMINISTRADOR vê todos os números; o responsável pela triagem
- * (`NumeroWhatsApp.triagemResponsavelId`) vê só os dele. Quem não é nenhum dos dois é recusado.
- */
 async function exigirAlcadaTriagem(): Promise<{ u: Awaited<ReturnType<typeof exigirSessao>>; filtroNumero: Prisma.NumeroWhatsAppWhereInput | null }> {
   const u = await exigirSessao();
   if (temPapel(u, Papel.ADMINISTRADOR)) return { u, filtroNumero: null };
@@ -238,7 +213,6 @@ export interface ItemTriagem {
   atendimentos: { id: string; nome: string }[];
 }
 
-/** Legado e inbound ambíguo são lidos exclusivamente na triagem administrativa. */
 export async function listarTriagemWhatsApp(): Promise<ItemTriagem[]> {
   const { filtroNumero } = await exigirAlcadaTriagem();
   const mensagens = await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: null, conversa: { grupoId: null, ...(filtroNumero ? { numero: filtroNumero } : {}) } }, take: 100, orderBy: { criadoEm: "desc" },
@@ -247,8 +221,6 @@ export async function listarTriagemWhatsApp(): Promise<ItemTriagem[]> {
     } } } } } });
   return mensagens.map((m) => ({ id: m.id, conversaId: m.conversaId, nome: nomeDoContato(contatoIndividual(m.conversa)),
     corpo: m.corpo, tipo: m.tipo, midiaPath: m.midiaPath, criadoEm: m.criadoEm.toISOString(), atendimentos: m.conversa.atendimentos
-      // Um contexto financeiro legado/encerrado é histórico consultável, mas
-      // não é destino de uma nova classificação manual.
       .filter((a) => a.finalidade !== "FINANCEIRO" || (!!a.matriculaId && !a.encerradoEm))
       .map((a) => ({
         id: a.id,
@@ -302,7 +274,6 @@ export async function listarRevisoesEnvio(): Promise<RevisaoEnvio[]> {
     criadoEm: i.criadaEm.toISOString(), contato: nomeDoContato(i.contato) }));
 }
 
-/** Só uma revisão explícita pode liberar um envio cujo resultado foi incerto. */
 export async function revisarFalhaEnvio(input: { id: string; decisao: "CANCELAR" | "REENVIAR_APOS_VERIFICACAO"; evidencia: string }): Promise<Resultado<{ mensagem: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -343,8 +314,6 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
     if (!temPapel(u, Papel.GERENTE_COMERCIAL, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO)) throw new ErroRegra("Encerramento exige gestão do atendimento.");
     const a = await atendimentoVisivel(u, atendimentoId, true);
     if (!a) {
-      // #166: o reenvio de quem encerrou devolve ok sem outro Evento. O escopo de envio já não inclui o encerrado;
-      // o de leitura diz se a pessoa o enxerga. Encerrado por outra pessoa (ou fora do escopo), segue recusado.
       const visto = await atendimentoVisivel(u, atendimentoId);
       if (visto?.encerradoEm && await encerradoPor(prisma, visto.id, u.id)) return;
       throw new ErroRegra(visto?.encerradoEm ? "Atendimento encerrado." : "Atendimento fora do seu escopo.");
@@ -355,7 +324,6 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
           : [Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA];
     if (!temPapel(u, ...papeisDaFinalidade)) throw new ErroRegra("Sua função não autoriza encerrar atendimentos desta finalidade.");
     const repetido = await prisma.$transaction(async (tx) => {
-      // Trava a linha: o clique duplo espera o primeiro encerramento e não grava um segundo AtendimentoEncerrado.
       const [atual] = await tx.$queryRaw<{ encerradoEm: Date | null }[]>`SELECT "encerradoEm" FROM "AtendimentoWhatsApp" WHERE id = ${a.id} FOR UPDATE`;
       if (atual?.encerradoEm) {
         if (await encerradoPor(tx, a.id, u.id)) return true;
@@ -368,7 +336,6 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
   });
 }
 
-/** O último AtendimentoEncerrado do atendimento é de `autorId`? */
 async function encerradoPor(db: Prisma.TransactionClient, atendimentoId: string, autorId: string): Promise<boolean> {
   return (await ultimoEventoDoAutor(db, { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId })) !== null;
 }

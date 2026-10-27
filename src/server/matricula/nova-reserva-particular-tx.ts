@@ -10,7 +10,6 @@ import { hashPrevia } from "@/server/contratos/previa-estado";
 
 export const NovaReservaParticularSchema = z.object({ matriculaId: z.string().min(1), anteriorId: z.string().min(1), agenda: AgendaParticularSchema }).strict();
 
-/** Chamador mantém esta revisão e a criação na mesma transação. */
 export async function revisarNovaReservaParticularTx(tx: Prisma.TransactionClient, input: z.input<typeof NovaReservaParticularSchema>, autorId: string) {
   const d = NovaReservaParticularSchema.parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -43,8 +42,6 @@ export async function revisarNovaReservaParticularTx(tx: Prisma.TransactionClien
   return { snapshot, revisaoHash: hashPrevia(snapshot), agendaHash: agenda.estadoHash };
 }
 
-/** Executor interno. Não cobra, não assina e não ativa; chamada pública e
- * reconciliação de documentos/assinaturas ainda precisam ser integradas. */
 export async function criarNovaReservaParticularTx(tx: Prisma.TransactionClient, input: z.input<typeof NovaReservaParticularSchema> & { autorId: string; revisaoHash: string; motivo: string; chaveIdempotencia: string; dadosConferidos: true }) {
   const d = NovaReservaParticularSchema.extend({ autorId: z.string().min(1), revisaoHash: z.string().regex(/^[a-f0-9]{64}$/), motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100), dadosConferidos: z.literal(true) }).strict().parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

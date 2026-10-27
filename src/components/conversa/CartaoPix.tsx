@@ -7,7 +7,6 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 
 export interface PixDados { quantia: string; solicitante: string; codigoCopiaCola: string; referencia?: string | null; descricao?: string | null }
 
-/** Cobrança Pix recebida na conversa: só leitura, com cópia do código. Nada é pago nem enviado daqui. */
 export function CartaoPix({ pix, meta }: { pix: PixDados; meta?: ReactNode }) {
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState(false);

@@ -10,7 +10,6 @@ import Designadas from "./page";
 
 const semNavegacao = { temAnterior: false, temProxima: false, anterior: null, proxima: null };
 
-// Revisão R1 da #134 (B5): início × ponto da fila sem itens nos dois modos; a volta preserva o modo.
 describe("minhas recuperações — vazio da fila", () => {
   beforeEach(() => { vi.resetAllMocks(); mocks.sessao.mockResolvedValue({}); });
   const render = async (sp: Record<string, string>, modo: "pendentes" | "historico") => {

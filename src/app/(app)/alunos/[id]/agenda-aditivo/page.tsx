@@ -7,8 +7,6 @@ import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { IdentificacaoRegistro } from "@/components/IdentificacaoRegistro";
 
-// A agenda é de um aluno: a tela diz de quem (docs/42 L268; docs/43 §6 item 7). Em erro, o cabeçalho e a
-// volta à ficha ficam — só o corpo vira o alerta (docs/42 L269).
 export default async function AgendaAditivoAlunoPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params;

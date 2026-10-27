@@ -1,20 +1,11 @@
 import { horaEDiaNoFuso } from "@/server/operacao/fuso";
 
-/**
- * Janela de envio (S3): horas [janelaInicio, janelaFim) e dias da semana (0 = domingo) em que uma mensagem pode
- * sair. É a regra que o despachante usa para adiar a automação (passo 8) e a que recusa o agendamento de uma
- * mensagem fora do horário (D12, #202 C4): uma fonte só, para as duas não divergirem.
- */
 export interface JanelaEnvio {
   janelaInicio: number;
   janelaFim: number;
   diasSemana: readonly number[];
 }
 
-/**
- * `instante` cai dentro da janela no `fuso`? Vale qualquer fuso que o `Intl` aceite (R1 do #254, C4: o fuso do contato
- * é texto livre); só o que nem o `Intl` aceita usa a hora do servidor (não trava a fila).
- */
 export function dentroDaJanelaEnvio(instante: Date, fuso: string, janela: JanelaEnvio): boolean {
   let local: { hora: number; diaSemana: number };
   try {
@@ -36,7 +27,6 @@ function descreverDias(dias: readonly number[]): string {
   return nomes.length > 1 ? `${nomes.slice(0, -1).join(", ")} e ${nomes.at(-1)}` : nomes[0] ?? "em nenhum dia";
 }
 
-/** Recusa do agendamento fora da janela, com o horário que vale (decisão D12). */
 export function mensagemForaDaJanela(janela: JanelaEnvio, fuso: string): string {
   return `Fora da janela de envio da escola: as mensagens saem das ${janela.janelaInicio}h às ${janela.janelaFim}h, `
     + `${descreverDias(janela.diasSemana)} (horário de ${fuso}). Escolha outro horário.`;

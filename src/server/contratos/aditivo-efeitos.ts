@@ -8,7 +8,6 @@ const cadastro: Record<string, string> = { ALUNO_NOME: "aluno.nome", ALUNO_DOCUM
 const financeiro = new Set(["TAXA_VALOR", "TAXA_VENCIMENTO", "MENSALIDADE_VALOR", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "HORA_VALOR", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA"]);
 const exigeFluxoProprio = new Set(["TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA", "REGIME"]);
 
-/** Projeta efeitos possíveis para revisão; não escreve matrícula, condições, cobrança ou agenda. */
 export function planejarEfeitosAditivo(entrada: readonly AlteracaoEfeitoAditivo[] | unknown, contexto?: { cobrancaEmitida: boolean }) {
   const alteracoes = EntradaSchema.parse(entrada), efeitos: { origem: string; dominio: "CADASTRO" | "CONTRATUAL" | "CONDICOES_FUTURAS" | "COBRANCA_EMITIDA" | "AGENDA"; destino: string; valor: unknown; exigeAcerto?: true }[] = [], pendencias: { origem: string; mensagem: string }[] = [];
   if (new Set(alteracoes.map(a => a.origem)).size !== alteracoes.length) throw new Error("Alteração repetida no plano de efeitos.");

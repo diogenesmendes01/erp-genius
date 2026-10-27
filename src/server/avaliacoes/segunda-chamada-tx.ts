@@ -9,7 +9,6 @@ export const EstadoSegundaChamadaSchema = z.object({
   reservasOcupadas: z.number().int().nonnegative(), autorizacoesAprovadas: z.number().int().nonnegative(), saldo: z.number().int(),
 });
 
-/** Estado isolado por matrícula e avaliação. Reserva/consumo não consulta recuperação, particular ou financeiro. */
 export async function estadoSegundaChamadaTx(tx: PrismaTypes.TransactionClient, alocacaoId: string, codigoAvaliacao: string) {
   const a = await bloquearLancamento(tx, alocacaoId);
   const turma = await tx.turma.findUniqueOrThrow({ where: { id: a.turmaId }, include: { regraAvaliacao: true } });

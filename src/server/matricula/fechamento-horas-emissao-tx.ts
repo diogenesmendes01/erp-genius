@@ -5,7 +5,6 @@ import { revalidarFechamentoHorasTx } from "./fechamento-horas-revalidacao-tx";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 
-/** Executor interno. Chamador fornece identidade autenticada; efeitos ficam na mesma transação. */
 export async function emitirFechamentoHorasTx(tx: Prisma.TransactionClient, d: { alunoId: string; matriculaId: string; decisaoId: string; executorId: string }) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
   await bloquearMatriculas(tx, [d.matriculaId]);

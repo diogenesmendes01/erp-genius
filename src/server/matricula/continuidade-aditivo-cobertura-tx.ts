@@ -14,11 +14,6 @@ export type ReferenciaAditivoCoberturaAplicada = Readonly<{
   historico: ReadonlyArray<{ referencia: ReturnType<typeof ReferenciaAditivoCoberturaContinuidadeSchema.parse>; aplicadaEm: string; politica: ReturnType<typeof CicloCoberturaFuturoAditivoSchema.parse> }>;
 }>;
 
-/**
- * Deriva a política da cadeia formalizada e da prova completa Q168. Uma política
- * PRESERVAR mantém a referência que já estava em vigor; não reconstitui o ciclo
- * original depois de uma mudança anterior.
- */
 export async function carregarReferenciaAditivoCoberturaAplicadaTx(
   tx: Prisma.TransactionClient,
   input: { matriculaId: string; inicioCobertura: Date; regraContratada: unknown },

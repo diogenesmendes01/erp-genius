@@ -5,11 +5,6 @@ import { SubTabs } from "@/components/SubTabs";
 import { carregarCabecalho } from "./carregar-cabecalho";
 import { secoesParaPapeis } from "./secoes";
 
-// Camada de registro das 33 telas de /matriculas/[id]/* (docs/42-auditoria-frontend-ux.md, E2):
-// antes, em nível 6, o operador decidia uma alçada sem ver aluno nem matrícula, e todas as abas do
-// navegador se chamavam "ERP Genius". Aqui: cabeçalho (código · aluno · estado · produto), abas
-// das seções que o papel abre e título de aba próprio.
-
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,8 +16,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function MatriculaLayout({ children, params }: Props & { children: React.ReactNode }) {
   const { id } = await params;
   const { usuario, cabecalho } = await carregarCabecalho(id);
-  // Sem acesso ou inexistente: a própria página decide (notFound, erro da consulta dela) — o layout
-  // não inventa um estado nem mostra dados de uma matrícula fora da carteira.
   if (!cabecalho) return <>{children}</>;
 
   return (

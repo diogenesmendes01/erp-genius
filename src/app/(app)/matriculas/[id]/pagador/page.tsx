@@ -15,7 +15,6 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
   const [r, h, preferencia] = await Promise.all([consultarTelaPagador(id), consultarHistoricoPagador({ matriculaId: id, pagina }), consultarPreferenciaFusoEquipe()]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, p = d.registro;
-  // Histórico no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6): antes era o ISO cru.
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <div className="space-y-4"><VoltarPara href="/secretaria" />
     <h1 className="text-2xl">Pagador da contratação · {d.matricula.codigo ?? "Em preparação"}</h1>

@@ -60,51 +60,32 @@ export interface PropsConversaAberta {
   podeUsarInsights?: boolean;
   aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   tarefaEmEdicaoId?: string | null;
-  /** DTO autorizado do painel da seleção corrente; não é o resumo global. */
   aria?: AriaDoAtendimento | null;
-  /** Recibo do GET de painel já existente; não cria aquisição paralela. */
   leituraPainel?: LeituraPainelHandoff;
-  /** Bloqueio cliente após404; não substitui a autorização por lead de cada cartão. */
   bloquearDecisoesAria?: boolean;
   usuario: { id: string; papeis: Papel[]; nome?: string | null };
   fuso: string | null;
-  /** Epoch capturado na página: mesmo instante no SSR/hidratação; cliente renova por revisão. */
   agoraInicial?: number;
   conversa: ConversaHook;
-  /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); null enquanto carrega. */
   podeEnviar: boolean | null;
-  /** O painel não carregou: "Tentar de novo" do compositor (C2 da revisão do #218). */
   falhaPermissao?: () => void;
   destinos?: DestinoTransferencia[];
   aoVoltar(): void;
   aoAlternarPainel(): void;
   painelAberto?: boolean;
   painelAuto?: boolean;
-  /** Uma ação do cabeçalho concluiu (a tela recarrega a lista). */
   aoMudar(): void;
-  /** Sucesso confirmado da geração atual; a tela mantém o aviso após a conversa sair do escopo. */
   aoTransferirConcluido?(mensagem: string): void;
 }
 
-/** "Transferido de Comercial": só quando o usuário também enxerga o atendimento de origem (escopo). */
 export function textoOrigem(setor: Setor | null): string | null {
   return setor ? `Transferido de ${rotular(SETOR_ATENDIMENTO_LABEL, setor)}` : null;
 }
 
-/**
- * Comandos do menu da mensagem que esta tela já executa; os outros ficam fora do menu até serem ligados.
- * Reagir, encaminhar, editar e apagar vão pelo motor (Fase 4D) e ainda passam por `comandosDaMensagem`. Encaminhar
- * abre a escolha da conversa de destino (mesmo número, com envio) em AcoesMensagem.
- */
 export const COMANDOS_MENSAGEM_LIGADOS: readonly ComandoMensagem[] = ["copiar", "reagir", "encaminhar", "editar", "apagar"];
 
 const RECURSO_DO_COMANDO: Partial<Record<ComandoMensagem, RecursoMotor>> = { reagir: "reagir", encaminhar: "encaminhar", editar: "editar", apagar: "apagar" };
 
-/**
- * Os comandos ligados que valem para esta mensagem. Os do motor exigem a capacidade do número (MOTOR ativo e
- * sessão CONECTADO), o podeEnviar da thread (as actions usam o escopo de envio) e mensagem não apagada; editar
- * e apagar, só a própria mensagem de saída (editar, só texto). O servidor confere tudo de novo.
- */
 export function comandosDaMensagem(
   m: Pick<MensagemThread, "direcao" | "tipo" | "propria" | "apagada">, capacidades: readonly RecursoMotor[], podeEnviar: boolean,
 ): ComandoMensagem[] {
@@ -118,11 +99,6 @@ export function comandosDaMensagem(
   });
 }
 
-/**
- * O compositor só envia com o podeEnviar da thread (o servidor decide por `atendimentoVisivel` com envio: escopo de
- * envio, convite com envio, destinatário atual) e com o atendimento aberto. `podeExecutar("enviar")` não serve:
- * libera todo mundo (C6 do #217).
- */
 export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeEnviar: boolean | null): boolean | null {
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
@@ -155,7 +131,6 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
     instanteDoItemFio,aria?.cartoes??[],{inicioJanela:conversa.temMaisAntes?conversa.mensagens[0]?.criadoEm??null:null,fimJanela:conversa.temMaisDepois?conversa.mensagens.at(-1)?.criadoEm??null:null}),
     {fuso,agora:new Date(agora),transferidoDe}),[conversa.mensagens,conversa.notas,conversa.temMaisAntes,conversa.temMaisDepois,janelaDesconhecida,tarefasNoFio,aria?.cartoes,fuso,agora,transferidoDe]);
   const { aberta: buscaAberta, termo, atual: achadoAtual, achados, posicao, campoRef, abrir: abrirBusca, fechar: fecharBusca, aoMudar: mudarBusca, navegar: navegarBusca } = useBuscaConversa(item?.id ?? null, conversa.mensagens, rolagem, itens);
-  // A origem (atendimento e número) fica guardada no clique: o encaminhar não muda de conversa se a seleção mudar.
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread; atendimentoId: string; numeroId: string } | null>(null);
   const [respostas, setRespostas] = useState<{ id: string; atalho: string; titulo: string; corpo: string }[]>([]);
   useEffect(() => {
@@ -164,7 +139,6 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
     return () => { ativo = false; };
   }, []);
   const capacidades = item?.capacidades ?? [];
-  // null (carregando) só chega ao compositor; os comandos da mensagem exigem o envio confirmado.
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
   const ocupada = conversa.carregando || conversa.carregandoAntigas || conversa.carregandoNovas;
   const cargaInicial = conversa.carregando && !conversa.mensagens.length && !(conversa.notas?.length);
@@ -177,8 +151,6 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
         aoAnterior={() => navegarBusca(-1)} aoProximo={() => navegarBusca(1)} aoFechar={fecharBusca}
         temMaisAntes={conversa.temMaisAntes} temMaisDepois={conversa.temMaisDepois} carregandoAntigas={conversa.carregandoAntigas} aoCarregarAntigas={() => {
           if (conversa.carregandoAntigas || !conversa.temMaisAntes) return;
-          // O controle pode perder foco ao ficar ocupado/desmontar. Entrega antes da carga,
-          // sem restaurar depois e tomar foco que o usuário moveu durante a espera.
           campoRef.current?.focus({preventScroll: true});
           void conversa.maisAntigas();
         }} />;
@@ -271,7 +243,6 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
   return item ? <CoordenadorAcoesConversa key={item.id} item={item} versaoInsights={versaoInsights} podeUsarInsights={podeUsarInsights} aoCriarTarefa={aoCriarTarefa} aria={aria} leituraPainel={leituraPainel} podeEnviar={envioLiberado} agora={new Date(agora)} linhaAria={linhaAria} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoTransferirConcluido={aoTransferirConcluido} aoBuscar={abrirBusca} renderizar={renderizarConversa} /> : renderizarConversa(null);
 }
 
-/** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
 function CoordenadorAcoesConversa({ item, versaoInsights, podeUsarInsights=false, aoCriarTarefa, aria, leituraPainel, podeEnviar, agora, linhaAria, usuario, fuso, destinos = [], aoMudar, aoTransferirConcluido, aoBuscar, renderizar }: { item: ItemListaInbox; aria?: AriaDoAtendimento | null; leituraPainel?: LeituraPainelHandoff; podeEnviar: boolean | null; agora: Date; linhaAria: LinhaEstadoAria | null; aoBuscar(): void; renderizar(acoes: AcoesCabecalho, devolver?: ControlesDevolverAria, handoff?: ReturnType<typeof useHandoffConversa>, tomada?: ReturnType<typeof useAssumirParaResponder>): ReactNode } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoTransferirConcluido" | "aoCriarTarefa" | "versaoInsights" | "podeUsarInsights">) {
   const handoff = useHandoffConversa({ item, usuarioId: usuario.id, handoff: aria?.handoff, respostaDisponivel: !item.grupo && item.status !== "ENCERRADO" && modoRodape(item.estadoAria, false) === "compositor", podeAssumirAria: aria?.podeAssumirAria === true, podeEnviar, leitura: leituraPainel, fuso, agora, aoMudar });
   const tomada = useAssumirParaResponder({ atendimentoId: item.id, usuarioId: usuario.id, responsavelId: item.responsavelId, estadoAria: !item.grupo && item.status !== "ENCERRADO" ? item.estadoAria : null, podeAssumirAria: aria?.podeAssumirAria === true && !item.grupo && item.status !== "ENCERRADO", podeEnviar, leitura: leituraPainel, aoMudar, controleResposta: handoff.controleResposta });

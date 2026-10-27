@@ -34,10 +34,6 @@ describe("Aviso", () => {
     for (const tom of ["info", "sucesso", "atencao"] as const) expect(html(tom)).toContain('role="status"');
   });
 
-  // Revisão R1 do #269: o info era `bg-surface-muted` sem borda, igual ao fundo da página no tema claro; direto
-  // sobre a página (fora de cartão, como em /aria), a caixa sumia. O fundo tingido dos tons quase não muda a
-  // luminância (green-100 sobre a página dá ~1,02:1), então quem marca a caixa é a borda inicial: ≥ 3:1 (WCAG
-  // 1.4.11) sobre a página e sobre o cartão, e o texto ≥ 4,5:1 sobre o próprio fundo, nos dois temas.
   it.each(Object.keys(TONS_AVISO) as TomAviso[])("tom %s: caixa visível direto na página ou no cartão, nos dois temas", (tom) => {
     const cls = TONS_AVISO[tom].split(" ");
     const achar = (re: RegExp) => {

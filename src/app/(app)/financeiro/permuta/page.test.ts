@@ -26,7 +26,6 @@ it("página vazia conserva retorno e não oferece próxima", async () => {
   mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
   expect(html).toContain("Nenhum acordo nesta página");
-  // Revisão R1 da #134 (B5): a volta ao início faz parte do vazio da página seguinte.
   expect(html).toContain('<a class="underline" href="/financeiro/permuta">Ir para a primeira página</a>');
   expect(html).toContain("Anterior");
   expect(html).not.toContain("Próxima");
@@ -53,7 +52,6 @@ it("não consulta acordos ou preferência quando a guarda falha", async () => {
   expect(mocks.preferencia).not.toHaveBeenCalled();
 });
 
-// C11 da #170: `financeiro.aprovar_acertos` vem do usuário da sessão, sem reler `usuario` no banco.
 it("financeiro com a capacidade aprova; sem ela, não — sem reler o usuário", async () => {
   mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
   mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });

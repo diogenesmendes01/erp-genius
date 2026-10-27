@@ -8,15 +8,12 @@ import { carregarFrequenciaVinculoTx } from "./frequencia-tx";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { carregarPendenciasFechamentoTx } from "./pendencias-fechamento-tx";
 
-/** Acompanhamento atual das avaliações regulares; não é fechamento ou decisão de progressão. */
 export async function consultarConsolidadoAvaliacoes(alocacaoId: string) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
     const id = SalvarLancamentoSchema.shape.alocacaoId.parse(alocacaoId);
     return prisma.$transaction(async tx => {
       const consolidado = await carregarConsolidadoAvaliacoesTx(tx, u.id, id, "ACOMPANHAMENTO");
-      // O serviço acima autoriza e bloqueia o vínculo e sua regra. A apuração
-      // de consulta não entra na memória estável dos planos de recuperação.
       const a = await tx.alocacaoTurma.findUniqueOrThrow({ where: { id }, include: { turma: { include: { regraAvaliacao: true } } } });
       const regra = ConteudoRegraAvaliacaoSchema.parse(a.turma.regraAvaliacao!.conteudo);
       const frequencia = await carregarFrequenciaVinculoTx(tx, { ...a, matriculaId: a.matriculaId! }, a.turma.nivelId, regra.frequenciaMinimaPercentual);

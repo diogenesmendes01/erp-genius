@@ -17,7 +17,6 @@ export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, po
 }) {
   const router = useRouter();
   const chave = useRef<string | null>(null);
-  // A chave só é trocada após sucesso; o servidor devolve o fechamento já registrado com a mesma chave (server/avaliacoes/fechamento.ts:38-43).
   const acao = useAcaoCliente({ idempotente: true });
   const ocupado = acao.ocupado;
 

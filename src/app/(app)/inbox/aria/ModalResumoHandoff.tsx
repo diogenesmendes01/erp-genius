@@ -19,7 +19,6 @@ export type PropsModalResumoHandoff = {
     aoResponder(): void;
     focoAoFechar?: RefObject<HTMLElement | null>;
     contextoAtivo?: boolean;
-    /** Só preserva callback iniciado; contextoAtivo continua obrigatório para iniciar. */
     preservarTentativa?: boolean;
     aoIniciarAssumir?(): boolean;
     podeAssumirAria?: boolean;
@@ -32,7 +31,6 @@ export type PropsModalResumoHandoff = {
 export function ModalResumoHandoff(props: PropsModalResumoHandoff) { return <SessaoResumo key={props.atendimentoId + ":" + props.handoff.acaoId} {...props}/>; }
 function SessaoResumo({ atendimentoId, contatoNome, handoff, fuso, aoFechar, aoAssumido, aoResponder, focoAoFechar, contextoAtivo = true, preservarTentativa = false, aoIniciarAssumir, podeAssumirAria = false, sessaoInvalidada = false, confirmacaoPendente = false, confirmando = false, erroConfirmacao, aoTentarConfirmar }: PropsModalResumoHandoff) {
     const acao = useAcaoCliente({ idempotente: true }), cancelar = useRef<HTMLButtonElement>(null), ciclo = useRef({ ativo: false });
-    // Preservar um callback em voo não habilita o botão para outra mutação.
     const cicloAutorizado = (contextoAtivo || preservarTentativa) && podeAssumirAria && !sessaoInvalidada && !confirmacaoPendente;
     useEffect(() => { const atual = { ativo: cicloAutorizado }; ciclo.current = atual; return () => { atual.ativo = false; }; }, [cicloAutorizado]);
     async function assumir() {

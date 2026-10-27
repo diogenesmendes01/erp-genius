@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DriverWhatsApp, Papel } from "@prisma/client";
 
-// D12 (#202 C3): a mensagem agendada pelo CRM só abre o atendimento quando sai. Este arquivo liga WHATSAPP_LIVE=1
-// com o driver do motor FALSO para exercitar o envio "real" do despachante; nenhuma mensagem sai.
 const { authMock, enviarTextoMock } = vi.hoisted(() => ({
   authMock: vi.fn(),
   enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-agendada", mensagemIdMotor: "c:agendada" }),
@@ -80,7 +78,6 @@ describe("mensagem agendada pelo CRM × atendimento (D12, #202 C3)", () => {
       data: { telefoneE164: "+5511955558002", rotulo: "Vendas", driver: DriverWhatsApp.MOTOR, finalidade: "VENDAS", providerRef: "inst-env2", donoId: vendedor.id },
     });
     const pessoa = await prisma.pessoa.create({ data: { nome: "Bia" } });
-    // O contato da pessoa (o mais antigo) é o escolhido, mas a oportunidade tem outro telefone.
     await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688882001", pessoaId: pessoa.id } });
     const lead = await prisma.oportunidade.create({ data: { nome: "Bia", vendedorDonoId: vendedor.id, pessoaId: pessoa.id, telefoneE164: "+50688882999" } });
     logadoComo(vendedor.id);

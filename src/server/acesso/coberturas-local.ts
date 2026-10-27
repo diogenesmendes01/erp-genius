@@ -15,7 +15,6 @@ const schema = z.object({
   motivo: z.string().max(1000),
 }).strict();
 
-/** Concede a cobertura com início e fim digitados no fuso informado (nunca no do navegador). */
 export async function concederCoberturaLocal(input: z.input<typeof schema>) {
   const r = await executarAcao(async () => {
     const { inicioLocal, fimLocal, fuso, ...resto } = schema.parse(input);

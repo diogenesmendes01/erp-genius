@@ -7,14 +7,14 @@ import {
   JANELA_FALHAS_MS,
 } from "./rate-limit-login";
 
-const T0 = 1_750_000_000_000; // relógio injetado — determinístico
+const T0 = 1_750_000_000_000;
 
 describe("rate-limit do login", () => {
   it("bloqueia após MAX_FALHAS na janela e trata e-mails separadamente", () => {
     const email = "a@genius.com";
     limparFalhasLogin(email);
     for (let i = 0; i < MAX_FALHAS; i++) {
-      expect(loginBloqueado(email, T0 + i)).toBe(false); // ainda não travou
+      expect(loginBloqueado(email, T0 + i)).toBe(false);
       registrarFalhaLogin(email, T0 + i);
     }
     expect(loginBloqueado(email, T0 + MAX_FALHAS)).toBe(true);

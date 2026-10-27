@@ -46,16 +46,6 @@ function hashFontes(entrada: unknown) {
   return createHash("sha256").update(JSON.stringify(entrada)).digest("hex");
 }
 
-/**
- * Q154: apura toda a trajetória conferida da mesma matrícula no nível. A
- * transferência de turma não apaga frequência já ocorrida, mas uma aula só
- * entra uma vez e apenas se tiver um único vínculo histórico que a cubra.
- *
- * `fonteHash` representa fatos persistidos (vínculos, aulas, chamada e
- * reposições), nunca o relógio da consulta. `apuradaEm` decide apenas se um
- * encontro ainda está por realizar e, portanto, se o fechamento é temporalmente
- * possível naquele instante.
- */
 export async function carregarFrequenciaNivelTx(
   tx: Prisma.TransactionClient,
   contexto: ContextoFrequenciaNivel,
@@ -68,7 +58,6 @@ type ChamadaSimulada = {
   participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO";
 };
 
-/** Uso interno na conferência Q23. Não persiste nem substitui a apuração oficial. */
 export async function simularFrequenciaCorrecaoAulaTx(tx: Prisma.TransactionClient, contexto: ContextoFrequenciaNivel, chamada: ChamadaSimulada) {
   if (chamada.matriculaId !== contexto.matriculaId) throw new ErroRegra("A simulação pertence a outra matrícula.");
   const resultado = await apurarFontesFrequenciaNivelTx(tx, contexto, chamada);
@@ -89,8 +78,6 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
       orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
       select: { id: true, alunoId: true, matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
     }),
-    // Não é seguro inferir que um vínculo legado do mesmo aluno pertence a
-    // esta matrícula. Ele fica explícito até uma conferência própria.
     tx.alocacaoTurma.findMany({
       where: { alunoId: matricula.alunoId, matriculaId: null, turma: { nivelId: contexto.nivelId } },
       orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
@@ -111,8 +98,6 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
   for (let indice = 0; indice < vinculosConferidos.length; indice++) {
     const atual = vinculosConferidos[indice]!;
     for (const posterior of vinculosConferidos.slice(indice + 1)) {
-      // Um ativo é aberto até o instante da apuração. Isso detecta uma linha
-      // histórica indevidamente mantida aberta sem presumir data de término.
       const fimAtual = fimVinculo(atual) ?? agora;
       const fimPosterior = fimVinculo(posterior) ?? agora;
       if (inicioVinculo(atual) && inicioVinculo(posterior) && inicioVinculo(atual)! < fimPosterior && inicioVinculo(posterior)! < fimAtual) {
@@ -281,12 +266,8 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
       matriculaId: contexto.matriculaId,
       nivelId: contexto.nivelId,
       minimoPercentual: contexto.minimoPercentual,
-      // Fechar o vínculo ao executar a progressão não muda frequência já
-      // conferida. Os limites continuam selecionando as aulas e produzindo
-      // pendências; quando afetarem a apuração, essas fontes mudarão o hash.
       vinculos: vinculosConferidos.map(vinculo => ({ id: vinculo.id, turmaId: vinculo.turmaId, criadoEm: vinculo.criadoEm.toISOString(), provenienciaVinculo: vinculo.provenienciaVinculo, inicioVigencia: vinculo.inicioVigencia?.toISOString() ?? null, fimVigencia: vinculo.fimVigencia?.toISOString() ?? null })),
       fontes,
-      // A classificação temporal de futuro/passado não compõe o hash.
       pendenciasPersistidas: ordenarPendencias(pendenciasHistoricas),
     }),
     fontes,

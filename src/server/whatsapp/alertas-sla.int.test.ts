@@ -70,7 +70,6 @@ describe("rodarAlertasSla", () => {
     await prisma.atendimentoWhatsApp.update({ where: { id: respondido.id }, data: { primeiraRespostaEm: minutos(-10), status: "AGUARDANDO_CLIENTE" } });
     const encerrado = await atendimento();
     await prisma.atendimentoWhatsApp.update({ where: { id: encerrado.id }, data: { status: "ENCERRADO", encerradoEm: minutos(-1) } });
-    // Conversa de grupo não abre atendimento (trigger do banco); o filtro grupoId do claim é só defesa.
     const aria = await atendimento();
     const conv = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: aria.id }, include: { conversa: true } });
     await prisma.mensagemWhatsApp.create({ data: { atendimentoId: aria.id, conversaId: conv.conversaId, numeroId: conv.conversa.numeroId, direcao: "SAIDA", origem: "IA", status: "ENVIADA", driver: "MOTOR", corpo: "Olá!", criadoEm: minutos(-30) } });
@@ -86,7 +85,6 @@ describe("rodarAlertasSla", () => {
     expect((await rodarAlertasSla(agora)).alertados).toBe(1);
   });
 
-  // C3 da R1 do #241: vale o momento em que a resposta da IA saiu (`enviadaEm`), não o `criadoEm`.
   it("aria_criada_na_fila_antes_do_prazo_e_enviada_depois_nao_evita_o_alerta", async () => {
     const a = await atendimento();
     const conv = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id }, include: { conversa: { include: { numero: true } } } });
@@ -94,7 +92,6 @@ describe("rodarAlertasSla", () => {
       atendimentoId: a.id, conversaId: conv.conversaId, numeroId: conv.conversa.numeroId, direcao: "SAIDA", origem: "IA", driver: "MOTOR",
       status: "NA_FILA", providerMessageId: `ia-fila-${a.id}`, criadoEm: minutos(-30),
     } });
-    // O envio é confirmado pelo canal só depois do vencimento (minutos(-5)).
     expect(await processarStatusNormalizado({ numeroProviderRef: conv.conversa.numero.providerRef, providerMessageId: `ia-fila-${a.id}`, status: "ENVIADA", driver: "MOTOR", quando: minutos(-2) })).toBe("atualizado");
     expect((await rodarAlertasSla(agora)).alertados).toBe(1);
   });
@@ -109,7 +106,6 @@ describe("rodarAlertasSla", () => {
     const status = (s: "ENVIADA" | "LIDA", quando: Date) =>
       processarStatusNormalizado({ numeroProviderRef: conv.conversa.numero.providerRef, providerMessageId: `ia-lida-${a.id}`, status: s, driver: "MOTOR", quando });
     await status("ENVIADA", minutos(-30));
-    // Lida depois do vencimento: o statusEm avança, mas o envio foi no prazo.
     await status("LIDA", minutos(-1));
     expect((await rodarAlertasSla(agora)).alertados).toBe(0);
   });

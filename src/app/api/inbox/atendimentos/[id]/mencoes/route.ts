@@ -4,7 +4,6 @@ import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { listarCandidatosMencao } from "@/server/inbox/consultas-mencoes";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-/** Somente candidatos de uma nota visível; resposta nunca contém cadastro completo. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   let u;
   try { u = await exigirSessao(); exigirPapel(u, ...PAPEIS_INBOX); }

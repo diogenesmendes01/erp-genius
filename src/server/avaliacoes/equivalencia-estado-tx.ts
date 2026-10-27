@@ -19,7 +19,6 @@ function semEstadoHash(snapshot: unknown) {
   return restante;
 }
 
-/** Mantém todas as fontes estritas; só o recorte futuro da agenda usa o mesmo marco nos dois lados. */
 export function estadosEquivalenciaCorrespondemNoMarco(anterior: unknown, atual: unknown, marco: Date) {
   const anteriorSemHash = semEstadoHash(anterior) as { academico?: unknown };
   const atualSemHash = semEstadoHash(atual) as { academico?: unknown };
@@ -30,8 +29,6 @@ export function estadosEquivalenciaCorrespondemNoMarco(anterior: unknown, atual:
     === JSON.stringify(canon({ ...atualSemHash, academico: normalizarSnapshotMudancaAcademicaNoMarco(academiaAtual.data, marco) }));
 }
 
-/** Estado interno: nunca retornar este objeto à Secretaria. O fluxo chamador
- * autoriza o papel antes da leitura e revalida o usuário após os locks. */
 export async function conferirEstadoEquivalenciaTx(tx: Prisma.TransactionClient, entrada: {
   matriculaId: string; alocacaoOrigemId: string; turmaDestinoId: string;
   mapeamentos: EntradaEquivalenciaTransferencia["mapeamentos"];

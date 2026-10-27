@@ -6,7 +6,6 @@ const m=vi.hoisted(()=>({replace:vi.fn(),params:"nova=p1&o=antiga&modo=lista&bus
 vi.mock("next/navigation",()=>({usePathname:()=>"/funil",useSearchParams:()=>new URLSearchParams(m.params),useRouter:()=>({push:vi.fn(),replace:m.replace,refresh:vi.fn()})}));
 vi.mock("@/server/crm/oportunidades",()=>({moverEtapaEmLote:vi.fn()}));
 vi.mock("./QuadroFunil",()=>({QuadroFunil:()=>null}));vi.mock("./ListaFunil",()=>({ListaFunil:()=>null}));
-// Fronteira do formulário existente: o pai é responsável por abrir uma superfície e entregar snapshot/fechamento.
 vi.mock("./NovaOportunidade",()=>({NovaOportunidade:(p:typeof m.nova[number])=>{m.nova.push(p);return createElement('section',{'role':'dialog','aria-label':'Nova oportunidade'},p.preenchido?.nome,createElement('button',{onClick:p.aoFechar},'Cancelar nova'));}}));
 vi.mock("./PainelOportunidade",()=>({PainelOportunidade:()=>createElement('section',{'role':'dialog'},'Oportunidade antiga')}));
 vi.mock("./ModalPerda",()=>({ModalPerda:()=>createElement('section',{'role':'dialog'},'Perda')}));
@@ -17,7 +16,6 @@ let root:Root,host:Elemento;
 const render=(p:Partial<Props>={})=>act(async()=>root.render(createElement(FunilCliente,{...base(),...p})));
 beforeEach(async()=>{vi.clearAllMocks();m.nova=[];m.params="nova=p1&o=antiga&modo=lista&busca=curso";const d=criarDomMinimo();const criar=d.documento.createElement.bind(d.documento);d.documento.createElement=(tag:string)=>{const el=criar(tag);if(tag==='select')Object.defineProperty(el,'options',{get:()=>el.querySelectorAll('option')});return el;};vi.stubGlobal('self',globalThis);vi.stubGlobal('document',d.documento);vi.stubGlobal('window',d.janela);vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);host=d.documento.createElement('div');d.documento.body.appendChild(host);const{createRoot}=await import('react-dom/client');root=createRoot(host as unknown as HTMLElement);});
 afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
-// Double da fronteira PainelOportunidade: este teste só verifica supressão do painel antigo; seus dados internos não são consumidos.
 it("Nova por Pessoa abre preenchida com uma única superfície, mesmo com o parâmetro o",async()=>{await render({aberta:{oportunidade:{id:"antiga"},historico:[]} as unknown as Props['aberta']});expect(host.querySelectorAll('[role=dialog]')).toHaveLength(1);expect(host.textContent).toContain('Pessoa um fictícia');expect(host.textContent).not.toContain('Oportunidade antiga');expect(m.nova.at(-1)?.preenchido).toEqual({pessoaId:"p1",nome:"Pessoa um fictícia"});});
 it("Cancelar limpa somente nova, conserva o e filtros, sem salvar",async()=>{await render();await act(async()=>m.nova.at(-1)!.aoFechar());expect(m.replace).toHaveBeenCalledExactlyOnceWith('/funil?o=antiga&modo=lista&busca=curso',{scroll:false});expect(host.querySelectorAll('[role=dialog]')).toHaveLength(0);});
 it("não concede criação sem capacidade global",async()=>{await render({capacidades:[]});expect(host.querySelectorAll('[role=dialog]')).toHaveLength(0);expect(m.nova).toHaveLength(0);});

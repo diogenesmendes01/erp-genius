@@ -71,7 +71,7 @@ describe("consultas da tela da Aria", () => {
   it("conta_por_turnos_do_periodo", async () => {
     for (let i = 0; i < 3; i++) await turno(propria, "RESPONDEU");
     await turno(propria, "HANDOFF");
-    await turno(propria, "RESPONDEU", new Date("2026-09-01T12:00:00Z")); // fora do período
+    await turno(propria, "RESPONDEU", new Date("2026-09-01T12:00:00Z"));
     const v = await visaoGeralAria({ dias: 7, agora });
     expect(v).toMatchObject({ conversas: 4, taxaHandoff: 0.25 });
     expect(v.volume).toHaveLength(7);
@@ -81,7 +81,6 @@ describe("consultas da tela da Aria", () => {
 
   it("dias_corridos_respeitam_o_fuso_institucional", async () => {
     await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "America/Costa_Rica" }, update: { fusoInstitucional: "America/Costa_Rica" } });
-    // 03:00Z de 18/10 ainda é 17/10 em Costa Rica (UTC-6); cai fora de "hoje" quando agora é 18/10 15:00Z? Não: hoje local = 18/10 00:00-06 = 06:00Z.
     await turno(propria, "RESPONDEU", new Date("2026-10-18T03:00:00Z"));
     await turno(propria, "RESPONDEU", new Date("2026-10-18T07:00:00Z"));
     const v = await visaoGeralAria({ dias: 1, agora });

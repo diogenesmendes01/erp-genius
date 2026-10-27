@@ -2,9 +2,6 @@ import { StatusAluno } from "@prisma/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
-// R1 da #145 (B2): a validação por campo da edição, da pausa e do encerramento, pelo clique — sem DOM.
-// O componente é chamado como função com os ganchos de src/test/tela-sem-dom.ts (estado guardado entre
-// renders); os botões e os controles dos <Campo> são achados na árvore e acionados.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   editar: vi.fn(), pausar: vi.fn(), encerrar: vi.fn(), refresh: vi.fn(),
@@ -36,9 +33,7 @@ const props = {
 let foco: ReturnType<typeof documentoQueRegistraFoco>;
 const tela = (): ReactNode => m.ganchos!.renderizar(FichaAluno, props);
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
-/** Erro de cada Campo da tela que tem erro, por id, na ordem da tela. */
 const errosNaTela = errosDosCampos;
-/** O foco foi para um Campo que existe e é o primeiro com erro na tela (id da validação = id do Campo). */
 function focoNoPrimeiroComErro(t: ReactNode) {
   const primeiro = campos(t).find((c) => c.props.erro);
   expect(primeiro, "algum Campo com erro").toBeDefined();

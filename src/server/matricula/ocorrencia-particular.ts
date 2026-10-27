@@ -33,7 +33,6 @@ const Entrada = z.object({ encontroId: z.string().min(1), versaoAnterior: z.numb
   chaveIdempotencia: z.string().min(8).max(100),
 }).strict().refine(d => d.tipo.startsWith("CANCELAMENTO") === !!d.comunicadoEm, "Informe a comunicação somente para cancelamentos.");
 
-/** Informe docente versionado. Não confirma cobrança, nota, presença ou consumo de horas. */
 export async function registrarOcorrenciaParticular(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR), d = Entrada.parse(input);

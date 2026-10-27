@@ -21,17 +21,14 @@ import {
   type ParamsTarefas,
 } from "./visao";
 
-/** Passo do arraste: 30 minutos. Das 06:00 às 21:30. */
 export const HORAS_DA_GRADE: string[] = Array.from({ length: 32 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
 
-/** Slot de 30 min que contém a hora (HH:MM), preso aos limites da grade. */
 export function slotDaHora(hora: string): string {
   const [h, m] = hora.split(":").map(Number);
   const minutos = Math.min(Math.max(h * 60 + (m >= 30 ? 30 : 0), 6 * 60), 21 * 60 + 30);
   return `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${minutos % 60 ? "30" : "00"}`;
 }
 
-/** `v` distingue a árvore do celular da da grade: o dnd-kit indexa por id, então ids repetidos se anulariam. */
 const idSlot = (data: string, hora: string, v: string) => `slot|${data}|${hora}|${v}`;
 export function lerSlot(alvo: unknown): { data: string; hora: string | null } | null {
   if (typeof alvo !== "string" || !alvo.startsWith("slot|")) return null;
@@ -55,7 +52,6 @@ export function AgendaTarefas({ visao, data, hoje, itens, fusoEscola, fusoExibic
   const [reagendando, setReagendando] = useState<ItemAgenda | null>(null);
   const [diaEscolhido, setDiaMovel] = useState(data);
   const dias = visao === "semana" ? diasDaSemana(data) : [data];
-  // Derivado: ao navegar para outra semana o componente segue montado, e o dia antigo não pertence mais à semana.
   const diaMovel = dias.includes(diaEscolhido) ? diaEscolhido : dias.includes(hoje) ? hoje : dias[0];
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -178,7 +174,6 @@ function BlocoItem({ item, fusoEscola, fusoExibicao, params, aoReagendar, v }: {
   );
 }
 
-/** Alternativa por teclado e toque ao arraste: escolher data e hora em campos. */
 export function ReagendarModal({ item, fusoEscola, aoFechar, aoConcluir }: { item: ItemAgenda; fusoEscola: string; aoFechar: () => void; aoConcluir: () => void }) {
   const acao = useAcaoCliente({ idempotente: false });
   const inicioData = dataCivilDoItem(item, fusoEscola) ?? "";

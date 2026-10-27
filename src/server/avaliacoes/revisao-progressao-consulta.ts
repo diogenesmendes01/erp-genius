@@ -17,7 +17,6 @@ type FontesCaso = { decisaoCorrecaoConclusaoReposicaoId: string | null; aprovaca
 type DecisaoReposicaoCaso = { id: string; reposicaoId: string; conclusaoVersao: number; matriculaId: string; contexto: unknown };
 type AprovacaoAulaCaso = { id: string; encontroId: string; versaoAula: number; impactos: unknown };
 
-/** Consulta institucional: não reutilizar no portal do aluno ou na Secretaria. */
 export async function consultarCasoRevisaoProgressao(entrada: z.input<typeof consultaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -97,8 +96,6 @@ export async function consultarCasoRevisaoProgressao(entrada: z.input<typeof con
         solicitacao: { id: caso.solicitacao.id, status: caso.solicitacao.status,
           turmaOrigem: caso.solicitacao.turmaOrigem, turmaDestino: caso.solicitacao.turmaDestino },
         statusNaCorrecao: impacto.status,
-        // Só uma decisão terminal deste caso o resolve. Correções posteriores
-        // criam outros casos e não herdam esta resolução.
         situacao: resolucao ? "RESOLVIDA" as const : "PENDENTE_REVISAO" as const,
         resolucao: resolucao?.proposta ?? null,
       };

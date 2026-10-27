@@ -9,7 +9,6 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { SITUACAO_APLICACAO_CADASTRO_MIGRACAO_LABEL, rotular } from "@/lib/labels";
 
 export function AplicarCadastroMigracao({ loteId }: { loteId: string }) {
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const router = useRouter(); const acao = useAcaoCliente({ idempotente: false }); const [linhas, setLinhas] = useState<{ linhaOrigem: string; situacao: string; alunoId: string | null; detalhe: string | null }[]>([]); const [confirmacaoHash, setConfirmacaoHash] = useState<string | null>(null);
   async function executar(modo: "ENSAIO" | "APLICAR") {
     const d = await acao.executar(() => aplicarCadastroPreparacaoMigracao({ loteId, modo, ...(modo === "APLICAR" && confirmacaoHash ? { confirmacaoHash } : {}) }), (dado) => dado?.explicacao ?? null);

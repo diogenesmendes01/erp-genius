@@ -5,9 +5,6 @@ import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { carregarPreviaPausaTx, PAPEIS_PAUSA } from "./pausa-estado";
 import { APROVADORES_PAUSA, estadoHashPausa, exigirUsuarioPausa, hashPausa } from "./pausa-integridade";
 
-/** Núcleo transacional usado pela aplicação contratual autorizada.
- * A data de operação é civil institucional e deve vir do relógio do servidor, nunca do formulário.
- */
 export async function aplicarPausaMatriculasTx(tx: Prisma.TransactionClient, propostaId: string, autorId: string, agora: Date) {
   await tx.$queryRaw`SELECT id FROM "PropostaPausaMatriculas" WHERE id = ${propostaId} FOR UPDATE`;
   const p = await tx.propostaPausaMatriculas.findUnique({ where: { id: propostaId }, include: { itens: { orderBy: { matriculaId: "asc" } } } });
@@ -35,7 +32,6 @@ export async function aplicarPausaMatriculasTx(tx: Prisma.TransactionClient, pro
   for (const m of previa.matriculas) {
     const item = p.itens.find((i) => i.matriculaId === m.matriculaId)!;
     const suspensas = m.periodos.filter((c) => c.efeito === "SUSPENDER_PERIODO_FUTURO").map((c) => c.cobrancaId);
-    // Suspender cobertura quitada preserva PAGO e seus recebimentos.
     await tx.cobranca.updateMany({ where: { id: { in: suspensas }, matriculaId: m.matriculaId, status: "PAGO" }, data: {
       suspensaPorItemPausaId: item.id, versao: { increment: 1 },
     } });

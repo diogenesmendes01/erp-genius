@@ -1,5 +1,3 @@
-// Estado de acesso negado para Server Components que barram leitura por papel
-// (ver src/lib/guards.ts). NÃO renderiza dados — só explica a falta de permissão.
 export function AcessoNegado({ recurso }: { recurso?: string }) {
   return (
     <div>

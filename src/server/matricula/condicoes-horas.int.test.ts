@@ -269,8 +269,6 @@ it("Q23 torna a revisão obsoleta por informe posterior e só publica a reconfer
   let pagamentoConcorrente: ReturnType<typeof registrarPagamento> | undefined;
   let publicacaoConcorrente: ReturnType<typeof aprovarCorrecaoAula> | undefined;
   try {
-    // A barreira usa apenas um lock de teste. As duas mutações são ações reais
-    // e só liberamos a fonte depois de observá-las bloqueadas pelo mesmo PID.
     login(gestor.id); pagamentoConcorrente = registrarPagamento(emissao.cobrancaId, { chaveIdempotencia: "q23-informe-pagamento-0001", valorRecebido: 20, forma: "DINHEIRO", dataPagamento: new Date("2026-01-12T15:00:00Z"), comentario: "Informe posterior para reconferência." });
     const [pidPagamento] = await aguardarAcoesNaCobranca(1);
     publicacaoConcorrente = aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos1.dado.propostaHash, impactosHash: impactos1.dado.impactosHash, motivo: "Não publicar com fotografia financeira antiga.", revisaoFinanceiraDecisaoId: decisao1.dado.id });
@@ -705,8 +703,6 @@ it.each(["13:00", "14:00"])("encerramento confere cancelamento do aluno comunica
  else expect(resultado).toMatchObject({ pendencias: [expect.stringContaining("sem destinação financeira")], destinacoesHoras: [] });
 });
 
-// ── Q175: correção "aula não devia ser cobrada" (port da #62, decisões de 21/09/2026) ─────────
-// Opção A: o "não cobrável" é declarado na revisão financeira; o encontro continua MINISTRADO.
 async function conferirOcorrencia(d: { alunoId: string; matriculaId: string; ocorrenciaId: string; condicoesId: string }, chave: string) {
   const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
   const { conferirOcorrenciaHoras } = await import("./ocorrencia-financeira-conferir");
@@ -715,7 +711,6 @@ async function conferirOcorrencia(d: { alunoId: string; matriculaId: string; oco
   expect(await conferirOcorrenciaHoras({ ...d, estadoPrevia: previa.dado.estadoPrevia, motivo: "Conferência da particular antes da correção", chaveIdempotencia: `${chave}-conferencia` })).toMatchObject({ ok: true });
 }
 
-/** Segunda aula do mesmo mês, conferida, para a cobrança do fechamento somar duas aulas. */
 async function segundaAulaConferida(d: { alunoId: string; matriculaId: string; condicoesId: string }, chave: string) {
   const professor = await criarUsuario(["PROFESSOR"]);
   const e = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: professor.id, preparadorId: adminId,
@@ -738,7 +733,6 @@ async function prepararAulaNaoCobravel(chave: string, emitir: boolean, opcoes: {
   await prisma.encontroAgenda.update({ where: { id: e.id }, data: { status: "MINISTRADO" } });
   const { revisarCorrecaoAula, proporCorrecaoAula } = await import("@/server/diario/correcao-aula");
   login(professor.id); const atual = await revisarCorrecaoAula({ encontroId: e.id }); if (!atual.ok || !atual.dado) throw new Error("Q23 ausente");
-  // Opção A: o diário registra o fato no conteúdo; a declaração de não cobrável pertence à revisão financeira.
   const q23 = await proporCorrecaoAula({ encontroId: e.id, estadoHash: atual.dado.estadoHash, versaoEsperada: atual.dado.versaoAtual, motivo: "Aula lançada, mas não realizada por indisponibilidade de sala.", evidencia: "Registro da coordenação sobre a sala indisponível.", chaveIdempotencia: `${chave}-proposta`,
     alteracao: { conteudo: "Aula não realizada: sala indisponível por responsabilidade da escola.", registros: atual.dado.snapshot.registros.map(r => ({ registroId: r.registroId, participacao: r.participacao, observacao: r.observacao })) } });
   if (!q23.ok || !q23.dado) throw new Error(JSON.stringify(q23));
@@ -773,7 +767,7 @@ it("Q175 aula ainda não fechada: publicação atômica marca não cobrável e o
   const publicada = await publicar(); if (!publicada.ok) throw new Error(JSON.stringify(publicada));
   expect(await publicar()).toEqual(publicada);
   const conferencia = await prisma.conferenciaOcorrenciaHoras.findUniqueOrThrow({ where: { encontroId: e.id } });
-  expect(conferencia.valor.toFixed(2)).toBe("156.25"); // histórico imutável
+  expect(conferencia.valor.toFixed(2)).toBe("156.25");
   expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.findMany()).toMatchObject([{ efeito: "SEM_ITEM", conferenciaId: conferencia.id, cobrancaId: null, creditoValor: null }]);
   expect(await prisma.creditoMatricula.count()).toBe(0);
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ status: "MINISTRADO" });
@@ -789,8 +783,6 @@ it("Q175 aula ainda não fechada: publicação atômica marca não cobrável e o
   expect(JSON.stringify(gravado)).not.toContain('"valor":"156.25"');
 }, 120_000);
 
-// B3 e C2 da R1 #266: a aula declarada não cobrável antes do fechamento (SEM_ITEM) não trava o encerramento da
-// matrícula por hora, e o banco recusa faturá-la depois, mesmo fora do fluxo do TS.
 it("Q175 encerramento por hora reconhece a aula não cobrável ainda não fechada e o banco recusa faturá-la", async () => {
   const { d, e, propostaId } = await prepararAulaNaoCobravel("q175-encerramento", false, { duasAulas: true });
   const { carregarImpactosAcademicosEncerramentoTx } = await import("./encerramento-impactos-academicos");
@@ -806,20 +798,16 @@ it("Q175 encerramento por hora reconhece a aula não cobrável ainda não fechad
   const depois = await agenda();
   expect(depois.pendencias.filter(p => p.includes(e.id))).toEqual([]);
   expect(depois.destinacoesHoras).toContainEqual({ encontroId: e.id, conferenciaId: conferencia.id, tipo: "NAO_COBRAVEL_CORRECAO", cobrancaId: null, itemId: null, aplicacaoId: aplicacao.id });
-  // O fechamento do mês fatura só a outra aula; com ela emitida, o encerramento fica sem pendência por hora.
   const emissao = await emitirCobrancaDaPrevia(d, "q175-encerramento-emissao");
   expect(await prisma.itemFechamentoHoras.findMany({ where: { emissaoId: emissao.id } })).toHaveLength(1);
   const final = await agenda();
   expect(final.pendencias).toEqual([]);
   expect(final.destinacoesHoras.map(x => x.tipo).sort()).toEqual(["FATURADA", "NAO_COBRAVEL_CORRECAO"]);
-  // C2: a trava não fica só no TS; inserir o item direto no banco é recusado.
   await expect(prisma.itemFechamentoHoras.create({ data: { emissaoId: emissao.id, conferenciaId: conferencia.id, valor: conferencia.valor } }))
     .rejects.toThrow(/não cobrável não pode ser faturada/);
   expect(await prisma.itemFechamentoHoras.count({ where: { conferenciaId: conferencia.id } })).toBe(0);
 }, 120_000);
 
-// N3 da R2 #266: declaração de não cobrável rejeitada pela segunda alçada não gera aplicação; por isso a trava
-// `recusar_item_nao_cobravel_175` não alcança a aula, que é faturada normalmente no fechamento do mês.
 it("Q175 declaração de aula não cobrável rejeitada: sem aplicação, a aula é faturada normalmente", async () => {
   const { d, e, propostaId } = await prepararAulaNaoCobravel("q175-rejeitada", false);
   const { proporRevisaoFinanceiraCorrecaoAula, decidirRevisaoFinanceiraCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
@@ -845,7 +833,6 @@ it("Q175 cobrança em aberto de uma aula: a publicação a cancela na mesma tran
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao!.cobrancaId } });
   expect(antes.valorNegociado.toFixed(2)).toBe("156.25");
   const { publicar, decisaoId, gestorId } = await revisarEPublicarNaoCobravel(propostaId, "q175-aberta");
-  // Escrita direta da aprovação, sem a aplicação, é desfeita pelo trigger diferido.
   const proposta = await prisma.propostaCorrecaoAula.findUniqueOrThrow({ where: { id: propostaId } });
   await expect(prisma.aprovacaoCorrecaoAula.create({ data: { propostaId, decisorId: gestorId, motivo: "Publicação direta sem acerto financeiro", propostaHash: proposta.entradaHash, impactosHash: "a".repeat(64), impactos: {}, revisaoFinanceiraDecisaoId: decisaoId } })).rejects.toThrow();
   expect(await prisma.aprovacaoCorrecaoAula.count()).toBe(0);
@@ -854,7 +841,7 @@ it("Q175 cobrança em aberto de uma aula: a publicação a cancela na mesma tran
   expect(depois).toMatchObject({ versao: antes.versao + 1, status: "CANCELADA", valorOriginal: antes.valorOriginal });
   expect(depois.valorNegociado.toFixed(2)).toBe("0.00");
   expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.findMany()).toMatchObject([{ efeito: "REDUZ_COBRANCA_ABERTA", cobrancaId: antes.id, versaoCobrancaAntes: antes.versao }]);
-  expect(await prisma.itemFechamentoHoras.count()).toBe(1); // item e emissão preservados
+  expect(await prisma.itemFechamentoHoras.count()).toBe(1);
   expect(await prisma.creditoMatricula.count()).toBe(0);
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ status: "MINISTRADO" });
 }, 120_000);
@@ -867,7 +854,6 @@ it("Q175 cobrança em aberto de duas aulas: a publicação só reduz o valor da 
   const { publicar, revisaoId } = await revisarEPublicarNaoCobravel(propostaId, "q175-reduzida");
   expect((await prisma.propostaRevisaoFinanceiraCorrecaoAula.findUniqueOrThrow({ where: { id: revisaoId } })).fotografia)
     .toMatchObject({ efeito: { tipo: "REDUZ_COBRANCA_ABERTA", cobrancaId: antes.id, valorNegociadoAnterior: 312.5, valorNegociadoNovo: 156.25 } });
-  // A revisão aprovada sozinha não move valor: o efeito só nasce com a publicação acadêmica.
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } })).toEqual(antes);
   expect(await publicar()).toMatchObject({ ok: true });
   const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } });
@@ -882,7 +868,6 @@ it("Q175 cobrança em aberto de duas aulas: a publicação só reduz o valor da 
 it("Q175 cobrança paga: fatura permanece quitada e nasce crédito na matrícula com origem rastreável; pagamento posterior à revisão a torna obsoleta", async () => {
   const { e, emissao, propostaId } = await prepararAulaNaoCobravel("q175-paga", true);
   const { registrarPagamento } = await import("@/server/financeiro/acoes");
-  // Revisão preparada com a fatura ainda aberta fica obsoleta quando o pagamento chega.
   const aberta = await revisarEPublicarNaoCobravel(propostaId, "q175-paga-aberta");
   login(adminId);
   expect(await registrarPagamento(emissao!.cobrancaId, { chaveIdempotencia: "q175-paga-recebimento-01", valorRecebido: 156.25, forma: "DINHEIRO", comentario: "Fatura de horas quitada antes da correção." })).toMatchObject({ ok: true });
@@ -898,11 +883,8 @@ it("Q175 cobrança paga: fatura permanece quitada e nasce crédito na matrícula
   expect(creditos[0]).toMatchObject({ matriculaId, moeda: antes.moeda, origemRevisaoCorrecaoAula: { cobrancaId: antes.id } });
   expect(creditos[0].valorInicial.toFixed(2)).toBe("156.25");
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ status: "MINISTRADO" });
-  // Crédito sem a origem da correção, ou com valor diferente dela, é recusado pelo banco.
   await expect(prisma.creditoMatricula.create({ data: { matriculaId, moeda: antes.moeda, valorInicial: "10.00" } })).rejects.toThrow();
   await expect(prisma.origemCreditoRevisaoCorrecaoAula.deleteMany()).rejects.toThrow();
-  // B2 da R1-b #266: a fotografia posterior da reconferência delta (TS) e a do ledger no banco
-  // (q165_fotografia_delta_atual_255, comparada pelo trigger diferido) coincidem com o crédito Q175.
   const { carregarFontesReconferenciaDeltaTx } = await import("./desistencia-reconferencia-delta-fontes");
   const memoriaBase = { itens: [{ cobrancaId: antes.id, devido: "0.00", moeda: antes.moeda }] };
   const [comparacao] = await prisma.$transaction(async tx => {
@@ -920,7 +902,6 @@ it("Q175 aprovações separadas: a financeira sozinha não muda valor, o Finance
   const { revisarImpactosCorrecaoAula, aprovarCorrecaoAula } = await import("@/server/diario/correcao-aula");
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao!.cobrancaId } });
   const { decisaoId, fin1Id, fin2Id } = await revisarNaoCobravel(propostaId, "q175-alcadas");
-  // Aprovação financeira concluída: nada muda até a publicação pedagógica.
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } })).toEqual(antes);
   expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.count()).toBe(0);
   expect(await prisma.aprovacaoCorrecaoAula.count()).toBe(0);
@@ -928,15 +909,12 @@ it("Q175 aprovações separadas: a financeira sozinha não muda valor, o Finance
   login(gestor.id); const impactos = await revisarImpactosCorrecaoAula({ propostaId }); if (!impactos.ok || !impactos.dado) throw new Error("Impactos ausentes");
   expect(impactos.dado).toMatchObject({ financeiro: { exigeConferenciaFinanceira: true } });
   const entrada = { propostaId, propostaHash: impactos.dado.propostaHash, impactosHash: impactos.dado.impactosHash, motivo: "Publicação da correção pela gestão." };
-  // Quem preparou ou decidiu a revisão financeira, ou o autor da Q23, não publica a correção pedagógica.
   for (const id of [fin1Id, fin2Id, professorId]) {
     login(id); expect(await aprovarCorrecaoAula({ ...entrada, revisaoFinanceiraDecisaoId: decisaoId })).toMatchObject({ ok: false });
   }
-  // Declarada a aula não cobrável, a gestão não publica sem vincular a revisão financeira, mesmo sem mudança de presença.
   login(gestor.id); expect(await aprovarCorrecaoAula(entrada)).toMatchObject({ ok: false });
   expect(await prisma.aprovacaoCorrecaoAula.count()).toBe(0);
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } })).toEqual(antes);
-  // A gestão pedagógica, com a revisão aprovada por outra alçada, publica e o efeito nasce junto.
   expect(await aprovarCorrecaoAula({ ...entrada, revisaoFinanceiraDecisaoId: decisaoId })).toMatchObject({ ok: true });
   const aprovacao = await prisma.aprovacaoCorrecaoAula.findFirstOrThrow({ include: { aplicacaoRevisaoFinanceira: true } });
   expect(aprovacao).toMatchObject({ decisorId: gestor.id, revisaoFinanceiraDecisaoId: decisaoId, aplicacaoRevisaoFinanceira: { decisaoRevisaoId: decisaoId, efeito: "REDUZ_COBRANCA_ABERTA" } });
@@ -971,15 +949,12 @@ it("Q173 (R2 do #284, B3): aula por hora da moeda anterior ainda não faturada i
   await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
   const pendencias = async (vigencia: string) => (await prisma.$queryRaw<Array<{ p: string[] }>>`SELECT pendencias_moeda_antiga_173(${matriculaId}, 'CRC', ${vigencia}::timestamp, 'UTC') AS p`)[0].p;
   const alvo = () => prisma.$transaction(tx => consultarAlvoMoedaTx(tx, matriculaId, { condicoes: { MOEDA: { tipo: "MOEDA", moeda: "USD" } }, vigenciaInicio: new Date("2026-03-01T00:00:00Z") }));
-  // Encontro de 10/01 ainda sem conferência: anterior à vigência de 01/03, bloqueia; com vigência anterior ao encontro, não.
   expect(await pendencias("2026-03-01T00:00:00")).toEqual(["HORAS_A_FATURAR"]);
   expect(await pendencias("2026-01-01T00:00:00")).toEqual([]);
-  // Conferida (156,25 CRC) e ainda não faturada: continua bloqueando, na checagem TS e no banco.
   const previa = await preverConferenciaOcorrenciaHoras(d); if (!previa.ok || !previa.dado) throw new Error("Prévia ausente");
   const conf = await conferirOcorrenciaHoras({ ...d, estadoPrevia: previa.dado.estadoPrevia, motivo: "Conferência antes da troca de moeda", chaveIdempotencia: "q173-b3-conferencia" });
   if (!conf.ok || !conf.dado) throw new Error(JSON.stringify(conf));
   expect(await alvo()).toMatchObject({ podePreparar: false, pendencias: [{ codigo: "HORAS_A_FATURAR", texto: expect.stringContaining("não faturada") }] });
-  // Fechada: a cobrança em aberto bloqueia; paga, a matrícula fica limpa. A cobrança do fechamento não é adiantamento.
   const emissao = await emitirCobrancaDaPrevia(d, "q173-b3-fechamento");
   expect(await pendencias("2026-03-01T00:00:00")).toEqual(["COBRANCA_EM_ABERTO"]);
   login(adminId);
@@ -1010,23 +985,16 @@ it("Q173 (R3 do #284, B4): vigência no meio do período de horas é recusada; n
     const c = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
     expect(await registrarPagamento(c.id, { chaveIdempotencia: chave, valorRecebido: c.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Aula por hora recebida." })).toMatchObject({ ok: true });
   };
-  // Janeiro: aula de 10/01 conferida (156,25 CRC), fechada e paga.
   await conferir(d, "q173-b4-janeiro");
   const janeiro = await emitirCobrancaDaPrevia(d, "q173-b4-fechamento-janeiro");
   await pagar(janeiro.cobrancaId, "q173-b4-pagamento-janeiro");
 
-  // Fuso da escola e do fechamento: São Paulo. Vigência no meio do período (20/01) é recusada, na checagem TS e no
-  // banco; 01/02 00:00 UTC também, porque em São Paulo ainda é 31/01, dentro do fechamento de janeiro.
   expect(await pendencias("2026-01-20T03:00:00")).toEqual(["VIGENCIA_NO_MEIO_DO_PERIODO_HORAS"]);
   expect(await pendencias("2026-02-01T00:00:00")).toEqual(["VIGENCIA_NO_MEIO_DO_PERIODO_HORAS"]);
   expect(await alvo("2026-01-20T03:00:00Z")).toMatchObject({ podePreparar: false, pendencias: [{ codigo: "VIGENCIA_NO_MEIO_DO_PERIODO_HORAS", texto: expect.stringContaining("primeiro dia do mês") }] });
-  // No dia 1, 00:00 em São Paulo (03:00Z), a matrícula está limpa.
   expect(await pendencias("2026-02-01T03:00:00")).toEqual([]);
   expect(await alvo("2026-02-01T03:00:00Z")).toMatchObject({ podePreparar: true, pendencias: [] });
 
-  // Troca aplicada com vigência em 01/02 (00:00 em São Paulo). Atalho só desta fixture, que não tem aditivo: os registros da troca (versão e
-  // aplicação geral das condições, proposta, decisão e aplicação da moeda) são gravados com os triggers desligados; a moeda da matrícula muda pela guarda real
-  // (aplicação desta transação + GUC). O fluxo completo da troca está em aditivo.int.test.ts.
   const { hashSubstituicao } = await import("@/server/contratos/substituicao-estado");
   const condicoesTroca = { MOEDA: { tipo: "MOEDA", moeda: "USD" } };
   await prisma.$transaction(async tx => {
@@ -1047,10 +1015,8 @@ it("Q173 (R3 do #284, B4): vigência no meio do período de horas é recusada; n
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
     return carregarApuracaoHorasTx(tx, { alunoId: d.alunoId, matriculaId, periodo: { referencia: "mes-civil", inicio, fimExclusivo }, vencimento, escolha: "AGUARDAR" });
   });
-  // Janeiro, já faturado em CRC antes da vigência, continua apurável: a aula fica preservada como FATURADA.
   expect(await apurar("2026-01-01T03:00:00Z", "2026-02-01T03:00:00Z", "2026-02-10")).toMatchObject({ preservados: [{ encontroId: aulaJaneiro.id, destinacao: { tipo: "FATURADA", cobrancaId: janeiro.cobrancaId } }] });
 
-  // Fevereiro: condições de horas em USD a partir de 01/02 e aula de 10/02 conferida e fechada em USD.
   login(secretariaId);
   const usd = await prepararCondicoesHoras({ ...input(), regras: { ...regras, moeda: "USD", valorHora: "40.00", vigenteDesde: "2026-02-01T00:00:00Z" } });
   if (!usd.ok || !usd.dado) throw new Error(JSON.stringify(usd));
@@ -1067,13 +1033,9 @@ it("Q173 (R3 do #284, B4): vigência no meio do período de horas é recusada; n
   const emissao = await emitirCobrancaDaPrevia(fevereiro, "q173-b4-fechamento-fevereiro", "2026-02-15", "2026-03-10");
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } })).toMatchObject({ moeda: "USD", tipo: "HORA_PARTICULAR" });
   expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } })).valorNegociado.toFixed(2)).toBe("40.00");
-  // Janeiro segue apurável depois do fechamento de fevereiro.
   expect(await apurar("2026-01-01T03:00:00Z", "2026-02-01T03:00:00Z", "2026-02-10")).toMatchObject({ preservados: [{ destinacao: { tipo: "FATURADA", cobrancaId: janeiro.cobrancaId } }] });
 });
 
-// R4 do #284 (B5). Atalho só desta fixture, que não tem aditivo: os registros da troca são gravados com os triggers
-// desligados, em duas etapas (proposta; depois decisão e aplicação), e a moeda da matrícula muda pela guarda real
-// (aplicação desta transação + GUC). O fluxo completo da troca está em aditivo.int.test.ts.
 function trocaDeFixture(vigencia: string) {
   const id = (s: string) => `q173-b5-${s}-${Math.random().toString(36).slice(2)}`;
   const v = id("v"), pa = id("pa"), pr = id("p"), h = "a".repeat(64);
@@ -1144,7 +1106,6 @@ async function cenarioB5() {
     login(adminId); expect(await decidirCondicoesHoras({ id: usd.dado.id, aprovar: true, motivo: "Condições em USD depois da troca" })).toMatchObject({ ok: true });
     return usd.dado.id;
   };
-  // Janeiro: aula de 10/01 conferida (156,25 CRC), fechada e paga.
   const conf = await conferir(d, "q173-b5-janeiro"); if (!conf.ok) throw new Error(JSON.stringify(conf));
   const janeiro = await emitirCobrancaDaPrevia(d, "q173-b5-fechamento-janeiro");
   await pagar(janeiro.cobrancaId, "q173-b5-pagamento-janeiro");
@@ -1155,16 +1116,13 @@ it("Q173 (R4 do #284, B5): aula entre a vigência e a aplicação da troca não 
   const { d, aulaJaneiro, pendencias, conferir, informar, apurar, condicoesUsd, janeiro } = await cenarioB5().then(c => ({ ...c, aulaJaneiro: c.e }));
   const troca = trocaDeFixture("2026-02-01T03:00:00");
   await troca.propor();
-  // Aula de 05/02, depois da vigência e antes da aplicação: informada, mas não entra em HORAS_A_FATURAR (não há impasse).
   const aula = await informar("2026-02-05T15:00:00Z", "05-02");
   expect(await pendencias("2026-02-01T03:00:00")).toEqual([]);
-  // A conferência na moeda anterior é recusada na ação (prévia e conferência) e no banco.
   const mensagem = "Há troca de moeda com vigência em 01/02 aguardando aplicação; aplique a troca antes de conferir esta aula.";
   expect(await conferir(aula.dados, "q173-b5-05-02-crc")).toMatchObject({ ok: false, erro: mensagem });
   await expect(prisma.conferenciaOcorrenciaHoras.create({ data: { encontroId: aula.encontro.id, ocorrenciaId: aula.dados.ocorrenciaId, condicoesId: d.condicoesId, conferenteId: adminId,
     minutos: 60, valor: 125, moeda: "CRC", desfecho: "REALIZADA", snapshot: {}, estadoPrevia: "a".repeat(64), motivo: "Conferência direta no banco", chaveIdempotencia: "q173-b5-banco", entradaHash: "x" } })).rejects.toThrow(/aguardando aplicação; aplique a troca/);
   expect(await prisma.conferenciaOcorrenciaHoras.count({ where: { encontroId: aula.encontro.id } })).toBe(0);
-  // Depois da aplicação, a aula é conferida nas condições em USD e fevereiro fecha em USD; janeiro segue apurável.
   await troca.aplicar();
   const condicoesId = await condicoesUsd();
   const conf = await conferir({ ...aula.dados, condicoesId }, "q173-b5-05-02-usd");
@@ -1179,7 +1137,6 @@ it("Q173 (R4 do #284, B5): aula entre a vigência e a aplicação da troca não 
 
 it("Q173 (R4 do #284, B5): conferência da moeda anterior já faturada depois da vigência (dado anterior à proposta) não trava fevereiro", async () => {
   const { pendencias, conferir, pagar, informar, apurar, condicoesUsd } = await cenarioB5();
-  // Sem troca proposta ainda, a aula de 05/02 é conferida e faturada em CRC (vigência retroativa, ou dado legado).
   const aula = await informar("2026-02-05T15:00:00Z", "05-02-legado");
   const conf = await conferir(aula.dados, "q173-b5-legado-crc"); if (!conf.ok) throw new Error(JSON.stringify(conf));
   expect(await pendencias("2026-02-01T03:00:00")).toEqual(["HORAS_A_FATURAR"]);
@@ -1188,9 +1145,7 @@ it("Q173 (R4 do #284, B5): conferência da moeda anterior já faturada depois da
   expect(await pendencias("2026-02-01T03:00:00")).toEqual([]);
   const troca = trocaDeFixture("2026-02-01T03:00:00");
   await troca.propor(); await troca.aplicar();
-  // Fevereiro continua apurável: a conferência CRC faturada fica só preservada, sem gerar item.
   expect(await apurar("2026-02-01T03:00:00Z", "2026-03-01T03:00:00Z", "2026-03-10")).toMatchObject({ preservados: [{ encontroId: aula.encontro.id, destinacao: { tipo: "FATURADA", cobrancaId: crc.cobrancaId } }] });
-  // E uma aula USD de fevereiro, depois da troca, é conferida e entra na apuração do mesmo mês.
   const condicoesId = await condicoesUsd();
   const usd = await informar("2026-02-10T15:00:00Z", "10-02-usd");
   const confUsd = await conferir({ ...usd.dados, condicoesId }, "q173-b5-legado-usd"); if (!confUsd.ok) throw new Error(JSON.stringify(confUsd));

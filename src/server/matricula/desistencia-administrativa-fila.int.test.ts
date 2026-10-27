@@ -130,7 +130,6 @@ describe("fila administrativa de desistência", () => {
     expect(segunda.dado.itens).toHaveLength(1);
     expect(segunda.dado.temProxima).toBe(false);
     expect(new Set(listados)).toEqual(new Set(ids));
-    // Volta a partir do primeiro item da segunda: os mesmos pedidos da primeira, na mesma ordem, sem anterior.
     const volta = await listarPendenciasAdministrativasDesistencia({ antes: segunda.dado.anterior! });
     if (!volta.ok || !volta.dado) throw new Error("Volta ausente.");
     expect(volta.dado.itens.map((item) => item.pedido.id)).toEqual(primeira.dado.itens.map((item) => item.pedido.id));

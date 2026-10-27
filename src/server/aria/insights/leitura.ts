@@ -8,7 +8,6 @@ import type { BancoInsight } from "./persistencia";
 const statusSelect={id:true,estado:true,versao:true,iniciadaEm:true} as const;
 const status=(g:{id:string;estado:string;versao:number;iniciadaEm:Date|null})=>({geracaoId:g.id,estado:g.estado,versao:g.versao,iniciada:g.iniciadaEm!==null});
 const BaseSnapshot=z.object({base:z.object({ultimaMensagemEmISO:z.string().datetime().nullable(),referenciasHash:z.string().regex(/^[a-f0-9]{64}$/)})});
-/** GET sem provider/mutações: ACL e cache pertencem ao mesmo snapshot de leitura. */
 export async function lerInsightAutorizado(autorId:string,atendimentoId:string,opcoes:{db?:BancoInsight;geracaoId?:string}={}) {
   const db=opcoes.db??prisma;
   return db.$transaction(async tx=>{
@@ -16,7 +15,6 @@ export async function lerInsightAutorizado(autorId:string,atendimentoId:string,o
     if(!c)return null;
     const ativo=await tx.geracaoInsightInbox.findFirst({where:{atendimentoId,estado:{in:["PROCESSANDO","INCERTO"]}},select:{...statusSelect,autorId:true,contextoHash:true},orderBy:[{solicitadoEm:"desc"},{id:"desc"}]});
     const observada=opcoes.geracaoId?await tx.geracaoInsightInbox.findFirst({where:{id:opcoes.geracaoId,atendimentoId},select:statusSelect}):null;
-    // A incompatibilidade de Pessoa não impede resolver metadata; não autoriza leitura de análise.
     const ultima=c.pessoasCompativeis?await tx.geracaoInsightInbox.findFirst({where:{atendimentoId,estado:"PRONTA",contextoHash:c.contextoHash},
       orderBy:[{geradoEm:"desc"},{id:"desc"}],select:{id:true,geradoEm:true,simulada:true,resultadoJson:true,configSnapshotJson:true,baseUltimaMensagemId:true}}):null;
     let novasMensagens=0,contextoAlterado=false;

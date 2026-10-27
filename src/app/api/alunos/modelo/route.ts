@@ -13,14 +13,10 @@ import {
   VALORES_PAISES_ISO_NOMES,
 } from "@/server/alunos/importacao";
 
-// Modelo XLSX para cadastro de alunos em lote (recurso ADMIN). Colunas de lista fechada
-// (enums Gênero/Escolaridade, sim/não, País, Tipo de documento, países ISO) viram DROPDOWN
-// via data validation, com os valores numa aba auxiliar oculta ("Listas").
 export const runtime = "nodejs";
 
-const LINHAS_COM_DROPDOWN = 200; // dropdown disponível nas primeiras N linhas de dados
+const LINHAS_COM_DROPDOWN = 200;
 
-/** Coluna do Excel (1→A, 2→B, …, 27→AA). */
 function colLetra(n: number): string {
   let s = "";
   while (n > 0) {
@@ -40,7 +36,6 @@ export async function GET() {
     throw erro;
   }
 
-  // Listas dinâmicas (vêm do banco): mercados e tipos de documento distintos.
   const paises = await prisma.pais.findMany({
     orderBy: { nome: "asc" },
     include: { tiposDocumento: true },
@@ -58,7 +53,6 @@ export async function GET() {
   ws.getRow(1).font = { bold: true };
   ws.addRow(EXEMPLO_LINHA);
 
-  // Aba auxiliar com as listas (uma por coluna). Oculta — o admin não precisa vê-la.
   const listas = wb.addWorksheet("Listas");
   listas.state = "hidden";
   const LISTA_COL: Record<string, number> = {
@@ -77,8 +71,6 @@ export async function GET() {
     tipoDocumento: tiposDoc.length ? tiposDoc : ["(sem tipos cadastrados)"],
     iso: VALORES_PAISES_ISO_NOMES,
   };
-  // Cada lista vira um NOME DEFINIDO (named range) — referência de lista entre abas só
-  // resolve no Excel via nome definido; range cru (Listas!$A$2:$A$4) sai com dropdown VAZIO.
   const NOME_LISTA: Record<string, string> = {
     genero: "Lista_genero",
     escolaridade: "Lista_escolaridade",
@@ -89,16 +81,15 @@ export async function GET() {
   };
   for (const [lista, col] of Object.entries(LISTA_COL)) {
     const valores = dados[lista];
-    listas.getCell(1, col).value = lista; // rótulo (linha 1)
+    listas.getCell(1, col).value = lista;
     valores.forEach((v, i) => {
       listas.getCell(i + 2, col).value = v;
     });
     const letra = colLetra(col);
-    const fim = valores.length + 1; // valores começam na linha 2
+    const fim = valores.length + 1;
     wb.definedNames.add(`Listas!$${letra}$2:$${letra}$${fim}`, NOME_LISTA[lista]);
   }
 
-  // Aplica os dropdowns nas colunas da aba "Alunos" (linhas 2..N), referenciando o nome.
   for (const { key, lista } of DROPDOWNS_IMPORTACAO) {
     const idx = COLUNAS_IMPORTACAO.findIndex((c) => c.key === key);
     if (idx < 0) continue;

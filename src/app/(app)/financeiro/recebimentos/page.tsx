@@ -16,8 +16,6 @@ export default async function RecebimentosPage({ searchParams }: { searchParams:
   if (!papeis) return <AcessoNegado recurso="o caixa" />;
   const contextos = await listarContextosRecebimentoDestinado();
   const pagina = Number((await searchParams).pagina ?? 1);
-  // Lote 2 do fuso pessoal: dataPagamento é misto (data digitada ou instante da baixa sem data); o slice UTC punha a
-  // baixa feita à noite na escola no dia seguinte. Sai no dia da escola, sem fuso pessoal.
   const [historico, fusoEscola] = await Promise.all([consultarHistoricoRecebimentos({ pagina }), fusoDaEscola()]);
   return <section className="mx-auto max-w-4xl space-y-5"><VoltarPara href="/financeiro" /><div><h1 className="text-2xl font-medium">Registrar recebimento com destinações</h1><p className="mt-1 text-sm text-gray-600">Registre um fato de caixa e divida-o entre cobranças já emitidas do mesmo contrato ou deixe o saldo como crédito explícito. Matrículas em preparação aceitam antecipação documentada sem ativação automática.</p></div><RecebimentoDestinadoForm contextos={contextos} />
     <section className="space-y-3"><h2 className="text-xl">Histórico de recebimentos</h2>

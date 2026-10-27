@@ -7,8 +7,6 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 
-/** Formulário comum da equipe e do professor designado. A ação decide o
- * escopo atual; enviar um relato não confirma falha nem interrompe o prazo. */
 export function RelatarIndisponibilidadeReposicao({ reposicaoId }: { reposicaoId: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");

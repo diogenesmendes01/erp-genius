@@ -11,7 +11,6 @@ export interface SituacaoGuarda {
   orcamento: "OK" | "ALERTA" | "ESTOURADO";
   acaoOrcamento: AcaoOrcamentoIA;
   conversaDeGrupo: boolean;
-  /** null = ainda sem setor; vai para a triagem (Task 23), não bloqueia aqui. */
   finalidade: FinalidadeAtendimentoWhatsApp | null;
   iaPausadaEm: Date | null;
   atendimentoEncerrado: boolean;
@@ -31,14 +30,10 @@ export type MotivoBloqueio =
   | "OUTRO_SETOR"
   | "LINHA_COM_DONO"
   | "SEM_TEXTO"
-  /** Rajada: chegou fala mais nova do cliente no atendimento; o turno dela responde ao conjunto. */
   | "FALA_SUPERADA";
 
-// Texto puro, ou mídia que pode carregar legenda (a legenda vira o texto do turno).
-// Também define o que conta como "fala mais nova" na rajada: só inbound que a Aria responderia.
 export const TIPOS_COM_TEXTO: ReadonlySet<TipoMensagem> = new Set(["TEXTO", "IMAGEM", "VIDEO", "DOCUMENTO"]);
 
-/** Leis de código: primeiro motivo que impede a Aria de atuar, ou null. GRUPO vence todas. */
 export function motivoParaNaoAtuar(s: SituacaoGuarda): MotivoBloqueio | null {
   if (s.conversaDeGrupo) return "GRUPO";
   if (s.estado === "DESLIGADA") return "DESLIGADA";
@@ -53,7 +48,6 @@ export function motivoParaNaoAtuar(s: SituacaoGuarda): MotivoBloqueio | null {
   return null;
 }
 
-/** Orçamento estourado com SO_SUGERIR: a Aria atua, mas só sugere (nada sai). */
 export function forcarSoSugerir(s: SituacaoGuarda): boolean {
   return s.orcamento === "ESTOURADO" && s.acaoOrcamento === "SO_SUGERIR";
 }

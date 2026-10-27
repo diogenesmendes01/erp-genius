@@ -16,7 +16,6 @@ const Entrada = z.object({
   encontros: z.array(z.object({
     encontroId: id, matriculaId: id, inicio: instante, fim: instante,
     contratoVersaoId: id.nullable(), moeda: id, valorHoraContratado: monetario.nullable(),
-    // Somente uma destinação conferida impede nova cobrança. Reserva pendente não é quitação.
     destinacao: z.discriminatedUnion("tipo", [
       z.object({ tipo: z.literal("SEM_DESTINACAO") }).strict(),
       z.object({ tipo: z.literal("ANTECIPACAO_PENDENTE"), reservaId: id }).strict(),
@@ -30,10 +29,6 @@ const Entrada = z.object({
 
 export type EntradaFechamentoHoras = z.input<typeof Entrada>;
 
-/** Apuração interna, sem efeitos. Origens devem ser carregadas e revalidadas pelo serviço;
- * este plano não comprova conferência, aprovação, quitação ou emissão no banco.
- * Os limites do período vêm da referência contratual, separados do vencimento.
- */
 export function apurarFechamentoHoras(input: EntradaFechamentoHoras) {
   const d = Entrada.parse(input);
   if (Date.parse(d.periodo.fimExclusivo) <= Date.parse(d.periodo.inicio)) throw new Error("Período de apuração inválido.");
@@ -85,6 +80,5 @@ export function apurarFechamentoHoras(input: EntradaFechamentoHoras) {
   return { matriculaId: d.matriculaId, periodo: d.periodo, vencimento: d.vencimento, moeda: d.moeda,
     estado, exigeAprovacaoIndependente: estado === "PROPOSTA_PARCIAL", itens, pendencias, preservados, semCobranca,
     totalApurado: total.toFixed(2), minutosApurados: itens.reduce((s, i) => s + i.minutos, 0),
-    // Mantém a apuração visível mesmo quando a decisão foi aguardar.
     emiteCobranca: false as const, alteraDiario: false as const };
 }

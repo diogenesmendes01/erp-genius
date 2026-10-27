@@ -10,12 +10,10 @@ type Aba = "responder" | "nota";
 export interface ControleResposta { selecionarResponder(): void }
 export type PropsRodapeConversa = Omit<PropsCompositor, "modo" | "contido" | "pedidoFoco"> & {
   modo: "travado" | "compositor";
-  /** Ponte local da conversa: muda a aba sem remontar o compositor/rascunho. */
   controleResposta?: Ref<ControleResposta>;
   abaInicial?: Aba;
   pedidoNota?: number;
   aoCriarTarefa?: () => void;
-  /** Grupos não são atendimentos individuais anotáveis; a action revalida o escopo. */
   podeAnotar?: boolean;
   travado?: { texto: string; aoNota(): void; aoAssumir?: () => void; ocupado?: boolean };
 };

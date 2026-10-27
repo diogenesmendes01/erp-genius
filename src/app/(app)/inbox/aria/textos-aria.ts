@@ -13,7 +13,6 @@ export function linhaEstadoAria(estado: EstadoAria | null, o: { atendidoPorVoce:
   const texto = estado === "ia" ? "Aria está atendendo" : estado === "aprovacao" ? (o.podeDecidir ? "Aria aguarda sua aprovação" : "Aria aguarda aprovação") : estado === "handoff" ? "Aria pediu um humano" : o.atendidoPorVoce ? "Você está atendendo" : nome ? `${nome} está atendendo` : "Uma pessoa está atendendo";
   return { tom: estado, texto, dica: o.pausada ? textoPausaAria(o.motivo) : null };
 }
-/** Duração por instantes; datas inválidas não produzem uma idade fictícia. */
 export function haQuanto(iso: string, agora: Date): string {
   const diferenca = agora.getTime() - new Date(iso).getTime();
   if (!Number.isFinite(diferenca)) return "";

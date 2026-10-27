@@ -6,10 +6,6 @@ import { competenciasFaturaveis, obterEmpresa } from "@/server/empresas/consulta
 import { listarProdutosParaMatricula } from "@/server/matricula/consultas";
 import { FichaEmpresa } from "./FichaEmpresa";
 
-// B2B — ficha da empresa (Fase 2, doc 03): dados do contrato corporativo, RELATÓRIO POR
-// COLABORADOR, matrículas em LOTE e faturas únicas (fechar/pagar/cancelar). As ações de fatura estão desligadas
-// pela decisão D9 (src/lib/funcionalidades.ts): as faturas antigas aparecem só para consulta.
-
 const PAPEIS: Papel[] = [Papel.FINANCEIRO];
 
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {

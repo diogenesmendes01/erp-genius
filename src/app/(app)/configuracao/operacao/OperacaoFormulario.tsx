@@ -9,8 +9,6 @@ import { CampoFuso } from "@/components/CampoFuso";
 
 export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferenciaHoras, fusoInstitucional, prazoReservaMinutos }: { exigirPrimeiraMensalidade: boolean; prazoConferenciaHoras: number | null; fusoInstitucional: string | null; prazoReservaMinutos: number | null }) {
   const router = useRouter();
-  // Sem chave de idempotência: cada gravação sobrescreve o singleton e registra um evento de alteração.
-  // A falha de rede manda conferir a configuração recarregada antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
   async function salvar(form: FormData) {
     const desfecho = await acao.executar(() => salvarConfiguracaoOperacional({ prazoReservaMinutos: String(form.get("reserva") ?? "").trim() ? Number(form.get("reserva")) : null, exigirPrimeiraMensalidade: form.get("primeira") === "on", prazoConferenciaHoras: Number(form.get("prazo")), fusoInstitucional: String(form.get("fuso") ?? "").trim() || undefined }), "Configuração salva.");

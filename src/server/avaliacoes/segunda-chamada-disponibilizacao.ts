@@ -11,7 +11,6 @@ import { instanteUtcSql } from "./segunda-chamada-utc";
 
 const schema = z.object({ propostaId: z.string().min(1).max(100), propostaHash: z.string().regex(/^[a-f0-9]{64}$/), disponibilizadaEm: z.string().datetime({ offset: true }), condicoes: z.string().trim().min(5).max(4000), evidenciaComunicacao: z.string().trim().min(5).max(4000) }).strict();
 
-/** Q149: publica as condições uma vez e fixa o prazo configurado da regra vinculada. */
 export async function disponibilizarSegundaChamada(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = schema.parse(input);

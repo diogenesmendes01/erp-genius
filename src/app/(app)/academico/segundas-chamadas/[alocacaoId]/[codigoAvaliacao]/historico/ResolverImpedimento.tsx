@@ -12,10 +12,8 @@ import { confirmarResolucaoImpedimentoSegundaChamada } from "@/server/avaliacoes
 
 const CONTROLE = "block w-full rounded border p-2";
 
-/** Q164: a gestão aponta a realização posterior com nota oficial; o impedimento original permanece no histórico. */
 export function ResolverImpedimento({ reservaImpedidaId, realizacoes }: { reservaImpedidaId: string; realizacoes: { id: string; rotulo: string }[] }) {
   const router = useRouter();
-  // A action devolve a resolução já registrada quando a mesma chave chega de novo com a mesma entrada.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [realizacaoId, setRealizacaoId] = useState(realizacoes.length === 1 ? realizacoes[0].id : "");

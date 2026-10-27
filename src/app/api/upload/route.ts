@@ -8,16 +8,10 @@ import { exigirSessao, exigirPapel, ErroAutenticacao, ErroPermissao } from "@/se
 import { UPLOAD_DIR } from "@/lib/uploads";
 import { validarContextoArquivo } from "@/server/uploads/autorizacao";
 
-// Upload de comprovantes / contratos / documentos (doc 09).
-// Storage PRIVADO em data/uploads (fora de public/) — os arquivos NÃO são servidos
-// estaticamente. A leitura passa por GET /api/files/[...path], que valida a sessão.
-// Para serverless, trocar por S3/Supabase (signed URLs).
 export const runtime = "nodejs";
 
-// Só documentos/imagens: comprovante e contrato não têm áudio/vídeo. A mídia da inbox
-// WhatsApp usa a rota própria POST /api/whatsapp/upload (posse por autor — PR #51 P1-2).
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_BYTES = 10 * 1024 * 1024;
 
 export async function POST(req: Request) {
   let usuario;
@@ -62,8 +56,7 @@ export async function POST(req: Request) {
   const mime = file.type.split(";")[0].trim();
   const extensao = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : "jpg";
   const nomeArquivo = `${randomUUID()}.${extensao}`;
-  // Storage de runtime não é um recurso a copiar para o bundle standalone.
-  const arquivo = path.join(/* turbopackIgnore: true */ UPLOAD_DIR, nomeArquivo);
+  const arquivo = path.join( UPLOAD_DIR, nomeArquivo);
   const url = `/api/files/${nomeArquivo}`;
   await writeFile(arquivo, bytes, { flag: "wx" });
   try {
@@ -73,6 +66,5 @@ export async function POST(req: Request) {
     throw erro;
   }
 
-  // URL servida pela rota autenticada — nunca um caminho público estático.
   return NextResponse.json({ url, nome: file.name });
 }

@@ -9,16 +9,6 @@ export type ImpactosCorrecaoReposicao = {
   impactos: ImpactoMudancaProgressao[];
 };
 
-/**
- * Q54/Q154: a frequência do nível inclui todos os vínculos conferidos da
- * mesma matrícula e nível, mesmo quando a troca de turma não teve
- * equivalência de notas. Este coletor reproduz esse escopo; não usa uma
- * cadeia de aplicações de equivalência como atalho.
- *
- * O vínculo da aula original é resolvido pelo mesmo intervalo semiaberto da
- * apuração de frequência. Para vínculos M01, a data técnica de criação é a
- * importação atual; a fonte é a vigência histórica semiaberta registrada.
- */
 export async function carregarImpactosCorrecaoReposicaoTx(
   tx: Prisma.TransactionClient,
   entrada: { reposicaoId: string },
@@ -44,7 +34,6 @@ export async function carregarImpactosCorrecaoReposicaoTx(
   });
 }
 
-/** Compartilhado por Q23 e Q54: fonte conferida pelo chamador, sob lock da agenda. */
 export async function carregarImpactosFrequenciaAulaTx(tx: Prisma.TransactionClient, fonte: {
   matriculaId: string; alunoId: string; turmaId: string; nivelId: string; inicio: Date;
 }): Promise<ImpactosCorrecaoReposicao> {

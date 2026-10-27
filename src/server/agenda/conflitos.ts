@@ -4,7 +4,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 
-/** Prévia de sobreposição; não autoriza publicação nem substitui revalidação transacional. */
 export async function consultarConflitosEncontro(input: { encontroId: string }) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);

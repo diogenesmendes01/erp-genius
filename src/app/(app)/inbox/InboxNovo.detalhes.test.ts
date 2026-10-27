@@ -11,7 +11,6 @@ vi.mock("./useEventosInbox", () => ({ useEventosInbox: (aoAviso: (a: AvisoInbox)
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: () => ({ mensagens: [] }) }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: async () => ({ ok: true }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn(), enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn() }));
-// A thread e suas escritas são outra fronteira; casca, abas, campos e hook continuam reais.
 vi.mock("./ConversaAberta", async () => { const { createElement } = await import("react"); return { ConversaAberta: () => createElement("header", null, "Conversa") }; });
 vi.mock("@tabler/icons-react", async original => { const real = await original<Record<string, unknown>>(); const { createElement } = await import("react"); return Object.fromEntries(Object.entries(real).map(([k, v]) => [k, k.startsWith("Icon") ? () => createElement("span") : v])); });
 import { InboxNovo } from "./InboxNovo";

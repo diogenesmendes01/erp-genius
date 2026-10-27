@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// D9 (decisão do dono, 19/10/2026): a escola não usa a cobrança de empresas (fatura B2B, docs/42 L2282). Com a
-// chave COBRANCA_B2B_ATIVA desligada, fechar e pagar fatura recusam com mensagem clara, depois da sessão e da
-// alçada e antes de qualquer leitura ou escrita. Cancelar continua (R1 do #251, B1): só desfaz o agrupamento, e é o
-// caminho que a pausa do aluno, o ajuste e a baixa pedem para uma fatura FECHADA antiga.
-
 const m = vi.hoisted(() => ({
   ativa: false,
   sessao: vi.fn(), papel: vi.fn(), evento: vi.fn(), revalidar: vi.fn(), transacao: vi.fn(),
@@ -66,7 +61,7 @@ describe("fatura B2B com a cobrança de empresas desligada (D9)", () => {
   for (const [nome, chamar] of Object.entries(acoes)) {
     it(`${nome} recusa com a mensagem clara, sem ler nem gravar nada`, async () => {
       expect(await chamar()).toEqual({ ok: false, erro: MSG_COBRANCA_B2B_DESLIGADA });
-      expect(m.sessao).toHaveBeenCalledTimes(1); // sessão e alçada continuam antes da recusa
+      expect(m.sessao).toHaveBeenCalledTimes(1);
       expect(m.transacao).not.toHaveBeenCalled();
       expect(m.empresa.findUnique).not.toHaveBeenCalled();
       expect(m.evento).not.toHaveBeenCalled();

@@ -50,7 +50,6 @@ describe("MovimentacoesPage preferência de fuso", () => {
     expect(html).toContain('data-compras="America/Costa_Rica"');
     expect(html).toContain('data-cumprimento="America/Costa_Rica"');
     expect(html).toContain('data-acerto="America/Costa_Rica"');
-    // Datas civis (@db.Date) em dd/mm/aaaa, sem o ISO cru (docs/43 §6 item 6).
     expect(html).toContain("Registrado por Secretaria em 01/01/2099. Encerramento solicitado para 02/01/2099.");
     expect(html).not.toContain("2099-01-01");
     expect(html).toContain('href="/alunos/aluno/movimentacoes?pagina=2"');
@@ -69,7 +68,6 @@ describe("MovimentacoesPage preferência de fuso", () => {
     mocks.pedidos.mockResolvedValue({ pagina: 1, temProxima: false, pedidos: [] });
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }), searchParams: Promise.resolve({ pagina: ["2", "3"] }) }));
     expect(mocks.pedidos).toHaveBeenCalledWith({ alunoId: "aluno", pagina: 1 }, expect.objectContaining({ id: "financeiro" }));
-    // Primeira página sem pedidos: não existe pedido nenhum — nada de "nesta página" (docs/42).
     expect(html).toContain("Nenhum pedido de encerramento registrado para este aluno.");
     expect(html).not.toContain("nesta página");
   });
@@ -91,7 +89,6 @@ describe("MovimentacoesPage preferência de fuso", () => {
   });
 });
 
-// C11 da #170: `financeiro.aprovar_acertos` vem do usuário da sessão, sem reler `usuario` no banco.
 describe("MovimentacoesPage capacidade de aprovar acertos", () => {
   beforeEach(() => {
     vi.resetAllMocks();

@@ -22,8 +22,6 @@ type Props = { config: ConfigAria; baseVersaoId: string | null; rascunho: Rascun
 
 export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fontes }: Props) {
   const router = useRouter();
-  // Este executor só cria fonte, e criarFonteTexto recebe chave de idempotência (#166): o reenvio depois de um
-  // resultado incerto devolve a fonte já criada. Arquivar usa o ConfirmarAcao, com executor próprio.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [c, setC] = useState<ConfigAria>(config);
@@ -138,7 +136,6 @@ export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fonte
 
       {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
 
-      {/* Arquivar é idempotente por natureza (#166, 5º lote): o reenvio de quem arquivou devolve ok sem outro Evento. */}
       {arquivando && (
         <ConfirmarAcao
           titulo={`Arquivar a fonte ${arquivando.nome}?`}

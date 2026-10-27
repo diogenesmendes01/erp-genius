@@ -4,10 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { trilhaDoCaminho } from "@/lib/trilha";
 
-/**
- * Trilha de navegação (breadcrumb) do shell (E2): de onde a tela vem e como subir, sem depender do
- * "Voltar" de cada página. Aparece a partir do segundo nível conhecido (na área em si, o menu basta).
- */
 export function Trilha() {
   const itens = trilhaDoCaminho(usePathname() ?? "");
   if (itens.length < 2) return null;

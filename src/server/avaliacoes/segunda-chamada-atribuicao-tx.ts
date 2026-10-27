@@ -9,7 +9,6 @@ type Entrada = {
   fim: Date;
 };
 
-/** A fonte SQL confere cada faixa de [início, fim), inclusive trocas de vínculo ou designação. */
 export async function professorSegundaChamadaCobreIntervaloTx(
   tx: PrismaTypes.TransactionClient,
   entrada: Entrada,

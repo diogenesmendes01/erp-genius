@@ -57,7 +57,6 @@ describe("Respostas rápidas", () => {
     const x = await salvarRespostaRapida(r);
     if (!x.ok || !x.dado) throw new Error("falha");
     const modelo = await prisma.templateWhatsApp.create({ data: { nome: "amigavel", corpo: "Oi {nome}" } });
-    // Consumidores reais (não só o helper): tela de templates e tela de avisos da agenda.
     expect((await listarTemplatesConfig()).map((t) => t.id)).toEqual([modelo.id]);
     expect((await carregarConfiguracaoAvisosAgenda()).templates.map((t) => t.id)).toEqual([modelo.id]);
     const politica = (templateId: string) => ({
@@ -91,7 +90,6 @@ describe("Respostas rápidas", () => {
     if (!x.ok || !x.dado) throw new Error("falha");
     expect((await salvarRespostaRapida({ ...r, id: x.dado.id, titulo: "Preço 2" })).ok).toBe(true);
     expect((await arquivarRespostaRapida(x.dado.id)).ok).toBe(true);
-    // Reenvio do arquivar (PR #267 C2): ok, sem segundo Evento.
     expect((await arquivarRespostaRapida(x.dado.id)).ok).toBe(true);
     expect((await salvarRespostaRapida({ ...r, id: x.dado.id })).ok).toBe(false);
     expect(await listarRespostasRapidas({ id: admin.id, nome: "A", papeis: [Papel.ADMINISTRADOR] })).toEqual([]);

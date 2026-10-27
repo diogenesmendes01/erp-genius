@@ -22,7 +22,6 @@ it("mostra a origem e o antes/depois sem aceitar ID de arquivo, fonte ou propost
       podeDecidir: true, decisao: null, fonteMaterial: null,
     }], fusoExibicao: "America/Costa_Rica",
   }));
-  // A revisão do Drive é texto secundário (title), não o texto da fonte (docs/43 §6 item 7).
   expect(tela).toContain('title="Revisão fixa no Drive: material-r1">Material: versão 1, com revisão fixada.');
   expect(tela).toContain('title="Revisões no Drive: material-r1 → aula-r2">Material v1 → publicação v2</p>');
   expect(tela).not.toMatch(/>[^<]*(?:material-r1|aula-r2)[^<]*</);

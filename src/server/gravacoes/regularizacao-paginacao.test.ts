@@ -2,7 +2,6 @@ import { expect, it, vi } from "vitest";
 
 type Item = { id: string } & Record<string, unknown>;
 const estado = vi.hoisted(() => ({ publicacoes: [] as Item[], materiais: [] as Item[], propostas: [] as Item[], chamadas: [] as { orderBy?: unknown; skip?: number; take?: number }[] }));
-// Como o Prisma: os itens já vêm na ordem de id; aplica skip/take e guarda os argumentos para conferir a ordem.
 const pagina = (itens: Item[], args: { orderBy?: unknown; skip?: number; take?: number }) => {
   estado.chamadas.push(args);
   const inicio = args.skip ?? 0;
@@ -49,11 +48,8 @@ it.each([[0, 25], [3, 25], [25, 3], [25, 0]])("pagina alvos assimétricos %i/%i 
   expect(vistos.m).toEqual(estado.materiais.map((x) => x.id));
   expect(vistos.q).toEqual(estado.propostas.map((x) => x.id));
   expect(new Set(vistos.q).size).toBe(51);
-  // 51 propostas, 20 por página: três páginas, a última sem próxima.
   expect(paginas).toHaveLength(3);
-  // Volta: a segunda e a primeira página, lidas de novo, trazem os mesmos itens.
   expect(ids(await consultarRegularizacoesFonteGravacao({ pagina: 2 }))).toEqual(paginas[1]);
   expect(ids(await consultarRegularizacoesFonteGravacao({}))).toEqual(paginas[0]);
-  // Ordem estável: as três listas são lidas por id.
   expect(estado.chamadas.every((args) => JSON.stringify(args.orderBy) === JSON.stringify({ id: "asc" }))).toBe(true);
 });

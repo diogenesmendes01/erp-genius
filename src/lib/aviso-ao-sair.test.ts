@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3: o aviso de saída (beforeunload) liga só com alteração não salva e desliga ao salvar.
-// Sem DOM: `window` falso (só add/removeEventListener) e os efeitos do React simulados com as dependências
-// (o efeito roda de novo — e o anterior é desfeito — só quando `sujo` muda), como o React faz.
 const m = vi.hoisted(() => {
   type Efeito = { deps: unknown[] | undefined; desfazer: (() => void) | void };
   let efeitos: Efeito[] = [];
@@ -28,13 +25,11 @@ vi.mock("react", async (original) => {
 
 import { pedirConfirmacaoDeSaida, useAvisoAoSair } from "./aviso-ao-sair";
 
-/** O mínimo de `window` que o aviso usa. */
 type AlvoDoAviso = {
   addEventListener(tipo: "beforeunload", ouvinte: (evento: BeforeUnloadEvent) => void): void;
   removeEventListener(tipo: "beforeunload", ouvinte: (evento: BeforeUnloadEvent) => void): void;
 };
 
-/** `window` falso: guarda os ouvintes de beforeunload registrados agora. */
 function janelaFalsa() {
   const ouvintes = new Set<(e: BeforeUnloadEvent) => void>();
   const alvo: AlvoDoAviso & { ouvintes: typeof ouvintes; adicoes: number } = {
@@ -44,7 +39,6 @@ function janelaFalsa() {
   };
   return alvo;
 }
-/** Dispara o beforeunload: devolve se o navegador perguntaria (preventDefault ou returnValue). */
 function sair(janela: ReturnType<typeof janelaFalsa>) {
   const evento = { prevenido: false, returnValue: undefined as unknown, preventDefault() { this.prevenido = true; } };
   for (const f of janela.ouvintes) f(evento as unknown as BeforeUnloadEvent);
@@ -72,7 +66,7 @@ describe("useAvisoAoSair", () => {
     tela(true);
     tela(true);
     expect(janela.adicoes).toBe(1);
-    tela(false); // salvou
+    tela(false);
     expect(janela.ouvintes.size).toBe(0);
     expect(sair(janela)).toBe(false);
   });

@@ -5,7 +5,6 @@ import { dataCivilDoItem, deslocarData, diasDoMes, hrefTarefas, rotuloDia, rotul
 
 const CABECALHO = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
 
-/** Mês: um quadro por dia com a contagem; clicar abre o dia. No celular, só os dias com itens aparecem. */
 export function CalendarioTarefas({ data, hoje, itens, fusoEscola, params }: { data: string; hoje: string; itens: ItemAgenda[]; fusoEscola: string; params: ParamsTarefas }) {
   const dias = diasDoMes(data);
   const porDia = new Map<string, { tarefas: number; mensagens: number; titulos: string[] }>();

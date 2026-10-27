@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Editar o nome salvo do contato pela thread (29/09/2026): alcance de quem responde a conversa,
-// nunca no pedagógico, gravação condicional (duas edições não se sobrescrevem) e auditoria.
-
 const m = vi.hoisted(() => ({
   sessao: vi.fn(), visivel: vi.fn(), soNoAlcance: vi.fn(), evento: vi.fn(),
   tx: { contatoWhatsApp: { updateMany: vi.fn() } },
@@ -41,7 +38,7 @@ beforeEach(() => {
 describe("editarNomeContatoWhatsApp", () => {
   it("salva o nome (sem espaços nas pontas), marca a edição da equipe e audita antes/depois", async () => {
     expect(await editarNomeContatoWhatsApp({ atendimentoId: "at", nome: "  Dr. Victor Maruyama ", nomeAnterior: null })).toEqual({ ok: true, dado: undefined });
-    expect(m.visivel).toHaveBeenCalledWith(expect.anything(), "at"); // leitura basta: renomear não envia nada
+    expect(m.visivel).toHaveBeenCalledWith(expect.anything(), "at");
     expect(gravado().where).toEqual({ id: "contato", nomeExibicao: null });
     expect(gravado().data).toEqual({ nomeExibicao: "Dr. Victor Maruyama", nomeEditadoEm: expect.any(Date) });
     expect(m.evento).toHaveBeenCalledWith(m.tx, expect.objectContaining({ tipo: "ContatoRenomeado", agregadoTipo: "ContatoWhatsApp",

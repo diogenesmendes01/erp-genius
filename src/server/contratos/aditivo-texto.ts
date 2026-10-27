@@ -11,8 +11,6 @@ const referencia = z.object({
   pdfHash: z.string().regex(/^[a-f0-9]{64}$/),
 }).strict();
 
-/** Projeção documental de fatos recarregados no servidor. Não é entrada de
- * formulário nem comprova aprovação, assinatura ou autorização para aplicar. */
 export const BaseTextoAditivoSchema = z.object({
   contratoOriginal: referencia,
   aditivosAnteriores: z.array(referencia).max(1000),
@@ -39,7 +37,6 @@ export function preencherTextoAditivo(conteudo: unknown, basePreservada: unknown
   const modelo = ConteudoModeloSchema.parse(conteudo);
   if (modelo.finalidade !== "ADITIVO") throw new ErroRegra("Use um modelo institucional de aditivo.");
   const base = BaseTextoAditivoSchema.parse(basePreservada);
-  // Declarar um campo sem incluí-lo no corpo não formaliza a informação.
   for (const origem of obrigatorias) {
     const chaves = modelo.campos.filter(c => c.origem === origem).map(c => c.chave);
     if (!chaves.some(chave => modelo.secoes.some(s => s.texto.includes(`{{${chave}}}`)))) {
@@ -49,7 +46,6 @@ export function preencherTextoAditivo(conteudo: unknown, basePreservada: unknown
   const descreverReferencia = (r: z.infer<typeof referencia>) => `${r.documentoId} — SHA-256 ${r.pdfHash}`;
   return preencherModelo(modelo, {
     ...fontesInstitucionais,
-    // A fonte genérica não pode substituir os fatos específicos preservados.
     ADITIVO_CONTRATO_ORIGINAL: descreverReferencia(base.contratoOriginal),
     ADITIVO_ANTERIORES: base.aditivosAnteriores.length
       ? base.aditivosAnteriores.map(descreverReferencia).join("\n") : "Nenhum aditivo anterior vinculado.",

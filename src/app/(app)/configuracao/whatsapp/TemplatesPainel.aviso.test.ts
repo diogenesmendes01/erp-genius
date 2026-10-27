@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3: o editor de templates do WhatsApp avisa ao sair só com alteração não salva — abrir e
-// fechar sem mexer, ou salvar, não deixa aviso ligado. O gancho é observado pelo valor de `sujo` a cada render
-// (o beforeunload em si está em src/lib/aviso-ao-sair.test.ts). Sem DOM: ganchos de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   aviso: vi.fn(), salvar: vi.fn(), refresh: vi.fn(),

@@ -35,7 +35,6 @@ export async function validarFonteAditivoAgendaTx(tx: Prisma.TransactionClient |
   return atuais.every(atual => { const esperado = fotografados.find(f => f.encontroId === atual.id); return !!esperado && atual.professorId === esperado.professorNovoId && atual.inicio.getTime() === new Date(esperado.inicioNovo).getTime() && atual.fim.getTime() === new Date(esperado.fimNovo).getTime() && atual.fusoOrigem === esperado.fusoNovo; }) ? { id: aplicacao.id } : null;
 }
 
-/** Cria avisos para a matrícula afetada, na transação da alteração aplicada. */
 export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; matriculaId: string; encontrosIds: string[] }) {
   const evento = await tx.evento.findUnique({ where: { id: entrada.eventoId }, select: { agregadoTipo: true, agregadoId: true, tipo: true, payload: true } });
   const remarcacao = evento?.agregadoTipo === "Matricula" && evento.agregadoId === entrada.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(evento.tipo);
@@ -72,8 +71,6 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
     return [];
   }
   if (matricula.aluno.email) canais.push({ canal: "EMAIL", contato: matricula.aluno.email.trim().toLowerCase(), destinatarioAlunoId: matricula.alunoId });
-  // Responsável financeiro não é destinatário acadêmico. O aluno opt-in e cada
-  // responsável pedagógico com autorização vigente podem coexistir como destinos.
   if (matricula.aluno.whatsapp && matricula.aluno.telefoneE164) canais.push({ canal: "WHATSAPP", contato: matricula.aluno.telefoneE164, destinatarioAlunoId: matricula.alunoId });
   for (const autorizacao of matricula.autorizacoesComunicacaoAcademica) if (autorizacao.responsavel.telefoneE164 && autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === matricula.alunoId)) canais.push({ canal: "WHATSAPP", contato: autorizacao.responsavel.telefoneE164, destinatarioResponsavelId: autorizacao.responsavelId, autorizacaoComunicacaoAcademicaId: autorizacao.id });
   if (!canais.length) {
@@ -83,8 +80,6 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   if (fonteQuantidade && !envioQuantidadeAulasHabilitado()) await registrarPendenciaAvisoAgendaTx(tx, { eventoId: entrada.eventoId, matriculaId: matricula.id, motivo: MotivoPendenciaAvisoAgenda.CONFIGURACAO_INDISPONIVEL });
   const avisos = [];
   for (const { canal, contato, destinatarioAlunoId, destinatarioResponsavelId, autorizacaoComunicacaoAcademicaId } of canais) {
-    // Email preserva a chave histórica, inclusive se o endereço atual mudou;
-    // WhatsApp pode ter vários destinatários autorizados e inclui o hash.
     const chave = canal === "EMAIL"
       ? `agenda:${entrada.eventoId}:${matricula.id}:${canal}`
       : `agenda:${entrada.eventoId}:${matricula.id}:${canal}:${hashContato(contato)}`;
@@ -102,7 +97,6 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
 
 export type EntregarAvisoAgenda = (entrada: { canal: Canal; destinatario: string; avisoId: string; encontrosIds: string[] }) => Promise<{ situacao: "ACEITO"; provedorId: string } | { situacao: "RECUSADO" | "INCERTO" }>;
 
-/** Executa apenas o transporte injetado; o processamento automático fica desligado por padrão. */
 export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar: EntregarAvisoAgenda) {
   const preparado = await prisma.$transaction(async tx => {
     const aviso = await tx.avisoAlteracaoAgenda.findUnique({ where: { id }, include: { aluno: true, matricula: true, evento: true, itens: { include: { encontro: true } } } });
@@ -150,18 +144,13 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
 
 export async function processarAvisosAlteracaoAgenda(entregar: EntregarAvisoAgenda) {
   if (!envioAvisosAgendaHabilitado()) return 0;
-  // Configuração ausente é pendência anterior ao envio: não faz claim, tentativa
-  // nem transforma o aviso em INCERTO.
   let processados = 0;
-  // WhatsApp só entra no worker quando houver finalidade institucional explícita
-  // para avisos de agenda; não reutiliza números de vendas ou cobrança.
   if (process.env.RESEND_API_KEY?.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.EMAIL_INSTITUCIONAL_REMETENTE?.trim() ?? "")) {
     const avisos = await prisma.avisoAlteracaoAgenda.findMany({ where: { situacao: "PREPARADO", canal: "EMAIL" }, take: 20, select: { id: true } });
     for (const aviso of avisos) await despacharAvisoAlteracaoAgendaInterna(aviso.id, entregar);
     processados += avisos.length;
   }
   const enfileirados = await enfileirarAvisosAgendaWhatsApp();
-  // Também escoa itens já enfileirados, sem tocar as filas financeira/comercial.
   await despacharFila(new Date(), { somenteAvisosAgenda: true });
   return processados + enfileirados;
 }

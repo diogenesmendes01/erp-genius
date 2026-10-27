@@ -33,40 +33,27 @@ import { itensDoMenuConversa, type AcoesCabecalho } from "./MenuConversa";
 export interface DestinoTransferencia { chave: string; nome: string; finalidade: Setor; disponivel?: boolean }
 
 export interface PropsAcoesAtendimento {
-  /** D3: somente o contexto Aria usa a nova action; a capacidade vem do painel autorizado. */
   contextoAria?: boolean;
-  /** Revalida somente o GET de sugestão enquanto o scheduler estiver aberto. */
   versaoInsights?: number;
-  /** Aplicabilidade do DTO autorizado da conversa; não concede permissão no servidor. */
   podeUsarInsights?: boolean;
   podeAssumirAria?: boolean;
   grupo?: boolean;
-  /** Callback autorizado pelo painel: tarefas não dependem da permissão de envio. */
   aoCriarTarefa?: () => void;
   atendimento: { id: string; finalidade: Setor; responsavelId: string | null; status: StatusAtendimentoWhatsApp };
   usuario: { id: string; papeis: Papel[] };
   setoresDoNumero: Setor[];
   fixada: boolean;
   silenciada: boolean;
-  /** Atendimento COMERCIAL de linha de vendas e o dono da linha: decidem se "Assumir" aparece (C3 da revisão da 3C). */
   linhaComercial?: boolean;
   donoLinhaId?: string | null;
-  /** Destinos com contexto (FINANCEIRO e PEDAGOGICO exigem escolher a matrícula/aluno); vêm de `listarOpcoesAtendimento`. */
   destinos?: DestinoTransferencia[];
-  /** Depois de qualquer ação concluída (a tela recarrega a lista). */
   aoMudar?: () => void;
-  /** Fuso de exibição de quem lê (o pessoal; sem ele, o da escola), já resolvido pela página do Inbox. */
   fuso: string | null;
 }
 
 const SILENCIO_HORAS = 8;
 const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
-/**
- * Horário de agendamento, lido no `fuso` escrito ao lado do campo (não no do navegador): vazio, inválido (inclusive
- * horário pulado ou repetido no horário de verão) ou que não é futuro são recusados na própria tela. Quem converte
- * de verdade é o servidor (agendarMensagemNoAtendimentoLocal), que revalida.
- */
 export function validarQuando(quando: string, fuso: string, agora: Date = new Date()): string | null {
   if (!quando) return "Escolha o dia e a hora do envio.";
   const r = instanteDoCampoLocal(quando, fuso);
@@ -75,7 +62,6 @@ export function validarQuando(quando: string, fuso: string, agora: Date = new Da
   return null;
 }
 
-/** Setores para onde transferir: os do número, menos o atual. */
 export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): Setor[] {
   return setoresDoNumero.filter((s) => s !== atual);
 }
@@ -85,9 +71,7 @@ type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar
 export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
-  // Fixar alterna o estado: o reenvio desfaria o primeiro clique, então fica sem garantia de repetição.
   const direta = useAcaoCliente({ idempotente: false });
-  // Assumir e devolver são idempotentes por natureza (#166): o reenvio de quem já fez a ação devolve ok sem Evento.
   const responsavel = useAcaoCliente({ idempotente: true });
   const aberto = atendimento.status !== "ENCERRADO";
   const ctx = { setor: atendimento.finalidade, responsavelId: atendimento.responsavelId, linhaComercial, donoLinhaId };
@@ -100,7 +84,6 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
     if (d?.tipo === "ok") { aposSucesso?.(); setAviso(sucesso); aoMudar?.(); }
   }
   const concluir = (msg: string) => { setDialogo(null); setAviso(msg); aoMudar?.(); };
-  // Revogar convite / cancelar agendamento: o diálogo de pendências continua aberto para as próximas.
   const avisar = (qual: "convite" | "agendamento") => { setAviso(qual === "convite" ? "Convite revogado." : "Agendamento cancelado."); aoMudar?.(); };
 
   const ocupado = direta.ocupado || responsavel.ocupado;
@@ -166,7 +149,6 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
 
 interface PropsDialogo { aoFechar: () => void; aoConcluir: () => void }
 
-/** Rodapé comum: erro da action em FeedbackAcao, dentro do diálogo. */
 function Rodape({ ocupado, aoFechar, children }: { ocupado: boolean; aoFechar: () => void; children: React.ReactNode }) {
   return (
     <div className="mt-4 flex justify-end gap-2">
@@ -177,7 +159,6 @@ function Rodape({ ocupado, aoFechar, children }: { ocupado: boolean; aoFechar: (
 }
 
 export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, destinos = [], aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; finalidade: Setor; setoresDoNumero: Setor[]; destinos?: DestinoTransferencia[] }) {
-  // transferirAtendimento recebe chave de idempotência (#166): o reenvio devolve o atendimento novo já aberto.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const setores = setoresParaTransferir(setoresDoNumero, finalidade);
@@ -231,18 +212,14 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
 }
 
 export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
-  // Convidar: convidarParticipante recebe chave de idempotência (#166) e o reenvio devolve o convite já criado.
-  // Atribuir é idempotente por estado-alvo: atribuir de novo à mesma pessoa devolve ok sem Evento.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  // O fim do convite é calculado no clique; dentro da mesma tentativa ele não muda (senão o reenvio vira outra entrada).
   const fimDaTentativa = useRef<{ chave: string; dias: number; fim: string } | null>(null);
   const [pessoas, setPessoas] = useState<{ id: string; nome: string }[] | null>(null);
   const [usuarioId, setUsuarioId] = useState("");
   const [podeEnviar, setPodeEnviar] = useState(false);
   const [dias, setDias] = useState(7);
   const [motivo, setMotivo] = useState("");
-  // Carga fora do render: em StrictMode o efeito roda duas vezes, mas a resposta descartada não é aplicada.
   useEffect(() => {
     let ativo = true;
     void listarPessoasParaAtendimento(atendimentoId, modo)
@@ -260,7 +237,6 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
       const fim = anterior && anterior.chave === chave && anterior.dias === dias ? anterior.fim : new Date(Date.now() + dias * 86_400_000).toISOString();
       fimDaTentativa.current = { chave, dias, fim };
       const r = await convidarParticipante({ atendimentoId, usuarioId, podeEnviar, fim, motivo, chaveIdempotencia: chave });
-      // O id do participante não interessa à tela: só o desfecho.
       return r.ok ? { ok: true } : { ok: false, erro: r.erro };
     });
     if (modo === "convidar") tentativa.depoisDo(d);
@@ -297,7 +273,6 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
 }
 
 function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string }) {
-  // registrarNotaAtendimento recebe chave de idempotência (#166): o reenvio não grava uma segunda nota.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [nota, setNota] = useState("");
@@ -320,10 +295,8 @@ function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { a
   );
 }
 
-/** `fuso`: o de exibição do Inbox (pessoal; sem preferência, o da escola), escrito ao lado do campo. */
 function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir,versaoInsights=0, insightsAplicaveis=false }: PropsDialogo & { atendimentoId: string; fuso: string;versaoInsights?:number;insightsAplicaveis?:boolean }) {
   const [revisaoTexto,setRevisaoTexto]=useState(0);
-  // agendarMensagemNoAtendimento recebe chave de idempotência (#166): o reenvio não agenda um segundo envio ao contato.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [texto, setTexto] = useState("");
@@ -360,10 +333,8 @@ function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir,versaoInsigh
 }
 
 type AlvoPendente = { tipo: "convite"; item: ConviteAtivo } | { tipo: "agendamento"; item: AgendamentoAtivo };
-/** Fim do convite e horário do agendamento no fuso de exibição (antes, no fuso do navegador). */
 export const quandoPendente = (iso: string | Date, fuso: string | null) => formatarInstanteExibicao(iso, fuso, "UTC").texto;
 
-/** Convites ativos e mensagens agendadas do atendimento; "Revogar convite" e "Cancelar agendamento" pedem confirmação. */
 export function DialogoPendentes({ atendimentoId, fuso, aoFechar, aoConcluir }: { atendimentoId: string; fuso: string | null; aoFechar: () => void; aoConcluir: (qual: "convite" | "agendamento") => void }) {
   const [dados, setDados] = useState<{ convites: ConviteAtivo[]; agendamentos: AgendamentoAtivo[] } | null>(null);
   const [alvo, setAlvo] = useState<AlvoPendente | null>(null);
@@ -378,7 +349,6 @@ export function DialogoPendentes({ atendimentoId, fuso, aoFechar, aoConcluir }: 
   }, [atendimentoId, versao]);
 
   if (alvo) {
-    // Revogar e cancelar são idempotentes por natureza (#166): o reenvio de quem já o fez devolve ok.
     const convite = alvo.tipo === "convite";
     return (
       <ConfirmarAcao

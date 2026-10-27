@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { configPadrao, type ModoAcao } from "../config-schema";
 import { destinoDaAcao } from "./decisao";
 
-const c = configPadrao(); // executa >= 80, transfere < 50
+const c = configPadrao();
 
 describe("destinoDaAcao", () => {
   it.each([

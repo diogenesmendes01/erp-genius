@@ -11,8 +11,6 @@ export function AgendaParticularFormulario({ leadId, ofertaId, versaoOferta, fix
   const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]), [professorId, setProfessor] = useState("");
   const [fuso, setFuso] = useState(""), [horarios, setHorarios] = useState([{ data: "", horario: "", minutos: "" }]);
   const [ocupado, setOcupado] = useState(false), [erro, setErro] = useState(""), [revisaoConferida, setRevisao] = useState<Revisao | null>(null), [confirmado, setConfirmado] = useState(false);
-  // O formulário não remonta quando a oferta muda de versão (docs/43 §6 item 3): a conferência feita para a
-  // versão anterior deixa de valer e é preciso conferir de novo — os horários digitados ficam.
   const [versaoConferida, setVersaoConferida] = useState<number | null>(null);
   const revisao = revisaoConferida && versaoConferida === versaoOferta ? revisaoConferida : null;
   function limpar() { setRevisao(null); setConfirmado(false); onChange(null); }

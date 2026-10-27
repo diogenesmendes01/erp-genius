@@ -6,7 +6,6 @@ import { estadoDiario } from "./estado";
 import { carregarAlunoParticularTx } from "./particular-contexto";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 
-/** Chamador adquire antes a trava institucional da agenda. */
 export async function contextoConclusaoTx(tx: Prisma.TransactionClient, encontroId: string) {
   const inicial = await tx.encontroAgenda.findUnique({ where: { id: encontroId }, include: { diario: { include: { registros: true } } } });
   if (inicial?.finalidade !== "AULA") throw new ErroRegra("Recuperação não pode ser concluída como aula ministrada.");

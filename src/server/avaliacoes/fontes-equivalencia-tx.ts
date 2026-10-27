@@ -8,8 +8,6 @@ import { z } from "zod";
 import type { FonteOficialEquivalencia } from "./equivalencia-transferencia";
 import { carregarAproveitamentoAplicadoTx } from "./aproveitamento-aplicado-tx";
 
-/** Leitura interna após autorização do fluxo. O chamador conserva a mesma
- * transação/snapshot para conferir contexto, preparar e decidir a proposta. */
 export async function carregarFontesEquivalenciaTx(tx: Prisma.TransactionClient, contexto: {
   matriculaId: string; alocacaoId: string; turmaId: string; nivelId: string; regraId: string;
 }, alocacoesVisitadas: readonly string[] = []): Promise<FonteOficialEquivalencia[]> {
@@ -47,8 +45,6 @@ export async function carregarFontesEquivalenciaTx(tx: Prisma.TransactionClient,
     },
   } });
 
-  // Não escolhemos a maior nota regular: cada avaliação continua sendo uma
-  // fonte própria, com seu peso, e o mapa pedagógico pode escolher uma delas.
   const fontesRegulares: FonteOficialEquivalencia[] = registros.flatMap((registro) => {
     const lancamento = registro.versoes[0];
     if (!lancamento?.decisao) return [];
@@ -73,9 +69,6 @@ export async function carregarFontesEquivalenciaTx(tx: Prisma.TransactionClient,
       }];
     });
   });
-  // Esta leitura também revalida uma aplicação anterior da alocação atual.
-  // Ela vem antes do motor Q133: recuperação compara a tentativa com o
-  // resultado consolidado efetivo, que pode conter requisitos aproveitados.
   const aplicado = await carregarAproveitamentoAplicadoTx(tx, {
     matriculaId: contexto.matriculaId,
     alocacaoDestinoId: contexto.alocacaoId,
@@ -102,8 +95,6 @@ export async function carregarFontesEquivalenciaTx(tx: Prisma.TransactionClient,
     } },
   } });
 
-  // Q133: a recuperação compete com o resultado consolidado da habilidade,
-  // não com uma nota regular isolada. O motor mantém pesos e a cadeia completa.
   const recuperacoesCalculo = realizacoes.map((realizacao, indice) => {
     const nota = realizacao.notas[0];
     const correcao = nota?.correcoes[0];

@@ -1,9 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Lote 2 do fuso pessoal: prazo e novo prazo são publicados no fuso da reserva (o novo prazo é digitado nele) e
-// mantêm esse fuso; registro e decisão da proposta são instantes e seguem a preferência (sem ela, o da reserva).
-// Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 const mocks = vi.hoisted(() => ({
   turma: vi.fn(),
   particular: vi.fn(),

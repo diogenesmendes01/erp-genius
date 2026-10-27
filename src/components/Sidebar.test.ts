@@ -27,9 +27,6 @@ describe("Sidebar", () => {
     mocks.pathname.mockReturnValue("/financeiro/permuta");
     const html = renderToStaticMarkup(createElement(Sidebar, { papeis: [Papel.ADMINISTRADOR], nome: "Ana" }));
     expect(html).toMatch(/<a(?=[^>]*\shref="\/financeiro\/permuta")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-bg[^"]*")[^>]*>/);
-    // Exatamente uma âncora marcada — se /financeiro (o prefixo mais curto) também
-    // estivesse marcado, esse total seria 2, não 1. Cobre aria-current E a classe visual,
-    // já que hoje o mesmo `ativo` dirige as duas — se um dia divergirem, este teste pega.
     const marcadosAtivos = [...html.matchAll(/aria-current="page"/g)];
     expect(marcadosAtivos).toHaveLength(1);
     const ancorasComClasseAtiva = [...html.matchAll(/<a[^>]*class="[^"]*bg-brand-bg[^"]*"[^>]*>/g)];

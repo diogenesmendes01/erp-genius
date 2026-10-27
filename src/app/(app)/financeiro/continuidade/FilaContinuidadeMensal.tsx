@@ -12,8 +12,7 @@ const ESTADO_LABEL: Record<ItemFilaContinuidadeMensal["estado"], string> = {
   A_CONFERIR: "Conferência necessária",
 };
 
-/** `inicioDaFila`: link do início quando a leitura partiu de um cursor (fora do início); null no início, onde vazio quer dizer fila zerada. */
-export function FilaContinuidadeMensal({ itens, inicioDaFila }: { itens: ItemFilaContinuidadeMensal[]; /** Obrigatório: esquecer o repasse faria um ponto da fila sem itens afirmar fila zerada. */ inicioDaFila: string | null }) {
+export function FilaContinuidadeMensal({ itens, inicioDaFila }: { itens: ItemFilaContinuidadeMensal[];  inicioDaFila: string | null }) {
   if (itens.length === 0) {
     return inicioDaFila !== null
       ? <EstadoVazio bloco acao={<Link className="underline" href={inicioDaFila}>Ir para o início da fila</Link>}>Nenhuma matrícula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.</EstadoVazio>

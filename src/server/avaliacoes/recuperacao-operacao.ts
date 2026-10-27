@@ -17,7 +17,6 @@ import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autoriza
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { preparacaoRecuperacaoVigenteTx } from "./recuperacao-preparacao-vigencia-tx";
 
-/** As reservas do plano são paginadas por número (E4), em ordem de id: ida e volta trazem as mesmas reservas. */
 export async function consultarOperacaoRecuperacao(input: { propostaId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -95,10 +94,6 @@ export async function consultarOperacaoRecuperacao(input: { propostaId: string; 
             const autorizacaoEspecialAte = autorizacoes.get(i.id) ?? null;
             return {
               ...i, agenda, autorizacaoEspecialAte, realizacao,
-              // Q151: o formulário continua disponível para regularizar fato
-              // anterior à pausa/encerramento. Uma realização nova, porém,
-              // só é oferecida quando a situação atual está ativa ou há a
-              // autorização pontual desta tentativa.
               podeRegistrarHistorica,
               podeRegistrarAgora: podeRegistrarHistorica && (situacaoContratual === "ATIVA" || autorizacaoEspecialAte !== null),
               podeRegistrarRealizacao: podeRegistrarHistorica,

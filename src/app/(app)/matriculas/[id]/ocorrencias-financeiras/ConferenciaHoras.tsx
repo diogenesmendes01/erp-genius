@@ -23,7 +23,6 @@ function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => s
     <p>Vigência: {data(r.data.regras.vigenteDesde)} · Antecedência de cancelamento: {r.data.regras.antecedenciaCancelamentoMinutos} minutos.</p>
     <p>Cláusula de preço: {r.data.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {r.data.regras.clausulaCancelamento}</p></div>;
 }
-/** Q175: o valor da conferência é histórico; a aula foi declarada não cobrável na revisão financeira da correção. */
 export function descreverAulaNaoCobravel(efeito: string) {
   const destino = efeito === "SEM_ITEM" ? "fica fora do fechamento por hora"
     : efeito === "REDUZ_COBRANCA_ABERTA" ? "foi retirada da cobrança em aberto"
@@ -31,16 +30,7 @@ export function descreverAulaNaoCobravel(efeito: string) {
         : efeito === "DEVOLVE_MINUTOS" ? "devolveu os minutos à compra de horas" : "teve efeito financeiro registrado";
   return `Aula declarada não cobrável na revisão financeira da correção: o valor acima é histórico e a aula ${destino}.`;
 }
-/**
- * Horário do encontro, vigência das condições e limite de cancelamento são publicados no fuso da agenda
- * (`fusoOrigem`) e mantêm esse fuso. Comunicação, conferência e aplicação da declaração são instantes de registro:
- * saem no fuso pessoal de exibição (sem preferência, o da agenda), com o fuso dito. A comunicação é o que se
- * compara com o limite de cancelamento (no prazo ou tardio): quando o fuso exibido difere do da agenda, ela também
- * sai no fuso da agenda, entre parênteses, para a comparação ficar no mesmo fuso (review do #289, item E).
- */
 export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenciaFusoExibicao = null }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"]; preferenciaFusoExibicao?: string | null }) {
-  // Prévia é leitura sem chave; a conferência leva chave de idempotência estável. Cada uma preserva a orientação
-  // própria para falha de transporte; um estado por grupo de ação, e o ocupado trava os dois.
   const router = useRouter(), carregamento = useAcaoCliente({ idempotente: false }), registro = useAcaoCliente({ idempotente: true }), [previa, setPrevia] = useState<Previa | null>(null);
   const ocupado = carregamento.ocupado || registro.ocupado;
   const [condicoesId, setCondicoesId] = useState("");
@@ -93,7 +83,6 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenci
           <button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-2`} disabled={ocupado}>Registrar conferência</button></form>}
       </section>}
     </>}
-    {/* Fora da prévia: depois do registro a prévia some (e, com o refresh, o formulário), e o resultado continua visível. */}
     <FeedbackAcao erro={registro.erro} sucesso={registro.sucesso} />
   </article>;
 }

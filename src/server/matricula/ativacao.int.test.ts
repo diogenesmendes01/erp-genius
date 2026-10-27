@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Papel, StatusCobranca, StatusComissao, StatusMatricula, EtapaLead, TipoCobranca } from "@prisma/client";
 
-// Prioridade 3 do docs/14 (integração): ATIVAÇÃO da matrícula — o fluxo que "distorce
-// receita se errar": cronograma gerado, comissão aprovada, lead Matriculado, eventos
-// gravados; e a ATOMICIDADE do fluxo criar+ativar (falha no meio → nada persiste).
-// Sessão mockada devolve só o id — papéis vêm do banco de teste (papéis frescos).
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -30,8 +25,6 @@ function inputMatricula(leadId: string | undefined, cat: typeof catalogo) {
     leadId,
     alunoPrimeiroNome: "Maria",
     alunoSobrenome: "Rojas",
-    // Obrigatórios desde a resolução do schema (pós-40ea4ff) — este teste nunca tinha
-    // rodado porque a suíte não parseava com os conflict markers.
     alunoGenero: "NAO_INFORMADO" as const,
     alunoNascimento: "1990-05-10",
     alunoPaisId: cat.pais.id,
@@ -104,11 +97,9 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     expect(await concluirMatricula(matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("diferem do aceite") });
     expect(await prisma.cobranca.count({ where: { matriculaId, tipo: "MENSALIDADE" } })).toBe(1);
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe("AGUARDANDO");
-    // Desfaz apenas a alteração artificial do teste; o aceite original continua preservado.
     await prisma.cobranca.update({ where: { id: primeiraAntes.id }, data: { valorNegociado: MENSALIDADE, saldo: MENSALIDADE, versao: { increment: 1 } } });
     expect((await concluirMatricula(matriculaId)).ok).toBe(true);
 
-    // A configuração padrão exige contrato aceito + taxa; a primeira permanece aberta.
     const matricula = await prisma.matricula.findUniqueOrThrow({
       where: { id: matriculaId },
       include: { cobrancas: true, comissoes: true },
@@ -118,7 +109,6 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     expect(matricula.pagamentoTaxaOk).toBe(true);
     expect(matricula.contratoDocumentoId).toBe(documento.id);
 
-    // Cronograma: 1 taxa PAGA + MESES_PLANO mensalidades PENDENTES (1ª + meses 2..N).
     const taxas = matricula.cobrancas.filter((c) => c.tipo === TipoCobranca.MATRICULA);
     const mensalidades = matricula.cobrancas.filter((c) => c.tipo === TipoCobranca.MENSALIDADE);
     expect(taxas).toHaveLength(1);
@@ -136,25 +126,20 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
       ["2028-01-31", "2028-02-28"], ["2028-02-29", "2028-03-30"], ["2028-03-31", "2028-04-29"],
     ]);
     expect(mensalidades.every((m) => m.status === StatusCobranca.PENDENTE)).toBe(true);
-    // Dinheiro exato no banco (Decimal): valor negociado volta idêntico.
     expect(mensalidades.every((m) => Number(m.valorNegociado) === MENSALIDADE)).toBe(true);
 
-    // Comissão do DONO DO LEAD, aprovada na ativação, valor = % da taxa (doc 10 §3).
     expect(matricula.comissoes).toHaveLength(1);
     expect(matricula.comissoes[0].vendedorId).toBe(vendedor.id);
     expect(matricula.comissoes[0].status).toBe(StatusComissao.APROVADA);
     expect(Number(matricula.comissoes[0].valor)).toBe((TAXA * COMISSAO_PCT) / 100);
 
-    // Lead avançou para MATRICULADO (etapa terminal).
     const leadDepois = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(leadDepois.etapa).toBe(EtapaLead.MATRICULADO);
 
-    // Auditoria: eventos da matrícula na MESMA transação.
     const tipos = (await eventosDo("Matricula", matriculaId)).map((e) => e.tipo);
     expect(tipos).toEqual(
       expect.arrayContaining(["MatriculaCriada", "ComissaoGerada", "MatriculaAtivada", "ComissaoAprovada"]),
     );
-    // Pagamento da taxa gravado no agregado Cobranca.
     const evPagamento = await eventosDo("Cobranca", taxas[0].id);
     expect(evPagamento.map((e) => e.tipo)).toContain("PagamentoRegistrado");
   });
@@ -171,7 +156,7 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
 
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.erro).toMatch(/contrato/i);
-    expect(await prisma.aluno.count()).toBe(alunosAntes); // rollback: aluno não persistiu
+    expect(await prisma.aluno.count()).toBe(alunosAntes);
     expect(await prisma.matricula.count()).toBe(matriculasAntes);
   });
 

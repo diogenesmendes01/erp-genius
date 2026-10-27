@@ -39,7 +39,7 @@ import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 const PAPEIS_COMISSAO: Papel[] = [Papel.FINANCEIRO];
-const PAPEIS_CAMBIO: Papel[] = [Papel.FINANCEIRO]; // + Admin (passa sempre em exigirSessaoComPapel)
+const PAPEIS_CAMBIO: Papel[] = [Papel.FINANCEIRO];
 const RegistroCobrancaWhatsAppSchema = z.object({
   cobrancaId: z.string().min(1),
   modelo: z.enum(MODELOS_WHATSAPP),
@@ -49,27 +49,20 @@ const RegistroCobrancaWhatsAppSchema = z.object({
 const RecebimentoDestinadoSchema = z.object({
   titularMatriculaId: z.string().min(1), pagadorId: z.string().min(1).nullable().optional(), chaveIdempotencia: z.string().min(16).max(120),
   valorRecebido: z.coerce.number().positive().finite(), moeda: z.string().regex(/^[A-Z]{3}$/), forma: z.nativeEnum(FormaPagamento),
-  // Data DIGITADA (AAAA-MM-DD): meio-dia da escola, como em registrarPagamento (antes: o meio-dia do NAVEGADOR, que
-  // em Sydney gravava 05/10 como 04/10 da escola). Um ISO (formulário antigo ainda aberto) continua aceito.
   dataPagamento: dataObrigatoria,
   comentario: z.string().trim().max(2000).nullable().optional(), comprovanteUrl: z.string().trim().nullable().optional(), comprovanteNome: z.string().trim().nullable().optional(),
   destinos: z.array(z.object({ tipo: z.enum(["COBRANCA", "CREDITO_SEM_DESTINO"]), cobrancaId: z.string().min(1).nullable().optional(), valor: z.coerce.number().positive().finite(), evidencia: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(1).max(120) }).strict()).min(1),
 }).strict();
-// Fonte de câmbio pública: grátis, sem chave, base USD. `rates[X]` = unidades por 1 USD,
-// que é EXATAMENTE o nosso `unidadesPorUsd` (pivô USD) — grava direto, sem conversão.
 const CAMBIO_API_URL = "https://open.er-api.com/v6/latest/USD";
 
-/** O cron reconcilia o acesso se esta tentativa falhar; a operação financeira já foi confirmada. */
 async function reavaliarAcessoAposCommit(cobrancaId: string) {
   try {
     await reavaliarAcessoAutomaticoDaCobranca(cobrancaId);
   } catch {
-    // Não registrar o erro bruto: mensagens do banco podem conter dados pessoais/financeiros.
     console.error("[financeiro] Operação confirmada. Falha no recálculo de acesso às aulas; reavaliação pendente pelo cron institucional.");
   }
 }
 
-/** FIN registra recebimento; SEC envia informe imutável para conferência. */
 export async function registrarPagamento(cobrancaId: string, input: PagamentoInput): Promise<Resultado<{ informado: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
@@ -115,7 +108,6 @@ export async function registrarPagamento(cobrancaId: string, input: PagamentoInp
   });
 }
 
-/** FIN-04: um fato de caixa pode liquidar várias cobranças e/ou gerar crédito. */
 export async function registrarRecebimentoDestinado(input: unknown): Promise<Resultado<{ recebimentoId: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -173,8 +165,6 @@ export async function conferirPagamento(informeId: string, input: { versao: numb
   });
 }
 
-/** Publicação versionada: fecha a vigência anterior, sem alterar comissões existentes. */
-/** A versão gravada corresponde à entrada (valores nas casas decimais das colunas: 5,2 e 12,2). */
 function mesmaPoliticaComissao(
   p: { tipo: string; percentual: Prisma.Decimal | null; valorFixo: Prisma.Decimal | null; moeda: string; vigenteEm: Date; base: string },
   d: { tipo: string; percentual: number | null; valorFixo: number | null; moeda: string; vigenteEm: Date },
@@ -190,15 +180,11 @@ export async function publicarPoliticaComissao(input: PoliticaComissaoInput): Pr
     await exigirCapacidade(autor, "comissao.configurar");
     const dados = PoliticaComissaoSchema.parse(input);
     await prisma.$transaction(async (tx) => {
-      // Todos os publicadores bloqueiam a mesma oferta; não há duas versões simultâneas.
       await tx.$queryRaw`SELECT id FROM "Produto" WHERE id = ${dados.produtoId} FOR UPDATE`;
       const pais = await tx.pais.findUnique({ where: { id: dados.paisId } });
       const produto = await tx.produto.findUnique({ where: { id: dados.produtoId } });
       if (!pais || !produto || pais.moedaLocal !== dados.moeda) throw new ErroRegra("Oferta/moeda inválida para a política.");
       const anterior = await tx.politicaComissao.findFirst({ where: { paisId: pais.id, produtoId: produto.id }, orderBy: { versao: "desc" } });
-      // Estado-alvo (#166): a última versão já é exatamente esta, publicada por este autor. O reenvio devolve ok
-      // sem abrir outra versão nem gravar outro Evento (antes recusava com "deve começar depois"). Vem antes da
-      // checagem de vigência, para o reenvio tardio de uma política "a partir de agora" também ser reconhecido.
       if (anterior && anterior.criadaPorId === autor.id && mesmaPoliticaComissao(anterior, dados)) return;
       if (dados.vigenteEm.getTime() < Date.now() - 60_000) throw new ErroRegra("Publique a política com vigência atual ou futura.");
       if (anterior && dados.vigenteEm <= anterior.vigenteEm) throw new ErroRegra("A nova versão deve começar depois da versão anterior.");
@@ -223,13 +209,7 @@ export async function registrarCobrancaWhatsApp(
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
     const dados = RegistroCobrancaWhatsAppSchema.parse({ cobrancaId, modelo, passo: passo ?? null, cicloRegua });
 
-    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
-    // `passo` = degrau da régua cumprido (doc 24) — é o que faz a fila avançar e o que o
-    // cron de automação lê. `canal:"manual"` (doc 26): o despachante grava o MESMO evento
-    // com canal:"api" — humano e cron continuam um do outro (helper único em cobrancas/eventos).
     await prisma.$transaction(async (tx) => {
-      // A confirmação é declaratória e aceita o ciclo histórico exibido antes de uma
-      // reprogramação; o lock impede que a leitura e o evento cruzem uma alteração da cobrança.
       await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ${dados.cobrancaId} FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
       const [usuario, cobranca] = await Promise.all([
@@ -252,13 +232,6 @@ export async function registrarCobrancaWhatsApp(
   });
 }
 
-/**
- * Fecha o mês: comissões Aprovadas → Pagas. (doc 10: fechamento dia 30 · pagamento dia 05)
- *
- * `chaveIdempotencia` (#166, 5º lote): a marca vai em cada `ComissaoPaga` deste fechamento, na mesma transação. O
- * reenvio da mesma tentativa devolve quantas foram pagas sem pagar as comissões aprovadas depois dela; um novo
- * fechamento deliberado usa chave nova. Sem chave, o comportamento de antes.
- */
 export async function fecharMesComissoes(input: { chaveIdempotencia?: string } = {}): Promise<Resultado<{ pagas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
@@ -270,7 +243,6 @@ export async function fecharMesComissoes(input: { chaveIdempotencia?: string } =
           mensagemConflito: "Esta tentativa já foi usada em outra operação. Recarregue a página e confira as comissões antes de repetir.",
         });
         if (repetido) {
-          // Mesma expressão e predicado do índice `Evento_idempotencia_idx` (ver `sqlBuscaIdempotente`).
           const [{ n }] = await tx.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM "Evento"
             WHERE "tipo" = 'ComissaoPaga' AND "autorId" = ${autor.id}
               AND "payload" ? 'chaveIdempotencia' AND ("payload" ->> 'chaveIdempotencia') = ${marca.chaveIdempotencia}
@@ -286,13 +258,6 @@ export async function fecharMesComissoes(input: { chaveIdempotencia?: string } =
   });
 }
 
-/**
- * NÚCLEO do fechamento (Fase 2): paga as comissões APROVADAS. Compartilhado entre a ação
- * manual (botão "Fechar mês" — sem corte: decisão humana paga tudo) e o fechamento
- * AUTOMÁTICO do cron, que passa `aprovadasAntesDe` = 1º dia do mês corrente (review PR #60):
- * o robô só paga o período JÁ FECHADO — vendas do mês corrente ficam para o próximo ciclo.
- * Comissões antigas sem `aprovadaEm` (pré-migration) caem no corte pelo `criadoEm`.
- */
 export async function fecharComissoesAprovadasTx(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   autorId: string | null,
@@ -331,7 +296,6 @@ export async function fecharComissoesAprovadasTx(
   return aprovadas.length;
 }
 
-/** Config do financeiro automatizado (Fase 2). Financeiro/Admin; evento auditável. */
 export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomatico: boolean }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
@@ -355,11 +319,6 @@ export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomati
   });
 }
 
-/**
- * Dia da previsão de pagamento das comissões (D11): a previsão é este dia do mês seguinte à competência. Mesma
- * alçada de publicar política de comissão (Financeiro ou Gerente Comercial com `comissao.configurar`; Admin passa).
- * Evento auditado com `{ de, para }`; repetir o mesmo dia não grava nada.
- */
 export async function salvarDiaPrevisaoComissao(input: { dia: number }): Promise<Resultado<{ dia: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
@@ -368,7 +327,6 @@ export async function salvarDiaPrevisaoComissao(input: { dia: number }): Promise
     if (!parsed.success) throw new ErroRegra(`Informe um dia entre ${DIA_PREVISAO_COMISSAO_MIN} e ${DIA_PREVISAO_COMISSAO_MAX}.`);
     const para = parsed.data;
     await prisma.$transaction(async (tx) => {
-      // Cria a linha padrão se faltar e a trava: duas trocas simultâneas não gravam o mesmo "de".
       await tx.configFinanceiro.upsert({ where: { id: "financeiro" }, create: { id: "financeiro" }, update: {} });
       await tx.$queryRaw`SELECT id FROM "ConfigFinanceiro" WHERE id = 'financeiro' FOR UPDATE`;
       const antes = await tx.configFinanceiro.findUniqueOrThrow({ where: { id: "financeiro" } });
@@ -389,11 +347,6 @@ export async function salvarDiaPrevisaoComissao(input: { dia: number }): Promise
   });
 }
 
-/**
- * Salva cotações de câmbio (Fase B) — uma linha NOVA por moeda (append-only, vigenteEm=agora),
- * preservando o histórico. Só consolidação/leitura: NÃO altera nenhuma cobrança/comissão.
- * Admin/Financeiro. Registra um Evento `TaxasCambioDefinidas` para auditoria de quem mexeu.
- */
 export async function salvarTaxasCambio(
   input: SalvarTaxasCambioInput,
 ): Promise<Resultado<{ salvas: number }>> {
@@ -421,12 +374,6 @@ export async function salvarTaxasCambio(
   });
 }
 
-/**
- * Atualiza as cotações automaticamente a partir de uma fonte pública (grátis, sem chave, base
- * USD). Grava na MESMA `TaxaCambio` (append-only) — o consolidado fica resiliente: se a fonte cair,
- * segue usando a última cotação salva. Override manual (`salvarTaxasCambio`) continua valendo.
- * Moedas-alvo = em uso nos países + BRL (matriz); USD é o pivô (=1, não busca).
- */
 export async function atualizarCotacoesAutomatico(): Promise<
   Resultado<{ atualizadas: number; semCotacao: string[] }>
 > {
@@ -455,7 +402,6 @@ export async function atualizarCotacoesAutomatico(): Promise<
     const valida = (m: string) => typeof rates[m] === "number" && rates[m] > 0;
     const entradas = alvo
       .filter(valida)
-      // 4 casas bastam para câmbio de referência e evita ruído de ponto-flutuante.
       .map((m) => ({ moeda: m, unidadesPorUsd: Math.round(rates[m] * 10000) / 10000 }));
     const semCotacao = alvo.filter((m) => !valida(m));
     if (entradas.length === 0) {

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { camposDosFiltros, destinoPaginaAlunos, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, orderByAlunos, parametrosFiltrosAlunos, sanearFiltrosAlunos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
 import { sincronizarCamposFiltro } from "@/lib/filtros-url";
 
-// A lista usa a sincronização genérica (useFiltrosUrl) sobre os campos derivados destes filtros.
 const sincronizarCampos = (atuais: ReturnType<typeof camposDosFiltros>, antes: ReturnType<typeof lerFiltrosAlunos>, depois: ReturnType<typeof lerFiltrosAlunos>) =>
   sincronizarCamposFiltro(atuais, camposDosFiltros(antes), camposDosFiltros(depois));
 
@@ -58,7 +57,6 @@ describe("whereFiltrosAlunos", () => {
     const w = whereFiltrosAlunos(lerFiltrosAlunos({ busca: "  Ana   Silva " })) as { AND: { OR: Record<string, { contains: string }>[] }[] };
     expect(w.AND).toHaveLength(2);
     expect(w.AND.map((c) => c.OR[0].primeiroNome.contains)).toEqual(["Ana", "Silva"]);
-    // Aluna com primeiroNome "Ana" e sobrenome "Silva": cada condição acha a palavra em algum campo.
     const aluna = { primeiroNome: "Ana", sobrenome: "Silva", nomePreferido: null, codigo: "A-1" } as Record<string, string | null>;
     const atende = w.AND.every((c) => c.OR.some((campo) => {
       const [nome, { contains }] = Object.entries(campo)[0];
@@ -127,7 +125,6 @@ describe("ordenação da lista (E1 — ColunaOrdenavel)", () => {
   it("orderBy: padrão idêntico ao de antes; cada coluna termina no desempate por id", () => {
     expect(orderByAlunos()).toEqual([{ nomeOrdenacao: "asc" }, { id: "asc" }]);
     expect(orderByAlunos(lerFiltrosAlunos({}).ordem)).toEqual([{ nomeOrdenacao: "asc" }, { id: "asc" }]);
-    // Decrescente por nome é o inverso exato da crescente (inclusive o desempate).
     expect(orderByAlunos({ campo: "nome", dir: "desc" })).toEqual([{ nomeOrdenacao: "desc" }, { id: "desc" }]);
     expect(orderByAlunos({ campo: "pais", dir: "desc" })).toEqual([{ pais: { nome: "desc" } }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
     expect(orderByAlunos({ campo: "status", dir: "asc" })).toEqual([{ status: "asc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
@@ -151,7 +148,6 @@ describe("ordenação da lista (E1 — ColunaOrdenavel)", () => {
   });
 });
 
-// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão (e não vai para a URL).
 describe("ordem de /alunos: chave herdada de Object", () => {
   it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
     expect(lerFiltrosAlunos({ ordem, dir: "desc" }).ordem).toEqual(lerFiltrosAlunos({}).ordem);

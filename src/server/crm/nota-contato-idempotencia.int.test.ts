@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (2º lote): "Registrar nota" na ficha do contato chama `registrarNotaDaFicha` com chave de
-// idempotência. A nota é o próprio Evento `NotaInterna`: o reenvio com a mesma chave não grava outra.
-
-// Sessão: só `exigirSessao` é trocada (mesmo motivo de comercial/criar-lead-idempotencia.int.test.ts).
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

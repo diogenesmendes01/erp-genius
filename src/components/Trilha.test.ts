@@ -22,7 +22,6 @@ describe("Trilha", () => {
     expect(html).toContain('<a class="hover:text-gray-800 hover:underline" href="/alunos">Alunos</a>');
     expect(html).toContain('href="/alunos/clx1a2b3c">Ficha do aluno</a>');
     expect(html).toContain('<span aria-current="page" class="text-gray-700">Financeiro</span>');
-    // O separador é decorativo.
     expect(html).toMatch(/<span aria-hidden="true"[^>]*>\/<\/span>/);
   });
 });

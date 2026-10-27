@@ -1,12 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (4º lote): publicar a política de comissão é idempotente por natureza. Se a última versão já é exatamente a
-// pedida, publicada por quem repete, o reenvio devolve ok sem abrir outra versão nem gravar outro Evento (antes
-// recusava com "deve começar depois da versão anterior").
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

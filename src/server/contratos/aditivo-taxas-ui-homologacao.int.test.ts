@@ -64,10 +64,6 @@ async function prepararCadeiaTaxa(vencimentoTaxa?: string, cobertura = false, co
  const cond = await registrarCondicoesFormalizadasAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash }); if (!cond.ok) throw new Error(JSON.stringify(cond)); alvo = { matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash }; cobrancaId = (await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MATRICULA" } })).id;
 }
 
-/**
- * Opt-in, no banco descartável: a cadeia usa stubs locais de assinatura.
- * Ela não chama provedor nem confirma assinatura de produção.
- */
 it.runIf(process.env.HOMOLOGACAO_UI_Q170 === "true")("prepara fixture local para homologação operacional Q170", async () => {
   await truncarBanco();
   await prepararCadeiaTaxa();

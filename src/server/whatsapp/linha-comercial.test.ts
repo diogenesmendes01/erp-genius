@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Travas UNITÁRIAS da linha comercial (SPEC-ERP-005) — rodam no `npm test` comum, sem banco. As
-// integrações (linha-comercial.int.test.ts) cobrem o fluxo real; aqui a forma de cada filtro e ramo
-// fica presa, para que uma mutação no escopo, no roteamento ou no backfill quebre a suíte padrão.
-
 const db = vi.hoisted(() => ({
   usuario: { findMany: vi.fn() },
   coberturaCarteira: { findMany: vi.fn() },
@@ -23,7 +19,6 @@ import {
   whereLinhasDosDonos,
 } from "./linha-comercial";
 
-/** tx fake: cada teste define as respostas; qualquer modelo não previsto quebra o teste (undefined). */
 function txFake(over: {
   conversa?: { numero: { finalidade: string; ativo?: boolean; donoId?: string | null }; contato?: { leadId: string | null } } | null;
   abertos?: Array<{ id: string; contextoChave: string; leadId: string | null; encerradoEm?: Date | null }>;
@@ -83,7 +78,7 @@ describe("donosDeLinhaVisiveis (LC-D02)", () => {
     db.usuario.findMany.mockResolvedValue([{ id: "v1" }, { id: "v2" }]);
     expect(await donosDeLinhaVisiveis({ id: "g1", papeis: [Papel.GERENTE_COMERCIAL] })).toEqual(["g1", "v1", "v2"]);
     expect(db.usuario.findMany).toHaveBeenCalledWith({ where: { gerenteComercialId: "g1" }, select: { id: true } });
-    expect(db.coberturaCarteira.findMany).not.toHaveBeenCalled(); // cobertura de carteira não dá linha
+    expect(db.coberturaCarteira.findMany).not.toHaveBeenCalled();
   });
 
   it("papéis sem comercial não veem linha; administrador vê por outra regra", async () => {

@@ -20,7 +20,6 @@ import { carregarCarteira, EVENTOS_DE_CONTATO_SEM_INTERACAO, lerFiltrosCarteira 
 
 const gerente = { id: "g1", nome: "G", papeis: [Papel.GERENTE_COMERCIAL] };
 const op = (id: string) => ({ id, nome: id, b2b: false, etapa: "NOVO", pessoaId: null, empresaId: null, vendedor: null, pessoa: null, matricula: null });
-// B19: a carteira filtra, ordena e corta no banco (uma consulta em SQL) e só depois busca os detalhes das linhas.
 const consulta = () => {
   const [strings, ...valores] = mocks.ordenadas.mock.calls[0] as [TemplateStringsArray, ...unknown[]];
   return Prisma.sql(strings, ...valores);
@@ -41,7 +40,6 @@ describe("carregarCarteira: regra \"sem interação\"", () => {
     expect([...EVENTOS_DE_CONTATO_SEM_INTERACAO].sort()).toEqual(
       ["ExperimentalAgendada", "ExperimentalConfirmada", "ExperimentalRealizada", "InteracaoRegistrada", "TarefaConcluida"].sort(),
     );
-    // Nota, edição de cadastro, reatribuição, tags, documentos e a régua automática não são contato.
     for (const tipo of ["NotaInterna", "LeadEditado", "DatasAtualizadas", "ResumoAtualizado", "LeadAtribuido", "TagAtribuida",
       "DocumentoAnexado", "ReguaComercialEnviada", "EtapaAlterada", "LeadCriado"]) {
       expect(EVENTOS_DE_CONTATO_SEM_INTERACAO).not.toContain(tipo);
@@ -51,7 +49,6 @@ describe("carregarCarteira: regra \"sem interação\"", () => {
 
   it("mensagem enviada ou recebida no atendimento da oportunidade conta como contato (D13)", async () => {
     await carregarCarteira(gerente, lerFiltrosCarteira({}));
-    // Saída só conta enviada por uma pessoa; régua, lote, gestão e Aria ficam de fora (decisão do dono no #254).
     const sql = textoDaConsulta();
     expect(sql).toContain(`m."direcao" = 'ENTRADA' OR (m."status" IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m."origem" IN ('HUMANO', 'CELULAR'))`);
     expect(sql).toContain(`a."leadId" = o."id"`);

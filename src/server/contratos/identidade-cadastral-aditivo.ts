@@ -3,7 +3,6 @@ import type { OrigemCampo } from "./campos";
 import { validarValorAlteracaoAditivo, representarValorAlteracaoAditivo } from "./aditivo-valores";
 import { ErroRegra } from "@/server/_shared";
 
-/** Identidade contratual para conferência. A proposta aprovada não altera a conta do aluno. */
 export function identidadeCadastralAditivo<T extends { nome?: string | null; email?: string | null; documento?: string | null }>(
   base: T, prefixo: "ALUNO" | "PAGADOR", anteriores: Prisma.JsonValue | null,
   alteracoes: readonly { origem: OrigemCampo; novo: string; valorEstruturado?: unknown }[],

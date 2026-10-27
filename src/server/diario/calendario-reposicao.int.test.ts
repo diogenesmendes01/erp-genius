@@ -63,7 +63,6 @@ it.each([true, false])("usa apenas calendário aprovado vigente; feriado removid
   const feriado = [{ id: "feriado", nome: "Dia não letivo", tipo: "FERIADO", inicio: "2099-10-12", fim: "2099-10-12" }];
   await publicarCalendario(2, feriado);
   await publicarCalendario(3, removido ? [] : feriado);
-  // Uma proposta posterior rejeitada não restaura o feriado.
   await publicarCalendario(4, removido ? feriado : [], false);
   await inserirPedido("pedido-calendario-vigente");
   const autorizacao = await prisma.autorizacaoExcecaoReposicaoParticular.create({ data: {

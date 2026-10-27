@@ -10,9 +10,6 @@ import {
   VALORES_SIM_NAO,
 } from "@/server/turmas/importacao";
 
-// Modelo XLSX para importar turmas em lote (recurso ADMIN). Colunas de lista fechada
-// (modalidade, nível, professor, rolling) viram DROPDOWN via nome definido (named range),
-// com os valores numa aba auxiliar oculta "Listas".
 export const runtime = "nodejs";
 
 const LINHAS_COM_DROPDOWN = 200;

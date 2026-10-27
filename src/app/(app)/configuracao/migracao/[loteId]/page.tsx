@@ -13,9 +13,6 @@ import { Paginacao } from "@/components/Paginacao";
 import { ESTADO_LINHA_PREPARACAO_MIGRACAO_LABEL, SITUACAO_APLICACAO_CADASTRO_MIGRACAO_LABEL, rotular } from "@/lib/labels";
 import { faixaDaPagina, hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-// Item 9 (docs/42 L2483; docs/43 §6): as linhas do lote vêm paginadas da consulta (lista, página numerada), e a
-// fotografia JSON de cada linha (e de cada tentativa divergente) fica num <details> fechado — por padrão a linha
-// mostra só os identificadores da origem, o estado, as pendências e as colisões.
 export default async function LotePreparacaoPage({ params, searchParams }: { params: Promise<{ loteId: string }>; searchParams?: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.ADMINISTRADOR);
   const [{ loteId }, parametros, preferencia] = await Promise.all([params, searchParams ?? Promise.resolve({}), consultarPreferenciaFusoEquipe()]);

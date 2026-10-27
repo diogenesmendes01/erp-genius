@@ -65,10 +65,6 @@ function MemoriaCalculo({ memoria }: { memoria: Memoria }) {
   </section>;
 }
 
-/**
- * Registro, decisão e aplicação são instantes (lote 3 do fuso pessoal nas telas): fuso pessoal de exibição; sem
- * preferência, o da escola (antes, UTC), com o fuso escrito.
- */
 export function instanteDoPeriodoIntegral(valor: string, preferenciaFusoExibicao: string | null, fusoEscola: string) {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, fusoEscola);
   return `${exibicao.texto} (horário exibido em ${exibicao.fuso})`;

@@ -44,7 +44,6 @@ function projetar(proposta: { id: string; inicio: Date; fim: Date; versao: numbe
   return { id: proposta.id, inicio: civil(proposta.inicio), fim: civil(proposta.fim), versao: proposta.versao, motivo: proposta.motivo, evidenciaTexto: proposta.evidenciaTexto, criadaEm: proposta.criadaEm.toISOString(), decisao: proposta.decisao ? { ...proposta.decisao, decididaEm: proposta.decisao.decididaEm.toISOString() } : null };
 }
 
-/** Provisão positiva auditável. Ainda não é autorização de saldo, financeiro ou emissão. */
 export async function proporDisponibilidadeOferta(input: z.input<typeof ProporSchema>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -69,7 +68,6 @@ export async function proporDisponibilidadeOferta(input: z.input<typeof ProporSc
   });
 }
 
-/** Decide uma versão exata e exige que negativas e agenda ainda sejam as mesmas fontes conferidas. */
 export async function decidirDisponibilidadeOferta(input: z.input<typeof DecidirSchema>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);

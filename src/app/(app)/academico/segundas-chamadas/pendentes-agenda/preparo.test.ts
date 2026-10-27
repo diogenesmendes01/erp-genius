@@ -1,9 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// docs/42 L1722 (docs/43 §6 item 7): "Preparar agenda inicial" aparecia em todo item, também nos que a própria
-// fila classifica como não acionáveis. Arquivo à parte do page.test.ts (que a #158 reescreve com a paginação):
-// a lista vem sem página seguinte e a URL sem parâmetros, o que vale antes e depois dela.
 const mocks = vi.hoisted(() => ({ listar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-fila-agenda", () => ({ listarSegundasChamadasSemAgenda: mocks.listar }));
@@ -32,7 +29,6 @@ describe("fila de segundas chamadas pendentes de agenda: preparar só quando faz
     expect(artigo(html, "pausada")).toContain("a agenda exige autorização específica da Gestão Pedagógica");
     expect(artigo(html, "pausada")).toContain(">Conferir a autorização na prévia</a>");
     expect(artigo(html, "semsaldo")).toContain("não há agenda a preparar");
-    // Mesmo sem preparo, há saída: a consulta das propostas da segunda chamada.
     expect(artigo(html, "semsaldo")).toContain('href="/academico/segundas-chamadas/propostas/semsaldo/agenda"');
   });
 });

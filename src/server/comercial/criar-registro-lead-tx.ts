@@ -1,4 +1,3 @@
-// Registro interno na transação do caller; normalização, código e autorização ficam fora.
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import type { LeadSchema } from "./schema";

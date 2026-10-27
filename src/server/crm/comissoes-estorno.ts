@@ -15,11 +15,6 @@ const schema = z.object({
   detalhe: z.string().max(1000).optional(),
 });
 
-/**
- * Estorno de comissão (Q7, decisão provisória: operador FINANCEIRO, matriz da Task 4). Só PENDENTE/APROVADA:
- * a PAGA exigiria desconto no próximo fechamento (clawback), fora desta fase. O valor fica intacto: o status
- * já basta. Não há "reativar".
- */
 export async function estornarComissao(input: { id: string; motivo: MotivoEstorno; detalhe?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -28,8 +23,6 @@ export async function estornarComissao(input: { id: string; motivo: MotivoEstorn
     const detalhe = dados.detalhe?.trim() || undefined;
     if (dados.motivo === "OUTRO" && !detalhe) throw new ErroRegra("Descreva o motivo.");
     await prisma.$transaction(async (tx) => {
-      // Idempotência por natureza (#166, 5º lote): o mesmo estorno, do mesmo autor e com o mesmo motivo, devolve ok
-      // sem outro Evento. A trava da linha serializa o clique duplo; outro estorno continua recusado.
       const [atual] = await tx.$queryRaw<{ status: string }[]>`SELECT status::text AS status FROM "Comissao" WHERE id = ${dados.id} FOR UPDATE`;
       if (!atual) throw new ErroRegra("Comissão não encontrada.");
       if (atual.status === "PAGA") throw new ErroRegra("Comissão já paga: o desconto no próximo fechamento ainda não existe.");

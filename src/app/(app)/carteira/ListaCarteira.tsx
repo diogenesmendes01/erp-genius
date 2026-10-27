@@ -16,7 +16,6 @@ const MAX_LOTE = MAX_LOTE_CARTEIRA;
 const CAIXA = "flex h-11 w-11 items-center justify-center";
 const CONTROLE = "rounded-md border border-border-soft bg-surface-raised px-2 text-sm min-h-11 sm:min-h-9";
 
-/** O que a confirmação diz antes de reatribuir: quem recebe, quantas e o efeito nos atendimentos e nas mensagens agendadas. */
 export function ConsequenciaReatribuicao({ quantidade, para }: { quantidade?: number; para?: string }) {
   return (
     <>
@@ -31,7 +30,6 @@ export function ConsequenciaReatribuicao({ quantidade, para }: { quantidade?: nu
   );
 }
 
-/** Junta o nome da linha a cada recusada, enquanto a linha ainda está na tela. */
 export function recusadasComNome(
   recusadas: { id: string; motivo: string }[],
   linhas: Pick<LinhaCarteira, "oportunidadeId" | "nome">[],
@@ -40,12 +38,10 @@ export function recusadasComNome(
   return recusadas.map((r) => ({ ...r, nome: nomes.get(r.id) ?? "Oportunidade" }));
 }
 
-/** "Selecionar todas" marca só as primeiras linhas que cabem num lote. */
 export function idsParaSelecionarTodas(linhas: Pick<LinhaCarteira, "oportunidadeId">[]): string[] {
   return linhas.slice(0, MAX_LOTE).map((l) => l.oportunidadeId);
 }
 
-/** Aviso da barra de seleção sobre o limite do lote; `bloqueia` desabilita "Mudar responsável". */
 export function avisoLimiteLote(selecionados: number, linhas: number): { texto: string; bloqueia: boolean } | null {
   if (selecionados > MAX_LOTE) {
     return { texto: `O lote aceita no máximo ${MAX_LOTE} oportunidades por vez; desmarque ${selecionados - MAX_LOTE}.`, bloqueia: true };
@@ -56,7 +52,6 @@ export function avisoLimiteLote(selecionados: number, linhas: number): { texto: 
   return null;
 }
 
-/** Mensagem depois do lote: só conta como reatribuída a que mudou de responsável. */
 export function textoConclusaoLote({ feitas, jaEram }: { feitas: number; jaEram: number }): string {
   const mudaram = feitas === 1 ? "1 oportunidade reatribuída." : `${feitas} oportunidades reatribuídas.`;
   if (jaEram === 0) return mudaram;
@@ -73,9 +68,7 @@ type Props = {
   vendedores: VendedorCarteira[];
   total: number;
   filtros: FiltrosCarteira;
-  /** Gerente comercial e administrador: selecionar em lote e mudar o responsável. */
   podeReatribuir: boolean;
-  /** Há filtro aplicado? Decide o texto do estado vazio (carteira vazia × filtro sem resultado). */
   filtrando: boolean;
 };
 
@@ -86,7 +79,6 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
   const [motivo, setMotivo] = useState("");
   const acao = useAcaoCliente({ idempotente: false });
   const [confirmando, setConfirmando] = useState(false);
-  // Nome guardado na hora da resposta: o `router.refresh()` pode tirar a linha da tela (ex.: filtro por vendedor).
   const [recusadas, setRecusadas] = useState<{ id: string; nome: string; motivo: string }[]>([]);
 
   const marcados = new Set(selecionados);

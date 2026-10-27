@@ -130,8 +130,6 @@ export function ResolucaoRevisaoProgressao({
     iniciar(async () => {
       setErro(""); setAviso("");
       try {
-        // A decisão usa exclusivamente o hash persistido na proposta; uma
-        // prévia atual não pode substituir a proposta que será decidida.
         const resposta = await decidirResolucaoRevisaoProgressao({ propostaId: proposta.id, estadoHash: proposta.estadoHash, aprovada, motivo: motivoDecisao });
         if (!resposta.ok) { setErro(resposta.erro); return; }
         setAviso("Decisão registrada. Atualizando o histórico e a situação do caso.");

@@ -23,7 +23,6 @@ const MOTIVO: Record<string, string> = { telefone: "mesmo telefone", email: "mes
 
 type Lado = "a" | "b";
 
-/** Resolve as escolhas relativas à pessoa principal: "principal" mantém o dado dela, "secundaria" o da outra. */
 export function escolhasDaMescla(
   principal: Lado,
   escolhido: Record<(typeof CAMPOS)[number]["chave"], Lado>,
@@ -34,12 +33,10 @@ export function escolhasDaMescla(
 const ROTULO_CAMPO: Record<string, string> = Object.fromEntries(CAMPOS.map(({ chave, rotulo }) => [chave, rotulo]));
 const contar = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
-/** Juntar rótulos em português: "Nome", "Nome e E-mail", "Nome, E-mail e Cidade". */
 function juntar(itens: string[]): string {
   return itens.length <= 1 ? (itens[0] ?? "") : `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
 }
 
-/** O que a mesclagem muda, a partir da prévia do servidor (D14). */
 function ResumoPrevia({ previa }: { previa: PreviaMescla }) {
   const { principal, secundaria, movidos, camposDaSecundaria, cadastroAcademico } = previa;
   const vinculos = [
@@ -69,13 +66,11 @@ function ResumoPrevia({ previa }: { previa: PreviaMescla }) {
   );
 }
 
-/** Painel da mesclagem de um par. "Revisar" pede a prévia ao servidor; só o "Confirmar" do diálogo mescla. */
 export function PainelMescla({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel; b: PessoaMesclavel; aoFechar: () => void; aoMesclar: () => void }) {
   const router = useRouter();
   const [principal, setPrincipal] = useState<Lado>("a");
   const [escolhido, setEscolhido] = useState<Record<(typeof CAMPOS)[number]["chave"], Lado>>({ nome: "a", email: "a", cidade: "a", cargo: "a" });
   const [previa, setPrevia] = useState<PreviaMescla | null>(null);
-  // A prévia só lê: repetir é seguro, então o resultado incerto pede para tentar de novo.
   const revisao = useAcaoCliente({ idempotente: true });
   const pessoa = { a, b };
   const outra: Lado = principal === "a" ? "b" : "a";
@@ -85,7 +80,6 @@ export function PainelMescla({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel
     setPrevia(null);
     const desfecho = await revisao.executar(() => previaMesclaDaLista(entrada()));
     if (desfecho?.tipo !== "ok" || !desfecho.dado) return;
-    // A mesclagem seria recusada (ex.: falta a alçada da Secretaria): o motivo aparece e o diálogo não abre.
     if (desfecho.dado.bloqueio) revisao.setErro(desfecho.dado.bloqueio);
     else setPrevia(desfecho.dado);
   }
@@ -139,7 +133,6 @@ export function PainelMescla({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel
   );
 }
 
-/** Duplicados sugeridos e, com duas pessoas marcadas na lista, a mesclagem delas. Só aparece para quem pode mesclar. */
 export function MesclarContatos({ pares, selecionado }: { pares: ParDuplicado[]; selecionado: { a: PessoaMesclavel; b: PessoaMesclavel } | null }) {
   const [ativo, setAtivo] = useState<{ a: PessoaMesclavel; b: PessoaMesclavel } | null>(null);
   const acao = useAcaoCliente({ idempotente: false });

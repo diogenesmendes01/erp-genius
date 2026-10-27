@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { anonimizarBuscaExportacoes } from "./anonimizar-busca-exportacoes";
 
-// #257 C5: se um lote falha e o registro do evento de auditoria também falha, o erro do lote não pode
-// sumir — é ele que diz ao operador o que consertar antes de rodar de novo.
 function prismaFalso(transacoes: Array<() => Promise<unknown>>) {
   const $transaction = vi.fn();
   for (const t of transacoes) $transaction.mockImplementationOnce(t);

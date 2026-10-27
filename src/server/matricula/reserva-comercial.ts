@@ -10,7 +10,6 @@ import { reservarVagaMatriculaTx } from "./reserva-vaga-tx";
 const permitidos: Papel[] = [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const Entrada = z.object({ matriculaId: z.string().min(1), turmaId: z.string().min(1), motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
 
-/** Reserva uma contratação já preparada; não cria a matrícula nem emite cobranças. */
 export async function reservarVagaContratacao(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);

@@ -11,9 +11,6 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedidoId: string; estadoHash: string; podeAprovar: boolean }) {
   const router = useRouter();
   const [concluido, setConcluido] = useState(false);
-  // Idempotente por natureza (#166): a mesma decisão, do mesmo decisor e com o mesmo motivo, devolve a decisão já
-  // registrada (server/matricula/desistencia-administrativa.ts). Na falha de transporte, o texto fixo da decisão
-  // incerta (MSG_DECISAO_INCERTA) — erro em role="alert", sucesso em role="status".
   const acao = useAcaoCliente({ idempotente: true });
   async function enviar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

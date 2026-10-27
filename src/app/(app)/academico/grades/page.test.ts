@@ -9,8 +9,6 @@ vi.mock("@/lib/prisma", () => ({ prisma: { propostaGradeTurma: { findMany: mocks
 import { buscarPorId, findManyComOnde } from "@/test/consulta-paginada";
 import Page from "./page";
 
-// Ordem da fila: criadoEm desc, id desc. Sete propostas por instante: o id desempata, e a âncora do cursor (a 30ª)
-// cai no meio de um empate.
 const base = Date.parse("2026-09-01T12:00:00.000Z");
 const proposta = (i: number) => ({ id: `grade-${String(99 - i).padStart(2, "0")}`, criadoEm: new Date(base - Math.floor(i / 7) * 60_000), versao: 1, fusoOrigem: "UTC", turma: { codigo: `T-${i}` }, decisao: null, preparador: { nome: "Secretaria" } });
 const render = async (params: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve(params) }));
@@ -23,7 +21,6 @@ describe("/academico/grades — fila por cursor nos dois sentidos (E4)", () => {
     await expect(render({})).rejects.toThrow("Sem acesso");
     expect(mocks.propostas).not.toHaveBeenCalled();
 
-    // 31 lidas = 30 da página + a que só diz que há próxima.
     mocks.propostas.mockResolvedValue(Array.from({ length: 31 }, (_, i) => proposta(i)));
     const html = await render({});
     expect(mocks.guarda).toHaveBeenLastCalledWith(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -50,7 +47,6 @@ describe("/academico/grades — fila por cursor nos dois sentidos (E4)", () => {
     mocks.propostas.mockImplementation(findManyComOnde(pendentes));
     mocks.ancora.mockImplementation(buscarPorId(todas));
     const inicio = await render({});
-    // Decididas: a 3ª e a âncora (a 30ª, último item da página) saem da fila; a âncora continua existindo.
     pendentes.splice(29, 1); pendentes.splice(2, 1);
     const seguinte = await render({ depois: proposta(29).id });
     const ids = [...seguinte.matchAll(/href="\/academico\/grades\/(grade-\d+)"/g)].map((m) => m[1]);

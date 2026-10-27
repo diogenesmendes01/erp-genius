@@ -14,14 +14,9 @@ import { progressoMetas } from "@/server/metas/metas";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 
-const SLA_MINUTOS = 60; // SLA do 1º contato (default; tunável — P10, doc 10 §10)
+const SLA_MINUTOS = 60;
 
 
-/**
- * A mesma referência temporal governa o card de próxima aula e a lista de
- * check-ins pendentes. Ela é capturada no servidor para que uma aba aberta em
- * outro fuso, ou um relógio local incorreto, não escolha outra aula.
- */
 export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Date()) {
   if (!usuario?.id) throw new ErroAutenticacao();
   exigirPapel(usuario, Papel.PROFESSOR);
@@ -31,14 +26,10 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      // Conta SOMENTE alocações ativas (issues #1/#19) — alunos atuais (não conta transferidos/removidos).
       _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
 
-  // Experimentais para check-in (agendadas) — só as ATRIBUÍDAS a este professor
-  // (escopo, Issue #13). O vínculo é a FK `professorExperimentalId` (fonte de
-  // verdade). Sem atribuição = nada aparece, e o check-in também é bloqueado.
   const experimentais = await prisma.oportunidade.findMany({
     where: {
       professorExperimentalId: usuario.id,
@@ -50,9 +41,6 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
   });
 
   const proximaExperimental = experimentais.find((e) => e.dataExperimental! >= agora);
-  // B9 (doc 32): check-in VENCIDO — aula já passou (além da tolerância) sem Compareceu/
-  // Faltou. Sem o check-in a recuperação de no-show (C2) nunca dispara; o professor é o
-  // responsável e a Home é o canal do alerta.
   const config = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
   const toleranciaMs = (config?.checkInToleranciaMinutos ?? 30) * 60_000;
   const limiteCheckIn = new Date(Date.now() - toleranciaMs);
@@ -70,9 +58,6 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
       data: e.dataExperimental!.toISOString(),
       vencida: e.dataExperimental! < limiteCheckIn,
     })),
-    // Check-in atrasado permanece disponível na lista. Somente o destaque
-    // "Próxima" exige uma ocorrência ainda futura (o instante igual a agora
-    // ainda é atendível nesta referência capturada).
     proximaExperimental: proximaExperimental
       ? {
           id: proximaExperimental.id,
@@ -83,10 +68,6 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
   };
 }
 
-/**
- * "Hoje" e "mês" da tela inicial são o dia e o mês civis da escola (Q176), nunca os do servidor, que roda em UTC.
- * O dia vai do primeiro instante válido do dia (`inicioDoDiaInstitucional`) ao do dia seguinte, exclusivo.
- */
 export async function dadosHomeGerente(usuario: UsuarioSessao, agora = new Date()) {
   if (!usuario?.id) throw new ErroAutenticacao();
   exigirPapel(usuario, Papel.GERENTE_COMERCIAL);
@@ -111,13 +92,10 @@ export async function dadosHomeGerente(usuario: UsuarioSessao, agora = new Date(
     where: { AND: [escopo], etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
   });
 
-  // Cada recebimento entra no mês em que ocorreu, inclusive baixa parcial.
   const pagasMes = await prisma.recebimento.findMany({
     where: { dataPagamento: { gte: inicioMes }, cobranca: { matricula: escopoMatriculas } },
     select: { valor: true, moeda: true },
   });
-  // B9 (doc 32): experimentais já ocorridas (além da tolerância) sem check-in do professor
-  // — o gerente cobra; sem o check-in a recuperação de no-show (C2) não dispara.
   const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
   const limiteCheckIn = new Date(Date.now() - (configComercial?.checkInToleranciaMinutos ?? 30) * 60_000);
   const checkInsVencidos = await prisma.oportunidade.count({
@@ -128,7 +106,6 @@ export async function dadosHomeGerente(usuario: UsuarioSessao, agora = new Date(
     pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })),
   );
 
-  // ranking simples por matrículas (leads matriculados por dono)
   const vendedores = await prisma.usuario.findMany({
     where: { papeis: { has: Papel.VENDEDOR }, ativo: true, ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { gerenteComercialId: usuario.id }) },
     select: { id: true, nome: true },
@@ -145,7 +122,6 @@ export async function dadosHomeGerente(usuario: UsuarioSessao, agora = new Date(
 
   const funil = await prisma.oportunidade.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
 
-  // Meta de matrículas do mês corrente (Q9): soma das metas do escopo; null quando ninguém definiu meta.
   const competencia = dataCivilInstitucional(agora, fuso).slice(0, 7);
   const metasMes = (await progressoMetas({ competencias: [competencia], escopo: await escopoRelatorio(usuario) })).filter((p) => p.metrica === "MATRICULAS");
   const metaGeral = metasMes.find((p) => p.usuarioId === null);

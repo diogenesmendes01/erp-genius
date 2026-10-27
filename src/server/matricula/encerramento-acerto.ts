@@ -19,7 +19,6 @@ export const AcertoMensalEncerramentoSchema = z.object({
   for (let i = 1; i < periodos.length; i++) if (periodos[i].coberturaInicio <= periodos[i - 1].coberturaFim) falha("Períodos sobrepostos exigem conferência antes do acerto.");
 });
 
-/** Prévia aritmética; a origem das parcelas deve ser conferida no banco pelo fluxo de proposta. */
 export function calcularAcertoMensalEncerramento(input: z.input<typeof AcertoMensalEncerramentoSchema>) {
   const d = AcertoMensalEncerramentoSchema.parse(input);
   const parcelas = d.parcelas.map(calcularParcelaEncerramento);

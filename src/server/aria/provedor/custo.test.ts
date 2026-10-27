@@ -19,7 +19,6 @@ describe("fatorEscritaCache", () => {
     expect(CACHE_CONTROL_SISTEMA).toEqual({ type: "ephemeral" }));
 });
 
-// Tabela oficial: platform.claude.com/docs/en/about-claude/pricing (consultada em 18/10/2026), USD por milhão de tokens.
 describe("precoPorMilhao: tabela oficial", () => {
   const linha = (modelo: string, tokensPrompt: number) => {
     const p = precoPorMilhao(modelo, tokensPrompt);
@@ -44,13 +43,10 @@ describe("precoPorMilhao: tabela oficial", () => {
 });
 
 describe("custoMicroUsd: faixa de prompt do Haiku 5.5", () => {
-  // Prompt = entrada + leitura de cache + escrita de cache (todos os tokens de entrada enviados ao modelo); a saída não conta.
   const base = { entrada: 40_000, cache: 50_000, escritaCache: 10_000, saida: 1000 };
   it("prompt_de_100_000_fica_na_faixa_baixa", () =>
-    // 40000×0,10 + 50000×0,01 + 10000×0,125 + 1000×0,50
     expect(custoMicroUsd("claude-haiku-5-5", base)).toBe(6250));
   it("prompt_de_100_001_usa_a_faixa_alta_em_todas_as_categorias", () =>
-    // 40001×0,50 + 50000×0,05 + 10000×0,625 + 1000×2,50 = 31250,5
     expect(custoMicroUsd("claude-haiku-5-5", { ...base, entrada: 40_001 })).toBe(31251));
   it("leitura_de_cache_conta_para_a_faixa", () =>
     expect(custoMicroUsd("claude-haiku-5-5", { entrada: 1, cache: 100_000, saida: 0 })).toBe(Math.round(0.5 + 100_000 * 0.05)));

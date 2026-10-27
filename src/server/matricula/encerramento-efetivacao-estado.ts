@@ -7,9 +7,7 @@ import { PreviaMensalPedidoEncerramentoSchema } from "./encerramento-previa-sche
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 
-/** Guarda interna para aplicação: locks e conferência pertencem à mesma transação dos efeitos futuros. */
 export async function carregarAcertoAprovadoParaEfetivacaoTx(tx: Prisma.TransactionClient, d: { alunoId: string; decisaoId: string; executorId: string }, agora: Date) {
-  // Agenda precede matrícula para compatibilidade com consumo, cancelamento e liberação de horas.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const inicial = await tx.decisaoAcertoEncerramento.findFirst({ where: { id: d.decisaoId, rascunho: { solicitacao: { alunoId: d.alunoId } } }, select: { rascunho: { select: { solicitacaoId: true } } } });
   if (!inicial) throw new ErroRegra("Decisão não encontrada para este aluno.");

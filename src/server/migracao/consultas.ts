@@ -19,7 +19,6 @@ async function adminFrescoTx(tx: Prisma.TransactionClient, usuarioId: string) {
   const [usuario] = await tx.$queryRaw<{ ativo: boolean; papeis: Papel[] }[]>(Prisma.sql`SELECT ativo, papeis FROM "Usuario" WHERE id = ${usuarioId} FOR SHARE`);
   if (!usuario?.ativo || !usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao("Sua permissão mudou; inicie a consulta novamente.");
 }
-/** Consulta administrativa sem aplicar nem supor dados a partir da preparação. Paginada por número (E4), em ordem de id. */
 export async function consultarLotesPreparacaoMigracao(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -37,15 +36,8 @@ export async function consultarLotesPreparacaoMigracao(input: { pagina?: number 
   });
 }
 
-/** Linhas do lote por página (docs/42 L2483; docs/43 §6 item 9): um lote de 95 alunos virava um documento só.
- * Não exportada: o arquivo é "use server" (só funções assíncronas); a consulta devolve `porPagina`. */
 const LINHAS_LOTE_POR_PAGINA = 25;
 
-/**
- * Detalhe do lote com as linhas paginadas por número (lista, não fila: a linha não sai do lote quando alguém age
- * nela). A ordem termina no id (desempate estável); as correspondências de vínculo são lidas só para as linhas da
- * página. `totalLinhas` dá a faixa "X–Y de N".
- */
 export async function consultarLotePreparacaoMigracao(loteId: string, input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

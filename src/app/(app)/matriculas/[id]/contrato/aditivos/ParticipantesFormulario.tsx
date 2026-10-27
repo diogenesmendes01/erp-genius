@@ -17,7 +17,6 @@ const campo = "mt-1 block w-full rounded border p-2";
 
 export function ParticipantesFormulario({ matriculaId, propostaId }: { matriculaId: string; propostaId: string }) {
   const router = useRouter();
-  // Dois grupos de ação: a consulta (só leitura; sem chave) e o registro (chave estável por conteúdo).
   const consulta = useAcaoCliente({ idempotente: false }), registro = useAcaoCliente({ idempotente: true });
   const pendente = consulta.ocupado || registro.ocupado;
   const [maioridade, setMaioridade] = useState<"MAIOR" | "MENOR" | null>(null);
@@ -28,7 +27,6 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
   async function carregar(paginaDocumentos = 1) {
     registro.limpar();
     const d = await consulta.executar(() => consultarFormularioParticipantesAditivo({ matriculaId, propostaId, maioridade, paginaDocumentos }));
-    // Falha de transporte numa consulta: nada foi gravado, basta repetir (mensagem própria, preservada).
     if (d?.tipo === "incerto") { consulta.setErro("Não foi possível consultar os signatários. Tente novamente."); return; }
     if (d?.tipo !== "ok") return;
     if (!d.dado) { consulta.setErro("Não foi possível carregar a conferência."); return; }
@@ -98,8 +96,6 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
       </form>
     </>}
-    {/* Logo abaixo do botão de registro (último item do formulário); fora do bloco condicional porque o
-        sucesso fecha o formulário e a confirmação precisa continuar visível. */}
     <FeedbackAcao erro={registro.erro} sucesso={registro.sucesso} />
   </section>;
 }

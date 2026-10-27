@@ -19,7 +19,6 @@ it.each(["UTC","America/Sao_Paulo"] as const)("oráculo503 produtor corte/instan
   const tarefa=await prisma.tarefa.create({data:{titulo:"Oráculo temporal fictício338",tipo:"OUTRO",setor:"COMERCIAL",responsavelId:c.dono.id,criadorId:c.dono.id,atendimentoId:c.a.id,fusoOrigem:"UTC",dataCivil:"2030-01-31",inicioEm:new Date("2030-01-31T09:00:00Z"),recorrencia:"MENSAL",recorrenciaAncoraDataCivil:"2030-01-31",recorrenciaAncoraHora:"09:00",recorrenciaAncoraFuso:"UTC",recorrenciaPoliticaVersao:1}});
   const jsTxAntes=Date.now();
   const evidencia=await prisma.$transaction(async tx=>{
-   // Lista literal fechada: SET LOCAL só afeta esta TX de diagnóstico.
    if(zona==="UTC")await tx.$executeRaw`SET LOCAL TIME ZONE 'UTC'`;
    else await tx.$executeRaw`SET LOCAL TIME ZONE 'America/Sao_Paulo'`;
    const jsClock1Antes=Date.now();
@@ -39,7 +38,6 @@ it.each(["UTC","America/Sao_Paulo"] as const)("oráculo503 produtor corte/instan
   const jsTxDepois=Date.now();
   registro.fase="MEDIDO_ANTES_ASSERTS";registro.medidas={...evidencia,jsTxAntes,jsTxDepois,deltaPG1JSAntes:evidencia.pgAntes-evidencia.jsClock1Antes,deltaPG1JSDepois:evidencia.pgAntes-evidencia.jsClock1Depois,deltaPG2JSAntes:evidencia.pgDepois-evidencia.jsClock2Antes,deltaPG2JSDepois:evidencia.pgDepois-evidencia.jsClock2Depois,deltaAuditPG:evidencia.criadaEm-evidencia.pgAntes,deltaCortePG:evidencia.corteEm-evidencia.pgAntes,deltaAuditJS:evidencia.criadaEm-jsTxAntes,deltaCorteJS:evidencia.corteEm-evidencia.jsProdutorAntes};preservar();
   expect(evidencia.zona1).toBe(zona);expect(evidencia.zona2).toBe(zona);
-  // Cada epochPG deve cair no próprio intervalo JS que cercou sua consulta.
   for(const [pg,antes,depois] of [[evidencia.pgAntes,evidencia.jsClock1Antes,evidencia.jsClock1Depois],[evidencia.pgDepois,evidencia.jsClock2Antes,evidencia.jsClock2Depois]]){expect(pg).toBeGreaterThanOrEqual(antes-toleranciaMs);expect(pg).toBeLessThanOrEqual(depois+toleranciaMs);}
   expect(evidencia.inicioEm).toBe("2030-01-31T09:00:00.000Z");
   expect(evidencia.corteEm).toBe(evidencia.concluidaEm);expect(evidencia.corteEpoch).toBe(evidencia.corteEm);expect(evidencia.criadaEpoch).toBe(evidencia.criadaEm);

@@ -31,7 +31,6 @@ describe("matriz de permissões do Inbox (doc 03)", () => {
     [Papel.PROFESSOR, "enviar", { setor: "PEDAGOGICO", participante: false }, true],
     [Papel.VENDEDOR, "encaminhar", {}, true], [Papel.VENDEDOR, "preferenciaPessoal", {}, true],
     [Papel.VENDEDOR, "notaInterna", {}, true], [Papel.VENDEDOR, "agendar", {}, true],
-    // D8 (#175, L2298): desvincular só Administrador ou o gerente do setor do atendimento; nunca no pedagógico.
     [Papel.ADMINISTRADOR, "desvincular", { setor: "COMERCIAL" }, true], [Papel.ADMINISTRADOR, "desvincular", { setor: "FINANCEIRO" }, true],
     [Papel.ADMINISTRADOR, "desvincular", { setor: "SECRETARIA" }, true], [Papel.ADMINISTRADOR, "desvincular", { setor: "PEDAGOGICO" }, false],
     [Papel.GERENTE_COMERCIAL, "desvincular", { setor: "COMERCIAL" }, true], [Papel.GERENTE_COMERCIAL, "desvincular", { setor: "SECRETARIA" }, false],
@@ -72,7 +71,6 @@ describe("projeção das capacidades do painel em contexto já autorizado", () =
       veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: false, moverEtapa: true,
       tarefas: true, tarefasEquipe: false, desfazerAria: false, verEmpresa: false,
     });
-    // D1 do responsável exige contexto/autorização da #354: veLead não equivale a ser responsável.
   });
   it("lead invisível não libera edição/tag/etapa/Aria nem mesmo ao administrador", () => {
     for (const papel of [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR]) {

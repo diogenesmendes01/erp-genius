@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados no registro da
-// realização e na submissão da nota original da segunda chamada — erro em role="alert", sucesso em
-// role="status", falha de rede como resultado incerto e o formulário saindo do ocupado. Sem DOM: ganchos
-// de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   realizar: vi.fn(), nota: vi.fn(), refresh: vi.fn(),
@@ -30,7 +26,6 @@ import type { ReactNode } from "react";
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-/** Rótulo de progresso no botão e o fieldset travado: os dois sinais do ocupado. */
 const ocupadoEm = (t: ReactNode, rotulo: string) => {
   const botao = elementos(t).find((n) => n.type === "button");
   const fieldset = elementos(t).find((n) => n.type === "fieldset");

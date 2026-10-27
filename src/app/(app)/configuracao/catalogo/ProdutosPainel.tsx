@@ -31,8 +31,6 @@ export function ProdutosPainel({
   const router = useRouter();
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [modalidadeId, setModalidadeId] = useState(modalidades[0]?.id ?? "");
-  // criarProduto recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
-  // produto já criado, em vez do erro "Já existe um produto".
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
 

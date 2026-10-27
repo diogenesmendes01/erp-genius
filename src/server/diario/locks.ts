@@ -2,9 +2,6 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 
-/** Ordem compartilhada com movimentos acadêmicos: contratos, aluno, turma.
- * Vínculo novo durante a espera exige nova leitura em outra transação, sem inverter locks.
- */
 export async function bloquearContextoDiario(tx: Prisma.TransactionClient, turmaId: string, alunoIds: string[]) {
   const lerIds = async () => [...new Set((await tx.alocacaoTurma.findMany({ where: { turmaId }, select: { matriculaId: true } }))
     .flatMap((a) => a.matriculaId ? [a.matriculaId] : []))].sort();

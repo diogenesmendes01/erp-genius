@@ -85,7 +85,7 @@ it.each(tipos)("446C1 Assumir real permite %s e conserva o conteúdo", async tip
   const intents = await prisma.intencaoMensagem.findMany({ where: { atendimentoId: c.at.id, origem: "HUMANO" } });
   expect(intents).toHaveLength(1);
   expect(intents[0]).toMatchObject({ conteudo: dados.conteudo, tipo: tipo === "GIF" ? "VIDEO" : tipo, midiaPath: dados.midiaUrl ?? null, autorId: c.admin.id });
-  semDriver(); // WHATSAPP_LIVE vazio; não executa o motor nem quando a intenção é válida.
+  semDriver();
 });
 it.each(["encerrado", "inativo", "optout", "desconectado", "mime", "posse"] as const)("446C1 preserva a recusa legada %s", async caso => {
   await prisma.agenteIA.update({ where: { id: "aria" }, data: { estado: "DESLIGADA" } });
@@ -131,7 +131,6 @@ async function duranteEspera(alterar: () => Promise<unknown>) {
     await alterar();
   } finally {
     soltar.resolve();
-    // Mesmo uma falha da mutação-fixture deve drenar a action antes do próximo TRUNCATE.
     const finais = await Promise.allSettled([holder, chamada]);
     for (const final of finais) if (final.status === "rejected") throw final.reason;
   }
@@ -142,7 +141,6 @@ it.each(["reativada", "config-removida", "ator", "papel-portal", "numero", "opto
   async caso => {
     await prisma.configIA.create({ data: { id: "ia", orcamentoMensalUsd: 100 } });
     await prisma.agenteIA.update({ where: { id: "aria" }, data: { estado: "DESLIGADA" } });
-    // O convite era legítimo para o ator ERP antes da mudança para um papel só de portal.
     if (caso === "papel-portal") await prisma.participanteAtendimentoWhatsApp.create({ data: { atendimentoId: c.at.id, usuarioId: c.admin.id, concedenteId: c.admin.id, inicio: new Date(Date.now() - 60000), fim: new Date(Date.now() + 3600000), podeEnviar: true, motivo: "Convite fictício446" } });
     const resultado = await duranteEspera(() => {
       if (caso === "reativada") return prisma.agenteIA.update({ where: { id: "aria" }, data: { estado: "ATIVA" } });

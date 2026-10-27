@@ -3,7 +3,6 @@ import { ErroRegra } from "@/server/_shared/sessao";
 type TipoAtual = { id: string; nome: string; validador: string; _count: { alunos: number; pessoas: number } };
 type TipoInformado = { id?: string; nome: string; validador: string };
 
-/** Preserva IDs de documentos e aceita formulários antigos apenas quando a identidade é inequívoca. */
 export function planejarTiposDocumento(atuais: TipoAtual[], informados: TipoInformado[]) {
   const usados = new Set<string>();
   const atualizar: (TipoInformado & { id: string })[] = [];

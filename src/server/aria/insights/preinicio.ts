@@ -2,7 +2,6 @@ import { Prisma,type GeracaoInsightInbox } from "@prisma/client";
 import { registrarEvento } from "@/server/_shared/evento";
 import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
 
-/** Só prova pré-envio permite esse terminal. Nunca chama provider ou inventa ChamadaIA de custo0. */
 type GeracaoPreInicio=Pick<GeracaoInsightInbox,"id"|"estado"|"iniciadaEm"|"versao"|"autorId">;
 async function terminalizarPreInicioInsight(tx:Prisma.TransactionClient,a:{id:string;conversaId:string},g:GeracaoPreInicio,autorOperacionalId:string|null,motivo:string,estado:"RECUSADA"|"FALHOU") {
   if(g.estado!=="PROCESSANDO"||g.iniciadaEm!==null)return false;

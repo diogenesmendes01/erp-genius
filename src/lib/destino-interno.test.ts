@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DESTINO_PADRAO_APOS_LOGIN, destinoAposLogin, destinoInterno, enderecoDoLogin } from "./destino-interno";
 
-// docs/42 /login #2 e docs/43 §6 item 8: o callbackUrl só leva a um caminho interno (sem open redirect).
-
 describe("destinoInterno", () => {
   it("aceita caminho interno, com query e fragmento", () => {
     expect(destinoInterno("/matriculas/m1")).toBe("/matriculas/m1");
@@ -45,7 +43,6 @@ describe("destinoInterno", () => {
     expect(destinoInterno(undefined)).toBeNull();
     expect(destinoInterno(42)).toBeNull();
     expect(destinoInterno(`/${"a".repeat(2048)}`)).toBeNull();
-    // Rota que só começa parecida com o login continua valendo.
     expect(destinoInterno("/login-ajuda")).toBe("/login-ajuda");
   });
 });

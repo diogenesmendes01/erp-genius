@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 8 (docs/42 /login #2 e #4): depois do login a pessoa volta à página pedida (`callbackUrl`),
-// só quando é um caminho interno — URL externa, `//…` e `/\…` caem no /home. A queda de rede vira mensagem.
-// Sem DOM: ganchos de src/test/tela-sem-dom.ts; o react-hook-form entrega os valores direto ao onSubmit.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   signIn: vi.fn(), push: vi.fn(), refresh: vi.fn(),
@@ -30,7 +27,6 @@ import { anuncios } from "@/test/feedback-acao";
 import { criarGanchos, submeter } from "@/test/tela-sem-dom";
 
 const tela = () => m.ganchos!.renderizar(LoginPage, {});
-/** Abre o login com esta query (o que o guard montou) e entra com credenciais aceitas. */
 async function entrarCom(search: string) {
   vi.stubGlobal("window", { location: { search } });
   m.signIn.mockResolvedValueOnce({ ok: true, error: undefined });

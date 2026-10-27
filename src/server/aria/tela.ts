@@ -7,9 +7,6 @@ import { situacaoAria } from "./estado";
 import { diffConfig } from "./versoes";
 import type { AcaoAgenteIATipo, EstadoPolitica, EtapaLead, StatusFonteConhecimento } from "@prisma/client";
 
-// Dados da página /aria (Task 27): tudo que a tela lê em uma chamada. Só leitura; as mutações são
-// as Server Actions de versoes/estado/historico/conhecimento.
-
 export const ABAS_ARIA = ["visao", "comportamento", "permissoes", "conhecimento", "handoff", "confianca", "historico", "playground"] as const;
 export type AbaAria = (typeof ABAS_ARIA)[number];
 
@@ -21,16 +18,12 @@ export type DadosTelaAria = {
   motivoPausa: string | null;
   supervisao: boolean;
   publicada: { id: string; numero: number; config: ConfigAria } | null;
-  /** Rascunho em edição; `atualizadoEm` (ISO) é o token de concorrência que a tela devolve ao salvar, publicar e descartar. */
   rascunho: { id: string; atualizadoEm: string; config: ConfigAria } | null;
-  /** Configuração em edição: rascunho, senão a publicada, senão o padrão. */
   config: ConfigAria;
-  /** Caminhos alterados do rascunho em relação à publicada (ou ao padrão, se nunca publicada). */
   diff: string[];
   visao: VisaoGeralAria | null;
   historico: { itens: ItemHistoricoAria[]; proximo: string | null } | null;
   fontes: FonteTela[] | null;
-  /** Países para o playground (só na aba dele). */
   paises: { id: string; nome: string }[] | null;
 };
 

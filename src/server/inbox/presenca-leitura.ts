@@ -7,7 +7,6 @@ import type {ConsultaPresenca} from "./presenca-schema";
 export class ErroFotoPresenca extends Error{constructor(){super("Presença indisponível neste contexto.");}}
 export type FotoPresenca={tokenModal:string;pessoas:{usuarioId:string;status:StatusPresencaInbox}[];validadeMs:number};
 async function fresco(db:Prisma.TransactionClient,id:string){const u=await db.usuario.findUnique({where:{id},select:{id:true,nome:true,ativo:true,papeis:true,permissoes:true}});if(!u?.ativo)throw new ErroAutenticacao();if(apenasPortal(u)||!temPapel(u,...PAPEIS_INBOX))throw new ErroPermissao();return u;}
-/** Só candidatos do contexto Transferir atual. Uma leitura batch, além das consultas de ACL. */
 export async function lerPresencasTransferiveis(db:Prisma.TransactionClient,usuarioId:string,consulta:ConsultaPresenca):Promise<FotoPresenca>{
  const u=await fresco(db,usuarioId),c=await contextoPessoas(u,consulta.atendimentoId,"atribuir",db);
  if(!c||c.a.conversa?.grupoId)throw new ErroFotoPresenca();

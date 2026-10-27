@@ -8,7 +8,6 @@ export interface VisualSugestao {
  textoProposto:string|null; avisoEnvio:boolean; rotuloAprovar:string; rotuloRejeitar:string;
  pendente:boolean; decidido:{tom:"brand"|"neutro";texto:string}|null; expira:string|null;
 }
-/** Descrição de dados já autorizados/decodificados; não executa nem reinterpreta payload. */
 export function visualSugestao(s:SugestaoAriaThread,o:{usuarioId:string;fuso:string|null}):VisualSugestao {
  const hora=(iso:string)=>formatarInstanteExibicao(iso,o.fuso,"UTC","hora").texto;
  const dataHora=(iso:string)=>formatarInstanteExibicao(iso,o.fuso,"UTC","dataHora").texto;

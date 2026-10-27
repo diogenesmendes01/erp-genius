@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// B1 da R1 do #216: as edições que só existiam na ficha antiga (/leads/[id]) moram no painel da oportunidade.
-// Interação sem DOM (src/test/tela-sem-dom.ts): cada seção é chamada como função e os botões/campos são
-// acionados pelas props.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -115,8 +112,6 @@ describe("DatasOportunidade", () => {
     expect(acoes.atualizarDatas).toHaveBeenCalledWith("op1", { proximoFollowUp: "2026-10-25", dataExperimental: "", fusoDataExperimental: "America/Sao_Paulo", dataProposta: "2026-10-27" });
     expect(refreshMock).toHaveBeenCalled();
   });
-  // Lote 3 do fuso pessoal: a experimental vai como o texto digitado + o fuso escrito ao lado do campo (pessoal; sem
-  // preferência, o da escola); o servidor converte. Antes: `new Date(valor)` no fuso do navegador.
   it("a experimental vai como texto + fuso do campo, sem conversão no navegador; hora preservada", async () => {
     const t = montar(DatasOportunidade, { oportunidade: op, podeEditar: true, fuso: "America/Sao_Paulo" });
     t.digitar("op-datas-experimental", "2026-10-22T18:30");
@@ -127,8 +122,6 @@ describe("DatasOportunidade", () => {
     await comPreferencia.clicar("Salvar datas");
     expect(acoes.atualizarDatas).toHaveBeenLastCalledWith("op1", expect.objectContaining({ dataExperimental: "2026-10-22T18:30", fusoDataExperimental: "Asia/Tokyo" }));
   });
-  // Menor 4 da review do #290: experimental gravada na hora repetida do fim do horário de verão (01:30 de 01/11 em
-  // Nova York existe duas vezes). Salvar só o follow-up não pode falhar por causa dela: intocada, vai o instante gravado.
   it("experimental intocada vai como o instante gravado, mesmo na hora repetida do horário de verão", async () => {
     const naHoraRepetida = { ...op, dataExperimental: new Date("2026-11-01T05:30:00.000Z") };
     const t = montar(DatasOportunidade, { oportunidade: naHoraRepetida, podeEditar: true, fuso: "America/New_York" });

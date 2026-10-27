@@ -12,7 +12,6 @@ import { dataCivilInstitucional } from "@/server/operacao/fuso";
 
 const Entrada = z.object({ matriculaId: z.string().min(1), cobrancaId: z.string().min(1), versaoEsperada: z.number().int().nonnegative(), cobertura: CoberturaInicialSchema, primeiroVencimento: DataCivilSchema, motivo: z.string().trim().min(5).max(2000) }).strict();
 
-/** Completa a preparação; condições já aceitas exigem o fluxo documental de alteração. */
 export async function conferirCoberturaInicial(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);

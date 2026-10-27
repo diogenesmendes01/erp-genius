@@ -22,17 +22,13 @@ describe("prazoVenceEm", () => {
   it("prazo_que_termina_no_fechamento_vence_no_fechamento", () => expect(prazoVenceEm(d("2026-10-19T17:00-03:00"), 60, util, fuso)).toEqual(d("2026-10-19T18:00-03:00")));
   it("inicio_antes_da_abertura_do_mesmo_dia", () => expect(prazoVenceEm(d("2026-10-19T06:00-03:00"), 15, util, fuso)).toEqual(d("2026-10-19T08:15-03:00")));
   it("horario_de_verao_inexistente_avanca_sem_erro", () => {
-    // Nova York: 08/03/2026 02:00 não existe (pula para 03:00). Intervalo 02:00–04:00 vira 03:00–04:00.
     const cal: HorarioAtendimento = { intervalos: [{ dia: 0, inicio: "02:00", fim: "04:00" }], feriados: [] };
     expect(prazoVenceEm(d("2026-03-08T00:00-05:00"), 30, cal, "America/New_York")).toEqual(d("2026-03-08T03:30-04:00"));
   });
   it("horario_de_verao_ambiguo_usa_o_primeiro", () => {
-    // Nova York: 01/11/2026 01:30 acontece duas vezes; vale a primeira (−04:00).
     const cal: HorarioAtendimento = { intervalos: [{ dia: 0, inicio: "01:30", fim: "05:00" }], feriados: [] };
     expect(prazoVenceEm(d("2026-11-01T00:00-04:00"), 10, cal, "America/New_York")).toEqual(d("2026-11-01T01:40-04:00"));
   });
-  // C2 da R1 do #241: quem chama é o inbound (na transação). Prazo que não cabe em 400 dias não derruba o
-  // inbound: avisa no log e conta corrido, como o horário inválido.
   it("prazo_que_nao_cabe_em_400_dias_avisa_e_conta_corrido", () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
@@ -49,7 +45,6 @@ describe("prazoVenceEm", () => {
   it("calendario_cujos_dias_de_atendimento_sao_todos_feriados_conta_corrido", () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      // Só segundas-feiras, e todas as segundas dos próximos 400 dias são feriado.
       const feriados = Array.from({ length: 60 }, (_, k) => new Date(Date.parse("2026-10-19T00:00:00Z") + k * 7 * 86_400_000).toISOString().slice(0, 10));
       const cal: HorarioAtendimento = { intervalos: [{ dia: 1, inicio: "08:00", fim: "18:00" }], feriados };
       const inicio = d("2026-10-19T08:00-03:00");

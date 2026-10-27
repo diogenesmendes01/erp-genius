@@ -36,8 +36,6 @@ export function PaisFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  // Sem chave de idempotência: repetir criarPais esbarra no código ISO já criado e editarPais cria de
-  // novo os tipos de documento sem id — a falha de rede manda conferir a página antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
 
   const {
@@ -103,7 +101,6 @@ export function PaisFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-fuso">Fuso horário</label>
-          {/* CampoFuso (docs/43 §6 item 6; docs/42 L2429): sugestões + validação IANA no campo; o PaisSchema valida de novo no servidor. */}
           <Controller control={control} name="fuso" render={({ field }) => (
             <CampoFuso id="pais-fuso" name={field.name} valor={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} className={inputCls} aria-invalid={errors.fuso ? true : undefined} aria-describedby={errors.fuso ? "pais-fuso-erro" : undefined} />
           )} />

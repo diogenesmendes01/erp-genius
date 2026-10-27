@@ -20,7 +20,6 @@ export function AbaVisao({ pipeline, atendimento, params }: { pipeline: Par<Metr
     { rotulo: "Ciclo médio", valor: fmtDias(p.cicloMedioDias), variacao: variacaoTexto(p.cicloMedioDias, pa.cicloMedioDias), anterior: fmtDias(pa.cicloMedioDias) },
     { rotulo: "Primeira resposta", valor: fmtMinutos(a.primeiraRespostaMediaMin), variacao: variacaoTexto(a.primeiraRespostaMediaMin, aa.primeiraRespostaMediaMin), anterior: fmtMinutos(aa.primeiraRespostaMediaMin) },
   ];
-  // "O que mudou": regra fixa e legível (variação de 10% ou mais), sem texto gerado por modelo.
   const mudancas = kpis.flatMap((k) => {
     const n = Number(k.variacao.replace("−", "-").replace("%", ""));
     return k.variacao !== "—" && Number.isFinite(n) && Math.abs(n) >= 10 ? [`${k.rotulo}: ${k.variacao} em relação ao período anterior.`] : [];

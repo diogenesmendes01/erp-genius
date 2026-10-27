@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 
-// Task 7 (2.M2): Empresa B2B (prospect sem matrícula) e participantes da oportunidade.
-
 beforeEach(async () => {
   await truncarBanco();
 });

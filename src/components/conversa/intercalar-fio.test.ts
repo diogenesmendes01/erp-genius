@@ -5,7 +5,6 @@ import {intercalarSugestoes} from "@/app/(app)/inbox/aria/intercalar";
 import type {MensagemThread,NotaInternaThread} from "@/server/whatsapp/consultas-inbox";
 import type {SugestaoAriaThread} from "@/server/aria/sugestoes-thread";
 import type {TarefaPainel} from "@/server/inbox/painel-tarefas";
-// Doubles de dados: este recorte só lê instante/id/autor; não simula transporte ou permissão.
 const msg=(id:string,em:string):ItemThread=>({tipo:"mensagem",id,m:{id,criadoEm:em,direcao:"ENTRADA",participanteNome:"Contato"} as unknown as MensagemThread});
 const nota=(id:string,em:string):ItemThread=>({tipo:"nota",id:"nota:"+id,n:{id,criadoEm:em,origem:"atendimento",autorNome:"Ana",nota:"Nota"} satisfies NotaInternaThread});
 const tar=(id:string,em:string)=>({id,criadoEm:em} as unknown as TarefaPainel);

@@ -10,7 +10,6 @@ import {cenarioCadastroPessoa} from "@/test/inbox-cadastro-pessoa";
 import {diaUtilAs} from "@/test/janela-envio";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {executarAgendadaInbox,type BancoAgendadaInbox,type ComandoAgendadaInbox} from "./agendadas-operacao-inbox";
-// Autoria test-only C2; não executado antes de lease ROOT. SQL/ACL são reais.
 beforeEach(()=>truncarBanco());
 afterAll(()=>prisma.$disconnect());
 async function fixture(){
@@ -21,7 +20,6 @@ async function fixture(){
  const numeroB=await prisma.numeroWhatsApp.create({data:{telefoneE164:c.numero.telefoneE164+"9",rotulo:"LinhaB fictícia362",driver:"MOTOR",finalidade:"VENDAS",donoId:c.dono.id}});
  const conversa=await prisma.conversaWhatsApp.create({data:{numeroId:numeroB.id,contatoId:c.contato.id}});
  const b=await prisma.atendimentoWhatsApp.create({data:{conversaId:conversa.id,contextoChave:"COMERCIAL::362:config-b",finalidade:"COMERCIAL",leadId:c.op.id,responsavelId:c.dono.id,iaPausadaEm:new Date()}});
- // Mesmo telefone canônico do Lead; duas linhas próprias/conversas/pais distintos.
  expect(c.atendimento.id).not.toBe(b.id);expect(c.conversa.id).not.toBe(conversa.id);
  expect(await atendimentoVisivel(c.dono,c.atendimento.id,true,prisma)).not.toBeNull();
  expect(await atendimentoVisivel(c.dono,b.id,true,prisma)).not.toBeNull();
@@ -61,7 +59,6 @@ async function executar(ack:boolean){
   const limite=Date.now()+2000,samples:unknown[]=[];let convoy=false;
   while(!b.acabou()&&Date.now()<limite){const rows=await ler(o,[ap,bp]);samples.push(rows.map(r=>({pid:r.pid,state:r.state,waitType:r.wait_event_type,wait:r.wait_event,bloqueadores:r.bloqueadores,sql:flags(r.query)})));const rb=rows.find(r=>r.pid===bp);if(rb?.wait_event_type==="Lock"&&rb.bloqueadores.includes(ap)&&flags(rb.query).config){convoy=true;break;}await new Promise(r=>setTimeout(r,20));}
   const concluiuAntes=b.acabou();evidence.samples=samples;evidence.convoyConfig=convoy;evidence.bConcluiuAntesDeLiberarA=concluiuAntes;
-  // Libera imediatamente após a observação; asserções causais só depois de ambos terminarem.
   await h.query("ROLLBACK");const [ra,rb]=await Promise.all([a.resultado,b.resultado]);evidence.a="valor" in ra?{sucesso:true}:{sucesso:false,code:(ra.erro as {code?:string})?.code??null};evidence.b="valor" in rb?{sucesso:true}:{sucesso:false,code:(rb.erro as {code?:string})?.code??null};evidence.queriesA=a.queries;evidence.queriesB=b.queries;
   expect(ra).toHaveProperty("valor.id");expect(rb).toHaveProperty("valor.id");
   if(!concluiuAntes&&!convoy)throw new Error("Medição inconclusiva: B não concluiu e não foi provado lock ConfigIA");

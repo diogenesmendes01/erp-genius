@@ -29,7 +29,6 @@ beforeEach(() => {
     linha("sla-legado", "SLA_ESTOURADO"), linha("tarefa-legada", "LEMBRETE_TAREFA")];
   permitidos = new Set(["visivel"]);
   m.escopo.mockResolvedValue({ finalidade: "COMERCIAL" });
-  // A fixture ja esta na ordem SQL. Nao se reordena o resultado no mock ou no oraculo.
   m.linhas.mockImplementation(async ({ where, take }: Consulta) => {
     const cursor = where.OR;
     return banco.filter(n => n.usuarioId === where.usuarioId && (!cursor

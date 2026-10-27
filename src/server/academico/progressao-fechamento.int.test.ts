@@ -142,7 +142,7 @@ async function aprovarComDispensa(solicitacaoId: string) {
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR], "Professor da origem")).id;
   secretariaId = (await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria executora")).id;

@@ -93,7 +93,6 @@ export async function listarAutorizacoesComunicacaoAcademica(input: unknown) {
     where: { id: sessao.id, ativo: true, papeis: { hasSome: [...papeisPermitidos] } },
     select: { id: true },
   });
-  // Histórico numerado (E4): vigência desc com desempate pelo id — a volta à página traz os mesmos registros.
   const pagina = dados.pagina ?? 1;
   const lidos = await prisma.autorizacaoComunicacaoAcademica.findMany({
     where: { matriculaId: dados.matriculaId },

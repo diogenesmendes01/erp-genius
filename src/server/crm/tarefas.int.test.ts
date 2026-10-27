@@ -60,7 +60,7 @@ describe("criarTarefa", () => {
       responsavelId: vendedor.id, setor: "COMERCIAL", fusoOrigem: "America/Costa_Rica",
     });
     const t = await buscar(idDe(r));
-    expect(t.inicioEm?.toISOString()).toBe("2026-10-15T15:00:00.000Z"); // Costa Rica é UTC-6, sem horário de verão
+    expect(t.inicioEm?.toISOString()).toBe("2026-10-15T15:00:00.000Z");
     expect(t.lembrarEm?.toISOString()).toBe("2026-10-15T14:30:00.000Z");
     expect((await eventosDo("Tarefa", t.id)).map((e) => e.tipo)).toEqual(["TarefaCriada"]);
     expect((await eventosDo("Lead", opDaCarteira)).map((e) => e.tipo)).toEqual(["TarefaCriada"]);
@@ -164,7 +164,6 @@ describe("versão e transições", () => {
 });
 
 describe("editar o agendamento", () => {
-  // 2026-10-15 09:00 em Costa Rica (UTC-6) = 15:00Z; lembrete 10 min antes = 14:50Z.
   const depoisDoLembrete = new Date("2026-10-15T16:30:00Z");
   const agendamento = { dataCivil: "2026-10-15", hora: "09:00", lembreteAntecedenciaMin: 10 as const };
   async function comLembreteDisparado() {

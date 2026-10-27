@@ -115,18 +115,17 @@ describe("/aria (página)", () => {
     }));
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ aba: "historico" }) }));
     expect(html).toContain("Bruno");
-    expect(html).toContain("md:hidden"); // cartões no celular
+    expect(html).toContain("md:hidden");
     expect(html).toContain('aria-label="Desfazer Aplicar tag de Ana"');
   });
 
-  // Fuso pessoal nas telas (pendência da Q176): o horário do histórico sai no fuso pessoal; sem ele, no da escola.
   it("historico_no_fuso_pessoal_de_exibicao", async () => {
     mocks.usuario.valor = { id: "u1", nome: "U", papeis: ["ADMINISTRADOR"], permissoes: [] };
     mocks.carregar.mockResolvedValue(dados({
       historico: { itens: [{ id: "a1", quando: "2026-10-21T02:30:00.000Z", acao: "TAG", contato: "Ana", etapa: "NOVO", confianca: 90, status: "APROVADA", podeDesfazer: true, motivoIrreversivel: null, decididaPor: "Bruno" }], proximo: null },
     }));
     const pagina = async () => renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ aba: "historico" }) }));
-    expect(await pagina()).toContain("20/10, 23:30"); // escola (America/Sao_Paulo)
+    expect(await pagina()).toContain("20/10, 23:30");
     mocks.preferencia.mockResolvedValueOnce({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
     const html = await pagina();
     expect(html).toContain("20/10, 20:30");

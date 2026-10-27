@@ -27,12 +27,9 @@ it("persiste somente a preferência do usuário autenticado e preserva fallback 
 it("grava apelido legado com o nome canônico IANA (decisão do dono, 17/10/2026)", async () => {
   expect(await salvarPreferenciaFusoEquipe({ fusoExibicao: "US/Eastern" })).toMatchObject({ ok: true, dado: { fusoExibicao: "America/New_York" } });
   expect(await prisma.usuario.findUniqueOrThrow({ where: { id: usuarioId } })).toMatchObject({ fusoExibicao: "America/New_York" });
-  // A linha continua editável pelo trigger de fuso depois de gravada.
   await expect(prisma.usuario.update({ where: { id: usuarioId }, data: { nome: "Professor com fuso" } })).resolves.toBeDefined();
 });
 
-// Revisão R1 do #210 (C1): links do `backward` que o CampoFuso sugeria (Intl.supportedValuesOf) viram o
-// nome canônico, e todo destino do mapa existe em pg_timezone_names com ou sem tzdata-legacy.
 it("grava links do backward listados pelo ICU com o nome canônico aceito pelo banco", async () => {
   for (const [link, canonico] of Object.entries(LINKS_FUSO_BACKWARD_ICU)) {
     expect(await salvarPreferenciaFusoEquipe({ fusoExibicao: link }), link).toMatchObject({ ok: true, dado: { fusoExibicao: canonico } });

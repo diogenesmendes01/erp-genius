@@ -97,7 +97,6 @@ async function contextoRemarcacaoVigenteTx(tx: PrismaTypes.TransactionClient, re
   return atual?.confere === true;
 }
 
-/** A reserva vem antes do calendário/contexto, mantendo a ordem de locks da segunda chamada. */
 async function bloquearReservaRemarcacaoTx(
   tx: PrismaTypes.TransactionClient,
   reservaId: string,
@@ -277,7 +276,6 @@ async function conferirDestinoRemarcacaoTx(
   return referenciaCalendario;
 }
 
-/** Q21/Q148/Q149: proposta auditável que mantém a mesma reserva e não troca a agenda. */
 export async function proporRemarcacaoAgendaSegundaChamada(
   input: z.input<typeof ProporRemarcacaoSegundaChamadaSchema>,
 ) {
@@ -357,7 +355,6 @@ export async function proporRemarcacaoAgendaSegundaChamada(
   });
 }
 
-/** Outra pessoa da gestão decide; o trigger aplica aprovação de modo atômico e preserva a reserva. */
 export async function decidirRemarcacaoAgendaSegundaChamada(
   input: z.input<typeof DecidirRemarcacaoSegundaChamadaSchema>,
 ) {
@@ -506,7 +503,6 @@ export async function decidirRemarcacaoAgendaSegundaChamada(
   });
 }
 
-/** Revisão administrativa da reserva identificada, sem alterar a agenda ou o prazo. */
 export async function consultarRemarcacoesAgendaSegundaChamada(input: z.input<typeof consultaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(
@@ -579,7 +575,6 @@ export async function consultarRemarcacoesAgendaSegundaChamada(input: z.input<ty
           codigoAvaliacao: reserva.codigoAvaliacao,
           professorAtual: professorAtual ? { id: professorAtual.id, nome: professorAtual.nome } : null,
           prazoVigente: prazoVigente?.toISOString() ?? null,
-          // Fuso da agenda; sem ela (ou inválido), o da escola — nunca o do servidor (ver fusoDoPrazoSegundaChamada).
           fusoExibicao: fusoPrazo.fuso,
           origemFusoExibicao: fusoPrazo.origem,
         },

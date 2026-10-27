@@ -4,22 +4,11 @@ import type { TipoMensagem } from "@prisma/client";
 import { UPLOAD_DIR, contentTypePorExtensao, resolverCaminhoUpload } from "@/lib/uploads";
 import { ErroDriver } from "./canal";
 
-// MÍDIA DO CANAL (doc 26 §Camada 3 · doc 30 S9 · gaps A3/D28 do doc 28).
-// DECISÃO (E3): storage em DISCO LOCAL no pipeline que já existe — data/uploads/whatsapp/
-// + GET /api/files/[...path] + ramo novo em podeLerArquivo (doc 29 regra 10: "mídia só via
-// UPLOAD_DIR + /api/files"). S3/retenção são decisão de deploy (E5).
-// Inbound: URLs de mídia da Meta EXPIRAM em minutos — o webhook baixa na hora (gap A3).
-// Validação (D28): whitelist de MIME + teto de 10MB; fora disso a mensagem entra no log
-// SEM binário (o texto/caption sobrevive; nada explode).
-
 const SUBPASTA = "whatsapp";
-/** Saída (inbox → contato): por AUTOR — whatsapp-out/<usuarioId>/ (review PR #51 P1-2). */
 const SUBPASTA_SAIDA = "whatsapp-out";
-/** Teto único de mídia do canal (inbound e outbound). Exportado p/ o uploader validar ANTES de materializar o corpo. */
 export const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 const MAX_BYTES = MAX_BYTES_MIDIA;
 
-/** MIME normalizado (sem "; codecs=...") → extensão canônica do storage. */
 const EXTENSAO_POR_MIME: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
@@ -40,7 +29,6 @@ export function extensaoPorMime(mime: string | null | undefined): string | null 
   return EXTENSAO_POR_MIME[normalizarMime(mime)] ?? null;
 }
 
-/** Tipo normalizado da mensagem a partir do MIME (enum TipoMensagem). */
 export function tipoPorMime(mime: string | null | undefined): TipoMensagem {
   const m = normalizarMime(mime);
   if (m.startsWith("image/")) return "IMAGEM";
@@ -50,11 +38,6 @@ export function tipoPorMime(mime: string | null | undefined): TipoMensagem {
   return "OUTRO";
 }
 
-/**
- * Persiste um binário inbound no storage privado e devolve a URL canônica
- * (`/api/files/whatsapp/<arquivo>`) para gravar em `MensagemWhatsApp.midiaPath`.
- * MIME fora da whitelist ou acima de 10MB → null (mensagem fica sem binário).
- */
 export async function salvarMidiaInbound(
   bytes: Buffer,
   mime: string | null | undefined,
@@ -70,12 +53,6 @@ export async function salvarMidiaInbound(
   return `/api/files/${SUBPASTA}/${nome}`;
 }
 
-/**
- * Persiste um binário que o USUÁRIO subiu para ENVIAR pela inbox. Vive em
- * `whatsapp-out/<usuarioId>/` — a posse fica no caminho, e é ela que a action de envio
- * valida (review PR #51 P1-2: sem isso, qualquer URL de /api/files viraria anexo e um
- * comprovante fora do escopo do usuário poderia ser exfiltrado para um contato externo).
- */
 export async function salvarMidiaSaida(
   usuarioId: string,
   bytes: Buffer,
@@ -92,11 +69,6 @@ export async function salvarMidiaSaida(
   return `/api/files/${SUBPASTA_SAIDA}/${usuarioId}/${nome}`;
 }
 
-/**
- * A URL é uma mídia de saída DO PRÓPRIO autor? Checagem canônica por segmentos (não por
- * prefixo de string): rejeita traversal (`..`) que "começaria com" o prefixo certo mas
- * resolveria para arquivo de outro usuário ou de outra pasta.
- */
 export function midiaSaidaDoAutor(url: string, autorId: string): boolean {
   const prefixo = "/api/files/";
   if (!url.startsWith(prefixo)) return false;
@@ -111,11 +83,6 @@ export function midiaSaidaDoAutor(url: string, autorId: string): boolean {
   );
 }
 
-/**
- * Copia uma mídia já armazenada (recebida em `whatsapp/` ou enviada em `whatsapp-out/`) para
- * `whatsapp-out/<autor>/`, de onde o despachante a lê (encaminhamento). Só aceita essas duas
- * origens; devolve null se o caminho for inválido, de outra pasta ou o arquivo sumiu.
- */
 export async function copiarMidiaParaSaida(autorId: string, midiaPath: string): Promise<string | null> {
   const prefixo = "/api/files/";
   if (!midiaPath.startsWith(prefixo)) return null;
@@ -140,13 +107,6 @@ export interface MidiaParaEnvio {
   dadosBase64: string;
 }
 
-/**
- * Lê um arquivo do storage privado a partir da URL canônica `/api/files/...` para o
- * despachante entregar ao driver. Lança ErroDriver com motivo estável (vira FALHOU na
- * intenção + fila humana) quando o caminho é inválido ou o arquivo sumiu.
- * DEFESA EM PROFUNDIDADE (review PR #51 P1-2): só lê de `whatsapp-out/` — mesmo que uma
- * intenção nasça com caminho de comprovante/documento, o despachante não o entrega.
- */
 export async function lerMidiaParaEnvio(midiaPath: string): Promise<MidiaParaEnvio> {
   const prefixo = "/api/files/";
   if (!midiaPath.startsWith(prefixo)) throw new ErroDriver("midia_caminho_invalido");
@@ -166,19 +126,10 @@ export async function lerMidiaParaEnvio(midiaPath: string): Promise<MidiaParaEnv
   return { mime, nomeArquivo: path.basename(caminho), dadosBase64: bytes.toString("base64") };
 }
 
-// ---------------------------------------------------------------------------
-// Download inbound pelo motor (chamado pelos tradutores de evento, antes de gravar o log)
-// ---------------------------------------------------------------------------
-
-/**
- * Baixa do motor os bytes de uma mídia recebida. Qualquer falha (arquivo grande demais,
- * motor fora, mídia expirada) devolve null: a mensagem entra no log sem binário.
- */
 export async function baixarMidiaMotor(
   numeroRef: string,
   mensagemIdMotor: string,
 ): Promise<{ bytes: Buffer; mime: string } | null> {
-  // Import dinâmico: cliente.ts importa MAX_BYTES_MIDIA daqui (evita ciclo estático).
   const { baixarDoMotor, ErroMotor } = await import("./motor/cliente");
   try {
     const { bytes, mime } = await baixarDoMotor(

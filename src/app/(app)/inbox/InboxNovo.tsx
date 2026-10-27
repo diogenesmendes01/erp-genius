@@ -68,27 +68,19 @@ export interface PropsInboxNovo {
   podeAbrirFunil?: boolean;
   podeCriarOportunidade?: boolean;
   fuso: string | null;
-  /** Fuso institucional já consultado pela página, para fallback dos instantes. */
   fusoEscola?: string;
-  /** Instante obrigatório para consumidores SSR: serializar o número capturado na página; sem ele, usa 0 até hidratar. */
   agoraInicial?: number;
-  /** Destinos de transferência com contexto (FINANCEIRO/PEDAGOGICO), de `listarOpcoesAtendimento`. */
   destinos?: DestinoTransferencia[];
-  /** Triagem e revisão de envio (Task 33): nulas para quem `listarTriagemWhatsApp` / `listarRevisoesEnvio` recusam. */
   triagem?: ItemTriagem[] | null;
   revisoes?: RevisaoEnvio[] | null;
-  /** Setores e números dos filtros da coluna (`opcoesFiltroInbox`); sem eles a barra de filtros não aparece. */
   opcoesFiltro?: OpcoesFiltroInbox;
-  /** Agregados autorizados; a apresentação em chips é entregue pela etapa 313. */
   contagens?: ContagensChipsInbox;
-  /** Resumo autorizado aditivo; apresentação nas etapas345–347. */
   resumo?: ResumoListaInbox;
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
 }
 
-/** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
 export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null, opcoes: { contagens?: boolean } = {}): string {
   const q = new URLSearchParams();
   if (f.setor) q.set("setor", f.setor);
@@ -114,11 +106,6 @@ async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promi
   } catch { return null; }
 }
 
-/**
- * Troca as linhas já conhecidas pelas da primeira página, põe no topo as novas e remove as que saíram do filtro:
- * sem `proximo` a primeira página é a lista inteira; com `proximo`, o que é tão recente quanto a última linha da
- * página e não veio nela já não pertence à lista.
- */
 export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaInbox[], proximo: string | null = null, manterId: string | null = null): ItemListaInbox[] {
   if (!proximo) {
     const fixo = manterId ? atual.find((i) => i.id === manterId) : undefined;
@@ -131,7 +118,6 @@ export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaIn
   return [...nova.filter((i) => !conhecidos.has(i.id)), ...atual.filter(manter).map((i) => novas.get(i.id) ?? i)];
 }
 
-/** A leitura recém-aberta aparece imediatamente na lista, antes da próxima consulta. */
 export function zerarNaoLidas(itens: ItemListaInbox[], id: string): ItemListaInbox[] {
   const pos = itens.findIndex((item) => item.id === id && item.naoLidas !== 0);
   if (pos < 0) return itens;
@@ -142,7 +128,6 @@ export function avisoMarcaLida(aviso: AvisoInbox, selecionado: string | null): b
   return aviso.tipo === "mensagem.nova" && aviso.atendimentoId !== null && aviso.atendimentoId === selecionado;
 }
 
-/** Invalida também os dados da Aria, sem trocar o painel conhecido durante a recarga. */
 export function avisoRecarregaPainel(a: AvisoInbox, selecionado: string | null): boolean {
   return a.tipo === "resync" || a.tipo === "aria.global"
     || (a.tipo === "atendimento.atualizado"
@@ -150,8 +135,6 @@ export function avisoRecarregaPainel(a: AvisoInbox, selecionado: string | null):
       && a.atendimentoId === selecionado);
 }
 
-/** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
-/** Painel do atendimento; "sem-acesso" no 404 (fora do escopo, ex.: convite revogado); null em outra falha. */
 async function buscarPainel(id: string): Promise<DadosPainelSetor | "sem-acesso" | null> {
   try {
     const r = await fetch(`/api/inbox/atendimentos/${encodeURIComponent(id)}/painel`, { cache: "no-store", credentials: "same-origin" });
@@ -160,10 +143,8 @@ async function buscarPainel(id: string): Promise<DadosPainelSetor | "sem-acesso"
   } catch { return null; }
 }
 
-/** Lista vazia de triagem/revisão vale como ausência (nenhum painel com "· 0"). */
 const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 
-// Limiares locais consideram a Sidebar global e o compositor humano, sem alterar a navegação.
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
@@ -175,7 +156,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
-  // Agregados do servidor, reconciliados por leitura/SSE; nunca pelo tamanho da página.
   const [contagens, setContagens] = useState(contagensIniciais);
   const [resumo, setResumo] = useState(resumoInicial);
   const [novaConversaAberta, setNovaConversaAberta] = useState(false);
@@ -208,8 +188,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   }
   const [eventoRecente, setEventoRecente] = useState<AvisoInbox | null>(null);
   const [carregandoMais, setCarregandoMais] = useState(false);
-  // Filtro novo (os controles da coluna trocam a URL e a página traz outra primeira página): a lista recomeça dela.
-  // Estado derivado no render, sem key de remontagem: o que não depende do filtro (Drawer, digitação) fica.
   const chaveFiltros = paramsDosFiltros(filtros);
   const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);
   const rotaMudou = rotaVista !== selecionadoDaRota;
@@ -227,7 +205,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       setSelecionado(selecionadoInicial);
       setVista(selecionadoInicial ? "conversa" : "lista");
     } else {
-      // Revalidação confirma a seleção local: atualiza a primeira página sem perder as já carregadas.
       setItens((atualLista) => mesclarPrimeiraPagina(atualLista, inicial.itens, inicial.proximo, selecionado));
       if (itens.length <= inicial.itens.length || !inicial.proximo) setProximo(inicial.proximo);
       setContagens(contagensIniciais);
@@ -239,7 +216,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const regiaoLista = useRef<HTMLElement>(null);
   const focoAoFecharPopover = useRef<HTMLElement | null>(null);
   const navegacaoVista = useRef(versaoNavegacao);
-  // O layout ocorre antes do cleanup passivo do diálogo: não retorna ao gatilho na lista oculta.
   useEfeitoDeLayout(() => {
     if (navegacaoVista.current === versaoNavegacao) return;
     navegacaoVista.current = versaoNavegacao;
@@ -256,18 +232,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const navegacaoDaListaRef = useRef(versaoNavegacao);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
   useEffect(() => {
-    // Um objeto SSR equivalente não elimina a reconciliação pessoal pendente.
     if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros || navegacaoDaListaRef.current !== versaoNavegacao) atualizadorListaRef.current?.cancelarPendentes();
     else atualizadorListaRef.current?.invalidarSnapshotEmVoo();
     navegacaoDaListaRef.current = versaoNavegacao;
     filtrosRef.current = filtros;
-    // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;
   }, [chaveFiltros, filtros, selecionadoInicial, versaoNavegacao]);
   useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined || resumoInicial !== undefined; }, [contagensIniciais, resumoInicial]);
   const executarAtualizacao = useCallback(async (contextoVigente: () => boolean) => {
     const filtro = filtrosRef.current;
-    // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
     const entradasNoInicio = versaoEntradasRef.current;
     const pagina = typeof document === "undefined" ? null : document;
@@ -276,11 +249,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     if (!contextoVigente() || !p || pedido < consultasRef.current.aplicada) return;
     const leitura = leituraRef.current;
     const mesmaLeitura = inicio.id === leitura.id && inicio.versao === leitura.versao;
-    // Uma consulta de outra leitura não pode apagar a restauração após falha.
-    // Na mesma versão, a resposta continua válida mesmo se a ação falhar enquanto o GET está em voo.
     if (leitura.fase === "falha" && !mesmaLeitura) return;
     consultasRef.current.aplicada = pedido;
-    // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
     if (leitura.fase !== "pendente" && inicio.id === leitura.id
       && inicio.versao === leitura.versao && inicio.fase === leitura.fase) {
       if (p.contagens) setContagens(p.contagens);
@@ -290,8 +260,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
     if (linha && !(leitura.fase === "sucesso" && antiga)) {
       const entrouDepois = entradasNoInicio !== versaoEntradasRef.current;
-      // O GET fresco é autoritativo inclusive em zero (outra aba pode ter lido).
-      // IDs ocultos governam a próxima tentativa, sem impor um mínimo ao contador.
       leitura.ultimaContagem = mesmaLeitura && !entrouDepois
         ? linha.naoLidas
         : Math.max(leitura.ultimaContagem, linha.naoLidas);
@@ -319,7 +287,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const versao = leituraRef.current.versao;
       const entradasNoPedido = entradasPendentesRef.current?.id === id ? new Set(entradasPendentesRef.current.mensagens) : null;
       let sucesso = false;
-      try { sucesso = (await marcarAtendimentoLidoAutomatico(id)).ok; } catch { /* reconcilia abaixo */ } finally { recontarNaoLidasInbox(); }
+      try { sucesso = (await marcarAtendimentoLidoAutomatico(id)).ok; } catch {  } finally { recontarNaoLidasInbox(); }
       const entradasAtuais = entradasPendentesRef.current;
       if (sucesso && entradasNoPedido && entradasAtuais?.id === id) {
         for (const mensagemId of entradasNoPedido) entradasAtuais.mensagens.delete(mensagemId);
@@ -334,7 +302,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
         if (possuiContagensRef.current) carregarLista();
       } else {
-        // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
         carregarLista();
       }
@@ -365,17 +332,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     pagina.addEventListener("visibilitychange", aoRetornar);
     return () => pagina.removeEventListener("visibilitychange", aoRetornar);
   }, [pedirLeitura]);
-  // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
   const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null; acessoRevogado: boolean; leitura: { versao: number; resultado: "ok" | "falha" | "sem-acesso" } } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
   useEffect(() => {
     if (!selecionado) return;
     let ativo = true;
-    // Recarga que falha (rede, 5xx) com um painel deste atendimento já carregado mantém o último conhecido: o
-    // compositor não troca o campo pelo erro no meio da digitação nem esconde uma gravação (C2 da R1 do #220).
-    // O erro com "Tentar de novo" fica para a carga inicial; o servidor continua decidindo cada envio.
-    // 404 numa recarga (acesso revogado, avisado pelo SSE): o último painel fica, com o compositor travado e sem ações
-    // (C1 da revisão do #223). 404 na carga inicial segue como erro.
     void buscarPainel(selecionado).then((r) => {
       if (!ativo) return;
       setPainelSetor((ant) => {
@@ -388,24 +349,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => { ativo = false; };
   }, [selecionado, versaoPainel]);
 
-  // Aviso do SSE: a thread se reconcilia em `useConversa` (recebe o aviso); a lista recarrega só a primeira página
-  // e troca as linhas afetadas, sem refazer a página inteira.
   const recarregarLista = useCallback(() => {
     setVersaoPainel((v) => v + 1);
     carregarLista();
   }, [carregarLista]);
-  // Aviso que pode mudar a permissão do atendimento aberto (`atendimento.atualizado`: transferência, responsável,
-  // status) ou resync: o painel recarrega e, com ele, o podeEnviar do compositor (C3 da revisão do #218). Mensagem
-  // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
-  // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
-    // React pode agrupar mensagem+global: preservar o aviso que reconcilia a thread.
     if (a.tipo !== "aria.global") setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current)) {
       const repetida = entradasPendentesRef.current?.id === a.atendimentoId && entradasPendentesRef.current.mensagens.has(a.mensagemId);
       if (!repetida) versaoEntradasRef.current++;
-      // Também registra a entrada visível: sua leitura pode ficar enfileirada e ser
-      // suspensa ao ocultar a aba antes de a ação anterior terminar.
       if (entradasPendentesRef.current?.id === a.atendimentoId) entradasPendentesRef.current.mensagens.add(a.mensagemId);
       else entradasPendentesRef.current = { id: a.atendimentoId!, mensagens: new Set([a.mensagemId]) };
       if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, !repetida);
@@ -417,8 +369,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
-  // Permissão de envio do compositor: null enquanto o painel do atendimento aberto não chegou; painel que falhou
-  // (buscarPainel devolve null) vira erro com "Tentar de novo", que volta a carregar. Só true envia.
   const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
   const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
   const tentarPainelDeNovo = useCallback(() => { setPainelSetor((ant) => ant?.acessoRevogado ? ant : null); setVersaoPainel((v) => v + 1); }, []);
@@ -426,7 +376,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
   const [abaDoContato, setAbaDoContato] = useState<{ atendimentoId: string | null; id: IdAbaPainel }>({ atendimentoId: selecionado, id: "detalhes" });
-  // Ajuste condicionado à seleção, sem remontar a casca ou esperar um efeito após o paint.
   if (abaDoContato.atendimentoId !== selecionado) setAbaDoContato({ atendimentoId: selecionado, id: "detalhes" });
   const [edicaoContato, setEdicaoContato] = useState({ atendimentoId: selecionado, aberta: false });
   if (edicaoContato.atendimentoId !== selecionado) setEdicaoContato({ atendimentoId: selecionado, aberta: false });
@@ -436,15 +385,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const abas = abasDoPainel(atual?.finalidade ?? "", { atividade: painelDoAberto?.dado?.cabecalho?.contadorAtividade }).filter(a=>a.id!=="insights"||podeUsarInsights);
   const abaAtiva = abaDoContato.atendimentoId === selecionado && abas.some(a => a.id === abaDoContato.id) ? abaDoContato.id : "detalhes";
   const detalhesComerciais = atual?.finalidade === "COMERCIAL" && !atual.grupo;
-  // A aba Detalhes e o editor compartilham uma única aquisição por contexto.
   const detalhesDoContato = useAbaPainel<DetalhesPainel>(selecionado, "detalhes", versaoPainel, (detalhesComerciais && abaAtiva === "detalhes") || editorAberto);
   const oportunidadesDoContato = useAbaPainel<OportunidadesPainel>(selecionado, "oportunidades", versaoPainel, detalhesComerciais && abaAtiva === "oportunidades");
   const atividadeDoContato=useAbaPainel<AtividadePainel>(selecionado,"atividade",versaoPainel,abaAtiva==="atividade");
   const [portaRascunhoInsight,setPortaRascunhoInsight]=useState<PortaRascunhoInsight|null>(null);
   const publicarPortaRascunhoInsight=useCallback((porta:PortaRascunhoInsight|null)=>setPortaRascunhoInsight(porta),[]);
   const [perdaOportunidade, setPerdaOportunidade] = useState<{ atendimentoId: string | null; id: string | null; nome: string; aberta: boolean; sessao: number }>({ atendimentoId: selecionado, id: null, nome: "", aberta: false, sessao: 0 });
-  // Loading conserva o rascunho; uma identidade conhecida diferente encerra a sessao.
-  // Nao basta ocultar o modal: o proximo loading nao pode ressuscitar a oportunidade antiga.
   if (perdaOportunidade.atendimentoId !== selecionado || (perdaOportunidade.aberta && oportunidadesDoContato.dado !== null
     && oportunidadesDoContato.dado.atual?.id !== perdaOportunidade.id)) {
     setPerdaOportunidade(p => ({ ...p, atendimentoId: selecionado, id: null, nome: "", aberta: false }));
@@ -509,7 +455,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     const antes = dialogoAnterior.current;
     dialogoAnterior.current = { id: selecionado, aberta: dialogoAberto };
     if (!antes.aberta || dialogoAberto || antes.id !== selecionado) return;
-    // Drawer devolve ao gatilho original; após resize ele pode estar oculto/inert.
     const disponivel = (el: HTMLElement | null): el is HTMLElement => !!el && !el.closest("[inert]") && el.getClientRects().length > 0;
     const ativo = document.activeElement as HTMLElement | null;
     if (ativo && ativo !== document.body && disponivel(ativo)) return;
@@ -520,7 +465,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
 
   function abrir(id: string) {
-    // ACK novo pode estar fora da página (sem mensagem, NULLS LAST). A rota carrega o item autorizado.
     if (!itens.some(item => item.id === id)) {
       if (selecionadoRef.current !== selecionado) return;
       setNovaConversaAberta(false);
@@ -539,7 +483,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const url = new URL(window.location.href);
       url.searchParams.set("c", id);
       window.history.replaceState(null, "", url);
-    } catch { /* sem history: a seleção vale só nesta tela */ }
+    } catch {  }
   }
 
   async function maisAntigas() {
@@ -563,7 +507,6 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     </div>;
   }
 
-  // Os blocos antigos preservam suas ações; só a composição local retira padding/borda duplicados.
   const secaoDetalhes = "-mx-[18px] px-[18px] empty:hidden [&>section]:border-t-0 [&>section]:p-0";
   const painel = atual ? (
     <div className="flex flex-col gap-5 [&>div+div]:border-t [&>div+div]:border-gray-200 [&>div+div]:pt-5">

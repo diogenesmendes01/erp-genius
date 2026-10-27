@@ -28,9 +28,7 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
 
   it("a aba ativa segue o caminho (inclusive subcaminho da aba); fora das abas, nenhuma ativa", () => {
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancas")).toMatch(/<a(?=[^>]*href="\/financeiro\/cobrancas")(?=[^>]*aria-current="page")/);
-    // Subcaminho da aba (ex.: um detalhe futuro sob a aba) mantém a aba ativa.
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancas/detalhe")).toMatch(/<a(?=[^>]*href="\/financeiro\/cobrancas")(?=[^>]*aria-current="page")/);
-    // Prefixo de texto não é subcaminho: /financeiro/cobrancasx não ativa Cobranças.
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancasx")).not.toContain('aria-current="page"');
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/permuta")).not.toContain('aria-current="page"');
   });
@@ -65,7 +63,6 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
   });
 
   it("abaixo de sm, faixa só rolável na horizontal como a SubTabs (C45) e a aba ativa trazida para a vista (C6, #263)", () => {
-    // No navegador a 375 px, as 9 abas do financeiro quebravam em 3 linhas enquanto as demais áreas já rolavam.
     const html = render(["cobrancas", "informes", "retomadas", "comissoes", "descontos", "cambio"], {}, "/financeiro/cambio");
     const nav = html.match(/^<nav[^>]*\sclass="([^"]*)"/)?.[1].split(" ") ?? [];
     expect(nav).toEqual(expect.arrayContaining(["flex", "max-sm:flex-nowrap", "max-sm:overflow-x-auto", "max-sm:p-1", "sm:flex-wrap"]));
@@ -73,7 +70,5 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
     const links = [...html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)].map((m) => m[1].split(" "));
     expect(links).toHaveLength(6);
     for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
-    // O efeito não roda no render estático: a rolagem até a aba ativa é conferida com o React DOM de verdade
-    // em BarraAbasFinanceiro.efeito.test.ts.
   });
 });

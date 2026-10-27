@@ -27,11 +27,8 @@ const MODELOS = [
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
 const usd = (n: number) => `US$ ${n.toFixed(2).replace(".", ",")}`;
 
-/** `fusoExibicao`: o fuso pessoal de quem lê, já resolvido na página (sem preferência, o da escola). */
 export function IaPainel({ chave, config, orcamento, chamadas, fusoExibicao }: { chave: "configurada" | "ausente"; config: ConfigIATela; orcamento: OrcamentoTela; chamadas: ChamadaTela[]; fusoExibicao: string }) {
   const router = useRouter();
-  // Idempotente por natureza (#166): a configuração de IA é um registro único, gravado com os valores da tela;
-  // o servidor não grava nada (nem Evento) quando eles já estão lá, então reenviar não duplica.
   const acao = useAcaoCliente({ idempotente: true });
   const [f, setF] = useState(config);
   const pct = orcamento.limiteUsd > 0 ? Math.min(100, (orcamento.gastoUsd / orcamento.limiteUsd) * 100) : 0;

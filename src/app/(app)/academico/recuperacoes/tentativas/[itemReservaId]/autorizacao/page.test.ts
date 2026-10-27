@@ -41,7 +41,6 @@ describe("autorização de realização de recuperação", () => {
 
   it("a volta diz para onde leva: a tela do avaliador (designação), não \"Tentativa\" (docs/42 L1617, C23 da #170)", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false, erro: "Indisponível" });
-    // Id com cara de identificador: o nome vem do mapa da trilha; sem ela (\"tentativa\"), do `para` — os dois iguais.
     for (const itemReservaId of ["ct1x2y3", "tentativa"]) {
       const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ itemReservaId }), searchParams: Promise.resolve({}) }));
       const volta = html.match(/<a [^>]*aria-label="Voltar para [^"]*"[^>]*>/)?.[0] ?? "";

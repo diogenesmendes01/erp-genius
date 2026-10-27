@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 type EncontroProposto = { encontroId: string; turmaId: string; professorId: string | null; inicio: string; fim: string };
 
-/** Horários antigos dos encontros remanejados são substituídos pelos propostos na conferência. */
 export async function conferirConflitosReplanejamento(tx: Prisma.TransactionClient, propostos: EncontroProposto[]) {
  const ids = propostos.map((p) => p.encontroId);
  if (new Set(ids).size !== ids.length) throw new Error("Encontro repetido no conjunto proposto.");

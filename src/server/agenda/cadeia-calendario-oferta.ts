@@ -11,7 +11,6 @@ const EncontroFotografado = z.object({ id: z.string().nullable(), inicio: z.stri
 const ImpactoQuantidadeSchema = z.object({ agendaAntes: z.array(EncontroFotografado), agendaDepois: z.array(EncontroFotografado) });
 export type ElosQuantidade = Array<{ propostaId: string; decisaoId: string; aplicacaoId: string; estadoHash: string }>;
 
-/** Alteração de quantidade de aulas da modalidade, com o impacto fotografado para a turma em leitura. */
 export type AlteracaoQuantidadeOferta = {
   propostaId: string; estadoHash: string; impactoSnapshot: unknown;
   decisao: { id: string; aprovada: boolean; estadoHash: string } | null;
@@ -24,11 +23,6 @@ export type AncoraCalendarioOferta =
 
 type Esperado = { inicio: string; fim: string; status: string };
 
-/**
- * O diário conclui a aula depois da fotografia: PREVISTO→MINISTRADO no mesmo
- * horário é evolução legítima, não divergência. Qualquer outro status continua
- * exigindo a cadeia aprovada que o explique.
- */
 const statusCoerente = (esperado: string, atual: string) => esperado === atual || (esperado === "PREVISTO" && atual === "MINISTRADO");
 const mesmoEncontro = (esperado: Esperado | undefined, encontro: Encontro) => !!esperado
   && esperado.inicio === encontro.inicio.toISOString()
@@ -51,12 +45,6 @@ function agendaPrevista(previsao: NonNullable<ReturnType<typeof ReplanejamentoSn
 const mesmaAgenda = (encontros: readonly Encontro[], esperados: ReadonlyMap<string, Esperado>) =>
   esperados.size === encontros.length && encontros.every((encontro) => mesmoEncontro(esperados.get(encontro.id), encontro));
 
-/**
- * Encadeia as alterações de quantidade aplicadas depois do replanejamento. Cada
- * elo precisa partir exatamente da agenda deixada pelo anterior; encontros
- * adicionados nascem sem id na fotografia e são reconhecidos pelo horário.
- * Com `desde`, só a agenda a partir desse instante é conferida (destinos).
- */
 export function encadearAlteracoesQuantidade(inicial: ReadonlyMap<string, Esperado>, agenda: readonly Encontro[], alteracoes: readonly AlteracaoQuantidadeOferta[], aplicadaApos: Date, desde?: Date) {
   const noRecorte = (e: { inicio: string }) => !desde || new Date(e.inicio) >= desde;
   const encontros = agenda.filter((e) => !desde || e.inicio >= desde);
@@ -90,12 +78,6 @@ export function encadearAlteracoesQuantidade(inicial: ReadonlyMap<string, Espera
   return elos.length && mesmaAgenda(encontros, estado) ? elos : null;
 }
 
-/**
- * Uma grade publicada pode permanecer vinculada ao calendário anterior depois de
- * uma revisão conjunta. A cadeia só é aceita quando a aplicação aprovada da
- * versão vigente contém a própria turma e explica a agenda que está em leitura,
- * diretamente ou seguida de alterações de quantidade aprovadas e aplicadas.
- */
 export function ancorarCalendarioOferta(input: {
   grade: { calendarioId: string; calendarioVersao: number };
   calendarioVigente: Calendario | null;

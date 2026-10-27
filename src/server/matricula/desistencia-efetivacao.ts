@@ -26,9 +26,6 @@ async function exigirExecutorAtualTx(tx: Prisma.TransactionClient, usuarioId: st
   if (!usuario?.ativo || !usuario.papeis.some((papel) => papel === Papel.SECRETARIA_ACADEMICA || papel === Papel.ADMINISTRADOR)) throw new ErroPermissao();
 }
 
-/** Efetiva exclusivamente a desistência de uma preparação sem avanço formal.
- * A inserção da aplicação aciona o trigger SQL que cancela a matrícula
- * e libera as reservas na mesma transação. */
 export async function efetivarPedidoDesistenciaPreparacao(input: z.input<typeof entradaSchema>): Promise<Resultado<{ id: string; matriculaId: string; status: "CANCELADA" }>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
@@ -83,8 +80,6 @@ export async function efetivarPedidoDesistenciaPreparacao(input: z.input<typeof 
       } });
       await registrarEvento(tx, { tipo: "PedidoDesistenciaPreparacaoEfetivado", agregadoTipo: "Matricula", agregadoId: aplicacao.matriculaId,
         autorId: sessao.id, payload: { pedidoId: aplicacao.pedidoId, efetivacaoId: aplicacao.id } });
-      // Prisma pode não propagar uma rejeição tardia no COMMIT. Forçar a
-      // verificação ainda no callback impede confirmar uma aplicação revertida.
       await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
       return { id: aplicacao.id, matriculaId: aplicacao.matriculaId, status: "CANCELADA" as const };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });

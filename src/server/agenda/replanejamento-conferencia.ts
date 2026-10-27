@@ -8,7 +8,6 @@ import { carregarReplanejamentoTx } from "./replanejamento-tx";
 import { estadoReplanejamento } from "./replanejamento-estado";
 import { ReplanejamentoSnapshotSchema } from "./replanejamento-snapshot";
 
-/** Consulta atual separada do histórico. Não autoriza nem aplica alterações. */
 export async function conferirRevisaoParaDecisao(input: { calendarioId: string; revisaoId: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);

@@ -14,7 +14,6 @@ interface ResultadoImport {
 const btnPri = botaoClasses({ tamanho: "lg" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "lg" });
 
-/** Modal de importação de turmas em lote (XLSX) — exibido só para administrador (doc 12). */
 export function ImportarTurmasModal() {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
@@ -115,7 +114,6 @@ export function ImportarTurmasModal() {
           )}
 
           <div className="flex justify-end gap-2">
-            {/* Durante o envio nada fecha — o resultado precisa aparecer aqui; depois dele, só este botão fecha. */}
             <button type="button" className={btnSec} onClick={fechar} disabled={enviando}>
               {res ? "Fechar" : "Cancelar"}
             </button>

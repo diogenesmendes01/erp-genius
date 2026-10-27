@@ -43,7 +43,6 @@ function projetarConfirmacao(confirmacao: {
   };
 }
 
-/** Confirmação é um fato imutável e não cria efeito financeiro ou acadêmico. */
 export async function confirmarRelatoIndisponibilidadeOferta(
   input: z.input<typeof ConfirmarRelatoSchema>,
 ) {

@@ -11,21 +11,14 @@ export interface PropsOptOutContato {
   contatoId: string;
   nome: string;
   optOut: boolean;
-  /** Só a administração desfaz o opt-out (removerOptOutContato exige ADMINISTRADOR), com evidência. */
   podeReautorizar: boolean;
   aoMudar?: () => void;
 }
 
-// Opt-out no painel da conversa (reposto depois da remoção do Inbox antigo, Task 33): o pedido de descadastro
-// do contato é registrado aqui. "Registrar opt-out" bloqueia toda mensagem ao contato; o botão só abre a
-// confirmação e a action roda no ConfirmarAcao (trava em src/app/confirmacoes.test.ts). O telefone não aparece
-// (regra 5): o nome identifica o contato.
 export function OptOutContato({ contatoId, nome, optOut, podeReautorizar, aoMudar }: PropsOptOutContato) {
   const [confirmar, setConfirmar] = useState(false);
   const [evidencia, setEvidencia] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
-  // Registrar e remover são idempotentes por natureza (#166, 5º lote): o reenvio de quem fez a ação (na remoção, com
-  // a mesma evidência) devolve ok sem outro Evento (server/whatsapp/acoes.ts).
   const remover = useAcaoCliente({ idempotente: true });
 
   async function reautorizar() {

@@ -10,7 +10,6 @@ type Versao = {
   aplicacao: { id: string; condicoesHash: string } | null;
 };
 
-/** Uso interno após autorização do contrato pelo chamador. */
 export async function consultarCadastroContratualVigenteTx(tx: Prisma.TransactionClient, matriculaId: string, em: Date) {
   if (!matriculaId || !Number.isFinite(em.getTime())) throw new ErroRegra("Referência inválida para o cadastro contratual.");
   const versao = await tx.versaoCondicoesAditivo.findFirst({
@@ -22,7 +21,6 @@ export async function consultarCadastroContratualVigenteTx(tx: Prisma.Transactio
   return versao ? projetarCadastroContratual(matriculaId, versao, em) : null;
 }
 
-/** Projeção contratual: nunca altera Aluno, identidade do portal ou outro contrato. */
 export function projetarCadastroContratual(matriculaId: string, versao: Versao, em: Date) {
   if (versao.matriculaId !== matriculaId || !Number.isFinite(em.getTime()) || !Number.isFinite(versao.vigenciaInicio.getTime())) {
     throw new ErroRegra("Referência inválida para o cadastro contratual.");

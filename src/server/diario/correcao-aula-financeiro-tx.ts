@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 
-/** Chamador autoriza a gestão e mantém o lock institucional. Não retorna valores. */
 export async function carregarDependenciasFinanceirasAulaTx(tx: Prisma.TransactionClient, encontroId: string, matriculaIds: string[]) {
   const [ocorrencias, reservas] = await Promise.all([
     tx.ocorrenciaParticular.findMany({ where: { encontroId }, orderBy: [{ versao: "asc" }, { id: "asc" }],

@@ -102,7 +102,6 @@ describe("pausa da Aria quando humano responde", () => {
   it("devolver_exige_escopo_de_envio", async () => {
     const c = await cenario();
     await enviarComoAtendente(c);
-    // Linha inativa: o responsável ainda LÊ o atendimento, mas não pode enviar por ele.
     await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { ativo: false } });
     logado(c.responsavel);
     expect((await devolverParaAria(c.a.id)).ok).toBe(false);
@@ -124,7 +123,6 @@ describe("pausa da Aria quando humano responde", () => {
     expect(await st(iaAdiada.id)).toEqual({ status: "CANCELADA", motivoFalha: "aria_pausada" });
     expect(await st(iaHandoff.id)).toMatchObject({ status: "PENDENTE" });
     expect(await st(humana.id)).toMatchObject({ status: "PENDENTE" });
-    // Já pausada: uma pessoa que responde depois ainda cancela o que restou da Aria.
     await prisma.$transaction((tx) => aoGravarSaidaHumana(tx, { atendimentoId: c.a.id, origem: "CELULAR", autorId: null }));
     expect(await st(iaHandoff.id)).toEqual({ status: "CANCELADA", motivoFalha: "aria_pausada" });
     expect(await st(humana.id)).toMatchObject({ status: "PENDENTE" });

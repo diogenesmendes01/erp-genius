@@ -81,8 +81,6 @@ describe("listagem de equivalências", () => {
     });
   });
 
-  // Revisão R1 da #134 (B1/B5): a fila de autorizadas é recortada da página; a página 1 só afirma
-  // "nenhuma nesta matrícula" quando a lista inteira coube nela.
   describe("autorizações aguardando execução — vazio", () => {
     const rejeitadas = (n: number) => Array.from({ length: n }, (_, i) => ({ ...proposta, id: `p${i}`, estado: "REJEITADA" }));
     const render = async (sp: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ matriculaId: "matricula-1", ...sp }) }));

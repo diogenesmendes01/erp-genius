@@ -99,7 +99,7 @@ it("ativa por convite único, persiste somente digest da sessão e não aceita r
 
   const conviteEnviado = await prisma.solicitacaoEnvioPortalAluno.findFirstOrThrow({ where: { contaId: conta.id, finalidade: "CONVITE" } });
   const token = await despachar(conviteEnviado.id).catch(() => "");
-  expect(token).toBe(""); // convite já ativado não pode gerar outro segredo.
+  expect(token).toBe("");
   expect(await entrarPortalAluno({ email: "aluna.portal@example.com", senha: "Senha inicial segura 2026" })).toMatchObject({ autenticado: true });
 });
 

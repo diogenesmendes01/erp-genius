@@ -1,6 +1,4 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-// Ganchos de src/test/tela-sem-dom.ts no lugar do React: modelo, ciclo e valores são escolhidos pelos
-// controles da tela, e a chave/tentativa vivem no estado entre envios, como no navegador.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, preparar: vi.fn(), push: vi.fn() }));
 vi.mock("react", async original => {
   const real = await original<typeof import("react")>();
@@ -14,7 +12,6 @@ vi.mock("react", async original => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: m.push, refresh: vi.fn() }) }));
-// Lote 3 do fuso pessoal: a vigência vai como texto + fuso; quem converte é o servidor (aditivos-local.ts).
 vi.mock("@/server/contratos/aditivos-local", () => ({ prepararAditivoContratualLocal: m.preparar }));
 vi.mock("@/server/contratos/aditivos", () => ({ prepararAditivoContratual: vi.fn(), decidirAditivoContratual: vi.fn() }));
 import { PrepararAditivo } from "./Formularios";
@@ -30,7 +27,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   m.ganchos = criarGanchos();
   vi.stubGlobal("FormData", FormDataFalso);
-  // A primeira chave nasce com o formulário; as seguintes só quando a tentativa muda de conteúdo.
   let chaves = 0;
   vi.stubGlobal("crypto", { randomUUID: () => (chaves++ === 0 ? "chave-original" : "chave-nova") });
   m.preparar.mockResolvedValue({ ok: true, dado: { id: "proposta" } });
@@ -38,11 +34,9 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 const mudar = (no: No, value: string) => (no.props.onChange as (e: unknown) => void)({ target: { value } });
-/** O <select> que tem uma <option> com este valor. */
 const selectCom = (t: ReactNode, opcao: string) =>
   elementos(t).find(n => n.type === "select" && elementos(n.props.children as ReactNode).some(o => o.type === "option" && o.props.value === opcao))!;
 
-/** Monta o formulário, escolhe o modelo, a regra do ciclo (quando há cobertura) e os novos valores. */
 function montar(escolha: string, cobertura = true) {
   const campos: Origem[] = cobertura ? ["COBERTURA_INICIO", "COBERTURA_FIM"] : ["ALUNO_NOME"];
   const props = { matriculaId: "matricula", fonte: { tipo: "CONCLUSAO" as const, conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), origemHistoricaId: null, origemHash: null, campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }], fusoVigencia: "America/Sao_Paulo" };
@@ -64,10 +58,8 @@ function montar(escolha: string, cobertura = true) {
 it("envia referência e data aprováveis no payload e na identidade da tentativa", async () => {
   const c = montar("MUDAR_REFERENCIA"); await c.enviar();
   expect(m.preparar).toHaveBeenCalledWith(expect.objectContaining({ cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2026-11-03" }, chaveIdempotencia: "chave-original" }));
-  // Lote 3 do fuso pessoal: a vigência vai como o texto digitado e o fuso escrito ao lado do campo, sem conversão no navegador.
   expect(m.preparar.mock.calls[0][0]).toMatchObject({ vigenciaLocal: "2026-10-01T10:00", fusoVigencia: "America/Sao_Paulo" });
   expect(m.preparar.mock.calls[0][0]).not.toHaveProperty("vigenciaInicio");
-  // A data de referência faz parte da identidade da tentativa: a mesma data reaproveita a chave; outra data troca.
   await c.enviar(); expect(m.preparar.mock.calls[1][0].chaveIdempotencia).toBe("chave-original");
   await c.enviar("2026-11-04"); expect(m.preparar.mock.calls[2][0]).toMatchObject({ chaveIdempotencia: "chave-nova", cicloCoberturaFutura: { dataReferencia: "2026-11-04" } });
 });

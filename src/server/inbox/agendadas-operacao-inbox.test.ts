@@ -12,7 +12,6 @@ function fixture(){
  const it={id:"i",atendimentoId:"a",numeroId:"n",contatoId:"c",origem:"HUMANO",autorId:"u",status:"PENDENTE",agendadaPara:new Date("2035-01-02T15:00:00Z") as Date|null,validaAte:null,passo:null,passoComercial:null,autor:{gerenteComercialId:null}};
  const tx={atendimentoWhatsApp:{findUnique:vi.fn().mockResolvedValue(a),findFirst:vi.fn().mockResolvedValue(a)},$queryRaw:vi.fn().mockResolvedValue([]),$executeRaw:vi.fn().mockResolvedValue(0),usuario:{findUnique:vi.fn().mockResolvedValue(u),findMany:vi.fn().mockResolvedValue([u])},configIA:{upsert:vi.fn().mockResolvedValue({id:"ia"}),findUnique:vi.fn().mockResolvedValue({id:"ia"})},intencaoMensagem:{findFirst:vi.fn().mockResolvedValue(it),findUnique:vi.fn().mockResolvedValue(it),create:vi.fn().mockResolvedValue({id:"nova"}),updateMany:vi.fn().mockResolvedValue({count:1})},evento:{create:vi.fn().mockResolvedValue({id:"evento"}),findFirst:vi.fn().mockResolvedValue(null)}};
  const banco={$transaction:vi.fn(async (fn:(db:typeof tx)=>Promise<unknown>)=>fn(tx))};
- // Double parcial só da fronteira; não é teste de SQL/ACL/TX nativa.
  const db=banco as unknown as BancoAgendadaInbox;
  m.visivel.mockResolvedValue(a);m.estado.mockResolvedValue({ctx:{agora:new Date(),ariaAtiva:false,handoffPendentes:new Set()},sugestao:false});
  Object.assign(a,{numero:a.conversa.numero,contato:a.conversa.contato});
@@ -26,7 +25,6 @@ it("ENVIAR_AGORA apenas torna elegível no próximo ciclo",async()=>{const f=fix
 it("Admin não substitui Assumir por alçada",async()=>{const f=fixture();f.u.papeis=[Papel.ADMINISTRADOR];f.a.responsavelId="outro";await expect(executarAgendadaInbox(f.db,"u",criar())).rejects.toThrow(/Assuma/);expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();expect(f.tx.evento.create).not.toHaveBeenCalled();});
 it("revogação de responsável durante leitura de estado recusa sem efeitos",async()=>{const f=fixture();m.estado.mockImplementation(async()=>{await Promise.resolve();f.a.responsavelId="outro";return {ctx:{agora:new Date(),ariaAtiva:false,handoffPendentes:new Set()},sugestao:false};});await expect(executarAgendadaInbox(f.db,"u",criar())).rejects.toThrow(/Assuma/);expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();});
 
-/** SQL doubles observe order and selected shape; native locks remain a separate gate. */
 function sqlTexto(q:unknown){return Array.isArray(q)?q.join("?"):((q as {strings?:string[]})?.strings??[]).join("?");}
 function observar(f:ReturnType<typeof fixture>,replay=false,comando:ComandoAgendadaInbox=criar()){
  const ordem:string[]=[];

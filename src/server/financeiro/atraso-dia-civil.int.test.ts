@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel, type Cobranca } from "@prisma/client";
 
-// Ref. #247: o vencimento é um dia civil. A mensalidade só entra em atraso quando o dia civil da ESCOLA passa
-// do dia do vencimento, e a data digitada vira o meio-dia da escola. Relógio fixo (`vi.setSystemTime`, só o
-// Date); verde com TZ=UTC e TZ=America/Sao_Paulo. Escola em America/Sao_Paulo (−03).
-
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -29,12 +25,12 @@ import { listarAlunos } from "@/server/alunos/consultas";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { decidirRetomada, solicitarRetomada } from "@/server/retomada/acoes";
 
-const VENCIMENTO_MEIO_DIA = new Date("2026-06-23T15:00:00.000Z"); // 23/06, meio-dia de Brasília
-const VENCIMENTO_LEGADO = new Date("2026-06-23T00:00:00.000Z"); // 23/06, meia-noite UTC (legado)
-const ANTES = new Date("2026-06-20T15:00:00.000Z"); // 20/06, meio-dia de Brasília
-const NO_DIA_2130 = new Date("2026-06-24T00:30:00.000Z"); // 23/06, 21h30 de Brasília (já 24/06 em UTC)
-const SEGUINTE_0030 = new Date("2026-06-24T03:30:00.000Z"); // 24/06, 00h30 de Brasília
-const VESPERA_2130 = new Date("2026-06-23T00:30:00.000Z"); // 22/06, 21h30 de Brasília
+const VENCIMENTO_MEIO_DIA = new Date("2026-06-23T15:00:00.000Z");
+const VENCIMENTO_LEGADO = new Date("2026-06-23T00:00:00.000Z");
+const ANTES = new Date("2026-06-20T15:00:00.000Z");
+const NO_DIA_2130 = new Date("2026-06-24T00:30:00.000Z");
+const SEGUINTE_0030 = new Date("2026-06-24T03:30:00.000Z");
+const VESPERA_2130 = new Date("2026-06-23T00:30:00.000Z");
 
 type Usuario = Awaited<ReturnType<typeof criarUsuario>>;
 let sec: Usuario;
@@ -188,7 +184,6 @@ describe("retomada: status restaurado e datas digitadas no dia da escola", () =>
     const c = await mensalidade(VENCIMENTO_MEIO_DIA);
     const input = { opcao: "REPROGRAMAR_PARCELAS" as const, motivo: "Retorno acordado com o aluno", novosVencimentos: [{ cobrancaId: c.id, vencimento: "2026-06-23" }] };
     const propostaId = await pausarEPropor(input);
-    // Dado anterior a esta correção: meio-dia do relógio do servidor (UTC em produção).
     const proposta = await prisma.propostaRetomada.findUniqueOrThrow({ where: { id: propostaId } });
     const snapshot = proposta.snapshot as { alvos: { cobrancaId: string; novoVencimento: string }[] };
     await prisma.propostaRetomada.update({ where: { id: propostaId }, data: { snapshot: { ...snapshot, alvos: [{ cobrancaId: c.id, novoVencimento: "2026-06-23T12:00:00.000Z" }] } } });

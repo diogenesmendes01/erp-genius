@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Emitir cobrança de fechamento (docs/42 L906): o botão só abre o ConfirmarAcao, que exige marcar
-// "Confirmo a emissão de {valor} para este período"; só a confirmação emite.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   emitir: vi.fn(), refresh: vi.fn(),
@@ -44,9 +42,9 @@ describe("EmitirFechamento \u2014 passa pela confirmação", () => {
     expect(c.props.titulo).toBe(`Emitir a cobrança de ${total}?`);
     expect(c.props.conferencia).toBe(`Confirmo a emissão de ${total} para este período.`);
     expect(texto(c.props.children)).toContain("Uma cobrança real de");
-    expect(m.emitir).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
+    expect(m.emitir).not.toHaveBeenCalled();
     await (c.props.acao as () => Promise<unknown>)();
-    expect(m.emitir).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
+    expect(m.emitir).toHaveBeenCalledTimes(1);
     expect(m.emitir).toHaveBeenCalledWith({ alunoId: "aluno-1", matriculaId: "mat-1", decisaoId: "dec-1" });
   });
 

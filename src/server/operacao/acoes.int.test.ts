@@ -146,8 +146,6 @@ describe("configuração operacional: defaults, permissão e auditoria", () => {
     expect(await prisma.configuracaoOperacional.count()).toBe(1);
     const eventos = await eventosDo("ConfiguracaoOperacional", "escola");
     expect(eventos).toHaveLength(2);
-    // O timestamp SQL pode representar o início da transação que aguardou o lock;
-    // verificamos a cadeia pelos valores auditados, sem presumir ordem dos workers.
     const payloads = eventos.map((e) => e.payload as { de: { prazoConferenciaHoras: number }; para: unknown });
     const primeiro = payloads.find((p) => p.de.prazoConferenciaHoras === 48)!;
     const segundo = payloads.find((p) => p !== primeiro)!;

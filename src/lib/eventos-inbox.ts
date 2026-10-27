@@ -6,20 +6,18 @@ export type FonteEventos = {
   onopen: ((e: Event) => void) | null; onerror: ((e: Event) => void) | null;
   addEventListener(tipo: string, f: (e: Event) => void): void; close(): void;
 };
-/** CONNECTING reconecta nativamente; CLOSED encerra o ciclo físico definitivamente. */
 export function assinarEventosInbox(criar: () => FonteEventos, aoAviso: (a: AvisoInbox) => void, aoConectado: (c: boolean) => void, aoEncerrada?: () => void): () => void {
   const fonte = criar(); let ativo = true; let jaAbriu = false;
   const encerrar = (definitiva = false) => {
     if (!ativo) return;
     ativo = false; fonte.onopen = null; fonte.onerror = null; fonte.close();
-    // Libera o ciclo compartilhado antes de notificar assinantes que possam remontar.
     if (definitiva) aoEncerrada?.();
     aoConectado(false);
   };
   fonte.onopen = () => { if (!ativo) return; aoConectado(true); if (jaAbriu) aoAviso(resync()); jaAbriu = true; };
   fonte.onerror = () => {
     if (!ativo) return;
-    if (fonte.readyState === 2 /* CLOSED */) encerrar(true);
+    if (fonte.readyState === 2 ) encerrar(true);
     else aoConectado(false);
   };
   const receber = (e: Event) => {
@@ -37,10 +35,10 @@ let fonteAtual: CicloFonte | null = null; let conectado = false; let recuperar =
 let atrasoRecuperacao = 1000;
 let retentativa: { timer: ReturnType<typeof setTimeout> } | null = null;
 function avisar(a: AvisoInbox) {
-  for (const s of [...assinantes]) { try { s.aviso(a); } catch { /* um assinante não derruba os outros */ } }
+  for (const s of [...assinantes]) { try { s.aviso(a); } catch {  } }
 }
 function notificarConexao(c: boolean) {
-  for (const s of [...assinantes]) { try { s.conexao(c); } catch { /* idem */ } }
+  for (const s of [...assinantes]) { try { s.conexao(c); } catch {  } }
 }
 function cancelarRetentativa() {
   if (retentativa) clearTimeout(retentativa.timer);
@@ -60,7 +58,6 @@ function abrirFonte(criar: () => FonteEventos) {
   if (fonteAtual || !assinantes.size) return;
   cancelarRetentativa();
   const ciclo: CicloFonte = { encerrar: null, ressincronizar: recuperar };
-  // Reserva a identidade antes de criar/instalar: callbacks síncronos não sobrescrevem outra fonte.
   fonteAtual = ciclo; recuperar = false;
   const encerrada = () => {
     if (fonteAtual !== ciclo) return;
@@ -80,11 +77,9 @@ function abrirFonte(criar: () => FonteEventos) {
       encerrada);
   } catch { encerrada(); }
 }
-/** Uma fonte por aba; CLOSED recupera com backoff, CONNECTING segue nativo. */
 export function assinarEventosCompartilhados(aoAviso: (a: AvisoInbox) => void, aoConectado: (c: boolean) => void, criar?: () => FonteEventos): () => void {
   if (!criar && typeof EventSource === "undefined") { aoConectado(false); return () => {}; }
   const assinante = { aviso: aoAviso, conexao: aoConectado }; assinantes.add(assinante); aoConectado(conectado);
-  // Quem monta após o stream já aberto pode ter um snapshot SSR anterior aos avisos.
   if (conectado) aoAviso(resync());
   abrirFonte(criar ?? (() => new EventSource("/api/inbox/eventos")));
   return () => {

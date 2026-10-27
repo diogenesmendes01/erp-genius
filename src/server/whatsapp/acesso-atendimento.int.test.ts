@@ -30,8 +30,6 @@ const sessao = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id
 async function comercial() {
   const vendedor = await criarUsuario([Papel.VENDEDOR]);
   const outro = await criarUsuario([Papel.VENDEDOR]);
-  // Linha SEM dono: aqui o acesso vem só da carteira. Dono da linha vê a conversa (SPEC-ERP-005
-  // LC-D01) — coberto em linha-comercial.int.test.ts.
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", donoId: null } });
   const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
@@ -138,8 +136,6 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
 });
 
 describe("W01–W07: intenção velha nunca chama o driver", () => {
-  // W01–W04 eram da cadência comercial do CRM antigo (removida); o cancelamento das que sobraram na fila
-  // está em despachante-teto.int.test.ts.
   it("W05: claim interrompido fica FALHOU e não é reenviado", async () => {
     const c = await comercial();
     const i = await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: c.contato.id, atendimentoId: c.a.id,

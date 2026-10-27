@@ -16,11 +16,6 @@ import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { capacidadesCrm } from "@/server/crm/permissoes";
 import { SinoNotificacoes } from "../tarefas/SinoNotificacoes";
 
-// Inbox novo (Fase 3): lista paginada por cursor + conversa + painel; tempo real por SSE (sem polling).
-// Guard de página ANTES de qualquer consulta; o row-level real é o escopo do atendimento (whatsapp/escopo.ts).
-// Triagem e revisão de envio moram no painel da conversa (PainelTriagem): a triagem vai a quem `listarTriagemWhatsApp`
-// aceita (administrador ou responsável pela triagem do número), a revisão só ao administrador. O guard real é do servidor.
-
 const um = (v: string | string[] | undefined): string | undefined => (Array.isArray(v) ? v[0] : v);
 
 export default async function InboxPage({
@@ -36,7 +31,6 @@ export default async function InboxPage({
   const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
   const operacao=criarOperacaoListaInbox(usuario);
   const admin = temPapel(usuario, Papel.ADMINISTRADOR);
-  // listarTriagemWhatsApp recusa (ErroPermissao) quem não é administrador nem responsável pela triagem de um número.
   const triagemOuNula = () => listarTriagemWhatsApp().catch((e: unknown) => {
     if (e instanceof ErroPermissao) return null;
     throw e;
@@ -49,22 +43,17 @@ export default async function InboxPage({
     admin ? listarRevisoesEnvio() : Promise.resolve(null),
     consultarPreferenciaFusoEquipe(),
     opcoesFiltroInbox(usuario),
-    // Sino (SLA): o aviso de prazo estourado abre o atendimento aqui (?c=).
     listarNotificacoes(usuario),
     fusoDaEscola(),
     contarChipsInbox(usuario, filtros,{operacao}),
     resumoDaListaInbox(usuario,filtros,undefined,{operacao}),
   ]);
-  // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
   if (c && !inicial.itens.some((i) => i.id === c)) {
     const item = await obterItemListaInbox(usuario, c,{operacao});
     if (item) inicial.itens = [item, ...inicial.itens];
   }
-  // Fuso de exibição já resolvido: o pessoal; sem ele, o da escola (antes, sem preferência, a lista e o balão saíam
-  // em UTC). Regras (SLA, prazos) seguem no fuso da escola, no servidor.
   const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
-  // Server Component: captura uma vez e serializa o mesmo instante para SSR/hidratação.
   // eslint-disable-next-line react-hooks/purity -- snapshot servidor autorizado; o cliente recebe o número, não recalcula no getter SSR.
   const agoraInicial = Date.now();
   return (

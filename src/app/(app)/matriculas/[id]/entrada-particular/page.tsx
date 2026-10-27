@@ -25,8 +25,6 @@ export default async function EntradaParticular({ params }: { params: Promise<{ 
       {c.pendencia && <p role="alert">{c.pendencia}</p>}
     </article>)}
     {d.emitirNaAtivacao.length > 0 && <section><h2 className="text-xl font-medium">Emissão prevista na ativação</h2><ul>{d.emitirNaAtivacao.map(c => <li key={c.tipo}>{tipo(c.tipo)} · {formatarMoeda(Number(c.valor),c.moeda)} · vencimento {formatarDataCivil(c.vencimento)}.</li>)}</ul></section>}
-    {/* Só quem abre /financeiro recebe o link (docs/42 L577; docs/43 §6 item 7): a Secretaria caía em "acesso
-        negado". Para ela, o caminho que ela tem: a matrícula na Secretaria, onde o comprovante é anexado. */}
     {abreFinanceiro(usuario.papeis)
       ? <Link className="underline" href="/financeiro">Acompanhar recebimentos no Financeiro</Link>
       : <p>A confirmação dos recebimentos é feita pelo Financeiro. Se o aluno entregou um comprovante, anexe-o à matrícula na Secretaria e avise o Financeiro. <Link className="underline" href={`/secretaria?matriculaId=${encodeURIComponent(id)}`}>Abrir a matrícula na Secretaria</Link></p>}

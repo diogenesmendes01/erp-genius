@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { RascunhoEncontroSchema } from "./schema";
 
-/** Planejamento não publica agenda, reserva vaga/horas nem confere disponibilidade docente. */
 export async function prepararEncontroAgenda(input: z.input<typeof RascunhoEncontroSchema>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);

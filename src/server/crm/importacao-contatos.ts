@@ -10,14 +10,12 @@ import { escopoPessoas, garantirPessoaTx } from "./pessoas";
 
 type Tx = Prisma.TransactionClient;
 
-/** Colunas aceitas. Não há coluna de consentimento: opt-in nunca vem de planilha (P4). */
 export const COLUNAS_IMPORTACAO_CONTATOS = ["Nome", "WhatsApp", "E-mail", "Cidade", "Origem", "Tag"] as const;
 
 export const MAX_BYTES_IMPORTACAO_CONTATOS = 5 * 1024 * 1024;
 export const MAX_LINHAS_IMPORTACAO_CONTATOS = 1000;
 
 export type LinhaImportavel = {
-  /** Número da linha na planilha (cabeçalho = 1). */
   linha: number;
   nome: string;
   telefoneE164: string | null;
@@ -37,16 +35,11 @@ const ORIGENS = new Map<string, OrigemCanal>(
   ]),
 );
 
-/** Chave de cabeçalho tolerante a caixa e acento ("e-mail", "WHATSAPP"). */
 export function chaveColuna(cabecalho: string): (typeof COLUNAS_IMPORTACAO_CONTATOS)[number] | null {
   const alvo = semAcento(cabecalho);
   return COLUNAS_IMPORTACAO_CONTATOS.find((c) => semAcento(c) === alvo) ?? null;
 }
 
-/**
- * Valida as linhas da planilha (a primeira linha de dados é a linha 2). Linha repetida na planilha
- * (mesmo telefone ou, sem telefone, mesmo e-mail) conta uma vez em `repetidasNaPlanilha` e não é erro.
- */
 export function analisarPlanilhaContatos(
   linhas: Record<string, string>[],
   ddiPadrao: string,
@@ -89,7 +82,6 @@ export function analisarPlanilhaContatos(
   return { validas, invalidas, repetidasNaPlanilha };
 }
 
-/** O dono precisa ser vendedor ativo; gerente só atribui a si ou à sua equipe. */
 export async function exigirDonoDaImportacao(autor: UsuarioSessao, donoId: string): Promise<void> {
   const dono = await prisma.usuario.findFirst({
     where: { id: donoId, ativo: true, papeis: { has: Papel.VENDEDOR } },
@@ -102,7 +94,6 @@ export async function exigirDonoDaImportacao(autor: UsuarioSessao, donoId: strin
   }
 }
 
-/** Prévia sem gravar: quantas linhas casam com um contato já existente (telefone ou e-mail). */
 export async function previaContatos(validas: LinhaImportavel[]): Promise<{ novos: number; existentes: number }> {
   const telefones = validas.flatMap((l) => (l.telefoneE164 ? [l.telefoneE164] : []));
   const emails = validas.filter((l) => !l.telefoneE164 && l.email).map((l) => l.email!);
@@ -116,11 +107,6 @@ export async function previaContatos(validas: LinhaImportavel[]): Promise<{ novo
   return { novos: validas.length - existentes, existentes };
 }
 
-/**
- * Linha cuja pessoa já existe fora de `escopoPessoas(autor)`. É lançada (e não devolvida) para a transação da
- * linha ser desfeita: `garantirPessoaTx` pode ter criado o `ContatoWhatsApp` dessa pessoa antes da checagem de
- * escopo. Quem chama conta a linha à parte, como "fora da carteira" (R1 do PR #211, C3).
- */
 export class LinhaForaDaCarteira extends Error {
   constructor() {
     super("Contato já cadastrado fora da carteira do autor.");
@@ -128,14 +114,6 @@ export class LinhaForaDaCarteira extends Error {
   }
 }
 
-/**
- * Aplica UMA linha em transação própria (quem chama abre a `tx`). Pessoa existente só recebe campos vazios;
- * `Aluno`/`Responsavel` não têm dado alterado (a ligação `pessoaId` é a do hub, feita por `garantirPessoaTx`).
- * Pessoa existente fora de `escopoPessoas(autor)` não é tocada: lança `LinhaForaDaCarteira`, e a transação
- * desfaz o que `garantirPessoaTx` tenha gravado. Pessoa nova ganha oportunidade NOVO quando há `donoId`, salvo se
- * nasceu ligada a aluno ou responsável: o telefone da planilha é de alguém do cadastro acadêmico e não vira lead
- * da carteira (R1 do PR #211, C3). Nenhum consentimento é gravado.
- */
 export async function aplicarLinhaContato(
   tx: Tx,
   l: LinhaImportavel,
@@ -162,8 +140,6 @@ export async function aplicarLinhaContato(
   }
   const pessoaId: string = achada!;
   if (!criada) {
-    // Escopo comercial: pessoa existente fora da carteira do autor não é tocada (nem contato, campos, tag ou
-    // Evento). Lançar desfaz a transação da linha.
     const noEscopo = await tx.pessoa.findFirst({ where: { AND: [{ id: pessoaId }, await escopoPessoas(autor, tx)] }, select: { id: true } });
     if (!noEscopo) throw new LinhaForaDaCarteira();
 
@@ -219,7 +195,6 @@ export async function aplicarLinhaContato(
   return { criada, oportunidade };
 }
 
-/** Evento-resumo da importação: só contagens, nunca nome, telefone ou e-mail. */
 export async function registrarResumoImportacao(
   tx: Tx,
   autorId: string,

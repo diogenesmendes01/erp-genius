@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados no informe da
-// particular — erro em role="alert", sucesso em role="status", falha de rede como resultado incerto
-// (com chave: reenviar é seguro) e o formulário saindo do ocupado. Sem DOM: src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   refresh: vi.fn(), registrar: vi.fn(), consultar: vi.fn(),
@@ -38,7 +35,6 @@ const aula = {
   conferidaFinanceiramente: false, podeInformarAula: true, podeInformarCancelamento: false, origemCancelamento: null, versaoAtual: 0, historico: [],
 } as unknown as Props["dados"];
 const tela = (dados: Props["dados"] = aula) => m.ganchos!.renderizar(OcorrenciaParticular, { dados, fusoExibicao: "America/Sao_Paulo" });
-/** O botão de envio (o rótulo muda para "Registrando…" durante a action). */
 const botaoEnvio = () => elementos(tela()).find((n) => n.type === "button" && n.props.type === "submit");
 
 describe("OcorrenciaParticular", () => {

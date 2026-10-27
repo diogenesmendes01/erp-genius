@@ -23,7 +23,6 @@ export function temFonteNegativaDisponibilidade(origem: Awaited<ReturnType<typeo
   return origem.indisponibilidades.some((registro) => registro.confirmacao === null || registro.confirmacao.confirmada);
 }
 
-/** Não soma intervalos: uma versão atual aprovada deve cobrir o período inteiro. */
 export async function conferirDisponibilidadeOfertaTx(tx: Prisma.TransactionClient, input: z.input<typeof Entrada>) {
   const dados = Entrada.parse(input), inicio = dataUtc(dados.inicio), fim = dataUtc(dados.fim);
   const atual = await capturarFonteDisponibilidadeOfertaTx(tx, { matriculaId: dados.matriculaId, inicio, fim });

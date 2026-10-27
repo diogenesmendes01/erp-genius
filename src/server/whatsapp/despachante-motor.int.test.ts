@@ -2,15 +2,12 @@ import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// Driver do motor FALSO: nenhuma mensagem real pode sair.
 const { enviarTexto, enviarTemplate, enviarMidia } = vi.hoisted(() => ({
   enviarTexto: vi.fn(),
   enviarTemplate: vi.fn(),
   enviarMidia: vi.fn(),
 }));
 vi.mock("./drivers/motor", () => ({ driverMotor: { enviarTexto, enviarTemplate, enviarMidia } }));
-// A revalidação do aviso de agenda (config, template, fonte) é coberta em agenda/*; aqui só
-// interessa o comportamento do catch pós-claim, então ela é neutralizada (claim e resultado reais).
 vi.mock("@/server/comunicacoes-agenda/whatsapp", async (orig) => ({
   ...(await orig<typeof import("@/server/comunicacoes-agenda/whatsapp")>()),
   motivoAvisoAgendaInvalido: async () => null,
@@ -168,7 +165,6 @@ describe("despachante × motor", () => {
       expect(await intencao(intencaoId)).toMatchObject({ status: "FALHOU", motivoFalha: "motor_indisponivel" });
     });
 
-    // B1 da R1 do #213: a retenção de agenda da #209/#212 vale também com o envio pelo motor.
     it("aviso de agenda com o envio de agenda desligado fica retido: não vai ao motor nem vira SIMULADA", async () => {
       vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "false");
       const { intencaoId } = await seed({}, { criadaEm: agora });

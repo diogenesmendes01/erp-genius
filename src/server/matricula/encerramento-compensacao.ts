@@ -24,7 +24,6 @@ export const CompensacaoEncerramentoSchema = z.object({
   if (new Set(destinos).size !== destinos.length) falha("O mesmo dia aparece em mais de uma destinação; concilie o histórico.");
 });
 
-/** Q83: somente apuração do ajuste; não cria crédito, liquidação ou devolução. */
 export function calcularCompensacaoPendenteEncerramento(input: z.input<typeof CompensacaoEncerramentoSchema>) {
   const d = CompensacaoEncerramentoSchema.parse(input);
   const resolvidos = new Set([...d.diasRecompostos, ...d.diasLiquidadosFinanceiramente, ...d.diasContempladosNoProporcional]);

@@ -69,7 +69,6 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
     const deOutraEquipe = await c.sugerir({ expiraEm: futuro, texto: "outra equipe", oportunidadeId: outroLead.id });
     const r = await carregarAriaDoAtendimento(c.gerente, c.a.id);
     expect(r?.cartoes.filter(s=>s.status==="SUGERIDA").map((s) => s.id)).toEqual([daEquipe.id]);
-    // O Admin vê as duas.
     const admin = await criarUsuario([Papel.ADMINISTRADOR]);
     expect((await carregarAriaDoAtendimento(admin, c.a.id))?.cartoes.filter(s=>s.status==="SUGERIDA").map((s) => s.id)).toEqual([daEquipe.id, deOutraEquipe.id]);
   });
@@ -88,7 +87,6 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
     await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
     expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toMatchObject({ pausada: true, podeDevolver: true });
     expect(await podeDevolverParaAria(prisma, c.vendedor, c.a.id)).toBe(true);
-    // Linha inativa: o vendedor ainda LÊ o atendimento (vê a pausa), mas não pode enviar por ele.
     await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { ativo: false } });
     expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toMatchObject({ pausada: true, podeDevolver: false });
     expect(await podeDevolverParaAria(prisma, c.vendedor, c.a.id)).toBe(false);

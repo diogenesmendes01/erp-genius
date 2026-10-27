@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, type MutableRefObject } from "react";
 import { useDialogo } from "@/lib/dialogo";
-/** Só montagem de teste; a suíte mantém o hook e o React DOM reais. */
 export function TelaRetorno({ aberto, explicito = false, isolar = false, versao = 0, focoAoFecharRef }: {
  aberto: boolean; explicito?: boolean; isolar?: boolean; versao?: number; focoAoFecharRef: MutableRefObject<HTMLElement | null>;
 }) {

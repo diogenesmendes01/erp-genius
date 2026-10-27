@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Fila de informes a conferir (aba "A conferir" do /financeiro) por cursor nos dois sentidos (docs/43 §6 item 9 e
-// §7.5: `listarInformesPagamento` lia todos os informes sem `take`). Sem banco: o findMany de mentira avalia o corte
-// do cursor no `where` (src/test/consulta-paginada.ts) e conferir um informe é trocar o status dele.
-
 const m = vi.hoisted(() => ({ sessao: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), count: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { pagamentoInformado: { findMany: m.findMany, findUnique: m.findUnique, count: m.count } } }));
 vi.mock("@/server/_shared", async (original) => {
@@ -15,7 +11,6 @@ import { buscarPorId, findManyComOnde, idsEmOrdem, terminaNoId } from "@/test/co
 import { INFORMES_POR_TRECHO, contarInformesAConferir, listarFilaInformesPagamento, listarInformesPagamento } from "./consultas";
 
 type Linha = ReturnType<typeof informe>;
-/** Dois informes por instante: o desempate pelo id é o que mantém a ordem estável. */
 const informe = (id: string, i: number) => ({
   id, versao: 1, valor: 100, moeda: "BRL", forma: "TRANSFERENCIA", status: "A_CONFERIR" as string,
   criadoEm: new Date(Date.UTC(2026, 8, 1, 0, Math.floor(i / 2))), dataPagamento: new Date("2026-09-01T12:00:00Z"),
@@ -29,7 +24,6 @@ beforeEach(() => {
   vi.resetAllMocks();
   m.sessao.mockResolvedValue({ id: "financeiro", papeis: ["FINANCEIRO"] });
   todas = idsEmOrdem(70).map(informe);
-  // A fila é o que está A_CONFERIR agora; a âncora do cursor continua existindo depois de conferida.
   m.findMany.mockImplementation((args) => findManyComOnde(todas.filter((l) => l.status === "A_CONFERIR"))(args));
   m.findUnique.mockImplementation(buscarPorId(todas));
 });

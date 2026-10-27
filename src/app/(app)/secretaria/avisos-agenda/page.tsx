@@ -14,7 +14,6 @@ import { cursorDaLeitura, lerNavegacao } from "@/lib/cursor-fila";
 export default async function AvisosAgendaPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
   const q = await searchParams, navAvisos = lerNavegacao(q), navPendencias = lerNavegacao(q, "Pendencias");
-  // Duas filas, cada uma com o próprio cursor nos dois sentidos; o link de uma mantém o ponto da outra.
   const avisosAtuais = { depois: navAvisos.depois, antes: navAvisos.antes };
   const pendenciasAtuais = { depoisPendencias: navPendencias.depois, antesPendencias: navPendencias.antes };
   const hrefAvisos = (cursor: CursorDoLink) => hrefLista("/secretaria/avisos-agenda", { ...cursor, ...pendenciasAtuais });

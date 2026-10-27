@@ -38,7 +38,6 @@ export async function moverEtapaEmLote(
   });
 }
 
-/** Aviso de cadastro existente ao criar oportunidade: roda no escopo de quem digita e não grava nada. */
 export async function buscarPossiveisDuplicados(entrada: {
   nome?: string;
   telefone?: string;

@@ -1,16 +1,5 @@
-// Lista ISO 3166-1 (alpha-2) de países — usada para campos de PESSOA que aceitam
-// qualquer país (nacionalidade, segunda nacionalidade, país de residência, país
-// emissor do documento). É DIFERENTE da tabela `Pais` do banco, que modela apenas
-// os MERCADOS ativos da Genius (CR/PA/SV…). Aluno venezuelano residente no Panamá
-// é comum na América Central (doc 04) — por isso a nacionalidade não é FK de `Pais`.
-//
-// Nomes em português (UI é pt-BR). Ordenada por nome. Extensível: adicione a linha
-// no formato { codigo, nome } mantendo a ordem alfabética.
-
 export interface PaisISO {
-  /** Código ISO 3166-1 alpha-2 (ex.: "VE"). */
   codigo: string;
-  /** Nome em português. */
   nome: string;
 }
 
@@ -206,11 +195,9 @@ export const PAISES_ISO: readonly PaisISO[] = [
 
 const NOME_POR_CODIGO = new Map(PAISES_ISO.map((p) => [p.codigo, p.nome]));
 
-/** Nome em português de um código ISO; devolve o próprio código se desconhecido. */
 export function nomePaisISO(codigo: string | null | undefined): string {
   if (!codigo) return "—";
   return NOME_POR_CODIGO.get(codigo) ?? codigo;
 }
 
-/** Conjunto de códigos válidos (para validação no servidor). */
 export const CODIGOS_ISO = new Set(PAISES_ISO.map((p) => p.codigo));

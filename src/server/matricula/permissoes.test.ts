@@ -9,9 +9,6 @@ import {
   podeCriarEAtivarMatricula,
 } from "@/server/matricula/permissoes";
 
-// Regras de permissão do fluxo de matrícula (issue #8).
-// criarMatricula → VENDEDOR/GERENTE_COMERCIAL; ativar → FINANCEIRO/SECRETARIA.
-// O fluxo atômico "criar + ativar" exige AMBOS os conjuntos de papéis.
 const vendedor: Papel[] = [Papel.VENDEDOR];
 const gerente: Papel[] = [Papel.GERENTE_COMERCIAL];
 const financeiro: Papel[] = [Papel.FINANCEIRO];

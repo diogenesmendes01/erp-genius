@@ -38,10 +38,6 @@ function somarDia(data: Date): Date {
   return proximo;
 }
 
-/**
- * Apura dias confirmados sem consultar a projeção limitada da UI. Términos
- * aprovados encurtam relatos originalmente abertos, mas não escrevem nada.
- */
 export async function apurarDiasIndisponibilidadeCoberturaTx(
   tx: Prisma.TransactionClient,
   input: z.input<typeof EntradaApuracaoSchema>,

@@ -13,7 +13,6 @@ export function extrairLimitesCoberturaFormalizada(snapshot: unknown, entradaHas
   if (inicio?.tipo !== "DATA" || fim?.tipo !== "DATA" || inicio.data > fim.data) throw new ErroRegra("Limites de cobertura formalizados inválidos.");
   return { inicio: inicio.data, fim: fim.data };
 }
-/** Lê somente o campo que integrou o snapshot assinado; tela financeira não o altera. */
 export function extrairPoliticaCoberturaFormalizada(snapshot: unknown, entradaHash: string): PoliticaCoberturaAditivo {
   if (hashSubstituicao(snapshot as Prisma.JsonValue) !== entradaHash) throw new ErroRegra("A proposta assinada perdeu sua integridade.");
   const entrada = z.object({ entrada: PrepararAditivoContratualSchema }).parse(snapshot).entrada;

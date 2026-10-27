@@ -39,7 +39,6 @@ describe("recuperações realizadas", () => {
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
 
-  // Revisão R1 da #134 (B5): página 1 × página seguinte, com o href exato da volta.
   it("vazio: página 1 diz que não há realização; página seguinte oferece a volta preservando a alocação", async () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
     mocks.listar.mockResolvedValue({ ok: true, dado: { ...dado, realizacoes: [] } });

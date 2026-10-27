@@ -8,11 +8,6 @@ import type { DadosMensagem, EnvelopeMotor } from "./eventos";
 import { apagarArquivo, tipoDaMensagem } from "./processar-mensagem";
 import { PROCESSADORES, type ResultadoProcessamento } from "./receber";
 
-/**
- * Mensagem de grupo (E3.5): grava grupo, conversa e mensagem com o remetente (`participante*`).
- * Sem atendimento, sem cancelar automação do participante e sem opt-out por palavra: o grupo é
- * um canal coletivo e a palavra de um participante não fala pelo contato individual.
- */
 export async function processarMensagemGrupo(env: EnvelopeMotor, dados: DadosMensagem, fromMe: boolean): Promise<ResultadoProcessamento> {
   const numero = await acharNumero({ numeroProviderRef: env.numeroId, driver: "MOTOR" });
   if (!numero) return { ignorado: "numero_desconhecido" };
@@ -37,7 +32,6 @@ export async function processarMensagemGrupo(env: EnvelopeMotor, dados: DadosMen
   const participante = dados.participante ?? null;
   try {
     await prisma.$transaction(async (tx) => {
-      // Nome provisório = JID; `grupo.atualizado` troca pelo assunto real.
       const grupo = await tx.grupoWhatsApp.upsert({
         where: { numeroId_grupoJid: { numeroId: numero.id, grupoJid: dados.chatJid } },
         create: { numeroId: numero.id, grupoJid: dados.chatJid, nome: dados.chatJid },
@@ -84,7 +78,6 @@ export async function processarMensagemGrupo(env: EnvelopeMotor, dados: DadosMen
 
 const DadosGrupoAtualizadoSchema = z.object({ grupoJid: z.string().min(1) });
 
-/** `grupo.atualizado`: busca o assunto no motor e atualiza `GrupoWhatsApp.nome`. */
 export async function processarGrupoAtualizado(env: EnvelopeMotor): Promise<ResultadoProcessamento> {
   const parsed = DadosGrupoAtualizadoSchema.safeParse(env.dados);
   if (!parsed.success) return { ignorado: "dados_invalidos" };

@@ -21,11 +21,6 @@ export type CondicaoContinuidadeVigente<T extends CondicaoContinuidadeParaSeleca
   regras: RegrasContinuidadeMensal;
 };
 
-/**
- * Confere todas as condições aprovadas carregadas pelo chamador e seleciona a
- * que já vigora na data civil informada. Esta função não consulta nem aprova
- * condições; documento, moeda e preço continuam sendo gates do consumidor.
- */
 export function selecionarCondicaoContinuidadeVigente<
   T extends CondicaoContinuidadeParaSelecao,
 >(condicoes: readonly T[], data: string): CondicaoContinuidadeVigente<T> {

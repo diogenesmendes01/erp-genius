@@ -57,12 +57,10 @@ it("cada rótulo do painel de edição aponta para um campo existente e as ajuda
   for (const id of alvos) {
     expect([...html.matchAll(new RegExp(`\\sid="${id}"`, "g"))], id).toHaveLength(1);
   }
-  // As ajudas são a `dica` do <Campo> (src/components/Campo.tsx): id = `${id do campo}-dica`.
   for (const [campo, ajuda] of [["ficha-documento", "ficha-documento-dica"], ["ficha-motivo", "ficha-motivo-dica"]]) {
     expect(html).toMatch(new RegExp(`id="${campo}"[^>]*aria-describedby="${ajuda}"|aria-describedby="${ajuda}"[^>]*id="${campo}"`));
     expect(html).toContain(`id="${ajuda}"`);
   }
-  // O motivo é obrigatório (o servidor recusa sem ele) — o leitor de tela precisa saber disso.
   expect(html).toMatch(/<textarea(?=[^>]*\sid="ficha-motivo")(?=[^>]*\saria-required="true")[^>]*>/);
 });
 
@@ -74,10 +72,8 @@ it("os obrigatórios da edição (EditarAlunoSchema) são aria-required, e nenhu
     .filter((m) => /\saria-required="true"/.test(m[0]))
     .map((m) => m[1]);
   expect(obrigatorios).toEqual(["ficha-primeiroNome", "ficha-sobrenome", "ficha-paisId", "ficha-motivo"]);
-  // Antes de tentar salvar: sem aria-invalid e sem mensagem de erro de campo.
   expect(html).not.toContain("aria-invalid");
   expect(html).not.toMatch(/id="ficha-[^"]+-erro"/);
-  // "Salvar alterações" não fica desabilitado sem explicação: o que falta aparece no campo ao clicar.
   expect(html).toMatch(/<button[^>]*>Salvar alterações<\/button>/);
   expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Salvar alterações<\/button>/);
 });

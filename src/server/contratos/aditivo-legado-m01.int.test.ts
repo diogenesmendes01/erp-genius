@@ -36,10 +36,6 @@ let catalogo: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
 
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 
-/** Cria uma fonte M01 com lote e mapa de origem montados pela fixture, seguida
- * das ações públicas de ensaio, vínculo aplicado e obrigação financeira
- * aprovada por outra pessoa. Não insere assinatura, proposta ou aplicação de
- * aditivo artificialmente. */
 async function criarMatriculaM01(nome: string) {
   const origem = `M01-ADITIVO-${randomUUID()}`;
   const alunoOrigemId = `aluno-${randomUUID()}`;

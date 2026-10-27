@@ -12,7 +12,6 @@ const sessao = (u: UsuarioArquivo) => ({ ...u, nome: "" });
 
 export function urlCanonica(segmentos: string[]): string { return `/api/files/${segmentos.join("/")}`; }
 
-/** Resolve o objeto real antes de fixar a finalidade do arquivo. */
 export async function validarContextoArquivo(usuario: UsuarioArquivo, contexto: ContextoArquivo, tx: Banco = prisma) {
   if (!usuario?.id) throw new ErroPermissao();
   if (contexto.cobrancaId) {
@@ -55,14 +54,11 @@ export async function validarContextoArquivo(usuario: UsuarioArquivo, contexto: 
   throw new ErroPermissao("Informe um objeto autorizado para vincular o arquivo.");
 }
 
-/** Primeiro vínculo exige autoria e compare-and-set. Chamar na transação da associação. */
 export async function exigirArquivoVinculavel(usuario: UsuarioArquivo, url: string, contexto: ContextoArquivo, tx: Banco = prisma) {
   if (!/^\/api\/files\/[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(url)) throw new ErroRegra("Use um arquivo enviado pelo sistema.");
   const destino = await validarContextoArquivo(usuario, contexto, tx);
   const registro = await tx.registroUpload.findUnique({ where: { url } });
   if (!registro) {
-    // Legado continua somente no mesmo objeto E categoria; conhecer URL não autoriza
-    // transformar um contrato administrativo em teste pedagógico ou proposta comercial.
     const legado = destino.cobrancaId
       ? await tx.cobranca.findFirst({ where: { id: destino.cobrancaId, comprovanteUrl: url }, select: { id: true } })
       : destino.categoriaDocumento && (destino.leadId || destino.matriculaId)
@@ -74,7 +70,6 @@ export async function exigirArquivoVinculavel(usuario: UsuarioArquivo, url: stri
     if (!legado) throw new ErroPermissao("Não foi possível comprovar a autoria deste upload. Envie o arquivo novamente.");
     return;
   }
-  // Operação de confirmação sem recategorização preserva a finalidade já fixada.
   destino.categoriaDocumento ??= registro.categoriaDocumento;
   const vinculado = !!(registro.leadId || registro.matriculaId || registro.alunoId || registro.cobrancaId);
   if (!vinculado && registro.autorId !== usuario.id) throw new ErroPermissao("Este upload pertence a outro usuário.");
@@ -89,12 +84,6 @@ export async function exigirArquivoVinculavel(usuario: UsuarioArquivo, url: stri
   if (alterado.count !== 1) throw new ErroRegra("O upload foi vinculado por outra operação. Atualize a página.");
 }
 
-/**
- * Upload "livre" para reuso fora de um objeto (ex.: base de conhecimento da Aria): enviado pelo
- * próprio usuário, sem vínculo em RegistroUpload (lead/aluno/cobrança/matrícula) e sem nenhuma
- * referência que lhe dê finalidade (cobrança, informe de pagamento, documento ou mídia de WhatsApp).
- * Mais restrito que `podeLerArquivo`: arquivo com finalidade nunca é livre, nem para o Administrador.
- */
 export async function uploadLivreDoAutor(usuario: UsuarioArquivo, registroUploadId: string, tx: Banco = prisma) {
   if (!usuario?.id || !registroUploadId) return null;
   const registro = await tx.registroUpload.findUnique({ where: { id: registroUploadId } });
@@ -111,7 +100,6 @@ export async function uploadLivreDoAutor(usuario: UsuarioArquivo, registroUpload
   return referencias.some((n) => n > 0) ? null : registro;
 }
 
-/** Leitura depende da finalidade atual e do objeto, inclusive após transferência. */
 export async function podeLerArquivo(usuario: UsuarioArquivo, segmentos: string[]): Promise<boolean> {
   if (!usuario?.id || !usuario.papeis.length) return false;
   const url = urlCanonica(segmentos);
@@ -151,8 +139,6 @@ export async function podeLerArquivo(usuario: UsuarioArquivo, segmentos: string[
     if (documento.lead.matricula?.secretariaAssumiuEm && documento.categoria !== "PROPOSTA") return false;
     return !!await prisma.oportunidade.findFirst({ where: { AND: [{ id: documento.leadId }, await escopoComercialAtual(sessao(usuario))] }, select: { id: true } });
   }
-  // Antecipações podem ter prova vinculada ao contrato antes de existir cobrança.
-  // Esse alcance é exclusivamente financeiro: não libera os demais documentos.
   if (registro?.matriculaId && registro.categoriaDocumento === CategoriaDocumento.COMPROVANTE) {
     if (!financeiro(usuario)) return false;
     return Boolean(await prisma.matricula.findUnique({ where: { id: registro.matriculaId }, select: { id: true } }));

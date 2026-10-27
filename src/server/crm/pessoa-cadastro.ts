@@ -19,7 +19,6 @@ async function atorAtual(db:Db,id:string,editar=false){
  const c=capacidadesCrm(u.papeis);return c.has("contatos.ver")&&(!editar||c.has("contatos.editar"))?u:null;
 }
 async function pessoaAutorizada(db:Db,u:UsuarioSessao,id:string){return db.pessoa.findFirst({where:{AND:[{id,mescladaEmId:null},await escopoPessoas(u,db)]},select:SELECT});}
-/** GateCRM precede a seleção sensível. Inbox acrescenta COMERCIAL/binding na sua fronteira. */
 export async function carregarCadastroPessoaAutorizado(db:Db,autorId:string,pessoaId:string):Promise<{valores:CadastroPessoa;informacoes:InformacoesCadastroPessoa}|null>{
  const u=await atorAtual(db,autorId);if(!u)return null;
  if(!await pessoaAutorizada(db,u,pessoaId))return null;
@@ -28,7 +27,6 @@ export async function carregarCadastroPessoaAutorizado(db:Db,autorId:string,pess
  const catalogo=podeEditar?await db.tipoDocumento.findMany({select:{id:true,nome:true,pais:{select:{id:true,nome:true,codigoISO:true}}},orderBy:[{paisId:"asc"},{nome:"asc"},{id:"asc"}]}):null;
  const final=await atorAtual(db,autorId);if(!final)return null;
  const p=await pessoaAutorizada(db,final,pessoaId);if(!p)return null;
- // Após os awaits da seleção sensível, confira ator e identidade/escopo sem reler os quatro valores.
  const publicador=await atorAtual(db,autorId);if(!publicador)return null;
  const vinculo=await db.pessoa.findFirst({where:{AND:[{id:pessoaId,mescladaEmId:null},await escopoPessoas(publicador,db)]},select:{id:true}});if(!vinculo)return null;
  const ultimoAtor=await atorAtual(db,autorId);if(!ultimoAtor||JSON.stringify(ultimoAtor.papeis)!==JSON.stringify(publicador.papeis))return null;
@@ -37,7 +35,6 @@ export async function carregarCadastroPessoaAutorizado(db:Db,autorId:string,pess
   documento:valores.documento!==null||valores.tipoDocumentoId!==null||valores.documentoPaisEmissor!==null?{tipoNome:tipo?.nome??null,paisNome:tipo?.pais.nome??null,paisCodigoISO:tipo?.pais.codigoISO??null,validado:avaliarDocumentoPessoa(valores,tipo??null).validado}:null,
   catalogo:capacidadesCrm(ultimoAtor.papeis).has("contatos.editar")?catalogo:null}};
 }
-/** Pessoa já está travada pelo núcleo. NOWAIT evita espera bloqueante nova Pessoa→catálogo/autor. */
 export async function prepararCadastroPessoaTx(tx:Prisma.TransactionClient,autorId:string,pessoaAtual:Pessoa,input:PessoaCadastroPatch):Promise<{data:Prisma.PessoaUncheckedUpdateInput;payload:Prisma.InputJsonObject;mudou:boolean;revalidar:()=>Promise<UsuarioSessao>}>{
  const revalidar=async()=>{const u=await atorAtual(tx,autorId,true);if(!u)throw new ErroPermissao();if(!await pessoaAutorizada(tx,u,pessoaAtual.id))throw new ErroRegra("Contato não encontrado.");return u;};
  await revalidar();
@@ -60,7 +57,6 @@ export async function prepararCadastroPessoaTx(tx:Prisma.TransactionClient,autor
  if(campos.includes("nascimento"))data.nascimento=depois.nascimento?new Date(depois.nascimento+"T00:00:00.000Z"):null;
  return {data,payload:auditoriaCadastroPessoa(antes,depois),mudou:campos.length>0,revalidar};
 }
-/** Só fora da TX: erros imprevistos não passam argumentos de cadastro ao logger genérico. */
 export function erroSeguroCadastroPessoa(erro:unknown):never{
  if(erro instanceof ErroRegra||erro instanceof ErroPermissao||erro instanceof ZodError)throw erro;
  if(typeof erro==="object"&&erro!==null){const e=erro as {code?:unknown;meta?:{code?:unknown}};

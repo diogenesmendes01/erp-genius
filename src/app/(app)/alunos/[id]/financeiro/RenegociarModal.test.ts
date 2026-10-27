@@ -4,9 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { StatusCobranca, TipoCobranca } from "@prisma/client";
 import type { VencimentoVisivel } from "@/lib/vencimento-civil";
 
-// R1 da #173 (C2): o "Novo valor" do RenegociarModal começa pelo valor negociado no formato do próprio
-// campo ("150,50"), nunca String(150.5) = "150.5", que parseMoeda recusa (ponto ambíguo, issue #167).
-// Sem banco: as actions do servidor (ajuste e, pela ficha, o pagamento) e o upload são dublês.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/ajustes/acoes", () => ({ ajustarCobranca: vi.fn() }));
 vi.mock("@/server/financeiro/acoes", () => ({ registrarPagamento: vi.fn() }));
@@ -23,7 +20,6 @@ const cobranca = (valorNegociado: number, moeda = "BRL"): Cobranca => ({
 const render = (valorNegociado: number, moeda = "BRL") =>
   renderToStaticMarkup(createElement(RenegociarModal, { cobranca: cobranca(valorNegociado, moeda), moeda, podePerdao: false, onClose: () => {}, onDone: () => {} }));
 
-/** O <input> do novo valor: o CampoMoeda recebe o id `${useId}-valor`. */
 const inputNovoValor = (html: string) => /<input\b[^>]*\sid="[^"]*-valor"[^>]*>/.exec(html)?.[0] ?? "";
 const attr = (trecho: string, nome: string) => new RegExp(`\\s${nome}="([^"]*)"`).exec(trecho)?.[1];
 

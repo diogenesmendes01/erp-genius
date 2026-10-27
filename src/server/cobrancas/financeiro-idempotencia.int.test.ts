@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel, TipoAjuste, Vigencia } from "@prisma/client";
 
-// #166 (3º lote): ações financeiras que gravam registro ou Evento a cada envio recebem chave de idempotência.
-// - Promessa de pagamento (Inbox, `registrarPromessaPagamento`): o reenvio não grava segunda promessa.
-// - Ajuste de cobrança (`ajustarCobranca`): o reenvio não aplica o ajuste de novo nem abre segundo pedido de
-//   aprovação; a mesma chave com outra entrada é recusada.
-
-// Sessão: só `exigirSessao`/`exigirSessaoComPapel` são trocadas (mesmo motivo de
-// comercial/criar-lead-idempotencia.int.test.ts); os papéis continuam lidos do banco.
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();
@@ -57,7 +50,6 @@ beforeEach(async () => {
 describe("registrarPromessaPagamento com chave (#166)", () => {
   const promessas = () => prisma.evento.count({ where: { tipo: "PromessaPagamento" } });
 
-  // C3 da R2 do #267 (lote 4): a repetição é procurada antes das validações de estado.
   it("reenvio tardio: a cobrança foi cancelada depois da promessa; a mesma chave devolve ok sem nova promessa", async () => {
     const c = await mensalidade();
     const primeira = await registrarPromessaPagamento(c.id, amanha(), "chave-promessa-tardia");

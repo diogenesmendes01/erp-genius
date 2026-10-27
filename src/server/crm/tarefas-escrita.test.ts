@@ -8,7 +8,6 @@ vi.mock("@/server/_shared/escopo-comercial",()=>({escopoComercialAtual:vi.fn(asy
 const autor={id:"u",nome:"Pessoa",papeis:[Papel.VENDEDOR],permissoes:[]} satisfies UsuarioSessao;
 it("núcleo de criação conserva defaults e todos os vínculos recebidos pelo CRM",async()=>{
  const create=vi.fn(async({data}:{data:Prisma.TarefaUncheckedCreateInput})=>({id:"t",...data}));
- // Double da fronteira Prisma: nenhum acesso real ao banco neste teste.
  const tx={tarefa:{create},oportunidade:{findFirst:vi.fn(async()=>({id:"l"}))},pessoa:{findUnique:vi.fn(async()=>({id:"p"}))},aluno:{findUnique:vi.fn(async()=>({id:"a"}))},matricula:{findUnique:vi.fn(async()=>({id:"m"}))}} as unknown as Prisma.TransactionClient;
  const t=await criarTarefaTx(tx,autor,{titulo:"Título",tipo:"WHATSAPP",leadId:"l",pessoaId:"p",alunoId:"a",matriculaId:"m",atendimentoId:"at"},"America/Sao_Paulo",null);
  expect(t).toMatchObject({id:"t",titulo:"Título",duracaoMin:30,prioridade:"NORMAL",responsavelId:"u",setor:"COMERCIAL",fusoOrigem:"America/Sao_Paulo",leadId:"l",pessoaId:"p",alunoId:"a",matriculaId:"m",atendimentoId:"at"});
@@ -16,7 +15,6 @@ it("núcleo de criação conserva defaults e todos os vínculos recebidos pelo C
 it("edição só de título não reinterpreta dobra DST nem duração/vínculos",async()=>{
  const updateMany=vi.fn(async()=>({count:1}));
  const tx={tarefa:{updateMany}} as unknown as Prisma.TransactionClient;
- // Snapshot suficiente para os campos lidos pelo núcleo; restante é irrelevante neste double.
  const t={id:"t",titulo:"Antes",status:"ABERTA",versao:4,inicioEm:new Date("2026-11-01T05:30:00Z"),fusoOrigem:"America/New_York",duracaoMin:60,leadId:"l",pessoaId:"p"} as unknown as Tarefa;
  await editarTarefaTx(tx,autor,t,4,{titulo:"Depois"});
  expect(updateMany).toHaveBeenCalledWith({where:{id:"t",versao:4,status:"ABERTA"},data:{titulo:"Depois",versao:{increment:1}}});

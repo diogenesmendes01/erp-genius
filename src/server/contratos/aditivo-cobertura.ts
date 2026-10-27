@@ -18,7 +18,6 @@ const civil = (d: Date | null) => d?.toISOString().slice(0, 10) ?? null;
 function foto(c: { id: string; versao: number; coberturaInicio: Date | null; coberturaFim: Date | null; status: string; valorRecebido: Prisma.Decimal | null }) {
   return { cobranca: { id: c.id, versao: c.versao, coberturaInicio: civil(c.coberturaInicio), coberturaFim: civil(c.coberturaFim), status: c.status, valorRecebido: c.valorRecebido?.toFixed(2) ?? null } };
 }
-/** Campos da fotografia do conjunto lidos na decisão (montada no preparo: revisão, condições e cobranças). */
 type FotografiaConjunto = { revisaoHash: string; cobrancas: { id: string; fotografiaHash: string }[] };
 
 function fotografiaMudou(impactos: { cobrancaId: string }[], fotografia: Prisma.JsonValue, atuais: { id: string; versao: number; coberturaInicio: Date | null; coberturaFim: Date | null; status: string; valorRecebido: Prisma.Decimal | null }[]) {

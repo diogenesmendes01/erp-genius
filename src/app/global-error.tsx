@@ -4,11 +4,6 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
 import "./globals.css";
 
-// Único boundary que repete <html>/<body>: o root layout não o envolve. Pega o que fura
-// (app)/error.tsx — falha no próprio layout raiz (ver docs/42-auditoria-frontend-ux.md,
-// ganho rápido 1). Sem fonte local nem layout.tsx aqui de propósito: se o root layout é
-// quem quebrou, importar de volta o que pode ter quebrado não é seguro. O Botao (#172) é um componente puro,
-// sem estado nem contexto, e não depende do layout.
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="pt-BR">

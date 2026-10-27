@@ -4,7 +4,6 @@ import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { hashPrevia } from "@/server/contratos/previa-estado";
 import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
 
-/** Chamador mantém calendário e matrícula bloqueados durante decisões/execuções. */
 export async function carregarContinuidadeReserva(tx: Prisma.TransactionClient, reservaId: string) {
   const r = await tx.reservaVagaMatricula.findUnique({ where: { id: reservaId }, include: { turma: true, janela: true,
     matricula: { select: { status: true, codigo: true, aluno: { select: { id: true, primeiroNome: true, sobrenome: true } }, preparacaoComercial: { select: { id: true } }, condicoesEntradaPreparacao: { orderBy: { versao: "desc" }, take: 1, select: { id: true } } } } } });
@@ -29,7 +28,6 @@ export function exigirCasoExcecao(d: Awaited<ReturnType<typeof carregarContinuid
   if (demais.length) throw new ErroRegra(`A exceção de prazo não dispensa os demais requisitos: ${demais.join(", ")}.`);
 }
 
-/** Q110 só remove o impedimento de prazo da reserva identificada. Nunca libera nova reserva. */
 export async function conferirContinuidadeReserva(tx: Prisma.TransactionClient, reservaId: string) {
   const d = await carregarContinuidadeReserva(tx, reservaId);
   if (!d.atual.conferencia.impedimentos.includes("JANELA_ENCERRADA")) return { ...d.atual, excecaoId: null };

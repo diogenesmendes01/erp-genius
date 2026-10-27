@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 const DIA = 86_400_000;
-/** Data civil representada em UTC, independente do fuso do servidor. */
 export const DataCivilSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((valor) => {
   const data = new Date(`${valor}T00:00:00.000Z`);
   return Number.isFinite(data.getTime()) && data.toISOString().slice(0, 10) === valor;
@@ -31,7 +30,6 @@ function aniversario(ancora: Date, meses: number) {
   primeiro.setUTCDate(Math.min(ancora.getUTCDate(), ultimo));
   return primeiro;
 }
-/** Q62: intervalo inclusivo contendo a data; não deriva cobertura do vencimento. */
 export function periodoMensalNaData(regra: RegraCobertura, data: string) {
   const r = RegraCoberturaSchema.parse(regra), alvo = utc(data);
   let inicio: Date, proximo: Date;
@@ -47,7 +45,6 @@ export function periodoMensalNaData(regra: RegraCobertura, data: string) {
   }
   return { inicio: civil(inicio), fim: civil(new Date(proximo.getTime() - DIA)), dias: (proximo.getTime() - inicio.getTime()) / DIA };
 }
-/** Q65: não depende do vencimento ou do estado global da pessoa. */
 export function efeitoPausaNaCobertura(periodo: { inicio: string; fim: string }, dataEfetiva: string) {
   const inicio = utc(periodo.inicio), fim = utc(periodo.fim), pausa = utc(dataEfetiva);
   if (fim < inicio) throw new Error("Período de cobertura invertido.");

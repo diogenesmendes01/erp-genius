@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-// Interação do ConfirmarAcao, sem DOM (src/test/tela-sem-dom.ts): o componente é chamado como função,
-// com useState/useCallback simulados (o executor do useAcaoCliente vive neles) e useRef/useId fixos.
-// O Modal, o Botao e o FeedbackAcao não são chamados — as props deles são lidas e acionadas.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -43,7 +40,6 @@ const botaoPorTexto = (t: ReactNode, rotulo: string): No => {
 };
 const clicar = (t: ReactNode, rotulo: string) => (botaoPorTexto(t, rotulo).props.onClick as () => unknown)();
 const CONFIRMAR = "Confirmar pagamento da fatura";
-/** O ref de um elemento (React 18: fora das props, em `element.ref`). */
 const refDe = (n: No): unknown => (n as unknown as { ref?: unknown }).ref ?? n.props.ref;
 
 beforeEach(() => {
@@ -79,12 +75,11 @@ describe("ConfirmarAcao \u2014 interação", () => {
     expect(modal.props.descricaoId).toBe("descricao-confirmacao");
     const descricao = elementos(t).find((n) => n.props.id === "descricao-confirmacao");
     expect(texto(descricao)).toBe("As 14 cobranças da fatura serão baixadas.");
-    // O foco inicial é o MESMO ref entregue ao botão "Voltar" — não o destrutivo.
     expect(modal.props.focoInicial).toBeDefined();
     expect(modal.props.focoInicial).toBe(refDe(botaoPorTexto(t, "Voltar")));
     expect(refDe(botaoPorTexto(t, CONFIRMAR))).toBeUndefined();
     expect(modal.props.bloquearFechamento).toBe(false);
-    (modal.props.aoFechar as () => void)(); // Escape ou clique no fundo
+    (modal.props.aoFechar as () => void)();
     expect(props.aoCancelar).toHaveBeenCalledTimes(1);
     expect(acao).not.toHaveBeenCalled();
   });
@@ -222,7 +217,7 @@ describe("ConfirmarAcao \u2014 interação", () => {
     expect(botaoPorTexto(t, CONFIRMAR).props.disabled).toBe(true);
     await clicar(t, CONFIRMAR);
     expect(acao).not.toHaveBeenCalled();
-    digitar("costa rica"); // caixa diferente não vale
+    digitar("costa rica");
     expect(botaoPorTexto(tela(), CONFIRMAR).props.disabled).toBe(true);
     digitar("  Costa Rica ");
     t = tela();

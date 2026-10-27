@@ -4,12 +4,10 @@ import { nomeCompleto } from "@/lib/nome";
 export type OrigemDestinoFinanceiro = "PAGADOR_PREPARACAO" | "LEGADO";
 export type TipoPagadorDestino = "ALUNO" | "RESPONSAVEL" | "EMPRESA" | null;
 
-/** Identidade financeira efetiva de uma matrícula, inclusive a versão que a fundamenta. */
 export interface DestinoFinanceiro {
   telefoneE164: string;
   nome: string;
   responsavelId: string | null;
-  /** Só ALUNO pode vincular o contato ao cadastro global do aluno. */
   contatoAlunoId: string | null;
   alunoId: string;
   matriculaId: string;
@@ -70,10 +68,6 @@ function destinoLegado(matricula: MatriculaComDestino): DestinoFinanceiro | null
   return destinoAluno(matricula, `legado:${matricula.id}`, "LEGADO", null);
 }
 
-/**
- * Resolve o único destinatário de cobrança a partir da matrícula. Uma fonte de
- * pagador explícita sempre vence; dados incompletos nunca recaem no cadastro global.
- */
 export function resolverDestinoFinanceiroDaMatricula(matricula: MatriculaComDestino): DestinoFinanceiro | null {
   const pagador = matricula.pagadoresPreparacao[0];
   if (pagador) {
@@ -92,7 +86,6 @@ export function resolverDestinoFinanceiroDaMatricula(matricula: MatriculaComDest
     }
     return null;
   }
-  // Preparação já existe: sem fotografia de pagador é pendência, não legado.
   if (matricula.preparacaoComercial) return null;
   return destinoLegado(matricula);
 }

@@ -14,7 +14,6 @@ const Snapshot = Entrada.pick({ taxaVencimento: true, aulas: true }).extend({
 export type CobrancaEntradaPlanejada = { tipo: "MATRICULA" | "MENSALIDADE" | "HORA_PARTICULAR"; etapa: "CONFERENCIA_SECRETARIA" | "ATIVACAO";
   valor: string; moeda: string; vencimento: string; cobertura: { inicio: string; fim: string; dias: number } | null; minutos: number | null };
 
-/** Q112/Q119: plano sem efeitos. O emissor deve revalidar versões, autorização e idempotência. */
 export function planejarCobrancasEntrada(snapshot: unknown): CobrancaEntradaPlanejada[] {
   const parse = Snapshot.safeParse(snapshot);
   if (!parse.success) throw new ErroRegra("Condições insuficientes para planejar as cobranças iniciais.");

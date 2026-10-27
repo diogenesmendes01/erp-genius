@@ -1,20 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ArgsPaginados } from "@/test/consulta-paginada";
 
-// Consultas que passaram de cursor "só para frente" para página numerada (E4, docs/43 §6 item 4). Para
-// cada uma: a página 1 não tem anterior (é a 1) e tem próxima; a última não tem próxima; ida e volta
-// trazem os mesmos registros; nenhuma página repete ou perde registro; a ordem termina no id (ou, na
-// consulta SQL crua, LIMIT/OFFSET recebem a janela da página).
-//
-// Só as LISTAS e os HISTÓRICOS ficam aqui. As FILAS de trabalho (pendências que somem quando alguém age
-// nelas) passaram a cursor nos dois sentidos (decisão de 10/10/2026) e são testadas em
-// src/server/filas-cursor.test.ts.
-//
-// O Prisma é de mentira (src/test/consulta-paginada.ts): `findMany` ordena e aplica skip/take sobre as
-// linhas do teste; `$queryRaw` devolve a janela LIMIT/OFFSET das linhas cruas ou, sem OFFSET, o usuário
-// ativo das conferências de papel. Tudo o mais que cada consulta chama de fora (identificação, agendas,
-// estado da segunda chamada, decisão administrativa) é simulado com o mínimo que a tela recebe.
-
 const estado = vi.hoisted(() => ({
   papeis: ["ADMINISTRADOR", "FINANCEIRO", "SECRETARIA_ACADEMICA", "GERENTE_PEDAGOGICO", "PROFESSOR"],
   linhas: {} as Record<string, Record<string, unknown>[]>,
@@ -88,7 +74,6 @@ const dado = <T,>(r: Resultado<T>): T => {
 const quando = new Date("2026-09-01T12:00:00.000Z");
 const ids = (quantidade: number) => Array.from({ length: quantidade }, (_, i) => `r${String(i).padStart(2, "0")}`);
 
-/** Cada consulta: onde estão as linhas (modelo do Prisma ou SQL cru), como é uma linha e como ler a página. */
 type Caso = { nome: string; porPagina: number; modelo: string | null; linha: (id: string) => Record<string, unknown>; ler: (pagina: number) => Promise<Pagina> };
 
 const CASOS: Caso[] = [
@@ -138,7 +123,6 @@ describe("consultas numeradas: ida e volta (E4)", () => {
   });
 
   it.each(CASOS.map((c) => [c.nome, c] as const))("%s", async (_nome, caso) => {
-    // Duas páginas cheias e uma com 3: a primeira tem próxima, a última não.
     const linhas = ids(caso.porPagina * 2 + 3).map(caso.linha);
     if (caso.modelo) estado.linhas[caso.modelo] = linhas;
     else estado.raw = linhas;
@@ -148,17 +132,14 @@ describe("consultas numeradas: ida e volta (E4)", () => {
     expect([p1.temProxima, p2.temProxima, p3.temProxima]).toEqual([true, true, false]);
     expect([p1.ids.length, p2.ids.length, p3.ids.length]).toEqual([caso.porPagina, caso.porPagina, 3]);
 
-    // Volta: a 2 e a 1, lidas de novo, trazem os mesmos registros na mesma ordem.
     expect((await caso.ler(2)).ids).toEqual(p2.ids);
     expect((await caso.ler(1)).ids).toEqual(p1.ids);
 
-    // Nenhum registro some nem se repete.
     const todos = [...p1.ids, ...p2.ids, ...p3.ids];
     expect(new Set(todos).size).toBe(linhas.length);
 
     if (caso.modelo) {
       const chamadas = estado.chamadas.filter((c) => c.modelo === caso.modelo);
-      // Desempate pelo id: a última ordem é o id.
       for (const { args } of chamadas) {
         const ordens = Array.isArray(args.orderBy) ? args.orderBy : [args.orderBy ?? {}];
         expect(Object.keys(ordens[ordens.length - 1] ?? {})).toEqual(["id"]);

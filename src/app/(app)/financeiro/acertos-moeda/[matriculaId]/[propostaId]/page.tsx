@@ -12,7 +12,6 @@ import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
 import { consultarCabecalhoMatricula } from "@/server/matricula/cabecalho";
 import { IdentificacaoRegistro } from "@/components/IdentificacaoRegistro";
 
-/** Q173: troca de moeda formalizada em aditivo, só para o futuro e com a matrícula sem pendências na moeda anterior. */
 export default async function Pagina({ params, searchParams }: {
  params: Promise<{ matriculaId: string; propostaId: string }>;
  searchParams: Promise<{ pagina?: string }>;
@@ -25,7 +24,6 @@ export default async function Pagina({ params, searchParams }: {
    consultarCabecalhoMatricula(usuario, matriculaId),
  ]);
  if (!versao) return <p role="status">Formalize as condições do aditivo antes de preparar a troca de moeda.</p>;
- // ?pagina inválida (texto, zero, negativa, fracionária ou acima do limite) cai na primeira página, sem erro na tela.
  const solicitada = Number((await searchParams).pagina ?? 1);
  const pagina = Number.isInteger(solicitada) && solicitada >= 1 && solicitada <= 10000 ? solicitada : 1;
  const r = await consultarMoedasAditivo({ matriculaId, versaoCondicoesId: versao.id, pagina });
@@ -34,7 +32,6 @@ export default async function Pagina({ params, searchParams }: {
  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
  const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, fusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; };
  const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, "UTC");
- // As pendências comparam a cobertura (data civil) com o dia da vigência no fuso da escola, não no fuso pessoal.
  const diaEscola = (fuso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short" }).format(new Date(d.vigenciaInicio));
  return <main className="space-y-5"><VoltarPara href="/financeiro/acertos-moeda" />
  <h1 className="text-2xl">Troca de moeda por aditivo</h1>

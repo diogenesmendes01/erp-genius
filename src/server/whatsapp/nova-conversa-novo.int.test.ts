@@ -1,4 +1,3 @@
-// PROPOSTA NÃO EXECUTADA. Destino sugerido só após ROOT aprovar: src/server/whatsapp/nova-conversa-novo.int.test.ts.
 import { beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

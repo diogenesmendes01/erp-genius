@@ -9,16 +9,13 @@ import { contagemSegura } from "./contagens";
 
 type ContextoConsulta = ContextoFiltroSql & { db:Db };
 export interface IdPaginaInbox { id:string; ultimaMensagemEm:Date|null }
-/** Cursor é composição fechada. Não pertence ao registry do where canônico. */
 export function depoisDoCursorEmSql(c:CursorInbox):Prisma.Sql {
   if(c.em===null)return Prisma.sql`a."ultimaMensagemEm" IS NULL AND a."id" < ${c.id}::text`;
-  // O decoder legado aceita offsets: preservar o instante antes do cast sem fuso.
   const instante=new Date(c.em).toISOString();
   return Prisma.sql`(a."ultimaMensagemEm" < ${instante}::timestamp(3)
     OR (a."ultimaMensagemEm" = ${instante}::timestamp(3) AND a."id" < ${c.id}::text)
     OR a."ultimaMensagemEm" IS NULL)`;
 }
-/** Apenas IDs da página; todos os filtros são aplicados antes de LIMIT. */
 export async function selecionarIdsPaginaInbox(ctx:ContextoConsulta,f:FiltrosInbox,pos:CursorInbox|null,tamanho:number):Promise<{fixadas:IdPaginaInbox[];normais:IdPaginaInbox[]}> {
   const where=filtrosEmSql(ctx,f);
   const fixada=Prisma.sql`EXISTS (SELECT 1 FROM "PreferenciaConversaUsuario" p WHERE p."conversaId" = a."conversaId" AND p."usuarioId" = ${ctx.usuarioId} AND p."fixadaEm" IS NOT NULL)`;
@@ -29,7 +26,6 @@ export async function selecionarIdsPaginaInbox(ctx:ContextoConsulta,f:FiltrosInb
     ORDER BY a."ultimaMensagemEm" DESC NULLS LAST,a."id" DESC LIMIT ${tamanho+1}`);
   return {fixadas,normais};
 }
-/** Snapshot só dos IDs já autorizados/hidratados; uma query independentemente dos instantes lidaAte. */
 export async function preferenciasDaPaginaSql(db:Db,usuarioId:string,ids:readonly string[],agora:Date):Promise<Map<string,PreferenciaDoAtendimento>> {
   if(!ids.length)return new Map();
   const linhas=await db.$queryRaw<{id:string;fixada:boolean;silenciada:boolean;naoLidas:bigint}[]>(Prisma.sql`
@@ -46,7 +42,6 @@ export async function preferenciasDaPaginaSql(db:Db,usuarioId:string,ids:readonl
     return [r.id,{fixada:r.fixada,silenciada:r.silenciada,naoLidas:Number(r.naoLidas)}];
   }));
 }
-/** Os cinco chips mantêm sua base histórica, distinta da base dos sete novos contadores. */
 export async function contarLegadosComContexto(ctx:ContextoConsulta,f:FiltrosInbox):Promise<ContagensChipsInbox> {
   const base={...f,responsavel:undefined,naoLidas:undefined,prazoEstourado:undefined};
   const [r]=await ctx.db.$queryRaw<{[K in keyof ContagensChipsInbox]:bigint}[]>(Prisma.sql`

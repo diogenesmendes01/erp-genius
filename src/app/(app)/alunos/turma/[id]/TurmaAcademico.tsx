@@ -1,8 +1,6 @@
 import Link from "next/link";
 import type { DiarioTurma, ProgressaoAluno } from "@/server/academico/consultas";
 
-// A ficha da turma só resume o estado. Diário e avaliações usam os fluxos
-// consolidados por encontro e alocação, que preservam rastreabilidade.
 export function TurmaAcademico({ diario, progressao, podeAprovar }: { turmaId: string; diario: DiarioTurma; progressao: ProgressaoAluno[]; podeEditar: boolean; podeAprovar: boolean }) {
   return <section className="rounded-lg border border-gray-200 bg-surface p-4">
     <h2 className="mb-3 font-medium">Acadêmico da turma</h2>

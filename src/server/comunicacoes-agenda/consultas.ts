@@ -10,12 +10,6 @@ const Entrada = z.object({ ...camposNavegacaoFila, depoisPendencias: cursorPende
   .refine(umSentido, MENSAGEM_DOIS_SENTIDOS)
   .refine((d) => umSentido({ depois: d.depoisPendencias, antes: d.antesPendencias }), MENSAGEM_DOIS_SENTIDOS);
 
-/**
- * Avisos e pendências: duas filas de trabalho, cada uma com o próprio cursor nos dois sentidos (E4, decisão de
- * 10/10/2026) — `depois`/`antes` dos avisos e `depoisPendencias`/`antesPendencias` das pendências. Em ordem de id
- * decrescente (o mais novo primeiro): um aviso ou uma pendência nova entra no topo sem deslocar a página de quem já
- * avançou, e a próxima continua do último item visto.
- */
 export async function consultarAvisosAlteracaoAgenda(input: z.input<typeof Entrada> = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);

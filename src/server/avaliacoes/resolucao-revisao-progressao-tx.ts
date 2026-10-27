@@ -65,8 +65,6 @@ export async function carregarResolucaoProgressaoTx(tx: Prisma.TransactionClient
   }
   const casos = abertos.map(c => {
     const fonte: Record<string, unknown> = { ...c };
-    // Colunas novas ausentes nas fontes anteriores não mudam o hash de casos
-    // já conferidos antes das migrações. As origens preenchidas integram o hash.
     if (fonte.decisaoCorrecaoConclusaoReposicaoId == null) delete fonte.decisaoCorrecaoConclusaoReposicaoId;
     if (fonte.aprovacaoCorrecaoAulaId == null) delete fonte.aprovacaoCorrecaoAulaId;
     return { id: c.id, casoHash: hashFechamento(JSON.parse(JSON.stringify(fonte))) };
@@ -80,10 +78,6 @@ export async function carregarResolucaoProgressaoTx(tx: Prisma.TransactionClient
   return { matriculaId, solicitacaoId, acao, casos, snapshot, estadoHash: hashFechamento(snapshot), versaoAtual: ultima?.versao ?? 0, fechamento };
 }
 
-/**
- * Pré-condição: o chamador já autenticou o ator. Este helper ainda revalida o
- * papel atual sob os mesmos locks usados pelas demais operações de resolução.
- */
 export async function decidirResolucaoRevisaoProgressaoTx(
   tx: Prisma.TransactionClient,
   usuarioId: string,
@@ -100,8 +94,6 @@ export async function decidirResolucaoRevisaoProgressaoTx(
     return { id: proposta.decisao.id, aprovada: proposta.decisao.aprovada };
   }
   let fechamento: { id: string; estadoHash: string } | null = null;
-  // Rejeitar registra a recusa da versão atual exata e não resolve casos nem
-  // valida a base atual. Só a aprovação pode aplicar o desfecho.
   if (d.aprovada) {
     const estado = await carregarResolucaoProgressaoTx(tx, usuarioId, proposta.solicitacaoId, proposta.acao);
     if (estado.estadoHash !== proposta.estadoHash || estado.versaoAtual !== proposta.versao) throw new ErroRegra("Os casos ou a base acadêmica mudaram. Prepare uma nova revisão.");

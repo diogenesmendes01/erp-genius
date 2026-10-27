@@ -6,7 +6,6 @@ import { aplicarEstadoEncerramentoTx } from "./encerramento-aplicar-estado";
 
 const Resultado = z.object({ matriculaIds: z.array(z.string()), ajustes: z.array(z.string()), creditos: z.array(z.string()), multas: z.array(z.string()), liquidacoesHoras: z.array(z.string()), compensacoes: z.array(z.string()), registrosTemporais: z.array(z.string()) });
 
-/** Executor interno. O transporte público deve autenticar e abrir a transação; nunca aceitar o relógio do cliente. */
 export async function efetivarAcertoEncerramentoTx(tx: Prisma.TransactionClient, d: { alunoId: string; decisaoId: string; executorId: string }, agora: Date) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   const decisao = await tx.decisaoAcertoEncerramento.findFirst({ where: { id: d.decisaoId, rascunho: { solicitacao: { alunoId: d.alunoId } } }, select: { rascunho: { select: { solicitacaoId: true } } } });

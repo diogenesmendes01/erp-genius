@@ -4,13 +4,8 @@ import { dataOpcional, dataHoraOpcional, ChaveIdempotenciaSchema } from "@/serve
 import { parseMoeda } from "@/lib/dinheiro";
 import { PrevisaoOportunidadeSchema } from "./previsao-schema";
 
-// Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
 const telefoneOpcional = z.string().optional();
 
-// parseMoeda (não Number direto): "1.234" digitado não pode virar 1234 por acidente
-// (ver docs/42-auditoria-frontend-ux.md, ganho rápido 13). null explícito ("" ou ausente)
-// passa direto; qualquer outra coisa não numérica no formato esperado vira NaN e o
-// z.number() seguinte rejeita com mensagem clara, em vez de gravar silenciosamente.
 function valorMonetarioOpcional(v: unknown) {
   if (v === "" || v == null) return null;
   if (typeof v === "number") return v;
@@ -25,28 +20,22 @@ export const LeadSchema = z.object({
   temperatura: z.nativeEnum(Temperatura).default(Temperatura.MORNO),
   b2b: z.boolean().optional().default(false),
   vendedorDonoId: z.string().optional(),
-  // CRM: liga a oportunidade a uma Pessoa existente (senão o servidor resolve por telefone/cria).
   pessoaId: z.string().optional(),
   email: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
   origemCanal: z.nativeEnum(OrigemCanal).optional(),
-  // CRM B2B: `empresaId` liga uma `Empresa` ativa existente; `criarEmpresa` cria a `Empresa` com o `nome` informado
-  // e não cria `Pessoa` (Ruling do C2 da R1 do #196: nenhuma Pessoa recebe o nome da empresa).
   empresaId: z.string().optional(),
   criarEmpresa: z.boolean().optional().default(false),
   origemCampanha: z.string().optional(),
   origemConjunto: z.string().optional(),
   origemAnuncio: z.string().optional(),
   origemPalavra: z.string().optional(),
-  // valor da oportunidade (doc 09 §Ficha do Lead)
   valorPrevisto: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
   planoPrevisto: z.string().optional(),
   comissaoPrevista: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
 });
 export type LeadInput = z.input<typeof LeadSchema>;
-/** Edição aditiva; a criação e seus defaults permanecem no contrato anterior. */
 export const EditarLeadSchema = LeadSchema.extend(PrevisaoOportunidadeSchema.shape);
 export type EditarLeadInput = z.input<typeof EditarLeadSchema>;
-/** Criação pela tela (#166): a mesma chave até o sucesso; o reenvio devolve a oportunidade já criada. */
 export const CriarLeadSchema = LeadSchema.extend({ chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
 export type CriarLeadInput = z.input<typeof CriarLeadSchema>;
 
@@ -60,28 +49,13 @@ export const ResumoSchema = z.object({
 });
 export type ResumoInput = z.input<typeof ResumoSchema>;
 
-/**
- * `dataExperimental` chega como instante ISO ou como o texto do `datetime-local` com `fusoDataExperimental` (o fuso
- * escrito ao lado do campo). O texto sem fuso é recusado por `paraDataHoraLocal`: nunca o fuso do processo.
- */
 export const DatasSchema = z.object({
   proximoFollowUp: dataOpcional,
-  // dataExperimental carrega HORA (alimenta a agenda da Home). Aceita datetime-local
-  // para não descartar o horário já agendado (issue #16); date-only ainda funciona,
-  // mas o front mantém a hora existente quando o usuário só ajusta a data.
   dataExperimental: dataHoraOpcional,
   dataProposta: dataOpcional,
 });
-/** Entrada da ação: o schema mais o fuso do campo da experimental, quando ela vem como texto digitado. */
 export type DatasInput = z.input<typeof DatasSchema> & { fusoDataExperimental?: string };
 
-// Agendamento da experimental (doc 09 §Ficha do Lead / pipeline). Captura também
-// o professor responsável (FK escopo — Issue #13). professorId opcional: pode-se
-// agendar sem definir o professor e atribuir/remanejar depois. A UI envia "" na
-// opção "Definir depois"; normalizamos vazio → null para diferenciar "limpar o
-// responsável" de "campo ausente".
-// Lote 3 do fuso pessoal: a tela manda o texto do `datetime-local` (`dataLocal`) e o fuso escrito ao lado do campo
-// (`fuso`); a ação converte no servidor, com o fuso explícito. `dataISO` (instante já convertido) continua aceito.
 export const AgendarExperimentalSchema = z.object({
   dataISO: z.string().min(1, "Informe a data/hora da experimental").optional(),
   dataLocal: z.string().min(1, "Informe a data/hora da experimental").optional(),
@@ -99,9 +73,6 @@ export const InteracaoSchema = z.object({
 });
 export type InteracaoInput = z.input<typeof InteracaoSchema>;
 
-// NOTA INTERNA (cockpit da inbox): comentário da equipe sobre o lead. É DISTINTA de
-// `InteracaoRegistrada` — aquela registra um contato REAL com o cliente (ligação,
-// presencial); esta nunca sai do ERP e jamais é enviada ao contato.
 export const NotaInternaSchema = z.object({
   nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "Nota longa demais (máx. 2000)."),
 });
@@ -118,18 +89,6 @@ export const PerdaSchema = z
   });
 export type PerdaInput = z.input<typeof PerdaSchema>;
 
-// Etapas que o vendedor pode definir manualmente no Kanban (Fase 0).
-//
-// As demais etapas do funil são geradas por EVENTOS DE DOMÍNIO, não por arraste:
-//   - EXPERIMENTAL_REALIZADA / NO_SHOW → check-in do professor (checkinExperimental)
-//   - PROPOSTA                          → envio da proposta (enviarProposta)
-//   - AGUARDANDO_MATRICULA              → handoff para a máquina da matrícula (doc 08)
-//   - MATRICULADO                       → matrícula ativada (fluxo próprio)
-//   - PERDIDO                           → marcar perdido (com motivo)
-// Por isso elas NÃO entram aqui: mesmo que o client envie, o backend recusa (ver acoes.moverEtapa).
-//
-// Mover manualmente ainda respeita a máquina de estados (origem→destino) — ver
-// transicaoManualPermitida() em @/server/_shared/regras.
 export const ETAPAS_MANUAIS: EtapaLead[] = [
   EtapaLead.NOVO,
   EtapaLead.EM_ATENDIMENTO,
@@ -137,10 +96,6 @@ export const ETAPAS_MANUAIS: EtapaLead[] = [
   EtapaLead.EXPERIMENTAL_AGENDADA,
 ];
 
-// Tipos de evento (agregado Lead) que mudam a etapa do funil. Fonte única de
-// verdade para projetar `etapaDesde` de forma confiável (issue #15): a etapa muda
-// por ação manual (EtapaAlterada) e também por ações específicas que avançam o
-// funil. O fluxo de matrícula também emite EtapaAlterada no agregado Lead.
 export const TIPOS_MUDAM_ETAPA: string[] = [
   "EtapaAlterada",
   "ExperimentalAgendada",

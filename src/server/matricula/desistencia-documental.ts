@@ -25,9 +25,7 @@ export type ConsultaDocumentosDesistenciaPreparacao = {
     ambiente: string;
     referenciaExternaPresente: boolean;
     conclusaoRegistrada: boolean;
-    /** Cancelamento pedido por substituição contratual (proposta + decisão). */
     cancelamentoSubstituicao: CancelamentoDocumental;
-    /** Cancelamento do envio por desistência Q165 (pedido + decisão administrativa). */
     cancelamentoDesistencia: CancelamentoDocumental;
   }>;
   pendencias: string[];
@@ -50,15 +48,11 @@ function descricaoEstado(estado: EstadoEnvioAssinatura) {
   return ({ PREPARADO: "preparado", ENVIANDO: "em envio", ENVIO_INCERTO: "com envio incerto", ENVIADO: "enviado", CANCELADO: "cancelado" } as const)[estado];
 }
 
-/** Consulta operacional somente leitura para conferir documentos e processos
- * contratuais antes de qualquer fluxo futuro de desistência. Resultado de
- * substituição é evidência operacional, nunca autorização do pedido de desistência. */
 export async function consultarDocumentosDesistenciaPreparacao(input: { matriculaId: string }): Promise<Resultado<ConsultaDocumentosDesistenciaPreparacao>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
     const dados = entradaSchema.parse(input);
     return prisma.$transaction(async tx => {
-      // Ordem comum para a visão consistente: calendário, matrícula e usuário.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await bloquearMatriculas(tx, [dados.matriculaId]);
       await exigirAutorAtualTx(tx, sessao.id);

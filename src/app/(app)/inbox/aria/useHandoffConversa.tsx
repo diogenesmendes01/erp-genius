@@ -5,7 +5,6 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { ControleResposta } from "../RodapeConversa";
 import { FaixaHandoff } from "./FaixaHandoff";
 import { ModalResumoHandoff } from "./ModalResumoHandoff";
-/** Recibo da aquisição já coordenada pelo InboxNovo; não inicia outra consulta. */
 export interface LeituraPainelHandoff {
     solicitada: number;
     finalizada: number;
@@ -17,7 +16,6 @@ export type PropsHandoffConversa = {
     handoff: HandoffDoAtendimento | null | undefined;
     podeEnviar: boolean | null;
     podeAssumirAria?: boolean;
-    /** Disponibilidade visual do campo; ausente preserva o comportamento352. Não revoga alçada. */
     respostaDisponivel?: boolean;
     leitura?: LeituraPainelHandoff;
     fuso: string | null;
@@ -26,7 +24,6 @@ export type PropsHandoffConversa = {
 };
 type Sessao = {
     atendimentoId: string;
-    /** GET compatível observado não substitui o ACK, mantido em campo separado. */
     tentativa: { leituraInicial: number; propriaConfirmada: boolean } | null;
     numero: number;
     acaoId: string;
@@ -35,7 +32,6 @@ type Sessao = {
     responder: boolean;
     minimo: number;
 };
-/** Apenas retém o recibo da tentativa local; nunca autoriza outra mutação ou foco. */
 function transicaoPropria(s: Pick<Sessao, "ativa" | "atendimentoId" | "tentativa"> | null, p: PropsHandoffConversa): boolean {
     const l = p.leitura;
     return !!s?.ativa && !!s.tentativa && p.item.id === s.atendimentoId && !p.item.grupo
@@ -52,7 +48,6 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         tentativa: Sessao["tentativa"];
         handoff: HandoffDoAtendimento;
         invalidada: boolean;
-        /** Retém resumo após ACK; não é autorização nem indicador de GET em voo. */
         aguardandoConfirmacao: boolean;
     } | null>(null), [confirmando, setConfirmando] = useState(false), [erro, setErro] = useState<string | null>(null);
     const atual = useRef(props), sessao = useRef<Sessao | null>(null), numero = useRef(0), querResposta = useRef(false);
@@ -71,7 +66,6 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
             return;
         if (!controleResposta.current)
             return;
-        // O callback ref acompanha a troca Nota → Responder antes do cleanup de foco do Modal.
         querResposta.current = true;
         retorno.current = campo.current;
         controleResposta.current.selecionarResponder();
@@ -102,7 +96,6 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         if (l.resultado !== "ok")
             return;
         if (p.podeEnviar !== true || p.podeAssumirAria !== true) {
-            // Voltar a ter permissão não retoma uma intenção antes recusada.
             s.responder = false;
             setConfirmando(false);
             setErro("Você não tem permissão para responder nesta conversa. Atualize para conferir seu acesso.");
@@ -128,7 +121,6 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         const proibido = props.item.id !== s.atendimentoId || props.item.grupo || props.item.status === "ENCERRADO" || l?.resultado === "sem-acesso";
         const envioRevogado = props.podeEnviar === false && (!!s.tentativa?.propriaConfirmada
             || (s.ack && l?.resultado === "ok" && l.finalizada === l.solicitada && l.finalizada >= s.minimo));
-        // Assumir pode remover o handoff do DTO; o ACK só libera foco após nova leitura e envio vigente.
         const mudou = props.handoff?.acaoId !== s.acaoId && (!s.ack || props.handoff != null) && !propria;
         const perdeu = !s.ack && props.handoff?.acaoId === s.acaoId && (props.podeAssumirAria !== true || (!props.handoff.podeAssumir && !props.handoff.ehResponsavel));
         const perdeuResponsabilidade = (!s.ack && s.responder && !propria && (!props.handoff?.ehResponsavel || props.item.responsavelId !== props.usuarioId))
@@ -198,7 +190,6 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         if (!s?.ativa || s.numero !== n || (!s.ack && (!p.handoff?.ehResponsavel || p.handoff.acaoId !== s.acaoId || p.item.responsavelId !== p.usuarioId)))
             return;
         if (!s.ack) {
-            // Atualizar o painel não substitui a transição MANUAL confirmada.
             setConfirmando(false); setErro(null); p.aoMudar(); return;
         }
         s.responder = true;
@@ -208,10 +199,8 @@ export function useHandoffConversa(props: PropsHandoffConversa) {
         p.aoMudar();
     }
     const valido = !props.item.grupo && props.item.status !== "ENCERRADO", h = props.handoff;
-    // Snapshot imutável para apresentação; o ref continua reservado aos handlers/efeitos.
     const preservarTentativa = transicaoPropria(modal ? { ativa: !modal.invalidada, atendimentoId: modal.atendimentoId, tentativa: modal.tentativa } : null, props);
     const atualModal = modal && (h?.acaoId === modal.handoff.acaoId || preservarTentativa || modal.aguardandoConfirmacao || modal.invalidada) ? (h?.acaoId === modal.handoff.acaoId ? h : modal.handoff) : null;
-    // A autorização vem somente do DTO atual; o fallback acima é exclusivamente de leitura.
     const leituraResponsavelPronta = !h?.ehResponsavel || (props.podeEnviar === true && props.leitura?.resultado === "ok" && props.leitura.finalizada === props.leitura.solicitada);
     const erroLeituraResponsavel = h?.ehResponsavel && !modal?.aguardandoConfirmacao && props.leitura?.resultado === "falha" ? "Não foi possível atualizar a conversa. Tente de novo para confirmar sua permissão." : null;
     const contextoAtivo = leituraResponsavelPronta && props.podeAssumirAria === true && !modal?.invalidada && valido && props.leitura?.resultado !== "sem-acesso" && !!atualModal && h?.acaoId === modal?.handoff.acaoId && !!h && (h.podeAssumir || h.ehResponsavel);

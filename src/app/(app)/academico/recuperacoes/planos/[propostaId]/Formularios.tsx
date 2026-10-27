@@ -25,10 +25,6 @@ export function Formulario({ titulo, executar, children }: { titulo: string; exe
     finally { setEnviando(false); }
   }}><h3 className="font-medium">{titulo}</h3><fieldset disabled={enviando} className="space-y-3">{children}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{enviando ? "Registrando…" : titulo}</button></fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }
-/**
- * Data/hora + fuso de um fato. Com `fusoExibicao` (o fuso em que a página mostra os horários), mostra antes do
- * envio a prévia da conversão quando o fuso digitado é outro (docs/43 §6 item 6; docs/42 L1540, L1566, L1590).
- */
 export function Horario({ rotulo = "Data e horário efetivos", fusoInstitucional, fusoExibicao }: { rotulo?: string; fusoInstitucional: string | null; fusoExibicao?: string }) {
   const [local, setLocal] = useState(""), [fuso, setFuso] = useState(fusoInstitucional ?? "");
   return <><label className="block">{rotulo}<input name="dataHora" type="datetime-local" step="0.001" required onChange={e => setLocal(e.target.value)} className="block rounded border p-2" /></label>

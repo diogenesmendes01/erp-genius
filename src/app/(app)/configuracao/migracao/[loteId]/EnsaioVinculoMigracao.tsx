@@ -21,15 +21,12 @@ const resultado: Readonly<Record<Ensaio["resultado"], string>> = RESULTADO_ENSAI
 const requisito: Record<string, string> = { MAPA_ALUNO_AUSENTE: "o aluno da origem ainda não está associado a um cadastro", CORRESPONDENCIA_PRODUTO_AUSENTE_OU_REVOGADA: "falta uma correspondência ativa de produto", PAIS_OU_MOEDA_DIVERGENTE: "o país ou a moeda da oferta não confere", CORRESPONDENCIA_TURMA_AUSENTE_OU_REVOGADA: "falta uma correspondência ativa de turma", CORRESPONDENCIA_STATUS_AUSENTE_OU_REVOGADA: "falta uma correspondência ativa de situação", CONTRATO_HISTORICO_EXIGE_EVIDENCIA: "o contrato histórico ainda precisa de evidência", PAGAMENTO_HISTORICO_EXIGE_EVIDENCIA: "o pagamento histórico ainda precisa de evidência" };
 const status = STATUS_MATRICULA_LABEL;
 const textoRequisito = (codigo: string) => requisito[codigo] ?? (codigo.startsWith("PENDENCIA_PREPARACAO_") ? "há uma pendência na fotografia de origem" : "há um requisito pendente nesta conferência");
-/** Dispara a revisão de uma correspondência (`ativa`: registrar; senão, revogar). O texto de sucesso é do painel. */
 type Executar = (acao: () => Promise<Resultado<unknown>>, ativa: boolean) => Promise<void>;
 type Bloco = "produto" | "turma" | "status" | "ensaio";
 
 export function EnsaioVinculoMigracao({ linhaId, origem, produtoOrigemId, turmaOrigemId, statusOrigem, produtoAtual, turmaAtual, statusAtual, ofertasProduto, turmas, ensaios, preferenciaFusoExibicao = null }: { linhaId: string; origem: string; produtoOrigemId: string | null; turmaOrigemId: string | null; statusOrigem: string | null; produtoAtual: AtualProduto | null; turmaAtual: AtualTurma | null; statusAtual: AtualStatus | null; ofertasProduto: Oferta[]; turmas: Turma[]; ensaios: Ensaio[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  // Revisões e ensaio sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false }); const ocupado = acao.ocupado;
-  // Uma ação por vez no painel (o ocupado trava todos os blocos); o resultado aparece no bloco que a disparou.
   const [bloco, setBloco] = useState<Bloco | null>(null);
   async function executarNoBloco(alvo: Bloco, fn: () => Promise<Resultado<unknown>>, sucesso: string) {
     if (acao.ocupado) return;

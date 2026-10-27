@@ -10,39 +10,22 @@ import { aoGravarSaidaHumana } from "@/server/aria/pausa";
 import { agendarTurnoAria } from "@/server/aria/turno/orquestrador";
 import { agendarTriagemAria } from "@/server/aria/triagem";
 
-// INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
-// pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
-// - dedupe por (numeroId, providerMessageId) — retries de webhook não duplicam (S7);
-// - fromMe TAMBÉM entra no log (gap 16: mensagem do app do celular vira SAIDA sem origem);
-// - inbound cancela intenções automáticas anteriores (lei do despachante, no ingresso);
-// - keyword de opt-out marca o contato no ingresso (S10 — a LEI já vive no despachante).
-
 export interface InboundNormalizado {
-  /** Identifica o número da escola: providerRef (phone_number_id/instância) ou telefone E.164. */
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;
-  /** wa_id/remoteJid do contato (sem "+" — normalizado aqui). */
   contatoWaId: string;
-  /** pushName/perfil do REMETENTE. Em fromMe é o perfil da própria linha: descartado aqui. */
   nomeExibicao?: string | null;
   providerMessageId: string;
-  /** Id da mensagem no motor (chatJid:idDoProtocolo); só o driver MOTOR preenche. */
   mensagemIdMotor?: string | null;
   corpo: string | null;
   tipo: TipoMensagem;
-  /** URL canônica /api/files/... do binário já baixado pelo webhook (E3 — gap A3). */
   midiaPath?: string | null;
   driver: DriverWhatsApp;
-  /** true = mensagem enviada pela escola FORA do ERP (app do celular / outro aparelho). */
   fromMe: boolean;
-  /** Bloco referral do click-to-WhatsApp (Meta) → origem do lead na auto-captura (C1). */
   referral?: ReferralInbound | null;
   quando: Date;
 }
 
-// Captura de opt-out por keyword (doc 30 S10, UI/captura na E3): match EXATO e
-// conservador — frase solta que contenha a palavra não conta (falso positivo mataria a
-// régua de um contato que disse "vou parar de atrasar").
 const KEYWORDS_OPT_OUT = new Set(["sair", "parar", "stop", "baja", "no enviar", "unsubscribe"]);
 
 export function ehPedidoOptOut(corpo: string | null): boolean {
@@ -64,7 +47,6 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
 
   const telefoneContato = telefoneDeWaId(m.contatoWaId);
 
-  // Uma tentativa termina (incluindo rollback) antes de iniciar a recuperação.
   async function gravarTentativa() {
     const ancoraAria: { id: string | null } = { id: null };
     const ancoraTriagem: { id: string | null } = { id: null };
@@ -72,7 +54,6 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
       const contato = await garantirContato(tx, {
         telefoneE164: telefoneContato,
         waId: m.contatoWaId.replace(/\D/g, ""),
-        // fromMe: o pushName é o perfil de quem ENVIOU (a própria linha), não o do contato.
         nomePerfil: m.fromMe ? null : m.nomeExibicao ?? null,
       });
 
@@ -82,11 +63,8 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         update: {},
       });
 
-      // Claim atômico de ConversaWhatsApp.capturadaEm: o despachante e elegibilidade.ts o leem.
       if (!m.fromMe) await tx.conversaWhatsApp.updateMany({ where: { id: conversa.id, capturadaEm: null }, data: { capturadaEm: m.quando } });
 
-      // Dedupe S7: o @@unique(numeroId, providerMessageId) faz o retry do webhook explodir
-      // aqui dentro — capturado fora como "duplicada", sem efeito colateral.
       const mensagem = await tx.mensagemWhatsApp.create({
         data: {
           conversaId: conversa.id,
@@ -99,7 +77,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           statusEm: m.quando,
           enviadaEm: m.fromMe ? m.quando : null,
           driver: m.driver,
-          origem: m.fromMe ? "CELULAR" : null, // fromMe fora do ERP: enviada pelo celular (E3.6)
+          origem: m.fromMe ? "CELULAR" : null,
           providerMessageId: m.providerMessageId,
           mensagemIdMotor: m.mensagemIdMotor ?? null,
           criadoEm: m.quando,
@@ -114,8 +92,6 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         },
       });
 
-      // LEI DO DESPACHANTE no ingresso: inbound real cancela intenções automáticas
-      // pendentes/adiadas criadas ANTES da mensagem (o despachante re-checa no despacho).
       if (!m.fromMe) {
         await tx.intencaoMensagem.updateMany({
           where: {
@@ -127,8 +103,6 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           data: { status: "CANCELADA", motivoFalha: "conversa_viva" },
         });
 
-        // Opt-out por keyword (S10): marca o contato + evento auditável (autor = sistema).
-        // A LEI que respeita o opt-out já mora no despachante; aqui é só a captura.
         const optOutAgora = !contato.optOutEm && ehPedidoOptOut(m.corpo);
         if (optOutAgora) {
           await tx.contatoWhatsApp.update({
@@ -144,8 +118,6 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           });
         }
 
-        // C2 (doc 27): resposta à confirmação da experimental ("SIM"/"REAGENDAR" — fallback
-        // textual do Baileys). Só vale com experimental AGENDADA.
         if (!optOutAgora) {
           await capturarRespostaExperimental(tx, {
             leadId: contato.leadId,
@@ -177,7 +149,6 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
   try {
     confirmada = await gravarTentativa();
   } catch (erro) {
-    // Só a colisão da identidade de Contato permite UMA nova TX, nunca uso da TX abortada.
     if (conflitoUnicoInbound(erro, "ContatoWhatsApp", ["telefoneE164"])) {
       try {
         confirmada = await gravarTentativa();
@@ -190,14 +161,12 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
       throw erro;
     }
   }
-  // Apenas os anchors da TX confirmada podem agendar efeitos pós-commit.
   if (confirmada.ariaId) agendarTurnoAria(confirmada.ariaId);
   else if (confirmada.triagemId) agendarTriagemAria(confirmada.triagemId);
   return "gravada";
 
   async function mensagemDuplicadaConfirmada(erro: unknown): Promise<boolean> {
     if (!conflitoUnicoInbound(erro, "MensagemWhatsApp", ["numeroId", "providerMessageId"])) return false;
-    // A Promise da TX já rejeitou e fez rollback; leitura independente, sem SQL na TX abortada.
     const existente = await prisma.mensagemWhatsApp.findUnique({
       where: { numeroId_providerMessageId: { numeroId: numero.id, providerMessageId: m.providerMessageId } },
       select: { id: true },
@@ -210,14 +179,12 @@ export interface StatusNormalizado {
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;
   providerMessageId: string;
-  /** Motor: o `providerMessageId` pode diferir do gravado no envio; o UUID da tentativa é a segunda chave. */
   clientMessageId?: string | null;
   status: StatusMensagem;
   driver: DriverWhatsApp;
   quando: Date;
 }
 
-/** Progressão só para frente: ENVIADA < ENTREGUE < LIDA (FALHOU sobrescreve qualquer uma). */
 const ORDEM_STATUS: Record<StatusMensagem, number> = {
   NA_FILA: 0,
   ENVIADA: 1,
@@ -228,7 +195,6 @@ const ORDEM_STATUS: Record<StatusMensagem, number> = {
 
 export async function processarStatusNormalizado(
   s: StatusNormalizado,
-  /** Roda na MESMA transação do update (ex.: Evento de auditoria). */
   aposAtualizar?: (tx: Prisma.TransactionClient, msg: { id: string }) => Promise<void>,
 ): Promise<"atualizado" | "ignorado" | "sem_mensagem"> {
   const numero = await acharNumero(s);
@@ -240,13 +206,12 @@ export async function processarStatusNormalizado(
     where: { numeroId: numero.id, OR: ou },
     select: { id: true, status: true, enviadaEm: true },
   });
-  if (!msg) return "sem_mensagem"; // status antes da mensagem existir: o motor adia e reprocessa; a Meta reenvia
+  if (!msg) return "sem_mensagem";
   if (ORDEM_STATUS[s.status] <= ORDEM_STATUS[msg.status]) return "ignorado";
 
   await prisma.$transaction(async (tx) => {
     await tx.mensagemWhatsApp.update({
       where: { id: msg.id },
-      // Saindo da fila para um status de envio, o primeiro deles marca o envio (D6 do SLA).
       data: { status: s.status, statusEm: s.quando, ...(msg.enviadaEm === null && msg.status === "NA_FILA" && s.status !== "FALHOU" ? { enviadaEm: s.quando } : {}) },
     });
     if (aposAtualizar) await aposAtualizar(tx, msg);
@@ -254,10 +219,6 @@ export async function processarStatusNormalizado(
   return "atualizado";
 }
 
-// providerRef só identifica DENTRO do driver (phone_number_id da Meta × instância da
-// Evolution são namespaces distintos) — o lookup filtra por driver e o schema garante
-// @@unique([driver, providerRef]) (review PR #51 P2-6: sem isso, dois números com a mesma
-// referência roteariam mensagens para a conversa/dono errados).
 export async function acharNumero(ref: {
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;

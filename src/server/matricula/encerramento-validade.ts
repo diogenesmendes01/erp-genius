@@ -7,7 +7,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { PreviaMensalPedidoEncerramentoSchema } from "./encerramento-previa-schema";
 import { carregarPreviaMensalEncerramentoTx } from "./encerramento-previa-tx";
 
-/** Diagnóstico em leitura; não concede aprovação nem garante validade futura. */
 export async function conferirValidadeRascunhoEncerramento(input: { alunoId: string; solicitacaoId: string; rascunhoId: string }) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.FINANCEIRO);

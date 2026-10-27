@@ -8,9 +8,6 @@ const Iniciar = z.object({ propostaId: z.string().min(1).max(100), propostaHash:
 const Observar = z.object({ intencaoId: z.string().min(1).max(100), processoId: z.string().min(1).max(100), propostaId: z.string().min(1).max(100),
   chave: z.string().trim().min(8).max(200), resultado: z.enum(["INCERTO", "CONFIRMADO"]), referenciaExterna: z.string().trim().min(1).max(200), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 
-/** Interna: persistir e COMMITAR a intenção antes de qualquer chamada remota.
- * `nova: false` exige conciliação da mesma intenção, nunca repetir a solicitação.
- * Nenhuma destas primitivas constitui um adaptador autenticado do fornecedor. */
 export async function iniciarCancelamentoAssinaturaTx(tx: Prisma.TransactionClient, executorId: string, entrada: unknown) {
   const d = Iniciar.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -39,9 +36,6 @@ export async function iniciarCancelamentoAssinaturaTx(tx: Prisma.TransactionClie
   return { id: intencao.id, nova: true, referenciaExterna: intencao.referenciaExterna, fornecedor: proposta.processoFonte.fornecedor, ambiente: proposta.processoFonte.ambiente };
 }
 
-/** Somente resultado previamente autenticado pelo adaptador/conciliador futuro.
- * A evidência externa é preservada mesmo se surgirem mudanças locais ou conclusão
- * concorrente. Não marca processo CANCELADO nem autoriza um contrato substituto. */
 export async function registrarObservacaoCancelamentoTx(tx: Prisma.TransactionClient, entrada: unknown) {
   const d = Observar.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -64,12 +58,8 @@ export async function registrarObservacaoCancelamentoTx(tx: Prisma.TransactionCl
 
 const IniciarDesistencia = z.object({ pedidoId: z.string().min(1).max(100), processoId: z.string().min(1).max(100), estadoHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const ObservarDesistencia = z.object({ intencaoId: z.string().min(1).max(100), processoId: z.string().min(1).max(100), pedidoId: z.string().min(1).max(100), chave: z.string().trim().min(8).max(200), resultado: z.enum(["INCERTO", "CONFIRMADO"]), referenciaExterna: z.string().trim().min(1).max(200), evidenciaHash: z.string().regex(/^[a-f0-9]{64}$/),
-  /** Quem acionou o cancelamento integrado e a marca de idempotência dessa ação. */
   autorId: z.string().min(1).optional(), marca: z.object({ chaveIdempotencia: z.string().min(1), entradaHash: z.string().min(1) }).strict().optional() }).strict();
 
-/** Cancela um envio externo por desistência já autorizada. Não cria artefato ou
- * processo substituto: o pedido, a decisão administrativa e a aplicação Q165
- * são a origem auditável desse ato. */
 export async function iniciarCancelamentoAssinaturaDesistenciaTx(tx: Prisma.TransactionClient, executorId: string, entrada: unknown) {
   const d = IniciarDesistencia.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

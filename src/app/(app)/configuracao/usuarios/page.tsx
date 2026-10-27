@@ -5,11 +5,7 @@ import { listarUsuarios } from "@/server/acesso/consultas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { UsuariosPainel, type UsuarioRow } from "./UsuariosPainel";
 
-// Guard server-side por papel ANTES de listar usuários (issue #1).
-// Gestão de usuários é exclusiva do Administrador (docs/07 e docs/12 §Configuração).
-// exigirPapelLeitura sem outros papéis = só Administrador passa.
 export default async function UsuariosPage() {
-  // Gestão de usuários é exclusiva do Admin (doc 07 / tabs de Configuração).
   const papeis = await exigirPapelLeitura(Papel.ADMINISTRADOR);
   if (!papeis) return <AcessoNegado recurso="a gestão de usuários" />;
 

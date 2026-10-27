@@ -24,8 +24,6 @@ export async function conferirAutorCorrecaoReposicaoTx(tx: Prisma.TransactionCli
   if (vigente.length !== 1) throw new ErroPermissao("Somente o professor com designação vigente pode propor esta correção.");
 }
 
-/** Chamador mantém o lock do calendário/reposição. A mesma prova é usada na
- * proposta e na aprovação; retirar conclusão não fabrica uma fonte nova. */
 export async function conferirFonteCorrecaoReposicaoTx(tx: Prisma.TransactionClient, reposicaoId: string, fonte: FonteCorrecaoReposicao, avaliadorEsperado?: string | null) {
   const r = await tx.reposicaoIndividual.findUnique({ where: { id: reposicaoId }, select: {
     id: true, modalidade: true, matriculaId: true, matricula: { select: { alunoId: true } }, aulaOriginal: { select: { fim: true } },

@@ -3,9 +3,6 @@ import { Papel, Prisma, PrismaClient } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
-// Mesmo limite do Vitest documentado em comercial/criar-lead-idempotencia.int.test.ts:
-// imports concorrentes de auth escapam do mock. Só a fronteira da sessão é adaptada;
-// usuário fresco, autorização pós-lock, decisões e executor continuam reais.
 vi.mock("@/server/_shared/sessao", async original => {
   const real = await original<typeof import("@/server/_shared/sessao")>();
   return { ...real, exigirSessao: async () => {
@@ -75,7 +72,7 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
   const tags = () => prisma.pessoaTag.findMany({ where: { pessoaId: c.pessoa.id } });
   const valorCampo = async () => (await prisma.valorCampoPersonalizado.findFirst({ where: { campoId: c.campo.id, pessoaId: c.pessoa.id } }))?.valor ?? null;
   const amanha = () => new Date(Date.now() + 86_400_000).toISOString();
-  const util = () => diaUtilAs(10).toISOString(); // D12: dentro da janela de envio
+  const util = () => diaUtilAs(10).toISOString();
   const sugTag = () => exec({ acao: "TAG", tagId: c.tag.id, justificativa: "x" }, "SUGERIR");
 
   it("aprovar_aplica_e_marca_quem", async () => {
@@ -209,7 +206,6 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
 
   it("desfazer_nao_sobrescreve_mudanca_humana", async () => {
     const e = await exec({ acao: "ATUALIZAR_CAMPO", campo: "objetivo", valor: "viagem", justificativa: "x" });
-    // pessoa muda o campo depois da Aria (valor e Evento sem ator ARIA)
     await prisma.valorCampoPersonalizado.updateMany({ where: { campoId: c.campo.id, pessoaId: c.pessoa.id }, data: { valor: "trabalho" } });
     await prisma.evento.create({ data: { tipo: "CampoPersonalizadoAlterado", agregadoTipo: "Pessoa", agregadoId: c.pessoa.id, autorId: c.dono.id, payload: { campoId: c.campo.id, nome: "objetivo", de: "viagem", para: "trabalho" } } });
     expect(await desfazerAcaoAria(e.id)).toEqual({ ok: false, erro: "O campo foi alterado por uma pessoa depois da Aria. Nada foi desfeito." });

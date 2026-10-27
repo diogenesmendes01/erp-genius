@@ -90,7 +90,6 @@ describe("validarTurmaParaProduto", () => {
   });
 
   it("ignora alocações inativas ao contar a vaga", () => {
-    // capacidade 2, 2 ativas → cheia (inativas não entram pois o chamador já filtra)
     expect(() => validarTurmaParaProduto(turma({ capacidade: 2 }), produto, 1)).not.toThrow();
   });
 });
@@ -100,7 +99,6 @@ describe("validarOfertaPreco", () => {
     preco({ tipoCobranca: TipoCobranca.MATRICULA }),
     preco({ tipoCobranca: TipoCobranca.MENSALIDADE }),
   ];
-  // Sem exceção: nem justificativa nem papel autorizado.
   const semExcecao = { justificativa: null, autorizado: false };
 
   it("passa com matrícula + mensalidade ativos e não marca ausência", () => {
@@ -147,8 +145,6 @@ describe("validarOfertaPreco", () => {
     expect(r).toEqual({ precoReferenciaAusente: true });
   });
 
-  // Reproduz exatamente como a action apura `autorizado` (temPapel) para garantir
-  // que vendedor comum não consegue forçar a exceção nem com justificativa.
   describe("integração com papel (como na Server Action)", () => {
     const PAPEIS_EXCECAO = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
     const vendedor: UsuarioSessao = { id: "v", nome: "V", papeis: [Papel.VENDEDOR] };

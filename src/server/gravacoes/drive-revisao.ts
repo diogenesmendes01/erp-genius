@@ -23,7 +23,6 @@ export type RevisaoDriveFixada = {
   mimeType: string;
 };
 
-// Alias transitório para os chamadores que começaram a integrar o adaptador.
 export type RevisaoDriveFixa = RevisaoDriveFixada;
 
 type MetadataArquivo = {
@@ -52,7 +51,7 @@ function urlRevisao(fileId: string, revisionId: string) {
 }
 
 async function descartar(resposta: Response) {
-  try { await resposta.body?.cancel(); } catch { /* resposta já consumida */ }
+  try { await resposta.body?.cancel(); } catch {  }
 }
 
 export async function aguardarComAbort<T>(signal: AbortSignal, iniciar: () => Promise<T>, aoTardar?: (valor: T) => void) {
@@ -70,8 +69,6 @@ export async function aguardarComAbort<T>(signal: AbortSignal, iniciar: () => Pr
     remover?.();
     throw new ErroVideoDrive();
   }
-  // Um adaptador injetado pode ignorar o signal. Se ele retornar tarde, o
-  // corpo não permanece aberto depois que o prazo já invalidou a operação.
   void operacao.then((valor) => { if (signal.aborted) aoTardar?.(valor); }).catch(() => undefined);
   try {
     return await Promise.race([operacao, abortada]);
@@ -157,10 +154,6 @@ function validarRevisao(metadata: MetadataRevisao, revisionId: string, mimeTypeA
   return { fileId: "", driveId: "", revisionId, md5Checksum: metadata.md5Checksum, size: metadata.size, mimeType: metadata.mimeType };
 }
 
-/**
- * Captura a revisão de cabeça atual, torna-a permanente e confirma a mesma
- * identidade. A chamada não baixa bytes e não infere uma revisão diferente.
- */
 export async function fixarRevisaoDriveOrganizacional(entrada: EntradaRevisaoDrive): Promise<RevisaoDriveFixada> {
   if (!ID_INTERNO.test(entrada.fileId) || !ID_INTERNO.test(entrada.driveIdOrganizacao)) throw new ErroVideoDrive();
   const prazo = sinalComPrazo(entrada.signal, entrada.timeoutMs ?? TEMPO_LIMITE_PADRAO_MS);
@@ -185,10 +178,6 @@ export async function fixarRevisaoDriveOrganizacional(entrada: EntradaRevisaoDri
   }
 }
 
-/**
- * Relê a fonte persistida para reprodução. Uma cabeça nova do mesmo arquivo
- * não substitui a revisão fixa: somente a revisão armazenada é aceita.
- */
 export async function consultarRevisaoDriveFixada(entrada: {
   fonte: RevisaoDriveFixada;
   token: BuscarTokenDrive;
@@ -204,8 +193,6 @@ export async function consultarRevisaoDriveFixada(entrada: {
   try {
     const token = await obterTokenSeguro(entrada.token, prazo.signal);
     const fetchDrive = entrada.fetch ?? fetch;
-    // A cabeça pode ter sido substituída depois da publicação. A segurança da
-    // leitura vem da revisão fixa, cuja MIME é comparada à fonte persistida.
     validarArquivo(await jsonSeguro<MetadataArquivo>(await requisitar(fetchDrive, urlArquivo(fonte.fileId), token, prazo.signal), prazo.signal), { fileId: fonte.fileId, driveIdOrganizacao: fonte.driveId }, false);
     const revisao = validarRevisao(await jsonSeguro<MetadataRevisao>(await requisitar(fetchDrive, urlRevisao(fonte.fileId, fonte.revisionId), token, prazo.signal), prazo.signal), fonte.revisionId, undefined, true);
     if (revisao.md5Checksum !== fonte.md5Checksum || revisao.size !== fonte.size || revisao.mimeType !== fonte.mimeType) throw new ErroVideoDrive();

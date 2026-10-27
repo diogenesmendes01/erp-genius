@@ -1,8 +1,3 @@
-/**
- * Credenciais exclusivamente de servidor para o Drive institucional.
- * A biblioteca oficial mantém o token e faz a renovação; este módulo nunca
- * serializa credenciais para o cliente nem registra valores de configuração.
- */
 import { JWT } from "google-auth-library";
 
 const ESCOPO_DRIVE_LEITURA = "https://www.googleapis.com/auth/drive.readonly";
@@ -71,10 +66,6 @@ function obterCliente(credenciais: CredenciaisDrive, criarCliente?: CriarCliente
   return cliente;
 }
 
-/**
- * Obtém um bearer de serviço com o escopo mínimo de leitura do Drive. A
- * instância JWT é reutilizada, portanto cache e renovação são do cliente oficial.
- */
 export async function obterTokenDrive(opcoes: OpcoesTokenDrive = {}): Promise<string> {
   try {
     const credenciais = lerCredenciais(opcoes.ambiente ?? process.env as AmbienteDrive);
@@ -87,7 +78,6 @@ export async function obterTokenDrive(opcoes: OpcoesTokenDrive = {}): Promise<st
   }
 }
 
-/** Lê o drive compartilhado da organização somente quando o adaptador é usado. */
 export function obterDriveOrganizacaoId(ambiente: AmbienteDrive = process.env as AmbienteDrive): string {
   const driveId = valorObrigatorio(ambiente.DRIVE_ORGANIZACAO_ID);
   if (!ID_DRIVE.test(driveId)) throw new ErroCredenciaisDrive();

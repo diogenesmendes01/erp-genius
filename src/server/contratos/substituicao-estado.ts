@@ -5,8 +5,6 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { carregarRevisaoAssinatura } from "./assinatura-estado";
 import { PrepararSubstituicaoContratualSchema } from "./substituicao-schema";
 
-/** Ordem determinística para snapshots que atravessam JSONB. Preserva a ordem
- * de arrays, pois participantes/etapas não são conjuntos intercambiáveis. */
 export function hashSubstituicao(valor: Prisma.JsonValue): string {
   const ordenar = (item: Prisma.JsonValue): Prisma.JsonValue => {
     if (Array.isArray(item)) return item.map(ordenar);
@@ -18,8 +16,6 @@ export function hashSubstituicao(valor: Prisma.JsonValue): string {
   return createHash("sha256").update(JSON.stringify(ordenar(valor))).digest("hex");
 }
 
-/** Primitiva interna; o chamador confere a identidade/permissão na mesma
- * transação. Não cancela a fonte nem autoriza envio ao fornecedor. */
 export async function carregarContextoSubstituicaoTx(tx: Prisma.TransactionClient, entrada: unknown) {
   const d = PrepararSubstituicaoContratualSchema.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -38,8 +34,6 @@ export async function carregarContextoSubstituicaoTx(tx: Prisma.TransactionClien
   if (!conferencia || conferencia.artefato.previa.matriculaId !== fonte.matriculaId) throw new ErroRegra("O substituto deve pertencer à mesma matrícula da fonte.");
   if (conferencia.artefatoId === fonte.artefatoId) throw new ErroRegra("O substituto exige original diferente da fonte.");
   if (conferencia.revisaoHash !== d.revisaoSubstitutoEsperada) throw new ErroRegra("A conferência do substituto não corresponde à revisão esperada.");
-  // Não recalcular a prévia antiga contra dados atuais: Q116 existe justamente
-  // para corrigir essa divergência. O substituto, por outro lado, deve ser atual.
   const atual = await carregarRevisaoAssinatura(tx, fonte.matriculaId, conferencia.artefatoId);
   if (atual.revisaoHash !== conferencia.revisaoHash) throw new ErroRegra("As condições do substituto mudaram. Confira novamente antes de prosseguir.");
   const diferencas = {

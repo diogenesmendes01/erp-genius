@@ -26,7 +26,7 @@ describe("layout de /diario", () => {
     expect(hrefs(html)).toEqual([
       "/diario", "/diario/encontros", "/diario/pendencias", "/diario/regularizacoes", "/diario/reposicoes", "/diario/excecoes-gravacao",
     ]);
-    expect(html).not.toContain('href="/diario/regularizacoes-gravacao"'); // só Gerência pedagógica e Administrador
+    expect(html).not.toContain('href="/diario/regularizacoes-gravacao"');
     const marcadas = ativas(html);
     expect(marcadas).toHaveLength(1);
     expect(marcadas[0]).toContain('href="/diario"');

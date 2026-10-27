@@ -2,10 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// R1 da #173 (C2 e C3): o valor recebido começa pelo saldo no formato do próprio campo ("150,50"), nunca
-// String(150.5) = "150.5", que parseMoeda recusa (ponto ambíguo, issue #167). E o CampoMoeda recebe o id
-// do modal, então o aviso de centavos em CRC entra no aria-describedby do input.
-// Sem banco: a action do servidor e o upload são trocados por dublês.
 vi.mock("@/server/financeiro/acoes", () => ({ registrarPagamento: vi.fn() }));
 vi.mock("@/components/UploadArquivo", () => ({ UploadArquivo: () => null }));
 
@@ -15,7 +11,6 @@ type Props = Parameters<typeof PagamentoModal>[0];
 const render = (p: Partial<Props>) =>
   renderToStaticMarkup(createElement(PagamentoModal, { cobrancaId: "c", moeda: "BRL", valorEsperado: 150.5, onClose: () => {}, onDone: () => {}, ...p }));
 
-/** O <input> do valor recebido (o único com esse nome acessível). */
 const inputValor = (html: string) => /<input\b[^>]*aria-label="Valor recebido"[^>]*>/.exec(html)?.[0] ?? "";
 const attr = (trecho: string, nome: string) => new RegExp(`\\s${nome}="([^"]*)"`).exec(trecho)?.[1];
 

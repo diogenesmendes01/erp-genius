@@ -7,7 +7,6 @@ import { hashSubstituicao } from "./substituicao-estado";
 
 const json = (valor: unknown): Prisma.InputJsonObject => JSON.parse(JSON.stringify(valor));
 
-/** Registra a revisão administrativa do original já preservado. Não envia nem aplica o aditivo. */
 export async function registrarConferenciaAssinaturaAditivoTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = RegistrarConferenciaAssinaturaAditivoSchema.parse(entrada);
   const entradaHash = hashSubstituicao(json(d) as Prisma.JsonObject);

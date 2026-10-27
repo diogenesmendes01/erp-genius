@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-// Ganchos de src/test/tela-sem-dom.ts no lugar do React: seleção, resultado e chave vivem no estado
-// entre renders (inclusive o do useAcaoCliente), e os controles são acionados como na tela.
 const mocks = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, consultar: vi.fn(), registrar: vi.fn() }));
 vi.mock("react", async importOriginal => {
   const real = await importOriginal<typeof import("react")>();
@@ -13,7 +11,6 @@ vi.mock("react", async importOriginal => {
   };
 });
 vi.mock("@/server/contratos/agenda-aditivo", () => ({ registrarPropostaAgendaAditivo: mocks.registrar }));
-// Lote 3 do fuso pessoal: a conferência manda o texto digitado e o fuso; quem converte é o servidor.
 vi.mock("@/server/contratos/agenda-aditivo-local", () => ({ consultarConferenciaAgendaAditivoLocal: mocks.consultar }));
 import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaAgendaFormulario";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
@@ -24,7 +21,6 @@ const dados = { "professor-e": "atual", "fuso-e": "UTC", "inicio-e": "2099-10-11
 const props = { matriculaId: "m", encontros: [{ id: "e", inicio: "2099-10-10T10:00:00.000Z", fim: "2099-10-10T11:00:00.000Z", fusoOrigem: "UTC", professorId: "atual", professor: "Atual" }], professores: [{ id: "primeiro", nome: "Primeiro" }, { id: "atual", nome: "Atual" }] };
 const tela = () => mocks.ganchos!.renderizar(ConferenciaAgendaFormulario, props);
 const no = (tipo: string) => elementos(tela()).find(n => n.type === tipo)!;
-/** Marca o encontro "e" (checkbox) e devolve a tela já com os campos do encontro. */
 const selecionar = () => { (elementos(tela()).find(n => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)(); return tela(); };
 const temResultado = () => elementos(tela()).some(n => n.type === "h3" && texto(n.props.children) === "Resultado da conferência");
 const resultado = { proposta: { encontros: [{ encontroId: "e", professorAnteriorId: "anterior", professorNovoId: "novo", professorAnteriorNome: "Anterior", professorNovoNome: "Novo", inicioAnterior: "2099-10-10T10:00:00.000Z", fimAnterior: "2099-10-10T11:00:00.000Z", inicioNovo: "2099-10-11T10:00:00.000Z", fimNovo: "2099-10-11T11:00:00.000Z", fusoAnterior: "UTC", fusoNovo: "UTC", duracaoMinutos: 60 }] }, pendencias: [] };

@@ -29,15 +29,12 @@ describe("ordem das comissões (E1)", () => {
   });
 });
 
-// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão.
 describe("ordem das comissões: chave herdada de Object", () => {
   it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
     expect(lerOrdemComissoes({ ordem, dir: "desc" })).toEqual(ORDEM_PADRAO_COMISSOES);
   });
 });
 
-// C50 da #170: a ordem de reserva (sem coluna válida) não é mais uma lista solta que podia divergir da
-// coluna padrão — é o critério da própria coluna padrão.
 describe("ordem de reserva das comissões", () => {
   it("sem ordenação, cai no mesmo critério da coluna padrão", () => {
     expect(orderByComissoes(null as never)).toEqual(orderByComissoes(ORDEM_PADRAO_COMISSOES));

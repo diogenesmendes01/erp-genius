@@ -27,7 +27,6 @@ function dataIsoComOffsetValida(valor: string) {
 
 const instante = z.string().datetime({ offset: true }).refine(dataIsoComOffsetValida, "Data ISO com offset inválida.");
 
-/** Entrada estrita para propor a troca de horário de uma reserva já existente. */
 export const ProporRemarcacaoSegundaChamadaSchema = z.object({
   reservaId: id,
   estadoConferido: sha256,
@@ -40,7 +39,6 @@ export const ProporRemarcacaoSegundaChamadaSchema = z.object({
   chaveIdempotencia,
 }).strict();
 
-/** Decisão independente sobre a proposta exata, sem dados de agenda implícitos. */
 export const DecidirRemarcacaoSegundaChamadaSchema = z.object({
   propostaId: id,
   propostaHash: sha256,
@@ -51,11 +49,6 @@ export const DecidirRemarcacaoSegundaChamadaSchema = z.object({
 
 export type PropostaRemarcacaoSegundaChamadaNormalizada = z.infer<typeof ProporRemarcacaoSegundaChamadaSchema>;
 
-/**
- * Canonicaliza instantes para UTC antes de calcular idempotência ou persistir.
- * A disponibilidade, o calendário, o prazo e a decisão continuam sendo
- * conferências do fluxo transacional.
- */
 export function canonicalizarPropostaRemarcacaoSegundaChamada(input: z.input<typeof ProporRemarcacaoSegundaChamadaSchema>) {
   const proposta = ProporRemarcacaoSegundaChamadaSchema.parse(input);
   const inicio = new Date(proposta.inicio);
@@ -74,7 +67,6 @@ export function normalizarPropostaRemarcacaoSegundaChamada(
   return proposta;
 }
 
-/** O hash independe do relógio: permite conferir reenvio histórico antes de validar uma nova proposta. */
 export function hashPropostaRemarcacaoSegundaChamada(
   input: z.input<typeof ProporRemarcacaoSegundaChamadaSchema>,
 ) {

@@ -2,11 +2,8 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { alemDoCursor, camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerNavegacao, lerPaginaDaFila, MENSAGEM_CURSOR_INVALIDO, MENSAGEM_DOIS_SENTIDOS, recorteDaFila, umSentido, type NavegacaoFila } from "./cursor-fila";
 
-// Cursor nos dois sentidos das filas de trabalho (E4, decisão de 10/10/2026). Fila de mentira: ids em
-// ordem ("f00"…), lidos como o Prisma leria com o corte do id e a direção de leitura.
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `f${String(i).padStart(2, "0")}`);
 
-/** Leitura sobre `visiveis` (a fila de agora), em ordem asc pelo id, com o corte e a direção do cursor. */
 const leitor = (visiveis: () => string[]) => async (nav: NavegacaoFila, take: number) => {
   const corte = corteDoId(nav, "asc").id;
   const sentido = direcaoDeLeitura(nav)("asc");
@@ -66,7 +63,7 @@ describe("cursor das filas: páginas", () => {
   it("resolver um item da primeira página não faz a próxima pular ninguém", async () => {
     const fila = ids(23), ler = leitor(() => fila);
     const p1 = await lerPaginaDaFila({}, 10, ler, proprio);
-    fila.splice(fila.indexOf("f03"), 1); // alguém resolveu f03: ele sai da fila
+    fila.splice(fila.indexOf("f03"), 1);
     const p2 = await lerPaginaDaFila({ depois: p1.proxima! }, 10, ler, proprio);
     expect(p2.registros[0]).toBe("f10");
     expect([...p1.registros, ...p2.registros]).toEqual(ids(20));
@@ -74,7 +71,6 @@ describe("cursor das filas: páginas", () => {
 
   it("ao voltar e chegar ao começo, a página é a primeira, cheia e sem anterior", async () => {
     const fila = ids(23), ler = leitor(() => fila);
-    // f00…f07 foram resolvidos: antes de f10 sobram só f08 e f09.
     fila.splice(0, 8);
     const volta = await lerPaginaDaFila({ antes: "f10" }, 10, ler, proprio);
     expect(volta).toMatchObject({ registros: ids(18).slice(8), temAnterior: false, temProxima: true, anterior: null });

@@ -15,7 +15,6 @@ export function CabecalhoConversa({ atendimento, acoes, linhaAria, acoesAria, pa
  const visual = estadoVisualCabecalho(atendimento, usuarioId);
  const estado = linhaAria ?? visual.estado;
  return <header className="grid min-h-[68px] shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] items-center gap-x-1.5 border-b border-gray-200 bg-surface py-2 pl-2.5 pr-3">
-  {/* Identidade e ações quebram pela largura necessária ao conteúdo. O Menu fica fora do containment. */}
   <div className="row-span-2 min-w-0 [container-type:inline-size]"><div className="flex w-full flex-wrap items-center gap-x-2.5 gap-y-2">
   <div className="flex min-w-0 flex-[1_1_20rem] items-center gap-2.5">
   <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>

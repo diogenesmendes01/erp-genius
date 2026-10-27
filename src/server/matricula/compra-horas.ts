@@ -10,7 +10,6 @@ import { separarDiferencaCompra } from "./compra-horas-diferenca";
 
 const ResumoLiquidacao = z.object({ liquidacao: z.object({ valorEmDinheiro: z.string(), valorEmCredito: z.string(), valorTotal: z.string() }) });
 const AplicacaoNaCompra = z.object({ preparacao: z.object({ aplicacaoAdiantamentoAditivoId: z.string().min(1) }) });
-/** Q172: aplicação de aditivo do adiantamento registrada na memória da compra (a última antes do registro). */
 function aplicacaoDaCompra(snapshot: Prisma.JsonValue) {
   const r = AplicacaoNaCompra.safeParse(snapshot);
   return r.success ? r.data.preparacao.aplicacaoAdiantamentoAditivoId : null;
@@ -35,8 +34,6 @@ export async function consultarComprasHorasAntecipadas(input: { alunoId: string;
       if (!await tx.matricula.count({ where: { id: d.matriculaId, alunoId: d.alunoId } })) throw new ErroRegra("Matrícula não encontrada para este aluno.");
       const compras = await tx.compraHorasAntecipadas.findMany({ where: { matriculaId: d.matriculaId }, orderBy: [{ criadoEm: "desc" }, { id: "asc" }],
         select: { liquidacaoAcerto: { select: { minutos: true } }, snapshot: true, id: true, cobrancaId: true, minutosComprados: true, valorOriginal: true, descontoOriginal: true, valorPagoAlocado: true, moeda: true, evidenciaCondicoes: true, criadoEm: true, registrador: { select: { nome: true } }, reservas: { select: { id: true, encontroId: true, minutos: true, inicio: true, fim: true, consumo: { select: { id: true, estorno: { select: { id: true, criadoEm: true } }, conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, encontro: { select: { status: true } }, decisoesLiberacao: { where: { aprovada: true }, select: { id: true, proposta: { select: { destino: true } } } }, propostasLiberacao: { select: { id: true, preparadorId: true, destino: true, valorCredito: true, calculoCredito: true, evidenciaEscolhaRemarcacao: true, motivo: true, decisao: { select: { aprovada: true, motivo: true, credito: { select: { id: true, valorInicial: true, moeda: true } } } } }, orderBy: { criadoEm: "desc" } } }, orderBy: { inicio: "asc" } } } });
-      // Q172: a diferença gravada separa desconto de emissão e redução por aditivo a partir das aplicações.
-      // `aprovada: true` repete a regra do trigger `guardar_aplicacao_adiantamento_172` (defesa em profundidade).
       const aplicacoes = compras.some(c => aplicacaoDaCompra(c.snapshot)) ? await tx.aplicacaoAdiantamentoAditivo.findMany({
         where: { decisao: { aprovada: true, proposta: { matriculaId: d.matriculaId, cobrancaId: { in: compras.map(c => c.cobrancaId) } } } }, orderBy: [{ versaoCobrancaDepois: "asc" }, { id: "asc" }],
         select: { id: true, valorAnterior: true, valorNovo: true, decisao: { select: { proposta: { select: { cobrancaId: true } } } } } }) : [];
@@ -54,7 +51,6 @@ export async function consultarComprasHorasAntecipadas(input: { alunoId: string;
   });
 }
 
-/** Identifica uma compra já paga; não registra outro recebimento nem oferece saldo sem lastro. */
 export async function registrarCompraHorasAntecipadas(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -79,10 +75,6 @@ export async function registrarCompraHorasAntecipadas(input: z.input<typeof Entr
       const c = await tx.cobranca.findFirst({ where: { id: d.cobrancaId, matriculaId: m.id }, include: { destinacoesRecebimento: { orderBy: { id: "asc" }, include: { recebimento: { select: { id: true, moeda: true, dataPagamento: true } } } }, informes: { where: { status: "A_CONFERIR" } }, comprasHoras: true } });
       if (!c || c.tipo !== "HORA_PARTICULAR" || c.versao !== d.versaoCobranca || c.moeda !== m.moeda || c.comprasHoras.length) throw new ErroRegra("Cobrança incompatível, desatualizada ou já vinculada a uma compra.");
       const preparacao = await conferirCompraPreparadaTx(tx, m, c, d.minutosComprados);
-      // Preço de referência inferior ao negociado não é desconto negativo. Preservar ambos na memória.
-      // Q172: a aplicação do aditivo não altera o valor original da emissão; descontoOriginal pode somar desconto
-      // de emissão e redução por aditivo. A memória guarda a aplicação (preparacao) e a consulta separa as
-      // parcelas a partir das aplicações (compra-horas-diferenca).
       const valorOriginal = preparacao ? Prisma.Decimal.max(c.valorOriginal, c.valorNegociado) : c.valorOriginal;
       const total = c.destinacoesRecebimento.reduce((s, d) => s.plus(d.valor), new Prisma.Decimal(0));
       const utilizacoes = await tx.propostaUsoCredito.findMany({ where: { cobrancaId: c.id, decisao: { aprovada: true } }, orderBy: { id: "asc" },

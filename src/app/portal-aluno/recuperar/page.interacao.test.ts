@@ -2,10 +2,6 @@ import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 8 (docs/42 /portal-aluno/recuperar #1, #3 e #4): a confirmação só aparece com o pedido aceito
-// — antes o `finally` a mostrava até com a rede fora —, em role="status"; recusa e falha de rede vão para
-// role="alert" com o formulário ainda na tela; e a confirmação é a mesma para qualquer e-mail. Sem DOM e sem
-// rede: ganchos de src/test/tela-sem-dom.ts e a chamada à rota (../requisicoes) trocada por um mock.
 const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, pedir: vi.fn() }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();

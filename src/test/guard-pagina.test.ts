@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { OPERADORES_LOGICOS_DA_RECUSA, papeisDoGuardFonte } from "./guard-pagina";
 
-// Autoteste da leitura de guard usada pelas travas "aba = guard" de /academico e /diario
-// (R1 da #143, B1/B2; R2, B3–B6; R3, B7–B9 na #152): os ramos de falha fechada precisam lançar,
-// comentário e texto de JSX não são guard, e o guard contado é o que segura a página — e o único que recusa.
-
 const IMPORTS = `import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 `;
 
-/** Página com o JSX de retorno de verdade: `jsx` entra DENTRO do `return (<div>…</div>)`. */
 const pagina = (corpo: string, { jsx = "ok", imports = IMPORTS, depois = "" }: { jsx?: string; imports?: string; depois?: string } = {}) => `${imports}
 export default async function Pagina() {
 ${corpo}
@@ -105,7 +100,6 @@ describe("papeisDoGuardFonte — o guard contado é o que segura a página (B3)"
       depois: "export async function guardAntigo() {\n  await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);\n}\n",
     });
     expect(() => ler(fonte)).toThrow("importado com alias");
-    // Só a isca, sem o alias: a chamada fora da função export default também lança.
     const soIsca = pagina("  const x = 1; void x;", { depois: "export async function guardAntigo() {\n  await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);\n}\n" });
     expect(() => ler(soIsca)).toThrow("sem guard de topo");
     const iscaEGuard = pagina("  await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);", { depois: "async function isca() {\n  await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);\n}\nvoid isca;\n" });
@@ -117,7 +111,6 @@ describe("papeisDoGuardFonte — o guard contado é o que segura a página (B3)"
       imports: 'import { Papel } from "@prisma/client";\nimport * as shared from "@/server/_shared";\n',
     });
     expect(() => ler(fonte)).toThrow('"* as"');
-    // Por outro caminho até o mesmo módulo, ou por import dinâmico/require, também.
     const subcaminho = pagina("  await s.exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);", {
       imports: 'import { Papel } from "@prisma/client";\nimport * as s from "@/server/_shared/sessao";\n',
     });
@@ -129,8 +122,6 @@ describe("papeisDoGuardFonte — o guard contado é o que segura a página (B3)"
   });
 
   it("B7/E16: módulo do guard por import(), require ou import = require, sem o identificador no código — lança pela carga", () => {
-    // Guard válido como 1ª instrução e uma 2ª chamada, por acesso com string, que recusa a Secretaria.
-    // Sem o identificador exigirSessaoPagina fora do import e do guard: só a regra da carga pega.
     const carga = "@/server/_shared carregado dinamicamente";
     const segunda = '["exigirSessaoPagina"](Papel.GERENTE_PEDAGOGICO);';
     expect(() => ler(pagina(`${GUARD_SEC_GP}\n  await (await import("@/server/_shared"))${segunda}`))).toThrow(carga);
@@ -178,7 +169,7 @@ describe("papeisDoGuardFonte — Papel é o enum do Prisma (B4)", () => {
     const local = pagina(GUARD_SEC_GP, { depois: "function ajuda(Papel: unknown) { return Papel; }\nvoid ajuda;\n" });
     expect(() => ler(local)).toThrow("declaração local chamada Papel");
     const desestruturado = pagina(`${GUARD_SEC_GP}\n  const { Papel: _p } = { Papel: 1 }; void _p;`);
-    expect(ler(desestruturado)).toEqual(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]); // chave de objeto não é declaração
+    expect(ler(desestruturado)).toEqual(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]);
     const sombra = pagina(`${GUARD_SEC_GP}\n  { const Papel = 1; void Papel; }`);
     expect(() => ler(sombra)).toThrow("declaração local chamada Papel");
   });
@@ -218,18 +209,15 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
     expect(() => ler(pagina(`${sessao}  if (!sessao.papeis.includes(Papel.GERENTE_PEDAGOGICO)) return <p>Sem acesso</p>;`))).toThrow("return sob condição de papel");
     expect(() => ler(pagina(`${sessao}  const gestao = sessao.papeis.includes(Papel.GERENTE_PEDAGOGICO);\n  const pode = gestao;\n  if (!pode) { return null; }`))).toThrow("return sob condição de papel");
     expect(() => ler(pagina(`${sessao}  const gestao = temPapel(sessao, Papel.GERENTE_PEDAGOGICO);\n  return gestao ? <div>ok</div> : null;`))).toThrow("return condicionado a papel");
-    // Num componente de topo para onde a página delega, com o papel chegando por prop: também.
     const delegado = pagina(sessao, {
       jsx: "<Conteudo podeVer={sessao.papeis.includes(Papel.GERENTE_PEDAGOGICO)} />",
       depois: "async function Conteudo({ podeVer }: { podeVer: boolean }) {\n  if (!podeVer) return null;\n  return <p>ok</p>;\n}\n",
     });
     expect(() => ler(delegado)).toThrow("return sob condição de papel");
-    // Componente de topo declarado como const arrow.
     const arrow = pagina(`${sessao}  void sessao;`, { depois: "const Outro = async (p: { papeis: string[] }) => { if (!p.papeis.length) return null; return <p>ok</p>; };\nvoid Outro;\n" });
     expect(() => ler(arrow)).toThrow("return sob condição de papel");
   });
 
-  // R3 da #143 (B8, B9): cada evasão e cada ramo da recusa branda com o seu caso.
   const SESSAO = "  const sessao = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);\n";
   const BRANDA = "return sob condição de papel";
   const COM_TEM_PAPEL = { imports: 'import { Papel } from "@prisma/client";\nimport { exigirSessaoPagina, temPapel } from "@/server/_shared";\n' };
@@ -250,13 +238,11 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
     expect(() => ler(pagina(`${SESSAO}  const { papeis: p } = sessao;${recusa}`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const { "papeis": p } = sessao;${recusa}`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const { ["papeis"]: p } = sessao;${recusa}`))).toThrow(BRANDA);
-    // Chave calculada: não dá para saber qual é, então lê papel, por cautela.
     expect(() => ler(pagina(`${SESSAO}  const k = "pa" + "peis";\n  const { [k]: p } = sessao;${recusa}`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const p = sessao.papeis;${recusa}`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const p = sessao["papeis"];${recusa}`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  let p: string[] = [];\n  p = sessao.papeis;${recusa}`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  let p: string[] = [];\n  ({ papeis: p } = sessao);${recusa}`))).toThrow(BRANDA);
-    // O próprio guard desestruturado com outro nome, e o parâmetro renomeado de um componente de topo.
     expect(() => ler(pagina(`  const { papeis: p } = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);${recusa}`))).toThrow(BRANDA);
     const delegado = pagina(SESSAO, {
       jsx: "<Conteudo usuario={sessao} />",
@@ -266,15 +252,12 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
   });
 
   it("C55b (#170, R1 da #171): papéis guardados num membro ou lidos por chave calculada — a recusa branda continua vista", () => {
-    // Atribuição a membro: o nome do membro e o objeto passam a ler papel.
     expect(() => ler(pagina(`${SESSAO}  const obj = { p: [] as string[] };\n  obj.p = sessao.papeis;\n  if (!obj.p.includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const obj: Record<string, string[]> = {};\n  obj["p"] = sessao.papeis;\n  if (!obj["p"].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const caixa = { lista: [] as string[] };\n  caixa.lista = sessao.papeis;\n  const { lista } = caixa;\n  if (!lista.includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
-    // Chave calculada no acesso: constante montada por partes é resolvida; não constante lê papel, por cautela.
     expect(() => ler(pagina(`${SESSAO}  if (!sessao["pap" + "eis"].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  if (!sessao[\`pap\${"eis"}\`].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  const parte = String(1);\n  if (!sessao["pap" + parte].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
-    // Sem papel: acesso por índice numérico ou por variável comum e membro que não recebe papel seguem livres.
     expect(ler(pagina(`${SESSAO}  const itens = [1, 2];\n  const i = 0;\n  if (!itens[i] || !itens[1]) return null;\n  const obj = { n: 0 };\n  obj.n = itens.length;\n  if (!obj.n) return null;`))).toEqual(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]);
     expect(ler(pagina(`${SESSAO}  const rotulos: Record<string, string> = { a: "A" };\n  if (!rotulos["a" + "b"]) return null;`))).toEqual(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]);
   });
@@ -288,10 +271,8 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
   });
 
   it("T14: return sob switch ou case com condição de papel — lança", () => {
-    // Condição no switch (o rótulo do case é uma string qualquer)…
     expect(() => ler(pagina(`${SESSAO}  switch (sessao.papeis[0]) { case "SECRETARIA_ACADEMICA": return null; }`))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  switch (sessao.papeis.length) { default: return null; }`))).toThrow(BRANDA);
-    // …e no rótulo do case (o switch não lê papel).
     expect(() => ler(pagina(`${SESSAO}  switch (true) { case !sessao.papeis.includes(Papel.GERENTE_PEDAGOGICO): return null; }`))).toThrow(BRANDA);
   });
 
@@ -302,14 +283,12 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
     for (const operador of operadores) {
       expect(() => ler(pagina(`${SESSAO}${podeVer}  return !podeVer ${operador} <p>ok</p>;`))).toThrow("return condicionado a papel");
     }
-    // Também sob envoltório de tipo (as, satisfies, !).
     expect(() => ler(pagina(`${SESSAO}${podeVer}  return (podeVer ? <p>ok</p> : null) as React.ReactNode;`))).toThrow("return condicionado a papel");
     expect(() => ler(pagina(`${SESSAO}${podeVer}  return (podeVer ? <p>ok</p> : null) satisfies unknown;`))).toThrow("return condicionado a papel");
     expect(() => ler(pagina(`${SESSAO}${podeVer}  return (!podeVer || <p>ok</p>)!;`))).toThrow("return condicionado a papel");
   });
 
   it("as regras novas não acusam o ajuste de tela nem a leitura de dado (o padrão das páginas reais)", () => {
-    // Chave que não é papel renomeada, return por dado, papéis renomeados usados só no JSX, laço sem return.
     const fonte = pagina(
       `${SESSAO}  const { registros: itens, total } = await carregar();\n  let busca = "";\n  busca = String(total);\n  for (const item of itens) { if (!item) continue; }\n  if (!itens.length) return <p>Nenhuma proposta.</p>;\n  const { papeis: meus } = sessao;`,
       { jsx: '{meus.includes(Papel.GERENTE_PEDAGOGICO) && " A decisão é sua."}<p>{busca}</p>', depois: "async function carregar() { return { registros: [1], total: 1 }; }\n" },
@@ -319,8 +298,6 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
 
   it("ajuste de tela por papel continua permitido (o padrão das páginas reais)", () => {
     const sessao = "  const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);\n";
-    // JSX condicional, variável usada só em texto, return por dado (não por papel), filtro do Prisma
-    // com chave `papeis`, e return condicionado dentro de um .map(...).
     const fonte = pagina(
       `${sessao}  const secretaria = temPapel(usuario, Papel.SECRETARIA_ACADEMICA);\n  const filtro = { papeis: { has: "PROFESSOR" } };\n  const itens = [1, 2].map((i) => { if (secretaria) return null; return i; });\n  if (!filtro) return <p>Selecione uma matrícula.</p>;\n  void itens;`,
       {

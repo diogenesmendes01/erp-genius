@@ -88,7 +88,6 @@ describe("salvarFiltro: corrida no nome", () => {
   it("a checagem prévia passa mas o índice único recusa (P2002) com a mesma mensagem", async () => {
     logadoComo(vendedor.id);
     await salvarFiltro({ tela: "FUNIL", nome: "Meu", filtros: {} });
-    // Simula a outra chamada ter criado "Meu" entre a checagem e a transação.
     const espiao = vi.spyOn(prisma.filtroSalvo, "findUnique").mockResolvedValueOnce(null);
     try {
       expect(await salvarFiltro({ tela: "FUNIL", nome: "Meu", filtros: {} })).toEqual({ ok: false, erro: "Já existe uma visualização com este nome." });
@@ -102,7 +101,6 @@ describe("salvarFiltro: corrida no nome", () => {
     logadoComo(vendedor.id);
     const id = idDe(await salvarFiltro({ tela: "FUNIL", nome: "Meu", filtros: {} }));
     await arquivarFiltro(id);
-    // A checagem prévia ainda vê o arquivado, mas outra chamada o reativou antes da transação.
     const espiao = vi.spyOn(prisma.filtroSalvo, "findUnique").mockResolvedValueOnce({ id, arquivadoEm: new Date() } as never);
     await prisma.filtroSalvo.update({ where: { id }, data: { arquivadoEm: null } });
     try {

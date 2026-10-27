@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// estimarAlcanceRegua (docs/42 L2517; fatia B, issue #169): a consulta de leitura que a confirmação da ativação
-// usa. Os degraus do FORMULÁRIO passam pela mesma tradução da política guardada (D+15 nunca automático, inativo
-// fora, ordem por offset, modelo do template) e a contagem é a do cron (contarAlcanceRegua, mock aqui; a regra
-// está em alcance-regua.test.ts). Só o administrador; nada é gravado.
-
 const m = vi.hoisted(() => ({
   sessaoPapel: vi.fn(), contar: vi.fn(), templates: vi.fn(),
   escrita: vi.fn(),

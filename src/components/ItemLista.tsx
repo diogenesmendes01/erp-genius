@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-// Linha de lista (conversas, fila): início (avatar), título + resumo truncados e meta à direita.
 const BASE = "flex w-full min-h-[76px] items-center gap-3 rounded-item p-3 text-left transition-colors";
 const SELECIONADO = "bg-brand-bg text-brand-800";
 const NORMAL = "hover:bg-highlight";

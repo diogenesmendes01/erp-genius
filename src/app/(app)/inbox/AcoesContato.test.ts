@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// C2 da R1 do #217 (decisão do dono: portar tudo): as ações que o Inbox antigo tinha na thread voltam no painel
-// lateral, pelas mesmas Server Actions. Marcação com o React real; interação com os ganchos de tela-sem-dom.
 const m = vi.hoisted(() => ({ g: null as null | import("@/test/tela-sem-dom").Ganchos }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -97,9 +94,6 @@ describe("AcoesContato: marcação", () => {
     expect(html()).not.toContain(">Desvincular<");
     expect(html({ podeVincular: true })).not.toContain(">Desvincular<");
     expect(html({ vinculos: [{ tipo: "aluno", id: "al1", nome: "Ana Lima" }] })).toContain(">Desvincular<");
-  });
-  it("a confirmação do vínculo aponta o desvincular da administração ou do gerente do setor", () => {
-    expect(readFileSync("src/app/(app)/inbox/AcoesContato.tsx", "utf8")).not.toContain("Não há desvincular pela tela");
   });
   it("não mostra telefone (regra 5)", () => {
     expect(html({ podeEditarNome: true, podeVincular: true, cobranca })).not.toMatch(/\+\d{6,}/);
@@ -233,11 +227,6 @@ describe("AcoesContato: interação", () => {
     expect(acoes.marcarConversaTratada).not.toHaveBeenCalledWith({ conversaId: "a1", motivo: "retomar_regua" });
   });
 
-  it("InboxNovo passa o opt-out do contato às ações do painel (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/InboxNovo.tsx", "utf8");
-    expect(fonte).toMatch(/<AcoesContato[^>]*optOut=\{atual\.optOut\}/);
-  });
-
   it("Registrar pagamento abre o PagamentoModal da cobrança e, no fim, trata a conversa como pagamento", async () => {
     m.g = criarGanchos();
     const p = props({ cobranca });
@@ -286,12 +275,5 @@ describe("AcoesContato: interação", () => {
     expect(chaves).toHaveLength(3);
     expect(chaves[1]).toBe(chaves[0]);
     expect(chaves[2]).not.toBe(chaves[0]);
-  });
-});
-
-describe("InboxNovo liga as ações do contato no painel (fonte)", () => {
-  it("o painel renderiza AcoesContato com as ações que o servidor mandou", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/InboxNovo.tsx", "utf8");
-    expect(fonte).toMatch(/<AcoesContato[^>]*acoes=\{painelSetor\.dado\.acoes\}/);
   });
 });

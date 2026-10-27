@@ -8,12 +8,10 @@ import type { FiltrosFunil } from "./funil";
 import { exigirCapacidadeCrm } from "./permissoes";
 import { comUnicidade } from "./unicidade";
 
-/** As chaves do funil são as de FiltrosFunil (lerFiltrosFunil lê a URL com esses nomes). */
 const CHAVES_FUNIL = [
   "busca", "tipo", "donoId", "temperatura", "origem", "tagId", "perdidosDias", "ordem",
 ] as const satisfies readonly (keyof FiltrosFunil)[];
 
-/** Chaves de filtro aceitas por tela; qualquer outra é descartada ao salvar. */
 export const CHAVES_FILTRO: Record<TelaFiltroSalvo, readonly string[]> = {
   FUNIL: CHAVES_FUNIL,
   CONTATOS: ["busca", "tag", "origem", "pais", "empresa", "vendedor", "situacao"],
@@ -57,9 +55,6 @@ export async function salvarFiltro(input: {
     if (existente && !existente.arquivadoEm) throw new ErroRegra(repetida);
 
     return comUnicidade(repetida, () => prisma.$transaction(async (tx) => {
-      // A unicidade (usuário, tela, nome) inclui arquivados e não há delete físico:
-      // salvar com o nome de um arquivado o reativa com os novos filtros. A reativação só vale
-      // se ele ainda estiver arquivado: outra chamada simultânea pode tê-lo reativado antes.
       let f;
       if (existente) {
         const { count } = await tx.filtroSalvo.updateMany({

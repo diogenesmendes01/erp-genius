@@ -12,16 +12,6 @@ const CAMPO: Record<TipoVinculoContato, "alunoId" | "responsavelId" | "leadId"> 
   aluno: "alunoId", responsavel: "responsavelId", lead: "leadId",
 };
 
-/**
- * "Desvincular contato" no Inbox (decisão D8 do dono; #175, docs/42 L2298). Desfaz o vínculo do contato do WhatsApp
- * com o aluno, o responsável ou a oportunidade, o mesmo que `vincularContatoWhatsApp` faz: as próximas mensagens deste
- * número deixam de aparecer no cadastro. Na linha de vendas, o atendimento único da conversa também solta a
- * oportunidade, para a conversa poder ser ligada à certa. Nada é apagado: cadastro, mensagens, atendimentos e o
- * contexto dos atendimentos de secretaria/financeiro (aluno e matrícula) ficam como estão.
- *
- * Só o Administrador ou o gerente do setor do atendimento (`podeExecutar(…, "desvincular")`), com motivo, e o
- * evento `ContatoDesvinculado` na mesma transação (trava de src/server/crm-config/auditoria.test.ts).
- */
 export async function desvincularContatoWhatsApp(input: DesvincularContatoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -40,8 +30,6 @@ export async function desvincularContatoWhatsApp(input: DesvincularContatoInput)
     const campo = CAMPO[alvo.tipo];
 
     await prisma.$transaction(async (tx) => {
-      // Ramo lead compartilha a ordem com vínculo/criação: Selected → Contato.
-      // Os demais vínculos mantêm seu contrato e não atualizam o atendimento comercial.
       const revalidarLead = async () => {
         if (alvo.tipo !== "lead") return;
         const fresco = await tx.usuario.findUnique({ where: { id: autor.id }, select: { nome: true, papeis: true, permissoes: true, ativo: true } });
@@ -58,7 +46,6 @@ export async function desvincularContatoWhatsApp(input: DesvincularContatoInput)
         await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR UPDATE`;
         await revalidarLead();
       }
-      // Trava a linha do contato: dois desvínculos (ou um vínculo) concorrentes não se cruzam.
       await tx.$queryRaw`SELECT id FROM "ContatoWhatsApp" WHERE id = ${alcance.contatoId} FOR UPDATE`;
       await revalidarLead();
       const contato = await tx.contatoWhatsApp.findUniqueOrThrow({
@@ -66,7 +53,6 @@ export async function desvincularContatoWhatsApp(input: DesvincularContatoInput)
       });
       if (contato[campo] !== alvo.id) throw new ErroRegra("Este contato não está mais vinculado a esse cadastro. Recarregue a conversa.");
       await tx.contatoWhatsApp.update({ where: { id: alcance.contatoId }, data: { [campo]: null } });
-      // Linha de vendas: o lead do atendimento da linha veio do vínculo; fora dela, o lead é o contexto do atendimento.
       const linha = alvo.tipo === "lead"
         ? await tx.atendimentoWhatsApp.updateMany({
             where: { id: alcance.id, leadId: alvo.id, contextoChave: { startsWith: CHAVE_LINHA } }, data: { leadId: null },

@@ -47,7 +47,6 @@ function aprovacaoAdministrativaVigente(decisao: { aprovada: boolean; decisor: {
   return !!decisao?.aprovada && decisao.decisor.ativo && decisao.decisor.papeis.includes(Papel.ADMINISTRADOR);
 }
 
-/** Consulta financeira da cadeia delta; não expõe fotografia nem chaves. */
 export async function consultarReconferenciaDeltaDesistencia(input: z.input<typeof entrada>) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);

@@ -81,7 +81,6 @@ describe("BarraPublicar", () => {
   });
 
   it("recusa_por_rascunho_alterado_chega_ao_dialogo", async () => {
-    // O ConfirmarAcao mostra o erro da action dentro do diálogo (ConfirmarAcao.interacao.test.ts).
     const msg = "O rascunho foi alterado por outra pessoa desde que você abriu. Recarregue para ver a versão atual.";
     versoes.publicarRascunho.mockResolvedValue({ ok: false, erro: msg });
     versoes.descartarRascunho.mockResolvedValue({ ok: false, erro: msg });

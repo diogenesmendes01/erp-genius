@@ -9,8 +9,6 @@ import { docenteAtual } from "@/server/diario/permissoes";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { conferirDiasNaoLetivos } from "@/server/agenda/calendario-intervalo";
 
-/** Conferência sob os locks do calendário e contrato. Não cria nem publica encontro.
- * Uma futura aprovação deve repetir esta conferência dentro da transação de aplicação. */
 export async function conferirAgendaRecuperacaoTx(tx: Prisma.TransactionClient, autorId: string, d: {
   itemReservaId: string; inicio: Date; fim: Date; fuso: string;
 }) {

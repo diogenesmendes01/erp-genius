@@ -22,7 +22,6 @@ function conferirEstado(estado: z.infer<typeof EstadoSegundaChamadaSchema>) {
 
 }
 
-/** Q146/Q147: propõe uma nova aplicação da avaliação pendente, sem criar nota ou recuperação. */
 export async function proporSegundaChamada(input: z.input<typeof propostaSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO), d = propostaSchema.parse(input);
@@ -39,7 +38,6 @@ export async function proporSegundaChamada(input: z.input<typeof propostaSchema>
   });
 }
 
-/** Q146/Q147: decisão independente não consome nem reserva; saldo é conferido ao agendar. */
 export async function decidirSegundaChamada(input: z.input<typeof decisaoSchema>) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = decisaoSchema.parse(input);
@@ -63,7 +61,6 @@ export async function decidirSegundaChamada(input: z.input<typeof decisaoSchema>
   });
 }
 
-/** Histórico paginado da avaliação pendente, sem agenda, prazo ou dados financeiros. */
 export async function consultarSegundasChamadas(input: { alocacaoId: string; codigoAvaliacao: string; antesId?: string }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -86,7 +83,6 @@ export async function consultarSegundasChamadas(input: { alocacaoId: string; cod
   });
 }
 
-/** Histórico administrativo das autorizações pontuais; não libera operações regulares. */
 export async function consultarAutorizacoesEspeciaisSegundaChamada(input: { alocacaoId: string; codigoAvaliacao: string; depoisId?: string }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);

@@ -12,16 +12,10 @@ export type TagPainel = { id: string; rotulo: string; ia: boolean };
 
 export type PainelSetor = DadosSetor & {
   cabecalho?: CabecalhoPainel | null;
-  /** Só vínculo direto e ACL da tarefa; inclui todos os estados. Ausente apenas em fixtures antigas. */
   tarefasNoFio?: TarefaPainel[];
-  /** Só pessoa comercial já autorizada; ausente apenas em fixtures antigas. */
   tags?: TagPainel[];
-  /** Ações de cadastro e cobrança (as do Inbox antigo); null em grupo. Ausente nos testes de marcação antigos. */
   acoes?: AcoesContatoInbox | null;
-  /** Estado da Aria no atendimento (Task 29). Ausente nos testes de marcação antigos. */
   aria?: AriaDoAtendimento | null;
-  /** O podeEnviar da thread (`atendimentoVisivel` com envio): decide o compositor (C6 do #217).
-   *  Ausente nos testes de marcação antigos; ausente vale como não pode. */
   podeEnviar?: boolean;
 };
 type DadosSetor =
@@ -30,14 +24,8 @@ type DadosSetor =
   | { setor: "SECRETARIA"; matriculaCodigo: string | null; matriculaId: string | null; documentosPendentes: number | null }
   | { setor: "PEDAGOGICO"; turma: string | null; frequenciaPct: number | null };
 
-/** Categorias que a Secretaria espera ver arquivadas na matrícula (não arquivadas) para considerá-la documentada. */
 const CATEGORIAS_EXIGIDAS = ["CONTRATO", "COMPROVANTE"] as const;
 
-/**
- * Painel lateral do setor do atendimento (Tarefa 32). Só leitura. null fora do escopo do usuário
- * (participante convidado entra no escopo; o conteúdo do setor é filtrado por papel em FINANCEIRO,
- * SECRETARIA e PEDAGOGICO: quem entra só como convidado, sem papel do setor, recebe campos vazios).
- */
 export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): Promise<PainelSetor | null> {
   const dados = await carregarDadosSetor(u, atendimentoId);
   if (!dados) return null;
@@ -48,14 +36,12 @@ export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): P
     atendimentoVisivel(u, atendimentoId, true),
     carregarAriaDoAtendimento(u, atendimentoId),
     dados.setor === "COMERCIAL" && cabecalho.pessoaId ? tagsDaPessoa(cabecalho.pessoaId) : Promise.resolve([]),
-    // O atendimento já passou pelo escopo acima; lead não participa do filtro direto do fio.
     carregarTarefasDoAtendimento(u, { id: atendimentoId, leadId: null }, { soDaConversa: true }),
   ]);
   const identidade = dados.setor === "COMERCIAL" ? { ...dados, pessoaId: cabecalho.pessoaId, oportunidade: cabecalho.capacidades.veLead ? dados.oportunidade : null } : dados;
   return { ...identidade, acoes, podeEnviar: !!envio, aria, tags, cabecalho, tarefasNoFio };
 }
 
-/** Somente depois do cabeçalho resolver a pessoa autorizada; não é action/endpoint. */
 async function tagsDaPessoa(pessoaId: string): Promise<TagPainel[]> {
   const tags = await prisma.pessoaTag.findMany({
     where: { pessoaId }, orderBy: { tag: { nome: "asc" } },
@@ -82,7 +68,6 @@ async function carregarDadosSetor(u: UsuarioSessao, atendimentoId: string): Prom
       if (!ver || !a.lead) return { setor: "COMERCIAL", oportunidade: null, pessoaId: null };
       return { setor: "COMERCIAL",
         oportunidade: { id: a.lead.id, titulo: a.lead.nome, etapa: a.lead.etapa, valor: a.lead.valorPrevisto?.toFixed(2) ?? null },
-        // Regra 6: o responsável legal não é a pessoa comercial.
         pessoaId: a.lead.pessoa?.responsavel ? null : a.lead.pessoaId };
     }
     case "FINANCEIRO": {

@@ -6,16 +6,11 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
-/** O que a aprovação aplica: a modalidade, a quantidade antes → depois e as turmas impactadas. */
 export type ResumoQuantidadeAulas = { nomeModalidade: string; quantidadeAnterior: number; quantidadeNova: number; turmas: number };
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 export function DecidirQuantidadeAulas({ propostaId, resumo }: { propostaId: string; resumo: ResumoQuantidadeAulas }) {
- // Decisão sem chave de idempotência no contrato (server/agenda/modalidade-quantidade.ts:60): a falha não manda reenviar.
  const router = useRouter();
  const [motivo, setMotivo] = useState(""), acao = useAcaoCliente({ idempotente: false }), pendente = acao.ocupado;
- // Aprovar aplica o conjunto completo na mesma transação (situação APLICADA) e muda a quantidade de aulas de TODAS as
- // turmas impactadas (docs/42 L1218): o botão só abre a confirmação, que repete a mudança e o número de turmas e exige
- // "Conferi as {n} turmas impactadas"; a action roda no ConfirmarAcao. Rejeitar só encerra a proposta (REJEITADA).
  const [confirmando, setConfirmando] = useState(false);
  const rejeitar = async () => { const d = await acao.executar(() => decidirAlteracaoQuantidadeAulasModalidade({ propostaId, aprovar: false, motivo }), "Proposta rejeitada."); if (d?.tipo === "ok") router.refresh(); };
  const pedirAprovacao = () => { acao.limpar(); setConfirmando(true); };

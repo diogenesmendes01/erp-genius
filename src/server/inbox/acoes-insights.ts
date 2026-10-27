@@ -7,7 +7,6 @@ import { reconciliarInsightInconclusivo,descartarInsightIncerto } from "@/server
 import type { AtualizarInsightInput,ReconciliarInsightInput,DescartarInsightInput } from "@/server/aria/insights/entradas";
 
 async function usuarioInbox(){const u=await exigirSessao();exigirPapel(u,...PAPEIS_INBOX);return u;}
-/** Somente identidade da sessão: o kernel relê ACL/binding após locks. */
 export async function atualizarInsightNoInbox(entrada:AtualizarInsightInput){
   return executarAcao(async()=>{const u=await usuarioInbox();return executarAtualizacaoInsight(u.id,entrada);});
 }

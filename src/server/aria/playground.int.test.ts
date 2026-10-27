@@ -48,7 +48,6 @@ beforeEach(async () => {
   await truncarBanco();
   authMock.mockReset();
   provedorMock.gerar.mockReset();
-  // O provedor de mentira cumprimenta com o nome que está no sistema (prova qual config foi usada).
   provedorMock.gerar.mockImplementation(async (ped: { sistema: string }) => {
     const nome = /Você é ([^,]+),/.exec(ped.sistema)?.[1] ?? "?";
     return resposta(saida({ resposta: `Oi! Eu sou a ${nome}, assistente virtual da escola.` }));
@@ -70,7 +69,6 @@ describe("playground da Aria", () => {
   it("usa_rascunho_quando_pedido", async () => {
     await rascunhoComNome("Lia");
     expect((await rodar({ ...p, usarRascunho: true })).resposta).toContain("Eu sou a Lia");
-    // Sem pedir o rascunho, vale a publicada (aqui, o padrão).
     expect((await rodar(p)).resposta).toContain(`Eu sou a ${configPadrao().nome}`);
   });
 
@@ -103,13 +101,11 @@ describe("playground da Aria", () => {
     provedorMock.gerar.mockResolvedValue(resposta(saida({ resposta: "A mensalidade é R$ 777 por mês." })));
     const r = await rodar({ ...p, paisId: cat.pais.id });
     expect(r.bloqueio).toContain("777");
-    // Mesmo comportamento do turno real: não sai como fala da Aria e transfere para humano.
     expect(r).toMatchObject({ resposta: null, handoff: "VALOR_NAO_AUTORIZADO" });
     const sistema = provedorMock.gerar.mock.calls[0][0].sistema as string;
     expect(sistema).toContain("Português · Regular");
   });
 
-  // C2 da R1 do #238: o playground lê as respostas liberadas como o turno real (COMERCIAL e gerais).
   it("usa_respostas_liberadas_do_comercial_e_gerais_como_o_turno_real", async () => {
     const rr = (atalho: string, corpo: string, ariaPodeUsar: boolean, setor: "COMERCIAL" | "FINANCEIRO" | null) =>
       prisma.templateWhatsApp.create({ data: { nome: `rr:${atalho}`, atalho, titulo: atalho, corpo, tipo: "RESPOSTA_RAPIDA", ariaPodeUsar, setor } });
@@ -125,7 +121,6 @@ describe("playground da Aria", () => {
     expect(sistema).toContain("- /geral:");
     expect(sistema).not.toContain("/boleto");
     expect(sistema).not.toContain("/interna");
-    // Outro setor ou não liberada: o valor continua bloqueado, como no turno real.
     provedorMock.gerar.mockResolvedValue(resposta(saida({ resposta: "A segunda via custa ₡2.000." })));
     expect((await rodar(p)).bloqueio).toContain("₡2.000");
   });
@@ -142,7 +137,6 @@ describe("playground da Aria", () => {
     const espiao = vi.spyOn(prisma.chamadaIA, "create").mockRejectedValueOnce(new Error("insert falhou"));
     try {
       expect((await testarAria(p)).ok).toBe(false);
-      // Só a tentativa do sucesso: nenhum registro de "erro" sem tokens foi gravado no lugar.
       expect(espiao).toHaveBeenCalledTimes(1);
       expect(espiao.mock.calls[0][0]).toMatchObject({ data: { resultado: "OK", tokensEntrada: 1000 } });
       expect(await prisma.chamadaIA.count({ where: { resultado: { startsWith: "ERRO" } } })).toBe(0);

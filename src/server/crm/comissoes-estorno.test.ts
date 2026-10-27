@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({
   ultimoEvento: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => {
-  // A situação é lida com a linha travada (`SELECT ... FOR UPDATE`, #166 5º lote); `findUnique` segue como a fonte do mock.
   const tx = {
     comissao: { updateMany: mocks.updateMany },
     $queryRaw: async () => { const c = await mocks.findUnique(); return c ? [c] : []; },

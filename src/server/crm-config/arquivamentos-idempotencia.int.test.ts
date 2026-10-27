@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DriverWhatsApp, Papel } from "@prisma/client";
 
-// #166, 5º lote: ações que levam um registro a um estado-alvo, idempotentes por natureza. O reenvio de quem já fez a
-// mesma ação devolve ok sem outro Evento (antes: erro, ou dois Eventos no clique duplo). Se o estado veio de outra
-// pessoa, a ação segue recusada como antes. Cobre: arquivar tag e campo (CRM), cancelar tarefa, revogar cobertura de
-// carteira, registrar e remover opt-out do WhatsApp. O arquivamento de fonte da Aria está em `fontes.int.test.ts`.
-
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

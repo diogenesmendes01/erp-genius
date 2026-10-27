@@ -6,7 +6,6 @@ import { registrarEvento } from "@/server/_shared/evento";
 import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
 export const MSG_VERSAO_TAREFA = "Esta tarefa foi alterada por outra pessoa. Recarregue.";
-/** Interno: o chamador carrega/autoriza a tarefa e fornece apenas filtros derivados no servidor. */
 export type ContextoTransicaoTarefa = { tx: Prisma.TransactionClient; autor: UsuarioSessao; tarefa: Tarefa; versao: number; filtro?: Prisma.TarefaWhereInput };
 async function gravar(c: ContextoTransicaoTarefa, status: "ABERTA" | "CONCLUIDA", data: Prisma.TarefaUncheckedUpdateManyInput) {
  const r = await c.tx.tarefa.updateMany({where:{AND:[{id:c.tarefa.id,versao:c.versao,status},c.filtro ?? {}]},data:{...data,versao:{increment:1}}});
@@ -35,7 +34,6 @@ export async function reabrirTarefaTx(c: ContextoTransicaoTarefa): Promise<boole
  return true;
 }
 export type AgendamentoTarefaResolvido = { dataCivil: string | null; inicioEm: Date | null; lembrarEm: Date | null; lembreteAntecedenciaMin: number | null };
-/** Preserva o instante já validado: não converte novamente texto ambíguo em fusoOrigem. */
 export async function reagendarTarefaTx(c: ContextoTransicaoTarefa, novo: AgendamentoTarefaResolvido): Promise<boolean> {
  const {tx,autor,tarefa:t}=c;
  if(t.status!=="ABERTA")throw new ErroRegra("Só tarefas abertas podem ser reagendadas.");
@@ -43,7 +41,6 @@ export async function reagendarTarefaTx(c: ContextoTransicaoTarefa, novo: Agenda
  await registrarEvento(tx,{tipo:"TarefaReagendada",agregadoTipo:"Tarefa",agregadoId:t.id,autorId:autor.id,payload:{de:{dataCivil:t.dataCivil,inicioEm:t.inicioEm?.toISOString()??null},para:{dataCivil:novo.dataCivil,inicioEm:novo.inicioEm?.toISOString()??null}}});
  return true;
 }
-/** O chamador segura a linha Tarefa e revalida ACL antes de autorizar inclusive o replay. */
 export async function cancelarTarefaTx(c: ContextoTransicaoTarefa, motivo: string): Promise<boolean> {
  const {tx,autor,tarefa:t}=c;
  if(t.status==="CANCELADA"&&t.motivoCancelamento===motivo){

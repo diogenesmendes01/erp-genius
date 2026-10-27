@@ -3,8 +3,6 @@ import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PAPEIS_FINANCEIRO, abreFinanceiro } from "@/app/(app)/financeiro/papeis";
 
-// docs/42 L577 (docs/43 §6 item 7): o único caminho de ação da tela era um link para /financeiro, que a Secretaria
-// (que abre esta tela) não abre — caía em "acesso negado".
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/entrada-particular-consulta", () => ({ consultarPagamentosEntradaParticular: mocks.consultar }));

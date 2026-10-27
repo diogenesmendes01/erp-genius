@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Conferir a nota de recuperação (docs/42 L1479; #175): "Oficializar esta versão" não tem volta pela tela (depois
-// só muda por correção aprovada). Escolher oficializar só abre o ConfirmarAcao, que repete a versão e a nota e
-// exige marcar "Conferi a nota e a evidência"; só a confirmação chama a action. Rejeitar continua direto.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   decidir: vi.fn(), refresh: vi.fn(),
@@ -77,7 +74,6 @@ describe("ConferirNota — oficializar", () => {
     await esvaziar();
     m.decidir.mockResolvedValueOnce({ ok: false, erro: "Existe versão mais recente da nota." });
     const [c] = confirmacoes(tela());
-    // A conferência é exigida pelo próprio diálogo; aqui o apoio clica direto, então ela não entra no caminho.
     expect((await confirmarNoDialogo({ ...c, props: { ...c.props, conferencia: undefined } }, usar)).erro).toBe("Existe versão mais recente da nota.");
     expect(confirmacoes(tela())).toHaveLength(1);
     expect(m.refresh).not.toHaveBeenCalled();

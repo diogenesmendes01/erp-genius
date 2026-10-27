@@ -13,7 +13,6 @@ import { identificarMatriculaAvaliacao } from "./identificacao";
 import { avaliacoesDesignadas } from "./designacao-acesso";
 import { SalvarLancamentoSchema, OficializarLancamentoSchema, NotasLancamentoSchema } from "./lancamento-schema";
 import { salvarLancamentoTx, oficializarLancamentoTx, bloquearLancamento } from "./lancamento-tx";
-/** D10: sem o fuso da escola, nenhum lançamento é aceito (em UTC a data da avaliação pode cair no dia errado). */
 async function exigirFusoDaEscola() {
   if (!(await consultarFusoInstitucional())) throw new ErroRegra(MSG_LANCAMENTO_SEM_FUSO);
 }
@@ -28,7 +27,7 @@ export async function salvarLancamentoAvaliacao(input: z.input<typeof SalvarLanc
 export async function salvarLancamentoAvaliacaoLocal(input: Omit<z.input<typeof SalvarLancamentoSchema>, "realizadaEm"> & { realizadaLocal: string; fuso: string }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
-    await exigirFusoDaEscola(); // D10 (a tela também esconde o formulário)
+    await exigirFusoDaEscola();
     const { realizadaLocal, fuso, ...d } = SalvarLancamentoSchema.omit({ realizadaEm: true }).extend({ realizadaLocal: DataHoraAvaliacaoSchema, fuso: FusoInstitucionalSchema }).strict().parse(input);
     let realizadaEm: string;
     try { realizadaEm = instanteAvaliacaoLocal(realizadaLocal, fuso).toISOString(); }
@@ -77,8 +76,6 @@ export async function consultarLancamentosAvaliacao(input: { alocacaoId: string;
         contexto: { turma: t.nome ?? t.codigo ?? "Turma", regraVersao: t.regraAvaliacao?.versao ?? null, escala: regra?.escala ?? null, avaliacao },
         versaoEsperada: ultima?.versao ?? 0, oficial, podeGerirDesignacao: gestao,
         podeLancar: (professorAtual || designado) && !!avaliacao && !oficial, realizadores, registradorId: u.id,
-        // A última versão, independente da página do histórico: base do formulário de lançamento, que fica
-        // montado em qualquer página (docs/43 §6 item 3). Só para quem lança, que já vê o histórico inteiro.
         anterior: (professorAtual || designado) && !!avaliacao && !oficial && ultima ? { realizadaEm: ultima.realizadaEm, notas: NotasLancamentoSchema.parse(ultima.notas) } : null,
         versoes: await Promise.all(versoes.slice(0, 20).map(async v => ({ ...v, notas: NotasLancamentoSchema.parse(v.notas),
           vigente: (gestao || professorAtual) && v.decisao?.aprovada ? await notaVigente(tx, v) : null,

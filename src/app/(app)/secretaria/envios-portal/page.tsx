@@ -13,8 +13,6 @@ import { FINALIDADE_TOKEN_PORTAL_ALUNO_LABEL, SITUACAO_ENVIO_PORTAL_ALUNO_LABEL,
 import type { ParametrosUrl } from "@/lib/pagina-url";
 import { cursorDaLeitura, lerNavegacao } from "@/lib/cursor-fila";
 
-// Abas de situação (docs/42 L431; docs/43 §6 item 9): "Incertos" abre a tela — é o que ela existe para tratar —,
-// "Falhas" e "Todos" ao lado. A situação vai na URL e acompanha o cursor nos dois sentidos.
 export default async function EnviosPortalPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
   const parametros = await searchParams;

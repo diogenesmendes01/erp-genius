@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 
-/** Paginada por número (E4), 50 por página, em ordem estável (criadaEm, id). */
 export async function listarPropostasEquivalencia(input: unknown) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
@@ -28,8 +27,6 @@ export async function listarPropostasEquivalencia(input: unknown) {
   });
 }
 
-/** A Secretaria consulta a autorização para transferir, sem receber as notas,
- * fontes ou comentários usados na decisão pedagógica. */
 export async function consultarPropostaEquivalencia(input: unknown) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
@@ -51,8 +48,6 @@ export async function consultarPropostaEquivalencia(input: unknown) {
       podeDecidir: gestao && !proposta.decisao && autor.id !== proposta.preparadorId,
       podeExecutar: estado === "APROVADA" && (autor.papeis.includes(Papel.SECRETARIA_ACADEMICA) || autor.papeis.includes(Papel.ADMINISTRADOR)),
     };
-    // Flags indicam a etapa/papel; as ações repetem a conferência completa de
-    // validade, versão e disponibilidade antes da escrita.
     return gestao ? { ...comum, visao: "PEDAGOGICA" as const, snapshot, mapeamentos }
       : { ...comum, visao: "EXECUCAO" as const };
   });

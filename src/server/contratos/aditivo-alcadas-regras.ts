@@ -10,7 +10,6 @@ const AlteracoesProjetadasSchema = z.array(z.object({
   campo: OrigemCampoSchema, rotulo: z.string().trim().min(1), anterior: z.string().trim().min(1), novo: z.string().trim().min(1),
 }).strict());
 
-/** Alçadas aplicáveis aos fatos do snapshot; não aprova nem aplica condições. */
 export function alcadasAplicaveisAditivo(alteracoes: unknown): AlcadaAditivo[] {
   const campos = AlteracoesSchema.parse(alteracoes).map(a => a.campo);
   const tem = (campos: readonly string[], conjunto: Set<string>) => campos.some(c => conjunto.has(c));

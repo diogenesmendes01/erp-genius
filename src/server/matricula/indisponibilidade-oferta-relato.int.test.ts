@@ -87,8 +87,6 @@ it("serializa confirmações concorrentes sem duplicar decisão ou evento", asyn
   const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
   authMock.mockResolvedValue({ user: { id: gestor.id } });
   const decisao = { registroId: relato.id, confirmada: true, motivo: "Oferta indisponível verificada", evidenciaTexto: "Gestão conferiu a ausência de turma compatível" };
-  // O import dinâmico de NextAuth no runner não suporta duas resoluções mockadas
-  // simultâneas. Fixar somente a sessão aqui mantém transações e guard fresco reais.
   const autenticacao = vi.spyOn(sessao, "exigirSessaoComPapel").mockResolvedValue({ id: gestor.id, nome: gestor.nome, papeis: gestor.papeis });
   try {
     const [primeira, repetida] = await Promise.all([

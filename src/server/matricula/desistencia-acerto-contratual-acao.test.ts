@@ -76,7 +76,6 @@ describe("prepararAcertoDesistenciaContratual", () => {
   });
 });
 
-// Prova apenas a sensibilidade do hash; os cenários integrados conferem sua aplicação.
 it("detecta fotografia financeira alterada", async () => {
   const { hashSubstituicao } = await import("@/server/contratos/substituicao-estado");
   const antes = { cobrancas: [{ id: "c", versao: 1, valorNegociado: "100.00", valorRecebido: null, valorLiquidadoCredito: "0.00", valorCompensadoPermuta: "0.00" }] };

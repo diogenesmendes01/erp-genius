@@ -25,20 +25,15 @@ import {
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
-// Empresas representam o responsável financeiro. As matrículas permanecem contratos
-// individuais; a ficha conserva o cadastro e o histórico financeiro da empresa.
-
 const btnPri = botaoClasses();
 const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const campoFiltro = "rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500";
 
-/** Link da mesma lista com os filtros atuais e outra página. */
 const hrefPagina = (f: FiltrosEmpresas, pagina: number) => {
   const q = filtrosEmpresasParaQuery({ ...f, pagina });
   return q ? `/empresas?${q}` : "/empresas";
 };
 
-// Lista (E4): busca, situação e país na URL, aplicados no servidor, uma página por vez.
 export function EmpresasCliente({
   empresas,
   total,
@@ -47,9 +42,7 @@ export function EmpresasCliente({
   paises,
 }: {
   empresas: EmpresaResumo[];
-  /** Empresas que atendem aos filtros (todas as páginas). */
   total: number;
-  /** Empresas cadastradas, sem filtro — distingue "nenhuma empresa" de "nenhum resultado". */
   totalBase: number;
   filtros: FiltrosEmpresas;
   paises: { id: string; nome: string }[];
@@ -58,15 +51,12 @@ export function EmpresasCliente({
   const filtrando = temFiltroEmpresas(filtros);
   const inicio = total ? (filtros.pagina - 1) * EMPRESAS_POR_PAGINA + 1 : 0;
   const fim = (filtros.pagina - 1) * EMPRESAS_POR_PAGINA + empresas.length;
-  // A ordem escolhida no cabeçalho (E1) não é campo do formulário: buscar/filtrar/limpar a mantém.
   const lista = useFiltrosUrl({ campos: camposDosFiltrosEmpresas(filtros), hrefDosCampos: (c) => hrefDosCamposEmpresas(c, filtros.ordem) });
   const limpar = hrefEmpresas({ ...lerFiltrosEmpresas({}), ordem: filtros.ordem });
   const coluna = { ordenacao: filtros.ordem, rota: "/empresas", parametros: parametrosFiltrosEmpresas(filtros), aoClicar: lista.aoClicar };
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState("");
   const [paisId, setPaisId] = useState("");
-  // A criação recebe chave de idempotência (#166): o reenvio da mesma tentativa devolve a empresa já criada em vez
-  // de outra com novo código. A chave só muda depois do sucesso.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
 
@@ -140,7 +130,6 @@ export function EmpresasCliente({
             <option value="">Todos os países</option>
             {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
-          {/* Sem JavaScript, o formulário GET também leva a ordem escolhida (sem ordem na URL, vale a padrão). */}
           {filtros.ordem && <>
             <input type="hidden" name="ordem" value={filtros.ordem.campo} />
             <input type="hidden" name="dir" value={filtros.ordem.dir} />
@@ -159,7 +148,6 @@ export function EmpresasCliente({
 
         {empresas.length === 0 ? (
           <EstadoVazio bloco aria-busy={lista.buscando}>
-            {/* Estado vazio duplo: nenhuma cadastrada × filtro sem resultado (este oferece a saída). */}
             {totalBase === 0 ? "Nenhuma empresa ainda. Crie a primeira para registrar o responsável financeiro de contratos individuais." : filtrando ? (
               <>Nenhuma empresa com esses filtros. <Link href={limpar} onClick={lista.aoClicar(limpar)} className="text-brand-700 hover:underline">Limpar filtros</Link></>
             ) : (
@@ -171,12 +159,10 @@ export function EmpresasCliente({
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-gray-100 text-left text-xs text-gray-500">
                 <tr>
-                  {/* Ordenação no servidor (E1); País e Faturas a receber não têm ordem no banco. */}
                   <ColunaOrdenavel campo="codigo" rotulo="Código" {...coluna} />
                   <ColunaOrdenavel campo="nome" rotulo="Empresa" {...coluna} />
                   <th className="px-4 py-2 font-medium">País</th>
                   <ColunaOrdenavel campo="colaboradores" rotulo="Colaboradores" direcaoInicial="desc" {...coluna} />
-                  {/* Faturas FECHADAS = emitidas e aguardando pagamento (StatusFaturaB2B). */}
                   <th className="px-4 py-2 font-medium">Faturas a receber</th>
                   <ColunaOrdenavel campo="situacao" rotulo="Status" {...coluna} />
                 </tr>

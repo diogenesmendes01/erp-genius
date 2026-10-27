@@ -4,7 +4,6 @@ import { Papel } from "@prisma/client";
 const { authMock, enviarTexto } = vi.hoisted(() => ({ authMock: vi.fn(), enviarTexto: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Driver FALSO: nenhuma mensagem real sai.
 vi.mock("../drivers/motor", () => ({ driverMotor: { enviarTexto, enviarTemplate: vi.fn(), enviarMidia: vi.fn(), enviarConteudo: vi.fn() } }));
 
 import { prisma } from "@/lib/prisma";
@@ -45,7 +44,6 @@ describe("envio humano para grupo", () => {
       status: "ENVIADA", providerMessageId: "3EBG1", mensagemIdMotor: `${GRUPO}:3EBG1`, driver: "MOTOR",
     });
     expect(m.clientMessageId).toMatch(/^[0-9a-f-]{36}$/);
-    // C3 da R1 do #241: a saída da fila marca o envio.
     expect(m.enviadaEm).toEqual(m.statusEm);
     expect(m.enviadaEm).not.toBeNull();
     expect(enviarTexto).toHaveBeenCalledTimes(1);
@@ -71,7 +69,6 @@ describe("envio humano para grupo", () => {
     let resultadoEco: unknown;
     let statusNoEco: string | undefined;
     enviarTexto.mockImplementation(async (_n: unknown, _jid: string, _t: string, opcoes: { clientMessageId: string }) => {
-      // O eco chega antes de o despachante gravar o resultado do envio.
       resultadoEco = await reconciliarEcoErp("n-grupo", {
         mensagemId: `${GRUPO}:3EBG1`, providerMessageId: "3EBG1", chatJid: GRUPO, ehGrupo: true, direcao: "SAIDA", origem: "erp",
         clientMessageId: opcoes.clientMessageId, tipo: "TEXTO", tipoMotor: "text", texto: "oi grupo", quando: Date.now(),

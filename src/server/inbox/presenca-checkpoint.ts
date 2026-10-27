@@ -1,7 +1,6 @@
 import type{Prisma}from"@prisma/client";
 import{ErroAutenticacao}from"@/server/_shared/sessao";
 import{usuarioPresencaFresco}from"./presenca-usuario";
-/** Metadado SELF, não lease nem leitura de negócio. UserNOKEY torna esta TX não-SET-READ-ONLY. */
 export async function resolverCheckpointPresenca(db:Prisma.TransactionClient,usuarioId:string,abaId:string):Promise<{id:string;geracao:string}|null>{
  const user=await db.$queryRaw<{id:string}[]>`SELECT id FROM "Usuario" WHERE id=${usuarioId} FOR NO KEY UPDATE`;
  if(!user.length)throw new ErroAutenticacao();await usuarioPresencaFresco(db,usuarioId);

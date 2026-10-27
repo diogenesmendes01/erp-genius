@@ -164,7 +164,6 @@ it("coleta só etapas abertas e ignora decisão rejeitada ou reserva corretament
     autorizacoesAguardandoAgenda: 0, reservasAguardandoRealizacao: 1,
   });
   const { consultarCancelamentosAgendaSegundaChamada, proporCancelamentoAgendaSegundaChamada, decidirCancelamentoAgendaSegundaChamada } = await import("./segunda-chamada-cancelamento");
-  // A proposta e a decisão são de pessoas diferentes, como no fluxo real.
   entrar(gestorId);
   const consultaCancelamento = await consultarCancelamentosAgendaSegundaChamada({ reservaId: reserva.reservaId });
   if (!consultaCancelamento.ok || !consultaCancelamento.dado) throw new Error(JSON.stringify(consultaCancelamento));
@@ -181,8 +180,6 @@ it("coleta só etapas abertas e ignora decisão rejeitada ou reserva corretament
 it("mantém realização sem lançamento oficial, pendência da escola e extra no contexto acadêmico exato", async () => {
   const fonte = await aprovarEDisponibilizar("segunda-realizacao-sem-nota");
   const reserva = await reservar(fonte, "encontro-pendencias-realizacao", 1_000);
-  // A realização exige o início real do encontro; aguardamos o instante criado
-  // pelo fluxo aprovado, sem alterar o horário persistido.
   await new Promise(resolve => setTimeout(resolve, 1_200));
   entrar(professorId);
   expect((await registrarRealizacaoSegundaChamada({
@@ -205,8 +202,6 @@ it("mantém realização sem lançamento oficial, pendência da escola e extra n
   });
 
   const pendenciaEscola = await aprovarEDisponibilizar("segunda-impedimento-escola", "F1");
-  // A realização anterior ainda mantém encontro e docente ocupados; esta
-  // oferta usa intervalo independente para testar somente o impedimento.
   const reservaEscola = await reservar(pendenciaEscola, "encontro-pendencias-escola", 2 * 60 * 60_000);
   entrar(gestorId);
   expect((await registrarOcorrenciaSegundaChamada({

@@ -3,7 +3,6 @@ import { ErroRegra, registrarEvento } from "@/server/_shared";
 import type { carregarAcertoAprovadoParaEfetivacaoTx } from "./encerramento-efetivacao-estado";
 import { registrarLimitesEncerramentoTx } from "./encerramento-registro-temporal";
 
-/** Etapa interna: integrar à conferência da agenda e ao financeiro na transação final. */
 export async function aplicarEstadoEncerramentoTx(tx: Prisma.TransactionClient, acerto: Awaited<ReturnType<typeof carregarAcertoAprovadoParaEfetivacaoTx>>, agora: Date) {
   const registros = await registrarLimitesEncerramentoTx(tx, acerto, agora);
   for (const registro of registros) {
@@ -15,7 +14,6 @@ export async function aplicarEstadoEncerramentoTx(tx: Prisma.TransactionClient, 
     for (const v of origem.vinculos.filter(v => v.ativa)) {
       if (v.encerradaEm) throw new ErroRegra("Concilie o vínculo ativo que já possui data de encerramento.");
       const criadaEm = new Date(v.criadoEm);
-      // Vínculo cadastrado depois do corte conserva a criação e fica com intervalo vazio.
       const fim = new Date(Math.max(criadaEm.getTime(), registro.limiteVinculo.getTime()));
       const encerrada = await tx.alocacaoTurma.updateMany({ where: { id: v.id, matriculaId: registro.matriculaId, turmaId: v.turmaId, ativa: true, encerradaEm: null, criadoEm: criadaEm }, data: { ativa: false, encerradaEm: fim } });
       if (encerrada.count !== 1) throw new ErroRegra("Vínculo alterado durante o encerramento.");

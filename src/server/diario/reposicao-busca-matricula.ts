@@ -5,10 +5,6 @@ import { nomeCompleto } from "@/lib/nome";
 import { executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 import { whereBuscaMatriculas } from "@/server/secretaria/busca-matriculas";
 
-// /academico/reposicoes sem `?matriculaId=` era um beco (docs/42 L1244; docs/43 §6 item 7): só a frase "abra pelo
-// contexto da matrícula". Esta busca dá a lista para escolher a matrícula — mesmos papéis da página, mesma regra
-// de busca da Secretaria (código da matrícula ou nome do aluno), só leitura e com limite.
-
 export const LIMITE_BUSCA_REPOSICAO = 20;
 const Entrada = z.object({ busca: z.string().trim().min(2).max(100) }).strict();
 

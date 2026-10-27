@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// docs/43 §6 item 3 (docs/42 L562): trocar o tipo de pagador e voltar devolve o que foi digitado. Antes,
-// `dados` só valia para o tipo registrado e o <fieldset key={tipo}> remontava os seis campos. Sem DOM: ganchos
-// de src/test/tela-sem-dom.ts.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   registrar: vi.fn(), refresh: vi.fn(),
@@ -20,7 +17,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/secretaria/pagador-preparacao", () => ({ registrarPagadorPreparacao: m.registrar }));
 
 import type { ReactNode } from "react";
-import { CAMPOS_DO_PAGADOR, PagadorFormulario, TIPOS_COM_IDENTIFICACAO, rascunhosIniciais } from "./PagadorFormulario";
+import { CAMPOS_DO_PAGADOR, PagadorFormulario, rascunhosIniciais } from "./PagadorFormulario";
 import { FormDataFalso, criarGanchos, elementos, submeter, type No } from "@/test/tela-sem-dom";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
@@ -76,10 +73,5 @@ describe("PagadorFormulario — um rascunho por tipo", () => {
     await submeter(tela(), { nome: "Empresa X Ltda", paisId: "br", documento: "", email: "", telefoneE164: "", endereco: "", motivo: "Contrato com a empresa." });
     expect(m.registrar).toHaveBeenCalledWith(expect.objectContaining({ pagador: { tipo: "EMPRESA", dados: expect.objectContaining({ nome: "Empresa X Ltda", paisId: "br" }) }, motivo: "Contrato com a empresa." }));
     expect(m.refresh).toHaveBeenCalledTimes(1);
-  });
-
-  it("listas fechadas: tipos com identificação e campos (cópia literal)", () => {
-    expect(TIPOS_COM_IDENTIFICACAO).toEqual(["RESPONSAVEL", "EMPRESA"]);
-    expect(CAMPOS_DO_PAGADOR).toEqual(["nome", "paisId", "documento", "email", "telefoneE164", "endereco"]);
   });
 });

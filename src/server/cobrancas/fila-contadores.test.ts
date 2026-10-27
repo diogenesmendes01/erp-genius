@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Contadores dos cartões-indicadores em listarFilaCobranca (E4, R2 da #144): o número de cada cartão tem
-// de ser o tamanho da lista que o filtro do mesmo cartão devolve (filtros-fila.ts). Sem banco: as
-// dependências de leitura são mockadas e a régua (proximaAcao) devolve o estado/atraso de cada cobrança.
-
 const m = vi.hoisted(() => ({
   cobrancas: vi.fn(),
   eventos: vi.fn(),
@@ -21,7 +17,7 @@ vi.mock("@/lib/prisma", () => ({
     templateWhatsApp: { findMany: m.templates },
     intencaoMensagem: { findMany: m.intencoes },
     atendimentoWhatsApp: { findMany: m.atendimentos },
-    configuracaoOperacional: { findUnique: m.config }, // null → fusoDaEscola() = America/Sao_Paulo
+    configuracaoOperacional: { findUnique: m.config },
   },
 }));
 vi.mock("./politica", () => ({ carregarPoliticaRegua: async () => ({ degraus: [], templateIdPorPasso: new Map() }) }));
@@ -40,25 +36,18 @@ vi.mock("@/server/whatsapp/render", () => ({ renderizarTemplate: () => ({ corpo:
 import { listarFilaCobranca } from "./consultas";
 import { filtrarFila, lerFiltrosFila } from "./filtros-fila";
 
-/** Cobranças abertas e o que a régua diz de cada uma (estado, dias de atraso). */
 const CASOS: { id: string; estado: string; diasAtraso: number; bloqueado?: boolean }[] = [
   { id: "vence", estado: "futuro", diasAtraso: -2 },
   { id: "vence2", estado: "futuro", diasAtraso: -9 },
   { id: "vence3", estado: "futuro", diasAtraso: -20 },
-  // Fronteira: vence hoje — é "A vencer", não "Em atraso".
   { id: "hoje", estado: "acao_devida", diasAtraso: 0 },
   { id: "atraso", estado: "acao_devida", diasAtraso: 5 },
   { id: "atraso2", estado: "acao_devida", diasAtraso: 10 },
-  // Atraso ≥ 30 sem acesso bloqueado → precisaBloqueio (Bloquear ⊂ Em atraso).
   { id: "bloqueio", estado: "acao_devida", diasAtraso: 40 },
-  // Promessas: uma que vence hoje e uma sobre cobrança atrasada — as duas só em "Promessas".
   { id: "promessa-hoje", estado: "promessa", diasAtraso: 0 },
   { id: "promessa-atrasada", estado: "promessa", diasAtraso: 4 },
-  // Entre 15 e 29 dias: Em atraso, ainda não Bloquear (o limiar é 30, não o 15 dos comentários antigos).
   { id: "atraso-medio", estado: "acao_devida", diasAtraso: 20 },
-  // Acesso já bloqueado: Em atraso, mas fora de Bloquear (não há mais o que bloquear).
   { id: "ja-bloqueado", estado: "acao_devida", diasAtraso: 45, bloqueado: true },
-  // Promessa com atraso ≥ 30: entra em Bloquear (precisaBloqueio não olha o estado) e fica fora de Em atraso.
   { id: "promessa-antiga", estado: "promessa", diasAtraso: 35 },
 ];
 
@@ -84,7 +73,6 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
     m.templates.mockResolvedValue([]);
     m.intencoes.mockResolvedValue([]);
     m.atendimentos.mockResolvedValue([]);
-    // A régua de cada cobrança, achada pelo vencimento (cada cobrança tem o seu).
     m.proximaAcao.mockImplementation((entrada: { vencimento: Date }) => {
       const caso = CASOS.find((_, i) => vencimentoDe(i).getTime() === entrada.vencimento.getTime());
       if (!caso) throw new Error(`vencimento inesperado: ${entrada.vencimento.toISOString()}`);
@@ -94,7 +82,6 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
 
   it("a fila chega com o estado e o atraso da régua (a fixture é a que os contadores veem), na ordem da fila", async () => {
     const { itens } = await listarFilaCobranca();
-    // Item 9: a fila chega ordenada pelo servidor — mesma prioridade, maior atraso primeiro, desempate pelo id.
     const naOrdem = [...CASOS].sort((a, b) => b.diasAtraso - a.diasAtraso || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     expect(itens.map((i) => [i.id, i.estado, i.diasAtraso, i.precisaBloqueio])).toEqual(
       naOrdem.map((c) => [c.id, c.estado, c.diasAtraso, c.id === "bloqueio" || c.id === "promessa-antiga"]),
@@ -109,7 +96,6 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
 
   it("o número de cada cartão é o tamanho da lista filtrada pelo mesmo cartão (filtros-fila)", async () => {
     const { itens, dashs } = await listarFilaCobranca();
-    // Cópia literal das chaves dos cartões (não itera INDICADORES_FILA).
     for (const indicador of ["aVencer", "emAtraso", "bloquear", "promessas"] as const) {
       expect(dashs[indicador], indicador).toBe(filtrarFila(itens, lerFiltrosFila({ indicador })).length);
     }
@@ -118,11 +104,9 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
   it("Q176: régua e \"recebido hoje\" usam o dia da escola — às 23h30 de Brasília ainda é o dia anterior", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     try {
-      vi.setSystemTime(new Date("2026-06-23T02:30:00Z")); // 22/06, 23h30 em Brasília
+      vi.setSystemTime(new Date("2026-06-23T02:30:00Z"));
       await listarFilaCobranca();
-      // A régua recebe o fuso da escola, e não decide o dia pelo relógio do servidor.
       expect(m.proximaAcao.mock.calls[0][2]).toBe("America/Sao_Paulo");
-      // "Recebido hoje" começa à meia-noite de 22/06 em Brasília (03h UTC), não à meia-noite UTC de 23/06.
       const recebidos = m.eventos.mock.calls.map(([args]) => args).find((a) => a.where.tipo === "PagamentoRegistrado");
       expect(recebidos.where.criadoEm.gte.toISOString()).toBe("2026-06-22T03:00:00.000Z");
     } finally {
@@ -134,9 +118,8 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
     m.config.mockResolvedValueOnce({ fusoInstitucional: "America/Santiago" });
     vi.useFakeTimers({ toFake: ["Date"] });
     try {
-      vi.setSystemTime(new Date("2026-09-06T15:00:00Z")); // 06/09, 12h em Santiago (-03)
+      vi.setSystemTime(new Date("2026-09-06T15:00:00Z"));
       await listarFilaCobranca();
-      // 05/09 23:59:59 (-04) é seguido de 06/09 01:00 (-03): o dia começa às 04h UTC, sem erro de "00:00 inexistente".
       const recebidos = m.eventos.mock.calls.map(([args]) => args).find((a) => a.where.tipo === "PagamentoRegistrado");
       expect(recebidos.where.criadoEm.gte.toISOString()).toBe("2026-09-06T04:00:00.000Z");
     } finally {

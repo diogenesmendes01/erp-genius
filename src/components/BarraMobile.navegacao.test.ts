@@ -2,9 +2,6 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Interação sem DOM (o projeto não tem jsdom/Testing Library): o estado da gaveta é observado pelo
-// setter do useState, os efeitos rodam na hora, a gaveta renderiza os filhos sempre e a NavLinks
-// guarda o `aoNavegar` recebido. "Clicar num link" = chamar o aoNavegar que a barra entregou.
 const mocks = vi.hoisted(() => ({
   setAberta: vi.fn(),
   navLinks: vi.fn((props: { aoNavegar?: () => void }) => (props ? null : null)),
@@ -21,7 +18,6 @@ vi.mock("./Sidebar", () => ({ NavLinks: mocks.navLinks, ThemeToggle: () => null 
 
 import { BarraMobile, CONSULTA_MD } from "./BarraMobile";
 
-/** window.matchMedia falso: guarda o ouvinte de "change" registrado para a consulta. */
 function simularMatchMedia() {
   const ouvintes: Record<string, (e: { matches: boolean }) => void> = {};
   vi.stubGlobal("window", {

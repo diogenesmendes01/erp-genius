@@ -9,8 +9,6 @@ import { exigirSessaoPortalAluno, revalidarSessaoPortalAlunoTx } from "./sessao"
 
 const Entrada = z.object({ fusoExibicao: z.union([FusoPreferenciaSchema, z.literal(""), z.null()]) }).strict().transform((d) => ({ fusoExibicao: d.fusoExibicao || null }));
 
-/** A escrita bloqueia primeiro a conta e depois a sessão; a validação acontece depois
- * dos locks para que revogação ou troca de versão concorrente vença a preferência. */
 async function travarSessaoAtualTx(tx: Prisma.TransactionClient, sessao: Awaited<ReturnType<typeof exigirSessaoPortalAluno>>) {
   const [conta] = await tx.$queryRaw<Array<{ id: string; alunoId: string; ativa: boolean; versaoSessao: number; emailVerificado: string | null; senhaHash: string | null }>>(Prisma.sql`
     SELECT id, "alunoId", ativa, "versaoSessao", "emailVerificado", "senhaHash"

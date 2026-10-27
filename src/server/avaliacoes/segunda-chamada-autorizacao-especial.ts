@@ -11,7 +11,6 @@ import { instanteUtcSql } from "./segunda-chamada-utc";
 const schema = z.object({ alocacaoId: z.string().min(1).max(100), codigoAvaliacao: z.string().min(1).max(100), prazoAte: z.string().datetime({ offset: true }), motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
 const hash = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 
-/** Q151: autorização pontual não reativa matrícula nem cria saldo, prazo geral ou acesso amplo. */
 export async function autorizarRealizacaoEspecialSegundaChamada(input: z.input<typeof schema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO), d = schema.parse(input);

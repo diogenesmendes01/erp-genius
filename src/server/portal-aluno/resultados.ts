@@ -14,11 +14,6 @@ type Habilidade = typeof HABILIDADES[number];
 
 type NotaVisivel = { habilidade: Habilidade; nota: string | null; comentarioAluno: string };
 
-/**
- * Q143: acompanhamento exclusivo do aluno autenticado por alocação.
- * O fechamento institucional por matrícula/nível é consultado separadamente;
- * este cálculo não representa confirmação de resultado final ou progressão.
- */
 export type ResultadoPortalAluno = {
   situacao: "PARCIAL_NAO_FINAL";
   resultadoFinal: null;
@@ -220,7 +215,6 @@ async function montarAlocacaoPortal(
   };
 }
 
-/** Não recebe IDs do navegador: a sessão opaca determina aluno, matrículas e vínculos. */
 export async function consultarResultadosPortalAluno(sessao?: SessaoPortalAluno): Promise<ResultadoPortalAluno> {
   const identidade = sessao ?? await exigirSessaoPortalAluno();
   return prisma.$transaction(async (tx) => {

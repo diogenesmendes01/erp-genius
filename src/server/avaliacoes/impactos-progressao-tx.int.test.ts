@@ -126,12 +126,7 @@ async function prepararEquivalenciaSemAplicar(alocacaoOrigemId: string) {
 }
 
 async function fecharC(alocacaoCId: string, extra?: { alunoId: string; matriculaId: string }) {
-  // Fechar o nível em C pressupõe o nível concluído: sem a aula futura das
-  // ofertas de B (turma que o aluno deixou) e de C.
   await retirarAulaFuturaDaOferta(turmaBId, turmaCId);
-  // A aula precisa pertencer inequivocamente ao vínculo C. Usar o instante
-  // persistido pela equivalência evita depender do desvio entre o relógio do
-  // Node e o PostgreSQL que gravou a alocação.
   const alocacaoC = await prisma.alocacaoTurma.findUniqueOrThrow({
     where: { id: alocacaoCId },
     select: { criadoEm: true },
@@ -231,7 +226,6 @@ async function publicarCorrecaoAulaTeste(encontroId: string, participacao: "PRES
     assertOk(publicada);
     return prisma.aprovacaoCorrecaoAula.findUniqueOrThrow({ where: { id: publicada.dado.id } });
   }
-  // Escrita interna apenas para comprovar a recusa de impactos adulterados no banco.
   return prisma.$transaction(async tx => {
     const { impactosHash, ...impactos } = await carregarImpactosCorrecaoAulaTx(tx, gestorId, proposta.dado.id);
     if (adulterar === "IMPACTOS") impactos.progressao = impactos.progressao.map(fonte => ({ ...fonte, impactos: [] }));
@@ -276,7 +270,7 @@ async function criarPendenteOutraMatricula(catalogo: Awaited<ReturnType<typeof s
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
-  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  await configurarFusoDaEscola();
   catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR])).id;
   gestorId = (await criarUsuario([Papel.GERENTE_PEDAGOGICO])).id;
@@ -388,7 +382,6 @@ it("correção publicada abre revisão da progressão executada e exige novo fec
 });
 
 it("segue A→B→C por aplicações reais e retorna a progressão APROVADA, sem proposta não aplicada ou outra matrícula", async () => {
-  // Proposta rejeitada não vira aplicação e tampouco interfere no fechamento.
   const decisaoSemAplicacao = await prepararEquivalenciaSemAplicar(alocacaoAId);
   const alocacaoBId = await aplicarEquivalencia(alocacaoAId, turmaBId, "impactos-aplicacao-a-b");
   const alocacaoCId = await aplicarEquivalencia(alocacaoBId, turmaCId, "impactos-aplicacao-b-c");

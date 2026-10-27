@@ -1,5 +1,3 @@
-// Adaptado do oráculo T333: SHA051a47ec9ea2253794f4b7e2403036050f850f8650527ea2fc03788ac2243dd4.
-// Original privado preservado no A. Além do bloqueio, exige conclusão e commit ANTES de soltar o holder.
 import {afterAll,beforeEach,expect,it,vi} from "vitest";
 import {Client} from "pg";
 import fs from "node:fs/promises";

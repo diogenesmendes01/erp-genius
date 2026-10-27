@@ -7,14 +7,11 @@ vi.mock("@/server/contratos/aditivos", () => ({ consultarAditivosContratuais: mo
 vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarPropostaAgendaAditivo: mocks.agenda }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("../CadastroContratualAplicado", () => ({ CadastroContratualAplicado: () => null }));
-// Lote 3 do fuso pessoal: a página resolve o fuso em que a vigência é digitada (pessoal; sem preferência, o da escola).
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("./Formularios", () => ({ PrepararAditivo: () => null }));
 
 import AditivosPage from "./page";
 
-// Revisão R1 da #134 (B5): modelos e propostas na mesma tela — página 1 afirma ausência; a volta de
-// uma lista preserva a página da outra.
 describe("aditivos contratuais — vazios paginados", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -46,8 +43,6 @@ describe("aditivos contratuais — vazios paginados", () => {
   });
 });
 
-// Revisão R1 da #285 (B1): sobre a origem histórica o aditivo ainda não segue para assinatura; a tela avisa e não
-// oferece a preparação (o servidor também a recusa).
 describe("aditivos contratuais — origem histórica", () => {
   beforeEach(() => {
     vi.resetAllMocks();

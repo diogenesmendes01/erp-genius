@@ -1,4 +1,3 @@
-/** Agrupa somente invalidações da primeira página; não faz polling nem altera avisos/leitura. */
 export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Promise<void>) {
   let ativo = true;
   let contexto = 0;
@@ -9,7 +8,6 @@ export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Pro
 
   const agendar = () => {
     if (!ativo || emVoo || timer !== null || !pendente) return;
-    // Fronteira fixa a partir do primeiro aviso: novas entradas não adiam a consulta.
     timer = setTimeout(() => { void iniciar(); }, 50);
   };
   const iniciar = async () => {
@@ -19,9 +17,8 @@ export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Pro
     emVoo = true;
     const inicio = contexto;
     contextoDoVoo = inicio;
-    try { await executar(() => ativo && contexto === inicio); } catch { /* só uma nova invalidação tenta outra vez */ }
+    try { await executar(() => ativo && contexto === inicio); } catch {  }
     finally {
-      // O executor só termina depois de consumir o corpo HTTP, mesmo ao descartar o snapshot.
       emVoo = false;
       contextoDoVoo = null;
       agendar();
@@ -35,8 +32,6 @@ export function criarAtualizadorEmLote(executar: (vigente: () => boolean) => Pro
   };
   return {
     solicitar() { if (ativo) { pendente = true; agendar(); } },
-    // Os guards do consumidor invalidam também snapshots no mesmo contexto (propsSSR novas).
-    // Só esse voo precisa de reconciliação; uma época cancelada nunca é reabilitada por A→B→A.
     invalidarSnapshotEmVoo() { if (ativo && emVoo && contextoDoVoo === contexto) pendente = true; },
     cancelarPendentes,
     descartar() { ativo = false; cancelarPendentes(); },

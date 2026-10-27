@@ -16,11 +16,9 @@ const Entrada = z.object({ matriculaId: z.string().trim().min(1), inicio: z.date
 type Fonte = { alocacaoId: string; turmaId: string; gradeId: string; gradeVersao: number; calendarioId: string; calendarioVersao: number; ancoraCalendario: AncoraCalendarioOferta; encontros: Array<{ id: string; inicio: string; fim: string; status: string; professorId: string | null }>; };
 type Motivo = "VINCULO_AUSENTE" | "TURMA_SEM_OFERTA_ATIVA" | "TURMA_TERMINA_NO_PERIODO" | "GRADE_NAO_PUBLICADA" | "GRADE_DIVERGENTE" | "CALENDARIO_DIVERGENTE" | "AGENDA_INSUFICIENTE" | "AULA_EXCEPCIONAL_NO_PERIODO" | "DOCENTE_INAPTO" | "DOCENTE_INDISPONIVEL";
 const civil = (data: Date, fuso: string) => dataCivilInstitucional(data, fuso);
-/** Encontros são intervalos [inicio, fim): meia-noite no fim não ocupa o novo dia civil. */
 const civilFimInclusivo = (data: Date, fuso: string) => civil(new Date(data.getTime() - 1), fuso);
 
 
-/** Q161: a prova automática é estreita; lacunas nunca declaram indisponibilidade. */
 export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Prisma.TransactionClient, "alocacaoTurma" | "indisponibilidadeDocente" | "versaoCalendarioEscolar" | "impactoQuantidadeAulasModalidade" | "solicitacaoMudancaAcademica">, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const selecaoAlocacao = { id: true, turmaId: true, ativa: true, criadoEm: true, encerradaEm: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true, turma: { select: {
@@ -33,8 +31,6 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
     select: selecaoAlocacao,
   });
-  // Q161: vínculo criado depois do início da cobertura só comprova oferta quando nasceu de transferência
-  // aprovada e executada que o liga, sem lacuna, à alocação que cobria o início do período.
   const tardias = alocacoes.length ? [] : await tx.alocacaoTurma.findMany({
     where: { matriculaId: d.matriculaId, ativa: true, encerradaEm: null, provenienciaVinculo: null, criadoEm: { gt: d.inicio } }, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: selecaoAlocacao });
   const mudancas = tardias.length === 1 ? await tx.solicitacaoMudancaAcademica.findMany({
@@ -61,27 +57,20 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     where: { decisao: { aprovada: true }, OR: encontrosConferidos.map(e => ({ professorId: e.professorId!, inicio: { lt: e.fim }, fim: { gt: e.inicio } })) },
     select: { id: true, professorId: true, inicio: true, fim: true }, orderBy: [{ inicio: "asc" }, { id: "asc" }],
   }) : [];
-  // Só a cadeia pós-replanejamento compara a agenda; alterações de quantidade aplicadas são os elos posteriores aceitos.
   const turmaIds = [...new Set(conferidas.map((a) => a.turmaId))];
   const impactos = turmaIds.length ? await tx.impactoQuantidadeAulasModalidade.findMany({
     where: { turmaId: { in: turmaIds }, proposta: { aplicacao: { isNot: null } } }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
     select: { id: true, turmaId: true, snapshot: true, proposta: { select: { id: true, estadoHash: true,
       decisao: { select: { id: true, aprovada: true, estadoHash: true } }, aplicacao: { select: { id: true, estadoHash: true, aplicadaEm: true } } } } },
   }) : [];
-  // Mesmo uma agenda insuficiente possui fontes que podem mudar após a aprovação humana.
-  // `aplicadaEm` só ordena os elos; fica fora do hash para não invalidar memórias já confirmadas.
   const calendarioNoHash = calendarioVigente && { ...calendarioVigente, replanejamentos: calendarioVigente.replanejamentos?.map((r) => ({ ...r,
     decisaoConjunta: r.decisaoConjunta && { ...r.decisaoConjunta, aplicacao: r.decisaoConjunta.aplicacao && { id: r.decisaoConjunta.aplicacao.id, estadoHash: r.decisaoConjunta.aplicacao.estadoHash } } })) };
-  // Impactos de quantidade só entram no hash quando viram elo da cadeia (B1 da #260): os que já existiam
-  // sem virar elo não podem invalidar confirmações da gestão. Uma alteração aplicada depois da confirmação
-  // continua invalidando pelas aulas da turma, que já estão no hash por meio de `alocacoes`.
   const hashContexto = (elos: ElosQuantidade = []) => hashSubstituicao(JSON.parse(JSON.stringify({ alocacoes, calendarioVigente: calendarioNoHash, ausencias,
     ...(elos.length ? { alteracoesQuantidade: elos } : {}), ...(transferencia ? { transferencia } : {}) })) as Prisma.JsonValue);
   const contextoHash = hashContexto();
   const exigir = (motivo: Motivo) => ({ estado: "EXIGE_CONFIRMACAO_GESTAO" as const, memoria: { fontes: [] as Fonte[], motivos: [motivo], contextoHash } });
   const inicioCivil = d.inicio.toISOString().slice(0, 10), fimCivil = d.fim.toISOString().slice(0, 10);
   type Segmento = { alocacao: (typeof conferidas)[number]; inicioCivil: string; fimCivil: string; exigeAntes: boolean; exigeDepois: boolean };
-  /** Confere uma turma num trecho civil do período. `exigeAntes`/`exigeDepois`: a agenda precisa alcançar a borda que este trecho cobre. */
   const avaliar = (seg: Segmento): Motivo | Fonte => {
     const alocacao = seg.alocacao, turma = alocacao.turma;
     if (!turma) return "VINCULO_AUSENTE";
@@ -90,7 +79,6 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     if (!grade) return "GRADE_NAO_PUBLICADA";
     const fuso = grade.calendario.fusoInstitucional;
     if (alocacao.provenienciaVinculo === "MIGRACAO") {
-      // Cobertura é civil no fuso institucional; cadastro/importação não prova vínculo.
       try {
         const inicioCobertura = instanteDaGrade(seg.inicioCivil, "00:00", fuso);
         const proximoDia = new Date(new Date(seg.fimCivil + "T00:00:00Z").getTime() + 86_400_000).toISOString().slice(0, 10);
@@ -120,7 +108,6 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
   };
   let segmentos: Segmento[];
   if (transferencia) {
-    // O dia civil da transferência pertence às duas turmas: a antiga cobre até ele, a nova a partir dele.
     const fusoDestino = transferencia.destino.turma?.propostasGrade[0]?.calendario.fusoInstitucional;
     if (!fusoDestino) return exigir("GRADE_NAO_PUBLICADA");
     const dia = civil(transferencia.executadaEm, fusoDestino);

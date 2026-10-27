@@ -3,7 +3,6 @@ import { ErroRegra } from "@/server/_shared";
 import { DataCivilSchema, RegraCoberturaSchema } from "./cobertura";
 const Data = DataCivilSchema;
 const Entrada=z.object({ vigenciaInicio:Data, status:z.literal("COMPLETO"), escolha:z.enum(["PRESERVAR_REFERENCIA","MUDAR_REFERENCIA"]), ciclo:z.unknown(), prova:z.boolean() });
-/** Preservar não restaura o contrato original: mantém a última âncora já vigente. */
 export function selecionarPoliticaCoberturaAditivo(entradas: unknown[], inicioSeguinte: string) {
  Data.parse(inicioSeguinte);
  let ultima: z.infer<typeof Entrada> | null=null;
@@ -17,6 +16,5 @@ export function selecionarPoliticaCoberturaAditivo(entradas: unknown[], inicioSe
  }
  if (!ultima) return null;
  const ciclo = z.object({ referencia:z.enum(["MES_CIVIL","CICLO_MATRICULA"]), dataReferencia:Data }).parse(ultima.ciclo);
- // O planejador usa um schema estrito: mês civil não possui âncora individual.
  return RegraCoberturaSchema.parse(ciclo.referencia === "MES_CIVIL" ? { referencia: "MES_CIVIL" } : ciclo);
 }

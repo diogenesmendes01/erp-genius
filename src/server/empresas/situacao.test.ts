@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// definirSituacaoEmpresa (docs/42 L2281; fatia B do ConfirmarAcao, issue #169): grava só a situação, com o
-// estado-alvo explícito — repetir é no-op, nada do cadastro é reenviado —, na alçada do Financeiro e com evento.
-
 const m = vi.hoisted(() => ({
   sessao: vi.fn(), papel: vi.fn(), evento: vi.fn(), revalidar: vi.fn(),
   tx: { empresa: { findUnique: vi.fn(), update: vi.fn() } },

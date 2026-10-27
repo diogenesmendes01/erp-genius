@@ -18,7 +18,6 @@ describe("BarraMobile (shell abaixo de md)", () => {
     expect(html).toMatch(/<header[^>]*class="[^"]*\bmd:hidden\b/);
     expect(html).toMatch(/<button[^>]*aria-label="Abrir menu"[^>]*aria-expanded="false"|<button[^>]*aria-expanded="false"[^>]*aria-label="Abrir menu"/);
     expect(html).toContain('aria-label="Alternar tema"');
-    // C21 da #170: o estado do tema é anunciado; no HTML do servidor, claro (a hidratação lê a classe do <html>).
     expect(html).toMatch(/<button[^>]*aria-label="Alternar tema"[^>]*aria-pressed="false"/);
     expect(html).toContain('href="/preferencias"');
     expect(html).toContain('aria-label="Sair"');
@@ -28,9 +27,8 @@ describe("BarraMobile (shell abaixo de md)", () => {
     const html = render();
     const cabecalho = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
     const controles = [...cabecalho.matchAll(/<(?:button|a)\b[^>]*>/g)].map((m) => m[0]);
-    expect(controles).toHaveLength(4); // menu, tema, fuso, sair
+    expect(controles).toHaveLength(4);
     for (const c of controles) expect(c).toMatch(/class="(?=[^"]*\bmin-h-10\b)(?=[^"]*\bmin-w-10\b)[^"]*"/);
-    // Ícones da barra em 24px (h-6), inclusive o do tema, que na Sidebar é menor.
     expect(cabecalho).not.toMatch(/tabler-icon[^"]*\bh-[45]\b/);
   });
 
@@ -43,7 +41,6 @@ describe("BarraMobile (shell abaixo de md)", () => {
     for (const c of controles) {
       expect(c).toMatch(/class="(?=[^"]*\brounded-item\b)(?=[^"]*\bhover:bg-highlight\b)(?=[^"]*\bmax-sm:min-h-11\b)(?=[^"]*\bmax-sm:min-w-11\b)[^"]*"/);
     }
-    // Itens da gaveta (a mesma NavLinks da Sidebar): 44px abaixo de sm, 40px no desktop.
     const gaveta = html.match(/<nav[^>]*aria-label="Menu de navegação"[\s\S]*?<\/nav>/)?.[0] ?? "";
     const itens = [...gaveta.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
     expect(itens.length).toBeGreaterThan(0);
@@ -60,13 +57,10 @@ describe("BarraMobile (shell abaixo de md)", () => {
   it("a gaveta de navegação começa fechada: fora da árvore (sem role=dialog) e com a mesma lista da Sidebar", () => {
     const html = render();
     expect(html).not.toMatch(/role="dialog"/);
-    // Rótulo próprio: não se confunde com a "Navegação principal" da Sidebar.
     expect(html).toContain('aria-label="Menu de navegação"');
-    // O botão aponta para o painel que controla.
     expect(html).toMatch(/<button[^>]*aria-controls="menu-navegacao"/);
     expect(html).toMatch(/<aside[^>]*id="menu-navegacao"/);
     expect(html).toContain('href="/alunos"');
-    // Pela esquerda: fechada, fica deslocada para fora da tela à esquerda.
     expect(html).toMatch(/<aside[^>]*class="[^"]*\bleft-0\b[^"]*-translate-x-full/);
   });
 
@@ -75,7 +69,6 @@ describe("BarraMobile (shell abaixo de md)", () => {
     expect(botao(render(5))).toContain('aria-label="Abrir menu, 5 conversas não lidas"');
     expect(botao(render(1))).toContain('aria-label="Abrir menu, 1 conversa não lida"');
     expect(botao(render(0))).toContain('aria-label="Abrir menu"');
-    // Nenhum texto sr-only escondido atrás do aria-label (leitor de tela não o anunciaria).
     const conteudo = render(5).match(/<button[^>]*aria-haspopup="dialog"[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? "";
     expect(conteudo).not.toContain("sr-only");
   });

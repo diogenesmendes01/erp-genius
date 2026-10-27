@@ -3,7 +3,6 @@ import { ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { z } from "zod";
 
-/** Resolve a cadeia preservada; não concede disponibilidade ou autorização de acesso. */
 export async function resolverReservaParticularAtual(tx: Prisma.TransactionClient, inicialId: string) {
   const visitadas = new Set<string>();
   let atualId = inicialId;
@@ -16,8 +15,6 @@ export async function resolverReservaParticularAtual(tx: Prisma.TransactionClien
   }
 }
 
-/** Primitiva interna: chamar na mesma transação que cria a nova reserva após
- * conferir condições/documentos. Não é Server Action nem executor de retomada completo. */
 export async function vincularNovaReservaParticularTx(tx: Prisma.TransactionClient, input: { anteriorId: string; novaId: string; autorId: string; motivo: string }) {
   const d = z.object({ anteriorId: z.string().min(1), novaId: z.string().min(1), autorId: z.string().min(1), motivo: z.string().trim().min(5).max(2000) }).strict().parse(input);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

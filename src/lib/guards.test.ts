@@ -2,13 +2,10 @@ import { describe, it, expect } from "vitest";
 import { Papel } from "@prisma/client";
 import { papeisTem } from "./guards";
 
-// Guards de LEITURA por papel para Server Components (issue #1).
-// `papeisTem` é a regra pura por trás de `exigirPapelLeitura` (que só adiciona o auth()).
-
 describe("papeisTem (guard de leitura de página)", () => {
   it("Administrador passa em qualquer leitura", () => {
     expect(papeisTem([Papel.ADMINISTRADOR], Papel.FINANCEIRO)).toBe(true);
-    expect(papeisTem([Papel.ADMINISTRADOR])).toBe(true); // ex.: gestão de usuários (só admin)
+    expect(papeisTem([Papel.ADMINISTRADOR])).toBe(true);
   });
 
   it("autoriza só quando tem um dos papéis alvo", () => {
@@ -18,7 +15,7 @@ describe("papeisTem (guard de leitura de página)", () => {
 
   it("nega leitura quando não há papel adequado (sem dados vazios acidentais)", () => {
     expect(papeisTem([], Papel.FINANCEIRO)).toBe(false);
-    expect(papeisTem([Papel.VENDEDOR], Papel.ADMINISTRADOR)).toBe(false); // usuários: só admin
+    expect(papeisTem([Papel.VENDEDOR], Papel.ADMINISTRADOR)).toBe(false);
   });
 
   it("financeiro: Financeiro e Gerente Comercial leem; Vendedor/Professor não", () => {

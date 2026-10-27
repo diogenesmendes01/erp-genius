@@ -48,12 +48,10 @@ describe("fila administrativa da desistência", () => {
   });
   it("distingue fila zerada (início), ponto da fila sem pedidos e falha na consulta", async () => {
     mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [], ...nav() } });
-    // Início: a fila está zerada — sem "nesta página" e sem link para si mesma (docs/42, desistências #4).
     const vazio = await render({});
     expect(vazio).toContain("Nenhum pedido aguardando decisão administrativa.");
     expect(vazio).not.toContain("nesta página"); expect(vazio).not.toContain("Anterior");
     expect(vazio).not.toContain('href="/secretaria/desistencias"');
-    // Cursor que não leva a nada (fim da fila, item sumido): o vazio leva de volta ao início.
     const alem = await render({ depois: "m-sumida" });
     expect(alem).toContain("Nenhum pedido pendente a partir deste ponto da fila");
     expect(alem).not.toContain("aguardando decisão administrativa");

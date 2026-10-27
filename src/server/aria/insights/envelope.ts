@@ -24,12 +24,10 @@ export type EnvelopeInsight =
       codigo: "USO_DESCONHECIDO" | "CORPO_INVALIDO" | "TRANSPORTE" | "DEADLINE" | "ABORTADO_APOS_ENVIO" | "MODELO_DESCONHECIDO" | "MODELO_DIVERGENTE"; uso: UsoConhecidoInsight | null })
   | { tipo: "nao-enviada"; fase: "nao-enviado"; codigo: "ABORTADO_ANTES_ENVIO" | "PROVEDOR_INDISPONIVEL" | "CONFIG_INVALIDA" };
 
-/** Porta local; usa o controle opt-in sem mudar os defaults de outros consumidores. */
 export interface PortaGeradorInsight {
   gerar(pedido: PedidoIA, controle: { signal?: AbortSignal; deadlineMs: 30000; maxRetries: 0 }): Promise<EnvelopeInsight>;
 }
 
-/** Metadados devem representar modelo observado e validado; nunca vêm do browser. Usage parcial não significa zero. */
 export function envelopeRespostaInsight(metadados: MetadadosInsight, resposta: unknown): EnvelopeInsight {
   const meta = MetadadosInsightSchema.parse(metadados);
   const corpo = typeof resposta === "object" && resposta !== null && !Array.isArray(resposta)
@@ -42,7 +40,6 @@ export function envelopeRespostaInsight(metadados: MetadadosInsight, resposta: u
   return { ...meta, tipo: "resposta", fase: "enviado", texto: corpo.texto, recusa: corpo.recusa, uso: uso.data };
 }
 
-/** Só o diagnóstico opt-in prova usage; campos legados com defaults não o completam. */
 export function envelopeRespostaControladaInsight(r: RespostaIA, modeloEsperado: string): EnvelopeInsight {
   const diagnostico = r.diagnostico;
   const observado = diagnostico?.modeloObservado;
@@ -57,7 +54,6 @@ export function envelopeRespostaControladaInsight(r: RespostaIA, modeloEsperado:
   if (diagnostico.fase !== "enviado") return { ...meta, tipo: "incerto", fase: "possivelmente-enviado", codigo: "TRANSPORTE", uso };
   return envelopeRespostaInsight({ modelo, provedor: r.provedor, latenciaMs: r.latenciaMs }, { texto: r.texto, recusa: r.recusa, uso });
 }
-/** Também cobre uma rejeição excepcional da porta sem apagar diagnóstico conhecido. */
 export function envelopeErroInsight(erro:unknown,modeloEsperado:string,latenciaMs:number):EnvelopeInsight {
   const d=erro instanceof ErroProvedorIA?erro.diagnostico:undefined;
   if(d?.fase==="nao-enviado")return {tipo:"nao-enviada",fase:"nao-enviado",codigo:erro instanceof ErroProvedorIA&&erro.codigo==="ABORTADO_ANTES_ENVIO"?"ABORTADO_ANTES_ENVIO":"CONFIG_INVALIDA"};

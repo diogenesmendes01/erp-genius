@@ -14,10 +14,6 @@ export type CamposFormulario = {
   lembreteAntecedenciaMin: 0 | 10 | 15 | 30 | 60 | 1440 | null;
 };
 
-/**
- * Só o que mudou em relação à tarefa lida. Data, hora e lembrete vão juntos quando qualquer um muda:
- * o servidor recalcula o agendamento com os três (limpar a data exige limpar a hora no mesmo pedido).
- */
 export function camposAlterados(antes: CamposFormulario, depois: CamposFormulario): Partial<TarefaInput> {
   const r: Partial<TarefaInput> = {};
   if ((depois.recorrencia??"NAO_REPETE") !== (antes.recorrencia??"NAO_REPETE")) r.recorrencia = depois.recorrencia??"NAO_REPETE";

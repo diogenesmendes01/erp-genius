@@ -9,7 +9,6 @@ export function classificarDestinoAcademico(origem: Classificavel, destino: Clas
   return origem.nivelId === destino.nivelId ? "EQUIVALENTE" : "EXCECAO";
 }
 
-/** Só os campos lidos — a lista de alunos (filtro de turma) usa o mesmo rótulo com um select enxuto. */
 export function rotuloTurmaAcademica(turma: {
   codigo: TurmaAcademica["codigo"];
   nome: TurmaAcademica["nome"];
@@ -89,11 +88,9 @@ function snapshotTurma(turma: TurmaAcademica): SnapshotMudancaAcademica["origem"
   };
 }
 
-/** Ocupação fica fora do snapshot: não há reserva, e a vaga é reavaliada na execução. */
 export function montarSnapshotMudancaAcademica(estado: EstadoAcademico): SnapshotMudancaAcademica {
   if (!estado.origem || !estado.destino || impedimentoEstadoAcademico(estado, false)) throw new ErroRegra("Estado acadêmico indisponível para a solicitação.");
   return {
-    // No vínculo contratual, a situação vinculante está em matriculas; o cadastro
     // global não decide a elegibilidade nem invalida a aprovação de outro contrato.
     versao: 3, alunoId: estado.aluno.id, statusAluno: estado.origem.matriculaId ? null : "ATIVO", alocacaoOrigemId: estado.origem.id, alocadaEm: estado.origem.criadoEm.toISOString(),
     escopoMatriculaId: estado.escopoMatriculaId ?? null,
@@ -101,18 +98,11 @@ export function montarSnapshotMudancaAcademica(estado: EstadoAcademico): Snapsho
     origem: snapshotTurma(estado.origem.turma), destino: snapshotTurma(estado.destino),
     matriculas: [...estado.matriculas].sort((a, b) => a.id.localeCompare(b.id)).map((m) => ({ id: m.id, status: m.status, produtoId: m.produtoId, idiomaId: m.produto.idiomaId, modalidadeId: m.produto.modalidadeId })),
     ultimaMovimentacao: estado.ultimaMovimentacao ? { id: estado.ultimaMovimentacao.id, tipo: estado.ultimaMovimentacao.tipo, criadoEm: estado.ultimaMovimentacao.criadoEm.toISOString() } : null,
-    // O contador também detecta movimentações novas com o mesmo timestamp da anterior.
     totalMovimentacoes: estado.totalMovimentacoes,
     agendaDestino: estado.ofertaDestino?.fotografia ?? null,
   };
 }
 
-/**
- * O relógio não torna um pedido obsoleto sozinho. Para verificar a aprovação
- * já guardada e a agenda atual, descartamos em ambos os lados as aulas que já
- * começaram no mesmo marco. Uma remarcação, cancelamento ou indisponibilidade
- * de aula que ainda pode afetar o novo vínculo permanece na comparação.
- */
 export function normalizarSnapshotMudancaAcademicaNoMarco(snapshot: SnapshotMudancaAcademica, marco: Date): SnapshotMudancaAcademica {
   if (!snapshot.agendaDestino) return snapshot;
   const encontros = snapshot.agendaDestino.encontros.filter((encontro) => new Date(encontro.inicio) >= marco);
@@ -127,11 +117,6 @@ export function lerSnapshotMudancaAcademica(snapshot: unknown) {
   return parsed.data;
 }
 
-/**
- * Repetir uma solicitação antiga não promove nem aprova sua memória. Ainda
- * exige que o escopo original inteiro permaneça igual; a única tolerância é o
- * relógio removendo dos dois lados aulas que já começaram.
- */
 export function memoriaLegadaMudancaAcademicaCorresponde(snapshot: SnapshotMudancaAcademica, estado: EstadoAcademico, marco: Date) {
   const atual = montarSnapshotMudancaAcademica(estado);
   const comparavel: SnapshotMudancaAcademica = {

@@ -22,7 +22,6 @@ import {agendarMensagemNoAtendimento,reagendarAgendamentoDoAtendimento,enviarAge
 import {agendadasDoAtendimento} from "@/server/whatsapp/consultas-acoes-atendimento";
 import {reagendarMensagem,enviarAgora,cancelarMensagemAgendada} from "@/server/crm/mensagens-agendadas";
 import {capacidadesCrm} from "@/server/crm/permissoes";
-/** Aceite server-only: DB real/DTO/ações; sem provider e sem flexibilizar guardas264/265. */
 beforeEach(async()=>{await truncarBanco();m.auth.mockReset();});afterAll(()=>prisma.$disconnect());
 const como=(u:{id:string})=>m.auth.mockResolvedValue({user:{id:u.id}});
 async function comercial(){const c=await cenarioCadastroPessoa();await prisma.oportunidade.update({where:{id:c.op.id},data:{telefoneE164:c.contato.telefoneE164}});await prisma.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{responsavelId:c.dono.id,iaPausadaEm:new Date()}});expect(await atendimentoVisivel(c.dono,c.atendimento.id,true,prisma)).not.toBeNull();como(c.dono);return c;}
@@ -30,7 +29,6 @@ function idDe(r:{ok:boolean;dado?:{id:string};erro?:string}){expect(r.ok,r.erro)
 const idOrdenado=(n:number)=>"aceite362-"+String(n).padStart(3,"0");
 it("aceite reader limita50 e ordena data/id, inclui HUMANO/IA e expõe somente DTO mínimo",async()=>{
  const c=await comercial();const quando=diaUtilAs(10,"America/Costa_Rica");
- // IDs decrescentes dentro de cada data; IDs da primeira data são maiores que os da segunda.
  const rows=Array.from({length:56},(_,i):Prisma.IntencaoMensagemCreateManyInput=>({id:idOrdenado(55-i),atendimentoId:c.atendimento.id,numeroId:c.numero.id,contatoId:c.contato.id,origem:i%2===0?"HUMANO":"IA",autorId:i%2===0?c.dono.id:null,status:i%3===0?"ADIADA":"PENDENTE",agendadaPara:new Date(quando.getTime()+Math.floor(i/28)*60_000),corpoRenderizado:"Fictício aceite "+i,...(i===2?{tipo:"DOCUMENTO",midiaPath:"/whatsapp-out/privado-aceite362.pdf"}:{}),...(i===3?{conteudo:{segredo:"conteudoPrivado362"}}:{})}));
  await prisma.intencaoMensagem.createMany({data:rows});
  const dto=await agendadasDoAtendimento(c.atendimento.id);
@@ -53,7 +51,6 @@ it("aceite filtros reais, invisível/encerrado retornam[] e recusam reagendar/en
  expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id}})).agendadaPara).toEqual(quando);expect(await prisma.evento.count({where:{agregadoId:c.atendimento.id}})).toBe(eventos);
 });
 async function pedagogico(){
- // Modelo direto ao aluno baseado na fixture264/265 nativa existente: matrícula/turma/vínculo/telefone atuais.
  const cat=await seedCatalogoMinimo();const gp=await criarUsuario([Papel.GERENTE_PEDAGOGICO],"GP fictício aceite362");const professor=await criarUsuario([Papel.PROFESSOR],"Docente fictício aceite362");
  const nivel=await prisma.nivel.create({data:{idiomaId:cat.idioma.id,codigo:"A1",ordem:1}});const turma=await prisma.turma.create({data:{nivelId:nivel.id,modalidadeId:cat.modalidade.id,professorId:professor.id}});await prisma.vinculoDocente.create({data:{turmaId:turma.id,professorId:professor.id,inicio:new Date(Date.now()-60_000)}});
  const aluno=await prisma.aluno.create({data:{primeiroNome:"Aluna fictícia",sobrenome:"Aceite362",paisId:cat.pais.id,telefoneE164:"+5060000362001",whatsapp:true}});
@@ -71,10 +68,8 @@ it("aceite GP acadêmico próprio sem tarefas opera ações e replays, CRM mant�
  const enviar={atendimentoId:c.atendimento.id,intencaoId:id,chaveIdempotencia:"aceite-gp-enviar-362"};const inicio=Date.now();expect(idDe(await enviarAgendamentoAgoraDoAtendimento(enviar))).toBe(id);const final=await prisma.intencaoMensagem.findUniqueOrThrow({where:{id}});expect(final.status).toBe("PENDENTE");expect(final.agendadaPara!.getTime()).toBeGreaterThanOrEqual(inicio);expect(idDe(await enviarAgendamentoAgoraDoAtendimento(enviar))).toBe(id);expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id}})).agendadaPara).toEqual(final.agendadaPara);
  expect(await prisma.intencaoMensagem.count()).toBe(1);expect(await prisma.evento.count({where:{agregadoId:c.atendimento.id,tipo:"MensagemAgendada"}})).toBe(1);expect(await prisma.evento.count({where:{agregadoId:c.atendimento.id,tipo:"MensagemReagendada"}})).toBe(2);
 
- // C6 humano call52bba613: a própria agendada GP também pode ser cancelada sem CRM.
  expect(await cancelarMensagemAgendada(id)).toEqual({ok:false,erro:"Você não tem acesso a esta função do CRM."});
  expect((await carregarAtividadePainel(c.gp,c.atendimento.id))?.agendadas.find(x=>x.id===id)?.podeCancelar).toBe(true);
- // C6 não inventa veto de encerrado: continua responsável, ativo e com leitura atual.
  await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{status:"ENCERRADO",encerradoEm:new Date()}});
  expect(await atendimentoVisivel(c.gp,c.atendimento.id,false,prisma)).not.toBeNull();
  expect((await carregarAtividadePainel(c.gp,c.atendimento.id))?.agendadas.find(x=>x.id===id)?.podeCancelar).toBe(true);
@@ -102,7 +97,6 @@ async function conectarGP(){const pg=new Client({connectionString:process.env.DA
 async function finalizarHolderGP(pg:Client){const erros:unknown[]=[];try{await pg.query("ROLLBACK");}catch(erro){erros.push(erro);}finally{try{await pg.end();}catch(erro){erros.push(erro);}}if(erros.length)throw new AggregateError(erros,"holder cleanup GP");}
 async function antesDeFimGP<T>(pronto:Promise<T>,fim:Promise<unknown>){let timer:ReturnType<typeof setTimeout>|undefined;try{return await Promise.race([pronto,fim.then(()=>{throw new Error("Worker encerrou antes da fase instrumental GP");}),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error("Fase instrumental GP não chegou em 2s")),2000);})]);}finally{if(timer)clearTimeout(timer);}}
 async function revogarDuranteCancelGP(c:Awaited<ReturnType<typeof pedagogico>>,id:string,qual:RevogacaoGP){
- // Canário positivo atual, não uma fixture que já começa sem a autorização testada.
  expect((await prisma.usuario.findUniqueOrThrow({where:{id:c.gp.id}}))).toMatchObject({ativo:true,papeis:[Papel.GERENTE_PEDAGOGICO]});
  expect(await atendimentoVisivel(c.gp,c.atendimento.id,false,prisma)).toMatchObject({responsavelId:c.gp.id});
  expect((await carregarAtividadePainel(c.gp,c.atendimento.id))?.agendadas.find(x=>x.id===id)?.podeCancelar).toBe(true);
@@ -140,7 +134,6 @@ async function revogarDuranteCancelGP(c:Awaited<ReturnType<typeof pedagogico>>,i
   else await h.query('UPDATE "Usuario" SET papeis=ARRAY[\'PROFESSOR\']::"Papel"[] WHERE id=$1',[c.gp.id]);
   await h.query("COMMIT");holderCommit=true;fase("holder.revocation.committed");
   await antesDeFimGP(paiAdquirido,op);expect(terminou).toBe(false);expect(timeline.at(-1)?.fase).toBe("after.parent.SHARE.pause");
-  // Worker permanece antes de I/business reads: aviso do UPDATE do setup é separado.
   await o.query("SELECT 1");await new Promise(r=>setTimeout(r,100));expect(avisos).toHaveLength(qual==="responsavel"?1:0);baseline=avisos.length;
   soltar();const resultado=await op;expect(resultado).toHaveProperty("erro");if(!("erro" in resultado))throw new Error("CancelGP revogado foi aceito");
   expect(erroCuradoGP(resultado.erro)).toMatchObject({code:null,sqlState:null});
@@ -163,7 +156,6 @@ it("aceite GP perde responsabilidade durante espera real no pai e cancelar recus
 it("aceite GP perde ativo ou papel durante espera real no pai e cancelar recusa sem efeito",async()=>{
  const c=await pedagogico(),id=idDe(await agendarMensagemNoAtendimento({atendimentoId:c.atendimento.id,texto:"GP revogação ator",quando:diaUtilAs(10,"America/Costa_Rica").toISOString()}));
  await revogarDuranteCancelGP(c,id,"ativo");
- // Novo subcenário com canário positivo, mesmo alvo ainda PENDENTE e nenhuma gravação cancel.
  await prisma.usuario.update({where:{id:c.gp.id},data:{ativo:true,papeis:[Papel.GERENTE_PEDAGOGICO]}});
  await revogarDuranteCancelGP(c,id,"papel");
 });

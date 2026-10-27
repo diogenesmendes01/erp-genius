@@ -2,7 +2,6 @@ import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import type { carregarAcertoAprovadoParaEfetivacaoTx } from "./encerramento-efetivacao-estado";
 
-/** Registro interno: integrar com o estado/vínculos e o financeiro na transação final. */
 export async function registrarLimitesEncerramentoTx(tx: Prisma.TransactionClient, acerto: Awaited<ReturnType<typeof carregarAcertoAprovadoParaEfetivacaoTx>>, agora: Date) {
   const registros = [];
   for (const c of acerto.previa.contratos) {

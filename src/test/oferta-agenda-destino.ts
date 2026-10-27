@@ -1,16 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-/**
- * Oferta de agenda mínima para uma turma de destino de mudança acadêmica.
- *
- * Desde a confirmação do destino pela agenda (`carregarOfertasAgendaDestinoTx`),
- * uma turma só recebe novo vínculo quando possui grade aprovada no calendário
- * vigente e ao menos uma aula regular futura com professor apto. A data manual
- * da turma deixou de bastar. Esta fixture publica exatamente esse mínimo:
- * calendário aprovado (reaproveita o vigente, se houver), grade aprovada e um
- * encontro PREVISTO bem no futuro, para não depender da data de execução.
- * Cada oferta usa um dia distinto, para não criar conflito docente entre destinos.
- */
 export async function publicarOfertaAgendaDestino(turmaId: string, dados: {
   preparadorId: string; decisorId: string; professorId: string; chave?: string;
 }) {
@@ -39,14 +28,6 @@ export async function publicarOfertaAgendaDestino(turmaId: string, dados: {
   return { calendarioId, gradeId: grade.id };
 }
 
-/**
- * Retira a aula futura desta fixture antes de fechar o nível. Ela existe só para
- * habilitar a turma como destino. A apuração do nível trata aula PREVISTA futura
- * de um vínculo como ENCONTROS_A_REALIZAR, e aula de turma do nível fora do
- * vínculo do aluno (a turma intermediária que ele deixou) como
- * AULA_FORA_DE_VINCULO_CONFERIDO. O fechamento dos cenários pressupõe o nível
- * concluído e sem essas aulas, como antes de o destino exigir agenda.
- */
 export async function retirarAulaFuturaDaOferta(...turmaIds: string[]) {
   for (const turmaId of turmaIds) {
     const { count } = await prisma.encontroAgenda.deleteMany({

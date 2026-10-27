@@ -18,7 +18,6 @@ describe("Menu", () => {
   });
 });
 
-// #315: o comportamento novo só entra por props explícitas.
 it("compacto aberto oferece dica, separador e folha sem top inline", () => {
   const h = renderToStaticMarkup(createElement(Menu, { rotulo: "Mais", gatilho: "…", densidade: "compacta", abertoInicial: true, folhaNoCelular: true,
     itens: [{ rotulo: "Fixar", dica: "só você", divisorDepois: true, aoEscolher() {} }, { rotulo: "Bloquear", dica: "Motivo extenso que precisa caber", desabilitado: true, perigo: true, aoEscolher() {} }] }));

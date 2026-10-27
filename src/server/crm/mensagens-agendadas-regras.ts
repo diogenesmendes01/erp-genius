@@ -10,9 +10,7 @@ export type AgendarMensagemInput = {
   tarefaId?: string;
   leadId?: string;
   pessoaId?: string;
-  /** Agendamento pelo Inbox: o destino é o contato do atendimento e o número é o dele (o acesso vem do atendimento). */
   atendimentoId?: string;
-  /** Só no agendamento pelo atendimento (#166): a mesma chave até o sucesso; o reenvio devolve a mensagem já agendada. */
   chaveIdempotencia?: string;
 };
 

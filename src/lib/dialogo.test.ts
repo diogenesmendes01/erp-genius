@@ -44,7 +44,7 @@ describe("pilha de diálogos (confirmação aberta sobre outro diálogo)", () =>
     expect(pilha.noTopo(gaveta)).toBe(true);
     pilha.abrir(confirmacao);
     expect(pilha.noTopo(confirmacao)).toBe(true);
-    expect(pilha.noTopo(gaveta)).toBe(false); // Escape não fecha a gaveta de trás
+    expect(pilha.noTopo(gaveta)).toBe(false);
     pilha.fechar(confirmacao);
     expect(pilha.noTopo(gaveta)).toBe(true);
     pilha.fechar(gaveta);
@@ -59,7 +59,7 @@ describe("pilha de diálogos (confirmação aberta sobre outro diálogo)", () =>
     expect(pilha.noTopo(c)).toBe(true);
     pilha.fechar(c);
     expect(pilha.noTopo(a)).toBe(true);
-    pilha.fechar({}); // desconhecido: nada muda
+    pilha.fechar({});
     expect(pilha.noTopo(a)).toBe(true);
   });
 });

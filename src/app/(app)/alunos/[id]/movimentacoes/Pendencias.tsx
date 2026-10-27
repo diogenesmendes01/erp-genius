@@ -22,7 +22,6 @@ const calculo = new Set([
 
 export function Pendencias({ itens }: { itens: string[] }) {
   if (!itens.length) return null;
-  // Projeta mensagens conhecidas: erros inesperados não expõem detalhes internos.
   const descricoes = [...new Set(itens.map((item) => mensagens[item.split(":")[0]]
     ?? (calculo.has(item) ? item : "A cobertura exige conferência da equipe antes da aprovação.")))];
   return <div role="alert" className="space-y-1 text-sm text-amber-800">

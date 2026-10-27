@@ -42,7 +42,6 @@ function jsonEstavel(valor: unknown): string {
   return JSON.stringify(valor);
 }
 const hashEstado = (estado: unknown) => createHash("sha256").update(jsonEstavel(estado)).digest("hex");
-/** JSON de `timestamp without time zone` do PostgreSQL representa UTC neste domínio. */
 function dataUtc(valor: string) {
   const data = new Date(/(?:Z|[+-]\d\d:\d\d)$/.test(valor) ? valor : `${valor}Z`);
   if (Number.isNaN(data.getTime())) throw new ErroRegra("Instante da agenda inválido.");
@@ -56,7 +55,6 @@ async function conferirPreparadorTx(tx: PrismaTypes.TransactionClient, usuarioId
   if (!usuario?.ativo || !usuario.papeis.some((papel) => preparadores.includes(papel))) throw new ErroPermissao();
 }
 
-/** A reserva é sempre o primeiro bloqueio específico da troca. */
 async function bloquearReservaTx(tx: PrismaTypes.TransactionClient, reservaId: string, conferirContexto = true): Promise<ReservaBloqueada> {
   const [reserva] = await tx.$queryRaw<ReservaBloqueada[]>(Prisma.sql`
     SELECT r.id AS "reservaId",r."matriculaId" AS "matriculaId",p."alocacaoId" AS "alocacaoId",p."turmaId" AS "turmaId"
@@ -68,7 +66,6 @@ async function bloquearReservaTx(tx: PrismaTypes.TransactionClient, reservaId: s
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
     return reserva;
   }
-  // Ordem global: reserva, calendário, fonte. `bloquearLancamento` toma o bloqueio de calendário e fixa a fonte.
   const alocacao = await bloquearLancamento(tx, reserva.alocacaoId);
   if (alocacao.matriculaId !== reserva.matriculaId || alocacao.turmaId !== reserva.turmaId) {
     throw new ErroRegra("O vínculo da segunda chamada mudou. Atualize a conferência.");
@@ -95,7 +92,6 @@ async function contextoSubstituicaoVigenteTx(tx: PrismaTypes.TransactionClient, 
 }
 
 async function contextoDepoisDoCalendarioTx(tx: PrismaTypes.TransactionClient, reserva: ReservaBloqueada, estado: Estado) {
-  // A função de estado consulta o calendário; depois dela, o bloqueio da fonte fixa matrícula/turma/regra.
   const alocacao = await bloquearLancamento(tx, reserva.alocacaoId);
   const segunda = await estadoSegundaChamadaTx(tx, reserva.alocacaoId, estado.reserva.codigoAvaliacao);
   if (!estado.fonte || alocacao.matriculaId !== reserva.matriculaId || alocacao.turmaId !== reserva.turmaId

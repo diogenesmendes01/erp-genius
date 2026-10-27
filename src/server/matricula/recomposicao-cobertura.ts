@@ -12,7 +12,6 @@ export const RecomposicaoCoberturaSchema = z.object({
     id: z.string().min(1), matriculaId: z.string().min(1), compensacaoId: z.string().min(1),
     diaOrigem: DataCivilSchema, estado: z.enum(["PENDENTE", "RECOMPOSTO", "LIQUIDADO_FINANCEIRAMENTE"]), versao: z.number().int().positive(),
   }).strict()).min(1).max(3660),
-  // O servidor deve fornecer toda a cobertura vigente, inclusive períodos preservados.
   periodosAtuais: z.array(z.object({
     cobrancaId: z.string().min(1), matriculaId: z.string().min(1), versao: z.number().int().nonnegative(),
     cobertura: Intervalo, valor: Valor, moeda: z.string().regex(/^[A-Z]{3}$/), vencimento: DataCivilSchema,
@@ -25,7 +24,6 @@ const quantidade = (p: { inicio: string; fim: string }) => (instante(p.fim) - in
 const somarDias = (d: string, n: number) => DataCivilSchema.parse(new Date(instante(d) + n * 86400000).toISOString().slice(0, 10));
 export class ErroRecomposicao extends ErroRegra {}
 
-/** Q70: confere uma proposta explícita. Não muda cobertura, vencimentos ou destinação dos direitos. */
 export function conferirRecomposicaoCobertura(input: z.input<typeof RecomposicaoCoberturaSchema>) {
   const d = RecomposicaoCoberturaSchema.parse(input);
   const falhar = (mensagem: string): never => { throw new ErroRecomposicao(mensagem); };

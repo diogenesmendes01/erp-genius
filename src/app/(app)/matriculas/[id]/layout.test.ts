@@ -29,7 +29,7 @@ describe("layout da matrícula", () => {
     const ativas = [...html.matchAll(/<a[^>]*aria-current="page"[^>]*>/g)].map((m) => m[0]);
     expect(ativas).toHaveLength(1);
     expect(ativas[0]).toContain('href="/matriculas/m1/pagador"');
-    expect(html).not.toContain("/matriculas/m1/contrato"); // Financeiro não abre Contrato
+    expect(html).not.toContain("/matriculas/m1/contrato");
     expect(html).toContain("<main>conteúdo</main>");
   });
 
@@ -54,7 +54,7 @@ describe("hub /matriculas/[id]", () => {
     mocks.carregar.mockResolvedValue({ usuario: { papeis: [Papel.VENDEDOR] }, cabecalho });
     const html = renderToStaticMarkup(await Hub({ params }));
     expect(html).toContain("Seções da matrícula");
-    expect(html).not.toContain("Ana Silva"); // já está no cabeçalho do layout
+    expect(html).not.toContain("Ana Silva");
     expect([...html.matchAll(/<a[^>]*\shref="([^"]+)"/g)].map((m) => m[1])).toEqual(["/matriculas/m1/preparacao", "/matriculas/m1/reserva"]);
   });
 

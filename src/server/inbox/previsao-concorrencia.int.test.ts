@@ -18,7 +18,6 @@ it("atribuirDono REAL espera Atendimento retido pelo setter; NOWAIT recusa e lib
  const c=await cenarioPerda328(),admin=await criarUsuario([Papel.ADMINISTRADOR]),destino=await criarUsuario([Papel.VENDEDOR]),o=await conexao();authMock.mockResolvedValue(admin.id);
  let liberar!:()=>void,chegou!:()=>void,pid=0;const barreira=new Promise<void>(r=>liberar=r),pronto=new Promise<void>(r=>chegou=r);
  const setter=prisma.$transaction(async tx=>{pid=(await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`)[0].pid;
-  // Instrumentação somente de chegada: todo SQL é delegado sem alteração à mesma TX real.
   const porta=new Proxy(tx,{get(alvo,chave){if(chave==='$queryRaw')return async(...args:unknown[])=>{const valor=await Reflect.apply(alvo.$queryRaw,alvo,args);if(Array.isArray(args[0])&&args[0].join('').includes('FOR NO KEY UPDATE')){chegou();await barreira;}return valor;};const v=Reflect.get(alvo,chave);return typeof v==='function'?v.bind(alvo):v;}}) as Prisma.TransactionClient;
   await definirPrevisaoNoInboxTx(porta,c.dono.id,c.a.id,entrada(c.op.id));
  },{timeout:15000}).then(()=>({ok:true as const}),erro=>({erro}));

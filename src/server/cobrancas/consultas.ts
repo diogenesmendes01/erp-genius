@@ -28,10 +28,6 @@ import { cicloDoEventoCobranca } from "./eventos";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { ONDE_MODELO_REGUA } from "@/server/whatsapp/modelos-regua";
 
-// Read path da régua de cobrança (doc 24). Monta a EntradaRegua de cada cobrança aberta a partir
-// dos eventos já gravados (passo cumprido + promessa) e roda o cérebro `proximaAcao`. Tudo
-// on-the-fly (Fase 0, sem cron). Devolve linhas serializáveis + contadores dos mini-dashs.
-
 export interface FilaCobrancaItem {
   conferenciaAte?: string | null;
   id: string;
@@ -44,7 +40,6 @@ export interface FilaCobrancaItem {
   moeda: string;
   vencimento: ReferenciaVencimentoCivil;
   competencia: string | null;
-  // Régua (cérebro), achatada para serializar Server → Client:
   estado: EstadoCobranca;
   passo: PassoRegua | null;
   tipoAcao: TipoAcao | null;
@@ -54,11 +49,8 @@ export interface FilaCobrancaItem {
   diasAtraso: number;
   prioridade: number;
   promessaAte: string | null;
-  // Contexto:
   matriculaId: string;
   acessoBloqueado: boolean;
-  /** Bloqueio PENDENTE de aprovação: atraso ≥ 30d e ainda não bloqueado (vale também para promessa). Desacoplado do passo
-   *  da régua — mandar a mensagem D+15 NÃO equivale a bloquear (doc 24, review §1). */
   precisaBloqueio: boolean;
   tentativas: number;
   ultimaCobrancaEm: string | null;
@@ -66,14 +58,9 @@ export interface FilaCobrancaItem {
   aluno: { id: string; nome: string; telefone: string | null };
   pais: string;
   turma: string | null;
-  // Canal WhatsApp (doc 30 E2):
-  /** Destino resolvido (S2): responsável financeiro > aluno; null = sem destino (manual). */
   destino: { telefone: string; nome: string; viaResponsavel: boolean } | null;
-  /** Inbound do destino POSTERIOR à última cobrança enviada — o selo "respondeu". */
   respondeuEm: string | null;
-  /** Última intenção na fila de envio (estado do braço API) — null = nunca enfileirada. */
   envio: { passo: string | null; status: string; motivo: string | null; em: string | null } | null;
-  /** Texto do degrau atual renderizado NO SERVIDOR (fonte única — doc 29 regra 4). */
   mensagemSugerida: string | null;
 }
 
@@ -102,26 +89,14 @@ export interface ReguaCalculada {
   passosFeitos: PassoRegua[];
 }
 
-// Universo de passos VÁLIDOS por tipo (não por política): eventos `{ passo }` são fatos
-// históricos e continuam contando como "feitos" mesmo se o admin desativar/alterar o degrau
-// depois — senão a régua re-enviaria passos já cumpridos (doc 30 S6/anti-duplicação).
 const PASSOS_VALIDOS = new Set<PassoRegua>(["D-7", "D-3", "D0", "D+3", "D+7", "D+15"]);
 
-/**
- * CÉREBRO COMPARTILHADO (doc 24 §só leitura): calcula o estado da régua por cobrança a partir
- * dos eventos já gravados (passo cumprido + promessa) e roda `proximaAcao`. Fonte ÚNICA usada
- * tanto pela FILA (/financeiro, todas as cobranças) quanto pela FICHA financeira do aluno (as
- * dele) — as duas telas passam a contar a mesma história, sem duplicar lógica. Espera cobranças
- * ABERTAS (status quitado não tem régua).
- */
 export async function montarReguaPorCobranca(
   cobrancas: { id: string; vencimento: Date; cicloRegua: number; acessoBloqueado: boolean }[],
   hoje: Date,
   politica?: readonly DegrauRegua[],
-  /** Fuso da escola; sem ele, lê `fusoDaEscola()` (Q176: o dia vira à meia-noite da escola). */
   fusoEscola?: string,
 ): Promise<Map<string, ReguaCalculada>> {
-  // Política como dado (doc 26/30): sem parâmetro, carrega a do banco (fallback = fábrica).
   const degraus = politica ?? (await carregarPoliticaRegua()).degraus;
   const fuso = fusoEscola ?? (cobrancas.length ? await fusoDaEscola() : "");
   const ids = cobrancas.map((c) => c.id);
@@ -143,22 +118,15 @@ export async function montarReguaPorCobranca(
   const promessaPorId = new Map<string, Date>();
   for (const e of eventos) {
     const p = (e.payload ?? {}) as Record<string, unknown>;
-    // S6 (doc 30): renegociação que MUDOU o vencimento zera os passos cumpridos até ali —
-    // a régua recomeça da data nova. Eventos vêm em ordem asc, então basta limpar o
-    // acumulado. Tentativas (sinal de reincidência) seguem contando o histórico inteiro.
     if (e.tipo === "CobrancaRenegociada") {
-      // Reprogramações com ciclo explícito já estão isoladas pelo filtro dos envios.
-      // O reset cronológico permanece para as renegociações anteriores a esse contrato.
       if (typeof p.novoVencimento === "string" && p.cicloRegua === undefined) passosPorId.delete(e.agregadoId);
       continue;
     }
     if (e.tipo === "CobrancaEnviadaWhatsApp") {
       const t = tentativasPorId.get(e.agregadoId) ?? { count: 0, ultima: e.criadoEm };
       t.count += 1;
-      t.ultima = e.criadoEm; // ordenado asc → fica o mais recente
+      t.ultima = e.criadoEm;
       tentativasPorId.set(e.agregadoId, t);
-      // Um envio do ciclo anterior pode terminar depois de uma reprogramação.
-      // Preserva o histórico de tentativas sem cumprir um passo do calendário novo.
       if (cicloDoEventoCobranca(e.payload) !== ciclos.get(e.agregadoId)) continue;
       const passo = p.passo as PassoRegua | undefined;
       if (passo && PASSOS_VALIDOS.has(passo)) {
@@ -168,7 +136,7 @@ export async function montarReguaPorCobranca(
       }
     } else if (e.tipo === "PromessaPagamento") {
       const ate = typeof p.ate === "string" ? new Date(p.ate) : null;
-      if (ate && !isNaN(ate.getTime())) promessaPorId.set(e.agregadoId, ate); // último vence
+      if (ate && !isNaN(ate.getTime())) promessaPorId.set(e.agregadoId, ate);
     }
   }
 
@@ -212,47 +180,28 @@ export interface DegrauFila {
   rotulo: string;
 }
 
-/** Rótulo da turma na fila ("Modalidade Nível"): só quando a matrícula tem exatamente uma alocação ativa. */
 function turmaDaFila(alocacoes: readonly { turma: { modalidade: { nome: string }; nivel: { codigo: string } } }[]): string | null {
   return alocacoes.length === 1 ? `${alocacoes[0].turma.modalidade.nome} ${alocacoes[0].turma.nivel.codigo}` : null;
 }
 
 export interface EntradaFilaCobranca {
-  /** Recorte da URL (cartão-indicador, busca, país, turma); sem ele, a fila inteira. */
   filtros?: FiltrosFila;
-  /** Cursor da URL (`depois`/`antes`), já validado pela página; sem ele, o início da fila. */
   navegacao?: NavegacaoFila;
 }
 
 export interface FilaCobrancaConsulta extends NavegacaoDaPagina {
-  /** O trecho da visão que a tela mostra (no máximo FILA_COBRANCA_POR_TRECHO), na ordem da fila. */
   itens: FilaCobrancaItem[];
-  /** Contadores dos cartões, sobre a fila inteira (sem filtro). */
   dashs: DashsCobranca;
-  /** Degraus da POLÍTICA vigente — a timeline do drawer desenha isto, nunca a const REGUA
-   *  do client (doc 29: a régua exibida deve ser a mesma que o cron executa). */
   regua: DegrauFila[];
-  /** Cobranças abertas na fila inteira. */
   totalFila: number;
-  /** Cobranças na visão filtrada (todos os trechos dela). */
   totalVisao: number;
-  /** Opções dos selects, da fila inteira (com o país/turma da URL mesmo que tenham saído). */
   opcoes: { paises: string[]; turmas: string[] };
 }
 
-/**
- * Fila de cobrança (doc 24) por cursor nos dois sentidos (docs/43 §6 item 9; decisão de 10/10/2026).
- *
- * Em dois tempos. (1) A fila inteira, só com o que ordena, filtra e conta (id, código, vencimento, nome,
- * país, turma e a régua): a ordem e os cartões dependem da régua calculada em memória, então não há
- * `take` possível aqui sem gravar o estado da régua (pendência anotada na PR). (2) O detalhe pesado —
- * fontes do vencimento civil, destinatário financeiro, intenções de envio, respostas e a mensagem
- * sugerida renderizada — só das cobranças do trecho exibido, com `take`.
- */
 export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Promise<FilaCobrancaConsulta> {
   const filtros = entrada.filtros ?? lerFiltrosFila({});
   const hoje = new Date();
-  const fuso = await fusoDaEscola(); // Q176: régua, D+30 e "recebido hoje" no dia da escola
+  const fuso = await fusoDaEscola();
   const politica = await carregarPoliticaRegua();
 
   const abertas = await prisma.cobranca.findMany({
@@ -274,7 +223,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
     },
   });
 
-  // Régua de cada cobrança via o cérebro compartilhado (mesma fonte da ficha do aluno).
   const regua = await montarReguaPorCobranca(
     abertas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
     hoje,
@@ -282,7 +230,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
     fuso,
   );
 
-  // O que ordena, filtra e conta, para a fila inteira (os mesmos campos que o item exibido mostra).
   const resumo = abertas.map((c) => {
     const r = regua.get(c.id)!;
     return {
@@ -299,7 +246,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   });
   const visao = filtrarFila(resumo, filtros);
 
-  // O trecho exibido: lido a partir da chave de ordem do cursor, nos dois sentidos (filtros-fila.ts).
   const { registros: trecho, ...navegacaoDoTrecho } = await lerPaginaDaFila(
     entrada.navegacao ?? {},
     FILA_COBRANCA_POR_TRECHO,
@@ -310,7 +256,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   const idsDoTrecho = trecho.map((t) => t.id);
   const detalhes = idsDoTrecho.length
     ? await prisma.cobranca.findMany({
-        // Mesmo recorte da leitura leve: a cobrança paga entre as duas leituras sai do trecho (C1 da R1 da #180).
         where: { id: { in: idsDoTrecho }, status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
         take: FILA_COBRANCA_POR_TRECHO,
         include: {
@@ -324,7 +269,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
         },
       })
     : [];
-  // Na ordem da fila; a cobrança paga entre as duas leituras sai do trecho.
   const detalhePorId = new Map(detalhes.map((c) => [c.id, c]));
   const cobrancas = idsDoTrecho.flatMap((id) => {
     const c = detalhePorId.get(id);
@@ -333,8 +277,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
 
   const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), [...new Set(cobrancas.map((c) => c.matriculaId))]);
 
-  // Canal WhatsApp (E2): templates p/ renderizar a mensagem sugerida no servidor,
-  // última intenção por cobrança (estado do braço) e inbound por destino ("respondeu").
   const ids = cobrancas.map((c) => c.id);
   const templates = await prisma.templateWhatsApp.findMany({ where: ONDE_MODELO_REGUA });
   const templatePorId = new Map(templates.map((t) => [t.id, t]));
@@ -354,10 +296,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
 
   const destinos = cobrancas.map((c) => resolverDestinoCobranca(c));
   const destinoPorMatricula = new Map(destinos.filter((d): d is NonNullable<typeof d> => !!d).map((d) => [d.matriculaId, d]));
-  // "Respondeu" pertence ao assunto financeiro daquela matrícula, não ao
-  // transporte/telefone. Contextos encerrados ainda contam como histórico se
-  // continuam ligados ao destinatário atual; COMERCIAL e financeiro legado sem
-  // matrícula nunca contaminam o sinal de cobrança.
   const atendimentos = destinoPorMatricula.size
     ? await prisma.atendimentoWhatsApp.findMany({
         where: { finalidade: "FINANCEIRO", matriculaId: { in: [...destinoPorMatricula.keys()] }, ultimoInboundEm: { not: null } },
@@ -384,7 +322,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
     const destino = d ? { telefone: d.telefoneE164, nome: d.nome,
       viaResponsavel: d.responsavelId !== null || d.tipoPagador === "RESPONSAVEL" || d.tipoPagador === "EMPRESA" } : null;
 
-    // "Respondeu" = inbound do destino DEPOIS da última cobrança enviada (doc 26 §Camada 3).
     const inbound = d ? inboundPorMatricula.get(d.matriculaId) : undefined;
     const respondeuEm =
       inbound && r.ultimaCobrancaEm && inbound > new Date(r.ultimaCobrancaEm) ? inbound.toISOString() : null;
@@ -399,8 +336,6 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
         }
       : null;
 
-    // Mensagem do degrau atual renderizada no servidor (fonte única — doc 29 regra 4):
-    // template da política > template pelo nome do modelo > texto de fábrica.
     let mensagemSugerida: string | null = null;
     if (r.estado === "acao_devida" && r.passo) {
       const tId = politica.templateIdPorPasso.get(r.passo) ?? null;
@@ -444,17 +379,10 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
     };
   });
 
-  // Contadores dos mini-dashs (filtros), sobre a fila INTEIRA — não sobre o trecho exibido. "Bloquear" é o
-  // subconjunto urgente de "Em atraso", mais a promessa com atraso ≥ 30.
-  // "Bloquear" usa `precisaBloqueio` (atraso ≥ 30 e não bloqueado), NÃO o passo da régua: o
-  // bloqueio pendente não pode sumir só porque a mensagem D+15 foi enviada (review §1).
-  // Mesmo critério do filtro da fila na URL (filtros-fila.ts): o número do cartão bate com a lista filtrada.
   const { aVencer, emAtraso, bloquear, promessas } = contarIndicadoresFila(resumo);
 
-  // Recebido hoje = soma das BAIXAS de hoje (eventos PagamentoRegistrado), não o status PAGO:
-  // captura parciais (que ficam PENDENTE) e usa o valor DESTA baixa, não o acumulado (review §2).
   const pagamentosHoje = await prisma.evento.findMany({
-    where: { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", criadoEm: { gte: inicioDoDiaInstitucional(hoje, fuso) } }, // R1 do #239 (C1): 1º instante válido do dia
+    where: { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", criadoEm: { gte: inicioDoDiaInstitucional(hoje, fuso) } },
     select: { agregadoId: true, payload: true },
   });
   const moedaPorCobranca = new Map<string, string>();
@@ -496,7 +424,6 @@ export interface HistoricoFinanceiroItem {
   autor: string | null;
 }
 
-/** Rótulo legível de um evento financeiro para a linha do tempo da ficha. */
 function rotuloEvento(tipo: string, payload: unknown): string {
   const p = (payload ?? {}) as Record<string, unknown>;
   switch (tipo) {
@@ -522,11 +449,6 @@ function rotuloEvento(tipo: string, payload: unknown): string {
   }
 }
 
-/**
- * Histórico financeiro do aluno (régua/cobrança) para EXIBIÇÃO na ficha (doc 24 §só leitura):
- * lembretes, cobranças, promessas, pagamentos (incl. parciais) e bloqueios/desbloqueios. Lê o
- * log de eventos (já persistido) — não grava nada. Mais recente primeiro, teto de 100.
- */
 export async function historicoFinanceiroDoAluno(
   cobrancaIds: string[],
   matriculaIds: string[],

@@ -46,7 +46,7 @@ describe("vencimentoMensalidade", () => {
     expect(() => vencimentoMensalidade(32, 0)).toThrow(/1 e 31/);
     expect(() => vencimentoMensalidade(0, 0)).toThrow(/1 e 31/);
   });
-  const base = new Date(2026, 5, 18); // junho/2026
+  const base = new Date(2026, 5, 18);
 
   it("usa o dia escolhido no mês atual (offset 0)", () => {
     const { data, competencia } = vencimentoMensalidade(5, 0, base);
@@ -67,11 +67,10 @@ describe("vencimentoPrimeiraMensalidade", () => {
     expect(r.data.getDate()).toBe(29);
   });
   it("vence 30 dias após o início da 1ª aula, ajustado ao dia escolhido", () => {
-    // início 01/jun/2026 + 30 dias = 01/jul/2026 → dia 5 = 05/jul/2026
     const inicio = new Date(2026, 5, 1);
     const { data, competencia } = vencimentoPrimeiraMensalidade(5, inicio);
     expect(data.getFullYear()).toBe(2026);
-    expect(data.getMonth()).toBe(6); // julho
+    expect(data.getMonth()).toBe(6);
     expect(data.getDate()).toBe(5);
     expect(competencia).toBe("2026-07");
   });
@@ -84,11 +83,10 @@ describe("vencimentoPrimeiraMensalidade", () => {
   });
 
   it("vira o mês/ano quando início + 30 dias cruza a virada", () => {
-    // início 15/dez/2026 + 30 dias = 14/jan/2027 → dia 10 = 10/jan/2027
     const inicio = new Date(2026, 11, 15);
     const { data, competencia } = vencimentoPrimeiraMensalidade(10, inicio);
     expect(data.getFullYear()).toBe(2027);
-    expect(data.getMonth()).toBe(0); // janeiro
+    expect(data.getMonth()).toBe(0);
     expect(data.getDate()).toBe(10);
     expect(competencia).toBe("2027-01");
   });
@@ -96,7 +94,7 @@ describe("vencimentoPrimeiraMensalidade", () => {
   it("sem data de início da turma, usa o fallback (+30 dias)", () => {
     const fallback = new Date(2026, 5, 1);
     const { data } = vencimentoPrimeiraMensalidade(15, null, fallback);
-    expect(data.getMonth()).toBe(6); // julho
+    expect(data.getMonth()).toBe(6);
     expect(data.getDate()).toBe(15);
   });
 });
@@ -141,7 +139,6 @@ describe("transicaoManualPermitida", () => {
   });
 
   it("bloqueia saltos para etapas geradas por evento", () => {
-    // pular a experimental e ir direto para realizada/proposta/aguardando
     expect(
       transicaoManualPermitida(EtapaLead.QUALIFICADO, EtapaLead.EXPERIMENTAL_REALIZADA),
     ).toBe(false);
@@ -167,14 +164,12 @@ describe("transicaoManualPermitida", () => {
   });
 
   it("permite retomar o trabalho manual após etapas de evento", () => {
-    // pós no-show ou pós-experimental, o vendedor reagenda ou requalifica
     expect(
       transicaoManualPermitida(EtapaLead.NO_SHOW, EtapaLead.EXPERIMENTAL_AGENDADA),
     ).toBe(true);
     expect(
       transicaoManualPermitida(EtapaLead.EXPERIMENTAL_REALIZADA, EtapaLead.QUALIFICADO),
     ).toBe(true);
-    // mas nunca avançar para outra etapa de evento manualmente
     expect(
       transicaoManualPermitida(EtapaLead.PROPOSTA, EtapaLead.AGUARDANDO_MATRICULA),
     ).toBe(false);
@@ -231,9 +226,8 @@ describe("aplicarBaixa (pagamento parcial — issue #1)", () => {
   });
 
   it("ACUMULA baixas parciais — a 2ª baixa nunca reduz o recebido", () => {
-    const primeira = aplicarBaixa(100, null, 40); // recebe 40 → saldo 60
+    const primeira = aplicarBaixa(100, null, 40);
     expect(primeira.recebidoTotal).toBe(40);
-    // segunda baixa de 30 deve SOMAR (70), não sobrescrever (30)
     const segunda = aplicarBaixa(100, primeira.recebidoTotal, 30);
     expect(segunda.recebidoTotal).toBe(70);
     expect(segunda.saldo).toBe(30);
@@ -249,7 +243,7 @@ describe("aplicarBaixa (pagamento parcial — issue #1)", () => {
   });
 
   it("recebimento acima do negociado quita e zera o saldo (não fica negativo)", () => {
-    const r = aplicarBaixa(100, 80, 50); // total 130 > 100
+    const r = aplicarBaixa(100, 80, 50);
     expect(r.recebidoTotal).toBe(130);
     expect(r.saldo).toBe(0);
     expect(r.quitada).toBe(true);
@@ -258,7 +252,6 @@ describe("aplicarBaixa (pagamento parcial — issue #1)", () => {
 
 describe("vagasDisponiveis / temVaga (contagem de vagas — issue #1)", () => {
   it("desconta da capacidade APENAS as alocações ativas informadas", () => {
-    // 16 de capacidade, 10 ativas → 6 vagas (inativas não entram nesta contagem).
     expect(vagasDisponiveis(16, 10)).toBe(6);
     expect(temVaga(16, 10)).toBe(true);
   });
@@ -274,11 +267,10 @@ describe("vagasDisponiveis / temVaga (contagem de vagas — issue #1)", () => {
   });
 
   it("contar inativas (bug) inflaria o ocupado e tiraria vaga indevidamente", () => {
-    // 16 cap, 6 ativas + 4 inativas. Correto: conta só as 6 ativas → 10 vagas.
     const ativas = 6;
-    const todas = 10; // 6 ativas + 4 inativas (o jeito ERRADO)
+    const todas = 10;
     expect(vagasDisponiveis(16, ativas)).toBe(10);
-    expect(vagasDisponiveis(16, todas)).toBe(6); // o que o bug produziria
+    expect(vagasDisponiveis(16, todas)).toBe(6);
   });
 });
 
@@ -308,8 +300,6 @@ describe("chave de negócio do preço (Issue #18)", () => {
   };
 
   it("é estável e independente da identidade do registro", () => {
-    // Dois preços (versões) da MESMA combinação compartilham a chave —
-    // por isso, ao reativar um antigo, os irmãos da chave devem ser inativados.
     const antigo = { ...base };
     const novo = { ...base };
     expect(chavePrecoReferencia(antigo)).toBe(chavePrecoReferencia(novo));
@@ -378,7 +368,6 @@ describe("acumularPagamento", () => {
   });
 
   it("parciais sucessivos ACUMULAM e o saldo cai pelo total recebido", () => {
-    // primeiro recebe 300 (jaRecebido=0), depois 400 sobre os 300 anteriores
     const primeiro = acumularPagamento(0, 1000, 300);
     const segundo = acumularPagamento(primeiro.recebidoTotal, 1000, 400);
     expect(segundo.recebidoTotal).toBe(700);

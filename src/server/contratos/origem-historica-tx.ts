@@ -35,10 +35,8 @@ export async function registrarOrigemContratualHistoricaTx(tx: Prisma.Transactio
   if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
   if (matricula.moeda !== transcricao.moeda) throw new ErroRegra(`A matrícula está em ${matricula.moeda}; a transcrição declara ${transcricao.moeda}. Alinhe a moeda antes de registrar a origem.`);
   if (matricula.preparacaoComercial && matricula.preparacaoComercial.regime !== transcricao.aulas.regime) throw new ErroRegra("O regime transcrito diverge da preparação comercial da matrícula.");
-  // Data civil de assinatura do PDF legado: nunca posterior a hoje no fuso da escola (o guard do banco confere o mesmo).
   const configuracao = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
   if (!configuracao?.fusoInstitucional) throw new ErroRegra("Configure o fuso institucional antes de registrar a origem histórica.");
-  // Fuso inválido gravado é problema de configuração da escola, não do formulário: mensagem própria (422), não ZodError.
   if (!fusoIanaValido(configuracao.fusoInstitucional)) throw new ErroRegra(`O fuso institucional configurado (${configuracao.fusoInstitucional}) não é reconhecido. Corrija a configuração da escola antes de registrar a origem histórica.`);
   const hoje = dataCivilInstitucional(new Date(), configuracao.fusoInstitucional);
   if (d.assinadoEm > hoje) throw new ErroRegra(`A data de assinatura (${d.assinadoEm}) não pode ser posterior a hoje (${hoje}) no fuso da escola.`);
@@ -52,7 +50,6 @@ export async function registrarOrigemContratualHistoricaTx(tx: Prisma.Transactio
   return { id: p.id, pdfHash, transcricaoHash };
 }
 
-/** Sem Server Action: bytes só são entregues pela rota privada autenticada. */
 export async function carregarArquivoOrigemHistorica(input: { matriculaId: string; origemId: string }) {
   const u = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
   const d = z.object({ matriculaId: id, origemId: id }).strict().parse(input);

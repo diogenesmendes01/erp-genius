@@ -36,22 +36,18 @@ function subtrairDias(data: string, dias: number): string {
   const resultado = dataUtc(data); resultado.setUTCDate(resultado.getUTCDate() - dias); return dataCivil(resultado);
 }
 
-/** Q30/Q64: prepara exclusivamente a próxima cobertura contratada. */
 export function planejarContinuidadeMensal(input: EntradaPlanejarContinuidadeMensal) {
   return calcularContinuidadeMensal(input, { retomadaAplicada: false });
 }
-/** Q66: aceita somente o trecho final do período contratado após retomada aplicada. */
 export function planejarContinuidadeMensalAposRetomada(input: EntradaPlanejarContinuidadeMensal) {
   return calcularContinuidadeMensal(input, { retomadaAplicada: true });
 }
-/** Uma retomada posterior conserva a referência já aplicada pela cadeia. */
 export function planejarContinuidadeMensalAposRetomadaComRegra(input: EntradaPlanejarContinuidadeMensal, regraAplicada: unknown) {
   return calcularContinuidadeMensal(input, {
     retomadaAplicada: true,
     regraAplicada: RegraCoberturaContinuidadeSchema.parse(regraAplicada),
   });
 }
-/** Q162: uma Q70 aplicada desloca o ciclo, sem reescrever a regra contratual. */
 export function planejarContinuidadeMensalAposRecomposicao(input: EntradaPlanejarContinuidadeMensal, referencia: unknown) {
   const memoria = ReferenciaRecomposicaoContinuidadeSchema.parse(referencia);
   return calcularContinuidadeMensal(input, {
@@ -61,7 +57,6 @@ export function planejarContinuidadeMensalAposRecomposicao(input: EntradaPlaneja
   });
 }
 
-/** Q169: o chamador confere a prova do conjunto aplicado e resolve a regra vigente. */
 export function planejarContinuidadeMensalAposAditivo(input: EntradaPlanejarContinuidadeMensal, referencia: unknown) {
   const memoria = ReferenciaAditivoCoberturaContinuidadeSchema.parse(referencia);
   return calcularContinuidadeMensal(input, { retomadaAplicada: false, memoriaAditivo: memoria });

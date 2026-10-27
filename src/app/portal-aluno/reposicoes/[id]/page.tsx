@@ -14,12 +14,6 @@ export const dynamic = "force-dynamic";
 
 export default async function ReposicaoPortalAlunoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Mesmo padrão de .../resultados/page.tsx: o guard vive dentro de
-  // exigirReposicaoDoPortalAluno (compartilhado com outras chamadas). ErroAutenticacao
-  // vira redirect; ErroPermissao (reposição de outro aluno — id trocado na URL, link
-  // velho, bookmark) vira notFound() — não é "sua sessão expirou" (não é isso que
-  // aconteceu) nem deveria confirmar que o registro existe. ErroRegra (id ausente,
-  // praticamente inalcançável por essa rota) continua subindo para error.tsx.
   let reposicao: ReposicaoPortalAluno;
   try {
     reposicao = await exigirReposicaoDoPortalAluno(id);
@@ -50,11 +44,8 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
       await autorizarReproducaoGravacao(reposicao.id);
       podeReproduzir = true;
     } catch {
-      // Histórico permanece visível; fonte e controles exigem autorização atual.
     }
   }
-  // O relato exige a mesma autorização da reprodução (o servidor a confere de novo). Sem ela, o formulário
-  // não aparece — e o aluno lê por quê e o que fazer, em vez de um bloco sem campo (docs/42 L2676).
   const motivoSemRelato = podeReproduzir ? null
     : detalhe?.pausadaDesde ? "A escola já confirmou a indisponibilidade do material e está regularizando; não é preciso enviar outro relato."
     : !detalhe?.disponivel ? "O material ainda não foi liberado pela escola. Se o prazo já estiver correndo, procure a secretaria."

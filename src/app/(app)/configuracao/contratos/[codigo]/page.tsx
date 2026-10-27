@@ -18,8 +18,6 @@ export default async function ModeloPage({ params, searchParams }: { params: Pro
   if (!PrepararModeloSchema.shape.codigo.safeParse(codigo).success) notFound();
   const p = Number((await searchParams).pagina ?? 1), pagina = Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1;
   const [dados, preferencia] = await Promise.all([consultarModelosContratuais({ codigo, pagina }), consultarPreferenciaFusoEquipe()]);
-  // Preparação e decisão no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6; docs/42 L2382):
-  // antes, "2026-09-22 14:03:11 UTC" recortado do ISO.
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const quando = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   if (!dados.modelos.length && pagina === 1) notFound();

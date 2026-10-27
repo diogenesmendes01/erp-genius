@@ -5,14 +5,8 @@ import { SETOR_ATENDIMENTO_LABEL } from "@/lib/labels";
 import { nomeDoAtendimento } from "./nome-contato";
 import type { Setor } from "./setor";
 
-// ALERTA DE PRAZO ESTOURADO (SLA, P5 da Task 39). Só dentro do app: NotificacaoUsuario no sino + o
-// `atendimento.atualizado` que o trigger notificar_inbox emite no UPDATE do claim (SSE do Inbox).
-// Nada de WhatsApp nem e-mail; não confundir com o "alerta de SLA" da régua de gestão (cron-gestao).
-
-/** Só estouros das últimas 24 h alertam: ligar os alertas com fila antiga não inunda o sino (D8). */
 export const JANELA_ALERTA_SLA_MS = 24 * 60 * 60_000;
 
-/** Gerente de cada setor. Financeiro e Secretaria não têm papel de gerente: vai ao Administrador (D4). */
 export const GERENTE_DO_SETOR: Readonly<Record<Setor, readonly Papel[]>> = Object.freeze({
   COMERCIAL: [Papel.GERENTE_COMERCIAL],
   PEDAGOGICO: [Papel.GERENTE_PEDAGOGICO],
@@ -20,11 +14,6 @@ export const GERENTE_DO_SETOR: Readonly<Record<Setor, readonly Papel[]>> = Objec
   SECRETARIA: [Papel.ADMINISTRADOR],
 });
 
-/**
- * Quem recebe o alerta (D3–D5), sem repetição. Responsável, se `alertarResponsavel`; sem responsável, o
- * aviso vai ao gerente do setor (ou aos administradores, se o setor não tiver gerente ativo). Gerentes,
- * se `alertarGerente` (mesmo fallback). Participantes do rodízio não recebem.
- */
 export function destinatariosAlertaSla(i: {
   responsavelId: string | null; alertarResponsavel: boolean; alertarGerente: boolean; gerentesIds: string[]; adminsIds: string[];
 }): string[] {
@@ -37,15 +26,6 @@ export function destinatariosAlertaSla(i: {
 
 type Reclamado = { id: string; finalidade: Setor; responsavelId: string | null; prazoRespostaEm: Date };
 
-/**
- * Claim atômico (`slaAlertadoEm` nulo → agora, como em rodarLembretesTarefas): uma notificação por
- * destinatário e um `SlaEstouradoAlertado` por atendimento, uma única vez (D3), na mesma transação.
- * O atendimento é marcado mesmo sem destinatário (alertas desligados): não volta a ser avaliado.
- * Não alerta: respondido, encerrado, grupo, estouro fora da janela, ou a Aria já respondeu no prazo (D6).
- * D6 compara o momento do envio (`enviadaEm`), não o `criadoEm` nem o `statusEm` (que avança com
- * ENTREGUE/LIDA): resposta criada na fila antes do vencimento e enviada depois não evita o alerta (C3 da
- * R1 do #241). Saídas gravadas antes da coluna já nasciam enviadas, então o `criadoEm` equivale.
- */
 export async function rodarAlertasSla(agora: Date): Promise<{ alertados: number; notificacoes: number }> {
   const desde = new Date(agora.getTime() - JANELA_ALERTA_SLA_MS);
   return prisma.$transaction(async (tx) => {

@@ -8,18 +8,11 @@ import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-a
 import { diaCivilGravado } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// Q171 (decisões de 21/09/2026): uso do saldo restrito a serviços. Abate mensalidade (hora particular e taxa: ver
-// TIPOS_ABATIVEIS) em aberto da MESMA matrícula, na moeda do saldo, por proposta do Financeiro e decisão de outro aprovador. A aprovação
-// nasce como aplicação de compensação de permuta (crédito de serviço) na mesma transação; o saldo não expira e nunca
-// vira dinheiro. Port da #62 (4f09181e); guards no banco em 20261021310000_uso_saldo_servico_permuta.
 const id = z.string().trim().min(1).max(100);
 const dinheiro = z.string().regex(/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/, "Informe valor com até duas casas.");
 const texto = z.string().trim().min(5).max(2000);
 const Propor = z.object({ saldoId: id, cobrancaId: id, valor: dinheiro, motivo: texto, chaveIdempotencia: z.string().trim().min(8).max(100) }).strict();
 const Decidir = z.object({ propostaId: id, aprovada: z.boolean(), motivo: texto }).strict();
-// R1 da #283 (B2 e item menor): só MENSALIDADE, como a permuta da main. Em HORA_PARTICULAR a aula declarada não cobrável
-// (Q175) devolveria o valor pago com saldo como crédito financeiro; em MATRICULA o acerto de taxa não conhece a permuta.
-// Hora particular e taxa ficam para conferência específica (ver a nota da Q171 em docs/planejamento/decisoes-2026-09-21.md).
 const TIPOS_ABATIVEIS = ["MENSALIDADE"] as const;
 
 async function executarUso<T>(acao: () => Promise<T>) {
@@ -48,14 +41,12 @@ async function bloquear(tx: Prisma.TransactionClient, matriculaId: string, cobra
   await tx.$queryRaw`SELECT id FROM "SaldoServicoPermuta" WHERE id=${saldoId} FOR UPDATE`;
 }
 
-/** Disponível = inicial − usos aprovados − propostas pendentes (a pendente reserva para não prometer duas vezes). Espelha saldo_servico_permuta_disponivel_171. */
 async function saldoServicoDisponivelTx(tx: Prisma.TransactionClient, saldoId: string, ignorarPropostaId?: string) {
   const s = await tx.saldoServicoPermuta.findUniqueOrThrow({ where: { id: saldoId }, select: { valorInicial: true, usos: { select: { id: true, valor: true, decisao: { select: { aprovada: true } } } } } });
   const comprometido = s.usos.filter(u => u.id !== ignorarPropostaId && (!u.decisao || u.decisao.aprovada)).reduce((acc, u) => acc.plus(u.valor), new Prisma.Decimal(0));
   return { inicial: s.valorInicial, disponivel: s.valorInicial.minus(comprometido), aprovado: s.usos.filter(u => u.decisao?.aprovada).reduce((acc, u) => acc.plus(u.valor), new Prisma.Decimal(0)) };
 }
 
-/** Mesmas recusas da compensação por permuta (permuta-servico.ts) e do guard SQL: pausa e comprovante a conferir. */
 async function exigirCobrancaAbativelTx(tx: Prisma.TransactionClient, c: { id: string; suspensaPorItemPausaId: string | null; canceladaPorPausaId: string | null }) {
   if (c.suspensaPorItemPausaId || c.canceladaPorPausaId) throw new ErroRegra("A cobrança está em pausa; o saldo de serviços não a abate.");
   if (await tx.pagamentoInformado.count({ where: { cobrancaId: c.id, status: "A_CONFERIR" } })) throw new ErroRegra("Confira o comprovante pendente desta cobrança antes de usar o saldo de serviços.");
@@ -118,7 +109,6 @@ export async function decidirUsoSaldoServicoPermuta(input: z.input<typeof Decidi
       return { id: decisao.id, aprovada: decisao.aprovada, cobrancaId: p.cobrancaId };
     }, { timeout: 30000 });
   });
-  // Mesmo pós-processamento da compensação por permuta: a cobrança pode ter sido quitada e liberar o acesso.
   if (resultado.ok && resultado.dado?.aprovada) {
     try { await reavaliarAcessoAutomaticoDaCobranca(resultado.dado.cobrancaId); }
     catch { console.error("[permuta] Uso do saldo de serviços confirmado; reavaliação do acesso pendente pelo cron institucional."); }
@@ -126,7 +116,6 @@ export async function decidirUsoSaldoServicoPermuta(input: z.input<typeof Decidi
   return resultado;
 }
 
-/** Painel do saldo: disponível, usos e cobranças abatíveis da matrícula. Só leitura. */
 export async function consultarUsosSaldoServicoPermuta(input: { matriculaId: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = z.object({ matriculaId: id }).strict().parse(input);

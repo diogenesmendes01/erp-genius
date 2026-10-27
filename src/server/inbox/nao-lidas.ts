@@ -3,14 +3,6 @@ import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { PAPEIS_INBOX, escopoAtendimentos } from "@/server/whatsapp/escopo";
 
-/**
- * Atendimentos com não lida PARA ESTE usuário (mesma regra de preferenciasDoUsuario), em qualquer posição da lista.
- * Vira condição da própria consulta paginada (sempre combinada com o escopo), sem varrer o banco todo:
- * - marcada como não lida pelo usuário;
- * - sem leitura registrada (lidaAte nulo ou sem preferência) e contador compartilhado > 0;
- * - com leitura registrada: ENTRADA depois de lidaAte, achada a partir das preferências DO USUÁRIO
- *   (limitadas às conversas dele) e não de todos os atendimentos.
- */
 export async function condicaoNaoLidaPessoal(usuarioId: string): Promise<Prisma.AtendimentoWhatsAppWhereInput> {
   const comLeitura = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT DISTINCT a."id" FROM "PreferenciaConversaUsuario" p

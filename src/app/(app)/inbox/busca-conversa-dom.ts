@@ -1,4 +1,3 @@
-/** Integração DOM local da busca. Nenhum seletor interpola IDs e nenhuma operação rola o documento. */
 export function elementoVisivel(el: HTMLElement | null): el is HTMLElement {
  return !!el && el.isConnected && el.getClientRects().length > 0 && !el.closest("[inert]");
 }

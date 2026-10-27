@@ -3,7 +3,6 @@ import {Papel,type Prisma} from "@prisma/client";
 import {writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 import type {UsuarioSessao} from "@/server/_shared/sessao";
-// SQL/ACL/TX reais. Cache React é real; dispatcher request-local/barreira de query são instrumentais.
 type CapturaCatalogo={model:"tipoDocumento";operation:"findMany";consultaRealConcluida:true;quantidade:number};
 type CanarioCatalogo={pid?:number;sqlCanarioConfirmado:boolean;capturaConfirmada:boolean;retornoConfirmado:boolean;capturas:CapturaCatalogo[]};
 type ReactServidor={cache:unknown;__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE:{A:unknown}};
@@ -11,7 +10,6 @@ const m=vi.hoisted(()=>({react:null as ReactServidor|null,armada:false,chegou:nu
 vi.mock("react",async original=>{const real=await original<typeof import("react")>(),{createRequire}=await import("node:module");m.react=createRequire(import.meta.url)("next/dist/compiled/react/cjs/react.react-server.development.js") as ReactServidor;return {...real,cache:m.react.cache};});
 vi.mock("@/lib/prisma",async original=>{
  const real=await original<typeof import("@/lib/prisma")>();
- // Observa o tx recebido da transação JÁ protegida; não usa $extends após o bind(BASE).
  function observar(tx:Prisma.TransactionClient){return new Proxy(tx,{get(alvo,propriedade,receptor){
   const valor=Reflect.get(alvo,propriedade,receptor);
   if(propriedade==="tipoDocumento")return new Proxy(valor,{get(delegate,metodo,receiver){

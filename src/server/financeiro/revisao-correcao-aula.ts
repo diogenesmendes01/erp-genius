@@ -21,20 +21,17 @@ async function exigirFinanceiroTx(tx: Prisma.TransactionClient, usuarioId: strin
 
 const TipoRevisao = z.enum(["SEM_ALTERACAO_VALORES", "AULA_NAO_COBRAVEL"]);
 async function fotoAtualTx(tx: Prisma.TransactionClient, propostaId: string, tipo: z.infer<typeof TipoRevisao> = "SEM_ALTERACAO_VALORES") {
-  // Q175: o tipo é sempre escolha explícita do Financeiro; nunca há fallback de uma fotografia para a outra.
   const linhas = tipo === "AULA_NAO_COBRAVEL"
     ? await tx.$queryRaw<FotoSql[]>`SELECT fotografia, "fotografiaHash" FROM q23_fotografia_nao_cobravel_materializada_175(${propostaId})`
     : await tx.$queryRaw<FotoSql[]>`SELECT fotografia, "fotografiaHash" FROM q23_fotografia_financeira_materializada_257(${propostaId})`;
   return linhas[0] ?? null;
 }
 
-/** Prepara a confirmação sem delta ou a declaração de aula não cobrável (Q175). Nenhum efeito nasce aqui: o acerto só acontece na publicação acadêmica. */
 export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
     const d = z.object({ propostaCorrecaoAulaId: id, motivo: texto, chaveIdempotencia: z.string().min(8).max(100), tipo: TipoRevisao.optional() }).strict().parse(input);
     const tipo = d.tipo ?? "SEM_ALTERACAO_VALORES";
-    // O hash das entradas anteriores à Q175 não conhecia o tipo; o padrão continua fora dele.
     const entradaHash = hash(tipo === "SEM_ALTERACAO_VALORES" ? { propostaCorrecaoAulaId: d.propostaCorrecaoAulaId, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia } : { ...d, tipo });
     return prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
@@ -48,8 +45,6 @@ export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
       if (!proposta?.encontro.matriculaId) throw new ErroRegra("A revisão financeira exige aula particular identificada.");
       const foto = await fotoAtualTx(tx, proposta.id, tipo);
       if (!foto && tipo === "AULA_NAO_COBRAVEL") {
-        // Q173 (R2 do #284, B2): aula paga com horas compradas antes de uma troca de moeda não devolve minutos. O banco
-        // recusa (fotografia e estorno); aqui só explicamos o motivo.
         const reserva = await tx.reservaHorasCompradas.findFirst({ where: { encontroId: proposta.encontroId }, select: { compra: { select: { moeda: true, matricula: { select: { moeda: true } } } } } });
         if (reserva && reserva.compra.moeda !== reserva.compra.matricula.moeda) throw new ErroRegra(`Esta aula foi paga com horas compradas em ${reserva.compra.moeda}, antes da troca de moeda da matrícula para ${reserva.compra.matricula.moeda}. Os minutos não voltam a essa compra: não há como usá-los nem liquidá-los na moeda anterior. A correção acadêmica pode seguir sem a declaração de não cobrável; o tratamento financeiro desta aula fica com a Administração.`);
       }
@@ -69,7 +64,6 @@ export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
   });
 }
 
-/** Decide a revisão; aprovação não publica nem altera a correção Q23. */
 export async function decidirRevisaoFinanceiraCorrecaoAula(input: unknown) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -92,7 +86,6 @@ export async function decidirRevisaoFinanceiraCorrecaoAula(input: unknown) {
   });
 }
 
-/** Projeção financeira por matrícula: não expõe diário, notas ou avaliações. */
 export async function consultarRevisoesFinanceirasCorrecaoAula(input: unknown) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
@@ -103,8 +96,6 @@ export async function consultarRevisoesFinanceirasCorrecaoAula(input: unknown) {
         select: { id: true, versao: true, tipo: true, motivo: true, criadaEm: true, propostaCorrecaoAulaId: true, fotografia: true, fotografiaHash: true, preparador: { select: { id: true, nome: true, ativo: true, papeis: true } }, decisao: { select: { id: true, aprovada: true, motivo: true, criadaEm: true, decisor: { select: { id: true, nome: true, ativo: true, papeis: true } } } }, propostaCorrecaoAula: { select: { versao: true, entradaHash: true, autorId: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } } } });
       const revisoes = revisoesBrutas.map(revisao => {
         const foto = revisao.fotografia as Record<string, unknown>;
-        // Financeiro vê somente a memória financeira já imutável. Diário,
-        // conteúdo e chamadas continuam restritos ao fluxo pedagógico Q23.
         return { ...revisao,
           podeDecidir: temAlcadaFinanceira(usuario) && !revisao.decisao && revisao.preparador.id !== usuario.id && revisao.propostaCorrecaoAula.autorId !== usuario.id,
           fotografia: { fundamento: foto.fundamento, ocorrencia: foto.ocorrencia, conferencia: foto.conferencia, reservaConsumida: foto.reservaConsumida,
@@ -113,12 +104,9 @@ export async function consultarRevisoesFinanceirasCorrecaoAula(input: unknown) {
         };
       });
       const brutas = await tx.propostaCorrecaoAula.findMany({ where: { encontro: { matriculaId: d.matriculaId }, rejeicao: null, aprovacao: null }, orderBy: { versao: "desc" }, distinct: ["encontroId"], select: { id: true, encontroId: true, versao: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } });
-      // The SQL projection is the eligibility authority. Do not expose a Q23
-      // motive merely because it belongs to this enrolment.
       type TipoDisponivel = { tipo: z.infer<typeof TipoRevisao>; efeito: unknown };
       const candidatas: Array<(typeof brutas)[number] & { podePreparar: boolean; preparoBloqueadoPor: string | null; tiposDisponiveis: TipoDisponivel[] }> = [];
       for (const candidata of brutas) {
-        // Q175: as duas fotografias são independentes; o Financeiro escolhe o tipo entre os que o banco comprova.
         const semAlteracao = await fotoAtualTx(tx, candidata.id), naoCobravel = await fotoAtualTx(tx, candidata.id, "AULA_NAO_COBRAVEL");
         if (!semAlteracao && !naoCobravel) continue;
         const tiposDisponiveis: TipoDisponivel[] = [

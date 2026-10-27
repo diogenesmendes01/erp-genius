@@ -29,10 +29,6 @@ import {
 
 const PATH = "/configuracao/catalogo";
 
-/**
- * Idempotência das criações (#166): com a marca da tentativa, trava a chave do autor e devolve o id já
- * criado por ela (repetição idêntica), ou `null` para criar e gravar a marca no Evento de criação.
- */
 async function idDaRepeticao(
   tx: Prisma.TransactionClient,
   alvo: { tipo: string; agregadoTipo: string; autorId: string; marca: MarcaIdempotencia | null; oQue: string },
@@ -45,7 +41,6 @@ async function idDaRepeticao(
   return evento?.agregadoId ?? null;
 }
 
-// ----- Idiomas -----
 export async function criarIdioma(input: IdiomaInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -69,11 +64,6 @@ export async function criarIdioma(input: IdiomaInput): Promise<Resultado<{ id: s
   });
 }
 
-/**
- * Ativa ou desativa o idioma com o estado-alvo explícito (B4, #175 C2): quem confirma com a tela velha o estado em
- * que o idioma já está não desfaz a mudança de um colega — é um no-op, sem evento. A linha é travada na transação
- * para que duas confirmações simultâneas leiam o estado uma depois da outra.
- */
 export async function definirIdiomaAtivo(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -97,7 +87,6 @@ export async function definirIdiomaAtivo(id: string, ativo: boolean): Promise<Re
   });
 }
 
-// ----- Modalidades -----
 export async function criarModalidade(input: CriarModalidadeInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -166,7 +155,6 @@ export async function editarModalidade(id: string, input: ModalidadeInput): Prom
   });
 }
 
-// ----- Níveis -----
 export async function criarNivel(input: NivelInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
@@ -194,7 +182,6 @@ export async function criarNivel(input: NivelInput): Promise<Resultado<{ id: str
   });
 }
 
-// ----- Produtos (idioma × modalidade) -----
 export async function criarProduto(input: ProdutoInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -202,8 +189,6 @@ export async function criarProduto(input: ProdutoInput): Promise<Resultado<{ id:
     const marca = marcaIdempotencia(chaveIdempotencia, dados);
 
     const id = await prisma.$transaction(async (tx) => {
-      // A repetição vem antes da conferência de duplicado: o produto que a própria tentativa criou não é
-      // "outro" produto, e o reenvio devolve ele em vez do erro.
       const repetido = await idDaRepeticao(tx, { tipo: "ProdutoCriado", agregadoTipo: "Produto", autorId: autor.id, marca, oQue: "o produto" });
       if (repetido) return repetido;
       const dup = await tx.produto.findFirst({
@@ -227,7 +212,6 @@ export async function criarProduto(input: ProdutoInput): Promise<Resultado<{ id:
   });
 }
 
-// ----- Preços (PrecoReferencia). Nova versão supersede a ativa do mesmo conjunto. -----
 export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -247,10 +231,8 @@ export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: str
     };
 
     const id = await prisma.$transaction(async (tx) => {
-      // O reenvio da mesma tentativa devolve o preço criado por ela, sem aposentá-lo com uma cópia.
       const repetido = await idDaRepeticao(tx, { tipo: "PrecoDefinido", agregadoTipo: "Preco", autorId: autor.id, marca, oQue: "o preço" });
       if (repetido) return repetido;
-      // supersede: desativa o preço ativo anterior do mesmo conjunto (mantém histórico)
       await tx.precoReferencia.updateMany({ where: { ...chave, ativo: true }, data: { ativo: false } });
       const preco = await tx.precoReferencia.create({
         data: {
@@ -275,11 +257,6 @@ export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: str
   });
 }
 
-/**
- * Ativa ou desativa o preço de referência com o estado-alvo explícito (B4, #175 C2). Se o preço já está no estado
- * pedido, nada muda e nenhum evento é gravado — em especial, confirmar "reativar" com a tela velha não aposenta o
- * preço que um colega acabou de ativar. A combinação é travada na transação (mesma chave de `criarPreco`).
- */
 export async function definirPrecoAtivo(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -298,16 +275,11 @@ export async function definirPrecoAtivo(id: string, ativo: boolean): Promise<Res
         modalidadeId: alvo.modalidadeId,
         tipoCobranca: alvo.tipoCobranca,
       };
-      // Trava todos os preços da combinação, em ordem estável: duas reativações concorrentes de irmãos não
-      // deixam dois preços ativos, e o estado lido abaixo é o que vale na hora de gravar.
       await tx.$queryRaw`SELECT id FROM "PrecoReferencia" WHERE "paisId" = ${chave.paisId} AND "produtoId" = ${chave.produtoId} AND "modalidadeId" = ${chave.modalidadeId} AND "tipoCobranca"::text = ${chave.tipoCobranca} ORDER BY id FOR UPDATE`;
       const preco = await tx.precoReferencia.findUnique({ where: { id }, select: { ativo: true } });
       if (!preco) throw new ErroRegra("Preço não encontrado.");
       if (preco.ativo === ativo) return;
 
-      // Ao reativar, supersede: inativa os irmãos ativos da mesma combinação
-      // (país/produto/modalidade/tipo) para nunca haver dois preços ativos.
-      // Mesmo comportamento de criarPreco — mantém histórico, só um fica ativo.
       let inativados: string[] = [];
       if (ativo) {
         const irmaosAtivos = await tx.precoReferencia.findMany({

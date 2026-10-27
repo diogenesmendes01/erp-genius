@@ -11,7 +11,6 @@ export async function definirPrevisaoNoInbox(atendimentoId:string,entrada:Defini
   const d=DefinirPrevisaoInboxSchema.parse(entrada);
   try{await prisma.$transaction(tx=>definirPrevisaoNoInboxTx(tx,u.id,atendimentoId,d));}
   catch(erro){
-   // 55P03 aborta a TX: só mapear depois que o rollback terminou. Nunca repetir automaticamente.
    if(leadOcupadoParaPrevisao(erro))throw new ErroRegra("A oportunidade está sendo atualizada. Atualize o painel e tente salvar novamente.");
    throw erro;
   }

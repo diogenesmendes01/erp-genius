@@ -17,8 +17,6 @@ export async function POST(req: Request) {
   try {
     return NextResponse.json(await processarEnviosPortalAluno(dados.data));
   } catch {
-    // Não expor destinatários, configuração ou respostas do provedor.
-    // Claims já iniciadas continuam INCERTO e não são repetidas pelo worker.
     return NextResponse.json({ erro: "Processamento não concluído. Confira a fila operacional." }, { status: 503 });
   }
 }

@@ -127,7 +127,6 @@ describe("carregarCarteira", () => {
     const ana = async () => (await carregarCarteira(sessaoDe(gerente), base)).linhas.find((l) => l.oportunidadeId === op1)!.diasSemInteracao;
     expect(await ana()).toBeGreaterThanOrEqual(19);
     expect(await ana()).toBeLessThanOrEqual(20);
-    // Enviada por uma pessoa (pela Inbox ou pelo celular) conta.
     await saida("CELULAR", 4);
     expect(await ana()).toBeLessThanOrEqual(4);
     await saida("HUMANO", 1);

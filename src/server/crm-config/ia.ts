@@ -6,10 +6,6 @@ import { modeloPermitido } from "@/server/aria/provedor/custo";
 import { chaveConfigurada } from "@/server/aria/provedor";
 import { estadoOrcamento } from "@/server/aria/uso";
 
-// Provedor de IA, modelos por tarefa, orçamento e triagem: só ADMINISTRADOR. A chave vive apenas em
-// ANTHROPIC_API_KEY; aqui sai só "configurada"/"ausente". O orquestrador e a triagem leem ConfigIA a
-// cada turno, então a troca vale no próximo turno.
-
 export interface ConfigIAInput {
   modeloConversa: string;
   modeloClassificacao: string;
@@ -19,7 +15,6 @@ export interface ConfigIAInput {
   limiarTriagem: number;
 }
 
-// Mesma regra que o provedor aplica antes de chamar a API (#227): MODELOS_PERMITIDOS via modeloPermitido().
 const Modelo = z.string().refine(modeloPermitido, "Modelo não permitido. Use Sonnet 5.5 ou Haiku 5.5.");
 
 const Schema = z.object({
@@ -51,8 +46,6 @@ export async function salvarConfigIA(i: ConfigIAInput): Promise<Resultado> {
     const d = parsed.data;
     await prisma.$transaction(async (tx) => {
       const antes = await tx.configIA.upsert({ where: { id: "ia" }, create: { id: "ia" }, update: {} });
-      // Nada mudou (ex.: reenvio após resultado incerto): sem update nem Evento, como aplicarSlaSetor.
-      // O orçamento é comparado já em centavos, como a coluna Decimal(10, 2) guarda.
       const alvo = resumo({ ...d, orcamentoMensalUsd: Math.round(d.orcamentoMensalUsd * 100) / 100 });
       if (JSON.stringify(resumo(antes)) === JSON.stringify(alvo)) return;
       const depois = await tx.configIA.update({ where: { id: "ia" }, data: { ...d, alteradaPorId: autor.id } });

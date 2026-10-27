@@ -10,14 +10,10 @@ import { CampoTexto } from "@/components/CampoTexto";
 
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof preverReplanejamentoCalendario>>, { ok: true }>["dado"]>;
 export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { inicial: Revisao; preferenciaFusoExibicao?: string | null }) {
-  // Sem key de estado ou de versão (docs/43 §6 item 3): um router.refresh() que traga outro estado não remonta o
-  // editor nem apaga os ajustes digitados. A conferência feita aqui vale enquanto o servidor estiver no estado em
-  // que ela foi feita; com outro estado, volta a prévia nova e os ajustes ficam para conferir de novo.
   const base = `${inicial.estadoHash}:${inicial.versaoRascunho}`;
   const [conferida, setConferida] = useState<{ base: string; revisao: Revisao } | null>(null);
   const revisao = conferida && conferida.base === base ? conferida.revisao : inicial;
   const [ajustes, setAjustes] = useState<AjusteReplanejamento[]>(inicial.ajustes);
-  // Alterado = os ajustes diferem dos da última conferência (comparados pelo conteúdo).
   const alterado = JSON.stringify(ajustes) !== JSON.stringify(revisao.ajustes);
   const [erro, setErro] = useState("");
   const [ocupado, iniciar] = useTransition();
@@ -61,8 +57,6 @@ export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { ini
     </form>
     <MensagemStatus texto={alterado ? "Há ajustes ainda não conferidos. O resultado abaixo corresponde à última conferência; confira novamente para guardar a revisão." : null} />
     <ConteudoRevisao r={revisao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
-    {/* Sempre montado (docs/42 L1081): com ajustes não conferidos o botão fica desabilitado e diz por quê, em vez
-        de o bloco sumir; sem key, o motivo digitado sobrevive a uma nova conferência. */}
     <SalvarRevisao calendarioId={revisao.calendarioId} estadoHash={revisao.estadoHash} versaoAnterior={revisao.versaoRascunho} ajustes={revisao.ajustes.length ? revisao.ajustes : undefined} desatualizado={alterado || ocupado} />
   </div>;
 }

@@ -99,8 +99,6 @@ describe("PainelOportunidade", () => {
   });
 });
 
-// Fuso pessoal nas telas (pendência da Q176): instantes no fuso pessoal (sem ele, o da escola); o follow-up é data
-// civil da escola e sai como dia, sem hora nem fuso pessoal. Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
 describe("PainelOportunidade: fuso pessoal de exibição", () => {
   const op: DetalheOportunidade = { ...base, criadoEm: new Date("2026-10-21T02:30:00Z"), proximoFollowUp: new Date("2026-10-21T15:00:00Z") };
   const detalhes = (extra: object) => render(op, GERENTE, { abaInicial: "detalhes", fuso: "America/Sao_Paulo", ...extra });
@@ -116,7 +114,6 @@ describe("PainelOportunidade: fuso pessoal de exibição", () => {
       expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*>21\/10\/2026</);
     }
   });
-  // C3 da review do #286: dataCivilInstitucional lança com fuso inválido; o painel cai no fallback como o resto.
   it("fuso da escola inválido não derruba o painel: follow-up no dia UTC, instantes no fallback do helper", () => {
     const html = detalhes({ fuso: "Fuso/Invalido", preferenciaFusoExibicao: null });
     expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*>21\/10\/2026</);

@@ -53,7 +53,6 @@ export class AnthropicHTTPClient implements ClienteMensagens {
     },
   };
 
-  /** Deadline total opt-in: inclui o body e nunca repete o POST. */
   private async chamarControlado(req: Record<string, unknown>, controle: ControleExecucaoIA): Promise<RespostaBruta> {
     let enviado = false;
     const erro = (codigo: string) => new ErroProvedorIA(codigo, codigo, {
@@ -70,7 +69,6 @@ export class AnthropicHTTPClient implements ClienteMensagens {
     const timer = setTimeout(() => interromper("DEADLINE"), controle.deadlineMs);
     try {
       const trabalho = async () => {
-        // Mesma normalização de payload do caminho legado abaixo; teste de bytes trava a paridade.
         const betas = req.betas as string[] | undefined;
         const bodyReq = { ...req };
         delete bodyReq.betas;
@@ -240,7 +238,6 @@ function montarMensagens(p: PedidoIA): Record<string, unknown>[] {
   });
 }
 
-/** Só nomes canônicos exatos; ausência não é alias do modelo pedido. */
 function diagnosticoDaResposta(resposta: unknown, fase: DiagnosticoChamadaIA["fase"], modeloEsperado?: string): DiagnosticoChamadaIA {
   const r = resposta !== null && typeof resposta === "object" && !Array.isArray(resposta) ? resposta as Record<string, unknown> : {};
   const modeloObservado = typeof r.model === "string" && modeloPermitido(r.model) ? r.model : null;

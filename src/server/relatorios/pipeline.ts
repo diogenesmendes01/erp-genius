@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import type { EscopoRelatorio } from "./escopo";
 import type { Periodo } from "./periodo";
 
-/** Filtros comuns dos relatórios do CRM. `autor` separa o que a Aria executou do que a equipe fez. */
 export interface FiltrosRelatorio {
   periodo: Periodo;
   responsavelId?: string;
@@ -12,13 +11,8 @@ export interface FiltrosRelatorio {
   autor?: "ARIA" | "EQUIPE";
 }
 
-/** Instante UTC comparável com colunas `timestamp(3)` (que guardam UTC sem fuso). */
 export const instanteUtc = (d: Date) => Prisma.sql`${d}::timestamptz AT TIME ZONE 'UTC'`;
 
-/**
- * Condição SQL sobre `"Lead" l` com escopo do papel + filtros. Valores sempre parametrizados.
- * `autor = ARIA`: a Aria executou (ou teve aprovada) ao menos uma ação na oportunidade.
- */
 export function condicoesLead(f: FiltrosRelatorio, e: EscopoRelatorio): Prisma.Sql {
   const partes: Prisma.Sql[] = [];
   if (e.tipo === "USUARIOS") {
@@ -52,13 +46,6 @@ export interface MetricasPipeline {
 
 const arred = (n: number, casas = 2) => Math.round(n * 10 ** casas) / 10 ** casas;
 
-/**
- * Pipeline comercial. Valores nunca somam moedas diferentes (moeda = moeda local do país da oportunidade);
- * oportunidade aberta sem valor, ou sem país (moeda indeterminada), conta em `semValor`.
- * `criadas`: criadas no período. `ganhas`: entraram em MATRICULADO no período (evento de etapa).
- * `conversao`: das criadas no período, quantas estão hoje MATRICULADO (coorte, sempre entre 0 e 1); null sem criadas.
- * `ticketMedio`: valor previsto médio das ganhas, por moeda. `cicloMedioDias`: criação → matrícula das ganhas.
- */
 export async function metricasPipeline(f: FiltrosRelatorio, e: EscopoRelatorio): Promise<MetricasPipeline> {
   const cond = condicoesLead(f, e);
   const ini = instanteUtc(f.periodo.inicio);
@@ -79,7 +66,6 @@ export async function metricasPipeline(f: FiltrosRelatorio, e: EscopoRelatorio):
     WHERE ${cond} AND l.etapa::text NOT IN ('MATRICULADO', 'PERDIDO') AND l."valorPrevisto" IS NOT NULL
     GROUP BY p."moedaLocal" ORDER BY p."moedaLocal"`);
 
-  // Ganhas: primeira entrada em MATRICULADO dentro do período, uma vez por oportunidade.
   const ganhas = await prisma.$queryRaw<{ moeda: string | null; valor: number | null; dias: number }[]>(Prisma.sql`
     SELECT p."moedaLocal" AS moeda, l."valorPrevisto"::float8 AS valor,
            EXTRACT(EPOCH FROM (g.em - l."criadoEm")) / 86400.0 AS dias

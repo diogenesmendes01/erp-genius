@@ -14,12 +14,10 @@ const EntradaAditivoPdf = z.object({ propostaId: z.string().regex(/^[a-zA-Z0-9_-
 const EntradaOriginalAditivoPdf = EntradaAditivoPdf.extend({ conferenciaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), conferenciaHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const regular = path.join(process.cwd(), "src/assets/fonts/NotoSans-Regular.ttf"), negrito = path.join(process.cwd(), "src/assets/fonts/NotoSans-Bold.ttf");
 
-/** PDF da prévia preservada. Não é o documento liberado ao serviço de assinatura. */
 export async function gerarPdfPrevia(input: z.input<typeof EntradaPdf>) {
   return renderizar(input, false);
 }
 
-/** Consulta da proposta preservada. Não gera o original do aditivo para assinatura. */
 export async function gerarPdfPreviaAditivo(input: z.input<typeof EntradaAditivoPdf>) {
   const d = EntradaAditivoPdf.parse(input);
   return renderizarDocumento({ registroId: d.propostaId, criadaEm: d.criadaEm, conteudoHash: d.propostaHash,
@@ -27,7 +25,6 @@ export async function gerarPdfPreviaAditivo(input: z.input<typeof EntradaAditivo
     documento: d.documento, assunto: "Prévia de aditivo sem assinatura", cabecalho: `PRÉVIA DE ADITIVO - SEM ASSINATURA${d.ambiente === "SANDBOX" ? " - AMBIENTE DE TESTE" : d.ambiente === "HISTORICO" ? " - CONTRATO DE ORIGEM HISTÓRICA" : ""}` });
 }
 
-/** Original binário do aditivo; ainda depende das assinaturas e da aplicação aprovadas. */
 export async function gerarPdfOriginalAditivo(input: z.input<typeof EntradaOriginalAditivoPdf>) {
   const d = EntradaOriginalAditivoPdf.parse(input);
   const pdf = await renderizarDocumento({ registroId: d.conferenciaId, criadaEm: d.criadaEm, conteudoHash: d.conferenciaHash,
@@ -44,7 +41,6 @@ function metadadosGerador() {
     ] };
 }
 
-/** Bytes do original a preservar, antes de qualquer assinatura externa. */
 export async function gerarPdfOriginal(input: z.input<typeof EntradaPdf>) {
   const pdf = await renderizar(input, true);
   return { ...pdf, gerador: metadadosGerador() };
@@ -89,7 +85,6 @@ async function renderizarDocumento(d: { registroId: string; criadaEm: Date; cont
   const paginas = doc.bufferedPageRange().count;
   for (let i = 0; i < paginas; i++) {
     doc.switchToPage(i);
-    // Rodapé não participa da quebra automática: usa coordenadas e margem local.
     doc.page.margins.bottom = 0;
     doc.font("Negrito").fontSize(8).fillColor("#475569").text(d.cabecalho, 54, 27, { width: largura, lineBreak: false });
     doc.font("Normal").fontSize(7).text(`Registro ${d.registroId} | Página ${i + 1} de ${paginas}`, 54, doc.page.height - 48, { width: largura, lineBreak: false });

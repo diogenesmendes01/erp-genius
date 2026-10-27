@@ -1,10 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-// #166 (3º lote): a nota interna do lead (painel da oportunidade) e o registro de interação (edição da
-// oportunidade) são o próprio Evento. Com chave, o reenvio da mesma tentativa não grava outro.
-
-// Sessão: só `exigirSessao` é trocada (mesmo motivo de criar-lead-idempotencia.int.test.ts).
 const sessao = vi.hoisted(() => ({ usuarioId: "" }));
 vi.mock("@/server/_shared/sessao", async (original) => {
   const o = await original<typeof import("@/server/_shared/sessao")>();

@@ -14,5 +14,4 @@ export const ROTULO_ABA: Record<AbaAria, string> = {
   playground: "Playground",
 };
 
-/** Abas que editam a configuração: só no computador (no celular ficam pausa, visão geral e histórico). */
 export const ABAS_DE_EDICAO: readonly AbaAria[] = ["comportamento", "permissoes", "conhecimento", "handoff", "confianca"];

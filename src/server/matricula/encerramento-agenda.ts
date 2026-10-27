@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { carregarImpactosAcademicosEncerramentoTx } from "./encerramento-impactos-academicos";
 
-/** Cancelamento segue sua aprovação pedagógica; o acerto não presume aula não realizada. */
 export async function conferirAgendaEncerramentoTx(tx: Prisma.TransactionClient,
   impactos: Awaited<ReturnType<typeof carregarImpactosAcademicosEncerramentoTx>>,
   dataEfetiva: string, fuso: string, incluiDia: boolean,
@@ -9,7 +8,6 @@ export async function conferirAgendaEncerramentoTx(tx: Prisma.TransactionClient,
   const [r] = await tx.$queryRaw<{ limite: Date }[]>`SELECT ((${dataEfetiva}::date + ${incluiDia ? 1 : 0}::integer)::timestamp AT TIME ZONE ${fuso}) AT TIME ZONE 'UTC' AS limite`;
   const encontros = impactos.encontrosParticulares.filter(e => e.status !== "CANCELADO" && e.status !== "RASCUNHO" && new Date(e.fim) > r.limite);
   const recuperacoes = (impactos.encontrosRecuperacao ?? []).filter(e => e.status === "PREVISTO" && new Date(e.fim) > r.limite);
-  // Legados sem preparação comercial também podem ter condições por hora aprovadas.
   const porHora = impactos.regimeCobranca === "HORA_PARTICULAR" || (impactos.regimeCobranca === null &&
     await tx.condicoesHorasMatricula.count({ where: { matriculaId: impactos.matriculaId, status: "APROVADA" } }) > 0);
   const candidatos = porHora ? impactos.encontrosParticulares.filter(e => e.status !== "RASCUNHO" &&
@@ -22,8 +20,6 @@ export async function conferirAgendaEncerramentoTx(tx: Prisma.TransactionClient,
     if (!c) return [];
     if (c.itemFaturado?.emissao.cobranca.matriculaId === impactos.matriculaId) return [{ encontroId: e.id, conferenciaId: c.id,
       tipo: "FATURADA" as const, cobrancaId: c.itemFaturado.emissao.cobrancaId, itemId: c.itemFaturado.id }];
-    // Q175 (B3 da R1 #266): aula declarada não cobrável antes do fechamento (efeito SEM_ITEM). A conferência guarda o
-    // valor histórico, mas a aplicação a tira da cobrança e o banco recusa o item (recusar_item_nao_cobravel_175).
     if (c.aplicacaoNaoCobravel?.efeito === "SEM_ITEM") return [{ encontroId: e.id, conferenciaId: c.id,
       tipo: "NAO_COBRAVEL_CORRECAO" as const, cobrancaId: null, itemId: null, aplicacaoId: c.aplicacaoNaoCobravel.id }];
     if (c.valor.isZero() && ["CANCELAMENTO_ESCOLA", "CANCELAMENTO_NO_PRAZO"].includes(c.desfecho)) return [{ encontroId: e.id,

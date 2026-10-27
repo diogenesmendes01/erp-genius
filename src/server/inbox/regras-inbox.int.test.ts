@@ -4,7 +4,6 @@ import { Papel, DriverWhatsApp } from "@prisma/client";
 const { authMock, enviarMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-// Fase 4B: o despachante só envia pelo motor (META_CLOUD e BAILEYS não têm driver); o motor fica simulado.
 vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 
 import { prisma } from "@/lib/prisma";
@@ -24,14 +23,10 @@ import { garantirContato } from "@/server/whatsapp/identidade";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 import { listarAtendimentosPagina } from "./consultas-pagina";
 
-// Aceite da Fase 3: um `it` por regra do §4.4 do levantamento (o número está no nome). Cada cenário usa
-// as funções reais de produção sobre o banco; envios saem por driver simulado (nunca mensagem real).
-
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 const sessao = (u: U) => ({ id: u.id, nome: u.nome, papeis: u.papeis }) as never;
 const como = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 const emDias = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
-// D12: agendamento só dentro da janela de envio da escola (fábrica: 9h–20h, segunda a sexta).
 const naJanela = () => diaUtilAs(10).toISOString();
 const abrir = (numeroId: string, contatoId: string, extra: Parameters<typeof garantirAtendimento>[1] extends infer D ? Partial<D> : never) =>
   prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId, contatoId, finalidade: "COMERCIAL", ...extra } as never));
@@ -52,7 +47,6 @@ beforeEach(async () => {
 });
 afterEach(() => vi.unstubAllEnvs());
 
-/** Número de vários setores com o vendedor como dono, um contato e um atendimento COMERCIAL dele. */
 async function comercial(telefone = "+50688880001", setores: ("COMERCIAL" | "SECRETARIA" | "FINANCEIRO")[] = ["COMERCIAL", "SECRETARIA", "FINANCEIRO"]) {
   const numero = await criarNumeroSetor({ telefoneE164: "+5511999990001", setores, donoId: vend.id });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone } });
@@ -60,7 +54,6 @@ async function comercial(telefone = "+50688880001", setores: ("COMERCIAL" | "SEC
   return { numero, contato, a };
 }
 
-/** Aluno com matrícula, turma do professor e atendimentos PEDAGOGICO e FINANCEIRO no mesmo contato. */
 async function turma() {
   const cat = await seedCatalogoMinimo();
   const prof = await criarUsuario([Papel.PROFESSOR], "Prof");
@@ -81,7 +74,6 @@ async function turma() {
 describe("§4.4 — regras do Inbox", () => {
   it("01 acesso vem do atendimento, nunca do número", async () => {
     const { numero, a } = await comercial();
-    // O financeiro e a secretaria atendem o mesmo número (setores FINANCEIRO e SECRETARIA), mas não têm vínculo com o assunto COMERCIAL.
     expect(await atendimentoVisivel(sessao(fin), a.id)).toBeNull();
     expect(await atendimentoVisivel(sessao(sec), a.id)).toBeNull();
     expect((await listarAtendimentosPagina(sessao(fin), {}, null)).itens).toHaveLength(0);
@@ -99,7 +91,6 @@ describe("§4.4 — regras do Inbox", () => {
     await prisma.coberturaCarteira.create({ data: { titularId: vend.id, substitutoId: vend2.id, concedenteId: gerente.id,
       inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60_000), motivo: "Férias do titular" } });
     expect(await atendimentoVisivel(sessao(vend2), a.id)).not.toBeNull();
-    // A carteira é a de agora: ao trocar o dono do lead, o antigo perde o acesso.
     await prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: vend2.id } });
     await prisma.coberturaCarteira.deleteMany();
     expect(await atendimentoVisivel(sessao(vend), a.id)).toBeNull();
@@ -115,12 +106,10 @@ describe("§4.4 — regras do Inbox", () => {
     const a = await prisma.atendimentoWhatsApp.findFirstOrThrow({ where: { conversa: { numeroId: linha.id } } });
     expect(await atendimentoVisivel(sessao(vend), a.id)).not.toBeNull();
     expect(await atendimentoVisivel(sessao(gerente), a.id)).not.toBeNull();
-    // Cobertura de carteira não entrega a linha do titular (o lead é de vend2, então vend2 vê pelo lead, mas um substituto de vend não ganha a linha).
     const substituto = await criarUsuario([Papel.VENDEDOR], "Substituto");
     await prisma.coberturaCarteira.create({ data: { titularId: vend.id, substitutoId: substituto.id, concedenteId: gerente.id,
       inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60_000), motivo: "Férias do titular" } });
     expect(await atendimentoVisivel(sessao(substituto), a.id)).toBeNull();
-    // O dono da linha vê a conversa, mas o painel do lead segue a carteira (do vend2).
     const { carregarPainel } = await import("./paineis");
     expect(await carregarPainel(sessao(vend), a.id)).toMatchObject({ oportunidade: null, acoes: { leadId: null } });
     expect(await carregarPainel(sessao(vend2), a.id)).toMatchObject({ oportunidade: { id: alheio.id }, acoes: { leadId: alheio.id } });
@@ -189,11 +178,9 @@ describe("§4.4 — regras do Inbox", () => {
   it("09 FINANCEIRO por matrícula; contexto FIN e PEDAG imutável na transferência", async () => {
     const { a } = await comercial();
     como(vend);
-    // Sem matrícula escolhida não há atendimento financeiro, e a origem não é encerrada.
     const semMatricula = await transferirAtendimento({ atendimentoId: a.id, destino: "FINANCEIRO", destinoChave: null, contexto: "Cliente pediu segunda via" });
     expect(semMatricula.ok).toBe(false);
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).encerradoEm).toBeNull();
-    // O contexto de um atendimento FIN ou PEDAG nunca muda.
     const c = await turma();
     await expect(prisma.atendimentoWhatsApp.update({ where: { id: c.financeiro.id }, data: { finalidade: "SECRETARIA" } })).rejects.toThrow();
     await expect(prisma.atendimentoWhatsApp.update({ where: { id: c.financeiro.id }, data: { matriculaId: null } })).rejects.toThrow();
@@ -211,13 +198,11 @@ describe("§4.4 — regras do Inbox", () => {
     expect((await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "depois", quando: naJanela() })).ok).toBe(false);
     expect((await encaminharMensagem({ mensagemId: m.id, destinoAtendimentoIds: [a.id] })).ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
-    // Pendente que já estava na fila também não sai.
     await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { optOutEm: null } });
     await prisma.intencaoMensagem.create({ data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: a.id, origem: "HUMANO", autorId: vend.id, corpoRenderizado: "na fila" } });
     await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { optOutEm: new Date() } });
     await despacharFila();
     expect(enviarMock).not.toHaveBeenCalled();
-    // Remoção: vendedor não, administrador só com evidência de 12+ caracteres.
     expect((await removerOptOutContato(contato.id, "Autorização por telefone registrada")).ok).toBe(false);
     como(adm);
     expect((await removerOptOutContato(contato.id, "curta")).ok).toBe(false);
@@ -227,14 +212,13 @@ describe("§4.4 — regras do Inbox", () => {
 
   it("11 envio = intenção HUMANO + despachante único", async () => {
     const { numero, a } = await comercial();
-    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR" } }); // o despachante só envia pelo motor (Fase 4B)
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR" } });
     como(vend);
     const r = await enviarTextoInbox({ conversaId: a.id, texto: "Olá! Podemos falar?" });
     expect(r.ok && r.dado!.status).toBe("DESPACHADA");
     const i = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(i).toMatchObject({ origem: "HUMANO", autorId: vend.id, atendimentoId: a.id, cobrancaId: null });
     expect(enviarMock).toHaveBeenCalledOnce();
-    // O kill switch congela a automação, nunca o humano.
     const { politica } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
     await prisma.politicaRegua.update({ where: { id: politica.id }, data: { killSwitch: true } });
     expect((await enviarTextoInbox({ conversaId: a.id, texto: "Resposta humana com kill switch" })).ok).toBe(true);
@@ -242,7 +226,7 @@ describe("§4.4 — regras do Inbox", () => {
 
   it("12 silêncio pós-inbound e tratar, com alçada FIN ou SEC", async () => {
     const c = await turma();
-    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { driver: "MOTOR" } }); // a automação só sai pelo motor (Fase 4B, D38)
+    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { driver: "MOTOR" } });
     await prisma.conversaWhatsApp.update({ where: { id: c.financeiro.conversaId }, data: { ultimoInboundEm: new Date(Date.now() - 3600_000) } });
     await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: c.contato.id, atendimentoId: c.financeiro.id, origem: "CRON", corpoRenderizado: "degrau" } });
     expect((await despacharFila()).adiadas).toBe(1);
@@ -258,7 +242,6 @@ describe("§4.4 — regras do Inbox", () => {
     const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA", janela: [0, 24] });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777" } });
     const cron = await prisma.intencaoMensagem.create({ data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", corpoRenderizado: "lembrete", criadaEm: new Date(Date.now() - 60_000) } });
-    // Mensagem de grupo do mesmo telefone não conta como conversa viva.
     await prisma.$transaction((tx) => gravarMensagemGrupo(tx, { numeroId: numero.id, grupoJid: "120363000000000001@g.us", nomeGrupo: "Turma A",
       participanteJid: "50688887777@s.whatsapp.net", participanteE164: "+50688887777", participanteNome: null, providerMessageId: "g-1", tipo: "TEXTO", corpo: "Bom dia", quando: new Date(), driver: DriverWhatsApp.BAILEYS }));
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: cron.id } })).status).toBe("PENDENTE");
@@ -272,7 +255,6 @@ describe("§4.4 — regras do Inbox", () => {
     expect(x.id).toBe(y.id);
     expect(await prisma.contatoWhatsApp.count({ where: { telefoneE164: "+50699990000" } })).toBe(1);
     await expect(prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50699990000" } })).rejects.toThrow();
-    // Vínculo de lead: telefone diferente é recusado e o vínculo existente não é trocado.
     const { numero } = await comercial("+50688880009");
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880010" } });
     const a = await abrir(numero.id, contato.id, { responsavelId: vend.id });
@@ -297,7 +279,6 @@ describe("§4.4 — regras do Inbox", () => {
     expect((await listarTriagemWhatsApp()).map((t) => t.id)).toEqual([m.id]);
     como(vend);
     await expect(listarTriagemWhatsApp()).rejects.toThrow();
-    // A classificação é auditada.
     const contato = await prisma.contatoWhatsApp.findFirstOrThrow();
     const a = await abrir(numero.id, contato.id, { finalidade: "SECRETARIA" });
     como(recepcao);
@@ -331,7 +312,6 @@ describe("§4.4 — regras do Inbox", () => {
     expect((await eventosDo("AtendimentoWhatsApp", a.id)).map((e) => e.tipo)).toContain("AtendimentoEncerrado");
   });
 
-  // Lacuna: o brief pede também "upload no visível", mas não existe upload por atendimento (upload/route.ts é por lead/matrícula).
   it("18 mídia: envio só de arquivo do próprio autor e download no escopo", async () => {
     const { numero, a } = await comercial();
     como(vend);
@@ -340,7 +320,6 @@ describe("§4.4 — regras do Inbox", () => {
     expect((await enviarMidiaInbox({ conversaId: a.id, url: `/api/files/whatsapp-out/${vend.id}/../${vend2.id}/foto.jpg` })).ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect((await enviarMidiaInbox({ conversaId: a.id, url: `/api/files/whatsapp-out/${vend.id}/foto.jpg` })).ok).toBe(true);
-    // Download: a mídia recebida só é lida por quem enxerga o atendimento.
     await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, tipo: "IMAGEM", midiaPath: "/api/files/whatsapp/entrada-18.jpg" } });
     expect(await podeLerArquivo({ id: vend.id, papeis: vend.papeis }, ["whatsapp", "entrada-18.jpg"])).toBe(true);
     expect(await podeLerArquivo({ id: fin.id, papeis: fin.papeis }, ["whatsapp", "entrada-18.jpg"])).toBe(false);
@@ -377,13 +356,11 @@ describe("§4.4 — regras do Inbox", () => {
     const destinoMsg = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880055" } });
     const b = await abrir(numero.id, destinoMsg.id, { responsavelId: vend.id });
     const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Olá" } });
-    // Fila do setor SECRETARIA: assumir, devolver, atribuir.
     const filaSec = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880066" } });
     const s = await abrir(numero.id, filaSec.id, { finalidade: "SECRETARIA" });
     como(sec); expect((await assumirAtendimento(s.id)).ok).toBe(true);
     expect((await devolverParaFila(s.id)).ok).toBe(true);
     como(adm); expect((await atribuirAtendimento({ atendimentoId: s.id, usuarioId: sec.id })).ok).toBe(true);
-    // Vendedor: nota, convite/revogação, agendar/cancelar, encaminhar, transferir.
     como(vend);
     expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "Anotação" })).ok).toBe(true);
     const conv = await convidarParticipante({ atendimentoId: a.id, usuarioId: fin.id, podeEnviar: false, fim: emDias(2), motivo: "Dúvida sobre boleto" });

@@ -1,19 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { proximaAcao, diaCivilGravado, diasCivisDesde, promessaNoPassado, REGUA, type EntradaRegua, type PassoRegua } from "./regua";
 
-// Q176: o dia da régua vira no fuso da escola. Os cenários usam instantes fixos (meio-dia de
-// Brasília = 15h UTC), e não o relógio local do processo, para valer com TZ=UTC e America/Sao_Paulo.
 const FUSO = "America/Sao_Paulo";
 const d = (ano: number, mes1a12: number, dia: number) => new Date(Date.UTC(ano, mes1a12 - 1, dia, 15));
-// Vencimento de referência fixo para todos os cenários.
-const VENC = d(2026, 6, 23); // 2026-06-23, gravado ao meio-dia da escola
+const VENC = d(2026, 6, 23);
 
 function entrada(over: Partial<EntradaRegua> = {}): EntradaRegua {
   return { vencimento: VENC, quitada: false, passosFeitos: [], promessaAte: null, ...over };
 }
 const TODOS_ATE = (passo: PassoRegua): PassoRegua[] => {
   const idx = REGUA.findIndex((x) => x.passo === passo);
-  return REGUA.slice(0, idx).map((x) => x.passo); // todos ANTES do passo informado
+  return REGUA.slice(0, idx).map((x) => x.passo);
 };
 
 describe("regua — diasCivisDesde (dias de calendário da escola, ignora hora)", () => {
@@ -21,23 +18,22 @@ describe("regua — diasCivisDesde (dias de calendário da escola, ignora hora)"
     expect(diasCivisDesde(d(2026, 6, 23), VENC, FUSO)).toBe(0);
     expect(diasCivisDesde(d(2026, 6, 30), VENC, FUSO)).toBe(7);
     expect(diasCivisDesde(d(2026, 6, 16), VENC, FUSO)).toBe(-7);
-    const manha = new Date("2026-06-23T11:00:00Z"); // 08h em Brasília
-    const noite = new Date("2026-06-24T02:30:00Z"); // 23h30 em Brasília, ainda dia 23
+    const manha = new Date("2026-06-23T11:00:00Z");
+    const noite = new Date("2026-06-24T02:30:00Z");
     expect(diasCivisDesde(noite, VENC, FUSO)).toBe(0);
     expect(diasCivisDesde(manha, VENC, FUSO)).toBe(0);
   });
 });
 
 describe("Q176 — o dia da régua vira à meia-noite da escola, não do servidor", () => {
-  // 23h30 de 22/06 em Brasília = 02h30 UTC de 23/06: o servidor em UTC já está no dia do vencimento.
   const vespera2330 = new Date("2026-06-23T02:30:00Z");
-  const dia0030 = new Date("2026-06-23T03:30:00Z"); // 00h30 de 23/06 em Brasília
+  const dia0030 = new Date("2026-06-23T03:30:00Z");
 
   it("recupera o dia civil nas três convenções de gravação do vencimento", () => {
-    expect(diaCivilGravado(new Date("2026-06-23T15:00:00Z"), FUSO)).toBe("2026-06-23"); // meio-dia da escola
-    expect(diaCivilGravado(new Date("2026-06-23T03:00:00Z"), FUSO)).toBe("2026-06-23"); // meia-noite da escola
-    expect(diaCivilGravado(new Date("2026-06-23T00:00:00Z"), FUSO)).toBe("2026-06-23"); // meia-noite UTC (legado)
-    expect(diaCivilGravado(new Date("2026-06-22T21:00:00Z"), "Europe/Moscow")).toBe("2026-06-23"); // fuso positivo
+    expect(diaCivilGravado(new Date("2026-06-23T15:00:00Z"), FUSO)).toBe("2026-06-23");
+    expect(diaCivilGravado(new Date("2026-06-23T03:00:00Z"), FUSO)).toBe("2026-06-23");
+    expect(diaCivilGravado(new Date("2026-06-23T00:00:00Z"), FUSO)).toBe("2026-06-23");
+    expect(diaCivilGravado(new Date("2026-06-22T21:00:00Z"), "Europe/Moscow")).toBe("2026-06-23");
   });
 
   it("às 23h30 de Brasília da véspera o D0 ainda não saiu; à 00h30 sai", () => {
@@ -51,7 +47,7 @@ describe("Q176 — o dia da régua vira à meia-noite da escola, não do servido
   });
 
   it("o lembrete D-3 não sai na noite de D-4", () => {
-    const r = proximaAcao(entrada({ passosFeitos: ["D-7"] }), new Date("2026-06-20T02:30:00Z"), FUSO); // 19/06, 23h30
+    const r = proximaAcao(entrada({ passosFeitos: ["D-7"] }), new Date("2026-06-20T02:30:00Z"), FUSO);
     expect(r.diasAtraso).toBe(-4);
     expect(r.estado).toBe("futuro");
     expect(proximaAcao(entrada({ passosFeitos: ["D-7"] }), new Date("2026-06-20T03:30:00Z"), FUSO).degrau?.passo).toBe("D-3");
@@ -59,8 +55,8 @@ describe("Q176 — o dia da régua vira à meia-noite da escola, não do servido
 
   it("a promessa vale até o fim do dia prometido no fuso da escola", () => {
     const prometida = entrada({ promessaAte: d(2026, 6, 25) });
-    expect(proximaAcao(prometida, new Date("2026-06-26T02:30:00Z"), FUSO).estado).toBe("promessa"); // 25/06, 23h30
-    expect(proximaAcao(prometida, new Date("2026-06-26T03:30:00Z"), FUSO).estado).not.toBe("promessa"); // 26/06, 00h30
+    expect(proximaAcao(prometida, new Date("2026-06-26T02:30:00Z"), FUSO).estado).toBe("promessa");
+    expect(proximaAcao(prometida, new Date("2026-06-26T03:30:00Z"), FUSO).estado).not.toBe("promessa");
   });
 
   it("promessa para hoje não é passado às 23h30 de Brasília", () => {
@@ -110,20 +106,19 @@ describe("regua — proximaAcao por degrau (caminho feliz)", () => {
 
 describe("regua — BACKLOG (dias pulados não somem)", () => {
   it("D-7 não enviado e a data já passou → continua devido, marcado atrasado na ação", () => {
-    const r = proximaAcao(entrada(), d(2026, 6, 18), FUSO); // offset -5, nada feito
+    const r = proximaAcao(entrada(), d(2026, 6, 18), FUSO);
     expect(r.degrau?.passo).toBe("D-7");
     expect(r.atrasadaNaAcao).toBe(true);
   });
 
   it("o degrau mais avançado que chegou vence os anteriores não cumpridos", () => {
-    // hoje = D+5 (entre D+3 e D+7), nada feito → ação é D+3 (mais avançado que chegou), atrasado
     const r = proximaAcao(entrada(), d(2026, 6, 28), FUSO);
     expect(r.degrau?.passo).toBe("D+3");
     expect(r.atrasadaNaAcao).toBe(true);
   });
 
   it("se o degrau atual foi feito mas o próximo ainda não chegou → futuro", () => {
-    const r = proximaAcao(entrada({ passosFeitos: ["D-7"] }), d(2026, 6, 18), FUSO); // D-7 feito, D-3 ainda longe
+    const r = proximaAcao(entrada({ passosFeitos: ["D-7"] }), d(2026, 6, 18), FUSO);
     expect(r.estado).toBe("futuro");
     expect(r.degrau).toBeNull();
   });
@@ -146,11 +141,11 @@ describe("regua — estados especiais", () => {
   it("promessa vencida é ignorada — volta a cobrar normalmente", () => {
     const r = proximaAcao(entrada({ promessaAte: d(2026, 6, 20) }), d(2026, 6, 26), FUSO);
     expect(r.estado).toBe("acao_devida");
-    expect(r.degrau?.passo).toBe("D+3"); // offset +3, mais avançado que chegou, nada feito
+    expect(r.degrau?.passo).toBe("D+3");
   });
 
   it("futuro: antes do primeiro degrau (D-7) não há ação", () => {
-    const r = proximaAcao(entrada(), d(2026, 6, 10), FUSO); // offset -13
+    const r = proximaAcao(entrada(), d(2026, 6, 10), FUSO);
     expect(r.estado).toBe("futuro");
     expect(r.degrau).toBeNull();
   });
@@ -174,18 +169,16 @@ describe("regua — política como dado (doc 26/30: proximaAcao recebe os degrau
       { passo: "D-3", offsetDias: -5, tipo: "lembrar", template: "amigavel", rotulo: "Lembrete custom" },
       { passo: "D0", offsetDias: 0, tipo: "cobrar", template: "dados", rotulo: "No dia" },
     ] as const;
-    const r = proximaAcao(entrada(), d(2026, 6, 18), FUSO, politica); // offset -5
+    const r = proximaAcao(entrada(), d(2026, 6, 18), FUSO, politica);
     expect(r.estado).toBe("acao_devida");
     expect(r.degrau?.passo).toBe("D-3");
     expect(r.atrasadaNaAcao).toBe(false);
   });
 
   it("degrau desativado (fora da política) nunca é devido — superação continua valendo", () => {
-    // Política sem D-7/D-3: no dia do vencimento a ação é direto o D0.
     const politica = REGUA.filter((x) => x.offsetDias >= 0);
     const r = proximaAcao(entrada(), VENC, FUSO, politica);
     expect(r.degrau?.passo).toBe("D0");
-    // E antes do vencimento não há nada devido (não existe degrau preventivo).
     const antes = proximaAcao(entrada(), d(2026, 6, 16), FUSO, politica);
     expect(antes.estado).toBe("futuro");
   });
@@ -197,15 +190,12 @@ describe("regua — política como dado (doc 26/30: proximaAcao recebe os degrau
   });
 
   it("passos feitos de degraus removidos da política não ressuscitam a ação (fatos históricos)", () => {
-    // D-7 foi cumprido no passado; depois o admin removeu D-7 da política. Hoje é D-2:
-    // com política sem preventivos, nada é devido — o histórico não quebra o cálculo.
     const politica = REGUA.filter((x) => x.offsetDias >= 0);
     const r = proximaAcao(entrada({ passosFeitos: ["D-7"] }), d(2026, 6, 21), FUSO, politica);
     expect(r.estado).toBe("futuro");
   });
 
   it("conclusão respeita o último degrau DA POLÍTICA (não o da fábrica)", () => {
-    // Política termina em D+7: cumprido tudo até D+7, aos 10 dias de atraso está concluída.
     const politica = REGUA.filter((x) => x.passo !== "D+15");
     const feitos = politica.map((x) => x.passo);
     const r = proximaAcao(entrada({ passosFeitos: feitos }), d(2026, 7, 3), FUSO, politica);

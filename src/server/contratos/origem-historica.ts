@@ -8,9 +8,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "
 import { conferirAutor } from "./modelos-tx";
 import { hashSubstituicao } from "./substituicao-estado";
 
-// Origem contratual histórica: contrato legado assinado fora do sistema. Secretaria/Administração transcreve as
-// condições do PDF assinado; outro administrador confere o PDF e a transcrição (declarando os hashes que
-// conferiu) e decide. Aprovada, é a fonte contratual de aditivos da matrícula — no lugar da conclusão assinada.
 const id = z.string().trim().min(1).max(100);
 const Decidir = z.object({ propostaId: id, aprovada: z.boolean(), motivo: z.string().trim().min(5).max(2000), pdfHashConferido: z.string().regex(/^[a-f0-9]{64}$/), transcricaoHashConferido: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 
@@ -29,12 +26,10 @@ export async function decidirOrigemContratualHistorica(input: z.input<typeof Dec
         if (p.decisao.decisorId !== ator.id || p.decisao.aprovada !== d.aprovada || p.decisao.motivo !== d.motivo) throw new ErroRegra("A origem já recebeu outra decisão.");
         return { id: p.decisao.id, aprovada: p.decisao.aprovada };
       }
-      // Conferência dupla: quem decide declara os hashes que conferiu no PDF e na transcrição; qualquer divergência recusa.
       if (d.pdfHashConferido !== p.pdfHash || d.transcricaoHashConferido !== p.transcricaoHash) throw new ErroRegra("Os hashes conferidos divergem da origem preservada. Reabra o PDF e a transcrição antes de decidir.");
       if (createHash("sha256").update(p.pdfAssinado).digest("hex") !== p.pdfHash || hashSubstituicao(p.transcricao as Prisma.JsonObject) !== p.transcricaoHash) throw new ErroRegra("A origem preservada exige conferência de integridade.");
       if (d.aprovada) {
         if (await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: p.matriculaId } } })) throw new ErroRegra("A matrícula já possui contrato assinado no sistema.");
-        // Contrato do sistema em assinatura: se o cliente assinar depois, a conclusão seria recusada e o documento ficaria sem destino.
         const aberto = await tx.processoAssinaturaContratual.findFirst({ where: { matriculaId: p.matriculaId, estado: { not: "CANCELADO" }, conclusao: null }, select: { estado: true } });
         if (aberto) throw new ErroRegra(`Há processo de assinatura do contrato em aberto nesta matrícula (${ESTADO_ENVIO_ASSINATURA_LABEL[aberto.estado]}). Cancele ou conclua o envio antes de aprovar a origem histórica.`);
         if (await tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: p.matriculaId, decisao: { is: { aprovada: true } } } })) throw new ErroRegra("A matrícula já possui origem contratual histórica aprovada.");

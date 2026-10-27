@@ -6,7 +6,6 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { conferirTurmaParaReserva } from "@/server/matricula/reserva-disponibilidade";
 import { exigirPrecoPreparacaoAutorizado } from "@/server/matricula/preco-autorizado";
 
-/** Diagnóstico, não autorização de emissão. Operações devem revalidar sob bloqueio. */
 export async function consultarPendenciasPreparacao(matriculaId: string) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);

@@ -10,8 +10,6 @@ vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn()
 vi.mock("@/server/whatsapp/acoes", () => ({ aprovarLoteCobranca: vi.fn(), enfileirarCobrancaWhatsApp: vi.fn() }));
 vi.mock("./AcessoAulasPainel", () => ({ AcessoAulasPainel: ({ matriculaId, alunoId, preferenciaFusoExibicao }: { matriculaId?: string; alunoId?: string; preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-acesso": `${matriculaId ?? alunoId ?? "geral"}:${preferenciaFusoExibicao ?? "UTC"}` }) }));
 
-// Captura as opções passadas a useFiltrosUrl (o caminho com JavaScript: buscar navega pelo
-// hrefDosCampos da fila); o handler de clique sai marcado com o href que o gerou (molde de EmpresasCliente.test).
 const capturado = vi.hoisted(() => ({ opcoes: [] as { campos: Record<string, string>; hrefDosCampos: (c: Record<string, string>) => string }[] }));
 vi.mock("@/lib/filtros-url", async (original) => {
   const real = await original<typeof import("@/lib/filtros-url")>();
@@ -21,9 +19,6 @@ vi.mock("@/lib/filtros-url", async (original) => {
     return { ...r, aoClicar: (href: string) => Object.assign(r.aoClicar(href), { navegaPara: href }) };
   } };
 });
-// Cada <Link> renderizado: o href, o texto visível (descendo nos elementos filhos — o cartão tem número e
-// rótulo em <div>s), o handler do clique (com JavaScript, o clique simples segue o handler, não o href) e
-// o de teclado (o cartão com role="button" aciona com Espaço).
 type TeclaFalsa = { key: string; preventDefault: () => void; currentTarget: { click: () => void } };
 const links = vi.hoisted(() => ({ lista: [] as { href: string; texto: string; onClick?: { navegaPara?: string }; onKeyDown?: (e: TeclaFalsa) => void }[] }));
 vi.mock("next/link", async () => {
@@ -79,7 +74,7 @@ describe("DetalheCobranca", () => {
     expect(html).toContain("31/12/2025, 20:30");
     expect(html).toContain("31/12/2025, 21:30");
     expect(html).toContain("horário exibido em America/Costa_Rica; origem UTC");
-    expect(html).toContain(" 01/2026"); // competência formatada, sem deslocar o mês
+    expect(html).toContain(" 01/2026");
     expect(html).toContain("vence 15/01/2026");
   });
 
@@ -142,7 +137,6 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
     expect(html).toContain('aria-label="Selecionar Ana Silva para o lote"');
     expect(html).toMatch(/type="checkbox"/);
     expect(html).not.toMatch(/<button\b(?:(?!<\/button>).)*type="checkbox"/);
-    // ações rápidas (outros botões) também não ficam aninhadas no botão da linha
     expect(html).not.toMatch(/<button\b(?:(?!<\/button>).)*<button\b/);
   });
 
@@ -161,7 +155,6 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
     const html = detalhe(item, null);
     expect(html).toContain("bg-black/60");
     expect(html).toMatch(/role="dialog"[^>]*class="[^"]*bg-surface-raised[^"]*shadow-dialog/);
-    // O valor não se parte (o símbolo ₡ ficava numa linha e o número em outra).
     expect(html).toContain('class="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800"');
   });
 
@@ -176,7 +169,6 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
   const ROTA = "/financeiro/cobrancas";
   const dashs = { aVencer: 2, emAtraso: 1, bloquear: 0, promessas: 0, recebidoHoje: [] };
   const costaRica: FilaCobrancaItem = { ...item, id: "cr", pais: "Costa Rica", turma: "Inglês A1" };
-  /** Fila com os filtros lidos da URL pelo mesmo leitor da página; 5 cobranças na fila inteira. */
   const fila = (params: Record<string, string>, itens: FilaCobrancaItem[] = [item]) => {
     links.lista = [];
     const filtros = lerFiltrosFila(params);
@@ -185,7 +177,6 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
       dashs, regua: [], podeOperar: true, podeBloquear: false, fusoEscola: "America/Sao_Paulo",
     }));
   };
-  /** [aria-pressed, texto] de cada cartão-indicador, na ordem. */
   const cartoes = (html: string) => [...html.matchAll(/<a [^>]*role="button" aria-pressed="(true|false)"[^>]*>(.*?)<\/a>/g)]
     .map((m) => [m[1], m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()]);
   const link = (texto: string) => {
@@ -199,9 +190,7 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     expect(html).toContain('role="group" aria-label="Filtrar a fila pelos indicadores"');
     expect(cartoes(html)).toEqual([["false", "2 A vencer"], ["true", "1 Em atraso"], ["false", "0 Bloquear"], ["false", "0 Promessas"]]);
     expect(html).toContain("limpar filtro");
-    // C33 da #170: o botão de limpar não fica dentro de um <p> (o texto de apoio é um <p>, o botão vem ao lado).
     expect(html).not.toMatch(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*limpar filtro/);
-    // A seleção do lote continua na linha (o filtro não mexe nela).
     expect(html).toContain('aria-label="Selecionar Ana Silva para o lote"');
   });
 
@@ -221,7 +210,6 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     expect(link("1 Em atraso").href).toBe(`${ROTA}?busca=ana&pais=Brasil`);
     expect(link("0 Bloquear").href).toBe(`${ROTA}?indicador=bloquear&busca=ana&pais=Brasil`);
     expect(link("0 Promessas").href).toBe(`${ROTA}?indicador=promessas&busca=ana&pais=Brasil`);
-    // "limpar filtro" tira só o indicador; "Limpar filtros" tira busca/país/turma e mantém o indicador.
     expect(link("limpar filtro").href).toBe(`${ROTA}?busca=ana&pais=Brasil`);
     expect(link("Limpar filtros").href).toBe(`${ROTA}?indicador=emAtraso`);
   });
@@ -243,7 +231,6 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     for (const texto of CARTOES) {
       const cartao = link(texto);
       expect(cartao.onKeyDown, `${texto}: sem onKeyDown`).toBeTypeOf("function");
-      // O clique() do elemento dispara o onClick do próprio link — que navega para o href do cartão.
       const destinos: (string | undefined)[] = [];
       const preventDefault = vi.fn();
       cartao.onKeyDown!({ key: " ", preventDefault, currentTarget: { click: () => destinos.push(cartao.onClick?.navegaPara) } });
@@ -350,8 +337,6 @@ describe("FilaCobranca — trechos por cursor nos dois sentidos (docs/43 §6 ite
   });
 });
 
-// Fuso pessoal nas telas (pendência da Q176): a promessa é data civil gravada e sai no dia da escola, sem fuso
-// pessoal e sem o fuso do processo. A gravação legada à meia-noite UTC dava 04/10 com o servidor em São Paulo.
 describe("promessa de pagamento: dia civil da escola", () => {
   const prometida = (promessaAte: string) => ({ ...item, estado: "promessa" as const, promessaAte });
   it("meio-dia da escola e meia-noite UTC (legado) dão o mesmo dia, para qualquer preferência", () => {

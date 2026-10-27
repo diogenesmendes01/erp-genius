@@ -1,20 +1,8 @@
 import { Prisma } from "@prisma/client";
 
-/**
- * Tradução para SQL do `where` de Oportunidade (tabela "Lead") usado pelo funil e pela carteira (B19, #196 C3 e
- * #198 C2). Essas telas montam o filtro uma vez, em Prisma (escopo comercial + filtros da URL), e a parte que o
- * Prisma não ordena nem filtra sozinho (o último Evento de cada oportunidade, as mensagens) roda em SQL cru com
- * esta tradução. Só cobre as formas que essas telas usam; qualquer outra forma é RECUSADA com erro, nunca
- * ignorada, para que um filtro novo (ou um escopo novo) não suma em silêncio da consulta.
- *
- * A semântica segue a do Prisma no Postgres: `contains` com `mode: "insensitive"` vira `ILIKE '%valor%'` sem
- * escapar `%` e `_` (o Prisma também não escapa), `in: []` não casa nada, `OR: []` é falso e `AND: []` verdadeiro.
- */
-
 const COLUNAS_TEXTO = new Set(["id", "vendedorDonoId", "nome", "codigo"]);
 const COLUNAS_ENUM: Record<string, string> = { etapa: "EtapaLead", temperatura: "Temperatura", origemCanal: "OrigemCanal" };
 const COLUNAS_BOOLEANAS = new Set(["b2b"]);
-/** Colunas NOT NULL: só nelas o `not` do Prisma é um simples `<>` (nas que aceitam nulo ele também deixaria o nulo de fora). */
 const COLUNAS_NAO_NULAS = new Set(["id", "nome", "etapa", "temperatura", "b2b"]);
 const BUSCAVEIS = new Set(["nome", "codigo"]);
 
@@ -73,7 +61,6 @@ function condicaoDaColuna(alias: string, campo: string, filtro: unknown): Prisma
 const igual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 function condicaoDeRelacao(alias: string, campo: string, filtro: unknown): Prisma.Sql {
-  // Tag da pessoa titular: { pessoa: { is: { tags: { some: { tagId } } } } }.
   if (campo === "pessoa" && ehObjeto(filtro) && ehObjeto(filtro.is) && Object.keys(filtro).length === 1) {
     const is = filtro.is;
     const some = ehObjeto(is.tags) && Object.keys(is).length === 1 && Object.keys(is.tags).length === 1 ? is.tags.some : undefined;
@@ -81,14 +68,12 @@ function condicaoDeRelacao(alias: string, campo: string, filtro: unknown): Prism
       return Prisma.sql`EXISTS (SELECT 1 FROM "PessoaTag" pt WHERE pt."pessoaId" = ${Prisma.raw(`${alias}."pessoaId"`)} AND pt."tagId" = ${some.tagId})`;
     }
   }
-  // Turma ativa da matrícula: { matricula: { is: { alocacoes: { some: { ativa: true } } } } }.
   if (campo === "matricula" && igual(filtro, { is: { alocacoes: { some: { ativa: true } } } })) {
     return Prisma.sql`EXISTS (SELECT 1 FROM "Matricula" mt JOIN "AlocacaoTurma" al ON al."matriculaId" = mt."id" WHERE mt."leadId" = ${Prisma.raw(`${alias}."id"`)} AND al."ativa" = TRUE)`;
   }
   return naoSuportado(`${campo} ${JSON.stringify(filtro)}`);
 }
 
-/** Condição SQL equivalente ao `where` do Prisma, sobre a tabela "Lead" com o apelido `alias`. */
 export function whereOportunidadeEmSql(where: Prisma.OportunidadeWhereInput, alias = "o"): Prisma.Sql {
   if (!/^[a-z_][a-z0-9_]*$/i.test(alias)) naoSuportado(`apelido ${alias}`);
   const partes: Prisma.Sql[] = [];

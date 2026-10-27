@@ -11,8 +11,6 @@ const Entrada = AgendaParticularSchema.extend({ matriculaId: z.string().min(1), 
   estadoHash: z.string().regex(/^[a-f0-9]{64}$/), horariosAcordadosConferidos: z.literal(true),
 }).strict();
 
-/** Primitiva interna; Comercial exige negociação no escopo atual. Não é Server Action.
- * Não ativa matrícula, não gera aula ou cobrança e não conclui Q111. */
 export async function reservarAgendaParticularTx(tx: Prisma.TransactionClient, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input), entradaHash = createHash("sha256").update(JSON.stringify(d)).digest("hex");
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;

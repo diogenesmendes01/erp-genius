@@ -14,8 +14,6 @@ export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
   const router = useRouter();
   const [selecionada, selecionar] = useState("");
   const [chave] = useState(() => crypto.randomUUID());
-  // Chave fixa pela vida do formulário e o servidor devolve a proposta existente quando ela se repete
-  // com a mesma entrada (server/contratos/substituicao-tx.ts:20-24): reenviar sem alterar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const pendente = acao.ocupado;
   const destino = conferencias.find(c => c.id === selecionada);
@@ -43,8 +41,6 @@ export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
 
 export function DecidirSubstituicao({ propostaId, propostaHash, superada }: { propostaId: string; propostaHash: string; superada: boolean }) {
   const router = useRouter();
-  // decidirSubstituicaoContratual não recebe chave de idempotência (server/contratos/substituicao.ts:24;
-  // só propostaHashEsperado). Conferir antes de repetir. Chave no servidor fica fora deste recorte.
   const acao = useAcaoCliente({ idempotente: false });
   const pendente = acao.ocupado;
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => {

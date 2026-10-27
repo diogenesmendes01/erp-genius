@@ -23,7 +23,6 @@ const GERENTE: CapacidadeAria[] = [
   "ver", "editarComportamento", "publicar", "pausar", "ligarSupervisao", "decidirHistorico",
 ];
 
-/** DF5-13: Administrador faz tudo; Gerente Comercial opera, mas não muda matriz, estado nem provedor. */
 export function capacidadesAria(u: Pick<UsuarioSessao, "papeis">): Set<CapacidadeAria> {
   if (u.papeis.includes(Papel.ADMINISTRADOR)) return new Set(TODAS);
   if (u.papeis.includes(Papel.GERENTE_COMERCIAL)) return new Set(GERENTE);
@@ -39,7 +38,6 @@ function igual(a: unknown, b: unknown): boolean {
   return ka.every((k) => igual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
 }
 
-/** Lança ErroPermissao se o papel não pode fazer a alteração `antes` → `depois`. */
 export function validarAlteracaoPorPapel(
   u: UsuarioSessao & { limiteDescontoTaxaPct: number | null; limiteDescontoMensalidadePct: number | null },
   antes: ConfigAria,
@@ -47,7 +45,7 @@ export function validarAlteracaoPorPapel(
 ): void {
   const cap = capacidadesAria(u);
   if (!cap.has("ver")) throw new ErroPermissao("Sem acesso à configuração da Aria.");
-  if (cap.has("editarMatriz") && cap.has("editarConfianca")) return; // Administrador
+  if (cap.has("editarMatriz") && cap.has("editarConfianca")) return;
 
   if (!igual(antes.matriz, depois.matriz)) {
     throw new ErroPermissao("Só o Administrador altera a matriz de autonomia da Aria.");

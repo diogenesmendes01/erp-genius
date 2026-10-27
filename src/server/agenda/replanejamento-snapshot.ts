@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 
-/** Projeção de leitura do registro histórico; nunca recalcula a agenda atual. */
 export const ReplanejamentoSnapshotSchema = z.object({
   calendarioId: z.string().min(1), conferidoEm: z.string().datetime(), pendencias: z.array(z.string()),
   revisoes: z.array(z.object({

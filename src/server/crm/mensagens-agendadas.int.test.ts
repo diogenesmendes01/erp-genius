@@ -24,7 +24,6 @@ function idDe(r: { ok: boolean; dado?: { id: string } }): string {
   return r.dado.id;
 }
 const emHoras = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();
-// D12: o agendamento só vale dentro da janela de envio (fábrica: 9h–20h, segunda a sexta) no fuso da escola.
 const FUSO = "America/Costa_Rica";
 const util = (hora: number, minutos = 0) => diaUtilAs(hora, FUSO, minutos).toISOString();
 
@@ -118,12 +117,10 @@ describe("D12: atendimento só no envio e recusa fora da janela", () => {
     expect(recusa).toContain("das 9h às 20h, de segunda a sexta (horário de America/Costa_Rica)");
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(3), leadId })).toEqual({ ok: false, erro: recusa });
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(20), leadId })).toEqual({ ok: false, erro: recusa });
-    // 19h de sábado: dentro do horário, fora dos dias.
     const sabado = new Date(diaUtilAs(10, FUSO).getTime());
     while (new Intl.DateTimeFormat("en-US", { timeZone: FUSO, weekday: "short" }).format(sabado) !== "Sat") sabado.setTime(sabado.getTime() + 86_400_000);
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: sabado.toISOString(), leadId })).toEqual({ ok: false, erro: recusa });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
-    // A janela é a da política que o despachante aplica: mudar a política muda a recusa.
     await prisma.politicaRegua.create({ data: { nome: "Cobrança", escopo: "COBRANCA", janelaInicio: 2, janelaFim: 6, diasSemana: [0, 1, 2, 3, 4, 5, 6] } });
     expect((await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(3), leadId })).ok).toBe(true);
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(10), leadId })).toEqual({

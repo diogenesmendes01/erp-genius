@@ -3,7 +3,6 @@ import { useRef, type ReactNode, type RefObject } from "react";
 import { IconX } from "@tabler/icons-react";
 import { BotaoIcone } from "@/components/BotaoIcone";
 import { useDialogo } from "@/lib/dialogo";
-/** Diálogo não-modal da coluna: trap/Escape/retorno/pilha; o fundo permanece interativo. */
 export function PopoverColuna({ titulo, aberto, aoFechar, topo = 56, rodape, children, focoAoFechar }: {
  titulo: string; aberto: boolean; aoFechar(): void; topo?: 56 | 72; rodape?: ReactNode; children: ReactNode; focoAoFechar?: RefObject<HTMLElement | null>;
 }) {

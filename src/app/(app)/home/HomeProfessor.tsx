@@ -21,7 +21,6 @@ interface Experimental {
   id: string;
   nome: string;
   data: string;
-  /** B9 (doc 32): aula já passou (além da tolerância) sem check-in — cobrar já. */
   vencida?: boolean;
 }
 
@@ -39,8 +38,6 @@ export function HomeProfessor({
   preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
-  // checkinExperimental é idempotente por natureza (#166, 5º lote): o mesmo check-in, já registrado por quem
-  // repete, devolve ok sem gravar de novo (server/comercial/acoes.ts). O erro aparece sob a linha da experimental.
   const acao = useAcaoCliente({ idempotente: true });
   const [alvo, setAlvo] = useState<string | null>(null);
 
@@ -50,9 +47,6 @@ export function HomeProfessor({
     if (d?.tipo === "ok") router.refresh();
   }
 
-  // "Faltou" grava no-show e dispara a recuperação de no-show, sem desfazer nem correção pela tela: o
-  // check-in só vale para experimental agendada (docs/42 L2693). O botão só abre a confirmação com o nome
-  // do lead e a data da aula; a action roda no ConfirmarAcao, que mostra a falha dentro dele.
   const [faltou, setFaltou] = useState<Experimental | null>(null);
   function pedirFalta(e: Experimental) {
     setAlvo(e.id);
@@ -65,8 +59,6 @@ export function HomeProfessor({
   }
 
   const data = (valor: string) => formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
-  // A seleção vem do servidor. Não recalcule a partir dos check-ins exibidos: uma lista
-  // pode conter apenas pendências passadas, sem próxima aula disponível.
   const proxima = proximaExperimental && !proximaExperimental.vencida ? proximaExperimental : null;
   const vencidas = experimentais.filter((e) => e.vencida).length;
 

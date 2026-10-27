@@ -18,32 +18,22 @@ import { desvincularContatoWhatsApp } from "@/server/whatsapp/desvincular-contat
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox, criarLeadDaConversa, editarNomeContatoWhatsApp, marcarConversaTratada, vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
 
-// Ações de cadastro e de cobrança no painel lateral do Inbox novo (C2 da R1 do #217, decisão do dono: portar
-// tudo o que o Inbox antigo tinha na thread). As regras de quem vê cada botão vêm do servidor
-// (carregarAcoesContatoInbox) e cada Server Action confere de novo a alçada.
-// O telefone não aparece (regra 5): o nome identifica o contato.
-
 export interface PropsAcoesContato {
   atendimentoId: string;
   acoes: AcoesContatoInbox;
   fuso: string | null;
-  /** Contato em opt-out: sem "Retomar régua" (a régua não volta a falar com quem pediu para sair), como no Inbox antigo. */
   optOut?: boolean;
-  /** Uma ação concluiu: a tela recarrega lista e painel. */
   aoMudar?: () => void;
 }
 
-/** Ficha de cada cadastro: a oportunidade mora no funil (a lista /leads saiu na Fase 2J). */
 export function hrefCadastro(tipo: "aluno" | "lead", id: string): string {
   return tipo === "aluno" ? `/alunos/${id}` : `/funil?o=${encodeURIComponent(id)}`;
 }
 
-/** O nome na conversa vem de um cadastro com tela própria: o painel explica e leva até lá. */
 export function avisoCadastroDoNome(a: Pick<AcoesContatoInbox, "fonteNome" | "alunoId" | "leadId">): { texto: string; href: string | null } | null {
   if (a.fonteNome === "aluno") return { texto: "Nesta conversa aparece o nome do cadastro do aluno.", href: a.alunoId ? hrefCadastro("aluno", a.alunoId) : null };
   if (a.fonteNome === "lead") return a.leadId
     ? { texto: "Nesta conversa aparece o nome do cadastro da oportunidade.", href: hrefCadastro("lead", a.leadId) }
-    // Oportunidade de outra carteira (LC-L02): quem corrige é o dono da carteira.
     : { texto: "Nesta conversa aparece o nome de uma oportunidade de outra carteira; peça a correção a quem cuida dela.", href: null };
   if (a.fonteNome === "responsavel") return { texto: "Nesta conversa aparece o nome do cadastro do responsável; a correção é feita pela Secretaria.", href: null };
   return null;
@@ -53,8 +43,6 @@ type Aberto = null | "nome" | "vincular" | "desvincular";
 
 export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMudar }: PropsAcoesContato) {
   const [aberto, setAberto] = useState<Aberto>(null);
-  // Idempotente por natureza (#166): com a conversa já vinculada, o servidor devolve a mesma oportunidade (e o
-  // mesmo `criado` do vínculo feito por quem repete), sem gravar outro Evento (criarLeadDaConversa).
   const criar = useAcaoCliente({ idempotente: true });
 
   async function criarOportunidade() {
@@ -94,7 +82,6 @@ export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMud
 
 export function EditarNomeContato({ atendimentoId, acoes, aoFechar, aoMudar }: { atendimentoId: string; acoes: AcoesContatoInbox; aoFechar(): void; aoMudar?: () => void }) {
   const [nome, setNome] = useState(acoes.nomeSalvo ?? "");
-  // A gravação é condicional ao nome lido: depois de um sucesso que não chegou, reenviar não devolve o mesmo registro.
   const salvar = useAcaoCliente({ idempotente: false });
   const aviso = avisoCadastroDoNome(acoes);
   const id = useId();
@@ -138,8 +125,6 @@ type Escolha = { alvo: AlvoVinculo; nome: string; como: string };
 export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { atendimentoId: string; acoes: AcoesContatoInbox; aoFechar(): void; aoMudar?: () => void }) {
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState<PessoasVinculo | null>(null);
-  // Vincular amarra o histórico da conversa a outra pessoa (docs/42 L2298); desfazer cabe só à administração ou ao
-  // gerente do setor, com motivo (D8). Escolher um nome só abre a confirmação; a action roda no ConfirmarAcao.
   const [escolha, setEscolha] = useState<Escolha | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const busca = useAcaoCliente({ idempotente: true });
@@ -198,10 +183,6 @@ export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { a
 const COMO_VINCULO: Record<VinculoContatoInbox["tipo"], string> = { aluno: "aluno", responsavel: "responsável", lead: "oportunidade" };
 const MOTIVO_MINIMO = 10;
 
-/**
- * "Desvincular contato" (D8, #175, docs/42 L2298): só aparece para quem o servidor autoriza (Administrador ou gerente do
- * setor). Escolhe o vínculo, exige o motivo e roda a action dentro do ConfirmarAcao, que diz o efeito.
- */
 export function DesvincularContato({ atendimentoId, vinculos, aoFechar, aoMudar }: { atendimentoId: string; vinculos: VinculoContatoInbox[]; aoFechar(): void; aoMudar?: () => void }) {
   const [escolha, setEscolha] = useState<VinculoContatoInbox | null>(vinculos.length === 1 ? vinculos[0] : null);
   const [motivo, setMotivo] = useState("");
@@ -256,8 +237,6 @@ export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false,
   const [promessa, setPromessa] = useState(false);
   const [data, setData] = useState("");
   const retomar = useAcaoCliente({ idempotente: true });
-  // A promessa recebe chave de idempotência (#166) e a marcação da conversa é por estado-alvo (a mesma de
-  // `retomar`): o reenvio depois de um resultado incerto não grava segunda promessa.
   const prometer = useAcaoCliente({ idempotente: true });
   const tentativaPromessa = useChaveIdempotencia();
   const ativa = cobranca.ativa;
@@ -278,7 +257,6 @@ export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false,
   }
   async function aposPagamento() {
     setPagar(false);
-    // O pagamento já entrou; só a marcação da conversa pode ter ficado incerta.
     const d = await retomar.executar(() => marcarConversaTratada({ conversaId: atendimentoId, motivo: "pagamento" }), "Pagamento registrado.");
     if (d && d.tipo !== "ok") retomar.setErro("Pagamento registrado. Confira se a conversa ficou marcada como tratada.");
     aoMudar?.();
