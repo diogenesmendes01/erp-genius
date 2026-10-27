@@ -27,6 +27,23 @@ export async function propostasDoAtendimento(atendimentoId: string): Promise<{ o
   return { oportunidadeId, propostas: propostas.map(({ id, nome, criadoEm }) => ({ id, nome, criadoEm })) };
 }
 
+export interface ContatoCartao { id: string; rotulo: string; contatoJid: string }
+
+export async function contatosParaCartao(atendimentoId: string): Promise<ContatoCartao[]> {
+  const u = await exigirSessao();
+  const a = await atendimentoVisivel(u, IdSchema.parse(atendimentoId), true);
+  if (!a || a.encerradoEm || !a.numero.ativo || a.numero.driver !== "MOTOR") return [];
+  const numeros = await prisma.numeroWhatsApp.findMany({
+    where: { ativo: true, excluidoEm: null },
+    select: { id: true, rotulo: true, telefoneE164: true },
+    orderBy: [{ rotulo: "asc" }, { id: "asc" }],
+  });
+  return numeros.flatMap((n) => {
+    const digitos = n.telefoneE164.replace(/\D/g, "");
+    return /^\d{8,20}$/.test(digitos) ? [{ id: n.id, rotulo: n.rotulo, contatoJid: `${digitos}@s.whatsapp.net` }] : [];
+  });
+}
+
 export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"):Promise<{id:string;nome:string}[]>{
   const u=await exigirSessao(),id=IdSchema.parse(atendimentoId);
   return(await contextoPessoas(u,id,para))?.pessoas??[];

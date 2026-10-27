@@ -3,7 +3,7 @@ import type { PublicarPortaRascunhoInsight } from "./rascunho-insight";
 
 import Link from "next/link";
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import { IconCalendarEvent, IconChevronLeft, IconFileCheck, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
+import { IconCalendarEvent, IconChevronLeft, IconFileCheck, IconUser, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import { comandoDaNota, consultaMencaoNoCursor, tokensAposEdicao, type CandidatoMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import type { Resultado } from "@/server/_shared/resultado";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
@@ -17,6 +17,7 @@ import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recurso
 import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
 import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
 import type { ConteudoEspecial } from "@/server/whatsapp/canal";
+import type { ContatoCartao } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { FormEnquete } from "./anexos/FormEnquete";
 import { FormLocalizacao } from "./anexos/FormLocalizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -31,6 +32,9 @@ export const FALHA_PERMISSAO_ENVIO = "Não foi possível verificar se você pode
 export const AVISO_NOTA = "Nota interna: fica só para a equipe e não é enviada ao contato.";
 export const AVISO_ANEXO_EM_BREVE = "O envio deste tipo pelo Inbox ainda não está disponível.";
 export const SEM_PROPOSTAS = "Nenhuma proposta anexada a esta oportunidade.";
+export const SEM_CONTATOS_CARTAO = "Nenhum número da escola disponível para compartilhar.";
+export const ERRO_CONTATOS_CARTAO = "Não foi possível carregar os números da escola.";
+export const CARREGANDO_CONTATOS_CARTAO = "Carregando números…";
 const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
@@ -55,11 +59,13 @@ export interface PropsCompositor {
   propostas?: { oportunidadeId: string | null; itens: readonly PropostaAnexavel[]; fuso?: string | null };
   aoEnviarProposta?(documentoId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
   aoEnviarConteudo?(c: ConteudoEspecial): Promise<Resultado<unknown>>;
+  aoListarContatosCartao?(): Promise<ContatoCartao[]>;
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
 
 type FormConteudo = "enquete" | "localizacao";
 const ehFormConteudo = (id: IdItemAnexo): id is FormConteudo => id === "enquete" || id === "localizacao";
+type ListaContatos = { estado: "carregando" } | { estado: "erro" } | { estado: "pronta"; itens: ContatoCartao[] };
 
 const chaveRascunho = (id: string, modo: string) => `conversa-rascunho:${id}:${modo}`;
 function lerRascunho(id: string, modo: string): string {
@@ -76,7 +82,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, aoEnviarConteudo, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, aoEnviarConteudo, aoListarContatosCartao, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -86,6 +92,8 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [anexos, setAnexos] = useState(false);
   const [listaPropostas, setListaPropostas] = useState(false);
   const [formConteudo, setFormConteudo] = useState<FormConteudo | null>(null);
+  const [listaContatos, setListaContatos] = useState<ListaContatos | null>(null);
+  const pedidoContatos = useRef(0);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
   const focoAtendido=useRef<{atendimentoId:string;pedido:number}|null>(null);
@@ -131,6 +139,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setAnexos(false);
     setListaPropostas(false);
     setFormConteudo(null);
+    setListaContatos(null);
     setGravando(false);
   }
   useLayoutEffect(() => {
@@ -414,8 +423,40 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   }
   const conteudoAtivo = (id: IdItemAnexo) => {
     const item = ITENS_ANEXO.find((i) => i.id === id);
-    return ehFormConteudo(id) && !!item?.recurso && capacidades.includes(item.recurso) && typeof aoEnviarConteudo === "function";
+    if (!item?.recurso || !capacidades.includes(item.recurso) || typeof aoEnviarConteudo !== "function") return false;
+    return ehFormConteudo(id) || (id === "contato" && typeof aoListarContatosCartao === "function");
   };
+  function fecharContatos() {
+    pedidoContatos.current += 1;
+    setListaContatos(null);
+  }
+  async function abrirContatos() {
+    if (!aoListarContatosCartao) return;
+    const pedido = ++pedidoContatos.current;
+    const vigente = () => contextoVigente() && pedidoContatos.current === pedido;
+    setListaContatos({ estado: "carregando" });
+    try {
+      const itens = await aoListarContatosCartao();
+      if (vigente()) setListaContatos({ estado: "pronta", itens });
+    } catch {
+      if (vigente()) setListaContatos({ estado: "erro" });
+    }
+  }
+  async function enviarCartao(contatoJid: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo || enviando || emCurso.current.has(contexto)) return;
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    setErro("");
+    try {
+      const desfecho = await executarAcaoCliente(() => enviarConteudo({ tipo: "CONTATO", contatoJid }), { idempotente: false });
+      if (!contextoVigente()) return;
+      if (desfecho.tipo === "ok") fecharContatos();
+      else setErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
 
   function selecionarAnexo(item: IdItemAnexo) {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
@@ -434,6 +475,11 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       setAnexos(false);
       setListaPropostas(false);
       setFormConteudo(item);
+    } else if (item === "contato" && conteudoAtivo(item)) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setFormConteudo(null);
+      void abrirContatos();
     }
   }
   const vazio = !texto.trim() && !arquivo;
@@ -488,7 +534,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         )}
         {!nota && (
           <>
-            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setFormConteudo(null); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
+            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setFormConteudo(null); fecharContatos(); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
@@ -512,6 +558,28 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
             )}
             {formConteudo === "enquete" && conteudoAtivo("enquete") && <FormEnquete aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
             {formConteudo === "localizacao" && conteudoAtivo("localizacao") && <FormLocalizacao aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
+            {listaContatos && conteudoAtivo("contato") && (
+              <div role="dialog" aria-label="Enviar contato" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { fecharContatos(); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Números da escola</p>
+                </div>
+                {listaContatos.estado === "carregando" ? <p role="status" className="px-3 pb-3 text-sm text-gray-600">{CARREGANDO_CONTATOS_CARTAO}</p>
+                  : listaContatos.estado === "erro" ? <p role="alert" className="px-3 pb-3 text-sm text-red-700">{ERRO_CONTATOS_CARTAO}</p>
+                  : listaContatos.itens.length ? (
+                  <ul aria-label="Números da escola" className="max-h-64 overflow-y-auto">
+                    {listaContatos.itens.map((c) => (
+                      <li key={c.id}>
+                        <button type="button" aria-label={`Enviar contato ${c.rotulo}`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarCartao(c.contatoJid)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                          <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><IconUser size={18} /></span>
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.rotulo}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <EstadoVazio role="status" className="mx-1 mb-1">{SEM_CONTATOS_CARTAO}</EstadoVazio>}
+              </div>
+            )}
             {listaPropostas && propostaDisponivel && propostas?.oportunidadeId && (
               <div role="dialog" aria-label="Enviar proposta" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
                 <div className="flex items-center gap-1 px-1 pb-1">

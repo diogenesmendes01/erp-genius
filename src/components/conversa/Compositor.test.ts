@@ -17,7 +17,7 @@ vi.mock("react", async (original) => {
   };
 });
 
-import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, AVISO_ANEXO_EM_BREVE, type PropsCompositor } from "./Compositor";
+import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, AVISO_ANEXO_EM_BREVE, SEM_CONTATOS_CARTAO, ERRO_CONTATOS_CARTAO, CARREGANDO_CONTATOS_CARTAO, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
 import { criarChavesPorAlvo } from "@/lib/chave-idempotencia";
@@ -701,5 +701,97 @@ describe("Compositor: enquete e localização pelo motor (#367 E4.8)", () => {
     const tela = () => m.g!.renderizar(Compositor, p);
     expect(elementos(tela()).some(n => n.props["aria-label"] === "Anexar")).toBe(false);
     expect(formsAbertos367(tela())).toHaveLength(0);
+  });
+});
+
+const CONTATOS368 = [
+  { id: "n1", rotulo: "Comercial", contatoJid: "5511999990001@s.whatsapp.net" },
+  { id: "n2", rotulo: "Secretaria", contatoJid: "5511999990002@s.whatsapp.net" },
+];
+const dialogoContato368 = (raiz: ReactNode) => elementos(raiz).find(n => n.props.role === "dialog" && n.props["aria-label"] === "Enviar contato");
+const botoesContato368 = (raiz: ReactNode) => elementos(raiz).filter(n => n.type === "button" && String(n.props["aria-label"] ?? "").startsWith("Enviar contato "));
+describe("Compositor: cartão de contato com os números da escola (#368 E4.9)", () => {
+  it("Compositor: Contato lista os números e envia { tipo: 'CONTATO', contatoJid }", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: true as const }));
+    const aoListarContatosCartao = vi.fn(async () => CONTATOS368);
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo, aoListarContatosCartao });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    const item = elementos(tela()).find(n => n.props.role === "menuitem" && n.props["aria-label"] === "Contato")!;
+    expect(item.props.disabled).toBe(false);
+    expect(item.props["aria-describedby"]).toBeUndefined();
+    clicarBotao(tela(), "Contato");
+    expect(elementos(tela()).some(n => n.props.role === "menu")).toBe(false);
+    expect(dialogoContato368(tela())).toBeDefined();
+    expect(elementos(tela()).some(n => n.props.role === "status" && n.props.children === CARREGANDO_CONTATOS_CARTAO)).toBe(true);
+    await esvaziar();
+    expect(aoListarContatosCartao).toHaveBeenCalledOnce();
+    expect(botoesContato368(tela()).map(b => b.props["aria-label"])).toEqual(["Enviar contato Comercial", "Enviar contato Secretaria"]);
+    (botoesContato368(tela())[1].props.onClick as () => void)();
+    await esvaziar();
+    expect(aoEnviarConteudo).toHaveBeenCalledExactlyOnceWith({ tipo: "CONTATO", contatoJid: "5511999990002@s.whatsapp.net" });
+    expect(dialogoContato368(tela())).toBeUndefined();
+    expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+  });
+
+  it("sem números: estado vazio; falha ao listar: alerta", async () => {
+    m.g = criarGanchos();
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao: vi.fn(async () => []) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    const vazio = elementos(tela()).find(n => n.type === EstadoVazio);
+    expect(vazio?.props.children).toBe(SEM_CONTATOS_CARTAO);
+    m.g = criarGanchos();
+    p = { ...p, aoListarContatosCartao: vi.fn(async () => { throw new Error("falhou"); }) };
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    expect(elementos(tela()).some(n => n.props.role === "alert" && n.props.children === ERRO_CONTATOS_CARTAO)).toBe(true);
+  });
+
+  it("erro do servidor no envio mantém a lista e mostra o motivo", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: false as const, erro: "Este canal não envia esse tipo de conteúdo." }));
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo, aoListarContatosCartao: vi.fn(async () => CONTATOS368) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    (botoesContato368(tela())[0].props.onClick as () => void)();
+    await esvaziar();
+    expect(aoEnviarConteudo).toHaveBeenCalledOnce();
+    expect(dialogoContato368(tela())).toBeDefined();
+    expect(elementos(tela()).some(n => n.props.role === "alert" && n.props.children === "Este canal não envia esse tipo de conteúdo.")).toBe(true);
+  });
+
+  it("sem aoListarContatosCartao ou sem motor, Contato segue desabilitado", () => {
+    m.g = criarGanchos();
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    esperarAnexoInativo365(tela(), "Contato", AVISO_ANEXO_EM_BREVE);
+    m.g = criarGanchos();
+    p = props({ capacidades: [], aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao: vi.fn(async () => CONTATOS368) });
+    abrirAnexos365(tela());
+    esperarAnexoInativo365(tela(), "Contato", AVISO_RECURSO_MOTOR);
+  });
+
+  it("lista que chega depois da troca de conversa não aparece na conversa nova", async () => {
+    m.g = criarGanchos();
+    let liberar: (v: typeof CONTATOS368) => void = () => {};
+    const aoListarContatosCartao = vi.fn(() => new Promise<typeof CONTATOS368>((r) => { liberar = r; }));
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    p = { ...p, atendimentoId: "at2" };
+    tela(); tela();
+    liberar(CONTATOS368);
+    await esvaziar();
+    expect(dialogoContato368(tela())).toBeUndefined();
+    expect(botoesContato368(tela())).toHaveLength(0);
   });
 });
