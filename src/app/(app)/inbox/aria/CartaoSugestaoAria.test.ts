@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect,it,vi } from "vitest";
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 vi.mock("@/server/aria/acoes",()=>({aprovarSugestaoNoInbox:vi.fn(),rejeitarSugestaoNoInbox:vi.fn()}));
-import { CartaoSugestaoAria } from "./CartaoSugestaoAria";
+import { CartaoPacoteAria, CartaoSugestaoAria } from "./CartaoSugestaoAria";
 import { botaoClasses } from "@/components/Botao";
 const s=(o:Partial<SugestaoAriaThread>={}):SugestaoAriaThread=>({id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-23T13:42Z",expiraEm:"2026-10-23T14:42Z",justificativa:"Motivo contextual",texto:"Olá!\nComo vai?",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null,...o});
 const montar=(x=s())=>renderToStaticMarkup(createElement(CartaoSugestaoAria,{atendimentoId:"thread",s:x,usuarioId:"u",fuso:"America/Sao_Paulo",aoDecidir(){}}));
@@ -30,3 +30,19 @@ it("Desfazer usa a variante canônica neutro do Botao, com contorno cinza",()=>{
 });
 
 it("editar_tarefa_aparece_so_na_linha_de_tarefa_pendente",()=>{const tarefa={tipo:"tarefa",titulo:"Ligar",venceEm:"2026-10-24T12:00Z"} as const;expect(montar(s({acao:"CRIAR_TAREFA",detalhe:tarefa}))).toContain(">Editar tarefa</button>");expect(montar(s({acao:"CRIAR_TAREFA",detalhe:tarefa,status:"APROVADA",podeDecidir:false,decididaPorId:"u",decididaEm:"2026-10-23T13:50Z"}))).not.toContain("Editar tarefa");expect(montar(s({acao:"MOVER_ETAPA",detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]}))).not.toMatch(/>Editar/);});
+
+it("pacote do turno mostra um cartão com três linhas, decisão individual e decisão em bloco",()=>{
+ const pacote=[s(),s({id:"t2",acao:"CRIAR_TAREFA",texto:null,detalhe:{tipo:"tarefa",titulo:"Ligar",venceEm:"2026-10-24T12:00Z"}}),s({id:"t3",acao:"MOVER_ETAPA",texto:null,detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]})];
+ const h=renderToStaticMarkup(createElement(CartaoPacoteAria,{atendimentoId:"thread",pacote,usuarioId:"u",fuso:"America/Sao_Paulo",aoDecidir(){}}));
+ expect(h.match(/<article/g)).toHaveLength(1);
+ expect(h.match(/<li/g)).toHaveLength(3);
+ for(const texto of ["Aria sugere 3 ações · aguardando aprovação","Como vai?","Criar tarefa: Ligar","Enviar a mensagem acima",">Aprovar tudo e enviar</button>",">Rejeitar tudo</button>",">Editar tarefa</button>",">Aprovar e enviar</button>","Isso será enviado agora no WhatsApp e não poderá ser desfeito."])expect(h).toContain(texto);
+ expect(h.indexOf("Criar tarefa: Ligar")).toBeLessThan(h.indexOf("Enviar a mensagem acima"));
+});
+it("pacote com ação fora do escopo desabilita só a decisão em bloco",()=>{
+ const pacote=[s(),s({id:"t3",acao:"MOVER_ETAPA",texto:null,podeDecidir:false,detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]})];
+ const h=renderToStaticMarkup(createElement(CartaoPacoteAria,{atendimentoId:"thread",pacote,usuarioId:"u",fuso:"UTC",aoDecidir(){}}));
+ expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Aprovar tudo e enviar<\/button>/);
+ expect(h).toMatch(/<button(?![^>]*disabled="")[^>]*>Aprovar e enviar<\/button>/);
+ expect(h).toContain("Há ações fora do seu escopo neste pacote.");
+});
