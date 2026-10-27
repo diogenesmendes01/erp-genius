@@ -117,3 +117,21 @@ it("tarefa já feita com mensagem é recusada",async()=>{
  const c=await cenarioMensagem(),r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,diaUtilAs(10),{jaFeita:true}));
  expect(r.ok).toBe(false);expect(await prisma.tarefa.count()).toBe(0);expect(await prisma.intencaoMensagem.count()).toBe(0);
 });
+it("sem vincular à oportunidade e sem Pessoa agenda ligada à tarefa do atendimento",async()=>{
+ const c=await cenarioMensagem(),quando=diaUtilAs(10),r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,quando,{vincularOportunidade:false}));
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ expect(await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}})).toMatchObject({leadId:null,pessoaId:null,atendimentoId:c.a.id});
+ const intencoes=await prisma.intencaoMensagem.findMany();expect(intencoes).toHaveLength(1);expect(intencoes[0]).toMatchObject({tarefaId:r.dado.id,leadId:null});
+});
+it("atendimento da secretaria agenda a mensagem ligada à tarefa",async()=>{
+ const sec=await criarUsuario([Papel.SECRETARIA_ACADEMICA],"Sec339");
+ const numero=await criarNumeroSetor({telefoneE164:"+5511999991339",setores:["SECRETARIA"]});
+ const contato=await prisma.contatoWhatsApp.create({data:{telefoneE164:"+50688881339"}});
+ const a=await prisma.$transaction(tx=>garantirAtendimento(tx,{numeroId:numero.id,contatoId:contato.id,finalidade:"SECRETARIA",responsavelId:sec.id}));
+ await prisma.configuracaoOperacional.upsert({where:{id:"escola"},create:{id:"escola",fusoInstitucional:"America/Sao_Paulo"},update:{fusoInstitucional:"America/Sao_Paulo"}});
+ authMock.mockResolvedValue({user:{id:sec.id}});
+ const d=await dadosModalTarefaNoInbox(a.id);expect(d.ok&&d.dado?.podeAgendarMensagem).toBe(true);
+ const r=await criarTarefaNoInbox(a.id,await entradaMensagem(a.id,diaUtilAs(10),{vincularOportunidade:false}));
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ const intencoes=await prisma.intencaoMensagem.findMany();expect(intencoes).toHaveLength(1);expect(intencoes[0]).toMatchObject({tarefaId:r.dado.id,leadId:null,atendimentoId:a.id});
+});

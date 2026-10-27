@@ -158,10 +158,18 @@ it("vínculo com a oportunidade da conversa grava leadId; de outra oportunidade 
 });
 it("vínculo com tarefa aberta da conversa grava tarefaId; tarefa fora do escopo, concluída ou de outro contato é recusada",async()=>{
  const f=fixture();Object.assign(f.a,{leadId:"op1"});const busca=comTarefa(f,{id:"t1"});await executarAgendadaInbox(f.db,"u",{...criar(),tarefaId:"t1"});
- expect(busca).toHaveBeenCalledWith(expect.objectContaining({where:{AND:[{id:"t1",status:"ABERTA"},{responsavelId:"u"},{OR:[{leadId:"op1"}]}]}}));
+ expect(busca).toHaveBeenCalledWith(expect.objectContaining({where:{AND:[{id:"t1",status:"ABERTA"},{responsavelId:"u"},{OR:[{atendimentoId:"a"},{leadId:"op1"}]}]}}));
  expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({tarefaId:"t1"})}));
  const g=fixture();Object.assign(g.a,{leadId:"op1"});comTarefa(g,null);await expect(executarAgendadaInbox(g.db,"u",{...criar(),tarefaId:"t9"})).rejects.toThrow("Tarefa não encontrada ou já concluída.");expect(g.tx.intencaoMensagem.create).not.toHaveBeenCalled();
- const h=fixture();const semLigacao=comTarefa(h,{id:"t1"});await expect(executarAgendadaInbox(h.db,"u",{...criar(),tarefaId:"t1"})).rejects.toThrow("Tarefa não encontrada ou já concluída.");expect(semLigacao).not.toHaveBeenCalled();
+ const h=fixture();const semLigacao=comTarefa(h,null);await expect(executarAgendadaInbox(h.db,"u",{...criar(),tarefaId:"t1"})).rejects.toThrow("Tarefa não encontrada ou já concluída.");expect(semLigacao).toHaveBeenCalledWith(expect.objectContaining({where:{AND:[{id:"t1",status:"ABERTA"},{responsavelId:"u"},{OR:[{atendimentoId:"a"}]}]}}));expect(h.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+});
+it("tarefa do próprio atendimento sem oportunidade nem pessoa é aceita, também fora do comercial",async()=>{
+ for(const finalidade of ["COMERCIAL","SECRETARIA","FINANCEIRO","PEDAGOGICO"]){
+  const f=fixture();Object.assign(f.a,{finalidade});const busca=comTarefa(f,{id:"t1"});
+  await executarAgendadaInbox(f.db,"u",{...criar(),tarefaId:"t1"});
+  expect(busca).toHaveBeenCalledWith(expect.objectContaining({where:{AND:[{id:"t1",status:"ABERTA"},{responsavelId:"u"},{OR:[{atendimentoId:"a"}]}]}}));
+  expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({tarefaId:"t1",leadId:null})}));
+ }
 });
 it("a marca de idempotência cobre anexo e vínculo",async()=>{
  anexo.existe.mockResolvedValue(true);anexo.verLead.mockResolvedValue(true);const f=fixture();Object.assign(f.a,{leadId:"op1"});await executarAgendadaInbox(f.db,"u",{...criar(),leadId:"op1",midiaUrl:"/api/files/whatsapp-out/u/1.pdf"});
