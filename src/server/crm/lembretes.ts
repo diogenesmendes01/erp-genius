@@ -1,4 +1,3 @@
-import { rodarRecorrenciasTarefas } from "./tarefa-recorrencia-materializacao";
 import {erroContencaoNotificadosTarefaD10} from "./tarefa-notificados";
 import {Prisma,type FinalidadeAtendimentoWhatsApp} from "@prisma/client";
 import {candidatoPodeLerTarefaD10} from "./tarefa-notificados-regras";
@@ -17,12 +16,11 @@ type TarefaReclamada = { id: string; responsavelId: string|null; titulo: string;
  * duas execuções simultâneas nunca reclamam a mesma tarefa, então há um único fanout por ciclo de lembrete.
  * Claim e notificações ficam na mesma transação: se a criação falhar, o claim volta e o próximo tick repete.
  */
-export async function rodarLembretesTarefas(agora: Date, opcoes: {agoraRecorrencia?:()=>Date} = {}): Promise<{ notificadas: number }> {
-  await rodarRecorrenciasTarefas({agora:opcoes.agoraRecorrencia});
+async function dispararLembreteTarefa(tarefaId:string,agora:Date):Promise<{notificadas:number}>{
   return prisma.$transaction(async (tx) => {
     const reclamadas = await tx.$queryRaw<TarefaReclamada[]>`
       UPDATE "Tarefa" t SET "lembreteDisparadoEm" = now()
-      WHERE t.status = 'ABERTA'
+      WHERE t.id = ${tarefaId} AND t.status = 'ABERTA'
         AND (t."responsavelId" IS NOT NULL OR EXISTS (SELECT 1 FROM "TarefaNotificado" n WHERE n."tarefaId"=t.id))
         AND t."lembrarEm" <= ${agora} AND t."lembreteDisparadoEm" IS NULL
       RETURNING t.id, t."responsavelId", t.titulo, t.setor, t.status, t.versao, t."lembrarEm", t."lembreteDisparadoEm"`;
@@ -42,6 +40,7 @@ export async function rodarLembretesTarefas(agora: Date, opcoes: {agoraRecorrenc
     const entregas=reclamadas.map(t=>({t,elegiveis:conjunto(t,usuarios,relacoes)}));
     for(const {t,elegiveis} of entregas)for(const usuarioId of elegiveis)await tx.notificacaoUsuario.create({data:{usuarioId,tipo:"LEMBRETE_TAREFA",refTipo:"Tarefa",refId:t.id,titulo:t.titulo}});
     // A FK não congela papéis. Reconciliar depois dos creates e antes dos Eventos.
+    const conferirEntrega=async()=>{
     const tarefasFinais=await tx.tarefa.findMany({where:{id:{in:reclamadas.map(t=>t.id)}},select:{id:true,responsavelId:true,titulo:true,setor:true,status:true,versao:true,lembrarEm:true,lembreteDisparadoEm:true}});
     const relacoesFinais=await tx.tarefaNotificado.findMany({where:{tarefaId:{in:reclamadas.map(t=>t.id)}},select:{tarefaId:true,usuarioId:true}});
     const idsFinais=[...new Set([...ids,...relacoesFinais.map(n=>n.usuarioId)])].sort();
@@ -51,15 +50,27 @@ export async function rodarLembretesTarefas(agora: Date, opcoes: {agoraRecorrenc
       const final=tarefasFinais.find(a=>a.id===t.id);
       if(!final||final.status!=="ABERTA"||lease(final)!==lease(t)||JSON.stringify(conjunto(final,usuariosFinais,relacoesFinais))!==JSON.stringify(elegiveis))throw new ErroRegra("O lembrete mudou durante a entrega. Aguarde o próximo ciclo.");
     }
+    };
+    await conferirEntrega();
     let notificadas=0;
     for(const {t,elegiveis} of entregas){
       await registrarEvento(tx,{tipo:"LembreteDisparado",agregadoTipo:"Tarefa",agregadoId:t.id,autorId:null,payload:elegiveis.length===1?{usuarioId:elegiveis[0]}:elegiveis.length?{usuarioIds:elegiveis}:{motivo:"SEM_DESTINATARIO_AUTORIZADO"}});
       if(elegiveis.length)notificadas++;
     }
+    await conferirEntrega();
     return {notificadas};
   }).catch(erroContencaoNotificadosTarefaD10);
 }
 
+/** Cada tarefa confirma claim/fanout/Evento juntos. Uma falha não desfaz os outros itens. */
+export async function rodarLembretesTarefas(agora:Date):Promise<{notificadas:number}>{
+ const candidatas=await prisma.tarefa.findMany({where:{status:"ABERTA",OR:[{responsavelId:{not:null}},{notificados:{some:{}}}],lembrarEm:{lte:agora},lembreteDisparadoEm:null},select:{id:true},orderBy:[{lembrarEm:"asc"},{id:"asc"}]});
+ let notificadas=0;const erros:unknown[]=[];
+ for(const t of candidatas)try{notificadas+=(await dispararLembreteTarefa(t.id,agora)).notificadas;}catch(erro){erros.push(erro);}
+ if(erros.length===1)throw erros[0];
+ if(erros.length>1)throw new AggregateError(erros,"Falhas independentes ao entregar lembretes de tarefas.");
+ return {notificadas};
+}
 /** Adia o lembrete: `lembrarEm = agora + minutos` e reabre o disparo. Só tarefa aberta e visível ao usuário. */
 export async function adiarLembrete(tarefaId: string, minutos: 10 | 60): Promise<Resultado> {
   return executarAcao(async () => {

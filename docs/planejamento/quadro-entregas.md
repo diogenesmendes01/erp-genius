@@ -8017,6 +8017,21 @@ Integração365 com main bfb85569 preserva Aria/Insights e passa24arquivos/363te
 
 CI457iniciale2b6:TypeScript/build/lintpassaram,doisUNITfusosfalharam3guardas/mocks. Composição corrigida usa captureIDL nativo,mockRodapeapenasexports,exceçãoASTresponsivoúnicamenudeíconescomnegativos;27arquivos/390testesde19c5+lint10 465588/código0. Retirados22delimitadoresdeconflitopreexistentesmain,nãoohistórico.NovaCI/visualpendentes,13pathspróprios.
 
+
+### PR458 #338 — revisão C1/C3/C4 em andamento (DEV B)
+
+Fonteb5c6ea22 pública/ambienteROOTclient0084, sem ancestryprivada. Recorrência separada do lembrete no cron; falhas independentes porintenção/tarefa, snapshotv1inválido impede comCAS/Evento, infra propaga; claim/fanout/Evento atômicos porTask comACLúltima; Modal explica sóocorrência/calendáriooriginal. RED7/75 eREDidentidade1/20 preservados; GREEN10UNIT235/235/lint11zeroavisos, TSCfinalemobservação e nativos7+7autorados aguardam execuçãoleaseRootdevgrav. Não houve DDL/client/profile porDEV, nem SQLciint/devemail. Recibos e limites em QA; não concluir338 nem reatribuir45nativos anteriores/QAind/visual.
+
+Atualização338C1/C3/C4: TSCfinal14054→9f502aEXIT0; lint11zeroavisos e10UNIT235/235. Lease ROOTdevgravPUBLIC503:6arquivosnativoscompletos30/30(7+7+11+1+2+2), seriaisconfigoriginal/Hermes1024/UTC7blank/w1, semfilter/skip/retry/timeoutchange.14pins congelados conferidos iguais após execução. Provas reais de rollbackA/commitB, revogaçãoúltimoEvento, claim2workers, snapshot inválido isolado e calendáriooriginal alcançadas. Somente6casos novos dentro dos14focais, sem somar45históricos. SemNOTIFYnovo, semSQLciint/devemail/DDL/restauroDEV. LEASE_END enviado; ROOTrestaura1389. QAindep/seleção/globals/CI/visual pendentes; revisão funcional local não fecha338.
+
+ROOTrestore21eec6/audit2106f5EXIT0 confirmaram1389/428/502ledger/sequências/6catálogos e0atores/listeners apósLEASE_END338. Novo códigoSNAPSHOT_INVALIDO está documentado no catálogo sem novo tipo de Evento/schema. Checkpoint local15paths autorizado; globalUNIT/build pós-fix ainda aguardam coordenação com ROOT/A, QAindep/CI/visualC3 pendentes.
+
+### #338 — publicação complementar sobre main
+
+As correções C1/C3/C4 foram selecionadas do checkpoint `26595e9e` para uma branch com pai direto em main `d95d99dc`, após o merge externo da #458. Os 14 arquivos fora do quadro mantêm os blobs exatos do checkpoint, sobre preimages conferidas; o quadro da main e o histórico externo foram preservados. Não há ancestrais privados nem nova migração.
+
+235 testes offline e 30 nativos em seis arquivos completos passaram no código selecionado, assim como TypeScript e lint focal. O integrador restaurou e auditou o banco descartável em 1.389 linhas/428 tabelas. Os gates globais locais, CI pública da composição, QA independente do novo commit e aceite visual após C3 continuam pendentes; a PR complementar nasce em rascunho.
+
 ### #362 D11 — porte local R41, revisão R3B1 ainda pendente
 
 Fonte pública original a64dbf4677980edaae082cc6032d8ce06c7240ff portada por30blobs limpos sobre MAINd95d99dca2423bd62b58bbfe8b8279fe2e26f4ba; histórico e D10 da MAIN preservados. Schema/client/perfil não mudam. SQL501/502 são bytes públicos imutáveis já aplicados no banco descartável conforme receipt ROOT; este porte não executa DDL.
@@ -8027,3 +8042,6 @@ Porte local sem push/retarget público; TDD, QA independente, novoCI e aceitevis
 
 R3B1/C2 em desenvolvimento no porte ae0cd807: ACK confirmado separado dos gates de nova mutação, leitura canônica fresca e zeroDML no replay; transferência com ACL mantida recupera próprio recibo, perda de acesso recusa. UNIT RED17/33→GREEN33/33; regressão sete arquivos115/115 (8afaeb0). Legado10 intocado; nativos/replayclaim/QA independente/CI/visual do novo delta ainda pendentes. Nenhum SQL nesta etapa nem publicação.
 Checkpoint DEV R3B1/C2: UNIT final115/115 (4ac9dc), legado10 byteexato10/10 (a66ddb) e núcleo16/16 (f5c95e),26casos distintos. Negativo intermediário14/16 causado por duas preparações inválidas (23514 status/42P01 tabela física), corrigidas test-only sem relaxar asserts/core. ROOTrestore93feae1389/428t/502ledger,lease encerrada. C2 somente zeroDML/upsert ACK,sem medição do restante. Global/build/QA independente/CI/visual da futura composição Main960 permanecem PENDENTES;79 históricos não atribuídos a este HEAD. Sem concluirissue/publicar.
+### #338 — encerramento do aceite complementar PR459
+
+Fonte413b/builddUxf: CI pública cinco jobs verdes, QA independente181UNIT/30nativos/build115 e capturaR57 de12PNG com inspeçãoTESTER favorável nos alvos, todos terminais0. Scroll nativo e prefetch de navegação alheia204 sintético qualificados; nenhuma tarefa submetida. Preview/SSE encerrados; auditoria pré-restauração zero registro original alterado e Task1ABERTA; snapshot1389/428t/502ledger restaurado e auditado0. PR459 foi mergeada externamente em96094390 antes deste encerramento, não pelo integrador. ZIP sanitizado local preparado; upload aguarda autorização específica. O comentário6430323694 preserva proveniência/limites.
