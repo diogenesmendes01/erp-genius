@@ -1,12 +1,12 @@
 import type {Resultado} from "@/server/_shared/resultado";
 import {executarAcaoCliente,type DesfechoAcao} from "@/lib/acao-cliente";
-export type EntradaAgendamento={atendimentoId:string;quandoLocal:string;fuso:string}&({tipo:"CRIAR";texto:string}|{tipo:"REAGENDAR";intencaoId:string});
+export type EntradaAgendamento={atendimentoId:string;quandoLocal:string;fuso:string}&({tipo:"CRIAR";texto:string}|{tipo:"EDITAR";intencaoId:string;texto:string});
 export type ComandoAgendamento=EntradaAgendamento&{chaveIdempotencia:string};
-export type AlvoAgendamento={atendimentoId:string}&({tipo:"CRIAR"}|{tipo:"REAGENDAR";intencaoId:string});
+export type AlvoAgendamento={atendimentoId:string}&({tipo:"CRIAR"}|{tipo:"EDITAR";intencaoId:string});
 type Estado=Readonly<{comando:ComandoAgendamento|null;ocupado:boolean;erro:string|null;incerto:boolean}>;
 export type IntencaoAgendamento={ler():Estado;assinar(f:()=>void):()=>void;reiniciar():void;enviar(e:EntradaAgendamento,action:(c:ComandoAgendamento)=>Promise<Resultado<{id:string}>>):Promise<DesfechoAcao<{id:string}>|null>};
 export type IntencoesAgendamento={para(alvo:AlvoAgendamento):IntencaoAgendamento;pendente(atendimentoId:string):{alvo:AlvoAgendamento;intencao:IntencaoAgendamento}|null};
-function identidade(alvo:AlvoAgendamento){return JSON.stringify([alvo.atendimentoId,alvo.tipo,alvo.tipo==="REAGENDAR"?alvo.intencaoId:null]);}
+function identidade(alvo:AlvoAgendamento){return JSON.stringify([alvo.atendimentoId,alvo.tipo,alvo.tipo==="EDITAR"?alvo.intencaoId:null]);}
 export function criarIntencoesAgendamento(gerar:()=>string=()=>crypto.randomUUID()):IntencoesAgendamento{
  const porAlvo=new Map<string,IntencaoAgendamento>(),alvos=new Map<string,AlvoAgendamento>();
  return {para(alvo){const chave=identidade(alvo),anterior=porAlvo.get(chave);if(anterior)return anterior;

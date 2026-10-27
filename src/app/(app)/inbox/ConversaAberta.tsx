@@ -32,9 +32,10 @@ import { linhaEstadoAria, type LinhaEstadoAria } from "./aria/textos-aria";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
+import { enviarConteudoInbox } from "@/server/whatsapp/motor/acoes-mensagem";
 import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-respostas";
 import { enviarPropostaNoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
-import { origemVisivelDaTransferencia, propostasDoAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
+import { contatosParaCartao, origemVisivelDaTransferencia, propostasDoAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
@@ -258,6 +259,8 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
           respostas={respostas}
           propostas={propostasDaConversa}
           aoEnviarProposta={propostasDaConversa ? (documentoId, chaveIdempotencia) => enviarPropostaNoAtendimento({ atendimentoId: item.id, documentoId, chaveIdempotencia }) : undefined}
+          aoEnviarConteudo={(conteudo) => enviarConteudoInbox({ atendimentoId: item.id, conteudo })}
+          aoListarContatosCartao={() => contatosParaCartao(item.id)}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />
       ) : <p className="border-t p-3 text-sm text-gray-600">{MOTIVO_SEM_ENVIO}</p>}
