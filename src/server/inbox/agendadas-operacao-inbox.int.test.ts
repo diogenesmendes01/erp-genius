@@ -137,10 +137,11 @@ it("SQL operação conclui usando cliente configurado com pool de uma conexão",
  finally {await pool.$disconnect();}
 });
 
-it("SQL replay não recupera autoridade perdida depois da criação",async()=>{
- const c=await fixture();const comando=criar(c);await executarAgendadaInbox(prisma,c.dono.id,comando);
+it("SQL replay recupera recibo após transferência com ACL de leitura mantida",async()=>{
+ const c=await fixture();const comando=criar(c);const primeira=await executarAgendadaInbox(prisma,c.dono.id,comando);
  await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{responsavelId:c.outro.id}});
- await expect(executarAgendadaInbox(prisma,c.dono.id,comando)).rejects.toThrow(/Assuma/);expect(await contar(c)).toBe(1);expect(await prisma.intencaoMensagem.count()).toBe(1);
+ expect(await atendimentoVisivel(c.dono,c.atendimento.id,false,prisma)).not.toBeNull();
+ expect(await executarAgendadaInbox(prisma,c.dono.id,comando)).toEqual(primeira);expect(await contar(c)).toBe(1);expect(await prisma.intencaoMensagem.count()).toBe(1);
 });
 it("SQL autorização é refeita após esperar advisory da mesma chave",async()=>{
  const c=await fixture();const comando=criar(c);let h:Holder|undefined,observer:Client|undefined,op:Operacao|undefined,primario:unknown;
@@ -186,4 +187,33 @@ it("SQL ciclo real claim ENVIANDO após worker travar pai preserva recusa de dom
   // Libera recursos primeiro; eventual claim pendente também precisa terminar antes de sair.
   try{await limpar(primario,h,observer,op);}finally{if(claim)await claim;}
  }
+});
+
+it("SQL recibo confirmado não escreve Config/Evento/intenção após optout, fechamento e claim",async()=>{
+ const c=await fixture();const comando=criar(c);const primeira=await executarAgendadaInbox(prisma,c.dono.id,comando);
+ await prisma.contatoWhatsApp.update({where:{id:c.contato.id},data:{optOutEm:new Date()}});
+ await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{status:"ENCERRADO",encerradoEm:new Date(),responsavelId:c.outro.id}});
+ await prisma.intencaoMensagem.update({where:{id:primeira.id},data:{status:"ENVIANDO"}});
+ const foto=async()=>({config:await prisma.configIA.findMany(),intencoes:await prisma.intencaoMensagem.findMany(),eventos:await prisma.evento.findMany({where:{agregadoId:c.atendimento.id}})});
+ const antes=await foto();const op=iniciar(c.dono.id,comando);const resultado=await op.resultado;
+ expect(resultado).toEqual({valor:primeira});expect(await foto()).toEqual(antes);
+ expect(op.diag.timeline.filter(x=>/^before\.(configIA\.upsert|intencaoMensagem\.(create|updateMany)|evento\.create)$/.test(x.stage))).toEqual([]);
+});
+it("SQL recibo recusa perda real de leitura durante espera sem novos efeitos",async()=>{
+ const c=await fixture();const comando=criar(c);const nova=await executarAgendadaInbox(prisma,c.dono.id,comando);let h:Holder|undefined,observer:Client|undefined,op:Operacao|undefined,primario:unknown;
+ try {h=await holder('SELECT id FROM "IntencaoMensagem" WHERE id=$1 FOR UPDATE',nova.id);observer=await conectar();op=iniciar(c.dono.id,comando);await esperar(observer,h,op,'"IntencaoMensagem"');
+  await h.pg.query('UPDATE "Lead" SET "vendedorDonoId"=$1 WHERE id=$2',[c.outro.id,c.op.id]);
+  await h.pg.query('UPDATE "NumeroWhatsApp" SET "donoId"=$1 WHERE id=$2',[c.outro.id,c.numero.id]);await h.pg.query("COMMIT");
+  expect(await atendimentoVisivel(c.dono,c.atendimento.id,false,prisma)).toBeNull();exigirRecusa(await op.resultado,/^Atendimento não encontrado\.$/);expect(await contar(c)).toBe(1);expect(await prisma.intencaoMensagem.count()).toBe(1);
+ }catch(erro){primario=erro;throw erro;}finally {await limpar(primario,h,observer,op);}
+});
+it("SQL Admin recupera seu recibo de alteração de intenção originalmente de vendedor",async()=>{
+ const c=await fixture();const nova=await executarAgendadaInbox(prisma,c.dono.id,criar(c));
+ await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{responsavelId:c.admin.id}});
+ const comando={tipo:"REAGENDAR" as const,atendimentoId:c.atendimento.id,intencaoId:nova.id,agendadaPara:diaUtilAs(11,"America/Costa_Rica").toISOString(),chaveIdempotencia:"native-admin-recibo-362"};
+ expect(await executarAgendadaInbox(prisma,c.admin.id,comando)).toEqual(nova);
+ await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{responsavelId:c.dono.id}});
+ await prisma.intencaoMensagem.update({where:{id:nova.id},data:{status:"DESPACHADA",agendadaPara:null}});
+ const antes=await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:nova.id}});expect(antes.autorId).toBe(c.dono.id);
+ expect(await executarAgendadaInbox(prisma,c.admin.id,comando)).toEqual(nova);expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:nova.id}})).toEqual(antes);expect(await contar(c)).toBe(2);
 });
