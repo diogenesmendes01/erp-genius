@@ -1,5 +1,6 @@
 "use server";
 
+import { TextoNotaInternaSchema } from "../_shared/efeitos-humanos-schema";
 import { normalizarNotaComMencoes, type TokenMencao } from "@/lib/mencoes-nota";
 import { notificarMencoesNaNota } from "@/server/inbox/mencoes";
 import { revalidatePath } from "next/cache";
@@ -23,7 +24,7 @@ import { copiarMidiaParaSaida } from "./midia";
 const TokenMencaoSchema = z.object({ usuarioId: z.string().min(1).max(200), inicio: z.number().int().nonnegative(), fim: z.number().int().positive() });
 const NotaSchema = z.object({
   atendimentoId: z.string().min(1),
-  nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres."),
+  nota: TextoNotaInternaSchema,
   mencoes: z.array(TokenMencaoSchema).max(50).optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });

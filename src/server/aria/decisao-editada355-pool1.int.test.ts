@@ -1,0 +1,14 @@
+import {afterAll,beforeEach,expect,it,vi} from "vitest";
+vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+const trace=vi.hoisted(()=>[] as string[]);
+vi.mock("@/lib/prisma",async()=>{const {PrismaClient}=await import("@prisma/client");const u=new URL(process.env.DATABASE_URL!);u.searchParams.set("connection_limit","1");u.searchParams.set("pool_timeout","2");const prisma=new PrismaClient({datasources:{db:{url:u.toString()}},log:[{emit:"event",level:"query"}]});prisma.$on("query",e=>{if(e.query.includes('"ConfiguracaoOperacional"')&&e.query.includes("FOR SHARE"))trace.push("config");if(e.query.includes('"AtendimentoWhatsApp"')&&e.query.includes("FOR NO KEY UPDATE"))trace.push("pai");});return {prisma};});
+import {prisma} from "@/lib/prisma";
+import {truncarBanco} from "@/test/integracao";
+import {cenarioEdicao355,sugestaoEdicao355,type CenarioEdicao355} from "@/test/aria-edicao355";
+import {diaUtilAs} from "@/test/janela-envio";
+import {aprovarSugestaoEditadaInboxTx} from "./decisao-inbox";
+let c:CenarioEdicao355;
+beforeEach(async()=>{await truncarBanco();c=await cenarioEdicao355();trace.length=0;vi.stubGlobal("fetch",vi.fn(async()=>{throw Error("Transporte externo bloqueado355");}));});
+afterAll(async()=>{vi.unstubAllGlobals();await prisma.$disconnect();});
+it("355 resposta editada e replay funcionam no cliente real pool1",async()=>{const s=await sugestaoEdicao355(c);const input={atendimentoId:c.at.id,id:s.id,edicao:{texto:"Resposta pool1"},chaveIdempotencia:"pool1-edicao355-1"};await prisma.$transaction(tx=>aprovarSugestaoEditadaInboxTx(tx,c.dono.id,input));await prisma.$transaction(tx=>aprovarSugestaoEditadaInboxTx(tx,c.dono.id,input));expect(await prisma.intencaoMensagem.count({where:{acaoAgenteIAId:s.id,origem:"HUMANO",autorId:c.dono.id}})).toBe(1);expect(await prisma.evento.count({where:{agregadoId:s.id,tipo:"AcaoAriaAprovada"}})).toBe(1);expect(fetch).not.toHaveBeenCalled();});
+it("355 tarefa editada captura fuso antes do pai no pool1 sem depender de D10",async()=>{const s=await sugestaoEdicao355(c,"CRIAR_TAREFA",{titulo:"Tarefa IA",venceEmISO:diaUtilAs(10).toISOString()});trace.length=0;await prisma.$transaction(tx=>aprovarSugestaoEditadaInboxTx(tx,c.dono.id,{atendimentoId:c.at.id,id:s.id,edicao:{titulo:"Tarefa pool1"},chaveIdempotencia:"pool1-edicao355-2"}));expect(trace.indexOf("config")).toBeGreaterThanOrEqual(0);expect(trace.indexOf("config")).toBeLessThan(trace.indexOf("pai"));expect(trace.filter(t=>t==="config")).toHaveLength(1);expect(await prisma.tarefa.count({where:{atendimentoId:c.at.id,titulo:"Tarefa pool1",origem:"IA"}})).toBe(1);});
