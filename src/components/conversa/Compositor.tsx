@@ -409,6 +409,9 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo) return { ok: false, erro: MOTIVO_SEM_ENVIO };
     return aoEnviarConteudo(c);
   }
+  function fecharConteudo() {
+    if (contextoVigente()) setFormConteudo(null);
+  }
   const conteudoAtivo = (id: IdItemAnexo) => {
     const item = ITENS_ANEXO.find((i) => i.id === id);
     return ehFormConteudo(id) && !!item?.recurso && capacidades.includes(item.recurso) && typeof aoEnviarConteudo === "function";
@@ -507,8 +510,8 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
                   })}
               </div>
             )}
-            {formConteudo === "enquete" && conteudoAtivo("enquete") && <FormEnquete aoEnviar={enviarConteudo} aoFechar={() => setFormConteudo(null)} />}
-            {formConteudo === "localizacao" && conteudoAtivo("localizacao") && <FormLocalizacao aoEnviar={enviarConteudo} aoFechar={() => setFormConteudo(null)} />}
+            {formConteudo === "enquete" && conteudoAtivo("enquete") && <FormEnquete aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
+            {formConteudo === "localizacao" && conteudoAtivo("localizacao") && <FormLocalizacao aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
             {listaPropostas && propostaDisponivel && propostas?.oportunidadeId && (
               <div role="dialog" aria-label="Enviar proposta" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
                 <div className="flex items-center gap-1 px-1 pb-1">

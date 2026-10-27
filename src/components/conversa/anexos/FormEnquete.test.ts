@@ -14,7 +14,7 @@ vi.mock("react", async (original) => {
 });
 
 import { FormEnquete, validarEnquete, type ConteudoEnquete } from "./FormEnquete";
-import { FormLocalizacao, validarLocalizacao, DICA_COORDENADAS, ERRO_COORDENADAS, type ConteudoLocalizacao } from "./FormLocalizacao";
+import { FormLocalizacao, validarLocalizacao, DICA_COORDENADAS, ERRO_COORDENADAS, ERRO_LINK_CURTO, type ConteudoLocalizacao } from "./FormLocalizacao";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
@@ -41,6 +41,7 @@ describe("validarEnquete", () => {
     expect(validarEnquete("P", ["Sim", "sim"], 1)).toEqual({ ok: false, erro: "As opções precisam ser diferentes." });
     expect(validarEnquete("P", ["a", "b"], 3)).toEqual({ ok: false, erro: "Escolhas por pessoa não pode passar do número de opções." });
     expect(validarEnquete("P", ["a", "b"], 0)).toEqual({ ok: false, erro: "Escolhas por pessoa: no mínimo 1." });
+    expect(validarEnquete("P", ["a", "b"], 1.5)).toEqual({ ok: false, erro: "Escolhas por pessoa precisa ser um número inteiro." });
     expect(validarEnquete("P", Array.from({ length: 13 }, (_, i) => `o${i}`), 1)).toEqual({ ok: false, erro: "A enquete pode ter no máximo 12 opções." });
   });
 });
@@ -119,6 +120,32 @@ describe("FormEnquete", () => {
     expect(p.aoEnviar).toHaveBeenCalledOnce();
   });
 
+  it("opções são anunciadas como obrigatórias", () => {
+    m.g = criarGanchos();
+    const tela = () => m.g!.renderizar(FormEnquete, { aoEnviar: enviarEnquete(), aoFechar: vi.fn() });
+    expect(opcao(tela(), 1).props["aria-required"]).toBe("true");
+    expect(opcao(tela(), 2).props["aria-required"]).toBe("true");
+  });
+
+  it("erro do servidor some quando o usuário edita a enquete", async () => {
+    m.g = criarGanchos();
+    const p = { aoEnviar: enviarEnquete(async () => ({ ok: false, erro: "Este canal não envia esse tipo de conteúdo." })), aoFechar: vi.fn() };
+    const tela = () => m.g!.renderizar(FormEnquete, p);
+    preencher(tela(), "enquete-pergunta", "P");
+    digitarOpcao(tela(), 1, "a");
+    digitarOpcao(tela(), 2, "b");
+    await submeter(tela());
+    await esvaziar();
+    expect(erroAcao(tela())).toBe("Este canal não envia esse tipo de conteúdo.");
+    digitarOpcao(tela(), 2, "c");
+    expect(erroAcao(tela())).toBeNull();
+    await submeter(tela());
+    await esvaziar();
+    expect(erroAcao(tela())).toBe("Este canal não envia esse tipo de conteúdo.");
+    preencher(tela(), "enquete-pergunta", "Q");
+    expect(erroAcao(tela())).toBeNull();
+  });
+
   it("validação local mostra o erro sem chamar o servidor", async () => {
     m.g = criarGanchos();
     const p = { aoEnviar: enviarEnquete(), aoFechar: vi.fn() };
@@ -137,6 +164,7 @@ describe("FormLocalizacao", () => {
     expect(validarLocalizacao("", "-23.5, -46.6")).toEqual({ ok: true, conteudo: { tipo: "LOCALIZACAO", latitude: -23.5, longitude: -46.6 } });
     expect(validarLocalizacao(" Escola ", "-23.5, -46.6")).toEqual({ ok: true, conteudo: { tipo: "LOCALIZACAO", latitude: -23.5, longitude: -46.6, nome: "Escola" } });
     expect(validarLocalizacao("", "Av. Paulista")).toEqual({ ok: false, erro: ERRO_COORDENADAS });
+    expect(validarLocalizacao("", "https://maps.app.goo.gl/abc123")).toEqual({ ok: false, erro: ERRO_LINK_CURTO });
   });
 
   it("mostra a dica, envia as coordenadas do link e fecha no sucesso", async () => {
@@ -171,5 +199,10 @@ describe("FormLocalizacao", () => {
     expect(p.aoEnviar).toHaveBeenCalledExactlyOnceWith({ tipo: "LOCALIZACAO", latitude: -23.5, longitude: -46.6 });
     expect(erroAcao(tela())).toBe("Este canal não envia esse tipo de conteúdo.");
     expect(p.aoFechar).not.toHaveBeenCalled();
+    preencher(tela(), "localizacao-link", "Av. Paulista");
+    expect(erroAcao(tela())).toBeNull();
+    await submeter(tela());
+    expect(errosDosCampos(tela())).toEqual({ "localizacao-link": ERRO_COORDENADAS });
+    expect(erroAcao(tela())).toBeNull();
   });
 });

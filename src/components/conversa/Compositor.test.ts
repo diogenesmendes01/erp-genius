@@ -675,6 +675,26 @@ describe("Compositor: enquete e localização pelo motor (#367 E4.8)", () => {
     expect(aoEnviarConteudo).not.toHaveBeenCalled();
   });
 
+  it("sucesso tardio de envio da conversa anterior não fecha o formulário da conversa nova", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: true as const }));
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Enquete");
+    const fecharRetido = formsAbertos367(tela())[0].props.aoFechar as () => void;
+    p = { ...p, atendimentoId: "at2" };
+    tela(); tela();
+    expect(formsAbertos367(tela())).toHaveLength(0);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Localização");
+    expect(formsAbertos367(tela()).map(n => n.type)).toEqual([FormLocalizacao]);
+    fecharRetido();
+    expect(formsAbertos367(tela()).map(n => n.type)).toEqual([FormLocalizacao]);
+    (formsAbertos367(tela())[0].props.aoFechar as () => void)();
+    expect(formsAbertos367(tela())).toHaveLength(0);
+  });
+
   it("modo Nota não abre os formulários", () => {
     m.g = criarGanchos();
     const p = props({ modo: "nota", capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })) });

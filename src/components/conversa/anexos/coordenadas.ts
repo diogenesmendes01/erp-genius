@@ -1,10 +1,15 @@
 const NUM = String.raw`[-+]?\d{1,3}(?:\.\d+)?`;
 const PAR = new RegExp(String.raw`^(${NUM})\s*[,;\s]\s*(${NUM})$`);
 const PADROES = [
-  new RegExp(String.raw`@(${NUM}),(${NUM})`),
-  new RegExp(String.raw`[?&](?:q|query|ll|destination)=(?:loc:)?(${NUM}),\s*(${NUM})`),
   new RegExp(String.raw`!3d(${NUM})!4d(${NUM})`),
+  new RegExp(String.raw`[?&](?:q|query|ll|destination)=(?:loc:)?(${NUM}),\s*(${NUM})`),
+  new RegExp(String.raw`@(${NUM}),(${NUM})`),
 ];
+const LINK_CURTO = /^(?:https?:\/\/)?(?:maps\.app\.goo\.gl|goo\.gl\/maps)\//i;
+
+export function ehLinkCurtoMapa(texto: string): boolean {
+  return LINK_CURTO.test(texto.trim());
+}
 
 function decodificar(texto: string): string {
   try { return decodeURIComponent(texto); } catch { return texto; }
