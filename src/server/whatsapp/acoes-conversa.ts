@@ -4,7 +4,7 @@ import { normalizarNotaComMencoes, type TokenMencao } from "@/lib/mencoes-nota";
 import { notificarMencoesNaNota } from "@/server/inbox/mencoes";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Papel, type Evento } from "@prisma/client";
+import { Papel, type Evento, type Prisma } from "@prisma/client";
 import { cancelarAgendadaInboxTx } from "@/server/inbox/agendadas-cancelamento";
 import { prisma } from "@/lib/prisma";
 import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
@@ -21,6 +21,7 @@ import { despacharFila } from "./despachante";
 import { copiarDocumentoParaSaida, copiarMidiaParaSaida, descartarMidiaSaida } from "./midia";
 import { enfileirarSaidaInboxTx } from "./enfileirar-inbox";
 import { ERRO_ANEXAR_PROPOSTA, exigirPropostaVisivel } from "./proposta-atendimento";
+import { ERRO_ANEXAR_MATERIAL, exigirMaterialAtivo, exigirMaterialDoCatalogo } from "./catalogo-atendimento";
 import type { EnvioInboxResultado } from "./acoes";
 
 const TokenMencaoSchema = z.object({ usuarioId: z.string().min(1).max(200), inicio: z.number().int().nonnegative(), fim: z.number().int().positive() });
@@ -191,11 +192,34 @@ const PropostaSchema = z.object({
   legenda: z.string().max(1024, "A legenda pode ter no máximo 1024 caracteres.").optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
+const MaterialCatalogoSchema = z.object({
+  atendimentoId: z.string().min(1),
+  fonteId: z.string().min(1),
+  legenda: z.string().max(1024, "A legenda pode ter no máximo 1024 caracteres.").optional(),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
+});
 const EVENTO_PROPOSTA = "PropostaEnviadaNoAtendimento";
+const EVENTO_CATALOGO = "CatalogoEnviadoNoAtendimento";
 
-function intencaoDoEvento(e: Evento): string {
+type Tx = Prisma.TransactionClient;
+
+interface EnvioDeArquivo {
+  autorId: string;
+  atendimentoId: string;
+  evento: string;
+  referencia: Record<string, string>;
+  legenda: string;
+  chaveIdempotencia?: string;
+  mensagemConflito: string;
+  mensagemSemConfirmacao: string;
+  erroCopia: string;
+  resolverUrl(): Promise<string>;
+  conferirNaTransacao?(tx: Tx): Promise<void>;
+}
+
+function intencaoDoEvento(e: Evento, mensagem: string): string {
   const id = (e.payload as Record<string, unknown> | null)?.intencaoId;
-  if (typeof id !== "string") throw new ErroRegra("Não foi possível confirmar o envio anterior desta proposta. Confira a conversa antes de repetir.");
+  if (typeof id !== "string") throw new ErroRegra(mensagem);
   return id;
 }
 
@@ -206,39 +230,62 @@ async function situacaoDoEnvio(intencaoId: string): Promise<EnvioInboxResultado>
   return { status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
 }
 
+async function enviarArquivoNoAtendimento(e: EnvioDeArquivo): Promise<EnvioInboxResultado> {
+  const { autorId, atendimentoId, legenda: texto } = e;
+  const marca = marcaIdempotencia(e.chaveIdempotencia, { atendimentoId, ...e.referencia, legenda: texto });
+  const alvo = marca ? { tipo: e.evento, agregadoTipo: "AtendimentoWhatsApp", autorId, marca, mensagemConflito: e.mensagemConflito } : null;
+  if (alvo) {
+    const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvo));
+    if (repetido) return situacaoDoEnvio(intencaoDoEvento(repetido, e.mensagemSemConfirmacao));
+  }
+  const url = await e.resolverUrl();
+  const midiaPath = await copiarDocumentoParaSaida(autorId, url);
+  if (!midiaPath) throw new ErroRegra(e.erroCopia);
+  let gravado: { intencaoId: string; nova: boolean };
+  try {
+    gravado = await prisma.$transaction(async (tx) => {
+      if (alvo) {
+        const repetido = await repeticaoIdempotente(tx, alvo);
+        if (repetido) return { intencaoId: intencaoDoEvento(repetido, e.mensagemSemConfirmacao), nova: false };
+      }
+      await e.conferirNaTransacao?.(tx);
+      const intencao = await enfileirarSaidaInboxTx(tx, autorId, atendimentoId, { tipo: "midia", url: midiaPath, ...(texto ? { legenda: texto } : {}) });
+      await registrarEvento(tx, { tipo: e.evento, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId, payload: { ...e.referencia, intencaoId: intencao.id, ...marca } });
+      return { intencaoId: intencao.id, nova: true };
+    });
+  } catch (erro) {
+    await descartarMidiaSaida(autorId, midiaPath);
+    throw erro;
+  }
+  if (!gravado.nova) await descartarMidiaSaida(autorId, midiaPath);
+  return situacaoDoEnvio(gravado.intencaoId);
+}
+
 export async function enviarPropostaNoAtendimento(input: { atendimentoId: string; documentoId: string; legenda?: string; chaveIdempotencia?: string }): Promise<Resultado<EnvioInboxResultado>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const { atendimentoId, documentoId, legenda, chaveIdempotencia } = PropostaSchema.parse(input);
-    const texto = legenda?.trim() ?? "";
-    const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, documentoId, legenda: texto });
-    const alvo = marca ? {
-      tipo: EVENTO_PROPOSTA, agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+    return enviarArquivoNoAtendimento({
+      autorId: u.id, atendimentoId, evento: EVENTO_PROPOSTA, referencia: { documentoId }, legenda: legenda?.trim() ?? "", chaveIdempotencia,
       mensagemConflito: "Esta tentativa já foi usada com outra proposta. Feche e reabra a conversa e confira as mensagens antes de repetir.",
-    } : null;
-    if (alvo) {
-      const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvo));
-      if (repetido) return situacaoDoEnvio(intencaoDoEvento(repetido));
-    }
-    const proposta = await exigirPropostaVisivel(u, atendimentoId, documentoId);
-    const midiaPath = await copiarDocumentoParaSaida(u.id, proposta.url);
-    if (!midiaPath) throw new ErroRegra(ERRO_ANEXAR_PROPOSTA);
-    let gravado: { intencaoId: string; nova: boolean };
-    try {
-      gravado = await prisma.$transaction(async (tx) => {
-        if (alvo) {
-          const repetido = await repeticaoIdempotente(tx, alvo);
-          if (repetido) return { intencaoId: intencaoDoEvento(repetido), nova: false };
-        }
-        const intencao = await enfileirarSaidaInboxTx(tx, u.id, atendimentoId, { tipo: "midia", url: midiaPath, ...(texto ? { legenda: texto } : {}) });
-        await registrarEvento(tx, { tipo: EVENTO_PROPOSTA, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { documentoId, intencaoId: intencao.id, ...marca } });
-        return { intencaoId: intencao.id, nova: true };
-      });
-    } catch (e) {
-      await descartarMidiaSaida(u.id, midiaPath);
-      throw e;
-    }
-    if (!gravado.nova) await descartarMidiaSaida(u.id, midiaPath);
-    return situacaoDoEnvio(gravado.intencaoId);
+      mensagemSemConfirmacao: "Não foi possível confirmar o envio anterior desta proposta. Confira a conversa antes de repetir.",
+      erroCopia: ERRO_ANEXAR_PROPOSTA,
+      resolverUrl: async () => (await exigirPropostaVisivel(u, atendimentoId, documentoId)).url,
+    });
+  });
+}
+
+export async function enviarMaterialDoCatalogo(input: { atendimentoId: string; fonteId: string; legenda?: string; chaveIdempotencia?: string }): Promise<Resultado<EnvioInboxResultado>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const { atendimentoId, fonteId, legenda, chaveIdempotencia } = MaterialCatalogoSchema.parse(input);
+    return enviarArquivoNoAtendimento({
+      autorId: u.id, atendimentoId, evento: EVENTO_CATALOGO, referencia: { fonteId }, legenda: legenda?.trim() ?? "", chaveIdempotencia,
+      mensagemConflito: "Esta tentativa já foi usada com outro material. Feche e reabra a conversa e confira as mensagens antes de repetir.",
+      mensagemSemConfirmacao: "Não foi possível confirmar o envio anterior deste material. Confira a conversa antes de repetir.",
+      erroCopia: ERRO_ANEXAR_MATERIAL,
+      resolverUrl: async () => (await exigirMaterialDoCatalogo(u, atendimentoId, fonteId)).url,
+      conferirNaTransacao: async (tx) => { await exigirMaterialAtivo(tx, fonteId); },
+    });
   });
 }
