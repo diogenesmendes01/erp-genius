@@ -71,12 +71,13 @@ function revalidarAgendadas() {
   revalidatePath("/inicio");
 }
 
-export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const perguntarSeResponder = z.boolean().optional().parse(input.perguntarSeResponder);
     const r = await executarAgendadaInbox(prisma, u.id, {
-      tipo: "CRIAR", atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia,
+      tipo: "CRIAR", atendimentoId, texto: input.texto, agendadaPara: input.quando, perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia,
     });
     revalidarAgendadas();
     return r;
@@ -119,10 +120,21 @@ export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId
   });
 }
 
-export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   const r = await executarAcao(async () => exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString());
   if (!r.ok) return { ok: false, erro: r.erro };
-  return agendarMensagemNoAtendimento({ atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, chaveIdempotencia: input.chaveIdempotencia });
+  return agendarMensagemNoAtendimento({ atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, perguntarSeResponder: input.perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia });
+}
+
+export async function manterAgendadaAposResposta(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const r = await executarAgendadaInbox(prisma, u.id, { tipo: "MANTER", atendimentoId, intencaoId, chaveIdempotencia: input.chaveIdempotencia });
+    revalidarAgendadas();
+    return r;
+  });
 }
 
 export async function cancelarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string }): Promise<Resultado> {

@@ -35,6 +35,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
  const [agoraAtual,setAgoraAtual]=useState(relogio);
  const [texto,setTexto]=useState(()=>{const c=intencao.ler().comando;return c?c.texto:editar?.texto??textoInicial;});
  const [quando,setQuando]=useState(()=>intencao.ler().comando?.quandoLocal??(editar?valorCampoLocal(editar.agendadaPara,fuso):atalhosDeAgendamento(agoraAtual,fuso).find(a=>a.id==="amanha9")?.valorLocal??""));
+ const [perguntar,setPerguntar]=useState(()=>{const c=intencao.ler().comando;return c?.tipo==="CRIAR"?c.perguntarSeResponder:true;});
  const [erroLocal,setErroLocal]=useState<string|null>(null),[revisaoTexto,setRevisaoTexto]=useState(0);
  const viva=useRef(true);useEffect(()=>{viva.current=true;return()=>{viva.current=false;};},[]);
  const recuperando=estado.incerto&&estado.comando!==null;
@@ -54,7 +55,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
    if(podeAgendar!==true||estadoLeitura!=="ok"||editar&&!editar.podeAlterar){setErroLocal(motivoBloqueio??(modoEditar?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem."));return;}
    if(erro||!texto.trim()||texto.length>4000){setErroLocal(erro??"Escreva uma mensagem de até 4000 caracteres.");return;}
   }
-  const entrada:EntradaAgendamento=recuperar&&atual.comando?atual.comando:editar?{tipo:"EDITAR",atendimentoId,intencaoId:editar.id,texto,quandoLocal:quando,fuso:fusoEfetivo}:{tipo:"CRIAR",atendimentoId,texto,quandoLocal:quando,fuso:fusoEfetivo};
+  const entrada:EntradaAgendamento=recuperar&&atual.comando?atual.comando:editar?{tipo:"EDITAR",atendimentoId,intencaoId:editar.id,texto,quandoLocal:quando,fuso:fusoEfetivo}:{tipo:"CRIAR",atendimentoId,texto,quandoLocal:quando,fuso:fusoEfetivo,perguntarSeResponder:perguntar};
   const resultado=await intencao.enviar(entrada,executar);
   if(viva.current&&resultado?.tipo==="ok")aoConcluir(modoEditar?"Agendamento atualizado.":"Mensagem agendada.");
  }
@@ -67,6 +68,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
    <fieldset className="space-y-2"><legend className="text-sm font-medium">Quando</legend><div className="flex flex-wrap gap-1">{atalhosDeAgendamento(agoraAtual,fusoEfetivo).map(a=><Botao key={a.id} aria-pressed={quando===a.valorLocal} variante={quando===a.valorLocal?"secundario":"fantasma"} tamanho="sm" disabled={bloqueado} onClick={()=>mudarQuando(a.valorLocal)}>{a.rotulo}</Botao>)}</div>
     <Campo rotulo="Data e hora" obrigatorio erro={quando?validacao:null}>{c=><CampoDataHoraLocal {...c} name="quandoLocal" fuso={fusoEfetivo} className="w-full rounded-lg border border-border-soft bg-surface p-2" value={quando} disabled={bloqueado} onChange={e=>mudarQuando(e.target.value)}/>}</Campo>
    </fieldset>
+   {!modoEditar&&<label className="flex items-start gap-2 text-sm"><input type="checkbox" name="perguntarSeResponder" checked={perguntar} disabled={bloqueado} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600" onChange={e=>{if(!viva.current||bloqueado)return;intencao.reiniciar();setPerguntar(e.target.checked);setErroLocal(null);}}/>Perguntar antes de enviar se o contato responder</label>}
    {conflito&&<p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-700">Já existe uma mensagem agendada para {nomeContato} {quandoAgendada(conflito.agendadaPara,fusoEfetivo,agoraAtual)}, perto desse horário.</p>}
    {!recuperando&&podeAgendar!==true&&<p role="status" className="text-sm text-gray-600">{motivoBloqueio??(modoEditar?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem.")}</p>}
    <FeedbackAcao erro={erroLocal??estado.erro??erroLeitura}/>{estadoLeitura==="erro"&&aoTentarLeitura&&<Botao variante="neutro" onClick={aoTentarLeitura}>Tentar de novo</Botao>}

@@ -10,15 +10,17 @@ import {lerContextoAtualInbox} from "@/server/whatsapp/enfileirar-inbox";
 import {exigirAgendamentoNaJanela} from "@/server/whatsapp/janela-agendamento";
 import {derivarEstadoAria,linhaEstadoDe} from "./estado-aria";
 import {podeAlterarAgendadaNoInbox} from "./agendadas-policy";
+import {MOTIVO_AGUARDA_CONFIRMACAO} from "@/server/crm/mensagens-agendadas-regras";
 export type ComandoAgendadaInbox=
- |{tipo:"CRIAR";atendimentoId:string;texto:string;agendadaPara:string;validaAte?:string;numeroEsperado?:string;chaveIdempotencia?:string}
+ |{tipo:"CRIAR";atendimentoId:string;texto:string;agendadaPara:string;validaAte?:string;numeroEsperado?:string;perguntarSeResponder?:boolean;chaveIdempotencia?:string}
  |{tipo:"REAGENDAR";atendimentoId:string;intencaoId:string;agendadaPara:string;chaveIdempotencia?:string}
  |{tipo:"ENVIAR_AGORA";atendimentoId:string;intencaoId:string;chaveIdempotencia?:string}
- |{tipo:"EDITAR";atendimentoId:string;intencaoId:string;texto:string;agendadaPara:string;chaveIdempotencia?:string};
+ |{tipo:"EDITAR";atendimentoId:string;intencaoId:string;texto:string;agendadaPara:string;chaveIdempotencia?:string}
+ |{tipo:"MANTER";atendimentoId:string;intencaoId:string;chaveIdempotencia?:string};
 export type BancoAgendadaInbox=Pick<PrismaClient,"$transaction">;
 type Tx=Prisma.TransactionClient;
 type Atendimento=NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>;
-type Alvo=Pick<IntencaoMensagem,"id"|"atendimentoId"|"numeroId"|"contatoId"|"origem"|"autorId"|"status"|"agendadaPara"|"validaAte"|"passo"|"passoComercial"|"corpoRenderizado"|"tipo"|"templateId"|"midiaPath"|"conteudo">;
+type Alvo=Pick<IntencaoMensagem,"id"|"atendimentoId"|"numeroId"|"contatoId"|"origem"|"autorId"|"status"|"agendadaPara"|"validaAte"|"passo"|"passoComercial"|"corpoRenderizado"|"tipo"|"templateId"|"midiaPath"|"conteudo"|"perguntarSeResponder"|"motivoFalha">;
 const semAlvo=()=>new ErroRegra("Mensagem não encontrada ou mudou de situação.");
 const assumir=(tipo:ComandoAgendadaInbox["tipo"])=>new ErroRegra(tipo==="CRIAR"?"Assuma a conversa para agendar a mensagem.":"Assuma a conversa para alterar a mensagem agendada.");
 function binding(a:Atendimento){const c=a.conversa.contato;return JSON.stringify([
@@ -68,8 +70,8 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
   const resolvido=await tx.atendimentoWhatsApp.findUnique({where:{id:c.atendimentoId},select:{conversa:{select:{numeroId:true}}}});
   if(!resolvido)throw new ErroRegra("Atendimento não encontrado.");
   const numeroId=resolvido.conversa.numeroId;
-  const tipoEvento=c.tipo==="CRIAR"?"MensagemAgendada":c.tipo==="EDITAR"?"MensagemAgendadaEditada":"MensagemReagendada";
-  const entrada=c.tipo==="CRIAR"?{atendimentoId:c.atendimentoId,numeroId,texto:c.texto,agendadaPara:new Date(c.agendadaPara).toISOString(),validaAte:c.validaAte?new Date(c.validaAte).toISOString():null}:
+  const tipoEvento=c.tipo==="CRIAR"?"MensagemAgendada":c.tipo==="EDITAR"?"MensagemAgendadaEditada":c.tipo==="MANTER"?"MensagemAgendadaMantida":"MensagemReagendada";
+  const entrada=c.tipo==="CRIAR"?{atendimentoId:c.atendimentoId,numeroId,texto:c.texto,agendadaPara:new Date(c.agendadaPara).toISOString(),validaAte:c.validaAte?new Date(c.validaAte).toISOString():null,...(c.perguntarSeResponder?{perguntarSeResponder:true}:{})}:
    {contexto:"inbox362",operacao:c.tipo,atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,...(c.tipo==="REAGENDAR"||c.tipo==="EDITAR"?{agendadaPara:new Date(c.agendadaPara).toISOString()}:{}),...(c.tipo==="EDITAR"?{texto}:{})};
   const marca=marcaIdempotencia(c.chaveIdempotencia,entrada);
   const replay=marca?await repeticaoIdempotente(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",autorId,marca,mensagemConflito:"Esta tentativa já foi usada com outra mensagem, operação ou horário."}):null;
@@ -108,6 +110,17 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
   }
   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   if(c.tipo==="EDITAR"&&(m?.tipo!=="TEXTO"||m.templateId!=null||m.midiaPath!=null||m.conteudo!=null))throw new ErroRegra("Só mensagens de texto podem ter o texto editado.");
+  if(c.tipo==="MANTER"){
+   if(!m)throw semAlvo();
+   if(!m.perguntarSeResponder)throw new ErroRegra("Esta mensagem não aguarda confirmação.");
+   const agora=new Date();
+   const r=await tx.intencaoMensagem.updateMany({where:{id:m.id,atendimentoId:c.atendimentoId,numeroId:m.numeroId,contatoId:m.contatoId,autorId:m.autorId,origem:"HUMANO",status:m.status,agendadaPara:m.agendadaPara,passo:null,passoComercial:null},
+    data:{confirmadaAposRespostaEm:agora,...(m.status==="ADIADA"&&m.motivoFalha===MOTIVO_AGUARDA_CONFIRMACAO?{status:"PENDENTE",despacharAposEm:null,motivoFalha:null}:{})}});
+   if(r.count!==1)throw semAlvo();
+   await registrarEvento(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",agregadoId:c.atendimentoId,autorId,payload:{contexto:"inbox362",operacao:c.tipo,intencaoId:m.id,atendimentoId:c.atendimentoId,agendadaPara:m.agendadaPara!.toISOString(),numeroId,...marca}});
+   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m);
+   return {id:m.id};
+  }
   const quando=c.tipo==="ENVIAR_AGORA"?new Date():futuro(c.agendadaPara);
   const validaAte=c.tipo==="CRIAR"?(c.validaAte?new Date(c.validaAte):null):m?.validaAte??null;
   if(c.tipo==="CRIAR"){if(validaAte&&validaAte.getTime()<=quando.getTime())throw new ErroRegra("A validade deve ser depois do horário agendado.");}
@@ -116,11 +129,11 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   let resultadoId:string;
   if(c.tipo==="CRIAR"){
-   const nova=await tx.intencaoMensagem.create({data:{numeroId,atendimentoId:c.atendimentoId,contatoId:inicial.contatoId,origem:"HUMANO",tipo:"TEXTO",corpoRenderizado:c.texto,agendadaPara:quando,validaAte,autorId}});
+   const nova=await tx.intencaoMensagem.create({data:{numeroId,atendimentoId:c.atendimentoId,contatoId:inicial.contatoId,origem:"HUMANO",tipo:"TEXTO",corpoRenderizado:c.texto,agendadaPara:quando,validaAte,perguntarSeResponder:c.perguntarSeResponder===true,autorId}});
    resultadoId=nova.id;
   }else{
    if(!m)throw semAlvo();
-   const r=await tx.intencaoMensagem.updateMany({where:{id:m.id,atendimentoId:c.atendimentoId,numeroId:m.numeroId,contatoId:m.contatoId,autorId:m.autorId,origem:"HUMANO",status:m.status,agendadaPara:m.agendadaPara,passo:null,passoComercial:null},data:{agendadaPara:quando,status:"PENDENTE",despacharAposEm:null,motivoFalha:null,...(c.tipo==="EDITAR"?{corpoRenderizado:texto!}:{})}});
+   const r=await tx.intencaoMensagem.updateMany({where:{id:m.id,atendimentoId:c.atendimentoId,numeroId:m.numeroId,contatoId:m.contatoId,autorId:m.autorId,origem:"HUMANO",status:m.status,agendadaPara:m.agendadaPara,passo:null,passoComercial:null},data:{agendadaPara:quando,status:"PENDENTE",despacharAposEm:null,motivoFalha:null,confirmadaAposRespostaEm:new Date(),...(c.tipo==="EDITAR"?{corpoRenderizado:texto!}:{})}});
    if(r.count!==1)throw semAlvo();resultadoId=m.id;
   }
   await registrarEvento(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",agregadoId:c.atendimentoId,autorId,payload:{contexto:"inbox362",operacao:c.tipo,intencaoId:resultadoId,atendimentoId:c.atendimentoId,agendadaPara:quando.toISOString(),numeroId,...marca,...(c.tipo==="ENVIAR_AGORA"?{enviarAgora:true}:{}),...(c.tipo==="EDITAR"?{textoAlterado:texto!==m?.corpoRenderizado}:{})}});

@@ -11,6 +11,7 @@ export type AgendarMensagemInput = {
   leadId?: string;
   pessoaId?: string;
   atendimentoId?: string;
+  perguntarSeResponder?: boolean;
   chaveIdempotencia?: string;
 };
 
@@ -26,6 +27,7 @@ export const AgendarSchema = z.object({
   leadId: z.string().min(1).optional(),
   pessoaId: z.string().min(1).optional(),
   atendimentoId: z.string().min(1).optional(),
+  perguntarSeResponder: z.boolean().optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
@@ -37,4 +39,19 @@ export function futuro(v: string, agora = new Date()): Date {
 
 export function dataFutura(m: { validaAte: Date | null }, quando: Date) {
   if (m.validaAte && m.validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A nova data passa da validade da mensagem.");
+}
+
+export const MOTIVO_AGUARDA_CONFIRMACAO = "aguarda_confirmacao_resposta";
+
+export type AgendadaComPergunta = {
+  origem: string;
+  agendadaPara: Date | null;
+  perguntarSeResponder: boolean;
+  confirmadaAposRespostaEm: Date | null;
+  criadaEm: Date;
+};
+
+export function respondeuDepoisDeAgendar(it: AgendadaComPergunta, ultimoInboundEm: Date | null | undefined): boolean {
+  if (it.origem !== "HUMANO" || !it.agendadaPara || !it.perguntarSeResponder || !ultimoInboundEm) return false;
+  return ultimoInboundEm.getTime() > (it.confirmadaAposRespostaEm ?? it.criadaEm).getTime();
 }

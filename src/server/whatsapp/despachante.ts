@@ -22,6 +22,9 @@ import { candidatosDaGrade } from "@/server/agenda/grade";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { dentroDaJanelaEnvio, type JanelaEnvio } from "./janela-envio";
 import { abrirAtendimentoDaAgendada, autorAindaPodeEnviarAgendada, esperaAtendimento } from "@/server/crm/mensagens-agendadas";
+import { MOTIVO_AGUARDA_CONFIRMACAO, respondeuDepoisDeAgendar } from "@/server/crm/mensagens-agendadas-regras";
+
+export { MOTIVO_AGUARDA_CONFIRMACAO };
 
 const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
   MOTOR: driverMotor,
@@ -210,6 +213,13 @@ export async function despacharFila(
     if (automatica && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
       await marcar(it.id, "CANCELADA", "conversa_viva");
       r.canceladas += 1;
+      continue;
+    }
+
+    if (respondeuDepoisDeAgendar(it, conversa?.ultimoInboundEm)) {
+      const retencao = await reterParaConfirmar(it);
+      if (retencao === "retida") r.adiadas += 1;
+      else if (retencao === "cancelada") r.canceladas += 1;
       continue;
     }
 
@@ -601,6 +611,20 @@ async function adiar(id: string, ate: Date, motivo: string): Promise<boolean> {
     if (!erroGuardaPedagogica(erro)) throw erro;
     await marcar(id, "CANCELADA", "autorizacao_academica_revogada");
     return false;
+  }
+}
+
+async function reterParaConfirmar(it: Pick<IntencaoMensagem, "id" | "status" | "agendadaPara" | "corpoRenderizado" | "confirmadaAposRespostaEm">): Promise<"retida" | "mudou" | "cancelada"> {
+  try {
+    const { count } = await prisma.intencaoMensagem.updateMany({
+      where: { ...vigente(it), confirmadaAposRespostaEm: it.confirmadaAposRespostaEm },
+      data: { status: "ADIADA", despacharAposEm: null, motivoFalha: MOTIVO_AGUARDA_CONFIRMACAO },
+    });
+    return count === 1 ? "retida" : "mudou";
+  } catch (erro) {
+    if (!erroGuardaPedagogica(erro)) throw erro;
+    await marcar(it.id, "CANCELADA", "autorizacao_academica_revogada");
+    return "cancelada";
   }
 }
 
