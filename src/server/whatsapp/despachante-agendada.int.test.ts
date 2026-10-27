@@ -1,12 +1,16 @@
-import { DriverWhatsApp } from "@prisma/client";
-import { describe, it, expect, beforeEach } from "vitest";
+import { DriverWhatsApp, Papel } from "@prisma/client";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { truncarBanco } from "@/test/integracao";
+import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { criarNumeroSetor } from "@/test/integracao-whatsapp";
+import { garantirAtendimento } from "./atendimentos";
 import { despacharFila, MOTIVO_AGUARDA_CONFIRMACAO } from "./despachante";
 
 beforeEach(async () => {
   await truncarBanco();
+  vi.stubEnv("WHATSAPP_LIVE", "0");
 });
+afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 async function seed(agendadaPara: Date | null, status: "PENDENTE" | "ADIADA" = "PENDENTE") {
   const numero = await prisma.numeroWhatsApp.create({
@@ -48,14 +52,16 @@ describe("despachante × perguntar se o contato responder", () => {
   async function retida(opcoes: { perguntar: boolean; entradaMs: number; confirmadaMs?: number }) {
     const agora = new Date();
     const criadaEm = new Date(agora.getTime() - 3600_000);
-    const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511955550102", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-da2" },
-    });
+    const vend = await criarUsuario([Papel.VENDEDOR], "Vend");
+    const numero = await criarNumeroSetor({ telefoneE164: "+5511955550102", setores: ["COMERCIAL"], donoId: vend.id });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887778" } });
-    await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id, ultimoInboundEm: new Date(criadaEm.getTime() + opcoes.entradaMs) } });
+    const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: vend.id }));
+    const ultimoInboundEm = new Date(criadaEm.getTime() + opcoes.entradaMs);
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { ultimoInboundEm } });
+    await prisma.conversaWhatsApp.update({ where: { numeroId_contatoId: { numeroId: numero.id, contatoId: contato.id } }, data: { ultimoInboundEm } });
     const it = await prisma.intencaoMensagem.create({
       data: {
-        numeroId: numero.id, contatoId: contato.id, origem: "HUMANO", corpoRenderizado: "Oi", criadaEm,
+        numeroId: numero.id, contatoId: contato.id, atendimentoId: a.id, autorId: vend.id, origem: "HUMANO", corpoRenderizado: "Oi", criadaEm,
         agendadaPara: new Date(agora.getTime() - 60_000), perguntarSeResponder: opcoes.perguntar,
         confirmadaAposRespostaEm: opcoes.confirmadaMs === undefined ? null : new Date(criadaEm.getTime() + opcoes.confirmadaMs),
       },
@@ -85,5 +91,20 @@ describe("despachante × perguntar se o contato responder", () => {
   it("confirmada depois da entrada não retém", async () => {
     const { agora, it: m } = await retida({ perguntar: true, entradaMs: 60_000, confirmadaMs: 120_000 });
     expect((await despacharFila(agora, { intencaoId: m.id })).simuladas).toBe(1);
+  });
+
+  it("MANTER concorrente antes da retenção: não conta adiada nem cancelada e a linha segue como o MANTER deixou", async () => {
+    const { agora, it: m } = await retida({ perguntar: true, entradaMs: 60_000 });
+    const confirmadaEm = new Date(agora.getTime() - 1000);
+    const original = prisma.intencaoMensagem.updateMany.bind(prisma.intencaoMensagem);
+    vi.spyOn(prisma.intencaoMensagem, "updateMany").mockImplementation((async (args: Parameters<typeof original>[0]) => {
+      if (args.data && (args.data as { motivoFalha?: unknown }).motivoFalha === MOTIVO_AGUARDA_CONFIRMACAO) {
+        await prisma.intencaoMensagem.update({ where: { id: m.id }, data: { confirmadaAposRespostaEm: confirmadaEm } });
+      }
+      return original(args);
+    }) as unknown as typeof original);
+    const r = await despacharFila(agora, { intencaoId: m.id });
+    expect(r).toMatchObject({ avaliadas: 1, adiadas: 0, canceladas: 0, simuladas: 0 });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: m.id } })).toMatchObject({ status: "PENDENTE", confirmadaAposRespostaEm: confirmadaEm, motivoFalha: null });
   });
 });

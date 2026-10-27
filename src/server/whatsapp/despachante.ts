@@ -217,8 +217,9 @@ export async function despacharFila(
     }
 
     if (respondeuDepoisDeAgendar(it, conversa?.ultimoInboundEm)) {
-      if (await reterParaConfirmar(it)) r.adiadas += 1;
-      else r.canceladas += 1;
+      const retencao = await reterParaConfirmar(it);
+      if (retencao === "retida") r.adiadas += 1;
+      else if (retencao === "cancelada") r.canceladas += 1;
       continue;
     }
 
@@ -613,17 +614,17 @@ async function adiar(id: string, ate: Date, motivo: string): Promise<boolean> {
   }
 }
 
-async function reterParaConfirmar(it: Pick<IntencaoMensagem, "id" | "status" | "agendadaPara" | "corpoRenderizado" | "confirmadaAposRespostaEm">): Promise<boolean> {
+async function reterParaConfirmar(it: Pick<IntencaoMensagem, "id" | "status" | "agendadaPara" | "corpoRenderizado" | "confirmadaAposRespostaEm">): Promise<"retida" | "mudou" | "cancelada"> {
   try {
-    await prisma.intencaoMensagem.updateMany({
+    const { count } = await prisma.intencaoMensagem.updateMany({
       where: { ...vigente(it), confirmadaAposRespostaEm: it.confirmadaAposRespostaEm },
       data: { status: "ADIADA", despacharAposEm: null, motivoFalha: MOTIVO_AGUARDA_CONFIRMACAO },
     });
-    return true;
+    return count === 1 ? "retida" : "mudou";
   } catch (erro) {
     if (!erroGuardaPedagogica(erro)) throw erro;
     await marcar(it.id, "CANCELADA", "autorizacao_academica_revogada");
-    return false;
+    return "cancelada";
   }
 }
 
