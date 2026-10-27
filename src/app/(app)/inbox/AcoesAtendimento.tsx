@@ -10,6 +10,7 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import {validarQuando as validarQuandoAgendar} from "./fluxos/agendar/validar-quando";
 import { Modal } from "@/components/Modal";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useSugestaoAgendamento } from "./insights/useSugestaoAgendamento";
@@ -52,7 +53,6 @@ export interface PropsAcoesAtendimento {
   fuso: string | null;
 }
 
-import {validarQuando as validarQuandoAgendar} from "./fluxos/agendar/validar-quando";
 const SILENCIO_HORAS = 8;
 const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
