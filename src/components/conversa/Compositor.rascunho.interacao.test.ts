@@ -37,8 +37,8 @@ async function enviar() { const b = Array.from(host.querySelectorAll("button")).
 async function anexar(nome: string) { const input = host.querySelector("input")!; await act(async () => eventos(input).onChange({ target: { files: [new File(["conteúdo"], nome)], value: nome } })); }
 
 it.each(["Resposta rápida", "Proposta"])("365 composição: callback retido de %s não atravessa o bloqueio da Aria nem uma nova geração", async rotulo => {
-  const abrirProposta = vi.fn();
-  const p = props({ aoEnviarTexto: vi.fn(async () => ({ ok: true as const })), aoEnviarMidia: vi.fn(async () => ({ ok: true as const })), respostas: [{ id: "r365", atalho: "/preco", titulo: "Preço", corpo: "Olá" }], propostas: { oportunidadeId: "op365", aoAbrir: abrirProposta } });
+  const abrirProposta = vi.fn(async () => ({ ok: true as const }));
+  const p = props({ aoEnviarTexto: vi.fn(async () => ({ ok: true as const })), aoEnviarMidia: vi.fn(async () => ({ ok: true as const })), respostas: [{ id: "r365", atalho: "/preco", titulo: "Preço", corpo: "Olá" }], propostas: { oportunidadeId: "op365", itens: [{ id: "doc365", nome: "Proposta.pdf", criadoEm: "2026-10-20T15:00:00.000Z" }] }, aoEnviarProposta: abrirProposta });
   await montar(p); await digitar("Rascunho preservado");
   const anexos = Array.from(host.querySelectorAll("button")).find(b => b.getAttribute("aria-label") === "Anexar")!;
   await act(async () => eventos(anexos).onClick());
@@ -53,6 +53,7 @@ it.each(["Resposta rápida", "Proposta"])("365 composição: callback retido de 
   await act(async () => retido());
   expect(storage.get("conversa-rascunho:A:responder")).toBe("Rascunho preservado");
   expect(abrirProposta).not.toHaveBeenCalled();
+  expect(host.querySelector('[role="dialog"]')).toBeNull();
   expect(p.aoEnviarTexto).not.toHaveBeenCalled();
   expect(p.aoEnviarMidia).not.toHaveBeenCalled();
 });
