@@ -17,6 +17,7 @@ import { executarAcaoMotor } from "./acoes";
 import { ErroMotor, MENSAGEM_LIMITE_RITMO, type CodigoErroMotor } from "./cliente";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { exigirMotorConectado } from "./capacidades";
+import { contatosCompartilhaveis } from "../contatos-cartao";
 
 const JANELA_EDICAO_MS = 15 * 60_000;
 
@@ -353,6 +354,7 @@ export async function enviarConteudoInbox(input: { atendimentoId: string; conteu
     const dados = EnviarConteudoSchema.parse(input);
     const c = dados.conteudo as ConteudoEspecial;
     if (c.tipo === "ENQUETE" && c.maxEscolhas > c.opcoes.length) throw new ErroRegra("Escolhas por pessoa não pode passar do número de opções.");
+    if (c.tipo === "CONTATO" && !(await contatosCompartilhaveis(u, dados.atendimentoId)).some((n) => n.contatoJid === c.contatoJid)) throw new ErroRegra("Escolha um dos números da escola para enviar como contato.");
     const intencao = await enfileirarSaidaInbox(prisma, u.id, dados.atendimentoId, { tipo: "especial", conteudo: c, midiaUrl: dados.midiaUrl });
     await despacharFila(new Date(), { intencaoId: intencao.id });
     const final = await prisma.intencaoMensagem.findUnique({ where: { id: intencao.id }, select: { status: true, motivoFalha: true } });
