@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   posEfeito: 0,
   parametros313: null as string | null,
   navegar361: vi.fn(),
+  substituir363: vi.fn(),
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   avisoThread: null as unknown,
@@ -53,7 +54,7 @@ vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => 
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: m.navegar361, refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: m.substituir363, push: m.navegar361, refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
@@ -1222,4 +1223,11 @@ it("361 R1B1 ACK fora dos itens navega pela rota canônica e abre item autorizad
 });
 it("361 R1B1 ACK retido depois de outra seleção não navega nem troca atendimento",()=>{
  habilitarRota313("c=a1");const p={...props,opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;const antigo=(elementos(tela(p)).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props.aoSelecionar;lista(tela(p)).aoSelecionar("a2");tela(p);antigo("novo-retido");expect(m.navegar361).not.toHaveBeenCalled();expect(coluna313(tela(p)).selecionado).toBe("a2");
+});
+it("363 dono de intenções fica acima da conversa e conserva comando incerto A→B→A",async()=>{
+ tela();await esvaziar();const dono=cabecalho(tela()).intencoesAgendamento;expect(dono).toBeDefined();const i=dono!.para({tipo:"CRIAR",atendimentoId:"a1"});const action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar({tipo:"CRIAR",atendimentoId:"a1",texto:"A",quandoLocal:"2035-01-01T09:00",fuso:"UTC"},action);const comando=i.ler().comando;
+ lista(tela()).aoSelecionar("a2");await esvaziar();expect(cabecalho(tela()).intencoesAgendamento).toBe(dono);lista(tela()).aoSelecionar("a1");await esvaziar();expect(cabecalho(tela()).intencoesAgendamento!.pendente("a1")?.intencao.ler().comando).toBe(comando);expect(action).toHaveBeenCalledOnce();
+});
+it("363 deep link consome só agendar preservando c/filtros/hash e não reabre no rerender",async()=>{
+ habilitarRota313("c=a1&agendar=1&busca=Ana");vi.stubGlobal("window",{...window,location:{...window.location,href:window.location.href+"#painel"}});m.substituir363.mockClear();const p={...props,agendarAoAbrir:true};tela(p);await esvaziar();const c=cabecalho(tela(p));expect(c.pedidoAgendamento).toEqual(expect.any(String));expect(c.aoPedidoAgendamentoConsumido).toEqual(expect.any(Function));c.aoPedidoAgendamentoConsumido!();expect(m.substituir363).toHaveBeenCalledWith("/inbox?c=a1&busca=Ana#painel",{scroll:false});expect(cabecalho(tela(p)).pedidoAgendamento).toBeNull();
 });
