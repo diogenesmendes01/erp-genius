@@ -32,6 +32,7 @@ export interface SugestaoAriaThread {
   decididaPorNome: string | null;
   decididaEm: string | null;
   podeDecidir?: boolean;
+  pendentesNoTurno?: number;
   podeDesfazer?: boolean;
   desfeitaPorId?: string | null;
   desfeitaPorNome?: string | null;
@@ -108,10 +109,13 @@ export async function cartoesDaThread(db: Db, usuario: UsuarioSessao, atendiment
     cursor = pagina[pagina.length - 1];
   }
   const ids = [...new Set(autorizadas.flatMap(s => [s.decididaPorId,s.desfeitaPorId].filter((id): id is string => !!id)))];
+  const turnosPendentes = [...new Set(autorizadas.filter(s => s.status === "SUGERIDA").map(s => s.turnoId))];
+  const pendentesPorTurno = new Map<string, number>();
+  if (turnosPendentes.length) for (const p of await db.acaoAgenteIA.findMany({ where: { AND: [{ atendimentoId: atendimento.id, turnoId: { in: turnosPendentes } }, sugestaoVigente(agora)] }, select: { turnoId: true } })) pendentesPorTurno.set(p.turnoId, (pendentesPorTurno.get(p.turnoId) ?? 0) + 1);
   const nomes = new Map(ids.length ? (await db.usuario.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true } })).map(u => [u.id, u.nome]) : []);
   return autorizadas.flatMap(s => {
     if (!statusCartao(s.status)) return [];
     const p = objeto(s.payload);
-    return [{ id: s.id, turnoId: s.turnoId, acao: s.acao, status: s.status, criadoEm: s.criadoEm.toISOString(), expiraEm: s.expiraEm?.toISOString() ?? null, justificativa: s.justificativa, texto: typeof p?.texto === "string" ? p.texto : null, detalhe: detalheDaSugestao(s.acao, s.payload), decididaPorId: s.decididaPorId, decididaPorNome: s.decididaPorId ? nomes.get(s.decididaPorId) ?? null : null, decididaEm: s.decididaEm?.toISOString() ?? null, podeDecidir: s.status === "SUGERIDA", podeDesfazer: s.reversivel && (s.status === "APROVADA" || s.status === "EXECUTADA"), desfeitaPorId: s.desfeitaPorId, desfeitaPorNome: s.desfeitaPorId ? nomes.get(s.desfeitaPorId) ?? null : null, desfeitaEm: s.desfeitaEm?.toISOString() ?? null }];
+    return [{ id: s.id, turnoId: s.turnoId, acao: s.acao, status: s.status, criadoEm: s.criadoEm.toISOString(), expiraEm: s.expiraEm?.toISOString() ?? null, justificativa: s.justificativa, texto: typeof p?.texto === "string" ? p.texto : null, detalhe: detalheDaSugestao(s.acao, s.payload), decididaPorId: s.decididaPorId, decididaPorNome: s.decididaPorId ? nomes.get(s.decididaPorId) ?? null : null, decididaEm: s.decididaEm?.toISOString() ?? null, podeDecidir: s.status === "SUGERIDA", ...(s.status === "SUGERIDA" ? { pendentesNoTurno: pendentesPorTurno.get(s.turnoId) ?? 1 } : {}), podeDesfazer: s.reversivel && (s.status === "APROVADA" || s.status === "EXECUTADA"), desfeitaPorId: s.desfeitaPorId, desfeitaPorNome: s.desfeitaPorId ? nomes.get(s.desfeitaPorId) ?? null : null, desfeitaEm: s.desfeitaEm?.toISOString() ?? null }];
   });
 }

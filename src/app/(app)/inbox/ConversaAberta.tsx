@@ -22,7 +22,7 @@ import type { ConversaHook } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { intercalarSugestoes } from "./aria/intercalar";
-import { CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
+import { CartaoPacoteAria, CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
 
 import { ControladorTransferir } from "./fluxos/transferir/ControladorTransferir";
 import { opcoesTransferir } from "./fluxos/transferir/opcoes-transferir";
@@ -32,9 +32,11 @@ import { linhaEstadoAria, type LinhaEstadoAria } from "./aria/textos-aria";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
+import { enviarConteudoInbox } from "@/server/whatsapp/motor/acoes-mensagem";
 import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-respostas";
-import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
-import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
+import { enviarPropostaNoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { origemVisivelDaTransferencia, propostasDoAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
+import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
 import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
@@ -151,6 +153,16 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
     void respostasRapidasDoCompositor().then((r) => { if (ativo) setRespostas(r); }).catch(() => undefined);
     return () => { ativo = false; };
   }, []);
+  const propostasId = item && !item.grupo && item.finalidade === "COMERCIAL" ? item.id : null;
+  const vinculoAtual = item?.vinculo ?? null;
+  const [propostas, setPropostas] = useState<{ de: string; oportunidadeId: string | null; itens: PropostaAnexavel[] } | null>(null);
+  useEffect(() => {
+    if (!propostasId) return;
+    let ativo = true;
+    void propostasDoAtendimento(propostasId).then((r) => { if (ativo) setPropostas({ de: propostasId, oportunidadeId: r.oportunidadeId, itens: r.propostas }); }).catch(() => undefined);
+    return () => { ativo = false; };
+  }, [propostasId, vinculoAtual]);
+  const propostasDaConversa = propostasId && propostas?.de === propostasId ? { oportunidadeId: propostas.oportunidadeId, itens: propostas.itens, fuso } : undefined;
   const capacidades = item?.capacidades ?? [];
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
   const ocupada = conversa.carregando || conversa.carregandoAntigas || conversa.carregandoNovas;
@@ -208,6 +220,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
             if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
             if (i.tipo === "tarefa") return <CartaoTarefaDoInbox atendimentoId={item?.id??""} t={i.t} bloqueado={bloquearDecisoesAria} fuso={fuso} usuarioNome={usuario.nome??null} aoEditar={aoEditarTarefa} aoMudar={aoMudar}/>;
+            if (i.tipo === "sugestao-aria" && i.pacote) return <CartaoPacoteAria pacote={i.pacote} atendimentoId={item!.id} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} atendimentoId={item!.id} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             const m = i.m;
             return (
@@ -244,6 +257,9 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
           aoNota={(nota, chaveIdempotencia, mencoes) => registrarNotaAtendimento({ atendimentoId: item.id, nota, chaveIdempotencia, ...(mencoes === undefined ? {} : { mencoes }) })}
           buscarMencoes={buscarMencoes}
           respostas={respostas}
+          propostas={propostasDaConversa}
+          aoEnviarProposta={propostasDaConversa ? (documentoId, chaveIdempotencia) => enviarPropostaNoAtendimento({ atendimentoId: item.id, documentoId, chaveIdempotencia }) : undefined}
+          aoEnviarConteudo={(conteudo) => enviarConteudoInbox({ atendimentoId: item.id, conteudo })}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />
       ) : <p className="border-t p-3 text-sm text-gray-600">{MOTIVO_SEM_ENVIO}</p>}

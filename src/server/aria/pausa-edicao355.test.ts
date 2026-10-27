@@ -1,0 +1,16 @@
+import type { Prisma } from "@prisma/client";
+import { beforeEach, expect, it, vi } from "vitest";
+const h=vi.hoisted(()=>({evento:vi.fn()}));
+vi.mock("@/lib/prisma",()=>({prisma:{}}));
+vi.mock("../_shared",()=>({ErroRegra:class extends Error{},executarAcao:vi.fn(),exigirSessao:vi.fn(),registrarEvento:h.evento}));
+vi.mock("../whatsapp/escopo",()=>({escopoAtendimentos:vi.fn()}));
+import { pausarAriaComIntencoesTravadasTx, pausarAriaNoAtendimento } from "./pausa";
+function portas(ids:string[],count=ids.length,pai=1){return {intencaoMensagem:{findMany:vi.fn().mockResolvedValue(ids.map(id=>({id}))),updateMany:vi.fn().mockResolvedValue({count})},atendimentoWhatsApp:{updateMany:vi.fn().mockResolvedValue({count:pai})}};}
+const tx=(p:ReturnType<typeof portas>)=>p as unknown as Prisma.TransactionClient;
+beforeEach(()=>h.evento.mockReset().mockResolvedValue({id:"evento"}));
+it("D2 cancela somente IDs qualificados e pausa com autor humano",async()=>{const p=portas(["i1","i2"]);expect(await pausarAriaComIntencoesTravadasTx(tx(p),"at","u",["i2","i1"])).toBe(true);expect(p.intencaoMensagem.updateMany).toHaveBeenCalledExactlyOnceWith({where:{id:{in:["i1","i2"]},atendimentoId:"at",origem:"IA",status:{in:["PENDENTE","ADIADA"]}},data:{status:"CANCELADA",motivoFalha:"aria_pausada",despacharAposEm:null}});expect(h.evento).toHaveBeenCalledWith(tx(p),expect.objectContaining({tipo:"AriaPausadaNoAtendimento",autorId:"u"}));});
+it("D2 conjunto vazio não executa cancelamento amplo",async()=>{const p=portas([]);expect(await pausarAriaComIntencoesTravadasTx(tx(p),"at","u",[])).toBe(true);expect(p.intencaoMensagem.updateMany).not.toHaveBeenCalled();});
+it("D2 nova intenção não travada recusa antes de writes",async()=>{const p=portas(["old","nova"]);await expect(pausarAriaComIntencoesTravadasTx(tx(p),"at","u",["old"])).rejects.toThrow("O conjunto de mensagens da Aria mudou.");expect(p.intencaoMensagem.updateMany).not.toHaveBeenCalled();expect(p.atendimentoWhatsApp.updateMany).not.toHaveBeenCalled();expect(h.evento).not.toHaveBeenCalled();});
+it("D2 mudança de estado na atualização recusa antes de pausar",async()=>{const p=portas(["old"],0);await expect(pausarAriaComIntencoesTravadasTx(tx(p),"at","u",["old"])).rejects.toThrow("O conjunto de mensagens da Aria mudou.");expect(p.atendimentoWhatsApp.updateMany).not.toHaveBeenCalled();});
+it("D2 já pausado cancela conjunto, sem duplicar evento",async()=>{const p=portas(["i"],1,0);expect(await pausarAriaComIntencoesTravadasTx(tx(p),"at","u",["i"])).toBe(false);expect(p.intencaoMensagem.updateMany).toHaveBeenCalledOnce();expect(h.evento).not.toHaveBeenCalled();});
+it("consumidor antigo mantém cancelamento amplo e evento canônicos",async()=>{const p=portas(["i"]);expect(await pausarAriaNoAtendimento(tx(p),"at","MANUAL","u")).toBe(true);expect(p.intencaoMensagem.updateMany).toHaveBeenCalledWith({where:{atendimentoId:"at",origem:"IA",status:{in:["PENDENTE","ADIADA"]}},data:{status:"CANCELADA",motivoFalha:"aria_pausada",despacharAposEm:null}});expect(h.evento).toHaveBeenCalledOnce();});
