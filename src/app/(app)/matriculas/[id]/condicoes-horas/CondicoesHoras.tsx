@@ -11,11 +11,12 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
-  const router = useRouter(), preparo = useAcaoCliente({ idempotente: false }), decisao = useAcaoCliente({ idempotente: false });
+  const router = useRouter(), preparo = useAcaoCliente({ idempotente: true }), tentativa = useChaveIdempotencia(), decisao = useAcaoCliente({ idempotente: false });
   const [versaoDecidida, setVersaoDecidida] = useState<string | null>(null);
   const ocupado = preparo.ocupado || decisao.ocupado;
   const [valorHora, setValorHora] = useState("");
@@ -38,7 +39,8 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
         moeda: d.moeda, unidadeMinutos: 60, valorHora: valorHoraNumero.toFixed(2), antecedenciaCancelamentoMinutos: Number(f.get("antecedencia")),
         vigenteDesde,
         clausulaPreco: String(f.get("preco")), clausulaCancelamento: String(f.get("cancelamento")),
-      } }), "Versão preparada para revisão independente.");
+      }, chaveIdempotencia: tentativa.atual }), "Versão preparada para revisão independente.");
+      tentativa.depoisDo(r);
       if (r?.tipo === "ok") router.refresh();
     }}>
       <fieldset disabled={ocupado} className="space-y-3"><legend>Nova transcrição do contrato confirmado</legend>

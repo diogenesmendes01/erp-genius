@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -33,7 +34,8 @@ const data = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "s
 export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao = null, fusoEscola }: { dados: Dados; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const dia = (instante: string) => { const x = formatarInstanteExibicao(instante, preferenciaFusoExibicao, fusoEscola, "data"); return `${x.texto} (${x.fuso})`; };
   const router = useRouter();
-  const preparo = useAcaoCliente({ idempotente: false });
+  const preparo = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const decisao = useAcaoCliente({ idempotente: false });
   const [versaoDecidida, setVersaoDecidida] = useState<string | null>(null);
   const ocupado = preparo.ocupado || decisao.ocupado;
@@ -94,7 +96,9 @@ export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao 
                 },
               },
         },
+        chaveIdempotencia: tentativa.atual,
       }), "Versão preparada para revisão independente.");
+      tentativa.depoisDo(resultado);
       if (resultado?.tipo === "ok") router.refresh();
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
