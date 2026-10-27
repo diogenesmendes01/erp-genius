@@ -130,3 +130,9 @@ it("pergunta sem nome do contato usa 'O contato'",async()=>{
  await render({nomeContato:null,agendada:{...base,autor:"equipe",perguntaPendente:true}});
  expect(host.textContent).toContain("O contato respondeu depois do agendamento. Ainda quer enviar?");
 });
+it("com nome do anexo: mostra o nome, sem texto vazio e sem Editar",async()=>{
+ await render({agendada:{...base,tipo:"DOCUMENTO",temAnexo:true,anexoNome:"Proposta anual.pdf",texto:""}});
+ const ps=host.querySelectorAll("p").map(p=>p.textContent);
+ expect(ps).toContain("Proposta anual.pdf");expect(ps).not.toContain("");
+ expect(botoes()).toEqual(["Enviar agora","Cancelar"]);
+});

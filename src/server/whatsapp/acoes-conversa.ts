@@ -70,13 +70,24 @@ function revalidarAgendadas() {
   revalidatePath("/inicio");
 }
 
-export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+export type AnexoVinculoAgendamento = { midiaUrl?: string; documentoPropostaId?: string; anexoNome?: string; leadId?: string; tarefaId?: string };
+const AnexoVinculoSchema = z.object({
+  midiaUrl: z.string().min(1).optional(),
+  documentoPropostaId: z.string().min(1).optional(),
+  anexoNome: z.string().optional(),
+  leadId: z.string().min(1).optional(),
+  tarefaId: z.string().min(1).optional(),
+});
+
+export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string } & AnexoVinculoAgendamento): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
     const perguntarSeResponder = z.boolean().optional().parse(input.perguntarSeResponder);
+    const { midiaUrl, documentoPropostaId, anexoNome, leadId, tarefaId } = AnexoVinculoSchema.parse(input);
     const r = await executarAgendadaInbox(prisma, u.id, {
       tipo: "CRIAR", atendimentoId, texto: input.texto, agendadaPara: input.quando, perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia,
+      midiaUrl, documentoPropostaId, anexoNome, leadId, tarefaId,
     });
     revalidarAgendadas();
     return r;
@@ -119,10 +130,13 @@ export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId
   });
 }
 
-export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string } & AnexoVinculoAgendamento): Promise<Resultado<{ id: string }>> {
   const r = await executarAcao(async () => exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString());
   if (!r.ok) return { ok: false, erro: r.erro };
-  return agendarMensagemNoAtendimento({ atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, perguntarSeResponder: input.perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia });
+  return agendarMensagemNoAtendimento({
+    atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, perguntarSeResponder: input.perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia,
+    midiaUrl: input.midiaUrl, documentoPropostaId: input.documentoPropostaId, anexoNome: input.anexoNome, leadId: input.leadId, tarefaId: input.tarefaId,
+  });
 }
 
 export async function manterAgendadaAposResposta(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {

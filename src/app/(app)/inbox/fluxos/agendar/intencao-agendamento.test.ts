@@ -1,5 +1,5 @@
 import {expect,it,vi} from "vitest";
-import {criarIntencoesAgendamento,type EntradaAgendamento} from "./intencao-agendamento";
+import {camposAnexoVinculo,criarIntencoesAgendamento,type EntradaAgendamento} from "./intencao-agendamento";
 const entrada=(id="a"):Extract<EntradaAgendamento,{tipo:"CRIAR"}>=>({tipo:"CRIAR",atendimentoId:id,texto:"Rascunho fictício",quandoLocal:"2035-01-01T09:00",fuso:"America/Sao_Paulo",perguntarSeResponder:true});
 it("donoMap acima da conversa conserva intenção A→B→A e separa operação/intençãodeeditar",()=>{
  const dono=criarIntencoesAgendamento();const a=dono.para(entrada());dono.para(entrada("b"));expect(dono.para(entrada())).toBe(a);
@@ -33,4 +33,8 @@ it("recusa de acesso ao recuperar incerto não prova rollback e não libera nova
 it("owner reencontra operação incerta de editar após A→B→A sem enviar automaticamente",async()=>{
  const dono=criarIntencoesAgendamento(()=>"k");const e:EntradaAgendamento={tipo:"EDITAR",atendimentoId:"a",intencaoId:"i",texto:"Texto editado",quandoLocal:"2035-01-01T09:00",fuso:"UTC"};const i=dono.para(e),action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar(e,action);dono.para(entrada("b"));
  expect(dono.pendente?.("a")).toMatchObject({alvo:{atendimentoId:"a",tipo:"EDITAR",intencaoId:"i"},intencao:i});expect(dono.pendente?.("b")).toBeNull();expect(action).toHaveBeenCalledOnce();
+});it("camposAnexoVinculo traduz anexo e vínculo para os campos do servidor",()=>{
+ expect(camposAnexoVinculo({})).toEqual({});
+ expect(camposAnexoVinculo({anexo:{tipo:"arquivo",url:"/api/files/whatsapp-out/u/1.pdf",nome:"Foto.pdf"},vinculo:{tipo:"oportunidade",leadId:"op"}})).toEqual({midiaUrl:"/api/files/whatsapp-out/u/1.pdf",anexoNome:"Foto.pdf",leadId:"op"});
+ expect(camposAnexoVinculo({anexo:{tipo:"proposta",documentoId:"d",nome:"P.pdf"},vinculo:{tipo:"tarefa",tarefaId:"t",titulo:"Ligar"}})).toEqual({documentoPropostaId:"d",tarefaId:"t"});
 });

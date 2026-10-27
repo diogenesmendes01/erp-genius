@@ -1,10 +1,15 @@
-import type {Prisma,PrismaClient,IntencaoMensagem} from "@prisma/client";
+import type {Prisma,PrismaClient,IntencaoMensagem,TipoMensagem} from "@prisma/client";
 import {z} from "zod";
 import {ErroRegra,apenasPortal} from "@/server/_shared/sessao";
 import {ChaveIdempotenciaSchema} from "@/server/_shared/validacao";
 import {marcaIdempotencia,repeticaoIdempotente} from "@/server/_shared/idempotencia";
 import {registrarEvento} from "@/server/_shared/evento";
-import {AgendarSchema,InstanteSchema,futuro,dataFutura} from "@/server/crm/mensagens-agendadas-regras";
+import {AgendarSchema,InstanteSchema,TextoAgendadaSchema,futuro,dataFutura} from "@/server/crm/mensagens-agendadas-regras";
+import {capacidadesCrm} from "@/server/crm/permissoes";
+import {escopoTarefas} from "@/server/crm/tarefas";
+import {contentTypePorExtensao} from "@/lib/uploads";
+import {copiarDocumentoParaSaida,descartarMidiaSaida,midiaSaidaDoAutor,tipoPorMime} from "@/server/whatsapp/midia";
+import {ERRO_ANEXAR_PROPOSTA,exigirPropostaVisivel} from "@/server/whatsapp/proposta-atendimento";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {lerContextoAtualInbox} from "@/server/whatsapp/enfileirar-inbox";
 import {exigirAgendamentoNaJanela} from "@/server/whatsapp/janela-agendamento";
@@ -12,7 +17,7 @@ import {derivarEstadoAria,linhaEstadoDe} from "./estado-aria";
 import {podeAlterarAgendadaNoInbox} from "./agendadas-policy";
 import {MOTIVO_AGUARDA_CONFIRMACAO} from "@/server/crm/mensagens-agendadas-regras";
 export type ComandoAgendadaInbox=
- |{tipo:"CRIAR";atendimentoId:string;texto:string;agendadaPara:string;validaAte?:string;numeroEsperado?:string;perguntarSeResponder?:boolean;chaveIdempotencia?:string}
+ |{tipo:"CRIAR";atendimentoId:string;texto:string;agendadaPara:string;validaAte?:string;numeroEsperado?:string;perguntarSeResponder?:boolean;midiaUrl?:string;documentoPropostaId?:string;anexoNome?:string;leadId?:string;tarefaId?:string;chaveIdempotencia?:string}
  |{tipo:"REAGENDAR";atendimentoId:string;intencaoId:string;agendadaPara:string;chaveIdempotencia?:string}
  |{tipo:"ENVIAR_AGORA";atendimentoId:string;intencaoId:string;chaveIdempotencia?:string}
  |{tipo:"EDITAR";atendimentoId:string;intencaoId:string;texto:string;agendadaPara:string;chaveIdempotencia?:string}
@@ -65,13 +70,14 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
  const c=comando.tipo==="CRIAR"?{...comando,...AgendarSchema.parse({...comando,numeroId:comando.numeroEsperado??"resolvido-no-servidor"})}:comando;
  if(c.tipo!=="CRIAR")z.string().min(1).parse(c.intencaoId);
  if(c.tipo==="REAGENDAR"||c.tipo==="EDITAR")InstanteSchema.parse(c.agendadaPara);
- const texto=c.tipo==="EDITAR"?AgendarSchema.shape.texto.parse(c.texto):null;
- return db.$transaction(async tx=>{
+ const texto=c.tipo==="EDITAR"?TextoAgendadaSchema.parse(c.texto):null;
+ let copiada:string|null=null;
+ try{return await db.$transaction(async tx=>{
   const resolvido=await tx.atendimentoWhatsApp.findUnique({where:{id:c.atendimentoId},select:{conversa:{select:{numeroId:true}}}});
   if(!resolvido)throw new ErroRegra("Atendimento não encontrado.");
   const numeroId=resolvido.conversa.numeroId;
   const tipoEvento=c.tipo==="CRIAR"?"MensagemAgendada":c.tipo==="EDITAR"?"MensagemAgendadaEditada":c.tipo==="MANTER"?"MensagemAgendadaMantida":"MensagemReagendada";
-  const entrada=c.tipo==="CRIAR"?{atendimentoId:c.atendimentoId,numeroId,texto:c.texto,agendadaPara:new Date(c.agendadaPara).toISOString(),validaAte:c.validaAte?new Date(c.validaAte).toISOString():null,...(c.perguntarSeResponder?{perguntarSeResponder:true}:{})}:
+  const entrada=c.tipo==="CRIAR"?{atendimentoId:c.atendimentoId,numeroId,texto:c.texto,agendadaPara:new Date(c.agendadaPara).toISOString(),validaAte:c.validaAte?new Date(c.validaAte).toISOString():null,...(c.perguntarSeResponder?{perguntarSeResponder:true}:{}),...(c.midiaUrl?{midiaUrl:c.midiaUrl}:{}),...(c.documentoPropostaId?{documentoPropostaId:c.documentoPropostaId}:{}),...(c.leadId?{leadId:c.leadId}:{}),...(c.tarefaId?{tarefaId:c.tarefaId}:{})}:
    {contexto:"inbox362",operacao:c.tipo,atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,...(c.tipo==="REAGENDAR"||c.tipo==="EDITAR"?{agendadaPara:new Date(c.agendadaPara).toISOString()}:{}),...(c.tipo==="EDITAR"?{texto}:{})};
   const marca=marcaIdempotencia(c.chaveIdempotencia,entrada);
   const replay=marca?await repeticaoIdempotente(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",autorId,marca,mensagemConflito:"Esta tentativa já foi usada com outra mensagem, operação ou horário."}):null;
@@ -126,18 +132,45 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
   if(c.tipo==="CRIAR"){if(validaAte&&validaAte.getTime()<=quando.getTime())throw new ErroRegra("A validade deve ser depois do horário agendado.");}
   else {if(!m)throw semAlvo();dataFutura(m,quando);}
   if(c.tipo!=="ENVIAR_AGORA")await exigirAgendamentoNaJanela(quando,tx);
+  let anexo:{midiaPath:string;tipo:TipoMensagem;nome:string|null}|null=null;
+  if(c.tipo==="CRIAR"){
+   const oportunidade=inicial.leadId??inicial.conversa.contato.leadId??null,pessoaId=inicial.conversa.contato.pessoaId??null;
+   if(c.leadId&&c.leadId!==oportunidade)throw new ErroRegra("Oportunidade não é desta conversa.");
+   const ator=c.tarefaId||c.documentoPropostaId?await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor}):null;
+   if(c.tarefaId){
+    const ligacoes:Prisma.TarefaWhereInput[]=[...(oportunidade?[{leadId:oportunidade}]:[]),...(pessoaId?[{pessoaId}]:[])];
+    const t=ator&&ligacoes.length?await tx.tarefa.findFirst({where:{AND:[{id:c.tarefaId,status:"ABERTA"},await escopoTarefas(ator,capacidadesCrm(ator.papeis).has("tarefas.equipe")),{OR:ligacoes}]},select:{id:true}}):null;
+    if(!t)throw new ErroRegra("Tarefa não encontrada ou já concluída.");
+   }
+   if(c.midiaUrl){
+    if(!midiaSaidaDoAutor(c.midiaUrl,autorId))throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
+    anexo={midiaPath:c.midiaUrl,tipo:tipoAnexo(c.midiaUrl),nome:c.anexoNome||null};
+   }
+   if(c.documentoPropostaId){
+    if(!ator)throw new ErroRegra("Sua sessão não está mais ativa.");
+    const proposta=await exigirPropostaVisivel(ator,c.atendimentoId,c.documentoPropostaId);
+    copiada=await copiarDocumentoParaSaida(autorId,proposta.url);
+    if(!copiada)throw new ErroRegra(ERRO_ANEXAR_PROPOSTA);
+    anexo={midiaPath:copiada,tipo:tipoAnexo(copiada),nome:proposta.nome};
+   }
+  }
   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   let resultadoId:string;
   if(c.tipo==="CRIAR"){
-   const nova=await tx.intencaoMensagem.create({data:{numeroId,atendimentoId:c.atendimentoId,contatoId:inicial.contatoId,origem:"HUMANO",tipo:"TEXTO",corpoRenderizado:c.texto,agendadaPara:quando,validaAte,perguntarSeResponder:c.perguntarSeResponder===true,autorId}});
+   const nova=await tx.intencaoMensagem.create({data:{numeroId,atendimentoId:c.atendimentoId,contatoId:inicial.contatoId,origem:"HUMANO",tipo:anexo?.tipo??"TEXTO",midiaPath:anexo?.midiaPath??null,corpoRenderizado:c.texto,agendadaPara:quando,validaAte,perguntarSeResponder:c.perguntarSeResponder===true,leadId:c.leadId??null,tarefaId:c.tarefaId??null,autorId}});
    resultadoId=nova.id;
   }else{
    if(!m)throw semAlvo();
    const r=await tx.intencaoMensagem.updateMany({where:{id:m.id,atendimentoId:c.atendimentoId,numeroId:m.numeroId,contatoId:m.contatoId,autorId:m.autorId,origem:"HUMANO",status:m.status,agendadaPara:m.agendadaPara,passo:null,passoComercial:null},data:{agendadaPara:quando,status:"PENDENTE",despacharAposEm:null,motivoFalha:null,confirmadaAposRespostaEm:new Date(),...(c.tipo==="EDITAR"?{corpoRenderizado:texto!}:{})}});
    if(r.count!==1)throw semAlvo();resultadoId=m.id;
   }
-  await registrarEvento(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",agregadoId:c.atendimentoId,autorId,payload:{contexto:"inbox362",operacao:c.tipo,intencaoId:resultadoId,atendimentoId:c.atendimentoId,agendadaPara:quando.toISOString(),numeroId,...marca,...(c.tipo==="ENVIAR_AGORA"?{enviarAgora:true}:{}),...(c.tipo==="EDITAR"?{textoAlterado:texto!==m?.corpoRenderizado}:{})}});
+  await registrarEvento(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",agregadoId:c.atendimentoId,autorId,payload:{contexto:"inbox362",operacao:c.tipo,intencaoId:resultadoId,atendimentoId:c.atendimentoId,agendadaPara:quando.toISOString(),numeroId,...marca,...(c.tipo==="ENVIAR_AGORA"?{enviarAgora:true}:{}),...(c.tipo==="EDITAR"?{textoAlterado:texto!==m?.corpoRenderizado}:{}),...(c.tipo==="CRIAR"?{...(c.leadId?{leadId:c.leadId}:{}),...(c.tarefaId?{tarefaId:c.tarefaId}:{}),...(anexo?{anexoTipo:anexo.tipo,...(anexo.nome?{anexoNome:anexo.nome}:{}),...(c.documentoPropostaId?{documentoPropostaId:c.documentoPropostaId}:{})}:{})}:{})}});
   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   return {id:resultadoId};
- });
+ });}catch(e){if(copiada)await descartarMidiaSaida(autorId,copiada);throw e;}
+}
+function tipoAnexo(url:string):TipoMensagem{
+ const mime=contentTypePorExtensao(url),tipo=tipoPorMime(mime);
+ if(!mime||tipo==="TEXTO"||tipo==="OUTRO")throw new ErroRegra("Tipo de arquivo não suportado para envio.");
+ return tipo;
 }

@@ -6,7 +6,7 @@ import {apenasPortal} from "@/server/_shared/sessao";
 import {derivarEstadoAria,linhaEstadoDe} from "./estado-aria";
 import {podeAlterarAgendadaNoInbox} from "./agendadas-policy";
 import {respondeuDepoisDeAgendar} from "@/server/crm/mensagens-agendadas-regras";
-export interface AgendadaNoFio{id:string;texto:string;agendadaPara:string;status:"PENDENTE"|"ADIADA";tipo:TipoMensagem;temAnexo:boolean;autor:"voce"|"aria"|"equipe";autorNome:string|null;podeAlterar:boolean;perguntaPendente:boolean}
+export interface AgendadaNoFio{id:string;texto:string;agendadaPara:string;status:"PENDENTE"|"ADIADA";tipo:TipoMensagem;temAnexo:boolean;anexoNome?:string|null;autor:"voce"|"aria"|"equipe";autorNome:string|null;podeAlterar:boolean;perguntaPendente:boolean}
 type Atendimento=NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>;
 function binding(a:Atendimento){const c=a.conversa.contato;return JSON.stringify([
  a.id,a.finalidade,a.numeroId,a.conversaId,a.contatoId,a.leadId??null,a.alunoId??null,a.matriculaId??null,a.turmaId??null,a.autorizacaoComunicacaoAcademicaId??null,
@@ -30,6 +30,11 @@ export async function lerAgendadasDoAtendimento(db:Db,autorId:string,atendimento
  const final=await atendimentoVisivel(publicador,atendimentoId,false,db);if(!final||final.encerradoEm||binding(final)!==alvo)return [];
  const usuarios=await db.usuario.findMany({where:{id:{in:[...new Set([autorId,...linhas.flatMap(m=>m.autorId?[m.autorId]:[])])]}},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true,gerenteComercialId:true}});
  const porId=new Map(usuarios.map(u=>[u.id,u]));
+ const comAnexo=linhas.filter(m=>m.origem==="HUMANO"&&m.midiaPath!==null).map(m=>m.id);
+ const nomesAnexo=new Map<string,string>();
+ if(comAnexo.length)for(const e of await db.evento.findMany({where:{tipo:"MensagemAgendada",agregadoTipo:"AtendimentoWhatsApp",agregadoId:atendimentoId,OR:comAnexo.map(id=>({payload:{path:["intencaoId"],equals:id}}))},select:{payload:true}})){
+  const p=(e.payload??{}) as Record<string,unknown>;if(typeof p.intencaoId==="string"&&typeof p.anexoNome==="string"&&p.anexoNome.trim())nomesAnexo.set(p.intencaoId,p.anexoNome.trim());
+ }
  const ultimo=porId.get(autorId);if(!ultimo?.ativo||apenasPortal(ultimo)||perfil(ultimo)!==perfil(publicador))return [];
  const estadoAria=derivarEstadoAria(linhaEstadoDe(final),ctx,sugestao);
  const ultimoInboundEm=final.ultimoInboundEm??final.conversa.ultimoInboundEm;
@@ -37,7 +42,7 @@ export async function lerAgendadasDoAtendimento(db:Db,autorId:string,atendimento
  return linhas.flatMap(m=>{
   if(!m.agendadaPara||(m.status!=="PENDENTE"&&m.status!=="ADIADA"))return [];
   const dto:AgendadaNoFio={id:m.id,texto:m.corpoRenderizado,agendadaPara:m.agendadaPara.toISOString(),status:m.status,tipo:m.tipo,
-   temAnexo:m.midiaPath!==null||m.conteudo!==null,autor:m.origem==="IA"?"aria":m.autorId===ultimo.id?"voce":"equipe",autorNome:m.autor?.nome??null,
+   temAnexo:m.midiaPath!==null||m.conteudo!==null,...(nomesAnexo.has(m.id)?{anexoNome:nomesAnexo.get(m.id)}:{}),autor:m.origem==="IA"?"aria":m.autorId===ultimo.id?"voce":"equipe",autorNome:m.autor?.nome??null,
    podeAlterar:podeAlterarAgendadaNoInbox(ultimo,{...m,autorGerenteComercialId:(m.autorId?porId.get(m.autorId)?.gerenteComercialId:null)??null},{id:final.id,responsavelId:final.responsavelId,encerradoEm:final.encerradoEm,autorizadoEnviar,estadoAria,numeroAtivo:final.conversa.numero.ativo,optOut:final.conversa.contato?.optOutEm!=null}),
    perguntaPendente:respondeuDepoisDeAgendar(m,ultimoInboundEm)};
   return [dto];

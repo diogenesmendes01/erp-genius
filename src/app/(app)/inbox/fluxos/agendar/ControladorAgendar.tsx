@@ -4,12 +4,14 @@ import type {AgendadaNoFio} from "@/server/inbox/agendadas-leitura";
 import type {PortaRascunhoAgendamento} from "@/components/conversa/porta-rascunho-agendamento";
 import type {RespostaDoCompositor} from "@/components/conversa/respostas-rapidas";
 import type {AlvoAgendamento,ComandoAgendamento,IntencaoAgendamento,IntencoesAgendamento} from "./intencao-agendamento";
-import {PopoverAgendar} from "./PopoverAgendar";
+import {PopoverAgendar,type OpcoesAgendamento} from "./PopoverAgendar";
+import {camposAnexoVinculo} from "./intencao-agendamento";
+import {subirAnexoAgendamento} from "./subir-anexo";
 import {PopoverFluxo} from "../PopoverFluxo";
 import {Botao} from "@/components/Botao";
 import {FeedbackAcao} from "@/components/FeedbackAcao";
 import {MensagemStatus} from "@/components/MensagemStatus";
-import {agendadasDoAtendimento} from "@/server/whatsapp/consultas-acoes-atendimento";
+import {agendadasDoAtendimento,propostasDoAtendimento,tarefasAbertasParaVinculo} from "@/server/whatsapp/consultas-acoes-atendimento";
 import {agendarMensagemNoAtendimentoLocal,editarAgendamentoDoAtendimento} from "@/server/whatsapp/acoes-conversa";
 import {MOTIVO_SEM_ENVIO} from "@/components/conversa/Compositor";
 import type {Resultado} from "@/server/_shared/resultado";
@@ -65,6 +67,11 @@ export function useControladorAgendar(props:PropsControladorAgendar){
   void agendadasDoAtendimento(capturada.alvo.atendimentoId).then(lista=>{if(vigente&&viva.current&&abertaRef.current===capturada){if(capturada.alvo.tipo==="EDITAR"){const id=capturada.alvo.intencaoId,dto=lista.find(l=>l.id===id);if(dto)setEdicao(anterior=>anterior?.geracao===capturada.geracao?anterior:{geracao:capturada.geracao,dto});}setLeitura({chave:chaveCapturada,lista,erro:null});}}).catch(()=>{if(vigente&&viva.current&&abertaRef.current===capturada)setLeitura({chave:chaveCapturada,lista:null,erro:"Não foi possível carregar os agendamentos."});});
   return()=>{vigente=false;};
  },[abertura,chave,props.intencoes,props.podeLer,props.usuarioId]);
+ const [opcoes,setOpcoes]=useState<{geracao:number;dado:OpcoesAgendamento}|null>(null);
+ useEffect(()=>{if(!abertura||abertura.alvo.tipo!=="CRIAR"||!props.podeLer||abertura.atorId!==props.usuarioId)return;let vigente=true;const capturada=abertura,id=capturada.alvo.atendimentoId;
+  void Promise.all([Promise.resolve().then(()=>propostasDoAtendimento(id)).catch(()=>({oportunidadeId:null,propostas:[]})),Promise.resolve().then(()=>tarefasAbertasParaVinculo(id)).catch(()=>[])]).then(([p,tarefas])=>{if(vigente&&viva.current&&abertaRef.current===capturada)setOpcoes({geracao:capturada.geracao,dado:{oportunidadeId:p.oportunidadeId,propostas:p.propostas,tarefas}});});
+  return()=>{vigente=false;};
+ },[abertura,props.podeLer,props.usuarioId]);
  const lerAgora=leitura?.chave===chave?leitura:null,lista=lerAgora?.lista??[],carregando=!!abertura&&!lerAgora;
  const idEditar=abertura?.alvo.tipo==="EDITAR"?abertura.alvo.intencaoId:null;
  const dto=idEditar?lista.find(l=>l.id===idEditar):undefined;
@@ -78,12 +85,13 @@ export function useControladorAgendar(props:PropsControladorAgendar){
   const executar=async(c:ComandoAgendamento):Promise<Resultado<{id:string}>>=>{const p=atual.current,e=capturada.intencao.ler();
    if(!viva.current||abertaRef.current!==capturada||p.usuarioId!==capturada.atorId||p.intencoes!==capturada.dono||p.atendimentoId!==c.atendimentoId||!p.podeLer)return {ok:false,erro:"Você não pode acessar este atendimento."};
    if(!e.incerto&&!podeMutar(p))return {ok:false,erro:c.tipo==="EDITAR"?"Assuma a conversa para alterar a mensagem agendada.":"Assuma a conversa para agendar a mensagem."};
-   return c.tipo==="CRIAR"?agendarMensagemNoAtendimentoLocal({atendimentoId:c.atendimentoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,perguntarSeResponder:c.perguntarSeResponder,chaveIdempotencia:c.chaveIdempotencia}):editarAgendamentoDoAtendimento({atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,chaveIdempotencia:c.chaveIdempotencia});
+   return c.tipo==="CRIAR"?agendarMensagemNoAtendimentoLocal({atendimentoId:c.atendimentoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,perguntarSeResponder:c.perguntarSeResponder,chaveIdempotencia:c.chaveIdempotencia,...camposAnexoVinculo(c)}):editarAgendamentoDoAtendimento({atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,chaveIdempotencia:c.chaveIdempotencia});
   };
   if(capturada.alvo.tipo==="EDITAR"&&!dtoExibido&&!incerto)dialogo=<PopoverFluxo titulo="Editar agendamento" ancora={ancora} aoFechar={fecharCapturada}><MensagemStatus texto={carregando?"Carregando agendamentos…":null}/><FeedbackAcao erro={lerAgora?.erro??(faltouAlvo?"Agendamento não encontrado ou mudou de situação.":null)}/>{lerAgora?.erro&&<Botao variante="neutro" onClick={()=>setTentativa(t=>t+1)}>Tentar de novo</Botao>}<Botao variante="neutro" onClick={fecharCapturada}>Cancelar</Botao></PopoverFluxo>;
   else dialogo=<PopoverAgendar key={capturada.geracao} atendimentoId={props.atendimentoId} nomeContato={props.nomeContato} fuso={capturada.fuso} textoInicial={capturada.porta?.textoAtual??""} ancora={ancora} agendadas={lista} respostas={props.respostas} variaveisResposta={props.variaveisResposta} intencao={capturada.intencao} executar={executar} editar={dto??(dtoExibido?{...dtoExibido,podeAlterar:false}:undefined)} relogio={props.relogio} podeSalvarRascunho={!!capturada.porta}
    podeAgendar={podeMutar(props)&&!!lerAgora&&!lerAgora.erro&&!faltouAlvo} podeRecuperar={props.podeLer} motivoBloqueio={motivo}
    estadoLeitura={carregando?"carregando":lerAgora?.erro?"erro":"ok"} erroLeitura={lerAgora?.erro??null} aoTentarLeitura={()=>setTentativa(t=>t+1)} insightsAplicaveis={props.insightsAplicaveis} versaoInsights={props.versaoInsights}
+   opcoes={opcoes?.geracao===capturada.geracao?opcoes.dado:undefined} subirArquivo={arquivo=>{const p=atual.current;if(!viva.current||abertaRef.current!==capturada||p.usuarioId!==capturada.atorId||p.atendimentoId!==capturada.alvo.atendimentoId||!podeMutar(p))return Promise.resolve({ok:false,erro:"Assuma a conversa para agendar a mensagem."});return subirAnexoAgendamento(capturada.alvo.atendimentoId,arquivo);}}
    aoSalvarRascunho={texto=>{const p=atual.current;if(!viva.current||abertaRef.current!==capturada||p.usuarioId!==capturada.atorId||p.intencoes!==capturada.dono||!p.podeLer||p.atendimentoId!==capturada.alvo.atendimentoId||!capturada.porta)return {ok:false,erro:"O rascunho mudou. Reabra o agendamento antes de salvar."};return capturada.porta.salvar({texto,revisaoEsperada:capturada.porta.revisao});}}
    aoFechar={fecharCapturada} aoConcluir={mensagem=>{if(viva.current&&abertaRef.current===capturada&&atual.current.atendimentoId===capturada.alvo.atendimentoId&&atual.current.usuarioId===capturada.atorId&&atual.current.intencoes===capturada.dono){fechar();setSucesso({atorId:capturada.atorId,mensagem});atual.current.aoConcluir(mensagem);}}}/>;
  }

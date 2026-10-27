@@ -114,3 +114,55 @@ it("MANTER antes do despachante reter só registra a confirmação",async()=>{co
 it("MANTER sem a opção recusa sem efeitos",async()=>{const f=fixture();Object.assign(f.it,{perguntarSeResponder:false});await expect(executarAgendadaInbox(f.db,"u",manter())).rejects.toThrow("Esta mensagem não aguarda confirmação.");expect(f.tx.intencaoMensagem.updateMany).not.toHaveBeenCalled();expect(f.tx.evento.create).not.toHaveBeenCalled();});
 it("MANTER exige ter assumido a conversa",async()=>{const f=fixture();Object.assign(f.it,{status:"ADIADA",motivoFalha:"aguarda_confirmacao_resposta",perguntarSeResponder:true});f.a.responsavelId="outro";await expect(executarAgendadaInbox(f.db,"u",manter())).rejects.toThrow("Assuma a conversa para alterar a mensagem agendada.");expect(f.tx.intencaoMensagem.updateMany).not.toHaveBeenCalled();});
 it("MANTER de mensagem já enviada recusa",async()=>{const f=fixture();Object.assign(f.it,{status:"DESPACHADA",perguntarSeResponder:true});await expect(executarAgendadaInbox(f.db,"u",manter())).rejects.toThrow("Mensagem não encontrada ou mudou de situação.");expect(f.tx.intencaoMensagem.updateMany).not.toHaveBeenCalled();});
+const anexo=vi.hoisted(()=>({proposta:vi.fn(),copiar:vi.fn(),descartar:vi.fn(),escopo:vi.fn()}));
+vi.mock("@/server/whatsapp/proposta-atendimento",()=>({ERRO_ANEXAR_PROPOSTA:"Não foi possível anexar esta proposta.",exigirPropostaVisivel:anexo.proposta}));
+vi.mock("@/server/whatsapp/midia",async(original)=>({...await original<typeof import("@/server/whatsapp/midia")>(),copiarDocumentoParaSaida:anexo.copiar,descartarMidiaSaida:anexo.descartar}));
+vi.mock("@/server/crm/tarefas",()=>({escopoTarefas:anexo.escopo}));
+function comTarefa(f:ReturnType<typeof fixture>,tarefa:{id:string}|null){const findFirst=vi.fn().mockResolvedValue(tarefa);Object.assign(f.tx,{tarefa:{findFirst}});anexo.escopo.mockResolvedValue({responsavelId:"u"});return findFirst;}
+it("CRIAR com arquivo do uploader grava a mídia do autor e dispensa o texto",async()=>{
+ const f=fixture();await executarAgendadaInbox(f.db,"u",{...criar(),texto:"",midiaUrl:"/api/files/whatsapp-out/u/1.pdf",anexoNome:"Foto da turma.pdf"});
+ expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({tipo:"DOCUMENTO",midiaPath:"/api/files/whatsapp-out/u/1.pdf",corpoRenderizado:""})}));
+ expect(f.tx.evento.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({payload:expect.objectContaining({anexoTipo:"DOCUMENTO",anexoNome:"Foto da turma.pdf"})})}));
+});
+it("arquivo de outro autor ou fora do uploader é recusado sem efeitos",async()=>{
+ for(const midiaUrl of ["/api/files/whatsapp-out/outro/1.pdf","/api/files/documentos/1.pdf"]){const f=fixture();await expect(executarAgendadaInbox(f.db,"u",{...criar(),midiaUrl})).rejects.toThrow("Anexo inválido: envie o arquivo pelo uploader da inbox.");expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();}
+});
+it("sem texto e sem anexo continua exigindo a mensagem; arquivo e proposta juntos são recusados",async()=>{
+ const f=fixture();await expect(executarAgendadaInbox(f.db,"u",{...criar(),texto:"  "})).rejects.toThrow("Escreva a mensagem.");
+ await expect(executarAgendadaInbox(f.db,"u",{...criar(),midiaUrl:"/api/files/whatsapp-out/u/1.pdf",documentoPropostaId:"d"})).rejects.toThrow("Escolha só um anexo.");
+ expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+});
+it("CRIAR com proposta copia o documento para a saída do autor e grava o nome",async()=>{
+ const f=fixture();anexo.proposta.mockResolvedValue({url:"/api/files/documentos/p.pdf",nome:"Proposta anual.pdf"});anexo.copiar.mockResolvedValue("/api/files/whatsapp-out/u/copia.pdf");
+ await executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"});
+ expect(anexo.proposta).toHaveBeenCalledWith(expect.objectContaining({id:"u"}),"a","d1");expect(anexo.copiar).toHaveBeenCalledWith("u","/api/files/documentos/p.pdf");
+ expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({tipo:"DOCUMENTO",midiaPath:"/api/files/whatsapp-out/u/copia.pdf"})}));
+ expect(f.tx.evento.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({payload:expect.objectContaining({documentoPropostaId:"d1",anexoNome:"Proposta anual.pdf"})})}));
+ expect(anexo.descartar).not.toHaveBeenCalled();
+});
+it("falha depois de copiar a proposta descarta a cópia",async()=>{
+ const f=fixture();anexo.proposta.mockResolvedValue({url:"/api/files/documentos/p.pdf",nome:"P.pdf"});anexo.copiar.mockResolvedValue("/api/files/whatsapp-out/u/copia.pdf");f.tx.intencaoMensagem.create.mockRejectedValue(new Error("banco"));
+ await expect(executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"})).rejects.toThrow("banco");expect(anexo.descartar).toHaveBeenCalledWith("u","/api/files/whatsapp-out/u/copia.pdf");
+});
+it("vínculo com a oportunidade da conversa grava leadId; de outra oportunidade é recusado",async()=>{
+ const f=fixture();Object.assign(f.a,{leadId:"op1"});await executarAgendadaInbox(f.db,"u",{...criar(),leadId:"op1"});
+ expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({leadId:"op1",tarefaId:null})}));
+ expect(f.tx.evento.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({agregadoTipo:"AtendimentoWhatsApp",payload:expect.objectContaining({leadId:"op1"})})}));
+ const g=fixture();Object.assign(g.a,{leadId:"op1"});await expect(executarAgendadaInbox(g.db,"u",{...criar(),leadId:"op2"})).rejects.toThrow("Oportunidade não é desta conversa.");expect(g.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+});
+it("vínculo com tarefa aberta da conversa grava tarefaId; tarefa fora do escopo, concluída ou de outro contato é recusada",async()=>{
+ const f=fixture();Object.assign(f.a,{leadId:"op1"});const busca=comTarefa(f,{id:"t1"});await executarAgendadaInbox(f.db,"u",{...criar(),tarefaId:"t1"});
+ expect(busca).toHaveBeenCalledWith(expect.objectContaining({where:{AND:[{id:"t1",status:"ABERTA"},{responsavelId:"u"},{OR:[{leadId:"op1"}]}]}}));
+ expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({tarefaId:"t1"})}));
+ const g=fixture();Object.assign(g.a,{leadId:"op1"});comTarefa(g,null);await expect(executarAgendadaInbox(g.db,"u",{...criar(),tarefaId:"t9"})).rejects.toThrow("Tarefa não encontrada ou já concluída.");expect(g.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+ const h=fixture();const semLigacao=comTarefa(h,{id:"t1"});await expect(executarAgendadaInbox(h.db,"u",{...criar(),tarefaId:"t1"})).rejects.toThrow("Tarefa não encontrada ou já concluída.");expect(semLigacao).not.toHaveBeenCalled();
+});
+it("a marca de idempotência cobre anexo e vínculo",async()=>{
+ const f=fixture();Object.assign(f.a,{leadId:"op1"});await executarAgendadaInbox(f.db,"u",{...criar(),leadId:"op1",midiaUrl:"/api/files/whatsapp-out/u/1.pdf"});
+ const comVinculo=marcaIdempotencia("tentativa-criar-362",{atendimentoId:"a",numeroId:"n",texto:"Texto fictício",agendadaPara:"2035-01-02T15:00:00.000Z",validaAte:null,midiaUrl:"/api/files/whatsapp-out/u/1.pdf",leadId:"op1"});
+ expect(f.tx.evento.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({payload:expect.objectContaining(comVinculo)})}));
+ expect(comVinculo).not.toEqual(marcaIdempotencia("tentativa-criar-362",{atendimentoId:"a",numeroId:"n",texto:"Texto fictício",agendadaPara:"2035-01-02T15:00:00.000Z",validaAte:null}));
+});
+it("sem ter assumido, anexo e vínculo não são lidos nem copiados",async()=>{
+ const f=fixture();f.a.responsavelId="outro";await expect(executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"})).rejects.toThrow(/Assuma/);expect(anexo.proposta).not.toHaveBeenCalled();expect(anexo.copiar).not.toHaveBeenCalled();
+});
