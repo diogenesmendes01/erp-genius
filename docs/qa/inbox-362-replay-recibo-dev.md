@@ -4,7 +4,7 @@
 
 Fonte local00a8a330/Main960 com delta C5 core RAWc2c608ab1cc2119798c383aac88d66f3d2bd0ef9e4c6810f1600e5c613ca666f. UNIT118/7arquivos (1c9171 EXIT0), lint3TS/c455b3 EXIT0 e TSC8192/ebd91d EXIT0. Nativos na MESMAfonteC5: legado10fd1bde/sess34528→2fc331 EXIT0,10/10,37.52s; operacional16bf6e8e/sess45742→d1b0f6 EXIT0,16/16,60.99s. Log10SHA16d8b46d2c981ba172d80c0a242f318bd9be83fbd47428b38303b250e1f6aa89/log16SHAdea4bdc16a8475d520114ee442d3c479934f224f41c86949f188412ea7f64c40. Mais C2concorrência22ef92 EXIT0,2/2 na mesma fonte: total atual28 casos distintos/três arquivos, sem somar execuções anteriores.
 
-C2: ACKsemConfigDML e hipótese de lockglobal da singleton existente não reproduzida (Prisma5.22, SQLsóSELECT, BantesliberarA, ACK0queriesConfig); inicializaçãoausente não medida. C3mapanominal abaixo; C4índiceIDs501502aplicadasimutáveis; C5textoagendar/alterar comRED→GREEN; C6decisõesD11GP+ACK esclarecidas. Nenhuma alteração especulativa da ordem de locks. Global/build/QA pública exata/CI e interface363 continuam PENDENTES; não fechar362. Todas as seções seguintes conservam fontes/negativos intermediários e não revogam este estado atual.
+C2: ACKsemConfigDML e hipótese de lockglobal da singleton existente não reproduzida (Prisma5.22, SQLsóSELECT, BantesliberarA, ACK0queriesConfig); inicializaçãoausente não medida. C3mapanominal abaixo; C4índiceIDs501502aplicadasimutáveis; C5textoagendar/alterar comRED→GREEN; C6decisõesD11GP+ACK esclarecidas. Nenhuma alteração especulativa da ordem de locks. Global UNIT/build DEV e QA independente TESTER concluídos, conforme seções finais: TESTER118UNIT/7arquivos e94nativos/12arquivos na fonteD5 exata. CI pública após o checkpoint final e interface363 continuam PENDENTES; não fechar362. Todas as seções seguintes conservam fontes/negativos intermediários e não revogam este estado atual.
 
 ## Histórico — fonte inicial R3B1, antes de C5 e da medição C2
 
@@ -48,5 +48,73 @@ FonteC5/corec2c608ab + nativo9ab40d9c, Prisma5.22/config original/dev-gravacoes/
 
 A hipótese C2 de lock global no hot path da singleton existente não se reproduziu no Prisma instalado: update:{} não emitiu DML nesse cenário. Não alterar ordem/preparação sem causa. Limite: inicialização concorrente quando ConfigIA ausente NÃO medida; duas amostras não demonstram ausência global de contenção/carga. ZeroDML ACK é separado desse controle. Nenhum P2028/erro infra usado como aprovação. ROOTrestorec47cf3 EXIT0 baseline1389/428t/502ledger/zero outros atores/listeners;lease encerrada.
 
-C4 índice de migrações atualizado com IDs reais501/502 e bytes aplicados imutáveis, preservando faixas históricas. C6 tabela original de decisõesD11 recebe esclarecimento datado sobre GPcall52bba613 e ACK de leitura, sem criar capacidadeCRMglobal. UI#363 é encaminhamento separado: controles futuros não são declarados entregues pelo servidor362. Global/build/QA pública exata/CI continuam pendentes.
+C4 índice de migrações atualizado com IDs reais501/502 e bytes aplicados imutáveis, preservando faixas históricas. C6 tabela original de decisõesD11 recebe esclarecimento datado sobre GPcall52bba613 e ACK de leitura, sem criar capacidadeCRMglobal. UI#363 é encaminhamento separado: controles futuros não são declarados entregues pelo servidor362. Naquele registro, global/build/QA ainda aguardavam; os resultados posteriores estão concluídos nas seções finais. CI permanece pendente.
 Após a última lease C5, ROOTrestore56b141 EXIT0 confirmou novamente baseline1389/428t/502ledger/zero outros atores/listeners. Nenhum SQL DEV posterior; a restauração c47cf3 acima pertence à lease C2 anterior.
+
+## Gates globais DEV concluídos — fonte congelada D5
+
+Fonte exata d5e2c9227e98ae58382ba1d42efdb8401d1c0613 (composição MAIN960/D10 preservada, coreC5c2c608ab). Nenhuma fonte foi editada durante os gates. Global UNIT ORIGINAL `vitest run`, configuração original automática, sem filtros/skips, worker1/no-file-parallelism apenas como limite de recursos, Hermes/UTC/sete provedores vazios/DBdummylocalhost:1/heap4096:934b5e/sess62630→8580be EXIT0,1116/1116arquivos e10229/10229casos,587.34s. Log SHA88d681ed308547eb6c7c8b7c0617a8d8d7f8552ac3c00b0c8a3e4a67815cf69f. Saídas de contraprovas do corpus não são aceite visual novo.
+
+Lint ORIGINAL `eslint .`:11fe38/sess10300→e78cd5 EXIT0,zero erros/97 avisos; log14963d12e06b853da8e6c32ec24fae672c8e740e3cd1e38c434554377dbeba9b. Não afirmar zero avisos nem alterar guardas/baseline; lint focal dos três TS próprios tinha zero avisos. TSC original `--noEmit --incremental false`8192/ebd91d0 permanece na mesma fonte produtiva; build abaixo também concluiu sua checagem TypeScript normal. Não houve novo delta que justificasse rerodar o TSC separado.
+
+Build ORIGINAL `next build`:d544d6/sess34285→5fcfb5 EXIT0,Next16.3.5/Turbopack,compilação17.9s/TypeScript69s/115páginas estáticas geradas e rotas finalizadas; log SHA23cfb2cd7acb2f48777a55727c58bc82c3c6d94de6e65f4c38548fb39f4633e0. Heap8192,MOCK_DADOS_BUILD1,DBdummy1,UTC/sete provedores vazios,telemetriaoff e preloadCJSprivado `globalThis.fetch` lança (sem stub de sucesso). ROOTaprovou protocolo. Preflight84d387 verificou realpaths dentro do próprio B e moveu integralmente .next para cache próprio sem deleção/junction,identidade de quatro arquivos20e0b02203f5868bf662f817315bcb289874370f29683869f45dbaf8ef77cca0 igual antes/depois; cache338 anterior preservado. Nenhum SQL,servidor ou browser DEV nestes gates.
+
+Gates DEV não substituem QA independente/CI: TESTER posteriormente concluiu118UNIT/7arquivos e94nativos/12arquivos na fonteD5 exata, registrados abaixo. Nova CI após publicação e recortes UI363 continuam pendentes; issue não concluída por esse checkpoint documental.
+
+## C3 — quatro requisitos INT da revisão, nomes literais e proveniência
+
+Todos os arquivos abaixo existem na fonte D5 d5e2c922; este mapa não renomeia testes nem atribui os79 históricos ao HEAD atual. “DEV atual” identifica somente execução completa própria na fonte C5. QA final TESTER concluída na fonteD5 exata:118UNIT/7arquivos e94nativos/12arquivos. Os quatro requisitos abaixo estão cobertos por execução completa; recibos individuais complementam o mapa na seção final, sem atribuir contagem histórica a esta fonte.
+
+| Requisito | Arquivo e casos literais | Execução e limite |
+| --- | --- | --- |
+| GP acadêmico sem tarefas.ver e cancelamento próprio | `src/server/inbox/agendadas-aceite362.int.test.ts`: `aceite GP acadêmico próprio sem tarefas opera ações e replays, CRM mantém negativa` (inclui cancelarGP); `aceite GP perde responsabilidade durante espera real no pai e cancelar recusa sem efeito`; `aceite GP perde ativo ou papel durante espera real no pai e cancelar recusa sem efeito` | BlobD5 `24d34b5872a4e4902de61409a24dbe18fce3687b`. Há histórico de fontes anteriores na QA; não repetido pelo DEV nesta janela. TESTER sessão11854→6349c7 EXIT0,5/5 no arquivo completo,fonteD5 exata. |
+| Mesma chave, Evento único e conflito por operação/horário | `src/server/inbox/agendadas-operacao-inbox.int.test.ts`: `SQL replay próprio preserva id/Evento e conflito de horário não grava`; `SQL namespace por tipo permite chave CRIAR/REAGENDAR e conflita REAGENDAR/ENVIAR_AGORA` | DEV atual d1b0f6 EXIT0 no arquivo completo16,fonteC5c2c608ab/nativee20f5d03. Não equivaler16 a todos os demais arquivos. TESTER sessão62455→4c136d EXIT0,16/16 no arquivo completo,fonteD5 exata. |
+| Atendimento encerrado/invisível sai da lista e novas alterações recusam | `src/server/inbox/agendadas-aceite362.int.test.ts`: `aceite filtros reais, invisível/encerrado retornam[] e recusam reagendar/enviar sem efeitos` | Mesmo blobD5 acima; não repetido pelo DEV nesta janela. ACK já confirmado é contrato separado, não nova mutação. TESTER sessão11854→6349c7 EXIT0,5/5 no arquivo completo,fonteD5 exata. |
+| Avisos transacionais do barramento, replay e rollback | `src/server/inbox/agendadas-realtime362.int.test.ts` (blobD5 `272ca98ba114d7d1385da35d947dce3490a406ce`) e `src/server/inbox/agendadas-realtime-ciclo362.int.test.ts` (blobD5 `fd6d10c6be49f3e863d1328f9468effc710111ec`); nomes nominais abaixo | Arquivos existentes/históricos não repetidos pelo DEV nesta janela. Não atribuir a eles o build/global UNIT nem C2 nativo. TESTER sessões37722→963535 EXIT0(7/7) e29900→4e7535 EXIT0(11/11),ambos arquivos completos,fonteD5 exata. |
+
+Nomes literais de `agendadas-realtime362.int.test.ts`:
+
+- `LISTEN CRIAR publica somente IDs após commit, nunca enquanto TX está aberta`
+- `LISTEN REAGENDAR publica um aviso de IDs para uma operação em sua TX`
+- `LISTEN ENVIAR_AGORA publica um aviso sem despacho direto`
+- `LISTEN replay próprio não publica aviso nem outro Evento`
+- `LISTEN rollback por revogação durante FK não publica aviso nem preserva intenção/Evento`
+- `LISTEN cancel333 conserva exatamente seu aviso existente, replay não duplica`
+- `LISTEN publica e conclui sob KEY SHARE do pai ainda retido sem upgrade`
+
+Nomes literais de `agendadas-realtime-ciclo362.int.test.ts`:
+
+- `ciclo LISTEN INSERT HUMANO agendado sem Evento avisa o atendimento`
+- `ciclo LISTEN INSERT IA agendada sem Evento avisa o atendimento`
+- `ciclo LISTEN UPDATE status fora do núcleo avisa sem Evento`
+- `ciclo LISTEN UPDATE horário fora do núcleo avisa sem Evento`
+- `ciclo LISTEN intenção sem agendadaPara não gera aviso de agendada`
+- `ciclo LISTEN OLD agendada vira NULL e ainda avisa o alvo antigo`
+- `ciclo LISTEN retarget avisa OLD e NEW distintos com seus IDs e conversas`
+- `ciclo LISTEN UPDATE com alvo igual avisa uma vez, sem duplicar OLD e NEW`
+- `ciclo LISTEN raw cancel com marca333 continua avisando sem helper manual`
+- `ciclo LISTEN payload raw é byteigual ao JSON.stringify do contrato manual333`
+- `ciclo SQL to_json param TEXT coincide com JSON.stringify nos escapes e Unicode`
+
+## QA independente TESTER concluída — fonte D5 exata
+
+O TESTER concluiu sete arquivos UNIT completos118/118 e doze arquivos nativos completos94/94 na fonteD5 exata. Fase2: nove arquivos66casos (5+1+7+11+1+5+20+12+4),todos EXIT0; fase1: três arquivos28casos (10+16+2),todos EXIT0. Último arquivo da fase2: executor18f83f/sess70811→7eaffa EXIT0. Não somar novamente DEV28/T28 ou execuções históricas, nem atribuir global DEV ao TESTER. Os quatro requisitos nominais C3 acima — GP/cancel,mesma chave,encerrado/lista,barramento — foram efetivamente cobertos pelo TESTER.
+
+ROOTrestore2de6a8 EXIT0 e audit17637d EXIT0 após94casos confirmaram baseline1389linhas/428tabelas/502migrações e zero outros atores/listeners. Snapshot `ROOT/output/inbox-root-public338-503-r35-snapshot.json` SHA256 `c73c8cac4c8b9533e1dadb2415e49d7b88a1c7ef478bf588b5487771a5e2fb73`; restaurador exclusivo SHA256 `d09a789eacc2df8daccb16596492a9fd7130b05b0126f924e07584136adccc83`. Nenhuma restauração/SQL pelo DEV nesta fase. R4C3 documental fechado por mapa nominal e execução independente concluída; nenhum código/teste foi movido,renomeado ou reexecutado para esse esclarecimento. CI do novo HEAD após publicação continua PENDENTE; não fecharissue.
+
+Recibo independente lido/conferido: `T/output/inbox-456-d5e2-qa-gates-tester.json`, SHA256 `4e902990b96ff57ae52b1f36d4623cb5742af01fbc4ceb36966662e477ab1853`. Fonte `d5e2c9227e98ae58382ba1d42efdb8401d1c0613`, srcTree `bd2dcaf74bc2da010341bb1eac62d47e5c2552e8`,cliente0084/perfildev-gravacoes/schema54579. UNIT TESTER118/7arquivos,terminal20aae7 EXIT0,3.56s. TESTER não executou globalUNIT/TSC/build/browser nesta QA; os gates globais anteriores são DEV. Todas as integrações abaixo foram arquivos completos sem filtro,skip ou retry,EXIT0.
+
+| Arquivo INT TESTER | Casos | Sessão | Terminal EXIT0 |
+| --- | ---: | ---: | --- |
+| `src/server/whatsapp/inbox-idempotencia.int.test.ts` | 10 | 20282 | `d6bc6e` |
+| `src/server/inbox/agendadas-operacao-inbox.int.test.ts` | 16 | 62455 | `4c136d` |
+| `src/server/inbox/agendadas-config-concorrencia362.int.test.ts` | 2 | 33097 | `f82598` |
+| `src/server/inbox/agendadas-aceite362.int.test.ts` | 5 | 11854 | `6349c7` |
+| `src/server/inbox/agendadas-cancelamento-claim362.int.test.ts` | 1 | 83691 | `a065e6` |
+| `src/server/inbox/agendadas-realtime362.int.test.ts` | 7 | 37722 | `963535` |
+| `src/server/inbox/agendadas-realtime-ciclo362.int.test.ts` | 11 | 29900 | `4e7535` |
+| `src/server/inbox/agendadas-keyshare.int.test.ts` | 1 | 24784 | `05df01` |
+| `src/server/inbox/agendadas-d11-legado.int.test.ts` | 5 | 71464 | `a71e0a` |
+| `src/server/inbox/acoes-painel-agendadas.int.test.ts` | 20 | 65747 | `62fc98` |
+| `src/server/crm/mensagens-agendadas.int.test.ts` | 12 | 17303 | `d6df22` |
+| `src/server/crm/mensagens-agendadas-envio.int.test.ts` | 4 | 70811 | `7eaffa` |
