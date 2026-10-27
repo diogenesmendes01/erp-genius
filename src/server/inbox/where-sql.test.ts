@@ -27,6 +27,12 @@ describe("tradutor fechado Inbox344", () => {
     const w = await escopoAtendimentos({id:"g",papeis:[Papel.GERENTE_COMERCIAL]}, {db:{...db,usuario:{findMany:async()=>equipe}} as never});
     expect(sql(w).values).toContain("dono-300");
   });
+  it("D5: acesso contextual transferido vira EXISTS na tabela própria, sem ramo fora do comercial", async () => {
+    const r = sql(await escopoAtendimentos({ id: "v", papeis: [Papel.VENDEDOR] }, { db: db as never }));
+    expect(r.sql).toContain('"AtendimentoAcessoTransferido"');
+    expect(r.sql).toContain('."revogadoEm" IS NULL');
+    expect(sql(await escopoAtendimentos({ id: "f", papeis: [Papel.FINANCEIRO] }, { db: db as never })).sql).not.toContain("AtendimentoAcessoTransferido");
+  });
   it("parametriza valores sem alias do chamador", () => {
     const valor = "' OR 1=1 --", r = sql({ responsavelId: valor });
     expect(r.sql).not.toContain(valor); expect(r.values).toContain(valor); expect(r.sql).toContain('a."responsavelId"');

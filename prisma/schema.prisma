@@ -452,6 +452,7 @@ model AtendimentoWhatsApp {
   mensagens MensagemWhatsApp[]
   intencoes IntencaoMensagem[]
   participantes ParticipanteAtendimentoWhatsApp[]
+  acessosTransferidos AtendimentoAcessoTransferido[]
   @@unique([conversaId, contextoChave])
   @@index([status, finalidade])
   @@index([atendimentoOrigemId])
@@ -476,6 +477,20 @@ model ParticipanteAtendimentoWhatsApp {
   podeEnviar Boolean @default(false)
   motivo String
   @@index([atendimentoId, usuarioId, fim])
+}
+
+model AtendimentoAcessoTransferido {
+  id String @id @default(cuid())
+  atendimentoId String
+  atendimento AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  usuarioId String
+  usuario Usuario @relation("AcessoTransferidoUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
+  concedenteId String
+  concedente Usuario @relation("AcessoTransferidoConcedente", fields: [concedenteId], references: [id], onDelete: Restrict)
+  criadoEm DateTime @default(now())
+  revogadoEm DateTime?
+  @@index([atendimentoId, usuarioId, revogadoEm])
+  @@index([usuarioId, revogadoEm])
 }
 
 enum Papel {
@@ -801,6 +816,8 @@ model Usuario {
   atendimentosResponsavel AtendimentoWhatsApp[] @relation("ResponsavelAtendimentoWhatsApp")
   participacoesAtendimento ParticipanteAtendimentoWhatsApp[] @relation("ParticipanteUsuario")
   participacoesConcedidas ParticipanteAtendimentoWhatsApp[] @relation("ConcedenteParticipante")
+  acessosTransferidos AtendimentoAcessoTransferido[] @relation("AcessoTransferidoUsuario")
+  acessosTransferidosConcedidos AtendimentoAcessoTransferido[] @relation("AcessoTransferidoConcedente")
   telefoneE164      String?
   documento         String?
   nascimento        DateTime?

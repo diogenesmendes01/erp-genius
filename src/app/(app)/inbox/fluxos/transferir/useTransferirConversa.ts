@@ -36,14 +36,14 @@ export function useTransferirConversa({ atendimentoId, identidade, opcoes, execu
     if (!sessao?.viva || sessao.token !== abertura?.token || atual.current.chave !== chave || invalidada || acao.ocupado) return;
     const permitido = entrada.alvo.tipo === "pessoa" ? opcoes.pessoas : entrada.alvo.tipo === "aria" ? opcoes.aria : entrada.alvo.tipo === "fila" ? opcoes.filaDoSetor !== null : opcoes.setores.includes(entrada.alvo.setor);
     if (!permitido) return;
-    const tentativa = tentativas.para(JSON.stringify([atendimentoId, entrada.alvo, entrada.contexto, entrada.alvo.tipo === "setor" && entrada.anexarResumoAria === true]));
+    const tentativa = tentativas.para(JSON.stringify([atendimentoId, entrada.alvo, entrada.contexto, entrada.anexarResumoAria === true]));
     const comando = { ...entrada, atendimentoId, chaveIdempotencia: tentativa.atual };
     const d = await acao.executar(async () => {
       try { const r = await executar(comando); return sessao.viva && atual.current.chave === chave ? r : { ok: true as const }; }
       catch (e) { if (!sessao.viva || atual.current.chave !== chave) return { ok: true as const }; throw e; }
     });
     if (d?.tipo === "ok" && sessao.viva && atual.current.chave === chave) {
-      tentativa.depoisDo(d); sessao.viva = false; setAbertura(null); atual.current.aoConcluir(entrada.alvo.tipo === "pessoa" ? "Atendimento atribuído." : entrada.alvo.tipo === "fila" ? "Devolvido para a fila." : entrada.alvo.tipo === "aria" ? "Atendimento devolvido para a Aria." : `Atendimento transferido para ${SETOR_ATENDIMENTO_LABEL[entrada.alvo.setor]}.`);
+      tentativa.depoisDo(d); sessao.viva = false; setAbertura(null); atual.current.aoConcluir(entrada.alvo.tipo === "pessoa" ? "Atendimento transferido." : entrada.alvo.tipo === "fila" ? "Devolvido para a fila." : entrada.alvo.tipo === "aria" ? "Atendimento devolvido para a Aria." : `Atendimento transferido para ${SETOR_ATENDIMENTO_LABEL[entrada.alvo.setor]}.`);
     }
   }
   return { ancora, gatilhoRef, abrir, fechar, confirmar, aberturaId: abertura?.id ?? 0, aberto: abertura !== null, ocupado: acao.ocupado, invalidada, erro: acao.erro };

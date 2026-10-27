@@ -12,7 +12,7 @@ export interface OpcoesTransferir { visivel: boolean; pessoas: boolean; setores:
 export function opcoesTransferir(e: EntradaTransferir): OpcoesTransferir {
   if (e.grupo || e.atendimento.encerrado) return { visivel: false, pessoas: false, setores: [], filaDoSetor: null, aria: false };
   const ctx = { setor: e.atendimento.finalidade, responsavelId: e.atendimento.responsavelId, linhaComercial: e.atendimento.linhaComercial, donoLinhaId: e.atendimento.donoLinhaId };
-  const pessoas = podeExecutar(e.usuario, "atribuir", ctx);
+  const pessoas = podeExecutar(e.usuario, "atribuir", ctx) || (podeExecutar(e.usuario, "transferir", ctx) && !ctx.linhaComercial);
   const setores = podeExecutar(e.usuario, "transferir", ctx) ? [...new Set(e.setoresDoNumero)].filter(s => s !== ctx.setor) : [];
   const filaDoSetor = ctx.responsavelId !== null && podeExecutar(e.usuario, "devolver", ctx) ? ctx.setor : null;
   const aria = e.ariaPodeDevolver;

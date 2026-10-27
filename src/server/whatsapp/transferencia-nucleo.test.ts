@@ -14,7 +14,7 @@ const ordem:string[]=[];
 const db={
  $queryRaw:vi.fn(),usuario:{findUnique:vi.fn()},
  atendimentoWhatsApp:{findUnique:vi.fn(),findUniqueOrThrow:vi.fn(),update:vi.fn(),count:vi.fn()},
- intencaoMensagem:{updateMany:vi.fn()},evento:{findFirst:vi.fn()},
+ intencaoMensagem:{updateMany:vi.fn()},evento:{findFirst:vi.fn()},atendimentoAcessoTransferido:{create:vi.fn()},
 };
 const tx=()=>db as unknown as Prisma.TransactionClient;
 const chamar=(contexto="Nota contextual")=>atribuirAtendimentoTx(tx(),autor,"a","b",{contexto,marca});
@@ -26,3 +26,18 @@ it("contexto vazio não grava nota",async()=>{await chamar("");expect(m.evento.m
 it("replay exige ator/cap/destino frescos e não repete evento/nota",async()=>{m.repeticao.mockResolvedValue({payload:{para:"b"}});m.visivel.mockResolvedValue({id:"a",finalidade:"COMERCIAL",responsavelId:"b",encerradoEm:null});db.atendimentoWhatsApp.findUniqueOrThrow.mockResolvedValue({status:"EM_ATENDIMENTO",responsavelId:"b"});db.evento.findFirst.mockResolvedValue({tipo:"AtendimentoAtribuido",autorId:"g",payload:{para:"b",chaveIdempotencia:"chave"}});await chamar();expect(db.usuario.findUnique).toHaveBeenCalledWith(expect.objectContaining({where:{id:"g"}}));expect(db.usuario.findUnique).toHaveBeenCalledWith(expect.objectContaining({where:{id:"b"}}));expect(m.evento).not.toHaveBeenCalled();expect(db.atendimentoWhatsApp.update).not.toHaveBeenCalled();});
 it("replay de dono posterior divergente não vira sucesso",async()=>{m.repeticao.mockResolvedValue({payload:{para:"b"}});await expect(chamar()).rejects.toThrow();expect(m.evento).not.toHaveBeenCalled();});
 it("replay também exige que o destino ainda enxergue o atendimento após revogação contextual",async()=>{m.repeticao.mockResolvedValue({payload:{para:"b"}});m.visivel.mockResolvedValue({id:"a",finalidade:"COMERCIAL",responsavelId:"b",encerradoEm:null});db.atendimentoWhatsApp.findUniqueOrThrow.mockResolvedValue({status:"EM_ATENDIMENTO",responsavelId:"b"});db.evento.findFirst.mockResolvedValue({tipo:"AtendimentoAtribuido",autorId:"g",payload:{para:"b",chaveIdempotencia:"chave"}});db.atendimentoWhatsApp.count.mockResolvedValue(0);await expect(chamar()).rejects.toThrow("Esta pessoa não teria acesso");expect(m.evento).not.toHaveBeenCalled();});
+
+const dono={id:"old",nome:"Vendedora",ativo:true,papeis:[Papel.VENDEDOR],permissoes:[]};
+function comoDono(opcoes:{linha?:boolean;resumo?:boolean}={}){
+ db.usuario.findUnique.mockImplementation(async({where}:{where:{id:string}})=>where.id==="old"?dono:alvo);
+ db.atendimentoWhatsApp.count.mockResolvedValueOnce(0).mockResolvedValue(opcoes.linha?0:1);
+ db.atendimentoWhatsApp.findUnique.mockResolvedValue({finalidade:"COMERCIAL",encerradoEm:null,conversa:{numero:{finalidade:opcoes.linha?"VENDAS":"AGENDA"}}});
+ db.$queryRaw.mockImplementation(async(partes:TemplateStringsArray)=>partes.join("").includes("AcaoAgenteIA")?(opcoes.resumo?[{acaoId:"acao-ia",nota:"Cliente quer proposta"}]:[]):[{id:"a"}]);
+}
+const transferirComoDono=(extra:{anexarResumoAria?:boolean}={})=>atribuirAtendimentoTx(tx(),dono,"a","b",{contexto:"",marca,...extra});
+it("D5: responsável concede acesso contextual ao colega que não enxergaria e registra via transferencia",async()=>{comoDono();await transferirComoDono();expect(db.atendimentoAcessoTransferido.create).toHaveBeenCalledExactlyOnceWith({data:{atendimentoId:"a",usuarioId:"b",concedenteId:"old"}});expect(m.evento.mock.calls.map(c=>c[1].tipo)).toEqual(["AtendimentoAtribuido"]);expect(m.evento.mock.calls[0][1].payload).toEqual({de:"old",para:"b",via:"transferencia",contexto:null,acessoContextual:true,...marca});expect(db.intencaoMensagem.updateMany).toHaveBeenCalledOnce();});
+it("D5: colega que já enxerga não recebe acesso extra",async()=>{comoDono();db.atendimentoWhatsApp.count.mockReset();db.atendimentoWhatsApp.count.mockResolvedValue(1);await transferirComoDono();expect(db.atendimentoAcessoTransferido.create).not.toHaveBeenCalled();expect(m.evento.mock.calls[0][1].payload).toMatchObject({acessoContextual:false});});
+it("D5: linha de vendas não concede acesso e recusa o destino",async()=>{comoDono({linha:true});await expect(transferirComoDono()).rejects.toThrow("Nesta linha de vendas");expect(db.atendimentoAcessoTransferido.create).not.toHaveBeenCalled();expect(m.evento).not.toHaveBeenCalled();});
+it("D5: gerente que não é o responsável não concede acesso contextual",async()=>{db.atendimentoWhatsApp.count.mockResolvedValue(0);await expect(chamar()).rejects.toThrow("Esta pessoa não teria acesso");expect(db.atendimentoAcessoTransferido.create).not.toHaveBeenCalled();});
+it("D5: quem não é responsável nem gerente não transfere",async()=>{const colega={...dono,id:"colega"};db.usuario.findUnique.mockImplementation(async({where}:{where:{id:string}})=>where.id==="colega"?colega:alvo);await expect(atribuirAtendimentoTx(tx(),colega,"a","b",{contexto:"",marca})).rejects.toThrow("Sua função não autoriza");expect(db.atendimentoWhatsApp.update).not.toHaveBeenCalled();});
+it("D5: resumo da Aria pedido vira nota com origem na mesma transação; sem resumo não grava",async()=>{comoDono({resumo:true});await transferirComoDono({anexarResumoAria:true});expect(m.evento.mock.calls.map(c=>c[1].tipo)).toEqual(["AtendimentoAtribuido","NotaInterna"]);expect(m.evento.mock.calls[1][1].payload).toEqual({nota:"Resumo da Aria\nCliente quer proposta",origem:"resumoAria",acaoAgenteIAId:"acao-ia"});vi.clearAllMocks();comoDono();await transferirComoDono({anexarResumoAria:true});expect(m.evento.mock.calls.map(c=>c[1].tipo)).toEqual(["AtendimentoAtribuido"]);});
