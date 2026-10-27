@@ -17,7 +17,7 @@ import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recurso
 import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
 import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
 import type { ConteudoEspecial } from "@/server/whatsapp/canal";
-import type { ContatoCartao } from "@/server/whatsapp/consultas-acoes-atendimento";
+import type { ContatoCartao } from "@/server/whatsapp/contatos-cartao";
 import { FormEnquete } from "./anexos/FormEnquete";
 import { FormLocalizacao } from "./anexos/FormLocalizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -65,7 +65,7 @@ export interface PropsCompositor {
 
 type FormConteudo = "enquete" | "localizacao";
 const ehFormConteudo = (id: IdItemAnexo): id is FormConteudo => id === "enquete" || id === "localizacao";
-type ListaContatos = { estado: "carregando" } | { estado: "erro" } | { estado: "pronta"; itens: ContatoCartao[] };
+type ListaContatos = { estado: "carregando" } | { estado: "erro" } | { estado: "pronta"; itens: ContatoCartao[]; erroEnvio?: string };
 
 const chaveRascunho = (id: string, modo: string) => `conversa-rascunho:${id}:${modo}`;
 function lerRascunho(id: string, modo: string): string {
@@ -444,14 +444,16 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   }
   async function enviarCartao(contatoJid: string) {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo || enviando || emCurso.current.has(contexto)) return;
+    const pedido = pedidoContatos.current;
+    const marcarErro = (erroEnvio?: string) => setListaContatos((l) => (l?.estado === "pronta" ? { ...l, erroEnvio } : l));
     emCurso.current.add(contexto);
     setEnviando(true);
-    setErro("");
+    marcarErro();
     try {
       const desfecho = await executarAcaoCliente(() => enviarConteudo({ tipo: "CONTATO", contatoJid }), { idempotente: false });
-      if (!contextoVigente()) return;
+      if (!contextoVigente() || pedidoContatos.current !== pedido) return;
       if (desfecho.tipo === "ok") fecharContatos();
-      else setErro(desfecho.mensagem);
+      else marcarErro(desfecho.mensagem);
     } finally {
       emCurso.current.delete(contexto);
       if (contextoVigente()) setEnviando(false);
@@ -565,18 +567,28 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
                   <p className="text-sm font-medium text-gray-800">Números da escola</p>
                 </div>
                 {listaContatos.estado === "carregando" ? <p role="status" className="px-3 pb-3 text-sm text-gray-600">{CARREGANDO_CONTATOS_CARTAO}</p>
-                  : listaContatos.estado === "erro" ? <p role="alert" className="px-3 pb-3 text-sm text-red-700">{ERRO_CONTATOS_CARTAO}</p>
-                  : listaContatos.itens.length ? (
+                  : listaContatos.estado === "erro" ? (
+                    <div className="flex items-center justify-between gap-2 px-3 pb-3">
+                      <p role="alert" className="text-sm text-red-700">{ERRO_CONTATOS_CARTAO}</p>
+                      <Botao variante="secundario" tamanho="sm" onClick={() => void abrirContatos()}>Tentar de novo</Botao>
+                    </div>
+                  ) : listaContatos.itens.length ? (
+                  <>
+                  {listaContatos.erroEnvio && <p role="alert" className="px-3 pb-2 text-sm text-red-700">{listaContatos.erroEnvio}</p>}
                   <ul aria-label="Números da escola" className="max-h-64 overflow-y-auto">
                     {listaContatos.itens.map((c) => (
                       <li key={c.id}>
-                        <button type="button" aria-label={`Enviar contato ${c.rotulo}`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarCartao(c.contatoJid)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                        <button type="button" aria-label={`Enviar contato ${c.rotulo} (${c.telefoneE164})`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarCartao(c.contatoJid)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
                           <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><IconUser size={18} /></span>
-                          <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.rotulo}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{c.rotulo}</span>
+                            <span className="block truncate text-xs text-gray-600">{c.telefoneE164}</span>
+                          </span>
                         </button>
                       </li>
                     ))}
                   </ul>
+                  </>
                 ) : <EstadoVazio role="status" className="mx-1 mb-1">{SEM_CONTATOS_CARTAO}</EstadoVazio>}
               </div>
             )}

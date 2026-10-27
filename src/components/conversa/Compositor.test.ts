@@ -705,8 +705,8 @@ describe("Compositor: enquete e localização pelo motor (#367 E4.8)", () => {
 });
 
 const CONTATOS368 = [
-  { id: "n1", rotulo: "Comercial", contatoJid: "5511999990001@s.whatsapp.net" },
-  { id: "n2", rotulo: "Secretaria", contatoJid: "5511999990002@s.whatsapp.net" },
+  { id: "n1", rotulo: "Comercial", telefoneE164: "+5511999990001", contatoJid: "5511999990001@s.whatsapp.net" },
+  { id: "n2", rotulo: "Comercial", telefoneE164: "+5511999990002", contatoJid: "5511999990002@s.whatsapp.net" },
 ];
 const dialogoContato368 = (raiz: ReactNode) => elementos(raiz).find(n => n.props.role === "dialog" && n.props["aria-label"] === "Enviar contato");
 const botoesContato368 = (raiz: ReactNode) => elementos(raiz).filter(n => n.type === "button" && String(n.props["aria-label"] ?? "").startsWith("Enviar contato "));
@@ -727,12 +727,30 @@ describe("Compositor: cartão de contato com os números da escola (#368 E4.9)",
     expect(elementos(tela()).some(n => n.props.role === "status" && n.props.children === CARREGANDO_CONTATOS_CARTAO)).toBe(true);
     await esvaziar();
     expect(aoListarContatosCartao).toHaveBeenCalledOnce();
-    expect(botoesContato368(tela()).map(b => b.props["aria-label"])).toEqual(["Enviar contato Comercial", "Enviar contato Secretaria"]);
+    expect(botoesContato368(tela()).map(b => b.props["aria-label"])).toEqual(["Enviar contato Comercial (+5511999990001)", "Enviar contato Comercial (+5511999990002)"]);
     (botoesContato368(tela())[1].props.onClick as () => void)();
     await esvaziar();
     expect(aoEnviarConteudo).toHaveBeenCalledExactlyOnceWith({ tipo: "CONTATO", contatoJid: "5511999990002@s.whatsapp.net" });
     expect(dialogoContato368(tela())).toBeUndefined();
     expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+  });
+
+  it("falha ao listar: Tentar de novo busca a lista outra vez", async () => {
+    m.g = criarGanchos();
+    let falhar = true;
+    const aoListarContatosCartao = vi.fn(async () => { if (falhar) throw new Error("falhou"); return CONTATOS368; });
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    expect(elementos(tela()).some(n => n.props.role === "alert" && n.props.children === ERRO_CONTATOS_CARTAO)).toBe(true);
+    falhar = false;
+    clicarBotao(tela(), "Tentar de novo");
+    await esvaziar();
+    expect(aoListarContatosCartao).toHaveBeenCalledTimes(2);
+    expect(botoesContato368(tela())).toHaveLength(2);
+    expect(elementos(tela()).some(n => n.props.role === "alert")).toBe(false);
   });
 
   it("sem números: estado vazio; falha ao listar: alerta", async () => {
@@ -763,8 +781,12 @@ describe("Compositor: cartão de contato com os números da escola (#368 E4.9)",
     (botoesContato368(tela())[0].props.onClick as () => void)();
     await esvaziar();
     expect(aoEnviarConteudo).toHaveBeenCalledOnce();
-    expect(dialogoContato368(tela())).toBeDefined();
-    expect(elementos(tela()).some(n => n.props.role === "alert" && n.props.children === "Este canal não envia esse tipo de conteúdo.")).toBe(true);
+    const motivo = (raiz: ReactNode) => elementos(raiz).filter(n => n.props.role === "alert" && n.props.children === "Este canal não envia esse tipo de conteúdo.");
+    expect(motivo(dialogoContato368(tela()) as ReactNode)).toHaveLength(1);
+    expect(motivo(tela())).toHaveLength(1);
+    (elementos(tela()).find(n => n.props["aria-label"] === "Voltar para anexos")!.props.onClick as () => void)();
+    expect(dialogoContato368(tela())).toBeUndefined();
+    expect(motivo(tela())).toHaveLength(0);
   });
 
   it("sem aoListarContatosCartao ou sem motor, Contato segue desabilitado", () => {
