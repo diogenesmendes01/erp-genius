@@ -91,6 +91,7 @@ export async function atribuirAtendimentoTx(tx: Tx, u: UsuarioSessao, id: string
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(autor, inbox ? "transferir" : "atribuir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+      if (inbox && usuarioId === autor.id) throw new ErroRegra("Escolha outra pessoa para receber a conversa.");
       const alvo = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { id: true, ativo: true, papeis: true } });
       const doSetor = papeisDoSetor(a.finalidade);
       if (!alvo || !alvo.ativo || !alvo.papeis.some((p) => doSetor.includes(p))) throw new ErroRegra("A pessoa escolhida não atende este setor.");

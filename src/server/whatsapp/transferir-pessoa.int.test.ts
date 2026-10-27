@@ -12,7 +12,8 @@ import { CANAL_INBOX, type AvisoInbox } from "@/server/inbox/barramento";
 import { criarFiltroDeAvisos } from "@/server/inbox/eventos-sse";
 import { listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
-import { atribuirAtendimento, devolverParaFila } from "./acoes-atendimento";
+import { atribuirAtendimento, convidarParticipante, devolverParaFila } from "./acoes-atendimento";
+import { listarPessoasParaAtendimento } from "./consultas-acoes-atendimento";
 import { podeVerLeadNaThread } from "./visibilidade-lead";
 import { transferirPessoaInbox } from "./transferencia-inbox";
 
@@ -147,6 +148,46 @@ describe("transferir para pessoa (D5): responsável passa a conversa ao colega d
     expect((await transferir(c.v2.id)).ok).toBe(false);
     expect((await ler(c.a.id)).responsavelId).toBe(c.v1.id);
     expect(await acessos(c.a.id)).toHaveLength(0);
+  });
+});
+
+const convidar = (usuarioId: string) => convidarParticipante({ atendimentoId: c.a.id, usuarioId, podeEnviar: false, fim: new Date(Date.now() + 2 * 86_400_000).toISOString(), motivo: "Apoio na negociação 370" });
+const MSG_CONVITE = "Convidar pessoas nesta conversa cabe a quem tem a oportunidade na carteira ou à gerência comercial.";
+
+describe("acesso contextual não amplia o CRM por convite", () => {
+  it("colega que recebeu a conversa não convida terceiros e o terceiro não passa a ver o lead", async () => {
+    expect((await transferir(c.v2.id)).ok).toBe(true);
+    como(c.v2);
+    expect(await convidar(c.fin.id)).toEqual({ ok: false, erro: MSG_CONVITE });
+    expect(await listarPessoasParaAtendimento(c.a.id, "convidar")).toEqual([]);
+    expect(await prisma.participanteAtendimentoWhatsApp.count({ where: { atendimentoId: c.a.id } })).toBe(0);
+    expect(await podeVerLeadNaThread(await fresco(c.fin), c.a.id, c.lead.id, Date.now())).toBe(false);
+  });
+
+  it("convite de volta pelo terceiro da cadeia não dá ao colega o CRM do lead", async () => {
+    expect((await transferir(c.v2.id)).ok).toBe(true);
+    como(c.v2);
+    expect((await transferir(c.v3.id)).ok).toBe(true);
+    como(c.v3);
+    expect(await convidar(c.v2.id)).toEqual({ ok: false, erro: MSG_CONVITE });
+    expect(await prisma.participanteAtendimentoWhatsApp.count({ where: { atendimentoId: c.a.id } })).toBe(0);
+    expect(await podeVerLeadNaThread(await fresco(c.v2), c.a.id, c.lead.id, Date.now())).toBe(false);
+    expect(await podeVerLeadNaThread(await fresco(c.v3), c.a.id, c.lead.id, Date.now())).toBe(false);
+  });
+
+  it("dona do lead e gerência comercial continuam convidando", async () => {
+    expect((await convidar(c.fin.id)).ok).toBe(true);
+    como(c.gc);
+    expect((await convidar(c.v3.id)).ok).toBe(true);
+  });
+});
+
+describe("transferir para si mesmo", () => {
+  it("gerente que não é o responsável não vira responsável pelo Inbox", async () => {
+    como(c.gc);
+    expect(await transferir(c.gc.id)).toEqual({ ok: false, erro: "Escolha outra pessoa para receber a conversa." });
+    expect((await ler(c.a.id)).responsavelId).toBe(c.v1.id);
+    expect(await eventos(c.a.id, "AtendimentoAtribuido")).toHaveLength(0);
   });
 });
 
