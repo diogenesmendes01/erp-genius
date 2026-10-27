@@ -55,6 +55,15 @@ async function gate(tx:Tx,autorId:string,id:string,numeroId:string,tipo:ComandoA
  }
  return a;
 }
+export async function podeCriarAgendadaInboxTx(tx:Tx,autorId:string,atendimentoId:string):Promise<boolean>{
+ const r=await tx.atendimentoWhatsApp.findUnique({where:{id:atendimentoId},select:{conversa:{select:{numeroId:true}}}});
+ if(!r)return false;
+ try{await gate(tx,autorId,atendimentoId,r.conversa.numeroId,"CRIAR");return true;}
+ catch(e){if(e instanceof ErroRegra)return false;throw e;}
+}
+export function naTransacaoAtual(tx:Tx):BancoAgendadaInbox{
+ return {$transaction:((fn:(t:Tx)=>Promise<unknown>)=>fn(tx)) as BancoAgendadaInbox["$transaction"]};
+}
 async function conferirLeituraRecibo(tx:Tx,autorId:string,atendimentoId:string){
  const u=await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor});
  if(!u?.ativo||apenasPortal(u))throw new ErroRegra("Sua sessão não está mais ativa.");

@@ -161,7 +161,7 @@ export async function dadosModalTarefaNoInbox(atendimentoId:string,tarefaId?:str
  return executarAcao(async()=>dadosTarefaModal(await exigirSessao(),atendimentoId,tarefaId));
 }
 export async function criarTarefaNoInbox(atendimentoId:string,input:CriarTarefaInboxInput):Promise<Resultado<{id:string}>>{
- return executarAcao(async()=>{const r=await criarTarefaInbox(await exigirSessao(),atendimentoId,input);revalidatePath("/tarefas");revalidatePath("/inicio");return r;});
+ return executarAcao(async()=>{const r=await criarTarefaInbox(await exigirSessao(),atendimentoId,input);revalidatePath("/tarefas");revalidatePath("/inicio");if(input.mensagem)revalidatePath("/inbox");return r;});
 }
 export async function editarTarefaNoInbox(atendimentoId:string,tarefaId:string,versao:number,input:EditarTarefaInboxInput):Promise<Resultado>{
  return executarAcao(async()=>{await editarTarefaInbox(await exigirSessao(),atendimentoId,tarefaId,versao,input);revalidatePath("/tarefas");revalidatePath("/inicio");});

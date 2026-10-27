@@ -9,3 +9,13 @@ export function validarTarefaModal(i:{titulo:string;descricao?:string;dataCivil:
  if(i.dataCivil&&i.hora){const r=instanteDoCampoLocal(i.dataCivil+"T"+i.hora,i.fusoEscola);if(!r.ok)return r.erro;}
  return null;
 }
+export function mensagemNaDataAgendavel(i:{dataCivil:string|null;hora:string|null;fusoEscola:string},agora=new Date()):boolean{
+ if(!i.dataCivil||!i.hora)return false;
+ const r=instanteDoCampoLocal(i.dataCivil+"T"+i.hora,i.fusoEscola);
+ return r.ok&&r.instante.getTime()>agora.getTime();
+}
+export function validarMensagemNaData(texto:string):string|null{
+ if(!texto.trim())return "Escreva a mensagem que será enviada ao contato.";
+ if(texto.trim().length>4096)return "A mensagem deve ter até 4096 caracteres.";
+ return null;
+}

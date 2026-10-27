@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useRef,useState,type ChangeEvent,type FormEvent} from "react";
 import type {TipoTarefa,PrioridadeTarefa} from "@prisma/client";
-import {IconMessageCircle,IconPhone,IconMail,IconCalendar,IconCircleDot} from "@tabler/icons-react";
+import {IconMessageCircle,IconPhone,IconMail,IconCalendar,IconCircleDot,IconClock} from "@tabler/icons-react";
 import {OpcoesTarefaD10,CampoLembreteTarefaD10,type PropsOpcoesTarefaD10} from "./OpcoesTarefaD10";
 import {usePreviaNotificadosTarefa} from "./usePreviaNotificadosTarefa";
 import {Avatar,tomDoAvatar} from "@/components/Avatar";
@@ -18,7 +18,7 @@ import {atalhosDeHorario,partesDoValorLocal} from "@/lib/atalhos-horario";
 import type {DadosModalTarefa,EditarTarefaInboxInput} from "@/server/inbox/tarefas-edicao";
 import {dadosModalTarefaNoInbox,criarTarefaNoInbox,editarTarefaNoInbox,cancelarTarefaNoInbox} from "@/server/inbox/acoes-painel";
 import {camposAlterados,type CamposFormulario} from "../tarefas/edicao";
-import {validarTarefaModal} from "./tarefa-modal-regras";
+import {validarTarefaModal,mensagemNaDataAgendavel,validarMensagemNaData} from "./tarefa-modal-regras";
 type Props={atendimentoId:string;modo:{tipo:"nova"}|{tipo:"editar";tarefa:{id:string;versao:number}};fuso:string|null;alvoDisponivel?:boolean;aoFechar():void;aoSalvo():void};
 const ICONE_TIPO_TAREFA={WHATSAPP:IconMessageCircle,LIGACAO:IconPhone,EMAIL:IconMail,REUNIAO:IconCalendar,OUTRO:IconCircleDot} satisfies Record<TipoTarefa,typeof IconMessageCircle>;
 const PRIORIDADES=Object.keys(PRIORIDADE_TAREFA_LABEL).map(p=>({valor:p as PrioridadeTarefa,rotulo:rotular(PRIORIDADE_TAREFA_LABEL,p)}));
@@ -34,6 +34,7 @@ function SessaoModalTarefa({atendimentoId,modo,alvoDisponivel=true,aoFechar,aoSa
  const [responsavel,setResponsavel]=useState<string|null>(null),[vincular,setVincular]=useState(false),[jaFeita,setJaFeita]=useState(false),[mais,setMais]=useState(false),[erro,setErro]=useState<string|null>(null);
  const [notificados,setNotificados]=useState<string[]>([]),notificadosAntes=useRef<string[]>([]);
  const [cancelando,setCancelando]=useState(false),[motivo,setMotivo]=useState("");
+ const [mensagem,setMensagem]=useState(false),[textoMensagem,setTextoMensagem]=useState(""),chaveMensagem=useChaveIdempotencia();
  const [obsoleta,setObsoleta]=useState(false);
  const versaoAtual=modo.tipo==="editar"?modo.tarefa.versao:null;
  const [versaoInicial]=useState(versaoAtual);
@@ -59,14 +60,16 @@ function SessaoModalTarefa({atendimentoId,modo,alvoDisponivel=true,aoFechar,aoSa
   const vinculo:EditarTarefaInboxInput["vinculo"]=nova||vincular===dados.tarefa?.vinculadaAtual?"manter":vincular?"vincularAtual":"remover";
   const selecao=[...new Set(notificados)].sort(),notificadosMudou=JSON.stringify(selecao)!==JSON.stringify(notificadosAntes.current);
   if(selecao.length>200){setErro("Selecione no máximo 200 colegas.");return;}
+  const comMensagem=nova&&mensagem&&dados.podeAgendarMensagem&&!jaFeita;
+  if(comMensagem){const v=validarMensagemNaData(textoMensagem);if(v){setErro(v);return;}}
   if(notificadosMudou&&(previa.carregando||previa.erro)){setErro("Atualize os colegas disponíveis antes de salvar a seleção.");return;}
   const diff=camposAlterados(antes.current,{...campos,titulo:campos.titulo.trim(),descricao:campos.descricao.trim()});
   if(!nova&&!Object.keys(diff).length&&responsavel===dados.tarefa?.responsavelId&&vinculo==="manter"&&!notificadosMudou){aoFechar();return;}
   enviando.current=true;setEnvioEmCurso(true);
   const contexto={contextoEsperado:!nova&&vinculo==="manter"?dados.contextoIdentidadeEsperada:dados.contextoEsperado,fusoEscolaEsperado:dados.fusoEscola};
-  const r=nova?await exec.executar(()=>criarTarefaNoInbox(atendimentoId,{...campos,titulo:campos.titulo.trim(),descricao:campos.descricao.trim(),...(selecao.length?{notificarUsuarioIds:selecao}:{}),responsavelId:responsavel,vincularOportunidade:vincular,jaFeita,chaveIdempotencia:chave.atual,...contexto})):await exec.executar(()=>editarTarefaNoInbox(atendimentoId,dados.tarefa!.id,dados.tarefa!.versao,{...diff,...(notificadosMudou?{notificarUsuarioIds:selecao}:{}),...(responsavel!==dados.tarefa!.responsavelId?{responsavelId:responsavel}:{}),vinculo,...contexto}));
+  const r=nova?await exec.executar(()=>criarTarefaNoInbox(atendimentoId,{...campos,titulo:campos.titulo.trim(),descricao:campos.descricao.trim(),...(selecao.length?{notificarUsuarioIds:selecao}:{}),responsavelId:responsavel,vincularOportunidade:vincular,jaFeita,chaveIdempotencia:chave.atual,...(comMensagem?{mensagem:{texto:textoMensagem.trim(),chaveIdempotencia:chaveMensagem.atual}}:{}),...contexto})):await exec.executar(()=>editarTarefaNoInbox(atendimentoId,dados.tarefa!.id,dados.tarefa!.versao,{...diff,...(notificadosMudou?{notificarUsuarioIds:selecao}:{}),...(responsavel!==dados.tarefa!.responsavelId?{responsavelId:responsavel}:{}),vinculo,...contexto}));
   enviando.current=false;if(!vivo.current)return;setEnvioEmCurso(false);
-  if(r?.tipo==="ok"){if(nova)chave.depoisDo(r);aoSalvo();}
+  if(r?.tipo==="ok"){if(nova){chave.depoisDo(r);chaveMensagem.depoisDo(r);}aoSalvo();}
   else if(r?.tipo==="erro"&&(r.mensagem.includes("Recarregue")||r.mensagem.includes("Reabra")||r.mensagem.includes("não encontrada")||r.mensagem.includes("permissão")))setObsoleta(true);
  }
  if(cancelando&&dados?.tarefa)return <ConfirmarAcao titulo={"Cancelar a tarefa “"+dados.tarefa.titulo+"”?"} confirmacao="cancelamento" folha idempotente={true} podeConfirmar={!obsoleta&&motivo.trim().length>0&&motivo.trim().length<=500} acao={async()=>{setEnvioEmCurso(true);try{return await cancelarTarefaNoInbox(atendimentoId,dados.tarefa!.id,dados.tarefa!.versao,motivo.trim());}finally{if(vivo.current)setEnvioEmCurso(false);}}} aoCancelar={()=>setCancelando(false)} aoConcluir={()=>{if(vivo.current)aoSalvo();}} aoFalhar={f=>{if(vivo.current&&f.tipo==="erro"&&(f.mensagem.includes("Recarregue")||f.mensagem.includes("permissão")||f.mensagem.includes("não encontrada")))setObsoleta(true);}}><p>A tarefa será cancelada e continuará no histórico.</p><label className="grid gap-1 text-sm">Motivo<CampoTexto value={motivo} required minLength={1} maxLength={500} onChange={(e:ChangeEvent<HTMLTextAreaElement>)=>setMotivo(e.target.value)} className="rounded-md border border-border-soft bg-surface p-2"/></label>{obsoleta&&<FeedbackAcao erro="A tarefa mudou. Feche e reabra o formulário."/>}</ConfirmarAcao>;
@@ -81,6 +84,8 @@ function SessaoModalTarefa({atendimentoId,modo,alvoDisponivel=true,aoFechar,aoSa
    <CampoLembreteTarefaD10 lembrete={campos.lembreteAntecedenciaMin} lembretes={LEMBRETES} ocupado={exec.ocupado||obsoleta} aoMudar={patchOpcoes}/>
    <label className="grid gap-1 text-sm">Descrição<CampoTexto aria-label="Descrição da tarefa" value={campos.descricao} maxLength={2000} onChange={(e:ChangeEvent<HTMLTextAreaElement>)=>mudar("descricao",e.target.value)} className="rounded-md border border-border-soft bg-surface p-2"/></label>
    {dados.oportunidade&&(nova||dados.tarefa?.podeAlterarVinculo)?<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={vincular} onChange={e=>setVincular(e.target.checked)}/>Vincular à oportunidade · {dados.oportunidade.titulo}</label>:dados.tarefa?.leadId&&<p className="text-xs text-gray-600">Vínculo original preservado. A oportunidade desse vínculo não está disponível neste contexto.</p>}
+   {nova&&<div className="space-y-2 rounded-md border border-border-soft p-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={mensagem&&dados.podeAgendarMensagem&&!jaFeita} disabled={!dados.podeAgendarMensagem||jaFeita||exec.ocupado||obsoleta} onChange={e=>{setMensagem(e.target.checked);setErro(null);}}/><span className="flex-1">Enviar mensagem nesta data</span><IconClock size={14} aria-hidden className="text-gray-600"/></label>
+    {!dados.podeAgendarMensagem?<p className="text-xs text-gray-600">Assuma a conversa para agendar a mensagem.</p>:jaFeita?<p className="text-xs text-gray-600">Tarefa já feita não agenda mensagem.</p>:mensagem&&<><CampoTexto aria-label="Mensagem ao contato" placeholder="Mensagem que será enviada ao contato" rows={2} maxLength={4096} value={textoMensagem} onChange={(e:ChangeEvent<HTMLTextAreaElement>)=>{setTextoMensagem(e.target.value);setErro(null);}} className="rounded-md border border-border-soft bg-surface p-2"/>{!mensagemNaDataAgendavel({dataCivil:campos.dataCivil??null,hora:campos.hora??null,fusoEscola:dados.fusoEscola})&&<p className="text-xs text-gray-600">A mensagem só é agendada quando a tarefa tem data e horário no futuro.</p>}</>}</div>}
    <OpcoesTarefaD10 recorrencia={campos.recorrencia??"NAO_REPETE"} mostrarLembrete={false} abertas={mais} aoAlternar={()=>setMais(v=>!v)} prioridade={campos.prioridade} prioridades={PRIORIDADES} lembrete={campos.lembreteAntecedenciaMin} lembretes={LEMBRETES} colegas={previa.candidatos} notificados={notificados} podeNotificar={!previa.carregando&&!previa.erro} ocupado={exec.ocupado||obsoleta} aoMudar={patchOpcoes}/>
    {notificados.length>0&&campos.lembreteAntecedenciaMin===null&&<p className="text-sm text-gray-600">As seleções ficam salvas. Os colegas só recebem aviso quando houver lembrete.</p>}
    <FeedbackAcao erro={previa.erro}/>{previa.erro&&<Botao variante="fantasma" tamanho="sm" onClick={previa.atualizar}>Atualizar colegas</Botao>}
