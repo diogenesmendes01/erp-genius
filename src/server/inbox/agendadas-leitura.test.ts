@@ -11,7 +11,7 @@ const linha=(id="m")=>({id,atendimentoId:"a",corpoRenderizado:"Texto fictício",
 function fixture(){const usuario={findUnique:vi.fn().mockResolvedValue(ator())},intencaoMensagem={findMany:vi.fn<(query:unknown)=>Promise<unknown[]>>().mockResolvedValue([linha()])};Object.assign(usuario,{findMany:vi.fn().mockImplementation(async()=>[await usuario.findUnique()])});const dados={usuario,intencaoMensagem};
  return {...dados,db:dados as unknown as Db};}
 beforeEach(()=>{vi.resetAllMocks();m.visivel.mockResolvedValue(atendimento());m.estado.mockResolvedValue({ctx:{agora:new Date(),ariaAtiva:false,handoffPendentes:new Set()},sugestao:false});});
-it("projeta somente contrato autorizado, sem IDs de vínculo, arquivo ou campos cadastrais",async()=>{const f=fixture();expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([{id:"m",texto:"Texto fictício",agendadaPara:"2030-01-02T15:00:00.000Z",status:"PENDENTE",tipo:"TEXTO",temAnexo:false,autor:"voce",autorNome:"Pessoa fictícia",podeAlterar:true}]);});
+it("projeta somente contrato autorizado, sem IDs de vínculo, arquivo ou campos cadastrais",async()=>{const f=fixture();expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([{id:"m",texto:"Texto fictício",agendadaPara:"2030-01-02T15:00:00.000Z",status:"PENDENTE",tipo:"TEXTO",temAnexo:false,autor:"voce",autorNome:"Pessoa fictícia",podeAlterar:true,perguntaPendente:false}]);});
 it("consulta somente atendimento selecionado, shape manual, duas origens e ordem determinística com limite50",async()=>{const f=fixture();await lerAgendadasDoAtendimento(f.db,"u","a");expect(f.intencaoMensagem.findMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({atendimentoId:"a",agendadaPara:{not:null},passo:null,passoComercial:null,status:{in:["PENDENTE","ADIADA"]},origem:{in:["HUMANO","IA"]}}),orderBy:[{agendadaPara:"asc"},{id:"asc"}],take:50,select:expect.any(Object)}));expect(f.intencaoMensagem.findMany.mock.calls[0]?.[0]).not.toHaveProperty("include");});
 it("sem ACL não consulta mensagens",async()=>{const f=fixture();m.visivel.mockResolvedValue(null);expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([]);expect(f.intencaoMensagem.findMany).not.toHaveBeenCalled();});
 it("encerrado não consulta mensagens",async()=>{const f=fixture();m.visivel.mockResolvedValue({...atendimento(),encerradoEm:new Date()});expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([]);expect(f.intencaoMensagem.findMany).not.toHaveBeenCalled();});
@@ -35,5 +35,25 @@ it("GC mantém leitura mas perde alteração quando autor sai da equipe durante 
  expect(saiuDaEquipe).toBe(true);
  expect(findMany).toHaveBeenCalledTimes(2);
  expect(findMany).toHaveBeenLastCalledWith({where:{id:{in:["u","colega"]}},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true,gerenteComercialId:true}});
- expect(dto).toEqual([{id:"m",texto:"Texto fictício",agendadaPara:"2030-01-02T15:00:00.000Z",status:"PENDENTE",tipo:"TEXTO",temAnexo:false,autor:"equipe",autorNome:"Autora fictícia",podeAlterar:false}]);
+ expect(dto).toEqual([{id:"m",texto:"Texto fictício",agendadaPara:"2030-01-02T15:00:00.000Z",status:"PENDENTE",tipo:"TEXTO",temAnexo:false,autor:"equipe",autorNome:"Autora fictícia",podeAlterar:false,perguntaPendente:false}]);
+});
+
+const comPergunta=(extra:Record<string,unknown>={})=>({...linha(),perguntarSeResponder:true,confirmadaAposRespostaEm:null,criadaEm:new Date("2030-01-01T10:00:00Z"),...extra});
+it("agendadasDoAtendimento marca perguntaPendente depois da entrada",async()=>{
+ const f=fixture();f.intencaoMensagem.findMany.mockResolvedValue([comPergunta()]);
+ m.visivel.mockResolvedValue({...atendimento(),ultimoInboundEm:new Date("2030-01-01T11:00:00Z")});
+ expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([expect.objectContaining({id:"m",perguntaPendente:true})]);
+ expect(f.intencaoMensagem.findMany.mock.calls[0]?.[0]).toMatchObject({select:{perguntarSeResponder:true,confirmadaAposRespostaEm:true,criadaEm:true}});
+});
+it("entrada antes de agendar, sem a opção ou já confirmada depois da entrada: sem pergunta",async()=>{
+ const entrada={...atendimento(),ultimoInboundEm:new Date("2030-01-01T11:00:00Z")};m.visivel.mockResolvedValue(entrada);
+ for(const linhaTeste of [comPergunta({criadaEm:new Date("2030-01-01T12:00:00Z")}),comPergunta({perguntarSeResponder:false}),comPergunta({confirmadaAposRespostaEm:new Date("2030-01-01T11:30:00Z")})]){
+  const f=fixture();f.intencaoMensagem.findMany.mockResolvedValue([linhaTeste]);
+  expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([expect.objectContaining({perguntaPendente:false})]);
+ }
+});
+it("sem entrada no atendimento usa a última entrada da conversa",async()=>{
+ const f=fixture();f.intencaoMensagem.findMany.mockResolvedValue([comPergunta()]);
+ m.visivel.mockResolvedValue({...atendimento(),ultimoInboundEm:null,conversa:{...atendimento().conversa,ultimoInboundEm:new Date("2030-01-01T11:00:00Z")}});
+ expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([expect.objectContaining({perguntaPendente:true})]);
 });

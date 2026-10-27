@@ -1,6 +1,6 @@
 import type {Resultado} from "@/server/_shared/resultado";
 import {executarAcaoCliente,type DesfechoAcao} from "@/lib/acao-cliente";
-export type EntradaAgendamento={atendimentoId:string;quandoLocal:string;fuso:string}&({tipo:"CRIAR";texto:string}|{tipo:"EDITAR";intencaoId:string;texto:string});
+export type EntradaAgendamento={atendimentoId:string;quandoLocal:string;fuso:string}&({tipo:"CRIAR";texto:string;perguntarSeResponder:boolean}|{tipo:"EDITAR";intencaoId:string;texto:string});
 export type ComandoAgendamento=EntradaAgendamento&{chaveIdempotencia:string};
 export type AlvoAgendamento={atendimentoId:string}&({tipo:"CRIAR"}|{tipo:"EDITAR";intencaoId:string});
 type Estado=Readonly<{comando:ComandoAgendamento|null;ocupado:boolean;erro:string|null;incerto:boolean}>;

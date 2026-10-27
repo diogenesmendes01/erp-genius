@@ -8,10 +8,11 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
-import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal, editarAgendamentoDoAtendimento } from "./acoes-conversa";
+import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, editarAgendamentoDoAtendimento, enviarAgendamentoAgoraDoAtendimento, manterAgendadaAposResposta } from "./acoes-conversa";
+import { agendadasDoAtendimento } from "./consultas-acoes-atendimento";
 import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { transferirAtendimento } from "./acoes-atendimento";
-import { despacharFila } from "./despachante";
+import { despacharFila, MOTIVO_AGUARDA_CONFIRMACAO } from "./despachante";
 import { diaUtilAs } from "@/test/janela-envio";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); enviarMock.mockReset().mockResolvedValue({ providerMessageId: "teste-sem-rede" }); });
@@ -204,5 +205,107 @@ describe("editar mensagem agendada pelo atendimento (D11)", () => {
     const c = await agendada();
     expect((await editar(c, { texto: "   " })).ok).toBe(false);
     expect(await editados(c.a.id)).toHaveLength(0);
+  });
+});
+
+describe("perguntar antes de enviar se o contato responder (D11)", () => {
+  async function agendadaComPergunta(perguntarSeResponder = true) {
+    const c = await cenario();
+    comoUsuario(c.vend);
+    const quando = util(10);
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Lembrete", quando: quando.toISOString(), perguntarSeResponder }));
+    return { ...c, id, quando };
+  }
+  const responder = (atendimentoId: string, em = new Date()) => prisma.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: { ultimoInboundEm: em } });
+  const intencao = (id: string) => prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
+  async function retida() {
+    const c = await agendadaComPergunta();
+    await responder(c.a.id);
+    await despacharFila(new Date(c.quando.getTime() + 60_000));
+    expect(await intencao(c.id)).toMatchObject({ status: "ADIADA", motivoFalha: MOTIVO_AGUARDA_CONFIRMACAO });
+    return c;
+  }
+
+  it("com a opção, entrada depois de agendar retém a mensagem: ADIADA aguarda_confirmacao_resposta e não envia", async () => {
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    const c = await agendadaComPergunta();
+    expect((await intencao(c.id)).perguntarSeResponder).toBe(true);
+    await responder(c.a.id);
+    await despacharFila(new Date(c.quando.getTime() + 60_000));
+    expect(await intencao(c.id)).toMatchObject({ status: "ADIADA", motivoFalha: MOTIVO_AGUARDA_CONFIRMACAO, despacharAposEm: null });
+    expect(enviarMock).not.toHaveBeenCalled();
+  });
+
+  it("sem a opção, sai normalmente (HUMANO não cai na lei da conversa viva)", async () => {
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    const c = await agendadaComPergunta(false);
+    await responder(c.a.id);
+    await despacharFila(new Date(c.quando.getTime() + 60_000));
+    expect((await intencao(c.id)).status).toBe("DESPACHADA");
+    expect(enviarMock).toHaveBeenCalledOnce();
+  });
+
+  it("entrada antes de agendar não retém", async () => {
+    const c = await cenario();
+    comoUsuario(c.vend);
+    await responder(c.a.id, new Date(Date.now() - 60_000));
+    const quando = util(10);
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Lembrete", quando: quando.toISOString(), perguntarSeResponder: true }));
+    await despacharFila(new Date(quando.getTime() + 60_000));
+    expect(["DESPACHADA", "SIMULADA"]).toContain((await intencao(id)).status);
+  });
+
+  it("agendadasDoAtendimento marca perguntaPendente depois da entrada", async () => {
+    const c = await agendadaComPergunta();
+    expect(await agendadasDoAtendimento(c.a.id)).toEqual([expect.objectContaining({ id: c.id, perguntaPendente: false })]);
+    await responder(c.a.id);
+    expect(await agendadasDoAtendimento(c.a.id)).toEqual([expect.objectContaining({ id: c.id, perguntaPendente: true })]);
+  });
+
+  it("manter agendada: confirma e sai no ciclo seguinte ao horário", async () => {
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    const c = await retida();
+    expect(await manterAgendadaAposResposta({ atendimentoId: c.a.id, intencaoId: c.id })).toEqual({ ok: true, dado: { id: c.id } });
+    const mantida = await intencao(c.id);
+    expect(mantida).toMatchObject({ status: "PENDENTE", motivoFalha: null, despacharAposEm: null });
+    expect(mantida.confirmadaAposRespostaEm).not.toBeNull();
+    expect(await prisma.evento.count({ where: { tipo: "MensagemAgendadaMantida", agregadoTipo: "AtendimentoWhatsApp", agregadoId: c.a.id } })).toBe(1);
+    expect(await agendadasDoAtendimento(c.a.id)).toEqual([expect.objectContaining({ id: c.id, perguntaPendente: false })]);
+    await despacharFila(new Date(c.quando.getTime() + 120_000));
+    expect((await intencao(c.id)).status).toBe("DESPACHADA");
+    expect(enviarMock).toHaveBeenCalledOnce();
+  });
+
+  it("manter sem ter assumido a conversa recusa e a mensagem continua retida", async () => {
+    const c = await retida();
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { responsavelId: null } });
+    expect((await manterAgendadaAposResposta({ atendimentoId: c.a.id, intencaoId: c.id })).ok).toBe(false);
+    expect(await intencao(c.id)).toMatchObject({ status: "ADIADA", motivoFalha: MOTIVO_AGUARDA_CONFIRMACAO });
+  });
+
+  it("enviar agora sobre a retida envia", async () => {
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    const c = await retida();
+    expect((await enviarAgendamentoAgoraDoAtendimento({ atendimentoId: c.a.id, intencaoId: c.id })).ok).toBe(true);
+    expect((await intencao(c.id)).status).toBe("PENDENTE");
+    await despacharFila(new Date(Date.now() + 1_000));
+    expect((await intencao(c.id)).status).toBe("DESPACHADA");
+    expect(enviarMock).toHaveBeenCalledOnce();
+  });
+
+  it("cancelar envio: CANCELADA cancelada_pelo_autor", async () => {
+    const c = await retida();
+    expect((await cancelarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: c.id })).ok).toBe(true);
+    expect(await intencao(c.id)).toMatchObject({ status: "CANCELADA", motivoFalha: "cancelada_pelo_autor" });
+    expect(enviarMock).not.toHaveBeenCalled();
+  });
+
+  it("mesma chave com perguntarSeResponder diferente: conflito", async () => {
+    const c = await cenario();
+    comoUsuario(c.vend);
+    const quando = util(10).toISOString();
+    expect((await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando, perguntarSeResponder: true, chaveIdempotencia: "agendar-373" })).ok).toBe(true);
+    expect((await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando, perguntarSeResponder: false, chaveIdempotencia: "agendar-373" })).ok).toBe(false);
+    expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: c.a.id } })).toBe(1);
   });
 });

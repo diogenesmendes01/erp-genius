@@ -1,6 +1,6 @@
 import {expect,it,vi} from "vitest";
 import {criarIntencoesAgendamento,type EntradaAgendamento} from "./intencao-agendamento";
-const entrada=(id="a"):Extract<EntradaAgendamento,{tipo:"CRIAR"}>=>({tipo:"CRIAR",atendimentoId:id,texto:"Rascunho fictício",quandoLocal:"2035-01-01T09:00",fuso:"America/Sao_Paulo"});
+const entrada=(id="a"):Extract<EntradaAgendamento,{tipo:"CRIAR"}>=>({tipo:"CRIAR",atendimentoId:id,texto:"Rascunho fictício",quandoLocal:"2035-01-01T09:00",fuso:"America/Sao_Paulo",perguntarSeResponder:true});
 it("donoMap acima da conversa conserva intenção A→B→A e separa operação/intençãodeeditar",()=>{
  const dono=criarIntencoesAgendamento();const a=dono.para(entrada());dono.para(entrada("b"));expect(dono.para(entrada())).toBe(a);
  expect(dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})).not.toBe(a);expect(dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})).not.toBe(dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"j"}));

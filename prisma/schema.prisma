@@ -2488,6 +2488,8 @@ model IntencaoMensagem {
   criadaEm        DateTime          @default(now())
   atualizadoEm    DateTime          @default(now()) @updatedAt
   agendadaPara    DateTime?
+  perguntarSeResponder     Boolean   @default(false)
+  confirmadaAposRespostaEm DateTime?
   tarefaId        String?
   tarefa          Tarefa?           @relation(fields: [tarefaId], references: [id], onDelete: SetNull)
   despacharAposEm DateTime?

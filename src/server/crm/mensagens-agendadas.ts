@@ -70,13 +70,14 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     if (d.atendimentoId) {
       const r = await executarAgendadaInbox(prisma, autor.id, {
         tipo: "CRIAR", atendimentoId: d.atendimentoId, numeroEsperado: d.numeroId,
-        texto: d.texto, agendadaPara: d.agendadaPara, validaAte: d.validaAte, chaveIdempotencia: d.chaveIdempotencia,
+        texto: d.texto, agendadaPara: d.agendadaPara, validaAte: d.validaAte, perguntarSeResponder: d.perguntarSeResponder, chaveIdempotencia: d.chaveIdempotencia,
       });
       revalidar();
       return r;
     }
     if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
     if (d.chaveIdempotencia && !d.atendimentoId) throw new ErroRegra("Chave de idempotência só no agendamento pelo atendimento.");
+    if (d.perguntarSeResponder) throw new ErroRegra("Perguntar se o contato responder só vale no agendamento pelo atendimento.");
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
@@ -232,7 +233,7 @@ export async function reagendarMensagem(id: string, agendadaPara: string): Promi
     const quando = futuro(InstanteSchema.parse(agendadaPara));
     dataFutura(m, quando);
     await exigirAgendamentoNaJanela(quando);
-    return { data: { agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null }, payload: { agendadaPara: quando.toISOString() } };
+    return { data: { agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null, confirmadaAposRespostaEm: new Date() }, payload: { agendadaPara: quando.toISOString() } };
   });
 }
 
@@ -244,7 +245,7 @@ export async function editarMensagemAgendada(id: string, dados: { texto: string;
     dataFutura(m, quando);
     await exigirAgendamentoNaJanela(quando);
     return {
-      data: { corpoRenderizado: texto, agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null },
+      data: { corpoRenderizado: texto, agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null, confirmadaAposRespostaEm: new Date() },
       payload: { agendadaPara: quando.toISOString(), textoAlterado: texto !== m.corpoRenderizado },
     };
   });
@@ -254,7 +255,7 @@ export async function enviarAgora(id: string): Promise<Resultado> {
   return alterar(id, "MensagemReagendada", (m) => {
     const agora = new Date();
     dataFutura(m, agora);
-    return { data: { agendadaPara: agora, status: "PENDENTE", despacharAposEm: null, motivoFalha: null }, payload: { agendadaPara: agora.toISOString(), enviarAgora: true } };
+    return { data: { agendadaPara: agora, status: "PENDENTE", despacharAposEm: null, motivoFalha: null, confirmadaAposRespostaEm: agora }, payload: { agendadaPara: agora.toISOString(), enviarAgora: true } };
   });
 }
 

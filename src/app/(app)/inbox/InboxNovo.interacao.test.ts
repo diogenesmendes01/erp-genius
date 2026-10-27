@@ -1228,7 +1228,7 @@ it("361 R1B1 ACK retido depois de outra seleção não navega nem troca atendime
  habilitarRota313("c=a1");const p={...props,opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;const antigo=(elementos(tela(p)).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props.aoSelecionar;lista(tela(p)).aoSelecionar("a2");tela(p);antigo("novo-retido");expect(m.navegar361).not.toHaveBeenCalled();expect(coluna313(tela(p)).selecionado).toBe("a2");
 });
 it("363 dono de intenções fica acima da conversa e conserva comando incerto A→B→A",async()=>{
- tela();await esvaziar();const dono=cabecalho(tela()).intencoesAgendamento;expect(dono).toBeDefined();const i=dono!.para({tipo:"CRIAR",atendimentoId:"a1"});const action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar({tipo:"CRIAR",atendimentoId:"a1",texto:"A",quandoLocal:"2035-01-01T09:00",fuso:"UTC"},action);const comando=i.ler().comando;
+ tela();await esvaziar();const dono=cabecalho(tela()).intencoesAgendamento;expect(dono).toBeDefined();const i=dono!.para({tipo:"CRIAR",atendimentoId:"a1"});const action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar({tipo:"CRIAR",atendimentoId:"a1",texto:"A",quandoLocal:"2035-01-01T09:00",fuso:"UTC",perguntarSeResponder:true},action);const comando=i.ler().comando;
  lista(tela()).aoSelecionar("a2");await esvaziar();expect(cabecalho(tela()).intencoesAgendamento).toBe(dono);lista(tela()).aoSelecionar("a1");await esvaziar();expect(cabecalho(tela()).intencoesAgendamento!.pendente("a1")?.intencao.ler().comando).toBe(comando);expect(action).toHaveBeenCalledOnce();
 });
 it("363 deep link consome só agendar preservando c/filtros/hash e não reabre no rerender",async()=>{

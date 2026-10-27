@@ -591,7 +591,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             aoPedidoAgendamentoConsumido={consumirPedidoAgendamento}
             podeLerAgendamento={!!painelDoAberto?.dado&&!painelDoAberto.acessoRevogado}
             tarefasNoFio={painelDoAberto?.acessoRevogado?undefined:painelDoAberto?.dado?.tarefasNoFio}
-            cartoesNoFio={selecionado&&!painelDoAberto?.acessoRevogado&&agendadasNoFio.length?({agora,aoEditar})=>agendadasNoFio.map(a=><CartaoAgendada key={a.id} agendada={a} atendimentoId={selecionado} fuso={fuso??"UTC"} agora={agora} aoEditar={aoEditar?origem=>aoEditar(a,origem):undefined} aoMudar={mensagem=>{if(selecionadoRef.current!==selecionado)return;setAvisoSucesso(mensagem);recarregarLista();}}/>):undefined}
+            cartoesNoFio={selecionado&&!painelDoAberto?.acessoRevogado&&agendadasNoFio.length?({agora,aoEditar})=>agendadasNoFio.map(a=><CartaoAgendada key={a.id} agendada={a} atendimentoId={selecionado} nomeContato={atual?.contatoNome} fuso={fuso??"UTC"} agora={agora} aoEditar={aoEditar?origem=>aoEditar(a,origem):undefined} aoMudar={mensagem=>{if(selecionadoRef.current!==selecionado)return;setAvisoSucesso(mensagem);recarregarLista();}}/>):undefined}
             aoCriarTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"},"fio"):undefined}
             aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}},"fio"):undefined}
             pedidoNota={notaSolicitada?.id===selecionado?notaSolicitada.pedido:undefined}
